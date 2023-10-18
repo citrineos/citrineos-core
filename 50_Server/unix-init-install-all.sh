@@ -19,7 +19,7 @@ execute_commands() {
 base_commands=(
     "cd 00_Base"
     "rm -rf ./lib"
-    "rm citrineos-base-1.0.0.tgz"
+    "rm -f citrineos-base-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
@@ -27,7 +27,7 @@ base_commands=(
 util_commands=(
     "cd ../99_Util"
     "rm -rf ./lib"
-    "rm citrineos-util-1.0.0.tgz"
+    "rm -f citrineos-util-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
     "npm install"
     "npm pack"
@@ -36,9 +36,8 @@ util_commands=(
 data_commands=(
     "cd ../10_Data"
     "rm -rf ./lib"
-    "rm citrineos-data-1.0.0.tgz"
+    "rm -f citrineos-data-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../99_Util/citrineos-util-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
@@ -46,7 +45,7 @@ data_commands=(
 provisioning_commands=(
     "cd ../01_Provisioning"
     "rm -rf ./lib"
-    "rm citrineos-provisioning-1.0.0.tgz"
+    "rm -f citrineos-provisioning-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
     "npm install ../99_Util/citrineos-util-1.0.0.tgz"
     "npm install ../10_Data/citrineos-data-1.0.0.tgz"
@@ -57,7 +56,7 @@ provisioning_commands=(
 authorization_commands=(
     "cd ../02_Authorization"
     "rm -rf ./lib"
-    "rm citrineos-authorization-1.0.0.tgz"
+    "rm -f citrineos-authorization-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
     "npm install ../99_Util/citrineos-util-1.0.0.tgz"
     "npm install ../10_Data/citrineos-data-1.0.0.tgz"
@@ -68,7 +67,7 @@ authorization_commands=(
 availability_commands=(
     "cd ../03_Availability"
     "rm -rf ./lib"
-    "rm citrineos-availability-1.0.0.tgz"
+    "rm -f citrineos-availability-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
     "npm install ../99_Util/citrineos-util-1.0.0.tgz"
     "npm install ../10_Data/citrineos-data-1.0.0.tgz"
@@ -79,7 +78,7 @@ availability_commands=(
 transaction_commands=(
     "cd ../04_Transaction"
     "rm -rf ./lib"
-    "rm citrineos-transaction-1.0.0.tgz"
+    "rm -f citrineos-transaction-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
     "npm install ../99_Util/citrineos-util-1.0.0.tgz"
     "npm install ../10_Data/citrineos-data-1.0.0.tgz"
@@ -90,7 +89,7 @@ transaction_commands=(
 monitoring_commands=(
     "cd ../05_Monitoring"
     "rm -rf ./lib"
-    "rm citrineos-monitoring-1.0.0.tgz"
+    "rm -f citrineos-monitoring-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
     "npm install ../99_Util/citrineos-util-1.0.0.tgz"
     "npm install ../10_Data/citrineos-data-1.0.0.tgz"
@@ -99,7 +98,7 @@ monitoring_commands=(
 )
 
 ocpp_server_commands=(
-    "cd ../50_Ocpp_Server"
+    "cd ../50_Server"
     "rm -rf ./lib"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
     "npm install ../99_Util/citrineos-util-1.0.0.tgz"
@@ -110,9 +109,9 @@ ocpp_server_commands=(
     "npm install ../04_Transaction/citrineos-transaction-1.0.0.tgz"
     "npm install ../05_Monitoring/citrineos-monitoring-1.0.0.tgz"
     "npm install"
-    "npm pack"
 )
 
+cd ..
 # Execute commands for each module
 execute_commands "${base_commands[@]}"
 execute_commands "${util_commands[@]}"
@@ -127,7 +126,7 @@ execute_commands "${transaction_commands[@]}"&
 pid_transaction=$!
 execute_commands "${monitoring_commands[@]}"&
 pid_monitoring=$!
-execute_commands "${ocpp_server_commands[@]}"
+
 
 
 wait $pid_provisioning
@@ -135,5 +134,9 @@ wait $pid_authorization
 wait $pid_availability
 wait $pid_transaction
 wait $pid_monitoring
+
+echo "Dependancy Installation Completed! Now initializing the OCPP server..."
+
+execute_commands "${ocpp_server_commands[@]}"
 
 echo "All commands executed successfully!"
