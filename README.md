@@ -41,31 +41,31 @@ Before you begin, make sure you have the following installed on your system:
     git clone https://github.com/citrineos/citrineos-core
     ```
 
-1. Navigate to the CitrineOS Server directory:
+2. Navigate to the CitrineOS Server directory:
 
     ```shell
     cd citrineos-core/50_Server
     ```
 
-1. Install project dependencies:
+3. Install project dependencies:
 
    ```shell
    ./unix-init-install-all.sh
    ```
 
-1. Start the server and its supporting infrastructure with:
+4. Start the server and its supporting infrastructure with:
 
     ```shell
     docker-compose up -d 
     ```
 
-### Configuration
+### Starting the Server without Docker
 
-CitrineOS requires configuration to allow your OCPP 2.0.1 compliant charging stations to connect. 
+CitrineOS requires configuration to allow your OCPP 2.0.1 compliant charging stations to connect.
 
-We recommend running and developing the project with docker-compose set-up.
+We recommend running and developing the project with the `docker-compose` set-up.
 
-Starting the Server without Docker configuration is also possible. To change necessary configuration for local execution, please adjust the configuration file at `50_Server/src/config/envs/local.ts`. Make sure any changes to the local configuration do not make it into your PR.
+To change necessary configuration for execution outside of `docker-compose`, please adjust the configuration file at `50_Server/src/config/envs/local.ts`. Make sure any changes to the local configuration do not make it into your PR.
 
 ### Starting the Server
 
