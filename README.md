@@ -41,19 +41,19 @@ Before you begin, make sure you have the following installed on your system:
     git clone https://github.com/citrineos/citrineos-core
     ```
 
-2. Navigate to the CitrineOS Server directory:
+1. Navigate to the CitrineOS Server directory:
 
     ```shell
     cd citrineos-core/50_Server
     ```
 
-3. Install project dependencies:
+1. Install project dependencies:
 
    ```shell
    ./unix-init-install-all.sh
    ```
 
-4. Start the server and its supporting infrastructure with:
+1. Start the server and its supporting infrastructure with:
 
     ```shell
     docker-compose up -d 
