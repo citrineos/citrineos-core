@@ -1,0 +1,41 @@
+{
+  "name": "@citrineos/base",
+  "version": "1.0.0",
+  "description": "The base module for OCPP v2.0.1 including all interfaces. This module is not intended to be used directly, but rather as a dependency for other modules.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "prepublish": "npx eslint ./src",
+    "prepare": "npm run build",
+    "build": "tsc",
+    "generate-interfaces": "node json-schema-processor.js ../OCPP-2.0.1/OCPP-2.0.1_part3_JSON_schemas",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ocpp",
+    "ocpp_v201"
+  ],
+  "author": "S44",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/uuid": "^9.0.3",
+    "@types/validator": "^13.11.1",
+    "eslint": "^8.48.0",
+    "json-schema-to-typescript": "^12.0.0",
+    "json-schema-to-zod": "^1.1.1",
+    "typescript": "5.0.4"
+  },
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.5.0",
+    "ajv": "^8.12.0",
+    "class-transformer": "^0.5.1",
+    "fastify": "^4.22.2",
+    "reflect-metadata": "^0.1.13",
+    "tslog": "^4.9.2",
+    "uuid": "^9.0.0",
+    "zod": "^3.22.2"
+  }
+}
