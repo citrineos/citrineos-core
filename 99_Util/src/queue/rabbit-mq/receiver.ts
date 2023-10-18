@@ -43,6 +43,10 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     super(config, logger);
     this._cache = cache || new MemoryCache();
     this._module = module;
+
+    this._connect().then(channel => {
+      this._channel = channel;
+    });
   }
 
   /**
