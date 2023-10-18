@@ -22,7 +22,7 @@ Now, the following services should be running:
 -   **Directus** (service name: directus) on port 8055 with endpoints
     -   `:8055/admin`: web interface (login = admin@citrineos.com:CitrineOS!)
 
-These three services are defined in `100_Docker/docker-compose.yml` and they
+These three services are defined in `50_Server/docker-compose.yml` and they
 live inside the docker network `docker_default` with their respective
 ports. By default these ports are directly accessible by using
 `localhost:8055` for example.
