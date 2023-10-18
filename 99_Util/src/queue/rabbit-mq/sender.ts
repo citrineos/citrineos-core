@@ -43,6 +43,10 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    */
   constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
     super(config, logger);
+
+    this._connect().then(channel => {
+      this._channel = channel;
+    });
   }
 
   /**
@@ -99,7 +103,8 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
     if (this._config.util.amqp) {
       const exchange = this._config.util.amqp.exchange;
       const channel = this._channel || await this._connect();
-
+      this._channel = channel;
+      
       this._logger.debug(`Publishing to ${exchange}:`, message);
 
       const success = channel.publish(exchange || "", "", Buffer.from(JSON.stringify(instanceToPlain(message)), "utf-8"), {
@@ -136,8 +141,16 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    * Connect to RabbitMQ
    */
   protected _connect(): Promise<amqplib.Channel> {
-    return amqplib.connect(this._config.util.amqp?.url || "").then(connection => {
+    return amqplib.connect(this._config.util.amqp?.url || "").then(async connection => {
+      this._connection = connection;
       return connection.createChannel();
+    }).then(channel => {
+      // Add listener for channel errors
+      channel.on("error", (err) => {
+        this._logger.error("AMQP channel error", err);
+        // TODO: add recovery logic
+      });
+      return channel;
     });
   }
 }
