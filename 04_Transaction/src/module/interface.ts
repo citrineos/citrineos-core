@@ -20,5 +20,5 @@ import { GetTransactionStatusRequest, IMessageConfirmation } from "@citrineos/ba
  * Interface for the transaction module.
  */
 export interface ITransactionModuleApi {
-    getTransactionStatus(identifier: string, partyId: string, request: GetTransactionStatusRequest): Promise<IMessageConfirmation>
+    getTransactionStatus(identifier: string, tenantId: string, request: GetTransactionStatusRequest): Promise<IMessageConfirmation>
 }

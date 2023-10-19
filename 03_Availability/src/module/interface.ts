@@ -20,5 +20,5 @@ import { ChangeAvailabilityRequest, IMessageConfirmation } from "@citrineos/base
  * Interface for the authorization module.
  */
 export interface IAvailabilityModuleApi {
-    changeAvailability(identifier: string, partyId: string, request: ChangeAvailabilityRequest): Promise<IMessageConfirmation>;
+    changeAvailability(identifier: string, tenantId: string, request: ChangeAvailabilityRequest): Promise<IMessageConfirmation>;
 }
