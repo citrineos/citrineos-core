@@ -45,16 +45,16 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
     @AsMessageEndpoint(CallAction.GetBaseReport, GetBaseReportRequestSchema)
     getBaseReport(
         identifier: string,
-        partyId: string,
+        tenantId: string,
         request: GetBaseReportRequest
     ): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, partyId, CallAction.GetBaseReport, request);
+        return this._module.sendCall(identifier, tenantId, CallAction.GetBaseReport, request);
     }
 
     @AsMessageEndpoint(CallAction.SetVariables, SetVariablesRequestSchema)
     async setVariables(
         identifier: string,
-        partyId: string,
+        tenantId: string,
         request: SetVariablesRequest
     ): Promise<IMessageConfirmation> {
         const setVariableData = request.setVariableData;
@@ -70,7 +70,7 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
             const itemsPerMessageSetVariables = Number(itemsPerMessageSetVariablesAttributes[0].value);
             while (setVariableData.length > 0) {
                 const setVariableDataSubset = setVariableData.slice(0, itemsPerMessageSetVariables);
-                const messageConfirmation = await this._module.sendCall(identifier, partyId, CallAction.SetVariables,
+                const messageConfirmation = await this._module.sendCall(identifier, tenantId, CallAction.SetVariables,
                     { setVariableData: setVariableDataSubset } as SetVariablesRequest);
                 if (!messageConfirmation.payload) {
                     finalMessageConfirmation.success = false;
@@ -81,7 +81,7 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
             return finalMessageConfirmation;
         } else if (itemsPerMessageSetVariablesAttributes.length == 0) {
             // If no limit reported, no limit used
-            return this._module.sendCall(identifier, partyId, CallAction.SetVariables,
+            return this._module.sendCall(identifier, tenantId, CallAction.SetVariables,
                 { setVariableData: setVariableData } as SetVariablesRequest);
         } else {
             throw new Error("Violation of Standard Component Structure: "
@@ -92,7 +92,7 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
     @AsMessageEndpoint(CallAction.GetVariables, GetVariablesRequestSchema)
     async getVariables(
         identifier: string,
-        partyId: string,
+        tenantId: string,
         request: GetVariablesRequest
     ): Promise<IMessageConfirmation> {
         const getVariableData = request.getVariableData;
@@ -108,7 +108,7 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
             const itemsPerMessageGetVariables = Number(itemsPerMessageGetVariablesAttributes[0].value);
             while (getVariableData.length > 0) {
                 const getVariableDataSubset = getVariableData.slice(0, itemsPerMessageGetVariables);
-                const messageConfirmation = await this._module.sendCall(identifier, partyId, CallAction.GetVariables,
+                const messageConfirmation = await this._module.sendCall(identifier, tenantId, CallAction.GetVariables,
                     { getVariableData: getVariableDataSubset } as GetVariablesRequest);
                 if (!messageConfirmation.payload) {
                     finalMessageConfirmation.success = false;
@@ -119,7 +119,7 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
             return finalMessageConfirmation;
         } else if (itemsPerMessageGetVariablesAttributes.length == 0) {
             // If no limit reported, no limit used
-            return this._module.sendCall(identifier, partyId, CallAction.GetVariables,
+            return this._module.sendCall(identifier, tenantId, CallAction.GetVariables,
                 { getVariableData: getVariableData } as GetVariablesRequest);
         } else {
             throw new Error("Violation of Standard Component Structure: "
@@ -130,19 +130,19 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
     @AsMessageEndpoint(CallAction.SetNetworkProfile, SetNetworkProfileRequestSchema)
     setNetworkProfile(
         identifier: string,
-        partyId: string,
+        tenantId: string,
         request: SetNetworkProfileRequest
     ): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, partyId, CallAction.SetNetworkProfile, request);
+        return this._module.sendCall(identifier, tenantId, CallAction.SetNetworkProfile, request);
     }
 
     @AsMessageEndpoint(CallAction.Reset, ResetRequestSchema)
     reset(
         identifier: string,
-        partyId: string,
+        tenantId: string,
         resetRequest: ResetRequest
     ): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, partyId, CallAction.Reset, resetRequest);
+        return this._module.sendCall(identifier, tenantId, CallAction.Reset, resetRequest);
     }
 
     /**

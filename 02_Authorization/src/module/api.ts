@@ -67,18 +67,18 @@ export class AuthorizationModuleApi extends AbstractModuleApi<AuthorizationModul
      */
 
     @AsMessageEndpoint(CallAction.RequestStartTransaction, RequestStartTransactionRequestSchema)
-    requestStartTransaction(identifier: string, partyId: string, request: RequestStartTransactionRequest): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, partyId, CallAction.RequestStartTransaction, request);
+    requestStartTransaction(identifier: string, tenantId: string, request: RequestStartTransactionRequest): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.RequestStartTransaction, request);
     }
 
     @AsMessageEndpoint(CallAction.RequestStopTransaction, RequestStopTransactionRequestSchema)
-    requestStopTransaction(identifier: string, partyId: string, request: RequestStopTransactionRequest): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, partyId, CallAction.RequestStopTransaction, request);
+    requestStopTransaction(identifier: string, tenantId: string, request: RequestStopTransactionRequest): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.RequestStopTransaction, request);
     }
 
     @AsMessageEndpoint(CallAction.ClearCache, ClearCacheRequestSchema)
-    clearCache(identifier: string, partyId: string, request: ClearCacheRequest): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, partyId, CallAction.ClearCache, request);
+    clearCache(identifier: string, tenantId: string, request: ClearCacheRequest): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.ClearCache, request);
     }
 
     /**

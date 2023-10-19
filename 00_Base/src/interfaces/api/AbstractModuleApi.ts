@@ -23,7 +23,7 @@ import { Namespace } from "../../ocpp/persistence";
 import { CallAction } from "../../ocpp/rpc/message";
 import { IMessageConfirmation } from "../messages";
 import { IModule } from "../modules";
-import { IMessageQuerystring } from "./MessageQuerystring";
+import { IMessageQuerystring, IMessageQuerystringSchema } from "./MessageQuerystring";
 import { IModuleApi } from "./ModuleApi";
 
 /**
@@ -80,20 +80,13 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
          * @return {Promise<IMessageConfirmation>} The promise that resolves to the message confirmation.
          */
         const _handler = async (request: FastifyRequest<{ Body: OcppRequest | OcppResponse, Querystring: IMessageQuerystring }>): Promise<IMessageConfirmation> => {
-            return method.call(this, request.query.identifier, request.query.partyId, request.body);
+            return method.call(this, request.query.identifier, request.query.tenantId, request.body);
         };
 
         const _opts = {
             schema: {
                 body: bodySchema,
-                querystring: {
-                    type: 'object',
-                    properties: {
-                        identifier: { type: 'string' },
-                        partyId: { type: 'string' }
-                    },
-                    required: ['identifier', 'partyId']
-                }
+                querystring: IMessageQuerystringSchema
             } as const
         };
 

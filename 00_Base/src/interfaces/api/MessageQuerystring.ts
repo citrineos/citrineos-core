@@ -19,5 +19,17 @@
  */
 export interface IMessageQuerystring {
     identifier: string;
-    partyId: string;
+    tenantId: string;
+}
+
+/**
+ * This message querystring schema describes the {@link IMessageQuerystring} interface.
+ */
+export const IMessageQuerystringSchema = {
+    type: 'object',
+    properties: {
+        identifier: { type: 'string' },
+        tenantId: { type: 'string' }
+    },
+    required: ['identifier', 'tenantId']
 }

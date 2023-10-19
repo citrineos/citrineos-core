@@ -41,8 +41,8 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
      */
 
     @AsMessageEndpoint(CallAction.GetMonitoringReport, GetMonitoringReportRequestSchema)
-    getMonitoringReport(identifier: string, partyId: string, request: GetMonitoringReportRequest): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, partyId, CallAction.GetMonitoringReport, request);
+    getMonitoringReport(identifier: string, tenantId: string, request: GetMonitoringReportRequest): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.GetMonitoringReport, request);
     }
 
 

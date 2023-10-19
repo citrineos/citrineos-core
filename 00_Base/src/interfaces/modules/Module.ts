@@ -24,8 +24,8 @@ import { HandlerProperties, IMessage, IMessageConfirmation, IMessageHandler, IMe
  */
 export interface IModule {
 
-    sendCall(identifier: string, partyId: string, action: CallAction, payload: OcppRequest, origin?: MessageOrigin): Promise<IMessageConfirmation>;
-    sendCallResult(correlationId: string, identifier: string, partyId: string, action: CallAction, payload: OcppResponse, origin?: MessageOrigin): Promise<IMessageConfirmation>;
+    sendCall(identifier: string, tenantId: string, action: CallAction, payload: OcppRequest, origin?: MessageOrigin): Promise<IMessageConfirmation>;
+    sendCallResult(correlationId: string, identifier: string, tenantId: string, action: CallAction, payload: OcppResponse, origin?: MessageOrigin): Promise<IMessageConfirmation>;
     sendCallResultWithMessage(message: IMessage<OcppResponse>, payload: OcppResponse): Promise<IMessageConfirmation>
 
     handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void;
