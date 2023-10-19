@@ -54,6 +54,17 @@ export interface ICache {
   get<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): Promise<T | null>;
 
   /**
+   * Gets a value synchronously from the underlying cache.
+   * 
+   * Note: The concrete implementation of this method might use run loop modification to achieve synchronous behavior.
+   * 
+   * @param {string} key - The key for the value.
+   * @param {string} [namespace] - The namespace for the key.
+   * @returns {string | null} - Returns the value as string or null if the key does not exist.
+   */
+  getSync<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): T | null;
+
+  /**
    * Gets and removes a value asynchronously from the underlying cache.
    * This is an atomic operation. The value will not be modified or read by any other process between getting and removing.
    * 
@@ -73,21 +84,6 @@ export interface ICache {
    * @returns {Promise<boolean>} - Returns true if the value was set successfully.
    * */
   set(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean>;
-
-  /**
-   * Synchronous methods
-   */
-
-  /**
-   * Gets a value synchronously from the underlying cache.
-   * 
-   * Note: The concrete implementation of this method might use run loop modification to achieve synchronous behavior.
-   * 
-   * @param {string} key - The key for the value.
-   * @param {string} [namespace] - The namespace for the key.
-   * @returns {string | null} - Returns the value as string or null if the key does not exist.
-   */
-  getSync<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): T | null;
 
   /**
    * Sets a value synchronously in the underlying cache.

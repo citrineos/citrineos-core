@@ -91,6 +91,20 @@ export class RedisCache implements ICache {
     });
   }
 
+  getSync<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): T | null {
+    namespace = namespace || "default";
+    key = `${namespace}:${key}`;
+    return deasyncPromise(this._client.get(key).then((result) => {
+      if (result) {
+        if (classConstructor) {
+          return plainToInstance(classConstructor(), JSON.parse(result));
+        }
+        return result as T;
+      }
+      return null;
+    }));
+  }
+  
   getAndRemove<T>(key: string, namespace?: string | undefined, classConstructor?: (() => ClassConstructor<T>) | undefined): Promise<T | null> {
     namespace = namespace || "default";
     key = `${namespace}:${key}`;
@@ -121,22 +135,6 @@ export class RedisCache implements ICache {
       }
       return false;
     });
-  }
-
-  // Synchronous versions
-
-  getSync<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): T | null {
-    namespace = namespace || "default";
-    key = `${namespace}:${key}`;
-    return deasyncPromise(this._client.get(key).then((result) => {
-      if (result) {
-        if (classConstructor) {
-          return plainToInstance(classConstructor(), JSON.parse(result));
-        }
-        return result as T;
-      }
-      return null;
-    }));
   }
 
   setSync(key: string, value: string, namespace?: string, expireSeconds?: number): boolean {

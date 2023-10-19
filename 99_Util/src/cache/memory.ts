@@ -115,6 +115,20 @@ export class MemoryCache implements ICache {
     });
   }
 
+  getSync<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): T | null {
+    namespace = namespace || "default";
+    key = `${namespace}:${key}`;
+    const value = this._cache.get(key);
+    if (value) {
+      if (classConstructor) {
+        return plainToInstance(classConstructor(), JSON.parse(value));
+      }
+      return value as T;
+    } else {
+      return null;
+    }
+  }
+  
   set(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean> {
     namespace = namespace || "default";
     key = `${namespace}:${key}`;
@@ -128,22 +142,6 @@ export class MemoryCache implements ICache {
       }, expireSeconds * 1000));
     }
     return Promise.resolve(true);
-  }
-
-  // Synchronous versions
-
-  getSync<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): T | null {
-    namespace = namespace || "default";
-    key = `${namespace}:${key}`;
-    const value = this._cache.get(key);
-    if (value) {
-      if (classConstructor) {
-        return plainToInstance(classConstructor(), JSON.parse(value));
-      }
-      return value as T;
-    } else {
-      return null;
-    }
   }
 
   setSync(key: string, value: string, namespace?: string, expireSeconds?: number): boolean {
