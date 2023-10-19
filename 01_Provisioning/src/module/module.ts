@@ -50,6 +50,7 @@ import { VariableAttribute } from "@citrineos/data/lib/layers/sequelize";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
+import { BootService } from "./services";
 
 /**
  * Component that handles provisioning related messages.
@@ -99,6 +100,8 @@ export class ProvisioningModule extends AbstractModule {
     CallAction.SetNetworkProfile,
     CallAction.Reset
   ];
+
+  protected _bootService: BootService;
 
   protected _bootRepository: IBootRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -159,6 +162,8 @@ export class ProvisioningModule extends AbstractModule {
     this._bootRepository = bootRepository || new sequelize.BootRepository(config, this._logger);
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, this._logger);
 
+    this._bootService = new BootService(this._bootRepository);
+
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
@@ -172,47 +177,49 @@ export class ProvisioningModule extends AbstractModule {
     props?: HandlerProperties
   ): Promise<void> {
 
+    /**
+     * Workflow:
+     * 1. Update device model
+     * 2. Construct response
+     * 3. Send response
+     * 4. Update config
+     * 5. If pending, perform configuration
+     */
+
+    /**
+     * updateDeviceModel(request)
+     * response = generateResponse(systemConfig, bootConfig)
+     * if accepted, end boot process: undo blacklisting, remove boot status
+     * send response
+     * update config
+     * sendGetMonitoringReport()
+     * sendSetVariables()
+     * accept boot
+     */
+
     this._logger.debug("BootNotification received:", message, props);
 
-    const chargingStation = message.payload.chargingStation;
     const stationId = message.context.stationId;
     const tenantId = message.context.tenantId;
 
-    // Construct default response
-    const bootNotificationResponse: BootNotificationResponse = {
-      currentTime: new Date().toISOString(),
-      interval: this._config.provisioning.bootRetryInterval,
-      status: this._config.provisioning.unknownChargerStatus
-    };
+    this._deviceModelRepository.updateBootAttributes(message.payload.chargingStation, stationId);
 
-    // Retrieve config
-    let bootConfig = await this._bootRepository.readByKey(stationId);
+    const bootNotificationResponse: BootNotificationResponse = await this._bootService.generateBootNotificationResponse(stationId, this._config);
 
-    // Update status from config, if present
-    if (bootConfig) {
-      bootNotificationResponse.interval = bootConfig.bootRetryInterval ? bootConfig.bootRetryInterval : bootNotificationResponse.interval;
-      bootNotificationResponse.status = bootConfig.status;
-      // TODO: Determine how/if StatusInfo should be generated
-      bootNotificationResponse.statusInfo = bootConfig.statusInfo;
-    }
+    // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
+    const cachedBootStatus = await this._cache.get<string>(ProvisioningModule.BOOT_STATUS, stationId);
 
-    // Check cache boot status to see if a boot process is ongoing
-    const cacheBootStatus = await this._cache.get<string>(ProvisioningModule.BOOT_STATUS, stationId);
-
-    if (bootNotificationResponse.status == RegistrationStatusEnumType.Accepted) {
-      // Replace bootRetryInterval with heartbeatInterval
-      bootNotificationResponse.interval = bootConfig?.heartbeatInterval ? bootConfig?.heartbeatInterval : this._config.provisioning.heartbeatInterval;
-
-      // if (cacheBootStatus) {
-      // Time to undo blacklisting
+    if (bootNotificationResponse.status == RegistrationStatusEnumType.Accepted && cachedBootStatus) {
+      // Undo blacklisting of charger-originated actions
       CALL_SCHEMA_MAP.forEach((actionSchema, action) => {
         this._cache.remove(action, stationId)
       });
+      // Remove cached boot status
       this._cache.remove(ProvisioningModule.BOOT_STATUS, stationId);
-      this._logger.debug("Boot process status cleared: ", cacheBootStatus)
-      // }
-    } else if (!cacheBootStatus) { // i.e. Starting a boot process
-      // Status is not Accepted; i.e. Status is Rejected or Pending
+      this._logger.debug("Cached boot status removed: ", cachedBootStatus);
+    } else if (!cachedBootStatus) {
+      // Status is not Accepted; i.e. Status is Rejected or Pending.
+      // Cached boot status for charger did not exist; i.e. this is the first BootNotificationResponse to be Rejected or Pending.
       // Blacklist all charger-originated actions except BootNotification
       // N.B. GetMonitoringReport & GetReport will need to un-blacklist NotifyReport
       // N.B. TriggerMessage will need to un-blacklist the message they trigger 
@@ -226,88 +233,77 @@ export class ProvisioningModule extends AbstractModule {
     const bootNotificationResponseMessageConfirmation: IMessageConfirmation = await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
     if (bootNotificationResponseMessageConfirmation.success) {
-      this._logger.debug("BootNotification response sent: ", bootNotificationResponseMessageConfirmation);
-      // If response sent successfully for unknown charger, create boot config record
-      if (!bootConfig) {
-        const unknownChargerBootConfig: BootConfig = {
-          status: bootNotificationResponse.status,
-          statusInfo: bootNotificationResponse.statusInfo
-        }
-        bootConfig = await this._bootRepository.createOrUpdateByKey(unknownChargerBootConfig, stationId);
-      }
-      // Record timestamp sent to charger
-      bootConfig = await this._bootRepository.updateLastBootTimeByKey(bootNotificationResponse.currentTime, stationId);
-      if (!bootConfig) {
-        throw new Error("BootConfig undefined during boot process...");
-      }
-      if (bootNotificationResponse.status == RegistrationStatusEnumType.Rejected && !cacheBootStatus) {
-        // Set cache boot status to rejected
+      this._logger.debug("BootNotification response successfully sent to central system: ", bootNotificationResponseMessageConfirmation);
+      
+      if (!cachedBootStatus || (cachedBootStatus && cachedBootStatus !== bootNotificationResponse.status)) {
+        // Cache boot status for charger
         this._cache.set(ProvisioningModule.BOOT_STATUS, bootNotificationResponse.status, stationId);
-      } else
-        // Pending status indicates further work to do...
-        // No cacheBootStatus or cacheBootStatus==Rejected verifies ongoing boot process is not interrupted
-        if (bootNotificationResponse.status == RegistrationStatusEnumType.Pending &&
-          (!cacheBootStatus || cacheBootStatus == RegistrationStatusEnumType.Rejected)) {
-          // Boot process starts...
-          // Set cache boot status to pending
-          await this._cache.set(ProvisioningModule.BOOT_STATUS, bootNotificationResponse.status, stationId);
-          // Either GetBaseReport or SetVariables or update to Accepted
-          const getBaseReportOnPending = (bootConfig.getBaseReportOnPending !== null) ? bootConfig.getBaseReportOnPending : this._config.provisioning.getBaseReportOnPending;
-          if (getBaseReportOnPending) {
-            // Remove Notify Report from blacklist
-            this._cache.remove(CallAction.NotifyReport, stationId);
+      }
+      // Update charger-specific boot config with details of most recently sent BootNotificationResponse
+      const bootConfigDbEntity = await this._bootService.updateBootConfigFromBootNotificationResponse(stationId, bootNotificationResponse);
 
-            // TODO: Determine if GetBaseReport.requestId needs to be anything special
-            const getBaseReportMessageConfirmation: IMessageConfirmation = await this.sendCall(stationId, tenantId, CallAction.GetBaseReport,
-              { requestId: 1, reportBase: ReportBaseEnumType.FullInventory } as GetBaseReportRequest);
-            if (getBaseReportMessageConfirmation.success) {
-              // N.B. The charger will restart this process by sending a BootNotificationRequest in {bootRetryInterval} seconds
-              // Make sure GetBaseReport doesn't re-trigger on next boot attempt
-              bootConfig.getBaseReportOnPending = false;
-              await bootConfig.save();
-              // Ending this boot process
-              // Responsibility to wait until NotifyReport messages triggered by GetBaseReport are done being sent
-              // before retrying BootNotification is on the charger.
-              this._cache.remove(ProvisioningModule.BOOT_STATUS, stationId);
-              this._logger.debug("Boot process status cleared: ", cacheBootStatus)
-            }
-          } else if (bootConfig.pendingBootSetVariables && bootConfig.pendingBootSetVariables.length > 1) {
-            bootConfig.variablesRejectedOnLastBoot = [];
-            const setVariableData: SetVariableDataType[] = await this._deviceModelRepository.readAllSetVariableByStationId(stationId);
+      // Pending status indicates configuration to do...
+      // If boot status was not previously cached or previously cached status was not Pending, start configuration
+      // Otherwise, configuration is already in progress.
+      if (bootNotificationResponse.status == RegistrationStatusEnumType.Pending &&
+        (!cachedBootStatus || cachedBootStatus != RegistrationStatusEnumType.Pending)) {
 
-            const itemsPerMessageSetVariablesAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
-              stationId: stationId,
-              component_name: 'DeviceDataCtrlr',
-              variable_name: 'ItemsPerMessage',
-              variable_instance: 'SetVariables',
-              type: AttributeEnumType.Actual
-            })
-            // It is possible for itemsPerMessageSetVariablesAttributes.length > 1 if component instances or evses
-            // are associated with alternate options. That structure is not supported by this logic, and that
-            // structure is a violation of Part 2 - Specification of OCPP 2.0.1.
-            // If ItemsPerMessageSetVariables not set, send all variables at once
-            const itemsPerMessageSetVariables = itemsPerMessageSetVariablesAttributes.length == 0 ?
-              setVariableData.length : Number(itemsPerMessageSetVariablesAttributes[0].value);
-            const setVariablesRequests = Math.ceil(setVariableData.length / itemsPerMessageSetVariables);
-            this._cache.set(ProvisioningModule.SET_VARIABLES, setVariablesRequests.toString(), stationId);
-            while (setVariableData.length > 0) {
-              await this.sendCall(stationId, tenantId, CallAction.SetVariables,
-                { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest);
-            }
-          } else {
-            // Update boot config with status accepted
-            // TODO: Determine how/if StatusInfo should be generated
-            await this._bootRepository.updateStatusByKey(RegistrationStatusEnumType.Accepted, undefined, stationId);
-            // We can trigger the new boot immediately rather than wait for the retry, as nothing needs to be done.
-            // B02.FR.02 - Spec allows for TriggerMessageRequest - OCTT fails over trigger - removing it here
-            // this.sendCall(stationId, tenantId, CallAction.TriggerMessage,
-            //   { requestedMessage: MessageTriggerEnumType.BootNotification } as TriggerMessageRequest);
+  
+        // Either GetBaseReport or SetVariables or update to Accepted
+        const getBaseReportOnPending = (bootConfigDbEntity.getBaseReportOnPending !== null) ? bootConfigDbEntity.getBaseReportOnPending : this._config.provisioning.getBaseReportOnPending;
+        if (getBaseReportOnPending) {
+          // Remove Notify Report from blacklist
+          this._cache.remove(CallAction.NotifyReport, stationId);
+
+          // TODO: Determine if GetBaseReport.requestId needs to be anything special
+          const getBaseReportMessageConfirmation: IMessageConfirmation = await this.sendCall(stationId, tenantId, CallAction.GetBaseReport,
+            { requestId: 1, reportBase: ReportBaseEnumType.FullInventory } as GetBaseReportRequest);
+          if (getBaseReportMessageConfirmation.success) {
+            // N.B. The charger will restart this process by sending a BootNotificationRequest in {bootRetryInterval} seconds
+            // Make sure GetBaseReport doesn't re-trigger on next boot attempt
+            bootConfigDbEntity.getBaseReportOnPending = false;
+            await bootConfigDbEntity.save();
+            // Ending this boot process
+            // Responsibility to wait until NotifyReport messages triggered by GetBaseReport are done being sent
+            // before retrying BootNotification is on the charger.
+            this._cache.remove(ProvisioningModule.BOOT_STATUS, stationId);
+            this._logger.debug("Boot process status cleared: ", cachedBootStatus)
           }
+        } else if (bootConfigDbEntity.pendingBootSetVariables && bootConfigDbEntity.pendingBootSetVariables.length > 1) {
+          bootConfigDbEntity.variablesRejectedOnLastBoot = [];
+          const setVariableData: SetVariableDataType[] = await this._deviceModelRepository.readAllSetVariableByStationId(stationId);
+
+          const itemsPerMessageSetVariablesAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+            stationId: stationId,
+            component_name: 'DeviceDataCtrlr',
+            variable_name: 'ItemsPerMessage',
+            variable_instance: 'SetVariables',
+            type: AttributeEnumType.Actual
+          })
+          // It is possible for itemsPerMessageSetVariablesAttributes.length > 1 if component instances or evses
+          // are associated with alternate options. That structure is not supported by this logic, and that
+          // structure is a violation of Part 2 - Specification of OCPP 2.0.1.
+          // If ItemsPerMessageSetVariables not set, send all variables at once
+          const itemsPerMessageSetVariables = itemsPerMessageSetVariablesAttributes.length == 0 ?
+            setVariableData.length : Number(itemsPerMessageSetVariablesAttributes[0].value);
+          const setVariablesRequests = Math.ceil(setVariableData.length / itemsPerMessageSetVariables);
+          this._cache.set(ProvisioningModule.SET_VARIABLES, setVariablesRequests.toString(), stationId);
+          while (setVariableData.length > 0) {
+            await this.sendCall(stationId, tenantId, CallAction.SetVariables,
+              { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest);
+          }
+        } else {
+          // Update boot config with status accepted
+          // TODO: Determine how/if StatusInfo should be generated
+          await this._bootRepository.updateStatusByKey(RegistrationStatusEnumType.Accepted, undefined, stationId);
+          // We can trigger the new boot immediately rather than wait for the retry, as nothing needs to be done.
+          // B02.FR.02 - Spec allows for TriggerMessageRequest - OCTT fails over trigger - removing it here
+          // this.sendCall(stationId, tenantId, CallAction.TriggerMessage,
+          //   { requestedMessage: MessageTriggerEnumType.BootNotification } as TriggerMessageRequest);
         }
+      }
     }
 
-    // TODO: Determine if anything needs to happen when BootNotificationResponse failed to send...
-    this._deviceModelRepository.updateBootAttributes(chargingStation, stationId);
   }
 
   @AsHandler(CallAction.NotifyReport)
