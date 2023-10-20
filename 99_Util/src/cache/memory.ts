@@ -30,7 +30,7 @@ export class MemoryCache implements ICache {
 
   constructor() {
     const keySubscriptionMap: Map<string, (arg: string | null) => void> = new Map();
-    const handler: ProxyHandler<Map<string, string>> = {
+    const subscriptionHandler: ProxyHandler<Map<string, string>> = {
       // Returns value when Map.set(key, value) is called
       set(target, property, value) {
         const setOutcome = Reflect.set(target, property, value);
@@ -49,7 +49,7 @@ export class MemoryCache implements ICache {
       },
     };
 
-    this._cache = new Proxy(new Map(), handler);
+    this._cache = new Proxy(new Map(), subscriptionHandler);
     this._keySubscriptionMap = keySubscriptionMap;
     this._keySubscriptionPromiseMap = new Map();
     this._lockMap = new Map();
