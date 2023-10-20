@@ -133,10 +133,12 @@ export class MemoryCache implements ICache {
         if (result) {
           if (classConstructor) {
             resolveGet(plainToInstance(classConstructor(), JSON.parse(result)));
+          } else {
+            resolveGet(result as T);
           }
-          resolveGet(result as T);
+        } else {
+          resolveGet(null);
         }
-        resolveGet(null);
         this._cache.delete(key);
         resolveLock();
       }));

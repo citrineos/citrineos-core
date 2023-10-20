@@ -17,7 +17,7 @@
 import { ICache } from "@citrineos/base";
 import { ClassConstructor, plainToInstance } from "class-transformer";
 import { default as deasyncPromise } from "deasync-promise";
-import { RedisClientType, createClient, PubSubListener } from "redis";
+import { RedisClientType, createClient } from "redis";
 
 /**
  * Implementation of cache interface with redis storage
@@ -104,7 +104,7 @@ export class RedisCache implements ICache {
       return null;
     }));
   }
-  
+
   getAndRemove<T>(key: string, namespace?: string | undefined, classConstructor?: (() => ClassConstructor<T>) | undefined): Promise<T | null> {
     namespace = namespace || "default";
     key = `${namespace}:${key}`;
