@@ -85,6 +85,8 @@ export class MemoryCache implements ICache {
       : this._keySubscriptionPromiseMap.set(key, new Promise<string | null>((resolve) => {
         this._keySubscriptionMap.set(key, (value: string | null) => {
           resolve(value);
+          this._keySubscriptionMap.delete(key);
+          this._keySubscriptionPromiseMap.delete(key);
         });
       })).get(key);
 
@@ -141,6 +143,7 @@ export class MemoryCache implements ICache {
         }
         this._cache.delete(key);
         resolveLock();
+        this._lockMap.delete(key);
       }));
     });
   }
