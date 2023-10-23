@@ -58,8 +58,8 @@ export class TransactionModuleApi extends AbstractModuleApi<TransactionModule> i
      */
 
     @AsMessageEndpoint(CallAction.GetTransactionStatus, GetTransactionStatusRequestSchema)
-    getTransactionStatus(identifier: string, partyId: string, request: GetTransactionStatusRequest): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, partyId, CallAction.GetTransactionStatus, request);
+    getTransactionStatus(identifier: string, tenantId: string, request: GetTransactionStatusRequest): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.GetTransactionStatus, request);
     }
 
     /**

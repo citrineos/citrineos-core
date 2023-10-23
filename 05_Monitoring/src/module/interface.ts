@@ -20,5 +20,5 @@ import { GetMonitoringReportRequest, IMessageConfirmation } from "@citrineos/bas
  * Interface for the transaction module.
  */
 export interface IMonitoringModuleApi {
-    getMonitoringReport(identifier: string, partyId: string, request: GetMonitoringReportRequest): Promise<IMessageConfirmation>
+    getMonitoringReport(identifier: string, tenantId: string, request: GetMonitoringReportRequest): Promise<IMessageConfirmation>
 }
