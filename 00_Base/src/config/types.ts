@@ -106,7 +106,8 @@ export const systemConfigSchema = z.object({
         port: z.number().int().positive().default(8080),
         host: z.string().default("localhost"),
         protocol: z.string().default('ocpp2.0.1'),
-        pingInterval: z.number().int().positive().default(60)
+        pingInterval: z.number().int().positive().default(60),
+        maxCallLengthSeconds: z.number().int().positive().default(5)
     }),
 });
 

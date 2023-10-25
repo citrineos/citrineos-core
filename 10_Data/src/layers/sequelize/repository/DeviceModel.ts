@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AttributeEnumType, ChargingStationType, ComponentType, MutabilityEnumType, ReportDataType, SetVariableDataType, SetVariableResultType, VariableType } from "@citrineos/base";
+import { AttributeEnumType, ChargingStationType, ComponentType, MutabilityEnumType, ReportDataType, SetVariableDataType, SetVariableResultType, SetVariableStatusEnumType, VariableType } from "@citrineos/base";
 import { VariableAttributeQuerystring } from "../../../interfaces/queries/VariableAttribute";
 import { SequelizeRepository } from "./Base";
 import { IDeviceModelRepository } from "../../../interfaces";
@@ -256,6 +256,17 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
 
     readAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]> {
         return super.readAllByQuery(this.constructQuery(query), VariableAttribute.MODEL_NAME);
+    }
+
+    existsRejectedSetVariableByStationId(stationId: string): Promise<boolean> {
+        return super.readAllByQuery({
+            where: {
+                stationId: stationId, bootConfigSetId: { [Op.ne]: null }
+            }
+        }, VariableAttribute.MODEL_NAME)
+            .then(variableAttributeArray => {
+               return variableAttributeArray.some(variableAttribute => variableAttribute.status === SetVariableStatusEnumType.Rejected); 
+            });
     }
 
     existsByQuery(query: VariableAttributeQuerystring): Promise<boolean> {
