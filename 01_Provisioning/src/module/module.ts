@@ -252,7 +252,10 @@ export class ProvisioningModule extends AbstractModule {
           // Remove Notify Report from blacklist
           this._cache.remove(CallAction.NotifyReport, stationId);
 
-          const requestId = Math.floor(Math.random() * ProvisioningModule.GET_BASE_REPORT_REQUEST_ID_MAX);
+          // OCTT tool does not meet B07.FR.04; instead always sends requestId == 0
+          // Commenting out this line, using requestId == 0 until fixed (10/26/2023)
+          // const requestId = Math.floor(Math.random() * ProvisioningModule.GET_BASE_REPORT_REQUEST_ID_MAX);
+          const requestId = 0;
 
           const getBaseReportMessageConfirmation: IMessageConfirmation = await this.sendCall(stationId, tenantId, CallAction.GetBaseReport,
             { requestId: requestId, reportBase: ReportBaseEnumType.FullInventory } as GetBaseReportRequest);
@@ -265,14 +268,16 @@ export class ProvisioningModule extends AbstractModule {
             this._cache.set(requestId.toString(), ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, stationId, this.config.websocketServer.maxCallLengthSeconds);
 
             let getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocketServer.maxCallLengthSeconds, stationId);
+            this._logger.info("Initial GetBaseReport cache value: ", getBaseReportCacheValue);
             while (getBaseReportCacheValue == ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE) {
               getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocketServer.maxCallLengthSeconds, stationId);
+              this._logger.info("GetBaseReport cache value: ", getBaseReportCacheValue);
             }
 
             if (getBaseReportCacheValue == ProvisioningModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE) {
               this._logger.debug("GetBaseReport process successful."); // All NotifyReports have been processed
             } else {
-              throw new Error("GetBaseReport process failed--message timed out witout a response");
+              throw new Error("GetBaseReport process failed--message timed out without a response, cache value: " + getBaseReportCacheValue);
             }
 
           } else {
@@ -345,13 +350,15 @@ export class ProvisioningModule extends AbstractModule {
     message: IMessage<NotifyReportRequest>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("NotifyReport received:", message, props);
+    this._logger.info("NotifyReport received:", message, props);
 
     if (!message.payload.tbc) { // Default if omitted is false
-      this._cache.set(message.payload.requestId.toString(), ProvisioningModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE, message.context.stationId);
+      const success = await this._cache.set(message.payload.requestId.toString(), ProvisioningModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE, message.context.stationId);
+      this._logger.info("Completed", success, message.payload.requestId);
     } else { // tbc (to be continued) is true
       // Continue to set get base report ongoing. Will extend the timeout.
-      this._cache.set(message.payload.requestId.toString(), ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, message.context.stationId, this.config.websocketServer.maxCallLengthSeconds);
+      const success = await this._cache.set(message.payload.requestId.toString(), ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, message.context.stationId, this.config.websocketServer.maxCallLengthSeconds);
+      this._logger.info("Ongoing", success, message.payload.requestId);
     }
 
     for (const reportDataType of (message.payload.reportData ? message.payload.reportData : [])) {

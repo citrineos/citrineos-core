@@ -75,7 +75,8 @@ export function createDockerConfig() {
             host: "0.0.0.0",
             port: 8080,
             protocol: "ocpp2.0.1",
-            pingInterval: 60
+            pingInterval: 60,
+            maxCallLengthSeconds: 5
         }
     });
 }
