@@ -66,10 +66,10 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     })
     declare  constant?: boolean;
 
-    // SetVariableResultType fields
+    // Result fields
 
     @Column(DataType.STRING)
-    declare status?: SetVariableStatusEnumType;
+    declare status?: string;
 
     @Column(DataType.JSON)
     declare statusInfo?: StatusInfoType;

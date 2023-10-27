@@ -17,7 +17,6 @@
 import {
   AbstractModule,
   AsHandler,
-  AttributeEnumType,
   BootNotificationRequest,
   BootNotificationResponse,
   CALL_SCHEMA_MAP,
@@ -25,6 +24,7 @@ import {
   EventGroup,
   GetBaseReportRequest,
   GetBaseReportResponse,
+  GetVariablesResponse,
   HandlerProperties,
   ICache,
   IMessage,
@@ -44,11 +44,10 @@ import {
   SystemConfig
 } from "@citrineos/base";
 import { IBootRepository, IDeviceModelRepository, sequelize } from "@citrineos/data";
-import { VariableAttribute } from "@citrineos/data/lib/layers/sequelize";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
-import { BootService } from "./services";
+import { BootService, DeviceModelService } from "./services";
 
 /**
  * Component that handles provisioning related messages.
@@ -68,18 +67,26 @@ export class ProvisioningModule extends AbstractModule {
   public static readonly BOOT_STATUS = "boot_status";
 
   /**
+   * Used to wait for SetVariables responses.
+   */
+  static readonly SET_VARIABLES_RESPONSE_CORRELATION_ID = "set_variables_response_correlation_id";
+  /**
    * When multiple SetVariablesRequests are being sent in a row, it is not optimal to reboot
    * immediately. Instead, rebooting is done at the end of said process, if any variable set
    * during the process required it.
    */
-  static REBOOT_REQUIRED_FOR_SET_VARIABLES: string = "reboot_required_for_set_variables";
+  static readonly REBOOT_REQUIRED_FOR_SET_VARIABLES: string = "reboot_required_for_set_variables";
 
+  /**
+   * Get Base Report variables. While NotifyReport requests correlated with a GetBaseReport's requestId
+   * are still being sent, cache value is 'ongoing'. Once a NotifyReport with tbc == false (or undefined)
+   * is received, cache value is 'complete'.
+   */
   static readonly GET_BASE_REPORT_REQUEST_ID_MAX = 10000000; // 10,000,000
   static readonly GET_BASE_REPORT_ONGOING_CACHE_VALUE = 'ongoing';
   static readonly GET_BASE_REPORT_COMPLETE_CACHE_VALUE = 'complete';
 
 
-  static readonly SET_VARIABLES_RESPONSE_CORRELATION_ID = "set_variables_response_correlation_id";
 
   /**
    * Fields
@@ -98,7 +105,8 @@ export class ProvisioningModule extends AbstractModule {
     CallAction.Reset
   ];
 
-  protected _bootService: BootService;
+  public _bootService: BootService;
+  public _deviceModelService: DeviceModelService;
 
   protected _bootRepository: IBootRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -160,6 +168,7 @@ export class ProvisioningModule extends AbstractModule {
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, this._logger);
 
     this._bootService = new BootService(this._bootRepository);
+    this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -173,39 +182,19 @@ export class ProvisioningModule extends AbstractModule {
     message: IMessage<BootNotificationRequest>,
     props?: HandlerProperties
   ): Promise<void> {
-
-    /**
-     * Workflow:
-     * 1. Update device model
-     * 2. Construct response
-     * 3. Send response
-     * 4. Update config
-     * 5. If pending, perform configuration
-     */
-
-    /**
-     * updateDeviceModel(request)
-     * response = generateResponse(systemConfig, bootConfig)
-     * if accepted, end boot process: undo blacklisting, remove boot status
-     * send response
-     * update config
-     * sendGetMonitoringReport()
-     * sendSetVariables()
-     * accept boot
-     */
-
     this._logger.debug("BootNotification received:", message, props);
 
     const stationId = message.context.stationId;
     const tenantId = message.context.tenantId;
 
-    this._deviceModelRepository.updateBootAttributes(message.payload.chargingStation, stationId);
+    this._deviceModelService.updateBootAttributes(message.payload.chargingStation, stationId);
 
     const bootNotificationResponse: BootNotificationResponse = await this._bootService.generateBootNotificationResponse(stationId, this._config);
 
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
     const cachedBootStatus = await this._cache.get(ProvisioningModule.BOOT_STATUS, stationId);
 
+    // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
     if (bootNotificationResponse.status == RegistrationStatusEnumType.Accepted && cachedBootStatus) {
       // Undo blacklisting of charger-originated actions
       CALL_SCHEMA_MAP.forEach((actionSchema, action) => {
@@ -218,8 +207,8 @@ export class ProvisioningModule extends AbstractModule {
       // Status is not Accepted; i.e. Status is Rejected or Pending.
       // Cached boot status for charger did not exist; i.e. this is the first BootNotificationResponse to be Rejected or Pending.
       // Blacklist all charger-originated actions except BootNotification
-      // N.B. GetMonitoringReport & GetReport will need to un-blacklist NotifyReport
-      // N.B. TriggerMessage will need to un-blacklist the message they trigger 
+      // GetReport messages will need to un-blacklist NotifyReport
+      // TriggerMessage will need to un-blacklist the message it triggers 
       CALL_SCHEMA_MAP.forEach((actionSchema, action) => {
         if (action !== CallAction.BootNotification) {
           this._cache.set(action, 'blacklisted', stationId)
@@ -246,7 +235,7 @@ export class ProvisioningModule extends AbstractModule {
       // Otherwise, configuration is already in progress, do not enter for a second time.
       if (bootNotificationResponse.status == RegistrationStatusEnumType.Pending &&
         (!cachedBootStatus || cachedBootStatus != RegistrationStatusEnumType.Pending)) {
-
+        // TODO Consider refactoring GetBaseReport and SetVariables sections as methods to be used by their respective message api endpoints as well
         // GetBaseReport
         if ((bootConfigDbEntity.getBaseReportOnPending !== null) ? bootConfigDbEntity.getBaseReportOnPending : this._config.provisioning.getBaseReportOnPending) {
           // Remove Notify Report from blacklist
@@ -256,30 +245,27 @@ export class ProvisioningModule extends AbstractModule {
           // Commenting out this line, using requestId == 0 until fixed (10/26/2023)
           // const requestId = Math.floor(Math.random() * ProvisioningModule.GET_BASE_REPORT_REQUEST_ID_MAX);
           const requestId = 0;
-
+          this._cache.set(requestId.toString(), ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, stationId, this.config.websocketServer.maxCallLengthSeconds);
           const getBaseReportMessageConfirmation: IMessageConfirmation = await this.sendCall(stationId, tenantId, CallAction.GetBaseReport,
             { requestId: requestId, reportBase: ReportBaseEnumType.FullInventory } as GetBaseReportRequest);
           if (getBaseReportMessageConfirmation.success) {
             this._logger.debug("GetBaseReport successfully sent to charger: ", getBaseReportMessageConfirmation);
-            // Make sure GetBaseReport doesn't re-trigger on next boot attempt
-            bootConfigDbEntity.getBaseReportOnPending = false;
-            bootConfigDbEntity.save();
 
-            this._cache.set(requestId.toString(), ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, stationId, this.config.websocketServer.maxCallLengthSeconds);
-
+            // Wait for GetBaseReport to complete
             let getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocketServer.maxCallLengthSeconds, stationId);
-            this._logger.info("Initial GetBaseReport cache value: ", getBaseReportCacheValue);
             while (getBaseReportCacheValue == ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE) {
               getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocketServer.maxCallLengthSeconds, stationId);
-              this._logger.info("GetBaseReport cache value: ", getBaseReportCacheValue);
             }
 
             if (getBaseReportCacheValue == ProvisioningModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE) {
               this._logger.debug("GetBaseReport process successful."); // All NotifyReports have been processed
-            } else {
-              throw new Error("GetBaseReport process failed--message timed out without a response, cache value: " + getBaseReportCacheValue);
+            } else { // getBaseReportCacheValue == null
+              throw new Error("GetBaseReport process failed--message timed out without a response.");
             }
 
+            // Make sure GetBaseReport doesn't re-trigger on next boot attempt
+            bootConfigDbEntity.getBaseReportOnPending = false;
+            bootConfigDbEntity.save();
           } else {
             throw new Error("GetBaseReport failed: " + getBaseReportMessageConfirmation);
           }
@@ -289,19 +275,11 @@ export class ProvisioningModule extends AbstractModule {
           bootConfigDbEntity.variablesRejectedOnLastBoot = [];
           const setVariableData: SetVariableDataType[] = await this._deviceModelRepository.readAllSetVariableByStationId(stationId);
 
-          const itemsPerMessageSetVariablesAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
-            stationId: stationId,
-            component_name: 'DeviceDataCtrlr',
-            variable_name: 'ItemsPerMessage',
-            variable_instance: 'SetVariables',
-            type: AttributeEnumType.Actual
-          })
-          // It is possible for itemsPerMessageSetVariablesAttributes.length > 1 if component instances or evses
-          // are associated with alternate options. That structure is not supported by this logic, and that
-          // structure is a violation of Part 2 - Specification of OCPP 2.0.1.
+          let itemsPerMessageSetVariables = await this._deviceModelService.getItemsPerMessageSetVariablesByStationId(stationId);
+
           // If ItemsPerMessageSetVariables not set, send all variables at once
-          const itemsPerMessageSetVariables = itemsPerMessageSetVariablesAttributes.length == 0 ?
-            setVariableData.length : Number(itemsPerMessageSetVariablesAttributes[0].value);
+          itemsPerMessageSetVariables = itemsPerMessageSetVariables == null ?
+            setVariableData.length : itemsPerMessageSetVariables;
           while (setVariableData.length > 0) {
             await this.sendCall(stationId, tenantId, CallAction.SetVariables,
               { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest);
@@ -387,7 +365,7 @@ export class ProvisioningModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.SetVariables)
-  protected async _handleVariables(
+  protected async _handleSetVariables(
     message: IMessage<SetVariablesResponse>,
     props?: HandlerProperties
   ): Promise<void> {
@@ -409,7 +387,19 @@ export class ProvisioningModule extends AbstractModule {
     });
 
     if (rebootRequired) { // Determination of whether to reboot immediately must be handled by caller.
-      this._cache.set(ProvisioningModule.REBOOT_REQUIRED_FOR_SET_VARIABLES, 'true', message.context.stationId);
+      // Expiration of one minute.
+      // TODO: Relate groups of SetVariables messages to each other in order to avoid race conditions with this cache value.
+      // Return to this TODO once correlationId can be set on messages.
+      this._cache.set(ProvisioningModule.REBOOT_REQUIRED_FOR_SET_VARIABLES, 'true', message.context.stationId, 60);
     }
+  }
+
+  @AsHandler(CallAction.GetVariables)
+  protected async _handleGetVariables(
+    message: IMessage<GetVariablesResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("GetVariables response received", message, props);
+    this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(message.payload.getVariableResult, message.context.stationId);
   }
 }

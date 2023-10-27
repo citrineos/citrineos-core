@@ -58,35 +58,35 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
         request: SetVariablesRequest
     ): Promise<IMessageConfirmation> {
         const setVariableData = request.setVariableData;
-        const itemsPerMessageSetVariablesAttributes: VariableAttribute[] = await this._module.deviceModelRepository.readAllByQuery({
-            stationId: identifier,
-            component_name: 'DeviceDataCtrlr',
-            variable_name: 'ItemsPerMessage',
-            variable_instance: 'SetVariables',
-            type: AttributeEnumType.Actual
-        })
-        if (itemsPerMessageSetVariablesAttributes.length == 1) {
-            const finalMessageConfirmation: IMessageConfirmation = { success: true };
-            const itemsPerMessageSetVariables = Number(itemsPerMessageSetVariablesAttributes[0].value);
-            while (setVariableData.length > 0) {
-                const setVariableDataSubset = setVariableData.slice(0, itemsPerMessageSetVariables);
-                const messageConfirmation = await this._module.sendCall(identifier, tenantId, CallAction.SetVariables,
-                    { setVariableData: setVariableDataSubset } as SetVariablesRequest);
-                if (!messageConfirmation.payload) {
-                    finalMessageConfirmation.success = false;
-                    finalMessageConfirmation.payload = finalMessageConfirmation.payload ?
-                        (finalMessageConfirmation.payload as SetVariableDataType[]).concat(setVariableDataSubset) : setVariableDataSubset
-                }
+
+        // Awaiting save action so that SetVariablesResponse does not trigger a race condition since an error is thrown
+        // from SetVariablesResponse handler if variable does not exist when it attempts to save the Response's status
+        await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(setVariableData, identifier);
+
+        let itemsPerMessageSetVariables = await this._module._deviceModelService.getItemsPerMessageSetVariablesByStationId(identifier);
+
+        // If ItemsPerMessageSetVariables not set, send all variables at once
+        itemsPerMessageSetVariables = itemsPerMessageSetVariables == null ?
+            setVariableData.length : itemsPerMessageSetVariables;
+
+        // We don't wait for each message to be responded to, instead this is fire-and-forget.
+        // Only a failure from the message bus to the central system is caught, downstream failures are invisible.
+        // Users can pull these variables from the data endpoint to check results afterwards.
+        // Max wait time before being able to view results should be:
+        // (setVariableData.length / itemsPerMessageSetVariables) * this.config.websocketServer.maxCallLengthSeconds
+        // TODO: Consider adding a callback url to response to check results
+        const finalMessageConfirmation: IMessageConfirmation = { success: true };
+        while (setVariableData.length > 0) {
+            const setVariableDataSubset = setVariableData.slice(0, itemsPerMessageSetVariables);
+            const messageConfirmation = await this._module.sendCall(identifier, tenantId, CallAction.SetVariables,
+                { setVariableData: setVariableDataSubset } as SetVariablesRequest);
+            if (!messageConfirmation.payload) {
+                finalMessageConfirmation.success = false;
+                finalMessageConfirmation.payload = finalMessageConfirmation.payload ?
+                    (finalMessageConfirmation.payload as SetVariableDataType[]).concat(setVariableDataSubset) : setVariableDataSubset
             }
-            return finalMessageConfirmation;
-        } else if (itemsPerMessageSetVariablesAttributes.length == 0) {
-            // If no limit reported, no limit used
-            return this._module.sendCall(identifier, tenantId, CallAction.SetVariables,
-                { setVariableData: setVariableData } as SetVariablesRequest);
-        } else {
-            throw new Error("Violation of Standard Component Structure: "
-                + JSON.stringify(itemsPerMessageSetVariablesAttributes));
         }
+        return finalMessageConfirmation;
     }
 
     @AsMessageEndpoint(CallAction.GetVariables, GetVariablesRequestSchema)
@@ -96,35 +96,26 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
         request: GetVariablesRequest
     ): Promise<IMessageConfirmation> {
         const getVariableData = request.getVariableData;
-        const itemsPerMessageGetVariablesAttributes: VariableAttribute[] = await this._module.deviceModelRepository.readAllByQuery({
-            stationId: identifier,
-            component_name: 'DeviceDataCtrlr',
-            variable_name: 'ItemsPerMessage',
-            variable_instance: 'GetVariables',
-            type: AttributeEnumType.Actual
-        })
-        if (itemsPerMessageGetVariablesAttributes.length == 1) {
-            const finalMessageConfirmation: IMessageConfirmation = { success: true };
-            const itemsPerMessageGetVariables = Number(itemsPerMessageGetVariablesAttributes[0].value);
-            while (getVariableData.length > 0) {
-                const getVariableDataSubset = getVariableData.slice(0, itemsPerMessageGetVariables);
-                const messageConfirmation = await this._module.sendCall(identifier, tenantId, CallAction.GetVariables,
-                    { getVariableData: getVariableDataSubset } as GetVariablesRequest);
-                if (!messageConfirmation.payload) {
-                    finalMessageConfirmation.success = false;
-                    finalMessageConfirmation.payload = finalMessageConfirmation.payload ?
-                        (finalMessageConfirmation.payload as GetVariableDataType[]).concat(getVariableDataSubset) : getVariableDataSubset
-                }
+        let itemsPerMessageGetVariables = await this._module._deviceModelService.getItemsPerMessageGetVariablesByStationId(identifier);
+
+        // If ItemsPerMessageGetVariables not set, send all variables at once
+        itemsPerMessageGetVariables = itemsPerMessageGetVariables == null ?
+            getVariableData.length : itemsPerMessageGetVariables;
+
+        // We don't wait for each message to be responded to, instead this is fire-and-forget.
+        // Only a failure from the message bus to the central system is caught, downstream failures are invisible.
+        const finalMessageConfirmation: IMessageConfirmation = { success: true };
+        while (getVariableData.length > 0) {
+            const getVariableDataSubset = getVariableData.slice(0, itemsPerMessageGetVariables);
+            const messageConfirmation = await this._module.sendCall(identifier, tenantId, CallAction.GetVariables,
+                { getVariableData: getVariableDataSubset } as GetVariablesRequest);
+            if (!messageConfirmation.payload) {
+                finalMessageConfirmation.success = false;
+                finalMessageConfirmation.payload = finalMessageConfirmation.payload ?
+                    (finalMessageConfirmation.payload as GetVariableDataType[]).concat(getVariableDataSubset) : getVariableDataSubset
             }
-            return finalMessageConfirmation;
-        } else if (itemsPerMessageGetVariablesAttributes.length == 0) {
-            // If no limit reported, no limit used
-            return this._module.sendCall(identifier, tenantId, CallAction.GetVariables,
-                { getVariableData: getVariableData } as GetVariablesRequest);
-        } else {
-            throw new Error("Violation of Standard Component Structure: "
-                + JSON.stringify(itemsPerMessageGetVariablesAttributes));
         }
+        return finalMessageConfirmation;
     }
 
     @AsMessageEndpoint(CallAction.SetNetworkProfile, SetNetworkProfileRequestSchema)

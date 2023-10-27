@@ -1,6 +1,6 @@
-import { BootConfig, BootNotificationResponse, RegistrationStatusEnumType, SystemConfig } from "@citrineos/base";
-import { IBootRepository } from "@citrineos/data";
-import { Boot } from "@citrineos/data/lib/layers/sequelize";
+import { AttributeEnumType, BootConfig, BootNotificationResponse, ChargingStationType, MutabilityEnumType, RegistrationStatusEnumType, SystemConfig } from "@citrineos/base";
+import { IBootRepository, IDeviceModelRepository } from "@citrineos/data";
+import { Boot, VariableAttribute } from "@citrineos/data/lib/layers/sequelize";
 
 
 
@@ -55,6 +55,13 @@ export class BootService {
         };
     }
 
+    /**
+     * Updates boot config from a boot notification response and returns the DB entity for further use.
+     * Throws an error if db is unable to save.
+     * @param stationId Charging station identifier.
+     * @param bootNotificationResponse Successfully sent bootNotificationResponse.
+     * @returns Boot Db entity
+     */
     async updateBootConfigFromBootNotificationResponse(stationId: string, bootNotificationResponse: BootNotificationResponse): Promise<Boot> {
         let bootConfig: Boot | undefined = await this._bootRepository.readByKey(stationId);
         if (!bootConfig) {
@@ -71,4 +78,180 @@ export class BootService {
             return bootConfig.save();
         }
     }
+}
+
+export class DeviceModelService {
+
+    protected _deviceModelRepository: IDeviceModelRepository;
+
+    constructor(
+        deviceModelRepository: IDeviceModelRepository) {
+        this._deviceModelRepository = deviceModelRepository;
+    }
+
+    /**
+     * Saves information from BootNotificationRequest to device model.
+     * @param chargingStation Charging station details from BootNotificationRequest
+     * @param stationId Charging station identifier
+     */
+    async updateBootAttributes(chargingStation: ChargingStationType, stationId: string) {
+        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+            component: {
+                name: "ChargingStation"
+            },
+            variable: {
+                name: "SerialNumber"
+            },
+            variableAttribute: [
+                {
+                    type: AttributeEnumType.Actual,
+                    value: chargingStation.serialNumber,
+                    mutability: MutabilityEnumType.ReadOnly,
+                    persistent: true,
+                    constant: true
+                }
+            ]
+        }, stationId);
+        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+            component: {
+                name: "ChargingStation"
+            },
+            variable: {
+                name: "Model"
+            },
+            variableAttribute: [
+                {
+                    type: AttributeEnumType.Actual,
+                    value: chargingStation.model,
+                    mutability: MutabilityEnumType.ReadOnly,
+                    persistent: true,
+                    constant: true
+                }
+            ]
+        }, stationId);
+        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+            component: {
+                name: "ChargingStation"
+            },
+            variable: {
+                name: "VendorName"
+            },
+            variableAttribute: [
+                {
+                    type: AttributeEnumType.Actual,
+                    value: chargingStation.vendorName,
+                    mutability: MutabilityEnumType.ReadOnly,
+                    persistent: true,
+                    constant: true
+                }
+            ]
+        }, stationId);
+        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+            component: {
+                name: "Controller"
+            },
+            variable: {
+                name: "FirmwareVersion"
+            },
+            variableAttribute: [
+                {
+                    type: AttributeEnumType.Actual,
+                    value: chargingStation.firmwareVersion,
+                    mutability: MutabilityEnumType.ReadOnly,
+                    persistent: true,
+                    constant: true
+                }
+            ]
+        }, stationId);
+        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+            component: {
+                name: "DataLink"
+            },
+            variable: {
+                name: "IMSI"
+            },
+            variableAttribute: [
+                {
+                    type: AttributeEnumType.Actual,
+                    value: chargingStation.modem?.imsi,
+                    mutability: MutabilityEnumType.ReadOnly,
+                    persistent: true,
+                    constant: true
+                }
+            ]
+        }, stationId);
+        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+            component: {
+                name: "DataLink"
+            },
+            variable: {
+                name: "ICCID"
+            },
+            variableAttribute: [
+                {
+                    type: AttributeEnumType.Actual,
+                    value: chargingStation.modem?.iccid,
+                    mutability: MutabilityEnumType.ReadOnly,
+                    persistent: true,
+                    constant: true
+                }
+            ]
+        }, stationId);
+    }
+
+    /**
+     * Fetches the ItemsPerMessageSetVariables attribute from the device model.
+     * Returns null if no such attribute exists.
+     * It is possible for there to be multiple ItemsPerMessageSetVariables attributes if component instances or evses
+     * are associated with alternate options. That structure is not supported by this logic, and that
+     * structure is a violation of Part 2 - Specification of OCPP 2.0.1.
+     * In that case, the first attribute will be returned.
+     * @param stationId Charging station identifier.
+     * @returns ItemsPerMessageSetVariables as a number or null if no such attribute exists.
+     */
+    async getItemsPerMessageSetVariablesByStationId(stationId: string): Promise<number | null> {
+        const itemsPerMessageSetVariablesAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+            stationId: stationId,
+            component_name: 'DeviceDataCtrlr',
+            variable_name: 'ItemsPerMessage',
+            variable_instance: 'SetVariables',
+            type: AttributeEnumType.Actual
+        });
+        if (itemsPerMessageSetVariablesAttributes.length == 0) {
+            return null;
+        } else {
+            // It is possible for itemsPerMessageSetVariablesAttributes.length > 1 if component instances or evses
+            // are associated with alternate options. That structure is not supported by this logic, and that
+            // structure is a violation of Part 2 - Specification of OCPP 2.0.1.
+            return Number(itemsPerMessageSetVariablesAttributes[0].value);
+        }
+    }
+
+    /**
+     * Fetches the ItemsPerMessageGetVariables attribute from the device model.
+     * Returns null if no such attribute exists.
+     * It is possible for there to be multiple ItemsPerMessageGetVariables attributes if component instances or evses
+     * are associated with alternate options. That structure is not supported by this logic, and that
+     * structure is a violation of Part 2 - Specification of OCPP 2.0.1.
+     * In that case, the first attribute will be returned.
+     * @param stationId Charging station identifier.
+     * @returns ItemsPerMessageGetVariables as a number or null if no such attribute exists.
+     */
+        async getItemsPerMessageGetVariablesByStationId(stationId: string): Promise<number | null> {
+            const itemsPerMessageGetVariablesAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+                stationId: stationId,
+                component_name: 'DeviceDataCtrlr',
+                variable_name: 'ItemsPerMessage',
+                variable_instance: 'GetVariables',
+                type: AttributeEnumType.Actual
+            });
+            if (itemsPerMessageGetVariablesAttributes.length == 0) {
+                return null;
+            } else {
+                // It is possible for itemsPerMessageGetVariablesAttributes.length > 1 if component instances or evses
+                // are associated with alternate options. That structure is not supported by this logic, and that
+                // structure is a violation of Part 2 - Specification of OCPP 2.0.1.
+                return Number(itemsPerMessageGetVariablesAttributes[0].value);
+            }
+        }
 }

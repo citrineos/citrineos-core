@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { ChargingStationType, SetVariableDataType, ICrudRepository, SetVariableResultType, AuthorizationData, TransactionEventRequest, ChargingStateEnumType, IdTokenType, VariableAttributeType, ReportDataType, BootConfig, RegistrationStatusEnumType, StatusInfoType } from "@citrineos/base";
+import { SetVariableDataType, ICrudRepository, SetVariableResultType, AuthorizationData, TransactionEventRequest, ChargingStateEnumType, IdTokenType, VariableAttributeType, ReportDataType, BootConfig, RegistrationStatusEnumType, StatusInfoType, GetVariableResultType } from "@citrineos/base";
 import { AuthorizationQuerystring } from "./queries/Authorization";
 import { Transaction } from "../layers/sequelize/model/TransactionEvent";
 import { VariableAttribute } from "../layers/sequelize/model/DeviceModel/VariableAttribute";
@@ -22,9 +22,10 @@ import { AuthorizationRestrictions, VariableAttributeQuerystring } from ".";
 import { Boot, Authorization } from "../layers/sequelize";
 
 export interface IDeviceModelRepository extends ICrudRepository<VariableAttributeType> {
-    createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]>;
+    createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string, status?: string, statusInfo?: StatusInfoType): Promise<VariableAttribute[]>;
+    createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string): Promise<VariableAttribute[]>;
+    createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string): Promise<VariableAttribute[]>;
     updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined>;
-    updateBootAttributes(chargingStation: ChargingStationType, stationId: string): void;
     readAllSetVariableByStationId(stationId: string): Promise<SetVariableDataType[]>;
     readAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
     existsRejectedSetVariableByStationId(stationId: string): Promise<boolean>;
