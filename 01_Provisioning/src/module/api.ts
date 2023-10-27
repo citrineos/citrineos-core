@@ -14,9 +14,9 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, AttributeEnumType, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariablesRequest, SetVariablesRequestSchema } from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariablesRequest, SetVariablesRequestSchema } from '@citrineos/base';
 import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, VariableAttributeQuerySchema, VariableAttributeQuerystring, sequelize } from '@citrineos/data';
-import { Boot, VariableAttribute } from '@citrineos/data/lib/layers/sequelize';
+import { Boot } from '@citrineos/data/lib/layers/sequelize';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IProvisioningModuleApi } from './interface';
