@@ -25,6 +25,15 @@ services:
       POSTGRES_DB: citrine
       POSTGRES_USER: citrine
       POSTGRES_PASSWORD: "citrine"
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
   citrine:
     build:
       context: ./
@@ -33,6 +42,8 @@ services:
       ocpp-db:
         condition: service_started
       amqp-broker:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - 8080:8080
