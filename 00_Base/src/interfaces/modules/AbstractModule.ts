@@ -18,6 +18,7 @@
 
 import 'reflect-metadata';
 import { ILogObj, Logger } from "tslog";
+import { v4 as uuidv4 } from "uuid";
 import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from ".";
 import { OcppRequest, OcppResponse } from "../..";
 import { SystemConfig } from "../../config/types";
@@ -26,8 +27,11 @@ import { RequestBuilder } from "../../util/request";
 import { CacheNamespace, ICache } from "../cache/cache";
 import { ClientConnection } from "../centralsystem";
 import { EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessageHandler, IMessageSender, MessageOrigin, MessageState } from "../messages";
+import axios from 'axios';
 
 export abstract class AbstractModule implements IModule {
+
+    public readonly CALLBACK_URL_CACHE_PREFIX: string = "CALLBACK_URL_";
 
     protected _config: SystemConfig;
     protected readonly _cache: ICache;
@@ -52,6 +56,10 @@ export abstract class AbstractModule implements IModule {
     /**
      * Getters & Setters
      */
+
+    get cache(): ICache {
+        return this._cache;
+    }
 
     get sender(): IMessageSender {
         return this._sender;
@@ -135,12 +143,26 @@ export abstract class AbstractModule implements IModule {
      * @return {void} This function does not return anything.
      */
     handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void {
+        if (message.state === MessageState.Response) {
+            this.handleMessageApiCallback(message as IMessage<OcppResponse>);
+        }
         const handlerDefinition = (Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>).filter((h) => h.action === message.action).pop();
         if (handlerDefinition) {
             handlerDefinition.method.call(this, message, props);
             // this.constructor.prototype[handlerDefinition.methodName].call(this, message, props);
         } else {
             this._logger.error("Failed handling message. No handler found for action: ", message.action);
+        }
+    }
+
+    async handleMessageApiCallback(message: IMessage<OcppResponse>): Promise<void> {
+        const url: string | null = await this._cache.getAndRemove(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
+        if (url) {
+            try {
+                await axios.post(url, message.payload);
+            } catch (error) {
+                this._logger.error("Failed sending call result: ", error);
+            }
         }
     }
 
@@ -169,13 +191,20 @@ export abstract class AbstractModule implements IModule {
      * @param {MessageOrigin} [origin] - The origin of the call.
      * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
      */
-    public sendCall(identifier: string, tenantId: string, action: CallAction, payload: OcppRequest, origin?: MessageOrigin): Promise<IMessageConfirmation> {
+    public sendCall(identifier: string, tenantId: string, action: CallAction, payload: OcppRequest, callbackUrl?: string, correlationId?: string, origin?: MessageOrigin): Promise<IMessageConfirmation> {
+        const _correlationId: string = correlationId == undefined ? uuidv4() : correlationId;
+        if (callbackUrl) {
+            // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
+            this._cache.set(_correlationId, callbackUrl, this.CALLBACK_URL_CACHE_PREFIX + identifier,
+                this.config.websocketServer.maxCallLengthSeconds * 20); // Fudge factor for any network lag
+        }
         // TODO: Future - Compound key with tenantId
         return this._cache.get<ClientConnection>(identifier, CacheNamespace.Connections, () => ClientConnection).then((connection) => {
             if (connection && connection.isAlive) {
                 return this._sender.sendRequest(
                     RequestBuilder.buildCall(
                         identifier,
+                        _correlationId,
                         tenantId,
                         action,
                         payload,
@@ -205,8 +234,8 @@ export abstract class AbstractModule implements IModule {
     public sendCallResult(correlationId: string, identifier: string, tenantId: string, action: CallAction, payload: OcppResponse, origin?: MessageOrigin): Promise<IMessageConfirmation> {
         return this._sender.sendResponse(
             RequestBuilder.buildCallResult(
-                correlationId,
                 identifier,
+                correlationId,
                 tenantId,
                 action,
                 payload,

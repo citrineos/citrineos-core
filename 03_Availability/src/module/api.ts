@@ -41,8 +41,8 @@ export class AvailabilityModuleApi extends AbstractModuleApi<AvailabilityModule>
    */
 
     @AsMessageEndpoint(CallAction.ChangeAvailability, ChangeAvailabilityRequestSchema)
-    changeAvailability(identifier: string, tenantId: string, request: ChangeAvailabilityRequest): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, tenantId, CallAction.ChangeAvailability, request);
+    changeAvailability(identifier: string, tenantId: string, request: ChangeAvailabilityRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.ChangeAvailability, request, callbackUrl);
     }
 
     /**
