@@ -14,8 +14,9 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AttributeEnumType, ComponentType, CustomDataType, EVSEType, MutabilityEnumType, Namespace, SetVariableStatusEnumType, StatusInfoType, VariableAttributeType, VariableType } from "@citrineos/base";
-import { BelongsTo, Column, DataType, ForeignKey, Index, Model, Table } from "sequelize-typescript";
+import { AttributeEnumType, ComponentType, CustomDataType, EVSEType, MutabilityEnumType, Namespace, StatusInfoType, VariableAttributeType, VariableType } from "@citrineos/base";
+import { BeforeCreate, BelongsTo, Column, DataType, ForeignKey, Index, Model, Table } from "sequelize-typescript";
+import * as bcrypt from "bcrypt";
 import { Variable } from "./Variable";
 import { Component } from "./Component";
 import { Evse } from "./Evse";
@@ -31,13 +32,13 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     /**
      * Fields
      */
-    
+
     @Index
     @Column({
         unique: 'stationId_type_variableId_componentId_evseSerialId'
     })
     declare stationId: string;
-    
+
     @Column({
         type: DataType.STRING,
         defaultValue: AttributeEnumType.Actual,
@@ -46,25 +47,25 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     declare type?: AttributeEnumType;
 
     @Column(DataType.STRING)
-    declare  value?: string;
+    declare value?: string;
 
     @Column({
         type: DataType.STRING,
         defaultValue: MutabilityEnumType.ReadWrite
     })
-    declare  mutability?: MutabilityEnumType;
+    declare mutability?: MutabilityEnumType;
 
     @Column({
         type: DataType.BOOLEAN,
         defaultValue: false
     })
-    declare  persistent?: boolean;
+    declare persistent?: boolean;
 
     @Column({
         type: DataType.BOOLEAN,
         defaultValue: false
     })
-    declare  constant?: boolean;
+    declare constant?: boolean;
 
     // Result fields
 
@@ -77,7 +78,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     /**
      * Relations
      */
-    
+
     @BelongsTo(() => Variable)
     declare variable: VariableType;
 
@@ -115,4 +116,38 @@ export class VariableAttribute extends Model implements VariableAttributeType {
 
     @ForeignKey(() => Boot)
     declare bootConfigId?: string;
+
+    /**
+     * Hook to ensure passwordString is not saved plaintext.
+     * This particular component/variable combination is the only one defined in OCPP 2.0.1 Part 2 - Appendices to use the type passwordString
+     * N.B. DataEnumType, used in VariableCharacteristics, does not have 'passwordString'! It is missing other types as well. It is unclear if this is an oversight in the protocol.
+     * If in a future version of the protocol 'passwordString' is added to DataEnumType, this hook will need to be adjusted
+     */
+    @BeforeCreate
+    static async beforeCreateHook(instance: VariableAttribute) {
+        // Fetch related Component and Variable
+        const component = await Component.findByPk(instance.componentId);
+        const variable = await Variable.findByPk(instance.variableId);
+
+        // Check if the conditions are met
+        if (component?.name === 'SecurityCtrlr' && variable?.name === 'BasicAuthPassword' && instance.value) {
+            // hash passwordString
+            const passwordString = instance.value;
+            const salt = await bcrypt.genSalt(10);
+            instance.value = await bcrypt.hash(passwordString, salt);
+        }
+    }
+
+    /**
+     * Utility method to compare password.
+     * If in a future version of the protocol 'passwordString' is added to DataEnumType, this function will need to be adjusted
+     * @param password Plaintext password to be compared
+     * @returns 
+     */
+    public async validatePassword(password: string): Promise<boolean> {
+        if (!this.value) {
+            return false;
+        }
+        return bcrypt.compare(password, this.value);
+    }
 }

@@ -77,6 +77,7 @@ export function createLocalConfig() {
             }
         },
         websocketServer: {
+            webProtocol: "http",
             host: "localhost",
             port: 8080,
             protocol: "ocpp2.0.1",

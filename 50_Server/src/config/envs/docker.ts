@@ -72,6 +72,7 @@ export function createDockerConfig() {
             }
         },
         websocketServer: {
+            webProtocol: "http",
             host: "0.0.0.0",
             port: 8080,
             protocol: "ocpp2.0.1",

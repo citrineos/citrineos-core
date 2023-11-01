@@ -14,16 +14,21 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractCentralSystem, CacheNamespace, Call, CallAction, CallError, CallResult, ClientConnection, ErrorCode, ICache, ICentralSystem, IClientConnection, IMessageHandler, IMessageRouter, IMessageSender, MessageTriggerEnumType, MessageTypeId, OcppError, RegistrationStatusEnumType, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
+import { AbstractCentralSystem, AttributeEnumType, CacheNamespace, Call, CallAction, CallError, CallResult, ClientConnection, ErrorCode, ICache, ICentralSystem, IClientConnection, IMessageHandler, IMessageRouter, IMessageSender, MessageTriggerEnumType, MessageTypeId, OcppError, RegistrationStatusEnumType, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
 import { ProvisioningModule } from "@citrineos/provisioning";
 import { RabbitMqSender } from "@citrineos/util";
 import Ajv from "ajv";
+import { Sequelize } from "sequelize-typescript";
 import { instanceToPlain } from "class-transformer";
-import { IncomingMessage } from "http";
+import * as https from "https";
+import * as http from "http";
+import fs from "fs";
 import { ILogObj, Logger } from "tslog";
 import { v4 as uuidv4 } from "uuid";
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from "ws";
 import { CentralSystemMessageHandler, OcppMessageRouter } from "./router";
+import { DeviceModelRepository } from "@citrineos/data/lib/layers/sequelize";
+import { Duplex } from "stream";
 
 /**
  * Implementation of the central system
@@ -38,6 +43,8 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
     private _router: IMessageRouter;
     private _socketServer: WebSocketServer;
     private _connections: Map<string, WebSocket> = new Map();
+    private _httpServer;
+    private _deviceModelRepository: DeviceModelRepository;
 
     /**
      * Constructor for the class.
@@ -55,7 +62,8 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         sender?: IMessageSender,
         handler?: CentralSystemMessageHandler,
         logger?: Logger<ILogObj>,
-        ajv?: Ajv,) {
+        ajv?: Ajv,
+        sequelize?: Sequelize) {
         super(config, logger, cache, ajv);
 
         // Initialize router before socket server to avoid race condition
@@ -65,15 +73,32 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
 
         this._cache = cache;
 
+        this._deviceModelRepository = new DeviceModelRepository(this._config, this._logger, sequelize);
+
+        this._httpServer = this._config.websocketServer.webProtocol == 'https' ? https.createServer({
+            key: fs.readFileSync(this._config.websocketServer.httpsCertificateFilepath + 'private_key.pem'),
+            cert: fs.readFileSync(this._config.websocketServer.httpsCertificateFilepath + 'certificate.pem')
+        }) : http.createServer();
+
         this._socketServer = new WebSocketServer({
-            port: this._config.websocketServer.port,
-            host: this._config.websocketServer.host,
+            noServer: true,
             handleProtocols: this._handleProtocols.bind(this),
-            clientTracking: true
+            clientTracking: false
         });
-        this._socketServer.on("connection", this._onConnection.bind(this));
-        this._socketServer.on("error", this._onError.bind(this));
-        this._socketServer.on("close", this._onClose.bind(this));
+
+        this._socketServer.on('connection', this._onConnection.bind(this));
+        this._socketServer.on('error', this._onError.bind(this));
+        this._socketServer.on('close', this._onClose.bind(this));
+
+        this._httpServer.on('upgrade', this._upgradeRequest.bind(this));
+        this._httpServer.on('error', (error) => this._socketServer.emit('error', error));
+        // socketServer.close() will not do anything; use httpServer.close()
+        this._httpServer.on('close', () => this._socketServer.emit('close'));
+
+
+        this._httpServer.listen(this._config.websocketServer.port, this._config.websocketServer.host, () => {
+            this._logger.info(`WebsocketServer running on ${this._config.websocketServer.webProtocol}://${this._config.websocketServer.host}:${this._config.websocketServer.port}/`)
+        });
     }
 
     /**
@@ -83,6 +108,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
     shutdown(): void {
         this._router.sender.shutdown();
         this._router.handler.shutdown();
+        this._httpServer.close();
     }
 
     /**
@@ -295,13 +321,64 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
     }
 
     /**
+     * Method to validate websocket upgrade requests and pass them to the socket server.
+     * 
+     * @param {IncomingMessage} req - The request object.
+     * @param {Duplex} socket - Websocket duplex stream. 
+     * @param {Buffer} head - Websocket buffer.
+     */
+    private async _upgradeRequest(req: http.IncomingMessage, socket: Duplex, head: Buffer) {
+        // Validate username/password from authorization header
+        //
+        // - The Authorization header is formatted as follows:
+        // AUTHORIZATION: Basic <Base64
+        // encoded(<Configured ChargingStationId>:<Configured
+        // BasicAuthPassword>)>
+
+        const authHeader = req.headers.authorization;
+        const [username, password] = Buffer.from(authHeader?.split(' ')[1] || '', 'base64').toString().split(':');
+        // const isValid = username === this._config.websocketServer.authUsername && password === this._config.websocketServer.authPassword;
+        // OCPP 2.0.1 A00.FR.204
+        if (username != this.getClientIdFromUrl(req.url as string) || await this._checkPassword(username, password) === false) {
+            this._rejectUpgradeUnauthorized(socket);
+            return;
+        }
+
+
+        this._socketServer.handleUpgrade(req, socket, head, (ws) => {
+            this._socketServer.emit('connection', ws, req);
+        });
+    }
+
+    private async _checkPassword(username: string, password: string) {
+        return (await this._deviceModelRepository.readAllByQuery({
+            stationId: username,
+            component_name: 'SecurityCtrlr',
+            variable_name: 'BasicAuthPassword',
+            type: AttributeEnumType.Actual
+        }))[0].validatePassword(password);
+    }
+
+    /**
+     * Utility function to reject websocket upgrade requests with 401 status code.
+     * @param socket - Websocket duplex stream.
+     */
+    private _rejectUpgradeUnauthorized(socket: Duplex) {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n');
+        socket.write('WWW-Authenticate: Basic realm="Access to the WebSocket", charset="UTF-8"\r\n');
+        socket.write('\r\n');
+        socket.end();
+        socket.destroy();
+    }
+
+    /**
      * Internal method to handle new client connection and ensures supported protocols are used.
      *
      * @param {Set<string>} protocols - The set of protocols to handle.
      * @param {IncomingMessage} req - The request object.
      * @return {boolean|string} - Returns the protocol version if successful, otherwise false.
      */
-    private _handleProtocols(protocols: Set<string>, req: IncomingMessage) {
+    private _handleProtocols(protocols: Set<string>, req: http.IncomingMessage) {
         // Only supports configured protocol version
         if (protocols.has(this._config.websocketServer.protocol)) {
 
@@ -338,10 +415,9 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @param {IncomingMessage} req - The request object associated with the connection.
      * @return {void}
      */
-    private _onConnection(ws: WebSocket, req: IncomingMessage): void {
+    private _onConnection(ws: WebSocket, req: http.IncomingMessage): void {
 
-        // Parse the path to get the client id
-        const identifier = (req.url as string).split("/")[1];
+        const identifier = this.getClientIdFromUrl(req.url as string);
         this._connections.set(identifier, ws);
 
         // Pause the WebSocket event emitter until broker is established
@@ -503,5 +579,13 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                 }
             });
         }, this._config.websocketServer.pingInterval * 1000);
+    }
+    /**
+     * 
+     * @param url Http upgrade request url used by charger
+     * @returns Charger identifier
+     */
+    private getClientIdFromUrl(url: string): string {
+        return url.split("/")[1];
     }
 }
