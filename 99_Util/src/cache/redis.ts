@@ -27,8 +27,6 @@ export class RedisCache implements ICache {
 
   constructor(client?: RedisClientType) {
     this._client = client ?? createClient();
-    // Set the notify-keyspace-events config for generic keyspace events such as set, expired, and del
-    this._client.configSet("notify-keyspace-events", "Kg");
   }
 
   exists(key: string, namespace?: string): Promise<boolean> {
@@ -41,40 +39,6 @@ export class RedisCache implements ICache {
     namespace = namespace || "default";
     key = `${namespace}:${key}`;
     return this._client.del(key).then((result) => result === 1);
-  }
-
-  onChange<T>(key: string, waitSeconds: number, namespace?: string | undefined, classConstructor?: (() => ClassConstructor<T>) | undefined): Promise<T | null> {
-    namespace = namespace || "default";
-    key = `${namespace}:${key}`;
-
-    // Create a Redis subscriber to listen for operations affecting the key
-    const subscriber = createClient();
-    const onChangeValuePromise: Promise<T | null> = new Promise((resolve) => {
-      // Channel: Key-space, message: the name of the event, which is the command executed on the key
-      subscriber.subscribe(`__keyspace@0__:${key}`, (channel, message) => {
-        switch (message) {
-          case "set":
-            resolve(this.get(key, namespace, classConstructor));
-            subscriber.quit();
-            break;
-          case "del":
-          case "expire":
-            resolve(null);
-            subscriber.quit();
-            break;
-          default:
-            // Do nothing
-            break;
-        }
-      });
-    })
-
-    return Promise.race([onChangeValuePromise, new Promise<T | null>((resolve) => {
-      setTimeout(() => {
-        resolve(this.get(key, namespace, classConstructor));
-        subscriber.quit();
-      }, waitSeconds * 1000);
-    })]);
   }
 
   get<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): Promise<T | null> {
@@ -103,27 +67,6 @@ export class RedisCache implements ICache {
       }
       return null;
     }));
-  }
-
-  getAndRemove<T>(key: string, namespace?: string | undefined, classConstructor?: (() => ClassConstructor<T>) | undefined): Promise<T | null> {
-    namespace = namespace || "default";
-    key = `${namespace}:${key}`;
-    const transaction = this._client.multi();
-    transaction.get(key);
-    transaction.del(key);
-    return new Promise((resolve) => {
-      transaction.exec().then((replies) => {
-        if (replies[0]) {
-          if (classConstructor) {
-            resolve(plainToInstance(classConstructor(), JSON.parse(replies[0] as string)));
-          } else {
-            resolve(replies[0] as T);
-          }
-        } else {
-          resolve(null);
-        }
-      });
-    });
   }
 
   set(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean> {
