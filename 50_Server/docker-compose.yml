@@ -27,8 +27,8 @@ services:
       POSTGRES_PASSWORD: "citrine"
   citrine:
     build:
-      context: ./
-      dockerfile: ./docker/Dockerfile
+      context: ../
+      dockerfile: /50_Server/docker/Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -39,6 +39,7 @@ services:
       - 8081:8081
     volumes:
       - ./:/usr/server
+      - /usr/server/node_modules
     environment:
       APP_ENV: 'local'
   directus:
