@@ -7,8 +7,8 @@
   "scripts": {
     "prepublish": "npm run build",
     "install-base": "cd ../00_Base && npm install && npm run build && npm pack && cd ../50_Server && npm install ../00_Base/citrineos-base-1.0.0.tgz",
-    "install-util": "cd ../99_Util && npm install ../00_Base/citrineos-base-1.0.0.tgz && npm run build && npm pack && cd ../50_Server && npm install ../99_Util/citrineos-util-1.0.0.tgz",
-    "install-data": "cd ../10_Data && npm install ../00_Base/citrineos-base-1.0.0.tgz && npm run build && npm pack && cd ../50_Server && npm install ../10_Data/citrineos-data-1.0.0.tgz",
+    "install-util": "cd ../99_Util && npm install ../00_Base/citrineos-base-1.0.0.tgz && npm install && npm run build && npm pack && cd ../50_Server && npm install ../99_Util/citrineos-util-1.0.0.tgz",
+    "install-data": "cd ../10_Data && npm install ../00_Base/citrineos-base-1.0.0.tgz && npm install && npm run build && npm pack && cd ../50_Server && npm install ../10_Data/citrineos-data-1.0.0.tgz",
     "install-provisioning": "cd ../01_Provisioning && npm run install-all && npm install && npm run build && npm pack && cd ../50_Server && npm install ../01_Provisioning/citrineos-provisioning-1.0.0.tgz",
     "install-authorization": "cd ../02_Authorization && npm run install-all && npm install && npm run build && npm pack && cd ../50_Server && npm install ../02_Authorization/citrineos-authorization-1.0.0.tgz",
     "install-availability": "cd ../03_Availability && npm run install-all && npm install && npm run build && npm pack && cd ../50_Server && npm install ../03_Availability/citrineos-availability-1.0.0.tgz",

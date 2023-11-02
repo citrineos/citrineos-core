@@ -9,7 +9,6 @@
   ],
   "scripts": {
     "prepublish": "npx eslint ./src",
-    "prepare": "npm run build",
     "build": "tsc",
     "generate-interfaces": "node json-schema-processor.js ../OCPP-2.0.1/OCPP-2.0.1_part3_JSON_schemas",
     "test": "echo \"Error: no test specified\" && exit 1"
