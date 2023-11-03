@@ -117,6 +117,7 @@ ocpp_server_commands=(
     "npm install ../04_Transaction/citrineos-transaction-1.0.0.tgz"
     "npm install ../05_Monitoring/citrineos-monitoring-1.0.0.tgz"
     "npm install"
+    "npm run build"
 )
 
 cd ..
