@@ -166,6 +166,7 @@ export abstract class AbstractModule implements IModule {
                     body: JSON.stringify(message.payload)
                 });
             } catch (error) {
+                // TODO: Ideally the error log is also stored in the database in a failed invocations table to ensure these are visible outside of a log file.
                 this._logger.error("Failed sending call result: ", error);
             }
         }

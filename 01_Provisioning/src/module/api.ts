@@ -72,12 +72,29 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
         itemsPerMessageSetVariables = itemsPerMessageSetVariables == null ?
             setVariableData.length : itemsPerMessageSetVariables;
 
+        const confirmations = [];
+        let lastVariableIndex = 0;
         while (setVariableData.length > 0) {
-            await this._module.sendCall(identifier, tenantId, CallAction.SetVariables,
-                { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest, callbackUrl);
+            const batch = setVariableData.slice(0, itemsPerMessageSetVariables);
+            try {
+                const batchResult = await this._module.sendCall(identifier, tenantId, CallAction.SetVariables, { setVariableData: batch } as SetVariablesRequest, callbackUrl);
+                confirmations.push({
+                    success: batchResult.success,
+                    batch: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
+                    message: `${batchResult.payload}`,
+                });
+            } catch (error) {
+                confirmations.push({
+                    success: false,
+                    variableName: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
+                    message: `${error}`,
+                });
+            }
+            lastVariableIndex += batch.length;
             setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
         }
-        return { success: true };
+        // Caller should use callbackUrl to ensure request reached station, otherwise receipt is not guaranteed
+        return { success: true, payload: confirmations };
     }
 
     @AsMessageEndpoint(CallAction.GetVariables, GetVariablesRequestSchema)
@@ -94,12 +111,29 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
         itemsPerMessageGetVariables = itemsPerMessageGetVariables == null ?
             getVariableData.length : itemsPerMessageGetVariables;
 
+        const confirmations = [];
+        let lastVariableIndex = 0;
         while (getVariableData.length > 0) {
-            await this._module.sendCall(identifier, tenantId, CallAction.GetVariables,
-                { getVariableData: getVariableData.slice(0, itemsPerMessageGetVariables) } as GetVariablesRequest, callbackUrl);
+            const batch = getVariableData.slice(0, itemsPerMessageGetVariables);
+            try {
+                const batchResult = await this._module.sendCall(identifier, tenantId, CallAction.GetVariables, { getVariableData: batch } as GetVariablesRequest, callbackUrl);
+                confirmations.push({
+                    success: batchResult.success,
+                    batch: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
+                    message: `${batchResult.payload}`,
+                });
+            } catch (error) {
+                confirmations.push({
+                    success: false,
+                    variableName: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
+                    message: `${error}`,
+                });
+            }
+            lastVariableIndex += batch.length;
             getVariableData = getVariableData.slice(itemsPerMessageGetVariables);
         }
-        return { success: true };
+        // Caller should use callbackUrl to ensure request reached station, otherwise receipt is not guaranteed
+        return { success: true, payload: confirmations };
     }
 
     @AsMessageEndpoint(CallAction.SetNetworkProfile, SetNetworkProfileRequestSchema)
