@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "prepublish": "npx eslint",
+    "prepare": "npm run build",
     "build": "tsc",
     "refresh-base": "cd ../00_Base && npm run build && npm pack && cd ../05_Monitoring && npm install ../00_Base/citrineos-base-1.0.0.tgz",
     "refresh-util": "cd ../99_Util && npm run build && npm pack && cd ../05_Monitoring && npm install ../99_Util/citrineos-util-1.0.0.tgz",

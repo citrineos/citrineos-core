@@ -21,7 +21,6 @@ base_commands=(
     "rm -rf ./lib"
     "rm -f citrineos-base-1.0.0.tgz"
     "npm install"
-    "npm run build"
     "npm pack"
 )
 
@@ -31,7 +30,6 @@ util_commands=(
     "rm -f citrineos-util-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
     "npm install"
-    "npm run build"
     "npm pack"
 )
 
@@ -41,7 +39,6 @@ data_commands=(
     "rm -f citrineos-data-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
     "npm install"
-    "npm run build"
     "npm pack"
 )
 
@@ -53,7 +50,6 @@ provisioning_commands=(
     "npm install ../99_Util/citrineos-util-1.0.0.tgz"
     "npm install ../10_Data/citrineos-data-1.0.0.tgz"
     "npm install"
-    "npm run build"
     "npm pack"
 )
 
@@ -65,7 +61,6 @@ authorization_commands=(
     "npm install ../99_Util/citrineos-util-1.0.0.tgz"
     "npm install ../10_Data/citrineos-data-1.0.0.tgz"
     "npm install"
-    "npm run build"
     "npm pack"
 )
 
@@ -77,7 +72,6 @@ availability_commands=(
     "npm install ../99_Util/citrineos-util-1.0.0.tgz"
     "npm install ../10_Data/citrineos-data-1.0.0.tgz"
     "npm install"
-    "npm run build"
     "npm pack"
 )
 
@@ -89,7 +83,6 @@ transaction_commands=(
     "npm install ../99_Util/citrineos-util-1.0.0.tgz"
     "npm install ../10_Data/citrineos-data-1.0.0.tgz"
     "npm install"
-    "npm run build"
     "npm pack"
 )
 
@@ -101,7 +94,6 @@ monitoring_commands=(
     "npm install ../99_Util/citrineos-util-1.0.0.tgz"
     "npm install ../10_Data/citrineos-data-1.0.0.tgz"
     "npm install"
-    "npm run build"
     "npm pack"
 )
 
@@ -117,7 +109,6 @@ ocpp_server_commands=(
     "npm install ../04_Transaction/citrineos-transaction-1.0.0.tgz"
     "npm install ../05_Monitoring/citrineos-monitoring-1.0.0.tgz"
     "npm install"
-    "npm run build"
 )
 
 cd ..

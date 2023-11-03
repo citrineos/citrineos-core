@@ -10,6 +10,7 @@
   "scripts": {
     "install-base": "cd ../00_Base && npm run build && npm pack && cd ../10_Data && npm install ../00_Base/citrineos-base-1.0.0.tgz",
     "prepublish": "npx eslint",
+    "prepare": "npm run build",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
