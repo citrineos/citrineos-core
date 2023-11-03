@@ -14,7 +14,6 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { v4 as uuidv4 } from "uuid";
 import {
   CallAction,
   EventGroup,
@@ -28,6 +27,7 @@ import {
 export class RequestBuilder {
   static buildCall(
     stationId: string,
+    correlationId: string,
     tenantId: string,
     action: CallAction,
     payload: OcppRequest,
@@ -40,7 +40,7 @@ export class RequestBuilder {
       action,
       context: {
         stationId,
-        correlationId: uuidv4(),
+        correlationId,
         tenantId
       },
       state: MessageState.Request,
@@ -49,8 +49,8 @@ export class RequestBuilder {
   }
 
   static buildCallResult(
-    correlationId: string,
     stationId: string,
+    correlationId: string,
     tenantId: string,
     action: CallAction,
     payload: OcppResponse,
@@ -63,7 +63,7 @@ export class RequestBuilder {
       action,
       context: {
         stationId,
-        correlationId: correlationId,
+        correlationId,
         tenantId
       },
       state: MessageState.Response,

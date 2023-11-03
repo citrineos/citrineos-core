@@ -80,7 +80,7 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
          * @return {Promise<IMessageConfirmation>} The promise that resolves to the message confirmation.
          */
         const _handler = async (request: FastifyRequest<{ Body: OcppRequest | OcppResponse, Querystring: IMessageQuerystring }>): Promise<IMessageConfirmation> => {
-            return method.call(this, request.query.identifier, request.query.tenantId, request.body);
+                return method.call(this, request.query.identifier, request.query.tenantId, request.body, request.query.callbackUrl);
         };
 
         const _opts = {
