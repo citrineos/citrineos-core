@@ -27,7 +27,6 @@ import { RequestBuilder } from "../../util/request";
 import { CacheNamespace, ICache } from "../cache/cache";
 import { ClientConnection } from "../centralsystem";
 import { EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessageHandler, IMessageSender, MessageOrigin, MessageState } from "../messages";
-import axios from 'axios';
 
 export abstract class AbstractModule implements IModule {
 
@@ -159,7 +158,13 @@ export abstract class AbstractModule implements IModule {
         const url: string | null = await this._cache.getAndRemove(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
         if (url) {
             try {
-                await axios.post(url, message.payload);
+                await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(message.payload)
+                });
             } catch (error) {
                 this._logger.error("Failed sending call result: ", error);
             }
