@@ -63,7 +63,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         handler?: CentralSystemMessageHandler,
         logger?: Logger<ILogObj>,
         ajv?: Ajv,
-        sequelize?: Sequelize) {
+        deviceModelRepository?: DeviceModelRepository) {
         super(config, logger, cache, ajv);
 
         // Initialize router before socket server to avoid race condition
@@ -73,11 +73,12 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
 
         this._cache = cache;
 
-        this._deviceModelRepository = new DeviceModelRepository(this._config, this._logger, sequelize);
+        this._deviceModelRepository = deviceModelRepository || new DeviceModelRepository(this._config, this._logger);
 
         this._httpServer = this._config.websocketServer.webProtocol == 'https' ? https.createServer({
-            key: fs.readFileSync(this._config.websocketServer.httpsCertificateFilepath + 'private_key.pem'),
-            cert: fs.readFileSync(this._config.websocketServer.httpsCertificateFilepath + 'certificate.pem')
+            key: fs.readFileSync(this._config.websocketServer.httpsPrivateKeysFilepath as string),
+            cert: fs.readFileSync(this._config.websocketServer.httpsCertificateChainFilepath as string),
+            minVersion: 'TLSv1.2'
         }) : http.createServer();
 
         this._socketServer = new WebSocketServer({
@@ -329,25 +330,18 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      */
     private async _upgradeRequest(req: http.IncomingMessage, socket: Duplex, head: Buffer) {
         // Validate username/password from authorization header
-        //
         // - The Authorization header is formatted as follows:
-        // AUTHORIZATION: Basic <Base64
-        // encoded(<Configured ChargingStationId>:<Configured
-        // BasicAuthPassword>)>
-
+        // AUTHORIZATION: Basic <Base64 encoded(<Configured ChargingStationId>:<Configured BasicAuthPassword>)>
         const authHeader = req.headers.authorization;
         const [username, password] = Buffer.from(authHeader?.split(' ')[1] || '', 'base64').toString().split(':');
-        // const isValid = username === this._config.websocketServer.authUsername && password === this._config.websocketServer.authPassword;
-        // OCPP 2.0.1 A00.FR.204
+
         if (username != this.getClientIdFromUrl(req.url as string) || await this._checkPassword(username, password) === false) {
             this._rejectUpgradeUnauthorized(socket);
-            return;
+        } else {
+            this._socketServer.handleUpgrade(req, socket, head, (ws) => {
+                this._socketServer.emit('connection', ws, req);
+            });
         }
-
-
-        this._socketServer.handleUpgrade(req, socket, head, (ws) => {
-            this._socketServer.emit('connection', ws, req);
-        });
     }
 
     private async _checkPassword(username: string, password: string) {
