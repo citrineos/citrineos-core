@@ -95,7 +95,7 @@ RUN npm ci --ignore-scripts=true --prefix /usr/05_Monitoring
 COPY /05_Monitoring/tsconfig.json /usr/05_Monitoring/
 COPY /05_Monitoring/src /usr/05_Monitoring/src
 RUN npm run build --prefix /usr/05_Monitoring
-RUN cd /usr/05_Monitoring npm pack
+RUN cd /usr/05_Monitoring && npm pack
 
 # Final stage to assemble the server
 FROM base as final-stage
