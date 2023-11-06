@@ -82,8 +82,8 @@ export class AuthorizationModuleApi extends AbstractModuleApi<AuthorizationModul
     }
 
     @AsMessageEndpoint(CallAction.InstallCertificate, InstallCertificateRequestSchema)
-    installCertificate(identifier: string, tenantId: string, request: InstallCertificateRequest): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, tenantId, CallAction.InstallCertificate, request);
+    installCertificate(identifier: string, tenantId: string, request: InstallCertificateRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.InstallCertificate, request, callbackUrl);
     }
 
     /**
