@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, AuthorizationData, AuthorizationDataSchema, CallAction, ClearCacheRequest, ClearCacheRequestSchema, HttpMethod, IMessageConfirmation, Namespace, RequestStartTransactionRequest, RequestStartTransactionRequestSchema, RequestStopTransactionRequest, RequestStopTransactionRequestSchema } from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, AuthorizationData, AuthorizationDataSchema, CallAction, ClearCacheRequest, ClearCacheRequestSchema, HttpMethod, IMessageConfirmation, InstallCertificateRequest, InstallCertificateRequestSchema, Namespace, RequestStartTransactionRequest, RequestStartTransactionRequestSchema, RequestStopTransactionRequest, RequestStopTransactionRequestSchema } from '@citrineos/base';
 import { AuthorizationQuerySchema, AuthorizationQuerystring, AuthorizationRestrictions, AuthorizationRestrictionsSchema, ChargingStationKeyQuerySchema } from '@citrineos/data';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
@@ -79,6 +79,11 @@ export class AuthorizationModuleApi extends AbstractModuleApi<AuthorizationModul
     @AsMessageEndpoint(CallAction.ClearCache, ClearCacheRequestSchema)
     clearCache(identifier: string, tenantId: string, request: ClearCacheRequest): Promise<IMessageConfirmation> {
         return this._module.sendCall(identifier, tenantId, CallAction.ClearCache, request);
+    }
+
+    @AsMessageEndpoint(CallAction.InstallCertificate, InstallCertificateRequestSchema)
+    installCertificate(identifier: string, tenantId: string, request: InstallCertificateRequest): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.InstallCertificate, request);
     }
 
     /**
