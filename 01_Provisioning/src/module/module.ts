@@ -90,8 +90,6 @@ export class ProvisioningModule extends AbstractModule {
   static readonly GET_BASE_REPORT_ONGOING_CACHE_VALUE = 'ongoing';
   static readonly GET_BASE_REPORT_COMPLETE_CACHE_VALUE = 'complete';
 
-
-
   /**
    * Fields
    */
@@ -423,7 +421,7 @@ export class ProvisioningModule extends AbstractModule {
         // SetVariables
         if (bootConfigDbEntity.pendingBootSetVariables && bootConfigDbEntity.pendingBootSetVariables.length > 1) {
           bootConfigDbEntity.variablesRejectedOnLastBoot = [];
-          const setVariableData: SetVariableDataType[] = await this._deviceModelRepository.readAllSetVariableByStationId(stationId);
+          let setVariableData: SetVariableDataType[] = await this._deviceModelRepository.readAllSetVariableByStationId(stationId);
 
           let itemsPerMessageSetVariables = await this._deviceModelService.getItemsPerMessageSetVariablesByStationId(stationId);
 
@@ -433,6 +431,7 @@ export class ProvisioningModule extends AbstractModule {
           while (setVariableData.length > 0) {
             await this.sendCall(stationId, tenantId, CallAction.SetVariables,
               { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest);
+            setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
             // TODO: Determine how to match request to response. Right now this could trigger on an unrelated SetVariables response being received.
             const setVariableResponseCorrelationId = await this._cache.onChange(ProvisioningModule.SET_VARIABLES_RESPONSE_CORRELATION_ID, this.config.websocketServer.maxCallLengthSeconds, stationId);
             if (setVariableResponseCorrelationId != null) {

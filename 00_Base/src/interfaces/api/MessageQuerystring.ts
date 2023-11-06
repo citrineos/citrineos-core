@@ -20,6 +20,7 @@
 export interface IMessageQuerystring {
     identifier: string;
     tenantId: string;
+    callbackUrl?: string;
 }
 
 /**
@@ -29,7 +30,8 @@ export const IMessageQuerystringSchema = {
     type: 'object',
     properties: {
         identifier: { type: 'string' },
-        tenantId: { type: 'string' }
+        tenantId: { type: 'string' },
+        callbackUrl: { type: 'string' }
     },
     required: ['identifier', 'tenantId']
 }

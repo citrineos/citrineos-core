@@ -20,9 +20,9 @@ import { GetBaseReportRequest, GetVariablesRequest, IMessageConfirmation, ResetR
  * Interface for the provisioning module.
  */
 export interface IProvisioningModuleApi {
-    getBaseReport(identifier: string, tenantId: string, request: GetBaseReportRequest): Promise<IMessageConfirmation>;
-    setVariables(identifier: string, tenantId: string, request: SetVariablesRequest): Promise<IMessageConfirmation>;
-    getVariables(identifier: string, tenantId: string, request: GetVariablesRequest): Promise<IMessageConfirmation>;
-    setNetworkProfile(identifier: string, tenantId: string, request: SetNetworkProfileRequest): Promise<IMessageConfirmation>;
-    reset(identifier: string, tenantId: string, request: ResetRequest): Promise<IMessageConfirmation>;
+    getBaseReport(identifier: string, tenantId: string, request: GetBaseReportRequest, callbackUrl?: string): Promise<IMessageConfirmation>;
+    setVariables(identifier: string, tenantId: string, request: SetVariablesRequest, callbackUrl?: string): Promise<IMessageConfirmation>;
+    getVariables(identifier: string, tenantId: string, request: GetVariablesRequest, callbackUrl?: string): Promise<IMessageConfirmation>;
+    setNetworkProfile(identifier: string, tenantId: string, request: SetNetworkProfileRequest, callbackUrl?: string): Promise<IMessageConfirmation>;
+    reset(identifier: string, tenantId: string, request: ResetRequest, callbackUrl?: string): Promise<IMessageConfirmation>;
 }
