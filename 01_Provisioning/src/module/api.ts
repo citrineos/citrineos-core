@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariablesRequest, SetVariablesRequestSchema } from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariablesRequest, SetVariablesRequestSchema, TriggerMessageRequest, TriggerMessageRequestSchema } from '@citrineos/base';
 import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, VariableAttributeQuerySchema, VariableAttributeQuerystring, sequelize } from '@citrineos/data';
 import { Boot } from '@citrineos/data/lib/layers/sequelize';
 import { FastifyInstance, FastifyRequest } from 'fastify';
@@ -150,10 +150,20 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
     reset(
         identifier: string,
         tenantId: string,
-        resetRequest: ResetRequest,
+        request: ResetRequest,
         callbackUrl?: string
     ): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, tenantId, CallAction.Reset, resetRequest, callbackUrl);
+        return this._module.sendCall(identifier, tenantId, CallAction.Reset, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.TriggerMessage, TriggerMessageRequestSchema)
+    triggerMessage(
+        identifier: string,
+        tenantId: string,
+        request: TriggerMessageRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.TriggerMessage, request, callbackUrl);
     }
 
     /**
