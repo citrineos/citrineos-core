@@ -1,6 +1,7 @@
 FROM node:18 as base
 
 # To work from package-lock.json for consistency, replace 'package' with 'package*' and 'install' with 'ci'
+# This will not work for package-lock files generated on Windows machines.
 
 # Build citrineos-base module
 FROM base as citrineos-base-builder
