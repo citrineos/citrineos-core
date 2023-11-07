@@ -20,7 +20,7 @@ import { ClearCacheRequest, IMessageConfirmation, RequestStartTransactionRequest
  * Interface for the authorization module.
  */
 export interface IAuthorizationModuleApi {
-    requestStartTransaction(identifier: string, tenantId: string, request: RequestStartTransactionRequest): Promise<IMessageConfirmation>;
-    requestStopTransaction(identifier: string, tenantId: string, request: RequestStopTransactionRequest): Promise<IMessageConfirmation>;
-    clearCache(identifier: string, tenantId: string, request: ClearCacheRequest): Promise<IMessageConfirmation>;
+    requestStartTransaction(identifier: string, tenantId: string, request: RequestStartTransactionRequest, callbackUrl?: string): Promise<IMessageConfirmation>;
+    requestStopTransaction(identifier: string, tenantId: string, request: RequestStopTransactionRequest, callbackUrl?: string): Promise<IMessageConfirmation>;
+    clearCache(identifier: string, tenantId: string, request: ClearCacheRequest, callbackUrl?: string): Promise<IMessageConfirmation>;
 }
