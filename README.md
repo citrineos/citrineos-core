@@ -32,7 +32,7 @@ Before you begin, make sure you have the following installed on your system:
 
 - Node.js (v18 or higher): [Download Node.js](https://nodejs.org/)
 - npm (Node Package Manager): [Download npm](https://www.npmjs.com/get-npm)
-
+- Docker (Optional). Version >= 20.10: [Download Docker] (https://docs.docker.com/get-docker/)
 ### Installation
 
 1. Clone the CitrineOS repository to your local machine:
@@ -84,7 +84,7 @@ You can now connect your OCPP 2.0.1 compliant charging stations to the CitrineOS
 ## Information on Docker setup
 
 You need to install
-[docker](https://docs.docker.com/engine/install/#server) and
+[docker](https://docs.docker.com/engine/install/#server) (>= 20.10) and
 [docker-compose](https://docs.docker.com/compose/install/#install-compose).
 Furthermore, [Visual Studio
 Code](https://code.visualstudio.com/docs/setup/linux) might be handy as
@@ -94,7 +94,7 @@ Once Docker is running, the following services should be available:
 
 -   **CitrineOS** (service name: citrineos) with ports
     -   `8080`: websocket server tcp connection
-    -   `8081`: webserver http - [Swagger](http://localhost:8081)
+    -   `8081`: webserver http - [Swagger](http://localhost:8081/docs)
 -   **RabbitMQ Broker** (service name: amqp-broker) with ports
     -   `5672`: amqp tcp connection
     -   `15672`: RabbitMQ [management interface](http://localhost:15672)
