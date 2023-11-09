@@ -48,6 +48,7 @@ import {
 } from "@citrineos/base";
 import { IBootRepository, IDeviceModelRepository, sequelize } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
+import { v4 as uuidv4 } from "uuid";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from "./services";
@@ -429,11 +430,14 @@ export class ProvisioningModule extends AbstractModule {
           itemsPerMessageSetVariables = itemsPerMessageSetVariables == null ?
             setVariableData.length : itemsPerMessageSetVariables;
           while (setVariableData.length > 0) {
-            await this.sendCall(stationId, tenantId, CallAction.SetVariables,
-              { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest);
+            const correlationId = uuidv4();
+            this.sendCall(stationId, tenantId, CallAction.SetVariables,
+              { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest, undefined, correlationId);
             setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
+            // We can do this now...
+            // todo: branch with correlationId caching, retrying/queueing message sending from central system to charger, and enforcement of maxCallSeconds
             // TODO: Determine how to match request to response. Right now this could trigger on an unrelated SetVariables response being received.
-            const setVariableResponseCorrelationId = await this._cache.onChange(ProvisioningModule.SET_VARIABLES_RESPONSE_CORRELATION_ID, this.config.websocketServer.maxCallLengthSeconds, stationId);
+            const setVariableResponseCorrelationId = await this._cache.onChange(correlationId, this.config.websocketServer.maxCallLengthSeconds, stationId);
             if (setVariableResponseCorrelationId != null) {
               this._logger.debug("SetVariables response correlation id from charger: ", setVariableResponseCorrelationId);
             } else {
@@ -523,7 +527,7 @@ export class ProvisioningModule extends AbstractModule {
     this._cache.set(ProvisioningModule.SET_VARIABLES_RESPONSE_CORRELATION_ID, message.context.correlationId, message.context.stationId);
 
     let rebootRequired: boolean = false;
-    message.payload.setVariableResult.forEach(setVariableResultType => {
+    message.payload.setVariableResult.forEach(async setVariableResultType => {
       switch (setVariableResultType.attributeStatus) {
         case SetVariableStatusEnumType.RebootRequired:
           rebootRequired = true;
@@ -532,7 +536,9 @@ export class ProvisioningModule extends AbstractModule {
           break;
       }
       // Update VariableAttributes...
-      this._deviceModelRepository.updateResultByStationId(setVariableResultType, message.context.stationId);
+      this._logger.info("Updating variable attribute...", setVariableResultType);
+      const varAttr = await this._deviceModelRepository.updateResultByStationId(setVariableResultType, message.context.stationId);
+      this._logger.info("Updated variable attribute...", varAttr);
     });
 
     if (rebootRequired) { // Determination of whether to reboot immediately must be handled by caller.

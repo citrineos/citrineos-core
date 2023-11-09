@@ -14,20 +14,22 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AttributeEnumType, ChargingStationType, ComponentType, GetVariableDataType, GetVariableResultType, MutabilityEnumType, ReportDataType, SetVariableDataType, SetVariableResultType, SetVariableStatusEnumType, StatusInfoType, VariableType } from "@citrineos/base";
+import { AttributeEnumType, ComponentType, GetVariableResultType, ReportDataType, SetVariableDataType, SetVariableResultType, SetVariableStatusEnumType, StatusInfoType, VariableType } from "@citrineos/base";
 import { VariableAttributeQuerystring } from "../../../interfaces/queries/VariableAttribute";
 import { SequelizeRepository } from "./Base";
 import { IDeviceModelRepository } from "../../../interfaces";
 import { Model, Op } from "sequelize";
 import { VariableAttribute, Component, Evse, Variable, VariableCharacteristics } from "../model/DeviceModel";
+import { VariableStatus } from "../model/DeviceModel/VariableStatus";
 
 // TODO: Document this
 
 export class DeviceModelRepository extends SequelizeRepository<VariableAttribute> implements IDeviceModelRepository {
 
-    createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string, status?: string, statusInfo?: StatusInfoType): Promise<VariableAttribute[]> {
+    createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]> {
         const component: ComponentType = value.component;
         const variable: VariableType = value.variable;
+        console.log("Called... " + value.variableAttribute);
         return this.s.models[Component.MODEL_NAME].findOne({
             where: { name: component.name, instance: component.instance ? component.instance : null },
             include: component.evse ? [{ model: Evse, where: { id: component.evse.id, connectorId: component.evse.connectorId ? component.evse.connectorId : null } }] : []
@@ -83,13 +85,12 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
                 const evseSerialId = componentModel.get('evseSerialId');
                 for (const variableAttribute of value.variableAttribute) {
                     const variableAttributeModel = VariableAttribute.build({
+                        id: undefined, // Prevents update from removing id
                         stationId: stationId,
                         variableId: variableModel.get('id'),
                         componentId: componentModel.get('id'),
                         evseSerialId: evseSerialId,
-                        ...variableAttribute,
-                        status: status,
-                        statusInfo: statusInfo
+                        ...variableAttribute
                     }, {
                         include: [{ model: Variable, include: [VariableCharacteristics] },
                         { model: Component, include: [Evse] }]
@@ -102,10 +103,16 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
                         // Create or update variable attribute
                         if (savedVariableAttribute) {
                             for (const k in variableAttributeModel.dataValues) {
-                                savedVariableAttribute.setDataValue(k, variableAttributeModel.getDataValue(k));
+                                console.log("Updating " + k + " from " + savedVariableAttribute.getDataValue(k) + " to " + variableAttributeModel.getDataValue(k));
+                                const updatedValue = variableAttributeModel.getDataValue(k);
+                                if (updatedValue != undefined) { // Null can still be used to remove data
+                                    savedVariableAttribute.setDataValue(k, variableAttributeModel.getDataValue(k));
+                                }
                             }
+                            console.log("Saving updated " + savedVariableAttribute.value);
                             return savedVariableAttribute.save();
                         } else {
+                            console.log("Saving " + variableAttributeModel.value);
                             return variableAttributeModel.save()
                         }
                     }).then(savedVariableAttribute => savedVariableAttributes.push(savedVariableAttribute));
@@ -115,9 +122,9 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
     }
 
     async createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string): Promise<VariableAttribute[]> {
-        const savedVariableAttributes: VariableAttribute[] = [];
+        let savedVariableAttributes: VariableAttribute[] = [];
         for (const result of getVariablesResult) {
-            savedVariableAttributes.concat(await this.createOrUpdateDeviceModelByStationId({
+            const savedVariableAttribute = (await this.createOrUpdateDeviceModelByStationId({
                 component: {
                     name: result.component.name,
                     instance: result.component.instance,
@@ -138,15 +145,22 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
                         value: result.attributeValue
                     }
                 ]
-            }, stationId, result.attributeStatus, result.attributeStatusInfo));
+            }, stationId))[0];
+            VariableStatus.build({
+                value: result.attributeValue,
+                status: result.attributeStatus,
+                statusInfo: result.attributeStatusInfo,
+                variableAttributeId: savedVariableAttribute.get('id')
+            }, { include: [VariableAttribute] }).save();
+            savedVariableAttributes = await savedVariableAttributes.concat(savedVariableAttribute);
         }
         return savedVariableAttributes;
     }
 
     async createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string): Promise<VariableAttribute[]> {
-        const savedVariableAttributes: VariableAttribute[] = [];
+        let savedVariableAttributes: VariableAttribute[] = [];
         for (const data of setVariablesData) {
-            savedVariableAttributes.concat(await this.createOrUpdateDeviceModelByStationId({
+            savedVariableAttributes = await savedVariableAttributes.concat(await this.createOrUpdateDeviceModelByStationId({
                 component: {
                     name: data.component.name,
                     instance: data.component.instance,
@@ -169,24 +183,41 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
                 ]
             }, stationId));
         }
+        console.log("Created " + savedVariableAttributes.length + " variable attributes");
+        savedVariableAttributes.forEach(savedVariableAttribute => {
+            console.log("Saved " + savedVariableAttribute.value);
+        })
         return savedVariableAttributes;
     }
 
     updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined> {
         return super.readByQuery({
             where: { stationId: stationId, type: result.attributeType ? result.attributeType : AttributeEnumType.Actual },
-            include: [
+            include: [ { model: VariableStatus, where: { status: "Accepted" } },
                 {
                     model: Component, where: { name: result.component.name, instance: result.component.instance ? result.component.instance : null },
                     include: result.component.evse ? [{ model: Evse, where: { id: result.component.evse.id, connectorId: result.component.evse.connectorId ? result.component.evse.connectorId : null } }] : []
                 },
-                { model: Variable, where: { name: result.variable.name, instance: result.variable.instance ? result.variable.instance : null } }]
+                { model: Variable, where: { name: result.variable.name, instance: result.variable.instance ? result.variable.instance : null } }],
+            order: [[VariableStatus, 'createdAt', 'DESC']]
         }, VariableAttribute.MODEL_NAME).then(savedVariableAttribute => {
             if (savedVariableAttribute) {
-                // Update result fields
-                savedVariableAttribute.status = result.attributeStatus;
-                savedVariableAttribute.statusInfo = result.attributeStatusInfo;
-                return savedVariableAttribute.save();
+                VariableStatus.build({
+                    value: savedVariableAttribute.value,
+                    status: result.attributeStatus,
+                    statusInfo: result.attributeStatusInfo,
+                    variableAttributeId: savedVariableAttribute.get('id')
+                }, { include: [VariableAttribute] }).save();
+
+                if (result.attributeStatus === SetVariableStatusEnumType.Rejected) {
+                    // Roll back variable attribute to last Accepted value, if any
+                    const oldVariableStatus = savedVariableAttribute.statuses?.pop();
+                    if (oldVariableStatus) {
+                        savedVariableAttribute.value = oldVariableStatus.value;
+                        return savedVariableAttribute.save();
+                    }
+                }
+                return savedVariableAttribute;
             } else {
                 throw new Error("Unable to update variable attribute...");
             }
@@ -210,17 +241,21 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
     }
 
     readAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]> {
-        return super.readAllByQuery(this.constructQuery(query), VariableAttribute.MODEL_NAME);
+        const readQuery = this.constructQuery(query);
+        readQuery.include.push(VariableStatus);
+        return super.readAllByQuery(readQuery, VariableAttribute.MODEL_NAME);
     }
 
     existsRejectedSetVariableByStationId(stationId: string): Promise<boolean> {
         return super.readAllByQuery({
             where: {
                 stationId: stationId, bootConfigSetId: { [Op.ne]: null }
-            }
+            },
+            include: [VariableStatus],
+            order: [[VariableStatus, 'createdAt', 'DESC']]
         }, VariableAttribute.MODEL_NAME)
             .then(variableAttributeArray => {
-                return variableAttributeArray.some(variableAttribute => variableAttribute.status === SetVariableStatusEnumType.Rejected);
+                return variableAttributeArray.some(variableAttribute => variableAttribute.statuses?.pop()?.status === SetVariableStatusEnumType.Rejected);
             });
     }
 
@@ -259,7 +294,7 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
         }
     }
 
-    private constructQuery(queryParams: VariableAttributeQuerystring): object {
+    private constructQuery(queryParams: VariableAttributeQuerystring): any {
         const evseInclude = (queryParams.component_evse_id || queryParams.component_evse_connectorId) ?
             {
                 model: Evse,

@@ -15,12 +15,13 @@
  */
 
 import { AttributeEnumType, ComponentType, CustomDataType, EVSEType, MutabilityEnumType, Namespace, StatusInfoType, VariableAttributeType, VariableType } from "@citrineos/base";
-import { BeforeCreate, BelongsTo, Column, DataType, ForeignKey, Index, Model, Table } from "sequelize-typescript";
+import { BeforeCreate, BeforeUpdate, BelongsTo, Column, DataType, ForeignKey, HasMany, Index, Model, Table } from "sequelize-typescript";
 import * as bcrypt from "bcrypt";
 import { Variable } from "./Variable";
 import { Component } from "./Component";
 import { Evse } from "./Evse";
 import { Boot } from "../Boot";
+import { VariableStatus } from "./VariableStatus";
 
 @Table
 export class VariableAttribute extends Model implements VariableAttributeType {
@@ -67,14 +68,6 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     })
     declare constant?: boolean;
 
-    // Result fields
-
-    @Column(DataType.STRING)
-    declare status?: string;
-
-    @Column(DataType.JSON)
-    declare statusInfo?: StatusInfoType;
-
     /**
      * Relations
      */
@@ -109,6 +102,11 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     })
     declare evseSerialId?: number;
 
+    // Statuses as received by charger in either SetVariablesResult or GetVariablesResult
+
+    @HasMany(() => VariableStatus)
+    declare statuses?: VariableStatus[];
+
     // Below used to associate attributes with boot process
 
     @BelongsTo(() => Boot)
@@ -124,17 +122,21 @@ export class VariableAttribute extends Model implements VariableAttributeType {
      * If in a future version of the protocol 'passwordString' is added to DataEnumType, this hook will need to be adjusted
      */
     @BeforeCreate
+    @BeforeUpdate
     static async beforeCreateHook(instance: VariableAttribute) {
         // Fetch related Component and Variable
         const component = await Component.findByPk(instance.componentId);
         const variable = await Variable.findByPk(instance.variableId);
 
+        console.log("Checking value " + instance.value);
         // Check if the conditions are met
-        if (component?.name === 'SecurityCtrlr' && variable?.name === 'BasicAuthPassword' && instance.value) {
+        if (component?.name === 'SecurityCtrlr' && variable?.name === 'BasicAuthPassword' && instance.changed('value') && instance.value) {
             // hash passwordString
+            console.log("hashing password string " + instance.value);
             const passwordString = instance.value;
             const salt = await bcrypt.genSalt(10);
             instance.value = await bcrypt.hash(passwordString, salt);
+            console.log("Updated value " + instance.value);
         }
     }
 

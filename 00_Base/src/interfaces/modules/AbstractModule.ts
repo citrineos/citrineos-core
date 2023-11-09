@@ -194,6 +194,8 @@ export abstract class AbstractModule implements IModule {
      * @param {string} tenantId - The tenant ID.
      * @param {CallAction} action - The action to be performed.
      * @param {OcppRequest} payload - The payload of the call.
+     * @param {string} [callbackUrl] - The callback URL for the call.
+     * @param {string} [correlationId] - The correlation ID of the call.
      * @param {MessageOrigin} [origin] - The origin of the call.
      * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
      */

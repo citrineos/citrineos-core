@@ -22,7 +22,7 @@ import { AuthorizationRestrictions, VariableAttributeQuerystring } from ".";
 import { Boot, Authorization } from "../layers/sequelize";
 
 export interface IDeviceModelRepository extends ICrudRepository<VariableAttributeType> {
-    createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string, status?: string, statusInfo?: StatusInfoType): Promise<VariableAttribute[]>;
+    createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]>;
     createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string): Promise<VariableAttribute[]>;
     createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string): Promise<VariableAttribute[]>;
     updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined>;

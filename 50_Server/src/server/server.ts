@@ -332,10 +332,14 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         // Validate username/password from authorization header
         // - The Authorization header is formatted as follows:
         // AUTHORIZATION: Basic <Base64 encoded(<Configured ChargingStationId>:<Configured BasicAuthPassword>)>
+        this._logger.info("Upgrade request", req.url);
         const authHeader = req.headers.authorization;
+        this._logger.info("Authorization header", req.headers.authorization);
         const [username, password] = Buffer.from(authHeader?.split(' ')[1] || '', 'base64').toString().split(':');
+        this._logger.info("Username and password", username, password);
 
         if (username != this.getClientIdFromUrl(req.url as string) || await this._checkPassword(username, password) === false) {
+            this._logger.info("Unauthorized");
             this._rejectUpgradeUnauthorized(socket);
         } else {
             this._socketServer.handleUpgrade(req, socket, head, (ws) => {
@@ -350,7 +354,15 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             component_name: 'SecurityCtrlr',
             variable_name: 'BasicAuthPassword',
             type: AttributeEnumType.Actual
-        }))[0].validatePassword(password);
+        }).then(r => {
+            if (r && r[0]) {
+                this._logger.info("BasicAuthPassword", r[0].value);
+                return r[0].validatePassword(password);
+            } else {
+                this._logger.warn("Has no password", username);
+                return false;
+            }
+        }));
     }
 
     /**
