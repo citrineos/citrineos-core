@@ -229,11 +229,12 @@ export class ProvisioningModule extends AbstractModule {
       // Blacklist all charger-originated actions except BootNotification
       // GetReport messages will need to un-blacklist NotifyReport
       // TriggerMessage will need to un-blacklist the message it triggers 
-      CALL_SCHEMA_MAP.forEach((actionSchema, action) => {
+      const promises = Array.from(CALL_SCHEMA_MAP).map(async ([action]) => {
         if (action !== CallAction.BootNotification) {
-          this._cache.set(action, 'blacklisted', stationId)
+          return this._cache.set(action, 'blacklisted', stationId);
         }
       });
+      await Promise.all(promises);      
     }
 
     const bootNotificationResponseMessageConfirmation: IMessageConfirmation = await this.sendCallResultWithMessage(message, bootNotificationResponse);

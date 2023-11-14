@@ -289,7 +289,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @return {Promise<boolean>} A promise that resolves to a boolean indicating if the action and identifier are allowed.
      */
     private _onCallIsAllowed(action: CallAction, identifier: string): Promise<boolean> {
-        return this._cache.exists(action, identifier).then(blacklisted => blacklisted !== null);
+        return this._cache.exists(action, identifier).then(blacklisted => !blacklisted);
     }
 
     /**

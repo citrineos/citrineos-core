@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariableResultType, SetVariableResultTypeSchema, SetVariableStatusEnumType, SetVariablesRequest, SetVariablesRequestSchema } from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetReportRequest, GetReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariableResultType, SetVariableResultTypeSchema, SetVariableStatusEnumType, SetVariablesRequest, SetVariablesRequestSchema } from '@citrineos/base';
 import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, CreateOrUpdateVariableAttributeQuerySchema, CreateOrUpdateVariableAttributeQuerystring, VariableAttributeQuerySchema, VariableAttributeQuerystring, sequelize } from '@citrineos/data';
 import { Boot } from '@citrineos/data/lib/layers/sequelize';
 import { FastifyInstance, FastifyRequest } from 'fastify';
@@ -51,6 +51,17 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
     ): Promise<IMessageConfirmation> {
         // TODO: Consider using requestId to send NotifyReportRequests to callbackUrl
         return this._module.sendCall(identifier, tenantId, CallAction.GetBaseReport, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.GetReport, GetReportRequestSchema)
+    getCustomReport(
+        identifier: string,
+        tenantId: string,
+        request: GetReportRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        // TODO: Consider using requestId to send NotifyReportRequests to callbackUrl
+        return this._module.sendCall(identifier, tenantId, CallAction.GetReport, request, callbackUrl);
     }
 
     @AsMessageEndpoint(CallAction.SetVariables, SetVariablesRequestSchema)

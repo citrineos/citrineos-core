@@ -30,7 +30,7 @@ export class OcppError extends Error {
     private _errorCode: ErrorCode;
     private _errorDetails?: object;
 
-    constructor(messageId: string, errorCode: ErrorCode, errorDescription: string, errorDetails?: object) {
+    constructor(messageId: string, errorCode: ErrorCode, errorDescription: string, errorDetails: object = {}) {
         super(errorDescription);
         this.name = "OcppError";
         this._messageId = messageId;
