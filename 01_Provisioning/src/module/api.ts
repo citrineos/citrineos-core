@@ -14,8 +14,8 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariableResultType, SetVariableResultTypeSchema, SetVariablesRequest, SetVariablesRequestSchema } from '@citrineos/base';
-import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, VariableAttributeQuerySchema, VariableAttributeQuerystring, sequelize } from '@citrineos/data';
+import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariableResultType, SetVariableResultTypeSchema, SetVariableStatusEnumType, SetVariablesRequest, SetVariablesRequestSchema } from '@citrineos/base';
+import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, CreateOrUpdateVariableAttributeQuerySchema, CreateOrUpdateVariableAttributeQuerystring, VariableAttributeQuerySchema, VariableAttributeQuerystring, sequelize } from '@citrineos/data';
 import { Boot } from '@citrineos/data/lib/layers/sequelize';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
@@ -74,6 +74,7 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
 
         const confirmations = [];
         let lastVariableIndex = 0;
+        // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
         while (setVariableData.length > 0) {
             const batch = setVariableData.slice(0, itemsPerMessageSetVariables);
             try {
@@ -113,7 +114,8 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
 
         const confirmations = [];
         let lastVariableIndex = 0;
-        while (getVariableData.length > 0) {
+        // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
+        while (getVariableData.length > 0) { 
             const batch = getVariableData.slice(0, itemsPerMessageGetVariables);
             try {
                 const batchResult = await this._module.sendCall(identifier, tenantId, CallAction.GetVariables, { getVariableData: batch } as GetVariablesRequest, callbackUrl);
@@ -175,9 +177,20 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
         return this._module.bootRepository.deleteByKey(request.query.stationId);
     }
 
-    @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Put, ChargingStationKeyQuerySchema, ReportDataTypeSchema)
-    putDeviceModelVariables(request: FastifyRequest<{ Body: ReportDataType, Querystring: ChargingStationKeyQuerystring }>): Promise<sequelize.VariableAttribute[]> {
-        return this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(request.body, request.query.stationId);
+    @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Put, CreateOrUpdateVariableAttributeQuerySchema, ReportDataTypeSchema)
+    putDeviceModelVariables(request: FastifyRequest<{ Body: ReportDataType, Querystring: CreateOrUpdateVariableAttributeQuerystring }>): Promise<sequelize.VariableAttribute[]> {
+        return this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(request.body, request.query.stationId).then(variableAttributes => {
+            if (request.query.setOnCharger) { // value set offline, for example: manually via charger ui, or via api other than ocpp
+                for (const variableAttribute of variableAttributes) {
+                    this._module.deviceModelRepository.updateResultByStationId({
+                        attributeType: variableAttribute.type,
+                        attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: "SetOnCharger" },
+                        component: variableAttribute.component, variable: variableAttribute.variable
+                      }, request.query.stationId);
+                }
+            }
+            return variableAttributes;
+        });
     }
 
     @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Get, VariableAttributeQuerySchema)
@@ -189,19 +202,6 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
     deleteDeviceModelVariables(request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>): Promise<string> {
         return this._module.deviceModelRepository.deleteAllByQuery(request.query)
             .then(deletedCount => deletedCount.toString() + " rows successfully deleted from " + Namespace.VariableAttributeType);
-    }
-
-    /**
-     * Use this endpoint to set the previously accepted status of a variable.
-     * This is important for rollbacks for values set offline, for example: Basic Authentication passwords.
-     * When a basic authentication password is set via the data api, then later an attempt to replace that value is made via message api 
-     * @param request 
-     * @returns 
-     */
-    @AsDataEndpoint(Namespace.VariableStatus, HttpMethod.Put, ChargingStationKeyQuerySchema, SetVariableResultTypeSchema)
-    putVariableStatus(request: FastifyRequest<{ Body: SetVariableResultType, Querystring: ChargingStationKeyQuerystring }>): Promise<sequelize.VariableAttribute | undefined> {
-        // TODO: return 404 when VariableAttribute for status not found
-        return this._module.deviceModelRepository.updateResultByStationId(request.body, request.query.stationId);
     }
 
     /**

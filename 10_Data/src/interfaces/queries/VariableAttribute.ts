@@ -17,7 +17,7 @@
 import { AttributeEnumType, QuerySchema, SetVariableStatusEnumType } from "@citrineos/base";
 
 export interface VariableAttributeQuerystring {
-    stationId?: string,
+    stationId: string,
     type?: AttributeEnumType,
     value?: string,
     status?: SetVariableStatusEnumType,
@@ -39,4 +39,14 @@ export const VariableAttributeQuerySchema = QuerySchema([
     ["component_name", "string"],
     ["component_instance", "string"],
     ["variable_name", "string"],
-    ["variable_instance", "string"]], []);
+    ["variable_instance", "string"]], ["stationId"]);
+
+
+export interface CreateOrUpdateVariableAttributeQuerystring {
+    stationId: string,
+    setOnCharger?: boolean // Used to indicate value has already been accepted by the station via means other than ocpp
+}
+
+export const CreateOrUpdateVariableAttributeQuerySchema = QuerySchema([
+    ["stationId", "string"],
+    ["setOnCharger", "boolean"]], ["stationId"]);

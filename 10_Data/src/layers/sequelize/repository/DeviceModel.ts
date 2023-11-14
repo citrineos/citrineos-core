@@ -29,10 +29,9 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
     async createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]> {
         const component: ComponentType = value.component;
         const variable: VariableType = value.variable;
-        console.log("Called... " + value.variableAttribute);
         let savedComponent = await this.s.models[Component.MODEL_NAME].findOne({
             where: { name: component.name, instance: component.instance ? component.instance : null },
-            include: component.evse ? [{ model: Evse, where: { id: component.evse.id, connectorId: component.evse.connectorId ? component.evse.connectorId : null } }] : []
+            include: component.evse ? [{ model: Evse, where: { id: component.evse.id, connectorId: component.evse.connectorId ? component.evse.connectorId : null } }] : [Evse]
         });
         if (!savedComponent) {
             // Create component if not exists
@@ -51,9 +50,9 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
                 ...variable
             }).save();
         }
-        let savedVariableCharacteristics = await this.s.models[VariableCharacteristics.MODEL_NAME].findOne({
+        let savedVariableCharacteristics: VariableCharacteristics | undefined = await this.s.models[VariableCharacteristics.MODEL_NAME].findOne({
             where: { variableId: savedVariable.get('id') }
-        });
+        }).then(row => (row as VariableCharacteristics));
         if (value.variableCharacteristics) {
             const variableCharacteristicsModel = VariableCharacteristics.build({
                 variableId: savedVariable.get('id'),
@@ -79,15 +78,15 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
                 variableId: savedVariable.get('id'),
                 componentId: savedComponent.get('id'),
                 evseDatabaseId: evseDatabaseId,
-                dataType: (savedVariableCharacteristics as VariableCharacteristics).dataType,
+                dataType: savedVariableCharacteristics ? savedVariableCharacteristics.dataType : undefined,
                 ...variableAttribute
             }, {
-                include: [{ model: Variable, include: [VariableCharacteristics] },
-                { model: Component, include: [Evse] }]
+                include: [{ model: Variable, where: { id: savedVariable.get('id') }, include: [VariableCharacteristics] },
+                { model: Component, where: { id: savedComponent.get('id') }, include: evseDatabaseId ? [{ model: Evse, where: { databaseId: evseDatabaseId } }] : [] }]
             });
             let savedVariableAttribute = await super.readByQuery({
                 where: { stationId: stationId, type: variableAttribute.type ? variableAttribute.type : AttributeEnumType.Actual },
-                include: [{ model: Variable, where: { id: savedVariable.get('id') } },
+                include: [{ model: Variable, where: { id: savedVariable.get('id') }, include: [VariableCharacteristics] },
                 { model: Component, where: { id: savedComponent.get('id') }, include: evseDatabaseId ? [{ model: Evse, where: { databaseId: evseDatabaseId } }] : [] }]
             }, VariableAttribute.MODEL_NAME)
             // Create or update variable attribute
@@ -99,8 +98,8 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
                     }
                 }
                 savedVariableAttribute = await savedVariableAttribute.save();
-            } else {
-                savedVariableAttribute = await variableAttributeModel.save();
+            } else { // Reload in order to eager load (otherwise component & variable will be undefined)
+                savedVariableAttribute = await (await variableAttributeModel.save()).reload();
             }
             savedVariableAttributes.push(savedVariableAttribute);
         }

@@ -58,9 +58,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
         type: DataType.STRING,
         set(valueString) {
             if (valueString) {
-                console.log("Setting value: " + valueString);
                 const valueType = (this as VariableAttribute).dataType;
-                console.log("Value type: " + valueType);
                 switch (valueType) {
                     case DataEnumType.passwordString:
                         valueString = bcrypt.hashSync(valueString as string, 10);
