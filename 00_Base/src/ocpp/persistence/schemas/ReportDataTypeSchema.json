@@ -46,7 +46,8 @@
                 "boolean",
                 "OptionList",
                 "SequenceList",
-                "MemberList"
+                "MemberList",
+                "passwordString"
             ],
             "javaType": "DataEnum",
             "tsEnumNames": [

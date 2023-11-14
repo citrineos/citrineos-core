@@ -18,7 +18,7 @@ import { AttributeEnumType, ComponentType, GetVariableResultType, ReportDataType
 import { VariableAttributeQuerystring } from "../../../interfaces/queries/VariableAttribute";
 import { SequelizeRepository } from "./Base";
 import { IDeviceModelRepository } from "../../../interfaces";
-import { Model, Op } from "sequelize";
+import { Op } from "sequelize";
 import { VariableAttribute, Component, Evse, Variable, VariableCharacteristics } from "../model/DeviceModel";
 import { VariableStatus } from "../model/DeviceModel/VariableStatus";
 
@@ -26,99 +26,85 @@ import { VariableStatus } from "../model/DeviceModel/VariableStatus";
 
 export class DeviceModelRepository extends SequelizeRepository<VariableAttribute> implements IDeviceModelRepository {
 
-    createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]> {
+    async createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]> {
         const component: ComponentType = value.component;
         const variable: VariableType = value.variable;
         console.log("Called... " + value.variableAttribute);
-        return this.s.models[Component.MODEL_NAME].findOne({
+        let savedComponent = await this.s.models[Component.MODEL_NAME].findOne({
             where: { name: component.name, instance: component.instance ? component.instance : null },
             include: component.evse ? [{ model: Evse, where: { id: component.evse.id, connectorId: component.evse.connectorId ? component.evse.connectorId : null } }] : []
-        })
-            .then(savedComponent => {
-                if (!savedComponent) {
-                    // Create component if not exists
-                    return Component.build({
-                        ...component
-                    }, { include: [Evse] }).save();
-                } else {
-                    return savedComponent;
-                }
-            }).then(componentModel => {
-                return this.s.models[Variable.MODEL_NAME].findOne({
-                    where: { name: variable.name, instance: variable.instance ? variable.instance : null },
-                    include: [{ model: Component, where: { id: componentModel.get('id') } }]
-                }).then(async savedVariable => {
-                    if (!savedVariable) {
-                        // Create variable if not exists
-                        return [componentModel, await Variable.build({
-                            componentId: componentModel.get('id'),
-                            ...variable
-                        }).save()];
-                    } else {
-                        return [componentModel, savedVariable];
-                    }
-                });
-            }).then(async componentVariableTuple => {
-                const componentModel: Model = componentVariableTuple[0] as Model;
-                const variableModel: Model = componentVariableTuple[1] as Model;
-                if (value.variableCharacteristics) {
-                    const variableCharacteristicsModel = VariableCharacteristics.build({
-                        ...value.variableCharacteristics
-                    });
-                    this.s.models[VariableCharacteristics.MODEL_NAME].findOne({
-                        where: {},
-                        include: [{ model: Variable, where: { id: variableModel.get('id') } }]
-                    })
-                        .then(savedVariableCharacteristics => {
-                            // Create or update variable characteristics
-                            if (savedVariableCharacteristics) {
-                                for (const k in variableCharacteristicsModel.dataValues) {
-                                    savedVariableCharacteristics.setDataValue(k, variableCharacteristicsModel.getDataValue(k));
-                                }
-                                savedVariableCharacteristics.save();
-                            } else {
-                                variableCharacteristicsModel.save()
-                            }
-                        });
-                }
-                const savedVariableAttributes: VariableAttribute[] = [];
-                const evseSerialId = componentModel.get('evseSerialId');
-                for (const variableAttribute of value.variableAttribute) {
-                    const variableAttributeModel = VariableAttribute.build({
-                        id: undefined, // Prevents update from removing id
-                        stationId: stationId,
-                        variableId: variableModel.get('id'),
-                        componentId: componentModel.get('id'),
-                        evseSerialId: evseSerialId,
-                        ...variableAttribute
-                    }, {
-                        include: [{ model: Variable, include: [VariableCharacteristics] },
-                        { model: Component, include: [Evse] }]
-                    });
-                    await super.readByQuery({
-                        where: { stationId: stationId, type: variableAttribute.type ? variableAttribute.type : AttributeEnumType.Actual },
-                        include: [{ model: Variable, where: { id: variableModel.get('id') } },
-                        { model: Component, where: { id: componentModel.get('id') }, include: evseSerialId ? [{ model: Evse, where: { serialId: evseSerialId } }] : [] }]
-                    }, VariableAttribute.MODEL_NAME).then(savedVariableAttribute => {
-                        // Create or update variable attribute
-                        if (savedVariableAttribute) {
-                            for (const k in variableAttributeModel.dataValues) {
-                                console.log("Updating " + k + " from " + savedVariableAttribute.getDataValue(k) + " to " + variableAttributeModel.getDataValue(k));
-                                const updatedValue = variableAttributeModel.getDataValue(k);
-                                if (updatedValue != undefined) { // Null can still be used to remove data
-                                    savedVariableAttribute.setDataValue(k, variableAttributeModel.getDataValue(k));
-                                }
-                            }
-                            console.log("Saving updated " + savedVariableAttribute.value);
-                            return savedVariableAttribute.save();
-                        } else {
-                            console.log("Saving " + variableAttributeModel.value);
-                            return variableAttributeModel.save()
-                        }
-                    }).then(savedVariableAttribute => savedVariableAttributes.push(savedVariableAttribute));
-                }
-                return savedVariableAttributes;
+        });
+        if (!savedComponent) {
+            // Create component if not exists
+            savedComponent = await Component.build({
+                ...component
+            }, { include: [Evse] }).save();
+        }
+        let savedVariable = await this.s.models[Variable.MODEL_NAME].findOne({
+            where: { name: variable.name, instance: variable.instance ? variable.instance : null },
+            include: [{ model: Component, where: { id: savedComponent.get('id') } }]
+        });
+        if (!savedVariable) {
+            // Create variable if not exists
+            savedVariable = await Variable.build({
+                componentId: savedComponent.get('id'),
+                ...variable
+            }).save();
+        }
+        let savedVariableCharacteristics = await this.s.models[VariableCharacteristics.MODEL_NAME].findOne({
+            where: { variableId: savedVariable.get('id') }
+        });
+        if (value.variableCharacteristics) {
+            const variableCharacteristicsModel = VariableCharacteristics.build({
+                variableId: savedVariable.get('id'),
+                ...value.variableCharacteristics
             });
+            // TODO: Although VariableCharacteristics is optional, VariableCharacteristics.dataType is a vital field for understanding VariableAttribute.value and should be set to some default and incorporated in handling VariableAttribute.value
+            // Create or update variable characteristics
+            if (savedVariableCharacteristics) {
+                for (const k in variableCharacteristicsModel.dataValues) {
+                    savedVariableCharacteristics.setDataValue(k, variableCharacteristicsModel.getDataValue(k));
+                }
+                savedVariableCharacteristics = await savedVariableCharacteristics.save();
+            } else {
+                savedVariableCharacteristics = await variableCharacteristicsModel.save();
+            }
+        }
+        const savedVariableAttributes: VariableAttribute[] = [];
+        const evseDatabaseId = savedComponent.get('evseDatabaseId');
+        for (const variableAttribute of value.variableAttribute) {
+            const variableAttributeModel = VariableAttribute.build({
+                id: undefined, // Prevents update from removing id
+                stationId: stationId,
+                variableId: savedVariable.get('id'),
+                componentId: savedComponent.get('id'),
+                evseDatabaseId: evseDatabaseId,
+                dataType: (savedVariableCharacteristics as VariableCharacteristics).dataType,
+                ...variableAttribute
+            }, {
+                include: [{ model: Variable, include: [VariableCharacteristics] },
+                { model: Component, include: [Evse] }]
+            });
+            let savedVariableAttribute = await super.readByQuery({
+                where: { stationId: stationId, type: variableAttribute.type ? variableAttribute.type : AttributeEnumType.Actual },
+                include: [{ model: Variable, where: { id: savedVariable.get('id') } },
+                { model: Component, where: { id: savedComponent.get('id') }, include: evseDatabaseId ? [{ model: Evse, where: { databaseId: evseDatabaseId } }] : [] }]
+            }, VariableAttribute.MODEL_NAME)
+            // Create or update variable attribute
+            if (savedVariableAttribute) {
+                for (const k in variableAttributeModel.dataValues) {
+                    const updatedValue = variableAttributeModel.getDataValue(k);
+                    if (updatedValue != undefined) { // Null can still be used to remove data
+                        savedVariableAttribute.setDataValue(k, variableAttributeModel.getDataValue(k));
+                    }
+                }
+                savedVariableAttribute = await savedVariableAttribute.save();
+            } else {
+                savedVariableAttribute = await variableAttributeModel.save();
+            }
+            savedVariableAttributes.push(savedVariableAttribute);
+        }
+        return savedVariableAttributes;
     }
 
     async createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string): Promise<VariableAttribute[]> {
@@ -183,45 +169,32 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
                 ]
             }, stationId));
         }
-        console.log("Created " + savedVariableAttributes.length + " variable attributes");
-        savedVariableAttributes.forEach(savedVariableAttribute => {
-            console.log("Saved " + savedVariableAttribute.value);
-        })
         return savedVariableAttributes;
     }
 
-    updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined> {
-        return super.readByQuery({
+    async updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined> {
+        const savedVariableAttribute = await super.readByQuery({
             where: { stationId: stationId, type: result.attributeType ? result.attributeType : AttributeEnumType.Actual },
-            include: [ { model: VariableStatus, where: { status: "Accepted" } },
+            include: [VariableStatus,
                 {
                     model: Component, where: { name: result.component.name, instance: result.component.instance ? result.component.instance : null },
                     include: result.component.evse ? [{ model: Evse, where: { id: result.component.evse.id, connectorId: result.component.evse.connectorId ? result.component.evse.connectorId : null } }] : []
                 },
-                { model: Variable, where: { name: result.variable.name, instance: result.variable.instance ? result.variable.instance : null } }],
-            order: [[VariableStatus, 'createdAt', 'DESC']]
-        }, VariableAttribute.MODEL_NAME).then(savedVariableAttribute => {
-            if (savedVariableAttribute) {
-                VariableStatus.build({
-                    value: savedVariableAttribute.value,
-                    status: result.attributeStatus,
-                    statusInfo: result.attributeStatusInfo,
-                    variableAttributeId: savedVariableAttribute.get('id')
-                }, { include: [VariableAttribute] }).save();
+                { model: Variable, where: { name: result.variable.name, instance: result.variable.instance ? result.variable.instance : null } }]
+        }, VariableAttribute.MODEL_NAME);
+        if (savedVariableAttribute) {
+            const savedVariableStatusArray = [await VariableStatus.build({
+                value: savedVariableAttribute.value,
+                status: result.attributeStatus,
+                statusInfo: result.attributeStatusInfo,
+                variableAttributeId: savedVariableAttribute.get('id')
+            }, { include: [VariableAttribute] }).save()];
+            savedVariableAttribute.statuses = savedVariableAttribute.statuses ? savedVariableAttribute.statuses.concat(savedVariableStatusArray) : savedVariableStatusArray;
+            return savedVariableAttribute;
+        } else {
+            throw new Error("Unable to update variable attribute...");
+        }
 
-                if (result.attributeStatus === SetVariableStatusEnumType.Rejected) {
-                    // Roll back variable attribute to last Accepted value, if any
-                    const oldVariableStatus = savedVariableAttribute.statuses?.pop();
-                    if (oldVariableStatus) {
-                        savedVariableAttribute.value = oldVariableStatus.value;
-                        return savedVariableAttribute.save();
-                    }
-                }
-                return savedVariableAttribute;
-            } else {
-                throw new Error("Unable to update variable attribute...");
-            }
-        });
     }
 
     readAllSetVariableByStationId(stationId: string): Promise<SetVariableDataType[]> {
@@ -244,19 +217,6 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
         const readQuery = this.constructQuery(query);
         readQuery.include.push(VariableStatus);
         return super.readAllByQuery(readQuery, VariableAttribute.MODEL_NAME);
-    }
-
-    existsRejectedSetVariableByStationId(stationId: string): Promise<boolean> {
-        return super.readAllByQuery({
-            where: {
-                stationId: stationId, bootConfigSetId: { [Op.ne]: null }
-            },
-            include: [VariableStatus],
-            order: [[VariableStatus, 'createdAt', 'DESC']]
-        }, VariableAttribute.MODEL_NAME)
-            .then(variableAttributeArray => {
-                return variableAttributeArray.some(variableAttribute => variableAttribute.statuses?.pop()?.status === SetVariableStatusEnumType.Rejected);
-            });
     }
 
     existsByQuery(query: VariableAttributeQuerystring): Promise<boolean> {

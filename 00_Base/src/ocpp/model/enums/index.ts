@@ -188,7 +188,8 @@ export const enum DataEnumType {
   boolean = "boolean",
   OptionList = "OptionList",
   SequenceList = "SequenceList",
-  MemberList = "MemberList"
+  MemberList = "MemberList",
+  passwordString = "passwordString"
 }
 
 /**

@@ -31,7 +31,7 @@ export class Evse extends Model implements EVSEType {
     @PrimaryKey
     @AutoIncrement
     @Column(DataType.INTEGER)
-    declare serialId: number;
+    declare databaseId: number;
 
     @Column({
         type: DataType.INTEGER,

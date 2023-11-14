@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariablesRequest, SetVariablesRequestSchema } from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariableResultType, SetVariableResultTypeSchema, SetVariablesRequest, SetVariablesRequestSchema } from '@citrineos/base';
 import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, VariableAttributeQuerySchema, VariableAttributeQuerystring, sequelize } from '@citrineos/data';
 import { Boot } from '@citrineos/data/lib/layers/sequelize';
 import { FastifyInstance, FastifyRequest } from 'fastify';
@@ -64,9 +64,7 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
 
         // Awaiting save action so that SetVariablesResponse does not trigger a race condition since an error is thrown
         // from SetVariablesResponse handler if variable does not exist when it attempts to save the Response's status
-        const setVariablesAttributes = await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(setVariableData, identifier);
-
-        this._logger.info("setVariablesAttributes", setVariablesAttributes);
+        await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(setVariableData, identifier);
 
         let itemsPerMessageSetVariables = await this._module._deviceModelService.getItemsPerMessageSetVariablesByStationId(identifier);
 
@@ -80,8 +78,6 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
             const batch = setVariableData.slice(0, itemsPerMessageSetVariables);
             try {
                 const batchResult = await this._module.sendCall(identifier, tenantId, CallAction.SetVariables, { setVariableData: batch } as SetVariablesRequest, callbackUrl);
-                this._logger.info("batch", batch);
-                this._logger.info("batchResult", batchResult);
                 confirmations.push({
                     success: batchResult.success,
                     batch: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
@@ -97,7 +93,6 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
             lastVariableIndex += batch.length;
             setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
         }
-        this._logger.info("confirmations", confirmations);
         // Caller should use callbackUrl to ensure request reached station, otherwise receipt is not guaranteed
         return { success: true, payload: confirmations };
     }
@@ -180,7 +175,7 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
         return this._module.bootRepository.deleteByKey(request.query.stationId);
     }
 
-    @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Put, VariableAttributeQuerySchema, ReportDataTypeSchema)
+    @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Put, ChargingStationKeyQuerySchema, ReportDataTypeSchema)
     putDeviceModelVariables(request: FastifyRequest<{ Body: ReportDataType, Querystring: ChargingStationKeyQuerystring }>): Promise<sequelize.VariableAttribute[]> {
         return this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(request.body, request.query.stationId);
     }
@@ -194,6 +189,19 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
     deleteDeviceModelVariables(request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>): Promise<string> {
         return this._module.deviceModelRepository.deleteAllByQuery(request.query)
             .then(deletedCount => deletedCount.toString() + " rows successfully deleted from " + Namespace.VariableAttributeType);
+    }
+
+    /**
+     * Use this endpoint to set the previously accepted status of a variable.
+     * This is important for rollbacks for values set offline, for example: Basic Authentication passwords.
+     * When a basic authentication password is set via the data api, then later an attempt to replace that value is made via message api 
+     * @param request 
+     * @returns 
+     */
+    @AsDataEndpoint(Namespace.VariableStatus, HttpMethod.Put, ChargingStationKeyQuerySchema, SetVariableResultTypeSchema)
+    putVariableStatus(request: FastifyRequest<{ Body: SetVariableResultType, Querystring: ChargingStationKeyQuerystring }>): Promise<sequelize.VariableAttribute | undefined> {
+        // TODO: return 404 when VariableAttribute for status not found
+        return this._module.deviceModelRepository.updateResultByStationId(request.body, request.query.stationId);
     }
 
     /**

@@ -28,7 +28,6 @@ export interface IDeviceModelRepository extends ICrudRepository<VariableAttribut
     updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined>;
     readAllSetVariableByStationId(stationId: string): Promise<SetVariableDataType[]>;
     readAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
-    existsRejectedSetVariableByStationId(stationId: string): Promise<boolean>;
     existsByQuery(query: VariableAttributeQuerystring): Promise<boolean>;
     deleteAllByQuery(query: VariableAttributeQuerystring): Promise<number>;
 }

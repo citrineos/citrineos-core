@@ -72,17 +72,6 @@ export class ProvisioningModule extends AbstractModule {
   public static readonly BOOT_STATUS = "boot_status";
 
   /**
-   * Used to wait for SetVariables responses.
-   */
-  static readonly SET_VARIABLES_RESPONSE_CORRELATION_ID = "set_variables_response_correlation_id";
-  /**
-   * When multiple SetVariablesRequests are being sent in a row, it is not optimal to reboot
-   * immediately. Instead, rebooting is done at the end of said process, if any variable set
-   * during the process required it.
-   */
-  static readonly REBOOT_REQUIRED_FOR_SET_VARIABLES: string = "reboot_required_for_set_variables";
-
-  /**
    * Get Base Report variables. While NotifyReport requests correlated with a GetBaseReport's requestId
    * are still being sent, cache value is 'ongoing'. Once a NotifyReport with tbc == false (or undefined)
    * is received, cache value is 'complete'.
@@ -420,6 +409,7 @@ export class ProvisioningModule extends AbstractModule {
           }
         }
         // SetVariables
+        let rebootSetVariable = false;
         if (bootConfigDbEntity.pendingBootSetVariables && bootConfigDbEntity.pendingBootSetVariables.length > 1) {
           bootConfigDbEntity.variablesRejectedOnLastBoot = [];
           let setVariableData: SetVariableDataType[] = await this._deviceModelRepository.readAllSetVariableByStationId(stationId);
@@ -429,23 +419,28 @@ export class ProvisioningModule extends AbstractModule {
           // If ItemsPerMessageSetVariables not set, send all variables at once
           itemsPerMessageSetVariables = itemsPerMessageSetVariables == null ?
             setVariableData.length : itemsPerMessageSetVariables;
+          let rejectedSetVariable = false;
           while (setVariableData.length > 0) {
+            // Below pattern is preferred way of receiving CallResults in an async mannner.
             const correlationId = uuidv4();
+            const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(correlationId, this.config.websocketServer.maxCallLengthSeconds * 2, stationId); // x2 fudge factor for any network lag
             this.sendCall(stationId, tenantId, CallAction.SetVariables,
               { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest, undefined, correlationId);
             setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
-            // We can do this now...
-            // todo: branch with correlationId caching, retrying/queueing message sending from central system to charger, and enforcement of maxCallSeconds
-            // TODO: Determine how to match request to response. Right now this could trigger on an unrelated SetVariables response being received.
-            const setVariableResponseCorrelationId = await this._cache.onChange(correlationId, this.config.websocketServer.maxCallLengthSeconds, stationId);
-            if (setVariableResponseCorrelationId != null) {
-              this._logger.debug("SetVariables response correlation id from charger: ", setVariableResponseCorrelationId);
+            const responseJsonString = await cacheCallbackPromise;
+            if (responseJsonString) {
+              const setVariablesResponse: SetVariablesResponse = JSON.parse(responseJsonString);
+              setVariablesResponse.setVariableResult.forEach(result => {
+                if (result.attributeStatus == SetVariableStatusEnumType.Rejected) {
+                  rejectedSetVariable = true;
+                } else if (result.attributeStatus == SetVariableStatusEnumType.RebootRequired) {
+                  rebootSetVariable = true;
+                }
+              })
             } else {
-              throw new Error("SetVariables response correlation id not found");
+              throw new Error("SetVariables response not found");
             }
           }
-
-          const rejectedSetVariable = await this._deviceModelRepository.existsRejectedSetVariableByStationId(stationId);
           if (rejectedSetVariable && (bootConfigDbEntity.bootWithRejectedVariables !== null) ? !bootConfigDbEntity.bootWithRejectedVariables : !this._config.provisioning.bootWithRejectedVariables) {
             bootConfigDbEntity.status = RegistrationStatusEnumType.Rejected;
             await bootConfigDbEntity.save();
@@ -458,8 +453,7 @@ export class ProvisioningModule extends AbstractModule {
         bootConfigDbEntity.status = RegistrationStatusEnumType.Accepted;
         await bootConfigDbEntity.save();
 
-        if (await this._cache.get<string>(ProvisioningModule.REBOOT_REQUIRED_FOR_SET_VARIABLES, message.context.stationId) == 'true') {
-          this._cache.remove(ProvisioningModule.REBOOT_REQUIRED_FOR_SET_VARIABLES, message.context.stationId);
+        if (rebootSetVariable) {
           // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
           this.sendCall(message.context.stationId, message.context.tenantId, CallAction.Reset,
             { type: ResetEnumType.Immediate } as ResetRequest);
@@ -493,7 +487,14 @@ export class ProvisioningModule extends AbstractModule {
     }
 
     for (const reportDataType of (message.payload.reportData ? message.payload.reportData : [])) {
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, message.context.stationId);
+      const variableAttributes = await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, message.context.stationId);
+      for (const variableAttribute of variableAttributes) {
+        this._deviceModelRepository.updateResultByStationId({
+          attributeType: variableAttribute.type,
+          attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: message.action },
+          component: variableAttribute.component, variable: variableAttribute.variable
+        }, message.context.stationId);
+      }
     }
 
     // Create response
@@ -524,29 +525,9 @@ export class ProvisioningModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug("SetVariables response received", message, props);
 
-    this._cache.set(ProvisioningModule.SET_VARIABLES_RESPONSE_CORRELATION_ID, message.context.correlationId, message.context.stationId);
-
-    let rebootRequired: boolean = false;
     message.payload.setVariableResult.forEach(async setVariableResultType => {
-      switch (setVariableResultType.attributeStatus) {
-        case SetVariableStatusEnumType.RebootRequired:
-          rebootRequired = true;
-          break;
-        default:
-          break;
-      }
-      // Update VariableAttributes...
-      this._logger.info("Updating variable attribute...", setVariableResultType);
-      const varAttr = await this._deviceModelRepository.updateResultByStationId(setVariableResultType, message.context.stationId);
-      this._logger.info("Updated variable attribute...", varAttr);
+      this._deviceModelRepository.updateResultByStationId(setVariableResultType, message.context.stationId);
     });
-
-    if (rebootRequired) { // Determination of whether to reboot immediately must be handled by caller.
-      // Expiration of one minute.
-      // TODO: Relate groups of SetVariables messages to each other in order to avoid race conditions with this cache value.
-      // Return to this TODO once correlationId can be set on messages.
-      this._cache.set(ProvisioningModule.REBOOT_REQUIRED_FOR_SET_VARIABLES, 'true', message.context.stationId, 60);
-    }
   }
 
   @AsHandler(CallAction.GetVariables)

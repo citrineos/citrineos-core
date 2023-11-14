@@ -55,6 +55,9 @@ export class VariableCharacteristics extends Model implements VariableCharacteri
   declare variable: VariableType;
   
   @ForeignKey(() => Variable)
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    unique: true
+  })
   declare variableId?: number;
 }

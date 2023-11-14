@@ -19,3 +19,4 @@ export { Evse } from "./Evse";
 export { Variable } from "./Variable";
 export { VariableAttribute } from "./VariableAttribute";
 export { VariableCharacteristics } from "./VariableCharacteristics";
+export { VariableStatus } from "./VariableStatus"

@@ -54,7 +54,7 @@ export class Component extends Model implements ComponentType {
         type: DataType.INTEGER,
         unique: 'evse_name_instance'
     })
-    declare evseSerialId?: number;
+    declare evseDatabaseId?: number;
 
     @HasMany(() => Variable)
     declare variables?: VariableType[];

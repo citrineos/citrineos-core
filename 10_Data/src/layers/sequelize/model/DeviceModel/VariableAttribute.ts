@@ -14,14 +14,15 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AttributeEnumType, ComponentType, CustomDataType, EVSEType, MutabilityEnumType, Namespace, StatusInfoType, VariableAttributeType, VariableType } from "@citrineos/base";
-import { BeforeCreate, BeforeUpdate, BelongsTo, Column, DataType, ForeignKey, HasMany, Index, Model, Table } from "sequelize-typescript";
+import { AttributeEnumType, ComponentType, CustomDataType, DataEnumType, EVSEType, MutabilityEnumType, Namespace, StatusInfoType, VariableAttributeType, VariableType } from "@citrineos/base";
+import { BeforeCreate, BeforeUpdate, BelongsTo, Column, DataType, ForeignKey, HasMany, HasOne, Index, Model, Table } from "sequelize-typescript";
 import * as bcrypt from "bcrypt";
 import { Variable } from "./Variable";
 import { Component } from "./Component";
 import { Evse } from "./Evse";
 import { Boot } from "../Boot";
 import { VariableStatus } from "./VariableStatus";
+import { VariableCharacteristics } from "./VariableCharacteristics";
 
 @Table
 export class VariableAttribute extends Model implements VariableAttributeType {
@@ -36,18 +37,42 @@ export class VariableAttribute extends Model implements VariableAttributeType {
 
     @Index
     @Column({
-        unique: 'stationId_type_variableId_componentId_evseSerialId'
+        unique: 'stationId_type_variableId_componentId_evseDatabaseId'
     })
     declare stationId: string;
 
     @Column({
         type: DataType.STRING,
         defaultValue: AttributeEnumType.Actual,
-        unique: 'stationId_type_variableId_componentId_evseSerialId'
+        unique: 'stationId_type_variableId_componentId_evseDatabaseId'
     })
     declare type?: AttributeEnumType;
+    // From VariableCharacteristics, which belongs to Variable associated with this VariableAttribute
+    @Column({
+        type: DataType.STRING,
+        defaultValue: DataEnumType.string
+    })
+    declare dataType: DataEnumType;
 
-    @Column(DataType.STRING)
+    @Column({
+        type: DataType.STRING,
+        set(valueString) {
+            if (valueString) {
+                console.log("Setting value: " + valueString);
+                const valueType = (this as VariableAttribute).dataType;
+                console.log("Value type: " + valueType);
+                switch (valueType) {
+                    case DataEnumType.passwordString:
+                        valueString = bcrypt.hashSync(valueString as string, 10);
+                        break;
+                    default:
+                        // Do nothing
+                        break;
+                }
+            }
+            this.setDataValue('value', valueString);
+        }
+    })
     declare value?: string;
 
     @Column({
@@ -78,7 +103,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     @ForeignKey(() => Variable)
     @Column({
         type: DataType.INTEGER,
-        unique: 'stationId_type_variableId_componentId_evseSerialId'
+        unique: 'stationId_type_variableId_componentId_evseDatabaseId'
     })
     declare variableId?: number;
 
@@ -88,7 +113,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     @ForeignKey(() => Component)
     @Column({
         type: DataType.INTEGER,
-        unique: 'stationId_type_variableId_componentId_evseSerialId'
+        unique: 'stationId_type_variableId_componentId_evseDatabaseId'
     })
     declare componentId?: number;
 
@@ -98,9 +123,9 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     @ForeignKey(() => Evse)
     @Column({
         type: DataType.INTEGER,
-        unique: 'stationId_type_variableId_componentId_evseSerialId'
+        unique: 'stationId_type_variableId_componentId_evseDatabaseId'
     })
-    declare evseSerialId?: number;
+    declare evseDatabaseId?: number;
 
     // Statuses as received by charger in either SetVariablesResult or GetVariablesResult
 
@@ -114,42 +139,4 @@ export class VariableAttribute extends Model implements VariableAttributeType {
 
     @ForeignKey(() => Boot)
     declare bootConfigId?: string;
-
-    /**
-     * Hook to ensure passwordString is not saved plaintext.
-     * This particular component/variable combination is the only one defined in OCPP 2.0.1 Part 2 - Appendices to use the type passwordString
-     * N.B. DataEnumType, used in VariableCharacteristics, does not have 'passwordString'! It is missing other types as well. It is unclear if this is an oversight in the protocol.
-     * If in a future version of the protocol 'passwordString' is added to DataEnumType, this hook will need to be adjusted
-     */
-    @BeforeCreate
-    @BeforeUpdate
-    static async beforeCreateHook(instance: VariableAttribute) {
-        // Fetch related Component and Variable
-        const component = await Component.findByPk(instance.componentId);
-        const variable = await Variable.findByPk(instance.variableId);
-
-        console.log("Checking value " + instance.value);
-        // Check if the conditions are met
-        if (component?.name === 'SecurityCtrlr' && variable?.name === 'BasicAuthPassword' && instance.changed('value') && instance.value) {
-            // hash passwordString
-            console.log("hashing password string " + instance.value);
-            const passwordString = instance.value;
-            const salt = await bcrypt.genSalt(10);
-            instance.value = await bcrypt.hash(passwordString, salt);
-            console.log("Updated value " + instance.value);
-        }
-    }
-
-    /**
-     * Utility method to compare password.
-     * If in a future version of the protocol 'passwordString' is added to DataEnumType, this function will need to be adjusted
-     * @param password Plaintext password to be compared
-     * @returns 
-     */
-    public async validatePassword(password: string): Promise<boolean> {
-        if (!this.value) {
-            return false;
-        }
-        return bcrypt.compare(password, this.value);
-    }
 }

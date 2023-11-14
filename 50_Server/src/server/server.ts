@@ -14,11 +14,11 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractCentralSystem, AttributeEnumType, CacheNamespace, Call, CallAction, CallError, CallResult, ClientConnection, ErrorCode, ICache, ICentralSystem, IClientConnection, IMessageHandler, IMessageRouter, IMessageSender, MessageTriggerEnumType, MessageTypeId, OcppError, RegistrationStatusEnumType, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
+import { AbstractCentralSystem, AttributeEnumType, CacheNamespace, Call, CallAction, CallError, CallResult, ClientConnection, ErrorCode, ICache, ICentralSystem, IClientConnection, IMessageHandler, IMessageRouter, IMessageSender, MessageTriggerEnumType, MessageTypeId, OcppError, RegistrationStatusEnumType, SetVariableStatusEnumType, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
 import { ProvisioningModule } from "@citrineos/provisioning";
 import { RabbitMqSender } from "@citrineos/util";
 import Ajv from "ajv";
-import { Sequelize } from "sequelize-typescript";
+import * as bcrypt from "bcrypt";
 import { instanceToPlain } from "class-transformer";
 import * as https from "https";
 import * as http from "http";
@@ -124,7 +124,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         const action = message[2] as CallAction;
         const payload = message[3];
 
-        this._isAllowed(action, connection.identifier)
+        this._onCallIsAllowed(action, connection.identifier)
             .then((isAllowed: boolean) => {
                 if (!isAllowed) {
                     throw new OcppError(messageId, ErrorCode.SecurityError, `Action ${action} not allowed`);
@@ -143,7 +143,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                     throw new OcppError(messageId, ErrorCode.RpcFrameworkError, "Call already in progress", {});
                 }
                 // Add reference to call in cache
-                this._cache.set(connection.identifier, `${messageId}|${action}`, CacheNamespace.Transactions, 30);
+                this._cache.set(connection.identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.websocketServer.maxCallLengthSeconds);
             }).then(success => {
                 // Route call
                 return this._router.routeCall(connection, message);
@@ -171,15 +171,17 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
 
         this._logger.debug("Process CallResult", connection.identifier, messageId, payload);
 
-        let key = `${connection.identifier}.${messageId}`;
-
-        this._cache.get<string>(key, CacheNamespace.Transactions)
-            .then(cachedAction => {
-                this._cache.remove(key, CacheNamespace.Transactions); // Always remove pending call transaction
-                if (!cachedAction) {
-                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found", {});
+        this._cache.get<string>(connection.identifier, CacheNamespace.Transactions)
+            .then(cachedActionMessageId => {
+                this._cache.remove(connection.identifier, CacheNamespace.Transactions); // Always remove pending call transaction
+                if (!cachedActionMessageId) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.websocketServer.maxCallLengthSeconds });
                 }
-                const action: CallAction = CallAction[cachedAction as keyof typeof CallAction]; // Parse CallAction from cached action
+                const [actionString, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+                if (messageId !== cachedMessageId) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", { "expectedMessageId": cachedMessageId });
+                }
+                const action: CallAction = CallAction[actionString as keyof typeof CallAction]; // Parse CallAction
                 return { action, ...this._validateCallResult(connection.identifier, action, message) }; // Run schema validation for incoming CallResult message
             }).then(({ action, isValid, errors }) => {
                 if (!isValid || errors) {
@@ -216,22 +218,21 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @param {Call} message - The Call message to send.
      * @return {Promise<boolean>} A promise that resolves to a boolean indicating if the call was sent successfully.
      */
-    sendCall(identifier: string, message: Call): Promise<boolean> {
+    async sendCall(identifier: string, message: Call): Promise<boolean> {
         const messageId = message[1];
         const action = message[2] as CallAction;
-        return this._cache.get<string>(ProvisioningModule.BOOT_STATUS, identifier).then(status => {
-            if (!status || status !== RegistrationStatusEnumType.Rejected ||
-                (action == CallAction.TriggerMessage && (message[3] as TriggerMessageRequest).requestedMessage == MessageTriggerEnumType.BootNotification)) {
-                return this._cache.set(`${identifier}.${messageId}`, action, CacheNamespace.Transactions).then(() => {
-                    // Intentionally removing NULL values from object for OCPP conformity
-                    const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
-                    return this._sendMessage(identifier, rawMessage);
-                })
-            } else {
-                this._logger.info(`RegistrationStatus ${status}, unable to send`, identifier, message);
-                return false;
-            }
-        });
+        if (await this._cache.exists(identifier, CacheNamespace.Transactions)) {
+            this._logger.info("Call already in progress, unable to send", identifier, message);
+            return false;
+        } else if (await this._sendCallIsAllowed(identifier, message)) {
+            await this._cache.set(identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.websocketServer.maxCallLengthSeconds);
+            // Intentionally removing NULL values from object for OCPP conformity
+            const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
+            return this._sendMessage(identifier, rawMessage);
+        } else {
+            this._logger.info("RegistrationStatus Rejected, unable to send", identifier, message);
+            return false;
+        }
     }
 
     /**
@@ -241,22 +242,26 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @param {CallResult} message - The CallResult message to send.
      * @return {Promise<boolean>} A promise that resolves to true if the call result was sent successfully, or false otherwise.
      */
-    sendCallResult(identifier: string, message: CallResult): Promise<boolean> {
+    async sendCallResult(identifier: string, message: CallResult): Promise<boolean> {
         const messageId = message[1];
-        return this._cache.get<string>(identifier, CacheNamespace.Transactions).then(value => {
-            let cachedMessageId = value?.split("|")[0];
-            if (cachedMessageId === messageId) {
-                // Intentionally removing NULL values from object for OCPP conformity
-                const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
-                return Promise.all([
-                    this._sendMessage(identifier, rawMessage),
-                    this._cache.remove(identifier, CacheNamespace.Transactions)
-                ]).then(successes => successes.every(Boolean));
-            } else {
-                this._logger.error("Failed to send callResult due to mismatch in message id", identifier, value, message);
-                return false;
-            }
-        });
+        const cachedActionMessageId = await this._cache.get<string>(identifier, CacheNamespace.Transactions);
+        if (!cachedActionMessageId) {
+            this._logger.error("Failed to send callResult due to missing message id", identifier, message);
+            return false;
+        }
+        let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+        if (cachedMessageId === messageId) {
+            // Intentionally removing NULL values from object for OCPP conformity
+            const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
+            return Promise.all([
+                this._sendMessage(identifier, rawMessage),
+                this._cache.remove(identifier, CacheNamespace.Transactions)
+            ]).then(successes => successes.every(Boolean));
+        } else {
+            this._logger.error("Failed to send callResult due to mismatch in message id", identifier, cachedActionMessageId, message);
+            return false;
+        }
+
     }
 
     /**
@@ -283,7 +288,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @param {string} identifier - The identifier to be checked.
      * @return {Promise<boolean>} A promise that resolves to a boolean indicating if the action and identifier are allowed.
      */
-    private _isAllowed(action: CallAction, identifier: string): Promise<boolean> {
+    private _onCallIsAllowed(action: CallAction, identifier: string): Promise<boolean> {
         return this._cache.exists(action, identifier).then(blacklisted => blacklisted !== null);
     }
 
@@ -338,7 +343,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         const [username, password] = Buffer.from(authHeader?.split(' ')[1] || '', 'base64').toString().split(':');
         this._logger.info("Username and password", username, password);
 
-        if (username != this.getClientIdFromUrl(req.url as string) || await this._checkPassword(username, password) === false) {
+        if (username != this._getClientIdFromUrl(req.url as string) || await this._checkPassword(username, password) === false) {
             this._logger.info("Unauthorized");
             this._rejectUpgradeUnauthorized(socket);
         } else {
@@ -357,11 +362,14 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         }).then(r => {
             if (r && r[0]) {
                 this._logger.info("BasicAuthPassword", r[0].value);
-                return r[0].validatePassword(password);
-            } else {
-                this._logger.warn("Has no password", username);
-                return false;
+                // Grabbing value most recently *successfully* set on charger
+                const hashedPassword = r[0].statuses?.filter(status => status.status !== SetVariableStatusEnumType.Rejected).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).shift();
+                if (hashedPassword?.value) {
+                    return bcrypt.compare(password, hashedPassword.value);
+                }
             }
+            this._logger.warn("Has no password", username);
+            return false;
         }));
     }
 
@@ -423,7 +431,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      */
     private _onConnection(ws: WebSocket, req: http.IncomingMessage): void {
 
-        const identifier = this.getClientIdFromUrl(req.url as string);
+        const identifier = this._getClientIdFromUrl(req.url as string);
         this._connections.set(identifier, ws);
 
         // Pause the WebSocket event emitter until broker is established
@@ -510,9 +518,18 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @return {void} This function does not return anything.
      */
     private _onMessage(client: IClientConnection, message: string): void {
+        let rpcMessage: any;
+        let messageTypeId: MessageTypeId;
+        let messageId: string = "0";
         try {
-            let rpcMessage = JSON.parse(message);
-            switch (rpcMessage[0]) {
+            try {
+                rpcMessage = JSON.parse(message);
+                messageTypeId = rpcMessage[0];
+                messageId = rpcMessage[1];
+            } catch (error) {
+                throw new OcppError(messageId, ErrorCode.FormatViolation, "Invalid message format", { error: error });
+            }
+            switch (messageTypeId) {
                 case MessageTypeId.Call:
                     this.onCall(client, rpcMessage as Call);
                     break;
@@ -522,10 +539,16 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                 case MessageTypeId.CallError:
                     this.onCallError(client, rpcMessage as CallError);
                     break;
+                default:
+                    throw new OcppError(messageId, ErrorCode.FormatViolation, "Unknown message type id: " + messageTypeId, {});
             }
         } catch (error) {
             this._logger.error("Error processing message:", message, error);
-            this.sendCallError(client.identifier, [MessageTypeId.CallError, "0", ErrorCode.FormatViolation, "Invalid message format", {}]);
+            if (error instanceof OcppError) {
+                (error as OcppError).sendAsCallError(client.identifier, this);
+            } else {
+                this.sendCallError(client.identifier, [MessageTypeId.CallError, messageId, ErrorCode.InternalError, "Unable to process message", { error: error }]);
+            }
             // TODO: Publish raw payload for error reporting
         }
     }
@@ -591,7 +614,17 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @param url Http upgrade request url used by charger
      * @returns Charger identifier
      */
-    private getClientIdFromUrl(url: string): string {
+    private _getClientIdFromUrl(url: string): string {
         return url.split("/")[1];
+    }
+
+    private async _sendCallIsAllowed(identifier: string, message: Call): Promise<boolean> {
+        const status = await this._cache.get<string>(ProvisioningModule.BOOT_STATUS, identifier);
+        if (status == RegistrationStatusEnumType.Rejected &&
+            // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
+            !(message[2] as CallAction == CallAction.TriggerMessage && (message[3] as TriggerMessageRequest).requestedMessage == MessageTriggerEnumType.BootNotification)) {
+            return false;
+        }
+        return true;
     }
 }
