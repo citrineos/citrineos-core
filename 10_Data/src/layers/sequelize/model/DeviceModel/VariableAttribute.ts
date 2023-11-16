@@ -125,7 +125,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     })
     declare evseDatabaseId?: number;
 
-    // Statuses as received by charger in either SetVariablesResult or GetVariablesResult
+    // History of variable status. Can be directly from GetVariablesResponse or SetVariablesResponse, or from NotifyReport handling, or from 'setOnCharger' option for data api 
 
     @HasMany(() => VariableStatus)
     declare statuses?: VariableStatus[];

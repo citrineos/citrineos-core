@@ -120,7 +120,6 @@ export class TransactionModule extends AbstractModule {
 
     const transactionEvent = message.payload;
     if (transactionEvent.idToken) {
-      this._logger.info("1");
       this._authorizeRepository.readByQuery({ ...transactionEvent.idToken }).then(authorization => {
         const response: TransactionEventResponse = {
           idTokenInfo: {
@@ -128,10 +127,8 @@ export class TransactionModule extends AbstractModule {
             // TODO determine how/if to set personalMessage
           }
         };
-        this._logger.info("2");
         if (authorization) {
           if (authorization.idTokenInfo) {
-            this._logger.info("3");
             // Extract DTO fields from sequelize Model<any, any> objects
             const idTokenInfo: IdTokenInfoType = {
               status: authorization.idTokenInfo.status,
@@ -153,7 +150,6 @@ export class TransactionModule extends AbstractModule {
               personalMessage: authorization.idTokenInfo.personalMessage
             };
 
-            this._logger.info("4");
             if (idTokenInfo.status == AuthorizationStatusEnumType.Accepted) {
               if (idTokenInfo.cacheExpiryDateTime &&
                 new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
@@ -180,18 +176,14 @@ export class TransactionModule extends AbstractModule {
             };
           }
         }
-        this._logger.info("5");
         return response;
       }).then(transactionEventResponse => {
-        this._logger.info("6");
         if (transactionEvent.eventType == TransactionEventEnumType.Started && transactionEventResponse
           && transactionEventResponse.idTokenInfo?.status == AuthorizationStatusEnumType.Accepted && transactionEvent.idToken) {
-            this._logger.info("7");
           // Check for ConcurrentTx
           return this._transactionEventRepository.readAllActiveTransactionByIdToken(transactionEvent.idToken).then(activeTransactions => {
             // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
             if (activeTransactions.length > 1) {
-              this._logger.info("8");
               const groupIdToken = transactionEventResponse.idTokenInfo?.groupIdToken;
               transactionEventResponse.idTokenInfo = {
                 status: AuthorizationStatusEnumType.ConcurrentTx,
@@ -204,12 +196,10 @@ export class TransactionModule extends AbstractModule {
         }
         return transactionEventResponse;
       }).then(transactionEventResponse => {
-        this._logger.info("9");
         this.sendCallResultWithMessage(message, transactionEventResponse)
           .then(messageConfirmation => this._logger.debug("Transaction response sent:", messageConfirmation));
       });
     } else {
-      this._logger.info("10");
       const response: TransactionEventResponse = {
         // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
       };

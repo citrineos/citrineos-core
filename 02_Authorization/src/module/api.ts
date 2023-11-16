@@ -43,7 +43,6 @@ export class AuthorizationModuleApi extends AbstractModuleApi<AuthorizationModul
 
     @AsDataEndpoint(Namespace.AuthorizationData, HttpMethod.Put, AuthorizationQuerySchema, AuthorizationDataSchema)
     putAuthorization(request: FastifyRequest<{ Body: AuthorizationData, Querystring: AuthorizationQuerystring }>): Promise<AuthorizationData | undefined> {
-        console.log("0");
         return this._module.authorizeRepository.createOrUpdateByQuery(request.body, request.query);
     }
 
