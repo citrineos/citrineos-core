@@ -18,6 +18,9 @@ import {
   AbstractModule,
   AsHandler,
   CallAction,
+  DataTransferRequest,
+  DataTransferResponse,
+  DataTransferStatusEnumType,
   EventGroup,
   FirmwareStatusNotificationRequest,
   FirmwareStatusNotificationResponse,
@@ -28,6 +31,8 @@ import {
   IMessageSender,
   LogStatusNotificationRequest,
   LogStatusNotificationResponse,
+  NotifyCustomerInformationRequest,
+  NotifyCustomerInformationResponse,
   NotifyMonitoringReportRequest,
   NotifyMonitoringReportResponse,
   SystemConfig
@@ -41,7 +46,7 @@ import { ILogObj, Logger } from 'tslog';
  */
 export class MonitoringModule extends AbstractModule {
 
-  protected _requests: CallAction[] = [CallAction.NotifyMonitoringReport, CallAction.LogStatusNotification, CallAction.FirmwareStatusNotification];
+  protected _requests: CallAction[] = [CallAction.NotifyMonitoringReport, CallAction.NotifyCustomerInformation, CallAction.LogStatusNotification, CallAction.FirmwareStatusNotification, CallAction.DataTransfer];
   protected _responses: CallAction[] = [CallAction.GetMonitoringReport];
 
   /**
@@ -90,7 +95,7 @@ export class MonitoringModule extends AbstractModule {
    */
 
   @AsHandler(CallAction.NotifyMonitoringReport)
-  protected _handleTransaction(
+  protected _handleNotifyMonitoringReport(
     message: IMessage<NotifyMonitoringReportRequest>,
     props?: HandlerProperties
   ): void {
@@ -133,5 +138,33 @@ export class MonitoringModule extends AbstractModule {
 
     this.sendCallResultWithMessage(message, response)
       .then(messageConfirmation => this._logger.debug("FirmwareStatusNotification response sent:", messageConfirmation));
+  }
+
+  @AsHandler(CallAction.NotifyCustomerInformation)
+  protected _handleNotifyCustomerInformation(
+    message: IMessage<NotifyCustomerInformationRequest>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("NotifyCustomerInformation request received:", message, props);
+
+    // Create response
+    const response: NotifyCustomerInformationResponse = {};
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("NotifyCustomerInformation response sent:", messageConfirmation));
+  }
+
+  @AsHandler(CallAction.DataTransfer)
+  protected _handleDataTransfer(
+    message: IMessage<DataTransferRequest>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("DataTransfer received:", message, props);
+
+    // Create response
+    const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("DataTransfer response sent:", messageConfirmation));
   }
 }

@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, AuthorizationData, AuthorizationDataSchema, CallAction, ClearCacheRequest, ClearCacheRequestSchema, GetLocalListVersionRequest, GetLocalListVersionRequestSchema, HttpMethod, IMessageConfirmation, Namespace, RequestStartTransactionRequest, RequestStartTransactionRequestSchema, RequestStopTransactionRequest, RequestStopTransactionRequestSchema, SendLocalListRequest, SendLocalListRequestSchema, UnlockConnectorRequest, UnlockConnectorRequestSchema } from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, AuthorizationData, AuthorizationDataSchema, CallAction, ClearCacheRequest, ClearCacheRequestSchema, DeleteCertificateRequest, DeleteCertificateRequestSchema, GetInstalledCertificateIdsRequest, GetInstalledCertificateIdsRequestSchema, GetLocalListVersionRequest, GetLocalListVersionRequestSchema, HttpMethod, IMessageConfirmation, InstallCertificateRequest, InstallCertificateRequestSchema, Namespace, RequestStartTransactionRequest, RequestStartTransactionRequestSchema, RequestStopTransactionRequest, RequestStopTransactionRequestSchema, SendLocalListRequest, SendLocalListRequestSchema, UnlockConnectorRequest, UnlockConnectorRequestSchema } from '@citrineos/base';
 import { AuthorizationQuerySchema, AuthorizationQuerystring, AuthorizationRestrictions, AuthorizationRestrictionsSchema, ChargingStationKeyQuerySchema } from '@citrineos/data';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
@@ -97,6 +97,20 @@ export class AuthorizationModuleApi extends AbstractModuleApi<AuthorizationModul
         return this._module.sendCall(identifier, tenantId, CallAction.GetLocalListVersion, request, callbackUrl);
     }
     
+    @AsMessageEndpoint(CallAction.InstallCertificate, InstallCertificateRequestSchema)
+    installCertificate(identifier: string, tenantId: string, request: InstallCertificateRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.InstallCertificate, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.GetInstalledCertificateIds, GetInstalledCertificateIdsRequestSchema)
+    getInstalledCertificateIds(identifier: string, tenantId: string, request: GetInstalledCertificateIdsRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.GetInstalledCertificateIds, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.DeleteCertificate, DeleteCertificateRequestSchema)
+    deleteCertificate(identifier: string, tenantId: string, request: DeleteCertificateRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.DeleteCertificate, request, callbackUrl);
+    }
 
     /**
     * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
