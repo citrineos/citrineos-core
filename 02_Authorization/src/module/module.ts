@@ -152,7 +152,6 @@ export class AuthorizationModule extends AbstractModule {
           if (idTokenInfo.status == AuthorizationStatusEnumType.Accepted) {
             if (idTokenInfo.cacheExpiryDateTime &&
               new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
-                this._logger.info("2");
               response.idTokenInfo = {
                 status: AuthorizationStatusEnumType.Invalid,
                 groupIdToken: idTokenInfo.groupIdToken
@@ -165,7 +164,6 @@ export class AuthorizationModule extends AbstractModule {
               // list of Part 2 - Appendices of OCPP 2.0.1
               let evseIds: Set<number> | undefined;
               if (authorization.allowedConnectorTypes) {
-                this._logger.info("4");
                 evseIds = new Set();
                 const connectorTypes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
                   stationId: message.context.stationId,
@@ -180,7 +178,6 @@ export class AuthorizationModule extends AbstractModule {
                 }
               }
               if (evseIds && evseIds.size == 0) {
-                this._logger.info("5");
                 response.idTokenInfo = {
                   status: AuthorizationStatusEnumType.NotAllowedTypeEVSE,
                   groupIdToken: idTokenInfo.groupIdToken
