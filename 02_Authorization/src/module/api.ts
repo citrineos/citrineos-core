@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, AuthorizationData, AuthorizationDataSchema, CallAction, ClearCacheRequest, ClearCacheRequestSchema, HttpMethod, IMessageConfirmation, Namespace, RequestStartTransactionRequest, RequestStartTransactionRequestSchema, RequestStopTransactionRequest, RequestStopTransactionRequestSchema } from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, AuthorizationData, AuthorizationDataSchema, CallAction, ClearCacheRequest, ClearCacheRequestSchema, GetLocalListVersionRequest, GetLocalListVersionRequestSchema, HttpMethod, IMessageConfirmation, Namespace, RequestStartTransactionRequest, RequestStartTransactionRequestSchema, RequestStopTransactionRequest, RequestStopTransactionRequestSchema, SendLocalListRequest, SendLocalListRequestSchema, UnlockConnectorRequest, UnlockConnectorRequestSchema } from '@citrineos/base';
 import { AuthorizationQuerySchema, AuthorizationQuerystring, AuthorizationRestrictions, AuthorizationRestrictionsSchema, ChargingStationKeyQuerySchema } from '@citrineos/data';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
@@ -43,6 +43,7 @@ export class AuthorizationModuleApi extends AbstractModuleApi<AuthorizationModul
 
     @AsDataEndpoint(Namespace.AuthorizationData, HttpMethod.Put, AuthorizationQuerySchema, AuthorizationDataSchema)
     putAuthorization(request: FastifyRequest<{ Body: AuthorizationData, Querystring: AuthorizationQuerystring }>): Promise<AuthorizationData | undefined> {
+        console.log("0");
         return this._module.authorizeRepository.createOrUpdateByQuery(request.body, request.query);
     }
 
@@ -76,10 +77,26 @@ export class AuthorizationModuleApi extends AbstractModuleApi<AuthorizationModul
         return this._module.sendCall(identifier, tenantId, CallAction.RequestStopTransaction, request, callbackUrl);
     }
 
+    @AsMessageEndpoint(CallAction.UnlockConnector, UnlockConnectorRequestSchema)
+    unlockConnector(identifier: string, tenantId: string, request: UnlockConnectorRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.UnlockConnector, request, callbackUrl);
+    }
+
     @AsMessageEndpoint(CallAction.ClearCache, ClearCacheRequestSchema)
     clearCache(identifier: string, tenantId: string, request: ClearCacheRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
         return this._module.sendCall(identifier, tenantId, CallAction.ClearCache, request, callbackUrl);
     }
+
+    @AsMessageEndpoint(CallAction.SendLocalList, SendLocalListRequestSchema)
+    sendLocalList(identifier: string, tenantId: string, request: SendLocalListRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.SendLocalList, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.GetLocalListVersion, GetLocalListVersionRequestSchema)
+    getLocalListVersion(identifier: string, tenantId: string, request: GetLocalListVersionRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.GetLocalListVersion, request, callbackUrl);
+    }
+    
 
     /**
     * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.

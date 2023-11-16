@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { TransactionEventRequest, ChargingStateEnumType, IdTokenType, TransactionEventEnumType } from "@citrineos/base";
+import { TransactionEventRequest, ChargingStateEnumType, IdTokenType, TransactionEventEnumType, EVSEType } from "@citrineos/base";
 import { ITransactionEventRepository } from "../../../interfaces";
 import { MeterValue, Transaction, TransactionEvent } from "../model/TransactionEvent";
 import { SequelizeRepository } from "./Base";
@@ -85,17 +85,17 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
 
     /**
      * @param stationId StationId of the charging station where the transaction took place.
-     * 
+     * @param evse Evse where the transaction took place.
      * @param chargingStates Optional list of {@link ChargingStateEnumType}s the transactions must be in. 
-     * If not present, will grab transactions regardless of charging state. If empty, will grab transactions 
+     * If not present, will grab transactions regardless of charging state. If not present, will grab transactions 
      * without charging states, such as transactions started when a parking bay occupancy detector detects 
      * an EV (trigger reason "EVDetected")
      * 
      * @returns List of transactions which meet the requirements.
      */
-    readAllTransactionsByStationIdAndChargingStates(stationId: string, chargingStates?: ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
+    readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: EVSEType, chargingStates?: ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
         return this.s.models[Transaction.MODEL_NAME].findAll({
-            where: { stationId: stationId, ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}) },
+            where: { stationId: stationId, ...(evse ? { evse: { id: evse.id, connectorId: evse.connectorId } } : {}), ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}) },
             include: [IdToken]
         }).then(row => (row as Transaction[]));
     }

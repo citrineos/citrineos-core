@@ -9,6 +9,7 @@ export function createProdConfig() {
             unknownChargerStatus: RegistrationStatusEnumType.Pending,
             getBaseReportOnPending: true,
             bootWithRejectedVariables: true,
+            autoAccept: true,
             api: {
                 endpointPrefix: "/provisioning",
                 port: 8081

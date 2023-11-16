@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { ChargingStateEnumType, CustomDataType, MeterValueType, Namespace, ReasonEnumType, TransactionEventRequest, TransactionType } from '@citrineos/base';
+import { ChargingStateEnumType, CustomDataType, EVSEType, MeterValueType, Namespace, ReasonEnumType, TransactionEventRequest, TransactionType } from '@citrineos/base';
 import {
     Table,
     Column,
@@ -27,6 +27,7 @@ import {
 import { IdToken } from '../Authorization';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
+import { Evse } from '../DeviceModel';
 
 @Table({ tableName: 'transactions' })
 export class Transaction extends Model implements TransactionType {
@@ -39,6 +40,16 @@ export class Transaction extends Model implements TransactionType {
     unique: 'stationId_transactionId'
   })
   declare stationId: string;
+
+  @BelongsTo(() => Evse)
+  declare evse?: EVSEType;
+
+  @ForeignKey(() => Evse)
+  @Column({
+      type: DataType.INTEGER,
+      unique: 'evse_name_instance'
+  })
+  declare evseDatabaseId?: number;
 
   @Column({
     unique: 'stationId_transactionId'

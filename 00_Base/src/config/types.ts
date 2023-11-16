@@ -25,6 +25,7 @@ export const systemConfigSchema = z.object({
         unknownChargerStatus: z.enum([RegistrationStatusEnumType.Accepted, RegistrationStatusEnumType.Pending, RegistrationStatusEnumType.Rejected]).default(RegistrationStatusEnumType.Accepted), // Unknown chargers have no entry in BootConfig table
         getBaseReportOnPending: z.boolean().default(true),
         bootWithRejectedVariables: z.boolean().default(true),
+        autoAccept: z.boolean().default(true), // If false, only data endpoint can update boot status to accepted
         api: z.object({
             endpointPrefix: z.string(),
             port: z.number().int().positive().default(8081),

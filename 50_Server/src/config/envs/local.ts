@@ -9,6 +9,7 @@ export function createLocalConfig() {
             unknownChargerStatus: RegistrationStatusEnumType.Accepted,
             getBaseReportOnPending: true,
             bootWithRejectedVariables: true,
+            autoAccept: true,
             api: {
                 endpointPrefix: "/provisioning",
                 port: 8081

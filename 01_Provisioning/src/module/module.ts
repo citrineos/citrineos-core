@@ -195,7 +195,7 @@ export class ProvisioningModule extends AbstractModule {
           needToSetVariables = true
         }
       }
-      if (!needToGetBaseReport && !needToSetVariables) {
+      if (!needToGetBaseReport && !needToSetVariables && this._config.provisioning.autoAccept) {
         bootStatus = RegistrationStatusEnumType.Accepted;
       }
     }
@@ -215,14 +215,19 @@ export class ProvisioningModule extends AbstractModule {
     const cachedBootStatus = await this._cache.get(ProvisioningModule.BOOT_STATUS, stationId);
 
     // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
-    if (bootNotificationResponse.status == RegistrationStatusEnumType.Accepted && cachedBootStatus) {
-      // Undo blacklisting of charger-originated actions
-      CALL_SCHEMA_MAP.forEach((actionSchema, action) => {
-        this._cache.remove(action, stationId)
-      });
-      // Remove cached boot status
-      this._cache.remove(ProvisioningModule.BOOT_STATUS, stationId);
-      this._logger.debug("Cached boot status removed: ", cachedBootStatus);
+    if (bootNotificationResponse.status == RegistrationStatusEnumType.Accepted) {
+      if (cachedBootStatus) {
+        // Undo blacklisting of charger-originated actions
+        const promises = Array.from(CALL_SCHEMA_MAP).map(async ([action]) => {
+          if (action !== CallAction.BootNotification) {
+            return this._cache.remove(action, stationId);
+          }
+        });
+        await Promise.all(promises);
+        // Remove cached boot status
+        this._cache.remove(ProvisioningModule.BOOT_STATUS, stationId);
+        this._logger.debug("Cached boot status removed: ", cachedBootStatus);
+      }
     } else if (!cachedBootStatus) {
       // Status is not Accepted; i.e. Status is Rejected or Pending.
       // Cached boot status for charger did not exist; i.e. this is the first BootNotificationResponse to be Rejected or Pending.
@@ -234,7 +239,7 @@ export class ProvisioningModule extends AbstractModule {
           return this._cache.set(action, 'blacklisted', stationId);
         }
       });
-      await Promise.all(promises);      
+      await Promise.all(promises);
     }
 
     const bootNotificationResponseMessageConfirmation: IMessageConfirmation = await this.sendCallResultWithMessage(message, bootNotificationResponse);
@@ -449,11 +454,12 @@ export class ProvisioningModule extends AbstractModule {
             return;
           }
         }
-        // Update boot config with status accepted
-        // TODO: Determine how/if StatusInfo should be generated
-        bootConfigDbEntity.status = RegistrationStatusEnumType.Accepted;
-        await bootConfigDbEntity.save();
-
+        if (this._config.provisioning.autoAccept) {
+          // Update boot config with status accepted
+          // TODO: Determine how/if StatusInfo should be generated
+          bootConfigDbEntity.status = RegistrationStatusEnumType.Accepted;
+          await bootConfigDbEntity.save();
+        }
         if (rebootSetVariable) {
           // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
           this.sendCall(message.context.stationId, message.context.tenantId, CallAction.Reset,

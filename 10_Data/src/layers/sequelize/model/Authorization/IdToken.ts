@@ -28,7 +28,6 @@ export class IdToken extends Model implements IdTokenType {
     @HasMany(() => AdditionalInfo)
     declare additionalInfo?: [AdditionalInfoType, ...AdditionalInfoType[]];
 
-    @PrimaryKey
     @Column({
         type: DataType.STRING,
         unique: 'idToken_type'

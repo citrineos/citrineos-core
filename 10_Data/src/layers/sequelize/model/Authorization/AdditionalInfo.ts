@@ -14,8 +14,8 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AdditionalInfoType, Namespace, CustomDataType } from "@citrineos/base";
-import { Table, ForeignKey, Column, DataType, Model } from "sequelize-typescript";
+import { AdditionalInfoType, Namespace, CustomDataType, IdTokenType } from "@citrineos/base";
+import { Table, ForeignKey, Column, DataType, Model, BelongsTo } from "sequelize-typescript";
 import { IdToken } from "./IdToken";
 
 @Table
@@ -26,8 +26,11 @@ export class AdditionalInfo extends Model implements AdditionalInfoType {
     declare customData?: CustomDataType;
 
     @ForeignKey(() => IdToken)
-    @Column(DataType.STRING)
-    declare idTokenId?: string;
+    @Column(DataType.INTEGER)
+    declare idTokenId?: number;
+
+    @BelongsTo(() => IdToken)
+    declare idToken: IdTokenType;
 
     @Column({
         type: DataType.STRING,

@@ -9,6 +9,7 @@ export function createDockerConfig() {
             unknownChargerStatus: RegistrationStatusEnumType.Accepted,
             getBaseReportOnPending: true,
             bootWithRejectedVariables: true,
+            autoAccept: false,
             api: {
                 endpointPrefix: "/provisioning",
                 port: 8081

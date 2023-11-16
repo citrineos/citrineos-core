@@ -16,15 +16,20 @@
 
 import {
   AbstractModule,
+  AdditionalInfoType,
   AsHandler,
   AuthorizationStatusEnumType,
   CallAction,
+  ChargingStateEnumType,
   EventGroup,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageHandler,
   IMessageSender,
+  IdTokenInfoType,
+  MeterValuesRequest,
+  MeterValuesResponse,
   SystemConfig,
   TransactionEventEnumType,
   TransactionEventRequest,
@@ -40,7 +45,7 @@ import { ILogObj, Logger } from 'tslog';
  */
 export class TransactionModule extends AbstractModule {
 
-  protected _requests: CallAction[] = [CallAction.TransactionEvent];
+  protected _requests: CallAction[] = [CallAction.TransactionEvent, CallAction.MeterValues];
   protected _responses: CallAction[] = [CallAction.RequestStartTransaction, CallAction.RequestStopTransaction, CallAction.GetTransactionStatus];
 
   protected _transactionEventRepository: ITransactionEventRepository;
@@ -105,26 +110,50 @@ export class TransactionModule extends AbstractModule {
    */
 
   @AsHandler(CallAction.TransactionEvent)
-  protected _handleTransactionEvent(
+  protected async _handleTransactionEvent(
     message: IMessage<TransactionEventRequest>,
     props?: HandlerProperties
-  ): void {
-    this._logger.debug("Transaction received:", message, props);
+  ): Promise<void> {
+    this._logger.debug("Transaction event received:", message, props);
 
-    this._transactionEventRepository.createByStationId(message.payload, message.context.stationId);
+    await this._transactionEventRepository.createByStationId(message.payload, message.context.stationId);
 
     const transactionEvent = message.payload;
     if (transactionEvent.idToken) {
-      this._authorizeRepository.readByQuery({ ...transactionEvent.idToken }).then(authorizationData => {
+      this._logger.info("1");
+      this._authorizeRepository.readByQuery({ ...transactionEvent.idToken }).then(authorization => {
         const response: TransactionEventResponse = {
           idTokenInfo: {
             status: AuthorizationStatusEnumType.Unknown
             // TODO determine how/if to set personalMessage
           }
         };
-        if (authorizationData) {
-          if (authorizationData.idTokenInfo) {
-            const idTokenInfo = authorizationData.idTokenInfo;
+        this._logger.info("2");
+        if (authorization) {
+          if (authorization.idTokenInfo) {
+            this._logger.info("3");
+            // Extract DTO fields from sequelize Model<any, any> objects
+            const idTokenInfo: IdTokenInfoType = {
+              status: authorization.idTokenInfo.status,
+              cacheExpiryDateTime: authorization.idTokenInfo.cacheExpiryDateTime,
+              chargingPriority: authorization.idTokenInfo.chargingPriority,
+              language1: authorization.idTokenInfo.language1,
+              evseId: authorization.idTokenInfo.evseId,
+              groupIdToken: authorization.idTokenInfo.groupIdToken ? {
+                additionalInfo: (authorization.idTokenInfo.groupIdToken.additionalInfo && authorization.idTokenInfo.groupIdToken.additionalInfo.length > 0) ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(additionalInfo => {
+                  return {
+                    additionalIdToken: additionalInfo.additionalIdToken,
+                    type: additionalInfo.type
+                  }
+                }) as [AdditionalInfoType, ...AdditionalInfoType[]]) : undefined,
+                idToken: authorization.idTokenInfo.groupIdToken.idToken,
+                type: authorization.idTokenInfo.groupIdToken.type
+              } : undefined,
+              language2: authorization.idTokenInfo.language2,
+              personalMessage: authorization.idTokenInfo.personalMessage
+            };
+
+            this._logger.info("4");
             if (idTokenInfo.status == AuthorizationStatusEnumType.Accepted) {
               if (idTokenInfo.cacheExpiryDateTime &&
                 new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
@@ -151,14 +180,18 @@ export class TransactionModule extends AbstractModule {
             };
           }
         }
+        this._logger.info("5");
         return response;
       }).then(transactionEventResponse => {
+        this._logger.info("6");
         if (transactionEvent.eventType == TransactionEventEnumType.Started && transactionEventResponse
           && transactionEventResponse.idTokenInfo?.status == AuthorizationStatusEnumType.Accepted && transactionEvent.idToken) {
+            this._logger.info("7");
           // Check for ConcurrentTx
           return this._transactionEventRepository.readAllActiveTransactionByIdToken(transactionEvent.idToken).then(activeTransactions => {
             // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
             if (activeTransactions.length > 1) {
+              this._logger.info("8");
               const groupIdToken = transactionEventResponse.idTokenInfo?.groupIdToken;
               transactionEventResponse.idTokenInfo = {
                 status: AuthorizationStatusEnumType.ConcurrentTx,
@@ -171,15 +204,33 @@ export class TransactionModule extends AbstractModule {
         }
         return transactionEventResponse;
       }).then(transactionEventResponse => {
+        this._logger.info("9");
         this.sendCallResultWithMessage(message, transactionEventResponse)
           .then(messageConfirmation => this._logger.debug("Transaction response sent:", messageConfirmation));
       });
     } else {
+      this._logger.info("10");
       const response: TransactionEventResponse = {
         // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
       };
       this.sendCallResultWithMessage(message, response)
         .then(messageConfirmation => this._logger.debug("Transaction response sent:", messageConfirmation));
     }
+  }
+
+  @AsHandler(CallAction.MeterValues)
+  protected async _handleMeterValues(
+    message: IMessage<MeterValuesRequest>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("MeterValues received:", message, props);
+
+    // TODO: Add meterValues to transactions
+    // TODO: Meter values can be triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
+
+    const response: MeterValuesResponse = {
+      // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
+    };
+    this.sendCallResultWithMessage(message, response)
   }
 }

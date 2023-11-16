@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetReportRequest, GetReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariableStatusEnumType, SetVariablesRequest, SetVariablesRequestSchema, TriggerMessageRequest, TriggerMessageRequestSchema } from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetReportRequest, GetReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariableStatusEnumType, SetVariablesRequest, SetVariablesRequestSchema, TriggerMessageRequest, TriggerMessageRequestSchema, UpdateFirmwareRequest, UpdateFirmwareRequestSchema } from '@citrineos/base';
 import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, CreateOrUpdateVariableAttributeQuerySchema, CreateOrUpdateVariableAttributeQuerystring, VariableAttributeQuerySchema, VariableAttributeQuerystring, sequelize } from '@citrineos/data';
 import { Boot } from '@citrineos/data/lib/layers/sequelize';
 import { FastifyInstance, FastifyRequest } from 'fastify';
@@ -157,6 +157,16 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
         callbackUrl?: string
     ): Promise<IMessageConfirmation> {
         return this._module.sendCall(identifier, tenantId, CallAction.SetNetworkProfile, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.UpdateFirmware, UpdateFirmwareRequestSchema)
+    updateFirmware(
+        identifier: string,
+        tenantId: string,
+        request: UpdateFirmwareRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.UpdateFirmware, request, callbackUrl);
     }
 
     @AsMessageEndpoint(CallAction.Reset, ResetRequestSchema)

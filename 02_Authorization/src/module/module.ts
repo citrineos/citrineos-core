@@ -16,6 +16,7 @@
 
 import {
   AbstractModule,
+  AdditionalInfoType,
   AsHandler,
   AttributeEnumType,
   AuthorizationStatusEnumType,
@@ -28,6 +29,8 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  IdTokenInfoType,
+  IdTokenType,
   SystemConfig
 } from "@citrineos/base";
 import { IAuthorizationRepository, IDeviceModelRepository, sequelize } from "@citrineos/data";
@@ -125,22 +128,48 @@ export class AuthorizationModule extends AbstractModule {
       };
       if (authorization) {
         if (authorization.idTokenInfo) {
-          const idTokenInfo = authorization.idTokenInfo;
+          this._logger.info("Authorization found in database");
+          // Extract DTO fields from sequelize Model<any, any> objects
+          const idTokenInfo: IdTokenInfoType = {
+            status: authorization.idTokenInfo.status,
+            cacheExpiryDateTime: authorization.idTokenInfo.cacheExpiryDateTime,
+            chargingPriority: authorization.idTokenInfo.chargingPriority,
+            language1: authorization.idTokenInfo.language1,
+            evseId: authorization.idTokenInfo.evseId,
+            groupIdToken: authorization.idTokenInfo.groupIdToken ? {
+              additionalInfo: (authorization.idTokenInfo.groupIdToken.additionalInfo && authorization.idTokenInfo.groupIdToken.additionalInfo.length > 0) ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(additionalInfo => {
+                return {
+                  additionalIdToken: additionalInfo.additionalIdToken,
+                  type: additionalInfo.type
+                } 
+              })  as [AdditionalInfoType, ...AdditionalInfoType[]]) : undefined,
+              idToken: authorization.idTokenInfo.groupIdToken.idToken,
+             type: authorization.idTokenInfo.groupIdToken.type
+            } : undefined,
+            language2: authorization.idTokenInfo.language2,
+            personalMessage: authorization.idTokenInfo.personalMessage
+          };
+
+          this._logger.info("IdTokenInfo:", idTokenInfo);
           if (idTokenInfo.status == AuthorizationStatusEnumType.Accepted) {
+            this._logger.info("1");
             if (idTokenInfo.cacheExpiryDateTime &&
               new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
+                this._logger.info("2");
               response.idTokenInfo = {
                 status: AuthorizationStatusEnumType.Invalid,
                 groupIdToken: idTokenInfo.groupIdToken
                 // TODO determine how/if to set personalMessage
               }
             } else {
+              this._logger.info("3");
               // If charging station does not have values and evses associated with the component/variable pairs below,
               // this logic will break. CSMS's aiming to use the allowedConnectorTypes or disallowedEvseIdPrefixes
               // authorization restrictions MUST provide these variable attributes as defined in Physical Component
               // list of Part 2 - Appendices of OCPP 2.0.1
               let evseIds: Set<number> | undefined;
               if (authorization.allowedConnectorTypes) {
+                this._logger.info("4");
                 evseIds = new Set();
                 const connectorTypes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
                   stationId: message.context.stationId,
@@ -155,17 +184,20 @@ export class AuthorizationModule extends AbstractModule {
                 }
               }
               if (evseIds && evseIds.size == 0) {
+                this._logger.info("5");
                 response.idTokenInfo = {
                   status: AuthorizationStatusEnumType.NotAllowedTypeEVSE,
                   groupIdToken: idTokenInfo.groupIdToken
                   // TODO determine how/if to set personalMessage
                 }
               } else {
+                this._logger.info("6");
                 // EVSEID prefixes here follow the ISO 15118/IEC 63119-2 format, unlike the evseId list on the
                 // IdTokenInfo object which refers to the serial evse ids defined within OCPP 2.0.1's 3-tier model
                 // Thus, the EvseId variable of the EVSE component defined in Part 2 - Appendices of OCPP 2.0.1
                 // Needs to be looked up to perform the match
                 if (authorization.disallowedEvseIdPrefixes) {
+                  this._logger.info("7");
                   evseIds = evseIds ? evseIds : new Set();
                   const evseIdAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
                     stationId: message.context.stationId,
@@ -186,12 +218,14 @@ export class AuthorizationModule extends AbstractModule {
                   }
                 }
                 if (evseIds && evseIds.size == 0) {
+                  this._logger.info("8");
                   response.idTokenInfo = {
                     status: AuthorizationStatusEnumType.NotAtThisLocation,
                     groupIdToken: idTokenInfo.groupIdToken
                     // TODO determine how/if to set personalMessage
                   }
                 } else {
+                  this._logger.info("9");
                   // TODO: Determine how to check for NotAtThisTime
                   response.idTokenInfo = idTokenInfo;
                   const evseId: number[] = [...(evseIds ? evseIds.values() : [])];
@@ -202,11 +236,13 @@ export class AuthorizationModule extends AbstractModule {
               }
             }
           } else {
+            this._logger.info("10");
             // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
             // N.B. Other statuses should not be allowed to be stored.
             response.idTokenInfo = idTokenInfo;
           }
         } else {
+          this._logger.info("11");
           // Assumed to always be valid without IdTokenInfo
           response.idTokenInfo = {
             status: AuthorizationStatusEnumType.Accepted
@@ -214,7 +250,8 @@ export class AuthorizationModule extends AbstractModule {
           }
         }
       }
+      this._logger.info("12");
       return this.sendCallResultWithMessage(message, response)
-    }).then(messageConfirmation => this._logger.debug("Authorize response sent:", messageConfirmation));
+    }).then(messageConfirmation => this._logger.info("Authorize response sent:", messageConfirmation));
   }
 }
