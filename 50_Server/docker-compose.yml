@@ -37,7 +37,7 @@ services:
   citrine:
     build:
       context: ../
-      dockerfile: /50_Server/docker/Dockerfile
+      dockerfile: ./50_Server/docker/Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
