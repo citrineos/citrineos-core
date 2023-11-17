@@ -389,16 +389,16 @@ export class ProvisioningModule extends AbstractModule {
           // Commenting out this line, using requestId == 0 until fixed (10/26/2023)
           // const requestId = Math.floor(Math.random() * ProvisioningModule.GET_BASE_REPORT_REQUEST_ID_MAX);
           const requestId = 0;
-          this._cache.set(requestId.toString(), ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, stationId, this.config.websocketServer.maxCallLengthSeconds);
+          this._cache.set(requestId.toString(), ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, stationId, this.config.websocketServer.maxCachingSeconds);
           const getBaseReportMessageConfirmation: IMessageConfirmation = await this.sendCall(stationId, tenantId, CallAction.GetBaseReport,
             { requestId: requestId, reportBase: ReportBaseEnumType.FullInventory } as GetBaseReportRequest);
           if (getBaseReportMessageConfirmation.success) {
             this._logger.debug("GetBaseReport successfully sent to charger: ", getBaseReportMessageConfirmation);
 
             // Wait for GetBaseReport to complete
-            let getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocketServer.maxCallLengthSeconds, stationId);
+            let getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocketServer.maxCachingSeconds, stationId);
             while (getBaseReportCacheValue == ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE) {
-              getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocketServer.maxCallLengthSeconds, stationId);
+              getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocketServer.maxCachingSeconds, stationId);
             }
 
             if (getBaseReportCacheValue == ProvisioningModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE) {
@@ -429,7 +429,7 @@ export class ProvisioningModule extends AbstractModule {
           while (setVariableData.length > 0) {
             // Below pattern is preferred way of receiving CallResults in an async mannner.
             const correlationId = uuidv4();
-            const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(correlationId, this.config.websocketServer.maxCallLengthSeconds * 2, stationId); // x2 fudge factor for any network lag
+            const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(correlationId, this.config.websocketServer.maxCachingSeconds, stationId); // x2 fudge factor for any network lag
             this.sendCall(stationId, tenantId, CallAction.SetVariables,
               { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest, undefined, correlationId);
             setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
@@ -489,7 +489,7 @@ export class ProvisioningModule extends AbstractModule {
       this._logger.info("Completed", success, message.payload.requestId);
     } else { // tbc (to be continued) is true
       // Continue to set get base report ongoing. Will extend the timeout.
-      const success = await this._cache.set(message.payload.requestId.toString(), ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, message.context.stationId, this.config.websocketServer.maxCallLengthSeconds);
+      const success = await this._cache.set(message.payload.requestId.toString(), ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, message.context.stationId, this.config.websocketServer.maxCachingSeconds);
       this._logger.info("Ongoing", success, message.payload.requestId);
     }
 

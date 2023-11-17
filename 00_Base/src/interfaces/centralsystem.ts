@@ -28,7 +28,7 @@ export class OcppError extends Error {
 
     private _messageId: string;
     private _errorCode: ErrorCode;
-    private _errorDetails?: object;
+    private _errorDetails: object;
 
     constructor(messageId: string, errorCode: ErrorCode, errorDescription: string, errorDetails: object = {}) {
         super(errorDescription);

@@ -75,9 +75,9 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
 
         this._deviceModelRepository = deviceModelRepository || new DeviceModelRepository(this._config, this._logger);
 
-        this._httpServer = this._config.websocketServer.webProtocol == 'https' ? https.createServer({
-            key: fs.readFileSync(this._config.websocketServer.httpsPrivateKeysFilepath as string),
-            cert: fs.readFileSync(this._config.websocketServer.httpsCertificateChainFilepath as string),
+        this._httpServer = this._config.websocketServer.tlsFlag ? https.createServer({
+            key: fs.readFileSync(this._config.websocketServer.tlsKeysFilepath as string),
+            cert: fs.readFileSync(this._config.websocketServer.tlsCertificateChainFilepath as string),
             minVersion: 'TLSv1.2'
         }) : http.createServer();
 
@@ -96,9 +96,9 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         // socketServer.close() will not do anything; use httpServer.close()
         this._httpServer.on('close', () => this._socketServer.emit('close'));
 
-
+        const protocol = this._config.websocketServer.tlsFlag ? 'wss' : 'ws';
         this._httpServer.listen(this._config.websocketServer.port, this._config.websocketServer.host, () => {
-            this._logger.info(`WebsocketServer running on ${this._config.websocketServer.webProtocol}://${this._config.websocketServer.host}:${this._config.websocketServer.port}/`)
+            this._logger.info(`WebsocketServer running on ${protocol}://${this._config.websocketServer.host}:${this._config.websocketServer.port}/`)
         });
     }
 

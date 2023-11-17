@@ -104,15 +104,18 @@ export const systemConfigSchema = z.object({
         })
     }),
     websocketServer: z.object({
-        webProtocol: z.enum(['http', 'https']).default('http'),
-        httpsPrivateKeysFilepath: z.string().optional(),
-        httpsCertificateChainFilepath: z.string().optional(),
+        tlsFlag: z.boolean().default(false),
+        tlsKeysFilepath: z.string().optional(),
+        tlsCertificateChainFilepath: z.string().optional(),
         port: z.number().int().positive().default(8080),
         host: z.string().default('localhost'),
         protocol: z.string().default('ocpp2.0.1'),
         pingInterval: z.number().int().positive().default(60),
-        maxCallLengthSeconds: z.number().int().positive().default(5)
-    }),
+        maxCallLengthSeconds: z.number().int().positive().default(5),
+        maxCachingSeconds: z.number().int().positive().default(10)
+    }).refine(websocketServer => websocketServer.maxCachingSeconds >= websocketServer.maxCallLengthSeconds, {
+        message: 'maxCachingSeconds cannot be less than maxCallLengthSeconds'
+    })
 });
 
 export type SystemConfig = z.infer<typeof systemConfigSchema>;

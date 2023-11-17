@@ -42,12 +42,13 @@ export function createProdConfig() {
             }
         },
         websocketServer: {
-            webProtocol: "http",
+            tlsFlag: false,
             host: "localhost",
             port: 8080,
             protocol: "ocpp2.0.1",
             pingInterval: 60,
-            maxCallLengthSeconds: 5
+            maxCallLengthSeconds: 5,
+            maxCachingSeconds: 10
         }
     });
 }
