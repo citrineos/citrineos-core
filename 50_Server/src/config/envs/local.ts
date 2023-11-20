@@ -80,7 +80,8 @@ export function createLocalConfig() {
             host: "localhost",
             port: 8080,
             protocol: "ocpp2.0.1",
-            pingInterval: 60
+            pingInterval: 60,
+            maxCallLengthSeconds: 5
         }
     });
 }

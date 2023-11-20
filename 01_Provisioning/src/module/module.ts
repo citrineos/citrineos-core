@@ -26,12 +26,14 @@ import {
   EventGroup,
   GetBaseReportRequest,
   GetBaseReportResponse,
+  GetVariablesResponse,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
+  MutabilityEnumType,
   NotifyReportRequest,
   NotifyReportResponse,
   RegistrationStatusEnumType,
@@ -39,17 +41,17 @@ import {
   ResetEnumType,
   ResetRequest,
   SetVariableDataType,
-  SetVariableResultType,
   SetVariableStatusEnumType,
   SetVariablesRequest,
   SetVariablesResponse,
   SystemConfig
 } from "@citrineos/base";
 import { IBootRepository, IDeviceModelRepository, sequelize } from "@citrineos/data";
-import { VariableAttribute } from "@citrineos/data/lib/layers/sequelize";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
+import { DeviceModelService } from "./services";
+import { Boot } from "@citrineos/data/lib/layers/sequelize";
 
 /**
  * Component that handles provisioning related messages.
@@ -69,19 +71,24 @@ export class ProvisioningModule extends AbstractModule {
   public static readonly BOOT_STATUS = "boot_status";
 
   /**
-   * When a request to set variables contains more variables than allowed by station's
-   * ItemsPerMessageSetVariables variable attribute, they are split up into separate SetVariables
-   * requests. The number remaining is kept track of in the cache to mediate behavior that may
-   * want to trigger only after all messages are sent, such as when a boot process is Pending.
+   * Used to wait for SetVariables responses.
    */
-  static SET_VARIABLES: string = "set_variables";
-
+  static readonly SET_VARIABLES_RESPONSE_CORRELATION_ID = "set_variables_response_correlation_id";
   /**
    * When multiple SetVariablesRequests are being sent in a row, it is not optimal to reboot
    * immediately. Instead, rebooting is done at the end of said process, if any variable set
    * during the process required it.
    */
-  static REBOOT_REQUIRED_FOR_SET_VARIABLES: string = "reboot_required_for_set_variables";
+  static readonly REBOOT_REQUIRED_FOR_SET_VARIABLES: string = "reboot_required_for_set_variables";
+
+  /**
+   * Get Base Report variables. While NotifyReport requests correlated with a GetBaseReport's requestId
+   * are still being sent, cache value is 'ongoing'. Once a NotifyReport with tbc == false (or undefined)
+   * is received, cache value is 'complete'.
+   */
+  static readonly GET_BASE_REPORT_REQUEST_ID_MAX = 10000000; // 10,000,000
+  static readonly GET_BASE_REPORT_ONGOING_CACHE_VALUE = 'ongoing';
+  static readonly GET_BASE_REPORT_COMPLETE_CACHE_VALUE = 'complete';
 
   /**
    * Fields
@@ -99,6 +106,8 @@ export class ProvisioningModule extends AbstractModule {
     CallAction.SetNetworkProfile,
     CallAction.Reset
   ];
+
+  public _deviceModelService: DeviceModelService;
 
   protected _bootRepository: IBootRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -159,6 +168,8 @@ export class ProvisioningModule extends AbstractModule {
     this._bootRepository = bootRepository || new sequelize.BootRepository(config, this._logger);
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, this._logger);
 
+    this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
+
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
@@ -171,51 +182,63 @@ export class ProvisioningModule extends AbstractModule {
     message: IMessage<BootNotificationRequest>,
     props?: HandlerProperties
   ): Promise<void> {
-
     this._logger.debug("BootNotification received:", message, props);
 
-    const chargingStation = message.payload.chargingStation;
     const stationId = message.context.stationId;
     const tenantId = message.context.tenantId;
+    const chargingStation = message.payload.chargingStation;
 
-    // Construct default response
+
+    // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
+    const bootConfig = await this._bootRepository.readByKey(stationId)
+    let bootStatus = bootConfig ? bootConfig.status : this._config.provisioning.unknownChargerStatus;
+
+    // Pending status only stays if there are actions to take for configuration
+    if (bootStatus == RegistrationStatusEnumType.Pending) {
+      let needToGetBaseReport = this._config.provisioning.getBaseReportOnPending;
+      let needToSetVariables = false;
+      if (bootConfig) {
+        if (bootConfig.getBaseReportOnPending !== undefined && bootConfig.getBaseReportOnPending !== null) {
+          needToGetBaseReport = bootConfig.getBaseReportOnPending;
+        }
+        if (bootConfig.pendingBootSetVariables && bootConfig.pendingBootSetVariables.length > 0) {
+          needToSetVariables = true
+        }
+      }
+      if (!needToGetBaseReport && !needToSetVariables) {
+        bootStatus = RegistrationStatusEnumType.Accepted;
+      }
+    }
+    // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
     const bootNotificationResponse: BootNotificationResponse = {
       currentTime: new Date().toISOString(),
-      interval: this._config.provisioning.bootRetryInterval,
-      status: this._config.provisioning.unknownChargerStatus
+      status: bootStatus,
+      statusInfo: bootConfig?.statusInfo,
+      interval: bootStatus == RegistrationStatusEnumType.Accepted ?
+        // Accepted == heartbeat interval
+        (bootConfig?.heartbeatInterval ? bootConfig.heartbeatInterval : this._config.provisioning.heartbeatInterval) :
+        // Pending or Rejected == boot retry interval
+        (bootConfig?.bootRetryInterval ? bootConfig.bootRetryInterval : this._config.provisioning.bootRetryInterval)
     };
 
-    // Retrieve config
-    let bootConfig = await this._bootRepository.readByKey(stationId);
+    // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
+    const cachedBootStatus = await this._cache.get(ProvisioningModule.BOOT_STATUS, stationId);
 
-    // Update status from config, if present
-    if (bootConfig) {
-      bootNotificationResponse.interval = bootConfig.bootRetryInterval ? bootConfig.bootRetryInterval : bootNotificationResponse.interval;
-      bootNotificationResponse.status = bootConfig.status;
-      // TODO: Determine how/if StatusInfo should be generated
-      bootNotificationResponse.statusInfo = bootConfig.statusInfo;
-    }
-
-    // Check cache boot status to see if a boot process is ongoing
-    const cacheBootStatus = await this._cache.get<string>(ProvisioningModule.BOOT_STATUS, stationId);
-
-    if (bootNotificationResponse.status == RegistrationStatusEnumType.Accepted) {
-      // Replace bootRetryInterval with heartbeatInterval
-      bootNotificationResponse.interval = bootConfig?.heartbeatInterval ? bootConfig?.heartbeatInterval : this._config.provisioning.heartbeatInterval;
-
-      // if (cacheBootStatus) {
-      // Time to undo blacklisting
+    // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
+    if (bootNotificationResponse.status == RegistrationStatusEnumType.Accepted && cachedBootStatus) {
+      // Undo blacklisting of charger-originated actions
       CALL_SCHEMA_MAP.forEach((actionSchema, action) => {
         this._cache.remove(action, stationId)
       });
+      // Remove cached boot status
       this._cache.remove(ProvisioningModule.BOOT_STATUS, stationId);
-      this._logger.debug("Boot process status cleared: ", cacheBootStatus)
-      // }
-    } else if (!cacheBootStatus) { // i.e. Starting a boot process
-      // Status is not Accepted; i.e. Status is Rejected or Pending
+      this._logger.debug("Cached boot status removed: ", cachedBootStatus);
+    } else if (!cachedBootStatus) {
+      // Status is not Accepted; i.e. Status is Rejected or Pending.
+      // Cached boot status for charger did not exist; i.e. this is the first BootNotificationResponse to be Rejected or Pending.
       // Blacklist all charger-originated actions except BootNotification
-      // N.B. GetMonitoringReport & GetReport will need to un-blacklist NotifyReport
-      // N.B. TriggerMessage will need to un-blacklist the message they trigger 
+      // GetReport messages will need to un-blacklist NotifyReport
+      // TriggerMessage will need to un-blacklist the message it triggers 
       CALL_SCHEMA_MAP.forEach((actionSchema, action) => {
         if (action !== CallAction.BootNotification) {
           this._cache.set(action, 'blacklisted', stationId)
@@ -225,89 +248,228 @@ export class ProvisioningModule extends AbstractModule {
 
     const bootNotificationResponseMessageConfirmation: IMessageConfirmation = await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
+    // Update device model from boot
+    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+      component: {
+        name: "ChargingStation"
+      },
+      variable: {
+        name: "SerialNumber"
+      },
+      variableAttribute: [
+        {
+          type: AttributeEnumType.Actual,
+          value: chargingStation.serialNumber,
+          mutability: MutabilityEnumType.ReadOnly,
+          persistent: true,
+          constant: true
+        }
+      ]
+    }, stationId);
+    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+      component: {
+        name: "ChargingStation"
+      },
+      variable: {
+        name: "Model"
+      },
+      variableAttribute: [
+        {
+          type: AttributeEnumType.Actual,
+          value: chargingStation.model,
+          mutability: MutabilityEnumType.ReadOnly,
+          persistent: true,
+          constant: true
+        }
+      ]
+    }, stationId);
+    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+      component: {
+        name: "ChargingStation"
+      },
+      variable: {
+        name: "VendorName"
+      },
+      variableAttribute: [
+        {
+          type: AttributeEnumType.Actual,
+          value: chargingStation.vendorName,
+          mutability: MutabilityEnumType.ReadOnly,
+          persistent: true,
+          constant: true
+        }
+      ]
+    }, stationId);
+    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+      component: {
+        name: "Controller"
+      },
+      variable: {
+        name: "FirmwareVersion"
+      },
+      variableAttribute: [
+        {
+          type: AttributeEnumType.Actual,
+          value: chargingStation.firmwareVersion,
+          mutability: MutabilityEnumType.ReadOnly,
+          persistent: true,
+          constant: true
+        }
+      ]
+    }, stationId);
+    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+      component: {
+        name: "DataLink"
+      },
+      variable: {
+        name: "IMSI"
+      },
+      variableAttribute: [
+        {
+          type: AttributeEnumType.Actual,
+          value: chargingStation.modem?.imsi,
+          mutability: MutabilityEnumType.ReadOnly,
+          persistent: true,
+          constant: true
+        }
+      ]
+    }, stationId);
+    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+      component: {
+        name: "DataLink"
+      },
+      variable: {
+        name: "ICCID"
+      },
+      variableAttribute: [
+        {
+          type: AttributeEnumType.Actual,
+          value: chargingStation.modem?.iccid,
+          mutability: MutabilityEnumType.ReadOnly,
+          persistent: true,
+          constant: true
+        }
+      ]
+    }, stationId);
+
+    // Handle post-response actions
     if (bootNotificationResponseMessageConfirmation.success) {
-      this._logger.debug("BootNotification response sent: ", bootNotificationResponseMessageConfirmation);
-      // If response sent successfully for unknown charger, create boot config record
-      if (!bootConfig) {
+      this._logger.debug("BootNotification response successfully sent to central system: ", bootNotificationResponseMessageConfirmation);
+
+      // Update charger-specific boot config with details of most recently sent BootNotificationResponse
+      let bootConfigDbEntity: Boot | undefined = await this._bootRepository.readByKey(stationId);
+      if (!bootConfigDbEntity) {
         const unknownChargerBootConfig: BootConfig = {
           status: bootNotificationResponse.status,
           statusInfo: bootNotificationResponse.statusInfo
         }
-        bootConfig = await this._bootRepository.createOrUpdateByKey(unknownChargerBootConfig, stationId);
+        bootConfigDbEntity = await this._bootRepository.createOrUpdateByKey(unknownChargerBootConfig, stationId);
       }
-      // Record timestamp sent to charger
-      bootConfig = await this._bootRepository.updateLastBootTimeByKey(bootNotificationResponse.currentTime, stationId);
-      if (!bootConfig) {
-        throw new Error("BootConfig undefined during boot process...");
+      if (!bootConfigDbEntity) {
+        throw new Error("Unable to create/update BootConfig...");
+      } else {
+        bootConfigDbEntity.lastBootTime = bootNotificationResponse.currentTime;
+        await bootConfigDbEntity.save();
       }
-      if (bootNotificationResponse.status == RegistrationStatusEnumType.Rejected && !cacheBootStatus) {
-        // Set cache boot status to rejected
+
+      if (bootNotificationResponse.status != RegistrationStatusEnumType.Accepted &&
+        (!cachedBootStatus || (cachedBootStatus && cachedBootStatus !== bootNotificationResponse.status))) {
+        // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
         this._cache.set(ProvisioningModule.BOOT_STATUS, bootNotificationResponse.status, stationId);
-      } else
-        // Pending status indicates further work to do...
-        // No cacheBootStatus or cacheBootStatus==Rejected verifies ongoing boot process is not interrupted
-        if (bootNotificationResponse.status == RegistrationStatusEnumType.Pending &&
-          (!cacheBootStatus || cacheBootStatus == RegistrationStatusEnumType.Rejected)) {
-          // Boot process starts...
-          // Set cache boot status to pending
-          await this._cache.set(ProvisioningModule.BOOT_STATUS, bootNotificationResponse.status, stationId);
-          // Either GetBaseReport or SetVariables or update to Accepted
-          const getBaseReportOnPending = (bootConfig.getBaseReportOnPending !== null) ? bootConfig.getBaseReportOnPending : this._config.provisioning.getBaseReportOnPending;
-          if (getBaseReportOnPending) {
-            // Remove Notify Report from blacklist
-            this._cache.remove(CallAction.NotifyReport, stationId);
+      }
 
-            // TODO: Determine if GetBaseReport.requestId needs to be anything special
-            const getBaseReportMessageConfirmation: IMessageConfirmation = await this.sendCall(stationId, tenantId, CallAction.GetBaseReport,
-              { requestId: 1, reportBase: ReportBaseEnumType.FullInventory } as GetBaseReportRequest);
-            if (getBaseReportMessageConfirmation.success) {
-              // N.B. The charger will restart this process by sending a BootNotificationRequest in {bootRetryInterval} seconds
-              // Make sure GetBaseReport doesn't re-trigger on next boot attempt
-              bootConfig.getBaseReportOnPending = false;
-              await bootConfig.save();
-              // Ending this boot process
-              // Responsibility to wait until NotifyReport messages triggered by GetBaseReport are done being sent
-              // before retrying BootNotification is on the charger.
-              this._cache.remove(ProvisioningModule.BOOT_STATUS, stationId);
-              this._logger.debug("Boot process status cleared: ", cacheBootStatus)
-            }
-          } else if (bootConfig.pendingBootSetVariables && bootConfig.pendingBootSetVariables.length > 1) {
-            bootConfig.variablesRejectedOnLastBoot = [];
-            const setVariableData: SetVariableDataType[] = await this._deviceModelRepository.readAllSetVariableByStationId(stationId);
+      // Pending status indicates configuration to do...
+      // If boot status was not previously cached or previously cached status was not Pending, start configuration.
+      // Otherwise, configuration is already in progress, do not enter for a second time.
+      if (bootNotificationResponse.status == RegistrationStatusEnumType.Pending &&
+        (!cachedBootStatus || cachedBootStatus != RegistrationStatusEnumType.Pending)) {
+        // TODO Consider refactoring GetBaseReport and SetVariables sections as methods to be used by their respective message api endpoints as well
+        // GetBaseReport
+        if ((bootConfigDbEntity.getBaseReportOnPending !== null) ? bootConfigDbEntity.getBaseReportOnPending : this._config.provisioning.getBaseReportOnPending) {
+          // Remove Notify Report from blacklist
+          this._cache.remove(CallAction.NotifyReport, stationId);
 
-            const itemsPerMessageSetVariablesAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
-              stationId: stationId,
-              component_name: 'DeviceDataCtrlr',
-              variable_name: 'ItemsPerMessage',
-              variable_instance: 'SetVariables',
-              type: AttributeEnumType.Actual
-            })
-            // It is possible for itemsPerMessageSetVariablesAttributes.length > 1 if component instances or evses
-            // are associated with alternate options. That structure is not supported by this logic, and that
-            // structure is a violation of Part 2 - Specification of OCPP 2.0.1.
-            // If ItemsPerMessageSetVariables not set, send all variables at once
-            const itemsPerMessageSetVariables = itemsPerMessageSetVariablesAttributes.length == 0 ?
-              setVariableData.length : Number(itemsPerMessageSetVariablesAttributes[0].value);
-            const setVariablesRequests = Math.ceil(setVariableData.length / itemsPerMessageSetVariables);
-            this._cache.set(ProvisioningModule.SET_VARIABLES, setVariablesRequests.toString(), stationId);
-            while (setVariableData.length > 0) {
-              await this.sendCall(stationId, tenantId, CallAction.SetVariables,
-                { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest);
+          // OCTT tool does not meet B07.FR.04; instead always sends requestId == 0
+          // Commenting out this line, using requestId == 0 until fixed (10/26/2023)
+          // const requestId = Math.floor(Math.random() * ProvisioningModule.GET_BASE_REPORT_REQUEST_ID_MAX);
+          const requestId = 0;
+          this._cache.set(requestId.toString(), ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, stationId, this.config.websocketServer.maxCallLengthSeconds);
+          const getBaseReportMessageConfirmation: IMessageConfirmation = await this.sendCall(stationId, tenantId, CallAction.GetBaseReport,
+            { requestId: requestId, reportBase: ReportBaseEnumType.FullInventory } as GetBaseReportRequest);
+          if (getBaseReportMessageConfirmation.success) {
+            this._logger.debug("GetBaseReport successfully sent to charger: ", getBaseReportMessageConfirmation);
+
+            // Wait for GetBaseReport to complete
+            let getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocketServer.maxCallLengthSeconds, stationId);
+            while (getBaseReportCacheValue == ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE) {
+              getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocketServer.maxCallLengthSeconds, stationId);
             }
+
+            if (getBaseReportCacheValue == ProvisioningModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE) {
+              this._logger.debug("GetBaseReport process successful."); // All NotifyReports have been processed
+            } else { // getBaseReportCacheValue == null
+              throw new Error("GetBaseReport process failed--message timed out without a response.");
+            }
+
+            // Make sure GetBaseReport doesn't re-trigger on next boot attempt
+            bootConfigDbEntity.getBaseReportOnPending = false;
+            bootConfigDbEntity.save();
           } else {
-            // Update boot config with status accepted
-            // TODO: Determine how/if StatusInfo should be generated
-            await this._bootRepository.updateStatusByKey(RegistrationStatusEnumType.Accepted, undefined, stationId);
-            // We can trigger the new boot immediately rather than wait for the retry, as nothing needs to be done.
-            // B02.FR.02 - Spec allows for TriggerMessageRequest - OCTT fails over trigger - removing it here
-            // this.sendCall(stationId, tenantId, CallAction.TriggerMessage,
-            //   { requestedMessage: MessageTriggerEnumType.BootNotification } as TriggerMessageRequest);
+            throw new Error("GetBaseReport failed: " + getBaseReportMessageConfirmation);
           }
         }
-    }
+        // SetVariables
+        if (bootConfigDbEntity.pendingBootSetVariables && bootConfigDbEntity.pendingBootSetVariables.length > 1) {
+          bootConfigDbEntity.variablesRejectedOnLastBoot = [];
+          let setVariableData: SetVariableDataType[] = await this._deviceModelRepository.readAllSetVariableByStationId(stationId);
 
-    // TODO: Determine if anything needs to happen when BootNotificationResponse failed to send...
-    this._deviceModelRepository.updateBootAttributes(chargingStation, stationId);
+          let itemsPerMessageSetVariables = await this._deviceModelService.getItemsPerMessageSetVariablesByStationId(stationId);
+
+          // If ItemsPerMessageSetVariables not set, send all variables at once
+          itemsPerMessageSetVariables = itemsPerMessageSetVariables == null ?
+            setVariableData.length : itemsPerMessageSetVariables;
+          while (setVariableData.length > 0) {
+            await this.sendCall(stationId, tenantId, CallAction.SetVariables,
+              { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest);
+            setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
+            // TODO: Determine how to match request to response. Right now this could trigger on an unrelated SetVariables response being received.
+            const setVariableResponseCorrelationId = await this._cache.onChange(ProvisioningModule.SET_VARIABLES_RESPONSE_CORRELATION_ID, this.config.websocketServer.maxCallLengthSeconds, stationId);
+            if (setVariableResponseCorrelationId != null) {
+              this._logger.debug("SetVariables response correlation id from charger: ", setVariableResponseCorrelationId);
+            } else {
+              throw new Error("SetVariables response correlation id not found");
+            }
+          }
+
+          const rejectedSetVariable = await this._deviceModelRepository.existsRejectedSetVariableByStationId(stationId);
+          if (rejectedSetVariable && (bootConfigDbEntity.bootWithRejectedVariables !== null) ? !bootConfigDbEntity.bootWithRejectedVariables : !this._config.provisioning.bootWithRejectedVariables) {
+            bootConfigDbEntity.status = RegistrationStatusEnumType.Rejected;
+            await bootConfigDbEntity.save();
+            // No more to do.
+            return;
+          }
+        }
+        // Update boot config with status accepted
+        // TODO: Determine how/if StatusInfo should be generated
+        bootConfigDbEntity.status = RegistrationStatusEnumType.Accepted;
+        await bootConfigDbEntity.save();
+
+        if (await this._cache.get<string>(ProvisioningModule.REBOOT_REQUIRED_FOR_SET_VARIABLES, message.context.stationId) == 'true') {
+          this._cache.remove(ProvisioningModule.REBOOT_REQUIRED_FOR_SET_VARIABLES, message.context.stationId);
+          // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
+          this.sendCall(message.context.stationId, message.context.tenantId, CallAction.Reset,
+            { type: ResetEnumType.Immediate } as ResetRequest);
+        } else {
+          // We could trigger the new boot immediately rather than wait for the retry, as nothing more now needs to be done.
+          // However, B02.FR.02 - Spec allows for TriggerMessageRequest - OCTT fails over trigger
+          // Commenting out until OCTT behavior changes.
+          // this.sendCall(stationId, tenantId, CallAction.TriggerMessage,
+          //   { requestedMessage: MessageTriggerEnumType.BootNotification } as TriggerMessageRequest);
+        }
+      }
+    } else {
+      throw new Error("BootNotification failed: " + bootNotificationResponseMessageConfirmation);
+    }
   }
 
   @AsHandler(CallAction.NotifyReport)
@@ -315,14 +477,19 @@ export class ProvisioningModule extends AbstractModule {
     message: IMessage<NotifyReportRequest>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("NotifyReport received:", message, props);
+    this._logger.info("NotifyReport received:", message, props);
+
+    if (!message.payload.tbc) { // Default if omitted is false
+      const success = await this._cache.set(message.payload.requestId.toString(), ProvisioningModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE, message.context.stationId);
+      this._logger.info("Completed", success, message.payload.requestId);
+    } else { // tbc (to be continued) is true
+      // Continue to set get base report ongoing. Will extend the timeout.
+      const success = await this._cache.set(message.payload.requestId.toString(), ProvisioningModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, message.context.stationId, this.config.websocketServer.maxCallLengthSeconds);
+      this._logger.info("Ongoing", success, message.payload.requestId);
+    }
 
     for (const reportDataType of (message.payload.reportData ? message.payload.reportData : [])) {
       await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, message.context.stationId);
-    }
-
-    if (message.payload.tbc !== undefined && !message.payload.tbc) {
-      await this._bootRepository.updateStatusByKey(RegistrationStatusEnumType.Accepted, undefined, message.context.stationId);
     }
 
     // Create response
@@ -347,69 +514,41 @@ export class ProvisioningModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.SetVariables)
-  protected async _handleVariables(
+  protected async _handleSetVariables(
     message: IMessage<SetVariablesResponse>,
     props?: HandlerProperties
   ): Promise<void> {
     this._logger.debug("SetVariables response received", message, props);
 
+    this._cache.set(ProvisioningModule.SET_VARIABLES_RESPONSE_CORRELATION_ID, message.context.correlationId, message.context.stationId);
+
     let rebootRequired: boolean = false;
-    const rejectedVariables: SetVariableResultType[] = [];
     message.payload.setVariableResult.forEach(setVariableResultType => {
       switch (setVariableResultType.attributeStatus) {
-        case SetVariableStatusEnumType.RebootRequired: {
+        case SetVariableStatusEnumType.RebootRequired:
           rebootRequired = true;
           break;
-        }
-        case SetVariableStatusEnumType.Rejected: {
-          rejectedVariables.push(setVariableResultType);
+        default:
           break;
-        }
-        default: {
-          break;
-        }
       }
       // Update VariableAttributes...
       this._deviceModelRepository.updateResultByStationId(setVariableResultType, message.context.stationId);
     });
-    // TODO: Determine whether below could trigger race condition...
-    const setVariablesRequests = await this._cache.get<string>(ProvisioningModule.SET_VARIABLES, message.context.stationId).then(async setVariablesRequests => {
-      if (setVariablesRequests) {
-        setVariablesRequests = (Number(setVariablesRequests) - 1).toString();
-        await this._cache.set(ProvisioningModule.SET_VARIABLES, setVariablesRequests, message.context.stationId);
-      }
-      return setVariablesRequests;
-    });
-    await this._cache.get<string>(ProvisioningModule.BOOT_STATUS, message.context.stationId).then(status => {
-      if (status == RegistrationStatusEnumType.Pending) {
-        this._bootRepository.readByKey(message.context.stationId).then(bootConfig => {
-          if (bootConfig) {
-            bootConfig.variablesRejectedOnLastBoot = bootConfig.variablesRejectedOnLastBoot ? bootConfig.variablesRejectedOnLastBoot.concat(rejectedVariables) : rejectedVariables;
-            // Update boot config status
-            // TODO: Determine how/if StatusInfo should be generated
-            if (!this._config.provisioning.bootWithRejectedVariables && rejectedVariables.length > 0) {
-              bootConfig.status = RegistrationStatusEnumType.Rejected;
-              this._cache.set(ProvisioningModule.BOOT_STATUS, bootConfig.status, message.context.stationId)
-            } else if (setVariablesRequests == '0') {
-              bootConfig.status = RegistrationStatusEnumType.Accepted;
-            }
-            return this._bootRepository.createOrUpdateByKey(bootConfig, message.context.stationId);
-          }
-        });
-      }
-    });
 
-    if (setVariablesRequests == '0') {
-      this._cache.remove(ProvisioningModule.SET_VARIABLES, message.context.stationId);
-      const rebootRequiredForSetVariables = await this._cache.get<string>(ProvisioningModule.REBOOT_REQUIRED_FOR_SET_VARIABLES, message.context.stationId);
-      if (rebootRequiredForSetVariables || rebootRequired) {
-        this._cache.remove(ProvisioningModule.REBOOT_REQUIRED_FOR_SET_VARIABLES, message.context.stationId);
-        // Send Reset... 
-        this.sendCall(message.context.stationId, message.context.tenantId, CallAction.Reset,
-          { type: ResetEnumType.OnIdle } as ResetRequest);
-      }
-    } else if (rebootRequired) {
-      this._cache.set(ProvisioningModule.REBOOT_REQUIRED_FOR_SET_VARIABLES, 'true', message.context.stationId);
+    if (rebootRequired) { // Determination of whether to reboot immediately must be handled by caller.
+      // Expiration of one minute.
+      // TODO: Relate groups of SetVariables messages to each other in order to avoid race conditions with this cache value.
+      // Return to this TODO once correlationId can be set on messages.
+      this._cache.set(ProvisioningModule.REBOOT_REQUIRED_FOR_SET_VARIABLES, 'true', message.context.stationId, 60);
     }
+  }
+
+  @AsHandler(CallAction.GetVariables)
+  protected async _handleGetVariables(
+    message: IMessage<GetVariablesResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("GetVariables response received", message, props);
+    this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(message.payload.getVariableResult, message.context.stationId);
   }
 }

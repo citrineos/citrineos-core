@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AttributeEnumType, ChargingStationType, ComponentType, MutabilityEnumType, ReportDataType, SetVariableDataType, SetVariableResultType, VariableType } from "@citrineos/base";
+import { AttributeEnumType, ChargingStationType, ComponentType, GetVariableDataType, GetVariableResultType, MutabilityEnumType, ReportDataType, SetVariableDataType, SetVariableResultType, SetVariableStatusEnumType, StatusInfoType, VariableType } from "@citrineos/base";
 import { VariableAttributeQuerystring } from "../../../interfaces/queries/VariableAttribute";
 import { SequelizeRepository } from "./Base";
 import { IDeviceModelRepository } from "../../../interfaces";
@@ -25,7 +25,7 @@ import { VariableAttribute, Component, Evse, Variable, VariableCharacteristics }
 
 export class DeviceModelRepository extends SequelizeRepository<VariableAttribute> implements IDeviceModelRepository {
 
-    createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]> {
+    createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string, status?: string, statusInfo?: StatusInfoType): Promise<VariableAttribute[]> {
         const component: ComponentType = value.component;
         const variable: VariableType = value.variable;
         return this.s.models[Component.MODEL_NAME].findOne({
@@ -87,7 +87,9 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
                         variableId: variableModel.get('id'),
                         componentId: componentModel.get('id'),
                         evseSerialId: evseSerialId,
-                        ...variableAttribute
+                        ...variableAttribute,
+                        status: status,
+                        statusInfo: statusInfo
                     }, {
                         include: [{ model: Variable, include: [VariableCharacteristics] },
                         { model: Component, include: [Evse] }]
@@ -112,6 +114,64 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
             });
     }
 
+    async createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string): Promise<VariableAttribute[]> {
+        const savedVariableAttributes: VariableAttribute[] = [];
+        for (const result of getVariablesResult) {
+            savedVariableAttributes.concat(await this.createOrUpdateDeviceModelByStationId({
+                component: {
+                    name: result.component.name,
+                    instance: result.component.instance,
+                    ...(result.component.evse ? {
+                        evse: {
+                            id: result.component.evse.id,
+                            connectorId: result.component.evse.connectorId
+                        }
+                    } : {})
+                },
+                variable: {
+                    name: result.variable.name,
+                    instance: result.variable.instance
+                },
+                variableAttribute: [
+                    {
+                        type: result.attributeType,
+                        value: result.attributeValue
+                    }
+                ]
+            }, stationId, result.attributeStatus, result.attributeStatusInfo));
+        }
+        return savedVariableAttributes;
+    }
+
+    async createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string): Promise<VariableAttribute[]> {
+        const savedVariableAttributes: VariableAttribute[] = [];
+        for (const data of setVariablesData) {
+            savedVariableAttributes.concat(await this.createOrUpdateDeviceModelByStationId({
+                component: {
+                    name: data.component.name,
+                    instance: data.component.instance,
+                    ...(data.component.evse ? {
+                        evse: {
+                            id: data.component.evse.id,
+                            connectorId: data.component.evse.connectorId
+                        }
+                    } : {})
+                },
+                variable: {
+                    name: data.variable.name,
+                    instance: data.variable.instance
+                },
+                variableAttribute: [
+                    {
+                        type: data.attributeType,
+                        value: data.attributeValue
+                    }
+                ]
+            }, stationId));
+        }
+        return savedVariableAttributes;
+    }
+
     updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined> {
         return super.readByQuery({
             where: { stationId: stationId, type: result.attributeType ? result.attributeType : AttributeEnumType.Actual },
@@ -128,114 +188,9 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
                 savedVariableAttribute.statusInfo = result.attributeStatusInfo;
                 return savedVariableAttribute.save();
             } else {
-                // Do nothing
+                throw new Error("Unable to update variable attribute...");
             }
         });
-    }
-
-    async updateBootAttributes(chargingStation: ChargingStationType, stationId: string) {
-        await this.createOrUpdateDeviceModelByStationId({
-            component: {
-                name: "ChargingStation"
-            },
-            variable: {
-                name: "SerialNumber"
-            },
-            variableAttribute: [
-                {
-                    type: AttributeEnumType.Actual,
-                    value: chargingStation.serialNumber,
-                    mutability: MutabilityEnumType.ReadOnly,
-                    persistent: true,
-                    constant: true
-                }
-            ]
-        }, stationId);
-        await this.createOrUpdateDeviceModelByStationId({
-            component: {
-                name: "ChargingStation"
-            },
-            variable: {
-                name: "Model"
-            },
-            variableAttribute: [
-                {
-                    type: AttributeEnumType.Actual,
-                    value: chargingStation.model,
-                    mutability: MutabilityEnumType.ReadOnly,
-                    persistent: true,
-                    constant: true
-                }
-            ]
-        }, stationId);
-        await this.createOrUpdateDeviceModelByStationId({
-            component: {
-                name: "ChargingStation"
-            },
-            variable: {
-                name: "VendorName"
-            },
-            variableAttribute: [
-                {
-                    type: AttributeEnumType.Actual,
-                    value: chargingStation.vendorName,
-                    mutability: MutabilityEnumType.ReadOnly,
-                    persistent: true,
-                    constant: true
-                }
-            ]
-        }, stationId);
-        await this.createOrUpdateDeviceModelByStationId({
-            component: {
-                name: "Controller"
-            },
-            variable: {
-                name: "FirmwareVersion"
-            },
-            variableAttribute: [
-                {
-                    type: AttributeEnumType.Actual,
-                    value: chargingStation.firmwareVersion,
-                    mutability: MutabilityEnumType.ReadOnly,
-                    persistent: true,
-                    constant: true
-                }
-            ]
-        }, stationId);
-        await this.createOrUpdateDeviceModelByStationId({
-            component: {
-                name: "DataLink"
-            },
-            variable: {
-                name: "IMSI"
-            },
-            variableAttribute: [
-                {
-                    type: AttributeEnumType.Actual,
-                    value: chargingStation.modem?.imsi,
-                    mutability: MutabilityEnumType.ReadOnly,
-                    persistent: true,
-                    constant: true
-                }
-            ]
-        }, stationId);
-        await this.createOrUpdateDeviceModelByStationId({
-            component: {
-                name: "DataLink"
-            },
-            variable: {
-                name: "ICCID"
-            },
-            variableAttribute: [
-                {
-                    type: AttributeEnumType.Actual,
-                    value: chargingStation.modem?.iccid,
-                    mutability: MutabilityEnumType.ReadOnly,
-                    persistent: true,
-                    constant: true
-                }
-            ]
-        }, stationId);
     }
 
     readAllSetVariableByStationId(stationId: string): Promise<SetVariableDataType[]> {
@@ -256,6 +211,17 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
 
     readAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]> {
         return super.readAllByQuery(this.constructQuery(query), VariableAttribute.MODEL_NAME);
+    }
+
+    existsRejectedSetVariableByStationId(stationId: string): Promise<boolean> {
+        return super.readAllByQuery({
+            where: {
+                stationId: stationId, bootConfigSetId: { [Op.ne]: null }
+            }
+        }, VariableAttribute.MODEL_NAME)
+            .then(variableAttributeArray => {
+                return variableAttributeArray.some(variableAttribute => variableAttribute.status === SetVariableStatusEnumType.Rejected);
+            });
     }
 
     existsByQuery(query: VariableAttributeQuerystring): Promise<boolean> {

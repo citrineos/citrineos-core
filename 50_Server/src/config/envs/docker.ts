@@ -40,7 +40,7 @@ export function createDockerConfig() {
         },
         data: {
             sequelize: {
-                host: "host.docker.internal",
+                host: "ocpp-db",
                 port: 5432,
                 database: "citrine",
                 dialect: "postgres",
@@ -52,11 +52,11 @@ export function createDockerConfig() {
         },
         util: {
             redis: {
-                host: "host.docker.internal",
+                host: "redis",
                 port: 6379,
             },
             amqp: {
-                url: "amqp://guest:guest@host.docker.internal:5672",
+                url: "amqp://guest:guest@amqp-broker:5672",
                 exchange: "citrineos",
             }
         },
@@ -75,7 +75,8 @@ export function createDockerConfig() {
             host: "0.0.0.0",
             port: 8080,
             protocol: "ocpp2.0.1",
-            pingInterval: 60
+            pingInterval: 60,
+            maxCallLengthSeconds: 5
         }
     });
 }

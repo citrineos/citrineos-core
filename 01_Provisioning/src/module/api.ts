@@ -14,9 +14,9 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, AttributeEnumType, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariablesRequest, SetVariablesRequestSchema } from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariablesRequest, SetVariablesRequestSchema } from '@citrineos/base';
 import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, VariableAttributeQuerySchema, VariableAttributeQuerystring, sequelize } from '@citrineos/data';
-import { Boot, VariableAttribute } from '@citrineos/data/lib/layers/sequelize';
+import { Boot } from '@citrineos/data/lib/layers/sequelize';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IProvisioningModuleApi } from './interface';
@@ -46,103 +46,114 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
     getBaseReport(
         identifier: string,
         tenantId: string,
-        request: GetBaseReportRequest
+        request: GetBaseReportRequest,
+        callbackUrl?: string
     ): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, tenantId, CallAction.GetBaseReport, request);
+        // TODO: Consider using requestId to send NotifyReportRequests to callbackUrl
+        return this._module.sendCall(identifier, tenantId, CallAction.GetBaseReport, request, callbackUrl);
     }
 
     @AsMessageEndpoint(CallAction.SetVariables, SetVariablesRequestSchema)
     async setVariables(
         identifier: string,
         tenantId: string,
-        request: SetVariablesRequest
+        request: SetVariablesRequest,
+        callbackUrl?: string
     ): Promise<IMessageConfirmation> {
-        const setVariableData = request.setVariableData;
-        const itemsPerMessageSetVariablesAttributes: VariableAttribute[] = await this._module.deviceModelRepository.readAllByQuery({
-            stationId: identifier,
-            component_name: 'DeviceDataCtrlr',
-            variable_name: 'ItemsPerMessage',
-            variable_instance: 'SetVariables',
-            type: AttributeEnumType.Actual
-        })
-        if (itemsPerMessageSetVariablesAttributes.length == 1) {
-            const finalMessageConfirmation: IMessageConfirmation = { success: true };
-            const itemsPerMessageSetVariables = Number(itemsPerMessageSetVariablesAttributes[0].value);
-            while (setVariableData.length > 0) {
-                const setVariableDataSubset = setVariableData.slice(0, itemsPerMessageSetVariables);
-                const messageConfirmation = await this._module.sendCall(identifier, tenantId, CallAction.SetVariables,
-                    { setVariableData: setVariableDataSubset } as SetVariablesRequest);
-                if (!messageConfirmation.payload) {
-                    finalMessageConfirmation.success = false;
-                    finalMessageConfirmation.payload = finalMessageConfirmation.payload ?
-                        (finalMessageConfirmation.payload as SetVariableDataType[]).concat(setVariableDataSubset) : setVariableDataSubset
-                }
+        let setVariableData = request.setVariableData as SetVariableDataType[];
+
+        // Awaiting save action so that SetVariablesResponse does not trigger a race condition since an error is thrown
+        // from SetVariablesResponse handler if variable does not exist when it attempts to save the Response's status
+        await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(setVariableData, identifier);
+
+        let itemsPerMessageSetVariables = await this._module._deviceModelService.getItemsPerMessageSetVariablesByStationId(identifier);
+
+        // If ItemsPerMessageSetVariables not set, send all variables at once
+        itemsPerMessageSetVariables = itemsPerMessageSetVariables == null ?
+            setVariableData.length : itemsPerMessageSetVariables;
+
+        const confirmations = [];
+        let lastVariableIndex = 0;
+        while (setVariableData.length > 0) {
+            const batch = setVariableData.slice(0, itemsPerMessageSetVariables);
+            try {
+                const batchResult = await this._module.sendCall(identifier, tenantId, CallAction.SetVariables, { setVariableData: batch } as SetVariablesRequest, callbackUrl);
+                confirmations.push({
+                    success: batchResult.success,
+                    batch: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
+                    message: `${batchResult.payload}`,
+                });
+            } catch (error) {
+                confirmations.push({
+                    success: false,
+                    variableName: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
+                    message: `${error}`,
+                });
             }
-            return finalMessageConfirmation;
-        } else if (itemsPerMessageSetVariablesAttributes.length == 0) {
-            // If no limit reported, no limit used
-            return this._module.sendCall(identifier, tenantId, CallAction.SetVariables,
-                { setVariableData: setVariableData } as SetVariablesRequest);
-        } else {
-            throw new Error("Violation of Standard Component Structure: "
-                + JSON.stringify(itemsPerMessageSetVariablesAttributes));
+            lastVariableIndex += batch.length;
+            setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
         }
+        // Caller should use callbackUrl to ensure request reached station, otherwise receipt is not guaranteed
+        return { success: true, payload: confirmations };
     }
 
     @AsMessageEndpoint(CallAction.GetVariables, GetVariablesRequestSchema)
     async getVariables(
         identifier: string,
         tenantId: string,
-        request: GetVariablesRequest
+        request: GetVariablesRequest,
+        callbackUrl?: string
     ): Promise<IMessageConfirmation> {
-        const getVariableData = request.getVariableData;
-        const itemsPerMessageGetVariablesAttributes: VariableAttribute[] = await this._module.deviceModelRepository.readAllByQuery({
-            stationId: identifier,
-            component_name: 'DeviceDataCtrlr',
-            variable_name: 'ItemsPerMessage',
-            variable_instance: 'GetVariables',
-            type: AttributeEnumType.Actual
-        })
-        if (itemsPerMessageGetVariablesAttributes.length == 1) {
-            const finalMessageConfirmation: IMessageConfirmation = { success: true };
-            const itemsPerMessageGetVariables = Number(itemsPerMessageGetVariablesAttributes[0].value);
-            while (getVariableData.length > 0) {
-                const getVariableDataSubset = getVariableData.slice(0, itemsPerMessageGetVariables);
-                const messageConfirmation = await this._module.sendCall(identifier, tenantId, CallAction.GetVariables,
-                    { getVariableData: getVariableDataSubset } as GetVariablesRequest);
-                if (!messageConfirmation.payload) {
-                    finalMessageConfirmation.success = false;
-                    finalMessageConfirmation.payload = finalMessageConfirmation.payload ?
-                        (finalMessageConfirmation.payload as GetVariableDataType[]).concat(getVariableDataSubset) : getVariableDataSubset
-                }
+        let getVariableData = request.getVariableData as GetVariableDataType[];
+        let itemsPerMessageGetVariables = await this._module._deviceModelService.getItemsPerMessageGetVariablesByStationId(identifier);
+
+        // If ItemsPerMessageGetVariables not set, send all variables at once
+        itemsPerMessageGetVariables = itemsPerMessageGetVariables == null ?
+            getVariableData.length : itemsPerMessageGetVariables;
+
+        const confirmations = [];
+        let lastVariableIndex = 0;
+        while (getVariableData.length > 0) {
+            const batch = getVariableData.slice(0, itemsPerMessageGetVariables);
+            try {
+                const batchResult = await this._module.sendCall(identifier, tenantId, CallAction.GetVariables, { getVariableData: batch } as GetVariablesRequest, callbackUrl);
+                confirmations.push({
+                    success: batchResult.success,
+                    batch: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
+                    message: `${batchResult.payload}`,
+                });
+            } catch (error) {
+                confirmations.push({
+                    success: false,
+                    variableName: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
+                    message: `${error}`,
+                });
             }
-            return finalMessageConfirmation;
-        } else if (itemsPerMessageGetVariablesAttributes.length == 0) {
-            // If no limit reported, no limit used
-            return this._module.sendCall(identifier, tenantId, CallAction.GetVariables,
-                { getVariableData: getVariableData } as GetVariablesRequest);
-        } else {
-            throw new Error("Violation of Standard Component Structure: "
-                + JSON.stringify(itemsPerMessageGetVariablesAttributes));
+            lastVariableIndex += batch.length;
+            getVariableData = getVariableData.slice(itemsPerMessageGetVariables);
         }
+        // Caller should use callbackUrl to ensure request reached station, otherwise receipt is not guaranteed
+        return { success: true, payload: confirmations };
     }
 
     @AsMessageEndpoint(CallAction.SetNetworkProfile, SetNetworkProfileRequestSchema)
     setNetworkProfile(
         identifier: string,
         tenantId: string,
-        request: SetNetworkProfileRequest
+        request: SetNetworkProfileRequest,
+        callbackUrl?: string
     ): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, tenantId, CallAction.SetNetworkProfile, request);
+        return this._module.sendCall(identifier, tenantId, CallAction.SetNetworkProfile, request, callbackUrl);
     }
 
     @AsMessageEndpoint(CallAction.Reset, ResetRequestSchema)
     reset(
         identifier: string,
         tenantId: string,
-        resetRequest: ResetRequest
+        resetRequest: ResetRequest,
+        callbackUrl?: string
     ): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, tenantId, CallAction.Reset, resetRequest);
+        return this._module.sendCall(identifier, tenantId, CallAction.Reset, resetRequest, callbackUrl);
     }
 
     /**
