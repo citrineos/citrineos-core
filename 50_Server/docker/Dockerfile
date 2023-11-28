@@ -117,6 +117,7 @@ COPY --from=citrineos-monitoring-builder /usr/05_Monitoring/*.tgz /usr/05_Monito
 COPY /50_Server/package.json ./
 RUN npm install --ignore-scripts=true
 RUN npm rebuild bcrypt --build-from-source
+RUN npm rebuild deasync --build-from-source
 
 COPY /50_Server/tsconfig.json ./
 COPY /50_Server/src ./src
