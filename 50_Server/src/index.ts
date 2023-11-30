@@ -23,6 +23,7 @@ import { TransactionModule, TransactionModuleApi } from '@citrineos/transaction'
 import { MemoryCache, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
+import addFormats from "ajv-formats"
 import fastify, { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
@@ -59,6 +60,7 @@ class CitrineOSServer {
 
         // Create Ajv JSON schema validator instance
         this._ajv = ajv || new Ajv({ removeAdditional: "all", useDefaults: true, coerceTypes: "array", strict: false });
+        addFormats(this._ajv, {mode: "fast", formats: ["date-time"]});
 
         // Initialize parent logger
         this._logger = new Logger<ILogObj>({

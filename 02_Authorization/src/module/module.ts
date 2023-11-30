@@ -16,6 +16,7 @@
 
 import {
   AbstractModule,
+  AdditionalInfoType,
   AsHandler,
   AttributeEnumType,
   AuthorizationStatusEnumType,
@@ -28,6 +29,8 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  IdTokenInfoType,
+  IdTokenType,
   SystemConfig
 } from "@citrineos/base";
 import { IAuthorizationRepository, IDeviceModelRepository, sequelize } from "@citrineos/data";
@@ -125,7 +128,27 @@ export class AuthorizationModule extends AbstractModule {
       };
       if (authorization) {
         if (authorization.idTokenInfo) {
-          const idTokenInfo = authorization.idTokenInfo;
+          // Extract DTO fields from sequelize Model<any, any> objects
+          const idTokenInfo: IdTokenInfoType = {
+            status: authorization.idTokenInfo.status,
+            cacheExpiryDateTime: authorization.idTokenInfo.cacheExpiryDateTime,
+            chargingPriority: authorization.idTokenInfo.chargingPriority,
+            language1: authorization.idTokenInfo.language1,
+            evseId: authorization.idTokenInfo.evseId,
+            groupIdToken: authorization.idTokenInfo.groupIdToken ? {
+              additionalInfo: (authorization.idTokenInfo.groupIdToken.additionalInfo && authorization.idTokenInfo.groupIdToken.additionalInfo.length > 0) ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(additionalInfo => {
+                return {
+                  additionalIdToken: additionalInfo.additionalIdToken,
+                  type: additionalInfo.type
+                } 
+              })  as [AdditionalInfoType, ...AdditionalInfoType[]]) : undefined,
+              idToken: authorization.idTokenInfo.groupIdToken.idToken,
+             type: authorization.idTokenInfo.groupIdToken.type
+            } : undefined,
+            language2: authorization.idTokenInfo.language2,
+            personalMessage: authorization.idTokenInfo.personalMessage
+          };
+
           if (idTokenInfo.status == AuthorizationStatusEnumType.Accepted) {
             if (idTokenInfo.cacheExpiryDateTime &&
               new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {

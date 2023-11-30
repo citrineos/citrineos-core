@@ -9,6 +9,7 @@ export function createDockerConfig() {
             unknownChargerStatus: RegistrationStatusEnumType.Accepted,
             getBaseReportOnPending: true,
             bootWithRejectedVariables: true,
+            autoAccept: false,
             api: {
                 endpointPrefix: "/provisioning",
                 port: 8081
@@ -72,11 +73,13 @@ export function createDockerConfig() {
             }
         },
         websocketServer: {
+            tlsFlag: false,
             host: "0.0.0.0",
             port: 8080,
             protocol: "ocpp2.0.1",
             pingInterval: 60,
-            maxCallLengthSeconds: 5
+            maxCallLengthSeconds: 5,
+            maxCachingSeconds: 10
         }
     });
 }

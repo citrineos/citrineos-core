@@ -14,8 +14,8 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariablesRequest, SetVariablesRequestSchema } from '@citrineos/base';
-import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, VariableAttributeQuerySchema, VariableAttributeQuerystring, sequelize } from '@citrineos/data';
+import { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, BootConfig, BootConfigSchema, BootNotificationResponse, CallAction, GetBaseReportRequest, GetBaseReportRequestSchema, GetReportRequest, GetReportRequestSchema, GetVariableDataType, GetVariablesRequest, GetVariablesRequestSchema, HttpMethod, IMessageConfirmation, Namespace, ReportDataType, ReportDataTypeSchema, ResetRequest, ResetRequestSchema, SetNetworkProfileRequest, SetNetworkProfileRequestSchema, SetVariableDataType, SetVariableStatusEnumType, SetVariablesRequest, SetVariablesRequestSchema, TriggerMessageRequest, TriggerMessageRequestSchema, UpdateFirmwareRequest, UpdateFirmwareRequestSchema } from '@citrineos/base';
+import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, CreateOrUpdateVariableAttributeQuerySchema, CreateOrUpdateVariableAttributeQuerystring, VariableAttributeQuerySchema, VariableAttributeQuerystring, sequelize } from '@citrineos/data';
 import { Boot } from '@citrineos/data/lib/layers/sequelize';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
@@ -53,6 +53,17 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
         return this._module.sendCall(identifier, tenantId, CallAction.GetBaseReport, request, callbackUrl);
     }
 
+    @AsMessageEndpoint(CallAction.GetReport, GetReportRequestSchema)
+    getCustomReport(
+        identifier: string,
+        tenantId: string,
+        request: GetReportRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        // TODO: Consider using requestId to send NotifyReportRequests to callbackUrl
+        return this._module.sendCall(identifier, tenantId, CallAction.GetReport, request, callbackUrl);
+    }
+
     @AsMessageEndpoint(CallAction.SetVariables, SetVariablesRequestSchema)
     async setVariables(
         identifier: string,
@@ -74,6 +85,7 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
 
         const confirmations = [];
         let lastVariableIndex = 0;
+        // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
         while (setVariableData.length > 0) {
             const batch = setVariableData.slice(0, itemsPerMessageSetVariables);
             try {
@@ -113,7 +125,8 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
 
         const confirmations = [];
         let lastVariableIndex = 0;
-        while (getVariableData.length > 0) {
+        // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
+        while (getVariableData.length > 0) { 
             const batch = getVariableData.slice(0, itemsPerMessageGetVariables);
             try {
                 const batchResult = await this._module.sendCall(identifier, tenantId, CallAction.GetVariables, { getVariableData: batch } as GetVariablesRequest, callbackUrl);
@@ -146,14 +159,34 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
         return this._module.sendCall(identifier, tenantId, CallAction.SetNetworkProfile, request, callbackUrl);
     }
 
+    @AsMessageEndpoint(CallAction.UpdateFirmware, UpdateFirmwareRequestSchema)
+    updateFirmware(
+        identifier: string,
+        tenantId: string,
+        request: UpdateFirmwareRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.UpdateFirmware, request, callbackUrl);
+    }
+
     @AsMessageEndpoint(CallAction.Reset, ResetRequestSchema)
     reset(
         identifier: string,
         tenantId: string,
-        resetRequest: ResetRequest,
+        request: ResetRequest,
         callbackUrl?: string
     ): Promise<IMessageConfirmation> {
-        return this._module.sendCall(identifier, tenantId, CallAction.Reset, resetRequest, callbackUrl);
+        return this._module.sendCall(identifier, tenantId, CallAction.Reset, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.TriggerMessage, TriggerMessageRequestSchema)
+    triggerMessage(
+        identifier: string,
+        tenantId: string,
+        request: TriggerMessageRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.TriggerMessage, request, callbackUrl);
     }
 
     /**
@@ -175,9 +208,20 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
         return this._module.bootRepository.deleteByKey(request.query.stationId);
     }
 
-    @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Put, VariableAttributeQuerySchema, ReportDataTypeSchema)
-    putDeviceModelVariables(request: FastifyRequest<{ Body: ReportDataType, Querystring: ChargingStationKeyQuerystring }>): Promise<sequelize.VariableAttribute[]> {
-        return this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(request.body, request.query.stationId);
+    @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Put, CreateOrUpdateVariableAttributeQuerySchema, ReportDataTypeSchema)
+    putDeviceModelVariables(request: FastifyRequest<{ Body: ReportDataType, Querystring: CreateOrUpdateVariableAttributeQuerystring }>): Promise<sequelize.VariableAttribute[]> {
+        return this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(request.body, request.query.stationId).then(variableAttributes => {
+            if (request.query.setOnCharger) { // value set offline, for example: manually via charger ui, or via api other than ocpp
+                for (const variableAttribute of variableAttributes) {
+                    this._module.deviceModelRepository.updateResultByStationId({
+                        attributeType: variableAttribute.type,
+                        attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: "SetOnCharger" },
+                        component: variableAttribute.component, variable: variableAttribute.variable
+                      }, request.query.stationId);
+                }
+            }
+            return variableAttributes;
+        });
     }
 
     @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Get, VariableAttributeQuerySchema)
@@ -188,7 +232,7 @@ export class ProvisioningModuleApi extends AbstractModuleApi<ProvisioningModule>
     @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Delete, VariableAttributeQuerySchema)
     deleteDeviceModelVariables(request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>): Promise<string> {
         return this._module.deviceModelRepository.deleteAllByQuery(request.query)
-            .then(deletedCount => deletedCount.toString + " rows successfully deleted from " + Namespace.VariableAttributeType);
+            .then(deletedCount => deletedCount.toString() + " rows successfully deleted from " + Namespace.VariableAttributeType);
     }
 
     /**

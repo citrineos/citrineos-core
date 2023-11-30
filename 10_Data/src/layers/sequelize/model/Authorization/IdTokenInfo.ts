@@ -39,11 +39,11 @@ export class IdTokenInfo extends Model implements IdTokenInfoType {
     declare language1?: string;
 
     @ForeignKey(() => IdToken)
-    @Column(DataType.STRING)
-    declare groupIdTokenId?: string;
+    @Column(DataType.INTEGER)
+    declare groupIdTokenId?: number;
 
     @BelongsTo(() => IdToken)
-    declare groupIdToken: IdTokenType;
+    declare groupIdToken?: IdTokenType;
 
     @Column(DataType.STRING)
     declare language2?: string;

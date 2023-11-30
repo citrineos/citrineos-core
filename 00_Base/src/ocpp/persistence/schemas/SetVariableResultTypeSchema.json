@@ -1,0 +1,141 @@
+{
+    "definitions": {
+        "AttributeEnumType": {
+            "default": "Actual",
+            "enum": [
+                "Actual",
+                "Target",
+                "MinSet",
+                "MaxSet"
+            ],
+            "javaType": "AttributeEnum",
+            "tsEnumNames": [
+                "Actual",
+                "Target",
+                "MinSet",
+                "MaxSet"
+            ],
+            "type": "string"
+        },
+        "ComponentType": {
+            "javaType": "Component",
+            "properties": {
+                "evse": {
+                    "$ref": "#/definitions/EVSEType"
+                },
+                "instance": {
+                    "maxLength": 50,
+                    "type": "string"
+                },
+                "name": {
+                    "maxLength": 50,
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name"
+            ],
+            "type": "object"
+        },
+        "EVSEType": {
+            "javaType": "EVSE",
+            "properties": {
+                "connectorId": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "id"
+            ],
+            "type": "object"
+        },
+        "VariableType": {
+            "javaType": "Variable",
+            "properties": {
+                "instance": {
+                    "maxLength": 50,
+                    "type": "string"
+                },
+                "name": {
+                    "maxLength": 50,
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name"
+            ],
+            "type": "object"
+        },
+        "StatusInfoType": {
+          "description": "Element providing more information about the status.\r\n",
+          "javaType": "StatusInfo",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "reasonCode": {
+              "description": "A predefined code for the reason why the status is returned in this response. The string is case-insensitive.\r\n",
+              "type": "string",
+              "maxLength": 20
+            },
+            "additionalInfo": {
+              "description": "Additional text to provide detailed information.\r\n",
+              "type": "string",
+              "maxLength": 512
+            }
+          },
+          "required": [
+            "reasonCode"
+          ]
+        },
+        "SetVariableStatusEnumType": {
+          "description": "Result status of setting the variable.\r\n",
+          "javaType": "SetVariableStatusEnum",
+          "type": "string",
+          "additionalProperties": false,
+          "enum": [
+            "Accepted",
+            "Rejected",
+            "UnknownComponent",
+            "UnknownVariable",
+            "NotSupportedAttributeType",
+            "RebootRequired"
+          ],
+          "tsEnumNames": [
+            "Accepted",
+            "Rejected",
+            "UnknownComponent",
+            "UnknownVariable",
+            "NotSupportedAttributeType",
+            "RebootRequired"
+          ]
+        }
+    },
+    "javaType": "SetVariableResult",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "attributeType": {
+        "$ref": "#/definitions/AttributeEnumType"
+      },
+      "attributeStatus": {
+        "$ref": "#/definitions/SetVariableStatusEnumType"
+      },
+      "attributeStatusInfo": {
+        "$ref": "#/definitions/StatusInfoType"
+      },
+      "component": {
+        "$ref": "#/definitions/ComponentType"
+      },
+      "variable": {
+        "$ref": "#/definitions/VariableType"
+      }
+    },
+    "required": [
+      "attributeStatus",
+      "component",
+      "variable"
+    ]
+}

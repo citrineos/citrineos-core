@@ -9,6 +9,7 @@ export function createProdConfig() {
             unknownChargerStatus: RegistrationStatusEnumType.Pending,
             getBaseReportOnPending: true,
             bootWithRejectedVariables: true,
+            autoAccept: true,
             api: {
                 endpointPrefix: "/provisioning",
                 port: 8081
@@ -41,11 +42,13 @@ export function createProdConfig() {
             }
         },
         websocketServer: {
+            tlsFlag: false,
             host: "localhost",
             port: 8080,
             protocol: "ocpp2.0.1",
             pingInterval: 60,
-            maxCallLengthSeconds: 5
+            maxCallLengthSeconds: 5,
+            maxCachingSeconds: 10
         }
     });
 }

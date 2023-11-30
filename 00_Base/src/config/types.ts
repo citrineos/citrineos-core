@@ -25,6 +25,7 @@ export const systemConfigSchema = z.object({
         unknownChargerStatus: z.enum([RegistrationStatusEnumType.Accepted, RegistrationStatusEnumType.Pending, RegistrationStatusEnumType.Rejected]).default(RegistrationStatusEnumType.Accepted), // Unknown chargers have no entry in BootConfig table
         getBaseReportOnPending: z.boolean().default(true),
         bootWithRejectedVariables: z.boolean().default(true),
+        autoAccept: z.boolean().default(true), // If false, only data endpoint can update boot status to accepted
         api: z.object({
             endpointPrefix: z.string(),
             port: z.number().int().positive().default(8081),
@@ -103,12 +104,18 @@ export const systemConfigSchema = z.object({
         })
     }),
     websocketServer: z.object({
+        tlsFlag: z.boolean().default(false),
+        tlsKeysFilepath: z.string().optional(),
+        tlsCertificateChainFilepath: z.string().optional(),
         port: z.number().int().positive().default(8080),
-        host: z.string().default("localhost"),
+        host: z.string().default('localhost'),
         protocol: z.string().default('ocpp2.0.1'),
         pingInterval: z.number().int().positive().default(60),
-        maxCallLengthSeconds: z.number().int().positive().default(5)
-    }),
+        maxCallLengthSeconds: z.number().int().positive().default(5),
+        maxCachingSeconds: z.number().int().positive().default(10)
+    }).refine(websocketServer => websocketServer.maxCachingSeconds >= websocketServer.maxCallLengthSeconds, {
+        message: 'maxCachingSeconds cannot be less than maxCallLengthSeconds'
+    })
 });
 
 export type SystemConfig = z.infer<typeof systemConfigSchema>;

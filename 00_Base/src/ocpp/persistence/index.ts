@@ -19,6 +19,7 @@ export { default as AuthorizationDataSchema } from './schemas/AuthorizationDataS
 export { default as BootConfigSchema } from './schemas/BootConfigSchema.json';
 export { default as ChargingStationTypeSchema } from './schemas/ChargingStationTypeSchema.json';
 export { default as ReportDataTypeSchema } from './schemas/ReportDataTypeSchema.json';
+export { default as SetVariableResultTypeSchema } from './schemas/SetVariableResultTypeSchema.json';
 
 export function QuerySchema(properties: [string, string][], required?: string[]): object {
     const schema: Record<string, string | object> = {

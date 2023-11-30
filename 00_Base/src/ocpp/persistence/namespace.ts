@@ -33,6 +33,7 @@ export enum Namespace {
     TransactionType = 'Transaction',
     VariableAttributeType = 'VariableAttribute',
     VariableCharacteristicsType = 'VariableCharacteristics',
+    VariableStatus = 'VariableStatus',
     VariableType = 'Variable',
     SystemConfig = 'SystemConfig'
 }

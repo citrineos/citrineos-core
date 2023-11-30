@@ -18,15 +18,24 @@ import {
   AbstractModule,
   AsHandler,
   CallAction,
+  DataTransferRequest,
+  DataTransferResponse,
+  DataTransferStatusEnumType,
   EventGroup,
+  FirmwareStatusNotificationRequest,
+  FirmwareStatusNotificationResponse,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageHandler,
   IMessageSender,
+  LogStatusNotificationRequest,
+  LogStatusNotificationResponse,
+  NotifyCustomerInformationRequest,
+  NotifyCustomerInformationResponse,
   NotifyMonitoringReportRequest,
-  SystemConfig,
-  TransactionEventResponse
+  NotifyMonitoringReportResponse,
+  SystemConfig
 } from "@citrineos/base";
 import { PubSubReceiver, PubSubSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
@@ -37,7 +46,7 @@ import { ILogObj, Logger } from 'tslog';
  */
 export class MonitoringModule extends AbstractModule {
 
-  protected _requests: CallAction[] = [CallAction.NotifyMonitoringReport];
+  protected _requests: CallAction[] = [CallAction.NotifyMonitoringReport, CallAction.NotifyCustomerInformation, CallAction.LogStatusNotification, CallAction.FirmwareStatusNotification, CallAction.DataTransfer];
   protected _responses: CallAction[] = [CallAction.GetMonitoringReport];
 
   /**
@@ -86,17 +95,76 @@ export class MonitoringModule extends AbstractModule {
    */
 
   @AsHandler(CallAction.NotifyMonitoringReport)
-  protected _handleTransaction(
+  protected _handleNotifyMonitoringReport(
     message: IMessage<NotifyMonitoringReportRequest>,
     props?: HandlerProperties
   ): void {
-
-    this._logger.debug("Transaction received:", message, props);
+    this._logger.debug("NotifyMonitoringReport request received:", message, props);
 
     // Create response
-    const response: TransactionEventResponse = {};
+    const response: NotifyMonitoringReportResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("Transaction response sent:", messageConfirmation));
+      .then(messageConfirmation => this._logger.debug("NotifyMonitoringReport response sent:", messageConfirmation));
+  }
+
+  @AsHandler(CallAction.LogStatusNotification)
+  protected _handleLogStatusNotification(
+    message: IMessage<LogStatusNotificationRequest>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("LogStatusNotification received:", message, props);
+
+    // TODO: LogStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
+
+    // Create response
+    const response: LogStatusNotificationResponse = {};
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("LogStatusNotification response sent:", messageConfirmation));
+  }
+
+  @AsHandler(CallAction.FirmwareStatusNotification)
+  protected _handleFirmwareStatusNotification(
+    message: IMessage<FirmwareStatusNotificationRequest>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("FirmwareStatusNotification received:", message, props);
+
+    // TODO: FirmwareStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
+
+    // Create response
+    const response: FirmwareStatusNotificationResponse = {};
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("FirmwareStatusNotification response sent:", messageConfirmation));
+  }
+
+  @AsHandler(CallAction.NotifyCustomerInformation)
+  protected _handleNotifyCustomerInformation(
+    message: IMessage<NotifyCustomerInformationRequest>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("NotifyCustomerInformation request received:", message, props);
+
+    // Create response
+    const response: NotifyCustomerInformationResponse = {};
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("NotifyCustomerInformation response sent:", messageConfirmation));
+  }
+
+  @AsHandler(CallAction.DataTransfer)
+  protected _handleDataTransfer(
+    message: IMessage<DataTransferRequest>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("DataTransfer received:", message, props);
+
+    // Create response
+    const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("DataTransfer response sent:", messageConfirmation));
   }
 }

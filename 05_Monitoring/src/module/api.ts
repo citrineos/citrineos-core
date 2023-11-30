@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractModuleApi, AsMessageEndpoint, CallAction, GetMonitoringReportRequest, GetMonitoringReportRequestSchema, IMessageConfirmation, Namespace } from '@citrineos/base';
+import { AbstractModuleApi, AsMessageEndpoint, CallAction, CustomerInformationRequest, CustomerInformationRequestSchema, GetLogRequest, GetLogRequestSchema, GetMonitoringReportRequest, GetMonitoringReportRequestSchema, IMessageConfirmation, Namespace } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IMonitoringModuleApi } from './interface';
@@ -45,6 +45,15 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         return this._module.sendCall(identifier, tenantId, CallAction.GetMonitoringReport, request, callbackUrl);
     }
 
+    @AsMessageEndpoint(CallAction.GetLog, GetLogRequestSchema)
+    getLog(identifier: string, tenantId: string, request: GetLogRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.GetLog, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.CustomerInformation, CustomerInformationRequestSchema)
+    customerInformation(identifier: string, tenantId: string, request: CustomerInformationRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.CustomerInformation, request, callbackUrl);
+    }
 
     /**
     * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.

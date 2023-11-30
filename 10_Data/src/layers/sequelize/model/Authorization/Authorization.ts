@@ -35,10 +35,10 @@ export class Authorization extends Model implements AuthorizationData, Authoriza
 
     @ForeignKey(() => IdToken)
     @Column({
-        type: DataType.STRING,
+        type: DataType.INTEGER,
         unique: true
     })
-    declare idTokenId?: string;
+    declare idTokenId?: number;
 
     @BelongsTo(() => IdToken)
     declare idToken: IdTokenType;

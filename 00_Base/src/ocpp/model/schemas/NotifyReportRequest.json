@@ -48,7 +48,8 @@
         "boolean",
         "OptionList",
         "SequenceList",
-        "MemberList"
+        "MemberList",
+        "passwordString"
       ],
       "tsEnumNames": [
         "string",

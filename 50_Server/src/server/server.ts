@@ -14,16 +14,21 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractCentralSystem, CacheNamespace, Call, CallAction, CallError, CallResult, ClientConnection, ErrorCode, ICache, ICentralSystem, IClientConnection, IMessageHandler, IMessageRouter, IMessageSender, MessageTriggerEnumType, MessageTypeId, OcppError, RegistrationStatusEnumType, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
+import { AbstractCentralSystem, AttributeEnumType, CacheNamespace, Call, CallAction, CallError, CallResult, ClientConnection, ErrorCode, ICache, ICentralSystem, IClientConnection, IMessageHandler, IMessageRouter, IMessageSender, MessageTriggerEnumType, MessageTypeId, OcppError, RegistrationStatusEnumType, SetVariableStatusEnumType, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
 import { ProvisioningModule } from "@citrineos/provisioning";
 import { RabbitMqSender } from "@citrineos/util";
 import Ajv from "ajv";
+import * as bcrypt from "bcrypt";
 import { instanceToPlain } from "class-transformer";
-import { IncomingMessage } from "http";
+import * as https from "https";
+import * as http from "http";
+import fs from "fs";
 import { ILogObj, Logger } from "tslog";
 import { v4 as uuidv4 } from "uuid";
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from "ws";
 import { CentralSystemMessageHandler, OcppMessageRouter } from "./router";
+import { DeviceModelRepository } from "@citrineos/data/lib/layers/sequelize";
+import { Duplex } from "stream";
 
 /**
  * Implementation of the central system
@@ -38,6 +43,8 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
     private _router: IMessageRouter;
     private _socketServer: WebSocketServer;
     private _connections: Map<string, WebSocket> = new Map();
+    private _httpServer;
+    private _deviceModelRepository: DeviceModelRepository;
 
     /**
      * Constructor for the class.
@@ -55,7 +62,8 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         sender?: IMessageSender,
         handler?: CentralSystemMessageHandler,
         logger?: Logger<ILogObj>,
-        ajv?: Ajv,) {
+        ajv?: Ajv,
+        deviceModelRepository?: DeviceModelRepository) {
         super(config, logger, cache, ajv);
 
         // Initialize router before socket server to avoid race condition
@@ -65,15 +73,33 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
 
         this._cache = cache;
 
+        this._deviceModelRepository = deviceModelRepository || new DeviceModelRepository(this._config, this._logger);
+
+        this._httpServer = this._config.websocketServer.tlsFlag ? https.createServer({
+            key: fs.readFileSync(this._config.websocketServer.tlsKeysFilepath as string),
+            cert: fs.readFileSync(this._config.websocketServer.tlsCertificateChainFilepath as string),
+            minVersion: 'TLSv1.2'
+        }) : http.createServer();
+
         this._socketServer = new WebSocketServer({
-            port: this._config.websocketServer.port,
-            host: this._config.websocketServer.host,
+            noServer: true,
             handleProtocols: this._handleProtocols.bind(this),
-            clientTracking: true
+            clientTracking: false
         });
-        this._socketServer.on("connection", this._onConnection.bind(this));
-        this._socketServer.on("error", this._onError.bind(this));
-        this._socketServer.on("close", this._onClose.bind(this));
+
+        this._socketServer.on('connection', this._onConnection.bind(this));
+        this._socketServer.on('error', this._onError.bind(this));
+        this._socketServer.on('close', this._onClose.bind(this));
+
+        this._httpServer.on('upgrade', this._upgradeRequest.bind(this));
+        this._httpServer.on('error', (error) => this._socketServer.emit('error', error));
+        // socketServer.close() will not do anything; use httpServer.close()
+        this._httpServer.on('close', () => this._socketServer.emit('close'));
+
+        const protocol = this._config.websocketServer.tlsFlag ? 'wss' : 'ws';
+        this._httpServer.listen(this._config.websocketServer.port, this._config.websocketServer.host, () => {
+            this._logger.info(`WebsocketServer running on ${protocol}://${this._config.websocketServer.host}:${this._config.websocketServer.port}/`)
+        });
     }
 
     /**
@@ -83,6 +109,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
     shutdown(): void {
         this._router.sender.shutdown();
         this._router.handler.shutdown();
+        this._httpServer.close();
     }
 
     /**
@@ -97,7 +124,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         const action = message[2] as CallAction;
         const payload = message[3];
 
-        this._isAllowed(action, connection.identifier)
+        this._onCallIsAllowed(action, connection.identifier)
             .then((isAllowed: boolean) => {
                 if (!isAllowed) {
                     throw new OcppError(messageId, ErrorCode.SecurityError, `Action ${action} not allowed`);
@@ -116,7 +143,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                     throw new OcppError(messageId, ErrorCode.RpcFrameworkError, "Call already in progress", {});
                 }
                 // Add reference to call in cache
-                this._cache.set(connection.identifier, `${messageId}|${action}`, CacheNamespace.Transactions, 30);
+                this._cache.set(connection.identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.websocketServer.maxCallLengthSeconds);
             }).then(success => {
                 // Route call
                 return this._router.routeCall(connection, message);
@@ -144,15 +171,17 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
 
         this._logger.debug("Process CallResult", connection.identifier, messageId, payload);
 
-        let key = `${connection.identifier}.${messageId}`;
-
-        this._cache.get<string>(key, CacheNamespace.Transactions)
-            .then(cachedAction => {
-                this._cache.remove(key, CacheNamespace.Transactions); // Always remove pending call transaction
-                if (!cachedAction) {
-                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found", {});
+        this._cache.get<string>(connection.identifier, CacheNamespace.Transactions)
+            .then(cachedActionMessageId => {
+                this._cache.remove(connection.identifier, CacheNamespace.Transactions); // Always remove pending call transaction
+                if (!cachedActionMessageId) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.websocketServer.maxCallLengthSeconds });
                 }
-                const action: CallAction = CallAction[cachedAction as keyof typeof CallAction]; // Parse CallAction from cached action
+                const [actionString, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+                if (messageId !== cachedMessageId) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", { "expectedMessageId": cachedMessageId });
+                }
+                const action: CallAction = CallAction[actionString as keyof typeof CallAction]; // Parse CallAction
                 return { action, ...this._validateCallResult(connection.identifier, action, message) }; // Run schema validation for incoming CallResult message
             }).then(({ action, isValid, errors }) => {
                 if (!isValid || errors) {
@@ -189,22 +218,21 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @param {Call} message - The Call message to send.
      * @return {Promise<boolean>} A promise that resolves to a boolean indicating if the call was sent successfully.
      */
-    sendCall(identifier: string, message: Call): Promise<boolean> {
+    async sendCall(identifier: string, message: Call): Promise<boolean> {
         const messageId = message[1];
         const action = message[2] as CallAction;
-        return this._cache.get<string>(ProvisioningModule.BOOT_STATUS, identifier).then(status => {
-            if (!status || status !== RegistrationStatusEnumType.Rejected ||
-                (action == CallAction.TriggerMessage && (message[3] as TriggerMessageRequest).requestedMessage == MessageTriggerEnumType.BootNotification)) {
-                return this._cache.set(`${identifier}.${messageId}`, action, CacheNamespace.Transactions).then(() => {
-                    // Intentionally removing NULL values from object for OCPP conformity
-                    const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
-                    return this._sendMessage(identifier, rawMessage);
-                })
-            } else {
-                this._logger.info(`RegistrationStatus ${status}, unable to send`, identifier, message);
-                return false;
-            }
-        });
+        if (await this._cache.exists(identifier, CacheNamespace.Transactions)) {
+            this._logger.info("Call already in progress, unable to send", identifier, message);
+            return false;
+        } else if (await this._sendCallIsAllowed(identifier, message)) {
+            await this._cache.set(identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.websocketServer.maxCallLengthSeconds);
+            // Intentionally removing NULL values from object for OCPP conformity
+            const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
+            return this._sendMessage(identifier, rawMessage);
+        } else {
+            this._logger.info("RegistrationStatus Rejected, unable to send", identifier, message);
+            return false;
+        }
     }
 
     /**
@@ -214,22 +242,26 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @param {CallResult} message - The CallResult message to send.
      * @return {Promise<boolean>} A promise that resolves to true if the call result was sent successfully, or false otherwise.
      */
-    sendCallResult(identifier: string, message: CallResult): Promise<boolean> {
+    async sendCallResult(identifier: string, message: CallResult): Promise<boolean> {
         const messageId = message[1];
-        return this._cache.get<string>(identifier, CacheNamespace.Transactions).then(value => {
-            let cachedMessageId = value?.split("|")[0];
-            if (cachedMessageId === messageId) {
-                // Intentionally removing NULL values from object for OCPP conformity
-                const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
-                return Promise.all([
-                    this._sendMessage(identifier, rawMessage),
-                    this._cache.remove(identifier, CacheNamespace.Transactions)
-                ]).then(successes => successes.every(Boolean));
-            } else {
-                this._logger.error("Failed to send callResult due to mismatch in message id", identifier, value, message);
-                return false;
-            }
-        });
+        const cachedActionMessageId = await this._cache.get<string>(identifier, CacheNamespace.Transactions);
+        if (!cachedActionMessageId) {
+            this._logger.error("Failed to send callResult due to missing message id", identifier, message);
+            return false;
+        }
+        let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+        if (cachedMessageId === messageId) {
+            // Intentionally removing NULL values from object for OCPP conformity
+            const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
+            return Promise.all([
+                this._sendMessage(identifier, rawMessage),
+                this._cache.remove(identifier, CacheNamespace.Transactions)
+            ]).then(successes => successes.every(Boolean));
+        } else {
+            this._logger.error("Failed to send callResult due to mismatch in message id", identifier, cachedActionMessageId, message);
+            return false;
+        }
+
     }
 
     /**
@@ -256,8 +288,8 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @param {string} identifier - The identifier to be checked.
      * @return {Promise<boolean>} A promise that resolves to a boolean indicating if the action and identifier are allowed.
      */
-    private _isAllowed(action: CallAction, identifier: string): Promise<boolean> {
-        return this._cache.exists(action, identifier).then(blacklisted => blacklisted !== null);
+    private _onCallIsAllowed(action: CallAction, identifier: string): Promise<boolean> {
+        return this._cache.exists(action, identifier).then(blacklisted => !blacklisted);
     }
 
     /**
@@ -295,13 +327,72 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
     }
 
     /**
+     * Method to validate websocket upgrade requests and pass them to the socket server.
+     * 
+     * @param {IncomingMessage} req - The request object.
+     * @param {Duplex} socket - Websocket duplex stream. 
+     * @param {Buffer} head - Websocket buffer.
+     */
+    private async _upgradeRequest(req: http.IncomingMessage, socket: Duplex, head: Buffer) {
+        // Validate username/password from authorization header
+        // - The Authorization header is formatted as follows:
+        // AUTHORIZATION: Basic <Base64 encoded(<Configured ChargingStationId>:<Configured BasicAuthPassword>)>
+        this._logger.info("Upgrade request", req.url);
+        const authHeader = req.headers.authorization;
+        this._logger.info("Authorization header", req.headers.authorization);
+        const [username, password] = Buffer.from(authHeader?.split(' ')[1] || '', 'base64').toString().split(':');
+        this._logger.info("Username and password", username, password);
+
+        if (username != this._getClientIdFromUrl(req.url as string) || await this._checkPassword(username, password) === false) {
+            this._logger.info("Unauthorized");
+            this._rejectUpgradeUnauthorized(socket);
+        } else {
+            this._socketServer.handleUpgrade(req, socket, head, (ws) => {
+                this._socketServer.emit('connection', ws, req);
+            });
+        }
+    }
+
+    private async _checkPassword(username: string, password: string) {
+        return (await this._deviceModelRepository.readAllByQuery({
+            stationId: username,
+            component_name: 'SecurityCtrlr',
+            variable_name: 'BasicAuthPassword',
+            type: AttributeEnumType.Actual
+        }).then(r => {
+            if (r && r[0]) {
+                this._logger.info("BasicAuthPassword", r[0].value);
+                // Grabbing value most recently *successfully* set on charger
+                const hashedPassword = r[0].statuses?.filter(status => status.status !== SetVariableStatusEnumType.Rejected).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).shift();
+                if (hashedPassword?.value) {
+                    return bcrypt.compare(password, hashedPassword.value);
+                }
+            }
+            this._logger.warn("Has no password", username);
+            return false;
+        }));
+    }
+
+    /**
+     * Utility function to reject websocket upgrade requests with 401 status code.
+     * @param socket - Websocket duplex stream.
+     */
+    private _rejectUpgradeUnauthorized(socket: Duplex) {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n');
+        socket.write('WWW-Authenticate: Basic realm="Access to the WebSocket", charset="UTF-8"\r\n');
+        socket.write('\r\n');
+        socket.end();
+        socket.destroy();
+    }
+
+    /**
      * Internal method to handle new client connection and ensures supported protocols are used.
      *
      * @param {Set<string>} protocols - The set of protocols to handle.
      * @param {IncomingMessage} req - The request object.
      * @return {boolean|string} - Returns the protocol version if successful, otherwise false.
      */
-    private _handleProtocols(protocols: Set<string>, req: IncomingMessage) {
+    private _handleProtocols(protocols: Set<string>, req: http.IncomingMessage) {
         // Only supports configured protocol version
         if (protocols.has(this._config.websocketServer.protocol)) {
 
@@ -338,10 +429,9 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @param {IncomingMessage} req - The request object associated with the connection.
      * @return {void}
      */
-    private _onConnection(ws: WebSocket, req: IncomingMessage): void {
+    private _onConnection(ws: WebSocket, req: http.IncomingMessage): void {
 
-        // Parse the path to get the client id
-        const identifier = (req.url as string).split("/")[1];
+        const identifier = this._getClientIdFromUrl(req.url as string);
         this._connections.set(identifier, ws);
 
         // Pause the WebSocket event emitter until broker is established
@@ -428,9 +518,18 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @return {void} This function does not return anything.
      */
     private _onMessage(client: IClientConnection, message: string): void {
+        let rpcMessage: any;
+        let messageTypeId: MessageTypeId;
+        let messageId: string = "0";
         try {
-            let rpcMessage = JSON.parse(message);
-            switch (rpcMessage[0]) {
+            try {
+                rpcMessage = JSON.parse(message);
+                messageTypeId = rpcMessage[0];
+                messageId = rpcMessage[1];
+            } catch (error) {
+                throw new OcppError(messageId, ErrorCode.FormatViolation, "Invalid message format", { error: error });
+            }
+            switch (messageTypeId) {
                 case MessageTypeId.Call:
                     this.onCall(client, rpcMessage as Call);
                     break;
@@ -440,10 +539,16 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                 case MessageTypeId.CallError:
                     this.onCallError(client, rpcMessage as CallError);
                     break;
+                default:
+                    throw new OcppError(messageId, ErrorCode.FormatViolation, "Unknown message type id: " + messageTypeId, {});
             }
         } catch (error) {
             this._logger.error("Error processing message:", message, error);
-            this.sendCallError(client.identifier, [MessageTypeId.CallError, "0", ErrorCode.FormatViolation, "Invalid message format", {}]);
+            if (error instanceof OcppError) {
+                (error as OcppError).sendAsCallError(client.identifier, this);
+            } else {
+                this.sendCallError(client.identifier, [MessageTypeId.CallError, messageId, ErrorCode.InternalError, "Unable to process message", { error: error }]);
+            }
             // TODO: Publish raw payload for error reporting
         }
     }
@@ -503,5 +608,23 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                 }
             });
         }, this._config.websocketServer.pingInterval * 1000);
+    }
+    /**
+     * 
+     * @param url Http upgrade request url used by charger
+     * @returns Charger identifier
+     */
+    private _getClientIdFromUrl(url: string): string {
+        return url.split("/")[1];
+    }
+
+    private async _sendCallIsAllowed(identifier: string, message: Call): Promise<boolean> {
+        const status = await this._cache.get<string>(ProvisioningModule.BOOT_STATUS, identifier);
+        if (status == RegistrationStatusEnumType.Rejected &&
+            // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
+            !(message[2] as CallAction == CallAction.TriggerMessage && (message[3] as TriggerMessageRequest).requestedMessage == MessageTriggerEnumType.BootNotification)) {
+            return false;
+        }
+        return true;
     }
 }
