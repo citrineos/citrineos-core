@@ -95,28 +95,26 @@ class CitrineOSServer {
         const configurationModule = new ConfigurationModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger);
         const evdriverModule = new EVDriverModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger);
         const monitoringModule = new MonitoringModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger);
+        const reportingModule = new ReportingModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger);
         const transactionsModule = new TransactionsModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger);
         this._modules = [
             configurationModule,
             evdriverModule,
             monitoringModule,
+            reportingModule,
             transactionsModule
         ]
         this._apis = [
             new ConfigurationModuleApi(configurationModule, this._server, this._logger),
             new EVDriverModuleApi(evdriverModule, this._server, this._logger),
             new MonitoringModuleApi(monitoringModule, this._server, this._logger),
+            new ReportingModuleApi(reportingModule, this._server, this._logger),
             new TransactionsModuleApi(transactionsModule, this._server, this._logger),
         ];
         if (this._config.modules.certificates) {
            const certificatesModule = new CertificatesModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger)
             this._modules.push(certificatesModule);
             this._apis.push(new CertificatesModuleApi(certificatesModule, this._server, this._logger));
-        }
-        if (this._config.modules.reporting) {
-            const reportingModule = new ReportingModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger)
-            this._modules.push(reportingModule);
-            this._apis.push(new ReportingModuleApi(reportingModule, this._server, this._logger));
         }
         if (this._config.modules.smartcharging) {
             const smartchargingModule = new SmartChargingModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger)

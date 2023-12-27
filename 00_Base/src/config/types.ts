@@ -45,7 +45,7 @@ export const systemConfigInputSchema = z.object({
         reporting: z.object({
             endpointPrefix: z.string().default("reporting").optional(),
             port: z.number().int().positive().default(8081).optional(),
-        }).optional(),
+        }),
         smartcharging: z.object({
             endpointPrefix: z.string().default("smartcharging").optional(),
             port: z.number().int().positive().default(8081).optional(),
@@ -157,7 +157,7 @@ export const systemConfigSchema = z.object({
         reporting: z.object({
             endpointPrefix: z.string(),
             port: z.number().int().positive(),
-        }).optional(),
+        }),
         smartcharging: z.object({
             endpointPrefix: z.string(),
             port: z.number().int().positive(),
