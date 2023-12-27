@@ -93,29 +93,25 @@ class CitrineOSServer {
         // Initialize modules & APIs
         // Always initialize APIs after SwaggerUI
         const configurationModule = new ConfigurationModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger);
+        const evdriverModule = new EVDriverModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger);
+        const monitoringModule = new MonitoringModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger);
         const transactionsModule = new TransactionsModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger);
         this._modules = [
             configurationModule,
+            evdriverModule,
+            monitoringModule,
             transactionsModule
         ]
         this._apis = [
             new ConfigurationModuleApi(configurationModule, this._server, this._logger),
+            new EVDriverModuleApi(evdriverModule, this._server, this._logger),
+            new MonitoringModuleApi(monitoringModule, this._server, this._logger),
             new TransactionsModuleApi(transactionsModule, this._server, this._logger),
         ];
         if (this._config.modules.certificates) {
            const certificatesModule = new CertificatesModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger)
             this._modules.push(certificatesModule);
             this._apis.push(new CertificatesModuleApi(certificatesModule, this._server, this._logger));
-        }
-        if (this._config.modules.evdriver) {
-            const evdriverModule = new EVDriverModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger)
-            this._modules.push(evdriverModule);
-            this._apis.push(new EVDriverModuleApi(evdriverModule, this._server, this._logger));
-         }
-        if (this._config.modules.monitoring) {
-            const monitoringModule = new MonitoringModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger)
-            this._modules.push(monitoringModule);
-            this._apis.push(new MonitoringModuleApi(monitoringModule, this._server, this._logger));
         }
         if (this._config.modules.reporting) {
             const reportingModule = new ReportingModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger)
