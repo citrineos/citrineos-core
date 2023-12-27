@@ -90,7 +90,7 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
             } as const
         };
 
-        if (this._module.config.server.swagger.exposeMessage) {
+        if (this._module.config.server.swagger?.exposeMessage) {
             this._server.register(async (fastifyInstance) => {
                 fastifyInstance.post(this._toMessagePath(action), _opts, _handler);
             });
@@ -140,7 +140,7 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
             handler: _handler
         };
 
-        if (this._module.config.server.swagger.exposeData) {
+        if (this._module.config.server.swagger?.exposeData) {
             this._server.register(async (fastifyInstance) => {
                 fastifyInstance.route<{ Body: object, Querystring: object }>(_opts);
             });
