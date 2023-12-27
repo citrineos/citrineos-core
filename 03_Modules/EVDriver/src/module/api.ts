@@ -103,7 +103,7 @@ export class EVDriverModuleApi extends AbstractModuleApi<EVDriverModule> impleme
     * @return {string} - The generated URL path.
     */
     protected _toMessagePath(input: CallAction): string {
-        const endpointPrefix = this._module.config.modules.evdriver?.endpointPrefix;
+        const endpointPrefix = this._module.config.modules.evdriver.endpointPrefix;
         return super._toMessagePath(input, endpointPrefix);
     }
 
@@ -114,7 +114,7 @@ export class EVDriverModuleApi extends AbstractModuleApi<EVDriverModule> impleme
      * @return {string} - The generated URL path.
      */
     protected _toDataPath(input: Namespace): string {
-        const endpointPrefix = this._module.config.modules.evdriver?.endpointPrefix;
+        const endpointPrefix = this._module.config.modules.evdriver.endpointPrefix;
         return super._toDataPath(input, endpointPrefix);
     }
 }

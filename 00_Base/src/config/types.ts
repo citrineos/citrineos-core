@@ -27,7 +27,7 @@ export const systemConfigInputSchema = z.object({
         evdriver: z.object({
             endpointPrefix: z.string().default("commands").optional(),
             port: z.number().int().positive().default(8081).optional(),
-        }).optional(),
+        }),
         configuration: z.object({
             heartbeatInterval: z.number().int().positive().default(60).optional(),
             bootRetryInterval: z.number().int().positive().default(10).optional(),
@@ -41,7 +41,7 @@ export const systemConfigInputSchema = z.object({
         monitoring: z.object({
             endpointPrefix: z.string().default("monitoring").optional(),
             port: z.number().int().positive().default(8081).optional(),
-        }).optional(),
+        }),
         reporting: z.object({
             endpointPrefix: z.string().default("reporting").optional(),
             port: z.number().int().positive().default(8081).optional(),
@@ -136,7 +136,7 @@ export const systemConfigSchema = z.object({
         evdriver: z.object({
             endpointPrefix: z.string(),
             port: z.number().int().positive(),
-        }).optional(),
+        }),
         configuration: z.object({
             heartbeatInterval: z.number().int().positive(),
             bootRetryInterval: z.number().int().positive(),
@@ -153,7 +153,7 @@ export const systemConfigSchema = z.object({
         monitoring: z.object({
             endpointPrefix: z.string(),
             port: z.number().int().positive(),
-        }).optional(),
+        }),
         reporting: z.object({
             endpointPrefix: z.string(),
             port: z.number().int().positive(),
