@@ -144,7 +144,7 @@ export abstract class AbstractModule implements IModule {
     handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void {
         if (message.state === MessageState.Response) {
             this.handleMessageApiCallback(message as IMessage<OcppResponse>);
-            this._cache.set(message.context.correlationId, JSON.stringify(message.payload), message.context.stationId, this._config.websocketServer.maxCachingSeconds);
+            this._cache.set(message.context.correlationId, JSON.stringify(message.payload), message.context.stationId, this._config.websocket.maxCachingSeconds);
         }
         const handlerDefinition = (Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>).filter((h) => h.action === message.action).pop();
         if (handlerDefinition) {
@@ -205,7 +205,7 @@ export abstract class AbstractModule implements IModule {
         if (callbackUrl) {
             // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
             this._cache.set(_correlationId, callbackUrl, this.CALLBACK_URL_CACHE_PREFIX + identifier,
-                this._config.websocketServer.maxCachingSeconds); // x2 fudge factor for any network lag
+                this._config.websocket.maxCachingSeconds); // x2 fudge factor for any network lag
         }
         // TODO: Future - Compound key with tenantId
         return this._cache.get<ClientConnection>(identifier, CacheNamespace.Connections, () => ClientConnection).then((connection) => {

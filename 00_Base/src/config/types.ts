@@ -111,17 +111,27 @@ export const systemConfigInputSchema = z.object({
             exposeMessage: z.boolean().default(true).optional(),
         }).optional(),
     }),
-    websocketServer: z.object({
-        tlsFlag: z.boolean().default(false).optional(),
-        tlsKeysFilepath: z.string().optional(),
-        tlsCertificateChainFilepath: z.string().optional(),
-        port: z.number().int().positive().default(8080).optional(),
-        host: z.string().default('localhost').optional(),
-        protocol: z.string().default('ocpp2.0.1').optional(),
+    websocket: z.object({
         pingInterval: z.number().int().positive().default(60).optional(),
         maxCallLengthSeconds: z.number().int().positive().default(5).optional(),
         maxCachingSeconds: z.number().int().positive().default(10).optional()
-    })
+    }),
+    websocketSecurity: z.object({
+        // TODO: Add support for each websocketServer/tenant to have its own certificates
+        // Such as when different tenants use different certificate roots for additional security
+        tlsKeysFilepath: z.string().optional(),
+        tlsCertificateChainFilepath: z.string().optional(),
+        mtlsCertificateAuthorityRootsFilepath: z.string().optional(),
+        mtlsCertificateAuthorityKeysFilepath: z.string().optional()
+    }).optional(),
+    websocketServer: z.array(z.object({ 
+        // This allows multiple servers, ideally for different security profile levels
+        // TODO: Add support for tenant ids on server level for tenant-specific behavior
+        securityProfile: z.number().int().min(0).max(3).default(0).optional(),
+        port: z.number().int().positive().default(8080).optional(),
+        host: z.string().default('localhost').optional(),
+        protocol: z.string().default('ocpp2.0.1').optional(),
+    }))
 });
 
 export type SystemConfigInput = z.infer<typeof systemConfigInputSchema>;
@@ -223,19 +233,66 @@ export const systemConfigSchema = z.object({
             exposeMessage: z.boolean(),
         }).optional(),
     }),
-    websocketServer: z.object({
-        tlsFlag: z.boolean(),
-        tlsKeysFilepath: z.string().optional(),
-        tlsCertificateChainFilepath: z.string().optional(),
-        port: z.number().int().positive(),
-        host: z.string(),
-        protocol: z.string(),
+    websocket: z.object({
         pingInterval: z.number().int().positive(),
         maxCallLengthSeconds: z.number().int().positive(),
         maxCachingSeconds: z.number().int().positive()
     }).refine(websocketServer => websocketServer.maxCachingSeconds >= websocketServer.maxCallLengthSeconds, {
         message: 'maxCachingSeconds cannot be less than maxCallLengthSeconds'
+    }),
+    websocketSecurity: z.object({
+        // TODO: Add support for each websocketServer/tenant to have its own certificates
+        // Such as when different tenants use different certificate roots for additional security
+        tlsKeysFilepath: z.string().optional(),
+        tlsCertificateChainFilepath: z.string().optional(),
+        mtlsCertificateAuthorityRootsFilepath: z.string().optional(),
+        mtlsCertificateAuthorityKeysFilepath: z.string().optional()
+    }).optional(),
+    websocketServer: z.array(z.object({ 
+        // This allows multiple servers, ideally for different security profile levels
+        // TODO: Add support for tenant ids on server level for tenant-specific behavior
+        securityProfile: z.number().int().min(0).max(3),
+        port: z.number().int().positive(),
+        host: z.string(),
+        protocol: z.string(),
+    })).refine(websocketServers => checkForHostPortDuplicates(websocketServers), {
+        message: 'host and port must be unique'
     })
+}).refine((data) => {
+    const wsSecurity = data.websocketSecurity;
+
+    const requiresTls = data.websocketServer.some(server => server.securityProfile >= 2);
+    const tlsFieldsFilled = wsSecurity?.tlsKeysFilepath && wsSecurity?.tlsCertificateChainFilepath;
+
+    const requiresMtls = data.websocketServer.some(server => server.securityProfile >= 3);
+    const mtlsFieldsFilled = wsSecurity?.mtlsCertificateAuthorityRootsFilepath && wsSecurity?.mtlsCertificateAuthorityKeysFilepath;
+
+    if (requiresTls && !tlsFieldsFilled) {
+        return false;
+    }
+
+    if (requiresMtls && !mtlsFieldsFilled) {
+        return false;
+    }
+
+    return true;
+}, {
+    message: "TLS and/or mTLS fields must be filled based on the security profile of the websocket server."
 });
 
 export type SystemConfig = z.infer<typeof systemConfigSchema>;
+
+function checkForHostPortDuplicates(websocketServers: { port: number; host: string;}[]): unknown {
+    const uniqueCombinations = new Set<string>();
+    for (const item of websocketServers) {
+      const combo = `${item.host}:${item.port}`;
+  
+      if (uniqueCombinations.has(combo)) {
+        return false; // Duplicate found
+      }
+  
+      uniqueCombinations.add(combo);
+    }
+  
+    return true;
+}
