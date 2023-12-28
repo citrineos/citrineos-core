@@ -55,7 +55,8 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     declare dataType: DataEnumType;
 
     @Column({
-        type: DataType.STRING,
+        // TODO: Make this configurable?
+        type: DataType.STRING(4000),
         set(valueString) {
             if (valueString) {
                 const valueType = (this as VariableAttribute).dataType;

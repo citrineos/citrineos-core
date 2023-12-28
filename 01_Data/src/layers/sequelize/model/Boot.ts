@@ -32,7 +32,12 @@ export class Boot extends Model implements BootConfig {
     @Column(DataType.STRING)
     declare id: string;
 
-    @Column(DataType.STRING)
+    @Column({
+        type: DataType.DATE,
+        get() {
+            return this.getDataValue('lastBootTime').toISOString();
+        }
+    })
     declare lastBootTime?: string;
 
     @Column(DataType.INTEGER)

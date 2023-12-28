@@ -23,13 +23,14 @@ import {
     ForeignKey,
     HasMany,
     BelongsTo,
+    BelongsToMany,
   } from 'sequelize-typescript';
 import { IdToken } from '../Authorization';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
 
-@Table({ tableName: 'transactions' })
+@Table
 export class Transaction extends Model implements TransactionType {
 
   static readonly MODEL_NAME: string = Namespace.TransactionType;
@@ -78,10 +79,4 @@ export class Transaction extends Model implements TransactionType {
 
   @Column(DataType.INTEGER)
   declare remoteStartId?: number;
-
-  @ForeignKey(() => IdToken)
-  declare idTokenId?: number;
-
-  @BelongsTo(() => IdToken)
-  declare idToken?: IdToken;
 }

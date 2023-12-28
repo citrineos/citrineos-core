@@ -43,6 +43,11 @@ export class MeterValue extends Model implements MeterValueType {
     @Column(DataType.JSON)
     declare sampledValue: [SampledValueType, ...SampledValueType[]];
 
-    @Column
+    @Column({
+        type: DataType.DATE,
+        get() {
+            return this.getDataValue('timestamp').toISOString();
+        }
+    })
     declare timestamp: string;
 }
