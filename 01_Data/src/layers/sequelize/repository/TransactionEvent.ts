@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { TransactionEventRequest, ChargingStateEnumType, IdTokenType, TransactionEventEnumType, EVSEType } from "@citrineos/base";
+import { TransactionEventRequest, ChargingStateEnumType, IdTokenType, TransactionEventEnumType, EVSEType, TransactionEventResponse } from "@citrineos/base";
 import { ITransactionEventRepository } from "../../../interfaces";
 import { MeterValue, Transaction, TransactionEvent } from "../model/TransactionEvent";
 import { SequelizeRepository } from "./Base";
@@ -33,18 +33,33 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
      * 
      * @returns Saved TransactionEvent
      */
-    createByStationId(value: TransactionEventRequest, stationId: string): Promise<TransactionEventRequest | undefined> {
+    async createOrUpdateTransactionByTransactionEventAndStationId(value: TransactionEventRequest, stationId: string): Promise<Transaction> {
+        let evse: Evse | undefined = undefined;
+        if (value.evse) {
+            evse = await this.s.models[Evse.MODEL_NAME]
+                .findOne({ where: { id: value.evse.id, connectorId: value.evse.connectorId ? value.evse.connectorId : null } }).then(row => row as Evse);
+            if (!evse) {
+                evse = await Evse.build({
+                    id: value.evse.id,
+                    connectorId: value.evse.connectorId ? value.evse.connectorId : null
+                }).save();
+            }
+        }
         const transaction = Transaction.build({
             stationId: stationId,
             isActive: value.eventType !== TransactionEventEnumType.Ended,
+            evseDatabaseId: evse ? evse.get('databaseId') : null,
             ...value.transactionInfo
         });
         return this.s.models[Transaction.MODEL_NAME]
             .findOne({ where: { transactionId: transaction.transactionId } }).then(model => {
                 if (model) {
                     for (const k in transaction.dataValues) {
-                        const newValue = transaction.getDataValue(k);
-                        if (newValue) { // Certain values, like chargingState, may be missing from updates
+                        if (k !== 'id') { // id is not a field that can be updated
+                            const newValue = transaction.getDataValue(k);
+                            // Certain fields, such as charging state, may be updated with null
+                            // In current version of ocpp (2.0.1) this is purposeful as charging state doesn't have an 'unplug' state--null is used instead
+                            // This is not ideal, and will hopefully be addressed in future versions.
                             model.setDataValue(k, newValue);
                         }
                     }
@@ -60,7 +75,8 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
                     ...value
                 }, { include: [MeterValue] });
                 event.meterValue?.forEach(meterValue => meterValue.transactionDatabaseId = transactionDatabaseId);
-                return super.create(event);
+                super.create(event);
+                return model as Transaction;
             });
     }
 
@@ -94,9 +110,10 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
      * @returns List of transactions which meet the requirements.
      */
     readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: EVSEType, chargingStates?: ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
+        const includeObj = evse ? [ { model: Evse, where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null } }, IdToken ] : [IdToken];
         return this.s.models[Transaction.MODEL_NAME].findAll({
-            where: { stationId: stationId, ...(evse ? { evse: { id: evse.id, connectorId: evse.connectorId } } : {}), ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}) },
-            include: [IdToken]
+            where: { stationId: stationId, ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}) },
+            include: includeObj
         }).then(row => (row as Transaction[]));
     }
 

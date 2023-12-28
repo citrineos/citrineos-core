@@ -64,6 +64,11 @@ class CitrineOSServer {
         // Create server instance
         this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
+        // Add health check
+        this._server.get('/health', async () => {
+            return { status: 'healthy' };
+        });
+
         // Create Ajv JSON schema validator instance
         this._ajv = ajv || new Ajv({ removeAdditional: "all", useDefaults: true, coerceTypes: "array", strict: false });
         addFormats(this._ajv, { mode: "fast", formats: ["date-time"] });

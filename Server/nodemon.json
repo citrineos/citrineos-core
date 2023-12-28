@@ -4,5 +4,8 @@
     ],
     "ext": ".ts,.js",
     "ignore": [],
-    "exec": "npx ts-node ./src/index.ts"
+    "exec": "npx ts-node ./src/index.ts",
+    "events": {
+        "crash": "nodemon --delay 500ms -L"
+    }
 }
