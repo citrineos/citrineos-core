@@ -31,7 +31,7 @@ export class ReportingModule extends AbstractModule {
    */
 
   protected _requests: CallAction[] = [
-    CallAction.LogStatusNotification, CallAction.NotifyCustomerInformation, CallAction.NotifyReport, CallAction.NotifyMonitoringReport, CallAction.SecurityEventNotification
+    CallAction.LogStatusNotification, CallAction.NotifyCustomerInformation, CallAction.NotifyMonitoringReport, CallAction.NotifyReport, CallAction.SecurityEventNotification
   ];
 
   protected _responses: CallAction[] = [
@@ -137,6 +137,20 @@ export class ReportingModule extends AbstractModule {
       .then(messageConfirmation => this._logger.debug("NotifyCustomerInformation response sent:", messageConfirmation));
   }
 
+  @AsHandler(CallAction.NotifyMonitoringReport)
+  protected _handleNotifyMonitoringReport(
+    message: IMessage<NotifyMonitoringReportRequest>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("NotifyMonitoringReport request received:", message, props);
+
+    // Create response
+    const response: NotifyMonitoringReportResponse = {};
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("NotifyMonitoringReport response sent:", messageConfirmation));
+  }
+
   @AsHandler(CallAction.NotifyReport)
   protected async _handleNotifyReport(
     message: IMessage<NotifyReportRequest>,
@@ -171,20 +185,6 @@ export class ReportingModule extends AbstractModule {
       .then((messageId) => {
         this._logger.debug("NotifyReport response sent:", messageId);
       });
-  }
-
-  @AsHandler(CallAction.NotifyMonitoringReport)
-  protected _handleNotifyMonitoringReport(
-    message: IMessage<NotifyMonitoringReportRequest>,
-    props?: HandlerProperties
-  ): void {
-    this._logger.debug("NotifyMonitoringReport request received:", message, props);
-
-    // Create response
-    const response: NotifyMonitoringReportResponse = {};
-
-    this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("NotifyMonitoringReport response sent:", messageConfirmation));
   }
 
   @AsHandler(CallAction.SecurityEventNotification)
