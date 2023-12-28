@@ -154,7 +154,7 @@ export class ConfigurationModule extends AbstractModule {
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
-    
+
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
@@ -245,23 +245,6 @@ export class ConfigurationModule extends AbstractModule {
         name: "ChargingStation"
       },
       variable: {
-        name: "SerialNumber"
-      },
-      variableAttribute: [
-        {
-          type: AttributeEnumType.Actual,
-          value: chargingStation.serialNumber,
-          mutability: MutabilityEnumType.ReadOnly,
-          persistent: true,
-          constant: true
-        }
-      ]
-    }, stationId);
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
-      component: {
-        name: "ChargingStation"
-      },
-      variable: {
         name: "Model"
       },
       variableAttribute: [
@@ -291,58 +274,84 @@ export class ConfigurationModule extends AbstractModule {
         }
       ]
     }, stationId);
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
-      component: {
-        name: "Controller"
-      },
-      variable: {
-        name: "FirmwareVersion"
-      },
-      variableAttribute: [
-        {
-          type: AttributeEnumType.Actual,
-          value: chargingStation.firmwareVersion,
-          mutability: MutabilityEnumType.ReadOnly,
-          persistent: true,
-          constant: true
-        }
-      ]
-    }, stationId);
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
-      component: {
-        name: "DataLink"
-      },
-      variable: {
-        name: "IMSI"
-      },
-      variableAttribute: [
-        {
-          type: AttributeEnumType.Actual,
-          value: chargingStation.modem?.imsi,
-          mutability: MutabilityEnumType.ReadOnly,
-          persistent: true,
-          constant: true
-        }
-      ]
-    }, stationId);
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
-      component: {
-        name: "DataLink"
-      },
-      variable: {
-        name: "ICCID"
-      },
-      variableAttribute: [
-        {
-          type: AttributeEnumType.Actual,
-          value: chargingStation.modem?.iccid,
-          mutability: MutabilityEnumType.ReadOnly,
-          persistent: true,
-          constant: true
-        }
-      ]
-    }, stationId);
-
+    if (chargingStation.firmwareVersion) {
+      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+        component: {
+          name: "Controller"
+        },
+        variable: {
+          name: "FirmwareVersion"
+        },
+        variableAttribute: [
+          {
+            type: AttributeEnumType.Actual,
+            value: chargingStation.firmwareVersion,
+            mutability: MutabilityEnumType.ReadOnly,
+            persistent: true,
+            constant: true
+          }
+        ]
+      }, stationId);
+    }
+    if (chargingStation.serialNumber) {
+      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+        component: {
+          name: "ChargingStation"
+        },
+        variable: {
+          name: "SerialNumber"
+        },
+        variableAttribute: [
+          {
+            type: AttributeEnumType.Actual,
+            value: chargingStation.serialNumber,
+            mutability: MutabilityEnumType.ReadOnly,
+            persistent: true,
+            constant: true
+          }
+        ]
+      }, stationId);
+    }
+    if (chargingStation.modem) {
+      if (chargingStation.modem.imsi) {
+        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+          component: {
+            name: "DataLink"
+          },
+          variable: {
+            name: "IMSI"
+          },
+          variableAttribute: [
+            {
+              type: AttributeEnumType.Actual,
+              value: chargingStation.modem?.imsi,
+              mutability: MutabilityEnumType.ReadOnly,
+              persistent: true,
+              constant: true
+            }
+          ]
+        }, stationId);
+      }
+      if (chargingStation.modem.iccid) {
+        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+          component: {
+            name: "DataLink"
+          },
+          variable: {
+            name: "ICCID"
+          },
+          variableAttribute: [
+            {
+              type: AttributeEnumType.Actual,
+              value: chargingStation.modem?.iccid,
+              mutability: MutabilityEnumType.ReadOnly,
+              persistent: true,
+              constant: true
+            }
+          ]
+        }, stationId);
+      }
+    }
     // Handle post-response actions
     if (bootNotificationResponseMessageConfirmation.success) {
       this._logger.debug("BootNotification response successfully sent to central system: ", bootNotificationResponseMessageConfirmation);
@@ -505,7 +514,7 @@ export class ConfigurationModule extends AbstractModule {
     this.sendCallResultWithMessage(message, response)
       .then(messageConfirmation => this._logger.debug("FirmwareStatusNotification response sent:", messageConfirmation));
   }
-  
+
   /**
    * Handle responses
    */
