@@ -97,7 +97,7 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug("Transaction event received:", message, props);
 
-    await this._transactionEventRepository.createByStationId(message.payload, message.context.stationId);
+    await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(message.payload, message.context.stationId);
 
     const transactionEvent = message.payload;
     if (transactionEvent.idToken) {
