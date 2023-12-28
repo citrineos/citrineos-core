@@ -16,7 +16,7 @@ services:
       timeout: 10s
       retries: 3
   ocpp-db:
-    image: citrineos/postgres:latest
+    image: citrineos/postgres:preseeded
     ports:
       - 5432:5432
     volumes:
