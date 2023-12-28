@@ -73,7 +73,6 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
         const evseDatabaseId = savedComponent.get('evseDatabaseId');
         for (const variableAttribute of value.variableAttribute) {
             const variableAttributeModel = VariableAttribute.build({
-                id: undefined, // Prevents update from removing id
                 stationId: stationId,
                 variableId: savedVariable.get('id'),
                 componentId: savedComponent.get('id'),
@@ -92,9 +91,9 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
             // Create or update variable attribute
             if (savedVariableAttribute) {
                 for (const k in variableAttributeModel.dataValues) {
-                    const updatedValue = variableAttributeModel.getDataValue(k);
-                    if (updatedValue != undefined) { // Null can still be used to remove data
-                        savedVariableAttribute.setDataValue(k, variableAttributeModel.getDataValue(k));
+                    if (k !== 'id') { // id is not a field that can be updated
+                        const updatedValue = variableAttributeModel.getDataValue(k);
+                        savedVariableAttribute.setDataValue(k, updatedValue);
                     }
                 }
                 savedVariableAttribute = await savedVariableAttribute.save();
