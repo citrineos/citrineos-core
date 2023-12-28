@@ -30,11 +30,13 @@ export enum MessageOrigin {
 
 export enum EventGroup {
   General = 'general',
-  Provisioning = 'provisioning',
-  Authorization = 'authorization',
-  Availability = 'availability',
-  Transaction = 'transaction',
+  Certificates = "certificates",
+  Configuration = "configuration",
+  EVDriver = "evdriver",
   Monitoring = 'monitoring',
+  Reporting = 'reporting',
+  SmartCharging = 'smartcharging',
+  Transactions = 'transactions',
 }
 
 export { IMessage, Message } from "./Message";

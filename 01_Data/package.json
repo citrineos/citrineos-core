@@ -1,0 +1,41 @@
+{
+  "name": "@citrineos/data",
+  "version": "1.0.0",
+  "description": "The OCPP data module which includes all persistence layer implementation.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "install-base": "cd ../00_Base && npm run build && npm pack && cd ../01_Data && npm install ../00_Base/citrineos-base-1.0.0.tgz",
+    "prepublish": "npx eslint",
+    "prepare": "npm run build",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ocpp",
+    "ocpp_v201"
+  ],
+  "author": "S44",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.1",
+    "@types/uuid": "^9.0.1",
+    "eslint": "^8.48.0",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "@citrineos/base": "file:../00_Base/citrineos-base-1.0.0.tgz",
+    "bcrypt": "^5.1.1",
+    "pg": "^8.11.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize-typescript": "^2.1.5",
+    "tslog": "^4.8.2",
+    "uuid": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

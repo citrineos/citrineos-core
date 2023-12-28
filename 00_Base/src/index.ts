@@ -32,7 +32,7 @@ export * from "./ocpp/persistence";
 
 export { BootConfig } from "./config/BootConfig";
 export { defineConfig } from "./config/defineConfig";
-export { RequiredConfig, SystemConfig } from "./config/types";
+export { SystemConfig } from "./config/types";
 
 // Utils
 
