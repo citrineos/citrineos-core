@@ -17,24 +17,15 @@ execute_commands() {
 
 # Commands for each module
 base_commands=(
-    "cd 00_Base"
+    "cd ../00_Base"
     "rm -rf ./lib"
     "rm -f citrineos-base-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
-util_commands=(
-    "cd ../99_Util"
-    "rm -rf ./lib"
-    "rm -f citrineos-util-1.0.0.tgz"
-    "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install"
-    "npm pack"
-)
-
 data_commands=(
-    "cd ../10_Data"
+    "cd ../01_Data"
     "rm -rf ./lib"
     "rm -f citrineos-data-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
@@ -42,98 +33,136 @@ data_commands=(
     "npm pack"
 )
 
-provisioning_commands=(
-    "cd ../01_Provisioning"
+util_commands=(
+    "cd ../02_Util"
     "rm -rf ./lib"
-    "rm -f citrineos-provisioning-1.0.0.tgz"
+    "rm -f citrineos-util-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../99_Util/citrineos-util-1.0.0.tgz"
-    "npm install ../10_Data/citrineos-data-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
-authorization_commands=(
-    "cd ../02_Authorization"
+certificates_commands=(
+    "cd ../03_Modules/Certificates"
     "rm -rf ./lib"
-    "rm -f citrineos-authorization-1.0.0.tgz"
+    "rm -f citrineos-certificates-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../99_Util/citrineos-util-1.0.0.tgz"
-    "npm install ../10_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
-availability_commands=(
-    "cd ../03_Availability"
+configuration_commands=(
+    "cd ../Configuration"
     "rm -rf ./lib"
-    "rm -f citrineos-availability-1.0.0.tgz"
+    "rm -f citrineos-configuration-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../99_Util/citrineos-util-1.0.0.tgz"
-    "npm install ../10_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
-transaction_commands=(
-    "cd ../04_Transaction"
+evdriver_commands=(
+    "cd ../EVDriver"
     "rm -rf ./lib"
-    "rm -f citrineos-transaction-1.0.0.tgz"
+    "rm -f citrineos-evdriver-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../99_Util/citrineos-util-1.0.0.tgz"
-    "npm install ../10_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
 monitoring_commands=(
-    "cd ../05_Monitoring"
+    "cd ../Monitoring"
     "rm -rf ./lib"
     "rm -f citrineos-monitoring-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../99_Util/citrineos-util-1.0.0.tgz"
-    "npm install ../10_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install"
+    "npm pack"
+)
+
+reporting_commands=(
+    "cd ../Reporting"
+    "rm -rf ./lib"
+    "rm -f citrineos-reporting-1.0.0.tgz"
+    "npm install ../00_Base/citrineos-base-1.0.0.tgz"
+    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install"
+    "npm pack"
+)
+
+smartcharging_commands=(
+    "cd ../SmartCharging"
+    "rm -rf ./lib"
+    "rm -f citrineos-smartcharging-1.0.0.tgz"
+    "npm install ../00_Base/citrineos-base-1.0.0.tgz"
+    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install"
+    "npm pack"
+)
+
+transactions_commands=(
+    "cd ../Transactions"
+    "rm -rf ./lib"
+    "rm -f citrineos-transactions-1.0.0.tgz"
+    "npm install ../00_Base/citrineos-base-1.0.0.tgz"
+    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
 ocpp_server_commands=(
-    "cd ../50_Server"
+    "cd ../../Server"
     "rm -rf ./lib"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../99_Util/citrineos-util-1.0.0.tgz"
-    "npm install ../10_Data/citrineos-data-1.0.0.tgz"
-    "npm install ../01_Provisioning/citrineos-provisioning-1.0.0.tgz"
-    "npm install ../02_Authorization/citrineos-authorization-1.0.0.tgz"
-    "npm install ../03_Availability/citrineos-availability-1.0.0.tgz"
-    "npm install ../04_Transaction/citrineos-transaction-1.0.0.tgz"
-    "npm install ../05_Monitoring/citrineos-monitoring-1.0.0.tgz"
+    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install ../03_Modules/Certificates/citrineos-certificates-1.0.0.tgz"
+    "npm install ../03_Modules/Configuration/citrineos-configuration-1.0.0.tgz"
+    "npm install ../03_Modules/EVDriver/citrineos-evdriver-1.0.0.tgz"
+    "npm install ../03_Modules/Monitoring/citrineos-monitoring-1.0.0.tgz"
+    "npm install ../03_Modules/Reporting/citrineos-reporting-1.0.0.tgz"
+    "npm install ../03_Modules/SmartCharging/citrineos-smartcharging-1.0.0.tgz"
+    "npm install ../03_Modules/Transactions/citrineos-transactions-1.0.0.tgz"
     "npm install"
 )
 
-cd ..
 # Execute commands for each module
 execute_commands "${base_commands[@]}"
-execute_commands "${util_commands[@]}"
 execute_commands "${data_commands[@]}"
-execute_commands "${provisioning_commands[@]}"&
-pid_provisioning=$!
-execute_commands "${authorization_commands[@]}"&
-pid_authorization=$!
-execute_commands "${availability_commands[@]}"&
-pid_availability=$!
-execute_commands "${transaction_commands[@]}"&
-pid_transaction=$!
+execute_commands "${util_commands[@]}"
+execute_commands "${certificates_commands[@]}"&
+pid_certificates=$!
+execute_commands "${configuration_commands[@]}"&
+pid_configuration=$!
+execute_commands "${evdriver_commands[@]}"&
+pid_evdriver=$!
 execute_commands "${monitoring_commands[@]}"&
 pid_monitoring=$!
+execute_commands "${reporting_commands[@]}"&
+pid_reporting=$!
+execute_commands "${smartcharging_commands[@]}"&
+pid_smartcharging=$!
+execute_commands "${transactions_commands[@]}"&
+pid_transactions=$!
 
 
 
-wait $pid_provisioning
-wait $pid_authorization
-wait $pid_availability
-wait $pid_transaction
+wait $pid_certificates
+wait $pid_configuration
+wait $pid_evdriver
 wait $pid_monitoring
+wait $pid_reporting
+wait $pid_smartcharging
+wait $pid_transactions
 
 echo "Dependancy Installation Completed! Now initializing the OCPP server..."
 
