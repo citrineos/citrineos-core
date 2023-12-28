@@ -6,7 +6,7 @@ export function createDockerConfig() {
         modules: {
             certificates: {
                 endpointPrefix: "/certificates",
-                port: 8081
+                port: 8080
             },
             configuration: {
                 heartbeatInterval: 60,
@@ -16,27 +16,27 @@ export function createDockerConfig() {
                 bootWithRejectedVariables: true,
                 autoAccept: false,
                 endpointPrefix: "/configuration",
-                port: 8081
+                port: 8080
             },
             evdriver: {
                 endpointPrefix: "/evdriver",
-                port: 8081
+                port: 8080
             },
             monitoring: {
                 endpointPrefix: "/monitoring",
-                port: 8081
+                port: 8080
             },
             reporting: {
                 endpointPrefix: "/reporting",
-                port: 8081
+                port: 8080
             },
             smartcharging: {
                 endpointPrefix: "/smartcharging",
-                port: 8081
+                port: 8080
             },
             transactions: {
                 endpointPrefix: "/transactions",
-                port: 8081
+                port: 8080
             },
         },
         data: {
@@ -66,23 +66,30 @@ export function createDockerConfig() {
             }
         },
         server: {
-            logLevel: 3,
+            logLevel: 2, // debug
             host: "0.0.0.0",
-            port: 8081,
+            port: 8080,
             swagger: {
                 path: "/docs",
                 exposeData: true,
                 exposeMessage: true
             }
-        },
-        websocketServer: {
-            tlsFlag: false,
-            host: "0.0.0.0",
-            port: 8080,
-            protocol: "ocpp2.0.1",
+        },        
+        websocket: {
             pingInterval: 60,
             maxCallLengthSeconds: 5,
             maxCachingSeconds: 10
-        }
+        },
+        websocketServer: [{
+            securityProfile: 0,
+            host: "0.0.0.0",
+            port: 8081,
+            protocol: "ocpp2.0.1"
+        },{
+            securityProfile: 1,
+            host: "0.0.0.0",
+            port: 8082,
+            protocol: "ocpp2.0.1"
+        }]
     });
 }

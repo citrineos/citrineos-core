@@ -47,7 +47,8 @@ export function createProdConfig() {
                 exposeMessage: true
             }
         },
-        websocketServer: {
-        }
+        websocket: {
+        },
+        websocketServer: [{}]
     });
 }

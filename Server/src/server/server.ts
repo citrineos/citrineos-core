@@ -41,9 +41,8 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
 
     protected _cache: ICache;
     private _router: IMessageRouter;
-    private _socketServer: WebSocketServer;
     private _connections: Map<string, WebSocket> = new Map();
-    private _httpServer;
+    private _httpServers: (http.Server | https.Server)[];
     private _deviceModelRepository: DeviceModelRepository;
 
     /**
@@ -75,30 +74,52 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
 
         this._deviceModelRepository = deviceModelRepository || new DeviceModelRepository(this._config, this._logger);
 
-        this._httpServer = this._config.websocketServer.tlsFlag ? https.createServer({
-            key: fs.readFileSync(this._config.websocketServer.tlsKeysFilepath as string),
-            cert: fs.readFileSync(this._config.websocketServer.tlsCertificateChainFilepath as string),
-            minVersion: 'TLSv1.2'
-        }) : http.createServer();
+        this._httpServers = [];
+        this._config.websocketServer.forEach(wsServer => {
+            let _httpServer;
+            switch (wsServer.securityProfile) {
+                case 3: // mTLS
+                    _httpServer = https.createServer({
+                        key: fs.readFileSync(this._config.websocketSecurity?.tlsKeysFilepath as string),
+                        cert: fs.readFileSync(this._config.websocketSecurity?.tlsCertificateChainFilepath as string),
+                        ca: fs.readFileSync(this._config.websocketSecurity?.mtlsCertificateAuthorityRootsFilepath as string),
+                        requestCert: true,
+                        rejectUnauthorized: true
+                    }, this._onHttpRequest.bind(this));
+                    break;
+                case 2: // TLS
+                    _httpServer = https.createServer({
+                        key: fs.readFileSync(this._config.websocketSecurity?.tlsKeysFilepath as string),
+                        cert: fs.readFileSync(this._config.websocketSecurity?.tlsCertificateChainFilepath as string)
+                    }, this._onHttpRequest.bind(this));
+                    break;
+                case 1:
+                case 0:
+                default: // No TLS
+                    _httpServer = http.createServer(this._onHttpRequest.bind(this));
+                    break;
+            }
 
-        this._socketServer = new WebSocketServer({
-            noServer: true,
-            handleProtocols: this._handleProtocols.bind(this),
-            clientTracking: false
-        });
+            let _socketServer = new WebSocketServer({
+                noServer: true,
+                handleProtocols: (protocols, req) => this._handleProtocols(protocols, req, wsServer.protocol),
+                clientTracking: false
+            });
 
-        this._socketServer.on('connection', this._onConnection.bind(this));
-        this._socketServer.on('error', this._onError.bind(this));
-        this._socketServer.on('close', this._onClose.bind(this));
+            _socketServer.on('connection', (ws: WebSocket, req: http.IncomingMessage) => this._onConnection(ws, req));
+            _socketServer.on('error', (wss: WebSocketServer, error: Error) => this._onError(wss, error));
+            _socketServer.on('close', (wss: WebSocketServer) => this._onClose(wss));
 
-        this._httpServer.on('upgrade', this._upgradeRequest.bind(this));
-        this._httpServer.on('error', (error) => this._socketServer.emit('error', error));
-        // socketServer.close() will not do anything; use httpServer.close()
-        this._httpServer.on('close', () => this._socketServer.emit('close'));
-
-        const protocol = this._config.websocketServer.tlsFlag ? 'wss' : 'ws';
-        this._httpServer.listen(this._config.websocketServer.port, this._config.websocketServer.host, () => {
-            this._logger.info(`WebsocketServer running on ${protocol}://${this._config.websocketServer.host}:${this._config.websocketServer.port}/`)
+            _httpServer.on('upgrade', (request, socket, head) =>
+                this._upgradeRequest(request, socket, head, _socketServer, wsServer.securityProfile));
+            _httpServer.on('error', (error) => _socketServer.emit('error', error));
+            // socketServer.close() will not do anything; use httpServer.close()
+            _httpServer.on('close', () => _socketServer.emit('close'));
+            const protocol = wsServer.securityProfile > 1 ? 'wss' : 'ws';
+            _httpServer.listen(wsServer.port, wsServer.host, () => {
+                this._logger.info(`WebsocketServer running on ${protocol}://${wsServer.host}:${wsServer.port}/`)
+            });
+            this._httpServers.push(_httpServer);
         });
     }
 
@@ -109,7 +130,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
     shutdown(): void {
         this._router.sender.shutdown();
         this._router.handler.shutdown();
-        this._httpServer.close();
+        this._httpServers.forEach(server => server.close());
     }
 
     /**
@@ -143,7 +164,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                     throw new OcppError(messageId, ErrorCode.RpcFrameworkError, "Call already in progress", {});
                 }
                 // Add reference to call in cache
-                this._cache.set(connection.identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.websocketServer.maxCallLengthSeconds);
+                this._cache.set(connection.identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.websocket.maxCallLengthSeconds);
             }).then(success => {
                 // Route call
                 return this._router.routeCall(connection, message);
@@ -175,7 +196,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             .then(cachedActionMessageId => {
                 this._cache.remove(connection.identifier, CacheNamespace.Transactions); // Always remove pending call transaction
                 if (!cachedActionMessageId) {
-                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.websocketServer.maxCallLengthSeconds });
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.websocket.maxCallLengthSeconds });
                 }
                 const [actionString, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
                 if (messageId !== cachedMessageId) {
@@ -225,7 +246,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             this._logger.info("Call already in progress, unable to send", identifier, message);
             return false;
         } else if (await this._sendCallIsAllowed(identifier, message)) {
-            await this._cache.set(identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.websocketServer.maxCallLengthSeconds);
+            await this._cache.set(identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.websocket.maxCallLengthSeconds);
             // Intentionally removing NULL values from object for OCPP conformity
             const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
             return this._sendMessage(identifier, rawMessage);
@@ -326,31 +347,45 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         });
     }
 
+    private _onHttpRequest(req: http.IncomingMessage, res: http.ServerResponse) {
+        if (req.method === "GET" && req.url == '/health') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'healthy' }));
+        } else {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: `Route ${req.method}:${req.url} not found`, error: "Not Found", statusCode: 404 }));
+        }
+    }
+
     /**
      * Method to validate websocket upgrade requests and pass them to the socket server.
      * 
      * @param {IncomingMessage} req - The request object.
      * @param {Duplex} socket - Websocket duplex stream. 
      * @param {Buffer} head - Websocket buffer.
+     * @param {WebSocketServer} wss - Websocket server.
+     * @param {number} securityProfile - The security profile to use for the websocket connection. See OCPP 2.0.1 Part 2-Specification A.1.3
      */
-    private async _upgradeRequest(req: http.IncomingMessage, socket: Duplex, head: Buffer) {
-        // Validate username/password from authorization header
-        // - The Authorization header is formatted as follows:
-        // AUTHORIZATION: Basic <Base64 encoded(<Configured ChargingStationId>:<Configured BasicAuthPassword>)>
-        this._logger.info("Upgrade request", req.url);
-        const authHeader = req.headers.authorization;
-        this._logger.info("Authorization header", req.headers.authorization);
-        const [username, password] = Buffer.from(authHeader?.split(' ')[1] || '', 'base64').toString().split(':');
-        this._logger.info("Username and password", username, password);
-
-        if (username != this._getClientIdFromUrl(req.url as string) || await this._checkPassword(username, password) === false) {
-            this._logger.info("Unauthorized");
-            this._rejectUpgradeUnauthorized(socket);
-        } else {
-            this._socketServer.handleUpgrade(req, socket, head, (ws) => {
-                this._socketServer.emit('connection', ws, req);
-            });
+    private async _upgradeRequest(req: http.IncomingMessage, socket: Duplex, head: Buffer, wss: WebSocketServer, securityProfile: number) {
+        // Failed mTLS and TLS requests are rejected by the server before getting this far
+        this._logger.debug("On upgrade request", req.method, req.url, req.headers);
+        
+        const identifier = this._getClientIdFromUrl(req.url as string);
+        if (3 > securityProfile && securityProfile > 0) {
+            // Validate username/password from authorization header
+            // - The Authorization header is formatted as follows:
+            // AUTHORIZATION: Basic <Base64 encoded(<Configured ChargingStationId>:<Configured BasicAuthPassword>)>
+            const authHeader = req.headers.authorization;
+            const [username, password] = Buffer.from(authHeader?.split(' ')[1] || '', 'base64').toString().split(':');
+            if (username != identifier || await this._checkPassword(username, password) === false) {
+                this._logger.warn("Unauthorized", identifier);
+                this._rejectUpgradeUnauthorized(socket);
+                return;
+            }
         }
+        wss.handleUpgrade(req, socket, head, (ws) => {
+            wss.emit('connection', ws, req);
+        });
     }
 
     private async _checkPassword(username: string, password: string) {
@@ -361,7 +396,6 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             type: AttributeEnumType.Actual
         }).then(r => {
             if (r && r[0]) {
-                this._logger.info("BasicAuthPassword", r[0].value);
                 // Grabbing value most recently *successfully* set on charger
                 const hashedPassword = r[0].statuses?.filter(status => status.status !== SetVariableStatusEnumType.Rejected).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).shift();
                 if (hashedPassword?.value) {
@@ -390,11 +424,12 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      *
      * @param {Set<string>} protocols - The set of protocols to handle.
      * @param {IncomingMessage} req - The request object.
+     * @param {string} wsServerProtocol - The websocket server protocol.
      * @return {boolean|string} - Returns the protocol version if successful, otherwise false.
      */
-    private _handleProtocols(protocols: Set<string>, req: http.IncomingMessage) {
+    private _handleProtocols(protocols: Set<string>, req: http.IncomingMessage, wsServerProtocol: string) {
         // Only supports configured protocol version
-        if (protocols.has(this._config.websocketServer.protocol)) {
+        if (protocols.has(wsServerProtocol)) {
 
             // Get IP address of client
             const ip = req.headers["x-forwarded-for"]?.toString().split(",")[0].trim() || req.socket.remoteAddress || "N/A";
@@ -414,7 +449,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                 this._logger.debug("Successfully registered websocket client", identifier, clientConnection);
             }
 
-            return this._config.websocketServer.protocol;
+            return wsServerProtocol;
         }
 
         // Reject the client trying to connect
@@ -607,7 +642,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                     ws.close(1011, "Client is not alive");
                 }
             });
-        }, this._config.websocketServer.pingInterval * 1000);
+        }, this._config.websocket.pingInterval * 1000);
     }
     /**
      * 
