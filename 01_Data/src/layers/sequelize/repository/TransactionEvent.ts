@@ -110,9 +110,10 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
      * @returns List of transactions which meet the requirements.
      */
     readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: EVSEType, chargingStates?: ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
+        const includeObj = evse ? [ { model: Evse, where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null } }, IdToken ] : [IdToken];
         return this.s.models[Transaction.MODEL_NAME].findAll({
             where: { stationId: stationId, ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}) },
-            include: [IdToken]
+            include: includeObj
         }).then(row => (row as Transaction[]));
     }
 

@@ -44,7 +44,7 @@ Before you begin, make sure you have the following installed on your system:
 1. Navigate to the CitrineOS Server directory:
 
     ```shell
-    cd citrineos-core/50_Server
+    cd citrineos-core/Server
     ```
 
 1. Install project dependencies:
@@ -93,8 +93,9 @@ a common integrated development environment.
 Once Docker is running, the following services should be available:
 
 -   **CitrineOS** (service name: citrineos) with ports
-    -   `8080`: websocket server tcp connection
-    -   `8081`: webserver http - [Swagger](http://localhost:8081/docs)
+    -   `8080`: webserver http - [Swagger](http://localhost:8080/docs)
+    -   `8081`: websocket server tcp connection without auth
+    -   `8082`: websocket server tcp connection with basic http auth
 -   **RabbitMQ Broker** (service name: amqp-broker) with ports
     -   `5672`: amqp tcp connection
     -   `15672`: RabbitMQ [management interface](http://localhost:15672)
@@ -103,10 +104,10 @@ Once Docker is running, the following services should be available:
 -   **Directus** (service name: directus) on port 8055 with endpoints
     -   `:8055/admin`: web interface (login = admin@citrineos.com:CitrineOS!)
 
-These three services are defined in `50_Server/docker-compose.yml` and they
+These three services are defined in `Server/docker-compose.yml` and they
 live inside the docker network `docker_default` with their respective
 ports. By default these ports are directly accessible by using
-`localhost:8081` for example.
+`localhost:8080` for example.
 
 So, if you want to access the **amqp-broker** default management port via your
 localhost, you need to access `localhost:15672`.
@@ -128,7 +129,6 @@ If you have any questions or need assistance, feel free to reach out to us on ou
 A more detailed roadmap is coming soon.
 
 - Support for Kafka Streams
-- Support for OCPP 2.0.1 Core Profile
 - OCA Certification (OCPP 2.0.1 Core Profile)
 - Adding plugin management
 - Implementing ISO15118 Plug and Charge (PnC)
