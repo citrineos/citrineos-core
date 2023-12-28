@@ -45,13 +45,18 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   @HasMany(() => MeterValue)
   declare meterValue?: [MeterValue, ...MeterValue[]];
 
-  @Column
+  @Column({
+    type: DataType.DATE,
+    get() {
+        return this.getDataValue('timestamp').toISOString();
+    }
+  })
   declare timestamp: string;
 
   @Column
   declare triggerReason: TriggerReasonEnumType;
 
-  @Column
+  @Column(DataType.INTEGER)
   declare seqNo: number;
 
   @Column({ type: DataType.BOOLEAN, defaultValue: false })

@@ -53,7 +53,7 @@ export interface IAuthorizationRepository extends ICrudRepository<AuthorizationD
 }
 
 export interface ITransactionEventRepository extends ICrudRepository<TransactionEventRequest> {
-    createByStationId(value: TransactionEventRequest, stationId: string): Promise<TransactionEventRequest | undefined>;
+    createOrUpdateTransactionByTransactionEventAndStationId(value: TransactionEventRequest, stationId: string): Promise<Transaction>;
     readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]>;
     readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
     readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: EVSEType, chargingStates?: ChargingStateEnumType[]): Promise<Transaction[]>;
