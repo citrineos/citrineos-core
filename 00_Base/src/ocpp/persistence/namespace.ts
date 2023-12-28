@@ -29,6 +29,7 @@ export enum Namespace {
     IdTokenType = 'IdToken',
     MeterValueType = 'MeterValue',
     ModemType = 'Modem',
+    SecurityEventNotificationRequest = 'SecurityEvent',
     TransactionEventRequest = 'TransactionEvent',
     TransactionType = 'Transaction',
     VariableAttributeType = 'VariableAttribute',
