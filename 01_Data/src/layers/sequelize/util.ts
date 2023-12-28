@@ -22,6 +22,7 @@ import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from "./model/Aut
 import { Boot } from "./model/Boot";
 import { Component, Evse, Variable, VariableAttribute, VariableCharacteristics, VariableStatus } from "./model/DeviceModel";
 import { MeterValue, Transaction, TransactionEvent } from "./model/TransactionEvent";
+import { SecurityEvent } from "./model/SecurityEvent";
 
 export class DefaultSequelizeInstance {
 
@@ -54,8 +55,8 @@ export class DefaultSequelizeInstance {
             password: config.data.sequelize.password,
             storage: config.data.sequelize.storage,
             models: [AdditionalInfo, Authorization, Boot,
-                Component, Evse, IdToken, IdTokenInfo, MeterValue, Transaction,
-                TransactionEvent, VariableAttribute, VariableCharacteristics,
+                Component, Evse, IdToken, IdTokenInfo, MeterValue, SecurityEvent,
+                Transaction, TransactionEvent, VariableAttribute, VariableCharacteristics,
                 VariableStatus, Variable],
             logging: (sql: string, timing?: number) => {
                 // TODO: Look into fixing that

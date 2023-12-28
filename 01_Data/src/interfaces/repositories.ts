@@ -14,22 +14,20 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { SetVariableDataType, ICrudRepository, SetVariableResultType, AuthorizationData, TransactionEventRequest, ChargingStateEnumType, IdTokenType, VariableAttributeType, ReportDataType, BootConfig, RegistrationStatusEnumType, StatusInfoType, GetVariableResultType, EVSEType } from "@citrineos/base";
+import { SetVariableDataType, ICrudRepository, SetVariableResultType, AuthorizationData, TransactionEventRequest, ChargingStateEnumType, IdTokenType, VariableAttributeType, ReportDataType, BootConfig, RegistrationStatusEnumType, StatusInfoType, GetVariableResultType, EVSEType, SecurityEventNotificationRequest } from "@citrineos/base";
 import { AuthorizationQuerystring } from "./queries/Authorization";
 import { Transaction } from "../layers/sequelize/model/TransactionEvent";
 import { VariableAttribute } from "../layers/sequelize/model/DeviceModel/VariableAttribute";
 import { AuthorizationRestrictions, VariableAttributeQuerystring } from ".";
-import { Boot, Authorization } from "../layers/sequelize";
+import { Boot, Authorization, SecurityEvent } from "../layers/sequelize";
 
-export interface IDeviceModelRepository extends ICrudRepository<VariableAttributeType> {
-    createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]>;
-    createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string): Promise<VariableAttribute[]>;
-    createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string): Promise<VariableAttribute[]>;
-    updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined>;
-    readAllSetVariableByStationId(stationId: string): Promise<SetVariableDataType[]>;
-    readAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
-    existsByQuery(query: VariableAttributeQuerystring): Promise<boolean>;
-    deleteAllByQuery(query: VariableAttributeQuerystring): Promise<number>;
+
+export interface IAuthorizationRepository extends ICrudRepository<AuthorizationData> {
+    createOrUpdateByQuery(value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined>;
+    updateRestrictionsByQuery(value: AuthorizationRestrictions, query: AuthorizationQuerystring): Promise<Authorization | undefined>;
+    readByQuery(query: AuthorizationQuerystring): Promise<Authorization | undefined>;
+    existsByQuery(query: AuthorizationQuerystring): Promise<boolean>;
+    deleteAllByQuery(query: AuthorizationQuerystring): Promise<number>;
 }
 
 /**
@@ -44,12 +42,21 @@ export interface IBootRepository extends ICrudRepository<BootConfig> {
     deleteByKey(key: string): Promise<boolean>;
 }
 
-export interface IAuthorizationRepository extends ICrudRepository<AuthorizationData> {
-    createOrUpdateByQuery(value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined>;
-    updateRestrictionsByQuery(value: AuthorizationRestrictions, query: AuthorizationQuerystring): Promise<Authorization | undefined>;
-    readByQuery(query: AuthorizationQuerystring): Promise<Authorization | undefined>;
-    existsByQuery(query: AuthorizationQuerystring): Promise<boolean>;
-    deleteAllByQuery(query: AuthorizationQuerystring): Promise<number>;
+export interface IDeviceModelRepository extends ICrudRepository<VariableAttributeType> {
+    createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]>;
+    createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string): Promise<VariableAttribute[]>;
+    createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string): Promise<VariableAttribute[]>;
+    updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined>;
+    readAllSetVariableByStationId(stationId: string): Promise<SetVariableDataType[]>;
+    readAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
+    existsByQuery(query: VariableAttributeQuerystring): Promise<boolean>;
+    deleteAllByQuery(query: VariableAttributeQuerystring): Promise<number>;
+}
+
+export interface ISecurityEventRepository extends ICrudRepository<SecurityEvent> {
+    createByStationId(value: SecurityEventNotificationRequest, stationId: string): Promise<SecurityEvent | undefined>;
+    readByStationIdAndTimestamps(stationId: string, from?: Date, to?: Date): Promise<SecurityEvent[]>;
+    deleteByKey(key: string): Promise<boolean>;
 }
 
 export interface ITransactionEventRepository extends ICrudRepository<TransactionEventRequest> {

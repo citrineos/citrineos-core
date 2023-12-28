@@ -15,8 +15,8 @@
  */
 
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyReportRequest, HandlerProperties, SetVariableStatusEnumType, NotifyReportResponse, NotifyMonitoringReportRequest, NotifyMonitoringReportResponse, LogStatusNotificationRequest, LogStatusNotificationResponse, NotifyCustomerInformationRequest, NotifyCustomerInformationResponse, GetBaseReportResponse, StatusNotificationRequest, StatusNotificationResponse } from "@citrineos/base";
-import { IDeviceModelRepository, sequelize } from "@citrineos/data";
+import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyReportRequest, HandlerProperties, SetVariableStatusEnumType, NotifyReportResponse, NotifyMonitoringReportRequest, NotifyMonitoringReportResponse, LogStatusNotificationRequest, LogStatusNotificationResponse, NotifyCustomerInformationRequest, NotifyCustomerInformationResponse, GetBaseReportResponse, StatusNotificationRequest, StatusNotificationResponse, SecurityEventNotificationRequest, SecurityEventNotificationResponse } from "@citrineos/base";
+import { IDeviceModelRepository, ISecurityEventRepository, sequelize } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
@@ -31,7 +31,7 @@ export class ReportingModule extends AbstractModule {
    */
 
   protected _requests: CallAction[] = [
-    CallAction.NotifyReport, CallAction.NotifyMonitoringReport, CallAction.NotifyCustomerInformation, CallAction.LogStatusNotification
+    CallAction.LogStatusNotification, CallAction.NotifyCustomerInformation, CallAction.NotifyReport, CallAction.NotifyMonitoringReport, CallAction.SecurityEventNotification
   ];
 
   protected _responses: CallAction[] = [
@@ -46,8 +46,9 @@ export class ReportingModule extends AbstractModule {
   static readonly GET_BASE_REPORT_REQUEST_ID_MAX = 10000000; // 10,000,000
   static readonly GET_BASE_REPORT_ONGOING_CACHE_VALUE = 'ongoing';
   static readonly GET_BASE_REPORT_COMPLETE_CACHE_VALUE = 'complete';
- 
+
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _securityEventRepository: ISecurityEventRepository;
 
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
@@ -74,6 +75,8 @@ export class ReportingModule extends AbstractModule {
    *  
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
+   *
+   * @param {ISecurityEventRepository} [securityEventRepository] - An optional parameter of type {@link ISecurityEventRepository} which represents a repository for accessing security event notification data.
    */
   constructor(
     config: SystemConfig,
@@ -81,7 +84,8 @@ export class ReportingModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
-    deviceModelRepository?: IDeviceModelRepository
+    deviceModelRepository?: IDeviceModelRepository,
+    securityEventRepository?: ISecurityEventRepository
   ) {
     super(config, cache, handler || new RabbitMqReceiver(config, logger, cache), sender || new RabbitMqSender(config, logger), EventGroup.Reporting, logger);
 
@@ -93,13 +97,45 @@ export class ReportingModule extends AbstractModule {
     }
 
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, this._logger);
-    
+    this._securityEventRepository = securityEventRepository || new sequelize.SecurityEventRepository(config, this._logger);
+
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
   /**
    * Handle Requests
    */
+
+  @AsHandler(CallAction.LogStatusNotification)
+  protected _handleLogStatusNotification(
+    message: IMessage<LogStatusNotificationRequest>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("LogStatusNotification received:", message, props);
+
+    // TODO: LogStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
+
+    // Create response
+    const response: LogStatusNotificationResponse = {};
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("LogStatusNotification response sent:", messageConfirmation));
+  }
+
+
+  @AsHandler(CallAction.NotifyCustomerInformation)
+  protected _handleNotifyCustomerInformation(
+    message: IMessage<NotifyCustomerInformationRequest>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("NotifyCustomerInformation request received:", message, props);
+
+    // Create response
+    const response: NotifyCustomerInformationResponse = {};
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("NotifyCustomerInformation response sent:", messageConfirmation));
+  }
 
   @AsHandler(CallAction.NotifyReport)
   protected async _handleNotifyReport(
@@ -151,35 +187,14 @@ export class ReportingModule extends AbstractModule {
       .then(messageConfirmation => this._logger.debug("NotifyMonitoringReport response sent:", messageConfirmation));
   }
 
-  @AsHandler(CallAction.LogStatusNotification)
-  protected _handleLogStatusNotification(
-    message: IMessage<LogStatusNotificationRequest>,
+  @AsHandler(CallAction.SecurityEventNotification)
+  protected _handleSecurityEventNotification(
+    message: IMessage<SecurityEventNotificationRequest>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("LogStatusNotification received:", message, props);
-
-    // TODO: LogStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
-
-    // Create response
-    const response: LogStatusNotificationResponse = {};
-
-    this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("LogStatusNotification response sent:", messageConfirmation));
-  }
-
-  
-  @AsHandler(CallAction.NotifyCustomerInformation)
-  protected _handleNotifyCustomerInformation(
-    message: IMessage<NotifyCustomerInformationRequest>,
-    props?: HandlerProperties
-  ): void {
-    this._logger.debug("NotifyCustomerInformation request received:", message, props);
-
-    // Create response
-    const response: NotifyCustomerInformationResponse = {};
-
-    this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("NotifyCustomerInformation response sent:", messageConfirmation));
+    this._logger.debug("SecurityEventNotification request received", message, props);
+    this._securityEventRepository.createByStationId(message.payload, message.context.stationId);
+    this.sendCallResultWithMessage(message, {} as SecurityEventNotificationResponse);
   }
 
   /**
