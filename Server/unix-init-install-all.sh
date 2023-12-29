@@ -46,81 +46,81 @@ certificates_commands=(
     "cd ../03_Modules/Certificates"
     "rm -rf ./lib"
     "rm -f citrineos-certificates-1.0.0.tgz"
-    "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
-    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install ../../00_Base/citrineos-base-1.0.0.tgz"
+    "npm install ../../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../../02_Util/citrineos-util-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
 configuration_commands=(
-    "cd ../Configuration"
+    "cd ../03_Modules/Configuration"
     "rm -rf ./lib"
     "rm -f citrineos-configuration-1.0.0.tgz"
-    "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
-    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install ../../00_Base/citrineos-base-1.0.0.tgz"
+    "npm install ../../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../../02_Util/citrineos-util-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
 evdriver_commands=(
-    "cd ../EVDriver"
+    "cd ../03_Modules/EVDriver"
     "rm -rf ./lib"
     "rm -f citrineos-evdriver-1.0.0.tgz"
-    "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
-    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install ../../00_Base/citrineos-base-1.0.0.tgz"
+    "npm install ../../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../../02_Util/citrineos-util-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
 monitoring_commands=(
-    "cd ../Monitoring"
+    "cd ../03_Modules/Monitoring"
     "rm -rf ./lib"
     "rm -f citrineos-monitoring-1.0.0.tgz"
-    "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
-    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install ../../00_Base/citrineos-base-1.0.0.tgz"
+    "npm install ../../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../../02_Util/citrineos-util-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
 reporting_commands=(
-    "cd ../Reporting"
+    "cd ../03_Modules/Reporting"
     "rm -rf ./lib"
     "rm -f citrineos-reporting-1.0.0.tgz"
-    "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
-    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install ../../00_Base/citrineos-base-1.0.0.tgz"
+    "npm install ../../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../../02_Util/citrineos-util-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
 smartcharging_commands=(
-    "cd ../SmartCharging"
+    "cd ../03_Modules/SmartCharging"
     "rm -rf ./lib"
     "rm -f citrineos-smartcharging-1.0.0.tgz"
-    "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
-    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install ../../00_Base/citrineos-base-1.0.0.tgz"
+    "npm install ../../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../../02_Util/citrineos-util-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
 transactions_commands=(
-    "cd ../Transactions"
+    "cd ../03_Modules/Transactions"
     "rm -rf ./lib"
     "rm -f citrineos-transactions-1.0.0.tgz"
-    "npm install ../00_Base/citrineos-base-1.0.0.tgz"
-    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
-    "npm install ../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install ../../00_Base/citrineos-base-1.0.0.tgz"
+    "npm install ../../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../../02_Util/citrineos-util-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
 
 ocpp_server_commands=(
-    "cd ../../Server"
+    "cd ../Server"
     "rm -rf ./lib"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
     "npm install ../01_Data/citrineos-data-1.0.0.tgz"
