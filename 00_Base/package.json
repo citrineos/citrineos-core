@@ -37,5 +37,8 @@
     "tslog": "^4.9.2",
     "uuid": "^9.0.0",
     "zod": "^3.22.2"
+  },
+  "overrides": {
+    "@typescript-eslint/*": "<6.16.0"
   }
 }

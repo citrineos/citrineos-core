@@ -40,5 +40,8 @@
     "@citrineos/data": "file:../10_Data/citrineos-data-1.0.0.tgz",
     "@citrineos/util": "file:../99_Util/citrineos-util-1.0.0.tgz",
     "uuid": "^9.0.1"
+  },
+  "overrides": {
+    "@typescript-eslint/*": "<6.16.0"
   }
 }
