@@ -20,6 +20,10 @@
   ],
   "author": "S44",
   "license": "Apache-2.0",
+  "overrides": {
+    "@typescript-eslint/eslint-plugin": "<6.16.0",
+    "@typescript-eslint/typescript-estree": "<6.16.0"
+  },
   "devDependencies": {
     "@types/uuid": "^9.0.3",
     "@types/validator": "^13.11.1",
@@ -37,8 +41,5 @@
     "tslog": "^4.9.2",
     "uuid": "^9.0.0",
     "zod": "^3.22.2"
-  },
-  "overrides": {
-    "@typescript-eslint/*": "<6.16.0"
   }
 }
