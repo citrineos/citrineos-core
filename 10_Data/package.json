@@ -37,8 +37,5 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "overrides": {
-    "@typescript-eslint/*": "<6.16.0"
   }
 }
