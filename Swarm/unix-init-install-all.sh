@@ -120,7 +120,7 @@ transactions_commands=(
 )
 
 ocpp_server_commands=(
-    "cd ../../Server"
+    "cd ../../Swarm"
     "rm -rf ./lib"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
     "npm install ../01_Data/citrineos-data-1.0.0.tgz"
