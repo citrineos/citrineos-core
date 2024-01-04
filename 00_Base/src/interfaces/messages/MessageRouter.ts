@@ -16,7 +16,7 @@
 
 import { IMessageConfirmation, IMessageHandler, IMessageSender } from "../..";
 import { Call, CallAction, CallError, CallResult } from "../../ocpp/rpc/message";
-import { IClientConnection } from "../centralsystem";
+import { IClientConnection } from "../server";
 
 /**
  * MessageRouter

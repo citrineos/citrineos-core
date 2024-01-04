@@ -16,36 +16,11 @@
 
 import Ajv, { ErrorObject } from "ajv";
 import { ILogObj, Logger } from "tslog";
-import { CALL_RESULT_SCHEMA_MAP, CALL_SCHEMA_MAP } from "..";
-import { SystemConfig } from "../config/types";
-import { Call, CallAction, CallError, CallResult, ErrorCode, MessageTypeId } from "../ocpp/rpc/message";
-import { ICache } from "./cache/cache";
-
-/**
- * Custom error to handle OCPP errors better.
- */
-export class OcppError extends Error {
-
-    private _messageId: string;
-    private _errorCode: ErrorCode;
-    private _errorDetails: object;
-
-    constructor(messageId: string, errorCode: ErrorCode, errorDescription: string, errorDetails: object = {}) {
-        super(errorDescription);
-        this.name = "OcppError";
-        this._messageId = messageId;
-        this._errorCode = errorCode;
-        this._errorDetails = errorDetails;
-    }
-
-    asCallError(): CallError {
-        return [MessageTypeId.CallError, this._messageId, this._errorCode, this.message, this._errorDetails] as CallError;
-    }
-
-    sendAsCallError(identifier: string, centralSystem: ICentralSystem): void {
-        centralSystem.sendCallError(identifier, this.asCallError());
-    }
-}
+import { CALL_RESULT_SCHEMA_MAP, CALL_SCHEMA_MAP } from "../..";
+import { SystemConfig } from "../../config/types";
+import { Call, CallAction, CallError, CallResult } from "../../ocpp/rpc/message";
+import { ICache } from "../cache/cache";
+import { IClientConnection } from ".";
 
 /**
  * Interface for the central system
@@ -61,6 +36,8 @@ export interface ICentralSystem {
     sendCallError(identifier: string, message: CallError): Promise<boolean>;
 
     shutdown(): void;
+    
+    config: SystemConfig;
 }
 
 export abstract class AbstractCentralSystem implements ICentralSystem {
@@ -84,6 +61,24 @@ export abstract class AbstractCentralSystem implements ICentralSystem {
         this._cache = blacklistCache;
         this._ajv = ajv || new Ajv({ removeAdditional: 'all', useDefaults: true, coerceTypes: 'array', strict: false });
         this._logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
+
+
+    }
+
+    /**
+     * Sets the system configuration.
+     *
+     * @param {SystemConfig} config - The new configuration to set.
+     */
+    set config(config: SystemConfig) {
+        this._config = config;
+        // Update all necessary settings for hot reload
+        this._logger.info(`Updating system configuration for central system...`);
+        this._logger.settings.minLevel = this._config.server.logLevel;
+    }
+
+    get config(): SystemConfig {
+        return this._config;
     }
 
     abstract onCall(connection: IClientConnection, message: Call): void;
@@ -152,77 +147,5 @@ export abstract class AbstractCentralSystem implements ICentralSystem {
             this._logger.error("No schema found for call result with action", action, message);
             return { isValid: false }; // TODO: Implement config for this behavior
         }
-    }
-}
-
-/**
- * Interface for the client connection
- */
-export interface IClientConnection {
-    get identifier(): string;
-    get sessionIndex(): string;
-    get ip(): string;
-    get port(): number;
-    get isAlive(): boolean;
-    set isAlive(value: boolean);
-}
-
-/**
- * Implementation of the client connection
- */
-export class ClientConnection implements IClientConnection {
-
-    /**
-     * Fields
-     */
-
-    private _identifier: string;
-    private _sessionIndex: string;
-    private _ip: string;
-    private _port: number;
-    private _isAlive: boolean;
-
-    /**
-     * Constructor
-     */
-
-    constructor(identifier: string, sessionIndex: string, ip: string, port: number) {
-        this._identifier = identifier;
-        this._sessionIndex = sessionIndex;
-        this._ip = ip;
-        this._port = port;
-        this._isAlive = false;
-    }
-
-    /**
-     * Properties
-     */
-
-    get identifier(): string {
-        return this._identifier;
-    }
-
-    get sessionIndex(): string {
-        return this._sessionIndex;
-    }
-
-    get ip(): string {
-        return this._ip;
-    }
-
-    get port(): number {
-        return this._port;
-    }
-
-    get isAlive(): boolean {
-        return this._isAlive;
-    }
-
-    set isAlive(value: boolean) {
-        this._isAlive = value;
-    }
-
-    get connectionUrl(): string {
-        return `ws://${this._ip}:${this._port}/${this._identifier}`;
     }
 }

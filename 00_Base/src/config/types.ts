@@ -16,18 +16,16 @@
 
 import { z } from "zod";
 import { RegistrationStatusEnumType } from "../ocpp/model/enums";
+import { EventGroup } from "..";
 
 export const systemConfigInputSchema = z.object({
     env: z.enum(["development", "production"]),
     modules: z.object({
         certificates: z.object({
-            endpointPrefix: z.string().default("certificates").optional(),
+            endpointPrefix: z.string().default(EventGroup.Certificates).optional(),
+            host: z.string().default("localhost").optional(),
             port: z.number().int().positive().default(8081).optional(),
         }).optional(),
-        evdriver: z.object({
-            endpointPrefix: z.string().default("commands").optional(),
-            port: z.number().int().positive().default(8081).optional(),
-        }),
         configuration: z.object({
             heartbeatInterval: z.number().int().positive().default(60).optional(),
             bootRetryInterval: z.number().int().positive().default(10).optional(),
@@ -35,23 +33,33 @@ export const systemConfigInputSchema = z.object({
             getBaseReportOnPending: z.boolean().default(true).optional(),
             bootWithRejectedVariables: z.boolean().default(true).optional(),
             autoAccept: z.boolean().default(true).optional(), // If false, only data endpoint can update boot status to accepted
-            endpointPrefix: z.string().default("configuration").optional(),
+            endpointPrefix: z.string().default(EventGroup.Configuration).optional(),
+            host: z.string().default("localhost").optional(),
             port: z.number().int().positive().default(8081).optional(),
         }), // Configuration module is required
+        evdriver: z.object({
+            endpointPrefix: z.string().default(EventGroup.EVDriver).optional(),
+            host: z.string().default("localhost").optional(),
+            port: z.number().int().positive().default(8081).optional(),
+        }),
         monitoring: z.object({
-            endpointPrefix: z.string().default("monitoring").optional(),
+            endpointPrefix: z.string().default(EventGroup.Monitoring).optional(),
+            host: z.string().default("localhost").optional(),
             port: z.number().int().positive().default(8081).optional(),
         }),
         reporting: z.object({
-            endpointPrefix: z.string().default("reporting").optional(),
+            endpointPrefix: z.string().default(EventGroup.Reporting).optional(),
+            host: z.string().default("localhost").optional(),
             port: z.number().int().positive().default(8081).optional(),
         }),
         smartcharging: z.object({
-            endpointPrefix: z.string().default("smartcharging").optional(),
+            endpointPrefix: z.string().default(EventGroup.SmartCharging).optional(),
+            host: z.string().default("localhost").optional(),
             port: z.number().int().positive().default(8081).optional(),
         }).optional(),
         transactions: z.object({
-            endpointPrefix: z.string().default("transactions").optional(),
+            endpointPrefix: z.string().default(EventGroup.Transactions).optional(),
+            host: z.string().default("localhost").optional(),
             port: z.number().int().positive().default(8081).optional(),
         }), // Transactions module is required
     }),
@@ -107,6 +115,7 @@ export const systemConfigInputSchema = z.object({
         port: z.number().int().positive().default(8081).optional(),
         swagger: z.object({
             path: z.string().default('/docs').optional(),
+            exposeAdmin: z.boolean().default(false).optional(),
             exposeData: z.boolean().default(true).optional(),
             exposeMessage: z.boolean().default(true).optional(),
         }).optional(),
@@ -141,10 +150,12 @@ export const systemConfigSchema = z.object({
     modules: z.object({
         certificates: z.object({
             endpointPrefix: z.string(),
+            host: z.string(),
             port: z.number().int().positive(),
         }).optional(),
         evdriver: z.object({
             endpointPrefix: z.string(),
+            host: z.string(),
             port: z.number().int().positive(),
         }),
         configuration: z.object({
@@ -158,22 +169,27 @@ export const systemConfigSchema = z.object({
              */
             autoAccept: z.boolean(), 
             endpointPrefix: z.string(),
+            host: z.string(),
             port: z.number().int().positive(),
         }), // Configuration module is required
         monitoring: z.object({
             endpointPrefix: z.string(),
+            host: z.string(),
             port: z.number().int().positive(),
         }),
         reporting: z.object({
             endpointPrefix: z.string(),
+            host: z.string(),
             port: z.number().int().positive(),
         }),
         smartcharging: z.object({
             endpointPrefix: z.string(),
+            host: z.string(),
             port: z.number().int().positive(),
         }).optional(),
         transactions: z.object({
             endpointPrefix: z.string(),
+            host: z.string(),
             port: z.number().int().positive(),
         }), // Transactions module is required
     }),
@@ -229,6 +245,7 @@ export const systemConfigSchema = z.object({
         port: z.number().int().positive(),
         swagger: z.object({
             path: z.string(),
+            exposeAdmin: z.boolean(),
             exposeData: z.boolean(),
             exposeMessage: z.boolean(),
         }).optional(),

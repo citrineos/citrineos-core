@@ -52,8 +52,6 @@ services:
     volumes:
       - ./:/usr/server
       - /usr/server/node_modules
-    environment:
-      APP_ENV: 'local'
   directus:
     image: directus/directus:latest
     ports:

@@ -1,0 +1,10 @@
+{
+    "watch": [
+        "src"
+    ],
+    "ext": ".ts,.js",
+    "ignore": [],
+    "events": {
+        "crash": "nodemon --delay 500ms -L"
+    }
+}

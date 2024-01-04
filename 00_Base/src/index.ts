@@ -18,7 +18,7 @@
 
 export { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, HttpMethod, IModuleApi } from './interfaces/api';
 export { CacheNamespace, ICache } from './interfaces/cache/cache';
-export { AbstractCentralSystem, ClientConnection, ICentralSystem, IClientConnection, OcppError } from './interfaces/centralsystem';
+export { AbstractCentralSystem, AbstractCentralSystemApi, AsAdminEndpoint, ClientConnection, ICentralSystem, IClientConnection, OcppError } from './interfaces/server';
 export { AbstractMessageHandler, AbstractMessageSender, EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, Message, MessageOrigin, MessageState } from './interfaces/messages';
 export { AbstractModule, AsHandler, IModule } from './interfaces/modules';
 export { Call, CallAction, CallError, CallResult, ErrorCode, MessageTypeId } from './ocpp/rpc/message';
