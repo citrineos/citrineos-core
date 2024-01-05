@@ -2,6 +2,8 @@
   "name": "@citrineos/swarm",
   "version": "1.0.0",
   "description": "The OCPP swarm implementation which acts right on top of an asynchronous WebSocket with separate servers for each module.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "prepublish": "npm run build",
     "install-base": "cd ../00_Base && npm install && npm run build && npm pack && cd ../Swarm && npm install ../00_Base/citrineos-base-1.0.0.tgz",
@@ -17,8 +19,9 @@
     "install-all": "npm run install-base && npm run install-data && npm run install-util && npm run install-configuration && npm run install-evdriver && npm run install-reporting && npm run install-transactions && npm run install-monitoring",
     "clean-all-windows": "del package-lock.json && cd ../00_Base && del package-lock.json && rmdir lib /s /q && cd ../02_Util && del package-lock.json && rmdir lib /s /q && cd ../01_Data && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Configuration && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/EVDriver && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Reporting && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Transactions && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Monitoring && del package-lock.json && rmdir lib /s /q",
     "build": "tsc",
-    "start-server:docker": "export APP_ENV=docker && nodemon --exec npx ts-node ./src/citrine.ts",
-    "start-module:docker": "export APP_ENV=docker && nodemon --exec npx ts-node ./src/module.ts",
+    "start-unix:docker": "export APP_ENV=docker && npx nodemon",
+    "start-unix:local": "export APP_ENV=local && npx nodemon",
+    "start-windows:local": "set APP_ENV=local && RefreshEnv.cmd && npx nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

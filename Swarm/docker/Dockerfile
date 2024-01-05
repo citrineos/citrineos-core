@@ -151,8 +151,5 @@ COPY /Swarm/tsconfig.json ./
 COPY /Swarm/src ./src
 RUN npm run build
 
-EXPOSE 8080
-EXPOSE 8081
-EXPOSE 8082
-
-CMD [ "npm", "run", "start-module:docker" ]
+COPY /Swarm/nodemon.json ./
+CMD [ "npm", "run", "start-unix:docker" ]

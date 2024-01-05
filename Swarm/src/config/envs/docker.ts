@@ -5,8 +5,9 @@ export function createDockerConfig() {
         env: "development",
         modules: {
             certificates: {
-                endpointPrefix: "/certificates",
-                port: 8080
+                endpointPrefix: "certificates",
+                host: "localhost",
+                port: 8083
             },
             configuration: {
                 heartbeatInterval: 60,
@@ -15,28 +16,34 @@ export function createDockerConfig() {
                 getBaseReportOnPending: true,
                 bootWithRejectedVariables: true,
                 autoAccept: false,
-                endpointPrefix: "/configuration",
-                port: 8080
+                endpointPrefix: "configuration",
+                host: "localhost",
+                port: 8084
             },
             evdriver: {
-                endpointPrefix: "/evdriver",
-                port: 8080
+                endpointPrefix: "evdriver",
+                host: "localhost",
+                port: 8085
             },
             monitoring: {
-                endpointPrefix: "/monitoring",
-                port: 8080
+                endpointPrefix: "monitoring",
+                host: "localhost",
+                port: 8086
             },
             reporting: {
-                endpointPrefix: "/reporting",
-                port: 8080
+                endpointPrefix: "reporting",
+                host: "localhost",
+                port: 8087
             },
             smartcharging: {
-                endpointPrefix: "/smartcharging",
-                port: 8080
+                endpointPrefix: "smartcharging",
+                host: "localhost",
+                port: 8088
             },
             transactions: {
-                endpointPrefix: "/transactions",
-                port: 8080
+                endpointPrefix: "transactions",
+                host: "localhost",
+                port: 8089
             },
         },
         data: {
@@ -71,6 +78,7 @@ export function createDockerConfig() {
             port: 8080,
             swagger: {
                 path: "/docs",
+                exposeAdmin: true,
                 exposeData: true,
                 exposeMessage: true
             }

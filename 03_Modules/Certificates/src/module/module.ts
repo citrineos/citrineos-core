@@ -194,7 +194,7 @@ export class CertificatesModule extends AbstractModule {
     
     // Create a new certificate
     const cert = forge.pki.createCertificate();
-    cert.publicKey = csr.publicKey;
+    cert.publicKey = csr.publicKey as forge.pki.rsa.PublicKey;
     cert.serialNumber = '01'; // Unique serial number for the certificate
     cert.validity.notBefore = new Date();
     cert.validity.notAfter = new Date();

@@ -6,6 +6,7 @@ export function createDockerConfig() {
         modules: {
             certificates: {
                 endpointPrefix: "/certificates",
+                host: "localhost",
                 port: 8080
             },
             configuration: {
@@ -16,26 +17,32 @@ export function createDockerConfig() {
                 bootWithRejectedVariables: true,
                 autoAccept: false,
                 endpointPrefix: "/configuration",
+                host: "localhost",
                 port: 8080
             },
             evdriver: {
                 endpointPrefix: "/evdriver",
+                host: "localhost",
                 port: 8080
             },
             monitoring: {
                 endpointPrefix: "/monitoring",
+                host: "localhost",
                 port: 8080
             },
             reporting: {
                 endpointPrefix: "/reporting",
+                host: "localhost",
                 port: 8080
             },
             smartcharging: {
                 endpointPrefix: "/smartcharging",
+                host: "localhost",
                 port: 8080
             },
             transactions: {
                 endpointPrefix: "/transactions",
+                host: "localhost",
                 port: 8080
             },
         },
@@ -71,6 +78,7 @@ export function createDockerConfig() {
             port: 8080,
             swagger: {
                 path: "/docs",
+                exposeAdmin: true,
                 exposeData: true,
                 exposeMessage: true
             }

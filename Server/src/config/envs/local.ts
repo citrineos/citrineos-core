@@ -6,6 +6,7 @@ export function createLocalConfig() {
         modules: {
             certificates: {
                 endpointPrefix: "/certificates",
+                host: "localhost",
                 port: 8081
             },
             configuration: {
@@ -16,26 +17,32 @@ export function createLocalConfig() {
                 bootWithRejectedVariables: true,
                 autoAccept: true,
                 endpointPrefix: "/configuration",
+                host: "localhost",
                 port: 8081
             },
             evdriver: {
                 endpointPrefix: "/evdriver",
+                host: "localhost",
                 port: 8081
             },
             monitoring: {
                 endpointPrefix: "/monitoring",
+                host: "localhost",
                 port: 8081
             },
             reporting: {
                 endpointPrefix: "/reporting",
+                host: "localhost",
                 port: 8081
             },
             smartcharging: {
                 endpointPrefix: "/smartcharging",
+                host: "localhost",
                 port: 8081
             },
             transactions: {
                 endpointPrefix: "/transactions",
+                host: "localhost",
                 port: 8081
             },
         },
@@ -71,6 +78,7 @@ export function createLocalConfig() {
             port: 8081,
             swagger: {
                 path: "/docs",
+                exposeAdmin: true,
                 exposeData: true,
                 exposeMessage: true
             }
@@ -81,7 +89,7 @@ export function createLocalConfig() {
             maxCachingSeconds: 10
         },
         websocketServer: [{
-            securityProfile: 1,
+            securityProfile: 0,
             host: "localhost",
             port: 8080,
             protocol: "ocpp2.0.1"

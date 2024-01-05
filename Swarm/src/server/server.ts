@@ -29,7 +29,6 @@ import { CentralSystemMessageHandler, OcppMessageRouter } from "./router";
 import { DeviceModelRepository } from "@citrineos/data/lib/layers/sequelize";
 import { Duplex } from "stream";
 import { ConfigurationModule } from "@citrineos/configuration";
-import { eventGroup } from "../config";
 
 /**
  * Implementation of the central system

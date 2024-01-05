@@ -14,32 +14,16 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { EventGroup, SystemConfig } from "@citrineos/base";
-import { createLocalConfig } from "./envs/local";
-import { createProdConfig } from "./envs/prod";
+import { SystemConfig } from "@citrineos/base";
 import { createDockerConfig } from "./envs/docker";
 
 export const systemConfig: SystemConfig = getConfig();
 
 function getConfig() {
     switch (process.env.APP_ENV) {
-        case "production":
-            return createProdConfig();
-        case "local":
-            return createLocalConfig();
         case "docker":
             return createDockerConfig();
         default:
             throw new Error('Invalid APP_ENV "${process.env.APP_ENV}"');
-    }
-}
-
-export const eventGroup: EventGroup = getGroup();
-
-function getGroup(): EventGroup {
-    if (process.env.APP_NAME && process.env.APP_NAME in EventGroup) {
-        return process.env.APP_NAME as EventGroup;
-    } else {
-        throw new Error('Invalid APP_NAME "${process.env.APP_NAME}"');
     }
 }

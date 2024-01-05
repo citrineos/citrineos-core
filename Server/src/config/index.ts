@@ -16,15 +16,12 @@
 
 import { SystemConfig } from "@citrineos/base";
 import { createLocalConfig } from "./envs/local";
-import { createProdConfig } from "./envs/prod";
 import { createDockerConfig } from "./envs/docker";
 
 export const systemConfig: SystemConfig = getConfig();
 
 function getConfig() {
     switch (process.env.APP_ENV) {
-        case "production":
-            return createProdConfig();
         case "local":
             return createLocalConfig();
         case "docker":

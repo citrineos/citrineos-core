@@ -14,13 +14,16 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { EventGroup, ICache, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
+import { EventGroup, ICache, ICentralSystem, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
 import { MemoryCache, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+import Ajv from "ajv";
+import addFormats from "ajv-formats"
 import fastify, { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { systemConfig, eventGroup } from './config';
+import { systemConfig } from './config';
+import { CentralSystemImpl } from './server/server';
 import { initSwagger } from './util/swagger';
 import { ConfigurationModule, ConfigurationModuleApi } from '@citrineos/configuration';
 import { TransactionsModule, TransactionsModuleApi } from '@citrineos/transactions';
@@ -29,19 +32,17 @@ import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import { SmartChargingModule, SmartChargingModuleApi } from '@citrineos/smartcharging';
 
-class ModuleService {
+class CitrineOSServer {
 
     /**
      * Fields
      */
     private _config: SystemConfig;
-    private _module: IModule;
-    private _api: IModuleApi;
+    private _centralSystem: ICentralSystem;
     private _logger: Logger<ILogObj>;
     private _server: FastifyInstance;
     private _cache: ICache;
-    private _host: string;
-    private _port: number;
+    private _ajv: Ajv;
 
     /**
      * Constructor for the class.
@@ -49,7 +50,7 @@ class ModuleService {
      * @param {FastifyInstance} server - optional Fastify server instance
      * @param {Ajv} ajv - optional Ajv JSON schema validator instance
      */
-    constructor(config: SystemConfig, eventGroup: EventGroup, server?: FastifyInstance, cache?: ICache) {
+    constructor(config: SystemConfig, server?: FastifyInstance, ajv?: Ajv, cache?: ICache) {
 
         // Set system config
         // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
@@ -66,6 +67,10 @@ class ModuleService {
             return { status: 'healthy' };
         });
 
+        // Create Ajv JSON schema validator instance
+        this._ajv = ajv || new Ajv({ removeAdditional: "all", useDefaults: true, coerceTypes: "array", strict: false });
+        addFormats(this._ajv, { mode: "fast", formats: ["date-time"] });
+
         // Initialize parent logger
         this._logger = new Logger<ILogObj>({
             name: "CitrineOS Logger",
@@ -81,10 +86,123 @@ class ModuleService {
             initSwagger(this._config, this._server);
         }
 
+        // Register AJV for schema validation
+        this._server.setValidatorCompiler(({ schema, method, url, httpPart }) => {
+            return this._ajv.compile(schema);
+        });
+
+        this._centralSystem = new CentralSystemImpl(this._config, this._cache, undefined, undefined, this._logger, ajv);
+
+        process.on('SIGINT', this.shutdown.bind(this));
+        process.on('SIGTERM', this.shutdown.bind(this));
+        process.on('SIGQUIT', this.shutdown.bind(this));
+    }
+
+    protected _createSender(): IMessageSender {
+        return new RabbitMqSender(this._config, this._logger);
+    }
+
+    protected _createHandler(): IMessageHandler {
+        return new RabbitMqReceiver(this._config, this._logger);
+    }
+
+    shutdown() {
+
+        // Shut down central system
+        this._centralSystem.shutdown();
+
+        // Shutdown server
+        this._server.close();
+
+        setTimeout(() => {
+            console.log("Exiting...");
+            process.exit(1);
+        }, 2000);
+    }
+
+    run(): Promise<void> {
+        try {
+            return this._server.listen({
+                port: this._config.server.port,
+                host: this._config.server.host
+            }).then(address => {
+                this._logger.info(`Server listening at ${address}`);
+            }).catch(error => {
+                this._logger.error(error);
+                process.exit(1);
+            });
+            // TODO Push config to microservices
+        } catch (error) {
+            return Promise.reject(error);
+        }
+    }
+}
+
+class ModuleService {
+
+    /**
+     * Fields
+     */
+    private _config: SystemConfig;
+    private _module: IModule;
+    private _api: IModuleApi;
+    private _logger: Logger<ILogObj>;
+    private _server: FastifyInstance;
+    private _ajv: Ajv;
+    private _cache: ICache;
+    private _host: string;
+    private _port: number;
+
+    /**
+     * Constructor for the class.
+     *
+     * @param {FastifyInstance} server - optional Fastify server instance
+     * @param {Ajv} ajv - optional Ajv JSON schema validator instance
+     */
+    constructor(config: SystemConfig, appName: string, server?: FastifyInstance, ajv?: Ajv, cache?: ICache) {
+
+        // Set system config
+        // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
+        if (!config.util.messageBroker.amqp) {
+            throw new Error("This server implementation requires amqp configuration for rabbitMQ.");
+        }
+        this._config = config;
+
+        // Create server instance
+        this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
+
+        // Add health check
+        this._server.get('/health', async () => {
+            return { status: 'healthy' };
+        });
+
+        // Create Ajv JSON schema validator instance
+        this._ajv = ajv || new Ajv({ removeAdditional: "all", useDefaults: true, coerceTypes: "array", strict: false });
+        addFormats(this._ajv, { mode: "fast", formats: ["date-time"] });
+
+        // Initialize parent logger
+        this._logger = new Logger<ILogObj>({
+            name: "CitrineOS Logger",
+            minLevel: systemConfig.server.logLevel,
+            hideLogPositionForProduction: systemConfig.env === "production"
+        });
+
+        // Set cache implementation
+        this._cache = cache || new MemoryCache();
+
+        // Initialize Swagger if enabled
+        if (this._config.server.swagger) {
+            initSwagger(this._config, this._server);
+        }
+
+        // Register AJV for schema validation
+        this._server.setValidatorCompiler(({ schema, method, url, httpPart }) => {
+            return this._ajv.compile(schema);
+        });
 
         // Initialize module & API
         // Always initialize API after SwaggerUI
-        switch (eventGroup) {
+        switch (appName) {
             case EventGroup.Certificates:
                 if (this._config.modules.certificates) {
                     this._module = new CertificatesModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger);
@@ -156,7 +274,7 @@ class ModuleService {
                     break;
                 } else throw new Error("No config for Transactions module");
             default:
-                throw new Error("Unhandled module type: " + eventGroup);
+                throw new Error("Unhandled module type: " + appName);
         }
 
         process.on('SIGINT', this.shutdown.bind(this));
@@ -203,7 +321,16 @@ class ModuleService {
     }
 }
 
-new ModuleService(systemConfig, eventGroup).run().catch(error => {
-    console.error(error);
-    process.exit(1);
-});
+if (process.env.APP_NAME == EventGroup.General) {
+    new CitrineOSServer(systemConfig).run().catch(error => {
+        console.error(error);
+        process.exit(1);
+    });
+} else if (process.env.APP_NAME) {
+    new ModuleService(systemConfig, process.env.APP_NAME).run().catch(error => {
+        console.error(error);
+        process.exit(1);
+    });
+} else {
+    throw new Error('Invalid APP_NAME environment variable "${process.env.APP_NAME}"');
+}
