@@ -28,8 +28,7 @@ export interface IModule {
     sendCallResult(correlationId: string, identifier: string, tenantId: string, action: CallAction, payload: OcppResponse, origin?: MessageOrigin): Promise<IMessageConfirmation>;
     sendCallResultWithMessage(message: IMessage<OcppResponse>, payload: OcppResponse): Promise<IMessageConfirmation>
 
-    handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void;
-    handleMessageApiCallback(message: IMessage<OcppResponse>): void;
+    handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): Promise<void>;
     shutdown(): void;
 
     config: SystemConfig;

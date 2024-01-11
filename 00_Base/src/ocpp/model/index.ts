@@ -1,19 +1,3 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright (c) 2023 S44, LLC
- */
-
 export *  from './enums';
 export { AuthorizeRequest } from './types/AuthorizeRequest';
 export { default as AuthorizeRequestSchema } from './schemas/AuthorizeRequest.json';
@@ -55,14 +39,14 @@ export { ClearDisplayMessageRequest } from './types/ClearDisplayMessageRequest';
 export { default as ClearDisplayMessageRequestSchema } from './schemas/ClearDisplayMessageRequest.json';
 export { ClearDisplayMessageResponse } from './types/ClearDisplayMessageResponse';
 export { default as ClearDisplayMessageResponseSchema } from './schemas/ClearDisplayMessageResponse.json';
-export { ClearVariableMonitoringRequest } from './types/ClearVariableMonitoringRequest';
-export { default as ClearVariableMonitoringRequestSchema } from './schemas/ClearVariableMonitoringRequest.json';
-export { ClearVariableMonitoringResponse, ClearMonitoringResultType } from './types/ClearVariableMonitoringResponse';
-export { default as ClearVariableMonitoringResponseSchema } from './schemas/ClearVariableMonitoringResponse.json';
 export { ClearedChargingLimitRequest } from './types/ClearedChargingLimitRequest';
 export { default as ClearedChargingLimitRequestSchema } from './schemas/ClearedChargingLimitRequest.json';
 export { ClearedChargingLimitResponse } from './types/ClearedChargingLimitResponse';
 export { default as ClearedChargingLimitResponseSchema } from './schemas/ClearedChargingLimitResponse.json';
+export { ClearVariableMonitoringRequest } from './types/ClearVariableMonitoringRequest';
+export { default as ClearVariableMonitoringRequestSchema } from './schemas/ClearVariableMonitoringRequest.json';
+export { ClearVariableMonitoringResponse, ClearMonitoringResultType } from './types/ClearVariableMonitoringResponse';
+export { default as ClearVariableMonitoringResponseSchema } from './schemas/ClearVariableMonitoringResponse.json';
 export { CostUpdatedRequest } from './types/CostUpdatedRequest';
 export { default as CostUpdatedRequestSchema } from './schemas/CostUpdatedRequest.json';
 export { CostUpdatedResponse } from './types/CostUpdatedResponse';

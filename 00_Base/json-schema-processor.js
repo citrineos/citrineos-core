@@ -13,6 +13,23 @@ const globalEnums = new Set();
 const globalDefinitions = {};
 const globalEnumDefinitions = {};
 
+const licenseComment = `/**
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright 2023 S44, LLC
+ */
+`;
+
 fs.readdir(path, (error, files) => {
 
     const writeToFile = true;
@@ -79,8 +96,24 @@ async function processJsonSchema(data, writeToFile = true) {
     // Preprocess nodes to enable enum extraction
     processNode(jsonSchema);
 
+    // Determine if the schema is a request or response
+    let schemaType = '';
+    if (id.toLowerCase().includes('request')) {
+        schemaType = 'OcppRequest';
+    } else if (id.toLowerCase().includes('response')) {
+        schemaType = 'OcppResponse';
+    }
+
     return new Promise((resolve, reject) => {
         jsts.compile(jsonSchema, id).then(ts => {
+            // Add licence comment
+            ts = licenseComment + ts;
+
+            // Extend the generated interface with Request or Response
+            if (schemaType) {
+                const interfaceNamePattern = new RegExp(`export interface ${id}`, 'g');
+                ts = ts.replace(interfaceNamePattern, `export interface ${id} extends ${schemaType}`);
+            }
 
             // Extract enums
             const enums = extractEnums(ts);
@@ -93,12 +126,14 @@ async function processJsonSchema(data, writeToFile = true) {
             // Collect all definitions
             const { definitions, enumDefinitions } = collectDefinitions(jsonSchema, id);
 
-            // Add import statement for enums
+            // Add import statement for enums & schemaType
             if (enumDefinitions.length > 0) {
-                // TODO: Hacky way, should be changed
-                const searchString = "and run json-schema-to-typescript to regenerate this file.";
-                const index = ts.indexOf(searchString) + searchString.length + 5;
-                ts = ts.substring(0, index) + `\nimport { ${enumDefinitions.join(", ")} } from "../enums";\n` + ts.substring(index);
+                const searchString = "\nexport";
+                const index = ts.indexOf(searchString);
+                ts = ts.substring(0, index) + 
+                `\nimport { ${enumDefinitions.join(", ")} } from "../enums";\n` +
+                `import { ${schemaType} } from "../../..";\n` 
+                + ts.substring(index);
             }
 
             if (writeToFile) {

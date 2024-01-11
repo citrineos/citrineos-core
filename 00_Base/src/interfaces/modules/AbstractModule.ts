@@ -141,14 +141,14 @@ export abstract class AbstractModule implements IModule {
      * @param {HandlerProperties} props - Optional properties for the handler.
      * @return {void} This function does not return anything.
      */
-    handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void {
+    async handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): Promise<void> {
         if (message.state === MessageState.Response) {
             this.handleMessageApiCallback(message as IMessage<OcppResponse>);
             this._cache.set(message.context.correlationId, JSON.stringify(message.payload), message.context.stationId, this._config.websocket.maxCachingSeconds);
         }
         const handlerDefinition = (Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>).filter((h) => h.action === message.action).pop();
         if (handlerDefinition) {
-            handlerDefinition.method.call(this, message, props);
+            await handlerDefinition.method.call(this, message, props);
             // this.constructor.prototype[handlerDefinition.methodName].call(this, message, props);
         } else {
             this._logger.error("Failed handling message. No handler found for action: ", message.action);
