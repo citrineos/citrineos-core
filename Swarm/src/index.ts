@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { EventGroup, ICache, ICentralSystem, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
+import { EventGroup, ICache, ICentralSystem, ICentralSystemApi, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
 import { MemoryCache, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
@@ -31,6 +31,7 @@ import { CertificatesModule, CertificatesModuleApi } from '@citrineos/certificat
 import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import { SmartChargingModule, SmartChargingModuleApi } from '@citrineos/smartcharging';
+import { CentralSystemApiImpl } from './server/api';
 
 class CitrineOSServer {
 
@@ -39,6 +40,7 @@ class CitrineOSServer {
      */
     private _config: SystemConfig;
     private _centralSystem: ICentralSystem;
+    private _centralSystemApi: ICentralSystemApi;
     private _logger: Logger<ILogObj>;
     private _server: FastifyInstance;
     private _cache: ICache;
@@ -92,6 +94,8 @@ class CitrineOSServer {
         });
 
         this._centralSystem = new CentralSystemImpl(this._config, this._cache, undefined, undefined, this._logger, ajv);
+
+        this._centralSystemApi = new CentralSystemApiImpl(this._centralSystem as CentralSystemImpl, this._server, this._logger);
 
         process.on('SIGINT', this.shutdown.bind(this));
         process.on('SIGTERM', this.shutdown.bind(this));

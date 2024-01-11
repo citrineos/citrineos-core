@@ -18,11 +18,10 @@ import { FastifyInstance, FastifyRequest } from "fastify";
 import { Logger, ILogObj } from "tslog";
 import { EventGroup, HttpMethod, AbstractCentralSystemApi, AsAdminEndpoint, SystemConfig } from "@citrineos/base";
 import { CentralSystemImpl } from "./server";
-
 /**
  * Implementation of the central system api
  */
-export class CentralSystemApiImpl extends AbstractCentralSystemApi {
+export class CentralSystemApiImpl extends AbstractCentralSystemApi<CentralSystemImpl> {
 
     /**
      * Constructs a new instance of the class.

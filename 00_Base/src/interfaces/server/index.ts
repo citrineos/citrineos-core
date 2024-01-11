@@ -118,7 +118,7 @@ export class ClientConnection implements IClientConnection {
 export { IAdminEndpointDefinition } from './AdminEndpointDefinition';
 export { AsAdminEndpoint } from './AsAdminEndpoint';
 export { ICentralSystem, AbstractCentralSystem } from './CentralSystem';
-export { AbstractCentralSystemApi } from './CentralSystemApi';
+export { AbstractCentralSystemApi, ICentralSystemApi } from './CentralSystemApi';
 
 export const METADATA_ADMIN_ENDPOINTS = 'METADATA_ADMIN_ENDPOINTS';
 

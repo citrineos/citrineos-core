@@ -166,6 +166,10 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         }
     }
 
+    get config(): SystemConfig {
+        return this._config;
+    }
+
     /**
      * Handles an incoming Call message from a client connection.
      *

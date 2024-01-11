@@ -19,22 +19,23 @@ import { Logger, ILogObj } from "tslog";
 import { METADATA_ADMIN_ENDPOINTS } from ".";
 import { HttpMethod } from "../api";
 import { IAdminEndpointDefinition } from "./AdminEndpointDefinition";
-import { AbstractCentralSystem } from "./CentralSystem";
+import { ICentralSystem } from "./CentralSystem";
 import { EventGroup } from "../messages";
 
+export interface ICentralSystemApi {
 
-
+}
 
 /**
  * Abstract module api class implementation.
  */
-export abstract class AbstractCentralSystemApi {
+export abstract class AbstractCentralSystemApi<T extends ICentralSystem> implements ICentralSystemApi {
 
     protected readonly _server: FastifyInstance;
-    protected readonly _centralSystem: AbstractCentralSystem;
+    protected readonly _centralSystem: T;
     protected readonly _logger: Logger<ILogObj>;
 
-    constructor(centralSystem: AbstractCentralSystem, server: FastifyInstance, logger?: Logger<ILogObj>) {
+    constructor(centralSystem: T, server: FastifyInstance, logger?: Logger<ILogObj>) {
         this._centralSystem = centralSystem;
         this._server = server;
 
@@ -62,7 +63,7 @@ export abstract class AbstractCentralSystemApi {
      */
     // eslint-disable-next-line @typescript-eslint/ban-types
     protected _addAdminRoute(eventGroup: EventGroup, method: Function, httpMethod: HttpMethod, querySchema?: object, bodySchema?: object): void {
-        this._logger.debug(`Adding Admin route for ${eventGroup}`, this._toAdminPath(eventGroup), httpMethod);
+        this._logger.info(`Adding Admin route for ${eventGroup}`, this._toAdminPath(eventGroup), httpMethod);
         const schema: Record<string, object> = {};
         if (querySchema) {
             schema["querystring"] = querySchema;
