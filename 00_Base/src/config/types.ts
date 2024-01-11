@@ -115,7 +115,6 @@ export const systemConfigInputSchema = z.object({
         port: z.number().int().positive().default(8081).optional(),
         swagger: z.object({
             path: z.string().default('/docs').optional(),
-            exposeAdmin: z.boolean().default(false).optional(),
             exposeData: z.boolean().default(true).optional(),
             exposeMessage: z.boolean().default(true).optional(),
         }).optional(),
@@ -245,7 +244,6 @@ export const systemConfigSchema = z.object({
         port: z.number().int().positive(),
         swagger: z.object({
             path: z.string(),
-            exposeAdmin: z.boolean(),
             exposeData: z.boolean(),
             exposeMessage: z.boolean(),
         }).optional(),

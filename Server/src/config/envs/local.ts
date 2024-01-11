@@ -78,7 +78,6 @@ export function createLocalConfig() {
             port: 8081,
             swagger: {
                 path: "/docs",
-                exposeAdmin: true,
                 exposeData: true,
                 exposeMessage: true
             }

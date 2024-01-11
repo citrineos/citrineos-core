@@ -78,7 +78,6 @@ export function createDockerConfig() {
             port: 8080,
             swagger: {
                 path: "/docs",
-                exposeAdmin: true,
                 exposeData: true,
                 exposeMessage: true
             }
