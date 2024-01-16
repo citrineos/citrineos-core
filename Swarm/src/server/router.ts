@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { Call, CallAction, CallError, CallResult, EventGroup, ICentralSystem, IClientConnection, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, LOG_LEVEL_OCPP, MessageOrigin, MessageState, MessageTypeId, OcppRequest, OcppResponse, SystemConfig } from "@citrineos/base";
+import { Call, CallAction, CallError, CallResult, EventGroup, ICentralSystem, IClientConnection, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, LOG_LEVEL_OCPP, MessageOrigin, MessageState, MessageTypeId, OcppError, OcppRequest, OcppResponse, SystemConfig } from "@citrineos/base";
 import { RabbitMqReceiver } from "@citrineos/util";
 import { ILogObj, Logger } from "tslog";
 
@@ -46,16 +46,24 @@ export class CentralSystemMessageHandler extends RabbitMqReceiver {
      * Methods
      */
 
-    handle(message: IMessage<OcppRequest | OcppResponse>, context?: IMessageContext): void {
+    handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, context?: IMessageContext): void {
 
-        this._logger.debug("Received message:", message);
+        logger.debug("Received message:", message);
 
         if (message.state === MessageState.Response) {
-            let callResult = [MessageTypeId.CallResult, message.context.correlationId, message.payload] as CallResult;
-            this._centralSystem.sendCallResult(message.context.stationId, callResult).catch(error => {
-                // TODO: Inform module about error
-                logger.error('Error sending call result:', error);
-            });
+            if (message.payload instanceof OcppError) {
+                let callError = (message.payload as OcppError).asCallError();
+                this._centralSystem.sendCallError(message.context.stationId, callError).catch(error => {
+                    // TODO: Inform module about error
+                    logger.error('Error sending call error:', error);
+                });
+            } else {
+                let callResult = [MessageTypeId.CallResult, message.context.correlationId, message.payload] as CallResult;
+                this._centralSystem.sendCallResult(message.context.stationId, callResult).catch(error => {
+                    // TODO: Inform module about error
+                    logger.error('Error sending call result:', error);
+                });
+            }
         } else if (message.state === MessageState.Request) {
             let call = [MessageTypeId.Call, message.context.correlationId, message.action, message.payload] as Call;
             this._centralSystem.sendCall(message.context.stationId, call).catch(error => {

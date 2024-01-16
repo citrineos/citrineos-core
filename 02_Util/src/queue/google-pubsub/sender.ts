@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractMessageSender, IMessageSender, SystemConfig, IMessage, OcppRequest, IMessageConfirmation, MessageState, OcppResponse, CallAction } from "@citrineos/base";
+import { AbstractMessageSender, IMessageSender, SystemConfig, IMessage, OcppRequest, IMessageConfirmation, MessageState, OcppResponse, CallAction, OcppError } from "@citrineos/base";
 import { PubSub } from "@google-cloud/pubsub";
 import { ILogObj, Logger } from "tslog";
 
@@ -56,7 +56,7 @@ export class PubSubSender extends AbstractMessageSender implements IMessageSende
    * @param payload The payload to send
    * @returns
    */
-  sendResponse(message: IMessage<OcppResponse>, payload?: OcppResponse): Promise<IMessageConfirmation> {
+  sendResponse(message: IMessage<OcppResponse | OcppError>, payload?: OcppResponse | OcppError): Promise<IMessageConfirmation> {
     return this.send(message, payload, MessageState.Response);
   }
 
@@ -69,8 +69,8 @@ export class PubSubSender extends AbstractMessageSender implements IMessageSende
    * @returns
    */
   send(
-    message: IMessage<OcppRequest | OcppResponse>,
-    payload?: OcppRequest | OcppResponse,
+    message: IMessage<OcppRequest | OcppResponse | OcppError>,
+    payload?: OcppRequest | OcppResponse | OcppError,
     state?: MessageState
   ): Promise<IMessageConfirmation> {
     if (payload) {
