@@ -17,7 +17,7 @@
 import * as amqplib from "amqplib";
 import { ILogObj, Logger } from "tslog";
 import { MemoryCache } from "../..";
-import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message } from "@citrineos/base";
+import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppError, OcppRequest, OcppResponse, HandlerProperties, Message } from "@citrineos/base";
 import { plainToInstance } from "class-transformer";
 
 /**
@@ -144,7 +144,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     });
   }
 
-  handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void {
+  handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): void {
     this._module?.handle(message, props);
   }
 
@@ -178,11 +178,11 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
    *
    * @param message The AMQPMessage to process
    */
-  protected _onMessage(message: amqplib.ConsumeMessage | null, channel: amqplib.Channel): void {
+  protected async _onMessage(message: amqplib.ConsumeMessage | null, channel: amqplib.Channel): Promise<void> {
     try {
       if (message) {
         this._logger.debug("_onMessage:Received message:", message.properties, message.content.toString());
-        const parsed = plainToInstance(Message<OcppRequest | OcppResponse>, <Message<OcppRequest | OcppResponse>>JSON.parse(message.content.toString()));
+        const parsed = plainToInstance(Message<OcppRequest | OcppResponse | OcppError>, <Message<OcppRequest | OcppResponse | OcppError>>JSON.parse(message.content.toString()));
         this.handle(parsed, message.properties);
       }
     } catch (error) {

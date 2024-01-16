@@ -47,9 +47,9 @@ export class RedisCache implements ICache {
     namespace = namespace || "default";
     key = `${namespace}:${key}`;
 
-    // Create a Redis subscriber to listen for operations affecting the key
-    const subscriber = createClient();
-    const onChangeValuePromise: Promise<T | null> = new Promise((resolve) => {
+    return new Promise((resolve) => {
+      // Create a Redis subscriber to listen for operations affecting the key
+      const subscriber = createClient();
       // Channel: Key-space, message: the name of the event, which is the command executed on the key
       subscriber.subscribe(`__keyspace@0__:${key}`, (channel, message) => {
         switch (message) {
@@ -67,14 +67,11 @@ export class RedisCache implements ICache {
             break;
         }
       });
-    })
-
-    return Promise.race([onChangeValuePromise, new Promise<T | null>((resolve) => {
       setTimeout(() => {
         resolve(this.get(key, namespace, classConstructor));
         subscriber.quit();
       }, waitSeconds * 1000);
-    })]);
+    });
   }
 
   get<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): Promise<T | null> {
@@ -108,10 +105,10 @@ export class RedisCache implements ICache {
   getAndRemove<T>(key: string, namespace?: string | undefined, classConstructor?: (() => ClassConstructor<T>) | undefined): Promise<T | null> {
     namespace = namespace || "default";
     key = `${namespace}:${key}`;
-    const transaction = this._client.multi();
-    transaction.get(key);
-    transaction.del(key);
     return new Promise((resolve) => {
+      const transaction = this._client.multi();
+      transaction.get(key);
+      transaction.del(key);
       transaction.exec().then((replies) => {
         if (replies[0]) {
           if (classConstructor) {

@@ -22,10 +22,10 @@ import { v4 as uuidv4 } from "uuid";
 import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from ".";
 import { OcppRequest, OcppResponse } from "../..";
 import { SystemConfig } from "../../config/types";
-import { CallAction } from "../../ocpp/rpc/message";
+import { CallAction, ErrorCode } from "../../ocpp/rpc/message";
 import { RequestBuilder } from "../../util/request";
 import { CacheNamespace, ICache } from "../cache/cache";
-import { ClientConnection } from "../centralsystem";
+import { ClientConnection, OcppError } from "../centralsystem";
 import { EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessageHandler, IMessageSender, MessageOrigin, MessageState } from "../messages";
 
 export abstract class AbstractModule implements IModule {
@@ -146,12 +146,20 @@ export abstract class AbstractModule implements IModule {
             this.handleMessageApiCallback(message as IMessage<OcppResponse>);
             this._cache.set(message.context.correlationId, JSON.stringify(message.payload), message.context.stationId, this._config.websocket.maxCachingSeconds);
         }
-        const handlerDefinition = (Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>).filter((h) => h.action === message.action).pop();
-        if (handlerDefinition) {
-            await handlerDefinition.method.call(this, message, props);
-            // this.constructor.prototype[handlerDefinition.methodName].call(this, message, props);
-        } else {
-            this._logger.error("Failed handling message. No handler found for action: ", message.action);
+        try {
+            const handlerDefinition = (Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>).filter((h) => h.action === message.action).pop();
+            if (handlerDefinition) {
+                await handlerDefinition.method.call(this, message, props);
+            } else {
+                throw new OcppError(message.context.correlationId, ErrorCode.NotSupported, "No handler found for action: " + message.action + " at module " + this._eventGroup);
+            }
+        } catch (error) {
+            this._logger.error("Failed handling message: ", error, message);
+            if (error instanceof OcppError) {
+                this._sender.sendResponse(message, error);
+            } else {
+                this._sender.sendResponse(message, new OcppError(message.context.correlationId, ErrorCode.InternalError, "Failed handling message: " + error));
+            }
         }
     }
 
@@ -255,13 +263,51 @@ export abstract class AbstractModule implements IModule {
     }
 
     /**
-     * Sends the call result with a message.
+     * Sends the call result using the request message's fields.
+     * Payload will overwrite message.payload.
      *
-     * @param {IMessage<OcppResponse>} message - The message object.
+     * @param {IMessage<OcppRequest>} message - The request message object.
      * @param {OcppResponse} payload - The payload to send.
      * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
      */
-    public sendCallResultWithMessage(message: IMessage<OcppResponse>, payload: OcppResponse): Promise<IMessageConfirmation> {
+    public sendCallResultWithMessage(message: IMessage<OcppRequest>, payload: OcppResponse): Promise<IMessageConfirmation> {
+        return this._sender.sendResponse(message, payload);
+    }
+
+    /**
+     * Sends the call error message and returns a Promise that resolves with the confirmation message.
+     *
+     * @param {string} correlationId - The correlation ID of the message.
+     * @param {string} identifier - The identifier of the message.
+     * @param {string} tenantId - The ID of the tenant.
+     * @param {CallAction} action - The call action.
+     * @param {OcppError} payload - The payload of the call error message.
+     * @param {MessageOrigin} origin - (optional) The origin of the message.
+     * @return {Promise<IMessageConfirmation>} A Promise that resolves with the confirmation message.
+     */
+    public sendCallError(correlationId: string, identifier: string, tenantId: string, action: CallAction, payload: OcppError, origin?: MessageOrigin): Promise<IMessageConfirmation> {
+        return this._sender.sendResponse(
+            RequestBuilder.buildCallError(
+                identifier,
+                correlationId,
+                tenantId,
+                action,
+                payload,
+                this._eventGroup,
+                origin
+            )
+        );
+    }
+
+    /**
+     * Sends the call error using the request message's fields.
+     * Payload will overwrite message.payload.
+     *
+     * @param {IMessage<OcppRequest>} message - The request message object.
+     * @param {OcppResponse} payload - The payload to send.
+     * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
+     */
+    public sendCallErrorWithMessage(message: IMessage<OcppRequest>, payload: OcppError): Promise<IMessageConfirmation> {
         return this._sender.sendResponse(message, payload);
     }
 }

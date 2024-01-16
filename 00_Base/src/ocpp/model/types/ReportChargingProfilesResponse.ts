@@ -20,6 +20,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+import { OcppResponse } from "../../..";
+
 export interface ReportChargingProfilesResponse extends OcppResponse {
   customData?: CustomDataType;
 }

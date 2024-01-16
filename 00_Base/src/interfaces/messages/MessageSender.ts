@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { IMessage, OcppRequest, IMessageConfirmation, OcppResponse } from "../..";
+import { IMessage, OcppRequest, IMessageConfirmation, OcppResponse, OcppError } from "../..";
 import { MessageState } from ".";
 
 /**
@@ -43,7 +43,7 @@ export interface IMessageSender {
      * @param payload - The payload object.
      * @returns A promise that resolves to the message confirmation.
      */
-    sendResponse(message: IMessage<OcppResponse>, payload?: OcppResponse): Promise<IMessageConfirmation>;
+    sendResponse(message: IMessage<OcppResponse | OcppError>, payload?: OcppResponse | OcppError): Promise<IMessageConfirmation>;
 
     /**
      * Sends a message.
@@ -53,7 +53,7 @@ export interface IMessageSender {
      * @param state - The message state.
      * @returns A promise that resolves to the message confirmation.
      */
-    send(message: IMessage<OcppRequest | OcppResponse>, payload?: OcppRequest | OcppResponse, state?: MessageState): Promise<IMessageConfirmation>;
+    send(message: IMessage<OcppRequest | OcppResponse | OcppError>, payload?: OcppRequest | OcppResponse | OcppError, state?: MessageState): Promise<IMessageConfirmation>;
 
     /**
      * Shuts down the sender.

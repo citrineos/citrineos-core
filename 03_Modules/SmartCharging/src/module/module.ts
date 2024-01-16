@@ -30,11 +30,11 @@ export class SmartChargingModule extends AbstractModule {
    */
 
   protected _requests: CallAction[] = [
-
+    CallAction.ReportChargingProfiles
   ];
 
   protected _responses: CallAction[] = [
-
+    CallAction.GetChargingProfiles
   ];
 
   /**

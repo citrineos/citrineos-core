@@ -52,7 +52,11 @@ fs.readdir(path, (error, files) => {
 
             if (enums.length > 0) {
                 enums.forEach(entry => {
-                    const { enumName, enumDocumentation, enumDefinition } = splitEnum(entry);
+                    let { enumName, enumDocumentation, enumDefinition } = splitEnum(entry);
+                    if (enumName == 'DataEnumType') { // Adding missing type for DataEnumType... type in OCPP 2.0.1 appendix but not in part 3 JSON schemas
+                        let lastLineIndex = enumDefinition.lastIndexOf(`"`);
+                        enumDefinition = enumDefinition.substring(0, lastLineIndex) + `",\n  passwordString = "passwordString` + enumDefinition.substring(lastLineIndex);
+                    }
                     globalEnumDefinitions[enumName] = enumDefinition;
                 });
             }
@@ -127,14 +131,13 @@ async function processJsonSchema(data, writeToFile = true) {
             const { definitions, enumDefinitions } = collectDefinitions(jsonSchema, id);
 
             // Add import statement for enums & schemaType
-            if (enumDefinitions.length > 0) {
-                const searchString = "\nexport";
-                const index = ts.indexOf(searchString);
-                ts = ts.substring(0, index) + 
-                `\nimport { ${enumDefinitions.join(", ")} } from "../enums";\n` +
-                `import { ${schemaType} } from "../../..";\n` 
+            const searchString = "\nexport";
+            const index = ts.indexOf(searchString);
+            ts = ts.substring(0, index) +
+                (enumDefinitions.length > 0 ? `\nimport { ${enumDefinitions.join(", ")} } from "../enums";\n` : "\n") +
+                `import { ${schemaType} } from "../../..";\n`
                 + ts.substring(index);
-            }
+
 
             if (writeToFile) {
                 fs.writeFileSync(`./src/ocpp/model/types/${id}.ts`, ts);

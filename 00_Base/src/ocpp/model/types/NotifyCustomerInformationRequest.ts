@@ -20,6 +20,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+import { OcppRequest } from "../../..";
+
 export interface NotifyCustomerInformationRequest extends OcppRequest {
   customData?: CustomDataType;
   /**

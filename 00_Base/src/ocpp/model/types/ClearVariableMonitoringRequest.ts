@@ -20,6 +20,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+import { OcppRequest } from "../../..";
+
 export interface ClearVariableMonitoringRequest extends OcppRequest {
   customData?: CustomDataType;
   /**
