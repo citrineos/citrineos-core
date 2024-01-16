@@ -5,9 +5,9 @@ export function createDockerConfig() {
         env: "development",
         modules: {
             certificates: {
-                endpointPrefix: "/certificates",
+                endpointPrefix: "certificates",
                 host: "localhost",
-                port: 8080
+                port: 8083
             },
             configuration: {
                 heartbeatInterval: 60,
@@ -16,34 +16,34 @@ export function createDockerConfig() {
                 getBaseReportOnPending: true,
                 bootWithRejectedVariables: true,
                 autoAccept: false,
-                endpointPrefix: "/configuration",
+                endpointPrefix: "configuration",
                 host: "localhost",
-                port: 8080
+                port: 8084
             },
             evdriver: {
-                endpointPrefix: "/evdriver",
+                endpointPrefix: "evdriver",
                 host: "localhost",
-                port: 8080
+                port: 8085
             },
             monitoring: {
-                endpointPrefix: "/monitoring",
+                endpointPrefix: "monitoring",
                 host: "localhost",
-                port: 8080
+                port: 8086
             },
             reporting: {
-                endpointPrefix: "/reporting",
+                endpointPrefix: "reporting",
                 host: "localhost",
-                port: 8080
+                port: 8087
             },
             smartcharging: {
-                endpointPrefix: "/smartcharging",
+                endpointPrefix: "smartcharging",
                 host: "localhost",
-                port: 8080
+                port: 8088
             },
             transactions: {
-                endpointPrefix: "/transactions",
+                endpointPrefix: "transactions",
                 host: "localhost",
-                port: 8080
+                port: 8089
             },
         },
         data: {

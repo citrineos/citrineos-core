@@ -15,15 +15,12 @@
  */
 
 import { SystemConfig } from "@citrineos/base";
-import { createLocalConfig } from "./envs/local";
 import { createDockerConfig } from "./envs/docker";
 
 export const systemConfig: SystemConfig = getConfig();
 
 function getConfig() {
     switch (process.env.APP_ENV) {
-        case "local":
-            return createLocalConfig();
         case "docker":
             return createDockerConfig();
         default:
