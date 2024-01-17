@@ -85,8 +85,8 @@ fs.readdir(path, (error, files) => {
         }
 
         if (writeToFile) {
-            fs.writeFileSync(`./src/ocpp/model/enums/index.ts`, Object.values(globalEnumDefinitions).sort().join("\n\n"));
-            fs.writeFileSync(`./src/ocpp/model/index.ts`, exportStatements.join("\n"));
+            fs.writeFileSync(`./src/ocpp/model/enums/index.ts`, licenseComment + Object.values(globalEnumDefinitions).sort().join("\n\n"));
+            fs.writeFileSync(`./src/ocpp/model/index.ts`, licenseComment + exportStatements.join("\n"));
         }
     });
 });
