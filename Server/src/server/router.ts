@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { Call, CallAction, CallError, CallResult, EventGroup, ICentralSystem, IClientConnection, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, LOG_LEVEL_OCPP, MessageOrigin, MessageState, MessageTypeId, OcppError, OcppRequest, OcppResponse, SystemConfig } from "@citrineos/base";
+import { Call, CallAction, CallError, CallResult, EventGroup, ICache, ICentralSystem, IClientConnection, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, LOG_LEVEL_OCPP, MessageOrigin, MessageState, MessageTypeId, OcppError, OcppRequest, OcppResponse, SystemConfig } from "@citrineos/base";
 import { RabbitMqReceiver } from "@citrineos/util";
 import { ILogObj, Logger } from "tslog";
 
@@ -77,10 +77,14 @@ export class CentralSystemMessageHandler extends RabbitMqReceiver {
 
 export class OcppMessageRouter implements IMessageRouter {
 
+    public readonly CALLBACK_URL_CACHE_PREFIX: string = "CALLBACK_URL_";
+
+    private _cache: ICache;
     private _sender: IMessageSender;
     private _handler: IMessageHandler;
 
-    constructor(sender: IMessageSender, handler: IMessageHandler) {
+    constructor(cache: ICache, sender: IMessageSender, handler: IMessageHandler) {
+        this._cache = cache;
         this._sender = sender;
         this._handler = handler;
     }
@@ -141,8 +145,40 @@ export class OcppMessageRouter implements IMessageRouter {
         return this._sender.send(_message);
     }
 
-    routeCallError(client: IClientConnection, message: CallError): Promise<IMessageConfirmation> {
+    routeCallError(client: IClientConnection, message: CallError, action: CallAction): Promise<IMessageConfirmation> {
+        let messageId = message[1];
+        let payload = new OcppError(messageId, message[2], message[3], message[4]);
+
+        // TODO: Add tenantId to context
+        let context: IMessageContext = { correlationId: messageId, stationId: client.identifier, tenantId: '' };
+
+        const _message: IMessage<OcppError> = {
+            origin: MessageOrigin.CentralSystem,
+            eventGroup: EventGroup.General,
+            action,
+            state: MessageState.Response,
+            context,
+            payload
+        };
+
+        // Fulfill callback for api, if needed
+        this.handleMessageApiCallback(_message);
+
+        // No error routing currently done
         throw new Error('Method not implemented.');
+    }
+
+    async handleMessageApiCallback(message: IMessage<OcppError>): Promise<void> {
+        const url: string | null = await this._cache.getAndRemove(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
+        if (url) {
+            await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(message.payload)
+            });
+        }
     }
 
     get sender(): IMessageSender {
