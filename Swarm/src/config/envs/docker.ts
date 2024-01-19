@@ -61,7 +61,7 @@ export function createDockerConfig() {
         util: {
             cache: {
                 redis: {
-                    host: "localhost",
+                    host: "redis",
                     port: 6379,
                 }
             },
