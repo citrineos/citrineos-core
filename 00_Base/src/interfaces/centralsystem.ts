@@ -41,10 +41,6 @@ export class OcppError extends Error {
     asCallError(): CallError {
         return [MessageTypeId.CallError, this._messageId, this._errorCode, this.message, this._errorDetails] as CallError;
     }
-
-    sendAsCallError(identifier: string, centralSystem: ICentralSystem): void {
-        centralSystem.sendCallError(identifier, this.asCallError());
-    }
 }
 
 /**

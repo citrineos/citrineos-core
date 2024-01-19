@@ -118,7 +118,6 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
       }
     });
     return { success };
-
   }
 
   /**

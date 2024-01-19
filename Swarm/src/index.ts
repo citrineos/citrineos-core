@@ -16,7 +16,7 @@
 
 import { EventGroup, ICache, ICentralSystem, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
-import { MemoryCache, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
+import { MemoryCache, RabbitMqReceiver, RabbitMqSender, RedisCache } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
 import addFormats from "ajv-formats"
@@ -31,6 +31,7 @@ import { CertificatesModule, CertificatesModuleApi } from '@citrineos/certificat
 import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import { SmartChargingModule, SmartChargingModuleApi } from '@citrineos/smartcharging';
+import { sequelize } from '@citrineos/data';
 
 class CitrineOSServer {
 
@@ -78,8 +79,11 @@ class CitrineOSServer {
             hideLogPositionForProduction: systemConfig.env === "production"
         });
 
+        // Force sync database
+        sequelize.DefaultSequelizeInstance.getInstance(this._config, this._logger, true);
+
         // Set cache implementation
-        this._cache = cache || new MemoryCache();
+        this._cache = cache || (this._config.util.cache.redis ? new RedisCache({ socket: { host: this._config.util.cache.redis.host, port: this._config.util.cache.redis.port } }) : new MemoryCache());
 
         // Initialize Swagger if enabled
         if (this._config.server.swagger) {
@@ -188,7 +192,7 @@ class ModuleService {
         });
 
         // Set cache implementation
-        this._cache = cache || new MemoryCache();
+        this._cache = cache || (this._config.util.cache.redis ? new RedisCache({ socket: { host: this._config.util.cache.redis.host, port: this._config.util.cache.redis.port } }) : new MemoryCache());
 
         // Initialize Swagger if enabled
         if (this._config.server.swagger) {

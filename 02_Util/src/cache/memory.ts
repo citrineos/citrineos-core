@@ -25,7 +25,6 @@ export class MemoryCache implements ICache {
   private _cache: Map<string, string>;
   private _keySubscriptionMap: Map<string, (arg: string | null) => void>;
   private _keySubscriptionPromiseMap: Map<string, Promise<string | null>>;
-  private _lockMap: Map<string, Promise<void>>;
   private _timeoutMap: Map<string, NodeJS.Timeout>;
 
   constructor() {
@@ -51,8 +50,8 @@ export class MemoryCache implements ICache {
       get(target, property) {
         const value = Reflect.get(target, property);
         if (typeof value === 'function') {
-            // Return a bound version of the method to the original target
-            return value.bind(target);
+          // Return a bound version of the method to the original target
+          return value.bind(target);
         }
         return value;
       }
@@ -61,7 +60,6 @@ export class MemoryCache implements ICache {
     this._cache = new Proxy(new Map(), subscriptionHandler);
     this._keySubscriptionMap = keySubscriptionMap;
     this._keySubscriptionPromiseMap = new Map();
-    this._lockMap = new Map();
     this._timeoutMap = new Map();
 
   }
@@ -75,10 +73,6 @@ export class MemoryCache implements ICache {
   async remove(key: string, namespace?: string): Promise<boolean> {
     namespace = namespace || "default";
     const namespaceKey = `${namespace}:${key}`;
-    const lock = this._lockMap.get(namespaceKey);
-    if (lock) {
-      await lock;
-    }
     return this._cache.delete(namespaceKey);
   }
 
@@ -120,11 +114,7 @@ export class MemoryCache implements ICache {
 
   async get<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): Promise<T | null> {
     namespace = namespace || "default";
-   const namespaceKey = `${namespace}:${key}`;
-    const lock = this._lockMap.get(namespaceKey);
-    if (lock) {
-      await lock;
-    }
+    const namespaceKey = `${namespace}:${key}`;
     const result = this._cache.get(namespaceKey);
     if (result) {
       if (classConstructor) {
@@ -135,35 +125,9 @@ export class MemoryCache implements ICache {
     return null;
   }
 
-  getAndRemove<T>(key: string, namespace?: string | undefined, classConstructor?: (() => ClassConstructor<T>) | undefined): Promise<T | null> {
-    namespace = namespace || "default";
-    const namespaceKey = `${namespace}:${key}`;
-    return new Promise<T | null>((resolveGet) => {
-      this._lockMap.set(namespaceKey, new Promise<void>((resolveLock) => {
-        const result = this._cache.get(namespaceKey);
-        if (result) {
-          if (classConstructor) {
-            resolveGet(plainToInstance(classConstructor(), JSON.parse(result)));
-          } else {
-            resolveGet(result as T);
-          }
-        } else {
-          resolveGet(null);
-        }
-        this._cache.delete(namespaceKey);
-        resolveLock();
-        this._lockMap.delete(namespaceKey);
-      }));
-    });
-  }
-
   getSync<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): T | null {
     namespace = namespace || "default";
     const namespaceKey = `${namespace}:${key}`;
-    const lock = this._lockMap.get(namespaceKey);
-    if (lock) {
-      throw new Error("Cannot call getSync() on a locked key");
-    }
     const value = this._cache.get(namespaceKey);
     if (value) {
       if (classConstructor) {
@@ -178,9 +142,23 @@ export class MemoryCache implements ICache {
   async set(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean> {
     namespace = namespace || "default";
     const namespaceKey = `${namespace}:${key}`;
-    const lock = this._lockMap.get(namespaceKey);
-    if (lock) {
-      await lock;
+    this._cache.set(namespaceKey, value);
+    if (this._timeoutMap.has(namespaceKey)) {
+      clearTimeout(this._timeoutMap.get(namespaceKey));
+    }
+    if (expireSeconds) {
+      this._timeoutMap.set(namespaceKey, setTimeout(() => {
+        this._cache.delete(namespaceKey);
+      }, expireSeconds * 1000));
+    }
+    return true;
+  }
+
+  async setIfNotExist(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean> {
+    namespace = namespace || "default";
+    const namespaceKey = `${namespace}:${key}`;
+    if (this._cache.has(namespaceKey)) {
+      return false;
     }
     this._cache.set(namespaceKey, value);
     if (this._timeoutMap.has(namespaceKey)) {
@@ -197,10 +175,6 @@ export class MemoryCache implements ICache {
   setSync(key: string, value: string, namespace?: string, expireSeconds?: number): boolean {
     namespace = namespace || "default";
     const namespaceKey = `${namespace}:${key}`;
-    const lock = this._lockMap.get(namespaceKey);
-    if (lock) {
-      throw new Error("Cannot call setSync() on a locked key");
-    }
     this._cache.set(namespaceKey, value);
     if (this._timeoutMap.has(namespaceKey)) {
       clearTimeout(this._timeoutMap.get(namespaceKey));

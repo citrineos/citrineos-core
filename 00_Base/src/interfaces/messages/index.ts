@@ -17,6 +17,12 @@
 
 export type HandlerProperties = string | object | undefined;
 
+export class RetryMessageError extends Error {
+  constructor(retryReason: string) {
+    super(retryReason);
+  }
+}
+
 export enum MessageState {
   Request = 1,
   Response = 2,

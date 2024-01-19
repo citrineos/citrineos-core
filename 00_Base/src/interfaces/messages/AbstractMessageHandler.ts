@@ -50,7 +50,7 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
 
     abstract subscribe(identifier: string, actions?: CallAction[], filter?: { [k: string]: string; }): Promise<boolean>;
     abstract unsubscribe(identifier: string): Promise<boolean>;
-    abstract handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): void;
+    abstract handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): Promise<void>;
     abstract shutdown(): void;
 
     abstract get module(): IModule | undefined;

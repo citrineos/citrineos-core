@@ -46,32 +46,22 @@ export class CentralSystemMessageHandler extends RabbitMqReceiver {
      * Methods
      */
 
-    handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, context?: IMessageContext): void {
+    async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, context?: IMessageContext): Promise<void> {
 
         logger.debug("Received message:", message);
 
         if (message.state === MessageState.Response) {
             if (message.payload instanceof OcppError) {
                 let callError = (message.payload as OcppError).asCallError();
-                this._centralSystem.sendCallError(message.context.stationId, callError).catch(error => {
-                    // TODO: Inform module about error
-                    logger.error('Error sending call error:', error);
-                });
+                await this._centralSystem.sendCallError(message.context.stationId, callError);
             } else {
                 let callResult = [MessageTypeId.CallResult, message.context.correlationId, message.payload] as CallResult;
-                this._centralSystem.sendCallResult(message.context.stationId, callResult).catch(error => {
-                    // TODO: Inform module about error
-                    logger.error('Error sending call result:', error);
-                });
+                await this._centralSystem.sendCallResult(message.context.stationId, callResult);
             }
         } else if (message.state === MessageState.Request) {
             let call = [MessageTypeId.Call, message.context.correlationId, message.action, message.payload] as Call;
-            this._centralSystem.sendCall(message.context.stationId, call).catch(error => {
-                // TODO: Inform module about error
-                logger.error('Error sending call:', error);
-            });
+            await this._centralSystem.sendCall(message.context.stationId, call);
         }
-        // TODO: Handle other message types including errors
     }
 }
 
@@ -169,7 +159,7 @@ export class OcppMessageRouter implements IMessageRouter {
     }
 
     async handleMessageApiCallback(message: IMessage<OcppError>): Promise<void> {
-        const url: string | null = await this._cache.getAndRemove(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
+        const url: string | null = await this._cache.get(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
         if (url) {
             await fetch(url, {
                 method: 'POST',

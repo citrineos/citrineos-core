@@ -33,14 +33,14 @@ export class DefaultSequelizeInstance {
 
     private constructor() { }
 
-    public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): Sequelize {
+    public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>, sync: boolean = false): Sequelize {
         if (!DefaultSequelizeInstance.instance) {
-            DefaultSequelizeInstance.instance = this.defaultSequelize(config, logger);
+            DefaultSequelizeInstance.instance = this.defaultSequelize(config, sync, logger);
         }
         return DefaultSequelizeInstance.instance;
     }
 
-    private static defaultSequelize(config: SystemConfig, logger?: Logger<ILogObj>) {
+    private static defaultSequelize(config: SystemConfig, sync?: boolean, logger?: Logger<ILogObj>) {
 
         const sequelizeLogger = logger ? logger.getSubLogger({ name: this.name }) : new Logger<ILogObj>({ name: this.name });
 
@@ -64,7 +64,7 @@ export class DefaultSequelizeInstance {
             }
         });
 
-        if (config.data.sequelize.sync) {
+        if (config.data.sequelize.sync && sync) {
             sequelize.sync({ force: true }).then(() => {
                 sequelizeLogger.info("Database synchronized");
             });

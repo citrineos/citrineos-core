@@ -164,7 +164,7 @@ export abstract class AbstractModule implements IModule {
     }
 
     async handleMessageApiCallback(message: IMessage<OcppResponse>): Promise<void> {
-        const url: string | null = await this._cache.getAndRemove(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
+        const url: string | null = await this._cache.get(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
         if (url) {
             try {
                 await fetch(url, {
@@ -213,7 +213,7 @@ export abstract class AbstractModule implements IModule {
         if (callbackUrl) {
             // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
             this._cache.set(_correlationId, callbackUrl, this.CALLBACK_URL_CACHE_PREFIX + identifier,
-                this._config.websocket.maxCachingSeconds); // x2 fudge factor for any network lag
+                this._config.websocket.maxCachingSeconds);
         }
         // TODO: Future - Compound key with tenantId
         return this._cache.get<ClientConnection>(identifier, CacheNamespace.Connections, () => ClientConnection).then((connection) => {

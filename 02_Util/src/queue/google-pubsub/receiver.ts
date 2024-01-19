@@ -23,7 +23,7 @@ import {
 } from "@google-cloud/pubsub";
 import { ILogObj, Logger } from "tslog";
 import { MemoryCache } from "../../cache/memory";
-import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message, OcppError } from "@citrineos/base";
+import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message, OcppError, RetryMessageError } from "@citrineos/base";
 import { plainToInstance } from "class-transformer";
 
 /**
@@ -108,8 +108,8 @@ export class PubSubReceiver extends AbstractMessageHandler {
    * @param message The incoming {@link IMessage}
    * @param context The context of the incoming message, in this implementation it's the PubSub message id
    */
-  handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): void {
-    this._module?.handle(message, props);
+  async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): Promise<void> {
+    await this._module?.handle(message, props);
   }
 
   /**
@@ -198,15 +198,20 @@ export class PubSubReceiver extends AbstractMessageHandler {
    *
    * @param message The PubSubMessage to process
    */
-  private _onMessage(message: PubSubMessage): void {
+  protected async _onMessage(message: PubSubMessage): Promise<void> {
     try {
       const parsed = plainToInstance(Message<OcppRequest | OcppResponse | OcppError>, <Message<OcppRequest | OcppResponse | OcppError>>JSON.parse(message.data.toString()));
-      this.handle(parsed, message.id);
+      await this.handle(parsed, message.id);
     } catch (error) {
-      this._logger.error("Error while processing message:", error);
-    } finally {
-      // TODO: Ensure message is processed without errors before acking if implementing retry
-      message.ack();
+      if (error instanceof RetryMessageError) {
+        this._logger.warn("Retrying message: ", error.message);
+        // Retryable error, usually ongoing call with station when trying to send new call
+        message.nack();
+        return;
+      } else {
+        this._logger.error("Error while processing message:", error, message);
+      }
     }
+    message.ack();
   }
 }

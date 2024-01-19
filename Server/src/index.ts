@@ -31,6 +31,7 @@ import { CertificatesModule, CertificatesModuleApi } from '@citrineos/certificat
 import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import { SmartChargingModule, SmartChargingModuleApi } from '@citrineos/smartcharging';
+import { sequelize } from '@citrineos/data';
 
 class CitrineOSServer {
 
@@ -92,6 +93,9 @@ class CitrineOSServer {
         this._server.setValidatorCompiler(({ schema, method, url, httpPart }) => {
             return this._ajv.compile(schema);
         });
+
+        // Force sync database
+        sequelize.DefaultSequelizeInstance.getInstance(this._config, this._logger, true);
 
         this._centralSystem = new CentralSystemImpl(this._config, this._cache, undefined, undefined, this._logger, ajv);
 
