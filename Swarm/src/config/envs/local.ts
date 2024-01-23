@@ -5,7 +5,9 @@ export function createLocalConfig() {
         env: "development",
         modules: {
             certificates: {
-                endpointPrefix: "/certificates"
+                endpointPrefix: "/certificates",
+                host: "localhost",
+                port: 8080
             },
             configuration: {
                 heartbeatInterval: 60,
@@ -14,22 +16,34 @@ export function createLocalConfig() {
                 getBaseReportOnPending: true,
                 bootWithRejectedVariables: true,
                 autoAccept: false,
-                endpointPrefix: "/configuration"
+                endpointPrefix: "/configuration",
+                host: "localhost",
+                port: 8080
             },
             evdriver: {
-                endpointPrefix: "/evdriver"
+                endpointPrefix: "/evdriver",
+                host: "localhost",
+                port: 8080
             },
             monitoring: {
-                endpointPrefix: "/monitoring"
+                endpointPrefix: "/monitoring",
+                host: "localhost",
+                port: 8080
             },
             reporting: {
-                endpointPrefix: "/reporting"
+                endpointPrefix: "/reporting",
+                host: "localhost",
+                port: 8080
             },
             smartcharging: {
-                endpointPrefix: "/smartcharging"
+                endpointPrefix: "/smartcharging",
+                host: "localhost",
+                port: 8080
             },
             transactions: {
-                endpointPrefix: "/transactions"
+                endpointPrefix: "/transactions",
+                host: "localhost",
+                port: 8080
             },
         },
         data: {
@@ -46,7 +60,10 @@ export function createLocalConfig() {
         },
         util: {
             cache: {
-                memory: true
+                redis: {
+                    host: "localhost",
+                    port: 6379,
+                }
             },
             messageBroker: {
                 amqp: {
@@ -64,7 +81,7 @@ export function createLocalConfig() {
                 exposeData: true,
                 exposeMessage: true
             }
-        },
+        },        
         websocket: {
             pingInterval: 60,
             maxCallLengthSeconds: 5,
@@ -75,7 +92,7 @@ export function createLocalConfig() {
             host: "0.0.0.0",
             port: 8081,
             protocol: "ocpp2.0.1"
-        }, {
+        },{
             securityProfile: 1,
             host: "0.0.0.0",
             port: 8082,

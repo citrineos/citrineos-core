@@ -147,9 +147,9 @@ RUN npm install --ignore-scripts=true
 RUN npm rebuild bcrypt --build-from-source
 RUN npm rebuild deasync --build-from-source
 
+COPY /Swarm/nodemon.json ./
 COPY /Swarm/tsconfig.json ./
 COPY /Swarm/src ./src
 RUN npm run build
 
-COPY /Swarm/nodemon.json ./
 CMD [ "npm", "run", "start-unix:docker" ]

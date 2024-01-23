@@ -149,13 +149,13 @@ export const systemConfigSchema = z.object({
     modules: z.object({
         certificates: z.object({
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }).optional(),
         evdriver: z.object({
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional().optional(),
+            port: z.number().int().positive().optional(),
         }),
         configuration: z.object({
             heartbeatInterval: z.number().int().positive(),
@@ -168,28 +168,28 @@ export const systemConfigSchema = z.object({
              */
             autoAccept: z.boolean(), 
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }), // Configuration module is required
         monitoring: z.object({
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }),
         reporting: z.object({
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }),
         smartcharging: z.object({
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }).optional(),
         transactions: z.object({
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }), // Transactions module is required
     }),
     data: z.object({

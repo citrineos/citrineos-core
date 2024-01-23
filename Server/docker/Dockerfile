@@ -147,12 +147,9 @@ RUN npm install --ignore-scripts=true
 RUN npm rebuild bcrypt --build-from-source
 RUN npm rebuild deasync --build-from-source
 
+COPY /Server/nodemon.json ./
 COPY /Server/tsconfig.json ./
 COPY /Server/src ./src
 RUN npm run build
-
-EXPOSE 8080
-EXPOSE 8081
-EXPOSE 8082
 
 CMD [ "npm", "run", "start-unix:docker" ]
