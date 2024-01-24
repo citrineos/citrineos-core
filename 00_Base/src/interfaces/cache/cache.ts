@@ -26,6 +26,8 @@ export enum CacheNamespace {
 
 /**
  * Interface for cache
+ * Implementers SHALL ensure minimal logic outside of promise resolution or async function to prevent lag
+ * Users of this interface can assume these methods behave asynchronously
  */
 export interface ICache {
   exists(key: string, namespace?: string): Promise<boolean>;

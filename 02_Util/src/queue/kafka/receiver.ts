@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractMessageHandler, IMessageHandler, IModule, SystemConfig, CallAction, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message } from "@citrineos/base";
+import { AbstractMessageHandler, IMessageHandler, IModule, SystemConfig, CallAction, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message, OcppError } from "@citrineos/base";
 import { plainToInstance } from "class-transformer";
 import { Admin, Consumer, EachMessagePayload, Kafka } from "kafkajs";
 import { ILogObj, Logger } from "tslog";
@@ -97,7 +97,7 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
             });
     }
 
-    handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void {
+    handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): void {
         this._module?.handle(message, props);
     }
 
@@ -132,7 +132,7 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
         try {
             const messageValue = message.value;
             if (messageValue) {
-                const parsed = plainToInstance(Message<OcppRequest | OcppResponse>, messageValue.toString());
+                const parsed = plainToInstance(Message<OcppRequest | OcppResponse | OcppError>, messageValue.toString());
                 this.handle(parsed, message.key?.toString());
             }
         } catch (error) {

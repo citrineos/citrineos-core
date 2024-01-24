@@ -20,6 +20,7 @@ import {
   IMessage,
   MessageOrigin,
   MessageState,
+  OcppError,
   OcppRequest,
   OcppResponse
 } from "..";
@@ -57,6 +58,29 @@ export class RequestBuilder {
     eventGroup: EventGroup,
     origin: MessageOrigin = MessageOrigin.ChargingStation,
   ): IMessage<OcppResponse> {
+    return {
+      origin: origin,
+      eventGroup: eventGroup,
+      action,
+      context: {
+        stationId,
+        correlationId,
+        tenantId
+      },
+      state: MessageState.Response,
+      payload
+    };
+  }
+
+  static buildCallError(
+    stationId: string,
+    correlationId: string,
+    tenantId: string,
+    action: CallAction,
+    payload: OcppError,
+    eventGroup: EventGroup,
+    origin: MessageOrigin = MessageOrigin.ChargingStation,
+  ): IMessage<OcppError> {
     return {
       origin: origin,
       eventGroup: eventGroup,

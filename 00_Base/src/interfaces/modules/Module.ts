@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { ICache, OcppRequest, OcppResponse, SystemConfig } from "../..";
+import { ICache, OcppError, OcppRequest, OcppResponse, SystemConfig } from "../..";
 import { CallAction } from "../../ocpp/rpc/message";
 import { HandlerProperties, IMessage, IMessageConfirmation, IMessageHandler, IMessageSender, MessageOrigin } from "../messages";
 
@@ -26,10 +26,11 @@ export interface IModule {
 
     sendCall(identifier: string, tenantId: string, action: CallAction, payload: OcppRequest, correlationId?: string, origin?: MessageOrigin): Promise<IMessageConfirmation>;
     sendCallResult(correlationId: string, identifier: string, tenantId: string, action: CallAction, payload: OcppResponse, origin?: MessageOrigin): Promise<IMessageConfirmation>;
-    sendCallResultWithMessage(message: IMessage<OcppResponse>, payload: OcppResponse): Promise<IMessageConfirmation>
+    sendCallResultWithMessage(message: IMessage<OcppRequest>, payload: OcppResponse): Promise<IMessageConfirmation>
+    sendCallError(correlationId: string, identifier: string, tenantId: string, action: CallAction, error: OcppError, origin?: MessageOrigin): Promise<IMessageConfirmation>;
+    sendCallErrorWithMessage(message: IMessage<OcppRequest>, error: OcppError): Promise<IMessageConfirmation>;
 
-    handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void;
-    handleMessageApiCallback(message: IMessage<OcppResponse>): void;
+    handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): Promise<void>;
     shutdown(): void;
 
     config: SystemConfig;

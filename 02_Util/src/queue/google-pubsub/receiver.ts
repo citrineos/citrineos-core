@@ -23,7 +23,7 @@ import {
 } from "@google-cloud/pubsub";
 import { ILogObj, Logger } from "tslog";
 import { MemoryCache } from "../../cache/memory";
-import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message } from "@citrineos/base";
+import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message, OcppError } from "@citrineos/base";
 import { plainToInstance } from "class-transformer";
 
 /**
@@ -108,7 +108,7 @@ export class PubSubReceiver extends AbstractMessageHandler {
    * @param message The incoming {@link IMessage}
    * @param context The context of the incoming message, in this implementation it's the PubSub message id
    */
-  handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void {
+  handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): void {
     this._module?.handle(message, props);
   }
 
@@ -200,7 +200,7 @@ export class PubSubReceiver extends AbstractMessageHandler {
    */
   private _onMessage(message: PubSubMessage): void {
     try {
-      const parsed = plainToInstance(Message<OcppRequest | OcppResponse>, <Message<OcppRequest | OcppResponse>>JSON.parse(message.data.toString()));
+      const parsed = plainToInstance(Message<OcppRequest | OcppResponse | OcppError>, <Message<OcppRequest | OcppResponse | OcppError>>JSON.parse(message.data.toString()));
       this.handle(parsed, message.id);
     } catch (error) {
       this._logger.error("Error while processing message:", error);

@@ -29,7 +29,7 @@ export interface IMessageRouter {
     // TODO: Add route for "unknown" messages
     routeCall(client: IClientConnection, message: Call): Promise<IMessageConfirmation>;
     routeCallResult(client: IClientConnection, message: CallResult, action: CallAction): Promise<IMessageConfirmation>;
-    routeCallError(client: IClientConnection, message: CallError): Promise<IMessageConfirmation>;
+    routeCallError(client: IClientConnection, message: CallError, action: CallAction): Promise<IMessageConfirmation>;
     // Getter & Setter
     get sender(): IMessageSender;
     get handler(): IMessageHandler;

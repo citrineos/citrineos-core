@@ -31,11 +31,17 @@ export class ReportingModule extends AbstractModule {
    */
 
   protected _requests: CallAction[] = [
-    CallAction.LogStatusNotification, CallAction.NotifyCustomerInformation, CallAction.NotifyMonitoringReport, CallAction.NotifyReport, CallAction.SecurityEventNotification
+    CallAction.LogStatusNotification,
+    CallAction.NotifyCustomerInformation,
+    CallAction.NotifyReport,
+    CallAction.SecurityEventNotification
   ];
 
   protected _responses: CallAction[] = [
-    CallAction.GetBaseReport
+    CallAction.CustomerInformation,
+    CallAction.GetBaseReport,
+    CallAction.GetLog,
+    CallAction.GetReport
   ];
 
   /**

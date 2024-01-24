@@ -112,6 +112,15 @@ ports. By default these ports are directly accessible by using
 So, if you want to access the **amqp-broker** default management port via your
 localhost, you need to access `localhost:15672`.
 
+## Generating OCPP Interfaces
+
+All CitrineOS interfaces for OCPP 2.0.1-defined schemas were procedurally generated using the script in 00_Base/json-schema-processor.js.
+It can be rerun:
+```shell
+npm run generate-interfaces -- ../../Path/To/OCPP-2.0.1_part3_JSON_schemas
+```
+This will replace all the files in `00_Base/src/ocpp/model/`,
+
 ## Contributing
 
 We welcome contributions from the community. If you would like to contribute to CitrineOS, please follow our [contribution guidelines](https://github.com/citrineos/citrineos/blob/main/CONTRIBUTING.md).

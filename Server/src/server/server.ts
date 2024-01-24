@@ -66,7 +66,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         super(config, logger, cache, ajv);
 
         // Initialize router before socket server to avoid race condition
-        this._router = new OcppMessageRouter(
+        this._router = new OcppMessageRouter(cache,
             sender || new RabbitMqSender(config, logger),
             handler || new CentralSystemMessageHandler(config, this, logger));
 
@@ -215,9 +215,8 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                     throw new OcppError(messageId, ErrorCode.InternalError, 'CallResult failed', { details: confirmation.payload });
                 }
             }).catch(error => {
-                if (error instanceof OcppError) {
-                    error.sendAsCallError(connection.identifier, this);
-                }
+                // TODO: Ideally the error log is also stored in the database in a failed invocations table to ensure these are visible outside of a log file.
+                this._logger.error("Failed processing call result: ", error);
             });
     }
 
@@ -229,7 +228,31 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @return {void} This function doesn't return anything.
      */
     onCallError(connection: IClientConnection, message: CallError): void {
-        this._router.routeCallError(connection, message);
+
+        const messageId = message[1];
+
+        this._logger.debug("Process CallError", connection.identifier, message);
+
+        this._cache.get<string>(connection.identifier, CacheNamespace.Transactions)
+            .then(cachedActionMessageId => {
+                this._cache.remove(connection.identifier, CacheNamespace.Transactions); // Always remove pending call transaction
+                if (!cachedActionMessageId) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.websocket.maxCallLengthSeconds });
+                }
+                const [actionString, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+                if (messageId !== cachedMessageId) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", { "expectedMessageId": cachedMessageId });
+                }
+                const action: CallAction = CallAction[actionString as keyof typeof CallAction]; // Parse CallAction
+                return this._router.routeCallError(connection, message, action);
+            }).then(confirmation => {
+                if (!confirmation.success) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, 'CallError failed', { details: confirmation.payload });
+                }
+            }).catch(error => {
+                // TODO: Ideally the error log is also stored in the database in a failed invocations table to ensure these are visible outside of a log file.
+                this._logger.error("Failed processing call error: ", error);
+            });
     }
 
     /**
@@ -369,7 +392,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
     private async _upgradeRequest(req: http.IncomingMessage, socket: Duplex, head: Buffer, wss: WebSocketServer, securityProfile: number) {
         // Failed mTLS and TLS requests are rejected by the server before getting this far
         this._logger.debug("On upgrade request", req.method, req.url, req.headers);
-        
+
         const identifier = this._getClientIdFromUrl(req.url as string);
         if (3 > securityProfile && securityProfile > 0) {
             // Validate username/password from authorization header

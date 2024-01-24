@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractMessageSender, IMessageSender, SystemConfig, IMessage, OcppRequest, IMessageConfirmation, MessageState, OcppResponse } from "@citrineos/base";
+import { AbstractMessageSender, IMessageSender, SystemConfig, IMessage, OcppRequest, IMessageConfirmation, MessageState, OcppResponse, OcppError } from "@citrineos/base";
 import { Admin, Kafka, Producer } from "kafkajs";
 import { ILogObj, Logger } from "tslog";
 /**
@@ -79,7 +79,7 @@ export class KafkaSender extends AbstractMessageSender implements IMessageSender
      * @param payload The payload to send
      * @returns
      */
-    sendResponse(message: IMessage<OcppResponse>, payload?: OcppResponse): Promise<IMessageConfirmation> {
+    sendResponse(message: IMessage<OcppResponse | OcppError>, payload?: OcppResponse | OcppError): Promise<IMessageConfirmation> {
         return this.send(message, payload, MessageState.Response);
     }
 
@@ -92,8 +92,8 @@ export class KafkaSender extends AbstractMessageSender implements IMessageSender
      * @returns
      */
     send(
-        message: IMessage<OcppRequest | OcppResponse>,
-        payload?: OcppRequest | OcppResponse,
+        message: IMessage<OcppRequest | OcppResponse | OcppError>,
+        payload?: OcppRequest | OcppResponse | OcppError,
         state?: MessageState
     ): Promise<IMessageConfirmation> {
         if (payload) {
