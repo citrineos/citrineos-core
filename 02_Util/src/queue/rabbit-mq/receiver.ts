@@ -1,23 +1,12 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright (c) 2023 S44, LLC
- */
+// Copyright (c) 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
 
 import * as amqplib from "amqplib";
 import { ILogObj, Logger } from "tslog";
 import { MemoryCache } from "../..";
-import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppError, OcppRequest, OcppResponse, HandlerProperties, Message } from "@citrineos/base";
+import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppError, OcppRequest, OcppResponse, HandlerProperties, Message, RetryMessageError } from "@citrineos/base";
 import { plainToInstance } from "class-transformer";
 
 /**
@@ -144,8 +133,8 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     });
   }
 
-  handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): void {
-    this._module?.handle(message, props);
+  async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): Promise<void> {
+    await this._module?.handle(message, props);
   }
 
   shutdown(): Promise<void> {
@@ -179,18 +168,22 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
    * @param message The AMQPMessage to process
    */
   protected async _onMessage(message: amqplib.ConsumeMessage | null, channel: amqplib.Channel): Promise<void> {
-    try {
-      if (message) {
+    if (message) {
+      try {
         this._logger.debug("_onMessage:Received message:", message.properties, message.content.toString());
         const parsed = plainToInstance(Message<OcppRequest | OcppResponse | OcppError>, <Message<OcppRequest | OcppResponse | OcppError>>JSON.parse(message.content.toString()));
-        this.handle(parsed, message.properties);
+        await this.handle(parsed, message.properties);
+      } catch (error) {
+        if (error instanceof RetryMessageError) {
+          this._logger.warn("Retrying message: ", error.message);
+          // Retryable error, usually ongoing call with station when trying to send new call
+          channel.nack(message);
+          return;
+        } else {
+          this._logger.error("Error while processing message:", error, message);
+        }
       }
-    } catch (error) {
-      this._logger.error("Error while processing message:", error);
-    } finally {
-      if (message) {
-        channel.ack(message);
-      }
+      channel.ack(message);
     }
   }
 }

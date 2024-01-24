@@ -1,19 +1,7 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright (c) 2023 S44, LLC
- */
-
+// Copyright (c) 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
 
 import {
   PubSub,
@@ -23,7 +11,7 @@ import {
 } from "@google-cloud/pubsub";
 import { ILogObj, Logger } from "tslog";
 import { MemoryCache } from "../../cache/memory";
-import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message, OcppError } from "@citrineos/base";
+import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message, OcppError, RetryMessageError } from "@citrineos/base";
 import { plainToInstance } from "class-transformer";
 
 /**
@@ -108,8 +96,8 @@ export class PubSubReceiver extends AbstractMessageHandler {
    * @param message The incoming {@link IMessage}
    * @param context The context of the incoming message, in this implementation it's the PubSub message id
    */
-  handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): void {
-    this._module?.handle(message, props);
+  async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): Promise<void> {
+    await this._module?.handle(message, props);
   }
 
   /**
@@ -198,15 +186,20 @@ export class PubSubReceiver extends AbstractMessageHandler {
    *
    * @param message The PubSubMessage to process
    */
-  private _onMessage(message: PubSubMessage): void {
+  protected async _onMessage(message: PubSubMessage): Promise<void> {
     try {
       const parsed = plainToInstance(Message<OcppRequest | OcppResponse | OcppError>, <Message<OcppRequest | OcppResponse | OcppError>>JSON.parse(message.data.toString()));
-      this.handle(parsed, message.id);
+      await this.handle(parsed, message.id);
     } catch (error) {
-      this._logger.error("Error while processing message:", error);
-    } finally {
-      // TODO: Ensure message is processed without errors before acking if implementing retry
-      message.ack();
+      if (error instanceof RetryMessageError) {
+        this._logger.warn("Retrying message: ", error.message);
+        // Retryable error, usually ongoing call with station when trying to send new call
+        message.nack();
+        return;
+      } else {
+        this._logger.error("Error while processing message:", error, message);
+      }
     }
+    message.ack();
   }
 }

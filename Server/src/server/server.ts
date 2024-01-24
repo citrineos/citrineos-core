@@ -1,20 +1,9 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright (c) 2023 S44, LLC
- */
+// Copyright (c) 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
 
-import { AbstractCentralSystem, AttributeEnumType, CacheNamespace, Call, CallAction, CallError, CallResult, ClientConnection, ErrorCode, ICache, ICentralSystem, IClientConnection, IMessageHandler, IMessageRouter, IMessageSender, MessageTriggerEnumType, MessageTypeId, OcppError, RegistrationStatusEnumType, SetVariableStatusEnumType, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
+import { AbstractCentralSystem, AttributeEnumType, CacheNamespace, Call, CallAction, CallError, CallResult, ClientConnection, ErrorCode, ICache, ICentralSystem, IClientConnection, IMessageHandler, IMessageRouter, IMessageSender, MessageTriggerEnumType, MessageTypeId, OcppError, RegistrationStatusEnumType, RetryMessageError, SetVariableStatusEnumType, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
 import { RabbitMqSender } from "@citrineos/util";
 import Ajv from "ajv";
 import * as bcrypt from "bcrypt";
@@ -158,14 +147,15 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                     throw new OcppError(messageId, ErrorCode.FormatViolation, "Invalid message format", { errors: errors });
                 }
                 // Ensure only one call is processed at a time
-                return this._cache.exists(connection.identifier, CacheNamespace.Transactions);
-            }).then(exists => {
-                if (exists) {
+                return this._cache.setIfNotExist(connection.identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.websocket.maxCallLengthSeconds);
+            }).catch(error => {
+                if (error instanceof OcppError) {
+                    this.sendCallError(connection.identifier, error.asCallError());
+                }
+            }).then(successfullySet => {
+                if (!successfullySet) {
                     throw new OcppError(messageId, ErrorCode.RpcFrameworkError, "Call already in progress", {});
                 }
-                // Add reference to call in cache
-                this._cache.set(connection.identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.websocket.maxCallLengthSeconds);
-            }).then(success => {
                 // Route call
                 return this._router.routeCall(connection, message);
             }).then(confirmation => {
@@ -174,7 +164,8 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                 }
             }).catch(error => {
                 if (error instanceof OcppError) {
-                    error.sendAsCallError(connection.identifier, this);
+                    this.sendCallError(connection.identifier, error.asCallError());
+                    this._cache.remove(connection.identifier, CacheNamespace.Transactions);
                 }
             });
     }
@@ -265,14 +256,16 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
     async sendCall(identifier: string, message: Call): Promise<boolean> {
         const messageId = message[1];
         const action = message[2] as CallAction;
-        if (await this._cache.exists(identifier, CacheNamespace.Transactions)) {
-            this._logger.info("Call already in progress, unable to send", identifier, message);
-            return false;
-        } else if (await this._sendCallIsAllowed(identifier, message)) {
-            await this._cache.set(identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.websocket.maxCallLengthSeconds);
-            // Intentionally removing NULL values from object for OCPP conformity
-            const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
-            return this._sendMessage(identifier, rawMessage);
+        if (await this._sendCallIsAllowed(identifier, message)) {
+            if (await this._cache.setIfNotExist(identifier, `${action}:${messageId}`,
+                CacheNamespace.Transactions, this._config.websocket.maxCallLengthSeconds)) {
+                // Intentionally removing NULL values from object for OCPP conformity
+                const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
+                return this._sendMessage(identifier, rawMessage);
+            } else {
+                this._logger.info("Call already in progress, throwing retry exception", identifier, message);
+                throw new RetryMessageError("Call already in progress");
+            }
         } else {
             this._logger.info("RegistrationStatus Rejected, unable to send", identifier, message);
             return false;
@@ -305,7 +298,6 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             this._logger.error("Failed to send callResult due to mismatch in message id", identifier, cachedActionMessageId, message);
             return false;
         }
-
     }
 
     /**
@@ -315,10 +307,25 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @param {CallError} message - The CallError message to send.
      * @return {Promise<boolean>} - A promise that resolves to true if the message was sent successfully.
      */
-    sendCallError(identifier: string, message: CallError): Promise<boolean> {
-        // Intentionally removing NULL values from object for OCPP conformity
-        const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
-        return this._sendMessage(identifier, rawMessage);
+    async sendCallError(identifier: string, message: CallError): Promise<boolean> {
+        const messageId = message[1];
+        const cachedActionMessageId = await this._cache.get<string>(identifier, CacheNamespace.Transactions);
+        if (!cachedActionMessageId) {
+            this._logger.error("Failed to send callError due to missing message id", identifier, message);
+            return false;
+        }
+        let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+        if (cachedMessageId === messageId) {
+            // Intentionally removing NULL values from object for OCPP conformity
+            const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
+            return Promise.all([
+                this._sendMessage(identifier, rawMessage),
+                this._cache.remove(identifier, CacheNamespace.Transactions)
+            ]).then(successes => successes.every(Boolean));
+        } else {
+            this._logger.error("Failed to send callError due to mismatch in message id", identifier, cachedActionMessageId, message);
+            return false;
+        }
     }
 
     /**
@@ -577,8 +584,8 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      */
     private _onMessage(client: IClientConnection, message: string): void {
         let rpcMessage: any;
-        let messageTypeId: MessageTypeId;
-        let messageId: string = "0";
+        let messageTypeId: MessageTypeId | undefined = undefined
+        let messageId: string = "-1"; // OCPP 2.0.1 part 4, section 4.2.3, "When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId."
         try {
             try {
                 rpcMessage = JSON.parse(message);
@@ -602,10 +609,12 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             }
         } catch (error) {
             this._logger.error("Error processing message:", message, error);
-            if (error instanceof OcppError) {
-                (error as OcppError).sendAsCallError(client.identifier, this);
-            } else {
-                this.sendCallError(client.identifier, [MessageTypeId.CallError, messageId, ErrorCode.InternalError, "Unable to process message", { error: error }]);
+            if (messageTypeId != MessageTypeId.CallResult && messageTypeId != MessageTypeId.CallError) {
+                if (error instanceof OcppError) {
+                    this.sendCallError(client.identifier, error.asCallError());
+                } else {
+                    this.sendCallError(client.identifier, [MessageTypeId.CallError, messageId, ErrorCode.InternalError, "Unable to process message", { error: error }]);
+                }
             }
             // TODO: Publish raw payload for error reporting
         }

@@ -1,3 +1,7 @@
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
 import { RegistrationStatusEnumType, defineConfig } from "@citrineos/base";
 
 export function createDockerConfig() {
@@ -6,7 +10,7 @@ export function createDockerConfig() {
         modules: {
             certificates: {
                 endpointPrefix: "certificates",
-                host: "localhost",
+                host: "0.0.0.0",
                 port: 8083
             },
             configuration: {
@@ -17,32 +21,32 @@ export function createDockerConfig() {
                 bootWithRejectedVariables: true,
                 autoAccept: false,
                 endpointPrefix: "configuration",
-                host: "localhost",
+                host: "0.0.0.0",
                 port: 8084
             },
             evdriver: {
                 endpointPrefix: "evdriver",
-                host: "localhost",
+                host: "0.0.0.0",
                 port: 8085
             },
             monitoring: {
                 endpointPrefix: "monitoring",
-                host: "localhost",
+                host: "0.0.0.0",
                 port: 8086
             },
             reporting: {
                 endpointPrefix: "reporting",
-                host: "localhost",
+                host: "0.0.0.0",
                 port: 8087
             },
             smartcharging: {
                 endpointPrefix: "smartcharging",
-                host: "localhost",
+                host: "0.0.0.0",
                 port: 8088
             },
             transactions: {
                 endpointPrefix: "transactions",
-                host: "localhost",
+                host: "0.0.0.0",
                 port: 8089
             },
         },

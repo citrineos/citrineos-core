@@ -1,18 +1,7 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright (c) 2023 S44, LLC
- */
+// Copyright (c) 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
 
 import { Call, CallAction, CallError, CallResult, EventGroup, ICache, ICentralSystem, IClientConnection, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, LOG_LEVEL_OCPP, MessageOrigin, MessageState, MessageTypeId, OcppError, OcppRequest, OcppResponse, SystemConfig } from "@citrineos/base";
 import { RabbitMqReceiver } from "@citrineos/util";
@@ -46,32 +35,22 @@ export class CentralSystemMessageHandler extends RabbitMqReceiver {
      * Methods
      */
 
-    handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, context?: IMessageContext): void {
+    async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, context?: IMessageContext): Promise<void> {
 
         logger.debug("Received message:", message);
 
         if (message.state === MessageState.Response) {
             if (message.payload instanceof OcppError) {
                 let callError = (message.payload as OcppError).asCallError();
-                this._centralSystem.sendCallError(message.context.stationId, callError).catch(error => {
-                    // TODO: Inform module about error
-                    logger.error('Error sending call error:', error);
-                });
+                await this._centralSystem.sendCallError(message.context.stationId, callError);
             } else {
                 let callResult = [MessageTypeId.CallResult, message.context.correlationId, message.payload] as CallResult;
-                this._centralSystem.sendCallResult(message.context.stationId, callResult).catch(error => {
-                    // TODO: Inform module about error
-                    logger.error('Error sending call result:', error);
-                });
+                await this._centralSystem.sendCallResult(message.context.stationId, callResult);
             }
         } else if (message.state === MessageState.Request) {
             let call = [MessageTypeId.Call, message.context.correlationId, message.action, message.payload] as Call;
-            this._centralSystem.sendCall(message.context.stationId, call).catch(error => {
-                // TODO: Inform module about error
-                logger.error('Error sending call:', error);
-            });
+            await this._centralSystem.sendCall(message.context.stationId, call);
         }
-        // TODO: Handle other message types including errors
     }
 }
 
@@ -169,7 +148,7 @@ export class OcppMessageRouter implements IMessageRouter {
     }
 
     async handleMessageApiCallback(message: IMessage<OcppError>): Promise<void> {
-        const url: string | null = await this._cache.getAndRemove(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
+        const url: string | null = await this._cache.get(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
         if (url) {
             await fetch(url, {
                 method: 'POST',

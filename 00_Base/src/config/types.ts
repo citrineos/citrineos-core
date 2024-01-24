@@ -1,18 +1,7 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright (c) 2023 S44, LLC
- */
+// Copyright (c) 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
 
 import { z } from "zod";
 import { RegistrationStatusEnumType } from "../ocpp/model/enums";
@@ -149,13 +138,13 @@ export const systemConfigSchema = z.object({
     modules: z.object({
         certificates: z.object({
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }).optional(),
         evdriver: z.object({
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }),
         configuration: z.object({
             heartbeatInterval: z.number().int().positive(),
@@ -168,28 +157,28 @@ export const systemConfigSchema = z.object({
              */
             autoAccept: z.boolean(), 
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }), // Configuration module is required
         monitoring: z.object({
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }),
         reporting: z.object({
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }),
         smartcharging: z.object({
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }).optional(),
         transactions: z.object({
             endpointPrefix: z.string(),
-            host: z.string(),
-            port: z.number().int().positive(),
+            host: z.string().optional(),
+            port: z.number().int().positive().optional(),
         }), // Transactions module is required
     }),
     data: z.object({

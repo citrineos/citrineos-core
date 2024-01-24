@@ -1,18 +1,7 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright (c) 2023 S44, LLC
- */
+// Copyright (c) 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
 
 import { SystemConfig } from "@citrineos/base";
 import { Dialect } from "sequelize";
@@ -33,14 +22,14 @@ export class DefaultSequelizeInstance {
 
     private constructor() { }
 
-    public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): Sequelize {
+    public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>, sync: boolean = false): Sequelize {
         if (!DefaultSequelizeInstance.instance) {
-            DefaultSequelizeInstance.instance = this.defaultSequelize(config, logger);
+            DefaultSequelizeInstance.instance = this.defaultSequelize(config, sync, logger);
         }
         return DefaultSequelizeInstance.instance;
     }
 
-    private static defaultSequelize(config: SystemConfig, logger?: Logger<ILogObj>) {
+    private static defaultSequelize(config: SystemConfig, sync?: boolean, logger?: Logger<ILogObj>) {
 
         const sequelizeLogger = logger ? logger.getSubLogger({ name: this.name }) : new Logger<ILogObj>({ name: this.name });
 
@@ -64,7 +53,7 @@ export class DefaultSequelizeInstance {
             }
         });
 
-        if (config.data.sequelize.sync) {
+        if (config.data.sequelize.sync && sync) {
             sequelize.sync({ force: true }).then(() => {
                 sequelizeLogger.info("Database synchronized");
             });

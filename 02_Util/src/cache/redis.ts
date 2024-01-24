@@ -1,34 +1,26 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright (c) 2023 S44, LLC
- */
+// Copyright (c) 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
 
 import { ICache } from "@citrineos/base";
 import { ClassConstructor, plainToInstance } from "class-transformer";
 import { default as deasyncPromise } from "deasync-promise";
-import { RedisClientType, createClient } from "redis";
+import { RedisClientOptions, RedisClientType, RedisFunctions, RedisModules, RedisScripts, createClient } from "redis";
 
 /**
  * Implementation of cache interface with redis storage
  */
 export class RedisCache implements ICache {
-  private _client: RedisClientType;
+  private _client: RedisClientType<RedisModules, RedisFunctions, RedisScripts>;
 
-  constructor(client?: RedisClientType) {
-    this._client = client ?? createClient();
-    // Set the notify-keyspace-events config for generic keyspace events such as set, expired, and del
-    this._client.configSet("notify-keyspace-events", "Kg");
+  constructor(clientOptions?: RedisClientOptions) {
+    this._client = clientOptions ? createClient(clientOptions) : createClient();
+    this._client.on('connect', () => console.log('Redis client connected'));
+    this._client.on('ready', () => console.log('Redis client ready to use'));
+    this._client.on('error', (err) => console.error('Redis error', err));
+    this._client.on('end', () => console.log('Redis client disconnected'));
+    this._client.connect();
   }
 
   exists(key: string, namespace?: string): Promise<boolean> {
@@ -102,31 +94,21 @@ export class RedisCache implements ICache {
     }));
   }
 
-  getAndRemove<T>(key: string, namespace?: string | undefined, classConstructor?: (() => ClassConstructor<T>) | undefined): Promise<T | null> {
-    namespace = namespace || "default";
-    key = `${namespace}:${key}`;
-    return new Promise((resolve) => {
-      const transaction = this._client.multi();
-      transaction.get(key);
-      transaction.del(key);
-      transaction.exec().then((replies) => {
-        if (replies[0]) {
-          if (classConstructor) {
-            resolve(plainToInstance(classConstructor(), JSON.parse(replies[0] as string)));
-          } else {
-            resolve(replies[0] as T);
-          }
-        } else {
-          resolve(null);
-        }
-      });
-    });
-  }
-
   set(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean> {
     namespace = namespace || "default";
     key = `${namespace}:${key}`;
     return this._client.set(key, value, { EX: expireSeconds }).then((result) => {
+      if (result) {
+        return result === "OK";
+      }
+      return false;
+    });
+  }
+
+  setIfNotExist(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean> {
+    namespace = namespace || "default";
+    key = `${namespace}:${key}`;
+    return this._client.set(key, value, { EX: expireSeconds, NX: true }).then((result) => {
       if (result) {
         return result === "OK";
       }

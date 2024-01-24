@@ -1,3 +1,7 @@
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
 import { RegistrationStatusEnumType, defineConfig } from "@citrineos/base";
 
 export function createDockerConfig() {
@@ -5,9 +9,7 @@ export function createDockerConfig() {
         env: "development",
         modules: {
             certificates: {
-                endpointPrefix: "/certificates",
-                host: "localhost",
-                port: 8080
+                endpointPrefix: "/certificates"
             },
             configuration: {
                 heartbeatInterval: 60,
@@ -16,34 +18,22 @@ export function createDockerConfig() {
                 getBaseReportOnPending: true,
                 bootWithRejectedVariables: true,
                 autoAccept: false,
-                endpointPrefix: "/configuration",
-                host: "localhost",
-                port: 8080
+                endpointPrefix: "/configuration"
             },
             evdriver: {
-                endpointPrefix: "/evdriver",
-                host: "localhost",
-                port: 8080
+                endpointPrefix: "/evdriver"
             },
             monitoring: {
-                endpointPrefix: "/monitoring",
-                host: "localhost",
-                port: 8080
+                endpointPrefix: "/monitoring"
             },
             reporting: {
-                endpointPrefix: "/reporting",
-                host: "localhost",
-                port: 8080
+                endpointPrefix: "/reporting"
             },
             smartcharging: {
-                endpointPrefix: "/smartcharging",
-                host: "localhost",
-                port: 8080
+                endpointPrefix: "/smartcharging"
             },
             transactions: {
-                endpointPrefix: "/transactions",
-                host: "localhost",
-                port: 8080
+                endpointPrefix: "/transactions"
             },
         },
         data: {
@@ -60,10 +50,7 @@ export function createDockerConfig() {
         },
         util: {
             cache: {
-                redis: {
-                    host: "redis",
-                    port: 6379,
-                }
+                memory: true
             },
             messageBroker: {
                 amqp: {

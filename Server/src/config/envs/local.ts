@@ -1,3 +1,7 @@
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
 import { RegistrationStatusEnumType, defineConfig } from "@citrineos/base";
 
 export function createLocalConfig() {
@@ -5,9 +9,7 @@ export function createLocalConfig() {
         env: "development",
         modules: {
             certificates: {
-                endpointPrefix: "/certificates",
-                host: "localhost",
-                port: 8081
+                endpointPrefix: "/certificates"
             },
             configuration: {
                 heartbeatInterval: 60,
@@ -15,35 +17,23 @@ export function createLocalConfig() {
                 unknownChargerStatus: RegistrationStatusEnumType.Accepted,
                 getBaseReportOnPending: true,
                 bootWithRejectedVariables: true,
-                autoAccept: true,
-                endpointPrefix: "/configuration",
-                host: "localhost",
-                port: 8081
+                autoAccept: false,
+                endpointPrefix: "/configuration"
             },
             evdriver: {
-                endpointPrefix: "/evdriver",
-                host: "localhost",
-                port: 8081
+                endpointPrefix: "/evdriver"
             },
             monitoring: {
-                endpointPrefix: "/monitoring",
-                host: "localhost",
-                port: 8081
+                endpointPrefix: "/monitoring"
             },
             reporting: {
-                endpointPrefix: "/reporting",
-                host: "localhost",
-                port: 8081
+                endpointPrefix: "/reporting"
             },
             smartcharging: {
-                endpointPrefix: "/smartcharging",
-                host: "localhost",
-                port: 8081
+                endpointPrefix: "/smartcharging"
             },
             transactions: {
-                endpointPrefix: "/transactions",
-                host: "localhost",
-                port: 8081
+                endpointPrefix: "/transactions"
             },
         },
         data: {
@@ -60,10 +50,7 @@ export function createLocalConfig() {
         },
         util: {
             cache: {
-                redis: {
-                    host: "localhost",
-                    port: 6379,
-                }
+                memory: true
             },
             messageBroker: {
                 amqp: {
@@ -73,9 +60,9 @@ export function createLocalConfig() {
             }
         },
         server: {
-            logLevel: 3,
-            host: "localhost",
-            port: 8081,
+            logLevel: 2, // debug
+            host: "0.0.0.0",
+            port: 8080,
             swagger: {
                 path: "/docs",
                 exposeData: true,
@@ -89,8 +76,13 @@ export function createLocalConfig() {
         },
         websocketServer: [{
             securityProfile: 0,
-            host: "localhost",
-            port: 8080,
+            host: "0.0.0.0",
+            port: 8081,
+            protocol: "ocpp2.0.1"
+        }, {
+            securityProfile: 1,
+            host: "0.0.0.0",
+            port: 8082,
             protocol: "ocpp2.0.1"
         }]
     });

@@ -1,20 +1,9 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright (c) 2023 S44, LLC
- */
+// Copyright (c) 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
 
-import { AbstractMessageHandler, IMessageHandler, IModule, SystemConfig, CallAction, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message, OcppError } from "@citrineos/base";
+import { AbstractMessageHandler, IMessageHandler, IModule, SystemConfig, CallAction, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message, OcppError, RetryMessageError } from "@citrineos/base";
 import { plainToInstance } from "class-transformer";
 import { Admin, Consumer, EachMessagePayload, Kafka } from "kafkajs";
 import { ILogObj, Logger } from "tslog";
@@ -74,7 +63,7 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
         const consumer = this._client.consumer({ groupId: 'test-group' });
         return consumer.connect()
             .then(() => consumer.subscribe({ topic: this._topicName, fromBeginning: false }))
-            .then(() => consumer.run({ eachMessage: this._onMessage.bind(this) })) // TODO: Add filter
+            .then(() => consumer.run({ autoCommit: false, eachMessage: (payload) => this._onMessage(payload, consumer) })) // TODO: Add filter
             .then(() => this._consumerMap.set(identifier, consumer))
             .then(() => true)
             .catch(err => {
@@ -97,8 +86,8 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
             });
     }
 
-    handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): void {
-        this._module?.handle(message, props);
+    async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): Promise<void> {
+        await this._module?.handle(message, props);
     }
 
     shutdown(): void {
@@ -127,16 +116,25 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
      *
      * @param message The PubSub message to process
      */
-    private async _onMessage({ topic, partition, message }: EachMessagePayload): Promise<void> {
+    private async _onMessage({ topic, partition, message }: EachMessagePayload, consumer: Consumer): Promise<void> {
         this._logger.debug(`Received message ${message.value?.toString()} on topic ${topic} partition ${partition}`);
         try {
             const messageValue = message.value;
             if (messageValue) {
                 const parsed = plainToInstance(Message<OcppRequest | OcppResponse | OcppError>, messageValue.toString());
-                this.handle(parsed, message.key?.toString());
+                await this.handle(parsed, message.key?.toString());
             }
         } catch (error) {
-            this._logger.error("Error while processing message:", error);
+            if (error instanceof RetryMessageError) {
+                this._logger.warn("Retrying message: ", error.message);
+                // Retryable error, usually ongoing call with station when trying to send new call
+                return;
+            } else {
+                this._logger.error("Error while processing message:", error, message);
+            }
         }
+        await consumer.commitOffsets([
+            { topic, partition, offset: message.offset },
+        ]);
     }
 }

@@ -1,20 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright (c) 2023 S44, LLC
- */
+// Copyright (c) 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
 
 import 'reflect-metadata';
 import { ILogObj, Logger } from "tslog";
@@ -164,7 +153,7 @@ export abstract class AbstractModule implements IModule {
     }
 
     async handleMessageApiCallback(message: IMessage<OcppResponse>): Promise<void> {
-        const url: string | null = await this._cache.getAndRemove(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
+        const url: string | null = await this._cache.get(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
         if (url) {
             try {
                 await fetch(url, {
@@ -213,7 +202,7 @@ export abstract class AbstractModule implements IModule {
         if (callbackUrl) {
             // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
             this._cache.set(_correlationId, callbackUrl, this.CALLBACK_URL_CACHE_PREFIX + identifier,
-                this._config.websocket.maxCachingSeconds); // x2 fudge factor for any network lag
+                this._config.websocket.maxCachingSeconds);
         }
         // TODO: Future - Compound key with tenantId
         return this._cache.get<ClientConnection>(identifier, CacheNamespace.Connections, () => ClientConnection).then((connection) => {

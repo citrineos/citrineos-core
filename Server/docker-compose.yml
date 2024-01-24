@@ -49,9 +49,6 @@ services:
       - 8080:8080
       - 8081:8081
       - 8082:8082
-    volumes:
-      - ./:/usr/server
-      - /usr/server/node_modules
   directus:
     image: directus/directus:latest
     ports:
