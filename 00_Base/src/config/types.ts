@@ -143,7 +143,7 @@ export const systemConfigSchema = z.object({
         }).optional(),
         evdriver: z.object({
             endpointPrefix: z.string(),
-            host: z.string().optional().optional(),
+            host: z.string().optional(),
             port: z.number().int().positive().optional(),
         }),
         configuration: z.object({
