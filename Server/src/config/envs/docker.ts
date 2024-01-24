@@ -1,3 +1,7 @@
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
 import { RegistrationStatusEnumType, defineConfig } from "@citrineos/base";
 
 export function createDockerConfig() {

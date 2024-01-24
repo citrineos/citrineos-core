@@ -1,3 +1,7 @@
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
 import { Namespace, CustomDataType } from "@citrineos/base";
 import { StatusInfoType } from "@citrineos/base/lib/ocpp/model/types/SetVariablesResponse";
 import { Table, Model, BelongsTo, Column, DataType, ForeignKey } from "sequelize-typescript";

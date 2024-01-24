@@ -1,3 +1,7 @@
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
 import { AttributeEnumType } from "@citrineos/base";
 import { IDeviceModelRepository } from "@citrineos/data";
 import { VariableAttribute } from "@citrineos/data/lib/layers/sequelize";
