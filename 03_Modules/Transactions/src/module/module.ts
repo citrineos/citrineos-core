@@ -26,8 +26,15 @@ import { ILogObj, Logger } from 'tslog';
  */
 export class TransactionsModule extends AbstractModule {
 
-  protected _requests: CallAction[] = [CallAction.TransactionEvent, CallAction.MeterValues];
-  protected _responses: CallAction[] = [CallAction.GetTransactionStatus];
+  protected _requests: CallAction[] = [
+    CallAction.MeterValues,
+    CallAction.StatusNotification,
+    CallAction.TransactionEvent
+  ];
+  protected _responses: CallAction[] = [
+    CallAction.CostUpdate,
+    CallAction.GetTransactionStatus
+  ];
 
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _authorizeRepository: IAuthorizationRepository;

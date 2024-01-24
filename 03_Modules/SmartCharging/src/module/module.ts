@@ -30,11 +30,18 @@ export class SmartChargingModule extends AbstractModule {
    */
 
   protected _requests: CallAction[] = [
-
+    CallAction.NotifyChargingLimit,
+    CallAction.NotifyEVChargingNeeds,
+    CallAction.NotifyEVChargingSchedule,
+    CallAction.ReportChargingProfiles
   ];
 
   protected _responses: CallAction[] = [
-
+    CallAction.ClearChargingProfile,
+    CallAction.ClearedChargingLimit,
+    CallAction.GetChargingProfiles,
+    CallAction.GetCompositeSchedule,
+    CallAction.SetChargingProfile
   ];
 
   /**

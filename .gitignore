@@ -200,6 +200,8 @@ package-lock.json
 
 # RabbitMQ
 /Server/data/rabbitmq
+/Swarm/data/rabbitmq
 
 # PostgreSQL
 /Server/data/postgresql
+/Swarm/data/postgresql

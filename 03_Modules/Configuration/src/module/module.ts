@@ -81,15 +81,24 @@ export class ConfigurationModule extends AbstractModule {
 
   protected _requests: CallAction[] = [
     CallAction.BootNotification,
-    CallAction.Heartbeat
+    CallAction.DataTransfer,
+    CallAction.FirmwareStatusNotification,
+    CallAction.Heartbeat,
+    CallAction.NotifyDisplayMessages,
+    CallAction.PublishFirmwareStatusNotification
   ];
 
   protected _responses: CallAction[] = [
-    CallAction.GetBaseReport,
-    CallAction.SetVariables,
-    CallAction.GetVariables,
+    CallAction.ChangeAvailability,
+    CallAction.ClearDisplayMessage,
+    CallAction.GetDisplayMessages,
+    CallAction.PublishFirmware,
+    CallAction.Reset,
+    CallAction.SetDisplayMessage,
     CallAction.SetNetworkProfile,
-    CallAction.Reset
+    CallAction.TriggerMessage,
+    CallAction.UnpublishFirmware,
+    CallAction.UpdateFirmware
   ];
 
   protected _bootRepository: IBootRepository;

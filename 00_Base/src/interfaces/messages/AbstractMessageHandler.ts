@@ -15,7 +15,7 @@
  */
 
 import { Logger, ILogObj } from "tslog";
-import { IMessageHandler, IMessage, OcppRequest, OcppResponse } from "../..";
+import { IMessageHandler, IMessage, OcppRequest, OcppResponse, OcppError } from "../..";
 import { SystemConfig } from "../../config/types";
 import { CallAction } from "../../ocpp/rpc/message";
 import { IModule } from "../modules";
@@ -50,7 +50,7 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
 
     abstract subscribe(identifier: string, actions?: CallAction[], filter?: { [k: string]: string; }): Promise<boolean>;
     abstract unsubscribe(identifier: string): Promise<boolean>;
-    abstract handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void;
+    abstract handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): void;
     abstract shutdown(): void;
 
     abstract get module(): IModule | undefined;

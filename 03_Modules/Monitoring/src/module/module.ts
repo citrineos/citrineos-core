@@ -27,8 +27,19 @@ import { DeviceModelService } from "./services";
  */
 export class MonitoringModule extends AbstractModule {
 
-  protected _requests: CallAction[] = [CallAction.NotifyEvent];
-  protected _responses: CallAction[] = [CallAction.GetVariables, CallAction.SetVariables];
+  protected _requests: CallAction[] = [
+    CallAction.NotifyEvent,
+    CallAction.NotifyMonitoringReport
+  ];
+  protected _responses: CallAction[] = [
+    CallAction.ClearVariableMonitoring,
+    CallAction.GetMonitoringReport,
+    CallAction.GetVariables,
+    CallAction.SetMonitoringBase,
+    CallAction.SetMonitoringLevel,
+    CallAction.SetVariableMonitoring,
+    CallAction.SetVariables
+  ];
 
   protected _deviceModelRepository: IDeviceModelRepository;
 

@@ -11,9 +11,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright (c) 2023 S44, LLC
+ * Copyright 2023 S44, LLC
  */
-
 export *  from './enums';
 export { AuthorizeRequest } from './types/AuthorizeRequest';
 export { default as AuthorizeRequestSchema } from './schemas/AuthorizeRequest.json';
@@ -55,14 +54,14 @@ export { ClearDisplayMessageRequest } from './types/ClearDisplayMessageRequest';
 export { default as ClearDisplayMessageRequestSchema } from './schemas/ClearDisplayMessageRequest.json';
 export { ClearDisplayMessageResponse } from './types/ClearDisplayMessageResponse';
 export { default as ClearDisplayMessageResponseSchema } from './schemas/ClearDisplayMessageResponse.json';
-export { ClearVariableMonitoringRequest } from './types/ClearVariableMonitoringRequest';
-export { default as ClearVariableMonitoringRequestSchema } from './schemas/ClearVariableMonitoringRequest.json';
-export { ClearVariableMonitoringResponse, ClearMonitoringResultType } from './types/ClearVariableMonitoringResponse';
-export { default as ClearVariableMonitoringResponseSchema } from './schemas/ClearVariableMonitoringResponse.json';
 export { ClearedChargingLimitRequest } from './types/ClearedChargingLimitRequest';
 export { default as ClearedChargingLimitRequestSchema } from './schemas/ClearedChargingLimitRequest.json';
 export { ClearedChargingLimitResponse } from './types/ClearedChargingLimitResponse';
 export { default as ClearedChargingLimitResponseSchema } from './schemas/ClearedChargingLimitResponse.json';
+export { ClearVariableMonitoringRequest } from './types/ClearVariableMonitoringRequest';
+export { default as ClearVariableMonitoringRequestSchema } from './schemas/ClearVariableMonitoringRequest.json';
+export { ClearVariableMonitoringResponse, ClearMonitoringResultType } from './types/ClearVariableMonitoringResponse';
+export { default as ClearVariableMonitoringResponseSchema } from './schemas/ClearVariableMonitoringResponse.json';
 export { CostUpdatedRequest } from './types/CostUpdatedRequest';
 export { default as CostUpdatedRequestSchema } from './schemas/CostUpdatedRequest.json';
 export { CostUpdatedResponse } from './types/CostUpdatedResponse';

@@ -29,8 +29,20 @@ export class EVDriverModule extends AbstractModule {
   /**
    * Fields
    */
-  protected _requests: CallAction[] = [CallAction.Authorize];
-  protected _responses: CallAction[] = [CallAction.ClearCache];
+  protected _requests: CallAction[] = [
+    CallAction.Authorize,
+    CallAction.ReservationStatusUpdate
+  ];
+  protected _responses: CallAction[] = [
+    CallAction.CancelReservation,
+    CallAction.ClearCache,
+    CallAction.GetLocalListVersion,
+    CallAction.RequestStartTransaction,
+    CallAction.RequestStopTransaction,
+    CallAction.ReserveNow,
+    CallAction.SendLocalList,
+    CallAction.UnlockConnector
+  ];
 
   protected _authorizeRepository: IAuthorizationRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -122,10 +134,10 @@ export class EVDriverModule extends AbstractModule {
                 return {
                   additionalIdToken: additionalInfo.additionalIdToken,
                   type: additionalInfo.type
-                } 
-              })  as [AdditionalInfoType, ...AdditionalInfoType[]]) : undefined,
+                }
+              }) as [AdditionalInfoType, ...AdditionalInfoType[]]) : undefined,
               idToken: authorization.idTokenInfo.groupIdToken.idToken,
-             type: authorization.idTokenInfo.groupIdToken.type
+              type: authorization.idTokenInfo.groupIdToken.type
             } : undefined,
             language2: authorization.idTokenInfo.language2,
             personalMessage: authorization.idTokenInfo.personalMessage

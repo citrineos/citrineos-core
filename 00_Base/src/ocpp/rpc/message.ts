@@ -29,7 +29,7 @@ export type CallResult = [messageTypeId: MessageTypeId, messageId: string, paylo
 /**
  * Definition of CallError Message (4.2.1 CALLERROR)
  */
-export type CallError = [messageTypeId: MessageTypeId, messageId: string, errorCode: ErrorCode, errorDescription: string, errorDetails: object ];
+export type CallError = [messageTypeId: MessageTypeId, messageId: string, errorCode: ErrorCode, errorDescription: string, errorDetails: object];
 
 /**
  * Number identifying the different types of OCPP messages.

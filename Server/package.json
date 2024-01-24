@@ -1,7 +1,7 @@
 {
   "name": "@citrineos/server",
   "version": "1.0.0",
-  "description": "The OCPP server module which acts right on top of an asynchronous WebSocket implementation.",
+  "description": "The OCPP server implementation which acts right on top of an asynchronous WebSocket.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

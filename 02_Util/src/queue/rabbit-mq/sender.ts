@@ -14,7 +14,7 @@
  * Copyright (c) 2023 S44, LLC
  */
 
-import { AbstractMessageSender, IMessageSender, SystemConfig, IMessage, OcppRequest, IMessageConfirmation, MessageState, OcppResponse } from "@citrineos/base";
+import { AbstractMessageSender, IMessageSender, SystemConfig, IMessage, OcppRequest, IMessageConfirmation, MessageState, OcppResponse, OcppError } from "@citrineos/base";
 import * as amqplib from "amqplib";
 import { instanceToPlain } from "class-transformer";
 import { ILogObj, Logger } from "tslog";
@@ -67,23 +67,23 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
   /**
    * Sends a response message and returns a promise of the message confirmation.
    *
-   * @param {IMessage<OcppResponse>} message - The message to send.
-   * @param {OcppResponse | undefined} payload - The payload to include in the response.
+   * @param {IMessage<OcppResponse | OcppError>} message - The message to send.
+   * @param {OcppResponse | OcppError} payload - The payload to include in the response.
    * @return {Promise<IMessageConfirmation>} - A promise that resolves to the message confirmation.
    */
-  sendResponse(message: IMessage<OcppResponse>, payload?: OcppResponse | undefined): Promise<IMessageConfirmation> {
+  sendResponse(message: IMessage<OcppResponse | OcppError>, payload?: OcppResponse | OcppError): Promise<IMessageConfirmation> {
     return this.send(message, payload, MessageState.Response);
   }
 
   /**
    * Sends a message and returns a promise that resolves to a message confirmation.
    *
-   * @param {IMessage<OcppRequest | OcppResponse>} message - The message to be sent.
-   * @param {OcppRequest | OcppResponse} [payload] - The payload to be included in the message.
+   * @param {IMessage<OcppRequest | OcppResponse | OcppError>} message - The message to be sent.
+   * @param {OcppRequest | OcppResponse | OcppError} [payload] - The payload to be included in the message.
    * @param {MessageState} [state] - The state of the message.
    * @return {Promise<IMessageConfirmation>} - A promise that resolves to a message confirmation.
    */
-  async send(message: IMessage<OcppRequest | OcppResponse>, payload?: OcppRequest | OcppResponse, state?: MessageState): Promise<IMessageConfirmation> {
+  async send(message: IMessage<OcppRequest | OcppResponse | OcppError>, payload?: OcppRequest | OcppResponse | OcppError, state?: MessageState): Promise<IMessageConfirmation> {
     if (payload) {
       message.payload = payload;
     }
