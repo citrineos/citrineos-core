@@ -199,7 +199,9 @@ package-lock.json
 .sqlite
 
 # RabbitMQ
-/50_Server/data/rabbitmq
+/Server/data/rabbitmq
+/Swarm/data/rabbitmq
 
 # PostgreSQL
-/50_Server/data/postgresql
+/Server/data/postgresql
+/Swarm/data/postgresql

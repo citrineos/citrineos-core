@@ -1,20 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright (c) 2023 S44, LLC
- */
+// Copyright (c) 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
 
 import 'reflect-metadata';
 import { ILogObj, Logger } from "tslog";
@@ -22,10 +11,10 @@ import { v4 as uuidv4 } from "uuid";
 import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from ".";
 import { OcppRequest, OcppResponse } from "../..";
 import { SystemConfig } from "../../config/types";
-import { CallAction } from "../../ocpp/rpc/message";
+import { CallAction, ErrorCode } from "../../ocpp/rpc/message";
 import { RequestBuilder } from "../../util/request";
 import { CacheNamespace, ICache } from "../cache/cache";
-import { ClientConnection } from "../centralsystem";
+import { ClientConnection, OcppError } from "../centralsystem";
 import { EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessageHandler, IMessageSender, MessageOrigin, MessageState } from "../messages";
 
 export abstract class AbstractModule implements IModule {
@@ -141,22 +130,30 @@ export abstract class AbstractModule implements IModule {
      * @param {HandlerProperties} props - Optional properties for the handler.
      * @return {void} This function does not return anything.
      */
-    handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void {
+    async handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): Promise<void> {
         if (message.state === MessageState.Response) {
             this.handleMessageApiCallback(message as IMessage<OcppResponse>);
-            this._cache.set(message.context.correlationId, JSON.stringify(message.payload), message.context.stationId, this._config.websocketServer.maxCachingSeconds);
+            this._cache.set(message.context.correlationId, JSON.stringify(message.payload), message.context.stationId, this._config.websocket.maxCachingSeconds);
         }
-        const handlerDefinition = (Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>).filter((h) => h.action === message.action).pop();
-        if (handlerDefinition) {
-            handlerDefinition.method.call(this, message, props);
-            // this.constructor.prototype[handlerDefinition.methodName].call(this, message, props);
-        } else {
-            this._logger.error("Failed handling message. No handler found for action: ", message.action);
+        try {
+            const handlerDefinition = (Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>).filter((h) => h.action === message.action).pop();
+            if (handlerDefinition) {
+                await handlerDefinition.method.call(this, message, props);
+            } else {
+                throw new OcppError(message.context.correlationId, ErrorCode.NotSupported, "No handler found for action: " + message.action + " at module " + this._eventGroup);
+            }
+        } catch (error) {
+            this._logger.error("Failed handling message: ", error, message);
+            if (error instanceof OcppError) {
+                this._sender.sendResponse(message, error);
+            } else {
+                this._sender.sendResponse(message, new OcppError(message.context.correlationId, ErrorCode.InternalError, "Failed handling message: " + error));
+            }
         }
     }
 
     async handleMessageApiCallback(message: IMessage<OcppResponse>): Promise<void> {
-        const url: string | null = await this._cache.getAndRemove(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
+        const url: string | null = await this._cache.get(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
         if (url) {
             try {
                 await fetch(url, {
@@ -205,7 +202,7 @@ export abstract class AbstractModule implements IModule {
         if (callbackUrl) {
             // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
             this._cache.set(_correlationId, callbackUrl, this.CALLBACK_URL_CACHE_PREFIX + identifier,
-                this._config.websocketServer.maxCachingSeconds); // x2 fudge factor for any network lag
+                this._config.websocket.maxCachingSeconds);
         }
         // TODO: Future - Compound key with tenantId
         return this._cache.get<ClientConnection>(identifier, CacheNamespace.Connections, () => ClientConnection).then((connection) => {
@@ -255,13 +252,51 @@ export abstract class AbstractModule implements IModule {
     }
 
     /**
-     * Sends the call result with a message.
+     * Sends the call result using the request message's fields.
+     * Payload will overwrite message.payload.
      *
-     * @param {IMessage<OcppResponse>} message - The message object.
+     * @param {IMessage<OcppRequest>} message - The request message object.
      * @param {OcppResponse} payload - The payload to send.
      * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
      */
-    public sendCallResultWithMessage(message: IMessage<OcppResponse>, payload: OcppResponse): Promise<IMessageConfirmation> {
+    public sendCallResultWithMessage(message: IMessage<OcppRequest>, payload: OcppResponse): Promise<IMessageConfirmation> {
+        return this._sender.sendResponse(message, payload);
+    }
+
+    /**
+     * Sends the call error message and returns a Promise that resolves with the confirmation message.
+     *
+     * @param {string} correlationId - The correlation ID of the message.
+     * @param {string} identifier - The identifier of the message.
+     * @param {string} tenantId - The ID of the tenant.
+     * @param {CallAction} action - The call action.
+     * @param {OcppError} payload - The payload of the call error message.
+     * @param {MessageOrigin} origin - (optional) The origin of the message.
+     * @return {Promise<IMessageConfirmation>} A Promise that resolves with the confirmation message.
+     */
+    public sendCallError(correlationId: string, identifier: string, tenantId: string, action: CallAction, payload: OcppError, origin?: MessageOrigin): Promise<IMessageConfirmation> {
+        return this._sender.sendResponse(
+            RequestBuilder.buildCallError(
+                identifier,
+                correlationId,
+                tenantId,
+                action,
+                payload,
+                this._eventGroup,
+                origin
+            )
+        );
+    }
+
+    /**
+     * Sends the call error using the request message's fields.
+     * Payload will overwrite message.payload.
+     *
+     * @param {IMessage<OcppRequest>} message - The request message object.
+     * @param {OcppResponse} payload - The payload to send.
+     * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
+     */
+    public sendCallErrorWithMessage(message: IMessage<OcppRequest>, payload: OcppError): Promise<IMessageConfirmation> {
         return this._sender.sendResponse(message, payload);
     }
 }

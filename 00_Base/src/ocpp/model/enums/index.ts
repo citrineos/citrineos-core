@@ -1,3 +1,8 @@
+// Copyright 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
 /**
  * APN. APN_ Authentication. APN_ Authentication_ Code
  * urn:x-oca:ocpp:uid:1:568828
