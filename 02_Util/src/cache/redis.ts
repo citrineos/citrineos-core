@@ -109,8 +109,7 @@ export class RedisCache implements ICache {
   setIfNotExist(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean> {
     namespace = namespace || "default";
     key = `${namespace}:${key}`;
-    const setOptions = expireSeconds ? { EX: expireSeconds, NX: true } : { NX: true };
-    return this._client.set(key, value, setOptions).then((result) => {
+    return this._client.set(key, value, expireSeconds ? { EX: expireSeconds, NX: true } : { NX: true }).then((result) => {
       if (result) {
         return result === "OK";
       }
