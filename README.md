@@ -32,7 +32,7 @@ Before you begin, make sure you have the following installed on your system:
 
 - Node.js (v18 or higher): [Download Node.js](https://nodejs.org/)
 - npm (Node Package Manager): [Download npm](https://www.npmjs.com/get-npm)
-- Docker (Optional). Version >= 20.10: [Download Docker] (https://docs.docker.com/get-docker/)
+- Docker (Optional). Version >= 20.10: [Download Docker](https://docs.docker.com/get-docker/)
 ### Installation
 
 1. Clone the CitrineOS repository to your local machine:
