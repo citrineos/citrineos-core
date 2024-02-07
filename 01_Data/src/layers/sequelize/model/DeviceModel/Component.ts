@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { ComponentType, CustomDataType, EVSEType, Namespace, VariableType } from "@citrineos/base";
-import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from "sequelize-typescript";
+import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 import { Evse } from "./Evse";
 import { Variable } from "./Variable";
 import { ComponentVariable } from "./ComponentVariable";

@@ -8,7 +8,6 @@ import { VariableAttributeQuerystring } from "../../../interfaces/queries/Variab
 import { SequelizeRepository } from "./Base";
 import { IDeviceModelRepository } from "../../../interfaces";
 import { Op } from "sequelize";
-import * as util from "util";
 import { VariableAttribute, Component, Evse, Variable, VariableCharacteristics } from "../model/DeviceModel";
 import { VariableStatus } from "../model/DeviceModel/VariableStatus";
 import { ComponentVariable } from "../model/DeviceModel/ComponentVariable";
@@ -18,18 +17,14 @@ import { ComponentVariable } from "../model/DeviceModel/ComponentVariable";
 export class DeviceModelRepository extends SequelizeRepository<VariableAttribute> implements IDeviceModelRepository {
 
     async createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]> {
-        console.log("createOrUpdateDeviceModelByStationId %s", JSON.stringify(value));
-
         // Doing this here so that no records are created if the data is invalid
         const variablAttributeTypes = value.variableAttribute.map(attr => attr.type ? attr.type : AttributeEnumType.Actual)
         if (variablAttributeTypes.length != (new Set(variablAttributeTypes)).size) {
             throw new Error("All variable attributes in ReportData must have different types.");
         }
 
-        console.log("EvseAndComponentAndVariable");
         const [component, variable] = await this.findOrCreateEvseAndComponentAndVariable(value.component, value.variable, stationId);
 
-        console.log("EvseAndComponentAndVariable set: %s & %s", JSON.stringify(component), JSON.stringify(variable));
         let dataType: DataEnumType | null = null;
         if (value.variableCharacteristics) {
             const [variableCharacteristics, variableCharacteristicsCreated] = await VariableCharacteristics.upsert({
@@ -40,7 +35,6 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
             dataType = variableCharacteristics.dataType;
         }
 
-        console.log("Data type: " + dataType);
         return await Promise.all(value.variableAttribute.map(async variableAttribute => {
             // Even though defaults are set on the VariableAttribute model, those only apply when creating an object
             // So we need to set them here to ensure they are set correctly when updating
@@ -62,14 +56,12 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
     async findOrCreateEvseAndComponentAndVariable(componentType: ComponentType, variableType: VariableType, stationId: string): Promise<[Component, Variable]> {
         const component = await this.findOrCreateEvseAndComponent(componentType, stationId);
 
-        console.log("Component: " + JSON.stringify(component));
         const [variable, variableCreated] = await Variable.findOrCreate({
             where: { name: variableType.name, instance: variableType.instance ? variableType.instance : null },
             defaults: {
                 ...variableType
             }
         });
-        console.log("Variable: " + JSON.stringify(variable));
 
         // This can happen asynchronously
         ComponentVariable.findOrCreate({
@@ -80,57 +72,48 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
     }
 
     async findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component> {
-        try {
-            console.log("Evse");
-            const evse = componentType.evse ? (await Evse.findOrCreate({ where: { id: componentType.evse.id, connectorId: componentType.evse.connectorId ? componentType.evse.connectorId : null } }))[0] : undefined;
-            console.log("Component");
-            const [component, componentCreated] = await Component.findOrCreate({
-                where: { name: componentType.name, instance: componentType.instance ? componentType.instance : null },
-                defaults: {
-                    ...componentType
-                }
-            });
-            console.log("EvseDatabaseId");
-            // Note: this permits changing the evse related to the component
-            if (component.evseDatabaseId !== evse?.databaseId && evse) {
-                await component.update({ evseDatabaseId: evse.databaseId});
+        const evse = componentType.evse ? (await Evse.findOrCreate({ where: { id: componentType.evse.id, connectorId: componentType.evse.connectorId ? componentType.evse.connectorId : null } }))[0] : undefined;
+
+        const [component, componentCreated] = await Component.findOrCreate({
+            where: { name: componentType.name, instance: componentType.instance ? componentType.instance : null },
+            defaults: { // Explicit assignment because evse field is a relation and is not able to accept a default value
+                name: componentType.name, 
+                instance: componentType.instance
             }
-            console.log("defaults");
-
-            if (componentCreated) {
-                // Excerpt from OCPP 2.0.1 Part 1 Architecture & Topology - 4.2 :
-                // When a Charging Station does not report: Present, Available and/or Enabled 
-                // the Central System SHALL assume them to be readonly and set to true.
-                const defaultComponentVariableNames = ['Present', 'Available', 'Enabled'];
-                for (const defaultComponentVariableName of defaultComponentVariableNames) {
-                    console.log("Component %s defaults %s", component.name, defaultComponentVariableName);
-                    const [defaultComponentVariable, defaultComponentVariableCreated] = await Variable.findOrCreate({ where: { name: defaultComponentVariableName, instance: null } });
-
-                    console.log("Default var %s", JSON.stringify(defaultComponentVariable));
-                    // This can happen asynchronously
-                    ComponentVariable.findOrCreate({
-                        where: { componentId: component.id, variableId: defaultComponentVariable.id }
-                    })
-                    console.log("Component associated");
-
-                    await VariableAttribute.create({
-                        stationId: stationId,
-                        variableId: defaultComponentVariable.id,
-                        componentId: component.id,
-                        evseDatabaseId: evse?.databaseId,
-                        dataType: DataEnumType.boolean,
-                        value: 'true',
-                        mutability: MutabilityEnumType.ReadOnly
-                    });
-                    console.log("Attribute created");
-                }
-            }
-
-            return component;
-        } catch (error) {
-            console.log(util.inspect(error));
-            throw error;
+        });
+        // Note: this permits changing the evse related to the component
+        if (component.evseDatabaseId !== evse?.databaseId && evse) {
+            await component.update({ evseDatabaseId: evse.databaseId });
         }
+
+        if (componentCreated) {
+            // Excerpt from OCPP 2.0.1 Part 1 Architecture & Topology - 4.2 :
+            // "When a Charging Station does not report: Present, Available and/or Enabled 
+            // the Central System SHALL assume them to be readonly and set to true."
+            // These default variables and their attributes are created here if the component is new,
+            // and they will be overwritten if they are included in the update
+            const defaultComponentVariableNames = ['Present', 'Available', 'Enabled'];
+            for (const defaultComponentVariableName of defaultComponentVariableNames) {
+                const [defaultComponentVariable, defaultComponentVariableCreated] = await Variable.findOrCreate({ where: { name: defaultComponentVariableName, instance: null } });
+
+                // This can happen asynchronously
+                ComponentVariable.findOrCreate({
+                    where: { componentId: component.id, variableId: defaultComponentVariable.id }
+                })
+
+                await VariableAttribute.create({
+                    stationId: stationId,
+                    variableId: defaultComponentVariable.id,
+                    componentId: component.id,
+                    evseDatabaseId: evse?.databaseId,
+                    dataType: DataEnumType.boolean,
+                    value: 'true',
+                    mutability: MutabilityEnumType.ReadOnly
+                });
+            }
+        }
+
+        return component;
     }
 
     async createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string): Promise<VariableAttribute[]> {

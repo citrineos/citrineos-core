@@ -3,15 +3,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AttributeEnumType, ComponentType, CustomDataType, DataEnumType, EVSEType, MutabilityEnumType, Namespace, StatusInfoType, VariableAttributeType, VariableType } from "@citrineos/base";
-import { BeforeCreate, BeforeUpdate, BelongsTo, Column, DataType, ForeignKey, HasMany, HasOne, Index, Model, Table } from "sequelize-typescript";
+import { AttributeEnumType, ComponentType, CustomDataType, DataEnumType, EVSEType, MutabilityEnumType, Namespace, VariableAttributeType, VariableType } from "@citrineos/base";
+import { BelongsTo, Column, DataType, ForeignKey, HasMany, Index, Model, Table } from "sequelize-typescript";
 import * as bcrypt from "bcrypt";
 import { Variable } from "./Variable";
 import { Component } from "./Component";
 import { Evse } from "./Evse";
 import { Boot } from "../Boot";
 import { VariableStatus } from "./VariableStatus";
-import { VariableCharacteristics } from "./VariableCharacteristics";
 
 @Table
 export class VariableAttribute extends Model implements VariableAttributeType {
