@@ -26,14 +26,14 @@ export class VariableAttribute extends Model implements VariableAttributeType {
 
     @Index
     @Column({
-        unique: 'stationId_type_variableId_componentId_evseDatabaseId'
+        unique: 'stationId_type_variableId_componentId'
     })
     declare stationId: string;
 
     @Column({
         type: DataType.STRING,
         defaultValue: AttributeEnumType.Actual,
-        unique: 'stationId_type_variableId_componentId_evseDatabaseId'
+        unique: 'stationId_type_variableId_componentId'
     })
     declare type?: AttributeEnumType;
     // From VariableCharacteristics, which belongs to Variable associated with this VariableAttribute
@@ -44,7 +44,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     declare dataType: DataEnumType;
 
     @Column({
-        // TODO: Make this configurable?
+        // TODO: Make this configurable? also used in VariableStatus model
         type: DataType.STRING(4000),
         set(valueString) {
             if (valueString) {
@@ -91,7 +91,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     @ForeignKey(() => Variable)
     @Column({
         type: DataType.INTEGER,
-        unique: 'stationId_type_variableId_componentId_evseDatabaseId'
+        unique: 'stationId_type_variableId_componentId'
     })
     declare variableId?: number;
 
@@ -101,7 +101,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     @ForeignKey(() => Component)
     @Column({
         type: DataType.INTEGER,
-        unique: 'stationId_type_variableId_componentId_evseDatabaseId'
+        unique: 'stationId_type_variableId_componentId'
     })
     declare componentId?: number;
 
@@ -109,10 +109,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     declare evse?: EVSEType;
 
     @ForeignKey(() => Evse)
-    @Column({
-        type: DataType.INTEGER,
-        unique: 'stationId_type_variableId_componentId_evseDatabaseId'
-    })
+    @Column(DataType.INTEGER)
     declare evseDatabaseId?: number;
 
     // History of variable status. Can be directly from GetVariablesResponse or SetVariablesResponse, or from NotifyReport handling, or from 'setOnCharger' option for data api 
