@@ -2,6 +2,7 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
+/* eslint-disable */
 
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
@@ -60,7 +61,7 @@ function OcppTransformObject({ swaggerObject, openapiObject }: {
         }
     }
     return openapiObject;
-};
+}
 
 export function initSwagger(systemConfig: SystemConfig, server: FastifyInstance) {
     server.register(fastifySwagger, {
@@ -74,13 +75,9 @@ export function initSwagger(systemConfig: SystemConfig, server: FastifyInstance)
         transformObject: OcppTransformObject
     });
 
-    const swaggerUiOptions = {
-        routePrefix: systemConfig.server.swagger?.path,
+    const swaggerUiOptions: any = {
+        routePrefix: systemConfig.util.swagger?.path,
         exposeRoute: true,
-        logo: {
-            type: 'image/png',
-            content: fs.readFileSync(__dirname + '/../assets/logo.png')
-        },
         uiConfig: {
             filter: true
         },
@@ -92,6 +89,13 @@ export function initSwagger(systemConfig: SystemConfig, server: FastifyInstance)
             }]
         }
     };
+
+    if (systemConfig.util.swagger?.logoPath) {
+        swaggerUiOptions['logo'] = {
+            type: 'image/png',
+            content: fs.readFileSync(systemConfig.util.swagger?.logoPath)
+        };
+    }
 
     server.register(fastifySwaggerUi, swaggerUiOptions);
 }

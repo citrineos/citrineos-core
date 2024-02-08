@@ -2,9 +2,9 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
+/* eslint-disable */
 
-import { AbstractCentralSystem, AttributeEnumType, CacheNamespace, Call, CallAction, CallError, CallResult, ClientConnection, ErrorCode, EventGroup, ICache, ICentralSystem, IClientConnection, IMessageRouter, IMessageSender, MessageTriggerEnumType, MessageTypeId, Namespace, OcppError, RegistrationStatusEnumType, RetryMessageError, SetVariableStatusEnumType, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
-import { RabbitMqSender } from "@citrineos/util";
+import { AbstractCentralSystem, AttributeEnumType, BOOT_STATUS, CacheNamespace, Call, CallAction, CallError, CallResult, ClientConnection, ErrorCode, ICache, ICentralSystem, IClientConnection, IMessageHandler, IMessageRouter, IMessageSender, MessageTriggerEnumType, MessageTypeId, OcppError, RegistrationStatusEnumType, RetryMessageError, SetVariableStatusEnumType, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
 import Ajv from "ajv";
 import * as bcrypt from "bcrypt";
 import { instanceToPlain } from "class-transformer";
@@ -15,9 +15,9 @@ import { ILogObj, Logger } from "tslog";
 import { v4 as uuidv4 } from "uuid";
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from "ws";
 import { CentralSystemMessageHandler, OcppMessageRouter } from "./router";
-import { DefaultSequelizeInstance, DeviceModelRepository } from "@citrineos/data/lib/layers/sequelize";
+import { DeviceModelRepository } from "@citrineos/data/lib/layers/sequelize";
 import { Duplex } from "stream";
-import { ConfigurationModule } from "@citrineos/configuration";
+import { RabbitMqSender } from "../../queue";
 
 /**
  * Implementation of the central system
@@ -120,43 +120,6 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         this._router.sender.shutdown();
         this._router.handler.shutdown();
         this._httpServers.forEach(server => server.close());
-    }
-
-    /**
-     * Sets the system configuration.
-     *
-     * @param {SystemConfig} config - The new configuration to set.
-     */
-    set config(config: SystemConfig) {
-        this._config = config;
-        // Update all necessary settings for hot reload
-        this._logger.info(`Updating system configuration for central system...`);
-        this._logger.settings.minLevel = this._config.server.logLevel;
-
-        for (const module of Object.values(EventGroup)) {
-            if (module != EventGroup.General) {
-                const moduleConfig = this._config.modules[module];
-                if (moduleConfig) {
-                    const host = moduleConfig.host;
-                    const port = moduleConfig.port;
-                    const path = `/data/${module}/${Namespace.SystemConfig.charAt(0).toLowerCase() + Namespace.SystemConfig.slice(1)}`;
-                    const url = `http://${host}:${port}${path}`;
-                    fetch(url, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(this._config)
-                    }).catch(error => {
-                        this._logger.error("Failed sending config update: ", error);
-                    });
-                }
-            }
-        }
-    }
-
-    get config(): SystemConfig {
-        return this._config;
     }
 
     /**
@@ -723,7 +686,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
     }
 
     private async _sendCallIsAllowed(identifier: string, message: Call): Promise<boolean> {
-        const status = await this._cache.get<string>(ConfigurationModule.BOOT_STATUS, identifier);
+        const status = await this._cache.get<string>(BOOT_STATUS, identifier);
         if (status == RegistrationStatusEnumType.Rejected &&
             // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
             !(message[2] as CallAction == CallAction.TriggerMessage && (message[3] as TriggerMessageRequest).requestedMessage == MessageTriggerEnumType.BootNotification)) {

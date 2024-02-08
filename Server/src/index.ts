@@ -5,15 +5,13 @@
 
 import { ICache, ICentralSystem, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
-import { MemoryCache, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
+import { CentralSystemImpl, MemoryCache, RabbitMqReceiver, RabbitMqSender, initSwagger } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
 import addFormats from "ajv-formats"
 import fastify, { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
-import { CentralSystemImpl } from './server/server';
-import { initSwagger } from './util/swagger';
 import { ConfigurationModule, ConfigurationModuleApi } from '@citrineos/configuration';
 import { TransactionsModule, TransactionsModuleApi } from '@citrineos/transactions';
 import { CertificatesModule, CertificatesModuleApi } from '@citrineos/certificates';
@@ -74,7 +72,7 @@ class CitrineOSServer {
         this._cache = cache || new MemoryCache();
 
         // Initialize Swagger if enabled
-        if (this._config.server.swagger) {
+        if (this._config.util.swagger) {
             initSwagger(this._config, this._server);
         }
 

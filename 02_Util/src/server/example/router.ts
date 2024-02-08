@@ -2,10 +2,11 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
+/* eslint-disable */
 
-import { Call, CallAction, CallError, CallResult, EventGroup, ICache, ICentralSystem, IClientConnection, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, MessageOrigin, MessageState, MessageTypeId, OcppError, OcppRequest, OcppResponse, SystemConfig } from "@citrineos/base";
-import { RabbitMqReceiver } from "@citrineos/util";
+import { Call, CallAction, CallError, CallResult, EventGroup, ICache, ICentralSystem, IClientConnection, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, LOG_LEVEL_OCPP, MessageOrigin, MessageState, MessageTypeId, OcppError, OcppRequest, OcppResponse, SystemConfig } from "@citrineos/base";
 import { ILogObj, Logger } from "tslog";
+import { RabbitMqReceiver } from "../../queue";
 
 const logger = new Logger({ name: "OCPPMessageRouter" });
 
@@ -114,7 +115,7 @@ export class OcppMessageRouter implements IMessageRouter {
 
         const _message: IMessage<OcppRequest> = {
             origin: MessageOrigin.CentralSystem,
-            eventGroup: EventGroup.General, // TODO: Change to appropriate event group based on cache value to allow module to receive responses for requests it sent
+            eventGroup: EventGroup.General,
             action,
             state: MessageState.Response,
             context,

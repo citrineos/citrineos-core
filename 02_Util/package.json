@@ -12,6 +12,7 @@
     "prepare": "npm run build",
     "build": "tsc",
     "install-base": "cd ../00_Base && npm run build && npm pack && cd ../02_Util && npm install ../00_Base/citrineos-base-1.0.0.tgz",
+    "install-data": "cd ../01_Data && npm run build && npm pack && cd ../02_Util && npm install ../01_Data/citrineos-data-1.0.0.tgz",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -22,6 +23,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/amqplib": "^0.10.2",
+    "@types/bcrypt": "^5.0.2",
     "@types/deasync-promise": "^1.0.0",
     "@types/uuid": "^9.0.1",
     "eslint": "^8.48.0",
@@ -33,6 +35,9 @@
   },
   "dependencies": {
     "@citrineos/base": "file:../00_Base/citrineos-base-1.0.0.tgz",
+    "@citrineos/data": "file:../01_Data/citrineos-data-1.0.0.tgz",
+    "@fastify/swagger": "^8.10.1",
+    "@fastify/swagger-ui": "^1.9.3",
     "@google-cloud/pubsub": "^3.6.0",
     "amqplib": "^0.10.3",
     "class-transformer": "^0.5.1",

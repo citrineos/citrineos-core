@@ -3,12 +3,22 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IClientConnection } from "@citrineos/base";
+/**
+ * Base interface for the websocket client connection
+ */
+export interface IClientConnection {
+    get identifier(): string;
+    get sessionIndex(): string;
+    get ip(): string;
+    get port(): number;
+    get isAlive(): boolean;
+    set isAlive(value: boolean);
+}
 
 /**
- * Implementation of the client connection
+ * Default implementation of the client connection
  */
-export class ClientConnectionImpl implements IClientConnection {
+export class ClientConnection implements IClientConnection {
 
     /**
      * Fields

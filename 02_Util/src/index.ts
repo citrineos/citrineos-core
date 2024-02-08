@@ -6,5 +6,7 @@
 export { MemoryCache } from "./cache/memory";
 export { RedisCache } from "./cache/redis";
 export * from "./queue";
+export * from "./server";
 
 export { Timed, Timer, isPromise } from "./util/timer";
+export { initSwagger } from "./util/swagger";
