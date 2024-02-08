@@ -14,7 +14,7 @@ export class VariableStatus extends Model {
 
     declare customData?: CustomDataType;
 
-    @Column(DataType.STRING)
+    @Column(DataType.STRING(4000))
     declare value: string;
 
     @Column(DataType.STRING)

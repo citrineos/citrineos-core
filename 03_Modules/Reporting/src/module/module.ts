@@ -3,8 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyReportRequest, HandlerProperties, SetVariableStatusEnumType, NotifyReportResponse, NotifyMonitoringReportRequest, NotifyMonitoringReportResponse, LogStatusNotificationRequest, LogStatusNotificationResponse, NotifyCustomerInformationRequest, NotifyCustomerInformationResponse, GetBaseReportResponse, StatusNotificationRequest, StatusNotificationResponse, SecurityEventNotificationRequest, SecurityEventNotificationResponse } from "@citrineos/base";
+import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyReportRequest, HandlerProperties, SetVariableStatusEnumType, NotifyReportResponse, NotifyMonitoringReportRequest, NotifyMonitoringReportResponse, LogStatusNotificationRequest, LogStatusNotificationResponse, NotifyCustomerInformationRequest, NotifyCustomerInformationResponse, GetBaseReportResponse, SecurityEventNotificationRequest, SecurityEventNotificationResponse } from "@citrineos/base";
 import { IDeviceModelRepository, ISecurityEventRepository, sequelize } from "@citrineos/data";
+import { Component, Variable } from "@citrineos/data/lib/layers/sequelize";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
@@ -152,6 +153,21 @@ export class ReportingModule extends AbstractModule {
   ): Promise<void> {
     this._logger.info("NotifyReport received:", message, props);
 
+    for (const reportDataType of (message.payload.reportData ? message.payload.reportData : [])) {
+      const variableAttributes = await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, message.context.stationId);
+      for (const variableAttribute of variableAttributes) {
+        // Reload is necessary because the upsert method used in createOrUpdateDeviceModelByStationId does not allow eager loading
+        await variableAttribute.reload({
+          include: [Component, Variable]
+        });
+        this._deviceModelRepository.updateResultByStationId({
+          attributeType: variableAttribute.type,
+          attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: message.action },
+          component: variableAttribute.component, variable: variableAttribute.variable
+        }, message.context.stationId);
+      }
+    }
+
     if (!message.payload.tbc) { // Default if omitted is false
       const success = await this._cache.set(message.payload.requestId.toString(), ReportingModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE, message.context.stationId);
       this._logger.info("Completed", success, message.payload.requestId);
@@ -159,17 +175,6 @@ export class ReportingModule extends AbstractModule {
       // Continue to set get base report ongoing. Will extend the timeout.
       const success = await this._cache.set(message.payload.requestId.toString(), ReportingModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, message.context.stationId, this.config.websocket.maxCachingSeconds);
       this._logger.info("Ongoing", success, message.payload.requestId);
-    }
-
-    for (const reportDataType of (message.payload.reportData ? message.payload.reportData : [])) {
-      const variableAttributes = await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, message.context.stationId);
-      for (const variableAttribute of variableAttributes) {
-        this._deviceModelRepository.updateResultByStationId({
-          attributeType: variableAttribute.type,
-          attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: message.action },
-          component: variableAttribute.component, variable: variableAttribute.variable
-        }, message.context.stationId);
-      }
     }
 
     // Create response

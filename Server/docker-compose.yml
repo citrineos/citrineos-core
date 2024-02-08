@@ -25,6 +25,12 @@ services:
       POSTGRES_DB: citrine
       POSTGRES_USER: citrine
       POSTGRES_PASSWORD: "citrine"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s  
   redis:
     image: redis:latest
     ports:
@@ -56,6 +62,9 @@ services:
     volumes:
       - ./data/directus/uploads:/directus/uploads
       - ./data/directus/extensions:/directus/extensions
+    depends_on:
+      ocpp-db:
+        condition: service_healthy
     environment:
       KEY: '1234567890'
       SECRET: '0987654321'
