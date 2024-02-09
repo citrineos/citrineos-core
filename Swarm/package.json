@@ -51,8 +51,6 @@
     "@citrineos/smartcharging": "file:../03_Modules/SmartCharging/citrineos-smartcharging-1.0.0.tgz",
     "@citrineos/transactions": "file:../03_Modules/Transactions/citrineos-transactions-1.0.0.tgz",
     "@citrineos/util": "file:../02_Util/citrineos-util-1.0.0.tgz",
-    "@fastify/swagger": "^8.10.1",
-    "@fastify/swagger-ui": "^1.9.3",
     "@fastify/type-provider-json-schema-to-ts": "^2.2.2",
     "ajv": "^8.12.0",
     "fastify": "^4.22.2",

@@ -96,17 +96,18 @@ export const systemConfigInputSchema = z.object({
             }).optional(),
         }).refine(obj => obj.pubsub || obj.kafka || obj.amqp, {
             message: 'A message broker implementation must be set'
-        })
+        }),
+        swagger: z.object({
+            path: z.string().default('/docs').optional(),
+            logoPath: z.string(),
+            exposeData: z.boolean().default(true).optional(),
+            exposeMessage: z.boolean().default(true).optional(),
+        }).optional()
     }),
     server: z.object({
         logLevel: z.number().min(0).max(6).default(0).optional(),
         host: z.string().default("localhost").optional(),
-        port: z.number().int().positive().default(8081).optional(),
-        swagger: z.object({
-            path: z.string().default('/docs').optional(),
-            exposeData: z.boolean().default(true).optional(),
-            exposeMessage: z.boolean().default(true).optional(),
-        }).optional(),
+        port: z.number().int().positive().default(8081).optional()
     }),
     websocket: z.object({
         pingInterval: z.number().int().positive().default(60).optional(),
@@ -225,17 +226,18 @@ export const systemConfigSchema = z.object({
             }).optional(),
         }).refine(obj => obj.pubsub || obj.kafka || obj.amqp, {
             message: 'A message broker implementation must be set'
-        })
+        }),
+        swagger: z.object({
+            path: z.string(),
+            logoPath: z.string(),
+            exposeData: z.boolean(),
+            exposeMessage: z.boolean(),
+        }).optional()
     }),
     server: z.object({
         logLevel: z.number().min(0).max(6),
         host: z.string(),
-        port: z.number().int().positive(),
-        swagger: z.object({
-            path: z.string(),
-            exposeData: z.boolean(),
-            exposeMessage: z.boolean(),
-        }).optional(),
+        port: z.number().int().positive()
     }),
     websocket: z.object({
         pingInterval: z.number().int().positive(),

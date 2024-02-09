@@ -27,6 +27,7 @@ RUN cd /usr/01_Data && npm pack
 # Build citrineos-util module
 FROM base as citrineos-util-builder
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
+COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
 COPY /02_Util/package.json /usr/02_Util/
 RUN npm install --ignore-scripts=true --prefix /usr/02_Util
 

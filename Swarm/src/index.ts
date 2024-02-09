@@ -5,15 +5,13 @@
 
 import { EventGroup, ICache, ICentralSystem, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
-import { MemoryCache, RabbitMqReceiver, RabbitMqSender, RedisCache } from '@citrineos/util';
+import { CentralSystemImpl, initSwagger, MemoryCache, RabbitMqReceiver, RabbitMqSender, RedisCache } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
 import addFormats from "ajv-formats"
 import fastify, { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
-import { CentralSystemImpl } from './server/server';
-import { initSwagger } from './util/swagger';
 import { ConfigurationModule, ConfigurationModuleApi } from '@citrineos/configuration';
 import { TransactionsModule, TransactionsModuleApi } from '@citrineos/transactions';
 import { CertificatesModule, CertificatesModuleApi } from '@citrineos/certificates';
@@ -75,7 +73,7 @@ class CitrineOSServer {
         this._cache = cache || (this._config.util.cache.redis ? new RedisCache({ socket: { host: this._config.util.cache.redis.host, port: this._config.util.cache.redis.port } }) : new MemoryCache());
 
         // Initialize Swagger if enabled
-        if (this._config.server.swagger) {
+        if (this._config.util.swagger) {
             initSwagger(this._config, this._server);
         }
 
@@ -184,7 +182,7 @@ class ModuleService {
         this._cache = cache || (this._config.util.cache.redis ? new RedisCache({ socket: { host: this._config.util.cache.redis.host, port: this._config.util.cache.redis.port } }) : new MemoryCache());
 
         // Initialize Swagger if enabled
-        if (this._config.server.swagger) {
+        if (this._config.util.swagger) {
             initSwagger(this._config, this._server);
         }
 
@@ -202,8 +200,8 @@ class ModuleService {
                     this._api = new CertificatesModuleApi(this._module as CertificatesModule, this._server, this._logger);
                     // TODO: take actions to make sure module has correct subscriptions and log proof
                     this._logger.info("Certificates module started...");
-                    this._host = this._config.modules.certificates.host;
-                    this._port = this._config.modules.certificates.port;
+                    this._host = this._config.modules.certificates.host as string;
+                    this._port = this._config.modules.certificates.port as number;
                     break;
                 } else throw new Error("No config for Certificates module");
             case EventGroup.Configuration:
@@ -212,8 +210,8 @@ class ModuleService {
                     this._api = new ConfigurationModuleApi(this._module as ConfigurationModule, this._server, this._logger);
                     // TODO: take actions to make sure module has correct subscriptions and log proof
                     this._logger.info("Configuration module started...");
-                    this._host = this._config.modules.configuration.host;
-                    this._port = this._config.modules.configuration.port;
+                    this._host = this._config.modules.configuration.host as string;
+                    this._port = this._config.modules.configuration.port as number;
                     break;
                 } else throw new Error("No config for Configuration module");
             case EventGroup.EVDriver:
@@ -222,8 +220,8 @@ class ModuleService {
                     this._api = new EVDriverModuleApi(this._module as EVDriverModule, this._server, this._logger);
                     // TODO: take actions to make sure module has correct subscriptions and log proof
                     this._logger.info("EVDriver module started...");
-                    this._host = this._config.modules.evdriver.host;
-                    this._port = this._config.modules.evdriver.port;
+                    this._host = this._config.modules.evdriver.host as string;
+                    this._port = this._config.modules.evdriver.port as number;
                     break;
                 } else throw new Error("No config for EVDriver module");
             case EventGroup.Monitoring:
@@ -232,8 +230,8 @@ class ModuleService {
                     this._api = new MonitoringModuleApi(this._module as MonitoringModule, this._server, this._logger);
                     // TODO: take actions to make sure module has correct subscriptions and log proof
                     this._logger.info("Monitoring module started...");
-                    this._host = this._config.modules.monitoring.host;
-                    this._port = this._config.modules.monitoring.port;
+                    this._host = this._config.modules.monitoring.host as string;
+                    this._port = this._config.modules.monitoring.port as number;
                     break;
                 } else throw new Error("No config for Monitoring module");
             case EventGroup.Reporting:
@@ -242,8 +240,8 @@ class ModuleService {
                     this._api = new ReportingModuleApi(this._module as ReportingModule, this._server, this._logger);
                     // TODO: take actions to make sure module has correct subscriptions and log proof
                     this._logger.info("Reporting module started...");
-                    this._host = this._config.modules.reporting.host;
-                    this._port = this._config.modules.reporting.port;
+                    this._host = this._config.modules.reporting.host as string;
+                    this._port = this._config.modules.reporting.port as number;
                     break;
                 } else throw new Error("No config for Reporting module");
             case EventGroup.SmartCharging:
@@ -252,8 +250,8 @@ class ModuleService {
                     this._api = new SmartChargingModuleApi(this._module as SmartChargingModule, this._server, this._logger);
                     // TODO: take actions to make sure module has correct subscriptions and log proof
                     this._logger.info("SmartCharging module started...");
-                    this._host = this._config.modules.smartcharging.host;
-                    this._port = this._config.modules.smartcharging.port;
+                    this._host = this._config.modules.smartcharging.host as string;
+                    this._port = this._config.modules.smartcharging.port as number;
                     break;
                 } else throw new Error("No config for SmartCharging module");
             case EventGroup.Transactions:
@@ -262,8 +260,8 @@ class ModuleService {
                     this._api = new TransactionsModuleApi(this._module as TransactionsModule, this._server, this._logger);
                     // TODO: take actions to make sure module has correct subscriptions and log proof
                     this._logger.info("Transactions module started...");
-                    this._host = this._config.modules.transactions.host;
-                    this._port = this._config.modules.transactions.port;
+                    this._host = this._config.modules.transactions.host as string;
+                    this._port = this._config.modules.transactions.port as number;
                     break;
                 } else throw new Error("No config for Transactions module");
             default:

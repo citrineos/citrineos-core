@@ -7,6 +7,7 @@ import {
   AbstractModule,
   AsHandler,
   AttributeEnumType,
+  BOOT_STATUS,
   BootConfig,
   BootNotificationRequest,
   BootNotificationResponse,
@@ -54,15 +55,6 @@ export class ConfigurationModule extends AbstractModule {
   /**
    * Constants used for cache:
    */
-
-  /**
-   * Cache boot status is used to keep track of the overall boot process for Rejected or Pending.
-   * When Accepting a boot, blacklist needs to be cleared if and only if there was a previously 
-   * Rejected or Pending boot. When starting to configure charger, i.e. sending GetBaseReport or
-   * SetVariables, this should only be done if configuring is not still ongoing from a previous 
-   * BootNotificationRequest. Cache boot status mediates this behavior.
-   */
-  public static readonly BOOT_STATUS = "boot_status";
 
   /**
    * Fields
@@ -205,7 +197,7 @@ export class ConfigurationModule extends AbstractModule {
     };
 
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
-    const cachedBootStatus = await this._cache.get(ConfigurationModule.BOOT_STATUS, stationId);
+    const cachedBootStatus = await this._cache.get(BOOT_STATUS, stationId);
 
     // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
     if (bootNotificationResponse.status == RegistrationStatusEnumType.Accepted) {
@@ -218,7 +210,7 @@ export class ConfigurationModule extends AbstractModule {
         });
         await Promise.all(promises);
         // Remove cached boot status
-        this._cache.remove(ConfigurationModule.BOOT_STATUS, stationId);
+        this._cache.remove(BOOT_STATUS, stationId);
         this._logger.debug("Cached boot status removed: ", cachedBootStatus);
       }
     } else if (!cachedBootStatus) {
@@ -373,7 +365,7 @@ export class ConfigurationModule extends AbstractModule {
       if (bootNotificationResponse.status != RegistrationStatusEnumType.Accepted &&
         (!cachedBootStatus || (cachedBootStatus && cachedBootStatus !== bootNotificationResponse.status))) {
         // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
-        this._cache.set(ConfigurationModule.BOOT_STATUS, bootNotificationResponse.status, stationId);
+        this._cache.set(BOOT_STATUS, bootNotificationResponse.status, stationId);
       }
 
       // Pending status indicates configuration to do...
