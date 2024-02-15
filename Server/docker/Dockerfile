@@ -153,4 +153,6 @@ COPY /Server/tsconfig.json ./
 COPY /Server/src ./src
 RUN npm run build
 
-CMD [ "npm", "run", "start-unix:docker" ]
+ARG BUILD_ARG_APP_ENV="docker"
+ENV BUILD_APP_ENV=$BUILD_ARG_APP_ENV
+CMD npm run start-unix:$BUILD_APP_ENV
