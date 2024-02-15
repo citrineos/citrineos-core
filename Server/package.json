@@ -21,7 +21,7 @@
     "build": "tsc",
     "start-unix:docker": "export APP_ENV=docker && npx nodemon",
     "start-unix:local": "export APP_ENV=local && npx nodemon",
-    "start-unix:dotenv": "export APP_ENV=dotenv && npx nodemon",
+    "start-unix:envvar": "export APP_ENV=envvar && npx nodemon",
     "start-windows:local": "set APP_ENV=local && RefreshEnv.cmd && npx nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -6,7 +6,7 @@
 import { SystemConfig } from "@citrineos/base";
 import { createLocalConfig } from "./envs/local";
 import { createDockerConfig } from "./envs/docker";
-import { createDotenvConfig } from "./envs/dotenv";
+import { createEnvvarConfig } from "./envs/envvar";
 
 export const systemConfig: SystemConfig = getConfig();
 
@@ -16,8 +16,8 @@ function getConfig() {
             return createLocalConfig();
         case "docker":
             return createDockerConfig();
-        case "dotenv":
-            return createDotenvConfig();
+        case "envvar":
+            return createEnvvarConfig();
         default:
             throw new Error('Invalid APP_ENV "${process.env.APP_ENV}"');
     }

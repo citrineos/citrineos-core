@@ -5,7 +5,7 @@
 import { RegistrationStatusEnumType, defineConfig } from "@citrineos/base";
 import { SystemConfigInput } from "@citrineos/base/lib/config/types";
 
-export function createDotenvConfig() {
+export function createEnvvarConfig() {
     const defaultConfig: SystemConfigInput = {
         env: "development",
         modules: {
