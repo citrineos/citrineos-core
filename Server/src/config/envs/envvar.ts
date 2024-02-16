@@ -89,29 +89,41 @@ export function createEnvvarConfig() {
         }]
     };
 
+    function findCaseInsensitiveMatch(obj: Record<string, any>, targetKey: string): string | undefined {
+        const lowerTargetKey = targetKey.toLowerCase();
+        // Find a key in obj that matches targetKey case-insensitively
+        return Object.keys(obj).find(key => key.toLowerCase() === lowerTargetKey);
+    }
+
     function mergeConfigFromEnvVars<T extends Record<string, any>>(defaultConfig: T, envVars: NodeJS.ProcessEnv): T {
         const config: Record<string, any> = JSON.parse(JSON.stringify(defaultConfig));
-        const prefix = "CITRINEOS_";
+        const prefix = "citrineos_";
     
         Object.keys(envVars).forEach((fullEnvKey) => {
-            if (fullEnvKey.startsWith(prefix)) {
-                const envKeyWithoutPrefix = fullEnvKey.toLowerCase().substring(prefix.length);
+            const lowercaseEnvKey = fullEnvKey.toLowerCase();
+            if (lowercaseEnvKey.startsWith(prefix)) {
+                const envKeyWithoutPrefix = lowercaseEnvKey.substring(prefix.length);
                 const path = envKeyWithoutPrefix.split('_');
                 let currentConfigPart = config;
     
                 for (let i = 0; i < path.length - 1; i++) {
                     const part = path[i];
-                    if (!currentConfigPart[part] || typeof currentConfigPart[part] !== 'object') {
-                        currentConfigPart[part] = {}; 
+                    const matchingKey = findCaseInsensitiveMatch(currentConfigPart, part);
+                    if (matchingKey && typeof currentConfigPart[matchingKey] === 'object') {
+                        currentConfigPart = currentConfigPart[matchingKey];
+                    } else {
+                        currentConfigPart[part] = {};
+                        currentConfigPart = currentConfigPart[part];
                     }
-                    currentConfigPart = currentConfigPart[part];
                 }
-    
-                const key = path[path.length - 1];
+
+                const finalPart = path[path.length - 1];
+                const finalMatchingKey = findCaseInsensitiveMatch(currentConfigPart, finalPart);
+                const keyToUse = finalMatchingKey || finalPart;
                 try {
-                    currentConfigPart[key] = JSON.parse(envVars[fullEnvKey] as string);
+                    currentConfigPart[keyToUse] = JSON.parse(envVars[fullEnvKey] as string);
                 } catch {
-                    currentConfigPart[key] = envVars[fullEnvKey];
+                    currentConfigPart[keyToUse] = envVars[fullEnvKey];
                 }
             }
         });
