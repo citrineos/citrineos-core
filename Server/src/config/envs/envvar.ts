@@ -95,7 +95,7 @@ export function createEnvvarConfig() {
     
         Object.keys(envVars).forEach((fullEnvKey) => {
             if (fullEnvKey.startsWith(prefix)) {
-                const envKeyWithoutPrefix = fullEnvKey.substring(prefix.length);
+                const envKeyWithoutPrefix = fullEnvKey.toLowerCase().substring(prefix.length);
                 const path = envKeyWithoutPrefix.split('_');
                 let currentConfigPart = config;
     
