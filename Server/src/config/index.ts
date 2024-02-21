@@ -3,10 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SystemConfig } from "@citrineos/base";
-import { createLocalConfig } from "./envs/local";
-import { createDockerConfig } from "./envs/docker";
-import { createEnvvarConfig } from "./envs/envvar";
+import {SystemConfig} from "@citrineos/base";
+import {createLocalConfig} from "./envs/local";
+import {createDockerConfig} from "./envs/docker";
 
 export const systemConfig: SystemConfig = getConfig();
 
@@ -16,8 +15,6 @@ function getConfig() {
             return createLocalConfig();
         case "docker":
             return createDockerConfig();
-        case "envvar":
-            return createEnvvarConfig();
         default:
             throw new Error('Invalid APP_ENV "${process.env.APP_ENV}"');
     }
