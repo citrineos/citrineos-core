@@ -60,14 +60,14 @@ export function createLocalConfig() {
             },
             swagger: {
                 path: "/docs",
-                logoPath: "/usr/server/src/assets/logo.png",
+                logoPath: "./src/assets/logo.png",
                 exposeData: true,
                 exposeMessage: true
             }
         },
         server: {
             logLevel: 2, // debug
-            host: "0.0.0.0",
+            host: "127.0.0.1",
             port: 8080
         },
         websocket: {

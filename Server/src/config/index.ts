@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SystemConfig } from "@citrineos/base";
-import { createLocalConfig } from "./envs/local";
-import { createDockerConfig } from "./envs/docker";
+import {SystemConfig} from "@citrineos/base";
+import {createLocalConfig} from "./envs/local";
+import {createDockerConfig} from "./envs/docker";
 
 export const systemConfig: SystemConfig = getConfig();
 

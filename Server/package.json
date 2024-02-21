@@ -20,7 +20,7 @@
     "clean-all-windows": "del package-lock.json && cd ../00_Base && del package-lock.json && rmdir lib /s /q && cd ../02_Util && del package-lock.json && rmdir lib /s /q && cd ../01_Data && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Configuration && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/EVDriver && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Reporting && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Transactions && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Monitoring && del package-lock.json && rmdir lib /s /q",
     "build": "tsc",
     "start-unix:docker": "export APP_ENV=docker && npx nodemon",
-    "start-unix:local": "export APP_ENV=local && npx nodemon",
+    "start-unix:local": "export APP_ENV=local && export CITRINEOS_DATA_SEQUELIZE_HOST=127.0.0.1 && npx nodemon",
     "start-windows:local": "set APP_ENV=local && RefreshEnv.cmd && npx nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
