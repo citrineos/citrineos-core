@@ -41,29 +41,26 @@ Before you begin, make sure you have the following installed on your system:
     git clone https://github.com/citrineos/citrineos-core
     ```
 
-1. Navigate to the CitrineOS Server directory:
-
-    ```shell
-    cd citrineos-core/Server
-    ```
-
-1. Install project dependencies:
+1. Install project dependencies from root dir:
 
    ```shell
-   ./unix-init-install-all.sh
+   npm run install-all
    ```
 
-1. Start the server and its supporting infrastructure with:
+1. The docker container should be initialized by running `docker-compose -f ./Server/docker-compose.yml up -d` or 
+by using the IntelliJ `Server` Run Configuration which was created for this purpose.
 
-    ```shell
-    docker-compose up -d 
-    ```
+1. Running `docker-compose.yml` will ensure that the container is configured to expose the `:9229` debugging
+port for the underlying NodeJS process. A variety of tools can be utilized to establish a debugger connection
+with the exposed localhost 9229 port which is forwarded to the NodeJS service running within docker. The IntelliJ
+`Attach Debugger` Run Configuration was made to attach to a debugging session.
 
 ### Starting the Server without Docker
 
 CitrineOS requires configuration to allow your OCPP 2.0.1 compliant charging stations to connect.
 
-We recommend running and developing the project with the `docker-compose` set-up.
+We recommend running and developing the project with the `docker-compose` set-up via the existing Run Configurations.
+Additional Run Configurations should be made for other IDEs (ex VSCode).
 
 To change necessary configuration for execution outside of `docker-compose`, please adjust the configuration file at `50_Server/src/config/envs/local.ts`. Make sure any changes to the local configuration do not make it into your PR.
 
@@ -72,10 +69,27 @@ To change necessary configuration for execution outside of `docker-compose`, ple
 To start the CitrineOS server, run the following command:
 
 ```shell
-npm run start-unix:local
+npm run start:local
 ```
 
-This will launch the CitrineOS server with the specified configuration.
+This will launch the CitrineOS server with the specified configuration. The debugger will be available 
+on port 9229.
+
+### Attaching Debugger
+Whether you run the application with Docker or locally with npm, you should be able to attach a debugger.
+With debugger attached you should be able to set breakpoints in the TS code right from your IDE and debug
+with ease.
+
+### Attaching Debugger before execution using `--inspect-brk`
+You can modify `nodemon.json` exec command from:
+```shell
+node --inspect=0.0.0.0:9229 --nolazy -r ts-node/register
+```
+to
+```shell
+node --inspect-brk=0.0.0.0:9229 --nolazy -r ts-node/register
+```
+which will wait for the debugger to attach before proceeding with execution.
 
 ### Usage
 

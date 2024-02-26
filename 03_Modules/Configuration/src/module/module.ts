@@ -40,12 +40,11 @@ import {
   SetVariablesResponse,
   SystemConfig
 } from "@citrineos/base";
-import { IBootRepository, IDeviceModelRepository, sequelize } from "@citrineos/data";
+import { IBootRepository, IDeviceModelRepository, sequelize, Boot } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import { v4 as uuidv4 } from "uuid";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
-import { Boot } from "@citrineos/data/lib/layers/sequelize/model/Boot";
 import { DeviceModelService } from "./services";
 
 /**

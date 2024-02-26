@@ -26,24 +26,42 @@ services:
       POSTGRES_USER: citrine
       POSTGRES_PASSWORD: "citrine"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
+      test: [ "CMD-SHELL", "pg_isready", "-d", "db_prod" ]
       interval: 30s
       timeout: 60s
       retries: 5
-      start_period: 80s  
+      start_period: 80s
   redis:
     image: redis:latest
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 3
   citrine:
     build:
-      context: ../
-      dockerfile: ./Server/docker/Dockerfile
+      context: ./
+      dockerfile: ./local.Dockerfile
+    volumes:
+      - ./:/usr/local/apps/citrineos
+      - /usr/local/apps/citrineos/node_modules
+      - /usr/local/apps/citrineos/dist
+      - /usr/local/apps/citrineos/Server/dist
+      - /usr/local/apps/citrineos/00_Base/dist
+      - /usr/local/apps/citrineos/01_Data/dist
+      - /usr/local/apps/citrineos/02_Util/dist
+      - /usr/local/apps/citrineos/03_Modules/Certificates/dist
+      - /usr/local/apps/citrineos/03_Modules/Configuration/dist
+      - /usr/local/apps/citrineos/03_Modules/EVDriver/dist
+      - /usr/local/apps/citrineos/03_Modules/Monitoring/dist
+      - /usr/local/apps/citrineos/03_Modules/Reporting/dist
+      - /usr/local/apps/citrineos/03_Modules/SmartCharging/dist
+      - /usr/local/apps/citrineos/03_Modules/Transactions/dist
+    environment:
+      APP_NAME: "all"
+      APP_ENV: "docker"
     depends_on:
       ocpp-db:
         condition: service_started
@@ -55,6 +73,7 @@ services:
       - 8080:8080
       - 8081:8081
       - 8082:8082
+      - 9229:9229
   directus:
     image: directus/directus:latest
     ports:
@@ -66,6 +85,7 @@ services:
       ocpp-db:
         condition: service_healthy
     environment:
+      APP_NAME: 'all'
       KEY: '1234567890'
       SECRET: '0987654321'
       ADMIN_EMAIL: 'admin@citrineos.com'

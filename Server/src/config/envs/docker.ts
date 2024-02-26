@@ -60,7 +60,7 @@ export function createDockerConfig() {
             },
             swagger: {
                 path: "/docs",
-                logoPath: "/usr/server/src/assets/logo.png",
+                logoPath: "./Server/src/assets/logo.png",
                 exposeData: true,
                 exposeMessage: true
             }
@@ -69,7 +69,7 @@ export function createDockerConfig() {
             logLevel: 2, // debug
             host: "0.0.0.0",
             port: 8080
-        },        
+        },
         websocket: {
             pingInterval: 60,
             maxCallLengthSeconds: 5,

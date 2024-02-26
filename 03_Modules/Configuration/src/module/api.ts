@@ -3,13 +3,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Boot } from '@citrineos/data/lib/layers/sequelize';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IConfigurationModuleApi } from './interface';
 import { ConfigurationModule } from './module';
 import { AbstractModuleApi, AsMessageEndpoint, CallAction, SetNetworkProfileRequestSchema, SetNetworkProfileRequest, IMessageConfirmation, UpdateFirmwareRequestSchema, UpdateFirmwareRequest, ResetRequestSchema, ResetRequest, TriggerMessageRequestSchema, TriggerMessageRequest, AsDataEndpoint, Namespace, HttpMethod, BootConfigSchema, BootNotificationResponse, BootConfig } from '@citrineos/base';
-import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring } from '@citrineos/data';
+import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, Boot } from '@citrineos/data';
 
 /**
  * Server API for the Configuration component.

@@ -60,7 +60,7 @@ export function createLocalConfig() {
             },
             swagger: {
                 path: "/docs",
-                logoPath: "./src/assets/logo.png",
+                logoPath: "./Server/src/assets/logo.png",
                 exposeData: true,
                 exposeMessage: true
             }

@@ -15,7 +15,7 @@ import { ILogObj, Logger } from "tslog";
 import { v4 as uuidv4 } from "uuid";
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from "ws";
 import { CentralSystemMessageHandler, OcppMessageRouter } from "./router";
-import { DeviceModelRepository } from "@citrineos/data/lib/layers/sequelize";
+import { DeviceModelRepository } from "@citrineos/data";
 import { Duplex } from "stream";
 import { RabbitMqSender } from "../../queue";
 
@@ -424,10 +424,14 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             component_name: 'SecurityCtrlr',
             variable_name: 'BasicAuthPassword',
             type: AttributeEnumType.Actual
-        }).then(r => {
+        }).then((r: any) => {
             if (r && r[0]) {
                 // Grabbing value most recently *successfully* set on charger
-                const hashedPassword = r[0].statuses?.filter(status => status.status !== SetVariableStatusEnumType.Rejected).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).shift();
+                const hashedPassword = r[0].statuses?.filter((status: any) => {
+                    return status.status !== SetVariableStatusEnumType.Rejected;
+                }).sort((a: any, b: any) => {
+                    return b.createdAt.getTime() - a.createdAt.getTime();
+                }).shift();
                 if (hashedPassword?.value) {
                     return bcrypt.compare(password, hashedPassword.value);
                 }

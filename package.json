@@ -1,0 +1,35 @@
+{
+  "name": "@citrineos/workspace",
+  "private": true,
+  "devDependencies": {
+    "@types/node": "^20.11.20",
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.0",
+    "typescript": "^5.3.3"
+  },
+  "scripts": {
+    "install-all": "npm i",
+    "clean": "rm -rf dist/*",
+    "build": "npm run clean && tsc --build --verbose",
+    "watch": "tsc -w",
+    "start": "APP_NAME=all APP_ENV=local node --inspect=0.0.0.0:9229 dist/index.js",
+    "start:local-docker": "nodemon src/index.ts",
+    "start:local": "APP_NAME=all APP_ENV=local nodemon src/index.ts"
+  },
+  "dependencies": {
+    "@citrineos/server": "1.0.0"
+  },
+  "workspaces": [
+    "./00_Base",
+    "./01_Data",
+    "./02_Util",
+    "./03_Modules/Certificates",
+    "./03_Modules/Configuration",
+    "./03_Modules/EVDriver",
+    "./03_Modules/Monitoring",
+    "./03_Modules/Reporting",
+    "./03_Modules/SmartCharging",
+    "./03_Modules/Transactions",
+    "./Server"
+  ]
+}
