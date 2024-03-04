@@ -13,7 +13,7 @@ export enum Namespace {
     BootConfig = 'Boot',
     ChargingStationType = 'ChargingStation',
     ComponentType = 'Component',
-    EVSEType = 'EVSE',
+    EVSEType = 'Evse',
     IdTokenInfoType = 'IdTokenInfo',
     IdTokenType = 'IdToken',
     MeterValueType = 'MeterValue',
