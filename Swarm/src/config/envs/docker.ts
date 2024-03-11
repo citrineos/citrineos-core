@@ -7,7 +7,7 @@ import { RegistrationStatusEnumType, defineConfig } from "@citrineos/base";
 export function createDockerConfig() {
     return defineConfig({
         env: "development",
-        centralsystem: {
+        centralSystem: {
             host: "0.0.0.0",
             port: 8080
         },
