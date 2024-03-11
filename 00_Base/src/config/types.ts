@@ -7,6 +7,7 @@ import { z } from "zod";
 import { RegistrationStatusEnumType } from "../ocpp/model/enums";
 import { EventGroup } from "..";
 
+// TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
 export const websocketServerInputSchema = z.object({
     // TODO: Add support for tenant ids on server level for tenant-specific behavior
     id: z.string().optional(),
