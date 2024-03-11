@@ -62,7 +62,7 @@ class CitrineOSServer {
         // Initialize parent logger
         this._logger = new Logger<ILogObj>({
             name: "CitrineOS Logger",
-            minLevel: systemConfig.server.logLevel,
+            minLevel: systemConfig.logLevel,
             hideLogPositionForProduction: systemConfig.env === "production"
         });
 
@@ -114,8 +114,8 @@ class CitrineOSServer {
     run(): Promise<void> {
         try {
             return this._server.listen({
-                port: this._config.server.port,
-                host: this._config.server.host
+                port: this._config.centralSystem.port,
+                host: this._config.centralSystem.host
             }).then(address => {
                 this._logger.info(`Server listening at ${address}`);
             }).catch(error => {
@@ -174,7 +174,7 @@ class ModuleService {
         // Initialize parent logger
         this._logger = new Logger<ILogObj>({
             name: "CitrineOS Logger",
-            minLevel: systemConfig.server.logLevel,
+            minLevel: systemConfig.logLevel,
             hideLogPositionForProduction: systemConfig.env === "production"
         });
 

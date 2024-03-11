@@ -383,16 +383,16 @@ export class ConfigurationModule extends AbstractModule {
           // Commenting out this line, using requestId == 0 until fixed (10/26/2023)
           // const requestId = Math.floor(Math.random() * ConfigurationModule.GET_BASE_REPORT_REQUEST_ID_MAX);
           const requestId = 0;
-          this._cache.set(requestId.toString(), 'ongoing', stationId, this.config.websocket.maxCachingSeconds);
+          this._cache.set(requestId.toString(), 'ongoing', stationId, this.config.maxCachingSeconds);
           const getBaseReportMessageConfirmation: IMessageConfirmation = await this.sendCall(stationId, tenantId, CallAction.GetBaseReport,
             { requestId: requestId, reportBase: ReportBaseEnumType.FullInventory } as GetBaseReportRequest);
           if (getBaseReportMessageConfirmation.success) {
             this._logger.debug("GetBaseReport successfully sent to charger: ", getBaseReportMessageConfirmation);
 
             // Wait for GetBaseReport to complete
-            let getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocket.maxCachingSeconds, stationId);
+            let getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.maxCachingSeconds, stationId);
             while (getBaseReportCacheValue == 'ongoing') {
-              getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocket.maxCachingSeconds, stationId);
+              getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.maxCachingSeconds, stationId);
             }
 
             if (getBaseReportCacheValue == 'complete') {
@@ -423,7 +423,7 @@ export class ConfigurationModule extends AbstractModule {
           while (setVariableData.length > 0) {
             // Below pattern is preferred way of receiving CallResults in an async mannner.
             const correlationId = uuidv4();
-            const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(correlationId, this.config.websocket.maxCachingSeconds, stationId); // x2 fudge factor for any network lag
+            const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(correlationId, this.config.maxCachingSeconds, stationId); // x2 fudge factor for any network lag
             this.sendCall(stationId, tenantId, CallAction.SetVariables,
               { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest, undefined, correlationId);
             setVariableData = setVariableData.slice(itemsPerMessageSetVariables);

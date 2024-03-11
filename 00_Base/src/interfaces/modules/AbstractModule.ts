@@ -66,7 +66,7 @@ export abstract class AbstractModule implements IModule {
         this._config = config;
         // Update all necessary settings for hot reload
         this._logger.info(`Updating system configuration for ${this._eventGroup} module...`);
-        this._logger.settings.minLevel = this._config.server.logLevel;
+        this._logger.settings.minLevel = this._config.logLevel;
     }
 
     get config(): SystemConfig {
@@ -105,7 +105,7 @@ export abstract class AbstractModule implements IModule {
     protected _initLogger(baseLogger?: Logger<ILogObj>): Logger<ILogObj> {
         return baseLogger ? baseLogger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({
             name: this.constructor.name,
-            minLevel: this._config.server.logLevel,
+            minLevel: this._config.logLevel,
             hideLogPositionForProduction: this._config.env === "production"
         });
     }
@@ -133,7 +133,7 @@ export abstract class AbstractModule implements IModule {
     async handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): Promise<void> {
         if (message.state === MessageState.Response) {
             this.handleMessageApiCallback(message as IMessage<OcppResponse>);
-            this._cache.set(message.context.correlationId, JSON.stringify(message.payload), message.context.stationId, this._config.websocket.maxCachingSeconds);
+            this._cache.set(message.context.correlationId, JSON.stringify(message.payload), message.context.stationId, this._config.maxCachingSeconds);
         }
         try {
             const handlerDefinition = (Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>).filter((h) => h.action === message.action).pop();
@@ -202,7 +202,7 @@ export abstract class AbstractModule implements IModule {
         if (callbackUrl) {
             // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
             this._cache.set(_correlationId, callbackUrl, this.CALLBACK_URL_CACHE_PREFIX + identifier,
-                this._config.websocket.maxCachingSeconds);
+                this._config.maxCachingSeconds);
         }
         // TODO: Future - Compound key with tenantId
         return this._cache.get<ClientConnection>(identifier, CacheNamespace.Connections, () => ClientConnection).then((connection) => {
