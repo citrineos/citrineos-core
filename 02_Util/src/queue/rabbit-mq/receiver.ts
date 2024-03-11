@@ -6,7 +6,7 @@
 import * as amqplib from "amqplib";
 import { ILogObj, Logger } from "tslog";
 import { MemoryCache } from "../..";
-import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppError, OcppRequest, OcppResponse, HandlerProperties, Message, RetryMessageError } from "@citrineos/base";
+import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace,  OcppError, OcppRequest, OcppResponse, Message, RetryMessageError } from "@citrineos/base";
 import { plainToInstance } from "class-transformer";
 
 /**
@@ -26,27 +26,14 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   protected _cache: ICache;
   protected _connection?: amqplib.Connection;
   protected _channel?: amqplib.Channel;
-  protected _module?: IModule;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, cache?: ICache, module?: IModule) {
-    super(config, logger);
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, module?: IModule, cache?: ICache) {
+    super(config, logger, module);
     this._cache = cache || new MemoryCache();
-    this._module = module;
 
     this._connect().then(channel => {
       this._channel = channel;
     });
-  }
-
-  /**
-   * Getter & Setter
-   */
-
-  get module(): IModule | undefined {
-    return this._module;
-  }
-  set module(value: IModule | undefined) {
-    this._module = value;
   }
 
   /**
@@ -132,11 +119,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
       }
     });
   }
-
-  async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): Promise<void> {
-    await this._module?.handle(message, props);
-  }
-
+  
   shutdown(): Promise<void> {
     return Promise.resolve();
   }
