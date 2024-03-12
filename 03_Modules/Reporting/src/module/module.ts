@@ -173,7 +173,7 @@ export class ReportingModule extends AbstractModule {
       this._logger.info("Completed", success, message.payload.requestId);
     } else { // tbc (to be continued) is true
       // Continue to set get base report ongoing. Will extend the timeout.
-      const success = await this._cache.set(message.payload.requestId.toString(), ReportingModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, message.context.stationId, this.config.websocket.maxCachingSeconds);
+      const success = await this._cache.set(message.payload.requestId.toString(), ReportingModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, message.context.stationId, this.config.maxCachingSeconds);
       this._logger.info("Ongoing", success, message.payload.requestId);
     }
 
