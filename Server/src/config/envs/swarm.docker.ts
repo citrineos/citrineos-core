@@ -7,6 +7,10 @@ import { RegistrationStatusEnumType, defineConfig } from "@citrineos/base";
 export function createDockerConfig() {
     return defineConfig({
         env: "development",
+        centralSystem: {
+            host: "0.0.0.0",
+            port: 8080
+        },
         modules: {
             certificates: {
                 endpointPrefix: "certificates",
@@ -80,28 +84,27 @@ export function createDockerConfig() {
                 logoPath: "/usr/server/src/assets/logo.png",
                 exposeData: true,
                 exposeMessage: true
+            },
+            networkConnection: {
+                websocketServers: [{
+                    id: "0",
+                    securityProfile: 0,
+                    pingInterval: 60,
+                    host: "0.0.0.0",
+                    port: 8081,
+                    protocol: "ocpp2.0.1"
+                }, {
+                    id: "1",
+                    securityProfile: 1,
+                    pingInterval: 60,
+                    host: "0.0.0.0",
+                    port: 8082,
+                    protocol: "ocpp2.0.1"
+                }]
             }
         },
-        server: {
-            logLevel: 2, // debug
-            host: "0.0.0.0",
-            port: 8080
-        },        
-        websocket: {
-            pingInterval: 60,
-            maxCallLengthSeconds: 5,
-            maxCachingSeconds: 10
-        },
-        websocketServer: [{
-            securityProfile: 0,
-            host: "0.0.0.0",
-            port: 8081,
-            protocol: "ocpp2.0.1"
-        },{
-            securityProfile: 1,
-            host: "0.0.0.0",
-            port: 8082,
-            protocol: "ocpp2.0.1"
-        }]
+        logLevel: 2, // debug
+        maxCallLengthSeconds: 5,
+        maxCachingSeconds: 10
     });
 }

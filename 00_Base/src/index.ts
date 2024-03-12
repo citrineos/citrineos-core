@@ -21,7 +21,7 @@ export * from "./ocpp/persistence";
 
 export { BootConfig, BOOT_STATUS } from "./config/BootConfig";
 export { defineConfig } from "./config/defineConfig";
-export { SystemConfig } from "./config/types";
+export { SystemConfig, WebsocketServerConfig } from "./config/types";
 
 // Utils
 

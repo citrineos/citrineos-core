@@ -64,22 +64,22 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         this._deviceModelRepository = deviceModelRepository || new DeviceModelRepository(this._config, this._logger);
 
         this._httpServers = [];
-        this._config.websocketServer.forEach(wsServer => {
+        this._config.util.networkConnection.websocketServers.forEach(wsServer => {
             let _httpServer;
             switch (wsServer.securityProfile) {
                 case 3: // mTLS
                     _httpServer = https.createServer({
-                        key: fs.readFileSync(this._config.websocketSecurity?.tlsKeysFilepath as string),
-                        cert: fs.readFileSync(this._config.websocketSecurity?.tlsCertificateChainFilepath as string),
-                        ca: fs.readFileSync(this._config.websocketSecurity?.mtlsCertificateAuthorityRootsFilepath as string),
+                        key: fs.readFileSync(wsServer.tlsKeysFilepath as string),
+                        cert: fs.readFileSync(wsServer.tlsCertificateChainFilepath as string),
+                        ca: fs.readFileSync(wsServer.mtlsCertificateAuthorityRootsFilepath as string),
                         requestCert: true,
                         rejectUnauthorized: true
                     }, this._onHttpRequest.bind(this));
                     break;
                 case 2: // TLS
                     _httpServer = https.createServer({
-                        key: fs.readFileSync(this._config.websocketSecurity?.tlsKeysFilepath as string),
-                        cert: fs.readFileSync(this._config.websocketSecurity?.tlsCertificateChainFilepath as string)
+                        key: fs.readFileSync(wsServer.tlsKeysFilepath as string),
+                        cert: fs.readFileSync(wsServer.tlsCertificateChainFilepath as string)
                     }, this._onHttpRequest.bind(this));
                     break;
                 case 1:
@@ -95,7 +95,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                 clientTracking: false
             });
 
-            _socketServer.on('connection', (ws: WebSocket, req: http.IncomingMessage) => this._onConnection(ws, req));
+            _socketServer.on('connection', (ws: WebSocket, req: http.IncomingMessage) => this._onConnection(ws, wsServer.pingInterval, req));
             _socketServer.on('error', (wss: WebSocketServer, error: Error) => this._onError(wss, error));
             _socketServer.on('close', (wss: WebSocketServer) => this._onClose(wss));
 
@@ -147,7 +147,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                     throw new OcppError(messageId, ErrorCode.FormatViolation, "Invalid message format", { errors: errors });
                 }
                 // Ensure only one call is processed at a time
-                return this._cache.setIfNotExist(connection.identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.websocket.maxCallLengthSeconds);
+                return this._cache.setIfNotExist(connection.identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.maxCallLengthSeconds);
             }).catch(error => {
                 if (error instanceof OcppError) {
                     this.sendCallError(connection.identifier, error.asCallError());
@@ -187,7 +187,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             .then(cachedActionMessageId => {
                 this._cache.remove(connection.identifier, CacheNamespace.Transactions); // Always remove pending call transaction
                 if (!cachedActionMessageId) {
-                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.websocket.maxCallLengthSeconds });
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.maxCallLengthSeconds });
                 }
                 const [actionString, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
                 if (messageId !== cachedMessageId) {
@@ -228,7 +228,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             .then(cachedActionMessageId => {
                 this._cache.remove(connection.identifier, CacheNamespace.Transactions); // Always remove pending call transaction
                 if (!cachedActionMessageId) {
-                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.websocket.maxCallLengthSeconds });
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.maxCallLengthSeconds });
                 }
                 const [actionString, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
                 if (messageId !== cachedMessageId) {
@@ -258,7 +258,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         const action = message[2] as CallAction;
         if (await this._sendCallIsAllowed(identifier, message)) {
             if (await this._cache.setIfNotExist(identifier, `${action}:${messageId}`,
-                CacheNamespace.Transactions, this._config.websocket.maxCallLengthSeconds)) {
+                CacheNamespace.Transactions, this._config.maxCallLengthSeconds)) {
                 // Intentionally removing NULL values from object for OCPP conformity
                 const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
                 return this._sendMessage(identifier, rawMessage);
@@ -498,7 +498,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @param {IncomingMessage} req - The request object associated with the connection.
      * @return {void}
      */
-    private _onConnection(ws: WebSocket, req: http.IncomingMessage): void {
+    private _onConnection(ws: WebSocket, pingInterval: number, req: http.IncomingMessage): void {
 
         const identifier = this._getClientIdFromUrl(req.url as string);
         this._connections.set(identifier, ws);
@@ -516,7 +516,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                     this._logger.info("Successfully connected new charging station.", identifier);
 
                     // Register all websocket events
-                    this._registerWebsocketEvents(identifier, ws);
+                    this._registerWebsocketEvents(identifier, ws, pingInterval);
 
                     // Resume the WebSocket event emitter after events have been subscribed to
                     ws.resume();
@@ -535,7 +535,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      * @param {WebSocket} ws - The WebSocket object representing the connection.
      * @return {void} This function does not return anything.
      */
-    private _registerWebsocketEvents(identifier: string, ws: WebSocket): void {
+    private _registerWebsocketEvents(identifier: string, ws: WebSocket, pingInterval: number): void {
 
         ws.onerror = (event: ErrorEvent) => {
             this._logger.error("Connection error encountered for", identifier, event.error, event.message, event.type);
@@ -570,13 +570,13 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                 if (clientConnection) {
                     clientConnection.isAlive = true;
                     this._cache.set(clientConnection.identifier, JSON.stringify(instanceToPlain(clientConnection)), CacheNamespace.Connections).then(() => {
-                        this._ping(clientConnection.identifier, ws);
+                        this._ping(clientConnection.identifier, ws, pingInterval);
                     });
                 }
             });
         });
 
-        this._ping(identifier, ws);
+        this._ping(identifier, ws, pingInterval);
     }
 
     /**
@@ -662,9 +662,10 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      *
      * @param {string} identifier - The identifier of the client connection.
      * @param {WebSocket} ws - The WebSocket connection to ping.
+     * @param {number} pingInterval - The ping interval in milliseconds.
      * @return {void} This function does not return anything.
      */
-    private _ping(identifier: string, ws: WebSocket): void {
+    private _ping(identifier: string, ws: WebSocket, pingInterval: number): void {
         setTimeout(() => {
             this._getClientConnection(identifier).then(clientConnection => {
                 if (clientConnection && clientConnection.isAlive) {
@@ -678,7 +679,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                     ws.close(1011, "Client is not alive");
                 }
             });
-        }, this._config.websocket.pingInterval * 1000);
+        }, pingInterval * 1000);
     }
     /**
      * 
