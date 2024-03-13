@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ICache } from "@citrineos/base";
 import { ClassConstructor, plainToInstance } from "class-transformer";
+import {ICache} from "../../../interfaces/cache/cache";
 
 /**
  * Implementation of cache interface with memory storage

@@ -49,7 +49,12 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         itemsPerMessageSetVariables = itemsPerMessageSetVariables == null ?
             setVariableData.length : itemsPerMessageSetVariables;
 
-        const confirmations = [];
+        const confirmations: {
+            success: boolean;
+            batch?: string;
+            message: string;
+            variableName?: string;
+        }[] = [];
         let lastVariableIndex = 0;
         // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
         while (setVariableData.length > 0) {
@@ -89,7 +94,12 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         itemsPerMessageGetVariables = itemsPerMessageGetVariables == null ?
             getVariableData.length : itemsPerMessageGetVariables;
 
-        const confirmations = [];
+        const confirmations: {
+            success: boolean;
+            batch?: string;
+            message: string;
+            variableName?: string;
+        }[] = [];
         let lastVariableIndex = 0;
         // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
         while (getVariableData.length > 0) { 

@@ -4,10 +4,23 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import * as amqplib from "amqplib";
-import { ILogObj, Logger } from "tslog";
-import { MemoryCache } from "../..";
-import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppError, OcppRequest, OcppResponse, HandlerProperties, Message, RetryMessageError } from "@citrineos/base";
-import { plainToInstance } from "class-transformer";
+import {ILogObj, Logger} from "tslog";
+import {
+  AbstractMessageHandler,
+  CacheNamespace,
+  CallAction,
+  HandlerProperties,
+  ICache,
+  IMessage,
+  IModule,
+  Message,
+  OcppError,
+  OcppRequest,
+  OcppResponse,
+  RetryMessageError,
+  SystemConfig
+} from "@citrineos/base";
+import {plainToInstance} from "class-transformer";
 
 /**
  * Implementation of a {@link IMessageHandler} using RabbitMQ as the underlying transport.
@@ -28,10 +41,15 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   protected _channel?: amqplib.Channel;
   protected _module?: IModule;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, cache?: ICache, module?: IModule) {
-    super(config, logger);
-    this._cache = cache || new MemoryCache();
-    this._module = module;
+  constructor(
+    logger?: Logger<ILogObj>,
+    module?: IModule,
+    config?: SystemConfig,
+    cache?: ICache,
+  ) {
+    super(config as SystemConfig, logger);
+    this._cache = cache as ICache;
+    this._module = module as IModule;
 
     this._connect().then(channel => {
       this._channel = channel;
@@ -45,6 +63,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   get module(): IModule | undefined {
     return this._module;
   }
+
   set module(value: IModule | undefined) {
     this._module = value;
   }
@@ -70,20 +89,20 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     filter = filter ? {
       "x-match": "all",
       ...filter
-    } : { "x-match": "all" };
+    } : {"x-match": "all"};
 
     const channel = this._channel || await this._connect();
     this._channel = channel;
 
     // Assert exchange and queue
-    await channel.assertExchange(exchange, "headers", { durable: false });
-    await channel.assertQueue(queueName, { durable: false, autoDelete: true, exclusive: false });
+    await channel.assertExchange(exchange, "headers", {durable: false});
+    await channel.assertQueue(queueName, {durable: false, autoDelete: true, exclusive: false});
 
     // Bind queue based on provided actions and filters
     if (actions && actions.length > 0) {
       for (const action of actions) {
         this._logger.debug(`Bind ${queueName} on ${exchange} for ${action} with filter ${JSON.stringify(filter)}.`);
-        await channel.bindQueue(queueName, exchange, "", { action, ...filter });
+        await channel.bindQueue(queueName, exchange, "", {action, ...filter});
       }
     } else {
       this._logger.debug(`Bind ${queueName} on ${exchange} with filter ${JSON.stringify(filter)}.`);
@@ -125,8 +144,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
           this._logger.info(`Queue ${identifier} deleted with ${messageCount?.messageCount} messages remaining.`);
         }
         return true;
-      }
-      else {
+      } else {
         this._logger.warn(`Failed to delete queue for ${identifier}, queue name not found in cache.`);
         return false;
       }

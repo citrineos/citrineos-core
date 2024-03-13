@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, TransactionEventRequest, HandlerProperties, TransactionEventResponse, AuthorizationStatusEnumType, IdTokenInfoType, AdditionalInfoType, TransactionEventEnumType, MeterValuesRequest, MeterValuesResponse, StatusNotificationRequest, StatusNotificationResponse } from "@citrineos/base";
+import { BaseModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, TransactionEventRequest, HandlerProperties, TransactionEventResponse, AuthorizationStatusEnumType, IdTokenInfoType, AdditionalInfoType, TransactionEventEnumType, MeterValuesRequest, MeterValuesResponse, StatusNotificationRequest, StatusNotificationResponse } from "@citrineos/base";
 import { IAuthorizationRepository, ITransactionEventRepository, sequelize } from "@citrineos/data";
 import { PubSubReceiver, PubSubSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
@@ -12,7 +12,7 @@ import { ILogObj, Logger } from 'tslog';
 /**
  * Component that handles transaction related messages.
  */
-export class TransactionsModule extends AbstractModule {
+export class TransactionsModule extends BaseModule {
 
   protected _requests: CallAction[] = [
     CallAction.MeterValues,
@@ -66,7 +66,7 @@ export class TransactionsModule extends AbstractModule {
     transactionEventRepository?: ITransactionEventRepository,
     authorizeRepository?: IAuthorizationRepository
   ) {
-    super(config, cache, handler || new PubSubReceiver(config, logger), sender || new PubSubSender(config, logger), EventGroup.Transactions, logger);
+    super(config, cache, handler || new PubSubReceiver(logger), sender || new PubSubSender(config, logger), EventGroup.Transactions, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);

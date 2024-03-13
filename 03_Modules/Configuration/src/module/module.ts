@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  AbstractModule,
   AsHandler,
   AttributeEnumType,
+  BaseModule,
   BOOT_STATUS,
   BootConfig,
   BootNotificationRequest,
@@ -35,22 +35,22 @@ import {
   ResetEnumType,
   ResetRequest,
   SetVariableDataType,
-  SetVariableStatusEnumType,
   SetVariablesRequest,
   SetVariablesResponse,
+  SetVariableStatusEnumType,
   SystemConfig
 } from "@citrineos/base";
-import { IBootRepository, IDeviceModelRepository, sequelize, Boot } from "@citrineos/data";
-import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
-import { v4 as uuidv4 } from "uuid";
+import {Boot, IBootRepository, IDeviceModelRepository, sequelize} from "@citrineos/data";
+import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
+import {v4 as uuidv4} from "uuid";
 import deasyncPromise from "deasync-promise";
-import { ILogObj, Logger } from 'tslog';
-import { DeviceModelService } from "./services";
+import {ILogObj, Logger} from 'tslog';
+import {DeviceModelService} from "./services";
 
 /**
  * Component that handles Configuration related messages.
  */
-export class ConfigurationModule extends AbstractModule {
+export class ConfigurationModule extends BaseModule {
   /**
    * Constants used for cache:
    */
@@ -101,23 +101,23 @@ export class ConfigurationModule extends AbstractModule {
 
   /**
    * This is the constructor function that initializes the {@link ConfigurationModule}.
-   * 
+   *
    * @param {SystemConfig} config - The `config` contains configuration settings for the module.
-   *  
+   *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   * 
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface. 
+   *
+   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   * 
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface. 
+   *
+   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   * 
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}. 
+   *
+   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   * 
+   *
    * @param {IBootRepository} [bootRepository] - An optional parameter of type {@link IBootRepository} which represents a repository for accessing and manipulating authorization data.
    * If no `bootRepository` is provided, a default {@link sequelize.BootRepository} instance is created and used.
-   * 
+   *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
    */
@@ -130,7 +130,7 @@ export class ConfigurationModule extends AbstractModule {
     bootRepository?: IBootRepository,
     deviceModelRepository?: IDeviceModelRepository
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Configuration, logger);
+    super(config, cache, handler || new RabbitMqReceiver(logger, undefined, config, cache), sender || new RabbitMqSender(config, logger), EventGroup.Configuration, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);
@@ -384,7 +384,7 @@ export class ConfigurationModule extends AbstractModule {
           const requestId = 0;
           this._cache.set(requestId.toString(), 'ongoing', stationId, this.config.maxCachingSeconds);
           const getBaseReportMessageConfirmation: IMessageConfirmation = await this.sendCall(stationId, tenantId, CallAction.GetBaseReport,
-            { requestId: requestId, reportBase: ReportBaseEnumType.FullInventory } as GetBaseReportRequest);
+            {requestId: requestId, reportBase: ReportBaseEnumType.FullInventory} as GetBaseReportRequest);
           if (getBaseReportMessageConfirmation.success) {
             this._logger.debug("GetBaseReport successfully sent to charger: ", getBaseReportMessageConfirmation);
 
@@ -424,7 +424,7 @@ export class ConfigurationModule extends AbstractModule {
             const correlationId = uuidv4();
             const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(correlationId, this.config.maxCachingSeconds, stationId); // x2 fudge factor for any network lag
             this.sendCall(stationId, tenantId, CallAction.SetVariables,
-              { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest, undefined, correlationId);
+              {setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables)} as SetVariablesRequest, undefined, correlationId);
             setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
             const responseJsonString = await cacheCallbackPromise;
             if (responseJsonString) {
@@ -456,7 +456,7 @@ export class ConfigurationModule extends AbstractModule {
         if (rebootSetVariable) {
           // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
           this.sendCall(message.context.stationId, message.context.tenantId, CallAction.Reset,
-            { type: ResetEnumType.Immediate } as ResetRequest);
+            {type: ResetEnumType.Immediate} as ResetRequest);
         } else {
           // We could trigger the new boot immediately rather than wait for the retry, as nothing more now needs to be done.
           // However, B02.FR.02 - Spec allows for TriggerMessageRequest - OCTT fails over trigger
@@ -525,7 +525,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug("DataTransfer received:", message, props);
 
     // Create response
-    const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected };
+    const response: DataTransferResponse = {status: DataTransferStatusEnumType.Rejected};
 
     this.sendCallResultWithMessage(message, response)
       .then(messageConfirmation => this._logger.debug("DataTransfer response sent:", messageConfirmation));

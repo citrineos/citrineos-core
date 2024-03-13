@@ -3,10 +3,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ICache } from "@citrineos/base";
 import { ClassConstructor, plainToInstance } from "class-transformer";
 import { default as deasyncPromise } from "deasync-promise";
 import { RedisClientOptions, RedisClientType, RedisFunctions, RedisModules, RedisScripts, createClient } from "redis";
+import {ICache} from "../../../interfaces/cache/cache";
 
 /**
  * Implementation of cache interface with redis storage

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup } from "@citrineos/base";
+import { BaseModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup } from "@citrineos/base";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
@@ -11,7 +11,7 @@ import { ILogObj, Logger } from 'tslog';
 /**
  * Component that handles provisioning related messages.
  */
-export class SmartChargingModule extends AbstractModule {
+export class SmartChargingModule extends BaseModule {
 
   /**
    * Fields
@@ -60,7 +60,7 @@ export class SmartChargingModule extends AbstractModule {
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(config, logger, cache), sender || new RabbitMqSender(config, logger), EventGroup.SmartCharging, logger);
+    super(config, cache, handler || new RabbitMqReceiver(logger, undefined, config, cache), sender || new RabbitMqSender(config, logger), EventGroup.SmartCharging, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);

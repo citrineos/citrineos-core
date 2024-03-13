@@ -10,6 +10,9 @@
   "references": [
     {
       "path": "./Server"
+    },
+    {
+      "path": "./00_Base"
     }
   ]
 }
