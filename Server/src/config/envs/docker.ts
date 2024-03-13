@@ -64,7 +64,7 @@ export function createDockerConfig() {
             },
             swagger: {
                 path: "/docs",
-                logoPath: "/usr/server/src/assets/logo.png",
+                logoPath: "/usr/local/apps/citrineos/server/src/assets/logo.png",
                 exposeData: true,
                 exposeMessage: true
             },
