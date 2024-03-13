@@ -171,8 +171,8 @@ export class Server {
 
   private initCentralSystem() {
     this._centralSystem = new CentralSystemImpl(this._config, this._cache as ICache, undefined, undefined, this._logger, this._ajv)
-    this.host = this._config.server.host
-    this.port = this._config.server.port
+    this.host = this._config.centralSystem.host
+    this.port = this._config.centralSystem.port
   }
 
   private initAllModules() {
