@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     }
   },
   "type": "object",
@@ -39,8 +37,5 @@
       "maxLength": 255
     }
   },
-  "required": [
-    "type",
-    "timestamp"
-  ]
+  "required": ["type", "timestamp"]
 }

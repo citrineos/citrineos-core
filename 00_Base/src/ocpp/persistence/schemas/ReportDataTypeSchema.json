@@ -1,194 +1,163 @@
 {
-    "definitions": {
-        "AttributeEnumType": {
-            "default": "Actual",
-            "enum": [
-                "Actual",
-                "Target",
-                "MinSet",
-                "MaxSet"
-            ],
-            "javaType": "AttributeEnum",
-            "tsEnumNames": [
-                "Actual",
-                "Target",
-                "MinSet",
-                "MaxSet"
-            ],
-            "type": "string"
-        },
-        "ComponentType": {
-            "javaType": "Component",
-            "properties": {
-                "evse": {
-                    "$ref": "#/definitions/EVSEType"
-                },
-                "instance": {
-                    "maxLength": 50,
-                    "type": "string"
-                },
-                "name": {
-                    "maxLength": 50,
-                    "type": "string"
-                }
-            },
-            "required": [
-                "name"
-            ],
-            "type": "object"
-        },
-        "DataEnumType": {
-            "enum": [
-                "string",
-                "decimal",
-                "integer",
-                "dateTime",
-                "boolean",
-                "OptionList",
-                "SequenceList",
-                "MemberList",
-                "passwordString"
-            ],
-            "javaType": "DataEnum",
-            "tsEnumNames": [
-                "string",
-                "decimal",
-                "integer",
-                "dateTime",
-                "boolean",
-                "OptionList",
-                "SequenceList",
-                "MemberList"
-            ],
-            "type": "string"
-        },
-        "EVSEType": {
-            "javaType": "EVSE",
-            "properties": {
-                "connectorId": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "id"
-            ],
-            "type": "object"
-        },
-        "MutabilityEnumType": {
-            "default": "ReadWrite",
-            "enum": [
-                "ReadOnly",
-                "WriteOnly",
-                "ReadWrite"
-            ],
-            "javaType": "MutabilityEnum",
-            "tsEnumNames": [
-                "ReadOnly",
-                "WriteOnly",
-                "ReadWrite"
-            ],
-            "type": "string"
-        },
-        "VariableAttributeType": {
-            "javaType": "VariableAttribute",
-            "properties": {
-                "constant": {
-                    "default": false,
-                    "type": "boolean"
-                },
-                "mutability": {
-                    "$ref": "#/definitions/MutabilityEnumType"
-                },
-                "persistent": {
-                    "default": false,
-                    "type": "boolean"
-                },
-                "type": {
-                    "$ref": "#/definitions/AttributeEnumType"
-                },
-                "value": {
-                    "maxLength": 2500,
-                    "type": "string"
-                }
-            },
-            "type": "object"
-        },
-        "VariableCharacteristicsType": {
-            "javaType": "VariableCharacteristics",
-            "properties": {
-                "dataType": {
-                    "$ref": "#/definitions/DataEnumType"
-                },
-                "maxLimit": {
-                    "type": "number"
-                },
-                "minLimit": {
-                    "type": "number"
-                },
-                "supportsMonitoring": {
-                    "type": "boolean"
-                },
-                "unit": {
-                    "maxLength": 16,
-                    "type": "string"
-                },
-                "valuesList": {
-                    "maxLength": 1000,
-                    "type": "string"
-                }
-            },
-            "required": [
-                "dataType",
-                "supportsMonitoring"
-            ],
-            "type": "object"
-        },
-        "VariableType": {
-            "javaType": "Variable",
-            "properties": {
-                "instance": {
-                    "maxLength": 50,
-                    "type": "string"
-                },
-                "name": {
-                    "maxLength": 50,
-                    "type": "string"
-                }
-            },
-            "required": [
-                "name"
-            ],
-            "type": "object"
-        }
+  "definitions": {
+    "AttributeEnumType": {
+      "default": "Actual",
+      "enum": ["Actual", "Target", "MinSet", "MaxSet"],
+      "javaType": "AttributeEnum",
+      "tsEnumNames": ["Actual", "Target", "MinSet", "MaxSet"],
+      "type": "string"
     },
-    "javaType": "ReportData",
-    "properties": {
-        "component": {
-            "$ref": "#/definitions/ComponentType"
+    "ComponentType": {
+      "javaType": "Component",
+      "properties": {
+        "evse": {
+          "$ref": "#/definitions/EVSEType"
         },
-        "variable": {
-            "$ref": "#/definitions/VariableType"
+        "instance": {
+          "maxLength": 50,
+          "type": "string"
         },
-        "variableAttribute": {
-            "additionalItems": false,
-            "items": {
-                "$ref": "#/definitions/VariableAttributeType"
-            },
-            "maxItems": 4,
-            "minItems": 1,
-            "type": "array"
-        },
-        "variableCharacteristics": {
-            "$ref": "#/definitions/VariableCharacteristicsType"
+        "name": {
+          "maxLength": 50,
+          "type": "string"
         }
+      },
+      "required": ["name"],
+      "type": "object"
     },
-    "required": [
-        "component",
-        "variable",
-        "variableAttribute"
-    ],
-    "type": "object"
+    "DataEnumType": {
+      "enum": [
+        "string",
+        "decimal",
+        "integer",
+        "dateTime",
+        "boolean",
+        "OptionList",
+        "SequenceList",
+        "MemberList",
+        "passwordString"
+      ],
+      "javaType": "DataEnum",
+      "tsEnumNames": [
+        "string",
+        "decimal",
+        "integer",
+        "dateTime",
+        "boolean",
+        "OptionList",
+        "SequenceList",
+        "MemberList"
+      ],
+      "type": "string"
+    },
+    "EVSEType": {
+      "javaType": "EVSE",
+      "properties": {
+        "connectorId": {
+          "type": "integer"
+        },
+        "id": {
+          "type": "integer"
+        }
+      },
+      "required": ["id"],
+      "type": "object"
+    },
+    "MutabilityEnumType": {
+      "default": "ReadWrite",
+      "enum": ["ReadOnly", "WriteOnly", "ReadWrite"],
+      "javaType": "MutabilityEnum",
+      "tsEnumNames": ["ReadOnly", "WriteOnly", "ReadWrite"],
+      "type": "string"
+    },
+    "VariableAttributeType": {
+      "javaType": "VariableAttribute",
+      "properties": {
+        "constant": {
+          "default": false,
+          "type": "boolean"
+        },
+        "mutability": {
+          "$ref": "#/definitions/MutabilityEnumType"
+        },
+        "persistent": {
+          "default": false,
+          "type": "boolean"
+        },
+        "type": {
+          "$ref": "#/definitions/AttributeEnumType"
+        },
+        "value": {
+          "maxLength": 2500,
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VariableCharacteristicsType": {
+      "javaType": "VariableCharacteristics",
+      "properties": {
+        "dataType": {
+          "$ref": "#/definitions/DataEnumType"
+        },
+        "maxLimit": {
+          "type": "number"
+        },
+        "minLimit": {
+          "type": "number"
+        },
+        "supportsMonitoring": {
+          "type": "boolean"
+        },
+        "unit": {
+          "maxLength": 16,
+          "type": "string"
+        },
+        "valuesList": {
+          "maxLength": 1000,
+          "type": "string"
+        }
+      },
+      "required": ["dataType", "supportsMonitoring"],
+      "type": "object"
+    },
+    "VariableType": {
+      "javaType": "Variable",
+      "properties": {
+        "instance": {
+          "maxLength": 50,
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 50,
+          "type": "string"
+        }
+      },
+      "required": ["name"],
+      "type": "object"
+    }
+  },
+  "javaType": "ReportData",
+  "properties": {
+    "component": {
+      "$ref": "#/definitions/ComponentType"
+    },
+    "variable": {
+      "$ref": "#/definitions/VariableType"
+    },
+    "variableAttribute": {
+      "additionalItems": false,
+      "items": {
+        "$ref": "#/definitions/VariableAttributeType"
+      },
+      "maxItems": 4,
+      "minItems": 1,
+      "type": "array"
+    },
+    "variableCharacteristics": {
+      "$ref": "#/definitions/VariableCharacteristicsType"
+    }
+  },
+  "required": ["component", "variable", "variableAttribute"],
+  "type": "object"
 }

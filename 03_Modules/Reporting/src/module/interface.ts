@@ -6,5 +6,4 @@
 /**
  * Interface for the authorization module.
  */
-export interface IReportingModuleApi {
-}
+export interface IReportingModuleApi {}

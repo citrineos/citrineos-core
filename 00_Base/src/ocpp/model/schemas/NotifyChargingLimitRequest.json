@@ -12,41 +12,23 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ChargingLimitSourceEnumType": {
       "description": "Charging_ Limit. Charging_ Limit_ Source. Charging_ Limit_ Source_ Code\r\nurn:x-enexis:ecdm:uid:1:570845\r\nRepresents the source of the charging limit.\r\n",
       "javaType": "ChargingLimitSourceEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "EMS",
-        "Other",
-        "SO",
-        "CSO"
-      ],
-      "tsEnumNames": [
-        "EMS",
-        "Other",
-        "SO",
-        "CSO"
-      ]
+      "enum": ["EMS", "Other", "SO", "CSO"],
+      "tsEnumNames": ["EMS", "Other", "SO", "CSO"]
     },
     "ChargingRateUnitEnumType": {
       "description": "Charging_ Schedule. Charging_ Rate_ Unit. Charging_ Rate_ Unit_ Code\r\nurn:x-oca:ocpp:uid:1:569238\r\nThe unit of measure Limit is expressed in.\r\n",
       "javaType": "ChargingRateUnitEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "W",
-        "A"
-      ],
-      "tsEnumNames": [
-        "W",
-        "A"
-      ]
+      "enum": ["W", "A"],
+      "tsEnumNames": ["W", "A"]
     },
     "CostKindEnumType": {
       "description": "Cost. Cost_ Kind. Cost_ Kind_ Code\r\nurn:x-oca:ocpp:uid:1:569243\r\nThe kind of cost referred to in the message element amount\r\n",
@@ -81,9 +63,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "chargingLimitSource"
-      ]
+      "required": ["chargingLimitSource"]
     },
     "ChargingSchedulePeriodType": {
       "description": "Charging_ Schedule_ Period\r\nurn:x-oca:ocpp:uid:2:233257\r\nCharging schedule period structure defines a time period in a charging schedule.\r\n",
@@ -111,10 +91,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "startPeriod",
-        "limit"
-      ]
+      "required": ["startPeriod", "limit"]
     },
     "ChargingScheduleType": {
       "description": "Charging_ Schedule\r\nurn:x-oca:ocpp:uid:2:233256\r\nCharging schedule structure defines a list of charging periods, as used in: GetCompositeSchedule.conf and ChargingProfile. \r\n",
@@ -158,11 +135,7 @@
           "$ref": "#/definitions/SalesTariffType"
         }
       },
-      "required": [
-        "id",
-        "chargingRateUnit",
-        "chargingSchedulePeriod"
-      ]
+      "required": ["id", "chargingRateUnit", "chargingSchedulePeriod"]
     },
     "ConsumptionCostType": {
       "description": "Consumption_ Cost\r\nurn:x-oca:ocpp:uid:2:233259\r\n",
@@ -187,10 +160,7 @@
           "maxItems": 3
         }
       },
-      "required": [
-        "startValue",
-        "cost"
-      ]
+      "required": ["startValue", "cost"]
     },
     "CostType": {
       "description": "Cost\r\nurn:x-oca:ocpp:uid:2:233258\r\n",
@@ -213,10 +183,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "costKind",
-        "amount"
-      ]
+      "required": ["costKind", "amount"]
     },
     "RelativeTimeIntervalType": {
       "description": "Relative_ Timer_ Interval\r\nurn:x-oca:ocpp:uid:2:233270\r\n",
@@ -236,9 +203,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "start"
-      ]
+      "required": ["start"]
     },
     "SalesTariffEntryType": {
       "description": "Sales_ Tariff_ Entry\r\nurn:x-oca:ocpp:uid:2:233271\r\n",
@@ -267,9 +232,7 @@
           "maxItems": 3
         }
       },
-      "required": [
-        "relativeTimeInterval"
-      ]
+      "required": ["relativeTimeInterval"]
     },
     "SalesTariffType": {
       "description": "Sales_ Tariff\r\nurn:x-oca:ocpp:uid:2:233272\r\nNOTE: This dataType is based on dataTypes from &lt;&lt;ref-ISOIEC15118-2,ISO 15118-2&gt;&gt;.\r\n",
@@ -303,10 +266,7 @@
           "maxItems": 1024
         }
       },
-      "required": [
-        "id",
-        "salesTariffEntry"
-      ]
+      "required": ["id", "salesTariffEntry"]
     }
   },
   "type": "object",
@@ -331,7 +291,5 @@
       "$ref": "#/definitions/ChargingLimitType"
     }
   },
-  "required": [
-    "chargingLimit"
-  ]
+  "required": ["chargingLimit"]
 }

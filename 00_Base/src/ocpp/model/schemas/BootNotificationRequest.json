@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "BootReasonEnumType": {
       "description": "This contains the reason for sending this message to the CSMS.\r\n",
@@ -77,10 +75,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "model",
-        "vendorName"
-      ]
+      "required": ["model", "vendorName"]
     },
     "ModemType": {
       "description": "Wireless_ Communication_ Module\r\nurn:x-oca:ocpp:uid:2:233306\r\nDefines parameters required for initiating and maintaining wireless communication with other devices.\r\n",
@@ -117,8 +112,5 @@
       "$ref": "#/definitions/BootReasonEnumType"
     }
   },
-  "required": [
-    "reason",
-    "chargingStation"
-  ]
+  "required": ["reason", "chargingStation"]
 }

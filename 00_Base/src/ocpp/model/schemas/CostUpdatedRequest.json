@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     }
   },
   "type": "object",
@@ -33,8 +31,5 @@
       "maxLength": 36
     }
   },
-  "required": [
-    "totalCost",
-    "transactionId"
-  ]
+  "required": ["totalCost", "transactionId"]
 }

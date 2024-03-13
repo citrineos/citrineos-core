@@ -12,43 +12,23 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "MessagePriorityEnumType": {
       "description": "If provided the Charging Station shall return Display Messages with the given priority only.\r\n",
       "javaType": "MessagePriorityEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "AlwaysFront",
-        "InFront",
-        "NormalCycle"
-      ],
-      "tsEnumNames": [
-        "AlwaysFront",
-        "InFront",
-        "NormalCycle"
-      ]
+      "enum": ["AlwaysFront", "InFront", "NormalCycle"],
+      "tsEnumNames": ["AlwaysFront", "InFront", "NormalCycle"]
     },
     "MessageStateEnumType": {
       "description": "If provided the Charging Station shall return Display Messages with the given state only. \r\n",
       "javaType": "MessageStateEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Charging",
-        "Faulted",
-        "Idle",
-        "Unavailable"
-      ],
-      "tsEnumNames": [
-        "Charging",
-        "Faulted",
-        "Idle",
-        "Unavailable"
-      ]
+      "enum": ["Charging", "Faulted", "Idle", "Unavailable"],
+      "tsEnumNames": ["Charging", "Faulted", "Idle", "Unavailable"]
     }
   },
   "type": "object",
@@ -77,7 +57,5 @@
       "$ref": "#/definitions/MessageStateEnumType"
     }
   },
-  "required": [
-    "requestId"
-  ]
+  "required": ["requestId"]
 }

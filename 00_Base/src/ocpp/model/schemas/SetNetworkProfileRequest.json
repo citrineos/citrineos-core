@@ -12,27 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "APNAuthenticationEnumType": {
       "description": "APN. APN_ Authentication. APN_ Authentication_ Code\r\nurn:x-oca:ocpp:uid:1:568828\r\nAuthentication method.\r\n",
       "javaType": "APNAuthenticationEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "CHAP",
-        "NONE",
-        "PAP",
-        "AUTO"
-      ],
-      "tsEnumNames": [
-        "CHAP",
-        "NONE",
-        "PAP",
-        "AUTO"
-      ]
+      "enum": ["CHAP", "NONE", "PAP", "AUTO"],
+      "tsEnumNames": ["CHAP", "NONE", "PAP", "AUTO"]
     },
     "OCPPInterfaceEnumType": {
       "description": "Applicable Network Interface.\r\n",
@@ -65,50 +53,24 @@
       "javaType": "OCPPTransportEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "JSON",
-        "SOAP"
-      ],
-      "tsEnumNames": [
-        "JSON",
-        "SOAP"
-      ]
+      "enum": ["JSON", "SOAP"],
+      "tsEnumNames": ["JSON", "SOAP"]
     },
     "OCPPVersionEnumType": {
       "description": "Communication_ Function. OCPP_ Version. OCPP_ Version_ Code\r\nurn:x-oca:ocpp:uid:1:569355\r\nDefines the OCPP version used for this communication function.\r\n",
       "javaType": "OCPPVersionEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "OCPP12",
-        "OCPP15",
-        "OCPP16",
-        "OCPP20"
-      ],
-      "tsEnumNames": [
-        "OCPP12",
-        "OCPP15",
-        "OCPP16",
-        "OCPP20"
-      ]
+      "enum": ["OCPP12", "OCPP15", "OCPP16", "OCPP20"],
+      "tsEnumNames": ["OCPP12", "OCPP15", "OCPP16", "OCPP20"]
     },
     "VPNEnumType": {
       "description": "VPN. Type. VPN_ Code\r\nurn:x-oca:ocpp:uid:1:569277\r\nType of VPN\r\n",
       "javaType": "VPNEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "IKEv2",
-        "IPSec",
-        "L2TP",
-        "PPTP"
-      ],
-      "tsEnumNames": [
-        "IKEv2",
-        "IPSec",
-        "L2TP",
-        "PPTP"
-      ]
+      "enum": ["IKEv2", "IPSec", "L2TP", "PPTP"],
+      "tsEnumNames": ["IKEv2", "IPSec", "L2TP", "PPTP"]
     },
     "APNType": {
       "description": "APN\r\nurn:x-oca:ocpp:uid:2:233134\r\nCollection of configuration data needed to make a data-connection over a cellular network.\r\n\r\nNOTE: When asking a GSM modem to dial in, it is possible to specify which mobile operator should be used. This can be done with the mobile country code (MCC) in combination with a mobile network code (MNC). Example: If your preferred network is Vodafone Netherlands, the MCC=204 and the MNC=04 which means the key PreferredNetwork = 20404 Some modems allows to specify a preferred network, which means, if this network is not available, a different network is used. If you specify UseOnlyPreferredNetwork and this network is not available, the modem will not dial in.\r\n",
@@ -152,10 +114,7 @@
           "$ref": "#/definitions/APNAuthenticationEnumType"
         }
       },
-      "required": [
-        "apn",
-        "apnAuthentication"
-      ]
+      "required": ["apn", "apnAuthentication"]
     },
     "NetworkConnectionProfileType": {
       "description": "Communication_ Function\r\nurn:x-oca:ocpp:uid:2:233304\r\nThe NetworkConnectionProfile defines the functional and technical parameters of a communication link.\r\n",
@@ -242,13 +201,7 @@
           "$ref": "#/definitions/VPNEnumType"
         }
       },
-      "required": [
-        "server",
-        "user",
-        "password",
-        "key",
-        "type"
-      ]
+      "required": ["server", "user", "password", "key", "type"]
     }
   },
   "type": "object",
@@ -265,8 +218,5 @@
       "$ref": "#/definitions/NetworkConnectionProfileType"
     }
   },
-  "required": [
-    "configurationSlot",
-    "connectionData"
-  ]
+  "required": ["configurationSlot", "connectionData"]
 }

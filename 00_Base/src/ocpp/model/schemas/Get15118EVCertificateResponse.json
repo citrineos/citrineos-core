@@ -12,23 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "Iso15118EVCertificateStatusEnumType": {
       "description": "Indicates whether the message was processed properly.\r\n",
       "javaType": "Iso15118EVCertificateStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "Failed"
-      ],
-      "tsEnumNames": [
-        "Accepted",
-        "Failed"
-      ]
+      "enum": ["Accepted", "Failed"],
+      "tsEnumNames": ["Accepted", "Failed"]
     },
     "StatusInfoType": {
       "description": "Element providing more information about the status.\r\n",
@@ -50,9 +42,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -73,8 +63,5 @@
       "maxLength": 5600
     }
   },
-  "required": [
-    "status",
-    "exiResponse"
-  ]
+  "required": ["status", "exiResponse"]
 }

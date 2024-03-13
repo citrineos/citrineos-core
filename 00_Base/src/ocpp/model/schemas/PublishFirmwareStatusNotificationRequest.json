@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "PublishFirmwareStatusEnumType": {
       "description": "This contains the progress status of the publishfirmware\r\ninstallation.\r\n",
@@ -71,7 +69,5 @@
       "type": "integer"
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

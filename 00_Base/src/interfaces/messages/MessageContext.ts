@@ -9,7 +9,7 @@
  * The context of any OCPP message.
  */
 export interface IMessageContext {
-    correlationId: string;
-    tenantId: string;
-    stationId: string;
+  correlationId: string;
+  tenantId: string;
+  stationId: string;
 }

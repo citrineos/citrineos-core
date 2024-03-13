@@ -13,9 +13,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "LocationEnumType": {
       "description": "Sampled_ Value. Location. Location_ Code\r\nurn:x-oca:ocpp:uid:1:569265\r\nIndicates where the measured value has been sampled. Default =  \"Outlet\"\r\n\r\n",
@@ -23,20 +21,8 @@
       "type": "string",
       "default": "Outlet",
       "additionalProperties": false,
-      "enum": [
-        "Body",
-        "Cable",
-        "EV",
-        "Inlet",
-        "Outlet"
-      ],
-      "tsEnumNames": [
-        "Body",
-        "Cable",
-        "EV",
-        "Inlet",
-        "Outlet"
-      ]
+      "enum": ["Body", "Cable", "EV", "Inlet", "Outlet"],
+      "tsEnumNames": ["Body", "Cable", "EV", "Inlet", "Outlet"]
     },
     "MeasurandEnumType": {
       "description": "Sampled_ Value. Measurand. Measurand_ Code\r\nurn:x-oca:ocpp:uid:1:569263\r\nType of measurement. Default = \"Energy.Active.Import.Register\"\r\n",
@@ -179,10 +165,7 @@
           "format": "date-time"
         }
       },
-      "required": [
-        "timestamp",
-        "sampledValue"
-      ]
+      "required": ["timestamp", "sampledValue"]
     },
     "SampledValueType": {
       "description": "Sampled_ Value\r\nurn:x-oca:ocpp:uid:2:233266\r\nSingle sampled value in MeterValues. Each value can be accompanied by optional fields.\r\n\r\nTo save on mobile data usage, default values of all of the optional fields are such that. The value without any additional fields will be interpreted, as a register reading of active import energy in Wh (Watt-hour) units.\r\n",
@@ -216,9 +199,7 @@
           "$ref": "#/definitions/UnitOfMeasureType"
         }
       },
-      "required": [
-        "value"
-      ]
+      "required": ["value"]
     },
     "SignedMeterValueType": {
       "description": "Represent a signed version of the meter value.\r\n",
@@ -299,8 +280,5 @@
       "minItems": 1
     }
   },
-  "required": [
-    "evseId",
-    "meterValue"
-  ]
+  "required": ["evseId", "meterValue"]
 }

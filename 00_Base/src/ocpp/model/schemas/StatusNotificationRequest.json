@@ -12,22 +12,14 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ConnectorStatusEnumType": {
       "description": "This contains the current status of the Connector.\r\n",
       "javaType": "ConnectorStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Available",
-        "Occupied",
-        "Reserved",
-        "Unavailable",
-        "Faulted"
-      ],
+      "enum": ["Available", "Occupied", "Reserved", "Unavailable", "Faulted"],
       "tsEnumNames": [
         "Available",
         "Occupied",
@@ -60,10 +52,5 @@
       "type": "integer"
     }
   },
-  "required": [
-    "timestamp",
-    "connectorStatus",
-    "evseId",
-    "connectorId"
-  ]
+  "required": ["timestamp", "connectorStatus", "evseId", "connectorId"]
 }

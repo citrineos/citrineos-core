@@ -83,5 +83,3 @@ export interface ModemType {
    */
   imsi?: string;
 }
-
-

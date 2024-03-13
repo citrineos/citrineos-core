@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "FirmwareStatusEnumType": {
       "description": "This contains the progress status of the firmware installation.\r\n",
@@ -69,7 +67,5 @@
       "type": "integer"
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

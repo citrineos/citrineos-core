@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ChargingStateEnumType": {
       "description": "Transaction. State. Transaction_ State_ Code\r\nurn:x-oca:ocpp:uid:1:569419\r\nCurrent charging state, is required when state\r\nhas changed.\r\n",
@@ -68,20 +66,8 @@
       "type": "string",
       "default": "Outlet",
       "additionalProperties": false,
-      "enum": [
-        "Body",
-        "Cable",
-        "EV",
-        "Inlet",
-        "Outlet"
-      ],
-      "tsEnumNames": [
-        "Body",
-        "Cable",
-        "EV",
-        "Inlet",
-        "Outlet"
-      ]
+      "enum": ["Body", "Cable", "EV", "Inlet", "Outlet"],
+      "tsEnumNames": ["Body", "Cable", "EV", "Inlet", "Outlet"]
     },
     "MeasurandEnumType": {
       "description": "Sampled_ Value. Measurand. Measurand_ Code\r\nurn:x-oca:ocpp:uid:1:569263\r\nType of measurement. Default = \"Energy.Active.Import.Register\"\r\n",
@@ -254,16 +240,8 @@
       "javaType": "TransactionEventEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Ended",
-        "Started",
-        "Updated"
-      ],
-      "tsEnumNames": [
-        "Ended",
-        "Started",
-        "Updated"
-      ]
+      "enum": ["Ended", "Started", "Updated"],
+      "tsEnumNames": ["Ended", "Started", "Updated"]
     },
     "TriggerReasonEnumType": {
       "description": "Reason the Charging Station sends this message to the CSMS\r\n",
@@ -337,10 +315,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "additionalIdToken",
-        "type"
-      ]
+      "required": ["additionalIdToken", "type"]
     },
     "EVSEType": {
       "description": "EVSE\r\nurn:x-oca:ocpp:uid:2:233123\r\nElectric Vehicle Supply Equipment\r\n",
@@ -360,9 +335,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id"]
     },
     "IdTokenType": {
       "description": "Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.\r\n",
@@ -390,10 +363,7 @@
           "$ref": "#/definitions/IdTokenEnumType"
         }
       },
-      "required": [
-        "idToken",
-        "type"
-      ]
+      "required": ["idToken", "type"]
     },
     "MeterValueType": {
       "description": "Meter_ Value\r\nurn:x-oca:ocpp:uid:2:233265\r\nCollection of one or more sampled values in MeterValuesRequest and TransactionEvent. All sampled values in a MeterValue are sampled at the same point in time.\r\n",
@@ -418,10 +388,7 @@
           "format": "date-time"
         }
       },
-      "required": [
-        "timestamp",
-        "sampledValue"
-      ]
+      "required": ["timestamp", "sampledValue"]
     },
     "SampledValueType": {
       "description": "Sampled_ Value\r\nurn:x-oca:ocpp:uid:2:233266\r\nSingle sampled value in MeterValues. Each value can be accompanied by optional fields.\r\n\r\nTo save on mobile data usage, default values of all of the optional fields are such that. The value without any additional fields will be interpreted, as a register reading of active import energy in Wh (Watt-hour) units.\r\n",
@@ -455,9 +422,7 @@
           "$ref": "#/definitions/UnitOfMeasureType"
         }
       },
-      "required": [
-        "value"
-      ]
+      "required": ["value"]
     },
     "SignedMeterValueType": {
       "description": "Represent a signed version of the meter value.\r\n",
@@ -525,9 +490,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "transactionId"
-      ]
+      "required": ["transactionId"]
     },
     "UnitOfMeasureType": {
       "description": "Represents a UnitOfMeasure with a multiplier\r\n",

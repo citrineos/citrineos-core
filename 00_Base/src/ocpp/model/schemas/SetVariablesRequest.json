@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "AttributeEnumType": {
       "description": "Type of attribute: Actual, Target, MinSet, MaxSet. Default is Actual when omitted.\r\n",
@@ -22,18 +20,8 @@
       "type": "string",
       "default": "Actual",
       "additionalProperties": false,
-      "enum": [
-        "Actual",
-        "Target",
-        "MinSet",
-        "MaxSet"
-      ],
-      "tsEnumNames": [
-        "Actual",
-        "Target",
-        "MinSet",
-        "MaxSet"
-      ]
+      "enum": ["Actual", "Target", "MinSet", "MaxSet"],
+      "tsEnumNames": ["Actual", "Target", "MinSet", "MaxSet"]
     },
     "ComponentType": {
       "description": "A physical or logical component\r\n",
@@ -58,9 +46,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "name"
-      ]
+      "required": ["name"]
     },
     "EVSEType": {
       "description": "EVSE\r\nurn:x-oca:ocpp:uid:2:233123\r\nElectric Vehicle Supply Equipment\r\n",
@@ -80,9 +66,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id"]
     },
     "SetVariableDataType": {
       "javaType": "SetVariableData",
@@ -107,11 +91,7 @@
           "$ref": "#/definitions/VariableType"
         }
       },
-      "required": [
-        "attributeValue",
-        "component",
-        "variable"
-      ]
+      "required": ["attributeValue", "component", "variable"]
     },
     "VariableType": {
       "description": "Reference key to a component-variable.\r\n",
@@ -133,9 +113,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "name"
-      ]
+      "required": ["name"]
     }
   },
   "type": "object",
@@ -153,7 +131,5 @@
       "minItems": 1
     }
   },
-  "required": [
-    "setVariableData"
-  ]
+  "required": ["setVariableData"]
 }

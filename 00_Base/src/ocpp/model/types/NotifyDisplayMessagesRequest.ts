@@ -10,7 +10,11 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { MessageFormatEnumType, MessagePriorityEnumType, MessageStateEnumType } from "../enums";
+import {
+  MessageFormatEnumType,
+  MessagePriorityEnumType,
+  MessageStateEnumType,
+} from "../enums";
 import { OcppRequest } from "../../..";
 
 export interface NotifyDisplayMessagesRequest extends OcppRequest {
@@ -143,7 +147,3 @@ export interface MessageContentType {
    */
   content: string;
 }
-
-
-
-

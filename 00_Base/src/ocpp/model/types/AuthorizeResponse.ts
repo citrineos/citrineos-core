@@ -10,7 +10,12 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { AuthorizationStatusEnumType, AuthorizeCertificateStatusEnumType, IdTokenEnumType, MessageFormatEnumType } from "../enums";
+import {
+  AuthorizationStatusEnumType,
+  AuthorizeCertificateStatusEnumType,
+  IdTokenEnumType,
+  MessageFormatEnumType,
+} from "../enums";
 import { OcppResponse } from "../../..";
 
 export interface AuthorizeResponse extends OcppResponse {
@@ -133,8 +138,3 @@ export interface MessageContentType {
    */
   content: string;
 }
-
-
-
-
-

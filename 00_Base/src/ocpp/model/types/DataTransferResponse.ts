@@ -49,5 +49,3 @@ export interface StatusInfoType {
    */
   additionalInfo?: string;
 }
-
-

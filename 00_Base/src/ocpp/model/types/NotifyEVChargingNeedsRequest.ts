@@ -157,5 +157,3 @@ export interface DCChargingParametersType {
    */
   bulkSoC?: number;
 }
-
-

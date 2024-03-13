@@ -10,7 +10,17 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ChargingStateEnumType, IdTokenEnumType, LocationEnumType, MeasurandEnumType, PhaseEnumType, ReadingContextEnumType, ReasonEnumType, TransactionEventEnumType, TriggerReasonEnumType } from "../enums";
+import {
+  ChargingStateEnumType,
+  IdTokenEnumType,
+  LocationEnumType,
+  MeasurandEnumType,
+  PhaseEnumType,
+  ReadingContextEnumType,
+  ReasonEnumType,
+  TransactionEventEnumType,
+  TriggerReasonEnumType,
+} from "../enums";
 import { OcppRequest } from "../../..";
 
 export interface TransactionEventRequest extends OcppRequest {
@@ -235,13 +245,3 @@ export interface AdditionalInfoType {
    */
   type: string;
 }
-
-
-
-
-
-
-
-
-
-

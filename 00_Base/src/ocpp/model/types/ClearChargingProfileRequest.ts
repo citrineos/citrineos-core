@@ -54,5 +54,3 @@ export interface ClearChargingProfileType {
    */
   stackLevel?: number;
 }
-
-

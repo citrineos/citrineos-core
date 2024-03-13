@@ -1,196 +1,179 @@
 {
-    "$id": "AuthorizationData",
-    "type": "object",
-    "properties": {
-      "idToken": {
-        "$ref": "#/definitions/IdTokenType"
-      },
-      "idTokenInfo": {
-        "$ref": "#/definitions/IdTokenInfoType"
-      }
+  "$id": "AuthorizationData",
+  "type": "object",
+  "properties": {
+    "idToken": {
+      "$ref": "#/definitions/IdTokenType"
     },
-    "required": ["idToken"],
-    "definitions": {
-      "AuthorizationStatusEnumType": {
-        "description": "ID_ Token. Status. Authorization_ Status\r\nurn:x-oca:ocpp:uid:1:569372\r\nCurrent status of the ID Token.\r\n",
-        "javaType": "AuthorizationStatusEnum",
-        "type": "string",
-        "additionalProperties": false,
-        "enum": [
-          "Accepted",
-          "Blocked",
-          "ConcurrentTx",
-          "Expired",
-          "Invalid",
-          "NoCredit",
-          "NotAllowedTypeEVSE",
-          "NotAtThisLocation",
-          "NotAtThisTime",
-          "Unknown"
-        ],
-        "tsEnumNames": [
-          "Accepted",
-          "Blocked",
-          "ConcurrentTx",
-          "Expired",
-          "Invalid",
-          "NoCredit",
-          "NotAllowedTypeEVSE",
-          "NotAtThisLocation",
-          "NotAtThisTime",
-          "Unknown"
-        ]
-      },
-      "IdTokenEnumType": {
-        "description": "Enumeration of possible idToken types.\r\n",
-        "javaType": "IdTokenEnum",
-        "type": "string",
-        "additionalProperties": false,
-        "enum": [
-          "Central",
-          "eMAID",
-          "ISO14443",
-          "ISO15693",
-          "KeyCode",
-          "Local",
-          "MacAddress",
-          "NoAuthorization"
-        ],
-        "tsEnumNames": [
-          "Central",
-          "eMAID",
-          "ISO14443",
-          "ISO15693",
-          "KeyCode",
-          "Local",
-          "MacAddress",
-          "NoAuthorization"
-        ]
-      },
-      "MessageContentType": {
-        "description": "Message_ Content\r\nurn:x-enexis:ecdm:uid:2:234490\r\nContains message details, for a message to be displayed on a Charging Station.\r\n\r\n",
-        "javaType": "MessageContent",
-        "type": "object",
-        "properties": {
-          "format": {
-            "$ref": "#/definitions/MessageFormatEnumType"
-          },
-          "language": {
-            "description": "Message_ Content. Language. Language_ Code\r\nurn:x-enexis:ecdm:uid:1:570849\r\nMessage language identifier. Contains a language code as defined in &lt;&lt;ref-RFC5646,[RFC5646]&gt;&gt;.\r\n",
-            "type": "string",
-            "maxLength": 8
-          },
-          "content": {
-            "description": "Message_ Content. Content. Message\r\nurn:x-enexis:ecdm:uid:1:570852\r\nMessage contents.\r\n\r\n",
-            "type": "string",
-            "maxLength": 512
-          }
+    "idTokenInfo": {
+      "$ref": "#/definitions/IdTokenInfoType"
+    }
+  },
+  "required": ["idToken"],
+  "definitions": {
+    "AuthorizationStatusEnumType": {
+      "description": "ID_ Token. Status. Authorization_ Status\r\nurn:x-oca:ocpp:uid:1:569372\r\nCurrent status of the ID Token.\r\n",
+      "javaType": "AuthorizationStatusEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "Accepted",
+        "Blocked",
+        "ConcurrentTx",
+        "Expired",
+        "Invalid",
+        "NoCredit",
+        "NotAllowedTypeEVSE",
+        "NotAtThisLocation",
+        "NotAtThisTime",
+        "Unknown"
+      ],
+      "tsEnumNames": [
+        "Accepted",
+        "Blocked",
+        "ConcurrentTx",
+        "Expired",
+        "Invalid",
+        "NoCredit",
+        "NotAllowedTypeEVSE",
+        "NotAtThisLocation",
+        "NotAtThisTime",
+        "Unknown"
+      ]
+    },
+    "IdTokenEnumType": {
+      "description": "Enumeration of possible idToken types.\r\n",
+      "javaType": "IdTokenEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "Central",
+        "eMAID",
+        "ISO14443",
+        "ISO15693",
+        "KeyCode",
+        "Local",
+        "MacAddress",
+        "NoAuthorization"
+      ],
+      "tsEnumNames": [
+        "Central",
+        "eMAID",
+        "ISO14443",
+        "ISO15693",
+        "KeyCode",
+        "Local",
+        "MacAddress",
+        "NoAuthorization"
+      ]
+    },
+    "MessageContentType": {
+      "description": "Message_ Content\r\nurn:x-enexis:ecdm:uid:2:234490\r\nContains message details, for a message to be displayed on a Charging Station.\r\n\r\n",
+      "javaType": "MessageContent",
+      "type": "object",
+      "properties": {
+        "format": {
+          "$ref": "#/definitions/MessageFormatEnumType"
         },
-        "required": [
-          "format",
-          "content"
-        ]
-      },
-      "MessageFormatEnumType": {
-        "description": "Message_ Content. Format. Message_ Format_ Code\r\nurn:x-enexis:ecdm:uid:1:570848\r\nFormat of the message.\r\n",
-        "javaType": "MessageFormatEnum",
-        "type": "string",
-        "additionalProperties": false,
-        "enum": [
-          "ASCII",
-          "HTML",
-          "URI",
-          "UTF8"
-        ],
-        "tsEnumNames": [
-          "ASCII",
-          "HTML",
-          "URI",
-          "UTF8"
-        ]
-      },
-      "AdditionalInfoType": {
-        "description": "Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.\r\n",
-        "javaType": "AdditionalInfo",
-        "type": "object",
-        "properties": {
-          "additionalIdToken": {
-            "description": "This field specifies the additional IdToken.\r\n",
-            "type": "string",
-            "maxLength": 36
-          },
-          "type": {
-            "description": "This defines the type of the additionalIdToken. This is a custom type, so the implementation needs to be agreed upon by all involved parties.\r\n",
-            "type": "string",
-            "maxLength": 50
-          }
+        "language": {
+          "description": "Message_ Content. Language. Language_ Code\r\nurn:x-enexis:ecdm:uid:1:570849\r\nMessage language identifier. Contains a language code as defined in &lt;&lt;ref-RFC5646,[RFC5646]&gt;&gt;.\r\n",
+          "type": "string",
+          "maxLength": 8
         },
-        "required": [
-          "additionalIdToken",
-          "type"
-        ]
+        "content": {
+          "description": "Message_ Content. Content. Message\r\nurn:x-enexis:ecdm:uid:1:570852\r\nMessage contents.\r\n\r\n",
+          "type": "string",
+          "maxLength": 512
+        }
       },
-      "IdTokenType": {
-        "javaType": "IdToken",
-        "type": "object",
-        "properties": {
-          "additionalInfo": {
-            "type": "array",
-            "additionalItems": false,
-            "items": {
-              "$ref": "#/definitions/AdditionalInfoType"
-            },
-            "minItems": 1
-          },
-          "idToken": {
-            "type": "string",
-            "maxLength": 36
-          },
-          "type": {
-            "$ref": "#/definitions/IdTokenEnumType"
-          }
+      "required": ["format", "content"]
+    },
+    "MessageFormatEnumType": {
+      "description": "Message_ Content. Format. Message_ Format_ Code\r\nurn:x-enexis:ecdm:uid:1:570848\r\nFormat of the message.\r\n",
+      "javaType": "MessageFormatEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["ASCII", "HTML", "URI", "UTF8"],
+      "tsEnumNames": ["ASCII", "HTML", "URI", "UTF8"]
+    },
+    "AdditionalInfoType": {
+      "description": "Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.\r\n",
+      "javaType": "AdditionalInfo",
+      "type": "object",
+      "properties": {
+        "additionalIdToken": {
+          "description": "This field specifies the additional IdToken.\r\n",
+          "type": "string",
+          "maxLength": 36
         },
-        "required": ["idToken", "type"]
+        "type": {
+          "description": "This defines the type of the additionalIdToken. This is a custom type, so the implementation needs to be agreed upon by all involved parties.\r\n",
+          "type": "string",
+          "maxLength": 50
+        }
       },
-      "IdTokenInfoType": {
-        "javaType": "IdTokenInfo",
-        "type": "object",
-        "properties": {
-          "status": {
-            "$ref": "#/definitions/AuthorizationStatusEnumType"
+      "required": ["additionalIdToken", "type"]
+    },
+    "IdTokenType": {
+      "javaType": "IdToken",
+      "type": "object",
+      "properties": {
+        "additionalInfo": {
+          "type": "array",
+          "additionalItems": false,
+          "items": {
+            "$ref": "#/definitions/AdditionalInfoType"
           },
-          "cacheExpiryDateTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "chargingPriority": {
+          "minItems": 1
+        },
+        "idToken": {
+          "type": "string",
+          "maxLength": 36
+        },
+        "type": {
+          "$ref": "#/definitions/IdTokenEnumType"
+        }
+      },
+      "required": ["idToken", "type"]
+    },
+    "IdTokenInfoType": {
+      "javaType": "IdTokenInfo",
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/AuthorizationStatusEnumType"
+        },
+        "cacheExpiryDateTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "chargingPriority": {
+          "type": "integer"
+        },
+        "language1": {
+          "type": "string",
+          "maxLength": 8
+        },
+        "evseId": {
+          "type": "array",
+          "additionalItems": false,
+          "items": {
             "type": "integer"
           },
-          "language1": {
-            "type": "string",
-            "maxLength": 8
-          },
-          "evseId": {
-            "type": "array",
-            "additionalItems": false,
-            "items": {
-              "type": "integer"
-            },
-            "minItems": 1
-          },
-          "groupIdToken": {
-            "$ref": "#/definitions/IdTokenType"
-          },
-          "language2": {
-            "type": "string",
-            "maxLength": 8
-          },
-          "personalMessage": {
-            "$ref": "#/definitions/MessageContentType"
-          }
+          "minItems": 1
         },
-        "required": ["status"]
-      }
+        "groupIdToken": {
+          "$ref": "#/definitions/IdTokenType"
+        },
+        "language2": {
+          "type": "string",
+          "maxLength": 8
+        },
+        "personalMessage": {
+          "$ref": "#/definitions/MessageContentType"
+        }
+      },
+      "required": ["status"]
     }
   }
-  
+}

@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     }
   },
   "type": "object",
@@ -29,7 +27,5 @@
       "format": "date-time"
     }
   },
-  "required": [
-    "currentTime"
-  ]
+  "required": ["currentTime"]
 }

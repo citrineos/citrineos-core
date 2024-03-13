@@ -10,14 +10,13 @@ import { IClientConnection } from "./ClientConnection";
  * Interface for the central system
  */
 export interface ICentralSystem {
+  onCall(connection: IClientConnection, message: Call): void;
+  onCallResult(connection: IClientConnection, message: CallResult): void;
+  onCallError(connection: IClientConnection, message: CallError): void;
 
-    onCall(connection: IClientConnection, message: Call): void;
-    onCallResult(connection: IClientConnection, message: CallResult): void;
-    onCallError(connection: IClientConnection, message: CallError): void;
+  sendCall(identifier: string, message: Call): Promise<boolean>;
+  sendCallResult(identifier: string, message: CallResult): Promise<boolean>;
+  sendCallError(identifier: string, message: CallError): Promise<boolean>;
 
-    sendCall(identifier: string, message: Call): Promise<boolean>;
-    sendCallResult(identifier: string, message: CallResult): Promise<boolean>;
-    sendCallError(identifier: string, message: CallError): Promise<boolean>;
-
-    shutdown(): void;
+  shutdown(): void;
 }

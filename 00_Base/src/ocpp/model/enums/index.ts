@@ -13,7 +13,7 @@ export const enum APNAuthenticationEnumType {
   CHAP = "CHAP",
   NONE = "NONE",
   PAP = "PAP",
-  AUTO = "AUTO"
+  AUTO = "AUTO",
 }
 
 /**
@@ -22,7 +22,7 @@ export const enum APNAuthenticationEnumType {
  */
 export const enum ClearCacheStatusEnumType {
   Accepted = "Accepted",
-  Rejected = "Rejected"
+  Rejected = "Rejected",
 }
 
 /**
@@ -37,7 +37,7 @@ export const enum OCPPInterfaceEnumType {
   Wireless0 = "Wireless0",
   Wireless1 = "Wireless1",
   Wireless2 = "Wireless2",
-  Wireless3 = "Wireless3"
+  Wireless3 = "Wireless3",
 }
 
 /**
@@ -53,7 +53,7 @@ export const enum AuthorizeCertificateStatusEnumType {
   CertificateRevoked = "CertificateRevoked",
   NoCertificateAvailable = "NoCertificateAvailable",
   CertChainError = "CertChainError",
-  ContractCancelled = "ContractCancelled"
+  ContractCancelled = "ContractCancelled",
 }
 
 /**
@@ -63,7 +63,7 @@ export const enum AuthorizeCertificateStatusEnumType {
 export const enum InstallCertificateStatusEnumType {
   Accepted = "Accepted",
   Rejected = "Rejected",
-  Failed = "Failed"
+  Failed = "Failed",
 }
 
 /**
@@ -73,7 +73,7 @@ export const enum InstallCertificateStatusEnumType {
 export const enum DeleteCertificateStatusEnumType {
   Accepted = "Accepted",
   Failed = "Failed",
-  NotFound = "NotFound"
+  NotFound = "NotFound",
 }
 
 /**
@@ -82,7 +82,7 @@ export const enum DeleteCertificateStatusEnumType {
  */
 export const enum GetInstalledCertificateStatusEnumType {
   Accepted = "Accepted",
-  NotFound = "NotFound"
+  NotFound = "NotFound",
 }
 
 /**
@@ -95,7 +95,7 @@ export const enum EnergyTransferModeEnumType {
   DC = "DC",
   AC_single_phase = "AC_single_phase",
   AC_two_phase = "AC_two_phase",
-  AC_three_phase = "AC_three_phase"
+  AC_three_phase = "AC_three_phase",
 }
 
 /**
@@ -107,7 +107,7 @@ export const enum EnergyTransferModeEnumType {
 export const enum ChargingProfileKindEnumType {
   Absolute = "Absolute",
   Recurring = "Recurring",
-  Relative = "Relative"
+  Relative = "Relative",
 }
 
 /**
@@ -120,7 +120,7 @@ export const enum ChargingProfilePurposeEnumType {
   ChargingStationExternalConstraints = "ChargingStationExternalConstraints",
   ChargingStationMaxProfile = "ChargingStationMaxProfile",
   TxDefaultProfile = "TxDefaultProfile",
-  TxProfile = "TxProfile"
+  TxProfile = "TxProfile",
 }
 
 /**
@@ -131,7 +131,7 @@ export const enum ChargingProfilePurposeEnumType {
  */
 export const enum RecurrencyKindEnumType {
   Daily = "Daily",
-  Weekly = "Weekly"
+  Weekly = "Weekly",
 }
 
 /**
@@ -142,7 +142,7 @@ export const enum RecurrencyKindEnumType {
  */
 export const enum ChargingRateUnitEnumType {
   W = "W",
-  A = "A"
+  A = "A",
 }
 
 /**
@@ -153,7 +153,7 @@ export const enum ChargingRateUnitEnumType {
  */
 export const enum OCPPTransportEnumType {
   JSON = "JSON",
-  SOAP = "SOAP"
+  SOAP = "SOAP",
 }
 
 /**
@@ -166,7 +166,7 @@ export const enum OCPPVersionEnumType {
   OCPP12 = "OCPP12",
   OCPP15 = "OCPP15",
   OCPP16 = "OCPP16",
-  OCPP20 = "OCPP20"
+  OCPP20 = "OCPP20",
 }
 
 /**
@@ -178,7 +178,7 @@ export const enum OCPPVersionEnumType {
 export const enum CostKindEnumType {
   CarbonDioxideEmission = "CarbonDioxideEmission",
   RelativePricePercentage = "RelativePricePercentage",
-  RenewableGenerationPercentage = "RenewableGenerationPercentage"
+  RenewableGenerationPercentage = "RenewableGenerationPercentage",
 }
 
 /**
@@ -194,7 +194,7 @@ export const enum DataEnumType {
   OptionList = "OptionList",
   SequenceList = "SequenceList",
   MemberList = "MemberList",
-  passwordString = "passwordString"
+  passwordString = "passwordString",
 }
 
 /**
@@ -204,7 +204,7 @@ export const enum DataEnumType {
 export const enum MutabilityEnumType {
   ReadOnly = "ReadOnly",
   WriteOnly = "WriteOnly",
-  ReadWrite = "ReadWrite"
+  ReadWrite = "ReadWrite",
 }
 
 /**
@@ -213,7 +213,7 @@ export const enum MutabilityEnumType {
  */
 export const enum CertificateActionEnumType {
   Install = "Install",
-  Update = "Update"
+  Update = "Update",
 }
 
 /**
@@ -228,7 +228,7 @@ export const enum IdTokenEnumType {
   KeyCode = "KeyCode",
   Local = "Local",
   MacAddress = "MacAddress",
-  NoAuthorization = "NoAuthorization"
+  NoAuthorization = "NoAuthorization",
 }
 
 /**
@@ -247,7 +247,7 @@ export const enum AuthorizationStatusEnumType {
   NotAllowedTypeEVSE = "NotAllowedTypeEVSE",
   NotAtThisLocation = "NotAtThisLocation",
   NotAtThisTime = "NotAtThisTime",
-  Unknown = "Unknown"
+  Unknown = "Unknown",
 }
 
 /**
@@ -256,7 +256,7 @@ export const enum AuthorizationStatusEnumType {
  */
 export const enum GetDisplayMessagesStatusEnumType {
   Accepted = "Accepted",
-  Unknown = "Unknown"
+  Unknown = "Unknown",
 }
 
 /**
@@ -265,7 +265,7 @@ export const enum GetDisplayMessagesStatusEnumType {
  */
 export const enum ClearChargingProfileStatusEnumType {
   Accepted = "Accepted",
-  Unknown = "Unknown"
+  Unknown = "Unknown",
 }
 
 /**
@@ -276,7 +276,7 @@ export const enum InstallCertificateUseEnumType {
   V2GRootCertificate = "V2GRootCertificate",
   MORootCertificate = "MORootCertificate",
   CSMSRootCertificate = "CSMSRootCertificate",
-  ManufacturerRootCertificate = "ManufacturerRootCertificate"
+  ManufacturerRootCertificate = "ManufacturerRootCertificate",
 }
 
 /**
@@ -286,7 +286,7 @@ export const enum InstallCertificateUseEnumType {
  */
 export const enum CertificateSigningUseEnumType {
   ChargingStationCertificate = "ChargingStationCertificate",
-  V2GCertificate = "V2GCertificate"
+  V2GCertificate = "V2GCertificate",
 }
 
 /**
@@ -298,7 +298,7 @@ export const enum GetCertificateIdUseEnumType {
   MORootCertificate = "MORootCertificate",
   CSMSRootCertificate = "CSMSRootCertificate",
   V2GCertificateChain = "V2GCertificateChain",
-  ManufacturerRootCertificate = "ManufacturerRootCertificate"
+  ManufacturerRootCertificate = "ManufacturerRootCertificate",
 }
 
 /**
@@ -309,7 +309,7 @@ export const enum GenericDeviceModelStatusEnumType {
   Accepted = "Accepted",
   Rejected = "Rejected",
   NotSupported = "NotSupported",
-  EmptyResultSet = "EmptyResultSet"
+  EmptyResultSet = "EmptyResultSet",
 }
 
 /**
@@ -319,7 +319,7 @@ export const enum GenericDeviceModelStatusEnumType {
 export const enum TriggerMessageStatusEnumType {
   Accepted = "Accepted",
   Rejected = "Rejected",
-  NotImplemented = "NotImplemented"
+  NotImplemented = "NotImplemented",
 }
 
 /**
@@ -329,7 +329,7 @@ export const enum TriggerMessageStatusEnumType {
 export const enum UnpublishFirmwareStatusEnumType {
   DownloadOngoing = "DownloadOngoing",
   NoFirmware = "NoFirmware",
-  Unpublished = "Unpublished"
+  Unpublished = "Unpublished",
 }
 
 /**
@@ -338,7 +338,7 @@ export const enum UnpublishFirmwareStatusEnumType {
  */
 export const enum Iso15118EVCertificateStatusEnumType {
   Accepted = "Accepted",
-  Failed = "Failed"
+  Failed = "Failed",
 }
 
 /**
@@ -348,7 +348,7 @@ export const enum Iso15118EVCertificateStatusEnumType {
 export const enum CustomerInformationStatusEnumType {
   Accepted = "Accepted",
   Rejected = "Rejected",
-  Invalid = "Invalid"
+  Invalid = "Invalid",
 }
 
 /**
@@ -361,7 +361,7 @@ export const enum MessageFormatEnumType {
   ASCII = "ASCII",
   HTML = "HTML",
   URI = "URI",
-  UTF8 = "UTF8"
+  UTF8 = "UTF8",
 }
 
 /**
@@ -373,7 +373,7 @@ export const enum MessageFormatEnumType {
 export const enum MessagePriorityEnumType {
   AlwaysFront = "AlwaysFront",
   InFront = "InFront",
-  NormalCycle = "NormalCycle"
+  NormalCycle = "NormalCycle",
 }
 
 /**
@@ -386,7 +386,7 @@ export const enum MessageStateEnumType {
   Charging = "Charging",
   Faulted = "Faulted",
   Idle = "Idle",
-  Unavailable = "Unavailable"
+  Unavailable = "Unavailable",
 }
 
 /**
@@ -414,7 +414,7 @@ export const enum TriggerReasonEnumType {
   RemoteStart = "RemoteStart",
   AbnormalCondition = "AbnormalCondition",
   SignedDataReceived = "SignedDataReceived",
-  ResetCommand = "ResetCommand"
+  ResetCommand = "ResetCommand",
 }
 
 /**
@@ -424,7 +424,7 @@ export const enum TriggerReasonEnumType {
 export const enum SetNetworkProfileStatusEnumType {
   Accepted = "Accepted",
   Rejected = "Rejected",
-  Failed = "Failed"
+  Failed = "Failed",
 }
 
 /**
@@ -435,7 +435,7 @@ export const enum SetNetworkProfileStatusEnumType {
 export const enum ClearMonitoringStatusEnumType {
   Accepted = "Accepted",
   Rejected = "Rejected",
-  NotFound = "NotFound"
+  NotFound = "NotFound",
 }
 
 /**
@@ -448,7 +448,7 @@ export const enum GetVariableStatusEnumType {
   Rejected = "Rejected",
   UnknownComponent = "UnknownComponent",
   UnknownVariable = "UnknownVariable",
-  NotSupportedAttributeType = "NotSupportedAttributeType"
+  NotSupportedAttributeType = "NotSupportedAttributeType",
 }
 
 /**
@@ -461,7 +461,7 @@ export const enum SetVariableStatusEnumType {
   UnknownComponent = "UnknownComponent",
   UnknownVariable = "UnknownVariable",
   NotSupportedAttributeType = "NotSupportedAttributeType",
-  RebootRequired = "RebootRequired"
+  RebootRequired = "RebootRequired",
 }
 
 /**
@@ -470,7 +470,7 @@ export const enum SetVariableStatusEnumType {
  */
 export const enum CertificateSignedStatusEnumType {
   Accepted = "Accepted",
-  Rejected = "Rejected"
+  Rejected = "Rejected",
 }
 
 /**
@@ -480,7 +480,7 @@ export const enum CertificateSignedStatusEnumType {
 export const enum NotifyEVChargingNeedsStatusEnumType {
   Accepted = "Accepted",
   Rejected = "Rejected",
-  Processing = "Processing"
+  Processing = "Processing",
 }
 
 /**
@@ -489,7 +489,7 @@ export const enum NotifyEVChargingNeedsStatusEnumType {
  */
 export const enum ChargingProfileStatusEnumType {
   Accepted = "Accepted",
-  Rejected = "Rejected"
+  Rejected = "Rejected",
 }
 
 /**
@@ -498,7 +498,7 @@ export const enum ChargingProfileStatusEnumType {
  */
 export const enum ClearMessageStatusEnumType {
   Accepted = "Accepted",
-  Unknown = "Unknown"
+  Unknown = "Unknown",
 }
 
 /**
@@ -515,7 +515,7 @@ export const enum ReadingContextEnumType {
   Sample_Periodic = "Sample.Periodic",
   Transaction_Begin = "Transaction.Begin",
   Transaction_End = "Transaction.End",
-  Trigger = "Trigger"
+  Trigger = "Trigger",
 }
 
 /**
@@ -530,7 +530,7 @@ export const enum LocationEnumType {
   Cable = "Cable",
   EV = "EV",
   Inlet = "Inlet",
-  Outlet = "Outlet"
+  Outlet = "Outlet",
 }
 
 /**
@@ -564,7 +564,7 @@ export const enum MeasurandEnumType {
   Power_Reactive_Export = "Power.Reactive.Export",
   Power_Reactive_Import = "Power.Reactive.Import",
   SoC = "SoC",
-  Voltage = "Voltage"
+  Voltage = "Voltage",
 }
 
 /**
@@ -583,7 +583,7 @@ export const enum PhaseEnumType {
   L3_N = "L3-N",
   L1_L2 = "L1-L2",
   L2_L3 = "L2-L3",
-  L3_L1 = "L3-L1"
+  L3_L1 = "L3-L1",
 }
 
 /**
@@ -594,7 +594,7 @@ export const enum ChargingLimitSourceEnumType {
   EMS = "EMS",
   Other = "Other",
   SO = "SO",
-  CSO = "CSO"
+  CSO = "CSO",
 }
 
 /**
@@ -606,7 +606,7 @@ export const enum EventNotificationEnumType {
   HardWiredNotification = "HardWiredNotification",
   HardWiredMonitor = "HardWiredMonitor",
   PreconfiguredMonitor = "PreconfiguredMonitor",
-  CustomMonitor = "CustomMonitor"
+  CustomMonitor = "CustomMonitor",
 }
 
 /**
@@ -615,7 +615,7 @@ export const enum EventNotificationEnumType {
  */
 export const enum GenericStatusEnumType {
   Accepted = "Accepted",
-  Rejected = "Rejected"
+  Rejected = "Rejected",
 }
 
 /**
@@ -625,7 +625,7 @@ export const enum GenericStatusEnumType {
 export const enum MonitoringBaseEnumType {
   All = "All",
   FactoryDefault = "FactoryDefault",
-  HardWiredOnly = "HardWiredOnly"
+  HardWiredOnly = "HardWiredOnly",
 }
 
 /**
@@ -634,7 +634,7 @@ export const enum MonitoringBaseEnumType {
  */
 export const enum RequestStartStopStatusEnumType {
   Accepted = "Accepted",
-  Rejected = "Rejected"
+  Rejected = "Rejected",
 }
 
 /**
@@ -647,7 +647,7 @@ export const enum SetMonitoringStatusEnumType {
   UnknownVariable = "UnknownVariable",
   UnsupportedMonitorType = "UnsupportedMonitorType",
   Rejected = "Rejected",
-  Duplicate = "Duplicate"
+  Duplicate = "Duplicate",
 }
 
 /**
@@ -660,7 +660,7 @@ export const enum MonitorEnumType {
   LowerThreshold = "LowerThreshold",
   Delta = "Delta",
   Periodic = "Periodic",
-  PeriodicClockAligned = "PeriodicClockAligned"
+  PeriodicClockAligned = "PeriodicClockAligned",
 }
 
 /**
@@ -669,7 +669,7 @@ export const enum MonitorEnumType {
  */
 export const enum ReservationUpdateStatusEnumType {
   Expired = "Expired",
-  Removed = "Removed"
+  Removed = "Removed",
 }
 
 /**
@@ -681,7 +681,7 @@ export const enum ConnectorStatusEnumType {
   Occupied = "Occupied",
   Reserved = "Reserved",
   Unavailable = "Unavailable",
-  Faulted = "Faulted"
+  Faulted = "Faulted",
 }
 
 /**
@@ -702,7 +702,7 @@ export const enum FirmwareStatusEnumType {
   InstallScheduled = "InstallScheduled",
   InstallVerificationFailed = "InstallVerificationFailed",
   InvalidSignature = "InvalidSignature",
-  SignatureVerified = "SignatureVerified"
+  SignatureVerified = "SignatureVerified",
 }
 
 /**
@@ -720,7 +720,7 @@ export const enum PublishFirmwareStatusEnumType {
   DownloadPaused = "DownloadPaused",
   InvalidChecksum = "InvalidChecksum",
   ChecksumVerified = "ChecksumVerified",
-  PublishFailed = "PublishFailed"
+  PublishFailed = "PublishFailed",
 }
 
 /**
@@ -736,7 +736,7 @@ export const enum BootReasonEnumType {
   ScheduledReset = "ScheduledReset",
   Triggered = "Triggered",
   Unknown = "Unknown",
-  Watchdog = "Watchdog"
+  Watchdog = "Watchdog",
 }
 
 /**
@@ -751,7 +751,7 @@ export const enum UploadLogStatusEnumType {
   Uploaded = "Uploaded",
   UploadFailure = "UploadFailure",
   Uploading = "Uploading",
-  AcceptedCanceled = "AcceptedCanceled"
+  AcceptedCanceled = "AcceptedCanceled",
 }
 
 /**
@@ -761,7 +761,7 @@ export const enum UploadLogStatusEnumType {
  */
 export const enum OperationalStatusEnumType {
   Inoperative = "Inoperative",
-  Operative = "Operative"
+  Operative = "Operative",
 }
 
 /**
@@ -771,7 +771,7 @@ export const enum OperationalStatusEnumType {
  */
 export const enum LogEnumType {
   DiagnosticsLog = "DiagnosticsLog",
-  SecurityLog = "SecurityLog"
+  SecurityLog = "SecurityLog",
 }
 
 /**
@@ -780,7 +780,7 @@ export const enum LogEnumType {
  */
 export const enum ResetEnumType {
   Immediate = "Immediate",
-  OnIdle = "OnIdle"
+  OnIdle = "OnIdle",
 }
 
 /**
@@ -791,7 +791,7 @@ export const enum ResetEnumType {
 export const enum TransactionEventEnumType {
   Ended = "Ended",
   Started = "Started",
-  Updated = "Updated"
+  Updated = "Updated",
 }
 
 /**
@@ -800,7 +800,7 @@ export const enum TransactionEventEnumType {
  */
 export const enum UpdateEnumType {
   Differential = "Differential",
-  Full = "Full"
+  Full = "Full",
 }
 
 /**
@@ -811,7 +811,7 @@ export const enum UpdateEnumType {
 export const enum RegistrationStatusEnumType {
   Accepted = "Accepted",
   Pending = "Pending",
-  Rejected = "Rejected"
+  Rejected = "Rejected",
 }
 
 /**
@@ -824,7 +824,7 @@ export const enum UpdateFirmwareStatusEnumType {
   Rejected = "Rejected",
   AcceptedCanceled = "AcceptedCanceled",
   InvalidCertificate = "InvalidCertificate",
-  RevokedCertificate = "RevokedCertificate"
+  RevokedCertificate = "RevokedCertificate",
 }
 
 /**
@@ -834,7 +834,7 @@ export const enum UpdateFirmwareStatusEnumType {
 export const enum LogStatusEnumType {
   Accepted = "Accepted",
   Rejected = "Rejected",
-  AcceptedCanceled = "AcceptedCanceled"
+  AcceptedCanceled = "AcceptedCanceled",
 }
 
 /**
@@ -863,7 +863,7 @@ export const enum ConnectorEnumType {
   wInductive = "wInductive",
   wResonant = "wResonant",
   Undetermined = "Undetermined",
-  Unknown = "Unknown"
+  Unknown = "Unknown",
 }
 
 /**
@@ -873,7 +873,7 @@ export const enum ConnectorEnumType {
 export const enum ReportBaseEnumType {
   ConfigurationInventory = "ConfigurationInventory",
   FullInventory = "FullInventory",
-  SummaryInventory = "SummaryInventory"
+  SummaryInventory = "SummaryInventory",
 }
 
 /**
@@ -882,7 +882,7 @@ export const enum ReportBaseEnumType {
  */
 export const enum CancelReservationStatusEnumType {
   Accepted = "Accepted",
-  Rejected = "Rejected"
+  Rejected = "Rejected",
 }
 
 /**
@@ -893,7 +893,7 @@ export const enum DataTransferStatusEnumType {
   Accepted = "Accepted",
   Rejected = "Rejected",
   UnknownMessageId = "UnknownMessageId",
-  UnknownVendorId = "UnknownVendorId"
+  UnknownVendorId = "UnknownVendorId",
 }
 
 /**
@@ -905,7 +905,7 @@ export const enum ReserveNowStatusEnumType {
   Faulted = "Faulted",
   Occupied = "Occupied",
   Rejected = "Rejected",
-  Unavailable = "Unavailable"
+  Unavailable = "Unavailable",
 }
 
 /**
@@ -915,7 +915,7 @@ export const enum ReserveNowStatusEnumType {
 export const enum SendLocalListStatusEnumType {
   Accepted = "Accepted",
   Failed = "Failed",
-  VersionMismatch = "VersionMismatch"
+  VersionMismatch = "VersionMismatch",
 }
 
 /**
@@ -926,7 +926,7 @@ export const enum UnlockStatusEnumType {
   Unlocked = "Unlocked",
   UnlockFailed = "UnlockFailed",
   OngoingAuthorizedTransaction = "OngoingAuthorizedTransaction",
-  UnknownConnector = "UnknownConnector"
+  UnknownConnector = "UnknownConnector",
 }
 
 /**
@@ -939,7 +939,7 @@ export const enum DisplayMessageStatusEnumType {
   Rejected = "Rejected",
   NotSupportedPriority = "NotSupportedPriority",
   NotSupportedState = "NotSupportedState",
-  UnknownTransaction = "UnknownTransaction"
+  UnknownTransaction = "UnknownTransaction",
 }
 
 /**
@@ -949,7 +949,7 @@ export const enum DisplayMessageStatusEnumType {
 export const enum ChangeAvailabilityStatusEnumType {
   Accepted = "Accepted",
   Rejected = "Rejected",
-  Scheduled = "Scheduled"
+  Scheduled = "Scheduled",
 }
 
 /**
@@ -959,7 +959,7 @@ export const enum ChangeAvailabilityStatusEnumType {
 export const enum ResetStatusEnumType {
   Accepted = "Accepted",
   Rejected = "Rejected",
-  Scheduled = "Scheduled"
+  Scheduled = "Scheduled",
 }
 
 /**
@@ -968,7 +968,7 @@ export const enum ResetStatusEnumType {
  */
 export const enum GetChargingProfileStatusEnumType {
   Accepted = "Accepted",
-  NoProfiles = "NoProfiles"
+  NoProfiles = "NoProfiles",
 }
 
 /**
@@ -977,7 +977,7 @@ export const enum GetChargingProfileStatusEnumType {
  */
 export const enum GetCertificateStatusEnumType {
   Accepted = "Accepted",
-  Failed = "Failed"
+  Failed = "Failed",
 }
 
 /**
@@ -992,7 +992,7 @@ export const enum ChargingStateEnumType {
   EVConnected = "EVConnected",
   SuspendedEV = "SuspendedEV",
   SuspendedEVSE = "SuspendedEVSE",
-  Idle = "Idle"
+  Idle = "Idle",
 }
 
 /**
@@ -1020,7 +1020,7 @@ export const enum ReasonEnumType {
   SOCLimitReached = "SOCLimitReached",
   StoppedByEV = "StoppedByEV",
   TimeLimitReached = "TimeLimitReached",
-  Timeout = "Timeout"
+  Timeout = "Timeout",
 }
 
 /**
@@ -1031,7 +1031,7 @@ export const enum AttributeEnumType {
   Actual = "Actual",
   Target = "Target",
   MinSet = "MinSet",
-  MaxSet = "MaxSet"
+  MaxSet = "MaxSet",
 }
 
 /**
@@ -1049,7 +1049,7 @@ export const enum MessageTriggerEnumType {
   StatusNotification = "StatusNotification",
   TransactionEvent = "TransactionEvent",
   SignCombinedCertificate = "SignCombinedCertificate",
-  PublishFirmwareStatusNotification = "PublishFirmwareStatusNotification"
+  PublishFirmwareStatusNotification = "PublishFirmwareStatusNotification",
 }
 
 /**
@@ -1060,7 +1060,7 @@ export const enum MessageTriggerEnumType {
 export const enum EventTriggerEnumType {
   Alerting = "Alerting",
   Delta = "Delta",
-  Periodic = "Periodic"
+  Periodic = "Periodic",
 }
 
 /**
@@ -1070,7 +1070,7 @@ export const enum EventTriggerEnumType {
 export const enum HashAlgorithmEnumType {
   SHA256 = "SHA256",
   SHA384 = "SHA384",
-  SHA512 = "SHA512"
+  SHA512 = "SHA512",
 }
 
 /**
@@ -1083,18 +1083,18 @@ export const enum VPNEnumType {
   IKEv2 = "IKEv2",
   IPSec = "IPSec",
   L2TP = "L2TP",
-  PPTP = "PPTP"
+  PPTP = "PPTP",
 }
 
 export const enum ComponentCriterionEnumType {
   Active = "Active",
   Available = "Available",
   Enabled = "Enabled",
-  Problem = "Problem"
+  Problem = "Problem",
 }
 
 export const enum MonitoringCriterionEnumType {
   ThresholdMonitoring = "ThresholdMonitoring",
   DeltaMonitoring = "DeltaMonitoring",
-  PeriodicMonitoring = "PeriodicMonitoring"
+  PeriodicMonitoring = "PeriodicMonitoring",
 }

@@ -12,25 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "LogStatusEnumType": {
       "description": "This field indicates whether the Charging Station was able to accept the request.\r\n",
       "javaType": "LogStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "Rejected",
-        "AcceptedCanceled"
-      ],
-      "tsEnumNames": [
-        "Accepted",
-        "Rejected",
-        "AcceptedCanceled"
-      ]
+      "enum": ["Accepted", "Rejected", "AcceptedCanceled"],
+      "tsEnumNames": ["Accepted", "Rejected", "AcceptedCanceled"]
     },
     "StatusInfoType": {
       "description": "Element providing more information about the status.\r\n",
@@ -52,9 +42,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -75,7 +63,5 @@
       "maxLength": 255
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

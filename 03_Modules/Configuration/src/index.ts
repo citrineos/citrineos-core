@@ -3,6 +3,6 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { ConfigurationModuleApi } from './module/api';
-export { IConfigurationModuleApi } from './module/interface';
-export { ConfigurationModule } from './module/module';
+export { ConfigurationModuleApi } from "./module/api";
+export { IConfigurationModuleApi } from "./module/interface";
+export { ConfigurationModule } from "./module/module";

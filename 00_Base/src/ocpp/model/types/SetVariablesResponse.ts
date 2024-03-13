@@ -108,6 +108,3 @@ export interface VariableType {
    */
   instance?: string;
 }
-
-
-

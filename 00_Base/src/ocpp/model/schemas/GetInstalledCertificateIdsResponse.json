@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "GetCertificateIdUseEnumType": {
       "description": "Indicates the type of the requested certificate(s).\r\n",
@@ -41,30 +39,16 @@
       "javaType": "GetInstalledCertificateStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "NotFound"
-      ],
-      "tsEnumNames": [
-        "Accepted",
-        "NotFound"
-      ]
+      "enum": ["Accepted", "NotFound"],
+      "tsEnumNames": ["Accepted", "NotFound"]
     },
     "HashAlgorithmEnumType": {
       "description": "Used algorithms for the hashes provided.\r\n",
       "javaType": "HashAlgorithmEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "SHA256",
-        "SHA384",
-        "SHA512"
-      ],
-      "tsEnumNames": [
-        "SHA256",
-        "SHA384",
-        "SHA512"
-      ]
+      "enum": ["SHA256", "SHA384", "SHA512"],
+      "tsEnumNames": ["SHA256", "SHA384", "SHA512"]
     },
     "CertificateHashDataChainType": {
       "javaType": "CertificateHashDataChain",
@@ -90,10 +74,7 @@
           "maxItems": 4
         }
       },
-      "required": [
-        "certificateType",
-        "certificateHashData"
-      ]
+      "required": ["certificateType", "certificateHashData"]
     },
     "CertificateHashDataType": {
       "javaType": "CertificateHashData",
@@ -149,9 +130,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -175,7 +154,5 @@
       "minItems": 1
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

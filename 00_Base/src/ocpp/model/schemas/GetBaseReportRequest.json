@@ -12,20 +12,14 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ReportBaseEnumType": {
       "description": "This field specifies the report base.\r\n",
       "javaType": "ReportBaseEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "ConfigurationInventory",
-        "FullInventory",
-        "SummaryInventory"
-      ],
+      "enum": ["ConfigurationInventory", "FullInventory", "SummaryInventory"],
       "tsEnumNames": [
         "ConfigurationInventory",
         "FullInventory",
@@ -47,8 +41,5 @@
       "$ref": "#/definitions/ReportBaseEnumType"
     }
   },
-  "required": [
-    "requestId",
-    "reportBase"
-  ]
+  "required": ["requestId", "reportBase"]
 }

@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     }
   },
   "type": "object",
@@ -47,10 +45,5 @@
       "type": "integer"
     }
   },
-  "required": [
-    "data",
-    "seqNo",
-    "generatedAt",
-    "requestId"
-  ]
+  "required": ["data", "seqNo", "generatedAt", "requestId"]
 }

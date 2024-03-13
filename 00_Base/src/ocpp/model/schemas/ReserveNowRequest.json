@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ConnectorEnumType": {
       "description": "This field specifies the connector type.\r\n",
@@ -116,10 +114,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "additionalIdToken",
-        "type"
-      ]
+      "required": ["additionalIdToken", "type"]
     },
     "IdTokenType": {
       "description": "Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.\r\n",
@@ -147,10 +142,7 @@
           "$ref": "#/definitions/IdTokenEnumType"
         }
       },
-      "required": [
-        "idToken",
-        "type"
-      ]
+      "required": ["idToken", "type"]
     }
   },
   "type": "object",
@@ -182,9 +174,5 @@
       "$ref": "#/definitions/IdTokenType"
     }
   },
-  "required": [
-    "id",
-    "expiryDateTime",
-    "idToken"
-  ]
+  "required": ["id", "expiryDateTime", "idToken"]
 }

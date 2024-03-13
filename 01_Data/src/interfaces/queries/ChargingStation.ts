@@ -3,10 +3,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { QuerySchema } from "@citrineos/base";
+import { QuerySchema } from '@citrineos/base';
 
 export interface ChargingStationKeyQuerystring {
-    stationId: string
+  stationId: string;
 }
 
-export const ChargingStationKeyQuerySchema = QuerySchema([["stationId", "string"]], ["stationId"]);
+export const ChargingStationKeyQuerySchema = QuerySchema([['stationId', 'string']], ['stationId']);

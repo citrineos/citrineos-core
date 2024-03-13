@@ -4,15 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { CustomDataType, EVSEType, Namespace, TransactionEventEnumType, TransactionEventRequest, TransactionType, TriggerReasonEnumType } from '@citrineos/base';
-import {
-  BelongsTo,
-  Column,
-  DataType,
-  ForeignKey,
-  HasMany,
-  Model,
-  Table,
-} from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import { IdToken } from '../Authorization';
 import { Evse } from '../DeviceModel';
 import { MeterValue } from './MeterValue';
@@ -20,7 +12,6 @@ import { Transaction } from './Transaction';
 
 @Table
 export class TransactionEvent extends Model implements TransactionEventRequest {
-
   static readonly MODEL_NAME: string = Namespace.TransactionEventRequest;
 
   declare customData?: CustomDataType;
@@ -37,8 +28,8 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   @Column({
     type: DataType.DATE,
     get() {
-        return this.getDataValue('timestamp').toISOString();
-    }
+      return this.getDataValue('timestamp').toISOString();
+    },
   })
   declare timestamp: string;
 

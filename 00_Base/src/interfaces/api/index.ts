@@ -8,15 +8,15 @@
 // SPDX-License-Identifier: Apache 2.0
 
 export enum HttpMethod {
-    Get = 'GET',
-    Put = 'PUT',
-    Post = 'POST',
-    Patch = 'PATCH',
-    Delete = 'DELETE'
+  Get = "GET",
+  Put = "PUT",
+  Post = "POST",
+  Patch = "PATCH",
+  Delete = "DELETE",
 }
 
-export const METADATA_MESSAGE_ENDPOINTS = 'METADATA_MESSAGE_ENDPOINTS';
-export const METADATA_DATA_ENDPOINTS = 'METADATA_DATA_ENDPOINTS';
+export const METADATA_MESSAGE_ENDPOINTS = "METADATA_MESSAGE_ENDPOINTS";
+export const METADATA_DATA_ENDPOINTS = "METADATA_DATA_ENDPOINTS";
 
 export { AbstractModuleApi } from "./AbstractModuleApi";
 export { AsDataEndpoint } from "./AsDataEndpoint";

@@ -12,25 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "HashAlgorithmEnumType": {
       "description": "Used algorithms for the hashes provided.\r\n",
       "javaType": "HashAlgorithmEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "SHA256",
-        "SHA384",
-        "SHA512"
-      ],
-      "tsEnumNames": [
-        "SHA256",
-        "SHA384",
-        "SHA512"
-      ]
+      "enum": ["SHA256", "SHA384", "SHA512"],
+      "tsEnumNames": ["SHA256", "SHA384", "SHA512"]
     },
     "IdTokenEnumType": {
       "description": "Enumeration of possible idToken types.\r\n",
@@ -78,10 +68,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "additionalIdToken",
-        "type"
-      ]
+      "required": ["additionalIdToken", "type"]
     },
     "CertificateHashDataType": {
       "javaType": "CertificateHashData",
@@ -143,10 +130,7 @@
           "$ref": "#/definitions/IdTokenEnumType"
         }
       },
-      "required": [
-        "idToken",
-        "type"
-      ]
+      "required": ["idToken", "type"]
     }
   },
   "type": "object",
@@ -179,9 +163,5 @@
       "maxLength": 64
     }
   },
-  "required": [
-    "requestId",
-    "report",
-    "clear"
-  ]
+  "required": ["requestId", "report", "clear"]
 }

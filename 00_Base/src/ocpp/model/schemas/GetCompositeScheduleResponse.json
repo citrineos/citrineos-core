@@ -12,37 +12,23 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ChargingRateUnitEnumType": {
       "description": "The unit of measure Limit is\r\nexpressed in.\r\n",
       "javaType": "ChargingRateUnitEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "W",
-        "A"
-      ],
-      "tsEnumNames": [
-        "W",
-        "A"
-      ]
+      "enum": ["W", "A"],
+      "tsEnumNames": ["W", "A"]
     },
     "GenericStatusEnumType": {
       "description": "The Charging Station will indicate if it was\r\nable to process the request\r\n",
       "javaType": "GenericStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "Rejected"
-      ],
-      "tsEnumNames": [
-        "Accepted",
-        "Rejected"
-      ]
+      "enum": ["Accepted", "Rejected"],
+      "tsEnumNames": ["Accepted", "Rejected"]
     },
     "ChargingSchedulePeriodType": {
       "description": "Charging_ Schedule_ Period\r\nurn:x-oca:ocpp:uid:2:233257\r\nCharging schedule period structure defines a time period in a charging schedule.\r\n",
@@ -70,10 +56,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "startPeriod",
-        "limit"
-      ]
+      "required": ["startPeriod", "limit"]
     },
     "CompositeScheduleType": {
       "description": "Composite_ Schedule\r\nurn:x-oca:ocpp:uid:2:233362\r\n",
@@ -137,9 +120,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -158,7 +139,5 @@
       "$ref": "#/definitions/CompositeScheduleType"
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

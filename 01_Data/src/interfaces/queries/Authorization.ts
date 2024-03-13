@@ -3,12 +3,17 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { QuerySchema } from "@citrineos/base";
+import { QuerySchema } from '@citrineos/base';
 
 export interface AuthorizationQuerystring {
-    idToken: string,
-    type: string
+  idToken: string;
+  type: string;
 }
 
-export const AuthorizationQuerySchema = QuerySchema([
-    ["idToken", "string"], ["type", "string"]], ["idToken", "type"]);
+export const AuthorizationQuerySchema = QuerySchema(
+  [
+    ['idToken', 'string'],
+    ['type', 'string'],
+  ],
+  ['idToken', 'type'],
+);

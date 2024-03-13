@@ -6,6 +6,4 @@
 /**
  * The module API interface.
  */
-export interface IModuleApi {
-
-}
+export interface IModuleApi {}

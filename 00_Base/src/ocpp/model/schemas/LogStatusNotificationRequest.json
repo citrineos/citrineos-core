@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "UploadLogStatusEnumType": {
       "description": "This contains the status of the log upload.\r\n",
@@ -57,7 +55,5 @@
       "type": "integer"
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }
