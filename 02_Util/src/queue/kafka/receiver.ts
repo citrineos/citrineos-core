@@ -3,10 +3,23 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractMessageHandler, IMessageHandler, IModule, SystemConfig, CallAction, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message, OcppError, RetryMessageError } from "@citrineos/base";
-import { plainToInstance } from "class-transformer";
-import { Admin, Consumer, EachMessagePayload, Kafka } from "kafkajs";
-import { ILogObj, Logger } from "tslog";
+import {
+    AbstractMessageHandler,
+    CallAction,
+    HandlerProperties,
+    IMessage,
+    IMessageHandler,
+    IModule,
+    Message,
+    OcppError,
+    OcppRequest,
+    OcppResponse,
+    RetryMessageError,
+    SystemConfig
+} from "@citrineos/base";
+import {plainToInstance} from "class-transformer";
+import {Admin, Consumer, EachMessagePayload, Kafka} from "kafkajs";
+import {ILogObj, Logger} from "tslog";
 
 /**
  * Implementation of a {@link IMessageHandler} using Kafka as the underlying transport.

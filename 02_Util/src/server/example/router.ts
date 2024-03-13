@@ -4,11 +4,33 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
-import { Call, CallAction, CallError, CallResult, EventGroup, ICache, ICentralSystem, IClientConnection, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, LOG_LEVEL_OCPP, MessageOrigin, MessageState, MessageTypeId, OcppError, OcppRequest, OcppResponse, SystemConfig } from "@citrineos/base";
-import { ILogObj, Logger } from "tslog";
-import { RabbitMqReceiver } from "../../queue";
+import {
+    Call,
+    CallAction,
+    CallError,
+    CallResult,
+    EventGroup,
+    ICache,
+    ICentralSystem,
+    IClientConnection,
+    IMessage,
+    IMessageConfirmation,
+    IMessageContext,
+    IMessageHandler,
+    IMessageRouter,
+    IMessageSender,
+    MessageOrigin,
+    MessageState,
+    MessageTypeId,
+    OcppError,
+    OcppRequest,
+    OcppResponse,
+    SystemConfig
+} from "@citrineos/base";
+import {ILogObj, Logger} from "tslog";
+import {RabbitMqReceiver} from "../../queue";
 
-const logger = new Logger({ name: "OCPPMessageRouter" });
+const logger = new Logger({name: "OCPPMessageRouter"});
 
 /**
  * Implementation of a message handler utilizing {@link RabbitMqReceiver} as the underlying transport.
@@ -23,7 +45,7 @@ export class CentralSystemMessageHandler extends RabbitMqReceiver {
 
     /**
      * Constructor
-     * 
+     *
      * @param centralSystem Central system implementation to use
      */
 
@@ -91,7 +113,7 @@ export class OcppMessageRouter implements IMessageRouter {
         let payload = message[3] as OcppRequest;
 
         // TODO: Add tenantId to context
-        let context: IMessageContext = { correlationId: messageId, stationId: client.identifier, tenantId: '' };
+        let context: IMessageContext = {correlationId: messageId, stationId: client.identifier, tenantId: ''};
 
         // TODO: Use base util builder instead
         const _message: IMessage<OcppRequest> = {
@@ -111,7 +133,7 @@ export class OcppMessageRouter implements IMessageRouter {
         let payload = message[2] as OcppResponse;
 
         // TODO: Add tenantId to context
-        let context: IMessageContext = { correlationId: messageId, stationId: client.identifier, tenantId: '' };
+        let context: IMessageContext = {correlationId: messageId, stationId: client.identifier, tenantId: ''};
 
         const _message: IMessage<OcppRequest> = {
             origin: MessageOrigin.CentralSystem,
@@ -130,7 +152,7 @@ export class OcppMessageRouter implements IMessageRouter {
         let payload = new OcppError(messageId, message[2], message[3], message[4]);
 
         // TODO: Add tenantId to context
-        let context: IMessageContext = { correlationId: messageId, stationId: client.identifier, tenantId: '' };
+        let context: IMessageContext = {correlationId: messageId, stationId: client.identifier, tenantId: ''};
 
         const _message: IMessage<OcppError> = {
             origin: MessageOrigin.CentralSystem,
