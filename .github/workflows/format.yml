@@ -1,0 +1,26 @@
+name: Prettier format
+on:
+  pull_request:
+    branches: [feature/prettier]
+concurrency:
+  # Rerun check when the PR is updated, https://stackoverflow.com/a/72408109
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  prettier:
+    name: Prettier
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        node-version: [18]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies
+        run: npm i
+      - name: Check formatting with Prettier
+        run: npm run prettier

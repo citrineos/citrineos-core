@@ -2,18 +2,18 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {defineConfig, RegistrationStatusEnumType} from "@citrineos/base";
+import { defineConfig, RegistrationStatusEnumType } from "@citrineos/base";
 
 export function createLocalConfig() {
   return defineConfig({
     env: "development",
     centralSystem: {
       host: "0.0.0.0",
-      port: 8080
+      port: 8080,
     },
     modules: {
       certificates: {
-        endpointPrefix: "/certificates"
+        endpointPrefix: "/certificates",
       },
       configuration: {
         heartbeatInterval: 60,
@@ -22,22 +22,22 @@ export function createLocalConfig() {
         getBaseReportOnPending: true,
         bootWithRejectedVariables: true,
         autoAccept: false,
-        endpointPrefix: "/configuration"
+        endpointPrefix: "/configuration",
       },
       evdriver: {
-        endpointPrefix: "/evdriver"
+        endpointPrefix: "/evdriver",
       },
       monitoring: {
-        endpointPrefix: "/monitoring"
+        endpointPrefix: "/monitoring",
       },
       reporting: {
-        endpointPrefix: "/reporting"
+        endpointPrefix: "/reporting",
       },
       smartcharging: {
-        endpointPrefix: "/smartcharging"
+        endpointPrefix: "/smartcharging",
       },
       transactions: {
-        endpointPrefix: "/transactions"
+        endpointPrefix: "/transactions",
       },
     },
     data: {
@@ -50,44 +50,47 @@ export function createLocalConfig() {
         password: "citrine",
         storage: "",
         sync: true,
-      }
+      },
     },
     util: {
       cache: {
-        memory: true
+        memory: true,
       },
       messageBroker: {
         amqp: {
           url: "amqp://guest:guest@localhost:5672",
           exchange: "citrineos",
-        }
+        },
       },
       swagger: {
         path: "/docs",
         logoPath: "./Server/src/assets/logo.png",
         exposeData: true,
-        exposeMessage: true
+        exposeMessage: true,
       },
       networkConnection: {
-        websocketServers: [{
-          id: "0",
-          securityProfile: 0,
-          pingInterval: 60,
-          host: "0.0.0.0",
-          port: 8081,
-          protocol: "ocpp2.0.1"
-        }, {
-          id: "1",
-          securityProfile: 1,
-          pingInterval: 60,
-          host: "0.0.0.0",
-          port: 8082,
-          protocol: "ocpp2.0.1"
-        }]
-      }
+        websocketServers: [
+          {
+            id: "0",
+            securityProfile: 0,
+            pingInterval: 60,
+            host: "0.0.0.0",
+            port: 8081,
+            protocol: "ocpp2.0.1",
+          },
+          {
+            id: "1",
+            securityProfile: 1,
+            pingInterval: 60,
+            host: "0.0.0.0",
+            port: 8082,
+            protocol: "ocpp2.0.1",
+          },
+        ],
+      },
     },
     logLevel: 2, // debug
     maxCallLengthSeconds: 5,
-    maxCachingSeconds: 10
+    maxCachingSeconds: 10,
   });
 }

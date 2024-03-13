@@ -11,32 +11,30 @@ import { AuthorizationRestrictions } from '../../../../interfaces';
 
 @Table
 export class Authorization extends Model implements AuthorizationData, AuthorizationRestrictions {
+  static readonly MODEL_NAME: string = Namespace.AuthorizationData;
 
-    static readonly MODEL_NAME: string = Namespace.AuthorizationData;
+  declare customData?: CustomDataType;
 
-    declare customData?: CustomDataType;
+  @Column(DataType.ARRAY(DataType.STRING))
+  declare allowedConnectorTypes?: string[];
 
-    @Column(DataType.ARRAY(DataType.STRING))
-    declare allowedConnectorTypes?: string[];
+  @Column(DataType.ARRAY(DataType.STRING))
+  declare disallowedEvseIdPrefixes?: string[];
 
-    @Column(DataType.ARRAY(DataType.STRING))
-    declare disallowedEvseIdPrefixes?: string[];
+  @ForeignKey(() => IdToken)
+  @Column({
+    type: DataType.INTEGER,
+    unique: true,
+  })
+  declare idTokenId?: number;
 
-    @ForeignKey(() => IdToken)
-    @Column({
-        type: DataType.INTEGER,
-        unique: true
-    })
-    declare idTokenId?: number;
+  @BelongsTo(() => IdToken)
+  declare idToken: IdTokenType;
 
-    @BelongsTo(() => IdToken)
-    declare idToken: IdTokenType;
+  @ForeignKey(() => IdTokenInfo)
+  @Column(DataType.INTEGER)
+  declare idTokenInfoId?: number;
 
-    @ForeignKey(() => IdTokenInfo)
-    @Column(DataType.INTEGER)
-    declare idTokenInfoId?: number;
-
-    @BelongsTo(() => IdTokenInfo)
-    declare idTokenInfo?: IdTokenInfoType;
+  @BelongsTo(() => IdTokenInfo)
+  declare idTokenInfo?: IdTokenInfoType;
 }
-

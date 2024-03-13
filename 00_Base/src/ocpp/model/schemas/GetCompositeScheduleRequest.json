@@ -12,23 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ChargingRateUnitEnumType": {
       "description": "Can be used to force a power or current profile.\r\n\r\n",
       "javaType": "ChargingRateUnitEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "W",
-        "A"
-      ],
-      "tsEnumNames": [
-        "W",
-        "A"
-      ]
+      "enum": ["W", "A"],
+      "tsEnumNames": ["W", "A"]
     }
   },
   "type": "object",
@@ -49,8 +41,5 @@
       "type": "integer"
     }
   },
-  "required": [
-    "duration",
-    "evseId"
-  ]
+  "required": ["duration", "evseId"]
 }

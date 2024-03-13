@@ -46,5 +46,3 @@ export interface EVSEType {
    */
   connectorId?: number;
 }
-
-

@@ -101,6 +101,3 @@ export interface AdditionalInfoType {
    */
   type: string;
 }
-
-
-

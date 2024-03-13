@@ -33,13 +33,14 @@ Before you begin, make sure you have the following installed on your system:
 - Node.js (v18 or higher): [Download Node.js](https://nodejs.org/)
 - npm (Node Package Manager): [Download npm](https://www.npmjs.com/get-npm)
 - Docker (Optional). Version >= 20.10: [Download Docker](https://docs.docker.com/get-docker/)
+
 ### Installation
 
 1. Clone the CitrineOS repository to your local machine:
 
-    ```shell
-    git clone https://github.com/citrineos/citrineos-core
-    ```
+   ```shell
+   git clone https://github.com/citrineos/citrineos-core
+   ```
 
 1. Install project dependencies from root dir:
 
@@ -47,13 +48,13 @@ Before you begin, make sure you have the following installed on your system:
    npm run install-all
    ```
 
-1. The docker container should be initialized by running `docker-compose -f ./docker-compose.yml up -d` or 
-by using the IntelliJ `Server` Run Configuration which was created for this purpose.
+1. The docker container should be initialized by running `docker-compose -f ./docker-compose.yml up -d` or
+   by using the IntelliJ `Server` Run Configuration which was created for this purpose.
 
 1. Running `docker-compose.yml` will ensure that the container is configured to expose the `:9229` debugging
-port for the underlying NodeJS process. A variety of tools can be utilized to establish a debugger connection
-with the exposed localhost 9229 port which is forwarded to the NodeJS service running within docker. The IntelliJ
-`Attach Debugger` Run Configuration was made to attach to a debugging session.
+   port for the underlying NodeJS process. A variety of tools can be utilized to establish a debugger connection
+   with the exposed localhost 9229 port which is forwarded to the NodeJS service running within docker. The IntelliJ
+   `Attach Debugger` Run Configuration was made to attach to a debugging session.
 
 ### Starting the Server without Docker
 
@@ -72,23 +73,29 @@ To start the CitrineOS server, run the following command:
 npm run start:local
 ```
 
-This will launch the CitrineOS server with the specified configuration. The debugger will be available 
+This will launch the CitrineOS server with the specified configuration. The debugger will be available
 on port 9229.
 
 ### Attaching Debugger
+
 Whether you run the application with Docker or locally with npm, you should be able to attach a debugger.
 With debugger attached you should be able to set breakpoints in the TS code right from your IDE and debug
 with ease.
 
 ### Attaching Debugger before execution using `--inspect-brk`
+
 You can modify `nodemon.json` exec command from:
+
 ```shell
 node --inspect=0.0.0.0:9229 --nolazy -r ts-node/register
 ```
+
 to
+
 ```shell
 node --inspect-brk=0.0.0.0:9229 --nolazy -r ts-node/register
 ```
+
 which will wait for the debugger to attach before proceeding with execution.
 
 ### Usage
@@ -106,17 +113,17 @@ a common integrated development environment.
 
 Once Docker is running, the following services should be available:
 
--   **CitrineOS** (service name: citrineos) with ports
-    -   `8080`: webserver http - [Swagger](http://localhost:8080/docs)
-    -   `8081`: websocket server tcp connection without auth
-    -   `8082`: websocket server tcp connection with basic http auth
--   **RabbitMQ Broker** (service name: amqp-broker) with ports
-    -   `5672`: amqp tcp connection
-    -   `15672`: RabbitMQ [management interface](http://localhost:15672)
--   **PostgreSQL** (service name: ocpp-db), PostgreSQL database for persistence
-    -   `5432`: sql tcp connection
--   **Directus** (service name: directus) on port 8055 with endpoints
-    -   `:8055/admin`: web interface (login = admin@citrineos.com:CitrineOS!)
+- **CitrineOS** (service name: citrineos) with ports
+  - `8080`: webserver http - [Swagger](http://localhost:8080/docs)
+  - `8081`: websocket server tcp connection without auth
+  - `8082`: websocket server tcp connection with basic http auth
+- **RabbitMQ Broker** (service name: amqp-broker) with ports
+  - `5672`: amqp tcp connection
+  - `15672`: RabbitMQ [management interface](http://localhost:15672)
+- **PostgreSQL** (service name: ocpp-db), PostgreSQL database for persistence
+  - `5432`: sql tcp connection
+- **Directus** (service name: directus) on port 8055 with endpoints
+  - `:8055/admin`: web interface (login = admin@citrineos.com:CitrineOS!)
 
 These three services are defined in `docker-compose.yml` and they
 live inside the docker network `docker_default` with their respective
@@ -130,9 +137,11 @@ localhost, you need to access `localhost:15672`.
 
 All CitrineOS interfaces for OCPP 2.0.1-defined schemas were procedurally generated using the script in 00_Base/json-schema-processor.js.
 It can be rerun:
+
 ```shell
 npm run generate-interfaces -- ../../Path/To/OCPP-2.0.1_part3_JSON_schemas
 ```
+
 This will replace all the files in `00_Base/src/ocpp/model/`,
 
 ## Contributing

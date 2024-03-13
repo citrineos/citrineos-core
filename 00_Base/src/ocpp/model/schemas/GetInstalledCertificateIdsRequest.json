@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "GetCertificateIdUseEnumType": {
       "javaType": "GetCertificateIdUseEnum",

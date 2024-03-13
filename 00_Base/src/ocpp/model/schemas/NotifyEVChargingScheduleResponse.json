@@ -12,23 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "GenericStatusEnumType": {
       "description": "Returns whether the CSMS has been able to process the message successfully. It does not imply any approval of the charging schedule.\r\n",
       "javaType": "GenericStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "Rejected"
-      ],
-      "tsEnumNames": [
-        "Accepted",
-        "Rejected"
-      ]
+      "enum": ["Accepted", "Rejected"],
+      "tsEnumNames": ["Accepted", "Rejected"]
     },
     "StatusInfoType": {
       "description": "Element providing more information about the status.\r\n",
@@ -50,9 +42,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -68,7 +58,5 @@
       "$ref": "#/definitions/StatusInfoType"
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

@@ -12,23 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "LogEnumType": {
       "description": "This contains the type of log file that the Charging Station\r\nshould send.\r\n",
       "javaType": "LogEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "DiagnosticsLog",
-        "SecurityLog"
-      ],
-      "tsEnumNames": [
-        "DiagnosticsLog",
-        "SecurityLog"
-      ]
+      "enum": ["DiagnosticsLog", "SecurityLog"],
+      "tsEnumNames": ["DiagnosticsLog", "SecurityLog"]
     },
     "LogParametersType": {
       "description": "Log\r\nurn:x-enexis:ecdm:uid:2:233373\r\nGeneric class for the configuration of logging entries.\r\n",
@@ -55,9 +47,7 @@
           "format": "date-time"
         }
       },
-      "required": [
-        "remoteLocation"
-      ]
+      "required": ["remoteLocation"]
     }
   },
   "type": "object",
@@ -85,9 +75,5 @@
       "type": "integer"
     }
   },
-  "required": [
-    "logType",
-    "requestId",
-    "log"
-  ]
+  "required": ["logType", "requestId", "log"]
 }

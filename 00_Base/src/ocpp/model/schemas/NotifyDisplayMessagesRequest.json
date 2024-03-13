@@ -12,61 +12,31 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "MessageFormatEnumType": {
       "description": "Message_ Content. Format. Message_ Format_ Code\r\nurn:x-enexis:ecdm:uid:1:570848\r\nFormat of the message.\r\n",
       "javaType": "MessageFormatEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "ASCII",
-        "HTML",
-        "URI",
-        "UTF8"
-      ],
-      "tsEnumNames": [
-        "ASCII",
-        "HTML",
-        "URI",
-        "UTF8"
-      ]
+      "enum": ["ASCII", "HTML", "URI", "UTF8"],
+      "tsEnumNames": ["ASCII", "HTML", "URI", "UTF8"]
     },
     "MessagePriorityEnumType": {
       "description": "Message_ Info. Priority. Message_ Priority_ Code\r\nurn:x-enexis:ecdm:uid:1:569253\r\nWith what priority should this message be shown\r\n",
       "javaType": "MessagePriorityEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "AlwaysFront",
-        "InFront",
-        "NormalCycle"
-      ],
-      "tsEnumNames": [
-        "AlwaysFront",
-        "InFront",
-        "NormalCycle"
-      ]
+      "enum": ["AlwaysFront", "InFront", "NormalCycle"],
+      "tsEnumNames": ["AlwaysFront", "InFront", "NormalCycle"]
     },
     "MessageStateEnumType": {
       "description": "Message_ Info. State. Message_ State_ Code\r\nurn:x-enexis:ecdm:uid:1:569254\r\nDuring what state should this message be shown. When omitted this message should be shown in any state of the Charging Station.\r\n",
       "javaType": "MessageStateEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Charging",
-        "Faulted",
-        "Idle",
-        "Unavailable"
-      ],
-      "tsEnumNames": [
-        "Charging",
-        "Faulted",
-        "Idle",
-        "Unavailable"
-      ]
+      "enum": ["Charging", "Faulted", "Idle", "Unavailable"],
+      "tsEnumNames": ["Charging", "Faulted", "Idle", "Unavailable"]
     },
     "ComponentType": {
       "description": "A physical or logical component\r\n",
@@ -91,9 +61,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "name"
-      ]
+      "required": ["name"]
     },
     "EVSEType": {
       "description": "EVSE\r\nurn:x-oca:ocpp:uid:2:233123\r\nElectric Vehicle Supply Equipment\r\n",
@@ -113,9 +81,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id"]
     },
     "MessageContentType": {
       "description": "Message_ Content\r\nurn:x-enexis:ecdm:uid:2:234490\r\nContains message details, for a message to be displayed on a Charging Station.\r\n\r\n",
@@ -140,10 +106,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "format",
-        "content"
-      ]
+      "required": ["format", "content"]
     },
     "MessageInfoType": {
       "description": "Message_ Info\r\nurn:x-enexis:ecdm:uid:2:233264\r\nContains message details, for a message to be displayed on a Charging Station.\r\n",
@@ -186,11 +149,7 @@
           "$ref": "#/definitions/MessageContentType"
         }
       },
-      "required": [
-        "id",
-        "priority",
-        "message"
-      ]
+      "required": ["id", "priority", "message"]
     }
   },
   "type": "object",
@@ -217,7 +176,5 @@
       "default": false
     }
   },
-  "required": [
-    "requestId"
-  ]
+  "required": ["requestId"]
 }

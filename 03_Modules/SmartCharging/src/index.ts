@@ -3,6 +3,6 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { SmartChargingModuleApi } from './module/api';
-export { ISmartChargingModuleApi } from './module/interface';
-export { SmartChargingModule } from './module/module';
+export { SmartChargingModuleApi } from "./module/api";
+export { ISmartChargingModuleApi } from "./module/interface";
+export { SmartChargingModule } from "./module/module";

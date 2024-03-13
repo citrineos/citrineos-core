@@ -64,7 +64,12 @@ export interface ReportDataType {
     | [VariableAttributeType]
     | [VariableAttributeType, VariableAttributeType]
     | [VariableAttributeType, VariableAttributeType, VariableAttributeType]
-    | [VariableAttributeType, VariableAttributeType, VariableAttributeType, VariableAttributeType];
+    | [
+        VariableAttributeType,
+        VariableAttributeType,
+        VariableAttributeType,
+        VariableAttributeType,
+      ];
   variableCharacteristics?: VariableCharacteristicsType;
 }
 /**
@@ -193,7 +198,3 @@ export interface VariableCharacteristicsType {
    */
   supportsMonitoring: boolean;
 }
-
-
-
-

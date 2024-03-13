@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "MonitorEnumType": {
       "description": "The type of this monitor, e.g. a threshold, delta or periodic monitor. \r\n\r\n",
@@ -81,9 +79,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "name"
-      ]
+      "required": ["name"]
     },
     "EVSEType": {
       "description": "EVSE\r\nurn:x-oca:ocpp:uid:2:233123\r\nElectric Vehicle Supply Equipment\r\n",
@@ -103,9 +99,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id"]
     },
     "SetMonitoringResultType": {
       "description": "Class to hold result of SetVariableMonitoring request.\r\n",
@@ -140,13 +134,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "status",
-        "type",
-        "severity",
-        "component",
-        "variable"
-      ]
+      "required": ["status", "type", "severity", "component", "variable"]
     },
     "StatusInfoType": {
       "description": "Element providing more information about the status.\r\n",
@@ -168,9 +156,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     },
     "VariableType": {
       "description": "Reference key to a component-variable.\r\n",
@@ -192,9 +178,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "name"
-      ]
+      "required": ["name"]
     }
   },
   "type": "object",
@@ -212,7 +196,5 @@
       "minItems": 1
     }
   },
-  "required": [
-    "setMonitoringResult"
-  ]
+  "required": ["setMonitoringResult"]
 }
