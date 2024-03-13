@@ -9,15 +9,17 @@ import 'reflect-metadata';
 import { ILogObj, Logger } from "tslog";
 import { v4 as uuidv4 } from "uuid";
 import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from ".";
-import { OcppRequest, OcppResponse } from "../..";
+import {CacheService, OcppRequest, OcppResponse, SystemConfigService} from "../..";
 import { SystemConfig } from "../../config/types";
 import { CallAction, ErrorCode, OcppError } from "../../ocpp/rpc/message";
 import { RequestBuilder } from "../../util/request";
 import { CacheNamespace, ICache } from "../cache/cache";
 import { ClientConnection } from "../centralsystem";
 import { EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessageHandler, IMessageSender, MessageOrigin, MessageState } from "../messages";
+import {autoInjectable, inject, injectable} from "tsyringe";
 
-export abstract class AbstractModule implements IModule {
+@autoInjectable()
+export class BaseModule implements IModule {
 
     public readonly CALLBACK_URL_CACHE_PREFIX: string = "CALLBACK_URL_";
 
@@ -28,7 +30,14 @@ export abstract class AbstractModule implements IModule {
     protected readonly _eventGroup: EventGroup;
     protected readonly _logger: Logger<ILogObj>;
 
-    constructor(config: SystemConfig, cache: ICache, handler: IMessageHandler, sender: IMessageSender, eventGroup: EventGroup, logger?: Logger<ILogObj>) {
+    constructor(
+      config: SystemConfig,
+      cache: ICache,
+      handler: IMessageHandler,
+      sender: IMessageSender,
+      eventGroup: EventGroup,
+      logger?: Logger<ILogObj>
+    ) {
         this._config = config;
         this._handler = handler;
         this._sender = sender;
@@ -115,10 +124,10 @@ export abstract class AbstractModule implements IModule {
      */
 
     /**
-     * Unimplemented method to handle incoming {@link IMessage}. 
-     * 
+     * Unimplemented method to handle incoming {@link IMessage}.
+     *
      * **Note**: This method is **programmatically** overridden by the {@link ModuleHandlers} annotation.
-     * 
+     *
      * @param message The {@link IMessage} to handle. Can contain either a {@link OcppRequest} or a {@link OcppResponse} as payload.
      * @param props The {@link HandlerProperties} for this {@link IMessage} containing implementation specific metadata. Metadata is not used in the base implementation.
      */
@@ -172,7 +181,7 @@ export abstract class AbstractModule implements IModule {
 
     /**
      * Calls shutdown on the handler and sender.
-     * 
+     *
      * Note: To be overwritten by subclass if other logic is necessary.
      *
      */

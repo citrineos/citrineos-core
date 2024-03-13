@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyReportRequest, HandlerProperties, SetVariableStatusEnumType, NotifyReportResponse, NotifyMonitoringReportRequest, NotifyMonitoringReportResponse, LogStatusNotificationRequest, LogStatusNotificationResponse, NotifyCustomerInformationRequest, NotifyCustomerInformationResponse, GetBaseReportResponse, SecurityEventNotificationRequest, SecurityEventNotificationResponse } from "@citrineos/base";
+import { BaseModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyReportRequest, HandlerProperties, SetVariableStatusEnumType, NotifyReportResponse, NotifyMonitoringReportRequest, NotifyMonitoringReportResponse, LogStatusNotificationRequest, LogStatusNotificationResponse, NotifyCustomerInformationRequest, NotifyCustomerInformationResponse, GetBaseReportResponse, SecurityEventNotificationRequest, SecurityEventNotificationResponse } from "@citrineos/base";
 import { IDeviceModelRepository, ISecurityEventRepository, sequelize, Component, Variable } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
@@ -12,7 +12,7 @@ import { ILogObj, Logger } from 'tslog';
 /**
  * Component that handles provisioning related messages.
  */
-export class ReportingModule extends AbstractModule {
+export class ReportingModule extends BaseModule {
 
   /**
    * Fields
@@ -81,7 +81,7 @@ export class ReportingModule extends AbstractModule {
     deviceModelRepository?: IDeviceModelRepository,
     securityEventRepository?: ISecurityEventRepository
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(config, logger, cache), sender || new RabbitMqSender(config, logger), EventGroup.Reporting, logger);
+    super(config, cache, handler || new RabbitMqReceiver(logger, undefined, config, cache), sender || new RabbitMqSender(config, logger), EventGroup.Reporting, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);

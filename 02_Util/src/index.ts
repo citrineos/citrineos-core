@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { MemoryCache } from "./cache/memory";
-export { RedisCache } from "./cache/redis";
+export { MemoryCache } from "../../00_Base/src/config/config/cache/memory";
+export { RedisCache } from "../../00_Base/src/config/config/cache/redis";
 export * from "./queue";
 export * from "./server";
 

@@ -3,20 +3,33 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
+import {Message as PubSubMessage, PubSub, Subscription, Topic,} from "@google-cloud/pubsub";
+import {ILogObj, Logger} from "tslog";
+import {MemoryCache} from "../../../../00_Base/src/config/config/cache/memory";
 import {
-  PubSub,
-  Message as PubSubMessage,
-  Subscription,
-  Topic,
-} from "@google-cloud/pubsub";
-import { ILogObj, Logger } from "tslog";
-import { MemoryCache } from "../../cache/memory";
-import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message, OcppError, RetryMessageError } from "@citrineos/base";
-import { plainToInstance } from "class-transformer";
+  AbstractMessageHandler,
+  autoInjectable,
+  CacheNamespace,
+  CallAction,
+  HandlerProperties,
+  ICache,
+  IMessage,
+  IModule,
+  inject,
+  Message,
+  OcppError,
+  OcppRequest,
+  OcppResponse,
+  RetryMessageError,
+  SystemConfig,
+  SystemConfigService
+} from "@citrineos/base";
+import {plainToInstance} from "class-transformer";
 
 /**
  * Implementation of a {@link IMessageHandler} using Google PubSub as the underlying transport.
  */
+@autoInjectable()
 export class PubSubReceiver extends AbstractMessageHandler {
   /**
    * Constants
@@ -36,20 +49,25 @@ export class PubSubReceiver extends AbstractMessageHandler {
    *
    * @param topicPrefix Custom topic prefix, defaults to "ocpp"
    */
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, cache?: ICache, module?: IModule) {
-    super(config, logger);
+  constructor(
+    logger?: Logger<ILogObj>,
+    cache?: ICache,
+    module?: IModule,
+    @inject(SystemConfigService) private readonly configService?: SystemConfigService
+  ) {
+    super(configService?.systemConfig as SystemConfig, logger);
     this._cache = cache || new MemoryCache();
-    this._client = new PubSub({ servicePath: this._config.util.messageBroker.pubsub?.servicePath });
+    this._client = new PubSub({servicePath: this._config.util.messageBroker.pubsub?.servicePath});
     this._module = module;
   }
 
   /**
-     * The init method will create a subscription for each action in the {@link CallAction} array.
-     *
-     * @param actions All actions to subscribe to
-     * @param stateFilter Optional filter for the subscription via {@link MessageState}, must be used to prevent looping of messages in Google PubSub
-     * @returns
-     */
+   * The init method will create a subscription for each action in the {@link CallAction} array.
+   *
+   * @param actions All actions to subscribe to
+   * @param stateFilter Optional filter for the subscription via {@link MessageState}, must be used to prevent looping of messages in Google PubSub
+   * @returns
+   */
   subscribe(identifier: string, actions?: CallAction[], filter?: { [k: string]: string }): Promise<boolean> {
 
     const topicName = `${this._config.util.messageBroker.pubsub?.topicPrefix}-${this._config.util.messageBroker.pubsub?.topicName}`;
@@ -70,7 +88,10 @@ export class PubSubReceiver extends AbstractMessageHandler {
         this._cache.set(`${PubSubReceiver.CACHE_PREFIX}${identifier}`, name, CacheNamespace.Other);
         return name !== undefined;
       });
-    }).catch((error) => { this._logger.error(error); return false; });
+    }).catch((error) => {
+      this._logger.error(error);
+      return false;
+    });
   }
 
   unsubscribe(identifier: string): Promise<boolean> {
@@ -83,8 +104,7 @@ export class PubSubReceiver extends AbstractMessageHandler {
           }
           return true;
         });
-      }
-      else {
+      } else {
         return false;
       }
     });
@@ -122,6 +142,7 @@ export class PubSubReceiver extends AbstractMessageHandler {
   get module(): IModule | undefined {
     return this._module;
   }
+
   set module(value: IModule | undefined) {
     this._module = value;
   }
@@ -172,7 +193,7 @@ export class PubSubReceiver extends AbstractMessageHandler {
 
     // Create subscription with filter
     return topic
-      .createSubscription(subscriptionName, { enableExactlyOnceDelivery: true, filter: filterString })
+      .createSubscription(subscriptionName, {enableExactlyOnceDelivery: true, filter: filterString})
       .then(([subscription]) => {
         this._logger.debug(`Subscription ${subscription.name} created.`);
         subscription.on("message", this._onMessage.bind(this));

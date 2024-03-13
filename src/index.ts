@@ -1,11 +1,8 @@
-import {EventGroup} from "@citrineos/base";
-import {Server} from "@citrineos/server";
-import {systemConfig} from "@citrineos/server/dist/config";
+import {container} from "@citrineos/base";
+import {CitrineOSServer} from "@citrineos/server";
 
-new Server(
-  process.env.APP_NAME as EventGroup,
-  systemConfig
-).run().catch((error: any) => {
+const server = container.resolve(CitrineOSServer);
+server.run().catch((error: any) => {
   console.error(error)
   process.exit(1)
 });

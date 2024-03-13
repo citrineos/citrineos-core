@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, AuthorizeRequest, HandlerProperties, AuthorizeResponse, IdTokenInfoType, AdditionalInfoType, AttributeEnumType, AuthorizationStatusEnumType } from "@citrineos/base";
+import { BaseModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, AuthorizeRequest, HandlerProperties, AuthorizeResponse, IdTokenInfoType, AdditionalInfoType, AttributeEnumType, AuthorizationStatusEnumType } from "@citrineos/base";
 import { IAuthorizationRepository, IDeviceModelRepository, sequelize, VariableAttribute } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
@@ -12,7 +12,7 @@ import { ILogObj, Logger } from 'tslog';
 /**
  * Component that handles provisioning related messages.
  */
-export class EVDriverModule extends AbstractModule {
+export class EVDriverModule extends BaseModule {
 
   /**
    * Fields
@@ -74,7 +74,7 @@ export class EVDriverModule extends AbstractModule {
     authorizeRepository?: IAuthorizationRepository,
     deviceModelRepository?: IDeviceModelRepository
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.EVDriver, logger);
+    super(config, cache, handler || new RabbitMqReceiver(logger, undefined, config, cache), sender || new RabbitMqSender(config, logger), EventGroup.EVDriver, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);

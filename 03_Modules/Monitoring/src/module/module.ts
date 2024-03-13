@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyEventRequest, HandlerProperties, NotifyEventResponse, GetVariablesResponse, SetVariablesResponse } from "@citrineos/base";
+import { BaseModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyEventRequest, HandlerProperties, NotifyEventResponse, GetVariablesResponse, SetVariablesResponse } from "@citrineos/base";
 import { IDeviceModelRepository, sequelize } from "@citrineos/data";
 import { PubSubReceiver, PubSubSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
@@ -13,7 +13,7 @@ import { DeviceModelService } from "./services";
 /**
  * Component that handles monitoring related messages.
  */
-export class MonitoringModule extends AbstractModule {
+export class MonitoringModule extends BaseModule {
 
   protected _requests: CallAction[] = [
     CallAction.NotifyEvent,
@@ -64,7 +64,7 @@ export class MonitoringModule extends AbstractModule {
     logger?: Logger<ILogObj>,
     deviceModelRepository?: IDeviceModelRepository
   ) {
-    super(config, cache, handler || new PubSubReceiver(config, logger), sender || new PubSubSender(config, logger), EventGroup.Monitoring, logger);
+    super(config, cache, handler || new PubSubReceiver(logger), sender || new PubSubSender(config, logger), EventGroup.Monitoring, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);

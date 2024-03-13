@@ -4,33 +4,29 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  type AbstractModule,
   type AbstractModuleApi,
+  type BaseModule,
+  CacheService,
   EventGroup,
   eventGroupFromString,
-  type ICache,
+  ICache,
   type ICentralSystem,
   type IMessageHandler,
   type IMessageSender,
   type IModule,
   type IModuleApi,
-  type SystemConfig
+  inject,
+  injectable,
+  type SystemConfig,
+  SystemConfigService,
 } from '@citrineos/base'
 import {MonitoringModule, MonitoringModuleApi} from '@citrineos/monitoring'
-import {
-  CentralSystemImpl,
-  initSwagger,
-  MemoryCache,
-  RabbitMqReceiver,
-  RabbitMqSender,
-  RedisCache
-} from '@citrineos/util'
+import {CentralSystemImpl, initSwagger, RabbitMqReceiver, RabbitMqSender} from '@citrineos/util'
 import {type JsonSchemaToTsProvider} from '@fastify/type-provider-json-schema-to-ts'
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
 import fastify, {type FastifyInstance} from 'fastify'
 import {type ILogObj, Logger} from 'tslog'
-import {systemConfig} from './config'
 import {ConfigurationModule, ConfigurationModuleApi} from '@citrineos/configuration'
 import {TransactionsModule, TransactionsModuleApi} from '@citrineos/transactions'
 import {CertificatesModule, CertificatesModuleApi} from '@citrineos/certificates'
@@ -41,12 +37,14 @@ import {sequelize} from '@citrineos/data'
 import {FastifyRouteSchemaDef, FastifySchemaCompiler, FastifyValidationResult} from "fastify/types/schema";
 
 interface ModuleConfig {
-  ModuleClass: new (...args: any[]) => AbstractModule
+  ModuleClass: new (...args: any[]) => BaseModule
   ModuleApiClass: new (...args: any[]) => AbstractModuleApi<any>
   configModule: any // todo type?
 }
 
-export class Server {
+// @autoInjectable()
+@injectable()
+export class CitrineOSServer {
   /**
    * Fields
    */
@@ -54,7 +52,6 @@ export class Server {
   private _centralSystem?: ICentralSystem
   private _logger?: Logger<ILogObj>
   private _server: FastifyInstance
-  private _cache?: ICache
   private _ajv?: Ajv
   private modules: Array<IModule> = [];
   private apis: Array<IModuleApi> = [];
@@ -66,37 +63,38 @@ export class Server {
   /**
    * Constructor for the class.
    *
-   * @param {EventGroup} appName - app type
-   * @param {SystemConfig} config - config
-   * @param {FastifyInstance} server - optional Fastify server instance
-   * @param {Ajv} ajv - optional Ajv JSON schema validator instance
+   * @param configService
+   * @param cacheService
    */
   // todo rename event group to type
-  constructor(appName: string, config: SystemConfig, server?: FastifyInstance, ajv?: Ajv, cache?: ICache) {
+  constructor(
+    @inject(SystemConfigService) private readonly configService?: SystemConfigService,
+    @inject(CacheService) private readonly cacheService?: CacheService,
+  ) {
+
+    const appName = process.env.APP_NAME as string;
+
     // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
-    if (!config.util.messageBroker.amqp) {
+    if (!configService?.systemConfig.util.messageBroker.amqp) {
       throw new Error('This server implementation requires amqp configuration for rabbitMQ.')
     }
-    this._config = config
+    this._config = configService.systemConfig
 
     // Create server instance
-    this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>()
+    this._server = fastify().withTypeProvider<JsonSchemaToTsProvider>()
 
     // Add health check
     this.initHealthCheck();
 
     // Create Ajv JSON schema validator instance
-    this.initAjv(ajv);
+    this.initAjv();
 
     // Initialize parent logger
     this.initLogger();
 
     // Force sync database
     this.forceDbSync();
-
-    // Set cache implementation
-    this.initCache(cache);
 
     // Initialize Swagger if enabled
     this.initSwagger();
@@ -119,8 +117,8 @@ export class Server {
     })
   }
 
-  private initAjv(ajv?: Ajv) {
-    this._ajv = ajv || new Ajv({
+  private initAjv() {
+    this._ajv = new Ajv({
       removeAdditional: 'all',
       useDefaults: true,
       coerceTypes: 'array',
@@ -135,24 +133,13 @@ export class Server {
   private initLogger() {
     this._logger = new Logger<ILogObj>({
       name: 'CitrineOS Logger',
-      minLevel: systemConfig.server.logLevel,
-      hideLogPositionForProduction: systemConfig.env === 'production'
+      minLevel: this.configService?.systemConfig.logLevel,
+      hideLogPositionForProduction: this.configService?.systemConfig.env === 'production'
     })
   }
 
   private forceDbSync() {
     sequelize.DefaultSequelizeInstance.getInstance(this._config, this._logger, true)
-  }
-
-  private initCache(cache?: ICache) {
-    this._cache = cache || (this._config.util.cache.redis
-      ? new RedisCache({
-        socket: {
-          host: this._config.util.cache.redis.host,
-          port: this._config.util.cache.redis.port
-        }
-      })
-      : new MemoryCache())
   }
 
   private initSwagger() {
@@ -170,9 +157,9 @@ export class Server {
   }
 
   private initCentralSystem() {
-    this._centralSystem = new CentralSystemImpl(this._config, this._cache as ICache, undefined, undefined, this._logger, this._ajv)
-    this.host = this._config.server.host
-    this.port = this._config.server.port
+    this._centralSystem = new CentralSystemImpl(this._config, undefined, undefined, this._logger, this._ajv)
+    this.host = this._config.centralSystem.host
+    this.port = this._config.centralSystem.port
   }
 
   private initAllModules() {
@@ -190,8 +177,8 @@ export class Server {
   private initModule(moduleConfig: ModuleConfig) {
     if (moduleConfig.configModule !== null) {
       const module = new moduleConfig.ModuleClass(
-        this._config,
-        this._cache,
+        this.configService?.systemConfig as SystemConfig,
+        this.cacheService?.cache as ICache,
         this._createSender(),
         this._createHandler(),
         this._logger
@@ -282,7 +269,7 @@ export class Server {
   }
 
   protected _createHandler(): IMessageHandler {
-    return new RabbitMqReceiver(this._config, this._logger)
+    return new RabbitMqReceiver(this._logger, undefined, this.configService?.systemConfig as SystemConfig, this.cacheService?.cache as ICache)
   }
 
   shutdown() {

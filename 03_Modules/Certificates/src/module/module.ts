@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  AbstractModule,
+  BaseModule,
   AsHandler,
   AttributeEnumType,
   CallAction,
@@ -38,7 +38,7 @@ import { CacheNamespace } from "@citrineos/base";
 /**
  * Component that handles provisioning related messages.
  */
-export class CertificatesModule extends AbstractModule {
+export class CertificatesModule extends BaseModule {
 
   /**
    * Fields
@@ -90,7 +90,7 @@ export class CertificatesModule extends AbstractModule {
     logger?: Logger<ILogObj>,
     deviceModelRepository?: IDeviceModelRepository
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Certificates, logger);
+    super(config, cache, handler || new RabbitMqReceiver(logger, undefined, config, cache), sender || new RabbitMqSender(config, logger), EventGroup.Certificates, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);
@@ -99,7 +99,7 @@ export class CertificatesModule extends AbstractModule {
       throw new Error("Could not initialize module due to failure in handler initialization.");
     }
 
-    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, logger);
+    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, logger as Logger<ILogObj>);
 
 
     this._config.util.networkConnection.websocketServers.forEach(server => {
