@@ -135,7 +135,7 @@ export class Server {
   private initLogger() {
     this._logger = new Logger<ILogObj>({
       name: 'CitrineOS Logger',
-      minLevel: systemConfig.server.logLevel,
+      minLevel: systemConfig.logLevel,
       hideLogPositionForProduction: systemConfig.env === 'production'
     })
   }
