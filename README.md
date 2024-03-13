@@ -47,7 +47,7 @@ Before you begin, make sure you have the following installed on your system:
    npm run install-all
    ```
 
-1. The docker container should be initialized by running `docker-compose -f ./Server/docker-compose.yml up -d` or 
+1. The docker container should be initialized by running `docker-compose -f ./docker-compose.yml up -d` or 
 by using the IntelliJ `Server` Run Configuration which was created for this purpose.
 
 1. Running `docker-compose.yml` will ensure that the container is configured to expose the `:9229` debugging
@@ -118,7 +118,7 @@ Once Docker is running, the following services should be available:
 -   **Directus** (service name: directus) on port 8055 with endpoints
     -   `:8055/admin`: web interface (login = admin@citrineos.com:CitrineOS!)
 
-These three services are defined in `Server/docker-compose.yml` and they
+These three services are defined in `docker-compose.yml` and they
 live inside the docker network `docker_default` with their respective
 ports. By default these ports are directly accessible by using
 `localhost:8080` for example.
