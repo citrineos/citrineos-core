@@ -9,7 +9,7 @@ import { MonitoringModule } from './module';
 import { CreateOrUpdateVariableAttributeQuerySchema, CreateOrUpdateVariableAttributeQuerystring, sequelize, VariableAttributeQuerySchema, VariableAttributeQuerystring } from '@citrineos/data';
 import { AbstractModuleApi, AsMessageEndpoint, CallAction, SetVariablesRequestSchema, SetVariablesRequest, IMessageConfirmation, SetVariableDataType, GetVariablesRequestSchema, GetVariablesRequest, GetVariableDataType, AsDataEndpoint, Namespace, HttpMethod, ReportDataTypeSchema, ReportDataType, SetVariableStatusEnumType, ClearVariableMonitoringRequest, ClearVariableMonitoringRequestSchema, SetMonitoringBaseRequest, SetMonitoringBaseRequestSchema, SetMonitoringLevelRequest, SetMonitoringLevelRequestSchema, SetVariableMonitoringRequest, SetVariableMonitoringRequestSchema, GetMonitoringReportRequest, GetMonitoringReportRequestSchema } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { Variable, Component, Evse } from '@citrineos/data/lib/layers/sequelize';
+import { Variable, Component } from '@citrineos/data/lib/layers/sequelize';
 
 /**
  * Server API for the Monitoring module.
@@ -145,7 +145,7 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         return this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(request.body, request.query.stationId).then(async variableAttributes => {
             if (request.query.setOnCharger) { // value set offline, for example: manually via charger ui, or via api other than ocpp
                 for (let variableAttribute of variableAttributes) {
-                    variableAttribute = await variableAttribute.reload({ include: [Variable, { model: Component, include: [Evse] }] });
+                    variableAttribute = await variableAttribute.reload({ include: [Variable, Component] });
                     this._module.deviceModelRepository.updateResultByStationId({
                         attributeType: variableAttribute.type,
                         attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: "SetOnCharger" },

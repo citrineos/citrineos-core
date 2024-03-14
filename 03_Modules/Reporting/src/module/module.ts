@@ -5,7 +5,7 @@
 
 import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyReportRequest, HandlerProperties, SetVariableStatusEnumType, NotifyReportResponse, NotifyMonitoringReportRequest, NotifyMonitoringReportResponse, LogStatusNotificationRequest, LogStatusNotificationResponse, NotifyCustomerInformationRequest, NotifyCustomerInformationResponse, GetBaseReportResponse, StatusNotificationRequest, StatusNotificationResponse, SecurityEventNotificationRequest, SecurityEventNotificationResponse, CustomerInformationResponse, GetLogResponse, GetMonitoringReportResponse, GetReportResponse } from "@citrineos/base";
 import { IDeviceModelRepository, ISecurityEventRepository, sequelize } from "@citrineos/data";
-import { Variable, Component, Evse } from "@citrineos/data/lib/layers/sequelize";
+import { Component, Variable } from "@citrineos/data/lib/layers/sequelize";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
