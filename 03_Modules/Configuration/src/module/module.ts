@@ -494,7 +494,7 @@ export class ConfigurationModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("Heartbeat response sent: ", messageConfirmation, ""));
+      .then(messageConfirmation => this._logger.debug("Heartbeat response sent: ", messageConfirmation));
   }
 
   @AsHandler(CallAction.NotifyDisplayMessages)
@@ -510,7 +510,7 @@ export class ConfigurationModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("NotifyDisplayMessages response sent: ", messageConfirmation, ""));
+      .then(messageConfirmation => this._logger.debug("NotifyDisplayMessages response sent: ", messageConfirmation));
   }
 
   @AsHandler(CallAction.FirmwareStatusNotification)
@@ -526,7 +526,7 @@ export class ConfigurationModule extends AbstractModule {
     const response: FirmwareStatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("FirmwareStatusNotification response sent: ", messageConfirmation, ""));
+      .then(messageConfirmation => this._logger.debug("FirmwareStatusNotification response sent: ", messageConfirmation));
   }
 
   @AsHandler(CallAction.DataTransfer)
@@ -540,7 +540,7 @@ export class ConfigurationModule extends AbstractModule {
     const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("DataTransfer response sent: ", messageConfirmation, ""));
+      .then(messageConfirmation => this._logger.debug("DataTransfer response sent: ", messageConfirmation));
   }
 
   /**

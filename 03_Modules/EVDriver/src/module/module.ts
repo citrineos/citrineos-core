@@ -236,7 +236,7 @@ export class EVDriverModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("ReservationStatusUpdate response sent: ", messageConfirmation, ""));
+      .then(messageConfirmation => this._logger.debug("ReservationStatusUpdate response sent: ", messageConfirmation));
  
   }
   
