@@ -94,7 +94,7 @@ export class MonitoringModule extends AbstractModule {
     const response: NotifyEventResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug(`NotifyEvent response sent: ${JSON.stringify(messageConfirmation)}`));
+      .then(messageConfirmation => this._logger.debug("NotifyEvent response sent:", messageConfirmation));
   }
 
   /**
@@ -108,7 +108,7 @@ export class MonitoringModule extends AbstractModule {
   ): void {
     this._logger.debug("SetVariableMonitoring response received:", message, props);
   }
-  
+
   @AsHandler(CallAction.ClearVariableMonitoring)
   protected _handleClearVariableMonitoring(
     message: IMessage<ClearVariableMonitoringResponse>,

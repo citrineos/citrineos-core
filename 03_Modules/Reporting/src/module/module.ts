@@ -113,7 +113,7 @@ export class ReportingModule extends AbstractModule {
     const response: LogStatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug(`LogStatusNotification response sent: ${JSON.stringify(messageConfirmation)}`));
+      .then(messageConfirmation => this._logger.debug("LogStatusNotification response sent: ", messageConfirmation, ""));
   }
 
 
@@ -128,7 +128,7 @@ export class ReportingModule extends AbstractModule {
     const response: NotifyCustomerInformationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug(`NotifyCustomerInformation response sent: ${JSON.stringify(messageConfirmation)}`));
+      .then(messageConfirmation => this._logger.debug("NotifyCustomerInformation response sent: ", messageConfirmation, ""));
   }
 
   @AsHandler(CallAction.NotifyMonitoringReport)
@@ -142,7 +142,7 @@ export class ReportingModule extends AbstractModule {
     const response: NotifyMonitoringReportResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug(`NotifyMonitoringReport response sent: ${JSON.stringify(messageConfirmation)}`));
+      .then(messageConfirmation => this._logger.debug("NotifyMonitoringReport response sent: ", messageConfirmation, ""));
   }
 
   @AsHandler(CallAction.NotifyReport)

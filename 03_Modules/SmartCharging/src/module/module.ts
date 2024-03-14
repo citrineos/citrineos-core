@@ -90,7 +90,7 @@ export class SmartChargingModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug(`NotifyEVChargingNeeds response sent: ${JSON.stringify(messageConfirmation)}`));
+      .then(messageConfirmation => this._logger.debug("NotifyEVChargingNeeds response sent: ", messageConfirmation, ""));
   }
 
   @AsHandler(CallAction.NotifyEVChargingSchedule)
@@ -107,7 +107,7 @@ export class SmartChargingModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug(`NotifyEVChargingSchedule response sent: ${JSON.stringify(messageConfirmation)}`));
+      .then(messageConfirmation => this._logger.debug("NotifyEVChargingSchedule response sent: ", messageConfirmation, ""));
   }
 
   
@@ -125,7 +125,7 @@ export class SmartChargingModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug(`NotifyChargingLimit response sent: ${JSON.stringify(messageConfirmation)}`));
+      .then(messageConfirmation => this._logger.debug("NotifyChargingLimit response sent: ", messageConfirmation, ""));
   }
 
   
@@ -143,7 +143,7 @@ export class SmartChargingModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug(`ReportChargingProfiles response sent: ${JSON.stringify(messageConfirmation)}`));
+      .then(messageConfirmation => this._logger.debug("ReportChargingProfiles response sent: ", messageConfirmation, ""));
   }
 
 
