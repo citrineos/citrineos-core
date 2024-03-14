@@ -152,6 +152,21 @@ export class ReportingModule extends AbstractModule {
   ): Promise<void> {
     this._logger.info("NotifyReport received:", message, props);
 
+    for (const reportDataType of (message.payload.reportData ? message.payload.reportData : [])) {
+      const variableAttributes = await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, message.context.stationId);
+      for (const variableAttribute of variableAttributes) {
+        // Reload is necessary because the upsert method used in createOrUpdateDeviceModelByStationId does not allow eager loading
+        await variableAttribute.reload({
+          include: [Component, Variable]
+        });
+        this._deviceModelRepository.updateResultByStationId({
+          attributeType: variableAttribute.type,
+          attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: message.action },
+          component: variableAttribute.component, variable: variableAttribute.variable
+        }, message.context.stationId);
+      }
+    }
+
     if (!message.payload.tbc) { // Default if omitted is false
       const success = await this._cache.set(message.payload.requestId.toString(), ReportingModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE, message.context.stationId);
       this._logger.info("Completed", success, message.payload.requestId);
@@ -159,18 +174,6 @@ export class ReportingModule extends AbstractModule {
       // Continue to set get base report ongoing. Will extend the timeout.
       const success = await this._cache.set(message.payload.requestId.toString(), ReportingModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, message.context.stationId, this.config.maxCachingSeconds);
       this._logger.info("Ongoing", success, message.payload.requestId);
-    }
-
-    for (const reportDataType of (message.payload.reportData ? message.payload.reportData : [])) {
-      const variableAttributes = await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, message.context.stationId);
-      for (let variableAttribute of variableAttributes) {
-        variableAttribute = await variableAttribute.reload({ include: [Variable, { model: Component, include: [Evse] }] });
-        this._deviceModelRepository.updateResultByStationId({
-          attributeType: variableAttribute.type,
-          attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: message.action },
-          component: variableAttribute.component, variable: variableAttribute.variable
-        }, message.context.stationId);
-      }
     }
 
     // Create response
@@ -203,7 +206,7 @@ export class ReportingModule extends AbstractModule {
   ): void {
     this._logger.debug("GetBaseReport response received:", message, props);
   }
-  
+
   @AsHandler(CallAction.GetReport)
   protected _handleGetReport(
     message: IMessage<GetReportResponse>,
@@ -211,7 +214,7 @@ export class ReportingModule extends AbstractModule {
   ): void {
     this._logger.debug("GetReport response received:", message, props);
   }
-  
+
   @AsHandler(CallAction.GetMonitoringReport)
   protected _handleGetMonitoringReport(
     message: IMessage<GetMonitoringReportResponse>,
@@ -219,7 +222,7 @@ export class ReportingModule extends AbstractModule {
   ): void {
     this._logger.debug("GetMonitoringReport response received:", message, props);
   }
-  
+
   @AsHandler(CallAction.GetLog)
   protected _handleGetLog(
     message: IMessage<GetLogResponse>,
@@ -227,7 +230,7 @@ export class ReportingModule extends AbstractModule {
   ): void {
     this._logger.debug("GetLog response received:", message, props);
   }
-  
+
   @AsHandler(CallAction.CustomerInformation)
   protected _handleCustomerInformation(
     message: IMessage<CustomerInformationResponse>,
