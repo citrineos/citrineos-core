@@ -7,8 +7,9 @@ import { ILogObj, Logger } from 'tslog';
 import { IMonitoringModuleApi } from './interface';
 import { MonitoringModule } from './module';
 import { CreateOrUpdateVariableAttributeQuerySchema, CreateOrUpdateVariableAttributeQuerystring, sequelize, VariableAttributeQuerySchema, VariableAttributeQuerystring } from '@citrineos/data';
-import { AbstractModuleApi, AsMessageEndpoint, CallAction, SetVariablesRequestSchema, SetVariablesRequest, IMessageConfirmation, SetVariableDataType, GetVariablesRequestSchema, GetVariablesRequest, GetVariableDataType, AsDataEndpoint, Namespace, HttpMethod, ReportDataTypeSchema, ReportDataType, SetVariableStatusEnumType } from '@citrineos/base';
+import { AbstractModuleApi, AsMessageEndpoint, CallAction, SetVariablesRequestSchema, SetVariablesRequest, IMessageConfirmation, SetVariableDataType, GetVariablesRequestSchema, GetVariablesRequest, GetVariableDataType, AsDataEndpoint, Namespace, HttpMethod, ReportDataTypeSchema, ReportDataType, SetVariableStatusEnumType, ClearVariableMonitoringRequest, ClearVariableMonitoringRequestSchema, SetMonitoringBaseRequest, SetMonitoringBaseRequestSchema, SetMonitoringLevelRequest, SetMonitoringLevelRequestSchema, SetVariableMonitoringRequest, SetVariableMonitoringRequestSchema, GetMonitoringReportRequest, GetMonitoringReportRequestSchema } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
+import { Variable, Component, Evse } from '@citrineos/data/lib/layers/sequelize';
 
 /**
  * Server API for the Monitoring module.
@@ -29,6 +30,26 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
     /**
      * Message Endpoints
      */
+
+    @AsMessageEndpoint(CallAction.SetVariableMonitoring, SetVariableMonitoringRequestSchema)
+    setVariableMonitoring(identifier: string, tenantId: string, request: SetVariableMonitoringRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.SetVariableMonitoring, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.ClearVariableMonitoring, ClearVariableMonitoringRequestSchema)
+    clearVariableMonitoring(identifier: string, tenantId: string, request: ClearVariableMonitoringRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.ClearVariableMonitoring, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.SetMonitoringLevel, SetMonitoringLevelRequestSchema)
+    setMonitoringLevel(identifier: string, tenantId: string, request: SetMonitoringLevelRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.SetMonitoringLevel, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.SetMonitoringBase, SetMonitoringBaseRequestSchema)
+    setMonitoringBase(identifier: string, tenantId: string, request: SetMonitoringBaseRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.SetMonitoringBase, request, callbackUrl);
+    }
 
     @AsMessageEndpoint(CallAction.SetVariables, SetVariablesRequestSchema)
     async setVariables(
@@ -92,7 +113,7 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         const confirmations = [];
         let lastVariableIndex = 0;
         // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
-        while (getVariableData.length > 0) { 
+        while (getVariableData.length > 0) {
             const batch = getVariableData.slice(0, itemsPerMessageGetVariables);
             try {
                 const batchResult = await this._module.sendCall(identifier, tenantId, CallAction.GetVariables, { getVariableData: batch } as GetVariablesRequest, callbackUrl);
@@ -120,15 +141,16 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
      */
 
     @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Put, CreateOrUpdateVariableAttributeQuerySchema, ReportDataTypeSchema)
-    putDeviceModelVariables(request: FastifyRequest<{ Body: ReportDataType, Querystring: CreateOrUpdateVariableAttributeQuerystring }>): Promise<sequelize.VariableAttribute[]> {
-        return this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(request.body, request.query.stationId).then(variableAttributes => {
+    async putDeviceModelVariables(request: FastifyRequest<{ Body: ReportDataType, Querystring: CreateOrUpdateVariableAttributeQuerystring }>): Promise<sequelize.VariableAttribute[]> {
+        return this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(request.body, request.query.stationId).then(async variableAttributes => {
             if (request.query.setOnCharger) { // value set offline, for example: manually via charger ui, or via api other than ocpp
-                for (const variableAttribute of variableAttributes) {
+                for (let variableAttribute of variableAttributes) {
+                    variableAttribute = await variableAttribute.reload({ include: [Variable, { model: Component, include: [Evse] }] });
                     this._module.deviceModelRepository.updateResultByStationId({
                         attributeType: variableAttribute.type,
                         attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: "SetOnCharger" },
                         component: variableAttribute.component, variable: variableAttribute.variable
-                      }, request.query.stationId);
+                    }, request.query.stationId);
                 }
             }
             return variableAttributes;

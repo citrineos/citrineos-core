@@ -7,7 +7,6 @@ import {
   AbstractModule,
   AsHandler,
   AttributeEnumType,
-  BOOT_STATUS,
   BootConfig,
   BootNotificationRequest,
   BootNotificationResponse,
@@ -21,6 +20,7 @@ import {
   FirmwareStatusNotificationRequest,
   FirmwareStatusNotificationResponse,
   GetBaseReportRequest,
+  GetDisplayMessagesResponse,
   HandlerProperties,
   HeartbeatRequest,
   HeartbeatResponse,
@@ -30,15 +30,23 @@ import {
   IMessageHandler,
   IMessageSender,
   MutabilityEnumType,
+  NotifyDisplayMessagesRequest,
+  NotifyDisplayMessagesResponse,
+  PublishFirmwareResponse,
   RegistrationStatusEnumType,
   ReportBaseEnumType,
   ResetEnumType,
   ResetRequest,
+  ResetResponse,
+  SetDisplayMessageResponse,
+  SetNetworkProfileResponse,
   SetVariableDataType,
   SetVariableStatusEnumType,
   SetVariablesRequest,
   SetVariablesResponse,
-  SystemConfig
+  SystemConfig,
+  UnpublishFirmwareResponse,
+  UpdateFirmwareResponse
 } from "@citrineos/base";
 import { IBootRepository, IDeviceModelRepository, sequelize } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
@@ -55,6 +63,15 @@ export class ConfigurationModule extends AbstractModule {
   /**
    * Constants used for cache:
    */
+
+  /**
+   * Cache boot status is used to keep track of the overall boot process for Rejected or Pending.
+   * When Accepting a boot, blacklist needs to be cleared if and only if there was a previously 
+   * Rejected or Pending boot. When starting to configure charger, i.e. sending GetBaseReport or
+   * SetVariables, this should only be done if configuring is not still ongoing from a previous 
+   * BootNotificationRequest. Cache boot status mediates this behavior.
+   */
+  public static readonly BOOT_STATUS = "boot_status";
 
   /**
    * Fields
@@ -197,7 +214,7 @@ export class ConfigurationModule extends AbstractModule {
     };
 
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
-    const cachedBootStatus = await this._cache.get(BOOT_STATUS, stationId);
+    const cachedBootStatus = await this._cache.get(ConfigurationModule.BOOT_STATUS, stationId);
 
     // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
     if (bootNotificationResponse.status == RegistrationStatusEnumType.Accepted) {
@@ -210,7 +227,7 @@ export class ConfigurationModule extends AbstractModule {
         });
         await Promise.all(promises);
         // Remove cached boot status
-        this._cache.remove(BOOT_STATUS, stationId);
+        this._cache.remove(ConfigurationModule.BOOT_STATUS, stationId);
         this._logger.debug("Cached boot status removed: ", cachedBootStatus);
       }
     } else if (!cachedBootStatus) {
@@ -365,7 +382,7 @@ export class ConfigurationModule extends AbstractModule {
       if (bootNotificationResponse.status != RegistrationStatusEnumType.Accepted &&
         (!cachedBootStatus || (cachedBootStatus && cachedBootStatus !== bootNotificationResponse.status))) {
         // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
-        this._cache.set(BOOT_STATUS, bootNotificationResponse.status, stationId);
+        this._cache.set(ConfigurationModule.BOOT_STATUS, bootNotificationResponse.status, stationId);
       }
 
       // Pending status indicates configuration to do...
@@ -485,9 +502,24 @@ export class ConfigurationModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("Heartbeat response sent:", messageConfirmation));
+      .then(messageConfirmation => this._logger.debug(`Heartbeat response sent: ${JSON.stringify(messageConfirmation)}`));
   }
 
+  @AsHandler(CallAction.NotifyDisplayMessages)
+  protected _handleNotifyDisplayMessages(
+    message: IMessage<NotifyDisplayMessagesRequest>,
+    props?: HandlerProperties
+  ): void {
+
+    this._logger.debug("NotifyDisplayMessages received: ", message, props);
+
+    // Create response
+    const response: NotifyDisplayMessagesResponse = {
+    };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug(`NotifyDisplayMessages response sent: ${JSON.stringify(messageConfirmation)}`));
+  }
 
   @AsHandler(CallAction.FirmwareStatusNotification)
   protected _handleFirmwareStatusNotification(
@@ -502,7 +534,21 @@ export class ConfigurationModule extends AbstractModule {
     const response: FirmwareStatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("FirmwareStatusNotification response sent:", messageConfirmation));
+      .then(messageConfirmation => this._logger.debug(`FirmwareStatusNotification response sent: ${JSON.stringify(messageConfirmation)}`));
+  }
+
+  @AsHandler(CallAction.DataTransfer)
+  protected _handleDataTransfer(
+    message: IMessage<DataTransferRequest>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("DataTransfer received:", message, props);
+
+    // Create response
+    const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug(`DataTransfer response sent: ${JSON.stringify(messageConfirmation)}`));
   }
 
   /**
@@ -518,18 +564,67 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug("ChangeAvailability response received:", message, props);
   }
 
-  @AsHandler(CallAction.DataTransfer)
-  protected _handleDataTransfer(
-    message: IMessage<DataTransferRequest>,
+  @AsHandler(CallAction.SetNetworkProfile)
+  protected _handleSetNetworkProfile(
+    message: IMessage<SetNetworkProfileResponse>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("DataTransfer received:", message, props);
-
-    // Create response
-    const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected };
-
-    this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("DataTransfer response sent:", messageConfirmation));
+    this._logger.debug("SetNetworkProfile response received:", message, props);
   }
 
+  @AsHandler(CallAction.GetDisplayMessages)
+  protected _handleGetDisplayMessages(
+    message: IMessage<GetDisplayMessagesResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("GetDisplayMessages response received:", message, props);
+  }
+
+  @AsHandler(CallAction.SetDisplayMessage)
+  protected _handleSetDisplayMessage(
+    message: IMessage<SetDisplayMessageResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("SetDisplayMessage response received:", message, props);
+  }
+
+  @AsHandler(CallAction.PublishFirmware)
+  protected _handlePublishFirmware(
+    message: IMessage<PublishFirmwareResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("PublishFirmware response received:", message, props);
+  }
+
+  @AsHandler(CallAction.UnpublishFirmware)
+  protected _handleUnpublishFirmware(
+    message: IMessage<UnpublishFirmwareResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("UnpublishFirmware response received:", message, props);
+  }
+
+  @AsHandler(CallAction.UpdateFirmware)
+  protected _handleUpdateFirmware(
+    message: IMessage<UpdateFirmwareResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("UpdateFirmware response received:", message, props);
+  }
+
+  @AsHandler(CallAction.Reset)
+  protected _handleReset(
+    message: IMessage<ResetResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("Reset response received:", message, props);
+  }
+
+  @AsHandler(CallAction.TriggerMessage)
+  protected _handleTriggerMessage(
+    message: IMessage<ChangeAvailabilityResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("ChangeAvailability response received:", message, props);
+  }
 }

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, TransactionEventRequest, HandlerProperties, TransactionEventResponse, AuthorizationStatusEnumType, IdTokenInfoType, AdditionalInfoType, TransactionEventEnumType, MeterValuesRequest, MeterValuesResponse, StatusNotificationRequest, StatusNotificationResponse } from "@citrineos/base";
+import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, TransactionEventRequest, HandlerProperties, TransactionEventResponse, AuthorizationStatusEnumType, IdTokenInfoType, AdditionalInfoType, TransactionEventEnumType, MeterValuesRequest, MeterValuesResponse, StatusNotificationRequest, StatusNotificationResponse, GetTransactionStatusResponse, CostUpdatedResponse } from "@citrineos/base";
 import { IAuthorizationRepository, ITransactionEventRepository, sequelize } from "@citrineos/data";
 import { PubSubReceiver, PubSubSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
@@ -20,7 +20,7 @@ export class TransactionsModule extends AbstractModule {
     CallAction.TransactionEvent
   ];
   protected _responses: CallAction[] = [
-    CallAction.CostUpdate,
+    CallAction.CostUpdated,
     CallAction.GetTransactionStatus
   ];
 
@@ -94,6 +94,8 @@ export class TransactionsModule extends AbstractModule {
 
     await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(message.payload, message.context.stationId);
 
+    this._logger.debug(`Transaction event processed`);
+    
     const transactionEvent = message.payload;
     if (transactionEvent.idToken) {
       this._authorizeRepository.readByQuery({ ...transactionEvent.idToken }).then(authorization => {
@@ -173,14 +175,14 @@ export class TransactionsModule extends AbstractModule {
         return transactionEventResponse;
       }).then(transactionEventResponse => {
         this.sendCallResultWithMessage(message, transactionEventResponse)
-          .then(messageConfirmation => this._logger.debug("Transaction response sent:", messageConfirmation));
+          .then(messageConfirmation => this._logger.debug(`Transaction response sent: ${JSON.stringify(messageConfirmation)}`));
       });
     } else {
       const response: TransactionEventResponse = {
         // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
       };
       this.sendCallResultWithMessage(message, response)
-        .then(messageConfirmation => this._logger.debug("Transaction response sent:", messageConfirmation));
+        .then(messageConfirmation => this._logger.debug(`Transaction response sent: ${JSON.stringify(messageConfirmation)}`));
     }
   }
 
@@ -212,6 +214,26 @@ export class TransactionsModule extends AbstractModule {
     const response: StatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("StatusNotification response sent:", messageConfirmation));
+      .then(messageConfirmation => this._logger.debug(`StatusNotification response sent: ${JSON.stringify(messageConfirmation)}`));
+  }
+
+  /**
+   * Handle responses
+   */
+  
+  @AsHandler(CallAction.CostUpdated)
+  protected _handleCostUpdated(
+    message: IMessage<CostUpdatedResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("CostUpdated response received:", message, props);
+  }
+  
+  @AsHandler(CallAction.GetTransactionStatus)
+  protected _handleGetTransactionStatus(
+    message: IMessage<GetTransactionStatusResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("GetTransactionStatus response received:", message, props);
   }
 }

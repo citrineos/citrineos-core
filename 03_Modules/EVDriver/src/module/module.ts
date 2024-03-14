@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, AuthorizeRequest, HandlerProperties, AuthorizeResponse, IdTokenInfoType, AdditionalInfoType, AttributeEnumType, AuthorizationStatusEnumType } from "@citrineos/base";
+import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, AuthorizeRequest, HandlerProperties, AuthorizeResponse, IdTokenInfoType, AdditionalInfoType, AttributeEnumType, AuthorizationStatusEnumType, RequestStartTransactionResponse, RequestStopTransactionResponse, ReservationStatusUpdateRequest, ReservationStatusUpdateResponse, CancelReservationResponse, ClearCacheResponse, GetLocalListVersionResponse, ReserveNowResponse, SendLocalListResponse, UnlockConnectorResponse } from "@citrineos/base";
 import { IAuthorizationRepository, IDeviceModelRepository, sequelize } from "@citrineos/data";
 import { VariableAttribute } from "@citrineos/data/lib/layers/sequelize";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
@@ -222,5 +222,97 @@ export class EVDriverModule extends AbstractModule {
       }
       return this.sendCallResultWithMessage(message, response)
     }).then(messageConfirmation => this._logger.debug("Authorize response sent:", messageConfirmation));
+  }
+  
+  @AsHandler(CallAction.ReservationStatusUpdate)
+  protected async _handleReservationStatusUpdate(
+    message: IMessage<ReservationStatusUpdateRequest>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("ReservationStatusUpdateRequest received:", message, props);
+
+    // Create response
+    const response: ReservationStatusUpdateResponse = {
+    };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug(`ReservationStatusUpdate response sent: ${JSON.stringify(messageConfirmation)}`));
+ 
+  }
+  
+  /**
+   * Handle responses
+   */
+
+  @AsHandler(CallAction.RequestStartTransaction)
+  protected async _handleRequestStartTransaction(
+    message: IMessage<RequestStartTransactionResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("RequestStartTransactionResponse received:", message, props);
+
+  }
+
+  @AsHandler(CallAction.RequestStopTransaction)
+  protected async _handleRequestStopTransaction(
+    message: IMessage<RequestStopTransactionResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("RequestStopTransactionResponse received:", message, props);
+
+  }
+
+  @AsHandler(CallAction.CancelReservation)
+  protected async _handleCancelReservation(
+    message: IMessage<CancelReservationResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("CancelReservationResponse received:", message, props);
+
+  }
+  
+  @AsHandler(CallAction.ReserveNow)
+  protected async _handleReserveNow(
+    message: IMessage<ReserveNowResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("ReserveNowResponse received:", message, props);
+
+  }
+  
+  @AsHandler(CallAction.UnlockConnector)
+  protected async _handleUnlockConnector(
+    message: IMessage<UnlockConnectorResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("UnlockConnectorResponse received:", message, props);
+
+  }
+  
+  @AsHandler(CallAction.ClearCache)
+  protected async _handleClearCache(
+    message: IMessage<ClearCacheResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("ClearCacheResponse received:", message, props);
+
+  }
+  
+  @AsHandler(CallAction.SendLocalList)
+  protected async _handleSendLocalList(
+    message: IMessage<SendLocalListResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("SendLocalListResponse received:", message, props);
+
+  }
+  
+  @AsHandler(CallAction.GetLocalListVersion)
+  protected async _handleGetLocalListVersion(
+    message: IMessage<GetLocalListVersionResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("GetLocalListVersionResponse received:", message, props);
+
   }
 }

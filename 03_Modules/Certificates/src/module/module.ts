@@ -12,10 +12,13 @@ import {
   CertificateSignedResponse,
   CertificateSigningUseEnumType,
   DeleteCertificateResponse,
+  ErrorCode,
   EventGroup,
   GenericStatusEnumType,
   Get15118EVCertificateRequest,
+  GetCertificateStatusEnumType,
   GetCertificateStatusRequest,
+  GetCertificateStatusResponse,
   GetInstalledCertificateIdsResponse,
   HandlerProperties,
   ICache,
@@ -23,6 +26,7 @@ import {
   IMessageHandler,
   IMessageSender,
   InstallCertificateResponse,
+  OcppError,
   SignCertificateRequest,
   SignCertificateResponse,
   SystemConfig
@@ -130,6 +134,7 @@ export class CertificatesModule extends AbstractModule {
     this._logger.debug("Get15118EVCertificate received:", message, props);
 
     this._logger.error("Get15118EVCertificate not implemented");
+    this.sendCallErrorWithMessage(message, new OcppError(message.context.correlationId, ErrorCode.NotImplemented, "Get15118EVCertificate not implemented"));
   }
 
   @AsHandler(CallAction.GetCertificateStatus)
@@ -141,6 +146,7 @@ export class CertificatesModule extends AbstractModule {
     this._logger.debug("GetCertificateStatus received:", message, props);
 
     this._logger.error("GetCertificateStatus not implemented");
+    this.sendCallResultWithMessage(message, { status: GetCertificateStatusEnumType.Failed } as GetCertificateStatusResponse);
   }
 
 

@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyReportRequest, HandlerProperties, SetVariableStatusEnumType, NotifyReportResponse, NotifyMonitoringReportRequest, NotifyMonitoringReportResponse, LogStatusNotificationRequest, LogStatusNotificationResponse, NotifyCustomerInformationRequest, NotifyCustomerInformationResponse, GetBaseReportResponse, SecurityEventNotificationRequest, SecurityEventNotificationResponse } from "@citrineos/base";
+import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyReportRequest, HandlerProperties, SetVariableStatusEnumType, NotifyReportResponse, NotifyMonitoringReportRequest, NotifyMonitoringReportResponse, LogStatusNotificationRequest, LogStatusNotificationResponse, NotifyCustomerInformationRequest, NotifyCustomerInformationResponse, GetBaseReportResponse, StatusNotificationRequest, StatusNotificationResponse, SecurityEventNotificationRequest, SecurityEventNotificationResponse, CustomerInformationResponse, GetLogResponse, GetMonitoringReportResponse, GetReportResponse } from "@citrineos/base";
 import { IDeviceModelRepository, ISecurityEventRepository, sequelize } from "@citrineos/data";
-import { Component, Variable } from "@citrineos/data/lib/layers/sequelize";
+import { Variable, Component, Evse } from "@citrineos/data/lib/layers/sequelize";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
@@ -28,7 +28,6 @@ export class ReportingModule extends AbstractModule {
 
   protected _responses: CallAction[] = [
     CallAction.CustomerInformation,
-    CallAction.GetBaseReport,
     CallAction.GetLog,
     CallAction.GetReport
   ];
@@ -114,7 +113,7 @@ export class ReportingModule extends AbstractModule {
     const response: LogStatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("LogStatusNotification response sent:", messageConfirmation));
+      .then(messageConfirmation => this._logger.debug(`LogStatusNotification response sent: ${JSON.stringify(messageConfirmation)}`));
   }
 
 
@@ -129,7 +128,7 @@ export class ReportingModule extends AbstractModule {
     const response: NotifyCustomerInformationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("NotifyCustomerInformation response sent:", messageConfirmation));
+      .then(messageConfirmation => this._logger.debug(`NotifyCustomerInformation response sent: ${JSON.stringify(messageConfirmation)}`));
   }
 
   @AsHandler(CallAction.NotifyMonitoringReport)
@@ -143,7 +142,7 @@ export class ReportingModule extends AbstractModule {
     const response: NotifyMonitoringReportResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("NotifyMonitoringReport response sent:", messageConfirmation));
+      .then(messageConfirmation => this._logger.debug(`NotifyMonitoringReport response sent: ${JSON.stringify(messageConfirmation)}`));
   }
 
   @AsHandler(CallAction.NotifyReport)
@@ -152,21 +151,6 @@ export class ReportingModule extends AbstractModule {
     props?: HandlerProperties
   ): Promise<void> {
     this._logger.info("NotifyReport received:", message, props);
-
-    for (const reportDataType of (message.payload.reportData ? message.payload.reportData : [])) {
-      const variableAttributes = await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, message.context.stationId);
-      for (const variableAttribute of variableAttributes) {
-        // Reload is necessary because the upsert method used in createOrUpdateDeviceModelByStationId does not allow eager loading
-        await variableAttribute.reload({
-          include: [Component, Variable]
-        });
-        this._deviceModelRepository.updateResultByStationId({
-          attributeType: variableAttribute.type,
-          attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: message.action },
-          component: variableAttribute.component, variable: variableAttribute.variable
-        }, message.context.stationId);
-      }
-    }
 
     if (!message.payload.tbc) { // Default if omitted is false
       const success = await this._cache.set(message.payload.requestId.toString(), ReportingModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE, message.context.stationId);
@@ -177,12 +161,24 @@ export class ReportingModule extends AbstractModule {
       this._logger.info("Ongoing", success, message.payload.requestId);
     }
 
+    for (const reportDataType of (message.payload.reportData ? message.payload.reportData : [])) {
+      const variableAttributes = await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, message.context.stationId);
+      for (let variableAttribute of variableAttributes) {
+        variableAttribute = await variableAttribute.reload({ include: [Variable, { model: Component, include: [Evse] }] });
+        this._deviceModelRepository.updateResultByStationId({
+          attributeType: variableAttribute.type,
+          attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: message.action },
+          component: variableAttribute.component, variable: variableAttribute.variable
+        }, message.context.stationId);
+      }
+    }
+
     // Create response
     const response: NotifyReportResponse = {};
 
     this.sendCallResultWithMessage(message, response)
       .then((messageId) => {
-        this._logger.debug("NotifyReport response sent:", messageId);
+        this._logger.debug("NotifyReport response sent:", message, props);
       });
   }
 
@@ -191,7 +187,7 @@ export class ReportingModule extends AbstractModule {
     message: IMessage<SecurityEventNotificationRequest>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("SecurityEventNotification request received", message, props);
+    this._logger.debug("SecurityEventNotification request received:", message, props);
     this._securityEventRepository.createByStationId(message.payload, message.context.stationId);
     this.sendCallResultWithMessage(message, {} as SecurityEventNotificationResponse);
   }
@@ -201,10 +197,42 @@ export class ReportingModule extends AbstractModule {
    */
 
   @AsHandler(CallAction.GetBaseReport)
-  protected _handleBaseReport(
+  protected _handleGetBaseReport(
     message: IMessage<GetBaseReportResponse>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("GetBaseReport response received", message, props);
+    this._logger.debug("GetBaseReport response received:", message, props);
+  }
+  
+  @AsHandler(CallAction.GetReport)
+  protected _handleGetReport(
+    message: IMessage<GetReportResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("GetReport response received:", message, props);
+  }
+  
+  @AsHandler(CallAction.GetMonitoringReport)
+  protected _handleGetMonitoringReport(
+    message: IMessage<GetMonitoringReportResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("GetMonitoringReport response received:", message, props);
+  }
+  
+  @AsHandler(CallAction.GetLog)
+  protected _handleGetLog(
+    message: IMessage<GetLogResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("GetLog response received:", message, props);
+  }
+  
+  @AsHandler(CallAction.CustomerInformation)
+  protected _handleCustomerInformation(
+    message: IMessage<CustomerInformationResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("CustomerInformation response received:", message, props);
   }
 }
