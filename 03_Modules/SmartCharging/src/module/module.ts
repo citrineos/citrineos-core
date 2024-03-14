@@ -60,7 +60,7 @@ export class SmartChargingModule extends AbstractModule {
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(config, logger, cache), sender || new RabbitMqSender(config, logger), EventGroup.SmartCharging, logger);
+    super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.SmartCharging, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);

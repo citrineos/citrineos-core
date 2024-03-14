@@ -5,7 +5,7 @@
 
 import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyEventRequest, HandlerProperties, NotifyEventResponse, GetVariablesResponse, SetVariablesResponse } from "@citrineos/base";
 import { IDeviceModelRepository, sequelize } from "@citrineos/data";
-import { PubSubReceiver, PubSubSender, Timer } from "@citrineos/util";
+import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from "./services";
@@ -64,7 +64,7 @@ export class MonitoringModule extends AbstractModule {
     logger?: Logger<ILogObj>,
     deviceModelRepository?: IDeviceModelRepository
   ) {
-    super(config, cache, handler || new PubSubReceiver(config, logger), sender || new PubSubSender(config, logger), EventGroup.Monitoring, logger);
+    super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Monitoring, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);

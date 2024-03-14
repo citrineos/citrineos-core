@@ -82,7 +82,7 @@ export class ReportingModule extends AbstractModule {
     deviceModelRepository?: IDeviceModelRepository,
     securityEventRepository?: ISecurityEventRepository
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(config, logger, cache), sender || new RabbitMqSender(config, logger), EventGroup.Reporting, logger);
+    super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Reporting, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);
