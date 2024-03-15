@@ -71,7 +71,7 @@ export class EVDriverModuleApi extends AbstractModuleApi<EVDriverModule> impleme
     }
 
     @AsMessageEndpoint(CallAction.ReserveNow, ReserveNowRequestSchema)
-    async requestReserveNow(identifier: string, tenantId: string, request: ReserveNowRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+    async reserveNow(identifier: string, tenantId: string, request: ReserveNowRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
         return this._module.sendCall(identifier, tenantId, CallAction.ReserveNow, request, callbackUrl);
     }
 
