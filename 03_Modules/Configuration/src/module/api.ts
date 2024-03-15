@@ -8,7 +8,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IConfigurationModuleApi } from './interface';
 import { ConfigurationModule } from './module';
-import { AbstractModuleApi, AsMessageEndpoint, CallAction, SetNetworkProfileRequestSchema, SetNetworkProfileRequest, IMessageConfirmation, UpdateFirmwareRequestSchema, UpdateFirmwareRequest, ResetRequestSchema, ResetRequest, TriggerMessageRequestSchema, TriggerMessageRequest, AsDataEndpoint, Namespace, HttpMethod, BootConfigSchema, BootNotificationResponse, BootConfig } from '@citrineos/base';
+import { AbstractModuleApi, AsMessageEndpoint, CallAction, SetNetworkProfileRequestSchema, SetNetworkProfileRequest, IMessageConfirmation, UpdateFirmwareRequestSchema, UpdateFirmwareRequest, ResetRequestSchema, ChangeAvailabilityRequestSchema, ResetRequest, TriggerMessageRequestSchema, TriggerMessageRequest, AsDataEndpoint, Namespace, HttpMethod, BootConfigSchema, BootNotificationResponse, BootConfig, ChangeAvailabilityRequest, PublishFirmwareRequestSchema, ClearDisplayMessageRequest, ClearDisplayMessageRequestSchema, GetDisplayMessagesRequest, GetDisplayMessagesRequestSchema, PublishFirmwareRequest, SetDisplayMessageRequest, SetDisplayMessageRequestSchema, UnpublishFirmwareRequest, UnpublishFirmwareRequestSchema } from '@citrineos/base';
 import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring } from '@citrineos/data';
 
 /**
@@ -41,6 +41,56 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
         return this._module.sendCall(identifier, tenantId, CallAction.SetNetworkProfile, request, callbackUrl);
     }
 
+    @AsMessageEndpoint(CallAction.ClearDisplayMessage, ClearDisplayMessageRequestSchema)
+    clearDisplayMessage(
+        identifier: string,
+        tenantId: string,
+        request: ClearDisplayMessageRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.ClearDisplayMessage, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.GetDisplayMessages, GetDisplayMessagesRequestSchema)
+    getDisplayMessages(
+        identifier: string,
+        tenantId: string,
+        request: GetDisplayMessagesRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.GetDisplayMessages, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.SetDisplayMessage, SetDisplayMessageRequestSchema)
+    setDisplayMessages(
+        identifier: string,
+        tenantId: string,
+        request: SetDisplayMessageRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.SetDisplayMessage, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.PublishFirmware, PublishFirmwareRequestSchema)
+    publishFirmware(
+        identifier: string,
+        tenantId: string,
+        request: PublishFirmwareRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.PublishFirmware, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.UnpublishFirmware, UnpublishFirmwareRequestSchema)
+    unpublishFirmware(
+        identifier: string,
+        tenantId: string,
+        request: UnpublishFirmwareRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.UnpublishFirmware, request, callbackUrl);
+    }
+
     @AsMessageEndpoint(CallAction.UpdateFirmware, UpdateFirmwareRequestSchema)
     updateFirmware(
         identifier: string,
@@ -59,6 +109,16 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
         callbackUrl?: string
     ): Promise<IMessageConfirmation> {
         return this._module.sendCall(identifier, tenantId, CallAction.Reset, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.ChangeAvailability, ChangeAvailabilityRequestSchema)
+    changeAvailability(
+        identifier: string,
+        tenantId: string,
+        request: ChangeAvailabilityRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.ChangeAvailability, request, callbackUrl);
     }
 
     @AsMessageEndpoint(CallAction.TriggerMessage, TriggerMessageRequestSchema)

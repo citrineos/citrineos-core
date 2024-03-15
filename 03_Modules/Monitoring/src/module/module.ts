@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyEventRequest, HandlerProperties, NotifyEventResponse, GetVariablesResponse, SetVariablesResponse } from "@citrineos/base";
+import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyEventRequest, HandlerProperties, NotifyEventResponse, GetVariablesResponse, SetVariablesResponse, NotifyMonitoringReportRequest, NotifyMonitoringReportResponse, ClearVariableMonitoringResponse, GetMonitoringReportResponse, SetMonitoringBaseResponse, SetMonitoringLevelResponse, SetVariableMonitoringResponse } from "@citrineos/base";
 import { IDeviceModelRepository, sequelize } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
@@ -16,12 +16,10 @@ import { DeviceModelService } from "./services";
 export class MonitoringModule extends AbstractModule {
 
   protected _requests: CallAction[] = [
-    CallAction.NotifyEvent,
-    CallAction.NotifyMonitoringReport
+    CallAction.NotifyEvent
   ];
   protected _responses: CallAction[] = [
     CallAction.ClearVariableMonitoring,
-    CallAction.GetMonitoringReport,
     CallAction.GetVariables,
     CallAction.SetMonitoringBase,
     CallAction.SetMonitoringLevel,
@@ -103,12 +101,52 @@ export class MonitoringModule extends AbstractModule {
    * Handle responses
    */
 
+  @AsHandler(CallAction.SetVariableMonitoring)
+  protected _handleSetVariableMonitoring(
+    message: IMessage<SetVariableMonitoringResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("SetVariableMonitoring response received:", message, props);
+  }
+
+  @AsHandler(CallAction.ClearVariableMonitoring)
+  protected _handleClearVariableMonitoring(
+    message: IMessage<ClearVariableMonitoringResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("ClearVariableMonitoring response received:", message, props);
+  }
+
+  @AsHandler(CallAction.GetMonitoringReport)
+  protected _handleGetMonitoringReport(
+    message: IMessage<GetMonitoringReportResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("GetMonitoringReport response received:", message, props);
+  }
+
+  @AsHandler(CallAction.SetMonitoringLevel)
+  protected _handleSetMonitoringLevel(
+    message: IMessage<SetMonitoringLevelResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("SetMonitoringLevel response received:", message, props);
+  }
+
+  @AsHandler(CallAction.SetMonitoringBase)
+  protected _handleSetMonitoringBase(
+    message: IMessage<SetMonitoringBaseResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("SetMonitoringBase response received:", message, props);
+  }
+
   @AsHandler(CallAction.GetVariables)
   protected async _handleGetVariables(
     message: IMessage<GetVariablesResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("GetVariables response received", message, props);
+    this._logger.debug("GetVariables response received:", message, props);
     this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(message.payload.getVariableResult, message.context.stationId);
   }
 
@@ -117,7 +155,7 @@ export class MonitoringModule extends AbstractModule {
     message: IMessage<SetVariablesResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("SetVariables response received", message, props);
+    this._logger.debug("SetVariables response received:", message, props);
 
     message.payload.setVariableResult.forEach(async setVariableResultType => {
       this._deviceModelRepository.updateResultByStationId(setVariableResultType, message.context.stationId);
