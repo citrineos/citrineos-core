@@ -146,7 +146,7 @@ export class CertificatesModule extends AbstractModule {
     this._logger.debug("GetCertificateStatus received:", message, props);
 
     this._logger.error("GetCertificateStatus not implemented");
-    this.sendCallResultWithMessage(message, { status: GetCertificateStatusEnumType.Failed } as GetCertificateStatusResponse);
+    this.sendCallResultWithMessage(message, { status: GetCertificateStatusEnumType.Failed, statusInfo: { reasonCode: ErrorCode.NotImplemented } } as GetCertificateStatusResponse);
   }
 
 
@@ -187,7 +187,7 @@ export class CertificatesModule extends AbstractModule {
         caPrivateKey = this._securityCaPrivateKeys.get(clientConnection) as forge.pki.rsa.PrivateKey;
         break;
       default:
-        this.sendCallResultWithMessage(message, { status: GenericStatusEnumType.Rejected, statusInfo: { reasonCode: 'SERVER_NOT_IMPLEMENTED', additionalInfo: certificateType } } as SignCertificateResponse);
+        this.sendCallResultWithMessage(message, { status: GenericStatusEnumType.Rejected, statusInfo: { reasonCode: ErrorCode.NotImplemented, additionalInfo: certificateType } } as SignCertificateResponse);
         this._logger.error("Unimplemented certificate type {}", certificateType);
         return;
     }

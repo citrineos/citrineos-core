@@ -17,6 +17,7 @@ import {
   DataTransferRequest,
   DataTransferResponse,
   DataTransferStatusEnumType,
+  ErrorCode,
   EventGroup,
   FirmwareStatusNotificationRequest,
   FirmwareStatusNotificationResponse,
@@ -537,7 +538,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug("DataTransfer received:", message, props);
 
     // Create response
-    const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected };
+    const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected, statusInfo: { reasonCode: ErrorCode.NotImplemented } };
 
     this.sendCallResultWithMessage(message, response)
       .then(messageConfirmation => this._logger.debug("DataTransfer response sent: ", messageConfirmation));
