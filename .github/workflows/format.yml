@@ -22,5 +22,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
         run: npm i
+      - name: Lint
+        run: npm run lint
       - name: Check formatting with Prettier
         run: npm run prettier

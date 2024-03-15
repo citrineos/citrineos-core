@@ -9,6 +9,7 @@
     "typescript": "^5.3.3"
   },
   "scripts": {
+    "lint": "npx eslint --fix --ext .ts ./",
     "install-all": "npm i",
     "clean": "rm -rf dist/*",
     "build": "npm run clean && tsc --build --verbose",
