@@ -85,6 +85,7 @@ export abstract class AbstractModule implements IModule {
        * @return {Promise<boolean>} Returns a promise that resolves to a boolean indicating if the initialization was successful.
        */
     protected async _initHandler(requests: CallAction[], responses: CallAction[]): Promise<boolean> {
+        this._handler.module = this;
 
         let success = await this._handler.subscribe(this._eventGroup.toString() + "_requests", requests, {
             state: MessageState.Request.toString()
@@ -144,17 +145,10 @@ export abstract class AbstractModule implements IModule {
             }
         } catch (error) {
             this._logger.error("Failed handling message: ", error, message);
-            if (message.state === MessageState.Request) { // Only requests need responses
-                if (error instanceof OcppError) {
-                    this._sender.sendResponse(message, error);
-                } else {
-                    if (error instanceof Error) {
-                        this._logger.debug("Stacktrace: " + error.stack);
-                        this._sender.sendResponse(message, new OcppError(message.context.correlationId, ErrorCode.InternalError, error.message));
-                    } else {
-                        this._sender.sendResponse(message, new OcppError(message.context.correlationId, ErrorCode.InternalError, "Failed handling message: " + error));
-                    }
-                }
+            if (error instanceof OcppError) {
+                this._sender.sendResponse(message, error);
+            } else {
+                this._sender.sendResponse(message, new OcppError(message.context.correlationId, ErrorCode.InternalError, "Failed handling message: " + error));
             }
         }
     }
@@ -212,8 +206,8 @@ export abstract class AbstractModule implements IModule {
                 this._config.maxCachingSeconds);
         }
         // TODO: Future - Compound key with tenantId
-        return this._cache.get<ClientConnection>(identifier, CacheNamespace.Connections, () => ClientConnection).then((connection) => {
-            if (connection && connection.isAlive) {
+        return this._cache.get(identifier, CacheNamespace.Connections).then((connection) => {
+            if (connection) {
                 return this._sender.sendRequest(
                     RequestBuilder.buildCall(
                         identifier,

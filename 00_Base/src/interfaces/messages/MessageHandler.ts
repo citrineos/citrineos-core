@@ -30,6 +30,7 @@ export interface IMessageHandler {
      * Unsubscribe from messages. E.g. when a connection drops.
      * 
      * @param identifier - The identifier to unsubscribe from.
+     * @returns A promise that resolves to a boolean value indicating whether the unsubscription was successful.
      */
     unsubscribe(identifier: string): Promise<boolean>;
 

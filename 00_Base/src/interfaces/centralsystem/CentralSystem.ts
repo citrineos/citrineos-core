@@ -3,21 +3,22 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Call, CallError, CallResult } from "../..";
-import { IClientConnection } from "./ClientConnection";
+import { Call, CallError, CallResult, IModule } from "../..";
 
 /**
  * Interface for the central system
  */
-export interface ICentralSystem {
+export interface ICentralSystem extends IModule {
+    /**
+     * Register a connection to the message handler with the given connection identifier.
+     *
+     * @param {string} connectionIdentifier - the identifier of the connection
+     * @return {Promise<boolean>} true if both request and response subscriptions are successful, false otherwise
+     */
+    registerConnection(connectionIdentifier: string): Promise<boolean>
+    deregisterConnection(connectionIdentifier: string): Promise<boolean>
 
-    onCall(connection: IClientConnection, message: Call): void;
-    onCallResult(connection: IClientConnection, message: CallResult): void;
-    onCallError(connection: IClientConnection, message: CallError): void;
-
-    sendCall(identifier: string, message: Call): Promise<boolean>;
-    sendCallResult(identifier: string, message: CallResult): Promise<boolean>;
-    sendCallError(identifier: string, message: CallError): Promise<boolean>;
-
-    shutdown(): void;
+    onCall(identifier: string, message: Call): void;
+    onCallResult(identifier: string, message: CallResult): void;
+    onCallError(identifier: string, message: CallError): void;
 }
