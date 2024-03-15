@@ -66,12 +66,12 @@ export class EVDriverModuleApi extends AbstractModuleApi<EVDriverModule> impleme
     }
 
     @AsMessageEndpoint(CallAction.CancelReservation, CancelReservationRequestSchema)
-    async requestCancelReservation(identifier: string, tenantId: string, request: CancelReservationRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+    async cancelReservation(identifier: string, tenantId: string, request: CancelReservationRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
         return this._module.sendCall(identifier, tenantId, CallAction.CancelReservation, request, callbackUrl);
     }
 
     @AsMessageEndpoint(CallAction.ReserveNow, ReserveNowRequestSchema)
-    async requestReserveNow(identifier: string, tenantId: string, request: ReserveNowRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+    async reserveNow(identifier: string, tenantId: string, request: ReserveNowRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
         return this._module.sendCall(identifier, tenantId, CallAction.ReserveNow, request, callbackUrl);
     }
 
