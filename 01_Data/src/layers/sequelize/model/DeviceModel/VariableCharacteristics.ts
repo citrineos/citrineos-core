@@ -24,13 +24,13 @@ export class VariableCharacteristics extends Model implements VariableCharacteri
   @Column(DataType.STRING)
   declare dataType: DataEnumType;
 
-  @Column(DataType.INTEGER)
+  @Column(DataType.DECIMAL)
   declare minLimit?: number;
 
-  @Column(DataType.INTEGER)
+  @Column(DataType.DECIMAL)
   declare maxLimit?: number;
 
-  @Column(DataType.STRING)
+  @Column(DataType.STRING(4000))
   declare valuesList?: string;
 
   @Column

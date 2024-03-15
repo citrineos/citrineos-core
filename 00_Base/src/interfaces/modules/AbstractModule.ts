@@ -144,10 +144,17 @@ export abstract class AbstractModule implements IModule {
             }
         } catch (error) {
             this._logger.error("Failed handling message: ", error, message);
-            if (error instanceof OcppError) {
-                this._sender.sendResponse(message, error);
-            } else {
-                this._sender.sendResponse(message, new OcppError(message.context.correlationId, ErrorCode.InternalError, "Failed handling message: " + error));
+            if (message.state === MessageState.Request) { // Only requests need responses
+                if (error instanceof OcppError) {
+                    this._sender.sendResponse(message, error);
+                } else {
+                    if (error instanceof Error) {
+                        this._logger.debug("Stacktrace: " + error.stack);
+                        this._sender.sendResponse(message, new OcppError(message.context.correlationId, ErrorCode.InternalError, error.message));
+                    } else {
+                        this._sender.sendResponse(message, new OcppError(message.context.correlationId, ErrorCode.InternalError, "Failed handling message: " + error));
+                    }
+                }
             }
         }
     }
