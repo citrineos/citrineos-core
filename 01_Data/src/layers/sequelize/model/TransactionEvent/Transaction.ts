@@ -5,15 +5,15 @@
 
 import { ChargingStateEnumType, CustomDataType, EVSEType, MeterValueType, Namespace, ReasonEnumType, TransactionEventRequest, TransactionType } from '@citrineos/base';
 import {
-    Table,
-    Column,
-    Model,
-    DataType,
-    ForeignKey,
-    HasMany,
-    BelongsTo,
-    BelongsToMany,
-  } from 'sequelize-typescript';
+  Table,
+  Column,
+  Model,
+  DataType,
+  ForeignKey,
+  HasMany,
+  BelongsTo,
+  BelongsToMany,
+} from 'sequelize-typescript';
 import { IdToken } from '../Authorization';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
@@ -35,10 +35,7 @@ export class Transaction extends Model implements TransactionType {
   declare evse?: EVSEType;
 
   @ForeignKey(() => Evse)
-  @Column({
-      type: DataType.INTEGER,
-      unique: 'evse_name_instance'
-  })
+  @Column(DataType.INTEGER)
   declare evseDatabaseId?: number;
 
   @Column({

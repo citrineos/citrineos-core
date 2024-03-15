@@ -55,15 +55,13 @@ export class AuthorizationRepository extends SequelizeRepository<Authorization> 
                     valueIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
                 }
                 authorizationModel.idTokenInfoId = (await valueIdTokenInfo.save()).id;
-                await authorizationModel.save();
             }
         } else if (authorizationModel.idTokenInfoId) {
             // Remove idTokenInfo
             authorizationModel.idTokenInfoId = undefined;
             authorizationModel.idTokenInfo = undefined;
-            await authorizationModel.save();
         }
-        return authorizationModel.reload();
+        return authorizationModel.save();
 
     }
 

@@ -21,7 +21,7 @@ export function createLocalConfig() {
                 unknownChargerStatus: RegistrationStatusEnumType.Accepted,
                 getBaseReportOnPending: true,
                 bootWithRejectedVariables: true,
-                autoAccept: false,
+                autoAccept: true,
                 endpointPrefix: "/configuration"
             },
             evdriver: {
@@ -49,7 +49,7 @@ export function createLocalConfig() {
                 username: "citrine",
                 password: "citrine",
                 storage: "",
-                sync: true,
+                sync: false,
             }
         },
         util: {

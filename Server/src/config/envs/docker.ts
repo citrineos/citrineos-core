@@ -49,7 +49,7 @@ export function createDockerConfig() {
                 username: "citrine",
                 password: "citrine",
                 storage: "",
-                sync: true,
+                sync: false,
             }
         },
         util: {

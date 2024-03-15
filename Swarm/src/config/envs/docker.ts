@@ -23,7 +23,7 @@ export function createDockerConfig() {
                 unknownChargerStatus: RegistrationStatusEnumType.Accepted,
                 getBaseReportOnPending: true,
                 bootWithRejectedVariables: true,
-                autoAccept: false,
+                autoAccept: true,
                 endpointPrefix: "configuration",
                 host: "0.0.0.0",
                 port: 8084
@@ -63,7 +63,7 @@ export function createDockerConfig() {
                 username: "citrine",
                 password: "citrine",
                 storage: "",
-                sync: true,
+                sync: false
             }
         },
         util: {
