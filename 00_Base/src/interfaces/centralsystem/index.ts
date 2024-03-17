@@ -5,4 +5,5 @@
 
 export { ICentralSystem } from "./CentralSystem";
 export { AbstractCentralSystem } from "./AbstractCentralSystem";
-export { IClientConnection, ClientConnection } from "./ClientConnection";
+export { INetworkConnection } from "./NetworkConnection";
+export { IAuthenticator } from "./Authenticator"

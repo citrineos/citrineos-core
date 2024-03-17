@@ -14,7 +14,6 @@ import { SystemConfig } from "../../config/types";
 import { CallAction, ErrorCode, OcppError } from "../../ocpp/rpc/message";
 import { RequestBuilder } from "../../util/request";
 import { CacheNamespace, ICache } from "../cache/cache";
-import { ClientConnection } from "../centralsystem";
 import { EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessageHandler, IMessageSender, MessageOrigin, MessageState } from "../messages";
 
 export abstract class AbstractModule implements IModule {

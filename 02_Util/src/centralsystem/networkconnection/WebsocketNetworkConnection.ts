@@ -3,24 +3,13 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
-import { ClientConnection, CacheNamespace, IClientConnection, ICache, WebsocketServerConfig } from "@citrineos/base";
-import { instanceToPlain } from "class-transformer";
+import { CacheNamespace, IAuthenticator, ICache, INetworkConnection, WebsocketServerConfig } from "@citrineos/base";
 import { Duplex } from "stream";
 import * as http from "http";
 import * as https from "https";
 import fs from "fs";
-import { v4 as uuidv4 } from "uuid";
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from "ws";
 import { Logger, ILogObj } from "tslog";
-import { IAuthenticator } from "../authenticator/Authenticator";
-
-export interface INetworkConnection {
-    addOnConnectionCallback(onConnectionCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void;
-    addOnCloseCallback(onConnectionCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void;
-    addOnMessageCallback(onMessageCallback: (identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>): void;
-    sendMessage(identifier: string, message: string): Promise<boolean>;
-    shutdown(): void;
-}
 
 export class WebsocketNetworkConnection implements INetworkConnection {
 
@@ -316,7 +305,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     /**
      * Internal method to handle the incoming message from the websocket client.
      *
-     * @param {IClientConnection} client - The client connection object.
+     * @param {string} identifier - The client identifier.
      * @param {string} message - The incoming message from the client.
      * @return {void} This function does not return anything.
      */
