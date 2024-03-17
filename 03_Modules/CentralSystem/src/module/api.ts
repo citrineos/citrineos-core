@@ -7,7 +7,7 @@ import { AbstractModuleApi, AsMessageEndpoint, CallAction, CertificateSignedRequ
 import { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IAdminApi } from './interface';
-import { CentralSystem } from './CentralSystem';
+import { CentralSystem } from './centralsystem';
 
 /**
  * Server API for the Certificates module.
@@ -17,12 +17,12 @@ export class AdminApi extends AbstractModuleApi<CentralSystem> implements IAdmin
     /**
      * Constructs a new instance of the class.
      *
-     * @param {CertificatesModule} CertificatesModule - The Certificates module.
+     * @param {CentralSystem} centralSystem - The CentralSystem module.
      * @param {FastifyInstance} server - The Fastify server instance.
      * @param {Logger<ILogObj>} [logger] - The logger instance.
      */
-    constructor(CertificatesModule: CertificatesModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
-        super(CertificatesModule, server, logger);
+    constructor(centralSystem: CentralSystem, server: FastifyInstance, logger?: Logger<ILogObj>) {
+        super(centralSystem, server, logger);
     }
 
     /**

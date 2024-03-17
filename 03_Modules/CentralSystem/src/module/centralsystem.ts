@@ -3,11 +3,10 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
-import { AbstractCentralSystem, BOOT_STATUS, CacheNamespace, Call, CallAction, CallError, CallResult, ErrorCode, ICache, ICentralSystem, IMessageConfirmation, IMessageHandler, IMessageRouter, IMessageSender, MessageOrigin, MessageTriggerEnumType, MessageTypeId, OcppError, OcppMessageRouter, OcppRequest, OcppResponse, RegistrationStatusEnumType, RetryMessageError, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
+import { AbstractCentralSystem, BOOT_STATUS, CacheNamespace, Call, CallAction, CallError, CallResult, ErrorCode, ICache, ICentralSystem, IMessageConfirmation, IMessageHandler, IMessageRouter, IMessageSender, INetworkConnection, MessageOrigin, MessageTriggerEnumType, MessageTypeId, OcppError, OcppMessageRouter, OcppRequest, OcppResponse, RegistrationStatusEnumType, RetryMessageError, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
 import Ajv from "ajv";
 import { v4 as uuidv4 } from "uuid";
 import { ILogObj, Logger } from "tslog";
-import { INetworkConnection } from "./networkconnection/WebsocketNetworkConnection";
 
 /**
  * Implementation of the central system
@@ -118,7 +117,7 @@ export class CentralSystem extends AbstractCentralSystem implements ICentralSyst
     /**
      * Handles an incoming Call message from a client connection.
      *
-     * @param {IClientConnection} connection - The client connection object.
+     * @param {string} identifier - The client identifier.
      * @param {Call} message - The Call message received.
      * @return {void}
      */
@@ -170,7 +169,7 @@ export class CentralSystem extends AbstractCentralSystem implements ICentralSyst
     /**
      * Handles a CallResult made by the client.
      *
-     * @param {IClientConnection} connection - The client connection that made the call.
+     * @param {string} identifier - The client identifier that made the call.
      * @param {CallResult} message - The OCPP CallResult message.
      * @return {void}
      */
@@ -211,7 +210,7 @@ export class CentralSystem extends AbstractCentralSystem implements ICentralSyst
     /**
      * Handles the CallError that may have occured during a Call exchange.
      *
-     * @param {IClientConnection} connection - The client connection object.
+     * @param {string} identifier - The client identifier.
      * @param {CallError} message - The error message.
      * @return {void} This function doesn't return anything.
      */
