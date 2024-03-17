@@ -2,14 +2,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ICache, AttributeEnumType, SetVariableStatusEnumType } from "@citrineos/base";
+import { ICache, AttributeEnumType, SetVariableStatusEnumType, IAuthenticator } from "@citrineos/base";
 import { DeviceModelRepository } from "@citrineos/data/lib/layers/sequelize";
 import { Logger, ILogObj } from "tslog";
 import * as bcrypt from "bcrypt";
-
-export interface IAuthenticator {
-    authenticate(identifier: string, username?: string, password?: string): Promise<boolean>;
-}
 
 export class Authenticator implements IAuthenticator {
 

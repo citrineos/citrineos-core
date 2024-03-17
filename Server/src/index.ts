@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ICache, ICentralSystem, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
+import { IAuthenticator, ICache, ICentralSystem, IMessageHandler, IMessageSender, IModule, IModuleApi, INetworkConnection, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
 import { Authenticator, CentralSystemImpl, MemoryCache, RabbitMqReceiver, RabbitMqSender, WebsocketNetworkConnection, initSwagger } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
@@ -19,8 +19,6 @@ import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import { SmartChargingModule, SmartChargingModuleApi } from '@citrineos/smartcharging';
 import { sequelize } from '@citrineos/data';
-import { IAuthenticator } from '@citrineos/util/lib/centralsystem/authenticator/Authenticator';
-import { INetworkConnection } from '@citrineos/util/lib/centralsystem/networkconnection/WebsocketNetworkConnection';
 
 class CitrineOSServer {
 

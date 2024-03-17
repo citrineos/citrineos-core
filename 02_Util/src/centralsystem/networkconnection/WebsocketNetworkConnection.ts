@@ -3,14 +3,13 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
-import { CacheNamespace, ICache, INetworkConnection, WebsocketServerConfig } from "@citrineos/base";
+import { CacheNamespace, IAuthenticator, ICache, INetworkConnection, WebsocketServerConfig } from "@citrineos/base";
 import { Duplex } from "stream";
 import * as http from "http";
 import * as https from "https";
 import fs from "fs";
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from "ws";
 import { Logger, ILogObj } from "tslog";
-import { IAuthenticator } from "../authenticator/Authenticator";
 
 export class WebsocketNetworkConnection implements INetworkConnection {
 
