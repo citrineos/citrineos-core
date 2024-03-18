@@ -3,12 +3,47 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyReportRequest, HandlerProperties, SetVariableStatusEnumType, NotifyReportResponse, NotifyMonitoringReportRequest, NotifyMonitoringReportResponse, LogStatusNotificationRequest, LogStatusNotificationResponse, NotifyCustomerInformationRequest, NotifyCustomerInformationResponse, GetBaseReportResponse, StatusNotificationRequest, StatusNotificationResponse, SecurityEventNotificationRequest, SecurityEventNotificationResponse, CustomerInformationResponse, GetLogResponse, GetMonitoringReportResponse, GetReportResponse } from "@citrineos/base";
-import { IDeviceModelRepository, ISecurityEventRepository, sequelize } from "@citrineos/data";
+import {
+  AbstractModule,
+  CallAction,
+  SystemConfig,
+  ICache,
+  IMessageSender,
+  IMessageHandler,
+  EventGroup,
+  AsHandler,
+  IMessage,
+  NotifyReportRequest,
+  HandlerProperties,
+  SetVariableStatusEnumType,
+  NotifyReportResponse,
+  NotifyMonitoringReportRequest,
+  NotifyMonitoringReportResponse,
+  LogStatusNotificationRequest,
+  LogStatusNotificationResponse,
+  NotifyCustomerInformationRequest,
+  NotifyCustomerInformationResponse,
+  GetBaseReportResponse,
+  SecurityEventNotificationRequest,
+  SecurityEventNotificationResponse,
+  CustomerInformationResponse,
+  GetLogResponse,
+  GetMonitoringReportResponse,
+  GetReportResponse,
+  GenericDeviceModelStatusEnumType
+} from "@citrineos/base";
+import {
+  IDeviceModelRepository,
+  ISecurityEventRepository,
+  IVariableMonitoringRepository,
+  sequelize
+} from "@citrineos/data";
 import { Component, Variable } from "@citrineos/data/lib/layers/sequelize";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
+import {DeviceModelService} from "./services";
+import {StatusInfoType} from "@citrineos/base/lib/ocpp/model/types/GetMonitoringReportResponse";
 
 /**
  * Component that handles provisioning related messages.
@@ -23,13 +58,16 @@ export class ReportingModule extends AbstractModule {
     CallAction.LogStatusNotification,
     CallAction.NotifyCustomerInformation,
     CallAction.NotifyReport,
-    CallAction.SecurityEventNotification
+    CallAction.SecurityEventNotification,
+    CallAction.NotifyMonitoringReport
   ];
 
   protected _responses: CallAction[] = [
     CallAction.CustomerInformation,
     CallAction.GetLog,
-    CallAction.GetReport
+    CallAction.GetReport,
+    CallAction.GetBaseReport,
+    CallAction.GetMonitoringReport
   ];
 
   /**
@@ -43,10 +81,14 @@ export class ReportingModule extends AbstractModule {
 
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _securityEventRepository: ISecurityEventRepository;
+  protected _variableMonitoringRepository: IVariableMonitoringRepository;
 
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
   }
+
+  public _deviceModelService: DeviceModelService;
+
   /**
    * Constructor
    */
@@ -68,9 +110,11 @@ export class ReportingModule extends AbstractModule {
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *  
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is created and used.
    *
    * @param {ISecurityEventRepository} [securityEventRepository] - An optional parameter of type {@link ISecurityEventRepository} which represents a repository for accessing security event notification data.
+   *
+   * @param {IVariableMonitoringRepository} [variableMonitoringRepository] - An optional parameter of type {@link IVariableMonitoringRepository} which represents a repository for accessing and manipulating monitoring data.
    */
   constructor(
     config: SystemConfig,
@@ -79,7 +123,8 @@ export class ReportingModule extends AbstractModule {
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
     deviceModelRepository?: IDeviceModelRepository,
-    securityEventRepository?: ISecurityEventRepository
+    securityEventRepository?: ISecurityEventRepository,
+    variableMonitoringRepository?: IVariableMonitoringRepository
   ) {
     super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Reporting, logger);
 
@@ -92,6 +137,8 @@ export class ReportingModule extends AbstractModule {
 
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, this._logger);
     this._securityEventRepository = securityEventRepository || new sequelize.SecurityEventRepository(config, this._logger);
+    this._variableMonitoringRepository = variableMonitoringRepository || new sequelize.VariableMonitoringRepository(config, this._logger);
+    this._deviceModelService = new DeviceModelService(this._deviceModelRepository)
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -113,7 +160,9 @@ export class ReportingModule extends AbstractModule {
     const response: LogStatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("LogStatusNotification response sent: ", messageConfirmation));
+        .then(messageConfirmation => {
+          this._logger.debug("LogStatusNotification response sent: ", messageConfirmation)
+        });
   }
 
 
@@ -128,21 +177,31 @@ export class ReportingModule extends AbstractModule {
     const response: NotifyCustomerInformationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("NotifyCustomerInformation response sent: ", messageConfirmation));
+        .then(messageConfirmation => {
+          this._logger.debug("NotifyCustomerInformation response sent: ", messageConfirmation)
+        });
   }
 
   @AsHandler(CallAction.NotifyMonitoringReport)
-  protected _handleNotifyMonitoringReport(
+  protected async _handleNotifyMonitoringReport(
     message: IMessage<NotifyMonitoringReportRequest>,
     props?: HandlerProperties
-  ): void {
+  ): Promise<void> {
     this._logger.debug("NotifyMonitoringReport request received:", message, props);
+
+    for (const monitorType of (message.payload.monitor ? message.payload.monitor : [])) {
+      const stationId: string = message.context.stationId;
+      const [component, variable] = await this._deviceModelRepository.findComponentAndVariable(monitorType.component, monitorType.variable);
+      await this._variableMonitoringRepository.createOrUpdateByMonitoringDataTypeAndStationId(monitorType, component ? component.id : null, variable ? variable.id : null, stationId);
+    }
 
     // Create response
     const response: NotifyMonitoringReportResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("NotifyMonitoringReport response sent: ", messageConfirmation));
+        .then(messageConfirmation => {
+          this._logger.debug("NotifyMonitoringReport response sent: ", messageConfirmation)
+        });
   }
 
   @AsHandler(CallAction.NotifyReport)
@@ -213,14 +272,26 @@ export class ReportingModule extends AbstractModule {
     props?: HandlerProperties
   ): void {
     this._logger.debug("GetReport response received:", message, props);
+
+    let status: GenericDeviceModelStatusEnumType = message.payload.status;
+    let statusInfo: StatusInfoType | undefined = message.payload.statusInfo;
+    if (status === GenericDeviceModelStatusEnumType.Rejected || status === GenericDeviceModelStatusEnumType.NotSupported) {
+      this._logger.error("Failed to get report.", status, statusInfo?.reasonCode, statusInfo?.additionalInfo);
+    }
   }
 
   @AsHandler(CallAction.GetMonitoringReport)
-  protected _handleGetMonitoringReport(
+  protected async _handleGetMonitoringReport(
     message: IMessage<GetMonitoringReportResponse>,
     props?: HandlerProperties
-  ): void {
+  ): Promise<void> {
     this._logger.debug("GetMonitoringReport response received:", message, props);
+
+    let status: GenericDeviceModelStatusEnumType = message.payload.status;
+    let statusInfo: StatusInfoType | undefined = message.payload.statusInfo;
+    if (status === GenericDeviceModelStatusEnumType.Rejected || status === GenericDeviceModelStatusEnumType.NotSupported) {
+      this._logger.error("Failed to get monitoring report.", status, statusInfo?.reasonCode, statusInfo?.additionalInfo);
+    }
   }
 
   @AsHandler(CallAction.GetLog)

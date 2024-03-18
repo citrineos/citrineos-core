@@ -208,3 +208,6 @@ package-lock.json
 # PostgreSQL
 /Server/data/postgresql
 /Swarm/data/postgresql
+
+# Intellij
+.idea/

@@ -18,8 +18,8 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
 
     async createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]> {
         // Doing this here so that no records are created if the data is invalid
-        const variablAttributeTypes = value.variableAttribute.map(attr => attr.type ? attr.type : AttributeEnumType.Actual)
-        if (variablAttributeTypes.length != (new Set(variablAttributeTypes)).size) {
+        const variableAttributeTypes = value.variableAttribute.map(attr => attr.type ? attr.type : AttributeEnumType.Actual)
+        if (variableAttributeTypes.length != (new Set(variableAttributeTypes)).size) {
             throw new Error("All variable attributes in ReportData must have different types.");
         }
 
@@ -212,6 +212,23 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
 
     deleteAllByQuery(query: VariableAttributeQuerystring): Promise<number> {
         return super.deleteAllByQuery(this.constructQuery(query), VariableAttribute.MODEL_NAME);
+    }
+
+    async findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | null, Variable | null]> {
+        const component = await Component.findOne({
+            where: {name: componentType.name, instance: componentType.instance ? componentType.instance : null}
+        })
+        const variable = await Variable.findOne({
+            where: {name: variableType.name, instance: variableType.instance ? variableType.instance : null}
+        })
+        if (variable) {
+            const variableCharacteristic = await VariableCharacteristics.findOne({
+                where: {variableId: variable.get('id')}
+            })
+            variable.variableCharacteristics = variableCharacteristic ? variableCharacteristic : undefined;
+        }
+
+        return [component, variable]
     }
 
     /**

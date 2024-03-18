@@ -3,12 +3,36 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SetVariableDataType, ICrudRepository, SetVariableResultType, AuthorizationData, TransactionEventRequest, ChargingStateEnumType, IdTokenType, VariableAttributeType, ReportDataType, BootConfig, RegistrationStatusEnumType, StatusInfoType, GetVariableResultType, EVSEType, SecurityEventNotificationRequest } from "@citrineos/base";
+import {
+    SetVariableDataType,
+    ICrudRepository,
+    SetVariableResultType,
+    AuthorizationData,
+    TransactionEventRequest,
+    ChargingStateEnumType,
+    IdTokenType,
+    VariableAttributeType,
+    ReportDataType,
+    BootConfig,
+    RegistrationStatusEnumType,
+    StatusInfoType,
+    GetVariableResultType,
+    EVSEType,
+    SecurityEventNotificationRequest,
+    VariableType,
+    ComponentType,
+    MonitoringDataType,
+    VariableMonitoringType,
+    SetMonitoringDataType,
+    SetMonitoringResultType,
+    EventDataType,
+    SetMonitoringStatusEnumType, CallAction
+} from "@citrineos/base";
 import { AuthorizationQuerystring } from "./queries/Authorization";
 import { Transaction } from "../layers/sequelize/model/TransactionEvent";
 import { VariableAttribute } from "../layers/sequelize/model/DeviceModel/VariableAttribute";
 import { AuthorizationRestrictions, VariableAttributeQuerystring } from ".";
-import { Boot, Authorization, SecurityEvent } from "../layers/sequelize";
+import { Boot, Authorization, SecurityEvent, Component, Variable, VariableMonitoring, EventData } from "../layers/sequelize";
 
 
 export interface IAuthorizationRepository extends ICrudRepository<AuthorizationData> {
@@ -40,6 +64,7 @@ export interface IDeviceModelRepository extends ICrudRepository<VariableAttribut
     readAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
     existsByQuery(query: VariableAttributeQuerystring): Promise<boolean>;
     deleteAllByQuery(query: VariableAttributeQuerystring): Promise<number>;
+    findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | null, Variable | null]>
 }
 
 export interface ISecurityEventRepository extends ICrudRepository<SecurityEvent> {
@@ -54,4 +79,13 @@ export interface ITransactionEventRepository extends ICrudRepository<Transaction
     readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
     readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: EVSEType, chargingStates?: ChargingStateEnumType[]): Promise<Transaction[]>;
     readAllActiveTransactionByIdToken(idToken: IdTokenType): Promise<Transaction[]>;
+}
+
+export interface IVariableMonitoringRepository extends ICrudRepository<VariableMonitoringType> {
+    createOrUpdateByMonitoringDataTypeAndStationId(value: MonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring[]>;
+    createOrUpdateBySetMonitoringDataTypeAndStationId(value: SetMonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring>;
+    rejectAllVariableMonitoringsByStationId(action: CallAction, stationId: string): Promise<void>;
+    rejectVariableMonitoringByIdAndStationId(action: CallAction, id: number, stationId: string): Promise<void>
+    updateResultByStationId(result: SetMonitoringResultType, stationId: string): Promise<VariableMonitoring | undefined>
+    createEventDatumByComponentIdAndVariableIdAndStationId(event: EventDataType, componentId: string, variableId: string, stationId: string): Promise<EventData>
 }
