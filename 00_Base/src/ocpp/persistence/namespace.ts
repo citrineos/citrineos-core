@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 /**
- * Persisted Datatypes and their namespaces
+ * Persisted DataTypes and their namespaces
  */
 export enum Namespace {
     AdditionalInfoType = 'AdditionalInfo',
@@ -14,6 +14,7 @@ export enum Namespace {
     ChargingStationType = 'ChargingStation',
     ComponentType = 'Component',
     EVSEType = 'Evse',
+    EventDataType = 'EventData',
     IdTokenInfoType = 'IdTokenInfo',
     IdTokenType = 'IdToken',
     MeterValueType = 'MeterValue',
@@ -23,6 +24,8 @@ export enum Namespace {
     TransactionType = 'Transaction',
     VariableAttributeType = 'VariableAttribute',
     VariableCharacteristicsType = 'VariableCharacteristics',
+    VariableMonitoringType = 'VariableMonitoring',
+    VariableMonitoringStatus = 'VariableMonitoringStatus',
     VariableStatus = 'VariableStatus',
     VariableType = 'Variable',
     SystemConfig = 'SystemConfig'

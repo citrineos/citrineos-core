@@ -10,3 +10,4 @@ export * from "./server";
 
 export { Timed, Timer, isPromise } from "./util/timer";
 export { initSwagger } from "./util/swagger";
+export {getSizeOfRequest, getBatches} from "./util/parser";

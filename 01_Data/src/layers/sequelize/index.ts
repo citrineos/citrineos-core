@@ -9,6 +9,7 @@ export { VariableAttribute, VariableCharacteristics, Component, Evse, Variable }
 export { Authorization, IdToken, IdTokenInfo, AdditionalInfo } from "./model/Authorization";
 export { Transaction } from "./model/TransactionEvent";
 export { SecurityEvent } from "./model/SecurityEvent";
+export { VariableMonitoring, EventData, VariableMonitoringStatus } from "./model/VariableMonitoring";
 
 // Sequelize Repositories
 export { SequelizeRepository } from "./repository/Base";
@@ -17,6 +18,7 @@ export { BootRepository } from "./repository/Boot";
 export { DeviceModelRepository } from "./repository/DeviceModel";
 export { TransactionEventRepository } from "./repository/TransactionEvent";
 export { SecurityEventRepository } from "./repository/SecurityEvent";
+export { VariableMonitoringRepository } from "./repository/VariableMonitoring";
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from "./util";
