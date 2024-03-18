@@ -22,6 +22,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     private _onConnectionCallbacks: ((identifier: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
     private _onCloseCallbacks: ((identifier: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
     private _onMessageCallbacks: ((identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
+    private _sentMessageCallbacks: ((identifier: string, message: string, error: any, info?: Map<string, string>) => Promise<boolean>)[] = [];
 
     constructor(
         websocketServerConfigs: WebsocketServerConfig[],
@@ -94,6 +95,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         this._onMessageCallbacks.push(onMessageCallback);
     }
 
+    addSentMessageCallback(sentMessageCallback: (identifier: string, message: string, error: any, info?: Map<string, string>) => Promise<boolean>): void {
+        this._sentMessageCallbacks.push(sentMessageCallback);
+    }
+
     /**
      * Send a message to the charging station specified by the identifier.
      *
@@ -110,6 +115,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
                         if (error) {
                             this._logger.error("On message send error", error);
                         }
+                        this._sentMessageCallbacks.forEach(callback => {
+                            callback(identifier, message, error);
+                        });
                     }); // TODO: Handle errors
                     // TODO: Embed error handling into websocket message flow
                     return true;

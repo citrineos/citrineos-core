@@ -5,13 +5,14 @@
 
 import { IAuthenticator, ICache, ICentralSystem, IMessageHandler, IMessageSender, IModule, IModuleApi, INetworkConnection, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
-import { Authenticator, CentralSystemImpl, MemoryCache, RabbitMqReceiver, RabbitMqSender, WebsocketNetworkConnection, initSwagger } from '@citrineos/util';
+import { Authenticator, MemoryCache, RabbitMqReceiver, RabbitMqSender, WebsocketNetworkConnection, initSwagger } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
 import addFormats from "ajv-formats"
 import fastify, { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
+import { CentralSystem, AdminApi } from '@citrineos/centralsystem';
 import { ConfigurationModule, ConfigurationModuleApi } from '@citrineos/configuration';
 import { TransactionsModule, TransactionsModuleApi } from '@citrineos/transactions';
 import { CertificatesModule, CertificatesModuleApi } from '@citrineos/certificates';
@@ -90,7 +91,7 @@ class CitrineOSServer {
 
         this._networkConnection = new WebsocketNetworkConnection(this._config.util.networkConnection.websocketServers, this._cache, this._logger, this._authenticator);
 
-        this._centralSystem = new CentralSystemImpl(this._config, this._cache, this._createSender(), this._createHandler(), this._networkConnection, this._logger, ajv);
+        this._centralSystem = new CentralSystem(this._config, this._cache, this._createSender(), this._createHandler(), this._networkConnection, this._logger, ajv);
 
         // Initialize modules & APIs
         // Always initialize APIs after SwaggerUI
@@ -107,6 +108,7 @@ class CitrineOSServer {
             transactionsModule
         ]
         this._apis = [
+            new AdminApi(this._centralSystem, this._server, this._logger),
             new ConfigurationModuleApi(configurationModule, this._server, this._logger),
             new EVDriverModuleApi(evdriverModule, this._server, this._logger),
             new MonitoringModuleApi(monitoringModule, this._server, this._logger),

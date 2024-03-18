@@ -8,6 +8,18 @@ import Ajv from "ajv";
 import { v4 as uuidv4 } from "uuid";
 import { ILogObj, Logger } from "tslog";
 
+export interface Subscription {
+    stationId: string;
+    onConnect: boolean;
+    onClose: boolean;
+    onMessage: boolean;
+    sentMessage: boolean;
+    messageOptions?: {
+        regexFilter?: string;
+    }
+    url: string;
+}
+
 /**
  * Implementation of the central system
  */
@@ -19,7 +31,6 @@ export class CentralSystem extends AbstractCentralSystem implements ICentralSyst
 
     protected _cache: ICache;
     private _router: IMessageRouter;
-    private _networkConnection: INetworkConnection;
 
     /**
      * Constructor for the class.
@@ -40,7 +51,7 @@ export class CentralSystem extends AbstractCentralSystem implements ICentralSyst
         logger?: Logger<ILogObj>,
         ajv?: Ajv,
     ) {
-        super(config, cache, handler, sender, logger, ajv);
+        super(config, cache, networkConnection, handler, sender, logger, ajv);
 
         // Initialize router before socket server to avoid race condition
         this._router = new OcppMessageRouter(cache,
@@ -58,8 +69,6 @@ export class CentralSystem extends AbstractCentralSystem implements ICentralSyst
         networkConnection.addOnMessageCallback((identifier: string, message: string) =>
             this.onMessage(identifier, message)
         );
-
-        this._networkConnection = networkConnection;
 
         this._cache = cache;
     }
@@ -107,7 +116,7 @@ export class CentralSystem extends AbstractCentralSystem implements ICentralSyst
                 const callError = error instanceof OcppError ? error.asCallError()
                     : [MessageTypeId.CallError, messageId, ErrorCode.InternalError, "Unable to process message", { error: error }];
                 const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
-                this._networkConnection.sendMessage(identifier, rawMessage);
+                this.networkConnection.sendMessage(identifier, rawMessage);
             }
             // TODO: Publish raw payload for error reporting
             return false;
@@ -256,7 +265,7 @@ export class CentralSystem extends AbstractCentralSystem implements ICentralSyst
                 CacheNamespace.Transactions, this._config.maxCallLengthSeconds)) {
                 // Intentionally removing NULL values from object for OCPP conformity
                 const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
-                const success = await this._networkConnection.sendMessage(identifier, rawMessage);
+                const success = await this.networkConnection.sendMessage(identifier, rawMessage);
                 return { success };
             } else {
                 this._logger.info("Call already in progress, throwing retry exception", identifier, message);
@@ -287,7 +296,7 @@ export class CentralSystem extends AbstractCentralSystem implements ICentralSyst
             // Intentionally removing NULL values from object for OCPP conformity
             const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
             const success = await Promise.all([
-                this._networkConnection.sendMessage(identifier, rawMessage),
+                this.networkConnection.sendMessage(identifier, rawMessage),
                 this._cache.remove(identifier, CacheNamespace.Transactions)
             ]).then(successes => successes.every(Boolean));
             return { success };
@@ -316,7 +325,7 @@ export class CentralSystem extends AbstractCentralSystem implements ICentralSyst
             // Intentionally removing NULL values from object for OCPP conformity
             const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
             const success = await Promise.all([
-                this._networkConnection.sendMessage(identifier, rawMessage),
+                this.networkConnection.sendMessage(identifier, rawMessage),
                 this._cache.remove(identifier, CacheNamespace.Transactions)
             ]).then(successes => successes.every(Boolean));
             return { success };

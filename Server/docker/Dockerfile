@@ -36,6 +36,19 @@ COPY /02_Util/src /usr/02_Util/src
 RUN npm run build --prefix /usr/02_Util
 RUN cd /usr/02_Util && npm pack
 
+# Build citrineos-centralsystem module
+FROM base as citrineos-centralsystem-builder
+COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
+COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
+COPY --from=citrineos-util-builder /usr/02_Util/*.tgz /usr/02_Util/
+COPY /03_Modules/CentralSystem/package.json /usr/03_Modules/CentralSystem/
+RUN npm install --ignore-scripts=true --prefix /usr/03_Modules/CentralSystem
+
+COPY /03_Modules/CentralSystem/tsconfig.json /usr/03_Modules/CentralSystem/
+COPY /03_Modules/CentralSystem/src /usr/03_Modules/CentralSystem/src
+RUN npm run build --prefix /usr/03_Modules/CentralSystem
+RUN cd /usr/03_Modules/CentralSystem && npm pack
+
 # Build citrineos-certificates module
 FROM base as citrineos-certificates-builder
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
@@ -135,6 +148,7 @@ WORKDIR /usr/server
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
 COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
 COPY --from=citrineos-util-builder /usr/02_Util/*.tgz /usr/02_Util/
+COPY --from=citrineos-centralsystem-builder /usr/03_Modules/CentralSystem/*.tgz /usr/03_Modules/CentralSystem/
 COPY --from=citrineos-certificates-builder /usr/03_Modules/Certificates/*.tgz /usr/03_Modules/Certificates/
 COPY --from=citrineos-configuration-builder /usr/03_Modules/Configuration/*.tgz /usr/03_Modules/Configuration/
 COPY --from=citrineos-evdriver-builder /usr/03_Modules/EVDriver/*.tgz /usr/03_Modules/EVDriver/

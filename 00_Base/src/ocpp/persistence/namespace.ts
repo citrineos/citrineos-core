@@ -19,11 +19,12 @@ export enum Namespace {
     MeterValueType = 'MeterValue',
     ModemType = 'Modem',
     SecurityEventNotificationRequest = 'SecurityEvent',
+    Subscription = 'Subscription',
+    SystemConfig = 'SystemConfig',
     TransactionEventRequest = 'TransactionEvent',
     TransactionType = 'Transaction',
     VariableAttributeType = 'VariableAttribute',
     VariableCharacteristicsType = 'VariableCharacteristics',
     VariableStatus = 'VariableStatus',
-    VariableType = 'Variable',
-    SystemConfig = 'SystemConfig'
+    VariableType = 'Variable'
 }

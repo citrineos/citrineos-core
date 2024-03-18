@@ -5,7 +5,7 @@
 
 import Ajv, { ErrorObject } from "ajv";
 import { ICentralSystem } from "./CentralSystem";
-import { Call, CallAction, CallError, CallResult, ICache, SystemConfig, CALL_SCHEMA_MAP, CALL_RESULT_SCHEMA_MAP, IMessageConfirmation, MessageOrigin, OcppError, OcppRequest, OcppResponse, IMessageHandler, IMessageSender, IMessage, MessageState } from "../..";
+import { Call, CallAction, CallError, CallResult, ICache, SystemConfig, CALL_SCHEMA_MAP, CALL_RESULT_SCHEMA_MAP, IMessageConfirmation, MessageOrigin, OcppError, OcppRequest, OcppResponse, IMessageHandler, IMessageSender, IMessage, MessageState, INetworkConnection } from "../..";
 import { ILogObj, Logger } from "tslog";
 
 export abstract class AbstractCentralSystem implements ICentralSystem {
@@ -18,6 +18,7 @@ export abstract class AbstractCentralSystem implements ICentralSystem {
     protected _cache: ICache;
     protected _config: SystemConfig;
     protected _logger: Logger<ILogObj>;
+    protected _networkConnection: INetworkConnection;
     protected readonly _handler: IMessageHandler;
     protected readonly _sender: IMessageSender;
 
@@ -26,9 +27,10 @@ export abstract class AbstractCentralSystem implements ICentralSystem {
      *
      * @param {Ajv} ajv - The Ajv instance to use for schema validation.
      */
-    constructor(config: SystemConfig, cache: ICache, handler: IMessageHandler, sender: IMessageSender, logger?: Logger<ILogObj>,  ajv?: Ajv) {
+    constructor(config: SystemConfig, cache: ICache, networkConnection: INetworkConnection, handler: IMessageHandler, sender: IMessageSender, logger?: Logger<ILogObj>,  ajv?: Ajv) {
         this._config = config;
         this._cache = cache;
+        this._networkConnection = networkConnection;
         this._handler = handler;
         this._sender = sender;
         this._ajv = ajv || new Ajv({ removeAdditional: 'all', useDefaults: true, coerceTypes: 'array', strict: false });
@@ -68,6 +70,10 @@ export abstract class AbstractCentralSystem implements ICentralSystem {
 
     get config(): SystemConfig {
         return this._config;
+    }
+
+    get networkConnection(): INetworkConnection {
+        return this._networkConnection;
     }
 
     abstract onCall(identifier: string, message: Call): void;

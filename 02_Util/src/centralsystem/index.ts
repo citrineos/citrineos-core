@@ -4,4 +4,3 @@
 
 export { Authenticator } from "./authenticator/Authenticator"
 export { WebsocketNetworkConnection } from "./networkconnection/WebsocketNetworkConnection"
-export { CentralSystemImpl } from "./CentralSystem"

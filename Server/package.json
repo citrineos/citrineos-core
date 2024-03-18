@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@citrineos/base": "file:../00_Base/citrineos-base-1.0.0.tgz",
+    "@citrineos/centralsystem": "file:../03_Modules/CentralSystem/citrineos-centralsystem-1.0.0.tgz",
     "@citrineos/certificates": "file:../03_Modules/Certificates/citrineos-certificates-1.0.0.tgz",
     "@citrineos/configuration": "file:../03_Modules/Configuration/citrineos-configuration-1.0.0.tgz",
     "@citrineos/data": "file:../01_Data/citrineos-data-1.0.0.tgz",

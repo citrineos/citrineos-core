@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Call, CallError, CallResult, IModule } from "../..";
+import { Call, CallError, CallResult, IModule, INetworkConnection } from "../..";
 
 /**
  * Interface for the central system
@@ -21,4 +21,6 @@ export interface ICentralSystem extends IModule {
     onCall(identifier: string, message: Call): void;
     onCallResult(identifier: string, message: CallResult): void;
     onCallError(identifier: string, message: CallError): void;
+
+    networkConnection: INetworkConnection;
 }

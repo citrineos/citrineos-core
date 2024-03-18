@@ -6,6 +6,7 @@ export interface INetworkConnection {
     addOnConnectionCallback(onConnectionCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void;
     addOnCloseCallback(onConnectionCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void;
     addOnMessageCallback(onMessageCallback: (identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>): void;
+    addSentMessageCallback(onSentMessageCallback: (identifier: string, message: string, error?: any, info?: Map<string, string>) => Promise<boolean>): void;
     sendMessage(identifier: string, message: string): Promise<boolean>;
     shutdown(): void;
 }
