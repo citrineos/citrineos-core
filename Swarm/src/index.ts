@@ -63,7 +63,9 @@ class CitrineOSServer {
         this._logger = new Logger<ILogObj>({
             name: "CitrineOS Logger",
             minLevel: systemConfig.logLevel,
-            hideLogPositionForProduction: systemConfig.env === "production"
+            hideLogPositionForProduction: systemConfig.env === "production",
+            //Disable colors for cloud deployment as some cloude logging environments such as cloudwatch can not interpret colors
+            stylePrettyLogs: process.env.DEPLOYMENT_TARGET != "cloud"
         });
 
         // Force sync database
