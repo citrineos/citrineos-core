@@ -122,6 +122,13 @@ export const systemConfigInputSchema = z.object({
             exposeData: z.boolean().default(true).optional(),
             exposeMessage: z.boolean().default(true).optional(),
         }).optional(),
+        directus: z.object({
+            host: z.string().default("localhost").optional(),
+            port: z.number().int().positive().default(8055).optional(),
+            generateFlows: z.boolean().default(false).optional(),
+        }).refine(obj => obj.generateFlows && !obj.host, {
+            message: 'Directus host must be set if generateFlows is true'
+        }).optional(),
         networkConnection: z.object({
             websocketServers: z.array(websocketServerInputSchema.optional())
         })
@@ -261,6 +268,11 @@ export const systemConfigSchema = z.object({
             logoPath: z.string(),
             exposeData: z.boolean(),
             exposeMessage: z.boolean(),
+        }).optional(),
+        directus: z.object({
+            host: z.string(),
+            port: z.number().int().positive(),
+            generateFlows: z.boolean()
         }).optional(),
         networkConnection: z.object({
             websocketServers: z.array(websocketServerSchema).refine(array => {

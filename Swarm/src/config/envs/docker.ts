@@ -85,6 +85,11 @@ export function createDockerConfig() {
                 exposeData: true,
                 exposeMessage: true
             },
+            directus: {
+                host: "directus",
+                port: 8055,
+                generateFlows: true
+            },
             networkConnection: {
                 websocketServers: [{
                     id: "0",
