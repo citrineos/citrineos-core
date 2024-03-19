@@ -25,12 +25,13 @@ import {
 import { FastifyInstance } from 'fastify';
 import { IReportingModuleApi } from './interface';
 import { ReportingModule } from './module';
-import {getBatches} from "@citrineos/util/lib/util/parser";
+import {getBatches, getSizeOfRequest} from "@citrineos/util/lib/util/parser";
 
 /**
  * Server API for the Reporting module.
  */
 export class ReportingModuleApi extends AbstractModuleApi<ReportingModule> implements IReportingModuleApi {
+    private readonly _componentDeviceDataCtrlr = 'DeviceDataCtrlr';
 
     /**
      * Constructs a new instance of the class.
@@ -66,12 +67,22 @@ export class ReportingModuleApi extends AbstractModuleApi<ReportingModule> imple
         request: GetReportRequest,
         callbackUrl?: string
     ): Promise<IMessageConfirmation> {
+        // if request size is bigger than BytesPerMessageGetReport,
+        // return error
+        let bytesPerMessageGetReport = await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(this._componentDeviceDataCtrlr, CallAction.GetReport, identifier);
+        const requestBytes = getSizeOfRequest(request);
+        if (bytesPerMessageGetReport && requestBytes > bytesPerMessageGetReport) {
+            let errorMsg = `The request is too big. The max size is ${bytesPerMessageGetReport} bytes.`;
+            this._logger.error(errorMsg);
+            return {success: false, payload: errorMsg};
+        }
+
         let componentVariables = request.componentVariable as ComponentVariableType[];
         if (componentVariables.length === 0) {
             return await this._module.sendCall(identifier, tenantId, CallAction.GetReport, request, callbackUrl);
         }
 
-        let itemsPerMessageGetReport = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId('DeviceDataCtrlr', CallAction.GetReport, identifier);
+        let itemsPerMessageGetReport = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(this._componentDeviceDataCtrlr, CallAction.GetReport, identifier);
         // If ItemsPerMessageGetReport not set, send all variables at once
         itemsPerMessageGetReport = itemsPerMessageGetReport == null ? componentVariables.length : itemsPerMessageGetReport;
 
@@ -113,7 +124,7 @@ export class ReportingModuleApi extends AbstractModuleApi<ReportingModule> imple
             return await this._module.sendCall(identifier, tenantId, CallAction.GetMonitoringReport, request, callbackUrl);
         }
 
-        let itemsPerMessageGetReport = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId('DeviceDataCtrlr', CallAction.GetReport, identifier);
+        let itemsPerMessageGetReport = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(this._componentDeviceDataCtrlr, CallAction.GetReport, identifier);
         // If ItemsPerMessageGetReport not set, send all variables at once
         itemsPerMessageGetReport = itemsPerMessageGetReport == null ? componentVariable.length : itemsPerMessageGetReport;
 

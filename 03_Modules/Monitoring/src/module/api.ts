@@ -42,6 +42,8 @@ import {getBatches, getSizeOfRequest} from "@citrineos/util/lib/util/parser";
  * Server API for the Monitoring module.
  */
 export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> implements IMonitoringModuleApi {
+    private readonly _componentMonitoringCtrlr = 'MonitoringCtrlr';
+    private readonly _componentDeviceDataCtrlr = 'DeviceDataCtrlr';
 
     /**
      * Constructor for the class.
@@ -62,7 +64,7 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
     async setVariableMonitoring(identifier: string, tenantId: string, request: SetVariableMonitoringRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
         // if request size is bigger than BytesPerMessageSetVariableMonitoring,
         // return error
-        let bytesPerMessageSetVariableMonitoring = await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId('MonitoringCtrlr', CallAction.SetVariableMonitoring, identifier);
+        let bytesPerMessageSetVariableMonitoring = await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(this._componentMonitoringCtrlr, CallAction.SetVariableMonitoring, identifier);
         const requestBytes = getSizeOfRequest(request);
         if (bytesPerMessageSetVariableMonitoring && requestBytes > bytesPerMessageSetVariableMonitoring) {
             let errorMsg = `The request is too big. The max size is ${bytesPerMessageSetVariableMonitoring} bytes.`;
@@ -88,7 +90,7 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
             }
         }
 
-        let itemsPerMessageSetVariableMonitoring = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId('MonitoringCtrlr', CallAction.SetVariableMonitoring, identifier);
+        let itemsPerMessageSetVariableMonitoring = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(this._componentMonitoringCtrlr, CallAction.SetVariableMonitoring, identifier);
         // If ItemsPerMessageSetVariableMonitoring not set, send all variables at once
         itemsPerMessageSetVariableMonitoring = itemsPerMessageSetVariableMonitoring == null ?
             setMonitoringData.length : itemsPerMessageSetVariableMonitoring;
@@ -121,7 +123,7 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         this._logger.debug("ClearVariableMonitoring request received", identifier, request);
         // if request size is bigger than bytesPerMessageClearVariableMonitoring,
         // return error
-        let bytesPerMessageClearVariableMonitoring = await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId('MonitoringCtrlr', CallAction.ClearVariableMonitoring, identifier);
+        let bytesPerMessageClearVariableMonitoring = await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(this._componentMonitoringCtrlr, CallAction.ClearVariableMonitoring, identifier);
         const requestBytes = getSizeOfRequest(request);
         if (bytesPerMessageClearVariableMonitoring && requestBytes > bytesPerMessageClearVariableMonitoring) {
             let errorMsg = `The request is too big. The max size is ${bytesPerMessageClearVariableMonitoring} bytes.`;
@@ -130,7 +132,7 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         }
 
         let ids = request.id as number[];
-        let itemsPerMessageClearVariableMonitoring = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId('MonitoringCtrlr', CallAction.ClearVariableMonitoring, identifier);
+        let itemsPerMessageClearVariableMonitoring = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(this._componentMonitoringCtrlr, CallAction.ClearVariableMonitoring, identifier);
         // If itemsPerMessageClearVariableMonitoring not set, send all variables at once
         itemsPerMessageClearVariableMonitoring = itemsPerMessageClearVariableMonitoring == null ?
             ids.length : itemsPerMessageClearVariableMonitoring;
@@ -180,7 +182,7 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         // from SetVariablesResponse handler if variable does not exist when it attempts to save the Response's status
         await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(setVariableData, identifier);
 
-        let itemsPerMessageSetVariables = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId('DeviceDataCtrlr', CallAction.SetVariables, identifier);
+        let itemsPerMessageSetVariables = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(this._componentDeviceDataCtrlr, CallAction.SetVariables, identifier);
 
         // If ItemsPerMessageSetVariables not set, send all variables at once
         itemsPerMessageSetVariables = itemsPerMessageSetVariables == null ?
@@ -219,8 +221,18 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         request: GetVariablesRequest,
         callbackUrl?: string
     ): Promise<IMessageConfirmation> {
+        // if request size is bigger than BytesPerMessageGetVariables,
+        // return error
+        let bytesPerMessageGetVariables = await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(this._componentDeviceDataCtrlr, CallAction.GetVariables, identifier);
+        const requestBytes = getSizeOfRequest(request);
+        if (bytesPerMessageGetVariables && requestBytes > bytesPerMessageGetVariables) {
+            let errorMsg = `The request is too big. The max size is ${bytesPerMessageGetVariables} bytes.`;
+            this._logger.error(errorMsg);
+            return {success: false, payload: errorMsg};
+        }
+
         let getVariableData = request.getVariableData as GetVariableDataType[];
-        let itemsPerMessageGetVariables = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId('DeviceDataCtrlr', CallAction.GetVariables, identifier);
+        let itemsPerMessageGetVariables = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(this._componentDeviceDataCtrlr, CallAction.GetVariables, identifier);
 
         // If ItemsPerMessageGetVariables not set, send all variables at once
         itemsPerMessageGetVariables = itemsPerMessageGetVariables == null ?

@@ -36,4 +36,32 @@ export class DeviceModelService {
             return Number(itemsPerMessageAttributes[0].value);
         }
     }
+
+    /**
+     * Fetches the BytesPerMessage attribute from the device model.
+     * Returns null if no such attribute exists.
+     * It is possible for there to be multiple BytesPerMessage attributes if component instances or evses
+     * are associated with alternate options. That structure is not supported by this logic, and that
+     * structure is a violation of Part 2 - Specification of OCPP 2.0.1.
+     * In that case, the first attribute will be returned.
+     * @param stationId Charging station identifier.
+     * @returns BytesPerMessage as a number or null if no such attribute exists.
+     */
+    async getBytesPerMessageByComponentAndVariableInstanceAndStationId(componentName: string, variableInstance: string, stationId: string): Promise<number | null> {
+        const bytesPerMessageAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+            stationId: stationId,
+            component_name: componentName,
+            variable_name: 'BytesPerMessage',
+            variable_instance: variableInstance,
+            type: AttributeEnumType.Actual
+        });
+        if (bytesPerMessageAttributes.length == 0) {
+            return null;
+        } else {
+            // It is possible for bytesPerMessageAttributes.length > 1 if component instances or evses
+            // are associated with alternate options. That structure is not supported by this logic, and that
+            // structure is a violation of Part 2 - Specification of OCPP 2.0.1.
+            return Number(bytesPerMessageAttributes[0].value);
+        }
+    }
 }
