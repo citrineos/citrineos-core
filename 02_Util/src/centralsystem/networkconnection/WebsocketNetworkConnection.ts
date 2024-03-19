@@ -59,6 +59,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
                     break;
             }
 
+            // TODO: stop using handleProtocols and switch to shouldHandle or verifyClient; see https://github.com/websockets/ws/issues/1552
             let _socketServer = new WebSocketServer({
                 noServer: true,
                 handleProtocols: (protocols, req) => this._handleProtocols(protocols, req, websocketServerConfig.protocol),
@@ -214,7 +215,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         if (protocols.has(wsServerProtocol)) {
             return wsServerProtocol;
         }
-
+        this._logger.error(`Protocol mismatch. Supported protocols: [${[...protocols].join(', ')}], but requested protocol: '${wsServerProtocol}' not supported.`);
         // Reject the client trying to connect
         return false;
     }
@@ -365,6 +366,6 @@ export class WebsocketNetworkConnection implements INetworkConnection {
      * @returns Charger identifier
      */
     private _getClientIdFromUrl(url: string): string {
-        return url.split("/")[1];
+        return url.split("/").pop() as string;
     }
 }

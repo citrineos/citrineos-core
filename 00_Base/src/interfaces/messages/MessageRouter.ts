@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { EventGroup, ICache, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageSender, MessageOrigin, MessageState, OcppRequest, OcppResponse } from "../..";
+import { AbstractModule, EventGroup, ICache, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageSender, MessageOrigin, MessageState, OcppRequest, OcppResponse, RequestBuilder } from "../..";
 import { Call, CallAction, CallError, CallResult, OcppError } from "../../ocpp/rpc/message";
 
 /**
@@ -27,8 +27,6 @@ export interface IMessageRouter {
  */
 export class OcppMessageRouter implements IMessageRouter {
 
-    public readonly CALLBACK_URL_CACHE_PREFIX: string = "CALLBACK_URL_";
-
     private _cache: ICache;
     private _sender: IMessageSender;
     private _handler: IMessageHandler;
@@ -44,18 +42,15 @@ export class OcppMessageRouter implements IMessageRouter {
         const action = message[2] as CallAction;
         const payload = message[3] as OcppRequest;
 
-        // TODO: Add tenantId to context
-        const context: IMessageContext = { correlationId: messageId, stationId: connectionIdentifier, tenantId: '' };
-
-        // TODO: Use base util builder instead
-        const _message: IMessage<OcppRequest> = {
-            origin: MessageOrigin.ChargingStation,
-            eventGroup: EventGroup.General, // TODO: Change to appropriate event group
+        const _message: IMessage<OcppRequest> = RequestBuilder.buildCall(
+            connectionIdentifier,
+            messageId,
+            '', // TODO: Add tenantId to method
             action,
-            state: MessageState.Request,
-            context,
-            payload
-        };
+            payload,
+            EventGroup.General, // TODO: Change to appropriate event group
+            MessageOrigin.ChargingStation
+        );
 
         return this._sender.send(_message);
     }
@@ -103,7 +98,7 @@ export class OcppMessageRouter implements IMessageRouter {
     }
 
     async handleMessageApiCallback(message: IMessage<OcppError>): Promise<void> {
-        const url: string | null = await this._cache.get(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
+        const url: string | null = await this._cache.get(message.context.correlationId, AbstractModule.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
         if (url) {
             await fetch(url, {
                 method: 'POST',

@@ -18,7 +18,7 @@ import { EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessage
 
 export abstract class AbstractModule implements IModule {
 
-    public readonly CALLBACK_URL_CACHE_PREFIX: string = "CALLBACK_URL_";
+    public static readonly CALLBACK_URL_CACHE_PREFIX: string = "CALLBACK_URL_";
 
     protected _config: SystemConfig;
     protected readonly _cache: ICache;
