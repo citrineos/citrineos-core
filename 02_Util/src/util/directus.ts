@@ -38,8 +38,8 @@ export class DirectusUtil {
     }
 
     public addDirectusMessageApiFlowsFastifyRouteHook(routeOptions: RouteOptions) {
-        this._logger.info(`Adding Directus Message API flow for ${routeOptions.url}`);
         if (routeOptions.url.split("/")[1] == "ocpp") { // Message API check
+            this._logger.info(`Adding Directus Message API flow for ${routeOptions.url}`);
             // Parse action from url
             const lowercaseAction: string = routeOptions.url.split("/").pop() as string;
             const action = lowercaseAction.charAt(0).toUpperCase() + lowercaseAction.slice(1)
