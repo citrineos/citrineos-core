@@ -11,9 +11,9 @@
     "prepublish": "npx eslint",
     "prepare": "npm run build",
     "build": "tsc",
-    "refresh-base": "cd ../../00_Base && npm run build && npm pack && cd ../03_Modules/Certificates && npm install ../../00_Base/citrineos-base-1.0.0.tgz",
-    "refresh-data": "cd ../../01_Data && npm run build && npm pack && cd ../03_Modules/Certificates && npm install ../../01_Data/citrineos-data-1.0.0.tgz",
-    "refresh-util": "cd ../../02_Util && npm run build && npm pack && cd ../03_Modules/Certificates && npm install ../../02_Util/citrineos-util-1.0.0.tgz",
+    "refresh-base": "cd ../../00_Base && npm run build && npm pack && cd ../03_Modules/CentralSystem && npm install ../../00_Base/citrineos-base-1.0.0.tgz",
+    "refresh-data": "cd ../../01_Data && npm run build && npm pack && cd ../03_Modules/CentralSystem && npm install ../../01_Data/citrineos-data-1.0.0.tgz",
+    "refresh-util": "cd ../../02_Util && npm run build && npm pack && cd ../03_Modules/CentralSystem && npm install ../../02_Util/citrineos-util-1.0.0.tgz",
     "install-all": "npm install ../../00_Base/citrineos-base-1.0.0.tgz && npm install ../../02_Util/citrineos-util-1.0.0.tgz && npm install ../../01_Data/citrineos-data-1.0.0.tgz",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
