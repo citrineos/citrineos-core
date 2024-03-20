@@ -182,30 +182,37 @@ export class DirectusUtil {
                 key: "{{$last.body.keys[0]}}"
             }
         }
+
+        let errorLogVerb = "reading";
         try {
             const readFlowsResponse = await this._client.request(readFlows({ filter: { name: { _eq: action } }, fields: ["id", "name"] }));
-        
+
             if (readFlowsResponse.length > 0) {
+                errorLogVerb = "updating";
                 this._logger.info("Flow already exists in Directus for ", action, ". Updating Flow.");
+                
                 const existingFlow = readFlowsResponse[0];
                 this.updateMessageApiFlow(existingFlow.id, flow, notificationOperation, webhookOperation, readOperation);
+                this._logger.info(`Successfully updated Directus Flow for ${action}`);
             } else {
+                errorLogVerb = "creating";
+                
                 this.createMessageApiFlow(flow, notificationOperation, webhookOperation, readOperation);
+                this._logger.info(`Successfully created Directus Flow for ${action}`);
             }
-            this._logger.info("Successfully created Directus Flow for ", action);
         } catch (error) {
-            this._logger.error("Error creating flow ", error);
+            this._logger.error(`Error ${errorLogVerb} Directus Flow: ${error}`);
         }
     }
 
     private async createMessageApiFlow(flow: Partial<DirectusFlow<Schema>>, notificationOperation: Partial<DirectusOperation<Schema>>, webhookOperation: Partial<DirectusOperation<Schema>>, readOperation: Partial<DirectusOperation<Schema>>): Promise<void> {
         // Create flow
         const flowCreationResponse = await this._client.request(createFlow(flow));
-        
+
         // Create notification operation
         notificationOperation.flow = flowCreationResponse.id;
         const notificationOperationCreationResponse = await this._client.request(createOperation(notificationOperation));
-        
+
         // Create webhook operation
         webhookOperation.flow = flowCreationResponse.id;
         webhookOperation.resolve = notificationOperationCreationResponse.id
@@ -225,7 +232,7 @@ export class DirectusUtil {
     private async updateMessageApiFlow(flowId: string, updatedFlow: Partial<DirectusFlow<Schema>>, notificationOperation: Partial<DirectusOperation<Schema>>, webhookOperation: Partial<DirectusOperation<Schema>>, readOperation: Partial<DirectusOperation<Schema>>): Promise<void> {
         // Update flow
         const flowUpdateResponse = await this._client.request(updateFlow(flowId, updatedFlow));
-        
+
         // Update read operation
         const readOperationUpdateResponse = await this._client.request(updateOperation(flowUpdateResponse.operation as string, readOperation));
 
