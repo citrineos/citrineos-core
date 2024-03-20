@@ -125,6 +125,9 @@ export const systemConfigInputSchema = z.object({
         directus: z.object({
             host: z.string().default("localhost").optional(),
             port: z.number().int().positive().default(8055).optional(),
+            staticToken: z.string().optional(),
+            adminUsername: z.string().default("admin@citrineos.com").optional(),
+            adminPassword: z.string().default("CitrineOS!").optional(),
             generateFlows: z.boolean().default(false).optional(),
         }).refine(obj => obj.generateFlows && !obj.host, {
             message: 'Directus host must be set if generateFlows is true'
@@ -272,6 +275,9 @@ export const systemConfigSchema = z.object({
         directus: z.object({
             host: z.string(),
             port: z.number().int().positive(),
+            staticToken: z.string().optional(),
+            adminUsername: z.string().optional(),
+            adminPassword: z.string().optional(),
             generateFlows: z.boolean()
         }).optional(),
         networkConnection: z.object({
