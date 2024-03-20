@@ -201,7 +201,7 @@ export class DirectusUtil {
                 this._logger.info(`Successfully created Directus Flow for ${action}`);
             }
         } catch (error) {
-            this._logger.error(`Error ${errorLogVerb} Directus Flow: ${error}`);
+            this._logger.error(`Error ${errorLogVerb} Directus Flow: ${JSON.stringify(error)}`);
         }
     }
 

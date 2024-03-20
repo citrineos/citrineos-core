@@ -79,6 +79,7 @@ class CitrineOSServer {
             initSwagger(this._config, this._server);
         }
 
+        // Add Directus Message API flow creation if enabled
         if (this._config.util.directus?.generateFlows) {
             const directusUtil = new DirectusUtil(this._config, this._logger);
             this._server.addHook("onRoute", directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(directusUtil));
