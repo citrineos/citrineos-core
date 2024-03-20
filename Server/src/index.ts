@@ -5,7 +5,7 @@
 
 import { ICache, ICentralSystem, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
-import { CentralSystemImpl, MemoryCache, RabbitMqReceiver, RabbitMqSender, initSwagger } from '@citrineos/util';
+import { CentralSystemImpl, DirectusUtil, MemoryCache, RabbitMqReceiver, RabbitMqSender, initSwagger } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
 import addFormats from "ajv-formats"
@@ -69,7 +69,7 @@ class CitrineOSServer {
             //Disable colors for cloud deployment as some cloude logging environments such as cloudwatch can not interpret colors
             stylePrettyLogs: process.env.DEPLOYMENT_TARGET != "cloud"
 
-    });
+        });
 
         // Set cache implementation
         this._cache = cache || new MemoryCache();
@@ -77,6 +77,11 @@ class CitrineOSServer {
         // Initialize Swagger if enabled
         if (this._config.util.swagger) {
             initSwagger(this._config, this._server);
+        }
+
+        if (this._config.util.directus?.generateFlows) {
+            const directusUtil = new DirectusUtil(this._config, this._logger);
+            this._server.addHook("onRoute", directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(directusUtil));
         }
 
         // Register AJV for schema validation
@@ -111,7 +116,7 @@ class CitrineOSServer {
             new TransactionsModuleApi(transactionsModule, this._server, this._logger),
         ];
         if (this._config.modules.certificates) {
-           const certificatesModule = new CertificatesModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger)
+            const certificatesModule = new CertificatesModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger)
             this._modules.push(certificatesModule);
             this._apis.push(new CertificatesModuleApi(certificatesModule, this._server, this._logger));
         }
