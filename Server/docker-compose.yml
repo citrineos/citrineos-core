@@ -56,8 +56,8 @@ services:
       - 8081:8081
       - 8082:8082
     environment:
-      CITRINEOS_UTIL_DIRECTUS_ADMINUSERNAME: 'admin@citrineos.com'
-      CITRINEOS_UTIL_DIRECTUS_ADMINPASSWORD: 'CitrineOS!'
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
   directus:
     image: directus/directus:latest
     ports:

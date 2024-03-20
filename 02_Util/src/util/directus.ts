@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { SystemConfig } from "@citrineos/base";
-import { DirectusFlow, DirectusOperation, RestClient, createDirectus, createFlow, createOperation, readFlows, rest, updateFlow, updateOperation } from "@directus/sdk";
+import { authentication, DirectusFlow, DirectusOperation, RestClient, createDirectus, createFlow, createOperation, readFlows, rest, updateFlow, updateOperation } from "@directus/sdk";
 import { RouteOptions } from "fastify";
 import { JSONSchemaFaker } from "json-schema-faker";
 import { Logger, ILogObj } from "tslog";
@@ -21,7 +21,12 @@ export class DirectusUtil {
     constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
         this._config = config;
         this._logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
-        this.client = createDirectus<Schema>(`http://${this._config.util.directus?.host}:${this._config.util.directus?.port}`).with(rest());
+        const authRestClient = createDirectus<Schema>(`http://${this._config.util.directus?.host}:${this._config.util.directus?.port}`).with(rest()).with(authentication());
+        if (this._config.util.directus?.username && this._config.util.directus?.password) {
+            this._logger.info(`Logging in as ${this._config.util.directus.username}`);
+            authRestClient.login(this._config.util.directus.username, this._config.util.directus.password);
+        }
+        this.client = authRestClient;
     }
 
     public addDirectusMessageApiFlowsFastifyRouteHook(routeOptions: RouteOptions) {
@@ -169,17 +174,22 @@ export class DirectusUtil {
                 key: "{{$last.body.keys[0]}}"
             }
         }
+        try {
+            this._logger.info("Reading flow for {} to {} with body {}", action, messagePath, bodyData);
+            const readFlowsResponse = await this.client.request(readFlows({ filter: { name: { _eq: action } }, fields: ["id", "name"] }));
+            this._logger.info("readFlowsResponse", readFlowsResponse);
 
-        const readFlowsResponse = await this.client.request(readFlows({ filter: { name: { _eq: action } }, fields: ["id", "name"] }));
-        this._logger.info("readFlowsResponse", readFlowsResponse);
-        if (readFlowsResponse.length > 0) {
-            this._logger.info("Flow already exists in Directus for ", action, ". Updating Flow.");
-            const existingFlow = readFlowsResponse[0];
-            this.updateMessageApiFlow(existingFlow.id, flow, notificationOperation, webhookOperation, readOperation);
-        } else {
-            this.createMessageApiFlow(flow, notificationOperation, webhookOperation, readOperation);
+            if (readFlowsResponse.length > 0) {
+                this._logger.info("Flow already exists in Directus for ", action, ". Updating Flow.");
+                const existingFlow = readFlowsResponse[0];
+                this.updateMessageApiFlow(existingFlow.id, flow, notificationOperation, webhookOperation, readOperation);
+            } else {
+                this.createMessageApiFlow(flow, notificationOperation, webhookOperation, readOperation);
+            }
+            this._logger.info("Successfully created Directus Flow for ", action);
+        } catch (error) {
+            this._logger.error("Error reading flows: {} error may be {}", JSON.stringify(error), error);
         }
-        this._logger.info("Successfully created Directus Flow for ", action);
     }
 
     private async createMessageApiFlow(flow: Partial<DirectusFlow<Schema>>, notificationOperation: Partial<DirectusOperation<Schema>>, webhookOperation: Partial<DirectusOperation<Schema>>, readOperation: Partial<DirectusOperation<Schema>>): Promise<void> {
