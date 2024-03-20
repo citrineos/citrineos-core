@@ -125,7 +125,7 @@ export const systemConfigInputSchema = z.object({
         directus: z.object({
             host: z.string().default("localhost").optional(),
             port: z.number().int().positive().default(8055).optional(),
-            staticToken: z.string().optional(),
+            token: z.string().optional(),
             username: z.string().default("admin@citrineos.com").optional(),
             password: z.string().default("CitrineOS!").optional(),
             generateFlows: z.boolean().default(false).optional(),
@@ -275,7 +275,7 @@ export const systemConfigSchema = z.object({
         directus: z.object({
             host: z.string(),
             port: z.number().int().positive(),
-            staticToken: z.string().optional(),
+            token: z.string().optional(),
             username: z.string().optional(),
             password: z.string().optional(),
             generateFlows: z.boolean()

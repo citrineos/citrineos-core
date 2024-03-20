@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { SystemConfig } from "@citrineos/base";
-import { authentication, DirectusFlow, DirectusOperation, RestClient, createDirectus, createFlow, createOperation, readFlows, rest, updateFlow, updateOperation } from "@directus/sdk";
+import { authentication, DirectusFlow, DirectusOperation, RestClient, createDirectus, createFlow, createOperation, readFlows, rest, staticToken, updateFlow, updateOperation } from "@directus/sdk";
 import { RouteOptions } from "fastify";
 import { JSONSchemaFaker } from "json-schema-faker";
 import { Logger, ILogObj } from "tslog";
@@ -16,17 +16,25 @@ export class DirectusUtil {
 
     protected readonly _config: SystemConfig;
     protected readonly _logger: Logger<ILogObj>;
-    private readonly client: RestClient<Schema>;
+    private readonly _client: RestClient<Schema>;
 
     constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
         this._config = config;
         this._logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
-        const authRestClient = createDirectus<Schema>(`http://${this._config.util.directus?.host}:${this._config.util.directus?.port}`).with(rest()).with(authentication());
-        if (this._config.util.directus?.username && this._config.util.directus?.password) {
-            this._logger.info(`Logging in as ${this._config.util.directus.username}`);
-            authRestClient.login(this._config.util.directus.username, this._config.util.directus.password);
+        let client;
+        if (this._config.util.directus?.token) { // Auth with static token
+            client = createDirectus(`http://${this._config.util.directus?.host}:${this._config.util.directus?.port}`)
+                .with(staticToken(this._config.util.directus?.token)).with(rest());
+        } else if (this._config.util.directus?.username && this._config.util.directus?.password) { // Auth with username and password
+            client = createDirectus<Schema>(`http://${this._config.util.directus?.host}:${this._config.util.directus?.port}`)
+                .with(authentication()).with(rest());
+            this._logger.info(`Logging into Directus as ${this._config.util.directus.username}`);
+            client.login(this._config.util.directus.username, this._config.util.directus.password);
+        } else { // No auth
+            client = createDirectus<Schema>(`http://${this._config.util.directus?.host}:${this._config.util.directus?.port}`)
+                .with(rest());
         }
-        this.client = authRestClient;
+        this._client = client;
     }
 
     public addDirectusMessageApiFlowsFastifyRouteHook(routeOptions: RouteOptions) {
@@ -175,10 +183,8 @@ export class DirectusUtil {
             }
         }
         try {
-            this._logger.info("Reading flow for {} to {} with body {}", action, messagePath, bodyData);
-            const readFlowsResponse = await this.client.request(readFlows({ filter: { name: { _eq: action } }, fields: ["id", "name"] }));
-            this._logger.info("readFlowsResponse", readFlowsResponse);
-
+            const readFlowsResponse = await this._client.request(readFlows({ filter: { name: { _eq: action } }, fields: ["id", "name"] }));
+        
             if (readFlowsResponse.length > 0) {
                 this._logger.info("Flow already exists in Directus for ", action, ". Updating Flow.");
                 const existingFlow = readFlowsResponse[0];
@@ -188,47 +194,45 @@ export class DirectusUtil {
             }
             this._logger.info("Successfully created Directus Flow for ", action);
         } catch (error) {
-            this._logger.error("Error reading flows: {} error may be {}", JSON.stringify(error), error);
+            this._logger.error("Error creating flow ", error);
         }
     }
 
     private async createMessageApiFlow(flow: Partial<DirectusFlow<Schema>>, notificationOperation: Partial<DirectusOperation<Schema>>, webhookOperation: Partial<DirectusOperation<Schema>>, readOperation: Partial<DirectusOperation<Schema>>): Promise<void> {
         // Create flow
-        const flowCreationResponse = await this.client.request(createFlow(flow));
-        this._logger.info("flowCreationResponse", flowCreationResponse);
+        const flowCreationResponse = await this._client.request(createFlow(flow));
+        
         // Create notification operation
         notificationOperation.flow = flowCreationResponse.id;
-        const notificationOperationCreationResponse = await this.client.request(createOperation(notificationOperation));
-        this._logger.info("notificationOperationCreationResponse", notificationOperationCreationResponse);
+        const notificationOperationCreationResponse = await this._client.request(createOperation(notificationOperation));
+        
         // Create webhook operation
         webhookOperation.flow = flowCreationResponse.id;
         webhookOperation.resolve = notificationOperationCreationResponse.id
-        const webhookOperationCreationResponse = await this.client.request(createOperation(webhookOperation));
+        const webhookOperationCreationResponse = await this._client.request(createOperation(webhookOperation));
 
         // Create read operation
         readOperation.flow = flowCreationResponse.id;
         readOperation.resolve = webhookOperationCreationResponse.id;
-        const readOperationCreationResponse = await this.client.request(createOperation(readOperation));
+        const readOperationCreationResponse = await this._client.request(createOperation(readOperation));
 
         // Update flow with operations
-        const updatedFlow = this.client.request(updateFlow(flowCreationResponse.id, {
+        this._client.request(updateFlow(flowCreationResponse.id, {
             operation: readOperationCreationResponse.id
         }));
-        this._logger.info("updatedFlow", updatedFlow);
     }
 
     private async updateMessageApiFlow(flowId: string, updatedFlow: Partial<DirectusFlow<Schema>>, notificationOperation: Partial<DirectusOperation<Schema>>, webhookOperation: Partial<DirectusOperation<Schema>>, readOperation: Partial<DirectusOperation<Schema>>): Promise<void> {
         // Update flow
-        const flowUpdateResponse = await this.client.request(updateFlow(flowId, updatedFlow));
-        this._logger.info("flowUpdateResponse", flowUpdateResponse);
+        const flowUpdateResponse = await this._client.request(updateFlow(flowId, updatedFlow));
+        
         // Update read operation
-        const readOperationUpdateResponse = await this.client.request(updateOperation(flowUpdateResponse.operation as string, readOperation));
+        const readOperationUpdateResponse = await this._client.request(updateOperation(flowUpdateResponse.operation as string, readOperation));
 
         // Update webhook operation
-        const webhookOperationUpdateResponse = await this.client.request(updateOperation(readOperationUpdateResponse.resolve, webhookOperation));
+        const webhookOperationUpdateResponse = await this._client.request(updateOperation(readOperationUpdateResponse.resolve, webhookOperation));
 
         // Update notification operation
-        const updatedOperationFlow = this.client.request(updateOperation(webhookOperationUpdateResponse.resolve, notificationOperation));
-        this._logger.info("updatedOperationFlow", updatedOperationFlow);
+        this._client.request(updateOperation(webhookOperationUpdateResponse.resolve, notificationOperation));
     }
 }
