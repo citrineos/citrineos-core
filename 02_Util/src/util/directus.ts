@@ -38,14 +38,14 @@ export class DirectusUtil {
     }
 
     public addDirectusMessageApiFlowsFastifyRouteHook(routeOptions: RouteOptions) {
-        if (routeOptions.url.split("/")[1] == "ocpp") { // Message API check: relies on implementation of _toMessagePath in AbstractModuleApi, which prefixes url with '/ocpp/'
-            this._logger.info(`Adding Directus Message API flow for ${routeOptions.url}`);
-            // Parse action from url
-            const lowercaseAction: string = routeOptions.url.split("/").pop() as string;
+        const messagePath = routeOptions.url // 'Url' here means the route specified when the endpoint was added to the fastify server
+        if (messagePath.split("/")[1] == "ocpp") { // Message API check: relies on implementation of _toMessagePath in AbstractModuleApi which prefixes url with '/ocpp/'
+            this._logger.info(`Adding Directus Message API flow for ${messagePath}`);
+            // Parse action from url: relies on implementation of _toMessagePath in AbstractModuleApi which puts CallAction in final path part
+            const lowercaseAction: string = messagePath.split("/").pop() as string;
             const action = lowercaseAction.charAt(0).toUpperCase() + lowercaseAction.slice(1)
-            // Parse message path from url
-            const messagePath = "/" + routeOptions.url.split("/").slice(1).join("/");
-
+            // _addMessageRoute in AbstractModuleApi adds the bodySchema specified in the @MessageEndpoint decorator to the fastify route schema
+            // These body schemas are the ones generated directly from the specification using the json-schema-processor in 00_Base
             const bodySchema = routeOptions.schema!.body as object;
             this.addDirectusFlowForAction(action, messagePath, bodySchema);
         }
