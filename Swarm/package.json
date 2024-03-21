@@ -60,7 +60,7 @@
     "ws": "^8.13.0"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8",
