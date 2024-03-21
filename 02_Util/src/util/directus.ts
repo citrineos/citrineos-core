@@ -38,7 +38,7 @@ export class DirectusUtil {
     }
 
     public addDirectusMessageApiFlowsFastifyRouteHook(routeOptions: RouteOptions) {
-        if (routeOptions.url.split("/")[1] == "ocpp") { // Message API check
+        if (routeOptions.url.split("/")[1] == "ocpp") { // Message API check: relies on implementation of _toMessagePath in AbstractModuleApi, which prefixes url with '/ocpp/'
             this._logger.info(`Adding Directus Message API flow for ${routeOptions.url}`);
             // Parse action from url
             const lowercaseAction: string = routeOptions.url.split("/").pop() as string;
