@@ -5,7 +5,7 @@ FROM node:18 as base
 
 # Build citrineos-base module
 FROM base as citrineos-base-builder
-COPY /00_Base/package*.json /usr/00_Base/
+COPY /00_Base/package.json /usr/00_Base/
 RUN npm install --ignore-scripts=true --prefix /usr/00_Base
 
 COPY /00_Base/tsconfig.json /usr/00_Base/
@@ -16,7 +16,7 @@ RUN cd /usr/00_Base && npm pack
 # Build citrineos-data module
 FROM base as citrineos-data-builder
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
-COPY /01_Data/package*.json /usr/01_Data/
+COPY /01_Data/package.json /usr/01_Data/
 RUN npm install --ignore-scripts=true --prefix /usr/01_Data
 
 COPY /01_Data/tsconfig.json /usr/01_Data/
@@ -28,7 +28,7 @@ RUN cd /usr/01_Data && npm pack
 FROM base as citrineos-util-builder
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
 COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
-COPY /02_Util/package*.json /usr/02_Util/
+COPY /02_Util/package.json /usr/02_Util/
 RUN npm install --ignore-scripts=true --prefix /usr/02_Util
 
 COPY /02_Util/tsconfig.json /usr/02_Util/
@@ -41,7 +41,7 @@ FROM base as citrineos-certificates-builder
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
 COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
 COPY --from=citrineos-util-builder /usr/02_Util/*.tgz /usr/02_Util/
-COPY /03_Modules/Certificates/package*.json /usr/03_Modules/Certificates/
+COPY /03_Modules/Certificates/package.json /usr/03_Modules/Certificates/
 RUN npm install --ignore-scripts=true --prefix /usr/03_Modules/Certificates
 
 COPY /03_Modules/Certificates/tsconfig.json /usr/03_Modules/Certificates/
@@ -54,7 +54,7 @@ FROM base as citrineos-configuration-builder
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
 COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
 COPY --from=citrineos-util-builder /usr/02_Util/*.tgz /usr/02_Util/
-COPY /03_Modules/Configuration/package*.json /usr/03_Modules/Configuration/
+COPY /03_Modules/Configuration/package.json /usr/03_Modules/Configuration/
 RUN npm install --ignore-scripts=true --prefix /usr/03_Modules/Configuration
 
 COPY /03_Modules/Configuration/tsconfig.json /usr/03_Modules/Configuration/
@@ -67,7 +67,7 @@ FROM base as citrineos-evdriver-builder
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
 COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
 COPY --from=citrineos-util-builder /usr/02_Util/*.tgz /usr/02_Util/
-COPY /03_Modules/EVDriver/package*.json /usr/03_Modules/EVDriver/
+COPY /03_Modules/EVDriver/package.json /usr/03_Modules/EVDriver/
 RUN npm install --ignore-scripts=true --prefix /usr/03_Modules/EVDriver
 
 COPY /03_Modules/EVDriver/tsconfig.json /usr/03_Modules/EVDriver/
@@ -80,7 +80,7 @@ FROM base as citrineos-monitoring-builder
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
 COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
 COPY --from=citrineos-util-builder /usr/02_Util/*.tgz /usr/02_Util/
-COPY /03_Modules/Monitoring/package*.json /usr/03_Modules/Monitoring/
+COPY /03_Modules/Monitoring/package.json /usr/03_Modules/Monitoring/
 RUN npm install --ignore-scripts=true --prefix /usr/03_Modules/Monitoring
 
 COPY /03_Modules/Monitoring/tsconfig.json /usr/03_Modules/Monitoring/
@@ -93,7 +93,7 @@ FROM base as citrineos-reporting-builder
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
 COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
 COPY --from=citrineos-util-builder /usr/02_Util/*.tgz /usr/02_Util/
-COPY /03_Modules/Reporting/package*.json /usr/03_Modules/Reporting/
+COPY /03_Modules/Reporting/package.json /usr/03_Modules/Reporting/
 RUN npm install --ignore-scripts=true --prefix /usr/03_Modules/Reporting
 
 COPY /03_Modules/Reporting/tsconfig.json /usr/03_Modules/Reporting/
@@ -106,7 +106,7 @@ FROM base as citrineos-smartcharging-builder
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
 COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
 COPY --from=citrineos-util-builder /usr/02_Util/*.tgz /usr/02_Util/
-COPY /03_Modules/SmartCharging/package*.json /usr/03_Modules/SmartCharging/
+COPY /03_Modules/SmartCharging/package.json /usr/03_Modules/SmartCharging/
 RUN npm install --ignore-scripts=true --prefix /usr/03_Modules/SmartCharging
 
 COPY /03_Modules/SmartCharging/tsconfig.json /usr/03_Modules/SmartCharging/
@@ -119,7 +119,7 @@ FROM base as citrineos-transactions-builder
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
 COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
 COPY --from=citrineos-util-builder /usr/02_Util/*.tgz /usr/02_Util/
-COPY /03_Modules/Transactions/package*.json /usr/03_Modules/Transactions/
+COPY /03_Modules/Transactions/package.json /usr/03_Modules/Transactions/
 RUN npm install --ignore-scripts=true --prefix /usr/03_Modules/Transactions
 
 COPY /03_Modules/Transactions/tsconfig.json /usr/03_Modules/Transactions/
@@ -143,7 +143,7 @@ COPY --from=citrineos-reporting-builder /usr/03_Modules/Reporting/*.tgz /usr/03_
 COPY --from=citrineos-smartcharging-builder /usr/03_Modules/SmartCharging/*.tgz /usr/03_Modules/SmartCharging/
 COPY --from=citrineos-transactions-builder /usr/03_Modules/Transactions/*.tgz /usr/03_Modules/Transactions/
 
-COPY /Server/package*.json ./
+COPY /Server/package.json ./
 RUN npm install --ignore-scripts=true
 RUN npm rebuild bcrypt --build-from-source
 RUN npm rebuild deasync --build-from-source
