@@ -1,7 +1,7 @@
 {
-  "name": "@citrineos/centralsystem",
+  "name": "@citrineos/ocpprouter",
   "version": "1.0.0",
-  "description": "The centralsystem module for OCPP v2.0.1. This module is not intended to be used directly, but rather as a dependency for other modules.",
+  "description": "The ocpprouter module for OCPP v2.0.1. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "files": [
@@ -11,9 +11,9 @@
     "prepublish": "npx eslint",
     "prepare": "npm run build",
     "build": "tsc",
-    "refresh-base": "cd ../../00_Base && npm run build && npm pack && cd ../03_Modules/CentralSystem && npm install ../../00_Base/citrineos-base-1.0.0.tgz",
-    "refresh-data": "cd ../../01_Data && npm run build && npm pack && cd ../03_Modules/CentralSystem && npm install ../../01_Data/citrineos-data-1.0.0.tgz",
-    "refresh-util": "cd ../../02_Util && npm run build && npm pack && cd ../03_Modules/CentralSystem && npm install ../../02_Util/citrineos-util-1.0.0.tgz",
+    "refresh-base": "cd ../../00_Base && npm run build && npm pack && cd ../03_Modules/OcppRouter && npm install ../../00_Base/citrineos-base-1.0.0.tgz",
+    "refresh-data": "cd ../../01_Data && npm run build && npm pack && cd ../03_Modules/OcppRouter && npm install ../../01_Data/citrineos-data-1.0.0.tgz",
+    "refresh-util": "cd ../../02_Util && npm run build && npm pack && cd ../03_Modules/OcppRouter && npm install ../../02_Util/citrineos-util-1.0.0.tgz",
     "install-all": "npm install ../../00_Base/citrineos-base-1.0.0.tgz && npm install ../../02_Util/citrineos-util-1.0.0.tgz && npm install ../../01_Data/citrineos-data-1.0.0.tgz",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

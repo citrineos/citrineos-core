@@ -29,7 +29,7 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
      * @param config The system configuration.
      * @param logger [Optional] The logger to use.
      */
-    constructor(config: SystemConfig, logger?: Logger<ILogObj>, module?: IModule, ) {
+    constructor(config: SystemConfig, logger?: Logger<ILogObj>, module?: IModule) {
         this._config = config;
         this._module = module;
         this._logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });

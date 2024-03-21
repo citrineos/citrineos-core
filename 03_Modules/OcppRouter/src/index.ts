@@ -5,4 +5,4 @@
 
 export { AdminApi } from './module/api';
 export { IAdminApi } from './module/interface';
-export { CentralSystem } from './module/centralsystem';
+export { MessageRouterImpl } from './module/router';

@@ -30,6 +30,7 @@ export class Authenticator implements IAuthenticator {
                 return false;
             }
         }
+        this._logger.debug("Successfully got past the authentication step for identifier", identifier);
         return true;
     }
 

@@ -3,30 +3,26 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModuleApi, AsDataEndpoint, CallAction, HttpMethod, ICentralSystem, INetworkConnection, MessageOrigin, Namespace, SystemConfig } from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, CallAction, HttpMethod, MessageOrigin, Namespace } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IAdminApi } from './interface';
-import { CentralSystem, Subscription } from './centralsystem';
+import { MessageRouterImpl, Subscription } from './router';
 
 /**
  * Server API for the Certificates module.
  */
-export class AdminApi extends AbstractModuleApi<ICentralSystem> implements IAdminApi {
-
-    private _networkConnection: INetworkConnection;
+export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IAdminApi {
 
     /**
      * Constructs a new instance of the class.
      *
-     * @param {CentralSystem} centralSystem - The CentralSystem module.
+     * @param {MessageRouterImpl} ocppRouter - The OcppRouter module.
      * @param {FastifyInstance} server - The Fastify server instance.
      * @param {Logger<ILogObj>} [logger] - The logger instance.
      */
-    constructor(centralSystem: ICentralSystem, server: FastifyInstance, logger?: Logger<ILogObj>) {
-        super(centralSystem, server, logger);
-
-        this._networkConnection = centralSystem.networkConnection;
+    constructor(ocppRouter: MessageRouterImpl, server: FastifyInstance, logger?: Logger<ILogObj>) {
+        super(ocppRouter, server, logger);
     }
 
     /**
@@ -36,7 +32,7 @@ export class AdminApi extends AbstractModuleApi<ICentralSystem> implements IAdmi
     @AsDataEndpoint(Namespace.Subscription, HttpMethod.Put)
     async putSubscription(request: FastifyRequest<{ Body: Subscription }>): Promise<void> {
         if (request.body.onConnect) {
-            this._networkConnection.addOnConnectionCallback(async (identifier: string) => {
+            this._module.addOnConnectionCallback(async (identifier: string) => {
                 if (identifier == request.body.stationId) {
                     return fetch(request.body.url, {
                         method: 'POST',
@@ -55,7 +51,7 @@ export class AdminApi extends AbstractModuleApi<ICentralSystem> implements IAdmi
             this._logger.debug(`Added onConnect callback to ${request.body.url} for station ${request.body.stationId}`);
         }
         if (request.body.onClose) {
-            this._networkConnection.addOnCloseCallback(async (identifier: string) => {
+            this._module.addOnCloseCallback(async (identifier: string) => {
                 if (identifier == request.body.stationId) {
                     return fetch(request.body.url, {
                         method: 'POST',
@@ -74,7 +70,7 @@ export class AdminApi extends AbstractModuleApi<ICentralSystem> implements IAdmi
             this._logger.debug(`Added onClose callback to ${request.body.url} for station ${request.body.stationId}`);
         }
         if (request.body.onMessage) {
-            this._networkConnection.addOnMessageCallback(async (identifier: string, message: string) => {
+            this._module.addOnMessageCallback(async (identifier: string, message: string) => {
                 if (identifier == request.body.stationId &&
                     (!request.body.messageOptions?.regexFilter || new RegExp(request.body.messageOptions.regexFilter).test(message))) {
                     return fetch(request.body.url, {
@@ -94,7 +90,7 @@ export class AdminApi extends AbstractModuleApi<ICentralSystem> implements IAdmi
             this._logger.debug(`Added onMessage callback to ${request.body.url} for station ${request.body.stationId}`);
         }
         if (request.body.sentMessage) {
-            this._networkConnection.addSentMessageCallback(async (identifier: string, message: string, error?: any) => {
+            this._module.addSentMessageCallback(async (identifier: string, message: string, error?: any) => {
                 if (identifier == request.body.stationId &&
                     (!request.body.messageOptions?.regexFilter || new RegExp(request.body.messageOptions.regexFilter).test(message))) {
                     return fetch(request.body.url, {
@@ -123,7 +119,7 @@ export class AdminApi extends AbstractModuleApi<ICentralSystem> implements IAdmi
     * @return {string} - The generated URL path.
     */
     protected _toMessagePath(input: CallAction): string {
-        const endpointPrefix = '/centralSystem';
+        const endpointPrefix = '/ocpprouter';
         return super._toMessagePath(input, endpointPrefix);
     }
 
@@ -134,7 +130,7 @@ export class AdminApi extends AbstractModuleApi<ICentralSystem> implements IAdmi
      * @return {string} - The generated URL path.
      */
     protected _toDataPath(input: Namespace): string {
-        const endpointPrefix = '/centralSystem';
+        const endpointPrefix = '/ocpprouter';
         return super._toDataPath(input, endpointPrefix);
     }
 }
