@@ -83,6 +83,9 @@ class CitrineOSServer {
         if (this._config.util.directus?.generateFlows) {
             const directusUtil = new DirectusUtil(this._config, this._logger);
             this._server.addHook("onRoute", directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(directusUtil));
+            this._server.addHook('onReady', async () => {
+                this._logger.info('Directus actions initialization finished');
+            });
         }
 
         // Register AJV for schema validation
