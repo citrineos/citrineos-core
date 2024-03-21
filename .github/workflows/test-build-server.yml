@@ -17,4 +17,4 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Build image
-        run: docker build ./Server --file Server/docker/Dockerfile --tag $IMAGE_NAME
+        run: docker build . --file ./Server/docker/Dockerfile --tag $IMAGE_NAME
