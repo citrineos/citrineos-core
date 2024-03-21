@@ -38,7 +38,7 @@ export class DirectusUtil {
     }
 
     public addDirectusMessageApiFlowsFastifyRouteHook(routeOptions: RouteOptions) {
-        const messagePath = routeOptions.url // 'Url' here means the route specified when the endpoint was added to the fastify server
+        const messagePath = routeOptions.url // 'Url' here means the route specified when the endpoint was added to the fastify server, such as '/ocpp/configuration/reset'
         if (messagePath.split("/")[1] == "ocpp") { // Message API check: relies on implementation of _toMessagePath in AbstractModuleApi which prefixes url with '/ocpp/'
             this._logger.info(`Adding Directus Message API flow for ${messagePath}`);
             // Parse action from url: relies on implementation of _toMessagePath in AbstractModuleApi which puts CallAction in final path part
