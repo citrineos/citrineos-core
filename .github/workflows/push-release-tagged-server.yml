@@ -2,6 +2,9 @@ name: Push Release Tagged Server
 
 on:
   push:
+    branches:
+      - main
+      - feature/add-docker-image-release-action
     tags:
       - "v*"
 
