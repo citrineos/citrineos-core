@@ -3,12 +3,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Call, CallError, CallResult, IModule } from "../..";
+import { IModule } from "../..";
 
 /**
  * Interface for the central system
  */
-export interface ICentralSystem extends IModule {
+export interface IMessageRouter extends IModule {
     /**
      * Register a connection to the message handler with the given connection identifier.
      *
@@ -18,7 +18,7 @@ export interface ICentralSystem extends IModule {
     registerConnection(connectionIdentifier: string): Promise<boolean>
     deregisterConnection(connectionIdentifier: string): Promise<boolean>
 
-    onCall(identifier: string, message: Call): void;
-    onCallResult(identifier: string, message: CallResult): void;
-    onCallError(identifier: string, message: CallError): void;
+    onMessage(identifier: string, message: string): Promise<boolean>;
+
+    networkHook: (identifier: string, message: string) => Promise<boolean>;
 }

@@ -4,11 +4,11 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import Ajv, { ErrorObject } from "ajv";
-import { ICentralSystem } from "./CentralSystem";
-import { Call, CallAction, CallError, CallResult, ICache, SystemConfig, CALL_SCHEMA_MAP, CALL_RESULT_SCHEMA_MAP, IMessageConfirmation, MessageOrigin, OcppError, OcppRequest, OcppResponse, IMessageHandler, IMessageSender, IMessage, MessageState } from "../..";
+import { Call, CallAction, CallResult, ICache, SystemConfig, CALL_SCHEMA_MAP, CALL_RESULT_SCHEMA_MAP, IMessageConfirmation, MessageOrigin, OcppError, OcppRequest, OcppResponse, IMessageHandler, IMessageSender, IMessage, MessageState } from "../..";
 import { ILogObj, Logger } from "tslog";
+import { IMessageRouter } from "./Router";
 
-export abstract class AbstractCentralSystem implements ICentralSystem {
+export abstract class AbstractMessageRouter implements IMessageRouter {
 
     /**
      * Fields
@@ -20,17 +20,20 @@ export abstract class AbstractCentralSystem implements ICentralSystem {
     protected _logger: Logger<ILogObj>;
     protected readonly _handler: IMessageHandler;
     protected readonly _sender: IMessageSender;
+    protected _networkHook: (identifier: string, message: string) => Promise<boolean>;
 
     /**
      * Constructor of abstract central system.
      *
      * @param {Ajv} ajv - The Ajv instance to use for schema validation.
      */
-    constructor(config: SystemConfig, cache: ICache, handler: IMessageHandler, sender: IMessageSender, logger?: Logger<ILogObj>,  ajv?: Ajv) {
+    constructor(config: SystemConfig, cache: ICache, handler: IMessageHandler, sender: IMessageSender,
+        networkHook: (identifier: string, message: string) => Promise<boolean>, logger?: Logger<ILogObj>, ajv?: Ajv) {
         this._config = config;
         this._cache = cache;
         this._handler = handler;
         this._sender = sender;
+        this._networkHook = networkHook;
         this._ajv = ajv || new Ajv({ removeAdditional: 'all', useDefaults: true, coerceTypes: 'array', strict: false });
         this._logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
 
@@ -54,6 +57,10 @@ export abstract class AbstractCentralSystem implements ICentralSystem {
         return this._handler;
     }
 
+    set networkHook(value: (identifier: string, message: string) => Promise<boolean>) {
+        this._networkHook = value;
+    }
+
     /**
      * Sets the system configuration for the module.
      *
@@ -70,9 +77,7 @@ export abstract class AbstractCentralSystem implements ICentralSystem {
         return this._config;
     }
 
-    abstract onCall(identifier: string, message: Call): void;
-    abstract onCallResult(identifier: string, message: CallResult): void;
-    abstract onCallError(identifier: string, message: CallError): void;
+    abstract onMessage(identifier: string, message: string): Promise<boolean>;
 
     abstract sendCall(identifier: string, tenantId: string, action: CallAction, payload: OcppRequest, correlationId?: string, origin?: MessageOrigin): Promise<IMessageConfirmation>;
     abstract sendCallResult(correlationId: string, identifier: string, tenantId: string, action: CallAction, payload: OcppResponse, origin?: MessageOrigin): Promise<IMessageConfirmation>;

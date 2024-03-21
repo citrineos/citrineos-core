@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
-import { AbstractCentralSystem, BOOT_STATUS, CacheNamespace, Call, CallAction, CallError, CallResult, ErrorCode, ICache, ICentralSystem, IMessageConfirmation, IMessageHandler, IMessageRouter, IMessageSender, INetworkConnection, MessageOrigin, MessageTriggerEnumType, MessageTypeId, OcppError, OcppMessageRouter, OcppRequest, OcppResponse, RegistrationStatusEnumType, RetryMessageError, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
+import { AbstractMessageRouter, AbstractModule, BOOT_STATUS, CacheNamespace, Call, CallAction, CallError, CallResult, ErrorCode, EventGroup, ICache, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, MessageOrigin, MessageState, MessageTriggerEnumType, MessageTypeId, OcppError, OcppRequest, OcppResponse, RegistrationStatusEnumType, RequestBuilder, RetryMessageError, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
 import Ajv from "ajv";
 import { v4 as uuidv4 } from "uuid";
 import { ILogObj, Logger } from "tslog";
@@ -11,15 +11,16 @@ import { ILogObj, Logger } from "tslog";
 /**
  * Implementation of the central system
  */
-export class CentralSystemImpl extends AbstractCentralSystem implements ICentralSystem {
+export class MessageRouterImpl extends AbstractMessageRouter implements IMessageRouter {
 
     /**
      * Fields
      */
 
     protected _cache: ICache;
-    private _router: IMessageRouter;
-    private _networkConnection: INetworkConnection;
+    protected _sender: IMessageSender;
+    protected _handler: IMessageHandler;
+    protected _networkHook: (identifier: string, message: string) => Promise<boolean>;
 
     /**
      * Constructor for the class.
@@ -36,32 +37,33 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
         cache: ICache,
         sender: IMessageSender,
         handler: IMessageHandler,
-        networkConnection: INetworkConnection,
+        networkHook: (identifier: string, message: string) => Promise<boolean>,
         logger?: Logger<ILogObj>,
         ajv?: Ajv,
     ) {
-        super(config, cache, handler, sender, logger, ajv);
+        super(config, cache, handler, sender, networkHook, logger, ajv);
 
         // Initialize router before socket server to avoid race condition
-        this._router = new OcppMessageRouter(cache,
-            sender,
-            handler);
+        // this._router = new OcppMessageRouter(cache,
+        //     sender,
+        //     handler);
 
-        networkConnection.addOnConnectionCallback((identifier: string) =>
-            this.registerConnection(identifier)
-        );
+        // networkConnection.addOnConnectionCallback((identifier: string) =>
+        //     this.registerConnection(identifier)
+        // );
 
-        networkConnection.addOnCloseCallback((identifier: string) =>
-            this.deregisterConnection(identifier)
-        );
+        // networkConnection.addOnCloseCallback((identifier: string) =>
+        //     this.deregisterConnection(identifier)
+        // );
 
-        networkConnection.addOnMessageCallback((identifier: string, message: string) =>
-            this.onMessage(identifier, message)
-        );
-
-        this._networkConnection = networkConnection;
+        // networkConnection.addOnMessageCallback((identifier: string, message: string) =>
+        //     this.onMessage(identifier, message)
+        // );
 
         this._cache = cache;
+        this._sender = sender;
+        this._handler = handler;
+        this._networkHook = networkHook;
     }
 
     /**
@@ -69,8 +71,8 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
      */
 
     shutdown(): void {
-        this._router.sender.shutdown();
-        this._router.handler.shutdown();
+        this._sender.shutdown();
+        this._handler.shutdown();
     }
 
     // TODO: identifier may not be unique, may require combination of tenantId and identifier.
@@ -89,13 +91,13 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             }
             switch (messageTypeId) {
                 case MessageTypeId.Call:
-                    this.onCall(identifier, rpcMessage as Call);
+                    this._onCall(identifier, rpcMessage as Call);
                     break;
                 case MessageTypeId.CallResult:
-                    this.onCallResult(identifier, rpcMessage as CallResult);
+                    this._onCallResult(identifier, rpcMessage as CallResult);
                     break;
                 case MessageTypeId.CallError:
-                    this.onCallError(identifier, rpcMessage as CallError);
+                    this._onCallError(identifier, rpcMessage as CallError);
                     break;
                 default:
                     throw new OcppError(messageId, ErrorCode.FormatViolation, "Unknown message type id: " + messageTypeId, {});
@@ -107,139 +109,11 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                 const callError = error instanceof OcppError ? error.asCallError()
                     : [MessageTypeId.CallError, messageId, ErrorCode.InternalError, "Unable to process message", { error: error }];
                 const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
-                this._networkConnection.sendMessage(identifier, rawMessage);
+                this._networkHook(identifier, rawMessage);
             }
             // TODO: Publish raw payload for error reporting
             return false;
         }
-    }
-
-    /**
-     * Handles an incoming Call message from a client connection.
-     *
-     * @param {string} identifier - The client identifier.
-     * @param {Call} message - The Call message received.
-     * @return {void}
-     */
-    onCall(identifier: string, message: Call): void {
-        const messageId = message[1];
-        const action = message[2] as CallAction;
-        const payload = message[3];
-
-        this._onCallIsAllowed(action, identifier)
-            .then((isAllowed: boolean) => {
-                if (!isAllowed) {
-                    throw new OcppError(messageId, ErrorCode.SecurityError, `Action ${action} not allowed`);
-                } else {
-                    // Run schema validation for incoming Call message
-                    return this._validateCall(identifier, message);
-                }
-            }).then(({ isValid, errors }) => {
-                if (!isValid || errors) {
-                    throw new OcppError(messageId, ErrorCode.FormatViolation, "Invalid message format", { errors: errors });
-                }
-                // Ensure only one call is processed at a time
-                return this._cache.setIfNotExist(identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.maxCallLengthSeconds);
-            }).catch(error => {
-                if (error instanceof OcppError) {
-                    // TODO: identifier may not be unique, may require combination of tenantId and identifier.
-                    // find way to include actual tenantId.
-                    this.sendCallError(messageId, identifier, "undefined", action, error);
-                }
-            }).then(successfullySet => {
-                if (!successfullySet) {
-                    throw new OcppError(messageId, ErrorCode.RpcFrameworkError, "Call already in progress", {});
-                }
-                // Route call
-                return this._router.routeCall(identifier, message);
-            }).then(confirmation => {
-                if (!confirmation.success) {
-                    throw new OcppError(messageId, ErrorCode.InternalError, 'Call failed', { details: confirmation.payload });
-                }
-            }).catch(error => {
-                if (error instanceof OcppError) {
-                    // TODO: identifier may not be unique, may require combination of tenantId and identifier.
-                    // find way to include tenantId here
-                    this.sendCallError(messageId, identifier, "undefined", action, error);
-                    this._cache.remove(identifier, CacheNamespace.Transactions);
-                }
-            });
-    }
-
-    /**
-     * Handles a CallResult made by the client.
-     *
-     * @param {string} identifier - The client identifier that made the call.
-     * @param {CallResult} message - The OCPP CallResult message.
-     * @return {void}
-     */
-    onCallResult(identifier: string, message: CallResult): void {
-        const messageId = message[1];
-        const payload = message[2];
-
-        this._logger.debug("Process CallResult", identifier, messageId, payload);
-
-        this._cache.get<string>(identifier, CacheNamespace.Transactions)
-            .then(cachedActionMessageId => {
-                this._cache.remove(identifier, CacheNamespace.Transactions); // Always remove pending call transaction
-                if (!cachedActionMessageId) {
-                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.maxCallLengthSeconds });
-                }
-                const [actionString, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
-                if (messageId !== cachedMessageId) {
-                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", { "expectedMessageId": cachedMessageId });
-                }
-                const action: CallAction = CallAction[actionString as keyof typeof CallAction]; // Parse CallAction
-                return { action, ...this._validateCallResult(identifier, action, message) }; // Run schema validation for incoming CallResult message
-            }).then(({ action, isValid, errors }) => {
-                if (!isValid || errors) {
-                    throw new OcppError(messageId, ErrorCode.FormatViolation, "Invalid message format", { errors: errors });
-                }
-                // Route call result
-                return this._router.routeCallResult(identifier, message, action);
-            }).then(confirmation => {
-                if (!confirmation.success) {
-                    throw new OcppError(messageId, ErrorCode.InternalError, 'CallResult failed', { details: confirmation.payload });
-                }
-            }).catch(error => {
-                // TODO: Ideally the error log is also stored in the database in a failed invocations table to ensure these are visible outside of a log file.
-                this._logger.error("Failed processing call result: ", error);
-            });
-    }
-
-    /**
-     * Handles the CallError that may have occured during a Call exchange.
-     *
-     * @param {string} identifier - The client identifier.
-     * @param {CallError} message - The error message.
-     * @return {void} This function doesn't return anything.
-     */
-    onCallError(identifier: string, message: CallError): void {
-
-        const messageId = message[1];
-
-        this._logger.debug("Process CallError", identifier, message);
-
-        this._cache.get<string>(identifier, CacheNamespace.Transactions)
-            .then(cachedActionMessageId => {
-                this._cache.remove(identifier, CacheNamespace.Transactions); // Always remove pending call transaction
-                if (!cachedActionMessageId) {
-                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.maxCallLengthSeconds });
-                }
-                const [actionString, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
-                if (messageId !== cachedMessageId) {
-                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", { "expectedMessageId": cachedMessageId });
-                }
-                const action: CallAction = CallAction[actionString as keyof typeof CallAction]; // Parse CallAction
-                return this._router.routeCallError(identifier, message, action);
-            }).then(confirmation => {
-                if (!confirmation.success) {
-                    throw new OcppError(messageId, ErrorCode.InternalError, 'CallError failed', { details: confirmation.payload });
-                }
-            }).catch(error => {
-                // TODO: Ideally the error log is also stored in the database in a failed invocations table to ensure these are visible outside of a log file.
-                this._logger.error("Failed processing call error: ", error);
-            });
     }
 
     /**
@@ -256,7 +130,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
                 CacheNamespace.Transactions, this._config.maxCallLengthSeconds)) {
                 // Intentionally removing NULL values from object for OCPP conformity
                 const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
-                const success = await this._networkConnection.sendMessage(identifier, rawMessage);
+                const success = await this._networkHook(identifier, rawMessage);
                 return { success };
             } else {
                 this._logger.info("Call already in progress, throwing retry exception", identifier, message);
@@ -287,7 +161,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             // Intentionally removing NULL values from object for OCPP conformity
             const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
             const success = await Promise.all([
-                this._networkConnection.sendMessage(identifier, rawMessage),
+                this._networkHook(identifier, rawMessage),
                 this._cache.remove(identifier, CacheNamespace.Transactions)
             ]).then(successes => successes.every(Boolean));
             return { success };
@@ -316,7 +190,7 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             // Intentionally removing NULL values from object for OCPP conformity
             const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
             const success = await Promise.all([
-                this._networkConnection.sendMessage(identifier, rawMessage),
+                this._networkHook(identifier, rawMessage),
                 this._cache.remove(identifier, CacheNamespace.Transactions)
             ]).then(successes => successes.every(Boolean));
             return { success };
@@ -327,8 +201,136 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
     }
 
     /**
-     * Methods 
+     * Private Methods 
      */
+
+    /**
+     * Handles an incoming Call message from a client connection.
+     *
+     * @param {string} identifier - The client identifier.
+     * @param {Call} message - The Call message received.
+     * @return {void}
+     */
+    _onCall(identifier: string, message: Call): void {
+        const messageId = message[1];
+        const action = message[2] as CallAction;
+        const payload = message[3];
+
+        this._onCallIsAllowed(action, identifier)
+            .then((isAllowed: boolean) => {
+                if (!isAllowed) {
+                    throw new OcppError(messageId, ErrorCode.SecurityError, `Action ${action} not allowed`);
+                } else {
+                    // Run schema validation for incoming Call message
+                    return this._validateCall(identifier, message);
+                }
+            }).then(({ isValid, errors }) => {
+                if (!isValid || errors) {
+                    throw new OcppError(messageId, ErrorCode.FormatViolation, "Invalid message format", { errors: errors });
+                }
+                // Ensure only one call is processed at a time
+                return this._cache.setIfNotExist(identifier, `${action}:${messageId}`, CacheNamespace.Transactions, this._config.maxCallLengthSeconds);
+            }).catch(error => {
+                if (error instanceof OcppError) {
+                    // TODO: identifier may not be unique, may require combination of tenantId and identifier.
+                    // find way to include actual tenantId.
+                    this.sendCallError(messageId, identifier, "undefined", action, error);
+                }
+            }).then(successfullySet => {
+                if (!successfullySet) {
+                    throw new OcppError(messageId, ErrorCode.RpcFrameworkError, "Call already in progress", {});
+                }
+                // Route call
+                return this._routeCall(identifier, message);
+            }).then(confirmation => {
+                if (!confirmation.success) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, 'Call failed', { details: confirmation.payload });
+                }
+            }).catch(error => {
+                if (error instanceof OcppError) {
+                    // TODO: identifier may not be unique, may require combination of tenantId and identifier.
+                    // find way to include tenantId here
+                    this.sendCallError(messageId, identifier, "undefined", action, error);
+                    this._cache.remove(identifier, CacheNamespace.Transactions);
+                }
+            });
+    }
+
+    /**
+     * Handles a CallResult made by the client.
+     *
+     * @param {string} identifier - The client identifier that made the call.
+     * @param {CallResult} message - The OCPP CallResult message.
+     * @return {void}
+     */
+    _onCallResult(identifier: string, message: CallResult): void {
+        const messageId = message[1];
+        const payload = message[2];
+
+        this._logger.debug("Process CallResult", identifier, messageId, payload);
+
+        this._cache.get<string>(identifier, CacheNamespace.Transactions)
+            .then(cachedActionMessageId => {
+                this._cache.remove(identifier, CacheNamespace.Transactions); // Always remove pending call transaction
+                if (!cachedActionMessageId) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.maxCallLengthSeconds });
+                }
+                const [actionString, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+                if (messageId !== cachedMessageId) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", { "expectedMessageId": cachedMessageId });
+                }
+                const action: CallAction = CallAction[actionString as keyof typeof CallAction]; // Parse CallAction
+                return { action, ...this._validateCallResult(identifier, action, message) }; // Run schema validation for incoming CallResult message
+            }).then(({ action, isValid, errors }) => {
+                if (!isValid || errors) {
+                    throw new OcppError(messageId, ErrorCode.FormatViolation, "Invalid message format", { errors: errors });
+                }
+                // Route call result
+                return this._routeCallResult(identifier, message, action);
+            }).then(confirmation => {
+                if (!confirmation.success) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, 'CallResult failed', { details: confirmation.payload });
+                }
+            }).catch(error => {
+                // TODO: Ideally the error log is also stored in the database in a failed invocations table to ensure these are visible outside of a log file.
+                this._logger.error("Failed processing call result: ", error);
+            });
+    }
+
+    /**
+     * Handles the CallError that may have occured during a Call exchange.
+     *
+     * @param {string} identifier - The client identifier.
+     * @param {CallError} message - The error message.
+     * @return {void} This function doesn't return anything.
+     */
+    _onCallError(identifier: string, message: CallError): void {
+
+        const messageId = message[1];
+
+        this._logger.debug("Process CallError", identifier, message);
+
+        this._cache.get<string>(identifier, CacheNamespace.Transactions)
+            .then(cachedActionMessageId => {
+                this._cache.remove(identifier, CacheNamespace.Transactions); // Always remove pending call transaction
+                if (!cachedActionMessageId) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId not found, call may have timed out", { "maxCallLengthSeconds": this._config.maxCallLengthSeconds });
+                }
+                const [actionString, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+                if (messageId !== cachedMessageId) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", { "expectedMessageId": cachedMessageId });
+                }
+                const action: CallAction = CallAction[actionString as keyof typeof CallAction]; // Parse CallAction
+                return this._routeCallError(identifier, message, action);
+            }).then(confirmation => {
+                if (!confirmation.success) {
+                    throw new OcppError(messageId, ErrorCode.InternalError, 'CallError failed', { details: confirmation.payload });
+                }
+            }).catch(error => {
+                // TODO: Ideally the error log is also stored in the database in a failed invocations table to ensure these are visible outside of a log file.
+                this._logger.error("Failed processing call error: ", error);
+            });
+    }
 
     /**
      * Determine if the given action for identifier is allowed.
@@ -350,5 +352,78 @@ export class CentralSystemImpl extends AbstractCentralSystem implements ICentral
             return false;
         }
         return true;
+    }
+
+    private async _routeCall(connectionIdentifier: string, message: Call): Promise<IMessageConfirmation> {
+        const messageId = message[1];
+        const action = message[2] as CallAction;
+        const payload = message[3] as OcppRequest;
+
+        const _message: IMessage<OcppRequest> = RequestBuilder.buildCall(
+            connectionIdentifier,
+            messageId,
+            '', // TODO: Add tenantId to method
+            action,
+            payload,
+            EventGroup.General, // TODO: Change to appropriate event group
+            MessageOrigin.ChargingStation
+        );
+
+        return this._sender.send(_message);
+    }
+
+    private async _routeCallResult(connectionIdentifier: string, message: CallResult, action: CallAction): Promise<IMessageConfirmation> {
+        const messageId = message[1];
+        const payload = message[2] as OcppResponse;
+
+        // TODO: Add tenantId to context
+        const context: IMessageContext = { correlationId: messageId, stationId: connectionIdentifier, tenantId: '' };
+
+        const _message: IMessage<OcppRequest> = {
+            origin: MessageOrigin.CentralSystem,
+            eventGroup: EventGroup.General,
+            action,
+            state: MessageState.Response,
+            context,
+            payload
+        };
+
+        return this._sender.send(_message);
+    }
+
+    private async _routeCallError(connectionIdentifier: string, message: CallError, action: CallAction): Promise<IMessageConfirmation> {
+        const messageId = message[1];
+        const payload = new OcppError(messageId, message[2], message[3], message[4]);
+
+        // TODO: Add tenantId to context
+        const context: IMessageContext = { correlationId: messageId, stationId: connectionIdentifier, tenantId: '' };
+
+        const _message: IMessage<OcppError> = {
+            origin: MessageOrigin.CentralSystem,
+            eventGroup: EventGroup.General,
+            action,
+            state: MessageState.Response,
+            context,
+            payload
+        };
+
+        // Fulfill callback for api, if needed
+        this._handleMessageApiCallback(_message);
+
+        // No error routing currently done
+        throw new Error('Method not implemented.');
+    }
+
+    private async _handleMessageApiCallback(message: IMessage<OcppError>): Promise<void> {
+        const url: string | null = await this._cache.get(message.context.correlationId, AbstractModule.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
+        if (url) {
+            await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(message.payload)
+            });
+        }
     }
 }

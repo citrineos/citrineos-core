@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
-import { CacheNamespace, IAuthenticator, ICache, INetworkConnection, WebsocketServerConfig } from "@citrineos/base";
+import { CacheNamespace, IAuthenticator, ICache, IMessageRouter, SystemConfig } from "@citrineos/base";
 import { Duplex } from "stream";
 import * as http from "http";
 import * as https from "https";
@@ -11,30 +11,34 @@ import fs from "fs";
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from "ws";
 import { Logger, ILogObj } from "tslog";
 
-export class WebsocketNetworkConnection implements INetworkConnection {
+export class WebsocketNetworkConnection {
 
     protected _cache: ICache;
-    protected _configs: WebsocketServerConfig[];
+    protected _config: SystemConfig;
     protected _logger: Logger<ILogObj>;
     private _identifierConnections: Map<string, WebSocket> = new Map();
     private _httpServers: (http.Server | https.Server)[];
     private _authenticator: IAuthenticator;
-    private _onConnectionCallbacks: ((identifier: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
-    private _onCloseCallbacks: ((identifier: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
-    private _onMessageCallbacks: ((identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
+    private _router: IMessageRouter;
+    // private _onConnectionCallbacks: ((identifier: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
+    // private _onCloseCallbacks: ((identifier: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
+    // private _onMessageCallbacks: ((identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
 
     constructor(
-        websocketServerConfigs: WebsocketServerConfig[],
+        config: SystemConfig,
         cache: ICache,
-        logger: Logger<ILogObj>,
-        authenticator: IAuthenticator) {
+        authenticator: IAuthenticator,
+        router: IMessageRouter,
+        logger?: Logger<ILogObj>) {
         this._cache = cache;
-        this._configs = websocketServerConfigs;
-        this._logger = logger;
+        this._config = config;
+        this._logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
         this._authenticator = authenticator;
+        router.networkHook = this.sendMessage.bind(this);
+        this._router = router;
 
         this._httpServers = [];
-        this._configs.forEach(websocketServerConfig => {
+        this._config.util.networkConnection.websocketServers.forEach(websocketServerConfig => {
             let _httpServer;
             switch (websocketServerConfig.securityProfile) {
                 case 3: // mTLS
@@ -83,17 +87,17 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         });
     }
 
-    addOnConnectionCallback(onConnectionCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void {
-        this._onConnectionCallbacks.push(onConnectionCallback);
-    }
+    // addOnConnectionCallback(onConnectionCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void {
+    //     this._onConnectionCallbacks.push(onConnectionCallback);
+    // }
 
-    addOnCloseCallback(onCloseCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void {
-        this._onCloseCallbacks.push(onCloseCallback);
-    }
+    // addOnCloseCallback(onCloseCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void {
+    //     this._onCloseCallbacks.push(onCloseCallback);
+    // }
 
-    addOnMessageCallback(onMessageCallback: (identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>): void {
-        this._onMessageCallbacks.push(onMessageCallback);
-    }
+    // addOnMessageCallback(onMessageCallback: (identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>): void {
+    //     this._onMessageCallbacks.push(onMessageCallback);
+    // }
 
     /**
      * Send a message to the charging station specified by the identifier.
@@ -131,6 +135,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
     shutdown(): void {
         this._httpServers.forEach(server => server.close());
+        this._router.shutdown();
     }
 
     private _onHttpRequest(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -239,11 +244,14 @@ export class WebsocketNetworkConnection implements INetworkConnection {
             // Get IP address of client
             const ip = req.headers["x-forwarded-for"]?.toString().split(",")[0].trim() || req.socket.remoteAddress || "N/A";
             const port = req.socket.remotePort as number;
+            this._logger.info("Client websocket connected", identifier, ip, port);
 
-            await this._onConnectionCallbacks.forEach(async callback => {
-                const info = new Map<string, string>([["ip", ip], ["port", port.toString()]]);
-                await callback(identifier, info);
-            });
+            this._router.registerConnection(identifier);
+
+            // await this._onConnectionCallbacks.forEach(async callback => {
+            //     const info = new Map<string, string>([["ip", ip], ["port", port.toString()]]);
+            //     await callback(identifier, info);
+            // });
 
             this._logger.info("Successfully connected new charging station.", identifier);
 
@@ -281,9 +289,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
             this._logger.info("Connection closed for", identifier);
             this._cache.remove(identifier, CacheNamespace.Connections);
             this._identifierConnections.delete(identifier);
-            this._onCloseCallbacks.forEach(callback => {
-                callback(identifier);
-            });
+            this._router.deregisterConnection(identifier);
+            // this._onCloseCallbacks.forEach(callback => {
+            //     callback(identifier);
+            // });
         });
 
         ws.on("pong", async () => {
@@ -311,9 +320,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
      * @return {void} This function does not return anything.
      */
     private _onMessage(identifier: string, message: string): void {
-        this._onMessageCallbacks.forEach(callback => {
-            callback(identifier, message);
-        });
+        this._router.onMessage(identifier, message);
+        // this._onMessageCallbacks.forEach(callback => {
+        //     callback(identifier, message);
+        // });
     }
 
     /**

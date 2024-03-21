@@ -3,5 +3,5 @@
 // SPDX-License-Identifier: Apache 2.0
 
 export { Authenticator } from "./authenticator/Authenticator"
-export { WebsocketNetworkConnection } from "./networkconnection/WebsocketNetworkConnection"
-export { CentralSystemImpl } from "./CentralSystem"
+export { WebsocketNetworkConnection } from "./WebsocketNetworkConnection"
+export { MessageRouterImpl } from "./router/MessageRouter"

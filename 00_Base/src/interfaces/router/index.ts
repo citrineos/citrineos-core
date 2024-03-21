@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { ICentralSystem } from "./CentralSystem";
-export { AbstractCentralSystem } from "./AbstractCentralSystem";
-export { INetworkConnection } from "./NetworkConnection";
+export { IMessageRouter } from "./Router";
+export { AbstractMessageRouter } from "./AbstractRouter";
 export { IAuthenticator } from "./Authenticator"
