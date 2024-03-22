@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ICache, ICentralSystem, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
+import { IAuthenticator, ICache, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
-import { CentralSystemImpl, DirectusUtil, MemoryCache, RabbitMqReceiver, RabbitMqSender, initSwagger } from '@citrineos/util';
+import { Authenticator, DirectusUtil, MemoryCache, MessageRouterImpl, RabbitMqReceiver, RabbitMqSender, WebsocketNetworkConnection, initSwagger } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
 import addFormats from "ajv-formats"
@@ -28,7 +28,8 @@ class CitrineOSServer {
     private _config: SystemConfig;
     private _modules: Array<IModule>;
     private _apis: Array<IModuleApi>;
-    private _centralSystem: ICentralSystem;
+    private _authenticator: IAuthenticator;
+    private _networkConnection: WebsocketNetworkConnection;
     private _logger: Logger<ILogObj>;
     private _server: FastifyInstance;
     private _cache: ICache;
@@ -96,7 +97,11 @@ class CitrineOSServer {
         // Force sync database
         sequelize.DefaultSequelizeInstance.getInstance(this._config, this._logger, true);
 
-        this._centralSystem = new CentralSystemImpl(this._config, this._cache, undefined, undefined, this._logger, ajv);
+        this._authenticator = new Authenticator(this._cache, this._logger, new sequelize.DeviceModelRepository(config, this._logger));
+
+        const router = new MessageRouterImpl(this._config, this._cache, this._createSender(), this._createHandler(), async (identifier: string, message: string) => false, this._logger, this._ajv);
+
+        this._networkConnection = new WebsocketNetworkConnection(this._config, this._cache, this._authenticator, router, this._logger);
 
         // Initialize modules & APIs
         // Always initialize APIs after SwaggerUI
@@ -149,7 +154,7 @@ class CitrineOSServer {
         this._modules.forEach(module => {
             module.shutdown();
         });
-        this._centralSystem.shutdown();
+        this._networkConnection.shutdown();
 
         // Shutdown server
         this._server.close();
