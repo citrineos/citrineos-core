@@ -2,10 +2,14 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
-
-import { EventGroup, ICache, ICentralSystem, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
+/* eslint-disable @typescript-eslint/prefer-readonly */
+/* eslint-disable @typescript-eslint/indent */
+/* eslint-disable @typescript-eslint/semi */
+/* eslint-disable @typescript-eslint/quotes */
+/* eslint-disable @typescript-eslint/consistent-type-imports */
+import { EventGroup, IAuthenticator, ICache, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
-import { CentralSystemImpl, initSwagger, MemoryCache, RabbitMqReceiver, RabbitMqSender, RedisCache } from '@citrineos/util';
+import { Authenticator, initSwagger, MemoryCache, MessageRouterImpl, RabbitMqReceiver, RabbitMqSender, RedisCache, WebsocketNetworkConnection } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
 import addFormats from "ajv-formats"
@@ -26,7 +30,8 @@ class CitrineOSServer {
      * Fields
      */
     private _config: SystemConfig;
-    private _centralSystem: ICentralSystem;
+    private _authenticator: IAuthenticator;
+    private _networkConnection: WebsocketNetworkConnection;
     private _logger: Logger<ILogObj>;
     private _server: FastifyInstance;
     private _cache: ICache;
@@ -84,7 +89,11 @@ class CitrineOSServer {
             return this._ajv.compile(schema);
         });
 
-        this._centralSystem = new CentralSystemImpl(this._config, this._cache, undefined, undefined, this._logger, ajv);
+        this._authenticator = new Authenticator(this._cache, this._logger, new sequelize.DeviceModelRepository(config, this._logger));
+
+        const router = new MessageRouterImpl(this._config, this._cache, this._createSender(), this._createHandler(), async (identifier: string, message: string) => false, this._logger, this._ajv);
+
+        this._networkConnection = new WebsocketNetworkConnection(this._config, this._cache, this._authenticator, router, this._logger);
 
         process.on('SIGINT', this.shutdown.bind(this));
         process.on('SIGTERM', this.shutdown.bind(this));
@@ -102,7 +111,7 @@ class CitrineOSServer {
     shutdown() {
 
         // Shut down central system
-        this._centralSystem.shutdown();
+        this._networkConnection.shutdown();
 
         // Shutdown server
         this._server.close();

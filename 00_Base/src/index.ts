@@ -7,8 +7,8 @@
 
 export { AbstractModuleApi, AsDataEndpoint, AsMessageEndpoint, HttpMethod, IModuleApi } from './interfaces/api';
 export { CacheNamespace, ICache } from './interfaces/cache/cache';
-export { AbstractCentralSystem, ClientConnection, ICentralSystem, IClientConnection } from './interfaces/centralsystem';
-export { AbstractMessageHandler, AbstractMessageSender, EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, Message, MessageOrigin, MessageState, RetryMessageError } from './interfaces/messages';
+export { AbstractMessageRouter, IAuthenticator, IMessageRouter } from './interfaces/router';
+export { AbstractMessageHandler, AbstractMessageSender, EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageSender, Message, MessageOrigin, MessageState, RetryMessageError } from './interfaces/messages';
 export { AbstractModule, AsHandler, IModule } from './interfaces/modules';
 export { Call, CallAction, CallError, CallResult, ErrorCode, MessageTypeId, OcppError } from './ocpp/rpc/message';
 
