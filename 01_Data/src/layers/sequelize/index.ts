@@ -7,9 +7,10 @@
 export { Boot } from "./model/Boot";
 export { VariableAttribute, VariableCharacteristics, Component, Evse, Variable } from "./model/DeviceModel";
 export { Authorization, IdToken, IdTokenInfo, AdditionalInfo } from "./model/Authorization";
-export { Transaction } from "./model/TransactionEvent";
+export { Transaction, TransactionEvent, MeterValue } from "./model/TransactionEvent";
 export { SecurityEvent } from "./model/SecurityEvent";
 export { VariableMonitoring, EventData, VariableMonitoringStatus } from "./model/VariableMonitoring";
+export { ChargingStation, Location } from "./model/Location";
 
 // Sequelize Repositories
 export { SequelizeRepository } from "./repository/Base";
