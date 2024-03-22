@@ -21,7 +21,7 @@ export interface Subscription {
 }
 
 /**
- * Implementation of the central system
+ * Implementation of the ocpp router
  */
 export class MessageRouterImpl extends AbstractMessageRouter implements IMessageRouter {
 

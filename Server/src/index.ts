@@ -141,7 +141,7 @@ class CitrineOSServer {
 
     shutdown() {
 
-        // Shut down all modules and central system
+        // Shut down all modules and ocpp router
         this._modules.forEach(module => {
             module.shutdown();
         });

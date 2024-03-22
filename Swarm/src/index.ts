@@ -111,7 +111,7 @@ class CitrineOSServer {
 
     shutdown() {
 
-        // Shut down central system
+        // Shut down ocpp router
         this._networkConnection.shutdown();
 
         // Shutdown server

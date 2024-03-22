@@ -24,7 +24,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     protected _networkHook: (identifier: string, message: string) => Promise<boolean>;
 
     /**
-     * Constructor of abstract central system.
+     * Constructor of abstract ocpp router.
      *
      * @param {Ajv} ajv - The Ajv instance to use for schema validation.
      */
@@ -70,7 +70,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     set config(config: SystemConfig) {
         this._config = config;
         // Update all necessary settings for hot reload
-        this._logger.info(`Updating system configuration for central system...`);
+        this._logger.info(`Updating system configuration for ocpp router...`);
         this._logger.settings.minLevel = this._config.logLevel;
     }
 

@@ -42,6 +42,17 @@ util_commands=(
     "npm pack"
 )
 
+ocpprouter_commands=(
+    "cd ../03_Modules/OcppRouter"
+    "rm -rf ./lib"
+    "rm -f citrineos-ocpprouter-1.0.0.tgz"
+    "npm install ../../00_Base/citrineos-base-1.0.0.tgz"
+    "npm install ../../01_Data/citrineos-data-1.0.0.tgz"
+    "npm install ../../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install"
+    "npm pack"
+)
+
 certificates_commands=(
     "cd ../03_Modules/Certificates"
     "rm -rf ./lib"
@@ -125,6 +136,7 @@ ocpp_server_commands=(
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
     "npm install ../01_Data/citrineos-data-1.0.0.tgz"
     "npm install ../02_Util/citrineos-util-1.0.0.tgz"
+    "npm install ../03_Modules/OcppRouter/citrineos-ocpprouter-1.0.0.tgz"
     "npm install ../03_Modules/Certificates/citrineos-certificates-1.0.0.tgz"
     "npm install ../03_Modules/Configuration/citrineos-configuration-1.0.0.tgz"
     "npm install ../03_Modules/EVDriver/citrineos-evdriver-1.0.0.tgz"
@@ -139,6 +151,8 @@ ocpp_server_commands=(
 execute_commands "${base_commands[@]}"
 execute_commands "${data_commands[@]}"
 execute_commands "${util_commands[@]}"
+execute_commands "${ocpprouter_commands[@]}"&
+pid_ocpprouter=$!
 execute_commands "${certificates_commands[@]}"&
 pid_certificates=$!
 execute_commands "${configuration_commands[@]}"&
@@ -156,6 +170,7 @@ pid_transactions=$!
 
 
 
+wait $pid_ocpprouter
 wait $pid_certificates
 wait $pid_configuration
 wait $pid_evdriver

@@ -354,7 +354,7 @@ export class ConfigurationModule extends AbstractModule {
     }
     // Handle post-response actions
     if (bootNotificationResponseMessageConfirmation.success) {
-      this._logger.debug("BootNotification response successfully sent to central system: ", bootNotificationResponseMessageConfirmation);
+      this._logger.debug("BootNotification response successfully sent to ocpp router: ", bootNotificationResponseMessageConfirmation);
 
       // Update charger-specific boot config with details of most recently sent BootNotificationResponse
       let bootConfigDbEntity: Boot | undefined = await this._bootRepository.readByKey(stationId);
