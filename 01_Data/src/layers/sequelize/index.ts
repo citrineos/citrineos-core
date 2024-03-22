@@ -17,6 +17,7 @@ export { SequelizeRepository } from "./repository/Base";
 export { AuthorizationRepository } from "./repository/Authorization";
 export { BootRepository } from "./repository/Boot";
 export { DeviceModelRepository } from "./repository/DeviceModel";
+export { LocationRepository } from "./repository/Location";
 export { TransactionEventRepository } from "./repository/TransactionEvent";
 export { SecurityEventRepository } from "./repository/SecurityEvent";
 export { VariableMonitoringRepository } from "./repository/VariableMonitoring";

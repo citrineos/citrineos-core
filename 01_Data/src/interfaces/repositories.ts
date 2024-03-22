@@ -26,13 +26,13 @@ import {
     SetMonitoringDataType,
     SetMonitoringResultType,
     EventDataType,
-    SetMonitoringStatusEnumType, CallAction
+    CallAction
 } from "@citrineos/base";
 import { AuthorizationQuerystring } from "./queries/Authorization";
 import { Transaction } from "../layers/sequelize/model/TransactionEvent";
 import { VariableAttribute } from "../layers/sequelize/model/DeviceModel/VariableAttribute";
 import { AuthorizationRestrictions, VariableAttributeQuerystring } from ".";
-import { Boot, Authorization, SecurityEvent, Component, Variable, VariableMonitoring, EventData } from "../layers/sequelize";
+import { Boot, Authorization, Location, SecurityEvent, Component, Variable, VariableMonitoring, EventData, ChargingStation } from "../layers/sequelize";
 
 
 export interface IAuthorizationRepository extends ICrudRepository<AuthorizationData> {
@@ -65,6 +65,10 @@ export interface IDeviceModelRepository extends ICrudRepository<VariableAttribut
     existsByQuery(query: VariableAttributeQuerystring): Promise<boolean>;
     deleteAllByQuery(query: VariableAttributeQuerystring): Promise<number>;
     findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | null, Variable | null]>
+}
+
+export interface ILocationRepository extends ICrudRepository<Location> { 
+    readChargingStationByStationId(stationId: string): Promise<ChargingStation | null>
 }
 
 export interface ISecurityEventRepository extends ICrudRepository<SecurityEvent> {

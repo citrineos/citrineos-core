@@ -72,6 +72,7 @@ export function createLocalConfig() {
                 websocketServers: [{
                     id: "0",
                     securityProfile: 0,
+                    allowUnknownChargingStations: true,
                     pingInterval: 60,
                     host: "0.0.0.0",
                     port: 8081,
@@ -79,6 +80,7 @@ export function createLocalConfig() {
                 }, {
                     id: "1",
                     securityProfile: 1,
+                    allowUnknownChargingStations: false,
                     pingInterval: 60,
                     host: "0.0.0.0",
                     port: 8082,
