@@ -4,4 +4,3 @@
 
 export { Authenticator } from "./authenticator/Authenticator"
 export { WebsocketNetworkConnection } from "./WebsocketNetworkConnection"
-export { MessageRouterImpl } from "./router/MessageRouter"

@@ -21,6 +21,8 @@ export enum Namespace {
     MeterValueType = 'MeterValue',
     ModemType = 'Modem',
     SecurityEventNotificationRequest = 'SecurityEvent',
+    Subscription = 'Subscription',
+    SystemConfig = 'SystemConfig',
     TransactionEventRequest = 'TransactionEvent',
     TransactionType = 'Transaction',
     VariableAttributeType = 'VariableAttribute',
@@ -28,6 +30,5 @@ export enum Namespace {
     VariableMonitoringType = 'VariableMonitoring',
     VariableMonitoringStatus = 'VariableMonitoringStatus',
     VariableStatus = 'VariableStatus',
-    VariableType = 'Variable',
-    SystemConfig = 'SystemConfig'
+    VariableType = 'Variable'
 }

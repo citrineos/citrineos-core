@@ -9,7 +9,7 @@
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 import { EventGroup, IAuthenticator, ICache, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
-import { Authenticator, initSwagger, MemoryCache, MessageRouterImpl, RabbitMqReceiver, RabbitMqSender, RedisCache, WebsocketNetworkConnection } from '@citrineos/util';
+import { Authenticator, initSwagger, MemoryCache, RabbitMqReceiver, RabbitMqSender, RedisCache, WebsocketNetworkConnection } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
 import addFormats from "ajv-formats"
@@ -20,6 +20,7 @@ import { ConfigurationModule, ConfigurationModuleApi } from '@citrineos/configur
 import { TransactionsModule, TransactionsModuleApi } from '@citrineos/transactions';
 import { CertificatesModule, CertificatesModuleApi } from '@citrineos/certificates';
 import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
+import { MessageRouterImpl, AdminApi } from '@citrineos/ocpprouter';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import { SmartChargingModule, SmartChargingModuleApi } from '@citrineos/smartcharging';
 import { sequelize } from '@citrineos/data';
@@ -95,6 +96,8 @@ class CitrineOSServer {
 
         this._networkConnection = new WebsocketNetworkConnection(this._config, this._cache, this._authenticator, router, this._logger);
 
+        const api = new AdminApi(router, this._server, this._logger)
+
         process.on('SIGINT', this.shutdown.bind(this));
         process.on('SIGTERM', this.shutdown.bind(this));
         process.on('SIGQUIT', this.shutdown.bind(this));
@@ -110,7 +113,7 @@ class CitrineOSServer {
 
     shutdown() {
 
-        // Shut down central system
+        // Shut down ocpp router
         this._networkConnection.shutdown();
 
         // Shutdown server

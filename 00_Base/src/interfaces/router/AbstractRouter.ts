@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import Ajv, { ErrorObject } from "ajv";
+
 import { Call, CallAction, CallResult, ICache, SystemConfig, CALL_SCHEMA_MAP, CALL_RESULT_SCHEMA_MAP, IMessageConfirmation, MessageOrigin, OcppError, OcppRequest, OcppResponse, IMessageHandler, IMessageSender, IMessage, MessageState } from "../..";
 import { ILogObj, Logger } from "tslog";
 import { IMessageRouter } from "./Router";
@@ -23,7 +24,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     protected _networkHook: (identifier: string, message: string) => Promise<boolean>;
 
     /**
-     * Constructor of abstract central system.
+     * Constructor of abstract ocpp router.
      *
      * @param {Ajv} ajv - The Ajv instance to use for schema validation.
      */
@@ -69,7 +70,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     set config(config: SystemConfig) {
         this._config = config;
         // Update all necessary settings for hot reload
-        this._logger.info(`Updating system configuration for central system...`);
+        this._logger.info(`Updating system configuration for ocpp router...`);
         this._logger.settings.minLevel = this._config.logLevel;
     }
 
@@ -79,38 +80,18 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
 
     abstract onMessage(identifier: string, message: string): Promise<boolean>;
 
+    abstract registerConnection(connectionIdentifier: string): Promise<boolean>;
+    abstract deregisterConnection(connectionIdentifier: string): Promise<boolean>;
+
     abstract sendCall(identifier: string, tenantId: string, action: CallAction, payload: OcppRequest, correlationId?: string, origin?: MessageOrigin): Promise<IMessageConfirmation>;
     abstract sendCallResult(correlationId: string, identifier: string, tenantId: string, action: CallAction, payload: OcppResponse, origin?: MessageOrigin): Promise<IMessageConfirmation>;
     abstract sendCallError(correlationId: string, identifier: string, tenantId: string, action: CallAction, error: OcppError, origin?: MessageOrigin): Promise<IMessageConfirmation>;
-
 
     abstract shutdown(): void;
 
     /**
      * Public Methods
      */
-
-    async registerConnection(connectionIdentifier: string): Promise<boolean> {
-        const requestSubscription = await this._handler.subscribe(connectionIdentifier, undefined, {
-            stationId: connectionIdentifier,
-            state: MessageState.Request.toString(),
-            origin: MessageOrigin.CentralSystem.toString()
-        });
-
-        const responseSubscription = await this._handler.subscribe(connectionIdentifier, undefined, {
-            stationId: connectionIdentifier,
-            state: MessageState.Response.toString(),
-            origin: MessageOrigin.ChargingStation.toString()
-        });
-
-        return requestSubscription && responseSubscription;
-    }
-
-    async deregisterConnection(connectionIdentifier: string): Promise<boolean> {
-        // TODO: ensure that all queue implementations in 02_Util only unsubscribe 1 queue per call
-        // ...which will require refactoring this method to unsubscribe request and response queues separately
-        return await this._handler.unsubscribe(connectionIdentifier)
-    }
 
     async handle(message: IMessage<OcppRequest | OcppResponse>): Promise<void> {
         this._logger.debug("Received message:", message);

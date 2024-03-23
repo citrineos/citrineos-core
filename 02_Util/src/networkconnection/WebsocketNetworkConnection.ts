@@ -20,9 +20,6 @@ export class WebsocketNetworkConnection {
     private _httpServers: (http.Server | https.Server)[];
     private _authenticator: IAuthenticator;
     private _router: IMessageRouter;
-    // private _onConnectionCallbacks: ((identifier: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
-    // private _onCloseCallbacks: ((identifier: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
-    // private _onMessageCallbacks: ((identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
 
     constructor(
         config: SystemConfig,
@@ -87,18 +84,6 @@ export class WebsocketNetworkConnection {
         });
     }
 
-    // addOnConnectionCallback(onConnectionCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void {
-    //     this._onConnectionCallbacks.push(onConnectionCallback);
-    // }
-
-    // addOnCloseCallback(onCloseCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void {
-    //     this._onCloseCallbacks.push(onCloseCallback);
-    // }
-
-    // addOnMessageCallback(onMessageCallback: (identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>): void {
-    //     this._onMessageCallbacks.push(onMessageCallback);
-    // }
-
     /**
      * Send a message to the charging station specified by the identifier.
      *
@@ -107,29 +92,34 @@ export class WebsocketNetworkConnection {
      * @return {boolean} True if the method sends the message successfully, false otherwise.
      */
     sendMessage(identifier: string, message: string): Promise<boolean> {
-        return this._cache.get(identifier, CacheNamespace.Connections).then(clientConnection => {
-            if (clientConnection) {
-                const websocketConnection = this._identifierConnections.get(identifier);
-                if (websocketConnection && websocketConnection.readyState === WebSocket.OPEN) {
-                    websocketConnection.send(message, (error) => {
-                        if (error) {
-                            this._logger.error("On message send error", error);
-                        }
-                    }); // TODO: Handle errors
-                    // TODO: Embed error handling into websocket message flow
-                    return true;
+        return new Promise<boolean>((resolve, reject) => {
+            this._cache.get(identifier, CacheNamespace.Connections).then(clientConnection => {
+                if (clientConnection) {
+                    const websocketConnection = this._identifierConnections.get(identifier);
+                    if (websocketConnection && websocketConnection.readyState === WebSocket.OPEN) {
+                        websocketConnection.send(message, (error) => {
+                            if (error) {
+                                this._logger.error("On message send error", error);
+                                reject(error); // Reject the promise with the error
+                            } else {
+                                resolve(true); // Resolve the promise with true indicating success
+                            }
+                        });
+                    } else {
+                        const errorMsg = "Websocket connection is not ready - " + identifier;
+                        this._logger.fatal(errorMsg);
+                        websocketConnection?.close(1011, errorMsg);
+                        reject(new Error(errorMsg)); // Reject with a new error
+                    }
                 } else {
-                    this._logger.fatal("Websocket connection is not ready -", identifier);
-                    websocketConnection?.close(1011, "Websocket connection is not ready - " + identifier);
-                    return false;
+                    const errorMsg = "Cannot identify client connection for " + identifier;
+                    // This can happen when a charging station disconnects in the moment a message is trying to send.
+                    // Retry logic on the message sender might not suffice as charging station might connect to different instance.
+                    this._logger.error(errorMsg);
+                    this._identifierConnections.get(identifier)?.close(1011, "Failed to get connection information for " + identifier);
+                    reject(new Error(errorMsg)); // Reject with a new error
                 }
-            } else {
-                // This can happen when a charging station disconnects in the moment a message is trying to send.
-                // Retry logic on the message sender might not suffice as charging station might connect to different instance.
-                this._logger.error("Cannot identify client connection for", identifier);
-                this._identifierConnections.get(identifier)?.close(1011, "Failed to get connection information for " + identifier);
-                return false;
-            }
+            }).catch(reject); // In case `_cache.get` fails
         });
     }
 
@@ -248,11 +238,6 @@ export class WebsocketNetworkConnection {
 
             this._router.registerConnection(identifier);
 
-            // await this._onConnectionCallbacks.forEach(async callback => {
-            //     const info = new Map<string, string>([["ip", ip], ["port", port.toString()]]);
-            //     await callback(identifier, info);
-            // });
-
             this._logger.info("Successfully connected new charging station.", identifier);
 
             // Register all websocket events
@@ -290,9 +275,6 @@ export class WebsocketNetworkConnection {
             this._cache.remove(identifier, CacheNamespace.Connections);
             this._identifierConnections.delete(identifier);
             this._router.deregisterConnection(identifier);
-            // this._onCloseCallbacks.forEach(callback => {
-            //     callback(identifier);
-            // });
         });
 
         ws.on("pong", async () => {
@@ -321,9 +303,6 @@ export class WebsocketNetworkConnection {
      */
     private _onMessage(identifier: string, message: string): void {
         this._router.onMessage(identifier, message);
-        // this._onMessageCallbacks.forEach(callback => {
-        //     callback(identifier, message);
-        // });
     }
 
     /**
