@@ -6,7 +6,7 @@ export default (router, { database }) => {
     router.post('/update-station-status', async (req, res) => {
         try {
             console.log("Request received: " + JSON.stringify(req.body));
-            const { identifier, event} = req.body;
+            const { stationId, event} = req.body;
             let isOnline = false;
 
             // Determine the status based on the event type
@@ -19,9 +19,9 @@ export default (router, { database }) => {
                 return res.status(400).json({ message: 'Invalid event type, expecting only "connected" or "closed"' });
             }
 
-            // Update the `isOnline` field in the `ChargingStation` collection for the specified identifier
-            await database('ChargingStation')
-                .where({ id: identifier })
+            // Update the `isOnline` field in the `ChargingStation` collection for the specified stationId
+            await database('ChargingStations')
+                .where({ id: stationId })
                 .update({ isOnline });
 
             res.status(200).json({ message: 'ChargingStation status updated successfully' });
