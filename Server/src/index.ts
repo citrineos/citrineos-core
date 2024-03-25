@@ -5,13 +5,14 @@
 
 import { IAuthenticator, ICache, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
-import { Authenticator, DirectusUtil, MemoryCache, MessageRouterImpl, RabbitMqReceiver, RabbitMqSender, WebsocketNetworkConnection, initSwagger } from '@citrineos/util';
+import { Authenticator, DirectusUtil, MemoryCache, RabbitMqReceiver, RabbitMqSender, WebsocketNetworkConnection, initSwagger } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
 import addFormats from "ajv-formats"
 import fastify, { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
+import { MessageRouterImpl, AdminApi } from '@citrineos/ocpprouter';
 import { ConfigurationModule, ConfigurationModuleApi } from '@citrineos/configuration';
 import { TransactionsModule, TransactionsModuleApi } from '@citrineos/transactions';
 import { CertificatesModule, CertificatesModuleApi } from '@citrineos/certificates';
@@ -97,7 +98,7 @@ class CitrineOSServer {
         // Force sync database
         sequelize.DefaultSequelizeInstance.getInstance(this._config, this._logger, true);
 
-        this._authenticator = new Authenticator(this._cache, this._logger, new sequelize.DeviceModelRepository(config, this._logger));
+        this._authenticator = new Authenticator(this._cache, new sequelize.LocationRepository(config, this._logger), new sequelize.DeviceModelRepository(config, this._logger), this._logger);
 
         const router = new MessageRouterImpl(this._config, this._cache, this._createSender(), this._createHandler(), async (identifier: string, message: string) => false, this._logger, this._ajv);
 
@@ -111,6 +112,7 @@ class CitrineOSServer {
         const reportingModule = new ReportingModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger);
         const transactionsModule = new TransactionsModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger);
         this._modules = [
+            router,
             configurationModule,
             evdriverModule,
             monitoringModule,
@@ -118,6 +120,7 @@ class CitrineOSServer {
             transactionsModule
         ]
         this._apis = [
+            new AdminApi(router, this._server, this._logger),
             new ConfigurationModuleApi(configurationModule, this._server, this._logger),
             new EVDriverModuleApi(evdriverModule, this._server, this._logger),
             new MonitoringModuleApi(monitoringModule, this._server, this._logger),
@@ -150,7 +153,7 @@ class CitrineOSServer {
 
     shutdown() {
 
-        // Shut down all modules and central system
+        // Shut down all modules and ocpp router
         this._modules.forEach(module => {
             module.shutdown();
         });

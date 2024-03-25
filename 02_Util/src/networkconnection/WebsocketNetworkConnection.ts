@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
-import { CacheNamespace, IAuthenticator, ICache, IMessageRouter, SystemConfig } from "@citrineos/base";
+import { CacheNamespace, IAuthenticator, ICache, IMessageRouter, SystemConfig, WebsocketServerConfig } from "@citrineos/base";
 import { Duplex } from "stream";
 import * as http from "http";
 import * as https from "https";
@@ -20,9 +20,6 @@ export class WebsocketNetworkConnection {
     private _httpServers: (http.Server | https.Server)[];
     private _authenticator: IAuthenticator;
     private _router: IMessageRouter;
-    // private _onConnectionCallbacks: ((identifier: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
-    // private _onCloseCallbacks: ((identifier: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
-    // private _onMessageCallbacks: ((identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
 
     constructor(
         config: SystemConfig,
@@ -75,7 +72,7 @@ export class WebsocketNetworkConnection {
             _socketServer.on('close', (wss: WebSocketServer) => this._onClose(wss));
 
             _httpServer.on('upgrade', (request, socket, head) =>
-                this._upgradeRequest(request, socket, head, _socketServer, websocketServerConfig.id, websocketServerConfig.securityProfile));
+                this._upgradeRequest(request, socket, head, _socketServer, websocketServerConfig));
             _httpServer.on('error', (error) => _socketServer.emit('error', error));
             // socketServer.close() will not do anything; use httpServer.close()
             _httpServer.on('close', () => _socketServer.emit('close'));
@@ -87,18 +84,6 @@ export class WebsocketNetworkConnection {
         });
     }
 
-    // addOnConnectionCallback(onConnectionCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void {
-    //     this._onConnectionCallbacks.push(onConnectionCallback);
-    // }
-
-    // addOnCloseCallback(onCloseCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void {
-    //     this._onCloseCallbacks.push(onCloseCallback);
-    // }
-
-    // addOnMessageCallback(onMessageCallback: (identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>): void {
-    //     this._onMessageCallbacks.push(onMessageCallback);
-    // }
-
     /**
      * Send a message to the charging station specified by the identifier.
      *
@@ -107,29 +92,34 @@ export class WebsocketNetworkConnection {
      * @return {boolean} True if the method sends the message successfully, false otherwise.
      */
     sendMessage(identifier: string, message: string): Promise<boolean> {
-        return this._cache.get(identifier, CacheNamespace.Connections).then(clientConnection => {
-            if (clientConnection) {
-                const websocketConnection = this._identifierConnections.get(identifier);
-                if (websocketConnection && websocketConnection.readyState === WebSocket.OPEN) {
-                    websocketConnection.send(message, (error) => {
-                        if (error) {
-                            this._logger.error("On message send error", error);
-                        }
-                    }); // TODO: Handle errors
-                    // TODO: Embed error handling into websocket message flow
-                    return true;
+        return new Promise<boolean>((resolve, reject) => {
+            this._cache.get(identifier, CacheNamespace.Connections).then(clientConnection => {
+                if (clientConnection) {
+                    const websocketConnection = this._identifierConnections.get(identifier);
+                    if (websocketConnection && websocketConnection.readyState === WebSocket.OPEN) {
+                        websocketConnection.send(message, (error) => {
+                            if (error) {
+                                this._logger.error("On message send error", error);
+                                reject(error); // Reject the promise with the error
+                            } else {
+                                resolve(true); // Resolve the promise with true indicating success
+                            }
+                        });
+                    } else {
+                        const errorMsg = "Websocket connection is not ready - " + identifier;
+                        this._logger.fatal(errorMsg);
+                        websocketConnection?.close(1011, errorMsg);
+                        reject(new Error(errorMsg)); // Reject with a new error
+                    }
                 } else {
-                    this._logger.fatal("Websocket connection is not ready -", identifier);
-                    websocketConnection?.close(1011, "Websocket connection is not ready - " + identifier);
-                    return false;
+                    const errorMsg = "Cannot identify client connection for " + identifier;
+                    // This can happen when a charging station disconnects in the moment a message is trying to send.
+                    // Retry logic on the message sender might not suffice as charging station might connect to different instance.
+                    this._logger.error(errorMsg);
+                    this._identifierConnections.get(identifier)?.close(1011, "Failed to get connection information for " + identifier);
+                    reject(new Error(errorMsg)); // Reject with a new error
                 }
-            } else {
-                // This can happen when a charging station disconnects in the moment a message is trying to send.
-                // Retry logic on the message sender might not suffice as charging station might connect to different instance.
-                this._logger.error("Cannot identify client connection for", identifier);
-                this._identifierConnections.get(identifier)?.close(1011, "Failed to get connection information for " + identifier);
-                return false;
-            }
+            }).catch(reject); // In case `_cache.get` fails
         });
     }
 
@@ -157,19 +147,19 @@ export class WebsocketNetworkConnection {
      * @param {WebSocketServer} wss - Websocket server.
      * @param {number} securityProfile - The security profile to use for the websocket connection. See OCPP 2.0.1 Part 2-Specification A.1.3
      */
-    private async _upgradeRequest(req: http.IncomingMessage, socket: Duplex, head: Buffer, wss: WebSocketServer, websocketId: string, securityProfile: number) {
+    private async _upgradeRequest(req: http.IncomingMessage, socket: Duplex, head: Buffer, wss: WebSocketServer, websocketServerConfig: WebsocketServerConfig) {
         // Failed mTLS and TLS requests are rejected by the server before getting this far
         this._logger.debug("On upgrade request", req.method, req.url, req.headers);
 
         const identifier = this._getClientIdFromUrl(req.url as string);
-        if (3 > securityProfile && securityProfile > 0) {
+        if (3 > websocketServerConfig.securityProfile && websocketServerConfig.securityProfile > 0) {
             // Validate username/password from authorization header
             // - The Authorization header is formatted as follows:
             // AUTHORIZATION: Basic <Base64 encoded(<Configured ChargingStationId>:<Configured BasicAuthPassword>)>
             const authHeader = req.headers.authorization;
             const [username, password] = Buffer.from(authHeader?.split(' ')[1] || '', 'base64').toString().split(':');
             if (username && password) {
-                if (!(await this._authenticator.authenticate(identifier, username, password))) {
+                if (!(await this._authenticator.authenticate(websocketServerConfig.allowUnknownChargingStations, identifier, username, password))) {
                     this._logger.warn("Unauthorized", identifier);
                     this._rejectUpgradeUnauthorized(socket);
                     return;
@@ -182,7 +172,7 @@ export class WebsocketNetworkConnection {
         }
 
         // Register client
-        const registered = await this._cache.set(identifier, websocketId, CacheNamespace.Connections);
+        const registered = await this._cache.set(identifier, websocketServerConfig.id, CacheNamespace.Connections);
         if (!registered) {
             this._logger.fatal("Failed to register websocket client", identifier);
             return false;
@@ -248,11 +238,6 @@ export class WebsocketNetworkConnection {
 
             this._router.registerConnection(identifier);
 
-            // await this._onConnectionCallbacks.forEach(async callback => {
-            //     const info = new Map<string, string>([["ip", ip], ["port", port.toString()]]);
-            //     await callback(identifier, info);
-            // });
-
             this._logger.info("Successfully connected new charging station.", identifier);
 
             // Register all websocket events
@@ -290,9 +275,6 @@ export class WebsocketNetworkConnection {
             this._cache.remove(identifier, CacheNamespace.Connections);
             this._identifierConnections.delete(identifier);
             this._router.deregisterConnection(identifier);
-            // this._onCloseCallbacks.forEach(callback => {
-            //     callback(identifier);
-            // });
         });
 
         ws.on("pong", async () => {
@@ -321,9 +303,6 @@ export class WebsocketNetworkConnection {
      */
     private _onMessage(identifier: string, message: string): void {
         this._router.onMessage(identifier, message);
-        // this._onMessageCallbacks.forEach(callback => {
-        //     callback(identifier, message);
-        // });
     }
 
     /**

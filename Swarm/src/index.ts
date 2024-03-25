@@ -9,7 +9,7 @@
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 import { EventGroup, IAuthenticator, ICache, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
-import { Authenticator, DirectusUtil, initSwagger, MemoryCache, MessageRouterImpl, RabbitMqReceiver, RabbitMqSender, RedisCache, WebsocketNetworkConnection } from '@citrineos/util';
+import { Authenticator, DirectusUtil, initSwagger, MemoryCache, RabbitMqReceiver, RabbitMqSender, RedisCache, WebsocketNetworkConnection } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
 import addFormats from "ajv-formats"
@@ -20,6 +20,7 @@ import { ConfigurationModule, ConfigurationModuleApi } from '@citrineos/configur
 import { TransactionsModule, TransactionsModuleApi } from '@citrineos/transactions';
 import { CertificatesModule, CertificatesModuleApi } from '@citrineos/certificates';
 import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
+import { MessageRouterImpl, AdminApi } from '@citrineos/ocpprouter';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import { SmartChargingModule, SmartChargingModuleApi } from '@citrineos/smartcharging';
 import { sequelize } from '@citrineos/data';
@@ -98,11 +99,13 @@ class CitrineOSServer {
             return this._ajv.compile(schema);
         });
 
-        this._authenticator = new Authenticator(this._cache, this._logger, new sequelize.DeviceModelRepository(config, this._logger));
+        this._authenticator = new Authenticator(this._cache, new sequelize.LocationRepository(config, this._logger), new sequelize.DeviceModelRepository(config, this._logger), this._logger);
 
         const router = new MessageRouterImpl(this._config, this._cache, this._createSender(), this._createHandler(), async (identifier: string, message: string) => false, this._logger, this._ajv);
 
         this._networkConnection = new WebsocketNetworkConnection(this._config, this._cache, this._authenticator, router, this._logger);
+
+        const api = new AdminApi(router, this._server, this._logger)
 
         process.on('SIGINT', this.shutdown.bind(this));
         process.on('SIGTERM', this.shutdown.bind(this));
@@ -119,7 +122,7 @@ class CitrineOSServer {
 
     shutdown() {
 
-        // Shut down central system
+        // Shut down ocpp router
         this._networkConnection.shutdown();
 
         // Shutdown server

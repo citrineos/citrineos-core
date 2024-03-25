@@ -8,8 +8,20 @@ import Ajv from "ajv";
 import { v4 as uuidv4 } from "uuid";
 import { ILogObj, Logger } from "tslog";
 
+export interface Subscription {
+    stationId: string;
+    onConnect: boolean;
+    onClose: boolean;
+    onMessage: boolean;
+    sentMessage: boolean;
+    messageOptions?: {
+        regexFilter?: string;
+    }
+    url: string;
+}
+
 /**
- * Implementation of the central system
+ * Implementation of the ocpp router
  */
 export class MessageRouterImpl extends AbstractMessageRouter implements IMessageRouter {
 
@@ -21,6 +33,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protected _sender: IMessageSender;
     protected _handler: IMessageHandler;
     protected _networkHook: (identifier: string, message: string) => Promise<boolean>;
+
+    private _onConnectionCallbacks: ((identifier: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
+    private _onCloseCallbacks: ((identifier: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
+    private _onMessageCallbacks: ((identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>)[] = [];
+    private _sentMessageCallbacks: ((identifier: string, message: string, error?: any, info?: Map<string, string>) => Promise<boolean>)[] = [];
 
     /**
      * Constructor for the class.
@@ -43,41 +60,67 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     ) {
         super(config, cache, handler, sender, networkHook, logger, ajv);
 
-        // Initialize router before socket server to avoid race condition
-        // this._router = new OcppMessageRouter(cache,
-        //     sender,
-        //     handler);
-
-        // networkConnection.addOnConnectionCallback((identifier: string) =>
-        //     this.registerConnection(identifier)
-        // );
-
-        // networkConnection.addOnCloseCallback((identifier: string) =>
-        //     this.deregisterConnection(identifier)
-        // );
-
-        // networkConnection.addOnMessageCallback((identifier: string, message: string) =>
-        //     this.onMessage(identifier, message)
-        // );
-
         this._cache = cache;
         this._sender = sender;
         this._handler = handler;
         this._networkHook = networkHook;
     }
 
+    addOnConnectionCallback(onConnectionCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void {
+        this._onConnectionCallbacks.push(onConnectionCallback);
+    }
+
+    addOnCloseCallback(onCloseCallback: (identifier: string, info?: Map<string, string>) => Promise<boolean>): void {
+        this._onCloseCallbacks.push(onCloseCallback);
+    }
+
+    addOnMessageCallback(onMessageCallback: (identifier: string, message: string, info?: Map<string, string>) => Promise<boolean>): void {
+        this._onMessageCallbacks.push(onMessageCallback);
+    }
+
+    addSentMessageCallback(sentMessageCallback: (identifier: string, message: string, error: any, info?: Map<string, string>) => Promise<boolean>): void {
+        this._sentMessageCallbacks.push(sentMessageCallback);
+    }
+
     /**
      * Interface implementation 
      */
 
-    shutdown(): void {
-        this._sender.shutdown();
-        this._handler.shutdown();
+    async registerConnection(connectionIdentifier: string): Promise<boolean> {
+        await this._onConnectionCallbacks.forEach(async callback => {
+            await callback(connectionIdentifier);
+        });
+
+        const requestSubscription = await this._handler.subscribe(connectionIdentifier, undefined, {
+            stationId: connectionIdentifier,
+            state: MessageState.Request.toString(),
+            origin: MessageOrigin.CentralSystem.toString()
+        });
+
+        const responseSubscription = await this._handler.subscribe(connectionIdentifier, undefined, {
+            stationId: connectionIdentifier,
+            state: MessageState.Response.toString(),
+            origin: MessageOrigin.ChargingStation.toString()
+        });
+
+        return requestSubscription && responseSubscription;
+    }
+
+    async deregisterConnection(connectionIdentifier: string): Promise<boolean> {
+        this._onCloseCallbacks.forEach(callback => {
+            callback(connectionIdentifier);
+        });
+        // TODO: ensure that all queue implementations in 02_Util only unsubscribe 1 queue per call
+        // ...which will require refactoring this method to unsubscribe request and response queues separately
+        return await this._handler.unsubscribe(connectionIdentifier)
     }
 
     // TODO: identifier may not be unique, may require combination of tenantId and identifier.
     // find way to include tenantId here
     async onMessage(identifier: string, message: string): Promise<boolean> {
+        this._onMessageCallbacks.forEach(callback => {
+            callback(identifier, message);
+        });
         let rpcMessage: any;
         let messageTypeId: MessageTypeId | undefined = undefined
         let messageId: string = "-1"; // OCPP 2.0.1 part 4, section 4.2.3, "When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId."
@@ -109,7 +152,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
                 const callError = error instanceof OcppError ? error.asCallError()
                     : [MessageTypeId.CallError, messageId, ErrorCode.InternalError, "Unable to process message", { error: error }];
                 const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
-                this._networkHook(identifier, rawMessage);
+                this._sendMessage(identifier, rawMessage);
             }
             // TODO: Publish raw payload for error reporting
             return false;
@@ -130,7 +173,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
                 CacheNamespace.Transactions, this._config.maxCallLengthSeconds)) {
                 // Intentionally removing NULL values from object for OCPP conformity
                 const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
-                const success = await this._networkHook(identifier, rawMessage);
+                const success = await this._sendMessage(identifier, rawMessage);
                 return { success };
             } else {
                 this._logger.info("Call already in progress, throwing retry exception", identifier, message);
@@ -161,7 +204,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             // Intentionally removing NULL values from object for OCPP conformity
             const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
             const success = await Promise.all([
-                this._networkHook(identifier, rawMessage),
+                this._sendMessage(identifier, rawMessage),
                 this._cache.remove(identifier, CacheNamespace.Transactions)
             ]).then(successes => successes.every(Boolean));
             return { success };
@@ -190,7 +233,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             // Intentionally removing NULL values from object for OCPP conformity
             const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
             const success = await Promise.all([
-                this._networkHook(identifier, rawMessage),
+                this._sendMessage(identifier, rawMessage),
                 this._cache.remove(identifier, CacheNamespace.Transactions)
             ]).then(successes => successes.every(Boolean));
             return { success };
@@ -198,6 +241,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             this._logger.error("Failed to send callError due to mismatch in message id", identifier, cachedActionMessageId, message);
             return { success: false };
         }
+    }
+
+    shutdown(): void {
+        this._sender.shutdown();
+        this._handler.shutdown();
     }
 
     /**
@@ -343,6 +391,20 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         return this._cache.exists(action, identifier).then(blacklisted => !blacklisted);
     }
 
+    private async _sendMessage(identifier: string, rawMessage: string): Promise<boolean> {
+        try {
+            const success = await this._networkHook(identifier, rawMessage);
+            this._sentMessageCallbacks.forEach(callback => {
+                callback(identifier, rawMessage);
+            });
+            return success;
+        } catch (error) {
+            this._sentMessageCallbacks.forEach(callback => {
+                callback(identifier, rawMessage, error);
+            });
+            return false;
+        }
+    }
 
     private async _sendCallIsAllowed(identifier: string, message: Call): Promise<boolean> {
         const status = await this._cache.get<string>(BOOT_STATUS, identifier);
