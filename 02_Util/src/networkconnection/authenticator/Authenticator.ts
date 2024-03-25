@@ -2,29 +2,38 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ICache, AttributeEnumType, SetVariableStatusEnumType, IAuthenticator } from "@citrineos/base";
-import { DeviceModelRepository } from "@citrineos/data/lib/layers/sequelize";
+import { ICache, AttributeEnumType, SetVariableStatusEnumType, IAuthenticator, CacheNamespace } from "@citrineos/base";
 import { Logger, ILogObj } from "tslog";
 import * as bcrypt from "bcrypt";
+import { IDeviceModelRepository, ILocationRepository } from "@citrineos/data";
 
 export class Authenticator implements IAuthenticator {
 
     protected _cache: ICache;
+    private _locationRepository: ILocationRepository;
+    private _deviceModelRepository: IDeviceModelRepository;
     protected _logger: Logger<ILogObj>;
-    private _deviceModelRepository: DeviceModelRepository;
 
     constructor(
         cache: ICache,
-        logger: Logger<ILogObj>,
-        deviceModelRepository: DeviceModelRepository) {
+        locationRepository: ILocationRepository,
+        deviceModelRepository: IDeviceModelRepository,
+        logger?: Logger<ILogObj>) {
         this._cache = cache;
-        this._logger = logger;
+        this._locationRepository = locationRepository;
         this._deviceModelRepository = deviceModelRepository;
+        this._logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
     }
 
-    async authenticate(identifier: string, username?: string, password?: string): Promise<boolean> {
+    async authenticate(allowUnknownChargingStations: boolean, identifier: string, username?: string, password?: string): Promise<boolean> {
+        if (!allowUnknownChargingStations && (await this._locationRepository.readChargingStationByStationId(identifier)) == null) {
+            this._logger.warn("Unknown identifier", identifier);
+            return false;
 
-        if (username && password) {
+        } else if (await this._cache.get(identifier, CacheNamespace.Connections)) {
+            this._logger.warn("New connection attempted for already connected identifier", identifier);
+            return false;
+        } else if (username && password) {
             if (username != identifier || await this._checkPassword(username, password) === false) {
                 this._logger.warn("Unauthorized", identifier);
                 return false;

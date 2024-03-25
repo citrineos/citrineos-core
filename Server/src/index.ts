@@ -89,7 +89,7 @@ class CitrineOSServer {
         // Force sync database
         sequelize.DefaultSequelizeInstance.getInstance(this._config, this._logger, true);
 
-        this._authenticator = new Authenticator(this._cache, this._logger, new sequelize.DeviceModelRepository(config, this._logger));
+        this._authenticator = new Authenticator(this._cache, new sequelize.LocationRepository(config, this._logger), new sequelize.DeviceModelRepository(config, this._logger), this._logger);
 
         const router = new MessageRouterImpl(this._config, this._cache, this._createSender(), this._createHandler(), async (identifier: string, message: string) => false, this._logger, this._ajv);
 
