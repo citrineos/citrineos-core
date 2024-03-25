@@ -16,11 +16,9 @@ services:
       timeout: 10s
       retries: 3
   ocpp-db:
-    image: postgis/postgis:latest
+    image: citrineos/postgres:v1.1.0
     ports:
       - 5432:5432
-    volumes:
-      - ./data/postgresql/pgdata:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: citrine
       POSTGRES_USER: citrine
@@ -48,6 +46,8 @@ services:
       ocpp-db:
         condition: service_started
       amqp-broker:
+        condition: service_healthy
+      directus:
         condition: service_healthy
       redis:
         condition: service_healthy
