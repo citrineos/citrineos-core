@@ -36,6 +36,19 @@ COPY /02_Util/src /usr/02_Util/src
 RUN npm run build --prefix /usr/02_Util
 RUN cd /usr/02_Util && npm pack
 
+# Build citrineos-ocpprouter module
+FROM base as citrineos-ocpprouter-builder
+COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
+COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
+COPY --from=citrineos-util-builder /usr/02_Util/*.tgz /usr/02_Util/
+COPY /03_Modules/OcppRouter/package.json /usr/03_Modules/OcppRouter/
+RUN npm install --ignore-scripts=true --prefix /usr/03_Modules/OcppRouter
+
+COPY /03_Modules/OcppRouter/tsconfig.json /usr/03_Modules/OcppRouter/
+COPY /03_Modules/OcppRouter/src /usr/03_Modules/OcppRouter/src
+RUN npm run build --prefix /usr/03_Modules/OcppRouter
+RUN cd /usr/03_Modules/OcppRouter && npm pack
+
 # Build citrineos-certificates module
 FROM base as citrineos-certificates-builder
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
@@ -135,6 +148,7 @@ WORKDIR /usr/server
 COPY --from=citrineos-base-builder /usr/00_Base/*.tgz /usr/00_Base/
 COPY --from=citrineos-data-builder /usr/01_Data/*.tgz /usr/01_Data/
 COPY --from=citrineos-util-builder /usr/02_Util/*.tgz /usr/02_Util/
+COPY --from=citrineos-ocpprouter-builder /usr/03_Modules/OcppRouter/*.tgz /usr/03_Modules/OcppRouter/
 COPY --from=citrineos-certificates-builder /usr/03_Modules/Certificates/*.tgz /usr/03_Modules/Certificates/
 COPY --from=citrineos-configuration-builder /usr/03_Modules/Configuration/*.tgz /usr/03_Modules/Configuration/
 COPY --from=citrineos-evdriver-builder /usr/03_Modules/EVDriver/*.tgz /usr/03_Modules/EVDriver/

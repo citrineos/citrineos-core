@@ -6,7 +6,7 @@
 import { IModule } from "../..";
 
 /**
- * Interface for the central system
+ * Interface for the ocpp router
  */
 export interface IMessageRouter extends IModule {
     /**
