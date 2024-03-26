@@ -68,6 +68,9 @@ export function createLocalConfig() {
                 exposeData: true,
                 exposeMessage: true
             },
+            directus: {
+                generateFlows: false
+            },
             networkConnection: {
                 websocketServers: [{
                     id: "0",

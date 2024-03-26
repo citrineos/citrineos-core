@@ -5,7 +5,7 @@
 
 import { IAuthenticator, ICache, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
-import { Authenticator, MemoryCache, RabbitMqReceiver, RabbitMqSender, WebsocketNetworkConnection, initSwagger } from '@citrineos/util';
+import { Authenticator, DirectusUtil, MemoryCache, RabbitMqReceiver, RabbitMqSender, WebsocketNetworkConnection, initSwagger } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
 import addFormats from "ajv-formats"
@@ -71,7 +71,7 @@ class CitrineOSServer {
             //Disable colors for cloud deployment as some cloude logging environments such as cloudwatch can not interpret colors
             stylePrettyLogs: process.env.DEPLOYMENT_TARGET != "cloud"
 
-    });
+        });
 
         // Set cache implementation
         this._cache = cache || new MemoryCache();
@@ -79,6 +79,15 @@ class CitrineOSServer {
         // Initialize Swagger if enabled
         if (this._config.util.swagger) {
             initSwagger(this._config, this._server);
+        }
+
+        // Add Directus Message API flow creation if enabled
+        if (this._config.util.directus?.generateFlows) {
+            const directusUtil = new DirectusUtil(this._config, this._logger);
+            this._server.addHook("onRoute", directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(directusUtil));
+            this._server.addHook('onReady', async () => {
+                this._logger.info('Directus actions initialization finished');
+            });
         }
 
         // Register AJV for schema validation
