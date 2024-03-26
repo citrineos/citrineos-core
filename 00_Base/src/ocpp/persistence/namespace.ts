@@ -20,6 +20,7 @@ export enum Namespace {
     Location = 'Location',
     MeterValueType = 'MeterValue',
     ModemType = 'Modem',
+    MessageInfoType = 'MessageInfo',
     SecurityEventNotificationRequest = 'SecurityEvent',
     Subscription = 'Subscription',
     SystemConfig = 'SystemConfig',

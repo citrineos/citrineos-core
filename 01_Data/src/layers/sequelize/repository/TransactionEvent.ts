@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { TransactionEventRequest, ChargingStateEnumType, IdTokenType, TransactionEventEnumType, EVSEType, TransactionEventResponse } from "@citrineos/base";
+import { TransactionEventRequest, ChargingStateEnumType, IdTokenType, TransactionEventEnumType, EVSEType } from "@citrineos/base";
 import { ITransactionEventRepository } from "../../../interfaces";
 import { MeterValue, Transaction, TransactionEvent } from "../model/TransactionEvent";
 import { SequelizeRepository } from "./Base";
@@ -120,5 +120,15 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
             }]
         })
             .then(row => (row as Transaction[]));
+    }
+
+    async updateTotalCostByTransactionIdAndStationId(totalCost: number, transactionId: string, stationId: string): Promise<void> {
+        await Transaction.update({totalCost: totalCost}, {
+            where: {
+                transactionId: transactionId,
+                stationId: stationId
+            },
+            returning: false
+        })
     }
 }

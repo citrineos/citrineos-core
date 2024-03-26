@@ -26,14 +26,25 @@ import {
     SetMonitoringDataType,
     SetMonitoringResultType,
     EventDataType,
-    CallAction
+    CallAction,
+    MessageInfoType
 } from "@citrineos/base";
 import { AuthorizationQuerystring } from "./queries/Authorization";
-import { Transaction } from "../layers/sequelize/model/TransactionEvent";
-import { VariableAttribute } from "../layers/sequelize/model/DeviceModel/VariableAttribute";
 import { AuthorizationRestrictions, VariableAttributeQuerystring } from ".";
-import { Boot, Authorization, Location, SecurityEvent, Component, Variable, VariableMonitoring, EventData, ChargingStation } from "../layers/sequelize";
-
+import {
+    Boot,
+    Authorization,
+    Location,
+    SecurityEvent,
+    Component,
+    Variable,
+    VariableAttribute,
+    VariableMonitoring,
+    EventData,
+    ChargingStation,
+    Transaction,
+    MessageInfo
+} from "../layers/sequelize";
 
 export interface IAuthorizationRepository extends ICrudRepository<AuthorizationData> {
     createOrUpdateByQuery(value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined>;
@@ -83,6 +94,7 @@ export interface ITransactionEventRepository extends ICrudRepository<Transaction
     readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
     readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: EVSEType, chargingStates?: ChargingStateEnumType[]): Promise<Transaction[]>;
     readAllActiveTransactionByIdToken(idToken: IdTokenType): Promise<Transaction[]>;
+    updateTotalCostByTransactionIdAndStationId(totalCost: number, transactionId: string, stationId: string): Promise<void>;
 }
 
 export interface IVariableMonitoringRepository extends ICrudRepository<VariableMonitoringType> {
@@ -92,4 +104,9 @@ export interface IVariableMonitoringRepository extends ICrudRepository<VariableM
     rejectVariableMonitoringByIdAndStationId(action: CallAction, id: number, stationId: string): Promise<void>
     updateResultByStationId(result: SetMonitoringResultType, stationId: string): Promise<VariableMonitoring | undefined>
     createEventDatumByComponentIdAndVariableIdAndStationId(event: EventDataType, componentId: string, variableId: string, stationId: string): Promise<EventData>
+}
+
+export interface IMessageInfoRepository extends ICrudRepository<MessageInfoType> {
+    deactivateAllByStationId(stationId: string): Promise<void>;
+    createOrUpdateByMessageInfoTypeAndStationId(value: MessageInfoType, stationId: string): Promise<MessageInfo>;
 }

@@ -30,7 +30,8 @@ export class TransactionsModuleApi extends AbstractModuleApi<TransactionsModule>
      * Message Endpoint Methods
      */
     @AsMessageEndpoint(CallAction.CostUpdated, CostUpdatedRequestSchema)
-    costUpdated(identifier: string, tenantId: string, request: CostUpdatedRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+    async costUpdated(identifier: string, tenantId: string, request: CostUpdatedRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        await this._module.transactionEventRepository.updateTotalCostByTransactionIdAndStationId(request.totalCost, request.transactionId, identifier);
         return this._module.sendCall(identifier, tenantId, CallAction.CostUpdated, request, callbackUrl);
     }
 

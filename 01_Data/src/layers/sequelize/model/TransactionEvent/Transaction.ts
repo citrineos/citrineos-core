@@ -11,10 +11,8 @@ import {
   DataType,
   ForeignKey,
   HasMany,
-  BelongsTo,
-  BelongsToMany,
+  BelongsTo
 } from 'sequelize-typescript';
-import { IdToken } from '../Authorization';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
@@ -65,4 +63,7 @@ export class Transaction extends Model implements TransactionType {
 
   @Column(DataType.INTEGER)
   declare remoteStartId?: number;
+
+  @Column(DataType.DECIMAL)
+  declare totalCost?: number;
 }

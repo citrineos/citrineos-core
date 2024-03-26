@@ -10,6 +10,7 @@ import { ILogObj, Logger } from "tslog";
 import { ComponentVariable } from "./model/DeviceModel/ComponentVariable";
 import { AdditionalInfo, Authorization, Boot, ChargingStation, Component, EventData, Evse, IdToken, IdTokenInfo, Location, MeterValue, SecurityEvent, Transaction, TransactionEvent, Variable, VariableAttribute, VariableCharacteristics, VariableMonitoring, VariableMonitoringStatus } from ".";
 import { VariableStatus } from "./model/DeviceModel";
+import { MessageInfo } from "./model/MessageInfo";
 
 export class DefaultSequelizeInstance {
 
@@ -42,7 +43,7 @@ export class DefaultSequelizeInstance {
             password: config.data.sequelize.password,
             storage: config.data.sequelize.storage,
             models: [AdditionalInfo, Authorization, Boot, ChargingStation, Component,
-                ComponentVariable, Evse, EventData, IdToken, IdTokenInfo, Location, MeterValue,
+                ComponentVariable, Evse, EventData, IdToken, IdTokenInfo, Location, MeterValue, MessageInfo,
                 SecurityEvent, Transaction, TransactionEvent, VariableAttribute,
                 VariableCharacteristics, VariableMonitoring, VariableMonitoringStatus, VariableStatus, Variable],
             logging: (sql: string, timing?: number) => {

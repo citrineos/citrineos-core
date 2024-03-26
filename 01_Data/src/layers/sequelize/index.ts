@@ -1,4 +1,3 @@
-// Copyright (c) 2023 S44, LLC
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
@@ -11,6 +10,7 @@ export { Transaction, TransactionEvent, MeterValue } from "./model/TransactionEv
 export { SecurityEvent } from "./model/SecurityEvent";
 export { VariableMonitoring, EventData, VariableMonitoringStatus } from "./model/VariableMonitoring";
 export { ChargingStation, Location } from "./model/Location";
+export { MessageInfo } from "./model/MessageInfo";
 
 // Sequelize Repositories
 export { SequelizeRepository } from "./repository/Base";
@@ -21,6 +21,7 @@ export { LocationRepository } from "./repository/Location";
 export { TransactionEventRepository } from "./repository/TransactionEvent";
 export { SecurityEventRepository } from "./repository/SecurityEvent";
 export { VariableMonitoringRepository } from "./repository/VariableMonitoring";
+export { MessageInfoRepository } from "./repository/MessageInfo";
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from "./util";

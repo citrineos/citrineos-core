@@ -9,6 +9,7 @@ import { VariableAttribute } from "@citrineos/data/lib/layers/sequelize";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
+import {DeviceModelService} from "./services";
 
 /**
  * Component that handles provisioning related messages.
@@ -44,6 +45,8 @@ export class EVDriverModule extends AbstractModule {
     return this._deviceModelRepository;
   }
 
+  public _deviceModelService: DeviceModelService;
+
   /**
    * This is the constructor function that initializes the {@link EVDriverModule}.
    * 
@@ -61,10 +64,12 @@ export class EVDriverModule extends AbstractModule {
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    * 
    * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating Authorization data.
-   * If no `authorizeRepository` is provided, a default {@link sequelize.AuthorizationRepository} instance is created and used.
+   * If no `authorizeRepository` is provided, a default {@link sequelize:authorizeRepository} instance is
+   * created and used.
    * 
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is
+   * created and used.
    */
   constructor(
     config: SystemConfig,
@@ -86,6 +91,8 @@ export class EVDriverModule extends AbstractModule {
 
     this._authorizeRepository = authorizeRepository || new sequelize.AuthorizationRepository(config, logger);
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, logger);
+
+    this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -219,9 +226,27 @@ export class EVDriverModule extends AbstractModule {
             // TODO determine how/if to set personalMessage
           }
         }
+
+        if (response.idTokenInfo.status == AuthorizationStatusEnumType.Accepted) {
+          const tariffAvailable: boolean | null = await this._deviceModelService.getAvailableByComponentAndVariableInstanceAndStationId("TariffCostCtrlr", "Tariff", message.context.stationId);
+          const displayMessageAvailable: boolean | null = await this._deviceModelService.getAvailableByComponentAndVariableInstanceAndStationId("DisplayMessageCtrlr", null, message.context.stationId);
+          if (tariffAvailable || displayMessageAvailable) {
+            // TODO: get specific tariff and set it in personalMessage.content field
+            // let tariff: string | null = null;
+            // if (tariff) {
+            //   if (!response.idTokenInfo.personalMessage) {
+            //     // TODO: determine how to set personalMessage
+            //   } else {
+            //     response.idTokenInfo.personalMessage.content = tariff;
+            //   }
+            // }
+          }
+        }
       }
       return this.sendCallResultWithMessage(message, response)
-    }).then(messageConfirmation => this._logger.debug("Authorize response sent:", messageConfirmation));
+    }).then(messageConfirmation => {
+      this._logger.debug("Authorize response sent:", messageConfirmation)
+    });
   }
   
   @AsHandler(CallAction.ReservationStatusUpdate)
@@ -236,8 +261,9 @@ export class EVDriverModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("ReservationStatusUpdate response sent: ", messageConfirmation));
- 
+        .then(messageConfirmation => {
+          this._logger.debug("ReservationStatusUpdate response sent: ", messageConfirmation)
+        });
   }
   
   /**
