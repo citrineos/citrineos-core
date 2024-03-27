@@ -7,7 +7,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IEVDriverModuleApi } from './interface';
 import { EVDriverModule } from './module';
-import { AbstractModuleApi, AsDataEndpoint, Namespace, HttpMethod, AsMessageEndpoint, CallAction, RequestStartTransactionRequestSchema, RequestStartTransactionRequest, IMessageConfirmation, RequestStopTransactionRequestSchema, RequestStopTransactionRequest, UnlockConnectorRequestSchema, UnlockConnectorRequest, ClearCacheRequestSchema, ClearCacheRequest, SendLocalListRequestSchema, SendLocalListRequest, GetLocalListVersionRequestSchema, GetLocalListVersionRequest, InstallCertificateRequestSchema, InstallCertificateRequest, GetInstalledCertificateIdsRequestSchema, GetInstalledCertificateIdsRequest, DeleteCertificateRequestSchema, DeleteCertificateRequest, AuthorizationData, AuthorizationDataSchema } from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, Namespace, HttpMethod, AsMessageEndpoint, CallAction, RequestStartTransactionRequestSchema, RequestStartTransactionRequest, IMessageConfirmation, RequestStopTransactionRequestSchema, RequestStopTransactionRequest, UnlockConnectorRequestSchema, UnlockConnectorRequest, ClearCacheRequestSchema, ClearCacheRequest, SendLocalListRequestSchema, SendLocalListRequest, GetLocalListVersionRequestSchema, GetLocalListVersionRequest, AuthorizationData, AuthorizationDataSchema, CancelReservationRequest, CancelReservationRequestSchema, ReserveNowRequest, ReserveNowRequestSchema } from '@citrineos/base';
 import { AuthorizationQuerySchema, AuthorizationQuerystring, AuthorizationRestrictions, AuthorizationRestrictionsSchema, ChargingStationKeyQuerySchema } from '@citrineos/data';
 
 /**
@@ -61,8 +61,18 @@ export class EVDriverModuleApi extends AbstractModuleApi<EVDriverModule> impleme
     }
 
     @AsMessageEndpoint(CallAction.RequestStopTransaction, RequestStopTransactionRequestSchema)
-    requestStopTransaction(identifier: string, tenantId: string, request: RequestStopTransactionRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+    async requestStopTransaction(identifier: string, tenantId: string, request: RequestStopTransactionRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
         return this._module.sendCall(identifier, tenantId, CallAction.RequestStopTransaction, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.CancelReservation, CancelReservationRequestSchema)
+    async cancelReservation(identifier: string, tenantId: string, request: CancelReservationRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.CancelReservation, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.ReserveNow, ReserveNowRequestSchema)
+    async reserveNow(identifier: string, tenantId: string, request: ReserveNowRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.ReserveNow, request, callbackUrl);
     }
 
     @AsMessageEndpoint(CallAction.UnlockConnector, UnlockConnectorRequestSchema)

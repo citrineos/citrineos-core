@@ -3,9 +3,35 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, NotifyEventRequest, HandlerProperties, NotifyEventResponse, GetVariablesResponse, SetVariablesResponse } from "@citrineos/base";
-import { IDeviceModelRepository, sequelize } from "@citrineos/data";
-import { PubSubReceiver, PubSubSender, Timer } from "@citrineos/util";
+import {
+  AbstractModule,
+  CallAction,
+  SystemConfig,
+  ICache,
+  IMessageSender,
+  IMessageHandler,
+  EventGroup,
+  AsHandler,
+  IMessage,
+  NotifyEventRequest,
+  HandlerProperties,
+  NotifyEventResponse,
+  GetVariablesResponse,
+  SetVariablesResponse,
+  ClearVariableMonitoringResponse,
+  GetMonitoringReportResponse,
+  SetMonitoringBaseResponse,
+  SetMonitoringLevelResponse,
+  SetVariableMonitoringResponse,
+  EventDataType,
+  GenericDeviceModelStatusEnumType,
+  StatusInfoType,
+  GetMonitoringReportRequest,
+  GenericStatusEnumType,
+  ClearMonitoringStatusEnumType
+} from "@citrineos/base";
+import {IDeviceModelRepository, IVariableMonitoringRepository, sequelize} from "@citrineos/data";
+import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from "./services";
@@ -16,23 +42,26 @@ import { DeviceModelService } from "./services";
 export class MonitoringModule extends AbstractModule {
 
   protected _requests: CallAction[] = [
-    CallAction.NotifyEvent,
-    CallAction.NotifyMonitoringReport
+    CallAction.NotifyEvent
   ];
   protected _responses: CallAction[] = [
     CallAction.ClearVariableMonitoring,
-    CallAction.GetMonitoringReport,
     CallAction.GetVariables,
     CallAction.SetMonitoringBase,
     CallAction.SetMonitoringLevel,
+    CallAction.GetMonitoringReport,
     CallAction.SetVariableMonitoring,
     CallAction.SetVariables
   ];
 
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableMonitoringRepository: IVariableMonitoringRepository;
 
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
+  }
+  get variableMonitoringRepository(): IVariableMonitoringRepository {
+    return this._variableMonitoringRepository;
   }
 
   public _deviceModelService: DeviceModelService;
@@ -55,6 +84,11 @@ export class MonitoringModule extends AbstractModule {
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
+   *
+   * @param {IVariableMonitoringRepository} [variableMonitoringRepository] - An optional parameter of type {@link IVariableMonitoringRepository}
+   * which represents a repository for accessing and manipulating variable monitoring data.
+   * If no `variableMonitoringRepository` is provided, a default {@link sequelize:variableMonitoringRepository} }
+   * instance is created and used.
    */
   constructor(
     config: SystemConfig,
@@ -62,9 +96,10 @@ export class MonitoringModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
-    deviceModelRepository?: IDeviceModelRepository
+    deviceModelRepository?: IDeviceModelRepository,
+    variableMonitoringRepository?: IVariableMonitoringRepository
   ) {
-    super(config, cache, handler || new PubSubReceiver(config, logger), sender || new PubSubSender(config, logger), EventGroup.Monitoring, logger);
+    super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Monitoring, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);
@@ -74,6 +109,7 @@ export class MonitoringModule extends AbstractModule {
     }
 
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, this._logger);
+    this._variableMonitoringRepository = variableMonitoringRepository || new sequelize.VariableMonitoringRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
 
@@ -85,30 +121,126 @@ export class MonitoringModule extends AbstractModule {
    */
 
   @AsHandler(CallAction.NotifyEvent)
-  protected _handleNotifyEvent(
+  protected async _handleNotifyEvent(
     message: IMessage<NotifyEventRequest>,
     props?: HandlerProperties
-  ): void {
+  ): Promise<void> {
 
     this._logger.debug("NotifyEvent received:", message, props);
+
+    const events = message.payload.eventData as EventDataType[];
+    for (const event of events) {
+      const stationId = message.context.stationId;
+      const [component, variable] = await this._deviceModelRepository.findComponentAndVariable(event.component, event.variable);
+      await this._variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId(event, component?.id, variable?.id, stationId);
+    }
 
     // Create response
     const response: NotifyEventResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("NotifyEvent response sent:", messageConfirmation));
+        .then(messageConfirmation => {
+          this._logger.debug("NotifyEvent response sent:", messageConfirmation)
+        });
   }
 
   /**
    * Handle responses
    */
 
+  @AsHandler(CallAction.SetVariableMonitoring)
+  protected async _handleSetVariableMonitoring(
+    message: IMessage<SetVariableMonitoringResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("SetVariableMonitoring response received:", message, props);
+
+    for (const setMonitoringResultType of message.payload.setMonitoringResult) {
+      await this._variableMonitoringRepository.updateResultByStationId(setMonitoringResultType, message.context.stationId);
+    }
+  }
+
+  @AsHandler(CallAction.ClearVariableMonitoring)
+  protected async _handleClearVariableMonitoring(
+    message: IMessage<ClearVariableMonitoringResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("ClearVariableMonitoring response received:", message, props);
+
+    for (const clearMonitoringResultType of message.payload.clearMonitoringResult) {
+      const resultStatus: ClearMonitoringStatusEnumType = clearMonitoringResultType.status;
+      const monitorId: number = clearMonitoringResultType.id;
+
+      // Reject the variable monitoring if Charging Station accepts to clear or cannot find it.
+      if (resultStatus === ClearMonitoringStatusEnumType.Accepted || resultStatus === ClearMonitoringStatusEnumType.NotFound) {
+        await this._variableMonitoringRepository.rejectVariableMonitoringByIdAndStationId(CallAction.ClearVariableMonitoring, monitorId, message.context.stationId);
+      } else {
+        const statusInfo: StatusInfoType | undefined = clearMonitoringResultType.statusInfo;
+        this._logger.error("Failed to clear variable monitoring.", monitorId, resultStatus, statusInfo?.reasonCode, statusInfo?.additionalInfo);
+      }
+    }
+  }
+
+  @AsHandler(CallAction.GetMonitoringReport)
+  protected _handleGetMonitoringReport(
+    message: IMessage<GetMonitoringReportResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("GetMonitoringReport response received:", message, props);
+
+    let status: GenericDeviceModelStatusEnumType = message.payload.status;
+    let statusInfo: StatusInfoType | undefined = message.payload.statusInfo;
+
+    if (status === GenericDeviceModelStatusEnumType.Rejected || status === GenericDeviceModelStatusEnumType.NotSupported) {
+      this._logger.error("Failed to get monitoring report.", status, statusInfo?.reasonCode, statusInfo?.additionalInfo);
+    }
+  }
+
+  @AsHandler(CallAction.SetMonitoringLevel)
+  protected _handleSetMonitoringLevel(
+    message: IMessage<SetMonitoringLevelResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("SetMonitoringLevel response received:", message, props);
+
+    let status: GenericStatusEnumType = message.payload.status;
+    let statusInfo: StatusInfoType | undefined = message.payload.statusInfo;
+    if (status === GenericStatusEnumType.Rejected) {
+      this._logger.error("Failed to set monitoring level.", status, statusInfo?.reasonCode, statusInfo?.additionalInfo);
+    }
+  }
+
+  @AsHandler(CallAction.SetMonitoringBase)
+  protected async _handleSetMonitoringBase(
+      message: IMessage<SetMonitoringBaseResponse>,
+      props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("SetMonitoringBase response received:", message, props);
+
+    let status: GenericDeviceModelStatusEnumType = message.payload.status;
+    let statusInfo: StatusInfoType | undefined = message.payload.statusInfo;
+
+    if (status === GenericDeviceModelStatusEnumType.Rejected || status === GenericDeviceModelStatusEnumType.NotSupported) {
+      this._logger.error("Failed to set monitoring base.", status, statusInfo?.reasonCode, statusInfo?.additionalInfo);
+    } else {
+      // After setting monitoring base, variable monitorings on charger side are influenced
+      // To get all the latest monitoring data, we intend to mask all variable monitorings on the charger as rejected.
+      // Then request a GetMonitoringReport for all monitorings
+      const stationId: string = message.context.stationId;
+      await this._variableMonitoringRepository.rejectAllVariableMonitoringsByStationId(CallAction.SetVariableMonitoring, stationId);
+      this._logger.debug("Rejected all variable monitorings on the charger", stationId);
+
+      // TODO: requestId is generated randomly. Think about changing it if it doesn't work on real chargers.
+      await this.sendCall(stationId, message.context.tenantId, CallAction.GetMonitoringReport, {requestId: Math.floor(Math.random() * 1000)} as GetMonitoringReportRequest)
+    }
+  }
+
   @AsHandler(CallAction.GetVariables)
   protected async _handleGetVariables(
     message: IMessage<GetVariablesResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("GetVariables response received", message, props);
+    this._logger.debug("GetVariables response received:", message, props);
     this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(message.payload.getVariableResult, message.context.stationId);
   }
 
@@ -117,7 +249,7 @@ export class MonitoringModule extends AbstractModule {
     message: IMessage<SetVariablesResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("SetVariables response received", message, props);
+    this._logger.debug("SetVariables response received:", message, props);
 
     message.payload.setVariableResult.forEach(async setVariableResultType => {
       this._deviceModelRepository.updateResultByStationId(setVariableResultType, message.context.stationId);

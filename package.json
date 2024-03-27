@@ -23,6 +23,7 @@
     "./03_Modules/Configuration",
     "./03_Modules/EVDriver",
     "./03_Modules/Monitoring",
+    "./03_Modules/OcppRouter",
     "./03_Modules/Reporting",
     "./03_Modules/SmartCharging",
     "./03_Modules/Transactions",

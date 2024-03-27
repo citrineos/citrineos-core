@@ -49,7 +49,7 @@ export function createDockerConfig() {
                 username: "citrine",
                 password: "citrine",
                 storage: "",
-                sync: true,
+                sync: false,
             }
         },
         util: {
@@ -68,10 +68,16 @@ export function createDockerConfig() {
                 exposeData: true,
                 exposeMessage: true
             },
+            directus: {
+                host: "directus",
+                port: 8055,
+                generateFlows: true
+            },
             networkConnection: {
                 websocketServers: [{
                     id: "0",
                     securityProfile: 0,
+                    allowUnknownChargingStations: true,
                     pingInterval: 60,
                     host: "0.0.0.0",
                     port: 8081,
@@ -79,6 +85,7 @@ export function createDockerConfig() {
                 }, {
                     id: "1",
                     securityProfile: 1,
+                    allowUnknownChargingStations: false,
                     pingInterval: 60,
                     host: "0.0.0.0",
                     port: 8082,

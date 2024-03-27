@@ -17,10 +17,12 @@ import {
   DataTransferRequest,
   DataTransferResponse,
   DataTransferStatusEnumType,
+  ErrorCode,
   EventGroup,
   FirmwareStatusNotificationRequest,
   FirmwareStatusNotificationResponse,
   GetBaseReportRequest,
+  GetDisplayMessagesResponse,
   HandlerProperties,
   HeartbeatRequest,
   HeartbeatResponse,
@@ -30,15 +32,23 @@ import {
   IMessageHandler,
   IMessageSender,
   MutabilityEnumType,
+  NotifyDisplayMessagesRequest,
+  NotifyDisplayMessagesResponse,
+  PublishFirmwareResponse,
   RegistrationStatusEnumType,
   ReportBaseEnumType,
   ResetEnumType,
   ResetRequest,
+  ResetResponse,
+  SetDisplayMessageResponse,
+  SetNetworkProfileResponse,
   SetVariableDataType,
   SetVariableStatusEnumType,
   SetVariablesRequest,
   SetVariablesResponse,
-  SystemConfig
+  SystemConfig,
+  UnpublishFirmwareResponse,
+  UpdateFirmwareResponse
 } from "@citrineos/base";
 import { IBootRepository, IDeviceModelRepository, sequelize, Boot } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
@@ -343,7 +353,7 @@ export class ConfigurationModule extends AbstractModule {
     }
     // Handle post-response actions
     if (bootNotificationResponseMessageConfirmation.success) {
-      this._logger.debug("BootNotification response successfully sent to central system: ", bootNotificationResponseMessageConfirmation);
+      this._logger.debug("BootNotification response successfully sent to ocpp router: ", bootNotificationResponseMessageConfirmation);
 
       // Update charger-specific boot config with details of most recently sent BootNotificationResponse
       let bootConfigDbEntity: Boot | undefined = await this._bootRepository.readByKey(stationId);
@@ -484,9 +494,24 @@ export class ConfigurationModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("Heartbeat response sent:", messageConfirmation));
+      .then(messageConfirmation => this._logger.debug("Heartbeat response sent: ", messageConfirmation));
   }
 
+  @AsHandler(CallAction.NotifyDisplayMessages)
+  protected _handleNotifyDisplayMessages(
+    message: IMessage<NotifyDisplayMessagesRequest>,
+    props?: HandlerProperties
+  ): void {
+
+    this._logger.debug("NotifyDisplayMessages received: ", message, props);
+
+    // Create response
+    const response: NotifyDisplayMessagesResponse = {
+    };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("NotifyDisplayMessages response sent: ", messageConfirmation));
+  }
 
   @AsHandler(CallAction.FirmwareStatusNotification)
   protected _handleFirmwareStatusNotification(
@@ -501,7 +526,21 @@ export class ConfigurationModule extends AbstractModule {
     const response: FirmwareStatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("FirmwareStatusNotification response sent:", messageConfirmation));
+      .then(messageConfirmation => this._logger.debug("FirmwareStatusNotification response sent: ", messageConfirmation));
+  }
+
+  @AsHandler(CallAction.DataTransfer)
+  protected _handleDataTransfer(
+    message: IMessage<DataTransferRequest>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("DataTransfer received:", message, props);
+
+    // Create response
+    const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected, statusInfo: { reasonCode: ErrorCode.NotImplemented } };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("DataTransfer response sent: ", messageConfirmation));
   }
 
   /**
@@ -517,18 +556,67 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug("ChangeAvailability response received:", message, props);
   }
 
-  @AsHandler(CallAction.DataTransfer)
-  protected _handleDataTransfer(
-    message: IMessage<DataTransferRequest>,
+  @AsHandler(CallAction.SetNetworkProfile)
+  protected _handleSetNetworkProfile(
+    message: IMessage<SetNetworkProfileResponse>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("DataTransfer received:", message, props);
-
-    // Create response
-    const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected };
-
-    this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("DataTransfer response sent:", messageConfirmation));
+    this._logger.debug("SetNetworkProfile response received:", message, props);
   }
 
+  @AsHandler(CallAction.GetDisplayMessages)
+  protected _handleGetDisplayMessages(
+    message: IMessage<GetDisplayMessagesResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("GetDisplayMessages response received:", message, props);
+  }
+
+  @AsHandler(CallAction.SetDisplayMessage)
+  protected _handleSetDisplayMessage(
+    message: IMessage<SetDisplayMessageResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("SetDisplayMessage response received:", message, props);
+  }
+
+  @AsHandler(CallAction.PublishFirmware)
+  protected _handlePublishFirmware(
+    message: IMessage<PublishFirmwareResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("PublishFirmware response received:", message, props);
+  }
+
+  @AsHandler(CallAction.UnpublishFirmware)
+  protected _handleUnpublishFirmware(
+    message: IMessage<UnpublishFirmwareResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("UnpublishFirmware response received:", message, props);
+  }
+
+  @AsHandler(CallAction.UpdateFirmware)
+  protected _handleUpdateFirmware(
+    message: IMessage<UpdateFirmwareResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("UpdateFirmware response received:", message, props);
+  }
+
+  @AsHandler(CallAction.Reset)
+  protected _handleReset(
+    message: IMessage<ResetResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("Reset response received:", message, props);
+  }
+
+  @AsHandler(CallAction.TriggerMessage)
+  protected _handleTriggerMessage(
+    message: IMessage<ChangeAvailabilityResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("ChangeAvailability response received:", message, props);
+  }
 }

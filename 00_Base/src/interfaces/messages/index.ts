@@ -23,7 +23,6 @@ export enum MessageOrigin {
 }
 
 export enum EventGroup {
-  All = 'all', // todo maybe not best place to put all?
   General = 'general',
   Certificates = "certificates",
   Configuration = "configuration",
@@ -34,22 +33,13 @@ export enum EventGroup {
   Transactions = 'transactions',
 }
 
-export const eventGroupFromString = (source: string): EventGroup => {
-  const eventGroup: EventGroup = source as EventGroup;
-  if (!eventGroup) {
-    throw new Error(`Invalid event group soruce ${source}"`);
-  }
-  return eventGroup;
-}
-
-export {IMessage, Message} from "./Message";
-export {IMessageHandler} from "./MessageHandler";
-export {IMessageSender} from "./MessageSender";
-export {IMessageRouter} from "./MessageRouter";
-export {IMessageContext} from "./MessageContext";
-export {IMessageConfirmation} from "./MessageConfirmation";
-export {AbstractMessageHandler} from "./AbstractMessageHandler";
-export {AbstractMessageSender} from "./AbstractMessageSender";
+export { IMessage, Message } from "./Message";
+export { IMessageHandler } from "./MessageHandler";
+export { IMessageSender } from "./MessageSender";
+export { IMessageContext } from "./MessageContext";
+export { IMessageConfirmation } from "./MessageConfirmation";
+export { AbstractMessageHandler } from "./AbstractMessageHandler";
+export { AbstractMessageSender } from "./AbstractMessageSender";
 
 
 

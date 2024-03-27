@@ -16,6 +16,7 @@ export const websocketServerInputSchema = z.object({
     pingInterval: z.number().int().positive().default(60).optional(),
     protocol: z.string().default('ocpp2.0.1').optional(),
     securityProfile: z.number().int().min(0).max(3).default(0).optional(),
+    allowUnknownChargingStations: z.boolean().default(false).optional(),
     tlsKeysFilepath: z.string().optional(),
     tlsCertificateChainFilepath: z.string().optional(),
     mtlsCertificateAuthorityRootsFilepath: z.string().optional(),
@@ -122,6 +123,16 @@ export const systemConfigInputSchema = z.object({
             exposeData: z.boolean().default(true).optional(),
             exposeMessage: z.boolean().default(true).optional(),
         }).optional(),
+        directus: z.object({
+            host: z.string().default("localhost").optional(),
+            port: z.number().int().positive().default(8055).optional(),
+            token: z.string().optional(),
+            username: z.string().optional(),
+            password: z.string().optional(),
+            generateFlows: z.boolean().default(false).optional(),
+        }).refine(obj => obj.generateFlows && !obj.host, {
+            message: 'Directus host must be set if generateFlows is true'
+        }).optional(),
         networkConnection: z.object({
             websocketServers: z.array(websocketServerInputSchema.optional())
         })
@@ -141,6 +152,7 @@ export const websocketServerSchema = z.object({
     pingInterval: z.number().int().positive(),
     protocol: z.string(),
     securityProfile: z.number().int().min(0).max(3),
+    allowUnknownChargingStations: z.boolean(),
     tlsKeysFilepath: z.string().optional(),
     tlsCertificateChainFilepath: z.string().optional(),
     mtlsCertificateAuthorityRootsFilepath: z.string().optional(),
@@ -261,6 +273,14 @@ export const systemConfigSchema = z.object({
             logoPath: z.string(),
             exposeData: z.boolean(),
             exposeMessage: z.boolean(),
+        }).optional(),
+        directus: z.object({
+            host: z.string(),
+            port: z.number().int().positive(),
+            token: z.string().optional(),
+            username: z.string().optional(),
+            password: z.string().optional(),
+            generateFlows: z.boolean()
         }).optional(),
         networkConnection: z.object({
             websocketServers: z.array(websocketServerSchema).refine(array => {

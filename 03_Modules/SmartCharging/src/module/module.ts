@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup } from "@citrineos/base";
+import { AbstractModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, HandlerProperties, IMessage, NotifyEVChargingNeedsRequest, NotifyEVChargingNeedsResponse, NotifyEVChargingNeedsStatusEnumType, NotifyEVChargingScheduleRequest, NotifyEVChargingScheduleResponse, GenericStatusEnumType, NotifyChargingLimitRequest, NotifyChargingLimitResponse, ReportChargingProfilesRequest, ReportChargingProfilesResponse, ClearChargingProfileResponse, ClearedChargingLimitResponse, GetChargingProfilesResponse, GetCompositeScheduleResponse, SetChargingProfileResponse } from "@citrineos/base";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
@@ -60,7 +60,7 @@ export class SmartChargingModule extends AbstractModule {
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(config, logger, cache), sender || new RabbitMqSender(config, logger), EventGroup.SmartCharging, logger);
+    super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.SmartCharging, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);
@@ -76,7 +76,118 @@ export class SmartChargingModule extends AbstractModule {
    * Handle requests
    */
 
+  @AsHandler(CallAction.NotifyEVChargingNeeds)
+  protected _handleNotifyEVChargingNeeds(
+    message: IMessage<NotifyEVChargingNeedsRequest>,
+    props?: HandlerProperties
+  ): void {
+
+    this._logger.debug("NotifyEVChargingNeeds received:", message, props);
+
+    // Create response
+    const response: NotifyEVChargingNeedsResponse = {
+      status: NotifyEVChargingNeedsStatusEnumType.Rejected
+    };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("NotifyEVChargingNeeds response sent: ", messageConfirmation));
+  }
+
+  @AsHandler(CallAction.NotifyEVChargingSchedule)
+  protected _handleNotifyEVChargingSchedule(
+    message: IMessage<NotifyEVChargingScheduleRequest>,
+    props?: HandlerProperties
+  ): void {
+
+    this._logger.debug("NotifyEVChargingSchedule received:", message, props);
+
+    // Create response
+    const response: NotifyEVChargingScheduleResponse = {
+      status: GenericStatusEnumType.Accepted
+    };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("NotifyEVChargingSchedule response sent: ", messageConfirmation));
+  }
+
+  
+
+  @AsHandler(CallAction.NotifyChargingLimit)
+  protected _handleNotifyChargingLimit(
+    message: IMessage<NotifyChargingLimitRequest>,
+    props?: HandlerProperties
+  ): void {
+
+    this._logger.debug("NotifyChargingLimit received:", message, props);
+
+    // Create response
+    const response: NotifyChargingLimitResponse = {
+    };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("NotifyChargingLimit response sent: ", messageConfirmation));
+  }
+
+  
+
+  @AsHandler(CallAction.ReportChargingProfiles)
+  protected _handleReportChargingProfiles(
+    message: IMessage<ReportChargingProfilesRequest>,
+    props?: HandlerProperties
+  ): void {
+
+    this._logger.debug("ReportChargingProfiles received:", message, props);
+
+    // Create response
+    const response: ReportChargingProfilesResponse = {
+    };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("ReportChargingProfiles response sent: ", messageConfirmation));
+  }
+
+
   /**
    * Handle responses
    */
+   
+  @AsHandler(CallAction.ClearChargingProfile)
+  protected _handleClearChargingProfile(
+    message: IMessage<ClearChargingProfileResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("ClearChargingProfile response received:", message, props);
+  }
+   
+  @AsHandler(CallAction.GetChargingProfiles)
+  protected _handleGetChargingProfiles(
+    message: IMessage<GetChargingProfilesResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("GetChargingProfiles response received:", message, props);
+  }
+   
+  @AsHandler(CallAction.SetChargingProfile)
+  protected _handleSetChargingProfile(
+    message: IMessage<SetChargingProfileResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("SetChargingProfile response received:", message, props);
+  }
+   
+  @AsHandler(CallAction.ClearedChargingLimit)
+  protected _handleClearedChargingLimit(
+    message: IMessage<ClearedChargingLimitResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("ClearedChargingLimit response received:", message, props);
+  }
+   
+  @AsHandler(CallAction.GetCompositeSchedule)
+  protected _handleGetCompositeSchedule(
+    message: IMessage<GetCompositeScheduleResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("GetCompositeSchedule response received:", message, props);
+  }
 }

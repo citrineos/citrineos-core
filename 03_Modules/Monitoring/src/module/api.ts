@@ -7,13 +7,43 @@ import { ILogObj, Logger } from 'tslog';
 import { IMonitoringModuleApi } from './interface';
 import { MonitoringModule } from './module';
 import { CreateOrUpdateVariableAttributeQuerySchema, CreateOrUpdateVariableAttributeQuerystring, sequelize, VariableAttributeQuerySchema, VariableAttributeQuerystring } from '@citrineos/data';
-import { AbstractModuleApi, AsMessageEndpoint, CallAction, SetVariablesRequestSchema, SetVariablesRequest, IMessageConfirmation, SetVariableDataType, GetVariablesRequestSchema, GetVariablesRequest, GetVariableDataType, AsDataEndpoint, Namespace, HttpMethod, ReportDataTypeSchema, ReportDataType, SetVariableStatusEnumType } from '@citrineos/base';
+import {
+    AbstractModuleApi,
+    AsMessageEndpoint,
+    CallAction,
+    SetVariablesRequestSchema,
+    SetVariablesRequest,
+    IMessageConfirmation,
+    SetVariableDataType,
+    GetVariablesRequestSchema,
+    GetVariablesRequest,
+    GetVariableDataType,
+    AsDataEndpoint,
+    Namespace,
+    HttpMethod,
+    ReportDataTypeSchema,
+    ReportDataType,
+    SetVariableStatusEnumType,
+    ClearVariableMonitoringRequest,
+    ClearVariableMonitoringRequestSchema,
+    SetMonitoringBaseRequest,
+    SetMonitoringBaseRequestSchema,
+    SetMonitoringLevelRequest,
+    SetMonitoringLevelRequestSchema,
+    SetVariableMonitoringRequest,
+    SetVariableMonitoringRequestSchema,
+    SetMonitoringDataType, MonitorEnumType, DataEnumType
+} from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
+import { Variable, Component } from '@citrineos/data/lib/layers/sequelize';
+import {getBatches, getSizeOfRequest} from "@citrineos/util/lib/util/parser";
 
 /**
  * Server API for the Monitoring module.
  */
 export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> implements IMonitoringModuleApi {
+    private readonly _componentMonitoringCtrlr = 'MonitoringCtrlr';
+    private readonly _componentDeviceDataCtrlr = 'DeviceDataCtrlr';
 
     /**
      * Constructor for the class.
@@ -30,6 +60,115 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
      * Message Endpoints
      */
 
+    @AsMessageEndpoint(CallAction.SetVariableMonitoring, SetVariableMonitoringRequestSchema)
+    async setVariableMonitoring(identifier: string, tenantId: string, request: SetVariableMonitoringRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        // if request size is bigger than BytesPerMessageSetVariableMonitoring,
+        // return error
+        let bytesPerMessageSetVariableMonitoring = await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(this._componentMonitoringCtrlr, CallAction.SetVariableMonitoring, identifier);
+        const requestBytes = getSizeOfRequest(request);
+        if (bytesPerMessageSetVariableMonitoring && requestBytes > bytesPerMessageSetVariableMonitoring) {
+            let errorMsg = `The request is too big. The max size is ${bytesPerMessageSetVariableMonitoring} bytes.`;
+            this._logger.error(errorMsg);
+            return {success: false, payload: errorMsg};
+        }
+
+        let setMonitoringData = request.setMonitoringData as SetMonitoringDataType[];
+        for (let i = 0; i < setMonitoringData.length; i++) {
+            let setMonitoringDataType: SetMonitoringDataType = setMonitoringData[i];
+            this._logger.debug("Current SetMonitoringData", setMonitoringDataType);
+            const [component, variable] = await this._module.deviceModelRepository.findComponentAndVariable(setMonitoringDataType.component, setMonitoringDataType.variable);
+            this._logger.debug("Found component and variable:", component, variable);
+            // When the CSMS sends a SetVariableMonitoringRequest with type Delta for a Variable that is NOT of a numeric
+            // type, It is RECOMMENDED to use a monitorValue of 1.
+            if (setMonitoringDataType.type === MonitorEnumType.Delta && variable && variable.variableCharacteristics && variable.variableCharacteristics.dataType !== DataEnumType.decimal && variable.variableCharacteristics.dataType !== DataEnumType.integer) {
+                setMonitoringDataType.value = 1;
+                this._logger.debug("Updated SetMonitoringData value to 1", setMonitoringData[i]);
+            }
+            // component and variable are required for a variableMonitoring
+            if (component && variable) {
+                await this._module.variableMonitoringRepository.createOrUpdateBySetMonitoringDataTypeAndStationId(setMonitoringDataType, component.id, variable.id, identifier);
+            }
+        }
+
+        let itemsPerMessageSetVariableMonitoring = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(this._componentMonitoringCtrlr, CallAction.SetVariableMonitoring, identifier);
+        // If ItemsPerMessageSetVariableMonitoring not set, send all variables at once
+        itemsPerMessageSetVariableMonitoring = itemsPerMessageSetVariableMonitoring == null ?
+            setMonitoringData.length : itemsPerMessageSetVariableMonitoring;
+
+        const confirmations = [];
+        // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
+        for (const [index, batch] of getBatches(setMonitoringData, itemsPerMessageSetVariableMonitoring).entries()) {
+            try {
+                const batchResult = await this._module.sendCall(identifier, tenantId, CallAction.SetVariableMonitoring, {setMonitoringData: batch} as SetVariableMonitoringRequest, callbackUrl);
+                confirmations.push({
+                    success: batchResult.success,
+                    batch: `[${index}:${index + batch.length}]`,
+                    message: `${batchResult.payload}`,
+                })
+            } catch (error) {
+                confirmations.push({
+                    success: false,
+                    batch: `[${index}:${index + batch.length}]`,
+                    message: `${error}`,
+                })
+            }
+        }
+
+        // Caller should use callbackUrl to ensure request reached station, otherwise receipt is not guaranteed
+        return { success: true, payload: confirmations };
+    }
+
+    @AsMessageEndpoint(CallAction.ClearVariableMonitoring, ClearVariableMonitoringRequestSchema)
+    async clearVariableMonitoring(identifier: string, tenantId: string, request: ClearVariableMonitoringRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        this._logger.debug("ClearVariableMonitoring request received", identifier, request);
+        // if request size is bigger than bytesPerMessageClearVariableMonitoring,
+        // return error
+        let bytesPerMessageClearVariableMonitoring = await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(this._componentMonitoringCtrlr, CallAction.ClearVariableMonitoring, identifier);
+        const requestBytes = getSizeOfRequest(request);
+        if (bytesPerMessageClearVariableMonitoring && requestBytes > bytesPerMessageClearVariableMonitoring) {
+            let errorMsg = `The request is too big. The max size is ${bytesPerMessageClearVariableMonitoring} bytes.`;
+            this._logger.error(errorMsg);
+            return {success: false, payload: errorMsg};
+        }
+
+        let ids = request.id as number[];
+        let itemsPerMessageClearVariableMonitoring = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(this._componentMonitoringCtrlr, CallAction.ClearVariableMonitoring, identifier);
+        // If itemsPerMessageClearVariableMonitoring not set, send all variables at once
+        itemsPerMessageClearVariableMonitoring = itemsPerMessageClearVariableMonitoring == null ?
+            ids.length : itemsPerMessageClearVariableMonitoring;
+
+        const confirmations = [];
+        // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
+        for (const [index, batch] of getBatches(ids, itemsPerMessageClearVariableMonitoring).entries()) {
+            try {
+                const batchResult = await this._module.sendCall(identifier, tenantId, CallAction.ClearVariableMonitoring, {id: batch} as ClearVariableMonitoringRequest, callbackUrl);
+                confirmations.push({
+                    success: batchResult.success,
+                    batch: `[${index}:${index + batch.length}]`,
+                    message: `${batchResult.payload}`,
+                });
+            } catch (error) {
+                confirmations.push({
+                    success: false,
+                    batch: `[${index}:${index + batch.length}]`,
+                    message: `${error}`,
+                });
+            }
+        }
+
+        return {success: true, payload: confirmations};
+    }
+
+    @AsMessageEndpoint(CallAction.SetMonitoringLevel, SetMonitoringLevelRequestSchema)
+    setMonitoringLevel(identifier: string, tenantId: string, request: SetMonitoringLevelRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.SetMonitoringLevel, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.SetMonitoringBase, SetMonitoringBaseRequestSchema)
+    setMonitoringBase(identifier: string, tenantId: string, request: SetMonitoringBaseRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.SetMonitoringBase, request, callbackUrl);
+    }
+
     @AsMessageEndpoint(CallAction.SetVariables, SetVariablesRequestSchema)
     async setVariables(
         identifier: string,
@@ -43,7 +182,7 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         // from SetVariablesResponse handler if variable does not exist when it attempts to save the Response's status
         await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(setVariableData, identifier);
 
-        let itemsPerMessageSetVariables = await this._module._deviceModelService.getItemsPerMessageSetVariablesByStationId(identifier);
+        let itemsPerMessageSetVariables = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(this._componentDeviceDataCtrlr, CallAction.SetVariables, identifier);
 
         // If ItemsPerMessageSetVariables not set, send all variables at once
         itemsPerMessageSetVariables = itemsPerMessageSetVariables == null ?
@@ -82,8 +221,18 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         request: GetVariablesRequest,
         callbackUrl?: string
     ): Promise<IMessageConfirmation> {
+        // if request size is bigger than BytesPerMessageGetVariables,
+        // return error
+        let bytesPerMessageGetVariables = await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(this._componentDeviceDataCtrlr, CallAction.GetVariables, identifier);
+        const requestBytes = getSizeOfRequest(request);
+        if (bytesPerMessageGetVariables && requestBytes > bytesPerMessageGetVariables) {
+            let errorMsg = `The request is too big. The max size is ${bytesPerMessageGetVariables} bytes.`;
+            this._logger.error(errorMsg);
+            return {success: false, payload: errorMsg};
+        }
+
         let getVariableData = request.getVariableData as GetVariableDataType[];
-        let itemsPerMessageGetVariables = await this._module._deviceModelService.getItemsPerMessageGetVariablesByStationId(identifier);
+        let itemsPerMessageGetVariables = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(this._componentDeviceDataCtrlr, CallAction.GetVariables, identifier);
 
         // If ItemsPerMessageGetVariables not set, send all variables at once
         itemsPerMessageGetVariables = itemsPerMessageGetVariables == null ?
@@ -92,7 +241,7 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         const confirmations = [];
         let lastVariableIndex = 0;
         // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
-        while (getVariableData.length > 0) { 
+        while (getVariableData.length > 0) {
             const batch = getVariableData.slice(0, itemsPerMessageGetVariables);
             try {
                 const batchResult = await this._module.sendCall(identifier, tenantId, CallAction.GetVariables, { getVariableData: batch } as GetVariablesRequest, callbackUrl);
@@ -120,15 +269,16 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
      */
 
     @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Put, CreateOrUpdateVariableAttributeQuerySchema, ReportDataTypeSchema)
-    putDeviceModelVariables(request: FastifyRequest<{ Body: ReportDataType, Querystring: CreateOrUpdateVariableAttributeQuerystring }>): Promise<sequelize.VariableAttribute[]> {
-        return this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(request.body, request.query.stationId).then(variableAttributes => {
+    async putDeviceModelVariables(request: FastifyRequest<{ Body: ReportDataType, Querystring: CreateOrUpdateVariableAttributeQuerystring }>): Promise<sequelize.VariableAttribute[]> {
+        return this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(request.body, request.query.stationId).then(async variableAttributes => {
             if (request.query.setOnCharger) { // value set offline, for example: manually via charger ui, or via api other than ocpp
-                for (const variableAttribute of variableAttributes) {
+                for (let variableAttribute of variableAttributes) {
+                    variableAttribute = await variableAttribute.reload({ include: [Variable, Component] });
                     this._module.deviceModelRepository.updateResultByStationId({
                         attributeType: variableAttribute.type,
                         attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: "SetOnCharger" },
                         component: variableAttribute.component, variable: variableAttribute.variable
-                      }, request.query.stationId);
+                    }, request.query.stationId);
                 }
             }
             return variableAttributes;
