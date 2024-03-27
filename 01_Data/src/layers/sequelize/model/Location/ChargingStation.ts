@@ -18,6 +18,7 @@ export class ChargingStation extends Model {
     @Column(DataType.STRING(36))
     declare id: string;
 
+    @Column
     declare isOnline: boolean;
 
     @ForeignKey(() => Location)
