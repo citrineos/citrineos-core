@@ -1,10 +1,10 @@
-node_modules
+../node_modules
 dist
 *.log
 *.lock
 .dockerignore
-deploy.Dockerfile
-docker-compose.yml
+Server/deploy.Dockerfile
+Server/docker-compose.yml
 package-lock.json
 
 Server/dist

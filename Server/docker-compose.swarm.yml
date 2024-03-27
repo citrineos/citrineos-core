@@ -27,8 +27,8 @@ services:
       POSTGRES_PASSWORD: "citrine"
   redis:
     build:
-      context: ./
-      dockerfile: ./redis.Dockerfile
+      context: ..
+      dockerfile: ../redis.Dockerfile
     ports:
       - "6379:6379"
     healthcheck:
@@ -57,8 +57,8 @@ services:
       WEBSOCKETS_ENABLED: 'true'
   citrine:
     build:
-      context: ./
-      dockerfile: .deploy.Dockerfile
+      context: ..
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -76,8 +76,8 @@ services:
       APP_NAME: 'general'
   certificates:
     build:
-      context: ../
-      dockerfile: .deploy.redis.Dockerfile
+      context: ..
+      dockerfile: ./Server/deploy.redis.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -93,7 +93,7 @@ services:
       APP_NAME: 'certificates'
   configuration:
     build:
-      context: ../
+      context: ../..
       dockerfile: .deploy.redis.Dockerfile
     depends_on:
       ocpp-db:
@@ -113,7 +113,7 @@ services:
       APP_NAME: 'configuration'
   evdriver:
     build:
-      context: ../
+      context: ../..
       dockerfile: .deploy.redis.Dockerfile
     depends_on:
       ocpp-db:
@@ -133,7 +133,7 @@ services:
       APP_NAME: 'evdriver'
   monitoring:
     build:
-      context: ../
+      context: ../..
       dockerfile: .deploy.redis.Dockerfile
     depends_on:
       ocpp-db:
@@ -153,7 +153,7 @@ services:
       APP_NAME: 'monitoring'
   reporting:
     build:
-      context: ../
+      context: ../..
       dockerfile: .deploy.redis.Dockerfile
     depends_on:
       ocpp-db:
@@ -173,7 +173,7 @@ services:
       APP_NAME: 'reporting'
   smartcharging:
     build:
-      context: ../
+      context: ../..
       dockerfile: .deploy.redis.Dockerfile
     depends_on:
       ocpp-db:
@@ -193,7 +193,7 @@ services:
       APP_NAME: 'smartcharging'
   transactions:
     build:
-      context: ../
+      context: ../..
       dockerfile: .deploy.redis.Dockerfile
     depends_on:
       ocpp-db:

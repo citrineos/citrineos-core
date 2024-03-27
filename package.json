@@ -10,11 +10,7 @@
   "scripts": {
     "install-all": "npm i",
     "clean": "rm -rf dist/*",
-    "build": "npm run clean && tsc --build --verbose",
-    "watch": "tsc -w",
-    "start": "APP_NAME=all APP_ENV=local node --inspect=0.0.0.0:9229 dist/index.js",
-    "start:local-docker": "nodemon src/index.ts",
-    "start:local": "APP_NAME=all APP_ENV=local nodemon src/index.ts"
+    "build": "npm run clean && tsc --build --verbose"
   },
   "dependencies": {
     "@citrineos/server": "1.0.0"

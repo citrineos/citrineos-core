@@ -10,7 +10,10 @@
     "start-unix:local": "export APP_ENV=local && export CITRINEOS_DATA_SEQUELIZE_HOST=127.0.0.1 && npx nodemon",
     "start-windows:local": "set APP_ENV=local && RefreshEnv.cmd && npx nodemon",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "rm -rf dist/* && tsc -p tsconfig.json"
+    "compile": "rm -rf dist/* && tsc -p tsconfig.json",
+    "start": "APP_NAME=all APP_ENV=local node --inspect=0.0.0.0:9229 dist/index.js",
+    "start:local-docker": "nodemon src/index.ts",
+    "start:local": "APP_NAME=all APP_ENV=local nodemon src/index.ts"
   },
   "keywords": [
     "ocpp",

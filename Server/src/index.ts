@@ -319,3 +319,11 @@ export class Server {
     }
   }
 }
+
+new Server(
+  process.env.APP_NAME as EventGroup,
+  systemConfig
+).run().catch((error: any) => {
+  console.error(error)
+  process.exit(1)
+});

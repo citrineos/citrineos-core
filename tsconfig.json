@@ -1,12 +1,9 @@
 {
   "extends": "./tsconfig.build.json",
   "compilerOptions": {
-    "rootDir": "./src",
+    "rootDir": "./",
     "outDir": "./dist/"
   },
-  "files": [
-    "./src/index.ts"
-  ],
   "references": [
     {
       "path": "./Server"
