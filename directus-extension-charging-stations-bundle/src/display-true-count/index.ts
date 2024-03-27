@@ -1,7 +1,12 @@
-import DisplayComponent from './display.vue';
-import { useStores } from '@directus/extensions-sdk';
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
 
-export default {
+import { defineDisplay, useStores } from '@directus/extensions-sdk';
+import DisplayComponent from './display.vue';
+import { DeepPartial, Field, FieldMeta } from '@directus/types';
+
+export default defineDisplay({
 	id: 'directus-display-true-count',
 	name: 'Count Present or True',
 	icon: '123',
@@ -9,13 +14,13 @@ export default {
 	component: DisplayComponent,
 	options: ({ editing, relations }) => {
 		const relatedCollection =
-			relations.o2m?.meta.junction_field != null ? relations.m2o?.related_collection : relations.o2m?.collection;
+			relations.o2m?.meta?.junction_field != null ? relations.m2o?.related_collection : relations.o2m?.collection;
 
-		const junction_table = relations.o2m?.meta.junction_field != null ? relations.o2m?.collection : null;
+		const junction_table = relations.o2m?.meta?.junction_field != null ? relations.o2m?.collection : null;
 		const { useFieldsStore } = useStores();
 		const fieldsStore = useFieldsStore();
 
-		let fieldSelection;
+		let fieldSelection: DeepPartial<FieldMeta>;
 		if (editing === '+') {
 			fieldSelection = {
 				interface: 'presentation-notice',
@@ -25,8 +30,8 @@ export default {
 				width: 'full',
 			};
 		} else {
-			const fields = fieldsStore.getFieldsForCollection(relatedCollection);
-			const field_choices = [];
+			const fields: Field[] = fieldsStore.getFieldsForCollection(relatedCollection);
+			const field_choices: object[] = [];
 
 			// console.log("fields", fields);
 			
@@ -34,7 +39,7 @@ export default {
 				// console.log(field);
 				field_choices.push({
 					text: field.field,
-					value: junction_table ? `${relations.o2m.meta.junction_field}.${field.field}` : field.field,
+					value: junction_table ? `${relations.o2m?.meta?.junction_field}.${field.field}` : field.field,
 				});
 			});
 
@@ -108,4 +113,4 @@ export default {
 	fields: (options) => {
 		return [options.column];
 	},
-};
+});

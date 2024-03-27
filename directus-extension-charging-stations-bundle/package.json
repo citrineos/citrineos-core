@@ -1,0 +1,50 @@
+{
+	"name": "directus-extension-charging-stations-bundle",
+	"description": "Directus extension bundle for CitrineOS to support charging stations",
+	"icon": "extension",
+	"version": "1.0.0",
+	"keywords": [
+		"directus",
+		"directus-extension",
+		"directus-extension-bundle"
+	],
+	"type": "module",
+	"files": [
+		"dist"
+	],
+	"directus:extension": {
+		"type": "bundle",
+		"path": {
+			"app": "dist/app.js",
+			"api": "dist/api.js"
+		},
+		"entries": [{
+			"type": "display",
+			"name": "Present or True Count",
+			"source": "src/display-true-count/index.ts"
+		}, {
+			"type": "endpoint",
+			"name": "Charging Stations endpoints",
+			"source": "src/endpoints-charging-stations/index.ts"
+		}, {
+			"type": "hook",
+			"name": "On Create Charging Station",
+			"source": "src/hook-on-create-charging-station/index.ts"
+		}],
+		"host": "^10.10.0"
+	},
+	"scripts": {
+		"build": "directus-extension build",
+		"dev": "directus-extension build -w --no-minify",
+		"link": "directus-extension link",
+		"add": "directus-extension add"
+	},
+	"devDependencies": {
+		"@directus/extensions-sdk": "11.0.1",
+		"@types/node": "^20.11.30",
+		"typescript": "^5.4.3"
+	},
+	"dependencies": {
+		"@directus/types": "^11.0.7"
+	}
+}

@@ -1,14 +1,18 @@
 <template>
-	<div v-if="calculatedValue">{{ calculatedValue }}{{ totalPrefix }}{{ total }}{{ suffix }}</div>
-	<value-null v-else />
+	<span>{{ calculatedValue }}{{ totalPrefix }}{{ total }}{{ suffix }}</span>
 </template>
 
-<script>
-import { ref } from 'vue';
-export default {
+<script lang="ts">
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
+import { defineComponent, ref } from 'vue';
+
+export default defineComponent({
 	props: {
 		value: {
-			type: String,
+			type: Array<object | string>,
 			default: null,
 		},
 		column: {
@@ -47,5 +51,5 @@ export default {
 
 		return { calculatedValue, total };
 	},
-};
+});
 </script>
