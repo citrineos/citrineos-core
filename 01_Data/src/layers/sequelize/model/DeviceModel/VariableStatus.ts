@@ -2,10 +2,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, CustomDataType } from "@citrineos/base";
-import { StatusInfoType } from "@citrineos/base/lib/ocpp/model/types/SetVariablesResponse";
-import { Table, Model, BelongsTo, Column, DataType, ForeignKey } from "sequelize-typescript";
-import { VariableAttribute } from "./VariableAttribute";
+import {CustomDataType, Namespace, StatusInfoType} from "@citrineos/base";
+import {BelongsTo, Column, DataType, ForeignKey, Model, Table} from "sequelize-typescript";
+import {VariableAttribute} from "./VariableAttribute";
 
 @Table
 export class VariableStatus extends Model {

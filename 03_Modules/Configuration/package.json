@@ -2,20 +2,15 @@
   "name": "@citrineos/configuration",
   "version": "1.0.0",
   "description": "The configuration module for OCPP v2.0.1. This module is not intended to be used directly, but rather as a dependency for other modules.",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
-    "lib"
+    "dist"
   ],
   "scripts": {
     "prepublish": "npx eslint",
-    "prepare": "npm run build",
-    "build": "tsc",
-    "refresh-base": "cd ../../00_Base && npm run build && npm pack && cd ../03_Modules/Configuration && npm install ../../00_Base/citrineos-base-1.0.0.tgz",
-    "refresh-data": "cd ../../01_Data && npm run build && npm pack && cd ../03_Modules/Configuration && npm install ../../01_Data/citrineos-data-1.0.0.tgz",
-    "refresh-util": "cd ../../02_Util && npm run build && npm pack && cd ../03_Modules/Configuration && npm install ../../02_Util/citrineos-util-1.0.0.tgz",
-    "install-all": "npm install ../../00_Base/citrineos-base-1.0.0.tgz && npm install ../../02_Util/citrineos-util-1.0.0.tgz && npm install ../../01_Data/citrineos-data-1.0.0.tgz",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile": "rm -rf dist/* && tsc -p tsconfig.json"
   },
   "keywords": [
     "ocpp",
@@ -35,9 +30,10 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@citrineos/base": "file:../../00_Base/citrineos-base-1.0.0.tgz",
-    "@citrineos/data": "file:../../01_Data/citrineos-data-1.0.0.tgz",
-    "@citrineos/util": "file:../../02_Util/citrineos-util-1.0.0.tgz",
+    "@citrineos/base": "1.0.0",
+    "@citrineos/data": "1.0.0",
+    "@citrineos/util": "1.0.0",
     "uuid": "^9.0.1"
-  }
+  },
+  "workspace": "../../"
 }

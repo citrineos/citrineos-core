@@ -5,32 +5,32 @@
 
 import {
   AbstractModule,
-  CallAction,
-  SystemConfig,
-  ICache,
-  IMessageSender,
-  IMessageHandler,
-  EventGroup,
   AsHandler,
-  IMessage,
-  NotifyReportRequest,
+  CallAction,
+  CustomerInformationResponse,
+  EventGroup,
+  GenericDeviceModelStatusEnumType,
+  GetBaseReportResponse,
+  GetLogResponse,
+  GetMonitoringReportResponse,
+  GetReportResponse,
   HandlerProperties,
-  SetVariableStatusEnumType,
-  NotifyReportResponse,
-  NotifyMonitoringReportRequest,
-  NotifyMonitoringReportResponse,
+  ICache,
+  IMessage,
+  IMessageHandler,
+  IMessageSender,
   LogStatusNotificationRequest,
   LogStatusNotificationResponse,
   NotifyCustomerInformationRequest,
   NotifyCustomerInformationResponse,
-  GetBaseReportResponse,
+  NotifyMonitoringReportRequest,
+  NotifyMonitoringReportResponse,
+  NotifyReportRequest,
+  NotifyReportResponse,
   SecurityEventNotificationRequest,
   SecurityEventNotificationResponse,
-  CustomerInformationResponse,
-  GetLogResponse,
-  GetMonitoringReportResponse,
-  GetReportResponse,
-  GenericDeviceModelStatusEnumType
+  SetVariableStatusEnumType,
+  SystemConfig
 } from "@citrineos/base";
 import {
   IDeviceModelRepository,
@@ -38,10 +38,10 @@ import {
   IVariableMonitoringRepository,
   sequelize
 } from "@citrineos/data";
-import { Component, Variable } from "@citrineos/data/lib/layers/sequelize";
-import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
+import {Component, Variable} from "@citrineos/data/lib/layers/sequelize";
+import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
-import { ILogObj, Logger } from 'tslog';
+import {ILogObj, Logger} from 'tslog';
 import {DeviceModelService} from "./services";
 import {StatusInfoType} from "@citrineos/base/lib/ocpp/model/types/GetMonitoringReportResponse";
 

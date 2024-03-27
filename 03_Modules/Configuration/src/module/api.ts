@@ -3,13 +3,43 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Boot } from '@citrineos/data/lib/layers/sequelize';
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import { IConfigurationModuleApi } from './interface';
-import { ConfigurationModule } from './module';
-import { AbstractModuleApi, AsMessageEndpoint, CallAction, SetNetworkProfileRequestSchema, SetNetworkProfileRequest, IMessageConfirmation, UpdateFirmwareRequestSchema, UpdateFirmwareRequest, ResetRequestSchema, ChangeAvailabilityRequestSchema, ResetRequest, TriggerMessageRequestSchema, TriggerMessageRequest, AsDataEndpoint, Namespace, HttpMethod, BootConfigSchema, BootNotificationResponse, BootConfig, ChangeAvailabilityRequest, PublishFirmwareRequestSchema, ClearDisplayMessageRequest, ClearDisplayMessageRequestSchema, GetDisplayMessagesRequest, GetDisplayMessagesRequestSchema, PublishFirmwareRequest, SetDisplayMessageRequest, SetDisplayMessageRequestSchema, UnpublishFirmwareRequest, UnpublishFirmwareRequestSchema } from '@citrineos/base';
-import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring } from '@citrineos/data';
+import {FastifyInstance, FastifyRequest} from 'fastify';
+import {ILogObj, Logger} from 'tslog';
+import {IConfigurationModuleApi} from './interface';
+import {ConfigurationModule} from './module';
+import {
+    AbstractModuleApi,
+    AsDataEndpoint,
+    AsMessageEndpoint,
+    BootConfig,
+    BootConfigSchema,
+    BootNotificationResponse,
+    CallAction,
+    ChangeAvailabilityRequest,
+    ChangeAvailabilityRequestSchema,
+    ClearDisplayMessageRequest,
+    ClearDisplayMessageRequestSchema,
+    GetDisplayMessagesRequest,
+    GetDisplayMessagesRequestSchema,
+    HttpMethod,
+    IMessageConfirmation,
+    Namespace,
+    PublishFirmwareRequest,
+    PublishFirmwareRequestSchema,
+    ResetRequest,
+    ResetRequestSchema,
+    SetDisplayMessageRequest,
+    SetDisplayMessageRequestSchema,
+    SetNetworkProfileRequest,
+    SetNetworkProfileRequestSchema,
+    TriggerMessageRequest,
+    TriggerMessageRequestSchema,
+    UnpublishFirmwareRequest,
+    UnpublishFirmwareRequestSchema,
+    UpdateFirmwareRequest,
+    UpdateFirmwareRequestSchema
+} from '@citrineos/base';
+import {Boot, ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring} from '@citrineos/data';
 
 /**
  * Server API for the Configuration component.

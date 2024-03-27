@@ -1,21 +1,44 @@
 {
-  "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",
-    "skipLibCheck": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "declaration": true,
-    "outDir": "lib",
-    "strict": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true
-  },
+  "extends": "../tsconfig.build.json",
   "include": [
-    "src"
+    "src/**/*.ts",
+    "src/**/*.json"
   ],
-  "exclude": [
-    "node_modules",
-    "**/__tests__/*"
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "rootDir": "./src",
+    "composite": true
+  },
+  "references": [
+    {
+      "path": "../00_Base"
+    },
+    {
+      "path": "../01_Data"
+    },
+    {
+      "path": "../02_Util"
+    },
+    {
+      "path": "../03_Modules/Certificates"
+    },
+    {
+      "path": "../03_Modules/Configuration"
+    },
+    {
+      "path": "../03_Modules/EVDriver"
+    },
+    {
+      "path": "../03_Modules/Monitoring"
+    },
+    {
+      "path": "../03_Modules/Reporting"
+    },
+    {
+      "path": "../03_Modules/SmartCharging"
+    },
+    {
+      "path": "../03_Modules/Transactions"
+    }
   ]
 }
