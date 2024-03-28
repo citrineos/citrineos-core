@@ -8,6 +8,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IAdminApi } from './interface';
 import { MessageRouterImpl, Subscription } from './router';
+import { ChargingStationKeyQuerystring, ModelKeyQuerystring } from '@citrineos/data';
 
 /**
  * Server API for the Certificates module.
@@ -29,87 +30,26 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
      * Data endpoints
      */
 
-    @AsDataEndpoint(Namespace.Subscription, HttpMethod.Put)
-    async putSubscription(request: FastifyRequest<{ Body: Subscription }>): Promise<void> {
-        if (request.body.onConnect) {
-            this._module.addOnConnectionCallback(async (identifier: string) => {
-                if (identifier == request.body.stationId) {
-                    return fetch(request.body.url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ stationId: identifier, event: 'connected' })
-                    }).then(res => res.status === 200).catch(error => {
-                        this._logger.error(error);
-                        return false;
-                    });
-                } else { // Ignore
-                    return true;
-                }
-            });
-            this._logger.debug(`Added onConnect callback to ${request.body.url} for station ${request.body.stationId}`);
-        }
-        if (request.body.onClose) {
-            this._module.addOnCloseCallback(async (identifier: string) => {
-                if (identifier == request.body.stationId) {
-                    return fetch(request.body.url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ stationId: identifier, event: 'closed' })
-                    }).then(res => res.status === 200).catch(error => {
-                        this._logger.error(error);
-                        return false;
-                    });
-                } else { // Ignore
-                    return true;
-                }
-            });
-            this._logger.debug(`Added onClose callback to ${request.body.url} for station ${request.body.stationId}`);
-        }
-        if (request.body.onMessage) {
-            this._module.addOnMessageCallback(async (identifier: string, message: string) => {
-                if (identifier == request.body.stationId &&
-                    (!request.body.messageOptions?.regexFilter || new RegExp(request.body.messageOptions.regexFilter).test(message))) {
-                    return fetch(request.body.url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ stationId: identifier, event: 'message', origin: MessageOrigin.ChargingStation, message: message })
-                    }).then(res => res.status === 200).catch(error => {
-                        this._logger.error(error);
-                        return false;
-                    });
-                } else { // Ignore
-                    return true;
-                }
-            });
-            this._logger.debug(`Added onMessage callback to ${request.body.url} for station ${request.body.stationId}`);
-        }
-        if (request.body.sentMessage) {
-            this._module.addSentMessageCallback(async (identifier: string, message: string, error?: any) => {
-                if (identifier == request.body.stationId &&
-                    (!request.body.messageOptions?.regexFilter || new RegExp(request.body.messageOptions.regexFilter).test(message))) {
-                    return fetch(request.body.url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ stationId: identifier, event: 'message', origin: MessageOrigin.CentralSystem, message: message, error: error })
-                    }).then(res => res.status === 200).catch(error => {
-                        this._logger.error(error);
-                        return false;
-                    });
-                } else { // Ignore
-                    return true;
-                }
-            });
-            this._logger.debug(`Added sentMessage callback to ${request.body.url} for station ${request.body.stationId}`);
-        }
-        return;
+    /**
+     * Creates a {@link Subscription}.
+     * Will always create a new entity and return its id.
+     *
+     * @param {FastifyRequest<{ Body: Subscription }>} request - The request object, containing the body which is parsed as a {@link Subscription}.
+     * @return {Promise<number>} The id of the created subscription.
+     */
+    @AsDataEndpoint(Namespace.Subscription, HttpMethod.Post)
+    async putSubscription(request: FastifyRequest<{ Body: Subscription }>): Promise<number> {
+        return this._module.subscriptionRepository.create(request.body as Subscription).then((subscription) => subscription?.id);
+    }
+
+    @AsDataEndpoint(Namespace.Subscription, HttpMethod.Get)
+    async getSubscriptionsByChargingStation(request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>): Promise<Subscription[]> {
+        return this._module.subscriptionRepository.readAllByStationId(request.query.stationId);
+    }
+
+    @AsDataEndpoint(Namespace.Subscription, HttpMethod.Delete)
+    async deleteSubscriptionById(request: FastifyRequest<{ Querystring: ModelKeyQuerystring }>): Promise<boolean> {
+        return this._module.subscriptionRepository.deleteByKey(request.query.id.toString()).then(() => true);
     }
 
     /**

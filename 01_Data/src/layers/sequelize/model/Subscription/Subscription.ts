@@ -3,12 +3,13 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace } from "@citrineos/base";
-import { Column, Model, Table } from "sequelize-typescript";
+import { Column, Index, Model, Table } from "sequelize-typescript";
 
 @Table
 export class Subscription extends Model {
     static readonly MODEL_NAME: string = Namespace.Subscription;
 
+    @Index
     @Column
     declare stationId: string;
 

@@ -22,6 +22,7 @@ export { LocationRepository } from "./repository/Location";
 export { TransactionEventRepository } from "./repository/TransactionEvent";
 export { SecurityEventRepository } from "./repository/SecurityEvent";
 export { VariableMonitoringRepository } from "./repository/VariableMonitoring";
+export { SubscriptionRepository } from "./repository/Subscription";
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from "./util";

@@ -10,6 +10,7 @@ export { ChargingStationKeyQuerystring, ChargingStationKeyQuerySchema } from "./
 export { VariableAttributeQuerystring, VariableAttributeQuerySchema, CreateOrUpdateVariableAttributeQuerystring, CreateOrUpdateVariableAttributeQuerySchema } from "./queries/VariableAttribute";
 export { AuthorizationQuerystring, AuthorizationQuerySchema } from "./queries/Authorization";
 export { TransactionEventQuerystring, TransactionEventQuerySchema } from "./queries/TransactionEvent";
+export { ModelKeyQuerystring, ModelKeyQuerystringSchema } from "./queries/Model";
 
 // Data projection models
 export { AuthorizationRestrictions } from "./projections/AuthorizationRestrictions";
