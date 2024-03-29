@@ -5,7 +5,6 @@ dist
 .dockerignore
 Server/deploy.Dockerfile
 Server/docker-compose.yml
-package-lock.json
 
 Server/dist
 00_Base/dist

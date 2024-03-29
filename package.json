@@ -1,5 +1,6 @@
 {
   "name": "@citrineos/workspace",
+  "version": "1.0.0",
   "private": true,
   "devDependencies": {
     "@types/node": "^20.11.20",
@@ -8,9 +9,9 @@
     "typescript": "^5.3.3"
   },
   "scripts": {
-    "install-all": "npm i",
-    "clean": "rm -rf dist/*",
-    "build": "npm run clean && tsc --build --verbose"
+    "install-all": "npm i --verbose",
+    "clean": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json dist **/dist **/**/dist node_modules **/node_modules **/**/node_modules tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
+    "build": "tsc --build --verbose"
   },
   "dependencies": {
     "@citrineos/server": "1.0.0"

@@ -25,7 +25,7 @@ import {
 import { FastifyInstance } from 'fastify';
 import { IReportingModuleApi } from './interface';
 import { ReportingModule } from './module';
-import {getBatches, getSizeOfRequest} from "@citrineos/util/lib/util/parser";
+import {getBatches, getSizeOfRequest} from "@citrineos/util";
 
 /**
  * Server API for the Reporting module.

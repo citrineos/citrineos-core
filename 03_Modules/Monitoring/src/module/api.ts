@@ -3,40 +3,48 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ILogObj, Logger } from 'tslog';
-import { IMonitoringModuleApi } from './interface';
-import { MonitoringModule } from './module';
-import { CreateOrUpdateVariableAttributeQuerySchema, CreateOrUpdateVariableAttributeQuerystring, sequelize, VariableAttributeQuerySchema, VariableAttributeQuerystring } from '@citrineos/data';
+import {ILogObj, Logger} from 'tslog';
+import {IMonitoringModuleApi} from './interface';
+import {MonitoringModule} from './module';
+import {
+    CreateOrUpdateVariableAttributeQuerySchema,
+    CreateOrUpdateVariableAttributeQuerystring,
+    sequelize,
+    VariableAttributeQuerySchema,
+    VariableAttributeQuerystring
+} from '@citrineos/data';
 import {
     AbstractModuleApi,
+    AsDataEndpoint,
     AsMessageEndpoint,
     CallAction,
-    SetVariablesRequestSchema,
-    SetVariablesRequest,
-    IMessageConfirmation,
-    SetVariableDataType,
-    GetVariablesRequestSchema,
-    GetVariablesRequest,
-    GetVariableDataType,
-    AsDataEndpoint,
-    Namespace,
-    HttpMethod,
-    ReportDataTypeSchema,
-    ReportDataType,
-    SetVariableStatusEnumType,
     ClearVariableMonitoringRequest,
     ClearVariableMonitoringRequestSchema,
+    DataEnumType,
+    GetVariableDataType,
+    GetVariablesRequest,
+    GetVariablesRequestSchema,
+    HttpMethod,
+    IMessageConfirmation,
+    MonitorEnumType,
+    Namespace,
+    ReportDataType,
+    ReportDataTypeSchema,
     SetMonitoringBaseRequest,
     SetMonitoringBaseRequestSchema,
+    SetMonitoringDataType,
     SetMonitoringLevelRequest,
     SetMonitoringLevelRequestSchema,
+    SetVariableDataType,
     SetVariableMonitoringRequest,
     SetVariableMonitoringRequestSchema,
-    SetMonitoringDataType, MonitorEnumType, DataEnumType
+    SetVariablesRequest,
+    SetVariablesRequestSchema,
+    SetVariableStatusEnumType
 } from '@citrineos/base';
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { Variable, Component } from '@citrineos/data/lib/layers/sequelize';
-import {getBatches, getSizeOfRequest} from "@citrineos/util/lib/util/parser";
+import {FastifyInstance, FastifyRequest} from 'fastify';
+import {Component, Variable} from '@citrineos/data';
+import {getBatches, getSizeOfRequest} from "@citrineos/util";
 
 /**
  * Server API for the Monitoring module.

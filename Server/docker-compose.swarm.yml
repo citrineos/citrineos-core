@@ -28,7 +28,7 @@ services:
   redis:
     build:
       context: ..
-      dockerfile: ../redis.Dockerfile
+      dockerfile: .redis.Dockerfile
     ports:
       - "6379:6379"
     healthcheck:
@@ -79,7 +79,7 @@ services:
   certificates:
     build:
       context: ..
-      dockerfile: ./Server/deploy.redis.Dockerfile
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -98,7 +98,7 @@ services:
   configuration:
     build:
       context: ../..
-      dockerfile: .deploy.redis.Dockerfile
+      dockerfile: .deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -120,7 +120,7 @@ services:
   evdriver:
     build:
       context: ../..
-      dockerfile: .deploy.redis.Dockerfile
+      dockerfile: .deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -142,7 +142,7 @@ services:
   monitoring:
     build:
       context: ../..
-      dockerfile: .deploy.redis.Dockerfile
+      dockerfile: .deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -164,7 +164,7 @@ services:
   reporting:
     build:
       context: ../..
-      dockerfile: .deploy.redis.Dockerfile
+      dockerfile: .deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -186,7 +186,7 @@ services:
   smartcharging:
     build:
       context: ../..
-      dockerfile: .deploy.redis.Dockerfile
+      dockerfile: .deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -208,7 +208,7 @@ services:
   transactions:
     build:
       context: ../..
-      dockerfile: .deploy.redis.Dockerfile
+      dockerfile: .deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started

@@ -55,21 +55,23 @@ services:
       - /usr/local/apps/citrineos/03_Modules/Configuration/node_modules
       - /usr/local/apps/citrineos/03_Modules/EVDriver/node_modules
       - /usr/local/apps/citrineos/03_Modules/Monitoring/node_modules
+      - /usr/local/apps/citrineos/03_Modules/OcppRouter/node_modules
       - /usr/local/apps/citrineos/03_Modules/Reporting/node_modules
       - /usr/local/apps/citrineos/03_Modules/SmartCharging/node_modules
       - /usr/local/apps/citrineos/03_Modules/Transactions/node_modules
-      - /usr/local/apps/citrineos/dist
-      - /usr/local/apps/citrineos/Server/dist
-      - /usr/local/apps/citrineos/00_Base/dist
-      - /usr/local/apps/citrineos/01_Data/dist
-      - /usr/local/apps/citrineos/02_Util/dist
-      - /usr/local/apps/citrineos/03_Modules/Certificates/dist
-      - /usr/local/apps/citrineos/03_Modules/Configuration/dist
-      - /usr/local/apps/citrineos/03_Modules/EVDriver/dist
-      - /usr/local/apps/citrineos/03_Modules/Monitoring/dist
-      - /usr/local/apps/citrineos/03_Modules/Reporting/dist
-      - /usr/local/apps/citrineos/03_Modules/SmartCharging/dist
-      - /usr/local/apps/citrineos/03_Modules/Transactions/dist
+      - /usr/local/apps/citrineos/dist/
+      - /usr/local/apps/citrineos/Server/dist/
+      - /usr/local/apps/citrineos/00_Base/dist/
+      - /usr/local/apps/citrineos/01_Data/dist/
+      - /usr/local/apps/citrineos/02_Util/dist/
+      - /usr/local/apps/citrineos/03_Modules/Certificates/dist/
+      - /usr/local/apps/citrineos/03_Modules/Configuration/dist/
+      - /usr/local/apps/citrineos/03_Modules/EVDriver/dist/
+      - /usr/local/apps/citrineos/03_Modules/Monitoring/dist/
+      - /usr/local/apps/citrineos/03_Modules/OcppRouter/dist/
+      - /usr/local/apps/citrineos/03_Modules/Reporting/dist/
+      - /usr/local/apps/citrineos/03_Modules/SmartCharging/dist/
+      - /usr/local/apps/citrineos/03_Modules/Transactions/dist/
     environment:
       APP_NAME: "all"
       APP_ENV: "docker"

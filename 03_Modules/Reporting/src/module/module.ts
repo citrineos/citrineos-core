@@ -38,12 +38,12 @@ import {
   IVariableMonitoringRepository,
   sequelize
 } from "@citrineos/data";
-import {Component, Variable} from "@citrineos/data/lib/layers/sequelize";
+import {Component, Variable} from "@citrineos/data";
 import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import {ILogObj, Logger} from 'tslog';
 import {DeviceModelService} from "./services";
-import {StatusInfoType} from "@citrineos/base/lib/ocpp/model/types/GetMonitoringReportResponse";
+import {StatusInfoType} from "@citrineos/base";
 
 /**
  * Component that handles provisioning related messages.

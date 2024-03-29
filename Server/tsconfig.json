@@ -32,6 +32,9 @@
       "path": "../03_Modules/Monitoring"
     },
     {
+      "path": "../03_Modules/OcppRouter"
+    },
+    {
       "path": "../03_Modules/Reporting"
     },
     {
