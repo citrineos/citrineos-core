@@ -61,6 +61,7 @@ services:
       - 8055:8055
     volumes:
       - ./data/directus/uploads:/directus/uploads
+      - ./directus-env-config.js:/directus/config.js
       - ../directus-extension-charging-stations-bundle:/directus/extensions/directus-extension-charging-stations-bundle
     depends_on:
       ocpp-db:
@@ -70,6 +71,7 @@ services:
       SECRET: '0987654321'
       ADMIN_EMAIL: 'admin@citrineos.com'
       ADMIN_PASSWORD: 'CitrineOS!'
+      CONFIG_PATH: '/directus/config.js'
       DB_CLIENT: 'pg'
       DB_HOST: ocpp-db
       DB_PORT: 5432

@@ -8,9 +8,10 @@ export default defineHook(({ action }, { env }) => {
 
     action('ChargingStations.items.create', (input) => {
         console.log("Subscribing " + input.key + " to connect and close events");
+        
         const stationId = input.key;
-        const subscriptionUrl = `http://citrine:8080/data/ocpprouter/subscription`;
-        const updateStationStatusUrl = "http://directus:8055/charging-stations/update-station-status";
+        const subscriptionUrl = `${env.CITRINEOS_URL}${env.CITRINEOS_SUBSCRIPTION_API_PATH}`;
+        const updateStationStatusUrl = `${env.DIRECTUS_URL}${env.DIRECTUS_CHARGING_STATION_UPDATE_STATUS_PATH}`;
         const requestBody = {
             stationId: stationId,
             onConnect: true,
@@ -18,6 +19,7 @@ export default defineHook(({ action }, { env }) => {
             url: updateStationStatusUrl
         }
 
+        console.log("Subscribing to " + subscriptionUrl + " with request body " + JSON.stringify(requestBody));
         fetch(subscriptionUrl, {
             method: 'PUT',
             headers: {

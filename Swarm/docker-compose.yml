@@ -16,7 +16,7 @@ services:
       timeout: 10s
       retries: 3
   ocpp-db:
-    image: citrineos/postgres:preseeded
+    image: postgis/postgis:latest
     ports:
       - 5432:5432
     volumes:
@@ -42,12 +42,14 @@ services:
       - 8055:8055
     volumes:
       - ./data/directus/uploads:/directus/uploads
-      - ./data/directus/extensions:/directus/extensions
+      - ./directus-env-config.js:/directus/config.js
+      - ../directus-extension-charging-stations-bundle:/directus/extensions/directus-extension-charging-stations-bundle
     environment:
       KEY: '1234567890'
       SECRET: '0987654321'
       ADMIN_EMAIL: 'admin@citrineos.com'
       ADMIN_PASSWORD: 'CitrineOS!'
+      CONFIG_PATH: '/directus/config.js'
       DB_CLIENT: 'pg'
       DB_HOST: ocpp-db
       DB_PORT: 5432
