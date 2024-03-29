@@ -49,9 +49,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         sender: IMessageSender,
         handler: IMessageHandler,
         networkHook: (identifier: string, message: string) => Promise<boolean>,
-        subscriptionRepository?: ISubscriptionRepository,
         logger?: Logger<ILogObj>,
         ajv?: Ajv,
+        subscriptionRepository?: ISubscriptionRepository
     ) {
         super(config, cache, handler, sender, networkHook, logger, ajv);
 

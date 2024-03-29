@@ -7,8 +7,9 @@ import { AbstractModuleApi, AsDataEndpoint, CallAction, HttpMethod, MessageOrigi
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IAdminApi } from './interface';
-import { MessageRouterImpl, Subscription } from './router';
+import { MessageRouterImpl } from './router';
 import { ChargingStationKeyQuerystring, ModelKeyQuerystring } from '@citrineos/data';
+import { Subscription } from '@citrineos/data/lib/layers/sequelize';
 
 /**
  * Server API for the Certificates module.
