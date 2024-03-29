@@ -391,13 +391,16 @@ export class WebsocketNetworkConnection {
                 const activeTransactions: Transaction[] = await this._transactionEventRepository.readAllActiveTransactionsByStationId(identifier);
                 for (let transaction of activeTransactions) {
                     const meterValues: MeterValue[] = await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(transaction.id);
-                    const cost = roundCost(getTotalKwh(meterValues) * tariff.price);
-                    this._logger.info(`Sending costUpdated for ${transaction.transactionId} with totalCost ${cost}`,);
+                    const totalKwh : number = getTotalKwh(meterValues);
+                    await Transaction.update({totalKwh: totalKwh}, {where: {id: transaction.id}, returning: false});
+                    const cost = roundCost(totalKwh * tariff.price);
                     // TODO: send correct tenantId
                     this._module.sendCall(identifier, "", CallAction.CostUpdated, {
                         totalCost: cost,
                         transactionId: transaction.transactionId
-                    } as CostUpdatedRequest)
+                    } as CostUpdatedRequest).then(() => {
+                        this._logger.info(`Sent costUpdated for ${transaction.transactionId} with totalCost ${cost}`,);
+                    })
                 }
             }
         }, costUpdatedInterval * 1000);

@@ -247,18 +247,7 @@ export class TransactionsModule extends AbstractModule {
       if (message.payload.eventType == TransactionEventEnumType.Updated) {
         // I02 - Show EV Driver Running Total Cost During Charging
         if (transaction && transaction.isActive && this._sendCostUpdatedOnMeterValue) {
-          // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
-          //  implementation is finalized
-          const tariff: Tariff | null = await this._tariffRepository.findByStationId(stationId);
-          if (tariff) {
-            this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);
-            const totalKwh = getTotalKwh(await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(transaction.id));
-            this._logger.debug(`TotalKwh: ${totalKwh}`);
-            await Transaction.update({totalKwh: totalKwh}, {where: {id: transaction.id}, returning: false});
-            response.totalCost = roundCost(totalKwh * tariff.price);
-          } else {
-            this._logger.error(`Tariff not found for station ${transactionEvent}`);
-          }
+          response.totalCost = await this._calculateTotalCost(stationId, transaction.id);
         }
 
         // I06 - Update Tariff Information During Transaction
@@ -278,18 +267,7 @@ export class TransactionsModule extends AbstractModule {
       }
 
       if (message.payload.eventType == TransactionEventEnumType.Ended && transaction) {
-        // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
-        //  implementation is finalized
-        const tariff: Tariff | null = await this._tariffRepository.findByStationId(stationId);
-        if (tariff) {
-          this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);
-          const totalKwh = getTotalKwh(await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(transaction.id));
-          this._logger.debug(`TotalKwh: ${totalKwh}`);
-          await Transaction.update({totalKwh: totalKwh}, {where: {id: transaction.id}, returning: false});
-          response.totalCost = roundCost(totalKwh * tariff.price);
-        } else {
-          this._logger.error(`Tariff not found for station ${transactionEvent}`);
-        }
+        response.totalCost = await this._calculateTotalCost(stationId, transaction.id);
       }
 
         this.sendCallResultWithMessage(message, response)
@@ -355,5 +333,24 @@ export class TransactionsModule extends AbstractModule {
     props?: HandlerProperties
   ): void {
     this._logger.debug("GetTransactionStatus response received:", message, props);
+  }
+
+  private async _calculateTotalCost(stationId: string, transactionDbId: number): Promise<number> {
+    // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
+    //  implementation is finalized
+    let totalCost: number = 0;
+
+    const tariff: Tariff | null = await this._tariffRepository.findByStationId(stationId);
+    if (tariff) {
+      this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);
+      const totalKwh = getTotalKwh(await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(transactionDbId));
+      this._logger.debug(`TotalKwh: ${totalKwh}`);
+      await Transaction.update({totalKwh: totalKwh}, {where: {id: transactionDbId}, returning: false});
+      totalCost = roundCost(totalKwh * tariff.price);
+    } else {
+      this._logger.error(`Tariff not found for station ${stationId}`);
+    }
+
+    return totalCost;
   }
 }
