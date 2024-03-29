@@ -12,7 +12,7 @@ import { ChargingStationKeyQuerystring, ModelKeyQuerystring } from '@citrineos/d
 import { Subscription } from '@citrineos/data/lib/layers/sequelize';
 
 /**
- * Server API for the Certificates module.
+ * Admin API for the OcppRouter.
  */
 export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IAdminApi {
 
