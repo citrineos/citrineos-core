@@ -4,12 +4,12 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { AttributeEnumType, ComponentType, DataEnumType, GetVariableResultType, MutabilityEnumType, ReportDataType, SetVariableDataType, SetVariableResultType, VariableType } from "@citrineos/base";
-import { VariableAttributeQuerystring } from "../../../interfaces/queries/VariableAttribute";
+import { VariableAttributeQuerystring } from "../../../interfaces";
 import { SequelizeRepository } from "./Base";
 import { IDeviceModelRepository } from "../../../interfaces";
 import { Op } from "sequelize";
 import { VariableAttribute, Component, Evse, Variable, VariableCharacteristics } from "../model/DeviceModel";
-import { VariableStatus } from "../model/DeviceModel/VariableStatus";
+import { VariableStatus } from "../model/DeviceModel";
 import { ComponentVariable } from "../model/DeviceModel/ComponentVariable";
 
 // TODO: Document this
@@ -229,6 +229,25 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
         }
 
         return [component, variable]
+    }
+
+    async findAttributeByComponentAndVariableAndStationId(componentName: string, variableName: string, variableInstance: string | null, stationId: string): Promise<boolean | null> {
+        const query: VariableAttributeQuerystring = {
+            stationId: stationId,
+            component_name: componentName,
+            variable_name: variableName,
+            type: AttributeEnumType.Actual
+        }
+        if (variableInstance) {
+            query.variable_instance = variableInstance;
+        }
+
+        const availableAttributes: VariableAttribute[] = await this.readAllByQuery(query);
+        if (availableAttributes.length == 0) {
+            return null;
+        } else {
+            return Boolean(availableAttributes[0].value);
+        }
     }
 
     /**

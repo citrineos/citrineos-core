@@ -30,7 +30,7 @@ import {
     MessageInfoType
 } from "@citrineos/base";
 import { AuthorizationQuerystring } from "./queries/Authorization";
-import { AuthorizationRestrictions, VariableAttributeQuerystring } from ".";
+import {AuthorizationRestrictions, TariffQueryString, VariableAttributeQuerystring} from ".";
 import {
     Boot,
     Authorization,
@@ -43,7 +43,8 @@ import {
     EventData,
     ChargingStation,
     Transaction,
-    MessageInfo
+    MessageInfo,
+    Tariff, MeterValue
 } from "../layers/sequelize";
 
 export interface IAuthorizationRepository extends ICrudRepository<AuthorizationData> {
@@ -76,6 +77,7 @@ export interface IDeviceModelRepository extends ICrudRepository<VariableAttribut
     existsByQuery(query: VariableAttributeQuerystring): Promise<boolean>;
     deleteAllByQuery(query: VariableAttributeQuerystring): Promise<number>;
     findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | null, Variable | null]>
+    findAttributeByComponentAndVariableAndStationId(componentName: string, variableName: string, variableInstance: string | null, stationId: string): Promise<boolean | null>
 }
 
 export interface ILocationRepository extends ICrudRepository<Location> { 
@@ -93,8 +95,9 @@ export interface ITransactionEventRepository extends ICrudRepository<Transaction
     readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]>;
     readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
     readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: EVSEType, chargingStates?: ChargingStateEnumType[]): Promise<Transaction[]>;
-    readAllActiveTransactionByIdToken(idToken: IdTokenType): Promise<Transaction[]>;
-    updateTotalCostByTransactionIdAndStationId(totalCost: number, transactionId: string, stationId: string): Promise<void>;
+    readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]>;
+    readAllActiveTransactionsByStationId(stationId: string): Promise<Transaction[]>;
+    readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
 }
 
 export interface IVariableMonitoringRepository extends ICrudRepository<VariableMonitoringType> {
@@ -109,4 +112,11 @@ export interface IVariableMonitoringRepository extends ICrudRepository<VariableM
 export interface IMessageInfoRepository extends ICrudRepository<MessageInfoType> {
     deactivateAllByStationId(stationId: string): Promise<void>;
     createOrUpdateByMessageInfoTypeAndStationId(value: MessageInfoType, stationId: string): Promise<MessageInfo>;
+}
+
+export interface ITariffRepository extends ICrudRepository<Tariff> {
+    findByStationId(stationId: string): Promise<Tariff | null>;
+    readAllByQuery(query: TariffQueryString): Promise<Tariff[]>;
+    deleteAllByQuery(query: TariffQueryString): Promise<number>;
+    createOrUpdateTariff(tariff: Tariff): Promise<Tariff>;
 }

@@ -10,7 +10,9 @@ export { ChargingStationKeyQuerystring, ChargingStationKeyQuerySchema } from "./
 export { VariableAttributeQuerystring, VariableAttributeQuerySchema, CreateOrUpdateVariableAttributeQuerystring, CreateOrUpdateVariableAttributeQuerySchema } from "./queries/VariableAttribute";
 export { AuthorizationQuerystring, AuthorizationQuerySchema } from "./queries/Authorization";
 export { TransactionEventQuerystring, TransactionEventQuerySchema } from "./queries/TransactionEvent";
+export { TariffQueryString, TariffQuerySchema, CreateOrUpdateTariffQuerySchema, CreateOrUpdateTariffQueryString } from "./queries/Tariff";
 
 // Data projection models
 export { AuthorizationRestrictions } from "./projections/AuthorizationRestrictions";
 export { default as AuthorizationRestrictionsSchema } from './projections/schemas/AuthorizationRestrictionsSchema.json'
+export { default as TariffSchema } from './projections/schemas/TariffSchema.json'

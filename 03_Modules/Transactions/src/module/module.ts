@@ -6,7 +6,7 @@
 import {
   AbstractModule,
   AdditionalInfoType,
-  AsHandler,
+  AsHandler, AttributeEnumType,
   AuthorizationStatusEnumType,
   CallAction,
   CostUpdatedResponse,
@@ -29,15 +29,14 @@ import {
 } from "@citrineos/base";
 import {
   IAuthorizationRepository,
-  IDeviceModelRepository,
+  IDeviceModelRepository, ITariffRepository,
   ITransactionEventRepository,
   sequelize
 } from "@citrineos/data";
-import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
+import {getTotalKwh, RabbitMqReceiver, RabbitMqSender, roundCost, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import {ILogObj, Logger} from 'tslog';
-import {DeviceModelService} from "./services";
-import {Transaction} from "@citrineos/data/lib/layers/sequelize";
+import {Tariff, Transaction, VariableAttribute} from "@citrineos/data/lib/layers/sequelize";
 
 /**
  * Component that handles transaction related messages.
@@ -54,9 +53,12 @@ export class TransactionsModule extends AbstractModule {
     CallAction.GetTransactionStatus
   ];
 
+  private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
+
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _authorizeRepository: IAuthorizationRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _tariffRepository: ITariffRepository;
 
   get transactionEventRepository(): ITransactionEventRepository {
     return this._transactionEventRepository;
@@ -70,7 +72,9 @@ export class TransactionsModule extends AbstractModule {
     return this._deviceModelRepository;
   }
 
-  public _deviceModelService: DeviceModelService;
+  get tariffRepository(): ITariffRepository {
+    return this._tariffRepository;
+  }
 
   /**
    * This is the constructor function that initializes the {@link TransactionModule}.
@@ -99,6 +103,11 @@ export class TransactionsModule extends AbstractModule {
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is
    * created and used.
+   *
+   * @param {ITariffRepository} [tariffRepository] - An optional parameter of type {@link ITariffRepository} which
+   * represents a repository for accessing and manipulating variable data.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize:tariffRepository} instance is
+   * created and used.
    */
   constructor(
     config: SystemConfig,
@@ -108,7 +117,8 @@ export class TransactionsModule extends AbstractModule {
     logger?: Logger<ILogObj>,
     transactionEventRepository?: ITransactionEventRepository,
     authorizeRepository?: IAuthorizationRepository,
-    deviceModelRepository?: IDeviceModelRepository
+    deviceModelRepository?: IDeviceModelRepository,
+    tariffRepository?: ITariffRepository
   ) {
     super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Transactions, logger);
 
@@ -122,8 +132,9 @@ export class TransactionsModule extends AbstractModule {
     this._transactionEventRepository = transactionEventRepository || new sequelize.TransactionEventRepository(config, logger);
     this._authorizeRepository = authorizeRepository || new sequelize.AuthorizationRepository(config, logger);
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, logger);
+    this._tariffRepository = tariffRepository || new sequelize.TariffRepository(config, logger);
 
-    this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
+    this._sendCostUpdatedOnMeterValue = config.modules.transactions.sendCostUpdatedOnMeterValue;
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -138,10 +149,12 @@ export class TransactionsModule extends AbstractModule {
     props?: HandlerProperties
   ): Promise<void> {
     this._logger.debug("Transaction event received:", message, props);
+    const stationId: string = message.context.stationId;
 
-    await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(message.payload, message.context.stationId);
+    await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(message.payload, stationId);
 
     const transactionEvent = message.payload;
+    const transactionId = transactionEvent.transactionInfo.transactionId;
     if (transactionEvent.idToken) {
       this._authorizeRepository.readByQuery({ ...transactionEvent.idToken }).then(authorization => {
         const response: TransactionEventResponse = {
@@ -201,27 +214,21 @@ export class TransactionsModule extends AbstractModule {
         }
         return response;
       }).then(transactionEventResponse => {
-        if (transactionEventResponse
-          && transactionEventResponse.idTokenInfo?.status == AuthorizationStatusEnumType.Accepted && transactionEvent.idToken) {
-          if(transactionEvent.eventType == TransactionEventEnumType.Started) {
-            // Check for ConcurrentTx
-            return this._transactionEventRepository.readAllActiveTransactionByIdToken(transactionEvent.idToken).then(activeTransactions => {
-              // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
-              if (activeTransactions.length > 1) {
-                const groupIdToken = transactionEventResponse.idTokenInfo?.groupIdToken;
-                transactionEventResponse.idTokenInfo = {
-                  status: AuthorizationStatusEnumType.ConcurrentTx,
-                  groupIdToken: groupIdToken
-                  // TODO determine how/if to set personalMessage
-                }
+        if (transactionEvent.eventType == TransactionEventEnumType.Started && transactionEventResponse
+            && transactionEventResponse.idTokenInfo?.status == AuthorizationStatusEnumType.Accepted && transactionEvent.idToken) {
+          // Check for ConcurrentTx
+          return this._transactionEventRepository.readAllActiveTransactionsByIdToken(transactionEvent.idToken).then(activeTransactions => {
+            // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
+            if (activeTransactions.length > 1) {
+              const groupIdToken = transactionEventResponse.idTokenInfo?.groupIdToken;
+              transactionEventResponse.idTokenInfo = {
+                status: AuthorizationStatusEnumType.ConcurrentTx,
+                groupIdToken: groupIdToken
+                // TODO determine how/if to set personalMessage
               }
-              return transactionEventResponse;
-            });
-          } else if (transactionEvent.eventType == TransactionEventEnumType.Ended) {
-            // TODO: determine whether this is a free transaction and set the totalCost to 0.00
-            // TODO: otherwise calculate final cost of the transaction and set it in the totalCost field
-            // TODO: return the updated transactionEventResponse
-          }
+            }
+            return transactionEventResponse;
+          });
         }
         return transactionEventResponse;
       }).then(transactionEventResponse => {
@@ -235,19 +242,57 @@ export class TransactionsModule extends AbstractModule {
         // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
       };
 
+      const transaction: Transaction | undefined = await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(stationId, transactionId);
+
       if (message.payload.eventType == TransactionEventEnumType.Updated) {
         // I02 - Show EV Driver Running Total Cost During Charging
-        // TODO: set the running cost corresponding to the timestamp and meterValue in the field totalCost in response
+        if (transaction && transaction.isActive && this._sendCostUpdatedOnMeterValue) {
+          // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
+          //  implementation is finalized
+          const tariff: Tariff | null = await this._tariffRepository.findByStationId(stationId);
+          if (tariff) {
+            this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);
+            const totalKwh = getTotalKwh(await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(transaction.id));
+            this._logger.debug(`TotalKwh: ${totalKwh}`);
+            await Transaction.update({totalKwh: totalKwh}, {where: {id: transaction.id}, returning: false});
+            response.totalCost = roundCost(totalKwh * tariff.price);
+          } else {
+            this._logger.error(`Tariff not found for station ${transactionEvent}`);
+          }
+        }
 
         // I06 - Update Tariff Information During Transaction
-        const supportTariff: boolean | null = await this._deviceModelService.getTariffAvailableByStationId(message.context.stationId);
-        const transaction: Transaction | undefined = await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(message.context.stationId, transactionEvent.transactionInfo.transactionId);
+        const tariffAvailableAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+          stationId: stationId,
+          component_name: 'TariffCostCtrlr',
+          variable_instance: 'Tariff',
+          variable_name: 'Available',
+          type: AttributeEnumType.Actual
+        });
+        const supportTariff: boolean = tariffAvailableAttributes.length !== 0 && Boolean(tariffAvailableAttributes[0].value);
+
         if (supportTariff && transaction && transaction.isActive) {
+          this._logger.debug(`Checking if updated tariff information is available for traction ${transaction.transactionId}`);
           // TODO: checks if there is updated tariff information available and set it in the PersonalMessage field.
         }
       }
 
-      this.sendCallResultWithMessage(message, response)
+      if (message.payload.eventType == TransactionEventEnumType.Ended && transaction) {
+        // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
+        //  implementation is finalized
+        const tariff: Tariff | null = await this._tariffRepository.findByStationId(stationId);
+        if (tariff) {
+          this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);
+          const totalKwh = getTotalKwh(await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(transaction.id));
+          this._logger.debug(`TotalKwh: ${totalKwh}`);
+          await Transaction.update({totalKwh: totalKwh}, {where: {id: transaction.id}, returning: false});
+          response.totalCost = roundCost(totalKwh * tariff.price);
+        } else {
+          this._logger.error(`Tariff not found for station ${transactionEvent}`);
+        }
+      }
+
+        this.sendCallResultWithMessage(message, response)
           .then(messageConfirmation => {
             this._logger.debug("Transaction response sent: ", messageConfirmation)
           });
@@ -263,11 +308,16 @@ export class TransactionsModule extends AbstractModule {
 
     // TODO: Add meterValues to transactions
     // TODO: Meter values can be triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
+    // TODO: If sendCostUpdatedOnMeterValue is true, meterValues handler triggers cost update
+    //  when it is added into a transaction
 
     const response: MeterValuesResponse = {
       // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
     };
-    this.sendCallResultWithMessage(message, response)
+
+    this.sendCallResultWithMessage(message, response).then(messageConfirmation => {
+      this._logger.debug("MeterValues response sent: ", messageConfirmation)
+    })
   }
 
   @AsHandler(CallAction.StatusNotification)

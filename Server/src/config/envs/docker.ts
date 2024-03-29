@@ -37,7 +37,8 @@ export function createDockerConfig() {
                 endpointPrefix: "/smartcharging"
             },
             transactions: {
-                endpointPrefix: "/transactions"
+                endpointPrefix: "/transactions",
+                costUpdatedInterval: 60
             },
         },
         data: {
@@ -94,7 +95,7 @@ export function createDockerConfig() {
             }
         },
         logLevel: 2, // debug
-        maxCallLengthSeconds: 5,
-        maxCachingSeconds: 10
+        maxCallLengthSeconds: 150,
+        maxCachingSeconds: 150
     });
 }

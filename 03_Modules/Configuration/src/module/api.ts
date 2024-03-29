@@ -103,10 +103,9 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
     ): Promise<IMessageConfirmation> {
         const messageInfo = request.message as MessageInfoType;
 
-        // TODO remove this part if the json schema pattern works
         const languageTag = messageInfo.message.language;
         if (languageTag && !validateLanguageTag(languageTag)) {
-            const errorMsg = 'Language shall be specified as RFC-5646 tags, example: US English is: "en-US".';
+            const errorMsg = 'Language shall be specified as RFC-5646 tags, example: US English is: en-US.';
             this._logger.error(errorMsg);
             return {success: false, payload: errorMsg};
         }

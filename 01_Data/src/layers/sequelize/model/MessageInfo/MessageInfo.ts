@@ -51,7 +51,8 @@ export class MessageInfo extends Model implements MessageInfoType {
     @Column({
         type: DataType.DATE,
         get() {
-            return this.getDataValue('startDateTime').toISOString();
+            const startDateTime: Date = this.getDataValue('startDateTime');
+            return startDateTime ? startDateTime.toISOString() : null;
         }
     })
     declare startDateTime?: string;
@@ -59,7 +60,8 @@ export class MessageInfo extends Model implements MessageInfoType {
     @Column({
         type: DataType.DATE,
         get() {
-            return this.getDataValue('endDateTime').toISOString();
+            const startDateTime: Date = this.getDataValue('endDateTime');
+            return startDateTime ? startDateTime.toISOString() : null;
         }
     })
     declare endDateTime?: string;

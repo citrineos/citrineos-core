@@ -38,6 +38,7 @@ util_commands=(
     "rm -rf ./lib"
     "rm -f citrineos-util-1.0.0.tgz"
     "npm install ../00_Base/citrineos-base-1.0.0.tgz"
+    "npm install ../01_Data/citrineos-data-1.0.0.tgz"
     "npm install"
     "npm pack"
 )
