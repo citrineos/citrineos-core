@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {MeterValue} from "@citrineos/data/lib/layers/sequelize";
-import {MeasurandEnumType, ReadingContextEnumType} from "@citrineos/base";
+import {MeasurandEnumType, ReadingContextEnumType, SampledValueType} from "@citrineos/base";
 
 /**
  * Calculate the total Kwh
@@ -14,23 +14,23 @@ import {MeasurandEnumType, ReadingContextEnumType} from "@citrineos/base";
 export function getTotalKwh(meterValues: MeterValue[]): number {
     const contexts: ReadingContextEnumType[] = [ReadingContextEnumType.Transaction_Begin, ReadingContextEnumType.Sample_Periodic, ReadingContextEnumType.Transaction_End];
 
-    let valueMap = new Map();
-    meterValues.filter(meterValues => meterValues.sampledValue[0].context && contexts.indexOf(meterValues.sampledValue[0].context) !== -1).forEach(
-        meterValue => meterValue.sampledValue.filter(simpleValue => simpleValue.phase === undefined && simpleValue.measurand == MeasurandEnumType.Energy_Active_Import_Register).map(simpleValue => {
-            let kwhValue: number = 0;
-            if (simpleValue.unitOfMeasure?.unit?.toUpperCase() === 'KWH') {
-                kwhValue = simpleValue.value;
-                valueMap.set(Date.parse(meterValue.timestamp), kwhValue)
-            } else if (simpleValue.unitOfMeasure?.unit?.toUpperCase() === 'WH') {
-                kwhValue = simpleValue.value / 1000;
-                valueMap.set(Date.parse(meterValue.timestamp), kwhValue)
+    let valuesMap = new Map();
+
+    meterValues.filter(meterValue => meterValue.sampledValue[0].context && contexts.indexOf(meterValue.sampledValue[0].context) !== -1).forEach(
+        meterValue => {
+            const sampledValues = meterValue.sampledValue as SampledValueType[];
+            const overallValue = sampledValues.find(sampledValue => sampledValue.phase === undefined && sampledValue.measurand == MeasurandEnumType.Energy_Active_Import_Register);
+            if (overallValue.unitOfMeasure?.unit?.toUpperCase() === 'KWH') {
+                valuesMap.set(Date.parse(meterValue.timestamp), overallValue.value)
+            } else if (overallValue.unitOfMeasure?.unit?.toUpperCase() === 'WH') {
+                valuesMap.set(Date.parse(meterValue.timestamp), overallValue.value / 1000)
             }
-        })
+        }
     );
 
     // sort the map based on timestamps
-    valueMap = new Map([...valueMap.entries()].sort((v1, v2) => v1[0] - v2[0]));
-    const sortedValues = Array.from(valueMap.values());
+    valuesMap = new Map([...valuesMap.entries()].sort((v1, v2) => v1[0] - v2[0]));
+    const sortedValues = Array.from(valuesMap.values());
 
     let totalKwh: number = 0;
     for (let i = 1; i < sortedValues.length; i++) {
