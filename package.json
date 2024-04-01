@@ -6,12 +6,17 @@
     "@types/node": "^20.11.20",
     "concurrently": "^8.2.2",
     "nodemon": "^3.1.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "prettier": "^3.2.5",
+    "eslint": "^8.48.0"
   },
   "scripts": {
     "install-all": "npm i --verbose",
     "clean": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json dist **/dist **/**/dist node_modules **/node_modules **/**/node_modules tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
-    "build": "tsc --build --verbose"
+    "build": "tsc --build --verbose",
+    "lint": "npx eslint --ext .ts ./",
+    "lint-fix": "npx eslint --fix --ext .ts ./",
+    "prettier": "prettier --write ."
   },
   "dependencies": {
     "@citrineos/server": "1.0.0"
