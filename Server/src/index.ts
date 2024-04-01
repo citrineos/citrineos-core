@@ -61,8 +61,8 @@ import {
   type FastifyValidationResult,
 } from "fastify/types/schema";
 import { MessageRouterImpl } from "@citrineos/ocpprouter";
-import { defaultDockerConfig } from "./envs/docker";
-import { defaultLocalConfig } from "./envs/local";
+import { defaultDockerConfig } from "./config/envs/docker";
+import { defaultLocalConfig } from "./config/envs/local";
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => BaseModule;

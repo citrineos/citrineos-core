@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { RegistrationStatusEnumType, SystemConfigInput } from "@citrineos/base";
-import { logo } from "../assets/logo";
+import {logo} from "../../assets/logo";
 
-export const defaultDockerConfig: SystemConfigInput = {
+export const defaultLocalConfig: SystemConfigInput = {
   env: "development",
   centralSystem: {
     host: "0.0.0.0",
@@ -42,7 +42,7 @@ export const defaultDockerConfig: SystemConfigInput = {
   },
   data: {
     sequelize: {
-      host: "ocpp-db",
+      host: "localhost",
       port: 5432,
       database: "citrine",
       dialect: "postgres",
@@ -58,7 +58,7 @@ export const defaultDockerConfig: SystemConfigInput = {
     },
     messageBroker: {
       amqp: {
-        url: "amqp://guest:guest@amqp-broker:5672",
+        url: "amqp://guest:guest@localhost:5672",
         exchange: "citrineos",
       },
     },
@@ -66,12 +66,12 @@ export const defaultDockerConfig: SystemConfigInput = {
       path: "/docs",
       exposeData: true,
       exposeMessage: true,
-      logo,
+      logo
     },
     directus: {
-      host: "directus",
+      host: "localhost",
       port: 8055,
-      generateFlows: true,
+      generateFlows: false,
     },
     networkConnection: {
       websocketServers: [

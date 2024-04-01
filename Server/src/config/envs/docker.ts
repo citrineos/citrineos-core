@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { RegistrationStatusEnumType } from "../../../00_Base/src/ocpp/model";
-import { SystemConfigInput } from "@citrineos/base/dist";
-import { logo } from "../assets/logo";
+import { RegistrationStatusEnumType, SystemConfigInput } from "@citrineos/base";
+import { logo } from "../../assets/logo";
 
-export const defaultSwarmConfig: SystemConfigInput = {
+export const defaultDockerConfig: SystemConfigInput = {
   env: "development",
   centralSystem: {
     host: "0.0.0.0",
@@ -14,9 +13,7 @@ export const defaultSwarmConfig: SystemConfigInput = {
   },
   modules: {
     certificates: {
-      endpointPrefix: "certificates",
-      host: "0.0.0.0",
-      port: 8083,
+      endpointPrefix: "/certificates",
     },
     configuration: {
       heartbeatInterval: 60,
@@ -25,34 +22,22 @@ export const defaultSwarmConfig: SystemConfigInput = {
       getBaseReportOnPending: true,
       bootWithRejectedVariables: true,
       autoAccept: true,
-      endpointPrefix: "configuration",
-      host: "0.0.0.0",
-      port: 8084,
+      endpointPrefix: "/configuration",
     },
     evdriver: {
-      endpointPrefix: "evdriver",
-      host: "0.0.0.0",
-      port: 8085,
+      endpointPrefix: "/evdriver",
     },
     monitoring: {
-      endpointPrefix: "monitoring",
-      host: "0.0.0.0",
-      port: 8086,
+      endpointPrefix: "/monitoring",
     },
     reporting: {
-      endpointPrefix: "reporting",
-      host: "0.0.0.0",
-      port: 8087,
+      endpointPrefix: "/reporting",
     },
     smartcharging: {
-      endpointPrefix: "smartcharging",
-      host: "0.0.0.0",
-      port: 8088,
+      endpointPrefix: "/smartcharging",
     },
     transactions: {
-      endpointPrefix: "transactions",
-      host: "0.0.0.0",
-      port: 8089,
+      endpointPrefix: "/transactions",
     },
   },
   data: {
@@ -69,10 +54,7 @@ export const defaultSwarmConfig: SystemConfigInput = {
   },
   util: {
     cache: {
-      redis: {
-        host: "redis",
-        port: 6379,
-      },
+      memory: true,
     },
     messageBroker: {
       amqp: {
@@ -82,9 +64,9 @@ export const defaultSwarmConfig: SystemConfigInput = {
     },
     swagger: {
       path: "/docs",
-      logo: logo,
       exposeData: true,
       exposeMessage: true,
+      logo,
     },
     directus: {
       host: "directus",

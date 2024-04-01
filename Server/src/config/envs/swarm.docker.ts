@@ -2,10 +2,11 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { RegistrationStatusEnumType, SystemConfigInput } from "@citrineos/base";
-import {logo} from "../assets/logo";
+import { RegistrationStatusEnumType } from "@citrineos/base/dist/ocpp/model";
+import { SystemConfigInput } from "@citrineos/base";
+import { logo } from "../../assets/logo";
 
-export const defaultLocalConfig: SystemConfigInput = {
+export const defaultSwarmConfig: SystemConfigInput = {
   env: "development",
   centralSystem: {
     host: "0.0.0.0",
@@ -13,7 +14,9 @@ export const defaultLocalConfig: SystemConfigInput = {
   },
   modules: {
     certificates: {
-      endpointPrefix: "/certificates",
+      endpointPrefix: "certificates",
+      host: "0.0.0.0",
+      port: 8083,
     },
     configuration: {
       heartbeatInterval: 60,
@@ -22,27 +25,39 @@ export const defaultLocalConfig: SystemConfigInput = {
       getBaseReportOnPending: true,
       bootWithRejectedVariables: true,
       autoAccept: true,
-      endpointPrefix: "/configuration",
+      endpointPrefix: "configuration",
+      host: "0.0.0.0",
+      port: 8084,
     },
     evdriver: {
-      endpointPrefix: "/evdriver",
+      endpointPrefix: "evdriver",
+      host: "0.0.0.0",
+      port: 8085,
     },
     monitoring: {
-      endpointPrefix: "/monitoring",
+      endpointPrefix: "monitoring",
+      host: "0.0.0.0",
+      port: 8086,
     },
     reporting: {
-      endpointPrefix: "/reporting",
+      endpointPrefix: "reporting",
+      host: "0.0.0.0",
+      port: 8087,
     },
     smartcharging: {
-      endpointPrefix: "/smartcharging",
+      endpointPrefix: "smartcharging",
+      host: "0.0.0.0",
+      port: 8088,
     },
     transactions: {
-      endpointPrefix: "/transactions",
+      endpointPrefix: "transactions",
+      host: "0.0.0.0",
+      port: 8089,
     },
   },
   data: {
     sequelize: {
-      host: "localhost",
+      host: "ocpp-db",
       port: 5432,
       database: "citrine",
       dialect: "postgres",
@@ -54,24 +69,27 @@ export const defaultLocalConfig: SystemConfigInput = {
   },
   util: {
     cache: {
-      memory: true,
+      redis: {
+        host: "redis",
+        port: 6379,
+      },
     },
     messageBroker: {
       amqp: {
-        url: "amqp://guest:guest@localhost:5672",
+        url: "amqp://guest:guest@amqp-broker:5672",
         exchange: "citrineos",
       },
     },
     swagger: {
       path: "/docs",
+      logo: logo,
       exposeData: true,
       exposeMessage: true,
-      logo
     },
     directus: {
-      host: "localhost",
+      host: "directus",
       port: 8055,
-      generateFlows: false,
+      generateFlows: true,
     },
     networkConnection: {
       websocketServers: [
