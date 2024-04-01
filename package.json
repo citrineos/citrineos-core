@@ -11,10 +11,7 @@
   "scripts": {
     "install-all": "npm i --verbose",
     "clean": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json dist **/dist **/**/dist node_modules **/node_modules **/**/node_modules tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
-    "build": "tsc --build --verbose",
-    "start": "APP_NAME=all APP_ENV=local node --inspect=0.0.0.0:9229 dist/index.js",
-    "start:local-docker": "nodemon src/index.ts",
-    "start:local": "APP_NAME=all APP_ENV=local nodemon src/index.ts"
+    "build": "tsc --build --verbose"
   },
   "dependencies": {
     "@citrineos/server": "1.0.0"
