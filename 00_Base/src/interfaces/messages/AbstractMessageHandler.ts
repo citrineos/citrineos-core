@@ -4,13 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Logger, ILogObj } from "tslog";
-import {
-  IMessageHandler,
-  IMessage,
-  OcppRequest,
-  OcppResponse,
-  OcppError,
-} from "../..";
+import { IMessageHandler, IMessage, OcppRequest, OcppResponse, OcppError } from "../..";
 import { SystemConfig } from "../../config/types";
 import { CallAction } from "../../ocpp/rpc/message";
 import { IModule } from "../modules";
@@ -20,42 +14,51 @@ import { HandlerProperties } from ".";
  * Abstract class implementing {@link IMessageHandler}.
  */
 export abstract class AbstractMessageHandler implements IMessageHandler {
-  /**
-   * Fields
-   */
 
-  protected _config: SystemConfig;
-  protected _logger: Logger<ILogObj>;
+    /**
+     * Fields
+     */
 
-  /**
-   * Constructor
-   *
-   * @param config The system configuration.
-   * @param logger [Optional] The logger to use.
-   */
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
-    this._config = config;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
-  }
+    protected _config: SystemConfig;
+    protected _module?: IModule;
+    protected _logger: Logger<ILogObj>;
 
-  /**
-   * Abstract Methods
-   */
+    /**
+     * Constructor
+     *
+     * @param config The system configuration.
+     * @param logger [Optional] The logger to use.
+     */
+    constructor(config: SystemConfig, logger?: Logger<ILogObj>, module?: IModule) {
+        this._config = config;
+        this._module = module;
+        this._logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
+    }
 
-  abstract subscribe(
-    identifier: string,
-    actions?: CallAction[],
-    filter?: { [k: string]: string },
-  ): Promise<boolean>;
-  abstract unsubscribe(identifier: string): Promise<boolean>;
-  abstract handle(
-    message: IMessage<OcppRequest | OcppResponse | OcppError>,
-    props?: HandlerProperties,
-  ): Promise<void>;
-  abstract shutdown(): void;
+    /**
+     * Getter & Setter
+     */
 
-  abstract get module(): IModule | undefined;
-  abstract set module(value: IModule | undefined);
+    get module(): IModule | undefined {
+        return this._module;
+    }
+    set module(value: IModule | undefined) {
+        this._module = value;
+    }
+
+    /**
+     * Methods
+     */
+
+    async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): Promise<void> {
+        await this._module?.handle(message, props);
+    }
+
+    /**
+     * Abstract Methods
+     */
+
+    abstract subscribe(identifier: string, actions?: CallAction[], filter?: { [k: string]: string; }): Promise<boolean>;
+    abstract unsubscribe(identifier: string): Promise<boolean>;
+    abstract shutdown(): void;
 }

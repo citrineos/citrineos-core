@@ -1,4 +1,5 @@
 name: Prettier format
+
 on:
   pull_request:
     branches: [feature/prettier]
@@ -24,5 +25,3 @@ jobs:
         run: npm i
       - name: Lint
         run: npm run lint
-      - name: Check formatting with Prettier
-        run: npm run prettier

@@ -100,6 +100,7 @@ export interface ICache {
     expireSeconds?: number,
   ): Promise<boolean>;
 
+  // TODO: Consider removing this method, no longer used
   /**
    * Sets a value synchronously in the underlying cache.
    *

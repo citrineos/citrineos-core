@@ -1,0 +1,71 @@
+{
+  "name": "@citrineos/swarm",
+  "version": "1.0.0",
+  "description": "The OCPP swarm implementation which acts right on top of an asynchronous WebSocket with separate servers for each module.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prepublish": "npm run build",
+    "install-base": "cd ../00_Base && npm install && npm run build && npm pack && cd ../Swarm && npm install ../00_Base/citrineos-base-1.0.0.tgz",
+    "install-util": "cd ../02_Util && npm install ../00_Base/citrineos-base-1.0.0.tgz && npm run build && npm pack && cd ../Swarm && npm install ../02_Util/citrineos-util-1.0.0.tgz",
+    "install-data": "cd ../01_Data && npm install ../00_Base/citrineos-base-1.0.0.tgz && npm run build && npm pack && cd ../Swarm && npm install ../01_Data/citrineos-data-1.0.0.tgz",
+    "install-ocpprouter": "cd ../03_Modules/OcppRouter && npm run install-all && npm install && npm run build && npm pack && cd ../../Server && npm install ../03_Modules/OcppRouter/citrineos-ocpprouter-1.0.0.tgz",
+    "install-certificates": "cd ../03_Modules/Certificates && npm run install-all && npm install && npm run build && npm pack && cd ../../Swarm && npm install ../03_Modules/Certificates/citrineos-certificates-1.0.0.tgz",
+    "install-configuration": "cd ../03_Modules/Configuration && npm run install-all && npm install && npm run build && npm pack && cd ../../Swarm && npm install ../03_Modules/Configuration/citrineos-configuration-1.0.0.tgz",
+    "install-evdriver": "cd ../03_Modules/EVDriver && npm run install-all && npm install && npm run build && npm pack && cd ../../Swarm && npm install ../03_Modules/EVDriver/citrineos-evdriver-1.0.0.tgz",
+    "install-monitoring": "cd ../03_Modules/Monitoring && npm run install-all && npm install && npm run build && npm pack && cd ../../Swarm && npm install ../03_Modules/Monitoring/citrineos-monitoring-1.0.0.tgz",
+    "install-reporting": "cd ../03_Modules/Reporting && npm run install-all && npm install && npm run build && npm pack && cd ../../Swarm && npm install ../03_Modules/Reporting/citrineos-reporting-1.0.0.tgz",
+    "install-smartcharging": "cd ../03_Modules/SmartCharging && npm run install-all && npm install && npm run build && npm pack && cd ../../Swarm && npm install ../03_Modules/Reporting/citrineos-smartcharging-1.0.0.tgz",
+    "install-transactions": "cd ../03_Modules/Transactions && npm run install-all && npm install && npm run build && npm pack && cd ../../Swarm && npm install ../03_Modules/Transactions/citrineos-transactions-1.0.0.tgz",
+    "install-all": "npm run install-base && npm run install-data && npm run install-util && npm run install-configuration && npm run install-evdriver && npm run install-reporting && npm run install-transactions && npm run install-monitoring",
+    "clean-all-windows": "del package-lock.json && cd ../00_Base && del package-lock.json && rmdir lib /s /q && cd ../02_Util && del package-lock.json && rmdir lib /s /q && cd ../01_Data && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Configuration && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/EVDriver && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Reporting && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Transactions && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Monitoring && del package-lock.json && rmdir lib /s /q",
+    "build": "tsc",
+    "start-unix:docker": "export APP_ENV=docker && npx nodemon",
+    "start-unix:local": "export APP_ENV=local && npx nodemon",
+    "start-windows:local": "set APP_ENV=local && RefreshEnv.cmd && npx nodemon",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ocpp",
+    "ocpp_v201"
+  ],
+  "author": "S44",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/amqplib": "^0.10.1",
+    "@types/bcrypt": "^5.0.2",
+    "@types/deasync-promise": "^1.0.0",
+    "@types/uuid": "^9.0.1",
+    "@types/ws": "^8.5.4",
+    "nodemon": "^2.0.22",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "@citrineos/base": "file:../00_Base/citrineos-base-1.0.0.tgz",
+    "@citrineos/certificates": "file:../03_Modules/Certificates/citrineos-certificates-1.0.0.tgz",
+    "@citrineos/configuration": "file:../03_Modules/Configuration/citrineos-configuration-1.0.0.tgz",
+    "@citrineos/data": "file:../01_Data/citrineos-data-1.0.0.tgz",
+    "@citrineos/evdriver": "file:../03_Modules/EVDriver/citrineos-evdriver-1.0.0.tgz",
+    "@citrineos/monitoring": "file:../03_Modules/Monitoring/citrineos-monitoring-1.0.0.tgz",
+    "@citrineos/ocpprouter": "file:../03_Modules/OcppRouter/citrineos-ocpprouter-1.0.0.tgz",
+    "@citrineos/reporting": "file:../03_Modules/Reporting/citrineos-reporting-1.0.0.tgz",
+    "@citrineos/smartcharging": "file:../03_Modules/SmartCharging/citrineos-smartcharging-1.0.0.tgz",
+    "@citrineos/transactions": "file:../03_Modules/Transactions/citrineos-transactions-1.0.0.tgz",
+    "@citrineos/util": "file:../02_Util/citrineos-util-1.0.0.tgz",
+    "@fastify/type-provider-json-schema-to-ts": "^2.2.2",
+    "ajv": "^8.12.0",
+    "fastify": "^4.22.2",
+    "sqlite3": "^5.1.6",
+    "tslog": "^4.8.2",
+    "uuid": "^9.0.0",
+    "ws": "^8.13.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.8",
+    "utf-8-validate": "^6.0.3"
+  }
+}
