@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
-import { AbstractMessageRouter, AbstractModule, BOOT_STATUS, CacheNamespace, Call, CallAction, CallError, CallResult, ErrorCode, EventGroup, ICache, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, MessageOrigin, MessageState, MessageTriggerEnumType, MessageTypeId, OcppError, OcppRequest, OcppResponse, RegistrationStatusEnumType, RequestBuilder, RetryMessageError, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
+import { AbstractMessageRouter, BaseModule, BOOT_STATUS, CacheNamespace, Call, CallAction, CallError, CallResult, ErrorCode, EventGroup, ICache, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, MessageOrigin, MessageState, MessageTriggerEnumType, MessageTypeId, OcppError, OcppRequest, OcppResponse, RegistrationStatusEnumType, RequestBuilder, RetryMessageError, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
 import Ajv from "ajv";
 import { v4 as uuidv4 } from "uuid";
 import { ILogObj, Logger } from "tslog";
@@ -83,7 +83,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
 
     /**
-     * Interface implementation 
+     * Interface implementation
      */
 
     async registerConnection(connectionIdentifier: string): Promise<boolean> {
@@ -249,7 +249,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
 
     /**
-     * Private Methods 
+     * Private Methods
      */
 
     /**
@@ -477,7 +477,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
 
     private async _handleMessageApiCallback(message: IMessage<OcppError>): Promise<void> {
-        const url: string | null = await this._cache.get(message.context.correlationId, AbstractModule.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
+        const url: string | null = await this._cache.get(message.context.correlationId, BaseModule.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
         if (url) {
             await fetch(url, {
                 method: 'POST',

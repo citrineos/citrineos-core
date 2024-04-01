@@ -86,7 +86,11 @@ export class ReportingModuleApi extends AbstractModuleApi<ReportingModule> imple
         // If ItemsPerMessageGetReport not set, send all variables at once
         itemsPerMessageGetReport = itemsPerMessageGetReport == null ? componentVariables.length : itemsPerMessageGetReport;
 
-        const confirmations = [];
+        const confirmations: {
+            success: boolean,
+            batch: string,
+            message: string
+        }[] = [];
         // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
         for (const [index, batch] of getBatches(componentVariables, itemsPerMessageGetReport).entries()) {
             try {
@@ -128,7 +132,11 @@ export class ReportingModuleApi extends AbstractModuleApi<ReportingModule> imple
         // If ItemsPerMessageGetReport not set, send all variables at once
         itemsPerMessageGetReport = itemsPerMessageGetReport == null ? componentVariable.length : itemsPerMessageGetReport;
 
-        const confirmations = [];
+        const confirmations: {
+            success: boolean,
+            batch: string,
+            message: string
+        }[] = [];
         // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
         for (const [index, batch] of getBatches(componentVariable, itemsPerMessageGetReport).entries()) {
             try {

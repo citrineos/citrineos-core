@@ -1,4 +1,5 @@
 version: '3'
+
 services:
   amqp-broker:
     image: rabbitmq:3-management
@@ -15,6 +16,8 @@ services:
       interval: 10s
       timeout: 10s
       retries: 3
+    networks:
+      - citrineos
   ocpp-db:
     image: citrineos/postgres:preseeded
     ports:
@@ -31,6 +34,8 @@ services:
       timeout: 60s
       retries: 5
       start_period: 80s
+    networks:
+      - citrineos
   redis:
     image: redis:latest
     ports:
@@ -40,6 +45,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    networks:
+      - citrineos
   citrine:
     build:
       context: ..
@@ -75,8 +82,8 @@ services:
     environment:
       APP_NAME: "all"
       APP_ENV: "docker"
-      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
-      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: "admin@citrineos.com"
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: "CitrineOS!"
     depends_on:
       ocpp-db:
         condition: service_started
@@ -89,6 +96,8 @@ services:
       - 8081:8081
       - 8082:8082
       - 9229:9229
+    networks:
+      - citrineos
 
   directus:
     image: directus/directus:latest
@@ -113,3 +122,9 @@ services:
       DB_USER: 'citrine'
       DB_PASSWORD: 'citrine'
       WEBSOCKETS_ENABLED: 'true'
+    networks:
+      - citrineos
+
+
+networks:
+  citrineos:

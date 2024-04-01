@@ -10,5 +10,5 @@
   "ignore": [
     "dist/**"
   ],
-  "exec": "npm run build && node --inspect-brk=0.0.0.0:9229 --nolazy -r ts-node/register"
+  "exec": "node --inspect=0.0.0.0:9229 --nolazy -r ts-node/register"
 }

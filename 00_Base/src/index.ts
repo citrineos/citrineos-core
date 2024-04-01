@@ -229,3 +229,4 @@ export const CALL_RESULT_SCHEMA_MAP: Map<CallAction, object> = new Map<
 export { SystemConfigService } from "./config/config/system.config.service";
 export { CacheService } from "./config/config/cache.service";
 export * from "tsyringe";
+export { MemoryCache } from "./config/config/cache/memory";

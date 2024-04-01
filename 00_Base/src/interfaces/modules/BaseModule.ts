@@ -162,7 +162,7 @@ export class BaseModule implements IModule {
     }
 
     async handleMessageApiCallback(message: IMessage<OcppResponse>): Promise<void> {
-        const url: string | null = await this._cache.get(message.context.correlationId, AbstractModule.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
+        const url: string | null = await this._cache.get(message.context.correlationId, BaseModule.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
         if (url) {
             try {
                 await fetch(url, {
@@ -210,7 +210,7 @@ export class BaseModule implements IModule {
         const _correlationId: string = correlationId == undefined ? uuidv4() : correlationId;
         if (callbackUrl) {
             // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
-            this._cache.set(_correlationId, callbackUrl, AbstractModule.CALLBACK_URL_CACHE_PREFIX + identifier,
+            this._cache.set(_correlationId, callbackUrl, BaseModule.CALLBACK_URL_CACHE_PREFIX + identifier,
                 this._config.maxCachingSeconds);
         }
         // TODO: Future - Compound key with tenantId

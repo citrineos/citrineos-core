@@ -103,7 +103,11 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         itemsPerMessageSetVariableMonitoring = itemsPerMessageSetVariableMonitoring == null ?
             setMonitoringData.length : itemsPerMessageSetVariableMonitoring;
 
-        const confirmations = [];
+        const confirmations: {
+            success: boolean,
+            batch: string,
+            message: string
+        }[] = [];
         // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
         for (const [index, batch] of getBatches(setMonitoringData, itemsPerMessageSetVariableMonitoring).entries()) {
             try {
@@ -145,7 +149,11 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         itemsPerMessageClearVariableMonitoring = itemsPerMessageClearVariableMonitoring == null ?
             ids.length : itemsPerMessageClearVariableMonitoring;
 
-        const confirmations = [];
+        const confirmations: {
+            success: boolean,
+            batch: string,
+            message: string
+        }[] = [];
         // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
         for (const [index, batch] of getBatches(ids, itemsPerMessageClearVariableMonitoring).entries()) {
             try {

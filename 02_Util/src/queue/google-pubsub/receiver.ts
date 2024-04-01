@@ -5,7 +5,6 @@
 
 import {Message as PubSubMessage, PubSub, Subscription, Topic,} from "@google-cloud/pubsub";
 import {ILogObj, Logger} from "tslog";
-import {MemoryCache} from "../../cache/memory";
 import {
   AbstractMessageHandler,
   autoInjectable,
@@ -20,7 +19,8 @@ import {
   OcppResponse,
   RetryMessageError,
   SystemConfig,
-  SystemConfigService
+  SystemConfigService,
+  MemoryCache
 } from "@citrineos/base";
 import {plainToInstance} from "class-transformer";
 

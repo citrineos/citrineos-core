@@ -46,7 +46,6 @@ import {
   SetVariablesRequest,
   SetVariablesResponse,
   SetVariableStatusEnumType,
-  SystemConfig
   SystemConfig,
   UnpublishFirmwareResponse,
   UpdateFirmwareResponse
