@@ -20,9 +20,9 @@ export function getTotalKwh(meterValues: MeterValue[]): number {
         meterValue => {
             const sampledValues = meterValue.sampledValue as SampledValueType[];
             const overallValue = sampledValues.find(sampledValue => sampledValue.phase === undefined && sampledValue.measurand == MeasurandEnumType.Energy_Active_Import_Register);
-            if (overallValue.unitOfMeasure?.unit?.toUpperCase() === 'KWH') {
+            if (overallValue && overallValue.unitOfMeasure?.unit?.toUpperCase() === 'KWH') {
                 valuesMap.set(Date.parse(meterValue.timestamp), overallValue.value)
-            } else if (overallValue.unitOfMeasure?.unit?.toUpperCase() === 'WH') {
+            } else if (overallValue && overallValue.unitOfMeasure?.unit?.toUpperCase() === 'WH') {
                 valuesMap.set(Date.parse(meterValue.timestamp), overallValue.value / 1000)
             }
         }
