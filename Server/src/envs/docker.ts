@@ -1,10 +1,11 @@
-import { inject, singleton } from "tsyringe";
-import { SystemConfig, SystemConfigInput } from "../types";
-import { merge } from "../../util/merge";
-import { defineConfig } from "../defineConfig";
-import { RegistrationStatusEnumType } from "../../ocpp/model";
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
 
-const defaultConfig: SystemConfigInput = {
+import { RegistrationStatusEnumType, SystemConfigInput } from "@citrineos/base";
+import { logo } from "../assets/logo";
+
+export const defaultDockerConfig: SystemConfigInput = {
   env: "development",
   centralSystem: {
     host: "0.0.0.0",
@@ -41,7 +42,7 @@ const defaultConfig: SystemConfigInput = {
   },
   data: {
     sequelize: {
-      host: "localhost",
+      host: "ocpp-db",
       port: 5432,
       database: "citrine",
       dialect: "postgres",
@@ -57,7 +58,7 @@ const defaultConfig: SystemConfigInput = {
     },
     messageBroker: {
       amqp: {
-        url: "amqp://guest:guest@localhost:5672",
+        url: "amqp://guest:guest@amqp-broker:5672",
         exchange: "citrineos",
       },
     },
@@ -65,10 +66,12 @@ const defaultConfig: SystemConfigInput = {
       path: "/docs",
       exposeData: true,
       exposeMessage: true,
-      logo: "todo",
+      logo,
     },
     directus: {
-      generateFlows: false,
+      host: "directus",
+      port: 8055,
+      generateFlows: true,
     },
     networkConnection: {
       websocketServers: [
@@ -97,19 +100,3 @@ const defaultConfig: SystemConfigInput = {
   maxCallLengthSeconds: 5,
   maxCachingSeconds: 10,
 };
-
-@singleton()
-export class SystemConfigService {
-  systemConfig: SystemConfig;
-
-  constructor(
-    @inject("SystemConfigInput")
-    private readonly inputConfig?: SystemConfigInput
-  ) {
-    const config = merge<SystemConfigInput>(
-      defaultConfig,
-      inputConfig as SystemConfigInput
-    );
-    this.systemConfig = defineConfig(config);
-  }
-}

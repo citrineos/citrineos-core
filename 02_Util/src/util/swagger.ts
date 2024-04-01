@@ -90,10 +90,10 @@ export function initSwagger(systemConfig: SystemConfig, server: FastifyInstance)
         }
     };
 
-    if (systemConfig.util.swagger?.logoPath) {
+    if (systemConfig.util.swagger?.logo) {
         swaggerUiOptions['logo'] = {
             type: 'image/png',
-            content: fs.readFileSync(systemConfig.util.swagger?.logoPath)
+            content: Buffer.from(systemConfig.util.swagger?.logo, 'base64')
         };
     }
 

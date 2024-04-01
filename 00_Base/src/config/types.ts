@@ -119,7 +119,7 @@ export const systemConfigInputSchema = z.object({
         }),
         swagger: z.object({
             path: z.string().default('/docs').optional(),
-            logoPath: z.string(),
+            logo: z.string(),
             exposeData: z.boolean().default(true).optional(),
             exposeMessage: z.boolean().default(true).optional(),
         }).optional(),
@@ -270,7 +270,7 @@ export const systemConfigSchema = z.object({
         }),
         swagger: z.object({
             path: z.string(),
-            logoPath: z.string(),
+            logo: z.string(),
             exposeData: z.boolean(),
             exposeMessage: z.boolean(),
         }).optional(),
