@@ -6,7 +6,7 @@
 import { ILogObj, Logger } from 'tslog';
 import { ISmartChargingModuleApi } from './interface';
 import { SmartChargingModule } from './module';
-import { AbstractModuleApi, CallAction, Namespace } from '@citrineos/base';
+import { AbstractModuleApi, AsMessageEndpoint, CallAction, ClearChargingProfileRequest, ClearChargingProfileRequestSchema, ClearedChargingLimitRequestSchema, CustomerInformationRequest, GetChargingProfilesRequest, GetChargingProfilesRequestSchema, GetCompositeScheduleRequest, GetCompositeScheduleRequestSchema, IMessageConfirmation, Namespace, SetChargingProfileRequest, SetChargingProfileRequestSchema } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 
 /**
@@ -28,6 +28,30 @@ export class SmartChargingModuleApi extends AbstractModuleApi<SmartChargingModul
     /**
      * Message endpoints
      */
+    @AsMessageEndpoint(CallAction.ClearChargingProfile, ClearChargingProfileRequestSchema)
+    clearChargingProfile(identifier: string, tenantId: string, request: ClearChargingProfileRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.ClearChargingProfile, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.GetChargingProfiles, GetChargingProfilesRequestSchema)
+    getChargingProfile(identifier: string, tenantId: string, request: GetChargingProfilesRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.GetChargingProfiles, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.SetChargingProfile, SetChargingProfileRequestSchema)
+    setChargingProfile(identifier: string, tenantId: string, request: SetChargingProfileRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.SetChargingProfile, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.ClearedChargingLimit, ClearedChargingLimitRequestSchema)
+    clearedChargingLimit(identifier: string, tenantId: string, request: CustomerInformationRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.ClearedChargingLimit, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.GetCompositeSchedule, GetCompositeScheduleRequestSchema)
+    getCompositeSchedule(identifier: string, tenantId: string, request: GetCompositeScheduleRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.GetCompositeSchedule, request, callbackUrl);
+    }
 
     /**
      * Data endpoints

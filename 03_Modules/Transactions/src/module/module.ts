@@ -3,11 +3,34 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { BaseModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, TransactionEventRequest, HandlerProperties, TransactionEventResponse, AuthorizationStatusEnumType, IdTokenInfoType, AdditionalInfoType, TransactionEventEnumType, MeterValuesRequest, MeterValuesResponse, StatusNotificationRequest, StatusNotificationResponse } from "@citrineos/base";
-import { IAuthorizationRepository, ITransactionEventRepository, sequelize } from "@citrineos/data";
-import { PubSubReceiver, PubSubSender, Timer } from "@citrineos/util";
+import {
+  AdditionalInfoType,
+  AsHandler,
+  AuthorizationStatusEnumType,
+  BaseModule,
+  CallAction,
+  CostUpdatedResponse,
+  EventGroup,
+  GetTransactionStatusResponse,
+  HandlerProperties,
+  ICache,
+  IdTokenInfoType,
+  IMessage,
+  IMessageHandler,
+  IMessageSender,
+  MeterValuesRequest,
+  MeterValuesResponse,
+  StatusNotificationRequest,
+  StatusNotificationResponse,
+  SystemConfig,
+  TransactionEventEnumType,
+  TransactionEventRequest,
+  TransactionEventResponse
+} from "@citrineos/base";
+import {IAuthorizationRepository, ITransactionEventRepository, sequelize} from "@citrineos/data";
+import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
-import { ILogObj, Logger } from 'tslog';
+import {ILogObj, Logger} from 'tslog';
 
 /**
  * Component that handles transaction related messages.
@@ -20,7 +43,7 @@ export class TransactionsModule extends BaseModule {
     CallAction.TransactionEvent
   ];
   protected _responses: CallAction[] = [
-    CallAction.CostUpdate,
+    CallAction.CostUpdated,
     CallAction.GetTransactionStatus
   ];
 
@@ -37,23 +60,23 @@ export class TransactionsModule extends BaseModule {
 
   /**
    * This is the constructor function that initializes the {@link TransactionModule}.
-   * 
+   *
    * @param {SystemConfig} config - The `config` contains configuration settings for the module.
-   *  
+   *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   * 
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface. 
+   *
+   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   * 
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface. 
+   *
+   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   * 
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}. 
+   *
+   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   * 
+   *
    * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository} which represents a repository for accessing and manipulating authorization data.
    * If no `transactionEventRepository` is provided, a default {@link sequelize.TransactionEventRepository} instance is created and used.
-   * 
+   *
    * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating variable data.
    * If no `authorizeRepository` is provided, a default {@link sequelize.AuthorizationRepository} instance is created and used.
    */
@@ -66,7 +89,7 @@ export class TransactionsModule extends BaseModule {
     transactionEventRepository?: ITransactionEventRepository,
     authorizeRepository?: IAuthorizationRepository
   ) {
-    super(config, cache, handler || new PubSubReceiver(logger), sender || new PubSubSender(config, logger), EventGroup.Transactions, logger);
+    super(config, cache, handler || new RabbitMqReceiver(logger, undefined, config, cache), sender || new RabbitMqSender(config, logger), EventGroup.Transactions, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);
@@ -173,14 +196,14 @@ export class TransactionsModule extends BaseModule {
         return transactionEventResponse;
       }).then(transactionEventResponse => {
         this.sendCallResultWithMessage(message, transactionEventResponse)
-          .then(messageConfirmation => this._logger.debug("Transaction response sent:", messageConfirmation));
+          .then(messageConfirmation => this._logger.debug("Transaction response sent: ", messageConfirmation));
       });
     } else {
       const response: TransactionEventResponse = {
         // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
       };
       this.sendCallResultWithMessage(message, response)
-        .then(messageConfirmation => this._logger.debug("Transaction response sent:", messageConfirmation));
+        .then(messageConfirmation => this._logger.debug("Transaction response sent: ", messageConfirmation));
     }
   }
 
@@ -212,6 +235,26 @@ export class TransactionsModule extends BaseModule {
     const response: StatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("StatusNotification response sent:", messageConfirmation));
+      .then(messageConfirmation => this._logger.debug("StatusNotification response sent: ", messageConfirmation));
+  }
+
+  /**
+   * Handle responses
+   */
+
+  @AsHandler(CallAction.CostUpdated)
+  protected _handleCostUpdated(
+    message: IMessage<CostUpdatedResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("CostUpdated response received:", message, props);
+  }
+
+  @AsHandler(CallAction.GetTransactionStatus)
+  protected _handleGetTransactionStatus(
+    message: IMessage<GetTransactionStatusResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("GetTransactionStatus response received:", message, props);
   }
 }

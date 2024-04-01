@@ -72,7 +72,7 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
     readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]> {
         return super.readAllByQuery({
             where: { stationId: stationId },
-            include: [{ model: Transaction, where: { transactionId: transactionId }, include: [IdToken] }, MeterValue, Evse, IdToken]
+            include: [{ model: Transaction, where: { transactionId: transactionId } }, MeterValue, Evse, IdToken]
         },
             TransactionEvent.MODEL_NAME).then(transactionEvents => {
                 transactionEvents?.forEach(transactionEvent => transactionEvent.transaction = undefined);
@@ -83,7 +83,7 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
     readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined> {
         return this.s.models[Transaction.MODEL_NAME].findOne({
             where: { stationId: stationId, transactionId: transactionId },
-            include: [MeterValue, IdToken]
+            include: [MeterValue]
         })
             .then(row => (row as Transaction));
     }
@@ -99,7 +99,7 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
      * @returns List of transactions which meet the requirements.
      */
     readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: EVSEType, chargingStates?: ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
-        const includeObj = evse ? [ { model: Evse, where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null } }, IdToken ] : [IdToken];
+        const includeObj = evse ? [{ model: Evse, where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null } }] : [];
         return this.s.models[Transaction.MODEL_NAME].findAll({
             where: { stationId: stationId, ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}) },
             include: includeObj
@@ -110,10 +110,13 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
         return this.s.models[Transaction.MODEL_NAME].findAll({
             where: { isActive: true },
             include: [{
-                model: IdToken, where: {
-                    idToken: idToken.idToken,
-                    type: idToken.type
-                }
+                model: TransactionEvent,
+                include: [{
+                    model: IdToken, where: {
+                        idToken: idToken.idToken,
+                        type: idToken.type
+                    }
+                }]
             }]
         })
             .then(row => (row as Transaction[]));

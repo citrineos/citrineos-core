@@ -9,8 +9,8 @@ import {
   CacheService,
   EventGroup,
   eventGroupFromString,
-  ICache,
-  type ICentralSystem,
+  type IAuthenticator,
+  type ICache,
   type IMessageHandler,
   type IMessageSender,
   type IModule,
@@ -19,22 +19,47 @@ import {
   injectable,
   type SystemConfig,
   SystemConfigService,
+  container
 } from '@citrineos/base'
-import {MonitoringModule, MonitoringModuleApi} from '@citrineos/monitoring'
-import {CentralSystemImpl, initSwagger, RabbitMqReceiver, RabbitMqSender} from '@citrineos/util'
-import {type JsonSchemaToTsProvider} from '@fastify/type-provider-json-schema-to-ts'
+import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring'
+import {
+  Authenticator,
+  DirectusUtil,
+  initSwagger,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  WebsocketNetworkConnection
+} from '@citrineos/util'
+import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts'
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
-import fastify, {type FastifyInstance} from 'fastify'
-import {type ILogObj, Logger} from 'tslog'
-import {ConfigurationModule, ConfigurationModuleApi} from '@citrineos/configuration'
-import {TransactionsModule, TransactionsModuleApi} from '@citrineos/transactions'
-import {CertificatesModule, CertificatesModuleApi} from '@citrineos/certificates'
-import {EVDriverModule, EVDriverModuleApi} from '@citrineos/evdriver'
-import {ReportingModule, ReportingModuleApi} from '@citrineos/reporting'
-import {SmartChargingModule, SmartChargingModuleApi} from '@citrineos/smartcharging'
-import {sequelize} from '@citrineos/data'
-import {FastifyRouteSchemaDef, FastifySchemaCompiler, FastifyValidationResult} from "fastify/types/schema";
+import fastify, { type FastifyInstance } from 'fastify'
+import { type ILogObj, Logger } from 'tslog'
+import {
+  ConfigurationModule,
+  ConfigurationModuleApi
+} from '@citrineos/configuration'
+import {
+  TransactionsModule,
+  TransactionsModuleApi
+} from '@citrineos/transactions'
+import {
+  CertificatesModule,
+  CertificatesModuleApi
+} from '@citrineos/certificates'
+import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver'
+import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting'
+import {
+  SmartChargingModule,
+  SmartChargingModuleApi
+} from '@citrineos/smartcharging'
+import { sequelize } from '@citrineos/data'
+import {
+  type FastifyRouteSchemaDef,
+  type FastifySchemaCompiler,
+  type FastifyValidationResult
+} from 'fastify/types/schema'
+import { MessageRouterImpl } from '@citrineos/ocpprouter'
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => BaseModule
@@ -48,17 +73,17 @@ export class CitrineOSServer {
   /**
    * Fields
    */
-  private _config: SystemConfig
-  private _centralSystem?: ICentralSystem
-  private _logger?: Logger<ILogObj>
-  private _server: FastifyInstance
-  private _ajv?: Ajv
-  private modules: Array<IModule> = [];
-  private apis: Array<IModuleApi> = [];
-  private host?: string;
-  private port?: number;
-  private eventGroup?: EventGroup;
-
+  private readonly _config: SystemConfig
+  private readonly _logger: Logger<ILogObj>
+  private readonly _server: FastifyInstance
+  private readonly _ajv: Ajv
+  private readonly modules: IModule[] = []
+  private readonly apis: IModuleApi[] = []
+  private host?: string
+  private port?: number
+  private eventGroup?: EventGroup
+  private _authenticator?: IAuthenticator
+  private _networkConnection?: WebsocketNetworkConnection
 
   /**
    * Constructor for the class.
@@ -67,17 +92,18 @@ export class CitrineOSServer {
    * @param cacheService
    */
   // todo rename event group to type
-  constructor(
+  constructor (
     @inject(SystemConfigService) private readonly configService?: SystemConfigService,
-    @inject(CacheService) private readonly cacheService?: CacheService,
+    @inject(CacheService) private readonly cacheService?: CacheService
   ) {
-
-    const appName = process.env.APP_NAME as string;
+    const appName = process.env.APP_NAME as string
 
     // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
     if (!configService?.systemConfig.util.messageBroker.amqp) {
-      throw new Error('This server implementation requires amqp configuration for rabbitMQ.')
+      throw new Error(
+        'This server implementation requires amqp configuration for rabbitMQ.'
+      )
     }
     this._config = configService.systemConfig
 
@@ -85,84 +111,135 @@ export class CitrineOSServer {
     this._server = fastify().withTypeProvider<JsonSchemaToTsProvider>()
 
     // Add health check
-    this.initHealthCheck();
+    this.initHealthCheck()
 
     // Create Ajv JSON schema validator instance
-    this.initAjv();
+    this._ajv = this.initAjv()
+    this.addAjvFormats()
 
     // Initialize parent logger
-    this.initLogger();
+    this._logger = this.initLogger()
 
     // Force sync database
-    this.forceDbSync();
+    this.forceDbSync()
 
     // Initialize Swagger if enabled
-    this.initSwagger();
+    this.initSwagger()
+
+    // Add Directus Message API flow creation if enabled
+    if (this._config.util.directus?.generateFlows) {
+      const directusUtil = new DirectusUtil(this._config, this._logger)
+      this._server.addHook(
+        'onRoute',
+        directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(
+          directusUtil
+        )
+      )
+      this._server.addHook('onReady', async () => {
+        this._logger?.info('Directus actions initialization finished')
+      })
+    }
 
     // Register AJV for schema validation
-    this.registerAjv();
+    this.registerAjv()
 
     // Initialize module & API
     // Always initialize API after SwaggerUI
-    this.initSystem(appName);
+    this.initSystem(appName)
 
     process.on('SIGINT', this.shutdown.bind(this))
     process.on('SIGTERM', this.shutdown.bind(this))
     process.on('SIGQUIT', this.shutdown.bind(this))
   }
 
-  private initHealthCheck() {
+  private initHealthCheck () {
     this._server.get('/health', async () => {
-      return {status: 'healthy'}
+      return { status: 'healthy' }
     })
   }
 
-  private initAjv() {
-    this._ajv = new Ajv({
-      removeAdditional: 'all',
-      useDefaults: true,
-      coerceTypes: 'array',
-      strict: false
-    })
+  private initAjv (ajv?: Ajv) {
+    return (
+      ajv ||
+      new Ajv({
+        removeAdditional: 'all',
+        useDefaults: true,
+        coerceTypes: 'array',
+        strict: false
+      })
+    )
+  }
+
+  private addAjvFormats () {
     addFormats(this._ajv, {
       mode: 'fast',
       formats: ['date-time']
     })
   }
 
-  private initLogger() {
-    this._logger = new Logger<ILogObj>({
+  private initLogger () {
+    return new Logger<ILogObj>({
       name: 'CitrineOS Logger',
       minLevel: this.configService?.systemConfig.logLevel,
-      hideLogPositionForProduction: this.configService?.systemConfig.env === 'production'
+      hideLogPositionForProduction:
+        this.configService?.systemConfig.env === 'production',
+      // Disable colors for cloud deployment as some cloude logging environments such as cloudwatch can not interpret colors
+      stylePrettyLogs: process.env.DEPLOYMENT_TARGET !== 'cloud'
     })
   }
 
-  private forceDbSync() {
-    sequelize.DefaultSequelizeInstance.getInstance(this._config, this._logger, true)
+  private forceDbSync () {
+    sequelize.DefaultSequelizeInstance.getInstance(
+      this._config,
+      this._logger,
+      true
+    )
   }
 
-  private initSwagger() {
+  private initSwagger () {
     if (this._config.util.swagger) {
       initSwagger(this._config, this._server)
     }
   }
 
-  private registerAjv() {
+  private registerAjv () {
     // todo type schema instead of any
-    const fastifySchemaCompiler: FastifySchemaCompiler<any> = (routeSchema: FastifyRouteSchemaDef<any>) => {
-      return this._ajv?.compile(routeSchema.schema) as FastifyValidationResult;
-    };
-    this._server.setValidatorCompiler(fastifySchemaCompiler);
+    const fastifySchemaCompiler: FastifySchemaCompiler<any> = (
+      routeSchema: FastifyRouteSchemaDef<any>
+    ) => {
+      return this._ajv?.compile(routeSchema.schema) as FastifyValidationResult
+    }
+    this._server.setValidatorCompiler(fastifySchemaCompiler)
   }
 
-  private initCentralSystem() {
-    this._centralSystem = new CentralSystemImpl(this._config, undefined, undefined, this._logger, this._ajv)
-    this.host = this._config.centralSystem.host
-    this.port = this._config.centralSystem.port
+  private initNetworkConnection () {
+    this._authenticator = new Authenticator(
+      this.cacheService?.cache as ICache,
+      new sequelize.LocationRepository(this._config, this._logger),
+      new sequelize.DeviceModelRepository(this._config, this._logger),
+      this._logger
+    )
+
+    const router = new MessageRouterImpl(
+      this._config,
+      this.cacheService?.cache as ICache,
+      this._createSender(),
+      this._createHandler(),
+      async (identifier: string, message: string) => false,
+      this._logger,
+      this._ajv
+    )
+
+    this._networkConnection = new WebsocketNetworkConnection(
+      this._config,
+      this.cacheService?.cache as ICache,
+      this._authenticator,
+      router,
+      this._logger
+    )
   }
 
-  private initAllModules() {
+  private initAllModules () {
     [
       this.getModuleConfig(EventGroup.Certificates),
       this.getModuleConfig(EventGroup.Configuration),
@@ -171,10 +248,12 @@ export class CitrineOSServer {
       this.getModuleConfig(EventGroup.Reporting),
       this.getModuleConfig(EventGroup.SmartCharging),
       this.getModuleConfig(EventGroup.Transactions)
-    ].forEach(moduleConfig => this.initModule(moduleConfig));
+    ].forEach((moduleConfig) => {
+      this.initModule(moduleConfig)
+    })
   }
 
-  private initModule(moduleConfig: ModuleConfig) {
+  private initModule (moduleConfig: ModuleConfig) {
     if (moduleConfig.configModule !== null) {
       const module = new moduleConfig.ModuleClass(
         this.configService?.systemConfig as SystemConfig,
@@ -182,15 +261,11 @@ export class CitrineOSServer {
         this._createSender(),
         this._createHandler(),
         this._logger
-      );
-      this.modules.push(module);
+      )
+      this.modules.push(module)
       this.apis.push(
-        new moduleConfig.ModuleApiClass(
-          module,
-          this._server,
-          this._logger
-        )
-      );
+        new moduleConfig.ModuleApiClass(module, this._server, this._logger)
+      )
       // TODO: take actions to make sure module has correct subscriptions and log proof
       this._logger?.info(`${moduleConfig.ModuleClass.name} module started...`)
       if (this.eventGroup !== EventGroup.All) {
@@ -202,7 +277,7 @@ export class CitrineOSServer {
     }
   }
 
-  private getModuleConfig(appName: EventGroup): ModuleConfig {
+  private getModuleConfig (appName: EventGroup): ModuleConfig {
     switch (appName) {
       case EventGroup.Certificates:
         return {
@@ -251,37 +326,41 @@ export class CitrineOSServer {
     }
   }
 
-  private initSystem(appName: string) {
-    this.eventGroup = eventGroupFromString(appName);
+  private initSystem (appName: string) {
+    this.eventGroup = eventGroupFromString(appName)
     if (this.eventGroup === EventGroup.All) {
-      this.initCentralSystem();
-      this.initAllModules();
+      this.initAllModules()
     } else if (this.eventGroup === EventGroup.General) {
-      this.initCentralSystem();
+      this.initNetworkConnection()
     } else {
-      const moduleConfig: ModuleConfig = this.getModuleConfig(this.eventGroup);
-      this.initModule(moduleConfig);
+      const moduleConfig: ModuleConfig = this.getModuleConfig(this.eventGroup)
+      this.initModule(moduleConfig)
     }
   }
 
-  protected _createSender(): IMessageSender {
+  protected _createSender (): IMessageSender {
     return new RabbitMqSender(this._config, this._logger)
   }
 
-  protected _createHandler(): IMessageHandler {
-    return new RabbitMqReceiver(this._logger, undefined, this.configService?.systemConfig as SystemConfig, this.cacheService?.cache as ICache)
+  protected _createHandler (): IMessageHandler {
+    return new RabbitMqReceiver(
+      this._logger,
+      undefined,
+      this.configService?.systemConfig as SystemConfig,
+      this.cacheService?.cache as ICache
+    )
   }
 
-  shutdown() {
+  shutdown () {
     // todo shut down depending on setup
     // Shut down all modules and central system
-    this.modules.forEach(module => {
-      module.shutdown();
-    });
-    this._centralSystem?.shutdown();
+    this.modules.forEach((module) => {
+      module.shutdown()
+    })
+    this._networkConnection?.shutdown()
 
     // Shutdown server
-    this._server.close().then(); // todo async?
+    this._server.close().then() // todo async?
 
     setTimeout(() => {
       console.log('Exiting...')
@@ -289,20 +368,29 @@ export class CitrineOSServer {
     }, 2000)
   }
 
-  async run(): Promise<void> {
+  async run (): Promise<void> {
     try {
-      await this._server.listen({
-        host: this.host,
-        port: this.port
-      }).then(address => {
-        this._logger?.info(`Server listening at ${address}`)
-      }).catch(error => {
-        this._logger?.error(error)
-        process.exit(1)
-      })
+      await this._server
+        .listen({
+          host: this.host,
+          port: this.port
+        })
+        .then((address) => {
+          this._logger?.info(`Server listening at ${address}`)
+        })
+        .catch((error) => {
+          this._logger?.error(error)
+          process.exit(1)
+        })
       // TODO Push config to microservices
     } catch (error) {
       await Promise.reject(error)
     }
   }
 }
+
+const server = container.resolve(CitrineOSServer)
+server.run().catch((error: any) => {
+  console.error(error)
+  process.exit(1)
+})

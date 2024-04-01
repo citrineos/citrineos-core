@@ -5,15 +5,13 @@
 
 import {Message as PubSubMessage, PubSub, Subscription, Topic,} from "@google-cloud/pubsub";
 import {ILogObj, Logger} from "tslog";
-import {MemoryCache} from "../../../../00_Base/src/config/config/cache/memory";
+import {MemoryCache} from "../../cache/memory";
 import {
   AbstractMessageHandler,
   autoInjectable,
   CacheNamespace,
   CallAction,
-  HandlerProperties,
   ICache,
-  IMessage,
   IModule,
   inject,
   Message,
@@ -41,7 +39,6 @@ export class PubSubReceiver extends AbstractMessageHandler {
    */
   private _cache: ICache;
   private _client: PubSub;
-  private _module?: IModule;
   private _subscriptions: Subscription[] = [];
 
   /**
@@ -50,10 +47,10 @@ export class PubSubReceiver extends AbstractMessageHandler {
    * @param topicPrefix Custom topic prefix, defaults to "ocpp"
    */
   constructor(
-    logger?: Logger<ILogObj>,
-    cache?: ICache,
-    module?: IModule,
-    @inject(SystemConfigService) private readonly configService?: SystemConfigService
+      logger?: Logger<ILogObj>,
+      cache?: ICache,
+      module?: IModule,
+      @inject(SystemConfigService) private readonly configService?: SystemConfigService
   ) {
     super(configService?.systemConfig as SystemConfig, logger);
     this._cache = cache || new MemoryCache();
@@ -111,16 +108,6 @@ export class PubSubReceiver extends AbstractMessageHandler {
   }
 
   /**
-   * Method to handle incoming messages. Forwarding to OCPP module.
-   *
-   * @param message The incoming {@link IMessage}
-   * @param context The context of the incoming message, in this implementation it's the PubSub message id
-   */
-  async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): Promise<void> {
-    await this._module?.handle(message, props);
-  }
-
-  /**
    * Shutdown the receiver by closing all subscriptions and deleting them.
    */
   shutdown() {
@@ -133,18 +120,6 @@ export class PubSubReceiver extends AbstractMessageHandler {
         });
       });
     });
-  }
-
-  /**
-   * Getter & Setter
-   */
-
-  get module(): IModule | undefined {
-    return this._module;
-  }
-
-  set module(value: IModule | undefined) {
-    this._module = value;
   }
 
   /**

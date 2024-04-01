@@ -27,8 +27,8 @@ services:
       POSTGRES_PASSWORD: "citrine"
   redis:
     build:
-      context: ./
-      dockerfile: ./redis.Dockerfile
+      context: ..
+      dockerfile: .redis.Dockerfile
     ports:
       - "6379:6379"
     healthcheck:
@@ -57,8 +57,8 @@ services:
       WEBSOCKETS_ENABLED: 'true'
   citrine:
     build:
-      context: ./
-      dockerfile: .deploy.Dockerfile
+      context: ..
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -73,11 +73,13 @@ services:
     expose:
       - 8080-8082
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'general'
   certificates:
     build:
-      context: ../
-      dockerfile: .deploy.redis.Dockerfile
+      context: ..
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -90,11 +92,13 @@ services:
     expose:
       - 8083
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'certificates'
   configuration:
     build:
-      context: ../
-      dockerfile: .deploy.redis.Dockerfile
+      context: ../..
+      dockerfile: .deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -110,11 +114,13 @@ services:
       - ./:/usr/configuration
       - /usr/configuration/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'configuration'
   evdriver:
     build:
-      context: ../
-      dockerfile: .deploy.redis.Dockerfile
+      context: ../..
+      dockerfile: .deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -130,11 +136,13 @@ services:
       - ./:/usr/evdriver
       - /usr/evdriver/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'evdriver'
   monitoring:
     build:
-      context: ../
-      dockerfile: .deploy.redis.Dockerfile
+      context: ../..
+      dockerfile: .deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -150,11 +158,13 @@ services:
       - ./:/usr/monitoring
       - /usr/monitoring/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'monitoring'
   reporting:
     build:
-      context: ../
-      dockerfile: .deploy.redis.Dockerfile
+      context: ../..
+      dockerfile: .deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -170,11 +180,13 @@ services:
       - ./:/usr/reporting
       - /usr/reporting/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'reporting'
   smartcharging:
     build:
-      context: ../
-      dockerfile: .deploy.redis.Dockerfile
+      context: ../..
+      dockerfile: .deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -190,11 +202,13 @@ services:
       - ./:/usr/smartcharging
       - /usr/smartcharging/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'smartcharging'
   transactions:
     build:
-      context: ../
-      dockerfile: .deploy.redis.Dockerfile
+      context: ../..
+      dockerfile: .deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -210,4 +224,6 @@ services:
       - ./:/usr/transactions
       - /usr/transactions/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'transactions'

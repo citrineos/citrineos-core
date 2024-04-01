@@ -3,11 +3,38 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { BaseModule, CallAction, SystemConfig, ICache, IMessageSender, IMessageHandler, EventGroup, AsHandler, IMessage, AuthorizeRequest, HandlerProperties, AuthorizeResponse, IdTokenInfoType, AdditionalInfoType, AttributeEnumType, AuthorizationStatusEnumType } from "@citrineos/base";
-import { IAuthorizationRepository, IDeviceModelRepository, sequelize, VariableAttribute } from "@citrineos/data";
-import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
+import {
+  AdditionalInfoType,
+  AsHandler,
+  AttributeEnumType,
+  AuthorizationStatusEnumType,
+  AuthorizeRequest,
+  AuthorizeResponse,
+  BaseModule,
+  CallAction,
+  CancelReservationResponse,
+  ClearCacheResponse,
+  EventGroup,
+  GetLocalListVersionResponse,
+  HandlerProperties,
+  ICache,
+  IdTokenInfoType,
+  IMessage,
+  IMessageHandler,
+  IMessageSender,
+  RequestStartTransactionResponse,
+  RequestStopTransactionResponse,
+  ReservationStatusUpdateRequest,
+  ReservationStatusUpdateResponse,
+  ReserveNowResponse,
+  SendLocalListResponse,
+  SystemConfig,
+  UnlockConnectorResponse
+} from "@citrineos/base";
+import {IAuthorizationRepository, IDeviceModelRepository, sequelize, VariableAttribute} from "@citrineos/data";
+import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
-import { ILogObj, Logger } from 'tslog';
+import {ILogObj, Logger} from 'tslog';
 
 /**
  * Component that handles provisioning related messages.
@@ -45,23 +72,23 @@ export class EVDriverModule extends BaseModule {
 
   /**
    * This is the constructor function that initializes the {@link EVDriverModule}.
-   * 
+   *
    * @param {SystemConfig} config - The `config` contains configuration settings for the module.
-   *  
+   *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   * 
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface. 
+   *
+   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   * 
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface. 
+   *
+   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   * 
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}. 
+   *
+   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   * 
+   *
    * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating Authorization data.
    * If no `authorizeRepository` is provided, a default {@link sequelize.AuthorizationRepository} instance is created and used.
-   * 
+   *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
    */
@@ -221,5 +248,97 @@ export class EVDriverModule extends BaseModule {
       }
       return this.sendCallResultWithMessage(message, response)
     }).then(messageConfirmation => this._logger.debug("Authorize response sent:", messageConfirmation));
+  }
+
+  @AsHandler(CallAction.ReservationStatusUpdate)
+  protected async _handleReservationStatusUpdate(
+    message: IMessage<ReservationStatusUpdateRequest>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("ReservationStatusUpdateRequest received:", message, props);
+
+    // Create response
+    const response: ReservationStatusUpdateResponse = {
+    };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => this._logger.debug("ReservationStatusUpdate response sent: ", messageConfirmation));
+
+  }
+
+  /**
+   * Handle responses
+   */
+
+  @AsHandler(CallAction.RequestStartTransaction)
+  protected async _handleRequestStartTransaction(
+    message: IMessage<RequestStartTransactionResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("RequestStartTransactionResponse received:", message, props);
+
+  }
+
+  @AsHandler(CallAction.RequestStopTransaction)
+  protected async _handleRequestStopTransaction(
+    message: IMessage<RequestStopTransactionResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("RequestStopTransactionResponse received:", message, props);
+
+  }
+
+  @AsHandler(CallAction.CancelReservation)
+  protected async _handleCancelReservation(
+    message: IMessage<CancelReservationResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("CancelReservationResponse received:", message, props);
+
+  }
+
+  @AsHandler(CallAction.ReserveNow)
+  protected async _handleReserveNow(
+    message: IMessage<ReserveNowResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("ReserveNowResponse received:", message, props);
+
+  }
+
+  @AsHandler(CallAction.UnlockConnector)
+  protected async _handleUnlockConnector(
+    message: IMessage<UnlockConnectorResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("UnlockConnectorResponse received:", message, props);
+
+  }
+
+  @AsHandler(CallAction.ClearCache)
+  protected async _handleClearCache(
+    message: IMessage<ClearCacheResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("ClearCacheResponse received:", message, props);
+
+  }
+
+  @AsHandler(CallAction.SendLocalList)
+  protected async _handleSendLocalList(
+    message: IMessage<SendLocalListResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("SendLocalListResponse received:", message, props);
+
+  }
+
+  @AsHandler(CallAction.GetLocalListVersion)
+  protected async _handleGetLocalListVersion(
+    message: IMessage<GetLocalListVersionResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("GetLocalListVersionResponse received:", message, props);
+
   }
 }

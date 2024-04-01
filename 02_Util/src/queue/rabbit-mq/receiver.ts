@@ -9,9 +9,7 @@ import {
   AbstractMessageHandler,
   CacheNamespace,
   CallAction,
-  HandlerProperties,
   ICache,
-  IMessage,
   IModule,
   Message,
   OcppError,
@@ -39,33 +37,19 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   protected _cache: ICache;
   protected _connection?: amqplib.Connection;
   protected _channel?: amqplib.Channel;
-  protected _module?: IModule;
 
   constructor(
-    logger?: Logger<ILogObj>,
-    module?: IModule,
-    config?: SystemConfig,
-    cache?: ICache,
+      logger?: Logger<ILogObj>,
+      module?: IModule,
+      config?: SystemConfig,
+      cache?: ICache,
   ) {
-    super(config as SystemConfig, logger);
+    super(config as SystemConfig, logger, module);
     this._cache = cache as ICache;
-    this._module = module as IModule;
 
     this._connect().then(channel => {
       this._channel = channel;
     });
-  }
-
-  /**
-   * Getter & Setter
-   */
-
-  get module(): IModule | undefined {
-    return this._module;
-  }
-
-  set module(value: IModule | undefined) {
-    this._module = value;
   }
 
   /**
@@ -149,10 +133,6 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
         return false;
       }
     });
-  }
-
-  async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): Promise<void> {
-    await this._module?.handle(message, props);
   }
 
   shutdown(): Promise<void> {

@@ -7,7 +7,7 @@ import { TransactionEventQuerySchema, TransactionEventQuerystring } from "@citri
 import { ILogObj, Logger } from 'tslog';
 import { ITransactionsModuleApi } from './interface';
 import { TransactionsModule } from './module';
-import { AbstractModuleApi, AsDataEndpoint, Namespace, HttpMethod, TransactionEventRequest, TransactionType, AsMessageEndpoint, CallAction, GetTransactionStatusRequestSchema, GetTransactionStatusRequest, IMessageConfirmation } from "@citrineos/base";
+import { AbstractModuleApi, AsDataEndpoint, Namespace, CostUpdatedRequest, CostUpdatedRequestSchema, HttpMethod, TransactionEventRequest, TransactionType, AsMessageEndpoint, CallAction, GetTransactionStatusRequestSchema, GetTransactionStatusRequest, IMessageConfirmation } from "@citrineos/base";
 import { FastifyInstance, FastifyRequest } from "fastify";
 
 /**
@@ -29,6 +29,11 @@ export class TransactionsModuleApi extends AbstractModuleApi<TransactionsModule>
     /**
      * Message Endpoint Methods
      */
+    @AsMessageEndpoint(CallAction.CostUpdated, CostUpdatedRequestSchema)
+    costUpdated(identifier: string, tenantId: string, request: CostUpdatedRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.CostUpdated, request, callbackUrl);
+    }
+
 
     @AsMessageEndpoint(CallAction.GetTransactionStatus, GetTransactionStatusRequestSchema)
     getTransactionStatus(identifier: string, tenantId: string, request: GetTransactionStatusRequest, callbackUrl?: string): Promise<IMessageConfirmation> {
