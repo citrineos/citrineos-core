@@ -75,6 +75,8 @@ services:
     expose:
       - 8080-8082
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'general'
   certificates:
     build:
@@ -92,6 +94,8 @@ services:
     expose:
       - 8083
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'certificates'
   configuration:
     build:
@@ -112,6 +116,8 @@ services:
       - ./:/usr/configuration
       - /usr/configuration/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'configuration'
   evdriver:
     build:
@@ -132,6 +138,8 @@ services:
       - ./:/usr/evdriver
       - /usr/evdriver/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'evdriver'
   monitoring:
     build:
@@ -152,6 +160,8 @@ services:
       - ./:/usr/monitoring
       - /usr/monitoring/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'monitoring'
   reporting:
     build:
@@ -172,6 +182,8 @@ services:
       - ./:/usr/reporting
       - /usr/reporting/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'reporting'
   smartcharging:
     build:
@@ -192,6 +204,8 @@ services:
       - ./:/usr/smartcharging
       - /usr/smartcharging/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'smartcharging'
   transactions:
     build:
@@ -212,4 +226,6 @@ services:
       - ./:/usr/transactions
       - /usr/transactions/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'transactions'

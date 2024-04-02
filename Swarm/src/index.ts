@@ -9,7 +9,7 @@
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 import { EventGroup, IAuthenticator, ICache, IMessageHandler, IMessageSender, IModule, IModuleApi, SystemConfig } from '@citrineos/base';
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
-import { Authenticator, initSwagger, MemoryCache, RabbitMqReceiver, RabbitMqSender, RedisCache, WebsocketNetworkConnection } from '@citrineos/util';
+import { Authenticator, DirectusUtil, initSwagger, MemoryCache, RabbitMqReceiver, RabbitMqSender, RedisCache, WebsocketNetworkConnection } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from "ajv";
 import addFormats from "ajv-formats"
@@ -83,6 +83,15 @@ class CitrineOSServer {
         // Initialize Swagger if enabled
         if (this._config.util.swagger) {
             initSwagger(this._config, this._server);
+        }
+
+        // Add Directus Message API flow creation if enabled
+        if (this._config.util.directus?.generateFlows) {
+            const directusUtil = new DirectusUtil(this._config, this._logger);
+            this._server.addHook("onRoute", directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(directusUtil));
+            this._server.addHook('onReady', async () => {
+                this._logger.info('Directus actions initialization finished');
+            });
         }
 
         // Register AJV for schema validation
@@ -198,6 +207,12 @@ class ModuleService {
         // Initialize Swagger if enabled
         if (this._config.util.swagger) {
             initSwagger(this._config, this._server);
+        }
+
+        // Add Directus Message API flow creation if enabled
+        if (this._config.util.directus?.generateFlows) {
+            const directusUtil = new DirectusUtil(this._config, this._logger);
+            this._server.addHook("onRoute", directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(directusUtil));
         }
 
         // Register AJV for schema validation

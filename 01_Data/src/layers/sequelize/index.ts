@@ -11,6 +11,7 @@ export { Transaction, TransactionEvent, MeterValue } from "./model/TransactionEv
 export { SecurityEvent } from "./model/SecurityEvent";
 export { VariableMonitoring, EventData, VariableMonitoringStatus } from "./model/VariableMonitoring";
 export { ChargingStation, Location } from "./model/Location";
+export { Subscription } from "./model/Subscription";
 
 // Sequelize Repositories
 export { SequelizeRepository } from "./repository/Base";
@@ -21,6 +22,7 @@ export { LocationRepository } from "./repository/Location";
 export { TransactionEventRepository } from "./repository/TransactionEvent";
 export { SecurityEventRepository } from "./repository/SecurityEvent";
 export { VariableMonitoringRepository } from "./repository/VariableMonitoring";
+export { SubscriptionRepository } from "./repository/Subscription";
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from "./util";
