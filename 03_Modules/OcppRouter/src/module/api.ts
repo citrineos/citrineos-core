@@ -31,6 +31,8 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
      * Data endpoints
      */
 
+    // N.B.: When adding subscriptions, chargers may be connected to a different instance of Citrine.
+    // If this is the case, new subscriptions will not take effect until the charger reconnects.
     /**
      * Creates a {@link Subscription}.
      * Will always create a new entity and return its id.
