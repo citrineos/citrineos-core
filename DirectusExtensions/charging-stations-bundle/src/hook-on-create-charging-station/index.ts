@@ -21,7 +21,7 @@ export default defineHook(({ action }, { env }) => {
 
         console.log("Subscribing to " + subscriptionUrl + " with request body " + JSON.stringify(requestBody));
         fetch(subscriptionUrl, {
-            method: 'PUT',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },

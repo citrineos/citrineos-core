@@ -43,7 +43,7 @@ services:
     volumes:
       - ./data/directus/uploads:/directus/uploads
       - ./directus-env-config.js:/directus/config.js
-      - ../directus-extension-charging-stations-bundle:/directus/extensions/directus-extension-charging-stations-bundle
+      - ../DirectusExtensions/charging-stations-bundle:/directus/extensions/directus-extension-charging-stations-bundle
     environment:
       KEY: '1234567890'
       SECRET: '0987654321'

@@ -65,7 +65,7 @@ services:
     volumes:
       - ./data/directus/uploads:/directus/uploads
       - ./directus-env-config.js:/directus/config.js
-      - ../directus-extension-charging-stations-bundle:/directus/extensions/directus-extension-charging-stations-bundle
+      - ../DirectusExtensions/charging-stations-bundle:/directus/extensions/directus-extension-charging-stations-bundle
     depends_on:
       ocpp-db:
         condition: service_healthy
