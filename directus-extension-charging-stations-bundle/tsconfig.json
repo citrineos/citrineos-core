@@ -1,28 +1,21 @@
 {
 	"compilerOptions": {
-		"target": "ES2019",
-		"lib": ["ES2019", "DOM"],
-		"moduleResolution": "node",
-		"strict": true,
-		"noFallthroughCasesInSwitch": true,
-		"esModuleInterop": true,
-		"noImplicitAny": true,
-		"noImplicitThis": true,
-		"noImplicitReturns": true,
-		"noUnusedLocals": true,
-		"noUncheckedIndexedAccess": true,
-		"noUnusedParameters": true,
-		"alwaysStrict": true,
-		"strictNullChecks": true,
-		"strictFunctionTypes": true,
-		"strictBindCallApply": true,
-		"strictPropertyInitialization": true,
-		"resolveJsonModule": false,
-		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true,
-		"allowSyntheticDefaultImports": true,
-		"isolatedModules": true,
-		"rootDir": "./src"
+	  "target": "es6",
+	  "module": "commonjs",
+	  "skipLibCheck": true,
+	  "experimentalDecorators": true,
+	  "emitDecoratorMetadata": true,
+	  "declaration": true,
+	  "outDir": "lib",
+	  "strict": true,
+	  "resolveJsonModule": true,
+	  "esModuleInterop": true
 	},
-	"include": ["./src/**/*.ts"]
-}
+	"include": [
+	  "src"
+	],
+	"exclude": [
+	  "node_modules",
+	  "**/__tests__/*"
+	]
+  }
