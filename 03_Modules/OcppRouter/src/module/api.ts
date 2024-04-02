@@ -39,7 +39,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
      * @return {Promise<number>} The id of the created subscription.
      */
     @AsDataEndpoint(Namespace.Subscription, HttpMethod.Post)
-    async putSubscription(request: FastifyRequest<{ Body: Subscription }>): Promise<number> {
+    async postSubscription(request: FastifyRequest<{ Body: Subscription }>): Promise<number> {
         return this._module.subscriptionRepository.create(request.body as Subscription).then((subscription) => subscription?.id);
     }
 
