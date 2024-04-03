@@ -51,7 +51,8 @@ export function createDockerConfig() {
             transactions: {
                 endpointPrefix: "transactions",
                 host: "0.0.0.0",
-                port: 8089
+                port: 8089,
+                costUpdatedInterval: 60
             },
         },
         data: {

@@ -37,7 +37,8 @@ export function createDockerConfig() {
                 endpointPrefix: "/smartcharging"
             },
             transactions: {
-                endpointPrefix: "/transactions"
+                endpointPrefix: "/transactions",
+                costUpdatedInterval: 60
             },
         },
         data: {

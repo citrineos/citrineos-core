@@ -26,7 +26,8 @@ export class WebsocketNetworkConnection {
         cache: ICache,
         authenticator: IAuthenticator,
         router: IMessageRouter,
-        logger?: Logger<ILogObj>) {
+        logger?: Logger<ILogObj>
+        ) {
         this._cache = cache;
         this._config = config;
         this._logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
@@ -145,7 +146,7 @@ export class WebsocketNetworkConnection {
      * @param {Duplex} socket - Websocket duplex stream. 
      * @param {Buffer} head - Websocket buffer.
      * @param {WebSocketServer} wss - Websocket server.
-     * @param {number} securityProfile - The security profile to use for the websocket connection. See OCPP 2.0.1 Part 2-Specification A.1.3
+     * @param {WebsocketServerConfig} websocketServerConfig - Configuration of the websocket connection.
      */
     private async _upgradeRequest(req: http.IncomingMessage, socket: Duplex, head: Buffer, wss: WebSocketServer, websocketServerConfig: WebsocketServerConfig) {
         // Failed mTLS and TLS requests are rejected by the server before getting this far
@@ -220,6 +221,7 @@ export class WebsocketNetworkConnection {
      * This happens after successful protocol exchange with client.
      *
      * @param {WebSocket} ws - The WebSocket object representing the connection.
+     * @param {number} pingInterval - The ping interval in seconds.
      * @param {IncomingMessage} req - The request object associated with the connection.
      * @return {void}
      */
@@ -256,6 +258,7 @@ export class WebsocketNetworkConnection {
      *
      * @param {string} identifier - The unique identifier for the connection.
      * @param {WebSocket} ws - The WebSocket object representing the connection.
+     * @param {number} pingInterval - The ping interval in seconds.
      * @return {void} This function does not return anything.
      */
     private _registerWebsocketEvents(identifier: string, ws: WebSocket, pingInterval: number): void {
@@ -349,6 +352,7 @@ export class WebsocketNetworkConnection {
             }
         }, pingInterval * 1000);
     }
+
     /**
      * 
      * @param url Http upgrade request url used by charger

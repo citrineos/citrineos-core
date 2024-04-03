@@ -4,12 +4,12 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { AttributeEnumType, ComponentType, DataEnumType, GetVariableResultType, MutabilityEnumType, ReportDataType, SetVariableDataType, SetVariableResultType, VariableType } from "@citrineos/base";
-import { VariableAttributeQuerystring } from "../../../interfaces/queries/VariableAttribute";
+import { VariableAttributeQuerystring } from "../../../interfaces";
 import { SequelizeRepository } from "./Base";
 import { IDeviceModelRepository } from "../../../interfaces";
 import { Op } from "sequelize";
 import { VariableAttribute, Component, Evse, Variable, VariableCharacteristics } from "../model/DeviceModel";
-import { VariableStatus } from "../model/DeviceModel/VariableStatus";
+import { VariableStatus } from "../model/DeviceModel";
 import { ComponentVariable } from "../model/DeviceModel/ComponentVariable";
 
 // TODO: Document this
