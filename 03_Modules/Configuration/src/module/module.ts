@@ -61,6 +61,7 @@ import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
 import { Boot } from "@citrineos/data/lib/layers/sequelize/model/Boot";
 import { DeviceModelService } from "./services";
+import { Component } from "@citrineos/data/lib/layers/sequelize";
 
 /**
  * Component that handles Configuration related messages.
@@ -524,7 +525,12 @@ export class ConfigurationModule extends AbstractModule {
 
     const messageInfoTypes = message.payload.messageInfo as MessageInfoType[];
     for (const messageInfoType of messageInfoTypes) {
-      await this._messageInfoRepository.createOrUpdateByMessageInfoTypeAndStationId(messageInfoType, message.context.stationId);
+      let componentId: number | undefined;
+      if (messageInfoType.display) {
+        const component: Component = await this._deviceModelRepository.findOrCreateEvseAndComponent(messageInfoType.display, message.context.tenantId);
+        componentId = component.id;
+      }
+      await this._messageInfoRepository.createOrUpdateByMessageInfoTypeAndStationId(messageInfoType, message.context.stationId, componentId);
     }
 
     // Create response

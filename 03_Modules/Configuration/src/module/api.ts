@@ -42,7 +42,7 @@ import {
     MessageInfoType
 } from '@citrineos/base';
 import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring } from '@citrineos/data';
-import {getZonedNow, validateLanguageTag} from "@citrineos/util";
+import { validateLanguageTag } from "@citrineos/util";
 
 /**
  * Server API for the Configuration component.
@@ -113,7 +113,7 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
         // According to OCPP 2.0.1, the CSMS MAY include a startTime and endTime when setting a message.
         // startDateTime is from what date-time should this message be shown. If omitted: directly.
         if (!messageInfo.startDateTime) {
-            messageInfo.startDateTime = getZonedNow();
+            messageInfo.startDateTime = new Date().toISOString();
         }
 
         return this._module.sendCall(identifier, tenantId, CallAction.SetDisplayMessage, request, callbackUrl);

@@ -23,21 +23,10 @@ export class MessageInfoRepository extends SequelizeRepository<MessageInfo> impl
         );
     }
 
-    async createOrUpdateByMessageInfoTypeAndStationId(message: MessageInfoType, stationId: string): Promise<MessageInfo> {
-        let matchedComponentId: string | null = null;
-        if (message.display) {
-            const componentType = message.display as ComponentType;
-            const component = await Component.findOne({
-                where: {name: componentType.name, instance: componentType.instance ? componentType.instance : null}
-            });
-            if (component) {
-                matchedComponentId = component.id;
-            }
-        }
-
+    async createOrUpdateByMessageInfoTypeAndStationId(message: MessageInfoType, stationId: string, componentId?: number): Promise<MessageInfo> {
         const [savedMessageInfo, messageInfoCreated] = await MessageInfo.upsert({
             stationId: stationId,
-            componentId: matchedComponentId,
+            componentId: componentId,
             id: message.id,
             priority: message.priority,
             state: message.state,

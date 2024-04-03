@@ -3,24 +3,13 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
-import {
-    CacheNamespace, CallAction, CostUpdatedRequest,
-    IAuthenticator,
-    ICache,
-    IMessageRouter,
-    IModule,
-    SystemConfig,
-    WebsocketServerConfig
-} from "@citrineos/base";
+import { CacheNamespace, IAuthenticator, ICache, IMessageRouter, SystemConfig, WebsocketServerConfig } from "@citrineos/base";
 import { Duplex } from "stream";
 import * as http from "http";
 import * as https from "https";
 import fs from "fs";
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from "ws";
 import { Logger, ILogObj } from "tslog";
-import { ITariffRepository, ITransactionEventRepository } from "@citrineos/data";
-import {MeterValue, Tariff, Transaction} from "@citrineos/data/lib/layers/sequelize";
-import {getTotalKwh, roundCost} from "../util/transaction";
 
 export class WebsocketNetworkConnection {
 
@@ -31,17 +20,12 @@ export class WebsocketNetworkConnection {
     private _httpServers: (http.Server | https.Server)[];
     private _authenticator: IAuthenticator;
     private _router: IMessageRouter;
-    private _tariffRepository: ITariffRepository;
-    private _transactionEventRepository: ITransactionEventRepository;
-    private _module: IModule = {} as IModule;
 
     constructor(
         config: SystemConfig,
         cache: ICache,
         authenticator: IAuthenticator,
         router: IMessageRouter,
-        tariffRepository: ITariffRepository,
-        transactionEventRepository: ITransactionEventRepository,
         logger?: Logger<ILogObj>
         ) {
         this._cache = cache;
@@ -50,8 +34,6 @@ export class WebsocketNetworkConnection {
         this._authenticator = authenticator;
         router.networkHook = this.sendMessage.bind(this);
         this._router = router;
-        this._tariffRepository = tariffRepository;
-        this._transactionEventRepository = transactionEventRepository;
 
         this._httpServers = [];
         this._config.util.networkConnection.websocketServers.forEach(websocketServerConfig => {
@@ -86,7 +68,7 @@ export class WebsocketNetworkConnection {
                 clientTracking: false
             });
 
-            _socketServer.on('connection', (ws: WebSocket, req: http.IncomingMessage) => this._onConnection(ws, websocketServerConfig.pingInterval, req, config.modules.transactions.costUpdatedInterval));
+            _socketServer.on('connection', (ws: WebSocket, req: http.IncomingMessage) => this._onConnection(ws, websocketServerConfig.pingInterval, req));
             _socketServer.on('error', (wss: WebSocketServer, error: Error) => this._onError(wss, error));
             _socketServer.on('close', (wss: WebSocketServer) => this._onClose(wss));
 
@@ -147,10 +129,6 @@ export class WebsocketNetworkConnection {
         this._router.shutdown();
     }
 
-    setTransactionModule(module: IModule) {
-        this._module = module;
-    }
-
     private _onHttpRequest(req: http.IncomingMessage, res: http.ServerResponse) {
         if (req.method === "GET" && req.url == '/health') {
             res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -168,7 +146,7 @@ export class WebsocketNetworkConnection {
      * @param {Duplex} socket - Websocket duplex stream. 
      * @param {Buffer} head - Websocket buffer.
      * @param {WebSocketServer} wss - Websocket server.
-     * @param {number} securityProfile - The security profile to use for the websocket connection. See OCPP 2.0.1 Part 2-Specification A.1.3
+     * @param {WebsocketServerConfig} websocketServerConfig - Configuration of the websocket connection.
      */
     private async _upgradeRequest(req: http.IncomingMessage, socket: Duplex, head: Buffer, wss: WebSocketServer, websocketServerConfig: WebsocketServerConfig) {
         // Failed mTLS and TLS requests are rejected by the server before getting this far
@@ -243,10 +221,11 @@ export class WebsocketNetworkConnection {
      * This happens after successful protocol exchange with client.
      *
      * @param {WebSocket} ws - The WebSocket object representing the connection.
+     * @param {number} pingInterval - The ping interval in seconds.
      * @param {IncomingMessage} req - The request object associated with the connection.
      * @return {void}
      */
-    private async _onConnection(ws: WebSocket, pingInterval: number, req: http.IncomingMessage, costUpdatedInterval?: number): Promise<void> {
+    private async _onConnection(ws: WebSocket, pingInterval: number, req: http.IncomingMessage): Promise<void> {
         // Pause the WebSocket event emitter until broker is established
         ws.pause();
 
@@ -264,7 +243,7 @@ export class WebsocketNetworkConnection {
             this._logger.info("Successfully connected new charging station.", identifier);
 
             // Register all websocket events
-            this._registerWebsocketEvents(identifier, ws, pingInterval, costUpdatedInterval);
+            this._registerWebsocketEvents(identifier, ws, pingInterval);
 
             // Resume the WebSocket event emitter after events have been subscribed to
             ws.resume();
@@ -279,9 +258,10 @@ export class WebsocketNetworkConnection {
      *
      * @param {string} identifier - The unique identifier for the connection.
      * @param {WebSocket} ws - The WebSocket object representing the connection.
+     * @param {number} pingInterval - The ping interval in seconds.
      * @return {void} This function does not return anything.
      */
-    private _registerWebsocketEvents(identifier: string, ws: WebSocket, pingInterval: number, costUpdatedInterval?: number): void {
+    private _registerWebsocketEvents(identifier: string, ws: WebSocket, pingInterval: number): void {
 
         ws.onerror = (event: ErrorEvent) => {
             this._logger.error("Connection error encountered for", identifier, event.error, event.message, event.type);
@@ -308,10 +288,6 @@ export class WebsocketNetworkConnection {
                 // Remove expiration for connection and send ping to client in pingInterval seconds.
                 await this._cache.set(identifier, clientConnection, CacheNamespace.Connections);
                 this._ping(identifier, ws, pingInterval);
-
-                if (costUpdatedInterval) {
-                    this._updateCost(identifier, costUpdatedInterval)
-                }
             } else {
                 this._logger.debug("Pong received for", identifier, "but client is not alive");
                 ws.close(1011, "Client is not alive");
@@ -375,35 +351,6 @@ export class WebsocketNetworkConnection {
                 ws.close(1011, "Client is not alive");
             }
         }, pingInterval * 1000);
-    }
-
-    /**
-     * Internal method to execute a costUpdated request on a WebSocket connection after a delay of 60 seconds.
-     *
-     * @param {string} identifier - The identifier of the client connection.
-     * @param {number} costUpdatedInterval - The ping interval in milliseconds.
-     * @return {void} This function does not return anything.
-     */
-    private _updateCost(identifier: string, costUpdatedInterval: number): void {
-        setTimeout(async () => {
-            const tariff: Tariff | null = await this._tariffRepository.findByStationId(identifier);
-            if (tariff) {
-                const activeTransactions: Transaction[] = await this._transactionEventRepository.readAllActiveTransactionsByStationId(identifier);
-                for (let transaction of activeTransactions) {
-                    const meterValues: MeterValue[] = await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(transaction.id);
-                    const totalKwh : number = getTotalKwh(meterValues);
-                    await Transaction.update({totalKwh: totalKwh}, {where: {id: transaction.id}, returning: false});
-                    const cost = roundCost(totalKwh * tariff.price);
-                    // TODO: send correct tenantId
-                    this._module.sendCall(identifier, "", CallAction.CostUpdated, {
-                        totalCost: cost,
-                        transactionId: transaction.transactionId
-                    } as CostUpdatedRequest).then(() => {
-                        this._logger.info(`Sent costUpdated for ${transaction.transactionId} with totalCost ${cost}`,);
-                    })
-                }
-            }
-        }, costUpdatedInterval * 1000);
     }
 
     /**

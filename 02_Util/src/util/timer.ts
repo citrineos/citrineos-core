@@ -98,10 +98,3 @@ export class Timer {
         return this.timerEnd ? this.timerEnd - this.timerStart : null;
     }
 }
-
-/**
- * @returns The current time in ISO format, e.g. "2023-01-01T00:00:00.000Z".
- */
-export function getZonedNow() : string {
-    return new Date().toISOString();
-}

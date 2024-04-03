@@ -77,7 +77,7 @@ export interface IDeviceModelRepository extends ICrudRepository<VariableAttribut
     existsByQuery(query: VariableAttributeQuerystring): Promise<boolean>;
     deleteAllByQuery(query: VariableAttributeQuerystring): Promise<number>;
     findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | null, Variable | null]>
-    findAttributeByComponentAndVariableAndStationId(componentName: string, variableName: string, variableInstance: string | null, stationId: string): Promise<boolean | null>
+    findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component>
 }
 
 export interface ILocationRepository extends ICrudRepository<Location> { 
@@ -96,7 +96,6 @@ export interface ITransactionEventRepository extends ICrudRepository<Transaction
     readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
     readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: EVSEType, chargingStates?: ChargingStateEnumType[]): Promise<Transaction[]>;
     readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]>;
-    readAllActiveTransactionsByStationId(stationId: string): Promise<Transaction[]>;
     readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
 }
 
@@ -111,7 +110,7 @@ export interface IVariableMonitoringRepository extends ICrudRepository<VariableM
 
 export interface IMessageInfoRepository extends ICrudRepository<MessageInfoType> {
     deactivateAllByStationId(stationId: string): Promise<void>;
-    createOrUpdateByMessageInfoTypeAndStationId(value: MessageInfoType, stationId: string): Promise<MessageInfo>;
+    createOrUpdateByMessageInfoTypeAndStationId(value: MessageInfoType, stationId: string, componentId?: number): Promise<MessageInfo>;
 }
 
 export interface ITariffRepository extends ICrudRepository<Tariff> {

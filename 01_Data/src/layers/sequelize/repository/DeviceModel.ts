@@ -231,25 +231,6 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
         return [component, variable]
     }
 
-    async findAttributeByComponentAndVariableAndStationId(componentName: string, variableName: string, variableInstance: string | null, stationId: string): Promise<boolean | null> {
-        const query: VariableAttributeQuerystring = {
-            stationId: stationId,
-            component_name: componentName,
-            variable_name: variableName,
-            type: AttributeEnumType.Actual
-        }
-        if (variableInstance) {
-            query.variable_instance = variableInstance;
-        }
-
-        const availableAttributes: VariableAttribute[] = await this.readAllByQuery(query);
-        if (availableAttributes.length == 0) {
-            return null;
-        } else {
-            return Boolean(availableAttributes[0].value);
-        }
-    }
-
     /**
      * Private Methods
      */

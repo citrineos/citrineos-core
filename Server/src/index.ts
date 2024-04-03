@@ -68,7 +68,7 @@ class CitrineOSServer {
             name: "CitrineOS Logger",
             minLevel: systemConfig.logLevel,
             hideLogPositionForProduction: systemConfig.env === "production",
-            //Disable colors for cloud deployment as some cloude logging environments such as cloudwatch can not interpret colors
+            //Disable colors for cloud deployment as some cloud logging environments such as cloudwatch can not interpret colors
             stylePrettyLogs: process.env.DEPLOYMENT_TARGET != "cloud"
 
         });
@@ -102,7 +102,7 @@ class CitrineOSServer {
 
         const router = new MessageRouterImpl(this._config, this._cache, this._createSender(), this._createHandler(), async (identifier: string, message: string) => false, this._logger, this._ajv);
 
-        this._networkConnection = new WebsocketNetworkConnection(this._config, this._cache, this._authenticator, router, new sequelize.TariffRepository(config, this._logger), new sequelize.TransactionEventRepository(config, this._logger), this._logger);
+        this._networkConnection = new WebsocketNetworkConnection(this._config, this._cache, this._authenticator, router, this._logger);
 
         // Initialize modules & APIs
         // Always initialize APIs after SwaggerUI
@@ -136,9 +136,6 @@ class CitrineOSServer {
             const smartchargingModule = new SmartChargingModule(this._config, this._cache, this._createSender(), this._createHandler(), this._logger)
             this._modules.push(smartchargingModule);
             this._apis.push(new SmartChargingModuleApi(smartchargingModule, this._server, this._logger));
-        }
-        if (this._config.modules.transactions.costUpdatedInterval && this._config.modules.transactions.costUpdatedInterval > 0) {
-            this._networkConnection.setTransactionModule(transactionsModule)
         }
 
         process.on('SIGINT', this.shutdown.bind(this));

@@ -260,18 +260,33 @@ export class EVDriverModule extends AbstractModule {
         }
 
         if (response.idTokenInfo.status == AuthorizationStatusEnumType.Accepted) {
-          const tariffAvailable: boolean | null = await this._deviceModelRepository.findAttributeByComponentAndVariableAndStationId('TariffCostCtrlr', 'Available', 'Tariff', message.context.stationId);
-          const displayMessageAvailable: boolean | null = await this._deviceModelRepository.findAttributeByComponentAndVariableAndStationId('DisplayMessageCtrlr', 'Available', null, message.context.stationId);
-          if (tariffAvailable || displayMessageAvailable) {
+          const tariffAvailable: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+            stationId: message.context.stationId,
+            component_name: 'TariffCostCtrlr',
+            variable_name: 'Available',
+            variable_instance: 'Tariff',
+            type: AttributeEnumType.Actual
+          });
+
+          const displayMessageAvailable: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+            stationId: message.context.stationId,
+            component_name: 'DisplayMessageCtrlr',
+            variable_name: 'Available',
+            type: AttributeEnumType.Actual
+          });
+
+          // only send the tariff information if the Charging Station supports the tariff or DisplayMessage functionality
+          if ((tariffAvailable.length > 0 && Boolean(tariffAvailable[0].value)) ||
+              (displayMessageAvailable.length > 0 && Boolean(displayMessageAvailable[0].value))) {
             // TODO: refactor the workaround below after tariff implementation is finalized.
             const tariff: Tariff | null = await this._tariffRepository.findByStationId(message.context.stationId);
             if (tariff) {
-                if (!response.idTokenInfo.personalMessage) {
-                  response.idTokenInfo.personalMessage = {
-                    format: MessageFormatEnumType.ASCII
-                  } as MessageContentType;
-                }
-                response.idTokenInfo.personalMessage.content = `${tariff.price}/${tariff.unit}`;
+              if (!response.idTokenInfo.personalMessage) {
+                response.idTokenInfo.personalMessage = {
+                  format: MessageFormatEnumType.ASCII
+                } as MessageContentType;
+              }
+              response.idTokenInfo.personalMessage.content = `${tariff.price}/${tariff.unit}`;
             }
           }
         }

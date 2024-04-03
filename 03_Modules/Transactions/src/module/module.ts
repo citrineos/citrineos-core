@@ -8,7 +8,7 @@ import {
   AdditionalInfoType,
   AsHandler, AttributeEnumType,
   AuthorizationStatusEnumType,
-  CallAction,
+  CallAction, CostUpdatedRequest,
   CostUpdatedResponse,
   EventGroup,
   GetTransactionStatusResponse,
@@ -17,9 +17,9 @@ import {
   IdTokenInfoType,
   IMessage,
   IMessageHandler,
-  IMessageSender,
+  IMessageSender, MeasurandEnumType,
   MeterValuesRequest,
-  MeterValuesResponse,
+  MeterValuesResponse, ReadingContextEnumType, SampledValueType,
   StatusNotificationRequest,
   StatusNotificationResponse,
   SystemConfig,
@@ -33,10 +33,10 @@ import {
   ITransactionEventRepository,
   sequelize
 } from "@citrineos/data";
-import {getTotalKwh, RabbitMqReceiver, RabbitMqSender, roundCost, Timer} from "@citrineos/util";
+import { RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
-import {ILogObj, Logger} from 'tslog';
-import {Tariff, Transaction, VariableAttribute} from "@citrineos/data/lib/layers/sequelize";
+import { ILogObj, Logger } from 'tslog';
+import { MeterValue, Tariff, Transaction, VariableAttribute } from "@citrineos/data/lib/layers/sequelize";
 
 /**
  * Component that handles transaction related messages.
@@ -54,6 +54,7 @@ export class TransactionsModule extends AbstractModule {
   ];
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
+  private readonly _costUpdatedInterval: number | undefined;
 
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _authorizeRepository: IAuthorizationRepository;
@@ -135,6 +136,7 @@ export class TransactionsModule extends AbstractModule {
     this._tariffRepository = tariffRepository || new sequelize.TariffRepository(config, logger);
 
     this._sendCostUpdatedOnMeterValue = config.modules.transactions.sendCostUpdatedOnMeterValue;
+    this._costUpdatedInterval = config.modules.transactions.costUpdatedInterval;
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -216,6 +218,11 @@ export class TransactionsModule extends AbstractModule {
       }).then(transactionEventResponse => {
         if (transactionEvent.eventType == TransactionEventEnumType.Started && transactionEventResponse
             && transactionEventResponse.idTokenInfo?.status == AuthorizationStatusEnumType.Accepted && transactionEvent.idToken) {
+
+          if(this._costUpdatedInterval) {
+            this._updateCost(stationId, transactionId, this._costUpdatedInterval, message.context.tenantId)
+          }
+
           // Check for ConcurrentTx
           return this._transactionEventRepository.readAllActiveTransactionsByIdToken(transactionEvent.idToken).then(activeTransactions => {
             // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
@@ -335,6 +342,16 @@ export class TransactionsModule extends AbstractModule {
     this._logger.debug("GetTransactionStatus response received:", message, props);
   }
 
+  /**
+   * Round floor the given cost to 2 decimal places, e.g., given 1.2378, return 1.23
+   *
+   * @param {number} cost - cost
+   * @return {number} rounded cost
+   */
+  private _roundCost(cost: number): number {
+    return Math.floor(cost * 100) / 100
+  }
+
   private async _calculateTotalCost(stationId: string, transactionDbId: number): Promise<number> {
     // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
     //  implementation is finalized
@@ -343,14 +360,73 @@ export class TransactionsModule extends AbstractModule {
     const tariff: Tariff | null = await this._tariffRepository.findByStationId(stationId);
     if (tariff) {
       this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);
-      const totalKwh = getTotalKwh(await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(transactionDbId));
+      const totalKwh = this._getTotalKwh(await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(transactionDbId));
       this._logger.debug(`TotalKwh: ${totalKwh}`);
       await Transaction.update({totalKwh: totalKwh}, {where: {id: transactionDbId}, returning: false});
-      totalCost = roundCost(totalKwh * tariff.price);
+      totalCost = this._roundCost(totalKwh * tariff.price);
     } else {
       this._logger.error(`Tariff not found for station ${stationId}`);
     }
 
     return totalCost;
+  }
+
+  /**
+   * Calculate the total Kwh
+   *
+   * @param {array} meterValues - meterValues of a transaction.
+   * @return {number} total Kwh based on the overall values (i.e., without phase) in the simpledValues.
+   */
+  private _getTotalKwh(meterValues: MeterValue[]): number {
+    const contexts: ReadingContextEnumType[] = [ReadingContextEnumType.Transaction_Begin, ReadingContextEnumType.Sample_Periodic, ReadingContextEnumType.Transaction_End];
+
+    let valuesMap = new Map();
+
+    meterValues.filter(meterValue => meterValue.sampledValue[0].context && contexts.indexOf(meterValue.sampledValue[0].context) !== -1).forEach(
+        meterValue => {
+          const sampledValues = meterValue.sampledValue as SampledValueType[];
+          const overallValue = sampledValues.find(sampledValue => sampledValue.phase === undefined && sampledValue.measurand == MeasurandEnumType.Energy_Active_Import_Register);
+          if (overallValue && overallValue.unitOfMeasure?.unit?.toUpperCase() === 'KWH') {
+            valuesMap.set(Date.parse(meterValue.timestamp), overallValue.value)
+          } else if (overallValue && overallValue.unitOfMeasure?.unit?.toUpperCase() === 'WH') {
+            valuesMap.set(Date.parse(meterValue.timestamp), overallValue.value / 1000)
+          }
+        }
+    );
+
+    // sort the map based on timestamps
+    valuesMap = new Map([...valuesMap.entries()].sort((v1, v2) => v1[0] - v2[0]));
+    const sortedValues = Array.from(valuesMap.values());
+
+    let totalKwh: number = 0;
+    for (let i = 1; i < sortedValues.length; i++) {
+      totalKwh += sortedValues[i] - sortedValues[i - 1];
+    }
+
+    return totalKwh;
+  }
+
+  /**
+   * Internal method to execute a costUpdated request for an ongoing transaction repeatedly based on the costUpdatedInterval
+   *
+   * @param {string} stationId - The identifier of the client connection.
+   * @param {string} transactionId - The identifier of the transaction.
+   * @param {number} costUpdatedInterval - The costUpdated interval in milliseconds.
+   * @param {string} tenantId - The identifier of the tenant.
+   * @return {void} This function does not return anything.
+   */
+  private _updateCost(stationId: string, transactionId: string, costUpdatedInterval: number, tenantId: string): void {
+    setInterval(async () => {
+      const transaction: Transaction | undefined = await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(stationId, transactionId);
+      if (transaction && transaction.isActive) {
+        const cost = await this._calculateTotalCost(stationId, transaction.id);
+        this.sendCall(stationId, tenantId, CallAction.CostUpdated, {
+          totalCost: cost,
+          transactionId: transaction.transactionId
+        } as CostUpdatedRequest).then(() => {
+          this._logger.info(`Sent costUpdated for ${transaction.transactionId} with totalCost ${cost}`,);
+        })
+      }
+    }, costUpdatedInterval * 1000);
   }
 }

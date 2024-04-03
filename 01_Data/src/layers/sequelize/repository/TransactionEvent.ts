@@ -128,13 +128,6 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
             .then(row => (row as Transaction[]));
     }
 
-    readAllActiveTransactionsByStationId(stationId: string): Promise<Transaction[]> {
-        return this.s.models[Transaction.MODEL_NAME].findAll({
-            where: {isActive: true}
-        })
-            .then(row => (row as Transaction[]));
-    }
-
     readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]> {
         return this.s.models[MeterValue.MODEL_NAME].findAll({
             where: { transactionDatabaseId: transactionDataBaseId }

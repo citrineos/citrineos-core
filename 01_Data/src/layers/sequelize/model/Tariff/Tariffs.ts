@@ -6,6 +6,7 @@ import {
     Namespace
 } from "@citrineos/base";
 import { Table, Model, Column, DataType, Index } from "sequelize-typescript";
+import { TariffUnitEnumType } from "./index";
 
 @Table
 export class Tariff extends Model {
@@ -21,7 +22,7 @@ export class Tariff extends Model {
     declare stationId: string;
 
     @Column(DataType.STRING)
-    declare unit: string;
+    declare unit: TariffUnitEnumType;
 
     @Column(DataType.DECIMAL)
     declare price: number;

@@ -60,14 +60,14 @@ export class MessageInfo extends Model implements MessageInfoType {
     @Column({
         type: DataType.DATE,
         get() {
-            const startDateTime: Date = this.getDataValue('endDateTime');
-            return startDateTime ? startDateTime.toISOString() : null;
+            const endDateTime: Date = this.getDataValue('endDateTime');
+            return endDateTime ? endDateTime.toISOString() : null;
         }
     })
     declare endDateTime?: string;
 
     @Column(DataType.STRING)
-    transactionId?: string;
+    declare transactionId?: string;
 
     @Column(DataType.JSON)
     declare message: MessageContentType;
