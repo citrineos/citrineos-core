@@ -11,6 +11,7 @@ export { VariableAttributeQuerystring, VariableAttributeQuerySchema, CreateOrUpd
 export { AuthorizationQuerystring, AuthorizationQuerySchema } from "./queries/Authorization";
 export { TransactionEventQuerystring, TransactionEventQuerySchema } from "./queries/TransactionEvent";
 export { TariffQueryString, TariffQuerySchema, CreateOrUpdateTariffQuerySchema, CreateOrUpdateTariffQueryString } from "./queries/Tariff";
+export { ModelKeyQuerystring, ModelKeyQuerystringSchema } from "./queries/Model";
 
 // Data projection models
 export { AuthorizationRestrictions } from "./projections/AuthorizationRestrictions";

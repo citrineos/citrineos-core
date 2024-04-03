@@ -30,22 +30,12 @@ import {
     MessageInfoType
 } from "@citrineos/base";
 import { AuthorizationQuerystring } from "./queries/Authorization";
-import {AuthorizationRestrictions, TariffQueryString, VariableAttributeQuerystring} from ".";
-import {
-    Boot,
-    Authorization,
-    Location,
-    SecurityEvent,
-    Component,
-    Variable,
-    VariableAttribute,
-    VariableMonitoring,
-    EventData,
-    ChargingStation,
-    Transaction,
-    MessageInfo,
-    Tariff, MeterValue
-} from "../layers/sequelize";
+import { Transaction } from "../layers/sequelize/model/TransactionEvent";
+import { VariableAttribute } from "../layers/sequelize/model/DeviceModel/VariableAttribute";
+import { AuthorizationRestrictions, VariableAttributeQuerystring, TariffQueryString } from ".";
+import { Boot, Authorization, Location, SecurityEvent, Component, Variable, VariableMonitoring, EventData, ChargingStation, MessageInfo, Tariff, MeterValue } from "../layers/sequelize";
+import { Subscription } from "../layers/sequelize/model/Subscription/Subscription";
+
 
 export interface IAuthorizationRepository extends ICrudRepository<AuthorizationData> {
     createOrUpdateByQuery(value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined>;
@@ -87,6 +77,12 @@ export interface ILocationRepository extends ICrudRepository<Location> {
 export interface ISecurityEventRepository extends ICrudRepository<SecurityEvent> {
     createByStationId(value: SecurityEventNotificationRequest, stationId: string): Promise<SecurityEvent | undefined>;
     readByStationIdAndTimestamps(stationId: string, from?: Date, to?: Date): Promise<SecurityEvent[]>;
+    deleteByKey(key: string): Promise<boolean>;
+}
+
+export interface ISubscriptionRepository extends ICrudRepository<Subscription> {   
+    create(value: Subscription): Promise<Subscription | undefined>;
+    readAllByStationId(stationId: string): Promise<Subscription[]>
     deleteByKey(key: string): Promise<boolean>;
 }
 
