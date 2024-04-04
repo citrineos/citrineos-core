@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {CustomDataType, Namespace} from "@citrineos/base";
-import {StatusInfoType} from "@citrineos/base/lib/ocpp/model/types/SetVariableMonitoringResponse";
+import {StatusInfoType} from "@citrineos/base";
 import {BelongsTo, Column, DataType, ForeignKey, Model, Table} from "sequelize-typescript";
 import {VariableMonitoring} from "./VariableMonitoring";
 

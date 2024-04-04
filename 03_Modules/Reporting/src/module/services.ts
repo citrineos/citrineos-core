@@ -4,7 +4,7 @@
 
 import {IDeviceModelRepository} from "@citrineos/data";
 import {AttributeEnumType} from "@citrineos/base";
-import {VariableAttribute} from "@citrineos/data/lib/layers/sequelize";
+import {VariableAttribute} from "@citrineos/data";
 
 export class DeviceModelService {
     protected _deviceModelRepository: IDeviceModelRepository;

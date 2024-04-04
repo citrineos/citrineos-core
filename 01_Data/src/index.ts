@@ -5,3 +5,14 @@
 
 export * as sequelize from "./layers/sequelize";
 export * from "./interfaces";
+export {
+    Boot,
+    Component,
+    DeviceModelRepository,
+    MeterValue,
+    Subscription,
+    Tariff,
+    Transaction,
+    Variable,
+    VariableAttribute
+} from "./layers/sequelize"; // todo export better as these seem to be used in other modules

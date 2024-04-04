@@ -11,10 +11,8 @@ import {
   DataType,
   ForeignKey,
   HasMany,
-  BelongsTo,
-  BelongsToMany,
+  BelongsTo
 } from 'sequelize-typescript';
-import { IdToken } from '../Authorization';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
@@ -59,6 +57,9 @@ export class Transaction extends Model implements TransactionType {
 
   @Column(DataType.BIGINT)
   declare timeSpentCharging?: number;
+
+  @Column(DataType.DECIMAL)
+  declare totalKwh?: number;
 
   @Column(DataType.STRING)
   declare stoppedReason?: ReasonEnumType;

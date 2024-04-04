@@ -23,6 +23,7 @@ export enum MessageOrigin {
 }
 
 export enum EventGroup {
+  All = 'all',
   General = 'general',
   Certificates = "certificates",
   Configuration = "configuration",
@@ -31,6 +32,14 @@ export enum EventGroup {
   Reporting = 'reporting',
   SmartCharging = 'smartcharging',
   Transactions = 'transactions',
+}
+
+export const eventGroupFromString = (source: string): EventGroup => {
+  const eventGroup: EventGroup = source as EventGroup;
+  if (!eventGroup) {
+    throw new Error(`Invalid event group soruce ${source}"`);
+  }
+  return eventGroup;
 }
 
 export { IMessage, Message } from "./Message";

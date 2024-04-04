@@ -48,14 +48,17 @@ import {
   SetVariablesResponse,
   SystemConfig,
   UnpublishFirmwareResponse,
-  UpdateFirmwareResponse
+  UpdateFirmwareResponse,
+  ClearDisplayMessageResponse,
+  DisplayMessageStatusEnumType,
+  GetDisplayMessagesRequest,
+  MessageInfoType, ClearMessageStatusEnumType
 } from "@citrineos/base";
-import { IBootRepository, IDeviceModelRepository, sequelize } from "@citrineos/data";
+import { Boot, Component, IBootRepository, IDeviceModelRepository, IMessageInfoRepository, sequelize } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import { v4 as uuidv4 } from "uuid";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
-import { Boot } from "@citrineos/data/lib/layers/sequelize/model/Boot";
 import { DeviceModelService } from "./services";
 
 /**
@@ -94,6 +97,7 @@ export class ConfigurationModule extends AbstractModule {
 
   protected _bootRepository: IBootRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _messageInfoRepository: IMessageInfoRepository;
 
   public _deviceModelService: DeviceModelService;
 
@@ -103,6 +107,10 @@ export class ConfigurationModule extends AbstractModule {
 
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
+  }
+
+  get messageInfoRepository(): IMessageInfoRepository {
+    return this._messageInfoRepository;
   }
 
   /**
@@ -127,10 +135,14 @@ export class ConfigurationModule extends AbstractModule {
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    * 
    * @param {IBootRepository} [bootRepository] - An optional parameter of type {@link IBootRepository} which represents a repository for accessing and manipulating authorization data.
-   * If no `bootRepository` is provided, a default {@link sequelize.BootRepository} instance is created and used.
+   * If no `bootRepository` is provided, a default {@link sequelize:bootRepository} instance is created and used.
    * 
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is created and used.
+   *
+   *@param {IMessageInfoRepository} [messageInfoRepository] - An optional parameter of type {@link messageInfoRepository} which
+   *  represents a repository for accessing and manipulating variable data.
+   *If no `deviceModelRepository` is provided, a default {@link sequelize:messageInfoRepository} instance is created and used.
    */
   constructor(
     config: SystemConfig,
@@ -139,7 +151,8 @@ export class ConfigurationModule extends AbstractModule {
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
     bootRepository?: IBootRepository,
-    deviceModelRepository?: IDeviceModelRepository
+    deviceModelRepository?: IDeviceModelRepository,
+    messageInfoRepository?: IMessageInfoRepository
   ) {
     super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Configuration, logger);
 
@@ -152,6 +165,7 @@ export class ConfigurationModule extends AbstractModule {
 
     this._bootRepository = bootRepository || new sequelize.BootRepository(config, this._logger);
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, this._logger);
+    this._messageInfoRepository = messageInfoRepository || new sequelize.MessageInfoRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
 
@@ -431,7 +445,7 @@ export class ConfigurationModule extends AbstractModule {
             setVariableData.length : itemsPerMessageSetVariables;
           let rejectedSetVariable = false;
           while (setVariableData.length > 0) {
-            // Below pattern is preferred way of receiving CallResults in an async mannner.
+            // Below pattern is preferred way of receiving CallResults in an async manner.
             const correlationId = uuidv4();
             const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(correlationId, this.config.maxCachingSeconds, stationId); // x2 fudge factor for any network lag
             this.sendCall(stationId, tenantId, CallAction.SetVariables,
@@ -495,23 +509,36 @@ export class ConfigurationModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("Heartbeat response sent: ", messageConfirmation));
+      .then(messageConfirmation => {
+        this._logger.debug("Heartbeat response sent: ", messageConfirmation)
+      });
   }
 
   @AsHandler(CallAction.NotifyDisplayMessages)
-  protected _handleNotifyDisplayMessages(
+  protected async _handleNotifyDisplayMessages(
     message: IMessage<NotifyDisplayMessagesRequest>,
     props?: HandlerProperties
-  ): void {
-
+  ): Promise<void> {
     this._logger.debug("NotifyDisplayMessages received: ", message, props);
+
+    const messageInfoTypes = message.payload.messageInfo as MessageInfoType[];
+    for (const messageInfoType of messageInfoTypes) {
+      let componentId: number | undefined;
+      if (messageInfoType.display) {
+        const component: Component = await this._deviceModelRepository.findOrCreateEvseAndComponent(messageInfoType.display, message.context.tenantId);
+        componentId = component.id;
+      }
+      await this._messageInfoRepository.createOrUpdateByMessageInfoTypeAndStationId(messageInfoType, message.context.stationId, componentId);
+    }
 
     // Create response
     const response: NotifyDisplayMessagesResponse = {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("NotifyDisplayMessages response sent: ", messageConfirmation));
+      .then(messageConfirmation => {
+        this._logger.debug("NotifyDisplayMessages response sent: ", messageConfirmation)
+      });
   }
 
   @AsHandler(CallAction.FirmwareStatusNotification)
@@ -527,7 +554,9 @@ export class ConfigurationModule extends AbstractModule {
     const response: FirmwareStatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("FirmwareStatusNotification response sent: ", messageConfirmation));
+      .then(messageConfirmation => {
+        this._logger.debug("FirmwareStatusNotification response sent: ", messageConfirmation)
+      });
   }
 
   @AsHandler(CallAction.DataTransfer)
@@ -541,7 +570,9 @@ export class ConfigurationModule extends AbstractModule {
     const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected, statusInfo: { reasonCode: ErrorCode.NotImplemented } };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("DataTransfer response sent: ", messageConfirmation));
+      .then(messageConfirmation => {
+        this._logger.debug("DataTransfer response sent: ", messageConfirmation)
+      });
   }
 
   /**
@@ -574,11 +605,19 @@ export class ConfigurationModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.SetDisplayMessage)
-  protected _handleSetDisplayMessage(
+  protected async _handleSetDisplayMessage(
     message: IMessage<SetDisplayMessageResponse>,
     props?: HandlerProperties
-  ): void {
+  ): Promise<void> {
     this._logger.debug("SetDisplayMessage response received:", message, props);
+
+    const status = message.payload.status as DisplayMessageStatusEnumType;
+    // when charger station accepts the set message info request
+    // we trigger a get all display messages request to update stored message info in db
+    if (status == DisplayMessageStatusEnumType.Accepted) {
+      await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId)
+      await this.sendCall(message.context.stationId, message.context.tenantId, CallAction.GetDisplayMessages, { requestId: Math.floor(Math.random() * 1000) } as GetDisplayMessagesRequest);
+    }
   }
 
   @AsHandler(CallAction.PublishFirmware)
@@ -619,5 +658,21 @@ export class ConfigurationModule extends AbstractModule {
     props?: HandlerProperties
   ): void {
     this._logger.debug("ChangeAvailability response received:", message, props);
+  }
+
+  @AsHandler(CallAction.ClearDisplayMessage)
+  protected async _handleClearDisplayMessage(
+    message: IMessage<ClearDisplayMessageResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("ClearDisplayMessage response received:", message, props);
+
+    const status = message.payload.status as ClearMessageStatusEnumType;
+    // when charger station accepts the clear message info request
+    // we trigger a get all display messages request to update stored message info in db
+    if (status == ClearMessageStatusEnumType.Accepted) {
+      await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId)
+      await this.sendCall(message.context.stationId, message.context.tenantId, CallAction.GetDisplayMessages, { requestId: Math.floor(Math.random() * 1000) } as GetDisplayMessagesRequest);
+    }
   }
 }
