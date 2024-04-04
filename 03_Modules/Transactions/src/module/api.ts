@@ -3,18 +3,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { TransactionEventQuerySchema, TransactionEventQuerystring, TariffSchema } from "@citrineos/data";
+import { TransactionEventQuerySchema, TransactionEventQuerystring,Tariff, TariffSchema, CreateOrUpdateTariffQuerySchema, CreateOrUpdateTariffQueryString, TariffQuerySchema, TariffQueryString } from "@citrineos/data";
 import { ILogObj, Logger } from 'tslog';
 import { ITransactionsModuleApi } from './interface';
 import { TransactionsModule } from './module';
 import { AbstractModuleApi, AsDataEndpoint, Namespace, CostUpdatedRequest, CostUpdatedRequestSchema, HttpMethod, TransactionEventRequest, TransactionType, AsMessageEndpoint, CallAction, GetTransactionStatusRequestSchema, GetTransactionStatusRequest, IMessageConfirmation } from "@citrineos/base";
 import { FastifyInstance, FastifyRequest } from "fastify";
-import {
-    CreateOrUpdateTariffQuerySchema,
-    CreateOrUpdateTariffQueryString,
-    TariffQuerySchema, TariffQueryString
-} from "@citrineos/data/lib/interfaces/queries/Tariff";
-import {Tariff} from "@citrineos/data/lib/layers/sequelize";
 
 /**
  * Server API for the transaction module.

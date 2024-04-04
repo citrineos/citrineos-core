@@ -3,11 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Boot } from '@citrineos/data/lib/layers/sequelize';
-import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { IConfigurationModuleApi } from './interface';
-import { ConfigurationModule } from './module';
 import {
     AbstractModuleApi,
     AsMessageEndpoint,
@@ -15,11 +11,23 @@ import {
     SetNetworkProfileRequestSchema,
     SetNetworkProfileRequest,
     IMessageConfirmation,
+    ClearDisplayMessageRequestSchema,
+    ClearDisplayMessageRequest,
+    GetDisplayMessagesRequestSchema,
+    GetDisplayMessagesRequest,
+    SetDisplayMessageRequestSchema,
+    SetDisplayMessageRequest,
+    MessageInfoType,
+    PublishFirmwareRequestSchema,
+    PublishFirmwareRequest,
+    UnpublishFirmwareRequestSchema,
+    UnpublishFirmwareRequest,
     UpdateFirmwareRequestSchema,
     UpdateFirmwareRequest,
     ResetRequestSchema,
-    ChangeAvailabilityRequestSchema,
     ResetRequest,
+    ChangeAvailabilityRequestSchema,
+    ChangeAvailabilityRequest,
     TriggerMessageRequestSchema,
     TriggerMessageRequest,
     AsDataEndpoint,
@@ -27,22 +35,15 @@ import {
     HttpMethod,
     BootConfigSchema,
     BootNotificationResponse,
-    BootConfig,
-    ChangeAvailabilityRequest,
-    PublishFirmwareRequestSchema,
-    ClearDisplayMessageRequest,
-    ClearDisplayMessageRequestSchema,
-    GetDisplayMessagesRequest,
-    GetDisplayMessagesRequestSchema,
-    PublishFirmwareRequest,
-    SetDisplayMessageRequest,
-    SetDisplayMessageRequestSchema,
-    UnpublishFirmwareRequest,
-    UnpublishFirmwareRequestSchema,
-    MessageInfoType
-} from '@citrineos/base';
-import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring } from '@citrineos/data';
+    BootConfig
+} from "@citrineos/base";
+import { FastifyInstance, FastifyRequest } from 'fastify';
+import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, Boot } from "@citrineos/data";
 import { validateLanguageTag } from "@citrineos/util";
+import { IConfigurationModuleApi } from "./interface";
+import { ConfigurationModule } from "./module";
+
+
 
 /**
  * Server API for the Configuration component.
@@ -107,7 +108,7 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
         if (languageTag && !validateLanguageTag(languageTag)) {
             const errorMsg = 'Language shall be specified as RFC-5646 tags, example: US English is: en-US.';
             this._logger.error(errorMsg);
-            return {success: false, payload: errorMsg};
+            return { success: false, payload: errorMsg };
         }
 
         // According to OCPP 2.0.1, the CSMS MAY include a startTime and endTime when setting a message.

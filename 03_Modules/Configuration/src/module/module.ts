@@ -54,14 +54,12 @@ import {
   GetDisplayMessagesRequest,
   MessageInfoType, ClearMessageStatusEnumType
 } from "@citrineos/base";
-import {IBootRepository, IDeviceModelRepository, IMessageInfoRepository, sequelize} from "@citrineos/data";
+import { Boot, Component, IBootRepository, IDeviceModelRepository, IMessageInfoRepository, sequelize } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import { v4 as uuidv4 } from "uuid";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
-import { Boot } from "@citrineos/data/lib/layers/sequelize/model/Boot";
 import { DeviceModelService } from "./services";
-import { Component } from "@citrineos/data/lib/layers/sequelize";
 
 /**
  * Component that handles Configuration related messages.
@@ -112,7 +110,7 @@ export class ConfigurationModule extends AbstractModule {
   }
 
   get messageInfoRepository(): IMessageInfoRepository {
-      return this._messageInfoRepository;
+    return this._messageInfoRepository;
   }
 
   /**
@@ -511,9 +509,9 @@ export class ConfigurationModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-        .then(messageConfirmation => {
-          this._logger.debug("Heartbeat response sent: ", messageConfirmation)
-        });
+      .then(messageConfirmation => {
+        this._logger.debug("Heartbeat response sent: ", messageConfirmation)
+      });
   }
 
   @AsHandler(CallAction.NotifyDisplayMessages)
@@ -538,9 +536,9 @@ export class ConfigurationModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-        .then(messageConfirmation => {
-          this._logger.debug("NotifyDisplayMessages response sent: ", messageConfirmation)
-        });
+      .then(messageConfirmation => {
+        this._logger.debug("NotifyDisplayMessages response sent: ", messageConfirmation)
+      });
   }
 
   @AsHandler(CallAction.FirmwareStatusNotification)
@@ -556,9 +554,9 @@ export class ConfigurationModule extends AbstractModule {
     const response: FirmwareStatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-        .then(messageConfirmation => {
-          this._logger.debug("FirmwareStatusNotification response sent: ", messageConfirmation)
-        });
+      .then(messageConfirmation => {
+        this._logger.debug("FirmwareStatusNotification response sent: ", messageConfirmation)
+      });
   }
 
   @AsHandler(CallAction.DataTransfer)
@@ -572,9 +570,9 @@ export class ConfigurationModule extends AbstractModule {
     const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected, statusInfo: { reasonCode: ErrorCode.NotImplemented } };
 
     this.sendCallResultWithMessage(message, response)
-        .then(messageConfirmation => {
-          this._logger.debug("DataTransfer response sent: ", messageConfirmation)
-        });
+      .then(messageConfirmation => {
+        this._logger.debug("DataTransfer response sent: ", messageConfirmation)
+      });
   }
 
   /**
@@ -608,8 +606,8 @@ export class ConfigurationModule extends AbstractModule {
 
   @AsHandler(CallAction.SetDisplayMessage)
   protected async _handleSetDisplayMessage(
-      message: IMessage<SetDisplayMessageResponse>,
-      props?: HandlerProperties
+    message: IMessage<SetDisplayMessageResponse>,
+    props?: HandlerProperties
   ): Promise<void> {
     this._logger.debug("SetDisplayMessage response received:", message, props);
 
@@ -618,7 +616,7 @@ export class ConfigurationModule extends AbstractModule {
     // we trigger a get all display messages request to update stored message info in db
     if (status == DisplayMessageStatusEnumType.Accepted) {
       await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId)
-      await this.sendCall(message.context.stationId, message.context.tenantId, CallAction.GetDisplayMessages, {requestId: Math.floor(Math.random() * 1000)} as GetDisplayMessagesRequest);
+      await this.sendCall(message.context.stationId, message.context.tenantId, CallAction.GetDisplayMessages, { requestId: Math.floor(Math.random() * 1000) } as GetDisplayMessagesRequest);
     }
   }
 
@@ -664,8 +662,8 @@ export class ConfigurationModule extends AbstractModule {
 
   @AsHandler(CallAction.ClearDisplayMessage)
   protected async _handleClearDisplayMessage(
-      message: IMessage<ClearDisplayMessageResponse>,
-      props?: HandlerProperties
+    message: IMessage<ClearDisplayMessageResponse>,
+    props?: HandlerProperties
   ): Promise<void> {
     this._logger.debug("ClearDisplayMessage response received:", message, props);
 
@@ -674,7 +672,7 @@ export class ConfigurationModule extends AbstractModule {
     // we trigger a get all display messages request to update stored message info in db
     if (status == ClearMessageStatusEnumType.Accepted) {
       await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId)
-      await this.sendCall(message.context.stationId, message.context.tenantId, CallAction.GetDisplayMessages, {requestId: Math.floor(Math.random() * 1000)} as GetDisplayMessagesRequest);
+      await this.sendCall(message.context.stationId, message.context.tenantId, CallAction.GetDisplayMessages, { requestId: Math.floor(Math.random() * 1000) } as GetDisplayMessagesRequest);
     }
   }
 }

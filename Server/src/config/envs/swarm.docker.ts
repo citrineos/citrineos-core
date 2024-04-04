@@ -13,7 +13,9 @@ export function createDockerConfig() {
         },
         modules: {
             certificates: {
-                endpointPrefix: "/certificates"
+                endpointPrefix: "certificates",
+                host: "0.0.0.0",
+                port: 8083
             },
             configuration: {
                 heartbeatInterval: 60,
@@ -22,23 +24,34 @@ export function createDockerConfig() {
                 getBaseReportOnPending: true,
                 bootWithRejectedVariables: true,
                 autoAccept: true,
-                endpointPrefix: "/configuration"
+                endpointPrefix: "configuration",
+                host: "0.0.0.0",
+                port: 8084
             },
             evdriver: {
-                endpointPrefix: "/evdriver"
+                endpointPrefix: "evdriver",
+                host: "0.0.0.0",
+                port: 8085
             },
             monitoring: {
-                endpointPrefix: "/monitoring"
+                endpointPrefix: "monitoring",
+                host: "0.0.0.0",
+                port: 8086
             },
             reporting: {
-                endpointPrefix: "/reporting"
+                endpointPrefix: "reporting",
+                host: "0.0.0.0",
+                port: 8087
             },
             smartcharging: {
-                endpointPrefix: "/smartcharging"
+                endpointPrefix: "smartcharging",
+                host: "0.0.0.0",
+                port: 8088
             },
             transactions: {
-                endpointPrefix: "/transactions",
-                costUpdatedInterval: 60
+                endpointPrefix: "transactions",
+                host: "0.0.0.0",
+                port: 8089
             },
         },
         data: {
@@ -50,12 +63,15 @@ export function createDockerConfig() {
                 username: "citrine",
                 password: "citrine",
                 storage: "",
-                sync: false,
+                sync: false
             }
         },
         util: {
             cache: {
-                memory: true
+                redis: {
+                    host: "redis",
+                    port: 6379,
+                }
             },
             messageBroker: {
                 amqp: {

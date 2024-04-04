@@ -1,20 +1,17 @@
 {
-  "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "declaration": true,
-    "outDir": "lib",
-    "strict": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true
-  },
+  "extends": "../tsconfig.build.json",
   "include": [
-    "src"
+    "src/**/*.ts",
+    "src/**/*.json"
   ],
-  "exclude": [
-    "node_modules",
-    "**/__tests__/*"
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "composite": true,
+    "rootDir": "./src"
+  },
+  "references": [
+    {
+      "path": "../00_Base"
+    }
   ]
 }

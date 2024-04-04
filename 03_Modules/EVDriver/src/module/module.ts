@@ -33,8 +33,7 @@ import {
   SystemConfig,
   UnlockConnectorResponse
 } from "@citrineos/base";
-import {IAuthorizationRepository, IDeviceModelRepository, ITariffRepository, sequelize} from "@citrineos/data";
-import {Tariff, VariableAttribute} from "@citrineos/data/lib/layers/sequelize";
+import {IAuthorizationRepository, IDeviceModelRepository, ITariffRepository, sequelize, Tariff, VariableAttribute} from "@citrineos/data";
 import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import {ILogObj, Logger} from 'tslog';

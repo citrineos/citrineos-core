@@ -31,12 +31,15 @@ import {
   IAuthorizationRepository,
   IDeviceModelRepository, ITariffRepository,
   ITransactionEventRepository,
-  sequelize
+  MeterValue,
+  sequelize,
+  Tariff,
+  Transaction,
+  VariableAttribute
 } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
-import { MeterValue, Tariff, Transaction, VariableAttribute } from "@citrineos/data/lib/layers/sequelize";
 
 /**
  * Component that handles transaction related messages.
