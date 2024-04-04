@@ -91,13 +91,14 @@ services:
       - 9229:9229
 
   directus:
-    image: directus/directus:latest
+    build:
+      context: ..
+      dockerfile: ./Server/directus.Dockerfile
     ports:
       - 8055:8055
     volumes:
       - ./data/directus/uploads:/directus/uploads
       - ./directus-env-config.js:/directus/config.js
-      - ../DirectusExtensions/charging-stations-bundle:/directus/extensions/directus-extension-charging-stations-bundle
     depends_on:
       ocpp-db:
         condition: service_healthy
