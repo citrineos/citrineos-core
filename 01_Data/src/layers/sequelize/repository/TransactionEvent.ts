@@ -3,7 +3,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { TransactionEventRequest, ChargingStateEnumType, IdTokenType, TransactionEventEnumType, EVSEType, TransactionEventResponse } from "@citrineos/base";
+import {
+    TransactionEventRequest,
+    ChargingStateEnumType,
+    IdTokenType,
+    TransactionEventEnumType,
+    EVSEType
+} from "@citrineos/base";
 import { ITransactionEventRepository } from "../../../interfaces";
 import { MeterValue, Transaction, TransactionEvent } from "../model/TransactionEvent";
 import { SequelizeRepository } from "./Base";
@@ -106,7 +112,7 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
         }).then(row => (row as Transaction[]));
     }
 
-    readAllActiveTransactionByIdToken(idToken: IdTokenType): Promise<Transaction[]> {
+    readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]> {
         return this.s.models[Transaction.MODEL_NAME].findAll({
             where: { isActive: true },
             include: [{
@@ -120,5 +126,12 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
             }]
         })
             .then(row => (row as Transaction[]));
+    }
+
+    readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]> {
+        return this.s.models[MeterValue.MODEL_NAME].findAll({
+            where: { transactionDatabaseId: transactionDataBaseId }
+        })
+            .then(row => (row as MeterValue[]));
     }
 }
