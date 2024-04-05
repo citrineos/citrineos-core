@@ -3,13 +3,47 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Boot } from '@citrineos/data/lib/layers/sequelize';
-import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { IConfigurationModuleApi } from './interface';
-import { ConfigurationModule } from './module';
-import { AbstractModuleApi, AsMessageEndpoint, CallAction, SetNetworkProfileRequestSchema, SetNetworkProfileRequest, IMessageConfirmation, UpdateFirmwareRequestSchema, UpdateFirmwareRequest, ResetRequestSchema, ResetRequest, TriggerMessageRequestSchema, TriggerMessageRequest, AsDataEndpoint, Namespace, HttpMethod, BootConfigSchema, BootNotificationResponse, BootConfig } from '@citrineos/base';
-import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring } from '@citrineos/data';
+import {
+    AbstractModuleApi,
+    AsMessageEndpoint,
+    CallAction,
+    SetNetworkProfileRequestSchema,
+    SetNetworkProfileRequest,
+    IMessageConfirmation,
+    ClearDisplayMessageRequestSchema,
+    ClearDisplayMessageRequest,
+    GetDisplayMessagesRequestSchema,
+    GetDisplayMessagesRequest,
+    SetDisplayMessageRequestSchema,
+    SetDisplayMessageRequest,
+    MessageInfoType,
+    PublishFirmwareRequestSchema,
+    PublishFirmwareRequest,
+    UnpublishFirmwareRequestSchema,
+    UnpublishFirmwareRequest,
+    UpdateFirmwareRequestSchema,
+    UpdateFirmwareRequest,
+    ResetRequestSchema,
+    ResetRequest,
+    ChangeAvailabilityRequestSchema,
+    ChangeAvailabilityRequest,
+    TriggerMessageRequestSchema,
+    TriggerMessageRequest,
+    AsDataEndpoint,
+    Namespace,
+    HttpMethod,
+    BootConfigSchema,
+    BootNotificationResponse,
+    BootConfig
+} from "@citrineos/base";
+import { FastifyInstance, FastifyRequest } from 'fastify';
+import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, Boot } from "@citrineos/data";
+import { validateLanguageTag } from "@citrineos/util";
+import { IConfigurationModuleApi } from "./interface";
+import { ConfigurationModule } from "./module";
+
+
 
 /**
  * Server API for the Configuration component.
@@ -41,6 +75,71 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
         return this._module.sendCall(identifier, tenantId, CallAction.SetNetworkProfile, request, callbackUrl);
     }
 
+    @AsMessageEndpoint(CallAction.ClearDisplayMessage, ClearDisplayMessageRequestSchema)
+    clearDisplayMessage(
+        identifier: string,
+        tenantId: string,
+        request: ClearDisplayMessageRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.ClearDisplayMessage, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.GetDisplayMessages, GetDisplayMessagesRequestSchema)
+    getDisplayMessages(
+        identifier: string,
+        tenantId: string,
+        request: GetDisplayMessagesRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.GetDisplayMessages, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.SetDisplayMessage, SetDisplayMessageRequestSchema)
+    async setDisplayMessages(
+        identifier: string,
+        tenantId: string,
+        request: SetDisplayMessageRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        const messageInfo = request.message as MessageInfoType;
+
+        const languageTag = messageInfo.message.language;
+        if (languageTag && !validateLanguageTag(languageTag)) {
+            const errorMsg = 'Language shall be specified as RFC-5646 tags, example: US English is: en-US.';
+            this._logger.error(errorMsg);
+            return { success: false, payload: errorMsg };
+        }
+
+        // According to OCPP 2.0.1, the CSMS MAY include a startTime and endTime when setting a message.
+        // startDateTime is from what date-time should this message be shown. If omitted: directly.
+        if (!messageInfo.startDateTime) {
+            messageInfo.startDateTime = new Date().toISOString();
+        }
+
+        return this._module.sendCall(identifier, tenantId, CallAction.SetDisplayMessage, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.PublishFirmware, PublishFirmwareRequestSchema)
+    publishFirmware(
+        identifier: string,
+        tenantId: string,
+        request: PublishFirmwareRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.PublishFirmware, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.UnpublishFirmware, UnpublishFirmwareRequestSchema)
+    unpublishFirmware(
+        identifier: string,
+        tenantId: string,
+        request: UnpublishFirmwareRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.UnpublishFirmware, request, callbackUrl);
+    }
+
     @AsMessageEndpoint(CallAction.UpdateFirmware, UpdateFirmwareRequestSchema)
     updateFirmware(
         identifier: string,
@@ -59,6 +158,16 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
         callbackUrl?: string
     ): Promise<IMessageConfirmation> {
         return this._module.sendCall(identifier, tenantId, CallAction.Reset, request, callbackUrl);
+    }
+
+    @AsMessageEndpoint(CallAction.ChangeAvailability, ChangeAvailabilityRequestSchema)
+    changeAvailability(
+        identifier: string,
+        tenantId: string,
+        request: ChangeAvailabilityRequest,
+        callbackUrl?: string
+    ): Promise<IMessageConfirmation> {
+        return this._module.sendCall(identifier, tenantId, CallAction.ChangeAvailability, request, callbackUrl);
     }
 
     @AsMessageEndpoint(CallAction.TriggerMessage, TriggerMessageRequestSchema)

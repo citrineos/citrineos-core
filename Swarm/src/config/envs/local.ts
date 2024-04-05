@@ -7,6 +7,10 @@ import { RegistrationStatusEnumType, defineConfig } from "@citrineos/base";
 export function createLocalConfig() {
     return defineConfig({
         env: "development",
+        centralSystem: {
+            host: "0.0.0.0",
+            port: 8080
+        },  
         modules: {
             certificates: {
                 endpointPrefix: "/certificates",
@@ -19,7 +23,7 @@ export function createLocalConfig() {
                 unknownChargerStatus: RegistrationStatusEnumType.Accepted,
                 getBaseReportOnPending: true,
                 bootWithRejectedVariables: true,
-                autoAccept: false,
+                autoAccept: true,
                 endpointPrefix: "/configuration",
                 host: "localhost",
                 port: 8080
@@ -47,7 +51,8 @@ export function createLocalConfig() {
             transactions: {
                 endpointPrefix: "/transactions",
                 host: "localhost",
-                port: 8080
+                port: 8080,
+                costUpdatedInterval: 60
             },
         },
         data: {
@@ -59,7 +64,7 @@ export function createLocalConfig() {
                 username: "citrine",
                 password: "citrine",
                 storage: "",
-                sync: true,
+                sync: false
             }
         },
         util: {
@@ -74,33 +79,38 @@ export function createLocalConfig() {
                     url: "amqp://guest:guest@localhost:5672",
                     exchange: "citrineos",
                 }
-            }
-        },
-        server: {
-            logLevel: 2, // debug
-            host: "0.0.0.0",
-            port: 8080,
+            },
             swagger: {
                 path: "/docs",
+                logoPath: "/usr/server/src/assets/logo.png",
                 exposeData: true,
                 exposeMessage: true
+            },
+            directus: {
+                generateFlows: false
+            },
+            networkConnection: {
+                websocketServers: [{
+                    id: "0",
+                    securityProfile: 0,
+                    allowUnknownChargingStations: true,
+                    pingInterval: 60,
+                    host: "0.0.0.0",
+                    port: 8081,
+                    protocol: "ocpp2.0.1"
+                }, {
+                    id: "1",
+                    securityProfile: 1,
+                    allowUnknownChargingStations: false,
+                    pingInterval: 60,
+                    host: "0.0.0.0",
+                    port: 8082,
+                    protocol: "ocpp2.0.1"
+                }]
             }
-        },        
-        websocket: {
-            pingInterval: 60,
-            maxCallLengthSeconds: 5,
-            maxCachingSeconds: 10
         },
-        websocketServer: [{
-            securityProfile: 0,
-            host: "0.0.0.0",
-            port: 8081,
-            protocol: "ocpp2.0.1"
-        },{
-            securityProfile: 1,
-            host: "0.0.0.0",
-            port: 8082,
-            protocol: "ocpp2.0.1"
-        }]
+        logLevel: 2, // debug
+        maxCallLengthSeconds: 5,
+        maxCachingSeconds: 10
     });
 }

@@ -7,11 +7,11 @@ import { SystemConfig } from "@citrineos/base";
 import { Dialect } from "sequelize";
 import { Sequelize } from "sequelize-typescript";
 import { ILogObj, Logger } from "tslog";
-import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from "./model/Authorization";
-import { Boot } from "./model/Boot";
-import { Component, Evse, Variable, VariableAttribute, VariableCharacteristics, VariableStatus } from "./model/DeviceModel";
-import { MeterValue, Transaction, TransactionEvent } from "./model/TransactionEvent";
-import { SecurityEvent } from "./model/SecurityEvent";
+import { ComponentVariable } from "./model/DeviceModel/ComponentVariable";
+import { AdditionalInfo, Authorization, Boot, ChargingStation, Component, EventData, Evse, IdToken, IdTokenInfo, Location, MeterValue, SecurityEvent, Subscription, Transaction, TransactionEvent, Variable, VariableAttribute, VariableCharacteristics, VariableMonitoring, VariableMonitoringStatus } from ".";
+import { VariableStatus } from "./model/DeviceModel";
+import { MessageInfo } from "./model/MessageInfo";
+import { Tariff } from "./model/Tariff";
 
 export class DefaultSequelizeInstance {
 
@@ -43,10 +43,10 @@ export class DefaultSequelizeInstance {
             username: config.data.sequelize.username,
             password: config.data.sequelize.password,
             storage: config.data.sequelize.storage,
-            models: [AdditionalInfo, Authorization, Boot,
-                Component, Evse, IdToken, IdTokenInfo, MeterValue, SecurityEvent,
-                Transaction, TransactionEvent, VariableAttribute, VariableCharacteristics,
-                VariableStatus, Variable],
+            models: [AdditionalInfo, Authorization, Boot, ChargingStation, Component,
+                ComponentVariable, Evse, EventData, IdToken, IdTokenInfo, Location, MeterValue, MessageInfo,
+                SecurityEvent, Subscription, Transaction, TransactionEvent, Tariff, VariableAttribute,
+                VariableCharacteristics, VariableMonitoring, VariableMonitoringStatus, VariableStatus, Variable],
             logging: (sql: string, timing?: number) => {
                 // TODO: Look into fixing that
                 // sequelizeLogger.debug(timing, sql);

@@ -11,15 +11,14 @@ import { v4 as uuidv4 } from "uuid";
 import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from ".";
 import { OcppRequest, OcppResponse } from "../..";
 import { SystemConfig } from "../../config/types";
-import { CallAction, ErrorCode } from "../../ocpp/rpc/message";
+import { CallAction, ErrorCode, OcppError } from "../../ocpp/rpc/message";
 import { RequestBuilder } from "../../util/request";
 import { CacheNamespace, ICache } from "../cache/cache";
-import { ClientConnection, OcppError } from "../centralsystem";
 import { EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessageHandler, IMessageSender, MessageOrigin, MessageState } from "../messages";
 
 export abstract class AbstractModule implements IModule {
 
-    public readonly CALLBACK_URL_CACHE_PREFIX: string = "CALLBACK_URL_";
+    public static readonly CALLBACK_URL_CACHE_PREFIX: string = "CALLBACK_URL_";
 
     protected _config: SystemConfig;
     protected readonly _cache: ICache;
@@ -66,7 +65,7 @@ export abstract class AbstractModule implements IModule {
         this._config = config;
         // Update all necessary settings for hot reload
         this._logger.info(`Updating system configuration for ${this._eventGroup} module...`);
-        this._logger.settings.minLevel = this._config.server.logLevel;
+        this._logger.settings.minLevel = this._config.logLevel;
     }
 
     get config(): SystemConfig {
@@ -85,6 +84,7 @@ export abstract class AbstractModule implements IModule {
        * @return {Promise<boolean>} Returns a promise that resolves to a boolean indicating if the initialization was successful.
        */
     protected async _initHandler(requests: CallAction[], responses: CallAction[]): Promise<boolean> {
+        this._handler.module = this;
 
         let success = await this._handler.subscribe(this._eventGroup.toString() + "_requests", requests, {
             state: MessageState.Request.toString()
@@ -105,7 +105,7 @@ export abstract class AbstractModule implements IModule {
     protected _initLogger(baseLogger?: Logger<ILogObj>): Logger<ILogObj> {
         return baseLogger ? baseLogger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({
             name: this.constructor.name,
-            minLevel: this._config.server.logLevel,
+            minLevel: this._config.logLevel,
             hideLogPositionForProduction: this._config.env === "production"
         });
     }
@@ -133,7 +133,7 @@ export abstract class AbstractModule implements IModule {
     async handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): Promise<void> {
         if (message.state === MessageState.Response) {
             this.handleMessageApiCallback(message as IMessage<OcppResponse>);
-            this._cache.set(message.context.correlationId, JSON.stringify(message.payload), message.context.stationId, this._config.websocket.maxCachingSeconds);
+            this._cache.set(message.context.correlationId, JSON.stringify(message.payload), message.context.stationId, this._config.maxCachingSeconds);
         }
         try {
             const handlerDefinition = (Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>).filter((h) => h.action === message.action).pop();
@@ -153,7 +153,7 @@ export abstract class AbstractModule implements IModule {
     }
 
     async handleMessageApiCallback(message: IMessage<OcppResponse>): Promise<void> {
-        const url: string | null = await this._cache.get(message.context.correlationId, this.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
+        const url: string | null = await this._cache.get(message.context.correlationId, AbstractModule.CALLBACK_URL_CACHE_PREFIX + message.context.stationId);
         if (url) {
             try {
                 await fetch(url, {
@@ -201,12 +201,12 @@ export abstract class AbstractModule implements IModule {
         const _correlationId: string = correlationId == undefined ? uuidv4() : correlationId;
         if (callbackUrl) {
             // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
-            this._cache.set(_correlationId, callbackUrl, this.CALLBACK_URL_CACHE_PREFIX + identifier,
-                this._config.websocket.maxCachingSeconds);
+            this._cache.set(_correlationId, callbackUrl, AbstractModule.CALLBACK_URL_CACHE_PREFIX + identifier,
+                this._config.maxCachingSeconds);
         }
         // TODO: Future - Compound key with tenantId
-        return this._cache.get<ClientConnection>(identifier, CacheNamespace.Connections, () => ClientConnection).then((connection) => {
-            if (connection && connection.isAlive) {
+        return this._cache.get(identifier, CacheNamespace.Connections).then((connection) => {
+            if (connection) {
                 return this._sender.sendRequest(
                     RequestBuilder.buildCall(
                         identifier,

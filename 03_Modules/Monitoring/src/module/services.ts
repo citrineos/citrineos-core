@@ -3,9 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { AttributeEnumType } from "@citrineos/base";
-import { IDeviceModelRepository } from "@citrineos/data";
-import { VariableAttribute } from "@citrineos/data/lib/layers/sequelize";
-
+import { IDeviceModelRepository, VariableAttribute } from "@citrineos/data";
 export class DeviceModelService {
 
     protected _deviceModelRepository: IDeviceModelRepository;
@@ -16,58 +14,58 @@ export class DeviceModelService {
     }
 
     /**
-     * Fetches the ItemsPerMessageSetVariables attribute from the device model.
+     * Fetches the ItemsPerMessage attribute from the device model.
      * Returns null if no such attribute exists.
-     * It is possible for there to be multiple ItemsPerMessageSetVariables attributes if component instances or evses
+     * It is possible for there to be multiple ItemsPerMessage attributes if component instances or evses
      * are associated with alternate options. That structure is not supported by this logic, and that
      * structure is a violation of Part 2 - Specification of OCPP 2.0.1.
      * In that case, the first attribute will be returned.
      * @param stationId Charging station identifier.
-     * @returns ItemsPerMessageSetVariables as a number or null if no such attribute exists.
+     * @returns ItemsPerMessage as a number or null if no such attribute exists.
      */
-    async getItemsPerMessageSetVariablesByStationId(stationId: string): Promise<number | null> {
-        const itemsPerMessageSetVariablesAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+    async getItemsPerMessageByComponentAndVariableInstanceAndStationId(componentName: string, variableInstance: string, stationId: string): Promise<number | null> {
+        const itemsPerMessageAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
             stationId: stationId,
-            component_name: 'DeviceDataCtrlr',
+            component_name: componentName,
             variable_name: 'ItemsPerMessage',
-            variable_instance: 'SetVariables',
+            variable_instance: variableInstance,
             type: AttributeEnumType.Actual
         });
-        if (itemsPerMessageSetVariablesAttributes.length == 0) {
+        if (itemsPerMessageAttributes.length == 0) {
             return null;
         } else {
-            // It is possible for itemsPerMessageSetVariablesAttributes.length > 1 if component instances or evses
+            // It is possible for itemsPerMessageAttributes.length > 1 if component instances or evses
             // are associated with alternate options. That structure is not supported by this logic, and that
             // structure is a violation of Part 2 - Specification of OCPP 2.0.1.
-            return Number(itemsPerMessageSetVariablesAttributes[0].value);
+            return Number(itemsPerMessageAttributes[0].value);
         }
     }
 
     /**
-     * Fetches the ItemsPerMessageGetVariables attribute from the device model.
+     * Fetches the BytesPerMessage attribute from the device model.
      * Returns null if no such attribute exists.
-     * It is possible for there to be multiple ItemsPerMessageGetVariables attributes if component instances or evses
+     * It is possible for there to be multiple BytesPerMessage attributes if component instances or evses
      * are associated with alternate options. That structure is not supported by this logic, and that
      * structure is a violation of Part 2 - Specification of OCPP 2.0.1.
      * In that case, the first attribute will be returned.
      * @param stationId Charging station identifier.
-     * @returns ItemsPerMessageGetVariables as a number or null if no such attribute exists.
+     * @returns BytesPerMessage as a number or null if no such attribute exists.
      */
-    async getItemsPerMessageGetVariablesByStationId(stationId: string): Promise<number | null> {
-        const itemsPerMessageGetVariablesAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+    async getBytesPerMessageByComponentAndVariableInstanceAndStationId(componentName: string, variableInstance: string, stationId: string): Promise<number | null> {
+        const bytesPerMessageAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
             stationId: stationId,
-            component_name: 'DeviceDataCtrlr',
-            variable_name: 'ItemsPerMessage',
-            variable_instance: 'GetVariables',
+            component_name: componentName,
+            variable_name: 'BytesPerMessage',
+            variable_instance: variableInstance,
             type: AttributeEnumType.Actual
         });
-        if (itemsPerMessageGetVariablesAttributes.length == 0) {
+        if (bytesPerMessageAttributes.length == 0) {
             return null;
         } else {
-            // It is possible for itemsPerMessageGetVariablesAttributes.length > 1 if component instances or evses
+            // It is possible for bytesPerMessageAttributes.length > 1 if component instances or evses
             // are associated with alternate options. That structure is not supported by this logic, and that
             // structure is a violation of Part 2 - Specification of OCPP 2.0.1.
-            return Number(itemsPerMessageGetVariablesAttributes[0].value);
+            return Number(bytesPerMessageAttributes[0].value);
         }
     }
 }

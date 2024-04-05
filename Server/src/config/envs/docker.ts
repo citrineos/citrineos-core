@@ -7,6 +7,10 @@ import { RegistrationStatusEnumType, defineConfig } from "@citrineos/base";
 export function createDockerConfig() {
     return defineConfig({
         env: "development",
+        centralSystem: {
+            host: "0.0.0.0",
+            port: 8080
+        },
         modules: {
             certificates: {
                 endpointPrefix: "/certificates"
@@ -17,7 +21,7 @@ export function createDockerConfig() {
                 unknownChargerStatus: RegistrationStatusEnumType.Accepted,
                 getBaseReportOnPending: true,
                 bootWithRejectedVariables: true,
-                autoAccept: false,
+                autoAccept: true,
                 endpointPrefix: "/configuration"
             },
             evdriver: {
@@ -33,7 +37,8 @@ export function createDockerConfig() {
                 endpointPrefix: "/smartcharging"
             },
             transactions: {
-                endpointPrefix: "/transactions"
+                endpointPrefix: "/transactions",
+                costUpdatedInterval: 60
             },
         },
         data: {
@@ -45,7 +50,7 @@ export function createDockerConfig() {
                 username: "citrine",
                 password: "citrine",
                 storage: "",
-                sync: true,
+                sync: false,
             }
         },
         util: {
@@ -57,33 +62,40 @@ export function createDockerConfig() {
                     url: "amqp://guest:guest@amqp-broker:5672",
                     exchange: "citrineos",
                 }
-            }
-        },
-        server: {
-            logLevel: 2, // debug
-            host: "0.0.0.0",
-            port: 8080,
+            },
             swagger: {
                 path: "/docs",
+                logoPath: "/usr/local/apps/citrineos/server/src/assets/logo.png",
                 exposeData: true,
                 exposeMessage: true
+            },
+            directus: {
+                host: "directus",
+                port: 8055,
+                generateFlows: true
+            },
+            networkConnection: {
+                websocketServers: [{
+                    id: "0",
+                    securityProfile: 0,
+                    allowUnknownChargingStations: true,
+                    pingInterval: 60,
+                    host: "0.0.0.0",
+                    port: 8081,
+                    protocol: "ocpp2.0.1"
+                }, {
+                    id: "1",
+                    securityProfile: 1,
+                    allowUnknownChargingStations: false,
+                    pingInterval: 60,
+                    host: "0.0.0.0",
+                    port: 8082,
+                    protocol: "ocpp2.0.1"
+                }]
             }
-        },        
-        websocket: {
-            pingInterval: 60,
-            maxCallLengthSeconds: 5,
-            maxCachingSeconds: 10
         },
-        websocketServer: [{
-            securityProfile: 0,
-            host: "0.0.0.0",
-            port: 8081,
-            protocol: "ocpp2.0.1"
-        },{
-            securityProfile: 1,
-            host: "0.0.0.0",
-            port: 8082,
-            protocol: "ocpp2.0.1"
-        }]
+        logLevel: 2, // debug
+        maxCallLengthSeconds: 5,
+        maxCachingSeconds: 10
     });
 }

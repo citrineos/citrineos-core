@@ -77,6 +77,7 @@ export interface ICache {
    * */
   setIfNotExist(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean>;
 
+  // TODO: Consider removing this method, no longer used
   /**
    * Sets a value synchronously in the underlying cache.
    * 

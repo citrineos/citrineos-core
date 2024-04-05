@@ -16,7 +16,7 @@ services:
       timeout: 10s
       retries: 3
   ocpp-db:
-    image: citrineos/postgres:preseeded
+    image: citrineos/postgis:v1.1.0
     ports:
       - 5432:5432
     volumes:
@@ -32,22 +32,31 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 3
   directus:
-    image: directus/directus:latest
+    build:
+      context: ..
+      dockerfile: ./Server/directus.Dockerfile
     ports:
       - 8055:8055
     volumes:
       - ./data/directus/uploads:/directus/uploads
-      - ./data/directus/extensions:/directus/extensions
+      - ./directus-env-config.cjs:/directus/config.cjs
+    depends_on:
+      ocpp-db:
+        condition: service_healthy
     environment:
+      APP_NAME: 'all'
       KEY: '1234567890'
       SECRET: '0987654321'
       ADMIN_EMAIL: 'admin@citrineos.com'
       ADMIN_PASSWORD: 'CitrineOS!'
+      CONFIG_PATH: '/directus/config.cjs'
+      EXTENSIONS_AUTO_RELOAD: 'true'
+      EXTENSIONS_CACHE_TTL: '1s'
       DB_CLIENT: 'pg'
       DB_HOST: ocpp-db
       DB_PORT: 5432
@@ -55,6 +64,12 @@ services:
       DB_USER: 'citrine'
       DB_PASSWORD: 'citrine'
       WEBSOCKETS_ENABLED: 'true'
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8055/server/health || exit 1
+      start_period: 15s
+      interval: 15s
+      timeout: 15s
+      retries: 3
   citrine:
     build:
       context: ../
@@ -63,6 +78,8 @@ services:
       ocpp-db:
         condition: service_started
       amqp-broker:
+        condition: service_healthy
+      directus:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -73,6 +90,8 @@ services:
     expose:
       - 8080-8082
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'general'
   certificates:
     build:
@@ -90,6 +109,8 @@ services:
     expose:
       - 8083
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'certificates'
   configuration:
     build:
@@ -110,6 +131,8 @@ services:
       - ./:/usr/configuration
       - /usr/configuration/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'configuration'
   evdriver:
     build:
@@ -130,6 +153,8 @@ services:
       - ./:/usr/evdriver
       - /usr/evdriver/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'evdriver'
   monitoring:
     build:
@@ -150,6 +175,8 @@ services:
       - ./:/usr/monitoring
       - /usr/monitoring/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'monitoring'
   reporting:
     build:
@@ -170,6 +197,8 @@ services:
       - ./:/usr/reporting
       - /usr/reporting/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'reporting'
   smartcharging:
     build:
@@ -190,6 +219,8 @@ services:
       - ./:/usr/smartcharging
       - /usr/smartcharging/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'smartcharging'
   transactions:
     build:
@@ -210,4 +241,6 @@ services:
       - ./:/usr/transactions
       - /usr/transactions/node_modules
     environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
       APP_NAME: 'transactions'

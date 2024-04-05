@@ -11,7 +11,7 @@ import {
 } from "@google-cloud/pubsub";
 import { ILogObj, Logger } from "tslog";
 import { MemoryCache } from "../../cache/memory";
-import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, IMessage, OcppRequest, OcppResponse, HandlerProperties, Message, OcppError, RetryMessageError } from "@citrineos/base";
+import { AbstractMessageHandler, ICache, IModule, SystemConfig, CallAction, CacheNamespace, OcppRequest, OcppResponse, Message, OcppError, RetryMessageError } from "@citrineos/base";
 import { plainToInstance } from "class-transformer";
 
 /**
@@ -28,7 +28,6 @@ export class PubSubReceiver extends AbstractMessageHandler {
    */
   private _cache: ICache;
   private _client: PubSub;
-  private _module?: IModule;
   private _subscriptions: Subscription[] = [];
 
   /**
@@ -36,11 +35,10 @@ export class PubSubReceiver extends AbstractMessageHandler {
    *
    * @param topicPrefix Custom topic prefix, defaults to "ocpp"
    */
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, cache?: ICache, module?: IModule) {
-    super(config, logger);
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, module?: IModule, cache?: ICache) {
+    super(config, logger, module);
     this._cache = cache || new MemoryCache();
     this._client = new PubSub({ servicePath: this._config.util.messageBroker.pubsub?.servicePath });
-    this._module = module;
   }
 
   /**
@@ -91,16 +89,6 @@ export class PubSubReceiver extends AbstractMessageHandler {
   }
 
   /**
-   * Method to handle incoming messages. Forwarding to OCPP module.
-   *
-   * @param message The incoming {@link IMessage}
-   * @param context The context of the incoming message, in this implementation it's the PubSub message id
-   */
-  async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>, props?: HandlerProperties): Promise<void> {
-    await this._module?.handle(message, props);
-  }
-
-  /**
    * Shutdown the receiver by closing all subscriptions and deleting them.
    */
   shutdown() {
@@ -113,17 +101,6 @@ export class PubSubReceiver extends AbstractMessageHandler {
         });
       });
     });
-  }
-
-  /**
-   * Getter & Setter
-   */
-
-  get module(): IModule | undefined {
-    return this._module;
-  }
-  set module(value: IModule | undefined) {
-    this._module = value;
   }
 
   /**

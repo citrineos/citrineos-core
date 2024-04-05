@@ -5,16 +5,14 @@
 
 import { ChargingStateEnumType, CustomDataType, EVSEType, MeterValueType, Namespace, ReasonEnumType, TransactionEventRequest, TransactionType } from '@citrineos/base';
 import {
-    Table,
-    Column,
-    Model,
-    DataType,
-    ForeignKey,
-    HasMany,
-    BelongsTo,
-    BelongsToMany,
-  } from 'sequelize-typescript';
-import { IdToken } from '../Authorization';
+  Table,
+  Column,
+  Model,
+  DataType,
+  ForeignKey,
+  HasMany,
+  BelongsTo
+} from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
@@ -35,10 +33,7 @@ export class Transaction extends Model implements TransactionType {
   declare evse?: EVSEType;
 
   @ForeignKey(() => Evse)
-  @Column({
-      type: DataType.INTEGER,
-      unique: 'evse_name_instance'
-  })
+  @Column(DataType.INTEGER)
   declare evseDatabaseId?: number;
 
   @Column({
@@ -62,6 +57,9 @@ export class Transaction extends Model implements TransactionType {
 
   @Column(DataType.BIGINT)
   declare timeSpentCharging?: number;
+
+  @Column(DataType.DECIMAL)
+  declare totalKwh?: number;
 
   @Column(DataType.STRING)
   declare stoppedReason?: ReasonEnumType;

@@ -12,10 +12,13 @@ import {
   CertificateSignedResponse,
   CertificateSigningUseEnumType,
   DeleteCertificateResponse,
+  ErrorCode,
   EventGroup,
   GenericStatusEnumType,
   Get15118EVCertificateRequest,
+  GetCertificateStatusEnumType,
   GetCertificateStatusRequest,
+  GetCertificateStatusResponse,
   GetInstalledCertificateIdsResponse,
   HandlerProperties,
   ICache,
@@ -23,6 +26,7 @@ import {
   IMessageHandler,
   IMessageSender,
   InstallCertificateResponse,
+  OcppError,
   SignCertificateRequest,
   SignCertificateResponse,
   SystemConfig
@@ -33,6 +37,7 @@ import deasyncPromise from "deasync-promise";
 import * as forge from "node-forge";
 import fs from "fs";
 import { ILogObj, Logger } from 'tslog';
+import { CacheNamespace } from "@citrineos/base";
 
 /**
  * Component that handles provisioning related messages.
@@ -57,9 +62,9 @@ export class CertificatesModule extends AbstractModule {
   ];
 
   protected _deviceModelRepository: IDeviceModelRepository;
-  private _securityCaCert?: forge.pki.Certificate;
-  private _securityCaPrivateKey?: forge.pki.rsa.PrivateKey;
-  
+  private _securityCaCerts: Map<string, forge.pki.Certificate> = new Map();
+  private _securityCaPrivateKeys: Map<string, forge.pki.rsa.PrivateKey> = new Map();
+
   /**
    * Constructor
    */
@@ -84,12 +89,12 @@ export class CertificatesModule extends AbstractModule {
   constructor(
     config: SystemConfig,
     cache: ICache,
-    sender?: IMessageSender,
-    handler?: IMessageHandler,
+    sender: IMessageSender,
+    handler: IMessageHandler,
     logger?: Logger<ILogObj>,
     deviceModelRepository?: IDeviceModelRepository
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(config, logger, cache), sender || new RabbitMqSender(config, logger), EventGroup.Certificates, logger);
+    super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Certificates, logger);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);
@@ -100,8 +105,18 @@ export class CertificatesModule extends AbstractModule {
 
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, logger);
 
-    this._securityCaCert = this._config.websocketSecurity?.mtlsCertificateAuthorityRootsFilepath ? forge.pki.certificateFromPem(fs.readFileSync(this._config.websocketSecurity.mtlsCertificateAuthorityRootsFilepath as string, 'utf8')) : undefined;
-    this._securityCaPrivateKey = this._config.websocketSecurity?.mtlsCertificateAuthorityRootsFilepath ? forge.pki.privateKeyFromPem(fs.readFileSync(this._config.websocketSecurity.mtlsCertificateAuthorityKeysFilepath as string, 'utf8')) : undefined;
+
+    this._config.util.networkConnection.websocketServers.forEach(server => {
+      if (server.securityProfile == 3) {
+        try {
+          this._securityCaCerts.set(server.id, forge.pki.certificateFromPem(fs.readFileSync(server.mtlsCertificateAuthorityRootsFilepath as string, 'utf8')));
+          this._securityCaPrivateKeys.set(server.id, forge.pki.privateKeyFromPem(fs.readFileSync(server.mtlsCertificateAuthorityKeysFilepath as string, 'utf8')));
+        } catch (error) {
+          this._logger.error("Unable to start Certificates module due to invalid security certificates for {}: {}", server, error);
+          throw error;
+        }
+      }
+    });
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -118,7 +133,8 @@ export class CertificatesModule extends AbstractModule {
 
     this._logger.debug("Get15118EVCertificate received:", message, props);
 
-    this._logger.error("Get15118EVCertificate not implemented");  
+    this._logger.error("Get15118EVCertificate not implemented");
+    this.sendCallErrorWithMessage(message, new OcppError(message.context.correlationId, ErrorCode.NotImplemented, "Get15118EVCertificate not implemented"));
   }
 
   @AsHandler(CallAction.GetCertificateStatus)
@@ -129,7 +145,8 @@ export class CertificatesModule extends AbstractModule {
 
     this._logger.debug("GetCertificateStatus received:", message, props);
 
-    this._logger.error("GetCertificateStatus not implemented");  
+    this._logger.error("GetCertificateStatus not implemented");
+    this.sendCallResultWithMessage(message, { status: GetCertificateStatusEnumType.Failed, statusInfo: { reasonCode: ErrorCode.NotImplemented } } as GetCertificateStatusResponse);
   }
 
 
@@ -157,13 +174,6 @@ export class CertificatesModule extends AbstractModule {
     const certificateType = message.payload.certificateType;
     switch (certificateType) {
       case CertificateSigningUseEnumType.ChargingStationCertificate:
-        if (!this._securityCaCert || !this._securityCaPrivateKey) {
-          // this.sendCallResultWithMessage(message, { status: GenericStatusEnumType.Rejected, statusInfo: { reasonCode: 'SERVER_SECURITY_CA_NOT_CONFIGURED' } } as SignCertificateResponse);
-          this._logger.error("Security CA not configured");
-          return;
-        }
-        caCert = this._securityCaCert;
-        caPrivateKey = this._securityCaPrivateKey;
         // Verify CSR...
         // @ts-ignore: Unreachable code error
         if (!(csr as any).verify() || !this.verifyChargingStationCertificateCSR(csr, message.context.stationId)) {
@@ -172,15 +182,18 @@ export class CertificatesModule extends AbstractModule {
           this._logger.error("Invalid CSR: {}", message.payload.csr);
           return;
         }
+        const clientConnection: string = await this._cache.get(message.context.stationId, CacheNamespace.Connections) as string;
+        caCert = this._securityCaCerts.get(clientConnection) as forge.pki.Certificate;
+        caPrivateKey = this._securityCaPrivateKeys.get(clientConnection) as forge.pki.rsa.PrivateKey;
         break;
       default:
-        this.sendCallResultWithMessage(message, { status: GenericStatusEnumType.Rejected, statusInfo: { reasonCode: 'SERVER_NOT_IMPLEMENTED', additionalInfo: certificateType } } as SignCertificateResponse);
+        this.sendCallResultWithMessage(message, { status: GenericStatusEnumType.Rejected, statusInfo: { reasonCode: ErrorCode.NotImplemented, additionalInfo: certificateType } } as SignCertificateResponse);
         this._logger.error("Unimplemented certificate type {}", certificateType);
         return;
     }
-    
+
     // this.sendCallResultWithMessage(message, { status: GenericStatusEnumType.Accepted } as SignCertificateResponse);
-    
+
     // Create a new certificate
     const cert = forge.pki.createCertificate();
     cert.publicKey = csr.publicKey as forge.pki.rsa.PublicKey;

@@ -47,7 +47,7 @@ export enum CallAction {
   ClearDisplayMessage = 'ClearDisplayMessage',
   ClearedChargingLimit = 'ClearedChargingLimit',
   ClearVariableMonitoring = 'ClearVariableMonitoring',
-  CostUpdate = 'CostUpdate',
+  CostUpdated = 'CostUpdated',
   CustomerInformation = 'CustomerInformation',
   DataTransfer = 'DataTransfer',
   DeleteCertificate = 'DeleteCertificate',
@@ -120,4 +120,26 @@ export enum ErrorCode {
   RpcFrameworkError = 'RpcFrameworkError', // Content of the call is not a valid RPC Request, for example: MessageId could not be read.
   SecurityError = 'SecurityError', // During the processing of Action a security issue occurred preventing receiver from completing the Action successfully
   TypeConstraintViolation = 'TypeConstraintViolation', // Payload for Action is syntactically correct but at least one of the fields violates data type constraints (e.g. 'somestring': 12)
+}
+
+/**
+ * Custom error to handle OCPP errors better.
+ */
+export class OcppError extends Error {
+
+  private _messageId: string;
+  private _errorCode: ErrorCode;
+  private _errorDetails: object;
+
+  constructor(messageId: string, errorCode: ErrorCode, errorDescription: string, errorDetails: object = {}) {
+      super(errorDescription);
+      this.name = "OcppError";
+      this._messageId = messageId;
+      this._errorCode = errorCode;
+      this._errorDetails = errorDetails;
+  }
+
+  asCallError(): CallError {
+      return [MessageTypeId.CallError, this._messageId, this._errorCode, this.message, this._errorDetails] as CallError;
+  }
 }

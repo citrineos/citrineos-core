@@ -7,6 +7,7 @@ import {
   AbstractModule,
   AsHandler,
   AttributeEnumType,
+  BOOT_STATUS,
   BootConfig,
   BootNotificationRequest,
   BootNotificationResponse,
@@ -16,10 +17,12 @@ import {
   DataTransferRequest,
   DataTransferResponse,
   DataTransferStatusEnumType,
+  ErrorCode,
   EventGroup,
   FirmwareStatusNotificationRequest,
   FirmwareStatusNotificationResponse,
   GetBaseReportRequest,
+  GetDisplayMessagesResponse,
   HandlerProperties,
   HeartbeatRequest,
   HeartbeatResponse,
@@ -29,22 +32,33 @@ import {
   IMessageHandler,
   IMessageSender,
   MutabilityEnumType,
+  NotifyDisplayMessagesRequest,
+  NotifyDisplayMessagesResponse,
+  PublishFirmwareResponse,
   RegistrationStatusEnumType,
   ReportBaseEnumType,
   ResetEnumType,
   ResetRequest,
+  ResetResponse,
+  SetDisplayMessageResponse,
+  SetNetworkProfileResponse,
   SetVariableDataType,
   SetVariableStatusEnumType,
   SetVariablesRequest,
   SetVariablesResponse,
-  SystemConfig
+  SystemConfig,
+  UnpublishFirmwareResponse,
+  UpdateFirmwareResponse,
+  ClearDisplayMessageResponse,
+  DisplayMessageStatusEnumType,
+  GetDisplayMessagesRequest,
+  MessageInfoType, ClearMessageStatusEnumType
 } from "@citrineos/base";
-import { IBootRepository, IDeviceModelRepository, sequelize } from "@citrineos/data";
+import { Boot, Component, IBootRepository, IDeviceModelRepository, IMessageInfoRepository, sequelize } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import { v4 as uuidv4 } from "uuid";
 import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from 'tslog';
-import { Boot } from "@citrineos/data/lib/layers/sequelize/model/Boot";
 import { DeviceModelService } from "./services";
 
 /**
@@ -54,15 +68,6 @@ export class ConfigurationModule extends AbstractModule {
   /**
    * Constants used for cache:
    */
-
-  /**
-   * Cache boot status is used to keep track of the overall boot process for Rejected or Pending.
-   * When Accepting a boot, blacklist needs to be cleared if and only if there was a previously 
-   * Rejected or Pending boot. When starting to configure charger, i.e. sending GetBaseReport or
-   * SetVariables, this should only be done if configuring is not still ongoing from a previous 
-   * BootNotificationRequest. Cache boot status mediates this behavior.
-   */
-  public static readonly BOOT_STATUS = "boot_status";
 
   /**
    * Fields
@@ -92,6 +97,7 @@ export class ConfigurationModule extends AbstractModule {
 
   protected _bootRepository: IBootRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _messageInfoRepository: IMessageInfoRepository;
 
   public _deviceModelService: DeviceModelService;
 
@@ -101,6 +107,10 @@ export class ConfigurationModule extends AbstractModule {
 
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
+  }
+
+  get messageInfoRepository(): IMessageInfoRepository {
+    return this._messageInfoRepository;
   }
 
   /**
@@ -125,10 +135,14 @@ export class ConfigurationModule extends AbstractModule {
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    * 
    * @param {IBootRepository} [bootRepository] - An optional parameter of type {@link IBootRepository} which represents a repository for accessing and manipulating authorization data.
-   * If no `bootRepository` is provided, a default {@link sequelize.BootRepository} instance is created and used.
+   * If no `bootRepository` is provided, a default {@link sequelize:bootRepository} instance is created and used.
    * 
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is created and used.
+   *
+   *@param {IMessageInfoRepository} [messageInfoRepository] - An optional parameter of type {@link messageInfoRepository} which
+   *  represents a repository for accessing and manipulating variable data.
+   *If no `deviceModelRepository` is provided, a default {@link sequelize:messageInfoRepository} instance is created and used.
    */
   constructor(
     config: SystemConfig,
@@ -137,7 +151,8 @@ export class ConfigurationModule extends AbstractModule {
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
     bootRepository?: IBootRepository,
-    deviceModelRepository?: IDeviceModelRepository
+    deviceModelRepository?: IDeviceModelRepository,
+    messageInfoRepository?: IMessageInfoRepository
   ) {
     super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Configuration, logger);
 
@@ -150,6 +165,7 @@ export class ConfigurationModule extends AbstractModule {
 
     this._bootRepository = bootRepository || new sequelize.BootRepository(config, this._logger);
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, this._logger);
+    this._messageInfoRepository = messageInfoRepository || new sequelize.MessageInfoRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
 
@@ -205,7 +221,7 @@ export class ConfigurationModule extends AbstractModule {
     };
 
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
-    const cachedBootStatus = await this._cache.get(ConfigurationModule.BOOT_STATUS, stationId);
+    const cachedBootStatus = await this._cache.get(BOOT_STATUS, stationId);
 
     // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
     if (bootNotificationResponse.status == RegistrationStatusEnumType.Accepted) {
@@ -218,7 +234,7 @@ export class ConfigurationModule extends AbstractModule {
         });
         await Promise.all(promises);
         // Remove cached boot status
-        this._cache.remove(ConfigurationModule.BOOT_STATUS, stationId);
+        this._cache.remove(BOOT_STATUS, stationId);
         this._logger.debug("Cached boot status removed: ", cachedBootStatus);
       }
     } else if (!cachedBootStatus) {
@@ -352,7 +368,7 @@ export class ConfigurationModule extends AbstractModule {
     }
     // Handle post-response actions
     if (bootNotificationResponseMessageConfirmation.success) {
-      this._logger.debug("BootNotification response successfully sent to central system: ", bootNotificationResponseMessageConfirmation);
+      this._logger.debug("BootNotification response successfully sent to ocpp router: ", bootNotificationResponseMessageConfirmation);
 
       // Update charger-specific boot config with details of most recently sent BootNotificationResponse
       let bootConfigDbEntity: Boot | undefined = await this._bootRepository.readByKey(stationId);
@@ -373,7 +389,7 @@ export class ConfigurationModule extends AbstractModule {
       if (bootNotificationResponse.status != RegistrationStatusEnumType.Accepted &&
         (!cachedBootStatus || (cachedBootStatus && cachedBootStatus !== bootNotificationResponse.status))) {
         // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
-        this._cache.set(ConfigurationModule.BOOT_STATUS, bootNotificationResponse.status, stationId);
+        this._cache.set(BOOT_STATUS, bootNotificationResponse.status, stationId);
       }
 
       // Pending status indicates configuration to do...
@@ -391,16 +407,16 @@ export class ConfigurationModule extends AbstractModule {
           // Commenting out this line, using requestId == 0 until fixed (10/26/2023)
           // const requestId = Math.floor(Math.random() * ConfigurationModule.GET_BASE_REPORT_REQUEST_ID_MAX);
           const requestId = 0;
-          this._cache.set(requestId.toString(), 'ongoing', stationId, this.config.websocket.maxCachingSeconds);
+          this._cache.set(requestId.toString(), 'ongoing', stationId, this.config.maxCachingSeconds);
           const getBaseReportMessageConfirmation: IMessageConfirmation = await this.sendCall(stationId, tenantId, CallAction.GetBaseReport,
             { requestId: requestId, reportBase: ReportBaseEnumType.FullInventory } as GetBaseReportRequest);
           if (getBaseReportMessageConfirmation.success) {
             this._logger.debug("GetBaseReport successfully sent to charger: ", getBaseReportMessageConfirmation);
 
             // Wait for GetBaseReport to complete
-            let getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocket.maxCachingSeconds, stationId);
+            let getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.maxCachingSeconds, stationId);
             while (getBaseReportCacheValue == 'ongoing') {
-              getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.websocket.maxCachingSeconds, stationId);
+              getBaseReportCacheValue = await this._cache.onChange(requestId.toString(), this.config.maxCachingSeconds, stationId);
             }
 
             if (getBaseReportCacheValue == 'complete') {
@@ -429,9 +445,9 @@ export class ConfigurationModule extends AbstractModule {
             setVariableData.length : itemsPerMessageSetVariables;
           let rejectedSetVariable = false;
           while (setVariableData.length > 0) {
-            // Below pattern is preferred way of receiving CallResults in an async mannner.
+            // Below pattern is preferred way of receiving CallResults in an async manner.
             const correlationId = uuidv4();
-            const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(correlationId, this.config.websocket.maxCachingSeconds, stationId); // x2 fudge factor for any network lag
+            const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(correlationId, this.config.maxCachingSeconds, stationId); // x2 fudge factor for any network lag
             this.sendCall(stationId, tenantId, CallAction.SetVariables,
               { setVariableData: setVariableData.slice(0, itemsPerMessageSetVariables) } as SetVariablesRequest, undefined, correlationId);
             setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
@@ -493,9 +509,37 @@ export class ConfigurationModule extends AbstractModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("Heartbeat response sent:", messageConfirmation));
+      .then(messageConfirmation => {
+        this._logger.debug("Heartbeat response sent: ", messageConfirmation)
+      });
   }
 
+  @AsHandler(CallAction.NotifyDisplayMessages)
+  protected async _handleNotifyDisplayMessages(
+    message: IMessage<NotifyDisplayMessagesRequest>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("NotifyDisplayMessages received: ", message, props);
+
+    const messageInfoTypes = message.payload.messageInfo as MessageInfoType[];
+    for (const messageInfoType of messageInfoTypes) {
+      let componentId: number | undefined;
+      if (messageInfoType.display) {
+        const component: Component = await this._deviceModelRepository.findOrCreateEvseAndComponent(messageInfoType.display, message.context.tenantId);
+        componentId = component.id;
+      }
+      await this._messageInfoRepository.createOrUpdateByMessageInfoTypeAndStationId(messageInfoType, message.context.stationId, componentId);
+    }
+
+    // Create response
+    const response: NotifyDisplayMessagesResponse = {
+    };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => {
+        this._logger.debug("NotifyDisplayMessages response sent: ", messageConfirmation)
+      });
+  }
 
   @AsHandler(CallAction.FirmwareStatusNotification)
   protected _handleFirmwareStatusNotification(
@@ -510,7 +554,25 @@ export class ConfigurationModule extends AbstractModule {
     const response: FirmwareStatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("FirmwareStatusNotification response sent:", messageConfirmation));
+      .then(messageConfirmation => {
+        this._logger.debug("FirmwareStatusNotification response sent: ", messageConfirmation)
+      });
+  }
+
+  @AsHandler(CallAction.DataTransfer)
+  protected _handleDataTransfer(
+    message: IMessage<DataTransferRequest>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("DataTransfer received:", message, props);
+
+    // Create response
+    const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected, statusInfo: { reasonCode: ErrorCode.NotImplemented } };
+
+    this.sendCallResultWithMessage(message, response)
+      .then(messageConfirmation => {
+        this._logger.debug("DataTransfer response sent: ", messageConfirmation)
+      });
   }
 
   /**
@@ -526,18 +588,91 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug("ChangeAvailability response received:", message, props);
   }
 
-  @AsHandler(CallAction.DataTransfer)
-  protected _handleDataTransfer(
-    message: IMessage<DataTransferRequest>,
+  @AsHandler(CallAction.SetNetworkProfile)
+  protected _handleSetNetworkProfile(
+    message: IMessage<SetNetworkProfileResponse>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("DataTransfer received:", message, props);
-
-    // Create response
-    const response: DataTransferResponse = { status: DataTransferStatusEnumType.Rejected };
-
-    this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("DataTransfer response sent:", messageConfirmation));
+    this._logger.debug("SetNetworkProfile response received:", message, props);
   }
 
+  @AsHandler(CallAction.GetDisplayMessages)
+  protected _handleGetDisplayMessages(
+    message: IMessage<GetDisplayMessagesResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("GetDisplayMessages response received:", message, props);
+  }
+
+  @AsHandler(CallAction.SetDisplayMessage)
+  protected async _handleSetDisplayMessage(
+    message: IMessage<SetDisplayMessageResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("SetDisplayMessage response received:", message, props);
+
+    const status = message.payload.status as DisplayMessageStatusEnumType;
+    // when charger station accepts the set message info request
+    // we trigger a get all display messages request to update stored message info in db
+    if (status == DisplayMessageStatusEnumType.Accepted) {
+      await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId)
+      await this.sendCall(message.context.stationId, message.context.tenantId, CallAction.GetDisplayMessages, { requestId: Math.floor(Math.random() * 1000) } as GetDisplayMessagesRequest);
+    }
+  }
+
+  @AsHandler(CallAction.PublishFirmware)
+  protected _handlePublishFirmware(
+    message: IMessage<PublishFirmwareResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("PublishFirmware response received:", message, props);
+  }
+
+  @AsHandler(CallAction.UnpublishFirmware)
+  protected _handleUnpublishFirmware(
+    message: IMessage<UnpublishFirmwareResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("UnpublishFirmware response received:", message, props);
+  }
+
+  @AsHandler(CallAction.UpdateFirmware)
+  protected _handleUpdateFirmware(
+    message: IMessage<UpdateFirmwareResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("UpdateFirmware response received:", message, props);
+  }
+
+  @AsHandler(CallAction.Reset)
+  protected _handleReset(
+    message: IMessage<ResetResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("Reset response received:", message, props);
+  }
+
+  @AsHandler(CallAction.TriggerMessage)
+  protected _handleTriggerMessage(
+    message: IMessage<ChangeAvailabilityResponse>,
+    props?: HandlerProperties
+  ): void {
+    this._logger.debug("ChangeAvailability response received:", message, props);
+  }
+
+  @AsHandler(CallAction.ClearDisplayMessage)
+  protected async _handleClearDisplayMessage(
+    message: IMessage<ClearDisplayMessageResponse>,
+    props?: HandlerProperties
+  ): Promise<void> {
+    this._logger.debug("ClearDisplayMessage response received:", message, props);
+
+    const status = message.payload.status as ClearMessageStatusEnumType;
+    // when charger station accepts the clear message info request
+    // we trigger a get all display messages request to update stored message info in db
+    if (status == ClearMessageStatusEnumType.Accepted) {
+      await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId)
+      await this.sendCall(message.context.stationId, message.context.tenantId, CallAction.GetDisplayMessages, { requestId: Math.floor(Math.random() * 1000) } as GetDisplayMessagesRequest);
+    }
+  }
 }
