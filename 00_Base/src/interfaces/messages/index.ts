@@ -48,7 +48,7 @@ export { IMessageSender } from "./MessageSender";
 export { IMessageContext } from "./MessageContext";
 export { IMessageConfirmation } from "./MessageConfirmation";
 export { AbstractMessageHandler } from "./AbstractMessageHandler";
-export { AbstractMessageSender } from "./AbstractMessageSender";
+export { BaseMessageSender } from "./BaseMessageSender";
 
 
 

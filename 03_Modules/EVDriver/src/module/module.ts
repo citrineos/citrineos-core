@@ -10,7 +10,7 @@ import {
   AuthorizationStatusEnumType,
   AuthorizeRequest,
   AuthorizeResponse,
-  BaseModule,
+  BaseModule, CacheService,
   CallAction,
   CancelReservationResponse,
   ClearCacheResponse,
@@ -21,14 +21,14 @@ import {
   IdTokenInfoType,
   IMessage,
   IMessageHandler,
-  IMessageSender,
+  IMessageSender, inject, injectable, LoggerService,
   RequestStartTransactionResponse,
   RequestStopTransactionResponse,
   ReservationStatusUpdateRequest,
   ReservationStatusUpdateResponse,
   ReserveNowResponse,
   SendLocalListResponse,
-  SystemConfig,
+  SystemConfig, SystemConfigService,
   UnlockConnectorResponse
 } from "@citrineos/base";
 import {IAuthorizationRepository, IDeviceModelRepository, sequelize, VariableAttribute} from "@citrineos/data";
@@ -39,6 +39,7 @@ import {ILogObj, Logger} from 'tslog';
 /**
  * Component that handles provisioning related messages.
  */
+@injectable()
 export class EVDriverModule extends BaseModule {
 
   /**
@@ -73,35 +74,35 @@ export class EVDriverModule extends BaseModule {
   /**
    * This is the constructor function that initializes the {@link EVDriverModule}.
    *
-   * @param {SystemConfig} config - The `config` contains configuration settings for the module.
    *
-   * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
    *
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
    *
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
    *
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
+   * @param configService
+   * @param cacheService
    * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating Authorization data.
    * If no `authorizeRepository` is provided, a default {@link sequelize.AuthorizationRepository} instance is created and used.
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
+   * @param loggerService
+   * @param rabbitMqSender
+   * @param rabbitMqReceiver
    */
   constructor(
-    config: SystemConfig,
-    cache: ICache,
-    sender?: IMessageSender,
-    handler?: IMessageHandler,
-    logger?: Logger<ILogObj>,
     authorizeRepository?: IAuthorizationRepository,
-    deviceModelRepository?: IDeviceModelRepository
+    deviceModelRepository?: IDeviceModelRepository,
+    @inject(SystemConfigService) private readonly configService?: SystemConfigService,
+    @inject(CacheService) private readonly cacheService?: CacheService,
+    @inject(LoggerService) private readonly loggerService?: LoggerService,
+    @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
+    @inject(RabbitMqReceiver) private readonly rabbitMqReceiver?: RabbitMqReceiver
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(logger, undefined, config, cache), sender || new RabbitMqSender(config, logger), EventGroup.EVDriver, logger);
+    super(configService?.systemConfig as SystemConfig, cacheService?.cache as ICache, rabbitMqReceiver!, rabbitMqSender!, EventGroup.EVDriver, loggerService?.logger as Logger<ILogObj>);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);
@@ -110,8 +111,8 @@ export class EVDriverModule extends BaseModule {
       throw new Error("Could not initialize module due to failure in handler initialization.");
     }
 
-    this._authorizeRepository = authorizeRepository || new sequelize.AuthorizationRepository(config, logger);
-    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, logger);
+    this._authorizeRepository = authorizeRepository || new sequelize.AuthorizationRepository();
+    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository();
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }

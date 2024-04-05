@@ -3,13 +3,25 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractMessageSender, IMessageSender, SystemConfig, IMessage, OcppRequest, IMessageConfirmation, MessageState, OcppResponse, OcppError } from "@citrineos/base";
+import {
+    BaseMessageSender,
+    IMessageSender,
+    SystemConfig,
+    IMessage,
+    OcppRequest,
+    IMessageConfirmation,
+    MessageState,
+    OcppResponse,
+    OcppError,
+    SystemConfigService, LoggerService
+} from "@citrineos/base";
 import { Admin, Kafka, Producer } from "kafkajs";
 import { ILogObj, Logger } from "tslog";
+import {inject} from "tsyringe";
 /**
  * Implementation of a {@link IMessageSender} using Kafka as the underlying transport.
  */
-export class KafkaSender extends AbstractMessageSender implements IMessageSender {
+export class KafkaSender extends BaseMessageSender implements IMessageSender {
 
     /**
      * Fields
@@ -23,16 +35,23 @@ export class KafkaSender extends AbstractMessageSender implements IMessageSender
      *
      * @param topicPrefix Custom topic prefix, defaults to "ocpp"
      */
-    constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
-        super(config, logger);
+    constructor(
+        @inject(SystemConfigService)
+        private readonly configService?: SystemConfigService,
+        @inject(LoggerService) private readonly loggerService?: LoggerService
+    ) {
+        super(
+            configService?.systemConfig as SystemConfig,
+            loggerService?.logger as Logger<ILogObj>
+        );
 
         this._client = new Kafka({
-            brokers: config.util.messageBroker.kafka?.brokers || [],
+            brokers: this._config.util.messageBroker.kafka?.brokers || [],
             ssl: true,
             sasl: {
                 mechanism: 'plain',
-                username: config.util.messageBroker.kafka?.sasl.username || "",
-                password: config.util.messageBroker.kafka?.sasl.password || ""
+                username: this._config.util.messageBroker.kafka?.sasl.username || "",
+                password: this._config.util.messageBroker.kafka?.sasl.password || ""
             }
         });
         this._producers = new Array<Producer>();

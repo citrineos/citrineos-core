@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 import { RegistrationStatusEnumType } from "../ocpp/model/enums";
-import { EventGroup } from "..";
+import {EventGroup} from "../interfaces/messages";
 
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
 export const websocketServerInputSchema = z.object({

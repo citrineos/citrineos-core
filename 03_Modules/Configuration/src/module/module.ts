@@ -10,7 +10,7 @@ import {
   BOOT_STATUS,
   BootConfig,
   BootNotificationRequest,
-  BootNotificationResponse,
+  BootNotificationResponse, CacheService,
   CALL_SCHEMA_MAP,
   CallAction,
   ChangeAvailabilityResponse,
@@ -30,7 +30,7 @@ import {
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
-  IMessageSender,
+  IMessageSender, inject, injectable, LoggerService,
   MutabilityEnumType,
   NotifyDisplayMessagesRequest,
   NotifyDisplayMessagesResponse,
@@ -46,7 +46,7 @@ import {
   SetVariablesRequest,
   SetVariablesResponse,
   SetVariableStatusEnumType,
-  SystemConfig,
+  SystemConfig, SystemConfigService,
   UnpublishFirmwareResponse,
   UpdateFirmwareResponse
 } from "@citrineos/base";
@@ -60,6 +60,7 @@ import {DeviceModelService} from "./services";
 /**
  * Component that handles Configuration related messages.
  */
+@injectable()
 export class ConfigurationModule extends BaseModule {
   /**
    * Constants used for cache:
@@ -132,15 +133,16 @@ export class ConfigurationModule extends BaseModule {
    * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
    */
   constructor(
-    config: SystemConfig,
-    cache: ICache,
-    sender?: IMessageSender,
-    handler?: IMessageHandler,
-    logger?: Logger<ILogObj>,
     bootRepository?: IBootRepository,
-    deviceModelRepository?: IDeviceModelRepository
+    deviceModelRepository?: IDeviceModelRepository,
+    @inject(SystemConfigService)
+    private readonly configService?: SystemConfigService,
+    @inject(CacheService) private readonly cacheService?: CacheService,
+    @inject(LoggerService) private readonly loggerService?: LoggerService,
+    @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
+    @inject(RabbitMqReceiver) private readonly rabbitMqReceiver?: RabbitMqReceiver
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(logger, undefined, config, cache), sender || new RabbitMqSender(config, logger), EventGroup.Configuration, logger);
+    super(configService?.systemConfig as SystemConfig, cacheService?.cache as ICache, rabbitMqReceiver!, rabbitMqSender!, EventGroup.Configuration, loggerService?.logger as Logger<ILogObj>);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);
@@ -149,8 +151,8 @@ export class ConfigurationModule extends BaseModule {
       throw new Error("Could not initialize module due to failure in handler initialization.");
     }
 
-    this._bootRepository = bootRepository || new sequelize.BootRepository(config, this._logger);
-    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, this._logger);
+    this._bootRepository = bootRepository || new sequelize.BootRepository();
+    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository();
 
     this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
 

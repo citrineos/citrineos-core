@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AuthorizationData, IdTokenType } from "@citrineos/base";
+import { AuthorizationData, IdTokenType, injectable } from "@citrineos/base";
 import { BuildOptions, Includeable } from "sequelize";
 import { AuthorizationQuerystring } from "../../../interfaces/queries/Authorization";
 import { IAuthorizationRepository } from "../../../interfaces/repositories";
@@ -11,13 +11,14 @@ import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from "../model/Au
 import { SequelizeRepository } from "./Base";
 import { AuthorizationRestrictions } from "../../../interfaces";
 
+@injectable()
 export class AuthorizationRepository extends SequelizeRepository<Authorization> implements IAuthorizationRepository {
 
     async createOrUpdateByQuery(value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined> {
         if (value.idToken.idToken !== query.idToken || value.idToken.type !== query.type) {
             throw new Error("Authorization idToken does not match query");
         }
-        
+
         const savedAuthorizationModel = await this.readByQuery(query);
         const authorizationModel = savedAuthorizationModel ? savedAuthorizationModel : Authorization.build({}, this._createInclude(value));
 

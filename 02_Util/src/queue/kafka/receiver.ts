@@ -5,11 +5,11 @@
 
 import {
     AbstractMessageHandler,
-    autoInjectable,
+    injectable,
     CallAction,
     IMessageHandler,
     IModule,
-    inject,
+    inject, LoggerService,
     Message,
     OcppError,
     OcppRequest,
@@ -25,7 +25,7 @@ import {ILogObj, Logger} from "tslog";
 /**
  * Implementation of a {@link IMessageHandler} using Kafka as the underlying transport.
  */
-@autoInjectable()
+@injectable()
 export class KafkaReceiver extends AbstractMessageHandler implements IMessageHandler {
 
     /**
@@ -36,11 +36,11 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
     private _consumerMap: Map<string, Consumer>;
 
     constructor(
-        logger?: Logger<ILogObj>,
         module?: IModule,
-        @inject(SystemConfigService) private readonly configService?: SystemConfigService
+        @inject(SystemConfigService) private readonly configService?: SystemConfigService,
+        @inject(LoggerService) private readonly loggerService?: LoggerService,
     ) {
-        super(configService?.systemConfig as SystemConfig, logger, module);
+        super(configService?.systemConfig as SystemConfig, loggerService?.logger, module);
 
         this._consumerMap = new Map<string, Consumer>();
         this._client = new Kafka({

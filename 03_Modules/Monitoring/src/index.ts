@@ -2,7 +2,7 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
-
+import "reflect-metadata";
 export { MonitoringModuleApi } from "./module/api";
 export { IMonitoringModuleApi } from "./module/interface";
 export { MonitoringModule } from "./module/module";

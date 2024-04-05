@@ -3,15 +3,29 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractMessageSender, IMessageSender, SystemConfig, IMessage, OcppRequest, IMessageConfirmation, MessageState, OcppResponse, OcppError } from "@citrineos/base";
+import {
+  BaseMessageSender,
+  IMessageSender,
+  SystemConfig,
+  IMessage,
+  OcppRequest,
+  IMessageConfirmation,
+  MessageState,
+  OcppResponse,
+  OcppError,
+  SystemConfigService, LoggerService
+} from "@citrineos/base";
 import * as amqplib from "amqplib";
 import { instanceToPlain } from "class-transformer";
 import { ILogObj, Logger } from "tslog";
+import { injectable } from "@citrineos/base";
+import {inject} from "tsyringe";
 
 /**
  * Implementation of a {@link IMessageSender} using RabbitMQ as the underlying transport.
  */
-export class RabbitMqSender extends AbstractMessageSender implements IMessageSender {
+@injectable()
+export class RabbitMqSender extends BaseMessageSender implements IMessageSender {
 
   /**
    * Constants
@@ -30,8 +44,15 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    * @param {SystemConfig} config - The system configuration.
    * @param {Logger<ILogObj>} [logger] - The logger object.
    */
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
-    super(config, logger);
+  constructor(
+      @inject(SystemConfigService)
+      private readonly configService?: SystemConfigService,
+      @inject(LoggerService) private readonly loggerService?: LoggerService
+  ) {
+    super(
+        configService?.systemConfig as SystemConfig,
+        loggerService?.logger as Logger<ILogObj>
+    );
 
     this._connect().then(channel => {
       this._channel = channel;

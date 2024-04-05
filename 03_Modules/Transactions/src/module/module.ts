@@ -7,7 +7,7 @@ import {
   AdditionalInfoType,
   AsHandler,
   AuthorizationStatusEnumType,
-  BaseModule,
+  BaseModule, CacheService,
   CallAction,
   CostUpdatedResponse,
   EventGroup,
@@ -17,24 +17,33 @@ import {
   IdTokenInfoType,
   IMessage,
   IMessageHandler,
-  IMessageSender,
+  IMessageSender, inject, LoggerService,
   MeterValuesRequest,
   MeterValuesResponse,
   StatusNotificationRequest,
   StatusNotificationResponse,
-  SystemConfig,
+  SystemConfig, SystemConfigService,
   TransactionEventEnumType,
   TransactionEventRequest,
-  TransactionEventResponse
+  TransactionEventResponse,
 } from "@citrineos/base";
-import {IAuthorizationRepository, ITransactionEventRepository, sequelize} from "@citrineos/data";
+import {
+  AuthorizationRepository,
+  IAuthorizationRepository,
+  ITransactionEventRepository,
+  sequelize,
+  TransactionEventRepository
+} from "@citrineos/data";
 import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import {ILogObj, Logger} from 'tslog';
+import {TransactionEventService} from "./services/transaction.event.service";
+import {injectable} from '@citrineos/base';
 
 /**
  * Component that handles transaction related messages.
  */
+@injectable()
 export class TransactionsModule extends BaseModule {
 
   protected _requests: CallAction[] = [
@@ -46,17 +55,6 @@ export class TransactionsModule extends BaseModule {
     CallAction.CostUpdated,
     CallAction.GetTransactionStatus
   ];
-
-  protected _transactionEventRepository: ITransactionEventRepository;
-  protected _authorizeRepository: IAuthorizationRepository;
-
-  get transactionEventRepository(): ITransactionEventRepository {
-    return this._transactionEventRepository;
-  }
-
-  get authorizeRepository(): IAuthorizationRepository {
-    return this._authorizeRepository;
-  }
 
   /**
    * This is the constructor function that initializes the {@link TransactionModule}.
@@ -81,15 +79,16 @@ export class TransactionsModule extends BaseModule {
    * If no `authorizeRepository` is provided, a default {@link sequelize.AuthorizationRepository} instance is created and used.
    */
   constructor(
-    config: SystemConfig,
-    cache: ICache,
-    sender?: IMessageSender,
-    handler?: IMessageHandler,
-    logger?: Logger<ILogObj>,
-    transactionEventRepository?: ITransactionEventRepository,
-    authorizeRepository?: IAuthorizationRepository
+    @inject(TransactionEventRepository) public readonly transactionEventRepository?: TransactionEventRepository,
+    @inject(AuthorizationRepository) private readonly authorizeRepository?: AuthorizationRepository,
+    @inject(SystemConfigService) private readonly configService?: SystemConfigService,
+    @inject(CacheService) private readonly cacheService?: CacheService,
+    @inject(LoggerService) private readonly loggerService?: LoggerService,
+    @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
+    @inject(RabbitMqReceiver) private readonly rabbitMqReceiver?: RabbitMqReceiver,
+    @inject(TransactionEventService) private readonly transactionEventService?: TransactionEventService
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(logger, undefined, config, cache), sender || new RabbitMqSender(config, logger), EventGroup.Transactions, logger);
+    super(configService?.systemConfig!, cacheService?.cache!, rabbitMqReceiver!, rabbitMqSender!, EventGroup.Transactions, loggerService?.logger!);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);
@@ -97,9 +96,6 @@ export class TransactionsModule extends BaseModule {
     if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
       throw new Error("Could not initialize module due to failure in handler initialization.");
     }
-
-    this._transactionEventRepository = transactionEventRepository || new sequelize.TransactionEventRepository(config, logger);
-    this._authorizeRepository = authorizeRepository || new sequelize.AuthorizationRepository(config, logger);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -113,98 +109,7 @@ export class TransactionsModule extends BaseModule {
     message: IMessage<TransactionEventRequest>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("Transaction event received:", message, props);
-
-    await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(message.payload, message.context.stationId);
-
-    const transactionEvent = message.payload;
-    if (transactionEvent.idToken) {
-      this._authorizeRepository.readByQuery({ ...transactionEvent.idToken }).then(authorization => {
-        const response: TransactionEventResponse = {
-          idTokenInfo: {
-            status: AuthorizationStatusEnumType.Unknown
-            // TODO determine how/if to set personalMessage
-          }
-        };
-        if (authorization) {
-          if (authorization.idTokenInfo) {
-            // Extract DTO fields from sequelize Model<any, any> objects
-            const idTokenInfo: IdTokenInfoType = {
-              status: authorization.idTokenInfo.status,
-              cacheExpiryDateTime: authorization.idTokenInfo.cacheExpiryDateTime,
-              chargingPriority: authorization.idTokenInfo.chargingPriority,
-              language1: authorization.idTokenInfo.language1,
-              evseId: authorization.idTokenInfo.evseId,
-              groupIdToken: authorization.idTokenInfo.groupIdToken ? {
-                additionalInfo: (authorization.idTokenInfo.groupIdToken.additionalInfo && authorization.idTokenInfo.groupIdToken.additionalInfo.length > 0) ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(additionalInfo => {
-                  return {
-                    additionalIdToken: additionalInfo.additionalIdToken,
-                    type: additionalInfo.type
-                  }
-                }) as [AdditionalInfoType, ...AdditionalInfoType[]]) : undefined,
-                idToken: authorization.idTokenInfo.groupIdToken.idToken,
-                type: authorization.idTokenInfo.groupIdToken.type
-              } : undefined,
-              language2: authorization.idTokenInfo.language2,
-              personalMessage: authorization.idTokenInfo.personalMessage
-            };
-
-            if (idTokenInfo.status == AuthorizationStatusEnumType.Accepted) {
-              if (idTokenInfo.cacheExpiryDateTime &&
-                new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
-                response.idTokenInfo = {
-                  status: AuthorizationStatusEnumType.Invalid,
-                  groupIdToken: idTokenInfo.groupIdToken
-                  // TODO determine how/if to set personalMessage
-                };
-              } else {
-                // TODO: Determine how to check for NotAllowedTypeEVSE, NotAtThisLocation, NotAtThisTime, NoCredit
-                // TODO: allow for a 'real time auth' type call to fetch token status.
-                response.idTokenInfo = idTokenInfo;
-              }
-            } else {
-              // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
-              // N.B. Other non-Accepted statuses should not be allowed to be stored.
-              response.idTokenInfo = idTokenInfo;
-            }
-          } else {
-            // Assumed to always be valid without IdTokenInfo
-            response.idTokenInfo = {
-              status: AuthorizationStatusEnumType.Accepted
-              // TODO determine how/if to set personalMessage
-            };
-          }
-        }
-        return response;
-      }).then(transactionEventResponse => {
-        if (transactionEvent.eventType == TransactionEventEnumType.Started && transactionEventResponse
-          && transactionEventResponse.idTokenInfo?.status == AuthorizationStatusEnumType.Accepted && transactionEvent.idToken) {
-          // Check for ConcurrentTx
-          return this._transactionEventRepository.readAllActiveTransactionByIdToken(transactionEvent.idToken).then(activeTransactions => {
-            // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
-            if (activeTransactions.length > 1) {
-              const groupIdToken = transactionEventResponse.idTokenInfo?.groupIdToken;
-              transactionEventResponse.idTokenInfo = {
-                status: AuthorizationStatusEnumType.ConcurrentTx,
-                groupIdToken: groupIdToken
-                // TODO determine how/if to set personalMessage
-              }
-            }
-            return transactionEventResponse;
-          });
-        }
-        return transactionEventResponse;
-      }).then(transactionEventResponse => {
-        this.sendCallResultWithMessage(message, transactionEventResponse)
-          .then(messageConfirmation => this._logger.debug("Transaction response sent: ", messageConfirmation));
-      });
-    } else {
-      const response: TransactionEventResponse = {
-        // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
-      };
-      this.sendCallResultWithMessage(message, response)
-        .then(messageConfirmation => this._logger.debug("Transaction response sent: ", messageConfirmation));
-    }
+    await this.transactionEventService?.handleTransactionEvent(message, props);
   }
 
   @AsHandler(CallAction.MeterValues)

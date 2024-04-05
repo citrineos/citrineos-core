@@ -3,7 +3,15 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { TransactionEventRequest, ChargingStateEnumType, IdTokenType, TransactionEventEnumType, EVSEType, TransactionEventResponse } from "@citrineos/base";
+import {
+    TransactionEventRequest,
+    ChargingStateEnumType,
+    IdTokenType,
+    TransactionEventEnumType,
+    EVSEType,
+    TransactionEventResponse,
+    injectable
+} from "@citrineos/base";
 import { ITransactionEventRepository } from "../../../interfaces";
 import { MeterValue, Transaction, TransactionEvent } from "../model/TransactionEvent";
 import { SequelizeRepository } from "./Base";
@@ -12,14 +20,15 @@ import { Evse } from "../model/DeviceModel";
 import { Op } from 'sequelize';
 import { Model } from "sequelize-typescript";
 
+@injectable()
 export class TransactionEventRepository extends SequelizeRepository<TransactionEvent> implements ITransactionEventRepository {
     /**
      * @param value TransactionEventRequest received from charging station. Will be used to create TransactionEvent,
-     * MeterValues, and either create or update Transaction. IdTokens (and associated AdditionalInfo) and EVSEs are 
+     * MeterValues, and either create or update Transaction. IdTokens (and associated AdditionalInfo) and EVSEs are
      * assumed to already exist and will not be created as part of this call.
-     * 
+     *
      * @param stationId StationId of charging station which sent TransactionEventRequest.
-     * 
+     *
      * @returns Saved TransactionEvent
      */
     async createOrUpdateTransactionByTransactionEventAndStationId(value: TransactionEventRequest, stationId: string): Promise<Transaction> {
@@ -91,11 +100,11 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
     /**
      * @param stationId StationId of the charging station where the transaction took place.
      * @param evse Evse where the transaction took place.
-     * @param chargingStates Optional list of {@link ChargingStateEnumType}s the transactions must be in. 
-     * If not present, will grab transactions regardless of charging state. If not present, will grab transactions 
-     * without charging states, such as transactions started when a parking bay occupancy detector detects 
+     * @param chargingStates Optional list of {@link ChargingStateEnumType}s the transactions must be in.
+     * If not present, will grab transactions regardless of charging state. If not present, will grab transactions
+     * without charging states, such as transactions started when a parking bay occupancy detector detects
      * an EV (trigger reason "EVDetected")
-     * 
+     *
      * @returns List of transactions which meet the requirements.
      */
     readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: EVSEType, chargingStates?: ChargingStateEnumType[] | undefined): Promise<Transaction[]> {

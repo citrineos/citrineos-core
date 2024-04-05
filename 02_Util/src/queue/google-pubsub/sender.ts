@@ -3,14 +3,27 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractMessageSender, IMessageSender, SystemConfig, IMessage, OcppRequest, IMessageConfirmation, MessageState, OcppResponse, CallAction, OcppError } from "@citrineos/base";
+import {
+  BaseMessageSender,
+  IMessageSender,
+  SystemConfig,
+  IMessage,
+  OcppRequest,
+  IMessageConfirmation,
+  MessageState,
+  OcppResponse,
+  CallAction,
+  OcppError,
+  SystemConfigService, LoggerService
+} from "@citrineos/base";
 import { PubSub } from "@google-cloud/pubsub";
 import { ILogObj, Logger } from "tslog";
+import {inject} from "tsyringe";
 
 /**
  * Implementation of a {@link IMessageSender} using Google PubSub as the underlying transport.
  */
-export class PubSubSender extends AbstractMessageSender implements IMessageSender {
+export class PubSubSender extends BaseMessageSender implements IMessageSender {
 
   /**
    * Fields
@@ -22,8 +35,15 @@ export class PubSubSender extends AbstractMessageSender implements IMessageSende
    *
    * @param topicPrefix Custom topic prefix, defaults to "ocpp"
    */
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
-    super(config, logger);
+  constructor(
+      @inject(SystemConfigService)
+      private readonly configService?: SystemConfigService,
+      @inject(LoggerService) private readonly loggerService?: LoggerService
+  ) {
+    super(
+        configService?.systemConfig as SystemConfig,
+        loggerService?.logger as Logger<ILogObj>
+    );
 
     this._client = new PubSub({ servicePath: this._config.util.messageBroker.pubsub?.servicePath });
   }

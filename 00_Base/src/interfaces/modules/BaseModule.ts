@@ -5,11 +5,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import 'reflect-metadata';
 import { ILogObj, Logger } from "tslog";
 import { v4 as uuidv4 } from "uuid";
 import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from ".";
-import {CacheService, OcppRequest, OcppResponse, SystemConfigService} from "../..";
+import {CacheService, LoggerService, OcppRequest, OcppResponse, SystemConfigService} from "../..";
 import { SystemConfig } from "../../config/types";
 import { CallAction, ErrorCode, OcppError } from "../../ocpp/rpc/message";
 import { RequestBuilder } from "../../util/request";
@@ -17,7 +16,6 @@ import { CacheNamespace, ICache } from "../cache/cache";
 import { EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessageHandler, IMessageSender, MessageOrigin, MessageState } from "../messages";
 import {autoInjectable, inject, injectable} from "tsyringe";
 
-@autoInjectable()
 export class BaseModule implements IModule {
 
     public static readonly CALLBACK_URL_CACHE_PREFIX: string = "CALLBACK_URL_";
@@ -35,7 +33,7 @@ export class BaseModule implements IModule {
       handler: IMessageHandler,
       sender: IMessageSender,
       eventGroup: EventGroup,
-      logger?: Logger<ILogObj>
+      logger: Logger<ILogObj>
     ) {
         this._config = config;
         this._handler = handler;

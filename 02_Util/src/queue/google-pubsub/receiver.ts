@@ -7,7 +7,7 @@ import {Message as PubSubMessage, PubSub, Subscription, Topic,} from "@google-cl
 import {ILogObj, Logger} from "tslog";
 import {
   AbstractMessageHandler,
-  autoInjectable,
+  injectable,
   CacheNamespace,
   CallAction,
   ICache,
@@ -20,14 +20,14 @@ import {
   RetryMessageError,
   SystemConfig,
   SystemConfigService,
-  MemoryCache
+  MemoryCache, LoggerService
 } from "@citrineos/base";
 import {plainToInstance} from "class-transformer";
 
 /**
  * Implementation of a {@link IMessageHandler} using Google PubSub as the underlying transport.
  */
-@autoInjectable()
+@injectable()
 export class PubSubReceiver extends AbstractMessageHandler {
   /**
    * Constants
@@ -44,15 +44,18 @@ export class PubSubReceiver extends AbstractMessageHandler {
   /**
    * Constructor
    *
-   * @param topicPrefix Custom topic prefix, defaults to "ocpp"
+   * @param cache
+   * @param module
+   * @param configService
+   * @param loggerService
    */
   constructor(
-      logger?: Logger<ILogObj>,
       cache?: ICache,
       module?: IModule,
-      @inject(SystemConfigService) private readonly configService?: SystemConfigService
+      @inject(SystemConfigService) private readonly configService?: SystemConfigService,
+      @inject(LoggerService) private readonly loggerService?: LoggerService,
   ) {
-    super(configService?.systemConfig as SystemConfig, logger);
+    super(configService?.systemConfig as SystemConfig, loggerService?.logger, module);
     this._cache = cache || new MemoryCache();
     this._client = new PubSub({servicePath: this._config.util.messageBroker.pubsub?.servicePath});
     this._module = module;

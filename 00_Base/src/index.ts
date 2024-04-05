@@ -4,10 +4,11 @@
 // SPDX-License-Identifier: Apache 2.0
 
 // Base Library Interfaces
+import "reflect-metadata";
 
 export {
   AbstractMessageHandler,
-  AbstractMessageSender,
+  BaseMessageSender,
   EventGroup,
   eventGroupFromString,
   HandlerProperties,
@@ -231,3 +232,4 @@ export { SystemConfigInput } from "./config/types";
 export { CacheService } from "./config/config/cache.service";
 export * from "tsyringe";
 export { MemoryCache } from "./config/config/cache/memory";
+export { LoggerService } from "./services/logger.service";

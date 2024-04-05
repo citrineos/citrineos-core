@@ -29,7 +29,7 @@ import {
   OcppError,
   SignCertificateRequest,
   SignCertificateResponse,
-  SystemConfig
+  SystemConfig, inject, LoggerService, SystemConfigService, CacheService, injectable
 } from "@citrineos/base";
 import { IDeviceModelRepository, sequelize } from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
@@ -42,6 +42,7 @@ import { CacheNamespace } from "@citrineos/base";
 /**
  * Component that handles provisioning related messages.
  */
+@injectable()
 export class CertificatesModule extends BaseModule {
 
   /**
@@ -71,30 +72,31 @@ export class CertificatesModule extends BaseModule {
 
   /**
    * This is the constructor function that initializes the {@link CertificatesModule}.
-   * 
+   *
    * @param {SystemConfig} config - The `config` contains configuration settings for the module.
-   *  
+   *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   * 
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface. 
+   *
+   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   * 
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface. 
+   *
+   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   * 
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}. 
+   *
+   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   * 
+   *
    */
   constructor(
-    config: SystemConfig,
-    cache: ICache,
-    sender: IMessageSender,
-    handler: IMessageHandler,
-    logger?: Logger<ILogObj>,
-    deviceModelRepository?: IDeviceModelRepository
+    deviceModelRepository?: IDeviceModelRepository,
+    @inject(SystemConfigService)
+    private readonly configService?: SystemConfigService,
+    @inject(CacheService) private readonly cacheService?: CacheService,
+    @inject(LoggerService) private readonly loggerService?: LoggerService,
+    @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
+    @inject(RabbitMqReceiver) private readonly rabbitMqReceiver?: RabbitMqReceiver
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(logger, undefined, config, cache), sender || new RabbitMqSender(config, logger), EventGroup.Certificates, logger);
+    super(configService?.systemConfig!, cacheService?.cache!, rabbitMqReceiver!, rabbitMqSender!, EventGroup.Certificates, loggerService?.logger!);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);
@@ -103,7 +105,7 @@ export class CertificatesModule extends BaseModule {
       throw new Error("Could not initialize module due to failure in handler initialization.");
     }
 
-    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, logger as Logger<ILogObj>);
+    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository();
 
 
     this._config.util.networkConnection.websocketServers.forEach(server => {

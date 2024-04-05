@@ -5,7 +5,7 @@
 
 import {
   AsHandler,
-  BaseModule,
+  BaseModule, CacheService,
   CallAction,
   CustomerInformationResponse,
   EventGroup,
@@ -18,7 +18,7 @@ import {
   ICache,
   IMessage,
   IMessageHandler,
-  IMessageSender,
+  IMessageSender, inject, injectable, LoggerService,
   LogStatusNotificationRequest,
   LogStatusNotificationResponse,
   NotifyCustomerInformationRequest,
@@ -31,7 +31,7 @@ import {
   SecurityEventNotificationResponse,
   SetVariableStatusEnumType,
   StatusInfoType,
-  SystemConfig
+  SystemConfig, SystemConfigService
 } from "@citrineos/base";
 import {
   Component,
@@ -49,6 +49,7 @@ import {DeviceModelService} from "./services";
 /**
  * Component that handles provisioning related messages.
  */
+@injectable()
 export class ReportingModule extends BaseModule {
 
   /**
@@ -118,16 +119,16 @@ export class ReportingModule extends BaseModule {
    * @param {IVariableMonitoringRepository} [variableMonitoringRepository] - An optional parameter of type {@link IVariableMonitoringRepository} which represents a repository for accessing and manipulating monitoring data.
    */
   constructor(
-    config: SystemConfig,
-    cache: ICache,
-    sender?: IMessageSender,
-    handler?: IMessageHandler,
-    logger?: Logger<ILogObj>,
     deviceModelRepository?: IDeviceModelRepository,
     securityEventRepository?: ISecurityEventRepository,
-    variableMonitoringRepository?: IVariableMonitoringRepository
+    variableMonitoringRepository?: IVariableMonitoringRepository,
+    @inject(SystemConfigService) private readonly configService?: SystemConfigService,
+    @inject(CacheService) private readonly cacheService?: CacheService,
+    @inject(LoggerService) private readonly loggerService?: LoggerService,
+    @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
+    @inject(RabbitMqReceiver) private readonly rabbitMqReceiver?: RabbitMqReceiver,
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(logger, undefined, config, cache), sender || new RabbitMqSender(config, logger), EventGroup.Reporting, logger);
+    super(configService?.systemConfig!, cacheService?.cache!, rabbitMqReceiver!, rabbitMqSender!, EventGroup.Reporting, loggerService?.logger!);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);
@@ -136,9 +137,9 @@ export class ReportingModule extends BaseModule {
       throw new Error("Could not initialize module due to failure in handler initialization.");
     }
 
-    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, this._logger);
-    this._securityEventRepository = securityEventRepository || new sequelize.SecurityEventRepository(config, this._logger);
-    this._variableMonitoringRepository = variableMonitoringRepository || new sequelize.VariableMonitoringRepository(config, this._logger);
+    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository();
+    this._securityEventRepository = securityEventRepository || new sequelize.SecurityEventRepository();
+    this._variableMonitoringRepository = variableMonitoringRepository || new sequelize.VariableMonitoringRepository();
     this._deviceModelService = new DeviceModelService(this._deviceModelRepository)
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);

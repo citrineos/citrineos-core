@@ -7,22 +7,24 @@ import * as amqplib from "amqplib";
 import {ILogObj, Logger} from "tslog";
 import {
   AbstractMessageHandler,
-  CacheNamespace,
+  CacheNamespace, CacheService,
   CallAction,
   ICache,
-  IModule,
+  IModule, inject, LoggerService,
   Message,
   OcppError,
   OcppRequest,
   OcppResponse,
   RetryMessageError,
-  SystemConfig
+  SystemConfig, SystemConfigService
 } from "@citrineos/base";
 import {plainToInstance} from "class-transformer";
+import {injectable} from "@citrineos/base";
 
 /**
  * Implementation of a {@link IMessageHandler} using RabbitMQ as the underlying transport.
  */
+@injectable()
 export class RabbitMqReceiver extends AbstractMessageHandler {
 
   /**
@@ -39,13 +41,14 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   protected _channel?: amqplib.Channel;
 
   constructor(
-      logger?: Logger<ILogObj>,
-      module?: IModule,
-      config?: SystemConfig,
-      cache?: ICache,
+      // module?: IModule, // todo handle triggering module.handle
+      @inject(SystemConfigService)
+      private readonly configService?: SystemConfigService,
+      @inject(CacheService) private readonly cacheService?: CacheService,
+      @inject(LoggerService) private readonly loggerService?: LoggerService,
   ) {
-    super(config as SystemConfig, logger, module);
-    this._cache = cache as ICache;
+    super((configService?.systemConfig as SystemConfig), loggerService?.logger, undefined); //todo module
+    this._cache = this.cacheService?.cache as ICache;
 
     this._connect().then(channel => {
       this._channel = channel;

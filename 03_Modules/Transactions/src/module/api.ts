@@ -46,12 +46,12 @@ export class TransactionsModuleApi extends AbstractModuleApi<TransactionsModule>
 
     @AsDataEndpoint(Namespace.TransactionEventRequest, HttpMethod.Get, TransactionEventQuerySchema)
     getTransactionEventsByStationIdAndTransactionId(request: FastifyRequest<{ Querystring: TransactionEventQuerystring }>): Promise<TransactionEventRequest[]> {
-        return this._module.transactionEventRepository.readAllByStationIdAndTransactionId(request.query.stationId, request.query.transactionId);
+        return this._module.transactionEventRepository?.readAllByStationIdAndTransactionId(request.query.stationId, request.query.transactionId)!;
     }
 
     @AsDataEndpoint(Namespace.TransactionType, HttpMethod.Get, TransactionEventQuerySchema)
     getTransactionByStationIdAndTransactionId(request: FastifyRequest<{ Querystring: TransactionEventQuerystring }>): Promise<TransactionType | undefined> {
-        return this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(request.query.stationId, request.query.transactionId);
+        return this._module.transactionEventRepository?.readTransactionByStationIdAndTransactionId(request.query.stationId, request.query.transactionId)!;
     }
 
     // TODO: Determine how to implement readAllTransactionsByStationIdAndChargingStates as a GET...

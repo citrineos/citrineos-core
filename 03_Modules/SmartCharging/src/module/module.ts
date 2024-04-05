@@ -5,7 +5,7 @@
 
 import {
   AsHandler,
-  BaseModule,
+  BaseModule, CacheService,
   CallAction,
   ClearChargingProfileResponse,
   ClearedChargingLimitResponse,
@@ -17,7 +17,7 @@ import {
   ICache,
   IMessage,
   IMessageHandler,
-  IMessageSender,
+  IMessageSender, inject, LoggerService,
   NotifyChargingLimitRequest,
   NotifyChargingLimitResponse,
   NotifyEVChargingNeedsRequest,
@@ -28,15 +28,17 @@ import {
   ReportChargingProfilesRequest,
   ReportChargingProfilesResponse,
   SetChargingProfileResponse,
-  SystemConfig
+  SystemConfig, SystemConfigService
 } from "@citrineos/base";
 import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import {ILogObj, Logger} from 'tslog';
+import {injectable} from "@citrineos/base";
 
 /**
  * Component that handles provisioning related messages.
  */
+@injectable()
 export class SmartChargingModule extends BaseModule {
 
   /**
@@ -80,13 +82,13 @@ export class SmartChargingModule extends BaseModule {
    *
    */
   constructor(
-    config: SystemConfig,
-    cache: ICache,
-    sender?: IMessageSender,
-    handler?: IMessageHandler,
-    logger?: Logger<ILogObj>
+    @inject(SystemConfigService) private readonly configService?: SystemConfigService,
+    @inject(CacheService) private readonly cacheService?: CacheService,
+    @inject(LoggerService) private readonly loggerService?: LoggerService,
+    @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
+    @inject(RabbitMqReceiver) private readonly rabbitMqReceiver?: RabbitMqReceiver,
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(logger, undefined, config, cache), sender || new RabbitMqSender(config, logger), EventGroup.SmartCharging, logger);
+    super(configService?.systemConfig!, cacheService?.cache!, rabbitMqReceiver!, rabbitMqSender!, EventGroup.SmartCharging, loggerService?.logger!);
 
     const timer = new Timer();
     this._logger.info(`Initializing...`);

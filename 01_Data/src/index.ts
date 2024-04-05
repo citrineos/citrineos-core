@@ -2,7 +2,8 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
-
+import "reflect-metadata";
+export {AuthorizationRepository, TransactionEventRepository} from "./layers/sequelize";
 export * as sequelize from "./layers/sequelize";
 export * from "./interfaces";
 export {DeviceModelRepository, Boot, Component, Variable, VariableAttribute} from "./layers/sequelize"; // todo export better as these seem to be used in other modules
