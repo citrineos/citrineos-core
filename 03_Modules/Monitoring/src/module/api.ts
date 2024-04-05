@@ -84,7 +84,9 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
         for (let i = 0; i < setMonitoringData.length; i++) {
             let setMonitoringDataType: SetMonitoringDataType = setMonitoringData[i];
             this._logger.debug("Current SetMonitoringData", setMonitoringDataType);
-            const [component, variable] = await this._module.deviceModelRepository.findComponentAndVariable(setMonitoringDataType.component, setMonitoringDataType.variable);
+            // todo undo tsignore
+            // @ts-ignore
+            const [component, variable] = await this._module.deviceModelRepository?.findComponentAndVariable(setMonitoringDataType.component, setMonitoringDataType.variable);
             this._logger.debug("Found component and variable:", component, variable);
             // When the CSMS sends a SetVariableMonitoringRequest with type Delta for a Variable that is NOT of a numeric
             // type, It is RECOMMENDED to use a monitorValue of 1.
@@ -94,7 +96,7 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
             }
             // component and variable are required for a variableMonitoring
             if (component && variable) {
-                await this._module.variableMonitoringRepository.createOrUpdateBySetMonitoringDataTypeAndStationId(setMonitoringDataType, component.id, variable.id, identifier);
+                await this._module.variableMonitoringRepository?.createOrUpdateBySetMonitoringDataTypeAndStationId(setMonitoringDataType, component.id, variable.id, identifier);
             }
         }
 
@@ -196,7 +198,7 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
 
         // Awaiting save action so that SetVariablesResponse does not trigger a race condition since an error is thrown
         // from SetVariablesResponse handler if variable does not exist when it attempts to save the Response's status
-        await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(setVariableData, identifier);
+        await this._module.deviceModelRepository!.createOrUpdateBySetVariablesDataAndStationId(setVariableData, identifier);
 
         let itemsPerMessageSetVariables = await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(this._componentDeviceDataCtrlr, CallAction.SetVariables, identifier);
 
@@ -296,11 +298,11 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
 
     @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Put, CreateOrUpdateVariableAttributeQuerySchema, ReportDataTypeSchema)
     async putDeviceModelVariables(request: FastifyRequest<{ Body: ReportDataType, Querystring: CreateOrUpdateVariableAttributeQuerystring }>): Promise<sequelize.VariableAttribute[]> {
-        return this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(request.body, request.query.stationId).then(async variableAttributes => {
+        return this._module.deviceModelRepository!.createOrUpdateDeviceModelByStationId(request.body, request.query.stationId).then(async variableAttributes => {
             if (request.query.setOnCharger) { // value set offline, for example: manually via charger ui, or via api other than ocpp
                 for (let variableAttribute of variableAttributes) {
                     variableAttribute = await variableAttribute.reload({ include: [Variable, Component] });
-                    this._module.deviceModelRepository.updateResultByStationId({
+                    this._module.deviceModelRepository?.updateResultByStationId({
                         attributeType: variableAttribute.type,
                         attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: "SetOnCharger" },
                         component: variableAttribute.component, variable: variableAttribute.variable
@@ -313,12 +315,12 @@ export class MonitoringModuleApi extends AbstractModuleApi<MonitoringModule> imp
 
     @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Get, VariableAttributeQuerySchema)
     getDeviceModelVariables(request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>): Promise<sequelize.VariableAttribute[] | undefined> {
-        return this._module.deviceModelRepository.readAllByQuery(request.query);
+        return this._module.deviceModelRepository!.readAllByQuery(request.query);
     }
 
     @AsDataEndpoint(Namespace.VariableAttributeType, HttpMethod.Delete, VariableAttributeQuerySchema)
     deleteDeviceModelVariables(request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>): Promise<string> {
-        return this._module.deviceModelRepository.deleteAllByQuery(request.query)
+        return this._module.deviceModelRepository!.deleteAllByQuery(request.query)
             .then(deletedCount => deletedCount.toString() + " rows successfully deleted from " + Namespace.VariableAttributeType);
     }
 

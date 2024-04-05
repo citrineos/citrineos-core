@@ -3,73 +3,73 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {ICrudRepository, injectable, LoggerService, SystemConfig, SystemConfigService} from '@citrineos/base';
-import { Model, Sequelize } from 'sequelize-typescript';
-import { DefaultSequelizeInstance } from '../util';
-import { inject } from 'tsyringe';
+import { type ICrudRepository, injectable, LoggerService, type SystemConfig, SystemConfigService } from '@citrineos/base'
+import { type Model, type Sequelize } from 'sequelize-typescript'
+import { DefaultSequelizeInstance } from '../util'
+import { inject } from 'tsyringe'
 
 @injectable()
 export class SequelizeRepository<T extends Model<any, any>> implements ICrudRepository<T> {
-  protected s: Sequelize;
+  protected s: Sequelize
 
-  constructor(
+  constructor (
     @inject(SystemConfigService) private readonly systemConfigService?: SystemConfigService,
     @inject(LoggerService) private readonly loggerService?: LoggerService
   ) {
-    this.s = DefaultSequelizeInstance.getInstance(systemConfigService?.systemConfig as SystemConfig, loggerService?.logger);
+    this.s = DefaultSequelizeInstance.getInstance(systemConfigService?.systemConfig as SystemConfig, loggerService?.logger)
   }
 
-  create(value: T): Promise<T | undefined> {
-    return value.save();
+  async create (value: T): Promise<T | undefined> {
+    return await value.save()
   }
 
-  createByKey(value: T, key: string): Promise<T> {
-    value.setDataValue('id', key);
-    return value.save();
+  async createByKey (value: T, key: string): Promise<T> {
+    value.setDataValue('id', key)
+    return await value.save()
   }
 
-  readByKey(key: string, namespace: string): Promise<T> {
-    return this.s.models[namespace].findOne({ where: { id: key } }).then((row) => row as T);
+  async readByKey (key: string, namespace: string): Promise<T> {
+    return await this.s.models[namespace].findOne({ where: { id: key } }).then((row) => row as T)
   }
 
-  readByQuery(query: object, namespace: string): Promise<T> {
-    return this.s.models[namespace].findOne(query).then((row) => row as T);
+  async readByQuery (query: object, namespace: string): Promise<T> {
+    return await this.s.models[namespace].findOne(query).then((row) => row as T)
   }
 
-  readAllByQuery(query: object, namespace: string): Promise<Array<T>> {
-    return this.s.models[namespace].findAll(query).then((row) => row as T[]);
+  async readAllByQuery (query: object, namespace: string): Promise<T[]> {
+    return await this.s.models[namespace].findAll(query).then((row) => row as T[])
   }
 
-  updateByKey(value: T, key: string, namespace: string): Promise<T | undefined> {
-    return this.readByKey(key, namespace).then((model) => {
-      return this._updateModel(value, model)?.save();
-    });
+  async updateByKey (value: T, key: string, namespace: string): Promise<T | undefined> {
+    return await this.readByKey(key, namespace).then(async (model) => {
+      return await this._updateModel(value, model)?.save()
+    })
   }
 
-  updateByQuery(value: T, query: object, namespace: string): Promise<T | undefined> {
-    return this.readByQuery(query, namespace).then((model) => {
-      return this._updateModel(value, model)?.save();
-    });
+  async updateByQuery (value: T, query: object, namespace: string): Promise<T | undefined> {
+    return await this.readByQuery(query, namespace).then(async (model) => {
+      return await this._updateModel(value, model)?.save()
+    })
   }
 
-  updateByModel(value: T, model: T): Promise<T> | undefined {
-    return this._updateModel(value, model)?.save();
+  updateByModel (value: T, model: T): Promise<T> | undefined {
+    return this._updateModel(value, model)?.save()
   }
 
-  deleteByKey(key: string, namespace: string): Promise<boolean> {
-    return this.s.models[namespace].destroy({ where: { id: key } }).then((count) => count > 0);
+  async deleteByKey (key: string, namespace: string): Promise<boolean> {
+    return await this.s.models[namespace].destroy({ where: { id: key } }).then((count) => count > 0)
   }
 
-  deleteAllByQuery(query: object, namespace: string): Promise<number> {
-    return this.s.models[namespace].destroy(query);
+  async deleteAllByQuery (query: object, namespace: string): Promise<number> {
+    return await this.s.models[namespace].destroy(query)
   }
 
-  existsByKey(key: string, namespace: string): Promise<boolean> {
-    return this.s.models[namespace].findOne({ where: { id: key } }).then((row) => row !== null);
+  async existsByKey (key: string, namespace: string): Promise<boolean> {
+    return await this.s.models[namespace].findOne({ where: { id: key } }).then((row) => row !== null)
   }
 
-  existsByQuery(query: object, namespace: string): Promise<boolean> {
-    return this.s.models[namespace].findOne(query).then((row) => row !== null);
+  async existsByQuery (query: object, namespace: string): Promise<boolean> {
+    return await this.s.models[namespace].findOne(query).then((row) => row !== null)
   }
 
   /**
@@ -79,12 +79,12 @@ export class SequelizeRepository<T extends Model<any, any>> implements ICrudRepo
    * @param {T} model - The model to be updated.
    * @return {T | undefined} The updated model, or undefined if the provided model is null.
    */
-  protected _updateModel(value: T, model: T): T | undefined {
+  protected _updateModel (value: T, model: T): T | undefined {
     if (model !== null) {
       for (const k in value.dataValues) {
-        model.setDataValue(k, value.getDataValue(k));
+        model.setDataValue(k, value.getDataValue(k))
       }
-      return model;
+      return model
     }
   }
 }

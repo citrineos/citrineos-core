@@ -34,7 +34,7 @@ import {
   SystemConfig, SystemConfigService
 } from "@citrineos/base";
 import {
-  Component,
+  Component, DeviceModelRepository,
   IDeviceModelRepository,
   ISecurityEventRepository,
   IVariableMonitoringRepository,
@@ -45,6 +45,7 @@ import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import {ILogObj, Logger} from 'tslog';
 import {DeviceModelService} from "./services";
+import {SecurityEventRepository, VariableMonitoringRepository} from "@citrineos/data";
 
 /**
  * Component that handles provisioning related messages.
@@ -81,14 +82,6 @@ export class ReportingModule extends BaseModule {
   static readonly GET_BASE_REPORT_ONGOING_CACHE_VALUE = 'ongoing';
   static readonly GET_BASE_REPORT_COMPLETE_CACHE_VALUE = 'complete';
 
-  protected _deviceModelRepository: IDeviceModelRepository;
-  protected _securityEventRepository: ISecurityEventRepository;
-  protected _variableMonitoringRepository: IVariableMonitoringRepository;
-
-  get deviceModelRepository(): IDeviceModelRepository {
-    return this._deviceModelRepository;
-  }
-
   public _deviceModelService: DeviceModelService;
 
   /**
@@ -119,9 +112,9 @@ export class ReportingModule extends BaseModule {
    * @param {IVariableMonitoringRepository} [variableMonitoringRepository] - An optional parameter of type {@link IVariableMonitoringRepository} which represents a repository for accessing and manipulating monitoring data.
    */
   constructor(
-    deviceModelRepository?: IDeviceModelRepository,
-    securityEventRepository?: ISecurityEventRepository,
-    variableMonitoringRepository?: IVariableMonitoringRepository,
+    @inject(DeviceModelRepository) public readonly deviceModelRepository?: DeviceModelRepository,
+    @inject(SecurityEventRepository) public readonly securityEventRepository?: SecurityEventRepository,
+    @inject(VariableMonitoringRepository) public readonly variableMonitoringRepository?: VariableMonitoringRepository,
     @inject(SystemConfigService) private readonly configService?: SystemConfigService,
     @inject(CacheService) private readonly cacheService?: CacheService,
     @inject(LoggerService) private readonly loggerService?: LoggerService,
@@ -136,11 +129,7 @@ export class ReportingModule extends BaseModule {
     if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
       throw new Error("Could not initialize module due to failure in handler initialization.");
     }
-
-    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository();
-    this._securityEventRepository = securityEventRepository || new sequelize.SecurityEventRepository();
-    this._variableMonitoringRepository = variableMonitoringRepository || new sequelize.VariableMonitoringRepository();
-    this._deviceModelService = new DeviceModelService(this._deviceModelRepository)
+    this._deviceModelService = new DeviceModelService(this.deviceModelRepository!);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -193,8 +182,10 @@ export class ReportingModule extends BaseModule {
 
     for (const monitorType of (message.payload.monitor ? message.payload.monitor : [])) {
       const stationId: string = message.context.stationId;
-      const [component, variable] = await this._deviceModelRepository.findComponentAndVariable(monitorType.component, monitorType.variable);
-      await this._variableMonitoringRepository.createOrUpdateByMonitoringDataTypeAndStationId(monitorType, component ? component.id : null, variable ? variable.id : null, stationId);
+      // todo undo tsignore
+      // @ts-ignore
+      const [component, variable] = await this.deviceModelRepository?.findComponentAndVariable(monitorType.component, monitorType.variable);
+      await this.variableMonitoringRepository?.createOrUpdateByMonitoringDataTypeAndStationId(monitorType, component ? component.id : null, variable ? variable.id : null, stationId);
     }
 
     // Create response
@@ -214,13 +205,13 @@ export class ReportingModule extends BaseModule {
     this._logger.info("NotifyReport received:", message, props);
 
     for (const reportDataType of (message.payload.reportData ? message.payload.reportData : [])) {
-      const variableAttributes = await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, message.context.stationId);
+      const variableAttributes = await this.deviceModelRepository?.createOrUpdateDeviceModelByStationId(reportDataType, message.context.stationId)!;
       for (const variableAttribute of variableAttributes) {
         // Reload is necessary because the upsert method used in createOrUpdateDeviceModelByStationId does not allow eager loading
         await variableAttribute.reload({
           include: [Component, Variable]
         });
-        this._deviceModelRepository.updateResultByStationId({
+        this.deviceModelRepository?.updateResultByStationId({
           attributeType: variableAttribute.type,
           attributeStatus: SetVariableStatusEnumType.Accepted, attributeStatusInfo: { reasonCode: message.action },
           component: variableAttribute.component, variable: variableAttribute.variable
@@ -252,7 +243,7 @@ export class ReportingModule extends BaseModule {
     props?: HandlerProperties
   ): void {
     this._logger.debug("SecurityEventNotification request received:", message, props);
-    this._securityEventRepository.createByStationId(message.payload, message.context.stationId);
+    this.securityEventRepository?.createByStationId(message.payload, message.context.stationId);
     this.sendCallResultWithMessage(message, {} as SecurityEventNotificationResponse);
   }
 

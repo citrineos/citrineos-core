@@ -7,7 +7,7 @@ import {EventData, VariableMonitoring, VariableMonitoringStatus} from "../model/
 import {IVariableMonitoringRepository} from "../../../interfaces";
 import {
     CallAction,
-    EventDataType,
+    EventDataType, injectable,
     MonitoringDataType,
     SetMonitoringDataType,
     SetMonitoringResultType,
@@ -15,6 +15,7 @@ import {
 } from "@citrineos/base";
 import {Component, Variable} from "../model/DeviceModel";
 
+@injectable()
 export class VariableMonitoringRepository extends SequelizeRepository<VariableMonitoring> implements IVariableMonitoringRepository {
 
     async createOrUpdateByMonitoringDataTypeAndStationId(value: MonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring[]> {

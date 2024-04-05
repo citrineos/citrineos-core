@@ -19,9 +19,7 @@ import {
   HandlerProperties,
   ICache,
   IdTokenInfoType,
-  IMessage,
-  IMessageHandler,
-  IMessageSender, inject, injectable, LoggerService,
+  IMessage, inject, injectable, LoggerService,
   RequestStartTransactionResponse,
   RequestStopTransactionResponse,
   ReservationStatusUpdateRequest,
@@ -31,7 +29,10 @@ import {
   SystemConfig, SystemConfigService,
   UnlockConnectorResponse
 } from "@citrineos/base";
-import {IAuthorizationRepository, IDeviceModelRepository, sequelize, VariableAttribute} from "@citrineos/data";
+import {
+  AuthorizationRepository, DeviceModelRepository,
+  VariableAttribute
+} from "@citrineos/data";
 import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import {ILogObj, Logger} from 'tslog';
@@ -60,17 +61,6 @@ export class EVDriverModule extends BaseModule {
     CallAction.UnlockConnector
   ];
 
-  protected _authorizeRepository: IAuthorizationRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
-
-  get authorizeRepository(): IAuthorizationRepository {
-    return this._authorizeRepository;
-  }
-
-  get deviceModelRepository(): IDeviceModelRepository {
-    return this._deviceModelRepository;
-  }
-
   /**
    * This is the constructor function that initializes the {@link EVDriverModule}.
    *
@@ -84,8 +74,8 @@ export class EVDriverModule extends BaseModule {
    *
    * @param configService
    * @param cacheService
-   * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating Authorization data.
-   * If no `authorizeRepository` is provided, a default {@link sequelize.AuthorizationRepository} instance is created and used.
+   * @param {IAuthorizationRepository} [authorizationRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating Authorization data.
+   * If no `authorizationRepository` is provided, a default {@link sequelize.AuthorizationRepository} instance is created and used.
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
@@ -94,8 +84,8 @@ export class EVDriverModule extends BaseModule {
    * @param rabbitMqReceiver
    */
   constructor(
-    authorizeRepository?: IAuthorizationRepository,
-    deviceModelRepository?: IDeviceModelRepository,
+    @inject(AuthorizationRepository) public readonly authorizationRepository?: AuthorizationRepository,
+    @inject(DeviceModelRepository) public readonly deviceModelRepository?: DeviceModelRepository,
     @inject(SystemConfigService) private readonly configService?: SystemConfigService,
     @inject(CacheService) private readonly cacheService?: CacheService,
     @inject(LoggerService) private readonly loggerService?: LoggerService,
@@ -110,9 +100,6 @@ export class EVDriverModule extends BaseModule {
     if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
       throw new Error("Could not initialize module due to failure in handler initialization.");
     }
-
-    this._authorizeRepository = authorizeRepository || new sequelize.AuthorizationRepository();
-    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository();
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -129,7 +116,7 @@ export class EVDriverModule extends BaseModule {
 
     this._logger.debug("Authorize received:", message, props);
 
-    this._authorizeRepository.readByQuery({ ...message.payload.idToken }).then(async authorization => {
+    this.authorizationRepository?.readByQuery({ ...message.payload.idToken }).then(async authorization => {
       const response: AuthorizeResponse = {
         idTokenInfo: {
           status: AuthorizationStatusEnumType.Unknown
@@ -175,12 +162,12 @@ export class EVDriverModule extends BaseModule {
               let evseIds: Set<number> | undefined;
               if (authorization.allowedConnectorTypes) {
                 evseIds = new Set();
-                const connectorTypes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+                const connectorTypes: VariableAttribute[] = await this.deviceModelRepository?.readAllByQuery({
                   stationId: message.context.stationId,
                   component_name: 'Connector',
                   variable_name: 'ConnectorType',
                   type: AttributeEnumType.Actual
-                });
+                })!;
                 for (const connectorType of connectorTypes) {
                   if (authorization.allowedConnectorTypes.indexOf(connectorType.value as string) > 0) {
                     evseIds.add(connectorType.evse?.id as number);
@@ -200,12 +187,12 @@ export class EVDriverModule extends BaseModule {
                 // Needs to be looked up to perform the match
                 if (authorization.disallowedEvseIdPrefixes) {
                   evseIds = evseIds ? evseIds : new Set();
-                  const evseIdAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+                  const evseIdAttributes: VariableAttribute[] = await this.deviceModelRepository?.readAllByQuery({
                     stationId: message.context.stationId,
                     component_name: 'EVSE',
                     variable_name: 'EvseId',
                     type: AttributeEnumType.Actual
-                  });
+                  })!;
                   for (const evseIdAttribute of evseIdAttributes) {
                     const evseIdAllowed: boolean = authorization.disallowedEvseIdPrefixes
                       .some(disallowedEvseId => (evseIdAttribute.value as string).startsWith(disallowedEvseId));

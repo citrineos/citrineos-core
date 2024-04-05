@@ -35,6 +35,7 @@ import {
   SystemConfigService,
 } from "@citrineos/base";
 import {
+  DeviceModelRepository,
   IDeviceModelRepository,
   IVariableMonitoringRepository,
   sequelize,
@@ -44,6 +45,7 @@ import deasyncPromise from "deasync-promise";
 import { ILogObj, Logger } from "tslog";
 import { DeviceModelService } from "./services";
 import { injectable } from "@citrineos/base";
+import {VariableMonitoringRepository} from "@citrineos/data";
 
 /**
  * Component that handles monitoring related messages.
@@ -60,17 +62,6 @@ export class MonitoringModule extends BaseModule {
     CallAction.SetVariableMonitoring,
     CallAction.SetVariables,
   ];
-
-  protected _deviceModelRepository: IDeviceModelRepository;
-  protected _variableMonitoringRepository: IVariableMonitoringRepository;
-
-  get deviceModelRepository(): IDeviceModelRepository {
-    return this._deviceModelRepository;
-  }
-
-  get variableMonitoringRepository(): IVariableMonitoringRepository {
-    return this._variableMonitoringRepository;
-  }
 
   public _deviceModelService: DeviceModelService;
 
@@ -99,15 +90,13 @@ export class MonitoringModule extends BaseModule {
    * instance is created and used.
    */
   constructor(
-    deviceModelRepository?: IDeviceModelRepository,
-    variableMonitoringRepository?: IVariableMonitoringRepository,
-    @inject(SystemConfigService)
-    private readonly configService?: SystemConfigService,
+    @inject(DeviceModelRepository) public readonly deviceModelRepository?: DeviceModelRepository,
+    @inject(VariableMonitoringRepository) public readonly variableMonitoringRepository?: VariableMonitoringRepository,
+    @inject(SystemConfigService) private readonly configService?: SystemConfigService,
     @inject(CacheService) private readonly cacheService?: CacheService,
     @inject(LoggerService) private readonly loggerService?: LoggerService,
     @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
-    @inject(RabbitMqReceiver)
-    private readonly rabbitMqReceiver?: RabbitMqReceiver
+    @inject(RabbitMqReceiver) private readonly rabbitMqReceiver?: RabbitMqReceiver
   ) {
     super(
       configService?.systemConfig as SystemConfig,
@@ -127,14 +116,8 @@ export class MonitoringModule extends BaseModule {
       );
     }
 
-    this._deviceModelRepository =
-      deviceModelRepository || new sequelize.DeviceModelRepository();
-    this._variableMonitoringRepository =
-      variableMonitoringRepository ||
-      new sequelize.VariableMonitoringRepository();
-
     this._deviceModelService = new DeviceModelService(
-      this._deviceModelRepository
+      this.deviceModelRepository!
     );
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
@@ -154,12 +137,14 @@ export class MonitoringModule extends BaseModule {
     const events = message.payload.eventData as EventDataType[];
     for (const event of events) {
       const stationId = message.context.stationId;
+      // todo remove ignore
+      // @ts-ignore
       const [component, variable] =
-        await this._deviceModelRepository.findComponentAndVariable(
+        await this.deviceModelRepository?.findComponentAndVariable(
           event.component,
           event.variable
         );
-      await this._variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId(
+      await this.variableMonitoringRepository?.createEventDatumByComponentIdAndVariableIdAndStationId(
         event,
         component?.id,
         variable?.id,
@@ -193,7 +178,7 @@ export class MonitoringModule extends BaseModule {
     );
 
     for (const setMonitoringResultType of message.payload.setMonitoringResult) {
-      await this._variableMonitoringRepository.updateResultByStationId(
+      await this.variableMonitoringRepository?.updateResultByStationId(
         setMonitoringResultType,
         message.context.stationId
       );
@@ -222,7 +207,7 @@ export class MonitoringModule extends BaseModule {
         resultStatus === ClearMonitoringStatusEnumType.Accepted ||
         resultStatus === ClearMonitoringStatusEnumType.NotFound
       ) {
-        await this._variableMonitoringRepository.rejectVariableMonitoringByIdAndStationId(
+        await this.variableMonitoringRepository?.rejectVariableMonitoringByIdAndStationId(
           CallAction.ClearVariableMonitoring,
           monitorId,
           message.context.stationId
@@ -312,7 +297,7 @@ export class MonitoringModule extends BaseModule {
       // To get all the latest monitoring data, we intend to mask all variable monitorings on the charger as rejected.
       // Then request a GetMonitoringReport for all monitorings
       const stationId: string = message.context.stationId;
-      await this._variableMonitoringRepository.rejectAllVariableMonitoringsByStationId(
+      await this.variableMonitoringRepository?.rejectAllVariableMonitoringsByStationId(
         CallAction.SetVariableMonitoring,
         stationId
       );
@@ -339,7 +324,7 @@ export class MonitoringModule extends BaseModule {
     props?: HandlerProperties
   ): Promise<void> {
     this._logger.debug("GetVariables response received:", message, props);
-    this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(
+    this.deviceModelRepository?.createOrUpdateByGetVariablesResultAndStationId(
       message.payload.getVariableResult,
       message.context.stationId
     );
@@ -353,7 +338,7 @@ export class MonitoringModule extends BaseModule {
     this._logger.debug("SetVariables response received:", message, props);
 
     message.payload.setVariableResult.forEach(async (setVariableResultType) => {
-      this._deviceModelRepository.updateResultByStationId(
+      this.deviceModelRepository?.updateResultByStationId(
         setVariableResultType,
         message.context.stationId
       );

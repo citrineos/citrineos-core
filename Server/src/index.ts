@@ -54,7 +54,7 @@ import {
   SmartChargingModule,
   SmartChargingModuleApi,
 } from "@citrineos/smartcharging";
-import { sequelize } from "@citrineos/data";
+import {DeviceModelRepository, LocationRepository, sequelize} from "@citrineos/data";
 import {
   type FastifyRouteSchemaDef,
   type FastifySchemaCompiler,
@@ -65,7 +65,7 @@ import { defaultDockerConfig } from "./config/envs/docker";
 import { defaultLocalConfig } from "./config/envs/local";
 
 interface ModuleConfig {
-  ModuleClass: new (...args: any[]) => BaseModule;
+  module: BaseModule | undefined;
   ModuleApiClass: new (...args: any[]) => AbstractModuleApi<any>;
   configModule: any; // todo type?
 }
@@ -102,6 +102,12 @@ export class CitrineOSServer {
     @inject(LoggerService) private readonly loggerService?: LoggerService,
     @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
     @inject(RabbitMqReceiver) private readonly rabbitMqReceiver?: RabbitMqReceiver,
+    @inject(CertificatesModule) private readonly certificatesModule?: CertificatesModule,
+    @inject(ConfigurationModule) private readonly configurationModule?: ConfigurationModule,
+    @inject(EVDriverModule) private readonly evDriverModule?: EVDriverModule,
+    @inject(MonitoringModule) private readonly monitoringModule?: MonitoringModule,
+    @inject(ReportingModule) private readonly reportingModule?: ReportingModule,
+    @inject(SmartChargingModule) private readonly smartChargingModule?: SmartChargingModule,
     @inject(TransactionsModule) private readonly transactionsModule?: TransactionsModule,
   ) {
     const appName = process.env.APP_NAME as string;
@@ -214,8 +220,8 @@ export class CitrineOSServer {
   private initNetworkConnection() {
     this._authenticator = new Authenticator(
       this.cacheService?.cache as ICache,
-      new sequelize.LocationRepository(),
-      new sequelize.DeviceModelRepository(),
+      new LocationRepository(), // todo will need to dependency inject
+      new DeviceModelRepository(),
       this.loggerService?.logger
     );
 
@@ -225,7 +231,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       async (identifier: string, message: string) => false,
-      this.loggerService?.logger,
+      this.loggerService?.logger, // todo will need to dependency inject
       this._ajv
     );
 
@@ -234,7 +240,7 @@ export class CitrineOSServer {
       this.cacheService?.cache as ICache,
       this._authenticator,
       router,
-      this.loggerService?.logger
+      this.loggerService?.logger // todo will need to dependency inject
     );
 
     this.host = this.configService?.systemConfig.centralSystem.host;
@@ -242,52 +248,33 @@ export class CitrineOSServer {
   }
 
   private initAllModules() {
-    // [
-    //   this.getModuleConfig(EventGroup.Certificates),
-    //   this.getModuleConfig(EventGroup.Configuration),
-    //   this.getModuleConfig(EventGroup.EVDriver),
-    //   this.getModuleConfig(EventGroup.Monitoring),
-    //   this.getModuleConfig(EventGroup.Reporting),
-    //   this.getModuleConfig(EventGroup.SmartCharging),
-    //   this.getModuleConfig(EventGroup.Transactions),
-    // ].forEach((moduleConfig) => {
-      // this.initModule(moduleConfig);
-    // });
-    this.modules.push(this.transactionsModule as BaseModule);
-    this.apis.push(
-        new TransactionsModuleApi(
-            this.transactionsModule!,
-            this._server,
-            this.loggerService?.logger
-        )
-    );
-    // TODO: take actions to make sure module has correct subscriptions and log proof
-    this.loggerService?.logger?.info(
-        `${TransactionsModule.name} module started...`
-    );
+    [
+      this.getModuleConfig(EventGroup.Certificates),
+      this.getModuleConfig(EventGroup.Configuration),
+      this.getModuleConfig(EventGroup.EVDriver),
+      this.getModuleConfig(EventGroup.Monitoring),
+      this.getModuleConfig(EventGroup.Reporting),
+      this.getModuleConfig(EventGroup.SmartCharging),
+      this.getModuleConfig(EventGroup.Transactions),
+    ].forEach((moduleConfig) => {
+      this.initModule(moduleConfig);
+    });
   }
 
   private initModule(moduleConfig: ModuleConfig) {
     if (moduleConfig.configModule !== null) {
-      const module = new moduleConfig.ModuleClass(
-          this.configService?.systemConfig as SystemConfig,
-          this.cacheService?.cache as ICache,
-          this._createSender(),
-          this._createHandler(),
-          this.loggerService?.logger
-      )
-      this.modules.push(module)
+      this.modules.push(moduleConfig.module as BaseModule)
 
       this.apis.push(
         new moduleConfig.ModuleApiClass(
-          module,
-          this._server,
-          this.loggerService?.logger
+            moduleConfig.module as BaseModule,
+            this._server,
+            this.loggerService?.logger
         )
       );
       // TODO: take actions to make sure module has correct subscriptions and log proof
       this.loggerService?.logger?.info(
-        `${moduleConfig.ModuleClass.name} module started...`
+        `${moduleConfig.module?.constructor.name} module started...`
       );
       if (this.eventGroup !== EventGroup.All) {
         this.host = moduleConfig.configModule.host as string;
@@ -302,43 +289,43 @@ export class CitrineOSServer {
     switch (appName) {
       case EventGroup.Certificates:
         return {
-          ModuleClass: CertificatesModule,
+          module: this.certificatesModule,
           ModuleApiClass: CertificatesModuleApi,
           configModule: this._config.modules.certificates,
         };
       case EventGroup.Configuration:
         return {
-          ModuleClass: ConfigurationModule,
+          module: this.configurationModule,
           ModuleApiClass: ConfigurationModuleApi,
           configModule: this._config.modules.configuration,
         };
       case EventGroup.EVDriver:
         return {
-          ModuleClass: EVDriverModule,
+          module: this.evDriverModule,
           ModuleApiClass: EVDriverModuleApi,
           configModule: this._config.modules.evdriver,
         };
       case EventGroup.Monitoring:
         return {
-          ModuleClass: MonitoringModule,
+          module: this.monitoringModule,
           ModuleApiClass: MonitoringModuleApi,
           configModule: this._config.modules.monitoring,
         };
       case EventGroup.Reporting:
         return {
-          ModuleClass: ReportingModule,
+          module: this.reportingModule,
           ModuleApiClass: ReportingModuleApi,
           configModule: this._config.modules.reporting,
         };
       case EventGroup.SmartCharging:
         return {
-          ModuleClass: SmartChargingModule,
+          module: this.smartChargingModule,
           ModuleApiClass: SmartChargingModuleApi,
           configModule: this._config.modules.smartcharging,
         };
       case EventGroup.Transactions:
         return {
-          ModuleClass: TransactionsModule,
+          module: this.transactionsModule,
           ModuleApiClass: TransactionsModuleApi,
           configModule: this._config.modules.transactions,
         };
@@ -356,7 +343,7 @@ export class CitrineOSServer {
       this.initNetworkConnection();
     } else {
       const moduleConfig: ModuleConfig = this.getModuleConfig(this.eventGroup);
-      // this.initModule(moduleConfig);
+      this.initModule(moduleConfig);
     }
   }
 

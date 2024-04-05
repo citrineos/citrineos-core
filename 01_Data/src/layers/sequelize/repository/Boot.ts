@@ -3,13 +3,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { BootConfig, RegistrationStatusEnumType, StatusInfoType } from "@citrineos/base";
+import {BootConfig, injectable, RegistrationStatusEnumType, StatusInfoType} from "@citrineos/base";
 import { IBootRepository } from "../../../interfaces/repositories";
 import { SequelizeRepository } from "./Base";
 import { Boot } from "../model/Boot";
 import { VariableAttribute } from "../model/DeviceModel";
 import { Op } from "sequelize";
 
+@injectable()
 export class BootRepository extends SequelizeRepository<Boot> implements IBootRepository {
 
     async createOrUpdateByKey(value: BootConfig, key: string): Promise<Boot | undefined> {

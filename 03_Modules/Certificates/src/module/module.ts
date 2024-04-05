@@ -31,7 +31,7 @@ import {
   SignCertificateResponse,
   SystemConfig, inject, LoggerService, SystemConfigService, CacheService, injectable
 } from "@citrineos/base";
-import { IDeviceModelRepository, sequelize } from "@citrineos/data";
+import {DeviceModelRepository, IDeviceModelRepository, sequelize} from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import * as forge from "node-forge";
@@ -62,7 +62,6 @@ export class CertificatesModule extends BaseModule {
     CallAction.InstallCertificate
   ];
 
-  protected _deviceModelRepository: IDeviceModelRepository;
   private _securityCaCerts: Map<string, forge.pki.Certificate> = new Map();
   private _securityCaPrivateKeys: Map<string, forge.pki.rsa.PrivateKey> = new Map();
 
@@ -88,9 +87,8 @@ export class CertificatesModule extends BaseModule {
    *
    */
   constructor(
-    deviceModelRepository?: IDeviceModelRepository,
-    @inject(SystemConfigService)
-    private readonly configService?: SystemConfigService,
+    @inject(DeviceModelRepository) public readonly deviceModelRepository?: DeviceModelRepository,
+    @inject(SystemConfigService) private readonly configService?: SystemConfigService,
     @inject(CacheService) private readonly cacheService?: CacheService,
     @inject(LoggerService) private readonly loggerService?: LoggerService,
     @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
@@ -104,9 +102,6 @@ export class CertificatesModule extends BaseModule {
     if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
       throw new Error("Could not initialize module due to failure in handler initialization.");
     }
-
-    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository();
-
 
     this._config.util.networkConnection.websocketServers.forEach(server => {
       if (server.securityProfile == 3) {
@@ -212,7 +207,7 @@ export class CertificatesModule extends BaseModule {
     this.sendCall(message.context.stationId, message.context.tenantId, CallAction.CertificateSigned, { certificateChain: forge.pki.certificateToPem(cert), certificateType: certificateType } as CertificateSignedRequest);
   }
   async verifyChargingStationCertificateCSR(csr: forge.pki.Certificate, stationId: string) {
-    const organizationName = await this._deviceModelRepository.readAllByQuery({
+    const organizationName = await this.deviceModelRepository?.readAllByQuery({
       stationId: stationId,
       component_name: 'SecurityCtrlr',
       variable_name: 'OrganizationName',

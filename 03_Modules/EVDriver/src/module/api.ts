@@ -32,22 +32,22 @@ export class EVDriverModuleApi extends AbstractModuleApi<EVDriverModule> impleme
 
     @AsDataEndpoint(Namespace.AuthorizationData, HttpMethod.Put, AuthorizationQuerySchema, AuthorizationDataSchema)
     putAuthorization(request: FastifyRequest<{ Body: AuthorizationData, Querystring: AuthorizationQuerystring }>): Promise<AuthorizationData | undefined> {
-        return this._module.authorizeRepository.createOrUpdateByQuery(request.body, request.query);
+        return this._module.authorizationRepository!.createOrUpdateByQuery(request.body, request.query);
     }
 
     @AsDataEndpoint(Namespace.AuthorizationRestrictions, HttpMethod.Put, AuthorizationQuerySchema, AuthorizationRestrictionsSchema)
     putAuthorizationRestrictions(request: FastifyRequest<{ Body: AuthorizationRestrictions, Querystring: AuthorizationQuerystring }>): Promise<AuthorizationData | undefined> {
-        return this._module.authorizeRepository.updateRestrictionsByQuery(request.body, request.query);
+        return this._module.authorizationRepository!.updateRestrictionsByQuery(request.body, request.query);
     }
 
     @AsDataEndpoint(Namespace.AuthorizationData, HttpMethod.Get, AuthorizationQuerySchema)
     getAuthorization(request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>): Promise<AuthorizationData | undefined> {
-        return this._module.authorizeRepository.readByQuery(request.query);
+        return this._module.authorizationRepository!.readByQuery(request.query);
     }
 
     @AsDataEndpoint(Namespace.AuthorizationData, HttpMethod.Delete, ChargingStationKeyQuerySchema)
     deleteAuthorization(request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>): Promise<string> {
-        return this._module.authorizeRepository.deleteAllByQuery(request.query)
+        return this._module.authorizationRepository!.deleteAllByQuery(request.query)
             .then(deletedCount => deletedCount.toString() + " rows successfully deleted from " + Namespace.AuthorizationData);
     }
 

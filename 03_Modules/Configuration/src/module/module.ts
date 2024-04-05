@@ -50,12 +50,13 @@ import {
   UnpublishFirmwareResponse,
   UpdateFirmwareResponse
 } from "@citrineos/base";
-import {Boot, IBootRepository, IDeviceModelRepository, sequelize} from "@citrineos/data";
+import {Boot, DeviceModelRepository, IBootRepository, IDeviceModelRepository, sequelize} from "@citrineos/data";
 import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import {v4 as uuidv4} from "uuid";
 import deasyncPromise from "deasync-promise";
 import {ILogObj, Logger} from 'tslog';
 import {DeviceModelService} from "./services";
+import {BootRepository} from "@citrineos/data";
 
 /**
  * Component that handles Configuration related messages.
@@ -92,18 +93,7 @@ export class ConfigurationModule extends BaseModule {
     CallAction.UpdateFirmware
   ];
 
-  protected _bootRepository: IBootRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
-
   public _deviceModelService: DeviceModelService;
-
-  get bootRepository(): IBootRepository {
-    return this._bootRepository;
-  }
-
-  get deviceModelRepository(): IDeviceModelRepository {
-    return this._deviceModelRepository;
-  }
 
   /**
    * Constructor
@@ -133,10 +123,9 @@ export class ConfigurationModule extends BaseModule {
    * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
    */
   constructor(
-    bootRepository?: IBootRepository,
-    deviceModelRepository?: IDeviceModelRepository,
-    @inject(SystemConfigService)
-    private readonly configService?: SystemConfigService,
+    @inject(BootRepository) public readonly bootRepository: BootRepository,
+    @inject(DeviceModelRepository) public readonly deviceModelRepository: DeviceModelRepository,
+    @inject(SystemConfigService) private readonly configService?: SystemConfigService,
     @inject(CacheService) private readonly cacheService?: CacheService,
     @inject(LoggerService) private readonly loggerService?: LoggerService,
     @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
@@ -151,10 +140,7 @@ export class ConfigurationModule extends BaseModule {
       throw new Error("Could not initialize module due to failure in handler initialization.");
     }
 
-    this._bootRepository = bootRepository || new sequelize.BootRepository();
-    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository();
-
-    this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
+    this._deviceModelService = new DeviceModelService(this.deviceModelRepository); // todo inject
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -176,7 +162,7 @@ export class ConfigurationModule extends BaseModule {
 
 
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
-    const bootConfig = await this._bootRepository.readByKey(stationId)
+    const bootConfig = await this.bootRepository.readByKey(stationId)
     let bootStatus = bootConfig ? bootConfig.status : this._config.modules.configuration.unknownChargerStatus;
 
     // Pending status only stays if there are actions to take for configuration
@@ -241,7 +227,7 @@ export class ConfigurationModule extends BaseModule {
     const bootNotificationResponseMessageConfirmation: IMessageConfirmation = await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
     // Update device model from boot
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+    await this.deviceModelRepository.createOrUpdateDeviceModelByStationId({
       component: {
         name: "ChargingStation"
       },
@@ -258,7 +244,7 @@ export class ConfigurationModule extends BaseModule {
         }
       ]
     }, stationId);
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+    await this.deviceModelRepository.createOrUpdateDeviceModelByStationId({
       component: {
         name: "ChargingStation"
       },
@@ -276,7 +262,7 @@ export class ConfigurationModule extends BaseModule {
       ]
     }, stationId);
     if (chargingStation.firmwareVersion) {
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+      await this.deviceModelRepository.createOrUpdateDeviceModelByStationId({
         component: {
           name: "Controller"
         },
@@ -295,7 +281,7 @@ export class ConfigurationModule extends BaseModule {
       }, stationId);
     }
     if (chargingStation.serialNumber) {
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+      await this.deviceModelRepository.createOrUpdateDeviceModelByStationId({
         component: {
           name: "ChargingStation"
         },
@@ -315,7 +301,7 @@ export class ConfigurationModule extends BaseModule {
     }
     if (chargingStation.modem) {
       if (chargingStation.modem.imsi) {
-        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+        await this.deviceModelRepository.createOrUpdateDeviceModelByStationId({
           component: {
             name: "DataLink"
           },
@@ -334,7 +320,7 @@ export class ConfigurationModule extends BaseModule {
         }, stationId);
       }
       if (chargingStation.modem.iccid) {
-        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId({
+        await this.deviceModelRepository.createOrUpdateDeviceModelByStationId({
           component: {
             name: "DataLink"
           },
@@ -358,13 +344,13 @@ export class ConfigurationModule extends BaseModule {
       this._logger.debug("BootNotification response successfully sent to ocpp router: ", bootNotificationResponseMessageConfirmation);
 
       // Update charger-specific boot config with details of most recently sent BootNotificationResponse
-      let bootConfigDbEntity: Boot | undefined = await this._bootRepository.readByKey(stationId);
+      let bootConfigDbEntity: Boot | undefined = await this.bootRepository.readByKey(stationId);
       if (!bootConfigDbEntity) {
         const unknownChargerBootConfig: BootConfig = {
           status: bootNotificationResponse.status,
           statusInfo: bootNotificationResponse.statusInfo
         }
-        bootConfigDbEntity = await this._bootRepository.createOrUpdateByKey(unknownChargerBootConfig, stationId);
+        bootConfigDbEntity = await this.bootRepository.createOrUpdateByKey(unknownChargerBootConfig, stationId);
       }
       if (!bootConfigDbEntity) {
         throw new Error("Unable to create/update BootConfig...");
@@ -423,7 +409,7 @@ export class ConfigurationModule extends BaseModule {
         let rebootSetVariable = false;
         if (bootConfigDbEntity.pendingBootSetVariables && bootConfigDbEntity.pendingBootSetVariables.length > 1) {
           bootConfigDbEntity.variablesRejectedOnLastBoot = [];
-          let setVariableData: SetVariableDataType[] = await this._deviceModelRepository.readAllSetVariableByStationId(stationId);
+          let setVariableData: SetVariableDataType[] = await this.deviceModelRepository.readAllSetVariableByStationId(stationId);
 
           let itemsPerMessageSetVariables = await this._deviceModelService.getItemsPerMessageSetVariablesByStationId(stationId);
 

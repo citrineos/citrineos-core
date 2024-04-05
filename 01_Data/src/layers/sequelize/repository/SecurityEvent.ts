@@ -3,14 +3,15 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SecurityEventNotificationRequest } from "@citrineos/base";
+import {injectable, SecurityEventNotificationRequest} from "@citrineos/base";
 import { SecurityEvent } from "../model/SecurityEvent";
 import { SequelizeRepository } from "./Base";
 import { Op } from "sequelize";
 import { ISecurityEventRepository } from "../../../interfaces/repositories";
 
+@injectable()
 export class SecurityEventRepository extends SequelizeRepository<SecurityEvent> implements ISecurityEventRepository {
- 
+
     async createByStationId(value: SecurityEventNotificationRequest, stationId: string): Promise<SecurityEvent | undefined> {
         return super.create(SecurityEvent.build({
             stationId: stationId,

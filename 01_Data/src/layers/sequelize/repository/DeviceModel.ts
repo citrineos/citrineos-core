@@ -3,7 +3,18 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AttributeEnumType, ComponentType, DataEnumType, GetVariableResultType, MutabilityEnumType, ReportDataType, SetVariableDataType, SetVariableResultType, VariableType } from "@citrineos/base";
+import {
+    AttributeEnumType,
+    ComponentType,
+    DataEnumType,
+    GetVariableResultType,
+    injectable,
+    MutabilityEnumType,
+    ReportDataType,
+    SetVariableDataType,
+    SetVariableResultType,
+    VariableType
+} from "@citrineos/base";
 import { VariableAttributeQuerystring } from "../../../interfaces/queries/VariableAttribute";
 import { SequelizeRepository } from "./Base";
 import { IDeviceModelRepository } from "../../../interfaces";
@@ -14,6 +25,7 @@ import { ComponentVariable } from "../model/DeviceModel/ComponentVariable";
 
 // TODO: Document this
 
+@injectable()
 export class DeviceModelRepository extends SequelizeRepository<VariableAttribute> implements IDeviceModelRepository {
 
     async createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]> {
@@ -77,7 +89,7 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
         const [component, componentCreated] = await Component.findOrCreate({
             where: { name: componentType.name, instance: componentType.instance ? componentType.instance : null },
             defaults: { // Explicit assignment because evse field is a relation and is not able to accept a default value
-                name: componentType.name, 
+                name: componentType.name,
                 instance: componentType.instance
             }
         });
@@ -88,7 +100,7 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
 
         if (componentCreated) {
             // Excerpt from OCPP 2.0.1 Part 1 Architecture & Topology - 4.2 :
-            // "When a Charging Station does not report: Present, Available and/or Enabled 
+            // "When a Charging Station does not report: Present, Available and/or Enabled
             // the Central System SHALL assume them to be readonly and set to true."
             // These default variables and their attributes are created here if the component is new,
             // and they will be overwritten if they are included in the update

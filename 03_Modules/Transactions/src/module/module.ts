@@ -80,7 +80,7 @@ export class TransactionsModule extends BaseModule {
    */
   constructor(
     @inject(TransactionEventRepository) public readonly transactionEventRepository?: TransactionEventRepository,
-    @inject(AuthorizationRepository) private readonly authorizeRepository?: AuthorizationRepository,
+    @inject(AuthorizationRepository) public readonly authorizeRepository?: AuthorizationRepository,
     @inject(SystemConfigService) private readonly configService?: SystemConfigService,
     @inject(CacheService) private readonly cacheService?: CacheService,
     @inject(LoggerService) private readonly loggerService?: LoggerService,
