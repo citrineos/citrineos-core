@@ -45,7 +45,7 @@ export class DefaultSequelizeInstance {
             storage: config.data.sequelize.storage,
             models: [AdditionalInfo, Authorization, Boot, ChargingStation, Component,
                 ComponentVariable, Evse, EventData, IdToken, IdTokenInfo, Location, MeterValue, MessageInfo,
-                SecurityEvent, Transaction, TransactionEvent, Tariff, VariableAttribute,
+                SecurityEvent, Subscription, Transaction, TransactionEvent, Tariff, VariableAttribute,
                 VariableCharacteristics, VariableMonitoring, VariableMonitoringStatus, VariableStatus, Variable],
             logging: (sql: string, timing?: number) => {
                 // TODO: Look into fixing that

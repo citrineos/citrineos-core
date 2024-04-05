@@ -45,7 +45,7 @@ import {
   type FastifySchemaCompiler,
   type FastifyValidationResult
 } from 'fastify/types/schema'
-import {MessageRouterImpl} from '@citrineos/ocpprouter'
+import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter'
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule
@@ -197,6 +197,11 @@ export class CitrineOSServer {
     const router = new MessageRouterImpl(this._config, this._cache, this._createSender(), this._createHandler(), async (identifier: string, message: string) => false, this._logger, this._ajv)
 
     this._networkConnection = new WebsocketNetworkConnection(this._config, this._cache, this._authenticator, router, this._logger)
+
+    this.apis.push(new AdminApi(router, this._server, this._logger));
+
+    this.host = this._config.centralSystem.host;
+    this.port = this._config.centralSystem.port;
   }
 
   private initAllModules() {
@@ -293,6 +298,7 @@ export class CitrineOSServer {
   private initSystem(appName: string) {
     this.eventGroup = eventGroupFromString(appName)
     if (this.eventGroup === EventGroup.All) {
+      this.initNetworkConnection()
       this.initAllModules()
     } else if (this.eventGroup === EventGroup.General) {
       this.initNetworkConnection()
