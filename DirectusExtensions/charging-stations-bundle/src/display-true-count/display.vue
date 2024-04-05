@@ -43,7 +43,7 @@ export default defineComponent({
 				item = item[col];
 			});
 
-			if (item && (item === 'true' || item !== 'false')) {
+			if (item && item !== 'false') {
 				calculatedValue.value += 1;
 			}
 		});
