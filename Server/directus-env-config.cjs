@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export default function (env) {
-
+module.exports = function (env) {
     const config = {
         // API Paths
         CITRINEOS_SUBSCRIPTION_API_PATH: '/data/ocpprouter/subscription',
