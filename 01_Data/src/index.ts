@@ -16,3 +16,6 @@ export { LocationRepository } from './layers/sequelize/repository/Location'
 export { TransactionEventRepository } from './layers/sequelize/repository/TransactionEvent'
 export { SecurityEventRepository } from './layers/sequelize/repository/SecurityEvent'
 export { VariableMonitoringRepository } from './layers/sequelize/repository/VariableMonitoring'
+
+// models
+export { Authorization } from './layers/sequelize/model/Authorization'
