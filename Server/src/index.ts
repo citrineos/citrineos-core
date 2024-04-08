@@ -63,6 +63,7 @@ import {
 import { MessageRouterImpl } from '@citrineos/ocpprouter'
 import { defaultDockerConfig } from './config/envs/docker'
 import { defaultLocalConfig } from './config/envs/local'
+import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter'
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => BaseModule
@@ -242,6 +243,8 @@ export class CitrineOSServer {
       this._logger
     )
 
+    this.apis.push(new AdminApi(router, this._server, this._logger));
+
     this.host = this.configService?.systemConfig.centralSystem.host
     this.port = this.configService?.systemConfig.centralSystem.port
   }
@@ -336,6 +339,7 @@ export class CitrineOSServer {
   private initSystem (appName: string) {
     this.eventGroup = eventGroupFromString(appName)
     if (this.eventGroup === EventGroup.All) {
+      this.initNetworkConnection()
       this.initAllModules()
       this.initNetworkConnection()
     } else if (this.eventGroup === EventGroup.General) {

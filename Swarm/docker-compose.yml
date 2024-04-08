@@ -1,0 +1,246 @@
+version: '3'
+services:
+  amqp-broker:
+    image: rabbitmq:3-management
+    ports:
+      - 15672:15672
+      - 5672:5672
+    environment:
+      RABBITMQ_DEFAULT_USER: 'guest'
+      RABBITMQ_DEFAULT_PASS: 'guest'
+    volumes:
+      - ./data/rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  ocpp-db:
+    image: citrineos/postgis:v1.1.0
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data/postgresql/pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: citrine
+      POSTGRES_USER: citrine
+      POSTGRES_PASSWORD: "citrine"
+  redis:
+    build:
+      context: ./
+      dockerfile: ./docker/redis/Dockerfile
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  directus:
+    build:
+      context: ..
+      dockerfile: ./Server/directus.Dockerfile
+    ports:
+      - 8055:8055
+    volumes:
+      - ./data/directus/uploads:/directus/uploads
+      - ./directus-env-config.cjs:/directus/config.cjs
+    depends_on:
+      ocpp-db:
+        condition: service_healthy
+    environment:
+      APP_NAME: 'all'
+      KEY: '1234567890'
+      SECRET: '0987654321'
+      ADMIN_EMAIL: 'admin@citrineos.com'
+      ADMIN_PASSWORD: 'CitrineOS!'
+      CONFIG_PATH: '/directus/config.cjs'
+      EXTENSIONS_AUTO_RELOAD: 'true'
+      EXTENSIONS_CACHE_TTL: '1s'
+      DB_CLIENT: 'pg'
+      DB_HOST: ocpp-db
+      DB_PORT: 5432
+      DB_DATABASE: 'citrine'
+      DB_USER: 'citrine'
+      DB_PASSWORD: 'citrine'
+      WEBSOCKETS_ENABLED: 'true'
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8055/server/health || exit 1
+      start_period: 15s
+      interval: 15s
+      timeout: 15s
+      retries: 3
+  citrine:
+    build:
+      context: ../
+      dockerfile: ./Swarm/docker/Dockerfile
+    depends_on:
+      ocpp-db:
+        condition: service_started
+      amqp-broker:
+        condition: service_healthy
+      directus:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - 8080:8080
+      - 8081:8081
+      - 8082:8082
+    expose:
+      - 8080-8082
+    environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
+      APP_NAME: 'general'
+  certificates:
+    build:
+      context: ../
+      dockerfile: ./Swarm/docker/Dockerfile
+    depends_on:
+      ocpp-db:
+        condition: service_started
+      amqp-broker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - 8083:8083
+    expose:
+      - 8083
+    environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
+      APP_NAME: 'certificates'
+  configuration:
+    build:
+      context: ../
+      dockerfile: ./Swarm/docker/Dockerfile
+    depends_on:
+      ocpp-db:
+        condition: service_started
+      amqp-broker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - 8084:8084
+    expose:
+      - 8084
+    volumes:
+      - ./:/usr/configuration
+      - /usr/configuration/node_modules
+    environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
+      APP_NAME: 'configuration'
+  evdriver:
+    build:
+      context: ../
+      dockerfile: ./Swarm/docker/Dockerfile
+    depends_on:
+      ocpp-db:
+        condition: service_started
+      amqp-broker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - 8085:8085
+    expose:
+      - 8085
+    volumes:
+      - ./:/usr/evdriver
+      - /usr/evdriver/node_modules
+    environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
+      APP_NAME: 'evdriver'
+  monitoring:
+    build:
+      context: ../
+      dockerfile: ./Swarm/docker/Dockerfile
+    depends_on:
+      ocpp-db:
+        condition: service_started
+      amqp-broker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - 8086:8086
+    expose:
+      - 8086
+    volumes:
+      - ./:/usr/monitoring
+      - /usr/monitoring/node_modules
+    environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
+      APP_NAME: 'monitoring'
+  reporting:
+    build:
+      context: ../
+      dockerfile: ./Swarm/docker/Dockerfile
+    depends_on:
+      ocpp-db:
+        condition: service_started
+      amqp-broker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - 8087:8087
+    expose:
+      - 8087
+    volumes:
+      - ./:/usr/reporting
+      - /usr/reporting/node_modules
+    environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
+      APP_NAME: 'reporting'
+  smartcharging:
+    build:
+      context: ../
+      dockerfile: ./Swarm/docker/Dockerfile
+    depends_on:
+      ocpp-db:
+        condition: service_started
+      amqp-broker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - 8088:8088
+    expose:
+      - 8088
+    volumes:
+      - ./:/usr/smartcharging
+      - /usr/smartcharging/node_modules
+    environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
+      APP_NAME: 'smartcharging'
+  transactions:
+    build:
+      context: ../
+      dockerfile: ./Swarm/docker/Dockerfile
+    depends_on:
+      ocpp-db:
+        condition: service_started
+      amqp-broker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - 8089:8089
+    expose:
+      - 8089
+    volumes:
+      - ./:/usr/transactions
+      - /usr/transactions/node_modules
+    environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
+      APP_NAME: 'transactions'

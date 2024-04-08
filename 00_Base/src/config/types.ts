@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { z } from "zod";
-import { RegistrationStatusEnumType } from "../ocpp/model/enums";
+import { RegistrationStatusEnumType } from "../ocpp/model";
 import { EventGroup } from "..";
 
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
@@ -70,6 +70,8 @@ export const systemConfigInputSchema = z.object({
             endpointPrefix: z.string().default(EventGroup.Transactions).optional(),
             host: z.string().default("localhost").optional(),
             port: z.number().int().positive().default(8081).optional(),
+            costUpdatedInterval: z.number().int().positive().default(60).optional(),
+            sendCostUpdatedOnMeterValue: z.boolean().default(false).optional(),
         })
     }),
     data: z.object({
@@ -221,6 +223,11 @@ export const systemConfigSchema = z.object({
             endpointPrefix: z.string(),
             host: z.string().optional(),
             port: z.number().int().positive().optional(),
+            costUpdatedInterval: z.number().int().positive().optional(),
+            sendCostUpdatedOnMeterValue: z.boolean().optional(),
+        }).refine(obj => !(obj.costUpdatedInterval && obj.sendCostUpdatedOnMeterValue) && (obj.costUpdatedInterval || obj.sendCostUpdatedOnMeterValue), {
+            message: 'Can only update cost based on the interval or in response to a transaction event /meter value' +
+                ' update. Not allowed to have both costUpdatedInterval and sendCostUpdatedOnMeterValue configured'
         }), // Transactions module is required
     }),
     data: z.object({

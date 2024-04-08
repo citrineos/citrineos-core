@@ -26,13 +26,15 @@ import {
     SetMonitoringDataType,
     SetMonitoringResultType,
     EventDataType,
-    CallAction
+    CallAction,
+    MessageInfoType
 } from "@citrineos/base";
 import { AuthorizationQuerystring } from "./queries/Authorization";
 import { Transaction } from "../layers/sequelize/model/TransactionEvent";
 import { VariableAttribute } from "../layers/sequelize/model/DeviceModel/VariableAttribute";
-import { AuthorizationRestrictions, VariableAttributeQuerystring } from ".";
-import { Boot, Authorization, Location, SecurityEvent, Component, Variable, VariableMonitoring, EventData, ChargingStation } from "../layers/sequelize";
+import { AuthorizationRestrictions, VariableAttributeQuerystring, TariffQueryString } from ".";
+import { Boot, Authorization, Location, SecurityEvent, Component, Variable, VariableMonitoring, EventData, ChargingStation, MessageInfo, Tariff, MeterValue } from "../layers/sequelize";
+import { Subscription } from "../layers/sequelize/model/Subscription/Subscription";
 
 
 export interface IAuthorizationRepository extends ICrudRepository<AuthorizationData> {
@@ -65,6 +67,7 @@ export interface IDeviceModelRepository extends ICrudRepository<VariableAttribut
     existsByQuery(query: VariableAttributeQuerystring): Promise<boolean>;
     deleteAllByQuery(query: VariableAttributeQuerystring): Promise<number>;
     findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | null, Variable | null]>
+    findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component>
 }
 
 export interface ILocationRepository extends ICrudRepository<Location> { 
@@ -77,12 +80,19 @@ export interface ISecurityEventRepository extends ICrudRepository<SecurityEvent>
     deleteByKey(key: string): Promise<boolean>;
 }
 
+export interface ISubscriptionRepository extends ICrudRepository<Subscription> {   
+    create(value: Subscription): Promise<Subscription | undefined>;
+    readAllByStationId(stationId: string): Promise<Subscription[]>
+    deleteByKey(key: string): Promise<boolean>;
+}
+
 export interface ITransactionEventRepository extends ICrudRepository<TransactionEventRequest> {
     createOrUpdateTransactionByTransactionEventAndStationId(value: TransactionEventRequest, stationId: string): Promise<Transaction>;
     readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]>;
     readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
     readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: EVSEType, chargingStates?: ChargingStateEnumType[]): Promise<Transaction[]>;
-    readAllActiveTransactionByIdToken(idToken: IdTokenType): Promise<Transaction[]>;
+    readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]>;
+    readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
 }
 
 export interface IVariableMonitoringRepository extends ICrudRepository<VariableMonitoringType> {
@@ -92,4 +102,16 @@ export interface IVariableMonitoringRepository extends ICrudRepository<VariableM
     rejectVariableMonitoringByIdAndStationId(action: CallAction, id: number, stationId: string): Promise<void>
     updateResultByStationId(result: SetMonitoringResultType, stationId: string): Promise<VariableMonitoring | undefined>
     createEventDatumByComponentIdAndVariableIdAndStationId(event: EventDataType, componentId: string, variableId: string, stationId: string): Promise<EventData>
+}
+
+export interface IMessageInfoRepository extends ICrudRepository<MessageInfoType> {
+    deactivateAllByStationId(stationId: string): Promise<void>;
+    createOrUpdateByMessageInfoTypeAndStationId(value: MessageInfoType, stationId: string, componentId?: number): Promise<MessageInfo>;
+}
+
+export interface ITariffRepository extends ICrudRepository<Tariff> {
+    findByStationId(stationId: string): Promise<Tariff | null>;
+    readAllByQuery(query: TariffQueryString): Promise<Tariff[]>;
+    deleteAllByQuery(query: TariffQueryString): Promise<number>;
+    createOrUpdateTariff(tariff: Tariff): Promise<Tariff>;
 }

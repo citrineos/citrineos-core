@@ -1,0 +1,10 @@
+node_modules
+lib
+data
+.eslintrc.json
+.gitignore
+*.tgz
+*.sh
+*.js
+*.md
+*.log
