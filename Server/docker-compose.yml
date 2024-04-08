@@ -82,8 +82,8 @@ services:
     environment:
       APP_NAME: "all"
       APP_ENV: "docker"
-      CITRINEOS_UTIL_DIRECTUS_USERNAME: "admin@citrineos.com"
-      CITRINEOS_UTIL_DIRECTUS_PASSWORD: "CitrineOS!"
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: '"admin@citrineos.com"'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: '"CitrineOS!"'
     depends_on:
       ocpp-db:
         condition: service_started
