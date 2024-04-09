@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { RegistrationStatusEnumType, type SystemConfigInput } from '@citrineos/base'
-import { logo } from '../../assets/logo'
 
 export const defaultDockerConfig: SystemConfigInput = {
   env: 'development',
@@ -37,7 +36,8 @@ export const defaultDockerConfig: SystemConfigInput = {
       endpointPrefix: '/smartcharging'
     },
     transactions: {
-      endpointPrefix: '/transactions'
+      endpointPrefix: '/transactions',
+      costUpdatedInterval: 60
     }
   },
   data: {
@@ -64,9 +64,9 @@ export const defaultDockerConfig: SystemConfigInput = {
     },
     swagger: {
       path: '/docs',
+      logo: '/usr/local/apps/citrineos/server/src/assets/logo.png',
       exposeData: true,
-      exposeMessage: true,
-      logo
+      exposeMessage: true
     },
     directus: {
       host: 'directus',
@@ -74,26 +74,23 @@ export const defaultDockerConfig: SystemConfigInput = {
       generateFlows: true
     },
     networkConnection: {
-      websocketServers: [
-        {
-          id: '0',
-          securityProfile: 0,
-          allowUnknownChargingStations: true,
-          pingInterval: 60,
-          host: '0.0.0.0',
-          port: 8081,
-          protocol: 'ocpp2.0.1'
-        },
-        {
-          id: '1',
-          securityProfile: 1,
-          allowUnknownChargingStations: false,
-          pingInterval: 60,
-          host: '0.0.0.0',
-          port: 8082,
-          protocol: 'ocpp2.0.1'
-        }
-      ]
+      websocketServers: [{
+        id: '0',
+        securityProfile: 0,
+        allowUnknownChargingStations: true,
+        pingInterval: 60,
+        host: '0.0.0.0',
+        port: 8081,
+        protocol: 'ocpp2.0.1'
+      }, {
+        id: '1',
+        securityProfile: 1,
+        allowUnknownChargingStations: false,
+        pingInterval: 60,
+        host: '0.0.0.0',
+        port: 8082,
+        protocol: 'ocpp2.0.1'
+      }]
     }
   },
   logLevel: 2, // debug

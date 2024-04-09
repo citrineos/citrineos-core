@@ -58,11 +58,10 @@ import {DeviceModelRepository, LocationRepository, sequelize} from "@citrineos/d
 import {
   type FastifyRouteSchemaDef,
   type FastifySchemaCompiler,
-  type FastifyValidationResult,
-} from "fastify/types/schema";
-import { MessageRouterImpl } from "@citrineos/ocpprouter";
-import { defaultDockerConfig } from "./config/envs/docker";
-import { defaultLocalConfig } from "./config/envs/local";
+import { MessageRouterImpl } from '@citrineos/ocpprouter'
+import { defaultDockerConfig } from './config/envs/docker'
+import { defaultLocalConfig } from './config/envs/local'
+import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter'
 
 interface ModuleConfig {
   module: BaseModule | undefined;
@@ -243,8 +242,10 @@ export class CitrineOSServer {
       this.loggerService?.logger // todo will need to dependency inject
     );
 
-    this.host = this.configService?.systemConfig.centralSystem.host;
-    this.port = this.configService?.systemConfig.centralSystem.port;
+    this.apis.push(new AdminApi(router, this._server, this._logger));
+
+    this.host = this.configService?.systemConfig.centralSystem.host
+    this.port = this.configService?.systemConfig.centralSystem.port
   }
 
   private initAllModules() {

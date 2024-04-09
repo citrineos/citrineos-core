@@ -3,43 +3,47 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {FastifyInstance, FastifyRequest} from 'fastify';
-import {ILogObj, Logger} from 'tslog';
-import {IConfigurationModuleApi} from './interface';
-import {ConfigurationModule} from './module';
+import { ILogObj, Logger } from 'tslog';
 import {
     AbstractModuleApi,
-    AsDataEndpoint,
     AsMessageEndpoint,
-    BootConfig,
+    CallAction,
+    SetNetworkProfileRequestSchema,
+    SetNetworkProfileRequest,
+    IMessageConfirmation,
+    ClearDisplayMessageRequestSchema,
+    ClearDisplayMessageRequest,
+    GetDisplayMessagesRequestSchema,
+    GetDisplayMessagesRequest,
+    SetDisplayMessageRequestSchema,
+    SetDisplayMessageRequest,
+    MessageInfoType,
+    PublishFirmwareRequestSchema,
+    PublishFirmwareRequest,
+    UnpublishFirmwareRequestSchema,
+    UnpublishFirmwareRequest,
+    UpdateFirmwareRequestSchema,
+    UpdateFirmwareRequest,
+    ResetRequestSchema,
+    ResetRequest,
+    ChangeAvailabilityRequestSchema,
+    ChangeAvailabilityRequest,
+    TriggerMessageRequestSchema,
+    TriggerMessageRequest,
+    AsDataEndpoint,
+    Namespace,
+    HttpMethod,
     BootConfigSchema,
     BootNotificationResponse,
-    CallAction,
-    ChangeAvailabilityRequest,
-    ChangeAvailabilityRequestSchema,
-    ClearDisplayMessageRequest,
-    ClearDisplayMessageRequestSchema,
-    GetDisplayMessagesRequest,
-    GetDisplayMessagesRequestSchema,
-    HttpMethod,
-    IMessageConfirmation,
-    Namespace,
-    PublishFirmwareRequest,
-    PublishFirmwareRequestSchema,
-    ResetRequest,
-    ResetRequestSchema,
-    SetDisplayMessageRequest,
-    SetDisplayMessageRequestSchema,
-    SetNetworkProfileRequest,
-    SetNetworkProfileRequestSchema,
-    TriggerMessageRequest,
-    TriggerMessageRequestSchema,
-    UnpublishFirmwareRequest,
-    UnpublishFirmwareRequestSchema,
-    UpdateFirmwareRequest,
-    UpdateFirmwareRequestSchema
-} from '@citrineos/base';
-import {Boot, ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring} from '@citrineos/data';
+    BootConfig
+} from "@citrineos/base";
+import { FastifyInstance, FastifyRequest } from 'fastify';
+import { ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring, Boot } from "@citrineos/data";
+import { validateLanguageTag } from "@citrineos/util";
+import { IConfigurationModuleApi } from "./interface";
+import { ConfigurationModule } from "./module";
+
+
 
 /**
  * Server API for the Configuration component.
@@ -92,12 +96,27 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
     }
 
     @AsMessageEndpoint(CallAction.SetDisplayMessage, SetDisplayMessageRequestSchema)
-    setDisplayMessages(
+    async setDisplayMessages(
         identifier: string,
         tenantId: string,
         request: SetDisplayMessageRequest,
         callbackUrl?: string
     ): Promise<IMessageConfirmation> {
+        const messageInfo = request.message as MessageInfoType;
+
+        const languageTag = messageInfo.message.language;
+        if (languageTag && !validateLanguageTag(languageTag)) {
+            const errorMsg = 'Language shall be specified as RFC-5646 tags, example: US English is: en-US.';
+            this._logger.error(errorMsg);
+            return { success: false, payload: errorMsg };
+        }
+
+        // According to OCPP 2.0.1, the CSMS MAY include a startTime and endTime when setting a message.
+        // startDateTime is from what date-time should this message be shown. If omitted: directly.
+        if (!messageInfo.startDateTime) {
+            messageInfo.startDateTime = new Date().toISOString();
+        }
+
         return this._module.sendCall(identifier, tenantId, CallAction.SetDisplayMessage, request, callbackUrl);
     }
 

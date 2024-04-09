@@ -10,7 +10,8 @@ import {
   AuthorizationStatusEnumType,
   AuthorizeRequest,
   AuthorizeResponse,
-  BaseModule, CacheService,
+  BaseModule,
+  CacheService,
   CallAction,
   CancelReservationResponse,
   ClearCacheResponse,
@@ -19,18 +20,29 @@ import {
   HandlerProperties,
   ICache,
   IdTokenInfoType,
-  IMessage, inject, injectable, LoggerService,
+  IMessage,
+  inject,
+  injectable,
+  LoggerService,
+  MessageContentType,
+  MessageFormatEnumType,
   RequestStartTransactionResponse,
   RequestStopTransactionResponse,
   ReservationStatusUpdateRequest,
   ReservationStatusUpdateResponse,
   ReserveNowResponse,
   SendLocalListResponse,
-  SystemConfig, SystemConfigService,
+  SystemConfig,
+  SystemConfigService,
   UnlockConnectorResponse
 } from "@citrineos/base";
 import {
-  AuthorizationRepository, DeviceModelRepository,
+  AuthorizationRepository,
+  DeviceModelRepository,
+  IAuthorizationRepository,
+  IDeviceModelRepository,
+  Tariff,
+  TariffRepository,
   VariableAttribute
 } from "@citrineos/data";
 import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
@@ -84,13 +96,14 @@ export class EVDriverModule extends BaseModule {
    * @param rabbitMqReceiver
    */
   constructor(
-    @inject(AuthorizationRepository) public readonly authorizationRepository?: AuthorizationRepository,
-    @inject(DeviceModelRepository) public readonly deviceModelRepository?: DeviceModelRepository,
-    @inject(SystemConfigService) private readonly configService?: SystemConfigService,
-    @inject(CacheService) private readonly cacheService?: CacheService,
-    @inject(LoggerService) private readonly loggerService?: LoggerService,
-    @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
-    @inject(RabbitMqReceiver) private readonly rabbitMqReceiver?: RabbitMqReceiver
+      @inject(AuthorizationRepository) public readonly authorizationRepository?: AuthorizationRepository,
+      @inject(DeviceModelRepository) public readonly deviceModelRepository?: DeviceModelRepository,
+      @inject(TariffRepository) public readonly tariffRepository?: TariffRepository,
+      @inject(SystemConfigService) private readonly configService?: SystemConfigService,
+      @inject(CacheService) private readonly cacheService?: CacheService,
+      @inject(LoggerService) private readonly loggerService?: LoggerService,
+      @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
+      @inject(RabbitMqReceiver) private readonly rabbitMqReceiver?: RabbitMqReceiver
   ) {
     super(configService?.systemConfig as SystemConfig, cacheService?.cache as ICache, rabbitMqReceiver!, rabbitMqSender!, EventGroup.EVDriver, loggerService?.logger as Logger<ILogObj>);
 
@@ -107,7 +120,6 @@ export class EVDriverModule extends BaseModule {
   /**
    * Handle requests
    */
-
   @AsHandler(CallAction.Authorize)
   protected _handleAuthorize(
     message: IMessage<AuthorizeRequest>,
@@ -233,9 +245,43 @@ export class EVDriverModule extends BaseModule {
             // TODO determine how/if to set personalMessage
           }
         }
+
+        if (response.idTokenInfo.status == AuthorizationStatusEnumType.Accepted) {
+          const tariffAvailable: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+            stationId: message.context.stationId,
+            component_name: 'TariffCostCtrlr',
+            variable_name: 'Available',
+            variable_instance: 'Tariff',
+            type: AttributeEnumType.Actual
+          });
+
+          const displayMessageAvailable: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+            stationId: message.context.stationId,
+            component_name: 'DisplayMessageCtrlr',
+            variable_name: 'Available',
+            type: AttributeEnumType.Actual
+          });
+
+          // only send the tariff information if the Charging Station supports the tariff or DisplayMessage functionality
+          if ((tariffAvailable.length > 0 && Boolean(tariffAvailable[0].value)) ||
+              (displayMessageAvailable.length > 0 && Boolean(displayMessageAvailable[0].value))) {
+            // TODO: refactor the workaround below after tariff implementation is finalized.
+            const tariff: Tariff | null = await this._tariffRepository.findByStationId(message.context.stationId);
+            if (tariff) {
+              if (!response.idTokenInfo.personalMessage) {
+                response.idTokenInfo.personalMessage = {
+                  format: MessageFormatEnumType.ASCII
+                } as MessageContentType;
+              }
+              response.idTokenInfo.personalMessage.content = `${tariff.price}/${tariff.unit}`;
+            }
+          }
+        }
       }
       return this.sendCallResultWithMessage(message, response)
-    }).then(messageConfirmation => this._logger.debug("Authorize response sent:", messageConfirmation));
+    }).then(messageConfirmation => {
+      this._logger.debug("Authorize response sent:", messageConfirmation)
+    });
   }
 
   @AsHandler(CallAction.ReservationStatusUpdate)
@@ -250,8 +296,9 @@ export class EVDriverModule extends BaseModule {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("ReservationStatusUpdate response sent: ", messageConfirmation));
-
+        .then(messageConfirmation => {
+          this._logger.debug("ReservationStatusUpdate response sent: ", messageConfirmation)
+        });
   }
 
   /**

@@ -58,7 +58,7 @@ Before you begin, make sure you have the following installed on your system:
    npm run build
    ```
 
-1. The docker container should be initialized by running `docker-compose -f ./docker-compose.yml up -d` or
+1. The docker container should be initialized from `cd /Server` by running `docker-compose -f ./docker-compose.yml up -d` or
    by using the IntelliJ `Server` Run Configuration which was created for this purpose.
 
 1. Running `docker-compose.yml` will ensure that the container is configured to expose the `:9229` debugging

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { SystemConfig } from "@citrineos/base";
+import { sequelize } from "@citrineos/data";
 import { authentication, DirectusFlow, DirectusOperation, RestClient, createDirectus, createFlow, createOperation, readFlows, rest, staticToken, updateFlow, updateOperation } from "@directus/sdk";
 import { RouteOptions } from "fastify";
 import { JSONSchemaFaker } from "json-schema-faker";
@@ -56,7 +57,7 @@ export class DirectusUtil {
         const bodyData = JSONSchemaFaker.generate(bodySchema);
         const flowOptions = {
             collections: [
-                "Locations"
+                sequelize.ChargingStation.getTableName()
             ],
             async: true,
             location: "item",
@@ -165,20 +166,20 @@ export class DirectusUtil {
             position_x: 40,
             position_y: 1,
             options: {
-                url: `{{$trigger.body.citrineUrl}}${messagePath}?identifier={{$last.station_id}}&tenantId={{$trigger.body.tenantId}}`,
+                url: `{{$trigger.body.citrineUrl}}${messagePath}?identifier={{$last.id}}&tenantId={{$trigger.body.tenantId}}`,
                 method: "POST",
                 body: "{{$trigger.body.payload}}"
             }
         };
 
         const readOperation: Partial<DirectusOperation<Schema>> = {
-            name: "Read Location Data",
-            key: "location_read",
+            name: "Read Charging Station Data",
+            key: "charging_station_read",
             type: "item-read",
             position_x: 20,
             position_y: 1,
             options: {
-                collection: "Locations",
+                collection: sequelize.ChargingStation.getTableName(),
                 key: "{{$last.body.keys[0]}}"
             }
         }

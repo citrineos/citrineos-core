@@ -5,7 +5,6 @@
 import 'reflect-metadata'
 export * as sequelize from './layers/sequelize'
 export * from './interfaces'
-export { Boot, Component, Variable, VariableAttribute } from './layers/sequelize' // todo export better as these seem to be used in other modules
 
 // Sequelize Repositories
 export { SequelizeRepository } from './layers/sequelize/repository/Base'
@@ -16,6 +15,18 @@ export { LocationRepository } from './layers/sequelize/repository/Location'
 export { TransactionEventRepository } from './layers/sequelize/repository/TransactionEvent'
 export { SecurityEventRepository } from './layers/sequelize/repository/SecurityEvent'
 export { VariableMonitoringRepository } from './layers/sequelize/repository/VariableMonitoring'
+export { MessageInfoRepository } from './layers/sequelize/repository/MessageInfo'
+export { TariffRepository } from './layers/sequelize/repository/Tariff'
 
 // models
 export { Authorization } from './layers/sequelize/model/Authorization'
+export {
+  Boot,
+  Component,
+  MeterValue,
+  Subscription,
+  Tariff,
+  Transaction,
+  Variable,
+  VariableAttribute
+} from './layers/sequelize' // todo export better as these seem to be used in other modules
