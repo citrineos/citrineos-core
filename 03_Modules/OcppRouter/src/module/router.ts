@@ -8,6 +8,7 @@ import Ajv from "ajv";
 import { v4 as uuidv4 } from "uuid";
 import { ILogObj, Logger } from "tslog";
 import { ISubscriptionRepository, sequelize } from "@citrineos/data";
+import {SubscriptionRepository} from "@citrineos/data";
 
 /**
  * Implementation of the ocpp router
@@ -59,7 +60,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         this._sender = sender;
         this._handler = handler;
         this._networkHook = networkHook;
-        this.subscriptionRepository = subscriptionRepository || new sequelize.SubscriptionRepository(config, this._logger);
+        this.subscriptionRepository = subscriptionRepository || new SubscriptionRepository(); // todo needs to be injected
     }
 
     addOnConnectionCallback(identifier: string, onConnectionCallback: (info?: Map<string, string>) => Promise<boolean>): void {

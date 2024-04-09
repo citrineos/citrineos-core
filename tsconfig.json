@@ -2,9 +2,9 @@
   "extends": "./tsconfig.build.json",
   "compilerOptions": {
     "rootDir": "./",
-    "outDir": "./dist/"
+    "outDir": "./dist"
   },
-  "exclude": ["DirectusExtensions"],
+  "exclude": ["DirectusExtensions", "Swarm", "dist"],
   "references": [
     {
       "path": "./Server"

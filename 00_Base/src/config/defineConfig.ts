@@ -17,7 +17,14 @@ export function defineConfig(inputConfig: SystemConfigInput): SystemConfig {
 
     validateFinalConfig(appConfig);
 
-    return systemConfigSchema.parse(appConfig);
+    try {
+        const config = systemConfigSchema.parse(appConfig);
+        return config;
+    } catch (e) {
+        console.error('defineConfig error', e);
+        throw new Error('defineConfig error');
+    }
+
 }
 
 /**

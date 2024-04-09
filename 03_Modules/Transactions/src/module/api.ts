@@ -58,18 +58,18 @@ export class TransactionsModuleApi extends AbstractModuleApi<TransactionsModule>
 
     @AsDataEndpoint(Namespace.Tariff, HttpMethod.Put, CreateOrUpdateTariffQuerySchema, TariffSchema)
     putTariff(request: FastifyRequest<{ Body: Tariff, Querystring: CreateOrUpdateTariffQueryString }>): Promise<Tariff> {
-        return this._module.tariffRepository.createOrUpdateTariff(request.body);
+        return this._module.tariffRepository?.createOrUpdateTariff(request.body)!;
     }
 
     @AsDataEndpoint(Namespace.Tariff, HttpMethod.Get, TariffQuerySchema)
     getTariffs(request: FastifyRequest<{ Querystring: TariffQueryString }>): Promise<Tariff[]> {
-        return this._module.tariffRepository.readAllByQuery(request.query);
+        return this._module.tariffRepository?.readAllByQuery(request.query)!;
     }
 
     @AsDataEndpoint(Namespace.Tariff, HttpMethod.Delete, TariffQuerySchema)
     deleteTariffs(request: FastifyRequest<{ Querystring: TariffQueryString }>): Promise<string> {
-        return this._module.tariffRepository.deleteAllByQuery(request.query)
-            .then(deletedCount => deletedCount.toString() + " rows successfully deleted from " + Namespace.Tariff);
+        return this._module.tariffRepository?.deleteAllByQuery(request.query)
+            .then(deletedCount => deletedCount.toString() + " rows successfully deleted from " + Namespace.Tariff)!;
     }
 
     /**

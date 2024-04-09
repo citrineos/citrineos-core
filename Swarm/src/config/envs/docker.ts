@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { RegistrationStatusEnumType, defineConfig } from "@citrineos/base";
+import {logo} from "../../../../Server/src/assets/logo";
 
 export function createDockerConfig() {
     return defineConfig({
@@ -82,7 +83,7 @@ export function createDockerConfig() {
             },
             swagger: {
                 path: "/docs",
-                logoPath: "/usr/server/src/assets/logo.png",
+                logo: logo,
                 exposeData: true,
                 exposeMessage: true
             },

@@ -15,7 +15,6 @@ import {
     SetVariableResultType,
     VariableType
 } from "@citrineos/base";
-import {VariableAttributeQuerystring} from "../../../interfaces/queries/VariableAttribute";
 import {IDeviceModelRepository, VariableAttributeQuerystring} from "../../../interfaces";
 import {SequelizeRepository} from "./Base";
 import {Op} from "sequelize";

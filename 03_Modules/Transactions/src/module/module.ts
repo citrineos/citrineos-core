@@ -12,10 +12,7 @@ import {
   EventGroup,
   GetTransactionStatusResponse,
   HandlerProperties,
-  ICache,
   IMessage,
-  IMessageHandler,
-  IMessageSender,
   inject,
   injectable,
   LoggerService,
@@ -23,31 +20,13 @@ import {
   MeterValuesResponse,
   StatusNotificationRequest,
   StatusNotificationResponse,
-  SystemConfig,
   SystemConfigService,
   TransactionEventRequest,
 } from "@citrineos/base";
 import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
-import {ILogObj, Logger} from 'tslog';
 import {TransactionEventService} from "./services/transaction.event.service";
-import {DeviceModelRepository, TariffRepository} from "@citrineos/data";
-import {
-  AuthorizationRepository,
-  IAuthorizationRepository,
-  ITransactionEventRepository,
-  sequelize,
-  TransactionEventRepository
-  IAuthorizationRepository,
-  IDeviceModelRepository,
-  ITariffRepository,
-  ITransactionEventRepository,
-  MeterValue,
-  sequelize,
-  Tariff,
-  Transaction,
-  VariableAttribute
-} from "@citrineos/data";
+import {TariffRepository, TransactionEventRepository} from "@citrineos/data";
 
 /**
  * Component that handles transaction related messages.
@@ -94,7 +73,9 @@ export class TransactionsModule extends BaseModule {
    * @param rabbitMqReceiver
    * @param transactionEventService
    */
-  constructor(
+  constructor( // repos needed here because Api classes use .module.repo but later wont need to be imported
+      @inject(TariffRepository) public readonly tariffRepository?: TariffRepository,
+      @inject(TransactionEventRepository) public readonly transactionEventRepository?: TransactionEventRepository,
       @inject(SystemConfigService) private readonly configService?: SystemConfigService,
       @inject(CacheService) private readonly cacheService?: CacheService,
       @inject(LoggerService) private readonly loggerService?: LoggerService,

@@ -247,26 +247,26 @@ export class EVDriverModule extends BaseModule {
         }
 
         if (response.idTokenInfo.status == AuthorizationStatusEnumType.Accepted) {
-          const tariffAvailable: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+          const tariffAvailable: VariableAttribute[] = await this.deviceModelRepository?.readAllByQuery({
             stationId: message.context.stationId,
             component_name: 'TariffCostCtrlr',
             variable_name: 'Available',
             variable_instance: 'Tariff',
             type: AttributeEnumType.Actual
-          });
+          })!;
 
-          const displayMessageAvailable: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
+          const displayMessageAvailable: VariableAttribute[] = await this.deviceModelRepository?.readAllByQuery({
             stationId: message.context.stationId,
             component_name: 'DisplayMessageCtrlr',
             variable_name: 'Available',
             type: AttributeEnumType.Actual
-          });
+          })!;
 
           // only send the tariff information if the Charging Station supports the tariff or DisplayMessage functionality
           if ((tariffAvailable.length > 0 && Boolean(tariffAvailable[0].value)) ||
               (displayMessageAvailable.length > 0 && Boolean(displayMessageAvailable[0].value))) {
             // TODO: refactor the workaround below after tariff implementation is finalized.
-            const tariff: Tariff | null = await this._tariffRepository.findByStationId(message.context.stationId);
+            const tariff: Tariff | null = await this.tariffRepository?.findByStationId(message.context.stationId)!;
             if (tariff) {
               if (!response.idTokenInfo.personalMessage) {
                 response.idTokenInfo.personalMessage = {

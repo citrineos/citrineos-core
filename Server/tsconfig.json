@@ -9,6 +9,13 @@
     "rootDir": "./src",
     "composite": true
   },
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.stub.ts",
+    "node_modules",
+    "**/__tests__/*",
+    "dist"
+  ],
   "references": [
     {
       "path": "../00_Base"

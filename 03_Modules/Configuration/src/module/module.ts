@@ -10,18 +10,23 @@ import {
   BOOT_STATUS,
   BootConfig,
   BootNotificationRequest,
-  BootNotificationResponse, CacheService,
+  BootNotificationResponse,
+  CacheService,
   CALL_SCHEMA_MAP,
   CallAction,
   ChangeAvailabilityResponse,
+  ClearDisplayMessageResponse,
+  ClearMessageStatusEnumType,
   DataTransferRequest,
   DataTransferResponse,
   DataTransferStatusEnumType,
+  DisplayMessageStatusEnumType,
   ErrorCode,
   EventGroup,
   FirmwareStatusNotificationRequest,
   FirmwareStatusNotificationResponse,
   GetBaseReportRequest,
+  GetDisplayMessagesRequest,
   GetDisplayMessagesResponse,
   HandlerProperties,
   HeartbeatRequest,
@@ -30,7 +35,11 @@ import {
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
-  IMessageSender, inject, injectable, LoggerService,
+  IMessageSender,
+  inject,
+  injectable,
+  LoggerService,
+  MessageInfoType,
   MutabilityEnumType,
   NotifyDisplayMessagesRequest,
   NotifyDisplayMessagesResponse,
@@ -46,31 +55,26 @@ import {
   SetVariablesRequest,
   SetVariablesResponse,
   SetVariableStatusEnumType,
-  SystemConfig, SystemConfigService,
+  SystemConfig,
+  SystemConfigService,
   UnpublishFirmwareResponse,
-  UpdateFirmwareResponse,
-  ClearDisplayMessageResponse,
-  DisplayMessageStatusEnumType,
-  GetDisplayMessagesRequest,
-  MessageInfoType, ClearMessageStatusEnumType
+  UpdateFirmwareResponse
 } from "@citrineos/base";
 import {
   Boot,
+  BootRepository,
+  Component,
   DeviceModelRepository,
   IBootRepository,
   IDeviceModelRepository,
-  MessageInfoRepository,
-  sequelize
+  IMessageInfoRepository,
+  MessageInfoRepository
 } from "@citrineos/data";
 import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import {v4 as uuidv4} from "uuid";
-import { Boot, Component, IBootRepository, IDeviceModelRepository, IMessageInfoRepository, sequelize } from "@citrineos/data";
-import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
-import { v4 as uuidv4 } from "uuid";
 import deasyncPromise from "deasync-promise";
 import {ILogObj, Logger} from 'tslog';
 import {DeviceModelService} from "./services";
-import {BootRepository} from "@citrineos/data";
 
 /**
  * Component that handles Configuration related messages.
@@ -516,10 +520,10 @@ export class ConfigurationModule extends BaseModule {
     for (const messageInfoType of messageInfoTypes) {
       let componentId: number | undefined;
       if (messageInfoType.display) {
-        const component: Component = await this._deviceModelRepository.findOrCreateEvseAndComponent(messageInfoType.display, message.context.tenantId);
+        const component: Component = await this.deviceModelRepository.findOrCreateEvseAndComponent(messageInfoType.display, message.context.tenantId);
         componentId = component.id;
       }
-      await this._messageInfoRepository.createOrUpdateByMessageInfoTypeAndStationId(messageInfoType, message.context.stationId, componentId);
+      await this.messageInfoRepository.createOrUpdateByMessageInfoTypeAndStationId(messageInfoType, message.context.stationId, componentId);
     }
 
     // Create response
@@ -606,7 +610,7 @@ export class ConfigurationModule extends BaseModule {
     // when charger station accepts the set message info request
     // we trigger a get all display messages request to update stored message info in db
     if (status == DisplayMessageStatusEnumType.Accepted) {
-      await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId)
+      await this.messageInfoRepository.deactivateAllByStationId(message.context.stationId)
       await this.sendCall(message.context.stationId, message.context.tenantId, CallAction.GetDisplayMessages, { requestId: Math.floor(Math.random() * 1000) } as GetDisplayMessagesRequest);
     }
   }
@@ -662,7 +666,7 @@ export class ConfigurationModule extends BaseModule {
     // when charger station accepts the clear message info request
     // we trigger a get all display messages request to update stored message info in db
     if (status == ClearMessageStatusEnumType.Accepted) {
-      await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId)
+      await this.messageInfoRepository.deactivateAllByStationId(message.context.stationId)
       await this.sendCall(message.context.stationId, message.context.tenantId, CallAction.GetDisplayMessages, { requestId: Math.floor(Math.random() * 1000) } as GetDisplayMessagesRequest);
     }
   }

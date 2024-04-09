@@ -17,6 +17,7 @@ export { SecurityEventRepository } from './layers/sequelize/repository/SecurityE
 export { VariableMonitoringRepository } from './layers/sequelize/repository/VariableMonitoring'
 export { MessageInfoRepository } from './layers/sequelize/repository/MessageInfo'
 export { TariffRepository } from './layers/sequelize/repository/Tariff'
+export { SubscriptionRepository } from './layers/sequelize/repository/Subscription'
 
 // models
 export { Authorization } from './layers/sequelize/model/Authorization'
