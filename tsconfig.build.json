@@ -2,9 +2,9 @@
   "exclude": [
     "**/*.test.ts",
     "**/*.stub.ts",
-    "node_modules",
+    "./node_modules",
     "**/__tests__/*",
-    "dist"
+    "./dist"
   ],
   "compilerOptions": {
     "target": "es6",

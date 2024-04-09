@@ -8,12 +8,11 @@
     "dist"
   ],
   "scripts": {
-    "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
     "prepublish": "npx eslint ./src",
     "generate-interfaces": "node json-schema-processor.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "npm run clean && tsc -p tsconfig.json",
-    "clean": "rm -rf package-lock.json dist node_modules tsconfig.tsbuildinfo"
+    "clean": "rm -rf dist/* tsconfig.tsbuildinfo"
   },
   "keywords": [
     "ocpp",
@@ -35,10 +34,10 @@
     "class-transformer": "^0.5.1",
     "fastify": "^4.22.2",
     "reflect-metadata": "^0.1.13",
-    "tslog": "^4.9.2",
+    "tslog": "4.9.2",
     "uuid": "^9.0.0",
     "zod": "^3.22.2",
-    "tsyringe": "^4.8.0"
+    "tsyringe": "4.8.0"
   },
   "workspace": "../"
 }

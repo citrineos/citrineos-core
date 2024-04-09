@@ -35,7 +35,7 @@ import {
 import { type JsonSchemaToTsProvider } from "@fastify/type-provider-json-schema-to-ts";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
-import fastify, { type FastifyInstance } from "fastify";
+import fastify, {type FastifyInstance, FastifySchemaCompiler} from "fastify";
 import {
   ConfigurationModule,
   ConfigurationModuleApi,
@@ -55,14 +55,11 @@ import {
   SmartChargingModuleApi,
 } from "@citrineos/smartcharging";
 import {DeviceModelRepository, LocationRepository, sequelize} from "@citrineos/data";
-import {
-  type FastifyRouteSchemaDef,
-  type FastifySchemaCompiler,
-  type FastifyValidationResult,
-} from "fastify/types/schema";
-import { MessageRouterImpl } from "@citrineos/ocpprouter";
-import { defaultDockerConfig } from "./config/envs/docker";
-import { defaultLocalConfig } from "./config/envs/local";
+
+import { defaultDockerConfig } from './config/envs/docker'
+import { defaultLocalConfig } from './config/envs/local'
+import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter'
+import {FastifyRouteSchemaDef, FastifyValidationResult} from "fastify/types/schema";
 
 interface ModuleConfig {
   module: BaseModule | undefined;
@@ -243,8 +240,10 @@ export class CitrineOSServer {
       this.loggerService?.logger // todo will need to dependency inject
     );
 
-    this.host = this.configService?.systemConfig.centralSystem.host;
-    this.port = this.configService?.systemConfig.centralSystem.port;
+    this.apis.push(new AdminApi(router, this._server, this.loggerService?.logger));
+
+    this.host = this.configService?.systemConfig.centralSystem.host
+    this.port = this.configService?.systemConfig.centralSystem.port
   }
 
   private initAllModules() {

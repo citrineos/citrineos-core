@@ -1,0 +1,19 @@
+{
+    "type": "object",
+    "properties": {
+        "stationId": {
+            "type": "string"
+        },
+        "unit": {
+            "type": "string"
+        },
+        "price": {
+            "type": "number"
+        }
+    },
+    "required": [
+        "stationId",
+        "unit",
+        "price"
+    ]
+}

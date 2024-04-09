@@ -12,8 +12,9 @@
   },
   "scripts": {
     "install-all": "npm i --verbose",
-    "clean": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json dist **/dist **/**/dist node_modules **/node_modules **/**/node_modules tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
+    "fresh": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json dist **/dist **/**/dist node_modules **/node_modules **/**/node_modules tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
     "build": "tsc --build --verbose",
+    "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
     "test": "jest --config jest.config.js"
   },
   "dependencies": {

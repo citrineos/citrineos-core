@@ -4,41 +4,29 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  AdditionalInfoType,
   AsHandler,
-  AuthorizationStatusEnumType,
-  BaseModule, CacheService,
+  BaseModule,
+  CacheService,
   CallAction,
   CostUpdatedResponse,
   EventGroup,
   GetTransactionStatusResponse,
   HandlerProperties,
-  ICache,
-  IdTokenInfoType,
   IMessage,
-  IMessageHandler,
-  IMessageSender, inject, LoggerService,
+  inject,
+  injectable,
+  LoggerService,
   MeterValuesRequest,
   MeterValuesResponse,
   StatusNotificationRequest,
   StatusNotificationResponse,
-  SystemConfig, SystemConfigService,
-  TransactionEventEnumType,
+  SystemConfigService,
   TransactionEventRequest,
-  TransactionEventResponse,
 } from "@citrineos/base";
-import {
-  AuthorizationRepository,
-  IAuthorizationRepository,
-  ITransactionEventRepository,
-  sequelize,
-  TransactionEventRepository
-} from "@citrineos/data";
 import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
-import {ILogObj, Logger} from 'tslog';
 import {TransactionEventService} from "./services/transaction.event.service";
-import {injectable} from '@citrineos/base';
+import {TariffRepository, TransactionEventRepository} from "@citrineos/data";
 
 /**
  * Component that handles transaction related messages.
@@ -59,34 +47,41 @@ export class TransactionsModule extends BaseModule {
   /**
    * This is the constructor function that initializes the {@link TransactionModule}.
    *
-   * @param {SystemConfig} config - The `config` contains configuration settings for the module.
    *
-   * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
    *
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
    *
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
    *
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
-   * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository} which represents a repository for accessing and manipulating authorization data.
-   * If no `transactionEventRepository` is provided, a default {@link sequelize.TransactionEventRepository} instance is created and used.
+   * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance
+   * is created and used.
+   * If no `authorizeRepository` is provided, a default {@link sequelize:authorizeRepository} instance is
+   * created and used.
    *
-   * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `authorizeRepository` is provided, a default {@link sequelize.AuthorizationRepository} instance is created and used.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is
+   * created and used.
+   *
+   * represents a repository for accessing and manipulating variable data.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize:tariffRepository} instance is
+   * created and used.
+   * @param configService
+   * @param cacheService
+   * @param loggerService
+   * @param rabbitMqSender
+   * @param rabbitMqReceiver
+   * @param transactionEventService
    */
-  constructor(
-    @inject(TransactionEventRepository) public readonly transactionEventRepository?: TransactionEventRepository,
-    @inject(AuthorizationRepository) public readonly authorizeRepository?: AuthorizationRepository,
-    @inject(SystemConfigService) private readonly configService?: SystemConfigService,
-    @inject(CacheService) private readonly cacheService?: CacheService,
-    @inject(LoggerService) private readonly loggerService?: LoggerService,
-    @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
-    @inject(RabbitMqReceiver) private readonly rabbitMqReceiver?: RabbitMqReceiver,
-    @inject(TransactionEventService) private readonly transactionEventService?: TransactionEventService
+  constructor( // repos needed here because Api classes use .module.repo but later wont need to be imported
+      @inject(TariffRepository) public readonly tariffRepository?: TariffRepository,
+      @inject(TransactionEventRepository) public readonly transactionEventRepository?: TransactionEventRepository,
+      @inject(SystemConfigService) private readonly configService?: SystemConfigService,
+      @inject(CacheService) private readonly cacheService?: CacheService,
+      @inject(LoggerService) private readonly loggerService?: LoggerService,
+      @inject(RabbitMqSender) private readonly rabbitMqSender?: RabbitMqSender,
+      @inject(RabbitMqReceiver) private readonly rabbitMqReceiver?: RabbitMqReceiver,
+      @inject(TransactionEventService) private readonly transactionEventService?: TransactionEventService
   ) {
     super(configService?.systemConfig!, cacheService?.cache!, rabbitMqReceiver!, rabbitMqSender!, EventGroup.Transactions, loggerService?.logger!);
 
@@ -121,11 +116,16 @@ export class TransactionsModule extends BaseModule {
 
     // TODO: Add meterValues to transactions
     // TODO: Meter values can be triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
+    // TODO: If sendCostUpdatedOnMeterValue is true, meterValues handler triggers cost update
+    //  when it is added into a transaction
 
     const response: MeterValuesResponse = {
       // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
     };
-    this.sendCallResultWithMessage(message, response)
+
+    this.sendCallResultWithMessage(message, response).then(messageConfirmation => {
+      this._logger.debug("MeterValues response sent: ", messageConfirmation)
+    })
   }
 
   @AsHandler(CallAction.StatusNotification)
@@ -140,7 +140,9 @@ export class TransactionsModule extends BaseModule {
     const response: StatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("StatusNotification response sent: ", messageConfirmation));
+        .then(messageConfirmation => {
+          this._logger.debug("StatusNotification response sent: ", messageConfirmation)
+        });
   }
 
   /**
@@ -162,4 +164,5 @@ export class TransactionsModule extends BaseModule {
   ): void {
     this._logger.debug("GetTransactionStatus response received:", message, props);
   }
+
 }

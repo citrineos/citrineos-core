@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { RegistrationStatusEnumType } from '@citrineos/base/dist/ocpp/model'
+import { RegistrationStatusEnumType } from '@citrineos/base'
 import { type SystemConfigInput } from '@citrineos/base'
 import { logo } from '../../assets/logo'
 

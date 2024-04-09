@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { RegistrationStatusEnumType, type SystemConfigInput } from '@citrineos/base'
+import {
+  RegistrationStatusEnumType,
+  type SystemConfigInput
+} from '@citrineos/base'
 import { logo } from '../../assets/logo'
 
 export const defaultLocalConfig: SystemConfigInput = {
@@ -37,7 +40,8 @@ export const defaultLocalConfig: SystemConfigInput = {
       endpointPrefix: '/smartcharging'
     },
     transactions: {
-      endpointPrefix: '/transactions'
+      endpointPrefix: '/transactions',
+      costUpdatedInterval: 60
     }
   },
   data: {
@@ -64,12 +68,12 @@ export const defaultLocalConfig: SystemConfigInput = {
     },
     swagger: {
       path: '/docs',
+      logo,
       exposeData: true,
-      exposeMessage: true,
-      logo
+      exposeMessage: true
     },
     directus: {
-      host: 'localhost',
+      host: 'directus',
       port: 8055,
       generateFlows: false
     },

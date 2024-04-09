@@ -15,13 +15,18 @@ import {
     SetVariableResultType,
     VariableType
 } from "@citrineos/base";
-import { VariableAttributeQuerystring } from "../../../interfaces/queries/VariableAttribute";
-import { SequelizeRepository } from "./Base";
-import { IDeviceModelRepository } from "../../../interfaces";
-import { Op } from "sequelize";
-import { VariableAttribute, Component, Evse, Variable, VariableCharacteristics } from "../model/DeviceModel";
-import { VariableStatus } from "../model/DeviceModel/VariableStatus";
-import { ComponentVariable } from "../model/DeviceModel/ComponentVariable";
+import {IDeviceModelRepository, VariableAttributeQuerystring} from "../../../interfaces";
+import {SequelizeRepository} from "./Base";
+import {Op} from "sequelize";
+import {
+    Component,
+    Evse,
+    Variable,
+    VariableAttribute,
+    VariableCharacteristics,
+    VariableStatus
+} from "../model/DeviceModel";
+import {ComponentVariable} from "../model/DeviceModel/ComponentVariable";
 
 // TODO: Document this
 

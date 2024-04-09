@@ -8,11 +8,10 @@
     "dist"
   ],
   "scripts": {
-    "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
     "prepublish": "npx eslint",
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "npm run clean && tsc -p tsconfig.json",
-    "clean": "rm -rf package-lock.json dist node_modules tsconfig.tsbuildinfo"
+    "clean": "rm -rf dist/* tsconfig.tsbuildinfo"
   },
   "keywords": [
     "ocpp",
@@ -22,13 +21,15 @@
   "devDependencies": {
     "@types/deasync-promise": "^1.0.0",
     "eslint": "^8.48.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "@types/uuid": "^9.0.1"
   },
   "dependencies": {
     "@citrineos/base": "1.0.0",
     "@citrineos/data": "1.0.0",
     "@citrineos/util": "1.0.0",
-    "fastify": "^4.22.2"
+    "fastify": "^4.22.2",
+    "uuid": "^9.0.0"
   },
   "workspace": "../../"
 }
