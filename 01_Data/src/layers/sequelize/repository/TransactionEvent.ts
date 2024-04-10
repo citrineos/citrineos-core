@@ -58,7 +58,7 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
           return await transaction.save();
         }
       })
-      .then((model) => {
+      .then(async (model) => {
         const transactionDatabaseId = (model as Model<any, any>).id;
         const event = TransactionEvent.build(
           {
