@@ -7,7 +7,7 @@
     "@types/node": "^20.11.20",
     "@typescript-eslint/eslint-plugin-tslint": "^7.0.2",
     "concurrently": "^8.2.2",
-    "eslint": "^8.57.0",
+    "eslint": "8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "nodemon": "^3.1.0",
     "prettier": "^3.2.5",
@@ -18,7 +18,7 @@
     "install-all": "npm i --verbose",
     "clean": "rm -rf package-lock.json **/package-lock.json **/dist/** **/lib/** **/node_modules/** **/tsconfig.tsbuildinfo",
     "build": "tsc --build --verbose",
-    "lint": "npx eslint --ext .ts ./",
+    "lint": "npx eslint --ext .ts --ignore-pattern \"**/dist/**\" --ignore-pattern \"**/lib/**\" ./",
     "lint-fix": "npx eslint --ext .ts --ignore-pattern \"**/dist/**\" --ignore-pattern \"**/lib/**\" --fix ./",
     "prettier": "prettier --write ."
   },
