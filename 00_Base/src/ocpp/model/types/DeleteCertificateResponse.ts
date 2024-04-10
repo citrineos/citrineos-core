@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { DeleteCertificateStatusEnumType } from "../enums";
-import { OcppResponse } from "../../..";
+import { DeleteCertificateStatusEnumType } from '../enums';
+import { OcppResponse } from '../../..';
 
 export interface DeleteCertificateResponse extends OcppResponse {
   customData?: CustomDataType;

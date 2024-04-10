@@ -3,10 +3,20 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractMessageSender, IMessageSender, SystemConfig, IMessage, OcppRequest, IMessageConfirmation, MessageState, OcppResponse, OcppError } from "@citrineos/base";
-import * as amqplib from "amqplib";
-import { instanceToPlain } from "class-transformer";
-import { ILogObj, Logger } from "tslog";
+import {
+  AbstractMessageSender,
+  IMessage,
+  IMessageConfirmation,
+  IMessageSender,
+  MessageState,
+  OcppError,
+  OcppRequest,
+  OcppResponse,
+  SystemConfig,
+} from '@citrineos/base';
+import * as amqplib from 'amqplib';
+import { instanceToPlain } from 'class-transformer';
+import { ILogObj, Logger } from 'tslog';
 
 /**
  * Implementation of a {@link IMessageSender} using RabbitMQ as the underlying transport.
@@ -16,7 +26,7 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
   /**
    * Constants
    */
-  private static readonly QUEUE_PREFIX = "amqp_queue_";
+  private static readonly QUEUE_PREFIX = 'amqp_queue_';
 
   /**
    * Fields
@@ -82,11 +92,11 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
     }
 
     if (!message.state) {
-      return { success: false, payload: "Message state must be set" };
+      return { success: false, payload: 'Message state must be set' };
     }
 
     if (!message.payload) {
-      return { success: false, payload: "Message payload must be set" };
+      return { success: false, payload: 'Message payload must be set' };
     }
 
     const exchange = this._config.util.messageBroker.amqp?.exchange as string;
@@ -95,9 +105,9 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
 
     this._logger.debug(`Publishing to ${exchange}:`, message);
 
-    const success = channel.publish(exchange || "", "", Buffer.from(JSON.stringify(instanceToPlain(message)), "utf-8"), {
-      contentEncoding: "utf-8",
-      contentType: "application/json",
+    const success = channel.publish(exchange || '', '', Buffer.from(JSON.stringify(instanceToPlain(message)), 'utf-8'), {
+      contentEncoding: 'utf-8',
+      contentType: 'application/json',
       headers: {
         origin: message.origin.toString(),
         eventGroup: message.eventGroup.toString(),
@@ -126,13 +136,13 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    * Connect to RabbitMQ
    */
   protected _connect(): Promise<amqplib.Channel> {
-    return amqplib.connect(this._config.util.messageBroker.amqp?.url || "").then(async connection => {
+    return amqplib.connect(this._config.util.messageBroker.amqp?.url || '').then(async connection => {
       this._connection = connection;
       return connection.createChannel();
     }).then(channel => {
       // Add listener for channel errors
-      channel.on("error", (err) => {
-        this._logger.error("AMQP channel error", err);
+      channel.on('error', (err) => {
+        this._logger.error('AMQP channel error', err);
         // TODO: add recovery logic
       });
       return channel;

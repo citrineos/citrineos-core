@@ -3,22 +3,22 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IMessage, OcppRequest, IMessageConfirmation, OcppResponse, OcppError } from "../..";
-import { MessageState } from ".";
+import { IMessage, IMessageConfirmation, OcppError, OcppRequest, OcppResponse } from '../..';
+import { MessageState } from '.';
 
 /**
  * IMessageSender
- * 
+ *
  * Represents an interface for sending messages.
- * 
- * All implementations of this interface should carry any context from the {@link IMessage} 
- * to be sent as metadata in the underlying message transport. This will allow to route 
- * messages to the correct module and filter them accordingly. 
+ *
+ * All implementations of this interface should carry any context from the {@link IMessage}
+ * to be sent as metadata in the underlying message transport. This will allow to route
+ * messages to the correct module and filter them accordingly.
  */
 export interface IMessageSender {
     /**
      * Sends a request message.
-     * 
+     *
      * @param message - The message object.
      * @param payload - The payload object.
      * @returns A promise that resolves to the message confirmation.
@@ -27,7 +27,7 @@ export interface IMessageSender {
 
     /**
      * Sends a response message.
-     * 
+     *
      * @param message - The message object.
      * @param payload - The payload object.
      * @returns A promise that resolves to the message confirmation.
@@ -36,7 +36,7 @@ export interface IMessageSender {
 
     /**
      * Sends a message.
-     * 
+     *
      * @param message - The message object.
      * @param payload - The payload object.
      * @param state - The message state.

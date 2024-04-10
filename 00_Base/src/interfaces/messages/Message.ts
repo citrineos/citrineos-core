@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IMessageContext, OcppRequest, OcppResponse } from "../..";
-import { CallAction } from "../../ocpp/rpc/message";
-import { EventGroup, MessageOrigin, MessageState } from ".";
+import { IMessageContext, OcppRequest, OcppResponse } from '../..';
+import { CallAction } from '../../ocpp/rpc/message';
+import { EventGroup, MessageOrigin, MessageState } from '.';
 
 /**
  * Message

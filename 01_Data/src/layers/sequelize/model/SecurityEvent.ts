@@ -3,34 +3,33 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SecurityEventNotificationRequest, Namespace, CustomDataType } from "@citrineos/base";
-import { Model, Index, Column, DataType, Table } from "sequelize-typescript";
+import { type CustomDataType, Namespace, type SecurityEventNotificationRequest } from '@citrineos/base';
+import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
 
 @Table
 export class SecurityEvent extends Model implements SecurityEventNotificationRequest {
+  static readonly MODEL_NAME: string = Namespace.SecurityEventNotificationRequest;
 
-    static readonly MODEL_NAME: string = Namespace.SecurityEventNotificationRequest;
-    
-    declare customData?: CustomDataType;
+  /**
+   * Fields
+   */
+  @Index
+  @Column
+  declare stationId: string;
 
-    /**
-     * Fields
-     */
-    @Index
-    @Column
-    declare stationId: string;
+  @Column
+  declare type: string;
 
-    @Column
-    declare type: string;
+  @Column({
+    type: DataType.DATE,
+    get () {
+      return this.getDataValue('timestamp').toISOString();
+    }
+  })
+  declare timestamp: string;
 
-    @Column({
-        type: DataType.DATE,
-        get() {
-            return this.getDataValue('timestamp').toISOString();
-        }
-    })
-    declare timestamp: string;
+  @Column(DataType.STRING)
+  declare techInfo?: string;
 
-    @Column(DataType.STRING)
-    declare techInfo?: string;
+  declare customData?: CustomDataType;
 }

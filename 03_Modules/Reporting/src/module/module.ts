@@ -30,25 +30,37 @@ import {
   SecurityEventNotificationRequest,
   SecurityEventNotificationResponse,
   SetVariableStatusEnumType,
-  SystemConfig
-} from "@citrineos/base";
+  StatusInfoType,
+  SystemConfig,
+} from '@citrineos/base';
 import {
+  Component,
   IDeviceModelRepository,
   ISecurityEventRepository,
   IVariableMonitoringRepository,
-  sequelize
-} from "@citrineos/data";
-import {Component, Variable} from "@citrineos/data";
-import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
-import deasyncPromise from "deasync-promise";
-import {ILogObj, Logger} from 'tslog';
-import {DeviceModelService} from "./services";
-import {StatusInfoType} from "@citrineos/base";
+  sequelize,
+  Variable,
+} from '@citrineos/data';
+import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import deasyncPromise from 'deasync-promise';
+import { ILogObj, Logger } from 'tslog';
+import { DeviceModelService } from './services';
 
 /**
  * Component that handles provisioning related messages.
  */
 export class ReportingModule extends AbstractModule {
+
+  /**
+   * Get Base Report variables. While NotifyReport requests correlated with a GetBaseReport's requestId
+   * are still being sent, cache value is 'ongoing'. Once a NotifyReport with tbc === false (or undefined)
+   * is received, cache value is 'complete'.
+   */
+  static readonly GET_BASE_REPORT_REQUEST_ID_MAX = 10000000; // 10,000,000
+  static readonly GET_BASE_REPORT_ONGOING_CACHE_VALUE = 'ongoing';
+  static readonly GET_BASE_REPORT_COMPLETE_CACHE_VALUE = 'complete';
+
+  public _deviceModelService: DeviceModelService;
 
   /**
    * Fields
@@ -70,24 +82,9 @@ export class ReportingModule extends AbstractModule {
     CallAction.GetMonitoringReport
   ];
 
-  /**
-   * Get Base Report variables. While NotifyReport requests correlated with a GetBaseReport's requestId
-   * are still being sent, cache value is 'ongoing'. Once a NotifyReport with tbc == false (or undefined)
-   * is received, cache value is 'complete'.
-   */
-  static readonly GET_BASE_REPORT_REQUEST_ID_MAX = 10000000; // 10,000,000
-  static readonly GET_BASE_REPORT_ONGOING_CACHE_VALUE = 'ongoing';
-  static readonly GET_BASE_REPORT_COMPLETE_CACHE_VALUE = 'complete';
-
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _securityEventRepository: ISecurityEventRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
-
-  get deviceModelRepository(): IDeviceModelRepository {
-    return this._deviceModelRepository;
-  }
-
-  public _deviceModelService: DeviceModelService;
 
   /**
    * Constructor
@@ -95,20 +92,20 @@ export class ReportingModule extends AbstractModule {
 
   /**
    * This is the constructor function that initializes the {@link ReportingModule}.
-   * 
+   *
    * @param {SystemConfig} config - The `config` contains configuration settings for the module.
-   *  
+   *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   * 
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface. 
+   *
+   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   * 
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface. 
+   *
+   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   * 
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}. 
+   *
+   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   *  
+   *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is created and used.
    *
@@ -129,18 +126,22 @@ export class ReportingModule extends AbstractModule {
     super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Reporting, logger);
 
     const timer = new Timer();
-    this._logger.info(`Initializing...`);
+    this._logger.info('Initializing...');
 
     if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error("Could not initialize module due to failure in handler initialization.");
+      throw new Error('Could not initialize module due to failure in handler initialization.');
     }
 
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, this._logger);
     this._securityEventRepository = securityEventRepository || new sequelize.SecurityEventRepository(config, this._logger);
     this._variableMonitoringRepository = variableMonitoringRepository || new sequelize.VariableMonitoringRepository(config, this._logger);
-    this._deviceModelService = new DeviceModelService(this._deviceModelRepository)
+    this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
+  }
+
+  get deviceModelRepository(): IDeviceModelRepository {
+    return this._deviceModelRepository;
   }
 
   /**
@@ -152,7 +153,7 @@ export class ReportingModule extends AbstractModule {
     message: IMessage<LogStatusNotificationRequest>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("LogStatusNotification received:", message, props);
+    this._logger.debug('LogStatusNotification received:', message, props);
 
     // TODO: LogStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
 
@@ -160,9 +161,9 @@ export class ReportingModule extends AbstractModule {
     const response: LogStatusNotificationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-        .then(messageConfirmation => {
-          this._logger.debug("LogStatusNotification response sent: ", messageConfirmation)
-        });
+      .then(messageConfirmation => {
+        this._logger.debug('LogStatusNotification response sent: ', messageConfirmation);
+      });
   }
 
 
@@ -171,15 +172,15 @@ export class ReportingModule extends AbstractModule {
     message: IMessage<NotifyCustomerInformationRequest>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("NotifyCustomerInformation request received:", message, props);
+    this._logger.debug('NotifyCustomerInformation request received:', message, props);
 
     // Create response
     const response: NotifyCustomerInformationResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-        .then(messageConfirmation => {
-          this._logger.debug("NotifyCustomerInformation response sent: ", messageConfirmation)
-        });
+      .then(messageConfirmation => {
+        this._logger.debug('NotifyCustomerInformation response sent: ', messageConfirmation);
+      });
   }
 
   @AsHandler(CallAction.NotifyMonitoringReport)
@@ -187,7 +188,7 @@ export class ReportingModule extends AbstractModule {
     message: IMessage<NotifyMonitoringReportRequest>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("NotifyMonitoringReport request received:", message, props);
+    this._logger.debug('NotifyMonitoringReport request received:', message, props);
 
     for (const monitorType of (message.payload.monitor ? message.payload.monitor : [])) {
       const stationId: string = message.context.stationId;
@@ -199,9 +200,9 @@ export class ReportingModule extends AbstractModule {
     const response: NotifyMonitoringReportResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-        .then(messageConfirmation => {
-          this._logger.debug("NotifyMonitoringReport response sent: ", messageConfirmation)
-        });
+      .then(messageConfirmation => {
+        this._logger.debug('NotifyMonitoringReport response sent: ', messageConfirmation);
+      });
   }
 
   @AsHandler(CallAction.NotifyReport)
@@ -209,7 +210,7 @@ export class ReportingModule extends AbstractModule {
     message: IMessage<NotifyReportRequest>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.info("NotifyReport received:", message, props);
+    this._logger.info('NotifyReport received:', message, props);
 
     for (const reportDataType of (message.payload.reportData ? message.payload.reportData : [])) {
       const variableAttributes = await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, message.context.stationId);
@@ -228,19 +229,19 @@ export class ReportingModule extends AbstractModule {
 
     if (!message.payload.tbc) { // Default if omitted is false
       const success = await this._cache.set(message.payload.requestId.toString(), ReportingModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE, message.context.stationId);
-      this._logger.info("Completed", success, message.payload.requestId);
+      this._logger.info('Completed', success, message.payload.requestId);
     } else { // tbc (to be continued) is true
       // Continue to set get base report ongoing. Will extend the timeout.
       const success = await this._cache.set(message.payload.requestId.toString(), ReportingModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE, message.context.stationId, this.config.maxCachingSeconds);
-      this._logger.info("Ongoing", success, message.payload.requestId);
+      this._logger.info('Ongoing', success, message.payload.requestId);
     }
 
     // Create response
     const response: NotifyReportResponse = {};
 
     this.sendCallResultWithMessage(message, response)
-      .then((messageId) => {
-        this._logger.debug("NotifyReport response sent:", message, props);
+      .then(() => {
+        this._logger.debug('NotifyReport response sent:', message, props);
       });
   }
 
@@ -249,7 +250,7 @@ export class ReportingModule extends AbstractModule {
     message: IMessage<SecurityEventNotificationRequest>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("SecurityEventNotification request received:", message, props);
+    this._logger.debug('SecurityEventNotification request received:', message, props);
     this._securityEventRepository.createByStationId(message.payload, message.context.stationId);
     this.sendCallResultWithMessage(message, {} as SecurityEventNotificationResponse);
   }
@@ -263,7 +264,7 @@ export class ReportingModule extends AbstractModule {
     message: IMessage<GetBaseReportResponse>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("GetBaseReport response received:", message, props);
+    this._logger.debug('GetBaseReport response received:', message, props);
   }
 
   @AsHandler(CallAction.GetReport)
@@ -271,12 +272,12 @@ export class ReportingModule extends AbstractModule {
     message: IMessage<GetReportResponse>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("GetReport response received:", message, props);
+    this._logger.debug('GetReport response received:', message, props);
 
-    let status: GenericDeviceModelStatusEnumType = message.payload.status;
-    let statusInfo: StatusInfoType | undefined = message.payload.statusInfo;
+    const status: GenericDeviceModelStatusEnumType = message.payload.status;
+    const statusInfo: StatusInfoType | undefined = message.payload.statusInfo;
     if (status === GenericDeviceModelStatusEnumType.Rejected || status === GenericDeviceModelStatusEnumType.NotSupported) {
-      this._logger.error("Failed to get report.", status, statusInfo?.reasonCode, statusInfo?.additionalInfo);
+      this._logger.error('Failed to get report.', status, statusInfo?.reasonCode, statusInfo?.additionalInfo);
     }
   }
 
@@ -285,12 +286,12 @@ export class ReportingModule extends AbstractModule {
     message: IMessage<GetMonitoringReportResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("GetMonitoringReport response received:", message, props);
+    this._logger.debug('GetMonitoringReport response received:', message, props);
 
-    let status: GenericDeviceModelStatusEnumType = message.payload.status;
-    let statusInfo: StatusInfoType | undefined = message.payload.statusInfo;
+    const status: GenericDeviceModelStatusEnumType = message.payload.status;
+    const statusInfo: StatusInfoType | undefined = message.payload.statusInfo;
     if (status === GenericDeviceModelStatusEnumType.Rejected || status === GenericDeviceModelStatusEnumType.NotSupported) {
-      this._logger.error("Failed to get monitoring report.", status, statusInfo?.reasonCode, statusInfo?.additionalInfo);
+      this._logger.error('Failed to get monitoring report.', status, statusInfo?.reasonCode, statusInfo?.additionalInfo);
     }
   }
 
@@ -299,7 +300,7 @@ export class ReportingModule extends AbstractModule {
     message: IMessage<GetLogResponse>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("GetLog response received:", message, props);
+    this._logger.debug('GetLog response received:', message, props);
   }
 
   @AsHandler(CallAction.CustomerInformation)
@@ -307,6 +308,6 @@ export class ReportingModule extends AbstractModule {
     message: IMessage<CustomerInformationResponse>,
     props?: HandlerProperties
   ): void {
-    this._logger.debug("CustomerInformation response received:", message, props);
+    this._logger.debug('CustomerInformation response received:', message, props);
   }
 }

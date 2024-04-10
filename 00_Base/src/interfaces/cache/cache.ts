@@ -3,14 +3,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ClassConstructor } from "class-transformer";
+import { ClassConstructor } from 'class-transformer';
 
 export enum CacheNamespace {
-  CentralSystem = "csms",
-  ChargingStation = "cs",
-  Transactions = "tx",
-  Connections = "conn",
-  Other = "other"
+  CentralSystem = 'csms',
+  ChargingStation = 'cs',
+  Transactions = 'tx',
+  Connections = 'conn',
+  Other = 'other',
 }
 
 /**
@@ -26,7 +26,7 @@ export interface ICache {
    * Monitors a key for potential changes to its value.
    * If key-value does not exist this method will wait for it to exist or return null at the end of the wait period.
    * If value is removed, the method will return null.
-   * 
+   *
    * @param {string} key - The key for the value.
    * @param {number} [waitSeconds] - The number of seconds after which the method should return if the value has not been modified by then.
    * @param {string} [namespace] - The namespace for the key.
@@ -36,7 +36,7 @@ export interface ICache {
 
   /**
    * Gets a value asynchronously from the underlying cache.
-   * 
+   *
    * @param {string} key - The key for the value.
    * @param {string} [namespace] - The namespace for the key.
    * @returns {Promise<string | null>} - Returns the value as string or null if the key does not exist.
@@ -46,9 +46,9 @@ export interface ICache {
 
   /**
    * Gets a value synchronously from the underlying cache.
-   * 
+   *
    * Note: The concrete implementation of this method might use run loop modification to achieve synchronous behavior.
-   * 
+   *
    * @param {string} key - The key for the value.
    * @param {string} [namespace] - The namespace for the key.
    * @returns {string | null} - Returns the value as string or null if the key does not exist.
@@ -57,7 +57,7 @@ export interface ICache {
 
   /**
    * Sets a value asynchronously in the underlying cache.
-   * 
+   *
    * @param {string} key - The key for the value.
    * @param {string} value - The value to set.
    * @param {string} [namespace] - The namespace for the key.
@@ -68,7 +68,7 @@ export interface ICache {
 
   /**
    * Sets a value asynchronously in the underlying cache if it doesn't exist. Returns false if the key already exists.
-   * 
+   *
    * @param {string} key - The key for the value.
    * @param {string} value - The value to set.
    * @param {string} [namespace] - The namespace for the key.
@@ -80,9 +80,9 @@ export interface ICache {
   // TODO: Consider removing this method, no longer used
   /**
    * Sets a value synchronously in the underlying cache.
-   * 
+   *
    * Note: The concrete implementation of this method might use run loop modification to achieve synchronous behavior.
-   * 
+   *
    * @param {string} key - The key for the value.
    * @param {string} value - The value to set.
    * @param {string} [namespace] - The namespace for the key.

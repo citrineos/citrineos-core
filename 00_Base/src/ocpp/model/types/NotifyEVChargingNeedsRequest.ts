@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { EnergyTransferModeEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { EnergyTransferModeEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface NotifyEVChargingNeedsRequest extends OcppRequest {
   customData?: CustomDataType;

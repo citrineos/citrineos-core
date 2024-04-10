@@ -3,13 +3,20 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
-import { CacheNamespace, IAuthenticator, ICache, IMessageRouter, SystemConfig, WebsocketServerConfig } from "@citrineos/base";
-import { Duplex } from "stream";
-import * as http from "http";
-import * as https from "https";
-import fs from "fs";
-import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from "ws";
-import { Logger, ILogObj } from "tslog";
+import {
+  CacheNamespace,
+  IAuthenticator,
+  ICache,
+  IMessageRouter,
+  SystemConfig,
+  WebsocketServerConfig,
+} from '@citrineos/base';
+import { Duplex } from 'stream';
+import * as http from 'http';
+import * as https from 'https';
+import fs from 'fs';
+import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from 'ws';
+import { ILogObj, Logger } from 'tslog';
 
 export class WebsocketNetworkConnection {
 
@@ -129,7 +136,7 @@ export class WebsocketNetworkConnection {
     }
 
     private _onHttpRequest(req: http.IncomingMessage, res: http.ServerResponse) {
-        if (req.method === "GET" && req.url == '/health') {
+        if (req.method === "GET" && req.url === '/health') {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ status: 'healthy' }));
         } else {
@@ -140,9 +147,9 @@ export class WebsocketNetworkConnection {
 
     /**
      * Method to validate websocket upgrade requests and pass them to the socket server.
-     * 
+     *
      * @param {IncomingMessage} req - The request object.
-     * @param {Duplex} socket - Websocket duplex stream. 
+     * @param {Duplex} socket - Websocket duplex stream.
      * @param {Buffer} head - Websocket buffer.
      * @param {WebSocketServer} wss - Websocket server.
      * @param {number} securityProfile - The security profile to use for the websocket connection. See OCPP 2.0.1 Part 2-Specification A.1.3
@@ -350,7 +357,7 @@ export class WebsocketNetworkConnection {
         }, pingInterval * 1000);
     }
     /**
-     * 
+     *
      * @param url Http upgrade request url used by charger
      * @returns Charger identifier
      */

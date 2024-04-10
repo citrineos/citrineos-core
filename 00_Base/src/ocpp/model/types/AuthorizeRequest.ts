@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { HashAlgorithmEnumType, IdTokenEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { HashAlgorithmEnumType, IdTokenEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface AuthorizeRequest extends OcppRequest {
   customData?: CustomDataType;
@@ -29,7 +29,12 @@ export interface AuthorizeRequest extends OcppRequest {
     | [OCSPRequestDataType]
     | [OCSPRequestDataType, OCSPRequestDataType]
     | [OCSPRequestDataType, OCSPRequestDataType, OCSPRequestDataType]
-    | [OCSPRequestDataType, OCSPRequestDataType, OCSPRequestDataType, OCSPRequestDataType];
+    | [
+        OCSPRequestDataType,
+        OCSPRequestDataType,
+        OCSPRequestDataType,
+        OCSPRequestDataType,
+      ];
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

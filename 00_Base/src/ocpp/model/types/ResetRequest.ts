@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ResetEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { ResetEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface ResetRequest extends OcppRequest {
   customData?: CustomDataType;

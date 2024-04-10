@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ClearMessageStatusEnumType } from "../enums";
-import { OcppResponse } from "../../..";
+import { ClearMessageStatusEnumType } from '../enums';
+import { OcppResponse } from '../../..';
 
 export interface ClearDisplayMessageResponse extends OcppResponse {
   customData?: CustomDataType;

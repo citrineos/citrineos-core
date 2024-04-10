@@ -10,8 +10,12 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ChargingLimitSourceEnumType, ChargingRateUnitEnumType, CostKindEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import {
+  ChargingLimitSourceEnumType,
+  ChargingRateUnitEnumType,
+  CostKindEnumType,
+} from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface NotifyChargingLimitRequest extends OcppRequest {
   customData?: CustomDataType;

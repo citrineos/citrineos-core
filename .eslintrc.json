@@ -4,12 +4,10 @@
         "es6": true,
         "node": true
     },
-    "extends": [
-        "prettier"
-    ],
+    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "project": "tsconfig.json",
+        "project": "tsconfig.eslint.json",
         "sourceType": "module"
     },
     "plugins": [
@@ -50,10 +48,11 @@
             {
                 "selector": "variable",
                 "format": [
+                    "PascalCase",
                     "camelCase",
                     "UPPER_CASE"
                 ],
-                "leadingUnderscore": "forbid",
+                "leadingUnderscore": "allow",
                 "trailingUnderscore": "forbid"
             }
         ],
@@ -86,6 +85,18 @@
         ],
         "@typescript-eslint/type-annotation-spacing": "error",
         "@typescript-eslint/unified-signatures": "error",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/strict-boolean-expressions": "off",
+        "@typescript-eslint/no-empty-interface": "off",
+        "no-unused-vars": "off",
+        "@typescript-eslint/no-unused-vars": [
+            "warn",
+            {
+                "argsIgnorePattern": "^_",
+                "varsIgnorePattern": "^_",
+                "caughtErrorsIgnorePattern": "^_"
+            }
+        ],
         "arrow-body-style": "error",
         "brace-style": [
             "error",

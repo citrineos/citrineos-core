@@ -3,10 +3,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IMessage, OcppRequest, OcppResponse } from "../..";
-import { CallAction } from "../../ocpp/rpc/message";
-import { IModule } from "../modules";
-import { HandlerProperties } from ".";
+import { IMessage, OcppRequest, OcppResponse } from '../..';
+import { CallAction } from '../../ocpp/rpc/message';
+import { IModule } from '../modules';
+import { HandlerProperties } from '.';
 
 /**
  * MessageHandler
@@ -18,7 +18,7 @@ export interface IMessageHandler {
 
     /**
      * Subscribes to messages based on actions and context filters.
-     * 
+     *
      * @param identifier - The identifier to subscribe for.
      * @param actions - Optional. The list of call actions to subscribe to.
      * @param filter - Optional. An additional message context filter. **Note**: Might not be supported by all implementations. @see {@link IMessageContext} for available attributes.
@@ -28,7 +28,7 @@ export interface IMessageHandler {
 
     /**
      * Unsubscribe from messages. E.g. when a connection drops.
-     * 
+     *
      * @param identifier - The identifier to unsubscribe from.
      * @returns A promise that resolves to a boolean value indicating whether the unsubscription was successful.
      */

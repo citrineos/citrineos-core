@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {type SystemConfig, SystemConfigInput, systemConfigSchema} from "./types";
+import { type SystemConfig, SystemConfigInput, systemConfigSchema } from './types';
 
 /**
  * Defines the application configuration by merging input configuration which is defined in a file with environment variables.

@@ -10,8 +10,12 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { AuthorizationStatusEnumType, IdTokenEnumType, MessageFormatEnumType } from "../enums";
-import { OcppResponse } from "../../..";
+import {
+  AuthorizationStatusEnumType,
+  IdTokenEnumType,
+  MessageFormatEnumType,
+} from '../enums';
+import { OcppResponse } from '../../..';
 
 export interface TransactionEventResponse extends OcppResponse {
   customData?: CustomDataType;

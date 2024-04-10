@@ -3,12 +3,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Logger, ILogObj } from "tslog";
-import { IMessageHandler, IMessage, OcppRequest, OcppResponse, OcppError } from "../..";
-import { SystemConfig } from "../../config/types";
-import { CallAction } from "../../ocpp/rpc/message";
-import { IModule } from "../modules";
-import { HandlerProperties } from ".";
+import { ILogObj, Logger } from 'tslog';
+import { IMessage, IMessageHandler, OcppError, OcppRequest, OcppResponse } from '../..';
+import { SystemConfig } from '../../config/types';
+import { CallAction } from '../../ocpp/rpc/message';
+import { IModule } from '../modules';
+import { HandlerProperties } from '.';
 
 /**
  * Abstract class implementing {@link IMessageHandler}.

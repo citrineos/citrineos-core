@@ -3,6 +3,6 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { TransactionsModuleApi } from "./module/api";
-export { ITransactionsModuleApi } from "./module/interface";
-export { TransactionsModule } from "./module/module";
+export { TransactionsModuleApi } from './module/api';
+export { ITransactionsModuleApi } from './module/interface';
+export { TransactionsModule } from './module/module';

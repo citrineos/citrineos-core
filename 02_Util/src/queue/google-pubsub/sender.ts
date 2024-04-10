@@ -3,9 +3,20 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractMessageSender, IMessageSender, SystemConfig, IMessage, OcppRequest, IMessageConfirmation, MessageState, OcppResponse, CallAction, OcppError } from "@citrineos/base";
-import { PubSub } from "@google-cloud/pubsub";
-import { ILogObj, Logger } from "tslog";
+import {
+  AbstractMessageSender,
+  CallAction,
+  IMessage,
+  IMessageConfirmation,
+  IMessageSender,
+  MessageState,
+  OcppError,
+  OcppRequest,
+  OcppResponse,
+  SystemConfig,
+} from '@citrineos/base';
+import { PubSub } from '@google-cloud/pubsub';
+import { ILogObj, Logger } from 'tslog';
 
 /**
  * Implementation of a {@link IMessageSender} using Google PubSub as the underlying transport.
@@ -71,11 +82,11 @@ export class PubSubSender extends AbstractMessageSender implements IMessageSende
     }
 
     if (!message.state) {
-      throw new Error("Message state must be set");
+      throw new Error('Message state must be set');
     }
 
     if (!message.payload) {
-      throw new Error("Message payload must be set");
+      throw new Error('Message payload must be set');
     }
 
     const topicName = `${this._config.util.messageBroker.pubsub?.topicPrefix}-${this._config.util.messageBroker.pubsub?.topicName}`;

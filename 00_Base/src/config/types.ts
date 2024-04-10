@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { z } from "zod";
-import { RegistrationStatusEnumType } from "../ocpp/model/enums";
-import { EventGroup } from "..";
+import { z } from 'zod';
+import { RegistrationStatusEnumType } from '../ocpp/model/enums';
+import { EventGroup } from '..';
 
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
 export const websocketServerInputSchema = z.object({

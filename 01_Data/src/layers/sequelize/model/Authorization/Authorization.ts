@@ -3,40 +3,38 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CustomDataType, IdTokenType, IdTokenInfoType, AuthorizationData, Namespace, ConnectorEnumType } from '@citrineos/base';
-import { Table, Column, Model, ForeignKey, BelongsTo, DataType } from 'sequelize-typescript';
+import { type AuthorizationData, type CustomDataType, IdTokenInfoType, IdTokenType, Namespace } from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { IdToken } from './IdToken';
 import { IdTokenInfo } from './IdTokenInfo';
-import { AuthorizationRestrictions } from '../../../../interfaces';
+import { type AuthorizationRestrictions } from '../../../../interfaces';
 
 @Table
 export class Authorization extends Model implements AuthorizationData, AuthorizationRestrictions {
+  static readonly MODEL_NAME: string = Namespace.AuthorizationData;
 
-    static readonly MODEL_NAME: string = Namespace.AuthorizationData;
+  @Column(DataType.ARRAY(DataType.STRING))
+  declare allowedConnectorTypes?: string[];
 
-    declare customData?: CustomDataType;
+  @Column(DataType.ARRAY(DataType.STRING))
+  declare disallowedEvseIdPrefixes?: string[];
 
-    @Column(DataType.ARRAY(DataType.STRING))
-    declare allowedConnectorTypes?: string[];
+  @ForeignKey(() => IdToken)
+  @Column({
+    type: DataType.INTEGER,
+    unique: true
+  })
+  declare idTokenId?: number;
 
-    @Column(DataType.ARRAY(DataType.STRING))
-    declare disallowedEvseIdPrefixes?: string[];
+  @BelongsTo(() => IdToken)
+  declare idToken: IdTokenType;
 
-    @ForeignKey(() => IdToken)
-    @Column({
-        type: DataType.INTEGER,
-        unique: true
-    })
-    declare idTokenId?: number;
+  @ForeignKey(() => IdTokenInfo)
+  @Column(DataType.INTEGER)
+  declare idTokenInfoId?: number;
 
-    @BelongsTo(() => IdToken)
-    declare idToken: IdTokenType;
+  @BelongsTo(() => IdTokenInfo)
+  declare idTokenInfo?: IdTokenInfoType;
 
-    @ForeignKey(() => IdTokenInfo)
-    @Column(DataType.INTEGER)
-    declare idTokenInfoId?: number;
-
-    @BelongsTo(() => IdTokenInfo)
-    declare idTokenInfo?: IdTokenInfoType;
+  declare customData?: CustomDataType;
 }
-

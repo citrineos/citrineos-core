@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ComponentCriterionEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { ComponentCriterionEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface GetReportRequest extends OcppRequest {
   customData?: CustomDataType;
@@ -34,8 +34,17 @@ export interface GetReportRequest extends OcppRequest {
   componentCriteria?:
     | [ComponentCriterionEnumType]
     | [ComponentCriterionEnumType, ComponentCriterionEnumType]
-    | [ComponentCriterionEnumType, ComponentCriterionEnumType, ComponentCriterionEnumType]
-    | [ComponentCriterionEnumType, ComponentCriterionEnumType, ComponentCriterionEnumType, ComponentCriterionEnumType];
+    | [
+        ComponentCriterionEnumType,
+        ComponentCriterionEnumType,
+        ComponentCriterionEnumType,
+      ]
+    | [
+        ComponentCriterionEnumType,
+        ComponentCriterionEnumType,
+        ComponentCriterionEnumType,
+        ComponentCriterionEnumType,
+      ];
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

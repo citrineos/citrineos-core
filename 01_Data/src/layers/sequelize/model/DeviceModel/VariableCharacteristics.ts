@@ -3,20 +3,17 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CustomDataType, DataEnumType, Namespace, VariableCharacteristicsType, VariableType } from "@citrineos/base";
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
-import { Variable } from "./Variable";
+import { type CustomDataType, DataEnumType, Namespace, type VariableCharacteristicsType, VariableType } from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { Variable } from './Variable';
 
 @Table
 export class VariableCharacteristics extends Model implements VariableCharacteristicsType {
-
   static readonly MODEL_NAME: string = Namespace.VariableCharacteristicsType;
 
-  declare customData?: CustomDataType;
-
   /**
-  * Fields
-  */
+   * Fields
+   */
 
   @Column(DataType.STRING)
   declare unit?: string;
@@ -37,16 +34,18 @@ export class VariableCharacteristics extends Model implements VariableCharacteri
   declare supportsMonitoring: boolean;
 
   /**
-  * Relations
-  */
+   * Relations
+   */
 
   @BelongsTo(() => Variable)
   declare variable: VariableType;
-  
+
   @ForeignKey(() => Variable)
   @Column({
     type: DataType.INTEGER,
     unique: true
   })
   declare variableId?: number;
+
+  declare customData?: CustomDataType;
 }

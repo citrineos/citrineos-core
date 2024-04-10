@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
-import fastifySwagger from "@fastify/swagger";
-import fastifySwaggerUi from "@fastify/swagger-ui";
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
 import { FastifyInstance } from 'fastify';
 import fs from 'fs';
 import { SystemConfig } from '@citrineos/base';

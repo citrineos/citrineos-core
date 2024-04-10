@@ -2,69 +2,68 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, CustomDataType, VariableMonitoringType, MonitorEnumType, VariableType, ComponentType } from "@citrineos/base";
-import { Table, Model, AutoIncrement, Column, DataType, PrimaryKey, Index, BelongsTo, ForeignKey } from "sequelize-typescript";
-import { Variable, Component } from "../DeviceModel";
+import { ComponentType, type CustomDataType, MonitorEnumType, Namespace, type VariableMonitoringType, VariableType } from '@citrineos/base';
+import { AutoIncrement, BelongsTo, Column, DataType, ForeignKey, Index, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import { Component, Variable } from '../DeviceModel';
 
 @Table
 export class VariableMonitoring extends Model implements VariableMonitoringType {
+  static readonly MODEL_NAME: string = Namespace.VariableMonitoringType;
 
-    static readonly MODEL_NAME: string = Namespace.VariableMonitoringType;
+  /**
+   * Fields
+   */
 
-    declare customData?: CustomDataType;
+  @PrimaryKey
+  @AutoIncrement
+  @Column(DataType.INTEGER)
+  declare databaseId: number;
 
-    /**
-     * Fields
-     */
+  @Index
+  @Column({
+    unique: 'stationId_Id'
+  })
+  declare stationId: string;
 
-    @PrimaryKey
-    @AutoIncrement
-    @Column(DataType.INTEGER)
-    declare databaseId: number;
+  @Column({
+    type: DataType.INTEGER,
+    unique: 'stationId_Id'
+  })
+  declare id: number;
 
-    @Index
-    @Column({
-        unique: 'stationId_Id'
-    })
-    declare stationId: string;
+  @Column(DataType.BOOLEAN)
+  declare transaction: boolean;
 
-    @Column({
-        type: DataType.INTEGER,
-        unique: 'stationId_Id'
-    })
-    declare id: number;
+  @Column(DataType.INTEGER)
+  declare value: number;
 
-    @Column(DataType.BOOLEAN)
-    declare transaction: boolean;
+  @Column(DataType.STRING)
+  declare type: MonitorEnumType;
 
-    @Column(DataType.INTEGER)
-    declare value: number;
+  @Column(DataType.INTEGER)
+  declare severity: number;
 
-    @Column(DataType.STRING)
-    declare type: MonitorEnumType;
+  /**
+   * Relations
+   */
 
-    @Column(DataType.INTEGER)
-    declare severity: number;
+  @BelongsTo(() => Variable)
+  declare variable: VariableType;
 
-    /**
-     * Relations
-     */
+  @ForeignKey(() => Variable)
+  @Column({
+    type: DataType.INTEGER
+  })
+  declare variableId?: number;
 
-    @BelongsTo(() => Variable)
-    declare variable: VariableType;
+  @BelongsTo(() => Component)
+  declare component: ComponentType;
 
-    @ForeignKey(() => Variable)
-    @Column({
-        type: DataType.INTEGER,
-    })
-    declare variableId?: number;
+  @ForeignKey(() => Component)
+  @Column({
+    type: DataType.INTEGER
+  })
+  declare componentId?: number;
 
-    @BelongsTo(() => Component)
-    declare component: ComponentType;
-
-    @ForeignKey(() => Component)
-    @Column({
-        type: DataType.INTEGER,
-    })
-    declare componentId?: number;
+  declare customData?: CustomDataType;
 }

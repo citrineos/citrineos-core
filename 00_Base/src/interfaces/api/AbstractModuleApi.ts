@@ -3,17 +3,23 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import 'reflect-metadata';
-import { ILogObj, Logger } from "tslog";
-import { HttpMethod, IDataEndpointDefinition, IMessageEndpointDefinition, METADATA_DATA_ENDPOINTS, METADATA_MESSAGE_ENDPOINTS } from ".";
-import { OcppRequest, OcppResponse, SystemConfig } from "../..";
-import { Namespace } from "../../ocpp/persistence";
-import { CallAction } from "../../ocpp/rpc/message";
-import { IMessageConfirmation } from "../messages";
-import { IModule } from "../modules";
-import { IMessageQuerystring, IMessageQuerystringSchema } from "./MessageQuerystring";
-import { IModuleApi } from "./ModuleApi";
+import { ILogObj, Logger } from 'tslog';
+import {
+  HttpMethod,
+  IDataEndpointDefinition,
+  IMessageEndpointDefinition,
+  METADATA_DATA_ENDPOINTS,
+  METADATA_MESSAGE_ENDPOINTS,
+} from '.';
+import { OcppRequest, OcppResponse, SystemConfig } from '../..';
+import { Namespace } from '../../ocpp/persistence';
+import { CallAction } from '../../ocpp/rpc/message';
+import { IMessageConfirmation } from '../messages';
+import { IModule } from '../modules';
+import { IMessageQuerystring, IMessageQuerystringSchema } from './MessageQuerystring';
+import { IModuleApi } from './ModuleApi';
 
 /**
  * Abstract module api class implementation.
@@ -140,7 +146,7 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
 
     /**
      * Convert a {@link CallAction} to a normed lowercase URL path.
-     * 
+     *
      * @param {CallAction} input - The {@link CallAction} to convert to a URL path.
      * @returns {string} - String representation of URL path.
      */
@@ -151,7 +157,7 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
 
     /**
      * Convert a {@link Namespace} to a normed lowercase URL path.
-     * 
+     *
      * @param {Namespace} input - The {@link Namespace} to convert to a URL path.
      * @returns {string} - String representation of URL path.
      */

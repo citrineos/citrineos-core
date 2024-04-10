@@ -6,11 +6,11 @@
 export * from './repositories';
 
 // Data endpoints query models
-export { ChargingStationKeyQuerystring, ChargingStationKeyQuerySchema } from "./queries/ChargingStation";
-export { VariableAttributeQuerystring, VariableAttributeQuerySchema, CreateOrUpdateVariableAttributeQuerystring, CreateOrUpdateVariableAttributeQuerySchema } from "./queries/VariableAttribute";
-export { AuthorizationQuerystring, AuthorizationQuerySchema } from "./queries/Authorization";
-export { TransactionEventQuerystring, TransactionEventQuerySchema } from "./queries/TransactionEvent";
+export { type ChargingStationKeyQuerystring, ChargingStationKeyQuerySchema } from './queries/ChargingStation';
+export { type VariableAttributeQuerystring, VariableAttributeQuerySchema, type CreateOrUpdateVariableAttributeQuerystring, CreateOrUpdateVariableAttributeQuerySchema } from './queries/VariableAttribute';
+export { type AuthorizationQuerystring, AuthorizationQuerySchema } from './queries/Authorization';
+export { type TransactionEventQuerystring, TransactionEventQuerySchema } from './queries/TransactionEvent';
 
 // Data projection models
-export { AuthorizationRestrictions } from "./projections/AuthorizationRestrictions";
-export { default as AuthorizationRestrictionsSchema } from './projections/schemas/AuthorizationRestrictionsSchema.json'
+export type { AuthorizationRestrictions } from './projections/AuthorizationRestrictions';
+export { default as AuthorizationRestrictionsSchema } from './projections/schemas/AuthorizationRestrictionsSchema.json';

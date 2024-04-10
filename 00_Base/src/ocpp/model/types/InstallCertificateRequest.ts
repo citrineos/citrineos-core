@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { InstallCertificateUseEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { InstallCertificateUseEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface InstallCertificateRequest extends OcppRequest {
   customData?: CustomDataType;

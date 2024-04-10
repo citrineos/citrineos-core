@@ -10,7 +10,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { OcppResponse } from "../../..";
+import { OcppResponse } from '../../..';
 
 export interface MeterValuesResponse extends OcppResponse {
   customData?: CustomDataType;

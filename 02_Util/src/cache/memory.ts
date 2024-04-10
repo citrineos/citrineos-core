@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ICache } from "@citrineos/base";
-import { ClassConstructor, plainToInstance } from "class-transformer";
+import { ICache } from '@citrineos/base';
+import { ClassConstructor, plainToInstance } from 'class-transformer';
 
 /**
  * Implementation of cache interface with memory storage
@@ -22,16 +22,16 @@ export class MemoryCache implements ICache {
       // Returns value on keySubscriptions when Map.set(key, value) is called
       set(target, property, value) {
         const setOutcome = Reflect.set(target, property, value);
-        if (typeof property === "string" && keySubscriptionMap.has(property) && setOutcome) {
-          keySubscriptionMap.get(property)!(value);
+        if (typeof property === 'string' && keySubscriptionMap.has(property) && setOutcome) {
+          (keySubscriptionMap?.get(property) as any)(value);
         }
         return setOutcome;
       },
       // Returns null on keySubscriptions when Map.delete(key) is called
       deleteProperty(target, property) {
         const deleteOutcome = Reflect.deleteProperty(target, property);
-        if (typeof property === "string" && keySubscriptionMap.has(property) && deleteOutcome) {
-          keySubscriptionMap.get(property)!(null);
+        if (typeof property === 'string' && keySubscriptionMap.has(property) && deleteOutcome) {
+          (keySubscriptionMap?.get(property) as any)(null);
         }
         return deleteOutcome;
       },
@@ -54,19 +54,19 @@ export class MemoryCache implements ICache {
   }
 
   exists(key: string, namespace?: string): Promise<boolean> {
-    namespace = namespace || "default";
+    namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
     return Promise.resolve(this._cache.has(namespaceKey));
   }
 
   async remove(key: string, namespace?: string): Promise<boolean> {
-    namespace = namespace || "default";
+    namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
     return this._cache.delete(namespaceKey);
   }
 
   onChange<T>(key: string, waitSeconds: number, namespace?: string, classConstructor?: () => ClassConstructor<T>): Promise<T | null> {
-    namespace = namespace || "default";
+    namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
 
     // Either get existing promise awaiting change on this key or create a new one and store it.
@@ -83,8 +83,8 @@ export class MemoryCache implements ICache {
       })).get(namespaceKey);
 
     return Promise.race([
-      onChangeValuePromise!.then((value) => {
-        if (typeof value === "string") {
+      onChangeValuePromise?.then((value) => {
+        if (typeof value === 'string') {
           if (classConstructor) {
             return plainToInstance(classConstructor(), JSON.parse(value));
           } else {
@@ -97,12 +97,12 @@ export class MemoryCache implements ICache {
         setTimeout(() => {
           resolve(this.get(key, namespace, classConstructor));
         }, waitSeconds * 1000);
-      })]);
+      })]) as Promise<T>;
   }
 
 
   async get<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): Promise<T | null> {
-    namespace = namespace || "default";
+    namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
     const result = this._cache.get(namespaceKey);
     if (result) {
@@ -115,7 +115,7 @@ export class MemoryCache implements ICache {
   }
 
   getSync<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): T | null {
-    namespace = namespace || "default";
+    namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
     const value = this._cache.get(namespaceKey);
     if (value) {
@@ -129,7 +129,7 @@ export class MemoryCache implements ICache {
   }
 
   async set(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean> {
-    namespace = namespace || "default";
+    namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
     this._cache.set(namespaceKey, value);
     if (this._timeoutMap.has(namespaceKey)) {
@@ -144,7 +144,7 @@ export class MemoryCache implements ICache {
   }
 
   async setIfNotExist(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean> {
-    namespace = namespace || "default";
+    namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
     if (this._cache.has(namespaceKey)) {
       return false;
@@ -162,7 +162,7 @@ export class MemoryCache implements ICache {
   }
 
   setSync(key: string, value: string, namespace?: string, expireSeconds?: number): boolean {
-    namespace = namespace || "default";
+    namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
     this._cache.set(namespaceKey, value);
     if (this._timeoutMap.has(namespaceKey)) {

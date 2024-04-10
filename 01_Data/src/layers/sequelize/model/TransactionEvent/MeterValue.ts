@@ -3,40 +3,33 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CustomDataType, MeterValueType, Namespace, SampledValueType } from '@citrineos/base';
-import {
-    Table,
-    Column,
-    Model,
-    DataType,
-    ForeignKey,
-} from 'sequelize-typescript';
+import { type CustomDataType, type MeterValueType, Namespace, type SampledValueType } from '@citrineos/base';
+import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { TransactionEvent } from './TransactionEvent';
 import { Transaction } from './Transaction';
 
 @Table
 export class MeterValue extends Model implements MeterValueType {
+  static readonly MODEL_NAME: string = Namespace.MeterValueType;
 
-    static readonly MODEL_NAME: string = Namespace.MeterValueType;
+  @ForeignKey(() => TransactionEvent)
+  @Column(DataType.INTEGER)
+  declare transactionEventId?: number;
 
-    declare customData?: CustomDataType;
+  @ForeignKey(() => Transaction)
+  @Column(DataType.INTEGER)
+  declare transactionDatabaseId?: number;
 
-    @ForeignKey(() => TransactionEvent)
-    @Column(DataType.INTEGER)
-    declare transactionEventId?: number;
+  @Column(DataType.JSON)
+  declare sampledValue: [SampledValueType, ...SampledValueType[]];
 
-    @ForeignKey(() => Transaction)
-    @Column(DataType.INTEGER)
-    declare transactionDatabaseId?: number;
+  @Column({
+    type: DataType.DATE,
+    get () {
+      return this.getDataValue('timestamp').toISOString();
+    }
+  })
+  declare timestamp: string;
 
-    @Column(DataType.JSON)
-    declare sampledValue: [SampledValueType, ...SampledValueType[]];
-
-    @Column({
-        type: DataType.DATE,
-        get() {
-            return this.getDataValue('timestamp').toISOString();
-        }
-    })
-    declare timestamp: string;
+  declare customData?: CustomDataType;
 }

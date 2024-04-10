@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ConnectorStatusEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { ConnectorStatusEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface StatusNotificationRequest extends OcppRequest {
   customData?: CustomDataType;

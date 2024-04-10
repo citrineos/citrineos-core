@@ -10,7 +10,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { OcppRequest } from "../../..";
+import { OcppRequest } from '../../..';
 
 export interface UpdateFirmwareRequest extends OcppRequest {
   customData?: CustomDataType;

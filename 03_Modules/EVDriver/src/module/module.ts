@@ -29,12 +29,12 @@ import {
   ReserveNowResponse,
   SendLocalListResponse,
   SystemConfig,
-  UnlockConnectorResponse
-} from "@citrineos/base";
-import {IAuthorizationRepository, IDeviceModelRepository, sequelize, VariableAttribute} from "@citrineos/data";
-import {RabbitMqReceiver, RabbitMqSender, Timer} from "@citrineos/util";
-import deasyncPromise from "deasync-promise";
-import {ILogObj, Logger} from 'tslog';
+  UnlockConnectorResponse,
+} from '@citrineos/base';
+import { IAuthorizationRepository, IDeviceModelRepository, sequelize, VariableAttribute } from '@citrineos/data';
+import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import deasyncPromise from 'deasync-promise';
+import { ILogObj, Logger } from 'tslog';
 
 /**
  * Component that handles provisioning related messages.
@@ -62,33 +62,26 @@ export class EVDriverModule extends AbstractModule {
   protected _authorizeRepository: IAuthorizationRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
 
-  get authorizeRepository(): IAuthorizationRepository {
-    return this._authorizeRepository;
-  }
-
-  get deviceModelRepository(): IDeviceModelRepository {
-    return this._deviceModelRepository;
-  }
 
   /**
    * This is the constructor function that initializes the {@link EVDriverModule}.
-   * 
+   *
    * @param {SystemConfig} config - The `config` contains configuration settings for the module.
-   *  
+   *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   * 
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface. 
+   *
+   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   * 
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface. 
+   *
+   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   * 
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}. 
+   *
+   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   * 
+   *
    * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating Authorization data.
    * If no `authorizeRepository` is provided, a default {@link sequelize.AuthorizationRepository} instance is created and used.
-   * 
+   *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
    */
@@ -104,16 +97,24 @@ export class EVDriverModule extends AbstractModule {
     super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.EVDriver, logger);
 
     const timer = new Timer();
-    this._logger.info(`Initializing...`);
+    this._logger.info('Initializing...');
 
     if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error("Could not initialize module due to failure in handler initialization.");
+      throw new Error('Could not initialize module due to failure in handler initialization.');
     }
 
     this._authorizeRepository = authorizeRepository || new sequelize.AuthorizationRepository(config, logger);
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, logger);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
+  }
+
+  get authorizeRepository(): IAuthorizationRepository {
+    return this._authorizeRepository;
+  }
+
+  get deviceModelRepository(): IDeviceModelRepository {
+    return this._deviceModelRepository;
   }
 
   /**
@@ -126,7 +127,7 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties
   ): void {
 
-    this._logger.debug("Authorize received:", message, props);
+    this._logger.debug('Authorize received:', message, props);
 
     this._authorizeRepository.readByQuery({ ...message.payload.idToken }).then(async authorization => {
       const response: AuthorizeResponse = {
@@ -145,12 +146,10 @@ export class EVDriverModule extends AbstractModule {
             language1: authorization.idTokenInfo.language1,
             evseId: authorization.idTokenInfo.evseId,
             groupIdToken: authorization.idTokenInfo.groupIdToken ? {
-              additionalInfo: (authorization.idTokenInfo.groupIdToken.additionalInfo && authorization.idTokenInfo.groupIdToken.additionalInfo.length > 0) ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(additionalInfo => {
-                return {
-                  additionalIdToken: additionalInfo.additionalIdToken,
-                  type: additionalInfo.type
-                }
-              }) as [AdditionalInfoType, ...AdditionalInfoType[]]) : undefined,
+              additionalInfo: (authorization.idTokenInfo.groupIdToken.additionalInfo && authorization.idTokenInfo.groupIdToken.additionalInfo.length > 0) ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(additionalInfo => ({
+                additionalIdToken: additionalInfo.additionalIdToken,
+                type: additionalInfo.type
+              })) as [AdditionalInfoType, ...AdditionalInfoType[]]) : undefined,
               idToken: authorization.idTokenInfo.groupIdToken.idToken,
               type: authorization.idTokenInfo.groupIdToken.type
             } : undefined,
@@ -158,14 +157,14 @@ export class EVDriverModule extends AbstractModule {
             personalMessage: authorization.idTokenInfo.personalMessage
           };
 
-          if (idTokenInfo.status == AuthorizationStatusEnumType.Accepted) {
+          if (idTokenInfo.status === AuthorizationStatusEnumType.Accepted) {
             if (idTokenInfo.cacheExpiryDateTime &&
               new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
               response.idTokenInfo = {
                 status: AuthorizationStatusEnumType.Invalid,
                 groupIdToken: idTokenInfo.groupIdToken
                 // TODO determine how/if to set personalMessage
-              }
+              };
             } else {
               // If charging station does not have values and evses associated with the component/variable pairs below,
               // this logic will break. CSMS's aiming to use the allowedConnectorTypes or disallowedEvseIdPrefixes
@@ -186,12 +185,12 @@ export class EVDriverModule extends AbstractModule {
                   }
                 }
               }
-              if (evseIds && evseIds.size == 0) {
+              if (evseIds && evseIds.size === 0) {
                 response.idTokenInfo = {
                   status: AuthorizationStatusEnumType.NotAllowedTypeEVSE,
                   groupIdToken: idTokenInfo.groupIdToken
                   // TODO determine how/if to set personalMessage
-                }
+                };
               } else {
                 // EVSEID prefixes here follow the ISO 15118/IEC 63119-2 format, unlike the evseId list on the
                 // IdTokenInfo object which refers to the serial evse ids defined within OCPP 2.0.1's 3-tier model
@@ -213,16 +212,16 @@ export class EVDriverModule extends AbstractModule {
                     if (evseIdAllowed && !authorization.allowedConnectorTypes) {
                       evseIds.add(evseIdAttribute.evse?.id as number);
                     } else if (!evseIdAllowed && authorization.allowedConnectorTypes) {
-                      evseIds.delete(evseIdAttribute.evse?.id as number)
+                      evseIds.delete(evseIdAttribute.evse?.id as number);
                     }
                   }
                 }
-                if (evseIds && evseIds.size == 0) {
+                if (evseIds && evseIds.size === 0) {
                   response.idTokenInfo = {
                     status: AuthorizationStatusEnumType.NotAtThisLocation,
                     groupIdToken: idTokenInfo.groupIdToken
                     // TODO determine how/if to set personalMessage
-                  }
+                  };
                 } else {
                   // TODO: Determine how to check for NotAtThisTime
                   response.idTokenInfo = idTokenInfo;
@@ -243,29 +242,29 @@ export class EVDriverModule extends AbstractModule {
           response.idTokenInfo = {
             status: AuthorizationStatusEnumType.Accepted
             // TODO determine how/if to set personalMessage
-          }
+          };
         }
       }
-      return this.sendCallResultWithMessage(message, response)
-    }).then(messageConfirmation => this._logger.debug("Authorize response sent:", messageConfirmation));
+      return this.sendCallResultWithMessage(message, response);
+    }).then(messageConfirmation => this._logger.debug('Authorize response sent:', messageConfirmation));
   }
-  
+
   @AsHandler(CallAction.ReservationStatusUpdate)
   protected async _handleReservationStatusUpdate(
     message: IMessage<ReservationStatusUpdateRequest>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("ReservationStatusUpdateRequest received:", message, props);
+    this._logger.debug('ReservationStatusUpdateRequest received:', message, props);
 
     // Create response
     const response: ReservationStatusUpdateResponse = {
     };
 
     this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug("ReservationStatusUpdate response sent: ", messageConfirmation));
- 
+      .then(messageConfirmation => this._logger.debug('ReservationStatusUpdate response sent: ', messageConfirmation));
+
   }
-  
+
   /**
    * Handle responses
    */
@@ -275,7 +274,7 @@ export class EVDriverModule extends AbstractModule {
     message: IMessage<RequestStartTransactionResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("RequestStartTransactionResponse received:", message, props);
+    this._logger.debug('RequestStartTransactionResponse received:', message, props);
 
   }
 
@@ -284,7 +283,7 @@ export class EVDriverModule extends AbstractModule {
     message: IMessage<RequestStopTransactionResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("RequestStopTransactionResponse received:", message, props);
+    this._logger.debug('RequestStopTransactionResponse received:', message, props);
 
   }
 
@@ -293,52 +292,52 @@ export class EVDriverModule extends AbstractModule {
     message: IMessage<CancelReservationResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("CancelReservationResponse received:", message, props);
+    this._logger.debug('CancelReservationResponse received:', message, props);
 
   }
-  
+
   @AsHandler(CallAction.ReserveNow)
   protected async _handleReserveNow(
     message: IMessage<ReserveNowResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("ReserveNowResponse received:", message, props);
+    this._logger.debug('ReserveNowResponse received:', message, props);
 
   }
-  
+
   @AsHandler(CallAction.UnlockConnector)
   protected async _handleUnlockConnector(
     message: IMessage<UnlockConnectorResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("UnlockConnectorResponse received:", message, props);
+    this._logger.debug('UnlockConnectorResponse received:', message, props);
 
   }
-  
+
   @AsHandler(CallAction.ClearCache)
   protected async _handleClearCache(
     message: IMessage<ClearCacheResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("ClearCacheResponse received:", message, props);
+    this._logger.debug('ClearCacheResponse received:', message, props);
 
   }
-  
+
   @AsHandler(CallAction.SendLocalList)
   protected async _handleSendLocalList(
     message: IMessage<SendLocalListResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("SendLocalListResponse received:", message, props);
+    this._logger.debug('SendLocalListResponse received:', message, props);
 
   }
-  
+
   @AsHandler(CallAction.GetLocalListVersion)
   protected async _handleGetLocalListVersion(
     message: IMessage<GetLocalListVersionResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("GetLocalListVersionResponse received:", message, props);
+    this._logger.debug('GetLocalListVersionResponse received:', message, props);
 
   }
 }

@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CallAction } from "../../ocpp/rpc/message";
+import { CallAction } from '../../ocpp/rpc/message';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AsHandler } from ".";
+import { AsHandler } from '.';
 
 /**
  * Interface for usage in {@link AsHandler} decorator.

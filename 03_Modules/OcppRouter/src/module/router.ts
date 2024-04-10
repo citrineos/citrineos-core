@@ -3,10 +3,40 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
-import { AbstractMessageRouter, AbstractModule, BOOT_STATUS, CacheNamespace, Call, CallAction, CallError, CallResult, ErrorCode, EventGroup, ICache, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageRouter, IMessageSender, MessageOrigin, MessageState, MessageTriggerEnumType, MessageTypeId, OcppError, OcppRequest, OcppResponse, RegistrationStatusEnumType, RequestBuilder, RetryMessageError, SystemConfig, TriggerMessageRequest } from "@citrineos/base";
-import Ajv from "ajv";
-import { v4 as uuidv4 } from "uuid";
-import { ILogObj, Logger } from "tslog";
+import {
+  AbstractMessageRouter,
+  AbstractModule,
+  BOOT_STATUS,
+  CacheNamespace,
+  Call,
+  CallAction,
+  CallError,
+  CallResult,
+  ErrorCode,
+  EventGroup,
+  ICache,
+  IMessage,
+  IMessageConfirmation,
+  IMessageContext,
+  IMessageHandler,
+  IMessageRouter,
+  IMessageSender,
+  MessageOrigin,
+  MessageState,
+  MessageTriggerEnumType,
+  MessageTypeId,
+  OcppError,
+  OcppRequest,
+  OcppResponse,
+  RegistrationStatusEnumType,
+  RequestBuilder,
+  RetryMessageError,
+  SystemConfig,
+  TriggerMessageRequest,
+} from '@citrineos/base';
+import Ajv from 'ajv';
+import { v4 as uuidv4 } from 'uuid';
+import { ILogObj, Logger } from 'tslog';
 
 export interface Subscription {
     stationId: string;
@@ -83,7 +113,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
 
     /**
-     * Interface implementation 
+     * Interface implementation
      */
 
     async registerConnection(connectionIdentifier: string): Promise<boolean> {
@@ -148,7 +178,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             return true;
         } catch (error) {
             this._logger.error("Error processing message:", message, error);
-            if (messageTypeId != MessageTypeId.CallResult && messageTypeId != MessageTypeId.CallError) {
+            if (messageTypeId !== MessageTypeId.CallResult && messageTypeId !== MessageTypeId.CallError) {
                 const callError = error instanceof OcppError ? error.asCallError()
                     : [MessageTypeId.CallError, messageId, ErrorCode.InternalError, "Unable to process message", { error: error }];
                 const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
@@ -249,7 +279,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
 
     /**
-     * Private Methods 
+     * Private Methods
      */
 
     /**
@@ -408,9 +438,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
     private async _sendCallIsAllowed(identifier: string, message: Call): Promise<boolean> {
         const status = await this._cache.get<string>(BOOT_STATUS, identifier);
-        if (status == RegistrationStatusEnumType.Rejected &&
+        if (status === RegistrationStatusEnumType.Rejected &&
             // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
-            !(message[2] as CallAction == CallAction.TriggerMessage && (message[3] as TriggerMessageRequest).requestedMessage == MessageTriggerEnumType.BootNotification)) {
+            !(message[2] as CallAction === CallAction.TriggerMessage && (message[3] as TriggerMessageRequest).requestedMessage === MessageTriggerEnumType.BootNotification)) {
             return false;
         }
         return true;

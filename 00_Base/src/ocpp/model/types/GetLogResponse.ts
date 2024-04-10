@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { LogStatusEnumType } from "../enums";
-import { OcppResponse } from "../../..";
+import { LogStatusEnumType } from '../enums';
+import { OcppResponse } from '../../..';
 
 export interface GetLogResponse extends OcppResponse {
   customData?: CustomDataType;

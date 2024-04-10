@@ -3,12 +3,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { HttpMethod, IDataEndpointDefinition, METADATA_DATA_ENDPOINTS } from ".";
-import { Namespace } from "../../ocpp/persistence";
+import { HttpMethod, IDataEndpointDefinition, METADATA_DATA_ENDPOINTS } from '.';
+import { Namespace } from '../../ocpp/persistence';
 
 /**
  * Decorator for use in module API class to expose methods as REST data endpoints.
- * 
+ *
  * @param {Namespace} namespace - The namespace value.
  * @param {HttpMethod} method - The HTTP method value.
  * @param {object} querySchema - The query schema value (optional).

@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { MonitoringBaseEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { MonitoringBaseEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface SetMonitoringBaseRequest extends OcppRequest {
   customData?: CustomDataType;

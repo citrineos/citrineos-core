@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from "@citrineos/base";
-import { Table, Model, PrimaryKey, Column, DataType, BelongsTo, ForeignKey } from "sequelize-typescript";
-import { Location } from "./Location";
+import { Namespace } from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import { Location } from './Location';
 
 /**
  * Represents a charging station.
@@ -12,21 +12,21 @@ import { Location } from "./Location";
  */
 @Table
 export class ChargingStation extends Model {
-    static readonly MODEL_NAME: string = Namespace.ChargingStation;
+  static readonly MODEL_NAME: string = Namespace.ChargingStation;
 
-    @PrimaryKey
-    @Column(DataType.STRING(36))
-    declare id: string;
+  @PrimaryKey
+  @Column(DataType.STRING(36))
+  declare id: string;
 
-    declare isOnline: boolean;
+  @ForeignKey(() => Location)
+  @Column(DataType.INTEGER)
+  declare locationId?: number;
 
-    @ForeignKey(() => Location)
-    @Column(DataType.INTEGER)
-    declare locationId?: number;
-
-    /**
+  /**
      * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.
      */
-    @BelongsTo(() => Location)
-    declare location?: Location;
+  @BelongsTo(() => Location)
+  declare location?: Location;
+
+  declare isOnline: boolean;
 }

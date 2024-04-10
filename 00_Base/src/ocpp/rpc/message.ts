@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OcppRequest, OcppResponse } from "../..";
+import { OcppRequest, OcppResponse } from '../..';
 
 /**
  * Definition of Call Message (4.2.1 CALL)

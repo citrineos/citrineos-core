@@ -2,75 +2,78 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 import {
-    ComponentType,
-    CustomDataType,
-    EventDataType,
-    EventNotificationEnumType,
-    EventTriggerEnumType,
-    Namespace,
-    VariableType
-} from "@citrineos/base";
-import {BelongsTo, Column, DataType, ForeignKey, Index, Model, Table} from "sequelize-typescript";
-import {Component, Variable} from "../DeviceModel";
+  ComponentType,
+  type CustomDataType,
+  type EventDataType,
+  EventNotificationEnumType,
+  EventTriggerEnumType,
+  Namespace,
+  VariableType
+} from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, Index, Model, Table } from 'sequelize-typescript';
+import { Component, Variable } from '../DeviceModel';
 
 @Table
 export class EventData extends Model implements EventDataType {
-    static readonly MODEL_NAME: string = Namespace.EventDataType;
-    declare customData?: CustomDataType;
+  static readonly MODEL_NAME: string = Namespace.EventDataType;
 
-    /**
-     * Fields
-     */
-    @Index
-    @Column({
-        unique: 'stationId'
-    })
-    declare stationId: string;
+  /**
+   * Fields
+   */
+  @Index
+  @Column({
+    unique: 'stationId'
+  })
+  declare stationId: string;
 
-    @Column(DataType.INTEGER)
-    declare eventId: number;
-    declare timestamp: string;
+  @Column(DataType.INTEGER)
+  declare eventId: number;
 
-    @Column(DataType.STRING)
-    declare trigger: EventTriggerEnumType;
+  @Column(DataType.STRING)
+  declare trigger: EventTriggerEnumType;
 
-    @Column(DataType.INTEGER)
-    declare cause?: number;
+  @Column(DataType.INTEGER)
+  declare cause?: number;
 
-    declare actualValue: string;
+  @Column(DataType.BOOLEAN)
+  declare cleared?: boolean;
 
-    declare techCode?: string;
+  @Column(DataType.INTEGER)
+  declare variableMonitoringId?: number;
 
-    declare techInfo?: string;
+  @Column(DataType.STRING)
+  declare eventNotificationType: EventNotificationEnumType;
 
-    @Column(DataType.BOOLEAN)
-    declare cleared?: boolean;
-    declare transactionId?: string;
+  /**
+   * Relations
+   */
+  @BelongsTo(() => Variable)
+  declare variable: VariableType;
 
-    @Column(DataType.INTEGER)
-    declare variableMonitoringId?: number;
+  @ForeignKey(() => Variable)
+  @Column({
+    type: DataType.INTEGER
+  })
+  declare variableId?: number;
 
-    @Column(DataType.STRING)
-    declare eventNotificationType: EventNotificationEnumType;
+  @BelongsTo(() => Component)
+  declare component: ComponentType;
 
-    /**
-     * Relations
-     */
-    @BelongsTo(() => Variable)
-    declare variable: VariableType;
+  @ForeignKey(() => Component)
+  @Column({
+    type: DataType.INTEGER
+  })
+  declare componentId?: number;
 
-    @ForeignKey(() => Variable)
-    @Column({
-        type: DataType.INTEGER,
-    })
-    declare variableId?: number;
+  declare timestamp: string;
 
-    @BelongsTo(() => Component)
-    declare component: ComponentType;
+  declare actualValue: string;
 
-    @ForeignKey(() => Component)
-    @Column({
-        type: DataType.INTEGER,
-    })
-    declare componentId?: number;
+  declare techCode?: string;
+
+  declare techInfo?: string;
+
+  declare transactionId?: string;
+
+  declare customData?: CustomDataType;
 }
