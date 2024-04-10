@@ -50,5 +50,3 @@ export interface OCSPRequestDataType {
    */
   responderURL: string;
 }
-
-

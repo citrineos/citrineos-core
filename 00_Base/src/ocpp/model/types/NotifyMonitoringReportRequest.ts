@@ -168,5 +168,3 @@ export interface VariableMonitoringType {
    */
   severity: number;
 }
-
-

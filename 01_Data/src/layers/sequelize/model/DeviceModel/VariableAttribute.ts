@@ -22,28 +22,28 @@ export class VariableAttribute extends Model implements VariableAttributeType {
 
   @Index
   @Column({
-    unique: 'stationId_type_variableId_componentId'
+    unique: 'stationId_type_variableId_componentId',
   })
   declare stationId: string;
 
   @Column({
     type: DataType.STRING,
     defaultValue: AttributeEnumType.Actual,
-    unique: 'stationId_type_variableId_componentId'
+    unique: 'stationId_type_variableId_componentId',
   })
   declare type?: AttributeEnumType;
 
   // From VariableCharacteristics, which belongs to Variable associated with this VariableAttribute
   @Column({
     type: DataType.STRING,
-    defaultValue: DataEnumType.string
+    defaultValue: DataEnumType.string,
   })
   declare dataType: DataEnumType;
 
   @Column({
     // TODO: Make this configurable? also used in VariableStatus model
     type: DataType.STRING(4000),
-    set (valueString) {
+    set(valueString) {
       if (valueString) {
         const valueType = (this as VariableAttribute).dataType;
         switch (valueType) {
@@ -56,25 +56,25 @@ export class VariableAttribute extends Model implements VariableAttributeType {
         }
       }
       this.setDataValue('value', valueString);
-    }
+    },
   })
   declare value?: string;
 
   @Column({
     type: DataType.STRING,
-    defaultValue: MutabilityEnumType.ReadWrite
+    defaultValue: MutabilityEnumType.ReadWrite,
   })
   declare mutability?: MutabilityEnumType;
 
   @Column({
     type: DataType.BOOLEAN,
-    defaultValue: false
+    defaultValue: false,
   })
   declare persistent?: boolean;
 
   @Column({
     type: DataType.BOOLEAN,
-    defaultValue: false
+    defaultValue: false,
   })
   declare constant?: boolean;
 
@@ -88,7 +88,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
   @ForeignKey(() => Variable)
   @Column({
     type: DataType.INTEGER,
-    unique: 'stationId_type_variableId_componentId'
+    unique: 'stationId_type_variableId_componentId',
   })
   declare variableId?: number;
 
@@ -98,7 +98,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
   @ForeignKey(() => Component)
   @Column({
     type: DataType.INTEGER,
-    unique: 'stationId_type_variableId_componentId'
+    unique: 'stationId_type_variableId_componentId',
   })
   declare componentId?: number;
 

@@ -13,19 +13,37 @@ import { CallAction } from '../../ocpp/rpc/message';
  * @param {object} bodySchema - The body schema.
  * @return {void} This function does not return anything.
  */
-export const AsMessageEndpoint = function (action: CallAction, bodySchema: object) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (target: any, propertyKey: string, descriptor: PropertyDescriptor): void => {
-        if (!Reflect.hasMetadata(METADATA_MESSAGE_ENDPOINTS, target.constructor)) {
-            Reflect.defineMetadata(METADATA_MESSAGE_ENDPOINTS, new Array<IMessageEndpointDefinition>(), target.constructor);
-        }
-        const messageEndpoints = Reflect.getMetadata(METADATA_MESSAGE_ENDPOINTS, target.constructor) as Array<IMessageEndpointDefinition>;
-        messageEndpoints.push({
-            action: action,
-            method: descriptor.value,
-            methodName: propertyKey,
-            bodySchema: bodySchema
-        });
-        Reflect.defineMetadata(METADATA_MESSAGE_ENDPOINTS, messageEndpoints, target.constructor);
-    };
+export const AsMessageEndpoint = function (
+  action: CallAction,
+  bodySchema: object,
+) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor,
+  ): void => {
+    if (!Reflect.hasMetadata(METADATA_MESSAGE_ENDPOINTS, target.constructor)) {
+      Reflect.defineMetadata(
+        METADATA_MESSAGE_ENDPOINTS,
+        new Array<IMessageEndpointDefinition>(),
+        target.constructor,
+      );
+    }
+    const messageEndpoints = Reflect.getMetadata(
+      METADATA_MESSAGE_ENDPOINTS,
+      target.constructor,
+    ) as Array<IMessageEndpointDefinition>;
+    messageEndpoints.push({
+      action: action,
+      method: descriptor.value,
+      methodName: propertyKey,
+      bodySchema: bodySchema,
+    });
+    Reflect.defineMetadata(
+      METADATA_MESSAGE_ENDPOINTS,
+      messageEndpoints,
+      target.constructor,
+    );
+  };
 };

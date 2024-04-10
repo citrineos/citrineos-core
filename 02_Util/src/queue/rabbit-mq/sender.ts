@@ -21,8 +21,10 @@ import { ILogObj, Logger } from 'tslog';
 /**
  * Implementation of a {@link IMessageSender} using RabbitMQ as the underlying transport.
  */
-export class RabbitMqSender extends AbstractMessageSender implements IMessageSender {
-
+export class RabbitMqSender
+  extends AbstractMessageSender
+  implements IMessageSender
+{
   /**
    * Constants
    */
@@ -43,7 +45,7 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
   constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
     super(config, logger);
 
-    this._connect().then(channel => {
+    this._connect().then((channel) => {
       this._channel = channel;
     });
   }
@@ -59,7 +61,10 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    * @param {OcppRequest | undefined} payload - The optional payload to be sent with the message.
    * @return {Promise<IMessageConfirmation>} A promise that resolves to the confirmation message.
    */
-  sendRequest(message: IMessage<OcppRequest>, payload?: OcppRequest | undefined): Promise<IMessageConfirmation> {
+  sendRequest(
+    message: IMessage<OcppRequest>,
+    payload?: OcppRequest | undefined,
+  ): Promise<IMessageConfirmation> {
     return this.send(message, payload, MessageState.Request);
   }
 
@@ -70,7 +75,10 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    * @param {OcppResponse | OcppError} payload - The payload to include in the response.
    * @return {Promise<IMessageConfirmation>} - A promise that resolves to the message confirmation.
    */
-  sendResponse(message: IMessage<OcppResponse | OcppError>, payload?: OcppResponse | OcppError): Promise<IMessageConfirmation> {
+  sendResponse(
+    message: IMessage<OcppResponse | OcppError>,
+    payload?: OcppResponse | OcppError,
+  ): Promise<IMessageConfirmation> {
     return this.send(message, payload, MessageState.Response);
   }
 
@@ -82,7 +90,11 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    * @param {MessageState} [state] - The state of the message.
    * @return {Promise<IMessageConfirmation>} - A promise that resolves to a message confirmation.
    */
-  async send(message: IMessage<OcppRequest | OcppResponse | OcppError>, payload?: OcppRequest | OcppResponse | OcppError, state?: MessageState): Promise<IMessageConfirmation> {
+  async send(
+    message: IMessage<OcppRequest | OcppResponse | OcppError>,
+    payload?: OcppRequest | OcppResponse | OcppError,
+    state?: MessageState,
+  ): Promise<IMessageConfirmation> {
     if (payload) {
       message.payload = payload;
     }
@@ -100,22 +112,27 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
     }
 
     const exchange = this._config.util.messageBroker.amqp?.exchange as string;
-    const channel = this._channel || await this._connect();
+    const channel = this._channel || (await this._connect());
     this._channel = channel;
 
     this._logger.debug(`Publishing to ${exchange}:`, message);
 
-    const success = channel.publish(exchange || '', '', Buffer.from(JSON.stringify(instanceToPlain(message)), 'utf-8'), {
-      contentEncoding: 'utf-8',
-      contentType: 'application/json',
-      headers: {
-        origin: message.origin.toString(),
-        eventGroup: message.eventGroup.toString(),
-        action: message.action.toString(),
-        state: message.state.toString(),
-        ...message.context,
-      }
-    });
+    const success = channel.publish(
+      exchange || '',
+      '',
+      Buffer.from(JSON.stringify(instanceToPlain(message)), 'utf-8'),
+      {
+        contentEncoding: 'utf-8',
+        contentType: 'application/json',
+        headers: {
+          origin: message.origin.toString(),
+          eventGroup: message.eventGroup.toString(),
+          action: message.action.toString(),
+          state: message.state.toString(),
+          ...message.context,
+        },
+      },
+    );
     return { success };
   }
 
@@ -136,16 +153,19 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    * Connect to RabbitMQ
    */
   protected _connect(): Promise<amqplib.Channel> {
-    return amqplib.connect(this._config.util.messageBroker.amqp?.url || '').then(async connection => {
-      this._connection = connection;
-      return connection.createChannel();
-    }).then(channel => {
-      // Add listener for channel errors
-      channel.on('error', (err) => {
-        this._logger.error('AMQP channel error', err);
-        // TODO: add recovery logic
+    return amqplib
+      .connect(this._config.util.messageBroker.amqp?.url || '')
+      .then(async (connection) => {
+        this._connection = connection;
+        return connection.createChannel();
+      })
+      .then((channel) => {
+        // Add listener for channel errors
+        channel.on('error', (err) => {
+          this._logger.error('AMQP channel error', err);
+          // TODO: add recovery logic
+        });
+        return channel;
       });
-      return channel;
-    });
   }
 }

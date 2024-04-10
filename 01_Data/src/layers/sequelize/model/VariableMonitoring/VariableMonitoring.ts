@@ -21,13 +21,13 @@ export class VariableMonitoring extends Model implements VariableMonitoringType 
 
   @Index
   @Column({
-    unique: 'stationId_Id'
+    unique: 'stationId_Id',
   })
   declare stationId: string;
 
   @Column({
     type: DataType.INTEGER,
-    unique: 'stationId_Id'
+    unique: 'stationId_Id',
   })
   declare id: number;
 
@@ -52,7 +52,7 @@ export class VariableMonitoring extends Model implements VariableMonitoringType 
 
   @ForeignKey(() => Variable)
   @Column({
-    type: DataType.INTEGER
+    type: DataType.INTEGER,
   })
   declare variableId?: number;
 
@@ -61,7 +61,7 @@ export class VariableMonitoring extends Model implements VariableMonitoringType 
 
   @ForeignKey(() => Component)
   @Column({
-    type: DataType.INTEGER
+    type: DataType.INTEGER,
   })
   declare componentId?: number;
 

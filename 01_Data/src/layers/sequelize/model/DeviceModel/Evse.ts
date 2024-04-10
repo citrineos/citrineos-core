@@ -21,13 +21,13 @@ export class Evse extends Model implements EVSEType {
 
   @Column({
     type: DataType.INTEGER,
-    unique: 'id_connectorId'
+    unique: 'id_connectorId',
   })
   declare id: number;
 
   @Column({
     type: DataType.INTEGER,
-    unique: 'id_connectorId'
+    unique: 'id_connectorId',
   })
   declare connectorId?: number;
 

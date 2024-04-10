@@ -19,13 +19,13 @@ export class Component extends Model implements ComponentType {
 
   @Column({
     type: DataType.STRING,
-    unique: 'name_instance'
+    unique: 'name_instance',
   })
   declare name: string;
 
   @Column({
     type: DataType.STRING,
-    unique: 'name_instance'
+    unique: 'name_instance',
   })
   declare instance?: string;
 

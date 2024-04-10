@@ -37,4 +37,4 @@ export interface BootConfig {
  * SetVariables, this should only be done if configuring is not still ongoing from a previous
  * BootNotificationRequest. Cache boot status mediates this behavior.
  */
-export const BOOT_STATUS = "boot_status";
+export const BOOT_STATUS = 'boot_status';

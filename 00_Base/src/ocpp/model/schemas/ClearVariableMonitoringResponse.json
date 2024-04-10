@@ -12,25 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ClearMonitoringStatusEnumType": {
       "description": "Result of the clear request for this monitor, identified by its Id.\r\n\r\n",
       "javaType": "ClearMonitoringStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "Rejected",
-        "NotFound"
-      ],
-      "tsEnumNames": [
-        "Accepted",
-        "Rejected",
-        "NotFound"
-      ]
+      "enum": ["Accepted", "Rejected", "NotFound"],
+      "tsEnumNames": ["Accepted", "Rejected", "NotFound"]
     },
     "ClearMonitoringResultType": {
       "javaType": "ClearMonitoringResult",
@@ -51,10 +41,7 @@
           "$ref": "#/definitions/StatusInfoType"
         }
       },
-      "required": [
-        "status",
-        "id"
-      ]
+      "required": ["status", "id"]
     },
     "StatusInfoType": {
       "description": "Element providing more information about the status.\r\n",
@@ -76,9 +63,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -96,7 +81,5 @@
       "minItems": 1
     }
   },
-  "required": [
-    "clearMonitoringResult"
-  ]
+  "required": ["clearMonitoringResult"]
 }

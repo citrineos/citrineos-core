@@ -22,9 +22,9 @@ export class SecurityEvent extends Model implements SecurityEventNotificationReq
 
   @Column({
     type: DataType.DATE,
-    get () {
+    get() {
       return this.getDataValue('timestamp').toISOString();
-    }
+    },
   })
   declare timestamp: string;
 

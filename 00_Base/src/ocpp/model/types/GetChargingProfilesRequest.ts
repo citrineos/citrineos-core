@@ -71,14 +71,15 @@ export interface ChargingProfileCriterionType {
   chargingLimitSource?:
     | [ChargingLimitSourceEnumType]
     | [ChargingLimitSourceEnumType, ChargingLimitSourceEnumType]
-    | [ChargingLimitSourceEnumType, ChargingLimitSourceEnumType, ChargingLimitSourceEnumType]
     | [
         ChargingLimitSourceEnumType,
         ChargingLimitSourceEnumType,
         ChargingLimitSourceEnumType,
-        ChargingLimitSourceEnumType
+      ]
+    | [
+        ChargingLimitSourceEnumType,
+        ChargingLimitSourceEnumType,
+        ChargingLimitSourceEnumType,
+        ChargingLimitSourceEnumType,
       ];
 }
-
-
-

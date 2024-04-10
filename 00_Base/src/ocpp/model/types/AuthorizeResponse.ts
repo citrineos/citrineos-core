@@ -138,8 +138,3 @@ export interface MessageContentType {
    */
   content: string;
 }
-
-
-
-
-

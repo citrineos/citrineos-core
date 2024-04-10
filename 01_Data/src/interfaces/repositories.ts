@@ -26,7 +26,7 @@ import {
   type TransactionEventRequest,
   type VariableAttributeType,
   type VariableMonitoringType,
-  type VariableType
+  type VariableType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
 import { type Transaction } from '../layers/sequelize/model/TransactionEvent';

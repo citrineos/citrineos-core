@@ -16,13 +16,13 @@ export class IdToken extends Model implements IdTokenType {
 
   @Column({
     type: DataType.STRING,
-    unique: 'idToken_type'
+    unique: 'idToken_type',
   })
   declare idToken: string;
 
   @Column({
     type: DataType.STRING,
-    unique: 'idToken_type'
+    unique: 'idToken_type',
   })
   declare type: IdTokenEnumType;
 

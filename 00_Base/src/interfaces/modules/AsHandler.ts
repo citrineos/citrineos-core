@@ -21,13 +21,24 @@ export const AS_HANDLER_METADATA = 'AS_HANDLER_METADATA';
  * @return {PropertyDescriptor} - the property descriptor
  */
 export const AsHandler = function (action: CallAction) {
-    return (target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor => {
-        if (!Reflect.hasMetadata(AS_HANDLER_METADATA, target.constructor)) {
-            Reflect.defineMetadata(AS_HANDLER_METADATA, [], target.constructor);
-        }
-        const handlers = Reflect.getMetadata(AS_HANDLER_METADATA, target.constructor) as Array<IHandlerDefinition>;
-        handlers.push({ action: action, methodName: propertyKey, method: descriptor.value });
-        Reflect.defineMetadata(AS_HANDLER_METADATA, handlers, target.constructor);
-        return descriptor;
-    };
+  return (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor,
+  ): PropertyDescriptor => {
+    if (!Reflect.hasMetadata(AS_HANDLER_METADATA, target.constructor)) {
+      Reflect.defineMetadata(AS_HANDLER_METADATA, [], target.constructor);
+    }
+    const handlers = Reflect.getMetadata(
+      AS_HANDLER_METADATA,
+      target.constructor,
+    ) as Array<IHandlerDefinition>;
+    handlers.push({
+      action: action,
+      methodName: propertyKey,
+      method: descriptor.value,
+    });
+    Reflect.defineMetadata(AS_HANDLER_METADATA, handlers, target.constructor);
+    return descriptor;
+  };
 };

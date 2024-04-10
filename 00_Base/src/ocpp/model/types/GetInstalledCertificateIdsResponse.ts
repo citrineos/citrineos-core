@@ -64,8 +64,17 @@ export interface CertificateHashDataChainType {
   childCertificateHashData?:
     | [CertificateHashDataType]
     | [CertificateHashDataType, CertificateHashDataType]
-    | [CertificateHashDataType, CertificateHashDataType, CertificateHashDataType]
-    | [CertificateHashDataType, CertificateHashDataType, CertificateHashDataType, CertificateHashDataType];
+    | [
+        CertificateHashDataType,
+        CertificateHashDataType,
+        CertificateHashDataType,
+      ]
+    | [
+        CertificateHashDataType,
+        CertificateHashDataType,
+        CertificateHashDataType,
+        CertificateHashDataType,
+      ];
 }
 export interface CertificateHashDataType {
   customData?: CustomDataType;
@@ -87,7 +96,3 @@ export interface CertificateHashDataType {
    */
   serialNumber: string;
 }
-
-
-
-

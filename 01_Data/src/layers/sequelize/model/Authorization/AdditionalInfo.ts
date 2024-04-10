@@ -20,13 +20,13 @@ export class AdditionalInfo extends Model implements AdditionalInfoType {
 
   @Column({
     type: DataType.STRING,
-    unique: 'additionalIdToken_type'
+    unique: 'additionalIdToken_type',
   })
   declare additionalIdToken: string;
 
   @Column({
     type: DataType.STRING,
-    unique: 'additionalIdToken_type'
+    unique: 'additionalIdToken_type',
   })
   declare type: string;
 

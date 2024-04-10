@@ -10,5 +10,10 @@ export interface TransactionEventQuerystring {
   transactionId: string;
 }
 
-export const TransactionEventQuerySchema = QuerySchema([
-  ['stationId', 'string'], ['transactionId', 'string']], ['stationId', 'transactionId']);
+export const TransactionEventQuerySchema = QuerySchema(
+  [
+    ['stationId', 'string'],
+    ['transactionId', 'string'],
+  ],
+  ['stationId', 'transactionId'],
+);

@@ -12,11 +12,11 @@ import { AsDataEndpoint } from './AsDataEndpoint';
  * Interface for usage in {@link AsDataEndpoint} decorator.
  */
 export interface IDataEndpointDefinition {
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    method: Function;
-    methodName: string;
-    namespace: Namespace;
-    httpMethod: HttpMethod;
-    querySchema?: object;
-    bodySchema?: object;
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  method: Function;
+  methodName: string;
+  namespace: Namespace;
+  httpMethod: HttpMethod;
+  querySchema?: object;
+  bodySchema?: object;
 }

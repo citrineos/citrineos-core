@@ -12,25 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ChargingProfileKindEnumType": {
       "description": "Charging_ Profile. Charging_ Profile_ Kind. Charging_ Profile_ Kind_ Code\r\nurn:x-oca:ocpp:uid:1:569232\r\nIndicates the kind of schedule.\r\n",
       "javaType": "ChargingProfileKindEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Absolute",
-        "Recurring",
-        "Relative"
-      ],
-      "tsEnumNames": [
-        "Absolute",
-        "Recurring",
-        "Relative"
-      ]
+      "enum": ["Absolute", "Recurring", "Relative"],
+      "tsEnumNames": ["Absolute", "Recurring", "Relative"]
     },
     "ChargingProfilePurposeEnumType": {
       "description": "Charging_ Profile. Charging_ Profile_ Purpose. Charging_ Profile_ Purpose_ Code\r\nurn:x-oca:ocpp:uid:1:569231\r\nDefines the purpose of the schedule transferred by this profile\r\n",
@@ -55,14 +45,8 @@
       "javaType": "ChargingRateUnitEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "W",
-        "A"
-      ],
-      "tsEnumNames": [
-        "W",
-        "A"
-      ]
+      "enum": ["W", "A"],
+      "tsEnumNames": ["W", "A"]
     },
     "CostKindEnumType": {
       "description": "Cost. Cost_ Kind. Cost_ Kind_ Code\r\nurn:x-oca:ocpp:uid:1:569243\r\nThe kind of cost referred to in the message element amount\r\n",
@@ -85,14 +69,8 @@
       "javaType": "RecurrencyKindEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Daily",
-        "Weekly"
-      ],
-      "tsEnumNames": [
-        "Daily",
-        "Weekly"
-      ]
+      "enum": ["Daily", "Weekly"],
+      "tsEnumNames": ["Daily", "Weekly"]
     },
     "ChargingProfileType": {
       "description": "Charging_ Profile\r\nurn:x-oca:ocpp:uid:2:233255\r\nA ChargingProfile consists of ChargingSchedule, describing the amount of power or current that can be delivered per time interval.\r\n",
@@ -179,10 +157,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "startPeriod",
-        "limit"
-      ]
+      "required": ["startPeriod", "limit"]
     },
     "ChargingScheduleType": {
       "description": "Charging_ Schedule\r\nurn:x-oca:ocpp:uid:2:233256\r\nCharging schedule structure defines a list of charging periods, as used in: GetCompositeSchedule.conf and ChargingProfile. \r\n",
@@ -226,11 +201,7 @@
           "$ref": "#/definitions/SalesTariffType"
         }
       },
-      "required": [
-        "id",
-        "chargingRateUnit",
-        "chargingSchedulePeriod"
-      ]
+      "required": ["id", "chargingRateUnit", "chargingSchedulePeriod"]
     },
     "ConsumptionCostType": {
       "description": "Consumption_ Cost\r\nurn:x-oca:ocpp:uid:2:233259\r\n",
@@ -255,10 +226,7 @@
           "maxItems": 3
         }
       },
-      "required": [
-        "startValue",
-        "cost"
-      ]
+      "required": ["startValue", "cost"]
     },
     "CostType": {
       "description": "Cost\r\nurn:x-oca:ocpp:uid:2:233258\r\n",
@@ -281,10 +249,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "costKind",
-        "amount"
-      ]
+      "required": ["costKind", "amount"]
     },
     "RelativeTimeIntervalType": {
       "description": "Relative_ Timer_ Interval\r\nurn:x-oca:ocpp:uid:2:233270\r\n",
@@ -304,9 +269,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "start"
-      ]
+      "required": ["start"]
     },
     "SalesTariffEntryType": {
       "description": "Sales_ Tariff_ Entry\r\nurn:x-oca:ocpp:uid:2:233271\r\n",
@@ -335,9 +298,7 @@
           "maxItems": 3
         }
       },
-      "required": [
-        "relativeTimeInterval"
-      ]
+      "required": ["relativeTimeInterval"]
     },
     "SalesTariffType": {
       "description": "Sales_ Tariff\r\nurn:x-oca:ocpp:uid:2:233272\r\nNOTE: This dataType is based on dataTypes from &lt;&lt;ref-ISOIEC15118-2,ISO 15118-2&gt;&gt;.\r\n",
@@ -371,10 +332,7 @@
           "maxItems": 1024
         }
       },
-      "required": [
-        "id",
-        "salesTariffEntry"
-      ]
+      "required": ["id", "salesTariffEntry"]
     }
   },
   "type": "object",
@@ -391,8 +349,5 @@
       "$ref": "#/definitions/ChargingProfileType"
     }
   },
-  "required": [
-    "evseId",
-    "chargingProfile"
-  ]
+  "required": ["evseId", "chargingProfile"]
 }

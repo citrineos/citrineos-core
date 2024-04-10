@@ -14,7 +14,7 @@ export class Transaction extends Model implements TransactionType {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
 
   @Column({
-    unique: 'stationId_transactionId'
+    unique: 'stationId_transactionId',
   })
   declare stationId: string;
 
@@ -26,12 +26,12 @@ export class Transaction extends Model implements TransactionType {
   declare evseDatabaseId?: number;
 
   @Column({
-    unique: 'stationId_transactionId'
+    unique: 'stationId_transactionId',
   })
   declare transactionId: string;
 
   @Column({
-    defaultValue: true
+    defaultValue: true,
   })
   declare isActive: boolean;
 

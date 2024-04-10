@@ -22,7 +22,7 @@ export class Authorization extends Model implements AuthorizationData, Authoriza
   @ForeignKey(() => IdToken)
   @Column({
     type: DataType.INTEGER,
-    unique: true
+    unique: true,
   })
   declare idTokenId?: number;
 

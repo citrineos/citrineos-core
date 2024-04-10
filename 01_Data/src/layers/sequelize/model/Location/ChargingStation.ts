@@ -23,8 +23,8 @@ export class ChargingStation extends Model {
   declare locationId?: number;
 
   /**
-     * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.
-     */
+   * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.
+   */
   @BelongsTo(() => Location)
   declare location?: Location;
 

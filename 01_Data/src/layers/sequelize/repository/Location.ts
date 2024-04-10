@@ -6,7 +6,7 @@ import { ChargingStation, type Location, SequelizeRepository } from '..';
 import { type ILocationRepository } from '../../..';
 
 export class LocationRepository extends SequelizeRepository<Location> implements ILocationRepository {
-  async readChargingStationByStationId (stationId: string): Promise<ChargingStation | null> {
+  async readChargingStationByStationId(stationId: string): Promise<ChargingStation | null> {
     return await ChargingStation.findByPk(stationId);
   }
 }

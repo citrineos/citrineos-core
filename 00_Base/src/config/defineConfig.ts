@@ -3,7 +3,11 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type SystemConfig, SystemConfigInput, systemConfigSchema } from './types';
+import {
+  type SystemConfig,
+  SystemConfigInput,
+  systemConfigSchema,
+} from './types';
 
 /**
  * Defines the application configuration by merging input configuration which is defined in a file with environment variables.
@@ -13,11 +17,14 @@ import { type SystemConfig, SystemConfigInput, systemConfigSchema } from './type
  * @throws Error if required environment variables are not set or if there are parsing errors.
  */
 export function defineConfig(inputConfig: SystemConfigInput): SystemConfig {
-    const appConfig = mergeConfigFromEnvVars<SystemConfigInput>(inputConfig, process.env);
+  const appConfig = mergeConfigFromEnvVars<SystemConfigInput>(
+    inputConfig,
+    process.env,
+  );
 
-    validateFinalConfig(appConfig);
+  validateFinalConfig(appConfig);
 
-    return systemConfigSchema.parse(appConfig);
+  return systemConfigSchema.parse(appConfig);
 }
 
 /**
@@ -26,9 +33,12 @@ export function defineConfig(inputConfig: SystemConfigInput): SystemConfig {
  * @param targetKey The target key.
  * @returns The matching key or undefined.
  */
-function findCaseInsensitiveMatch<T>(obj: Record<string, T>, targetKey: string): string | undefined {
-    const lowerTargetKey = targetKey.toLowerCase();
-    return Object.keys(obj).find(key => key.toLowerCase() === lowerTargetKey);
+function findCaseInsensitiveMatch<T>(
+  obj: Record<string, T>,
+  targetKey: string,
+): string | undefined {
+  const lowerTargetKey = targetKey.toLowerCase();
+  return Object.keys(obj).find((key) => key.toLowerCase() === lowerTargetKey);
 }
 
 /**
@@ -38,47 +48,52 @@ function findCaseInsensitiveMatch<T>(obj: Record<string, T>, targetKey: string):
  * @returns The merged configuration.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mergeConfigFromEnvVars<T extends Record<string, any>>(defaultConfig: T, envVars: NodeJS.ProcessEnv): T {
-    const config: T = {...defaultConfig};
+function mergeConfigFromEnvVars<T extends Record<string, any>>(
+  defaultConfig: T,
+  envVars: NodeJS.ProcessEnv,
+): T {
+  const config: T = { ...defaultConfig };
 
-    const prefix = "citrineos_";
+  const prefix = 'citrineos_';
 
-    for (const [fullEnvKey, value] of Object.entries(envVars)) {
-        if (!value) continue;
-        const lowercaseEnvKey = fullEnvKey.toLowerCase();
-        console.log(lowercaseEnvKey);
-        if (lowercaseEnvKey.startsWith(prefix)) {
-            const envKeyWithoutPrefix = lowercaseEnvKey.substring(prefix.length);
-            const path = envKeyWithoutPrefix.split('_');
+  for (const [fullEnvKey, value] of Object.entries(envVars)) {
+    if (!value) continue;
+    const lowercaseEnvKey = fullEnvKey.toLowerCase();
+    console.log(lowercaseEnvKey);
+    if (lowercaseEnvKey.startsWith(prefix)) {
+      const envKeyWithoutPrefix = lowercaseEnvKey.substring(prefix.length);
+      const path = envKeyWithoutPrefix.split('_');
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            let currentConfigPart: any = config;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let currentConfigPart: any = config;
 
-            for (let i = 0; i < path.length - 1; i++) {
-                const part = path[i];
-                const matchingKey = findCaseInsensitiveMatch(currentConfigPart, part);
-                if (matchingKey && typeof currentConfigPart[matchingKey] === 'object') {
-                    currentConfigPart = currentConfigPart[matchingKey];
-                } else {
-                    currentConfigPart[part] = {};
-                    currentConfigPart = currentConfigPart[part];
-                }
-            }
-
-            const finalPart = path[path.length - 1];
-            const keyToUse = findCaseInsensitiveMatch(currentConfigPart, finalPart) || finalPart;
-
-            try {
-                currentConfigPart[keyToUse] = JSON.parse(value as string);
-            } catch {
-                console.error(`Error parsing value '${value}' for environment variable '${fullEnvKey}'.`);
-                currentConfigPart[keyToUse] = value;
-            }
+      for (let i = 0; i < path.length - 1; i++) {
+        const part = path[i];
+        const matchingKey = findCaseInsensitiveMatch(currentConfigPart, part);
+        if (matchingKey && typeof currentConfigPart[matchingKey] === 'object') {
+          currentConfigPart = currentConfigPart[matchingKey];
+        } else {
+          currentConfigPart[part] = {};
+          currentConfigPart = currentConfigPart[part];
         }
-    }
-    return config as T;
-}
+      }
 
+      const finalPart = path[path.length - 1];
+      const keyToUse =
+        findCaseInsensitiveMatch(currentConfigPart, finalPart) || finalPart;
+
+      try {
+        currentConfigPart[keyToUse] = JSON.parse(value as string);
+      } catch {
+        console.error(
+          `Error parsing value '${value}' for environment variable '${fullEnvKey}'.`,
+        );
+        currentConfigPart[keyToUse] = value;
+      }
+    }
+  }
+  return config as T;
+}
 
 /**
  * Validates the  system configuration to ensure required properties are set.
@@ -86,10 +101,14 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(defaultConfig: T,
  * @throws Error if required properties are not set.
  */
 function validateFinalConfig(finalConfig: SystemConfigInput) {
-    if (!finalConfig.data.sequelize.username) {
-        throw new Error('CITRINEOS_DATA_SEQUELIZE_USERNAME must be set if username not provided in config');
-    }
-    if (!finalConfig.data.sequelize.password) {
-        throw new Error('CITRINEOS_DATA_SEQUELIZE_PASSWORD must be set if password not provided in config');
-    }
+  if (!finalConfig.data.sequelize.username) {
+    throw new Error(
+      'CITRINEOS_DATA_SEQUELIZE_USERNAME must be set if username not provided in config',
+    );
+  }
+  if (!finalConfig.data.sequelize.password) {
+    throw new Error(
+      'CITRINEOS_DATA_SEQUELIZE_PASSWORD must be set if password not provided in config',
+    );
+  }
 }

@@ -38,7 +38,6 @@ import { ILogObj, Logger } from 'tslog';
  * Component that handles provisioning related messages.
  */
 export class SmartChargingModule extends AbstractModule {
-
   /**
    * Fields
    */
@@ -47,7 +46,7 @@ export class SmartChargingModule extends AbstractModule {
     CallAction.NotifyChargingLimit,
     CallAction.NotifyEVChargingNeeds,
     CallAction.NotifyEVChargingSchedule,
-    CallAction.ReportChargingProfiles
+    CallAction.ReportChargingProfiles,
   ];
 
   protected _responses: CallAction[] = [
@@ -55,7 +54,7 @@ export class SmartChargingModule extends AbstractModule {
     CallAction.ClearedChargingLimit,
     CallAction.GetChargingProfiles,
     CallAction.GetCompositeSchedule,
-    CallAction.SetChargingProfile
+    CallAction.SetChargingProfile,
   ];
 
   /**
@@ -84,15 +83,24 @@ export class SmartChargingModule extends AbstractModule {
     cache: ICache,
     sender?: IMessageSender,
     handler?: IMessageHandler,
-    logger?: Logger<ILogObj>
+    logger?: Logger<ILogObj>,
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.SmartCharging, logger);
+    super(
+      config,
+      cache,
+      handler || new RabbitMqReceiver(config, logger),
+      sender || new RabbitMqSender(config, logger),
+      EventGroup.SmartCharging,
+      logger,
+    );
 
     const timer = new Timer();
     this._logger.info('Initializing...');
 
     if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error('Could not initialize module due to failure in handler initialization.');
+      throw new Error(
+        'Could not initialize module due to failure in handler initialization.',
+      );
     }
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
@@ -105,73 +113,82 @@ export class SmartChargingModule extends AbstractModule {
   @AsHandler(CallAction.NotifyEVChargingNeeds)
   protected _handleNotifyEVChargingNeeds(
     message: IMessage<NotifyEVChargingNeedsRequest>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
-
     this._logger.debug('NotifyEVChargingNeeds received:', message, props);
 
     // Create response
     const response: NotifyEVChargingNeedsResponse = {
-      status: NotifyEVChargingNeedsStatusEnumType.Rejected
+      status: NotifyEVChargingNeedsStatusEnumType.Rejected,
     };
 
-    this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug('NotifyEVChargingNeeds response sent: ', messageConfirmation));
+    this.sendCallResultWithMessage(message, response).then(
+      (messageConfirmation) =>
+        this._logger.debug(
+          'NotifyEVChargingNeeds response sent: ',
+          messageConfirmation,
+        ),
+    );
   }
 
   @AsHandler(CallAction.NotifyEVChargingSchedule)
   protected _handleNotifyEVChargingSchedule(
     message: IMessage<NotifyEVChargingScheduleRequest>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
-
     this._logger.debug('NotifyEVChargingSchedule received:', message, props);
 
     // Create response
     const response: NotifyEVChargingScheduleResponse = {
-      status: GenericStatusEnumType.Accepted
+      status: GenericStatusEnumType.Accepted,
     };
 
-    this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug('NotifyEVChargingSchedule response sent: ', messageConfirmation));
+    this.sendCallResultWithMessage(message, response).then(
+      (messageConfirmation) =>
+        this._logger.debug(
+          'NotifyEVChargingSchedule response sent: ',
+          messageConfirmation,
+        ),
+    );
   }
-
-
 
   @AsHandler(CallAction.NotifyChargingLimit)
   protected _handleNotifyChargingLimit(
     message: IMessage<NotifyChargingLimitRequest>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
-
     this._logger.debug('NotifyChargingLimit received:', message, props);
 
     // Create response
-    const response: NotifyChargingLimitResponse = {
-    };
+    const response: NotifyChargingLimitResponse = {};
 
-    this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug('NotifyChargingLimit response sent: ', messageConfirmation));
+    this.sendCallResultWithMessage(message, response).then(
+      (messageConfirmation) =>
+        this._logger.debug(
+          'NotifyChargingLimit response sent: ',
+          messageConfirmation,
+        ),
+    );
   }
-
-
 
   @AsHandler(CallAction.ReportChargingProfiles)
   protected _handleReportChargingProfiles(
     message: IMessage<ReportChargingProfilesRequest>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
-
     this._logger.debug('ReportChargingProfiles received:', message, props);
 
     // Create response
-    const response: ReportChargingProfilesResponse = {
-    };
+    const response: ReportChargingProfilesResponse = {};
 
-    this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug('ReportChargingProfiles response sent: ', messageConfirmation));
+    this.sendCallResultWithMessage(message, response).then(
+      (messageConfirmation) =>
+        this._logger.debug(
+          'ReportChargingProfiles response sent: ',
+          messageConfirmation,
+        ),
+    );
   }
-
 
   /**
    * Handle responses
@@ -180,23 +197,31 @@ export class SmartChargingModule extends AbstractModule {
   @AsHandler(CallAction.ClearChargingProfile)
   protected _handleClearChargingProfile(
     message: IMessage<ClearChargingProfileResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
-    this._logger.debug('ClearChargingProfile response received:', message, props);
+    this._logger.debug(
+      'ClearChargingProfile response received:',
+      message,
+      props,
+    );
   }
 
   @AsHandler(CallAction.GetChargingProfiles)
   protected _handleGetChargingProfiles(
     message: IMessage<GetChargingProfilesResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
-    this._logger.debug('GetChargingProfiles response received:', message, props);
+    this._logger.debug(
+      'GetChargingProfiles response received:',
+      message,
+      props,
+    );
   }
 
   @AsHandler(CallAction.SetChargingProfile)
   protected _handleSetChargingProfile(
     message: IMessage<SetChargingProfileResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
     this._logger.debug('SetChargingProfile response received:', message, props);
   }
@@ -204,16 +229,24 @@ export class SmartChargingModule extends AbstractModule {
   @AsHandler(CallAction.ClearedChargingLimit)
   protected _handleClearedChargingLimit(
     message: IMessage<ClearedChargingLimitResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
-    this._logger.debug('ClearedChargingLimit response received:', message, props);
+    this._logger.debug(
+      'ClearedChargingLimit response received:',
+      message,
+      props,
+    );
   }
 
   @AsHandler(CallAction.GetCompositeSchedule)
   protected _handleGetCompositeSchedule(
     message: IMessage<GetCompositeScheduleResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
-    this._logger.debug('GetCompositeSchedule response received:', message, props);
+    this._logger.debug(
+      'GetCompositeSchedule response received:',
+      message,
+      props,
+    );
   }
 }

@@ -18,23 +18,31 @@ export interface VariableAttributeQuerystring {
   variable_instance?: string;
 }
 
-export const VariableAttributeQuerySchema = QuerySchema([
-  ['stationId', 'string'],
-  ['type', 'string'],
-  ['value', 'string'],
-  ['status', 'string'],
-  ['component_evse_id', 'number'],
-  ['component_evse_connectorId', 'number'],
-  ['component_name', 'string'],
-  ['component_instance', 'string'],
-  ['variable_name', 'string'],
-  ['variable_instance', 'string']], ['stationId']);
+export const VariableAttributeQuerySchema = QuerySchema(
+  [
+    ['stationId', 'string'],
+    ['type', 'string'],
+    ['value', 'string'],
+    ['status', 'string'],
+    ['component_evse_id', 'number'],
+    ['component_evse_connectorId', 'number'],
+    ['component_name', 'string'],
+    ['component_instance', 'string'],
+    ['variable_name', 'string'],
+    ['variable_instance', 'string'],
+  ],
+  ['stationId'],
+);
 
 export interface CreateOrUpdateVariableAttributeQuerystring {
   stationId: string;
   setOnCharger?: boolean; // Used to indicate value has already been accepted by the station via means other than ocpp
 }
 
-export const CreateOrUpdateVariableAttributeQuerySchema = QuerySchema([
-  ['stationId', 'string'],
-  ['setOnCharger', 'boolean']], ['stationId']);
+export const CreateOrUpdateVariableAttributeQuerySchema = QuerySchema(
+  [
+    ['stationId', 'string'],
+    ['setOnCharger', 'boolean'],
+  ],
+  ['stationId'],
+);

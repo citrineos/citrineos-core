@@ -1,15 +1,7 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
-import {
-  ComponentType,
-  type CustomDataType,
-  type EventDataType,
-  EventNotificationEnumType,
-  EventTriggerEnumType,
-  Namespace,
-  VariableType
-} from '@citrineos/base';
+import { ComponentType, type CustomDataType, type EventDataType, EventNotificationEnumType, EventTriggerEnumType, Namespace, VariableType } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Index, Model, Table } from 'sequelize-typescript';
 import { Component, Variable } from '../DeviceModel';
 
@@ -22,7 +14,7 @@ export class EventData extends Model implements EventDataType {
    */
   @Index
   @Column({
-    unique: 'stationId'
+    unique: 'stationId',
   })
   declare stationId: string;
 
@@ -52,7 +44,7 @@ export class EventData extends Model implements EventDataType {
 
   @ForeignKey(() => Variable)
   @Column({
-    type: DataType.INTEGER
+    type: DataType.INTEGER,
   })
   declare variableId?: number;
 
@@ -61,7 +53,7 @@ export class EventData extends Model implements EventDataType {
 
   @ForeignKey(() => Component)
   @Column({
-    type: DataType.INTEGER
+    type: DataType.INTEGER,
   })
   declare componentId?: number;
 

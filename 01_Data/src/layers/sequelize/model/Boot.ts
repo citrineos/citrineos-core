@@ -20,9 +20,9 @@ export class Boot extends Model implements BootConfig {
 
   @Column({
     type: DataType.DATE,
-    get () {
+    get() {
       return this.getDataValue('lastBootTime').toISOString();
-    }
+    },
   })
   declare lastBootTime?: string;
 

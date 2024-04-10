@@ -25,9 +25,9 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
 
   @Column({
     type: DataType.DATE,
-    get () {
+    get() {
       return this.getDataValue('timestamp').toISOString();
-    }
+    },
   })
   declare timestamp: string;
 

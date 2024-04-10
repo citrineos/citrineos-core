@@ -39,66 +39,112 @@ import {
   UpdateFirmwareRequest,
   UpdateFirmwareRequestSchema,
 } from '@citrineos/base';
-import { Boot, ChargingStationKeyQuerySchema, ChargingStationKeyQuerystring } from '@citrineos/data';
+import {
+  Boot,
+  ChargingStationKeyQuerySchema,
+  ChargingStationKeyQuerystring,
+} from '@citrineos/data';
 
 /**
  * Server API for the Configuration component.
  */
-export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModule> implements IConfigurationModuleApi {
-
+export class ConfigurationModuleApi
+  extends AbstractModuleApi<ConfigurationModule>
+  implements IConfigurationModuleApi
+{
   /**
-     * Constructor for the class.
-     *
-     * @param {ConfigurationModule} ConfigurationComponent - The Configuration component.
-     * @param {FastifyInstance} server - The server instance.
-     * @param {Logger<ILogObj>} [logger] - Optional logger instance.
-     */
-  constructor(ConfigurationComponent: ConfigurationModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
+   * Constructor for the class.
+   *
+   * @param {ConfigurationModule} ConfigurationComponent - The Configuration component.
+   * @param {FastifyInstance} server - The server instance.
+   * @param {Logger<ILogObj>} [logger] - Optional logger instance.
+   */
+  constructor(
+    ConfigurationComponent: ConfigurationModule,
+    server: FastifyInstance,
+    logger?: Logger<ILogObj>,
+  ) {
     super(ConfigurationComponent, server, logger);
   }
 
   /**
-     * Message Endpoint Methods
-     */
+   * Message Endpoint Methods
+   */
 
-  @AsMessageEndpoint(CallAction.SetNetworkProfile, SetNetworkProfileRequestSchema)
+  @AsMessageEndpoint(
+    CallAction.SetNetworkProfile,
+    SetNetworkProfileRequestSchema,
+  )
   setNetworkProfile(
     identifier: string,
     tenantId: string,
     request: SetNetworkProfileRequest,
-    callbackUrl?: string
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(identifier, tenantId, CallAction.SetNetworkProfile, request, callbackUrl);
+    return this._module.sendCall(
+      identifier,
+      tenantId,
+      CallAction.SetNetworkProfile,
+      request,
+      callbackUrl,
+    );
   }
 
-  @AsMessageEndpoint(CallAction.ClearDisplayMessage, ClearDisplayMessageRequestSchema)
+  @AsMessageEndpoint(
+    CallAction.ClearDisplayMessage,
+    ClearDisplayMessageRequestSchema,
+  )
   clearDisplayMessage(
     identifier: string,
     tenantId: string,
     request: ClearDisplayMessageRequest,
-    callbackUrl?: string
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(identifier, tenantId, CallAction.ClearDisplayMessage, request, callbackUrl);
+    return this._module.sendCall(
+      identifier,
+      tenantId,
+      CallAction.ClearDisplayMessage,
+      request,
+      callbackUrl,
+    );
   }
 
-  @AsMessageEndpoint(CallAction.GetDisplayMessages, GetDisplayMessagesRequestSchema)
+  @AsMessageEndpoint(
+    CallAction.GetDisplayMessages,
+    GetDisplayMessagesRequestSchema,
+  )
   getDisplayMessages(
     identifier: string,
     tenantId: string,
     request: GetDisplayMessagesRequest,
-    callbackUrl?: string
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(identifier, tenantId, CallAction.GetDisplayMessages, request, callbackUrl);
+    return this._module.sendCall(
+      identifier,
+      tenantId,
+      CallAction.GetDisplayMessages,
+      request,
+      callbackUrl,
+    );
   }
 
-  @AsMessageEndpoint(CallAction.SetDisplayMessage, SetDisplayMessageRequestSchema)
+  @AsMessageEndpoint(
+    CallAction.SetDisplayMessage,
+    SetDisplayMessageRequestSchema,
+  )
   setDisplayMessages(
     identifier: string,
     tenantId: string,
     request: SetDisplayMessageRequest,
-    callbackUrl?: string
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(identifier, tenantId, CallAction.SetDisplayMessage, request, callbackUrl);
+    return this._module.sendCall(
+      identifier,
+      tenantId,
+      CallAction.SetDisplayMessage,
+      request,
+      callbackUrl,
+    );
   }
 
   @AsMessageEndpoint(CallAction.PublishFirmware, PublishFirmwareRequestSchema)
@@ -106,19 +152,34 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
     identifier: string,
     tenantId: string,
     request: PublishFirmwareRequest,
-    callbackUrl?: string
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(identifier, tenantId, CallAction.PublishFirmware, request, callbackUrl);
+    return this._module.sendCall(
+      identifier,
+      tenantId,
+      CallAction.PublishFirmware,
+      request,
+      callbackUrl,
+    );
   }
 
-  @AsMessageEndpoint(CallAction.UnpublishFirmware, UnpublishFirmwareRequestSchema)
+  @AsMessageEndpoint(
+    CallAction.UnpublishFirmware,
+    UnpublishFirmwareRequestSchema,
+  )
   unpublishFirmware(
     identifier: string,
     tenantId: string,
     request: UnpublishFirmwareRequest,
-    callbackUrl?: string
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(identifier, tenantId, CallAction.UnpublishFirmware, request, callbackUrl);
+    return this._module.sendCall(
+      identifier,
+      tenantId,
+      CallAction.UnpublishFirmware,
+      request,
+      callbackUrl,
+    );
   }
 
   @AsMessageEndpoint(CallAction.UpdateFirmware, UpdateFirmwareRequestSchema)
@@ -126,9 +187,15 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
     identifier: string,
     tenantId: string,
     request: UpdateFirmwareRequest,
-    callbackUrl?: string
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(identifier, tenantId, CallAction.UpdateFirmware, request, callbackUrl);
+    return this._module.sendCall(
+      identifier,
+      tenantId,
+      CallAction.UpdateFirmware,
+      request,
+      callbackUrl,
+    );
   }
 
   @AsMessageEndpoint(CallAction.Reset, ResetRequestSchema)
@@ -136,19 +203,34 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
     identifier: string,
     tenantId: string,
     request: ResetRequest,
-    callbackUrl?: string
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(identifier, tenantId, CallAction.Reset, request, callbackUrl);
+    return this._module.sendCall(
+      identifier,
+      tenantId,
+      CallAction.Reset,
+      request,
+      callbackUrl,
+    );
   }
 
-  @AsMessageEndpoint(CallAction.ChangeAvailability, ChangeAvailabilityRequestSchema)
+  @AsMessageEndpoint(
+    CallAction.ChangeAvailability,
+    ChangeAvailabilityRequestSchema,
+  )
   changeAvailability(
     identifier: string,
     tenantId: string,
     request: ChangeAvailabilityRequest,
-    callbackUrl?: string
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(identifier, tenantId, CallAction.ChangeAvailability, request, callbackUrl);
+    return this._module.sendCall(
+      identifier,
+      tenantId,
+      CallAction.ChangeAvailability,
+      request,
+      callbackUrl,
+    );
   }
 
   @AsMessageEndpoint(CallAction.TriggerMessage, TriggerMessageRequestSchema)
@@ -156,49 +238,82 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
     identifier: string,
     tenantId: string,
     request: TriggerMessageRequest,
-    callbackUrl?: string
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(identifier, tenantId, CallAction.TriggerMessage, request, callbackUrl);
+    return this._module.sendCall(
+      identifier,
+      tenantId,
+      CallAction.TriggerMessage,
+      request,
+      callbackUrl,
+    );
   }
 
   /**
-     * Data Endpoints
-     */
+   * Data Endpoints
+   */
 
-  @AsDataEndpoint(Namespace.BootConfig, HttpMethod.Put, ChargingStationKeyQuerySchema, BootConfigSchema)
-  putBootConfig(request: FastifyRequest<{ Body: BootNotificationResponse; Querystring: ChargingStationKeyQuerystring }>): Promise<BootConfig | undefined> {
-    return this._module.bootRepository.createOrUpdateByKey(request.body, request.query.stationId);
+  @AsDataEndpoint(
+    Namespace.BootConfig,
+    HttpMethod.Put,
+    ChargingStationKeyQuerySchema,
+    BootConfigSchema,
+  )
+  putBootConfig(
+    request: FastifyRequest<{
+      Body: BootNotificationResponse;
+      Querystring: ChargingStationKeyQuerystring;
+    }>,
+  ): Promise<BootConfig | undefined> {
+    return this._module.bootRepository.createOrUpdateByKey(
+      request.body,
+      request.query.stationId,
+    );
   }
 
-  @AsDataEndpoint(Namespace.BootConfig, HttpMethod.Get, ChargingStationKeyQuerySchema)
-  getBootConfig(request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>): Promise<Boot | undefined> {
+  @AsDataEndpoint(
+    Namespace.BootConfig,
+    HttpMethod.Get,
+    ChargingStationKeyQuerySchema,
+  )
+  getBootConfig(
+    request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
+  ): Promise<Boot | undefined> {
     return this._module.bootRepository.readByKey(request.query.stationId);
   }
 
-  @AsDataEndpoint(Namespace.BootConfig, HttpMethod.Delete, ChargingStationKeyQuerySchema)
-  deleteBootConfig(request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>): Promise<boolean> {
+  @AsDataEndpoint(
+    Namespace.BootConfig,
+    HttpMethod.Delete,
+    ChargingStationKeyQuerySchema,
+  )
+  deleteBootConfig(
+    request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
+  ): Promise<boolean> {
     return this._module.bootRepository.deleteByKey(request.query.stationId);
   }
 
   /**
-     * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
-     *
-     * @param {CallAction} input - The input {@link CallAction}.
-     * @return {string} - The generated URL path.
-     */
+   * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
+   *
+   * @param {CallAction} input - The input {@link CallAction}.
+   * @return {string} - The generated URL path.
+   */
   protected _toMessagePath(input: CallAction): string {
-    const endpointPrefix = this._module.config.modules.configuration.endpointPrefix;
+    const endpointPrefix =
+      this._module.config.modules.configuration.endpointPrefix;
     return super._toMessagePath(input, endpointPrefix);
   }
 
   /**
-     * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
-     *
-     * @param {CallAction} input - The input {@link Namespace}.
-     * @return {string} - The generated URL path.
-     */
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   *
+   * @param {CallAction} input - The input {@link Namespace}.
+   * @return {string} - The generated URL path.
+   */
   protected _toDataPath(input: Namespace): string {
-    const endpointPrefix = this._module.config.modules.configuration.endpointPrefix;
+    const endpointPrefix =
+      this._module.config.modules.configuration.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
   }
 }

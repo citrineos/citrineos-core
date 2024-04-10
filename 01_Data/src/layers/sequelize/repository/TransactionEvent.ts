@@ -22,14 +22,14 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
    *
    * @returns Saved TransactionEvent
    */
-  async createOrUpdateTransactionByTransactionEventAndStationId (value: TransactionEventRequest, stationId: string): Promise<Transaction> {
+  async createOrUpdateTransactionByTransactionEventAndStationId(value: TransactionEventRequest, stationId: string): Promise<Transaction> {
     let evse: Evse | undefined;
     if (value.evse) {
       evse = await this.s.models[Evse.MODEL_NAME].findOne({ where: { id: value.evse.id, connectorId: value.evse.connectorId ? value.evse.connectorId : null } }).then((row) => row as Evse);
       if (!evse) {
         evse = await Evse.build({
           id: value.evse.id,
-          connectorId: value.evse.connectorId ? value.evse.connectorId : null
+          connectorId: value.evse.connectorId ? value.evse.connectorId : null,
         }).save();
       }
     }
@@ -37,7 +37,7 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
       stationId,
       isActive: value.eventType !== TransactionEventEnumType.Ended,
       evseDatabaseId: evse ? evse.get('databaseId') : null,
-      ...value.transactionInfo
+      ...value.transactionInfo,
     });
     return await this.s.models[Transaction.MODEL_NAME]
       .findOne({ where: { transactionId: transaction.transactionId } })
@@ -64,9 +64,9 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
           {
             stationId,
             transactionDatabaseId,
-            ...value
+            ...value,
           },
-          { include: [MeterValue] }
+          { include: [MeterValue] },
         );
         event.meterValue?.forEach((meterValue) => (meterValue.transactionDatabaseId = transactionDatabaseId));
         await super.create(event);
@@ -74,14 +74,14 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
       });
   }
 
-  async readAllByStationIdAndTransactionId (stationId: string, transactionId: string): Promise<TransactionEventRequest[]> {
+  async readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]> {
     return await super
       .readAllByQuery(
         {
           where: { stationId },
-          include: [{ model: Transaction, where: { transactionId } }, MeterValue, Evse, IdToken]
+          include: [{ model: Transaction, where: { transactionId } }, MeterValue, Evse, IdToken],
         },
-        TransactionEvent.MODEL_NAME
+        TransactionEvent.MODEL_NAME,
       )
       .then((transactionEvents) => {
         transactionEvents?.forEach((transactionEvent) => (transactionEvent.transaction = undefined));
@@ -89,11 +89,11 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
       });
   }
 
-  async readTransactionByStationIdAndTransactionId (stationId: string, transactionId: string): Promise<Transaction | undefined> {
+  async readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined> {
     return await this.s.models[Transaction.MODEL_NAME]
       .findOne({
         where: { stationId, transactionId },
-        include: [MeterValue]
+        include: [MeterValue],
       })
       .then((row) => row as Transaction);
   }
@@ -108,17 +108,17 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
    *
    * @returns List of transactions which meet the requirements.
    */
-  async readAllTransactionsByStationIdAndEvseAndChargingStates (stationId: string, evse?: EVSEType, chargingStates?: ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
+  async readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: EVSEType, chargingStates?: ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
     const includeObj = evse ? [{ model: Evse, where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null } }] : [];
     return await this.s.models[Transaction.MODEL_NAME]
       .findAll({
         where: { stationId, ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}) },
-        include: includeObj
+        include: includeObj,
       })
       .then((row) => row as Transaction[]);
   }
 
-  async readAllActiveTransactionByIdToken (idToken: IdTokenType): Promise<Transaction[]> {
+  async readAllActiveTransactionByIdToken(idToken: IdTokenType): Promise<Transaction[]> {
     return await this.s.models[Transaction.MODEL_NAME]
       .findAll({
         where: { isActive: true },
@@ -130,12 +130,12 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
                 model: IdToken,
                 where: {
                   idToken: idToken.idToken,
-                  type: idToken.type
-                }
-              }
-            ]
-          }
-        ]
+                  type: idToken.type,
+                },
+              },
+            ],
+          },
+        ],
       })
       .then((row) => row as Transaction[]);
   }

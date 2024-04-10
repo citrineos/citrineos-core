@@ -27,7 +27,11 @@ import {
   TransactionEventRequest,
   TransactionEventResponse,
 } from '@citrineos/base';
-import { IAuthorizationRepository, ITransactionEventRepository, sequelize } from '@citrineos/data';
+import {
+  IAuthorizationRepository,
+  ITransactionEventRepository,
+  sequelize,
+} from '@citrineos/data';
 import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
@@ -36,15 +40,14 @@ import { ILogObj, Logger } from 'tslog';
  * Component that handles transaction related messages.
  */
 export class TransactionsModule extends AbstractModule {
-
   protected _requests: CallAction[] = [
     CallAction.MeterValues,
     CallAction.StatusNotification,
-    CallAction.TransactionEvent
+    CallAction.TransactionEvent,
   ];
   protected _responses: CallAction[] = [
     CallAction.CostUpdated,
-    CallAction.GetTransactionStatus
+    CallAction.GetTransactionStatus,
   ];
 
   protected _transactionEventRepository: ITransactionEventRepository;
@@ -79,19 +82,32 @@ export class TransactionsModule extends AbstractModule {
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
     transactionEventRepository?: ITransactionEventRepository,
-    authorizeRepository?: IAuthorizationRepository
+    authorizeRepository?: IAuthorizationRepository,
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Transactions, logger);
+    super(
+      config,
+      cache,
+      handler || new RabbitMqReceiver(config, logger),
+      sender || new RabbitMqSender(config, logger),
+      EventGroup.Transactions,
+      logger,
+    );
 
     const timer = new Timer();
     this._logger.info('Initializing...');
 
     if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error('Could not initialize module due to failure in handler initialization.');
+      throw new Error(
+        'Could not initialize module due to failure in handler initialization.',
+      );
     }
 
-    this._transactionEventRepository = transactionEventRepository || new sequelize.TransactionEventRepository(config, logger);
-    this._authorizeRepository = authorizeRepository || new sequelize.AuthorizationRepository(config, logger);
+    this._transactionEventRepository =
+      transactionEventRepository ||
+      new sequelize.TransactionEventRepository(config, logger);
+    this._authorizeRepository =
+      authorizeRepository ||
+      new sequelize.AuthorizationRepository(config, logger);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -111,104 +127,144 @@ export class TransactionsModule extends AbstractModule {
   @AsHandler(CallAction.TransactionEvent)
   protected async _handleTransactionEvent(
     message: IMessage<TransactionEventRequest>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('Transaction event received:', message, props);
 
-    await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(message.payload, message.context.stationId);
+    await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
+      message.payload,
+      message.context.stationId,
+    );
 
     const transactionEvent = message.payload;
     if (transactionEvent.idToken) {
-      this._authorizeRepository.readByQuery({ ...transactionEvent.idToken }).then(authorization => {
-        const response: TransactionEventResponse = {
-          idTokenInfo: {
-            status: AuthorizationStatusEnumType.Unknown
-            // TODO determine how/if to set personalMessage
-          }
-        };
-        if (authorization) {
-          if (authorization.idTokenInfo) {
-            // Extract DTO fields from sequelize Model<any, any> objects
-            const idTokenInfo: IdTokenInfoType = {
-              status: authorization.idTokenInfo.status,
-              cacheExpiryDateTime: authorization.idTokenInfo.cacheExpiryDateTime,
-              chargingPriority: authorization.idTokenInfo.chargingPriority,
-              language1: authorization.idTokenInfo.language1,
-              evseId: authorization.idTokenInfo.evseId,
-              groupIdToken: authorization.idTokenInfo.groupIdToken ? {
-                additionalInfo: (authorization.idTokenInfo.groupIdToken.additionalInfo && authorization.idTokenInfo.groupIdToken.additionalInfo.length > 0) ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(additionalInfo => ({
-                  additionalIdToken: additionalInfo.additionalIdToken,
-                  type: additionalInfo.type
-                })) as [AdditionalInfoType, ...AdditionalInfoType[]]) : undefined,
-                idToken: authorization.idTokenInfo.groupIdToken.idToken,
-                type: authorization.idTokenInfo.groupIdToken.type
-              } : undefined,
-              language2: authorization.idTokenInfo.language2,
-              personalMessage: authorization.idTokenInfo.personalMessage
-            };
+      this._authorizeRepository
+        .readByQuery({ ...transactionEvent.idToken })
+        .then((authorization) => {
+          const response: TransactionEventResponse = {
+            idTokenInfo: {
+              status: AuthorizationStatusEnumType.Unknown,
+              // TODO determine how/if to set personalMessage
+            },
+          };
+          if (authorization) {
+            if (authorization.idTokenInfo) {
+              // Extract DTO fields from sequelize Model<any, any> objects
+              const idTokenInfo: IdTokenInfoType = {
+                status: authorization.idTokenInfo.status,
+                cacheExpiryDateTime:
+                  authorization.idTokenInfo.cacheExpiryDateTime,
+                chargingPriority: authorization.idTokenInfo.chargingPriority,
+                language1: authorization.idTokenInfo.language1,
+                evseId: authorization.idTokenInfo.evseId,
+                groupIdToken: authorization.idTokenInfo.groupIdToken
+                  ? {
+                      additionalInfo:
+                        authorization.idTokenInfo.groupIdToken.additionalInfo &&
+                        authorization.idTokenInfo.groupIdToken.additionalInfo
+                          .length > 0
+                          ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
+                              (additionalInfo) => ({
+                                additionalIdToken:
+                                  additionalInfo.additionalIdToken,
+                                type: additionalInfo.type,
+                              }),
+                            ) as [AdditionalInfoType, ...AdditionalInfoType[]])
+                          : undefined,
+                      idToken: authorization.idTokenInfo.groupIdToken.idToken,
+                      type: authorization.idTokenInfo.groupIdToken.type,
+                    }
+                  : undefined,
+                language2: authorization.idTokenInfo.language2,
+                personalMessage: authorization.idTokenInfo.personalMessage,
+              };
 
-            if (idTokenInfo.status === AuthorizationStatusEnumType.Accepted) {
-              if (idTokenInfo.cacheExpiryDateTime &&
-                new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
-                response.idTokenInfo = {
-                  status: AuthorizationStatusEnumType.Invalid,
-                  groupIdToken: idTokenInfo.groupIdToken
-                  // TODO determine how/if to set personalMessage
-                };
+              if (idTokenInfo.status === AuthorizationStatusEnumType.Accepted) {
+                if (
+                  idTokenInfo.cacheExpiryDateTime &&
+                  new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
+                ) {
+                  response.idTokenInfo = {
+                    status: AuthorizationStatusEnumType.Invalid,
+                    groupIdToken: idTokenInfo.groupIdToken,
+                    // TODO determine how/if to set personalMessage
+                  };
+                } else {
+                  // TODO: Determine how to check for NotAllowedTypeEVSE, NotAtThisLocation, NotAtThisTime, NoCredit
+                  // TODO: allow for a 'real time auth' type call to fetch token status.
+                  response.idTokenInfo = idTokenInfo;
+                }
               } else {
-                // TODO: Determine how to check for NotAllowedTypeEVSE, NotAtThisLocation, NotAtThisTime, NoCredit
-                // TODO: allow for a 'real time auth' type call to fetch token status.
+                // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
+                // N.B. Other non-Accepted statuses should not be allowed to be stored.
                 response.idTokenInfo = idTokenInfo;
               }
             } else {
-              // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
-              // N.B. Other non-Accepted statuses should not be allowed to be stored.
-              response.idTokenInfo = idTokenInfo;
-            }
-          } else {
-            // Assumed to always be valid without IdTokenInfo
-            response.idTokenInfo = {
-              status: AuthorizationStatusEnumType.Accepted
-              // TODO determine how/if to set personalMessage
-            };
-          }
-        }
-        return response;
-      }).then(transactionEventResponse => {
-        if (transactionEvent.eventType === TransactionEventEnumType.Started && transactionEventResponse
-          && transactionEventResponse.idTokenInfo?.status === AuthorizationStatusEnumType.Accepted && transactionEvent.idToken) {
-          // Check for ConcurrentTx
-          return this._transactionEventRepository.readAllActiveTransactionByIdToken(transactionEvent.idToken).then(activeTransactions => {
-            // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
-            if (activeTransactions.length > 1) {
-              const groupIdToken = transactionEventResponse.idTokenInfo?.groupIdToken;
-              transactionEventResponse.idTokenInfo = {
-                status: AuthorizationStatusEnumType.ConcurrentTx,
-                groupIdToken: groupIdToken
+              // Assumed to always be valid without IdTokenInfo
+              response.idTokenInfo = {
+                status: AuthorizationStatusEnumType.Accepted,
                 // TODO determine how/if to set personalMessage
               };
             }
-            return transactionEventResponse;
-          });
-        }
-        return transactionEventResponse;
-      }).then(transactionEventResponse => {
-        this.sendCallResultWithMessage(message, transactionEventResponse)
-          .then(messageConfirmation => this._logger.debug('Transaction response sent: ', messageConfirmation));
-      });
+          }
+          return response;
+        })
+        .then((transactionEventResponse) => {
+          if (
+            transactionEvent.eventType === TransactionEventEnumType.Started &&
+            transactionEventResponse &&
+            transactionEventResponse.idTokenInfo?.status ===
+              AuthorizationStatusEnumType.Accepted &&
+            transactionEvent.idToken
+          ) {
+            // Check for ConcurrentTx
+            return this._transactionEventRepository
+              .readAllActiveTransactionByIdToken(transactionEvent.idToken)
+              .then((activeTransactions) => {
+                // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
+                if (activeTransactions.length > 1) {
+                  const groupIdToken =
+                    transactionEventResponse.idTokenInfo?.groupIdToken;
+                  transactionEventResponse.idTokenInfo = {
+                    status: AuthorizationStatusEnumType.ConcurrentTx,
+                    groupIdToken: groupIdToken,
+                    // TODO determine how/if to set personalMessage
+                  };
+                }
+                return transactionEventResponse;
+              });
+          }
+          return transactionEventResponse;
+        })
+        .then((transactionEventResponse) => {
+          this.sendCallResultWithMessage(
+            message,
+            transactionEventResponse,
+          ).then((messageConfirmation) =>
+            this._logger.debug(
+              'Transaction response sent: ',
+              messageConfirmation,
+            ),
+          );
+        });
     } else {
       const response: TransactionEventResponse = {
         // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
       };
-      this.sendCallResultWithMessage(message, response)
-        .then(messageConfirmation => this._logger.debug('Transaction response sent: ', messageConfirmation));
+      this.sendCallResultWithMessage(message, response).then(
+        (messageConfirmation) =>
+          this._logger.debug(
+            'Transaction response sent: ',
+            messageConfirmation,
+          ),
+      );
     }
   }
 
   @AsHandler(CallAction.MeterValues)
   protected async _handleMeterValues(
     message: IMessage<MeterValuesRequest>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('MeterValues received:', message, props);
 
@@ -224,16 +280,20 @@ export class TransactionsModule extends AbstractModule {
   @AsHandler(CallAction.StatusNotification)
   protected _handleStatusNotification(
     message: IMessage<StatusNotificationRequest>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
-
     this._logger.debug('StatusNotification received:', message, props);
 
     // Create response
     const response: StatusNotificationResponse = {};
 
-    this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug('StatusNotification response sent: ', messageConfirmation));
+    this.sendCallResultWithMessage(message, response).then(
+      (messageConfirmation) =>
+        this._logger.debug(
+          'StatusNotification response sent: ',
+          messageConfirmation,
+        ),
+    );
   }
 
   /**
@@ -243,7 +303,7 @@ export class TransactionsModule extends AbstractModule {
   @AsHandler(CallAction.CostUpdated)
   protected _handleCostUpdated(
     message: IMessage<CostUpdatedResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
     this._logger.debug('CostUpdated response received:', message, props);
   }
@@ -251,8 +311,12 @@ export class TransactionsModule extends AbstractModule {
   @AsHandler(CallAction.GetTransactionStatus)
   protected _handleGetTransactionStatus(
     message: IMessage<GetTransactionStatusResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
-    this._logger.debug('GetTransactionStatus response received:', message, props);
+    this._logger.debug(
+      'GetTransactionStatus response received:',
+      message,
+      props,
+    );
   }
 }

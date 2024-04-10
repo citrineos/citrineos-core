@@ -21,8 +21,10 @@ import { ILogObj, Logger } from 'tslog';
 /**
  * Implementation of a {@link IMessageSender} using Google PubSub as the underlying transport.
  */
-export class PubSubSender extends AbstractMessageSender implements IMessageSender {
-
+export class PubSubSender
+  extends AbstractMessageSender
+  implements IMessageSender
+{
   /**
    * Fields
    */
@@ -36,7 +38,9 @@ export class PubSubSender extends AbstractMessageSender implements IMessageSende
   constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
     super(config, logger);
 
-    this._client = new PubSub({ servicePath: this._config.util.messageBroker.pubsub?.servicePath });
+    this._client = new PubSub({
+      servicePath: this._config.util.messageBroker.pubsub?.servicePath,
+    });
   }
 
   /**
@@ -46,7 +50,10 @@ export class PubSubSender extends AbstractMessageSender implements IMessageSende
    * @param payload The payload to send
    * @returns
    */
-  sendRequest(message: IMessage<OcppRequest>, payload?: OcppRequest): Promise<IMessageConfirmation> {
+  sendRequest(
+    message: IMessage<OcppRequest>,
+    payload?: OcppRequest,
+  ): Promise<IMessageConfirmation> {
     return this.send(message, payload, MessageState.Request);
   }
 
@@ -56,7 +63,10 @@ export class PubSubSender extends AbstractMessageSender implements IMessageSende
    * @param payload The payload to send
    * @returns
    */
-  sendResponse(message: IMessage<OcppResponse | OcppError>, payload?: OcppResponse | OcppError): Promise<IMessageConfirmation> {
+  sendResponse(
+    message: IMessage<OcppResponse | OcppError>,
+    payload?: OcppResponse | OcppError,
+  ): Promise<IMessageConfirmation> {
     return this.send(message, payload, MessageState.Response);
   }
 
@@ -71,7 +81,7 @@ export class PubSubSender extends AbstractMessageSender implements IMessageSende
   send(
     message: IMessage<OcppRequest | OcppResponse | OcppError>,
     payload?: OcppRequest | OcppResponse | OcppError,
-    state?: MessageState
+    state?: MessageState,
   ): Promise<IMessageConfirmation> {
     if (payload) {
       message.payload = payload;
@@ -91,7 +101,9 @@ export class PubSubSender extends AbstractMessageSender implements IMessageSende
 
     const topicName = `${this._config.util.messageBroker.pubsub?.topicPrefix}-${this._config.util.messageBroker.pubsub?.topicName}`;
     // Convert into action index due to PubSub limits of 256 characters in filter string
-    const actionIndex: number = Object.keys(CallAction).indexOf(message.action.toString());
+    const actionIndex: number = Object.keys(CallAction).indexOf(
+      message.action.toString(),
+    );
 
     this._logger.debug(`Publishing to ${topicName}:`, message);
     return this._client

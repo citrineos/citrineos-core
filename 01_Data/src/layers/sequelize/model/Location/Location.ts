@@ -18,8 +18,8 @@ export class Location extends Model {
   declare name: string;
 
   /**
-     * [longitude, latitude]
-     */
+   * [longitude, latitude]
+   */
   @Column(DataType.GEOMETRY('POINT'))
   declare coordinates: [number, number];
 

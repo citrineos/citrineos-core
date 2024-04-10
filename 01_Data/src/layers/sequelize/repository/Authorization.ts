@@ -10,7 +10,7 @@ import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from '../model/Au
 import { SequelizeRepository } from './Base';
 
 export class AuthorizationRepository extends SequelizeRepository<Authorization> implements IAuthorizationRepository {
-  async createOrUpdateByQuery (value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined> {
+  async createOrUpdateByQuery(value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined> {
     if (value.idToken.idToken !== query.idToken || value.idToken.type !== query.type) {
       throw new Error('Authorization idToken does not match query');
     }
@@ -23,12 +23,12 @@ export class AuthorizationRepository extends SequelizeRepository<Authorization> 
     if (value.idTokenInfo) {
       const valueIdTokenInfo = IdTokenInfo.build({
         id: undefined,
-        ...value.idTokenInfo
+        ...value.idTokenInfo,
       });
       if (authorizationModel.idTokenInfoId) {
         let savedIdTokenInfo = (await this.s.models[IdTokenInfo.MODEL_NAME].findOne({
           where: { id: authorizationModel.idTokenInfoId },
-          include: [{ model: IdToken, include: [AdditionalInfo] }]
+          include: [{ model: IdToken, include: [AdditionalInfo] }],
         })) as IdTokenInfo;
         Object.keys(valueIdTokenInfo.dataValues).forEach((k) => {
           const updatedValue = valueIdTokenInfo.getDataValue(k);
@@ -62,14 +62,14 @@ export class AuthorizationRepository extends SequelizeRepository<Authorization> 
     return await authorizationModel.save();
   }
 
-  async updateRestrictionsByQuery (value: AuthorizationRestrictions, query: AuthorizationQuerystring): Promise<Authorization | undefined> {
+  async updateRestrictionsByQuery(value: AuthorizationRestrictions, query: AuthorizationQuerystring): Promise<Authorization | undefined> {
     return await this.readByQuery(query).then(async (dbValue) => {
       if (dbValue) {
         return await super.updateByModel(
           Authorization.build({
-            ...value
+            ...value,
           }),
-          dbValue
+          dbValue,
         );
       } else {
         // Do nothing
@@ -77,15 +77,15 @@ export class AuthorizationRepository extends SequelizeRepository<Authorization> 
     });
   }
 
-  async readByQuery (query: AuthorizationQuerystring): Promise<Authorization> {
+  async readByQuery(query: AuthorizationQuerystring): Promise<Authorization> {
     return await super.readByQuery(this._constructQuery(query), Authorization.MODEL_NAME);
   }
 
-  async existsByQuery (query: AuthorizationQuerystring): Promise<boolean> {
+  async existsByQuery(query: AuthorizationQuerystring): Promise<boolean> {
     return await super.existsByQuery(this._constructQuery(query), Authorization.MODEL_NAME);
   }
 
-  async deleteAllByQuery (query: AuthorizationQuerystring): Promise<number> {
+  async deleteAllByQuery(query: AuthorizationQuerystring): Promise<number> {
     return await super.deleteAllByQuery(this._constructQuery(query), Authorization.MODEL_NAME);
   }
 
@@ -93,21 +93,21 @@ export class AuthorizationRepository extends SequelizeRepository<Authorization> 
    * Private Methods
    */
 
-  private _constructQuery (queryParams: AuthorizationQuerystring): object {
+  private _constructQuery(queryParams: AuthorizationQuerystring): object {
     return {
       where: {},
       include: [
         {
           model: IdToken,
           where: { idToken: queryParams.idToken, type: queryParams.type },
-          required: true // This ensures the inner join, so only Authorizations with the matching IdToken are returned
+          required: true, // This ensures the inner join, so only Authorizations with the matching IdToken are returned
         },
-        { model: IdTokenInfo, include: [{ model: IdToken, include: [AdditionalInfo] }] }
-      ]
+        { model: IdTokenInfo, include: [{ model: IdToken, include: [AdditionalInfo] }] },
+      ],
     };
   }
 
-  private _createInclude (value: AuthorizationData): BuildOptions {
+  private _createInclude(value: AuthorizationData): BuildOptions {
     const include: Includeable[] = [];
     if (value.idTokenInfo) {
       const idTokenInfoInclude: Includeable[] = [];
@@ -128,27 +128,27 @@ export class AuthorizationRepository extends SequelizeRepository<Authorization> 
     return { include };
   }
 
-  private async _updateIdToken (value: IdTokenType, savedIdTokenId?: number) {
+  private async _updateIdToken(value: IdTokenType, savedIdTokenId?: number) {
     const idTokenModel = IdToken.build(
       {
         id: undefined,
-        ...value
+        ...value,
       },
       {
-        include: [AdditionalInfo]
-      }
+        include: [AdditionalInfo],
+      },
     );
     let savedIdTokenModel: IdToken | undefined;
     if (savedIdTokenId) {
       savedIdTokenModel = (await this.s.models[IdToken.MODEL_NAME].findOne({
         where: { id: savedIdTokenId },
-        include: [AdditionalInfo]
+        include: [AdditionalInfo],
       })) as IdToken;
     }
     if (!savedIdTokenModel || savedIdTokenModel.idToken !== value.idToken || savedIdTokenModel.type !== value.type) {
       savedIdTokenModel = (await this.s.models[IdToken.MODEL_NAME].findOne({
         where: { idToken: value.idToken, type: value.type },
-        include: [AdditionalInfo]
+        include: [AdditionalInfo],
       })) as IdToken;
     }
     if (savedIdTokenModel) {
@@ -165,7 +165,7 @@ export class AuthorizationRepository extends SequelizeRepository<Authorization> 
         if (!savedIdTokenModel?.additionalInfo?.some((savedAdditionalInfo) => savedAdditionalInfo.additionalIdToken === valueAdditionalInfo.additionalIdToken && savedAdditionalInfo.type === valueAdditionalInfo.type)) {
           AdditionalInfo.build({
             idTokenId: savedIdTokenModel.id,
-            ...valueAdditionalInfo
+            ...valueAdditionalInfo,
           }).save();
         }
       });

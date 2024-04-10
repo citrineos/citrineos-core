@@ -6,7 +6,14 @@
 import { ICache } from '@citrineos/base';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 import { default as deasyncPromise } from 'deasync-promise';
-import { createClient, RedisClientOptions, RedisClientType, RedisFunctions, RedisModules, RedisScripts } from 'redis';
+import {
+  createClient,
+  RedisClientOptions,
+  RedisClientType,
+  RedisFunctions,
+  RedisModules,
+  RedisScripts,
+} from 'redis';
 
 /**
  * Implementation of cache interface with redis storage
@@ -35,7 +42,12 @@ export class RedisCache implements ICache {
     return this._client.del(key).then((result) => result === 1);
   }
 
-  onChange<T>(key: string, waitSeconds: number, namespace?: string | undefined, classConstructor?: (() => ClassConstructor<T>) | undefined): Promise<T | null> {
+  onChange<T>(
+    key: string,
+    waitSeconds: number,
+    namespace?: string | undefined,
+    classConstructor?: (() => ClassConstructor<T>) | undefined,
+  ): Promise<T | null> {
     namespace = namespace || 'default';
     key = `${namespace}:${key}`;
 
@@ -66,7 +78,11 @@ export class RedisCache implements ICache {
     });
   }
 
-  get<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): Promise<T | null> {
+  get<T>(
+    key: string,
+    namespace?: string,
+    classConstructor?: () => ClassConstructor<T>,
+  ): Promise<T | null> {
     namespace = namespace || 'default';
     key = `${namespace}:${key}`;
     return this._client.get(key).then((result) => {
@@ -80,21 +96,32 @@ export class RedisCache implements ICache {
     });
   }
 
-  getSync<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): T | null {
+  getSync<T>(
+    key: string,
+    namespace?: string,
+    classConstructor?: () => ClassConstructor<T>,
+  ): T | null {
     namespace = namespace || 'default';
     key = `${namespace}:${key}`;
-    return deasyncPromise(this._client.get(key).then((result) => {
-      if (result) {
-        if (classConstructor) {
-          return plainToInstance(classConstructor(), JSON.parse(result));
+    return deasyncPromise(
+      this._client.get(key).then((result) => {
+        if (result) {
+          if (classConstructor) {
+            return plainToInstance(classConstructor(), JSON.parse(result));
+          }
+          return result as T;
         }
-        return result as T;
-      }
-      return null;
-    }));
+        return null;
+      }),
+    );
   }
 
-  set(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean> {
+  set(
+    key: string,
+    value: string,
+    namespace?: string,
+    expireSeconds?: number,
+  ): Promise<boolean> {
     namespace = namespace || 'default';
     key = `${namespace}:${key}`;
     const setOptions = expireSeconds ? { EX: expireSeconds } : undefined;
@@ -106,25 +133,43 @@ export class RedisCache implements ICache {
     });
   }
 
-  setIfNotExist(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean> {
+  setIfNotExist(
+    key: string,
+    value: string,
+    namespace?: string,
+    expireSeconds?: number,
+  ): Promise<boolean> {
     namespace = namespace || 'default';
     key = `${namespace}:${key}`;
-    return this._client.set(key, value, expireSeconds ? { EX: expireSeconds, NX: true } : { NX: true }).then((result) => {
-      if (result) {
-        return result === 'OK';
-      }
-      return false;
-    });
+    return this._client
+      .set(
+        key,
+        value,
+        expireSeconds ? { EX: expireSeconds, NX: true } : { NX: true },
+      )
+      .then((result) => {
+        if (result) {
+          return result === 'OK';
+        }
+        return false;
+      });
   }
 
-  setSync(key: string, value: string, namespace?: string, expireSeconds?: number): boolean {
+  setSync(
+    key: string,
+    value: string,
+    namespace?: string,
+    expireSeconds?: number,
+  ): boolean {
     namespace = namespace || 'default';
     key = `${namespace}:${key}`;
-    return deasyncPromise(this._client.set(key, value, { EX: expireSeconds }).then((result) => {
-      if (result) {
-        return result === 'OK';
-      }
-      return false;
-    }));
+    return deasyncPromise(
+      this._client.set(key, value, { EX: expireSeconds }).then((result) => {
+        if (result) {
+          return result === 'OK';
+        }
+        return false;
+      }),
+    );
   }
 }

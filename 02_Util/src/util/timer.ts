@@ -9,12 +9,10 @@
 
 import { ILogObj, Logger } from 'tslog';
 
-
 /**
  * Utility class to measure time
  */
 export class Timer {
-
   /**
    * Fields
    */
@@ -74,10 +72,19 @@ export function isPromise<T = unknown>(p: T | Promise<T>): p is Promise<T> {
  * @param {number} [logLevel=3] - The log level.
  * @returns {PropertyDescriptor} - The modified property descriptor.
  */
-export function Timed(logger: Logger<ILogObj>, logPrefix?: string, logLevel: number = 3) {
-  return (target: any, propertyKey: string, propertyDescriptor: PropertyDescriptor): PropertyDescriptor => {
-
-    propertyDescriptor = propertyDescriptor || Object.getOwnPropertyDescriptor(target, propertyKey);
+export function Timed(
+  logger: Logger<ILogObj>,
+  logPrefix?: string,
+  logLevel: number = 3,
+) {
+  return (
+    target: any,
+    propertyKey: string,
+    propertyDescriptor: PropertyDescriptor,
+  ): PropertyDescriptor => {
+    propertyDescriptor =
+      propertyDescriptor ||
+      Object.getOwnPropertyDescriptor(target, propertyKey);
     const originalMethod = propertyDescriptor.value;
 
     propertyDescriptor.value = function (...args: unknown[]) {

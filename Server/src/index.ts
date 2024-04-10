@@ -91,16 +91,25 @@ export class CitrineOSServer {
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
    */
   // todo rename event group to type
-  constructor(appName: string, config: SystemConfig, server?: FastifyInstance, ajv?: Ajv, cache?: ICache) {
+  constructor(
+    appName: string,
+    config: SystemConfig,
+    server?: FastifyInstance,
+    ajv?: Ajv,
+    cache?: ICache,
+  ) {
     // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
     if (!config.util.messageBroker.amqp) {
-      throw new Error('This server implementation requires amqp configuration for rabbitMQ.');
+      throw new Error(
+        'This server implementation requires amqp configuration for rabbitMQ.',
+      );
     }
     this._config = config;
 
     // Create server instance
-    this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
+    this._server =
+      server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
     // Add health check
     this.initHealthCheck();
@@ -124,7 +133,12 @@ export class CitrineOSServer {
     // Add Directus Message API flow creation if enabled
     if (this._config.util.directus?.generateFlows) {
       const directusUtil = new DirectusUtil(this._config, this._logger);
-      this._server.addHook('onRoute', directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(directusUtil));
+      this._server.addHook(
+        'onRoute',
+        directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(
+          directusUtil,
+        ),
+      );
       this._server.addHook('onReady', async () => {
         this._logger?.info('Directus actions initialization finished');
       });
@@ -145,7 +159,7 @@ export class CitrineOSServer {
   shutdown() {
     // todo shut down depending on setup
     // Shut down all modules and central system
-    this.modules.forEach(module => {
+    this.modules.forEach((module) => {
       module.shutdown();
     });
     this._networkConnection?.shutdown();
@@ -161,15 +175,18 @@ export class CitrineOSServer {
 
   async run(): Promise<void> {
     try {
-      await this._server.listen({
-        host: this.host,
-        port: this.port
-      }).then(address => {
-        this._logger?.info(`Server listening at ${address}`);
-      }).catch(error => {
-        this._logger?.error(error);
-        process.exit(1);
-      });
+      await this._server
+        .listen({
+          host: this.host,
+          port: this.port,
+        })
+        .then((address) => {
+          this._logger?.info(`Server listening at ${address}`);
+        })
+        .catch((error) => {
+          this._logger?.error(error);
+          process.exit(1);
+        });
       // TODO Push config to microservices
     } catch (error) {
       await Promise.reject(error);
@@ -185,22 +202,25 @@ export class CitrineOSServer {
   }
 
   private initHealthCheck() {
-    this._server.get('/health', async () => ({status: 'healthy'}));
+    this._server.get('/health', async () => ({ status: 'healthy' }));
   }
 
   private initAjv(ajv?: Ajv) {
-    return ajv || new Ajv({
-      removeAdditional: 'all',
-      useDefaults: true,
-      coerceTypes: 'array',
-      strict: false
-    });
+    return (
+      ajv ||
+      new Ajv({
+        removeAdditional: 'all',
+        useDefaults: true,
+        coerceTypes: 'array',
+        strict: false,
+      })
+    );
   }
 
   private addAjvFormats() {
     addFormats(this._ajv, {
       mode: 'fast',
-      formats: ['date-time']
+      formats: ['date-time'],
     });
   }
 
@@ -210,23 +230,30 @@ export class CitrineOSServer {
       minLevel: systemConfig.logLevel,
       hideLogPositionForProduction: systemConfig.env === 'production',
       // Disable colors for cloud deployment as some cloude logging environments such as cloudwatch can not interpret colors
-      stylePrettyLogs: process.env.DEPLOYMENT_TARGET !== 'cloud'
+      stylePrettyLogs: process.env.DEPLOYMENT_TARGET !== 'cloud',
     });
   }
 
   private forceDbSync() {
-    sequelize.DefaultSequelizeInstance.getInstance(this._config, this._logger, true);
+    sequelize.DefaultSequelizeInstance.getInstance(
+      this._config,
+      this._logger,
+      true,
+    );
   }
 
   private initCache(cache?: ICache): ICache {
-    return cache || (this._config.util.cache.redis
-      ? new RedisCache({
-        socket: {
-          host: this._config.util.cache.redis.host,
-          port: this._config.util.cache.redis.port
-        }
-      })
-      : new MemoryCache());
+    return (
+      cache ||
+      (this._config.util.cache.redis
+        ? new RedisCache({
+            socket: {
+              host: this._config.util.cache.redis.host,
+              port: this._config.util.cache.redis.port,
+            },
+          })
+        : new MemoryCache())
+    );
   }
 
   private initSwagger() {
@@ -237,17 +264,38 @@ export class CitrineOSServer {
 
   private registerAjv() {
     // todo type schema instead of any
-    const fastifySchemaCompiler: FastifySchemaCompiler<any> = (routeSchema: FastifyRouteSchemaDef<any>) => this._ajv?.compile(routeSchema.schema) as FastifyValidationResult;
+    const fastifySchemaCompiler: FastifySchemaCompiler<any> = (
+      routeSchema: FastifyRouteSchemaDef<any>,
+    ) => this._ajv?.compile(routeSchema.schema) as FastifyValidationResult;
     this._server.setValidatorCompiler(fastifySchemaCompiler);
   }
 
   private initNetworkConnection() {
-    this._authenticator = new Authenticator(this._cache, new sequelize.LocationRepository(this._config, this._logger), new sequelize.DeviceModelRepository(this._config, this._logger), this._logger);
+    this._authenticator = new Authenticator(
+      this._cache,
+      new sequelize.LocationRepository(this._config, this._logger),
+      new sequelize.DeviceModelRepository(this._config, this._logger),
+      this._logger,
+    );
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const router = new MessageRouterImpl(this._config, this._cache, this._createSender(), this._createHandler(), async (_identifier: string, _message: string) => false, this._logger, this._ajv);
+    const router = new MessageRouterImpl(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      async (_identifier: string, _message: string) => false,
+      this._logger,
+      this._ajv,
+    );
 
-    this._networkConnection = new WebsocketNetworkConnection(this._config, this._cache, this._authenticator, router, this._logger);
+    this._networkConnection = new WebsocketNetworkConnection(
+      this._config,
+      this._cache,
+      this._authenticator,
+      router,
+      this._logger,
+    );
   }
 
   private initAllModules() {
@@ -258,8 +306,8 @@ export class CitrineOSServer {
       this.getModuleConfig(EventGroup.Monitoring),
       this.getModuleConfig(EventGroup.Reporting),
       this.getModuleConfig(EventGroup.SmartCharging),
-      this.getModuleConfig(EventGroup.Transactions)
-    ].forEach(moduleConfig => {
+      this.getModuleConfig(EventGroup.Transactions),
+    ].forEach((moduleConfig) => {
       this.initModule(moduleConfig);
     });
   }
@@ -271,15 +319,11 @@ export class CitrineOSServer {
         this._cache,
         this._createSender(),
         this._createHandler(),
-        this._logger
+        this._logger,
       );
       this.modules.push(module);
       this.apis.push(
-        new moduleConfig.ModuleApiClass(
-          module,
-          this._server,
-          this._logger
-        )
+        new moduleConfig.ModuleApiClass(module, this._server, this._logger),
       );
       // TODO: take actions to make sure module has correct subscriptions and log proof
       this._logger?.info(`${moduleConfig.ModuleClass.name} module started...`);
@@ -298,43 +342,43 @@ export class CitrineOSServer {
         return {
           ModuleClass: CertificatesModule,
           ModuleApiClass: CertificatesModuleApi,
-          configModule: this._config.modules.certificates
+          configModule: this._config.modules.certificates,
         };
       case EventGroup.Configuration:
         return {
           ModuleClass: ConfigurationModule,
           ModuleApiClass: ConfigurationModuleApi,
-          configModule: this._config.modules.configuration
+          configModule: this._config.modules.configuration,
         };
       case EventGroup.EVDriver:
         return {
           ModuleClass: EVDriverModule,
           ModuleApiClass: EVDriverModuleApi,
-          configModule: this._config.modules.evdriver
+          configModule: this._config.modules.evdriver,
         };
       case EventGroup.Monitoring:
         return {
           ModuleClass: MonitoringModule,
           ModuleApiClass: MonitoringModuleApi,
-          configModule: this._config.modules.monitoring
+          configModule: this._config.modules.monitoring,
         };
       case EventGroup.Reporting:
         return {
           ModuleClass: ReportingModule,
           ModuleApiClass: ReportingModuleApi,
-          configModule: this._config.modules.reporting
+          configModule: this._config.modules.reporting,
         };
       case EventGroup.SmartCharging:
         return {
           ModuleClass: SmartChargingModule,
           ModuleApiClass: SmartChargingModuleApi,
-          configModule: this._config.modules.smartcharging
+          configModule: this._config.modules.smartcharging,
         };
       case EventGroup.Transactions:
         return {
           ModuleClass: TransactionsModule,
           ModuleApiClass: TransactionsModuleApi,
-          configModule: this._config.modules.transactions
+          configModule: this._config.modules.transactions,
         };
       default:
         throw new Error('Unhandled module type: ' + appName);
@@ -354,10 +398,9 @@ export class CitrineOSServer {
   }
 }
 
-new CitrineOSServer(
-  process.env.APP_NAME as EventGroup,
-  systemConfig
-).run().catch((error: any) => {
-  console.error(error);
-  process.exit(1);
-});
+new CitrineOSServer(process.env.APP_NAME as EventGroup, systemConfig)
+  .run()
+  .catch((error: any) => {
+    console.error(error);
+    process.exit(1);
+  });

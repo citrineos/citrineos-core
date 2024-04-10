@@ -12,23 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ChargingProfileStatusEnumType": {
       "description": "Returns whether the Charging Station has been able to process the message successfully. This does not guarantee the schedule will be followed to the letter. There might be other constraints the Charging Station may need to take into account.\r\n",
       "javaType": "ChargingProfileStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "Rejected"
-      ],
-      "tsEnumNames": [
-        "Accepted",
-        "Rejected"
-      ]
+      "enum": ["Accepted", "Rejected"],
+      "tsEnumNames": ["Accepted", "Rejected"]
     },
     "StatusInfoType": {
       "description": "Element providing more information about the status.\r\n",
@@ -50,9 +42,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -68,7 +58,5 @@
       "$ref": "#/definitions/StatusInfoType"
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

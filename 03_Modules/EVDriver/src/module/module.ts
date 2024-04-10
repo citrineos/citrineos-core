@@ -31,7 +31,12 @@ import {
   SystemConfig,
   UnlockConnectorResponse,
 } from '@citrineos/base';
-import { IAuthorizationRepository, IDeviceModelRepository, sequelize, VariableAttribute } from '@citrineos/data';
+import {
+  IAuthorizationRepository,
+  IDeviceModelRepository,
+  sequelize,
+  VariableAttribute,
+} from '@citrineos/data';
 import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
@@ -40,13 +45,12 @@ import { ILogObj, Logger } from 'tslog';
  * Component that handles provisioning related messages.
  */
 export class EVDriverModule extends AbstractModule {
-
   /**
    * Fields
    */
   protected _requests: CallAction[] = [
     CallAction.Authorize,
-    CallAction.ReservationStatusUpdate
+    CallAction.ReservationStatusUpdate,
   ];
   protected _responses: CallAction[] = [
     CallAction.CancelReservation,
@@ -56,12 +60,11 @@ export class EVDriverModule extends AbstractModule {
     CallAction.RequestStopTransaction,
     CallAction.ReserveNow,
     CallAction.SendLocalList,
-    CallAction.UnlockConnector
+    CallAction.UnlockConnector,
   ];
 
   protected _authorizeRepository: IAuthorizationRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
-
 
   /**
    * This is the constructor function that initializes the {@link EVDriverModule}.
@@ -92,19 +95,32 @@ export class EVDriverModule extends AbstractModule {
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
     authorizeRepository?: IAuthorizationRepository,
-    deviceModelRepository?: IDeviceModelRepository
+    deviceModelRepository?: IDeviceModelRepository,
   ) {
-    super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.EVDriver, logger);
+    super(
+      config,
+      cache,
+      handler || new RabbitMqReceiver(config, logger),
+      sender || new RabbitMqSender(config, logger),
+      EventGroup.EVDriver,
+      logger,
+    );
 
     const timer = new Timer();
     this._logger.info('Initializing...');
 
     if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error('Could not initialize module due to failure in handler initialization.');
+      throw new Error(
+        'Could not initialize module due to failure in handler initialization.',
+      );
     }
 
-    this._authorizeRepository = authorizeRepository || new sequelize.AuthorizationRepository(config, logger);
-    this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, logger);
+    this._authorizeRepository =
+      authorizeRepository ||
+      new sequelize.AuthorizationRepository(config, logger);
+    this._deviceModelRepository =
+      deviceModelRepository ||
+      new sequelize.DeviceModelRepository(config, logger);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -124,145 +140,191 @@ export class EVDriverModule extends AbstractModule {
   @AsHandler(CallAction.Authorize)
   protected _handleAuthorize(
     message: IMessage<AuthorizeRequest>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): void {
-
     this._logger.debug('Authorize received:', message, props);
 
-    this._authorizeRepository.readByQuery({ ...message.payload.idToken }).then(async authorization => {
-      const response: AuthorizeResponse = {
-        idTokenInfo: {
-          status: AuthorizationStatusEnumType.Unknown
-          // TODO determine how/if to set personalMessage
-        }
-      };
-      if (authorization) {
-        if (authorization.idTokenInfo) {
-          // Extract DTO fields from sequelize Model<any, any> objects
-          const idTokenInfo: IdTokenInfoType = {
-            status: authorization.idTokenInfo.status,
-            cacheExpiryDateTime: authorization.idTokenInfo.cacheExpiryDateTime,
-            chargingPriority: authorization.idTokenInfo.chargingPriority,
-            language1: authorization.idTokenInfo.language1,
-            evseId: authorization.idTokenInfo.evseId,
-            groupIdToken: authorization.idTokenInfo.groupIdToken ? {
-              additionalInfo: (authorization.idTokenInfo.groupIdToken.additionalInfo && authorization.idTokenInfo.groupIdToken.additionalInfo.length > 0) ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(additionalInfo => ({
-                additionalIdToken: additionalInfo.additionalIdToken,
-                type: additionalInfo.type
-              })) as [AdditionalInfoType, ...AdditionalInfoType[]]) : undefined,
-              idToken: authorization.idTokenInfo.groupIdToken.idToken,
-              type: authorization.idTokenInfo.groupIdToken.type
-            } : undefined,
-            language2: authorization.idTokenInfo.language2,
-            personalMessage: authorization.idTokenInfo.personalMessage
-          };
-
-          if (idTokenInfo.status === AuthorizationStatusEnumType.Accepted) {
-            if (idTokenInfo.cacheExpiryDateTime &&
-              new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
-              response.idTokenInfo = {
-                status: AuthorizationStatusEnumType.Invalid,
-                groupIdToken: idTokenInfo.groupIdToken
-                // TODO determine how/if to set personalMessage
-              };
-            } else {
-              // If charging station does not have values and evses associated with the component/variable pairs below,
-              // this logic will break. CSMS's aiming to use the allowedConnectorTypes or disallowedEvseIdPrefixes
-              // Authorization restrictions MUST provide these variable attributes as defined in Physical Component
-              // list of Part 2 - Appendices of OCPP 2.0.1
-              let evseIds: Set<number> | undefined;
-              if (authorization.allowedConnectorTypes) {
-                evseIds = new Set();
-                const connectorTypes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
-                  stationId: message.context.stationId,
-                  component_name: 'Connector',
-                  variable_name: 'ConnectorType',
-                  type: AttributeEnumType.Actual
-                });
-                for (const connectorType of connectorTypes) {
-                  if (authorization.allowedConnectorTypes.indexOf(connectorType.value as string) > 0) {
-                    evseIds.add(connectorType.evse?.id as number);
+    this._authorizeRepository
+      .readByQuery({ ...message.payload.idToken })
+      .then(async (authorization) => {
+        const response: AuthorizeResponse = {
+          idTokenInfo: {
+            status: AuthorizationStatusEnumType.Unknown,
+            // TODO determine how/if to set personalMessage
+          },
+        };
+        if (authorization) {
+          if (authorization.idTokenInfo) {
+            // Extract DTO fields from sequelize Model<any, any> objects
+            const idTokenInfo: IdTokenInfoType = {
+              status: authorization.idTokenInfo.status,
+              cacheExpiryDateTime:
+                authorization.idTokenInfo.cacheExpiryDateTime,
+              chargingPriority: authorization.idTokenInfo.chargingPriority,
+              language1: authorization.idTokenInfo.language1,
+              evseId: authorization.idTokenInfo.evseId,
+              groupIdToken: authorization.idTokenInfo.groupIdToken
+                ? {
+                    additionalInfo:
+                      authorization.idTokenInfo.groupIdToken.additionalInfo &&
+                      authorization.idTokenInfo.groupIdToken.additionalInfo
+                        .length > 0
+                        ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
+                            (additionalInfo) => ({
+                              additionalIdToken:
+                                additionalInfo.additionalIdToken,
+                              type: additionalInfo.type,
+                            }),
+                          ) as [AdditionalInfoType, ...AdditionalInfoType[]])
+                        : undefined,
+                    idToken: authorization.idTokenInfo.groupIdToken.idToken,
+                    type: authorization.idTokenInfo.groupIdToken.type,
                   }
-                }
-              }
-              if (evseIds && evseIds.size === 0) {
+                : undefined,
+              language2: authorization.idTokenInfo.language2,
+              personalMessage: authorization.idTokenInfo.personalMessage,
+            };
+
+            if (idTokenInfo.status === AuthorizationStatusEnumType.Accepted) {
+              if (
+                idTokenInfo.cacheExpiryDateTime &&
+                new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
+              ) {
                 response.idTokenInfo = {
-                  status: AuthorizationStatusEnumType.NotAllowedTypeEVSE,
-                  groupIdToken: idTokenInfo.groupIdToken
+                  status: AuthorizationStatusEnumType.Invalid,
+                  groupIdToken: idTokenInfo.groupIdToken,
                   // TODO determine how/if to set personalMessage
                 };
               } else {
-                // EVSEID prefixes here follow the ISO 15118/IEC 63119-2 format, unlike the evseId list on the
-                // IdTokenInfo object which refers to the serial evse ids defined within OCPP 2.0.1's 3-tier model
-                // Thus, the EvseId variable of the EVSE component defined in Part 2 - Appendices of OCPP 2.0.1
-                // Needs to be looked up to perform the match
-                if (authorization.disallowedEvseIdPrefixes) {
-                  evseIds = evseIds ? evseIds : new Set();
-                  const evseIdAttributes: VariableAttribute[] = await this._deviceModelRepository.readAllByQuery({
-                    stationId: message.context.stationId,
-                    component_name: 'EVSE',
-                    variable_name: 'EvseId',
-                    type: AttributeEnumType.Actual
-                  });
-                  for (const evseIdAttribute of evseIdAttributes) {
-                    const evseIdAllowed: boolean = authorization.disallowedEvseIdPrefixes
-                      .some(disallowedEvseId => (evseIdAttribute.value as string).startsWith(disallowedEvseId));
-                    // If evseId allowed and evseIds were not already filtered by connector type, add to set
-                    // If evseId not allowed and evseIds were already filtered by connector type, remove from set
-                    if (evseIdAllowed && !authorization.allowedConnectorTypes) {
-                      evseIds.add(evseIdAttribute.evse?.id as number);
-                    } else if (!evseIdAllowed && authorization.allowedConnectorTypes) {
-                      evseIds.delete(evseIdAttribute.evse?.id as number);
+                // If charging station does not have values and evses associated with the component/variable pairs below,
+                // this logic will break. CSMS's aiming to use the allowedConnectorTypes or disallowedEvseIdPrefixes
+                // Authorization restrictions MUST provide these variable attributes as defined in Physical Component
+                // list of Part 2 - Appendices of OCPP 2.0.1
+                let evseIds: Set<number> | undefined;
+                if (authorization.allowedConnectorTypes) {
+                  evseIds = new Set();
+                  const connectorTypes: VariableAttribute[] =
+                    await this._deviceModelRepository.readAllByQuery({
+                      stationId: message.context.stationId,
+                      component_name: 'Connector',
+                      variable_name: 'ConnectorType',
+                      type: AttributeEnumType.Actual,
+                    });
+                  for (const connectorType of connectorTypes) {
+                    if (
+                      authorization.allowedConnectorTypes.indexOf(
+                        connectorType.value as string,
+                      ) > 0
+                    ) {
+                      evseIds.add(connectorType.evse?.id as number);
                     }
                   }
                 }
                 if (evseIds && evseIds.size === 0) {
                   response.idTokenInfo = {
-                    status: AuthorizationStatusEnumType.NotAtThisLocation,
-                    groupIdToken: idTokenInfo.groupIdToken
+                    status: AuthorizationStatusEnumType.NotAllowedTypeEVSE,
+                    groupIdToken: idTokenInfo.groupIdToken,
                     // TODO determine how/if to set personalMessage
                   };
                 } else {
-                  // TODO: Determine how to check for NotAtThisTime
-                  response.idTokenInfo = idTokenInfo;
-                  const evseId: number[] = [...(evseIds ? evseIds.values() : [])];
-                  if (evseId.length > 0) {
-                    response.idTokenInfo.evseId = [evseId.pop() as number, ...evseId];
+                  // EVSEID prefixes here follow the ISO 15118/IEC 63119-2 format, unlike the evseId list on the
+                  // IdTokenInfo object which refers to the serial evse ids defined within OCPP 2.0.1's 3-tier model
+                  // Thus, the EvseId variable of the EVSE component defined in Part 2 - Appendices of OCPP 2.0.1
+                  // Needs to be looked up to perform the match
+                  if (authorization.disallowedEvseIdPrefixes) {
+                    evseIds = evseIds ? evseIds : new Set();
+                    const evseIdAttributes: VariableAttribute[] =
+                      await this._deviceModelRepository.readAllByQuery({
+                        stationId: message.context.stationId,
+                        component_name: 'EVSE',
+                        variable_name: 'EvseId',
+                        type: AttributeEnumType.Actual,
+                      });
+                    for (const evseIdAttribute of evseIdAttributes) {
+                      const evseIdAllowed: boolean =
+                        authorization.disallowedEvseIdPrefixes.some(
+                          (disallowedEvseId) =>
+                            (evseIdAttribute.value as string).startsWith(
+                              disallowedEvseId,
+                            ),
+                        );
+                      // If evseId allowed and evseIds were not already filtered by connector type, add to set
+                      // If evseId not allowed and evseIds were already filtered by connector type, remove from set
+                      if (
+                        evseIdAllowed &&
+                        !authorization.allowedConnectorTypes
+                      ) {
+                        evseIds.add(evseIdAttribute.evse?.id as number);
+                      } else if (
+                        !evseIdAllowed &&
+                        authorization.allowedConnectorTypes
+                      ) {
+                        evseIds.delete(evseIdAttribute.evse?.id as number);
+                      }
+                    }
+                  }
+                  if (evseIds && evseIds.size === 0) {
+                    response.idTokenInfo = {
+                      status: AuthorizationStatusEnumType.NotAtThisLocation,
+                      groupIdToken: idTokenInfo.groupIdToken,
+                      // TODO determine how/if to set personalMessage
+                    };
+                  } else {
+                    // TODO: Determine how to check for NotAtThisTime
+                    response.idTokenInfo = idTokenInfo;
+                    const evseId: number[] = [
+                      ...(evseIds ? evseIds.values() : []),
+                    ];
+                    if (evseId.length > 0) {
+                      response.idTokenInfo.evseId = [
+                        evseId.pop() as number,
+                        ...evseId,
+                      ];
+                    }
                   }
                 }
               }
+            } else {
+              // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
+              // N.B. Other statuses should not be allowed to be stored.
+              response.idTokenInfo = idTokenInfo;
             }
           } else {
-            // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
-            // N.B. Other statuses should not be allowed to be stored.
-            response.idTokenInfo = idTokenInfo;
+            // Assumed to always be valid without IdTokenInfo
+            response.idTokenInfo = {
+              status: AuthorizationStatusEnumType.Accepted,
+              // TODO determine how/if to set personalMessage
+            };
           }
-        } else {
-          // Assumed to always be valid without IdTokenInfo
-          response.idTokenInfo = {
-            status: AuthorizationStatusEnumType.Accepted
-            // TODO determine how/if to set personalMessage
-          };
         }
-      }
-      return this.sendCallResultWithMessage(message, response);
-    }).then(messageConfirmation => this._logger.debug('Authorize response sent:', messageConfirmation));
+        return this.sendCallResultWithMessage(message, response);
+      })
+      .then((messageConfirmation) =>
+        this._logger.debug('Authorize response sent:', messageConfirmation),
+      );
   }
 
   @AsHandler(CallAction.ReservationStatusUpdate)
   protected async _handleReservationStatusUpdate(
     message: IMessage<ReservationStatusUpdateRequest>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug('ReservationStatusUpdateRequest received:', message, props);
+    this._logger.debug(
+      'ReservationStatusUpdateRequest received:',
+      message,
+      props,
+    );
 
     // Create response
-    const response: ReservationStatusUpdateResponse = {
-    };
+    const response: ReservationStatusUpdateResponse = {};
 
-    this.sendCallResultWithMessage(message, response)
-      .then(messageConfirmation => this._logger.debug('ReservationStatusUpdate response sent: ', messageConfirmation));
-
+    this.sendCallResultWithMessage(message, response).then(
+      (messageConfirmation) =>
+        this._logger.debug(
+          'ReservationStatusUpdate response sent: ',
+          messageConfirmation,
+        ),
+    );
   }
 
   /**
@@ -272,72 +334,72 @@ export class EVDriverModule extends AbstractModule {
   @AsHandler(CallAction.RequestStartTransaction)
   protected async _handleRequestStartTransaction(
     message: IMessage<RequestStartTransactionResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug('RequestStartTransactionResponse received:', message, props);
-
+    this._logger.debug(
+      'RequestStartTransactionResponse received:',
+      message,
+      props,
+    );
   }
 
   @AsHandler(CallAction.RequestStopTransaction)
   protected async _handleRequestStopTransaction(
     message: IMessage<RequestStopTransactionResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug('RequestStopTransactionResponse received:', message, props);
-
+    this._logger.debug(
+      'RequestStopTransactionResponse received:',
+      message,
+      props,
+    );
   }
 
   @AsHandler(CallAction.CancelReservation)
   protected async _handleCancelReservation(
     message: IMessage<CancelReservationResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('CancelReservationResponse received:', message, props);
-
   }
 
   @AsHandler(CallAction.ReserveNow)
   protected async _handleReserveNow(
     message: IMessage<ReserveNowResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('ReserveNowResponse received:', message, props);
-
   }
 
   @AsHandler(CallAction.UnlockConnector)
   protected async _handleUnlockConnector(
     message: IMessage<UnlockConnectorResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('UnlockConnectorResponse received:', message, props);
-
   }
 
   @AsHandler(CallAction.ClearCache)
   protected async _handleClearCache(
     message: IMessage<ClearCacheResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('ClearCacheResponse received:', message, props);
-
   }
 
   @AsHandler(CallAction.SendLocalList)
   protected async _handleSendLocalList(
     message: IMessage<SendLocalListResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('SendLocalListResponse received:', message, props);
-
   }
 
   @AsHandler(CallAction.GetLocalListVersion)
   protected async _handleGetLocalListVersion(
     message: IMessage<GetLocalListVersionResponse>,
-    props?: HandlerProperties
+    props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetLocalListVersionResponse received:', message, props);
-
   }
 }

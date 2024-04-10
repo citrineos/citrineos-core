@@ -24,9 +24,9 @@ services:
     environment:
       POSTGRES_DB: citrine
       POSTGRES_USER: citrine
-      POSTGRES_PASSWORD: "citrine"
+      POSTGRES_PASSWORD: 'citrine'
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready", "-d", "db_prod" ]
+      test: ['CMD-SHELL', 'pg_isready', '-d', 'db_prod']
       interval: 30s
       timeout: 60s
       retries: 5
@@ -34,9 +34,9 @@ services:
   redis:
     image: redis:latest
     ports:
-      - "6379:6379"
+      - '6379:6379'
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -73,8 +73,8 @@ services:
       - /usr/local/apps/citrineos/03_Modules/SmartCharging/dist/
       - /usr/local/apps/citrineos/03_Modules/Transactions/dist/
     environment:
-      APP_NAME: "all"
-      APP_ENV: "docker"
+      APP_NAME: 'all'
+      APP_ENV: 'docker'
       CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
       CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
     depends_on:

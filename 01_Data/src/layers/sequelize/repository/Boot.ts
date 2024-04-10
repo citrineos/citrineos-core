@@ -11,24 +11,24 @@ import { VariableAttribute } from '../model/DeviceModel';
 import { Op } from 'sequelize';
 
 export class BootRepository extends SequelizeRepository<Boot> implements IBootRepository {
-  async createOrUpdateByKey (value: BootConfig, key: string): Promise<Boot | undefined> {
+  async createOrUpdateByKey(value: BootConfig, key: string): Promise<Boot | undefined> {
     return await this.existsByKey(key)
       .then(async (exists) => {
         if (exists) {
           return await super.updateByKey(
             Boot.build({
               id: key,
-              ...value
+              ...value,
             }),
             key,
-            Boot.MODEL_NAME
+            Boot.MODEL_NAME,
           );
         } else {
           return await super.create(
             Boot.build({
               id: key,
-              ...value
-            })
+              ...value,
+            }),
           );
         }
       })
@@ -42,7 +42,7 @@ export class BootRepository extends SequelizeRepository<Boot> implements IBootRe
       });
   }
 
-  async updateStatusByKey (status: RegistrationStatusEnumType, statusInfo: StatusInfoType | undefined, key: string): Promise<Boot | undefined> {
+  async updateStatusByKey(status: RegistrationStatusEnumType, statusInfo: StatusInfoType | undefined, key: string): Promise<Boot | undefined> {
     return await this.readByKey(key).then(async (boot) => {
       if (boot) {
         boot.status = status;
@@ -52,7 +52,7 @@ export class BootRepository extends SequelizeRepository<Boot> implements IBootRe
     });
   }
 
-  async updateLastBootTimeByKey (lastBootTime: string, key: string): Promise<Boot | undefined> {
+  async updateLastBootTimeByKey(lastBootTime: string, key: string): Promise<Boot | undefined> {
     return await this.readByKey(key).then(async (boot) => {
       if (boot) {
         boot.lastBootTime = lastBootTime;
@@ -61,15 +61,15 @@ export class BootRepository extends SequelizeRepository<Boot> implements IBootRe
     });
   }
 
-  async readByKey (key: string): Promise<Boot> {
+  async readByKey(key: string): Promise<Boot> {
     return await super.readByKey(key, Boot.MODEL_NAME);
   }
 
-  async existsByKey (key: string): Promise<boolean> {
+  async existsByKey(key: string): Promise<boolean> {
     return await super.existsByKey(key, Boot.MODEL_NAME);
   }
 
-  async deleteByKey (key: string): Promise<boolean> {
+  async deleteByKey(key: string): Promise<boolean> {
     return await super.deleteByKey(key, Boot.MODEL_NAME);
   }
 
@@ -77,14 +77,14 @@ export class BootRepository extends SequelizeRepository<Boot> implements IBootRe
    * Private Methods
    */
 
-  private async manageSetVariables (setVariableIds: number[], stationId: string, bootConfigId: string): Promise<VariableAttribute[]> {
+  private async manageSetVariables(setVariableIds: number[], stationId: string, bootConfigId: string): Promise<VariableAttribute[]> {
     const managedSetVariables: VariableAttribute[] = [];
     const savedSetVariables: VariableAttribute[] = await this.s.models[VariableAttribute.MODEL_NAME]
       .findAll({
         where: {
           stationId,
-          bootConfigId: { [Op.ne]: null }
-        }
+          bootConfigId: { [Op.ne]: null },
+        },
       })
       .then((rows) => rows as VariableAttribute[]);
     // Unassign variables not in array, remove already assigned variables from array

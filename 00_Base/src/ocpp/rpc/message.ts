@@ -8,17 +8,32 @@ import { OcppRequest, OcppResponse } from '../..';
 /**
  * Definition of Call Message (4.2.1 CALL)
  */
-export type Call = [messageTypeId: MessageTypeId, messageId: string, action: CallAction, payload: OcppRequest];
+export type Call = [
+  messageTypeId: MessageTypeId,
+  messageId: string,
+  action: CallAction,
+  payload: OcppRequest,
+];
 
 /**
  * Definition of CallResult Message (4.2.2 CALLRESULT)
  */
-export type CallResult = [messageTypeId: MessageTypeId, messageId: string, payload: OcppResponse];
+export type CallResult = [
+  messageTypeId: MessageTypeId,
+  messageId: string,
+  payload: OcppResponse,
+];
 
 /**
  * Definition of CallError Message (4.2.1 CALLERROR)
  */
-export type CallError = [messageTypeId: MessageTypeId, messageId: string, errorCode: ErrorCode, errorDescription: string, errorDetails: object];
+export type CallError = [
+  messageTypeId: MessageTypeId,
+  messageId: string,
+  errorCode: ErrorCode,
+  errorDescription: string,
+  errorDetails: object,
+];
 
 /**
  * Number identifying the different types of OCPP messages.
@@ -126,20 +141,30 @@ export enum ErrorCode {
  * Custom error to handle OCPP errors better.
  */
 export class OcppError extends Error {
-
   private _messageId: string;
   private _errorCode: ErrorCode;
   private _errorDetails: object;
 
-  constructor(messageId: string, errorCode: ErrorCode, errorDescription: string, errorDetails: object = {}) {
-      super(errorDescription);
-      this.name = "OcppError";
-      this._messageId = messageId;
-      this._errorCode = errorCode;
-      this._errorDetails = errorDetails;
+  constructor(
+    messageId: string,
+    errorCode: ErrorCode,
+    errorDescription: string,
+    errorDetails: object = {},
+  ) {
+    super(errorDescription);
+    this.name = 'OcppError';
+    this._messageId = messageId;
+    this._errorCode = errorCode;
+    this._errorDetails = errorDetails;
   }
 
   asCallError(): CallError {
-      return [MessageTypeId.CallError, this._messageId, this._errorCode, this.message, this._errorDetails] as CallError;
+    return [
+      MessageTypeId.CallError,
+      this._messageId,
+      this._errorCode,
+      this.message,
+      this._errorDetails,
+    ] as CallError;
   }
 }

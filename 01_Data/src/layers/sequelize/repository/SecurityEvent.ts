@@ -10,35 +10,35 @@ import { Op } from 'sequelize';
 import { type ISecurityEventRepository } from '../../../interfaces/repositories';
 
 export class SecurityEventRepository extends SequelizeRepository<SecurityEvent> implements ISecurityEventRepository {
-  async createByStationId (value: SecurityEventNotificationRequest, stationId: string): Promise<SecurityEvent | undefined> {
+  async createByStationId(value: SecurityEventNotificationRequest, stationId: string): Promise<SecurityEvent | undefined> {
     return await super.create(
       SecurityEvent.build({
         stationId,
-        ...value
-      })
+        ...value,
+      }),
     );
   }
 
-  async readByStationIdAndTimestamps (stationId: string, from?: Date, to?: Date): Promise<SecurityEvent[]> {
+  async readByStationIdAndTimestamps(stationId: string, from?: Date, to?: Date): Promise<SecurityEvent[]> {
     const timestampQuery = this.generateTimestampQuery(from?.toISOString(), to?.toISOString());
     return await this.s.models[SecurityEvent.MODEL_NAME]
       .findAll({
         where: {
           stationId,
-          ...timestampQuery
-        }
+          ...timestampQuery,
+        },
       })
       .then((row) => row as SecurityEvent[]);
   }
 
-  async deleteByKey (key: string): Promise<boolean> {
+  async deleteByKey(key: string): Promise<boolean> {
     return await super.deleteByKey(key, SecurityEvent.MODEL_NAME);
   }
 
   /**
    * Private Methods
    */
-  private generateTimestampQuery (from?: string, to?: string): any {
+  private generateTimestampQuery(from?: string, to?: string): any {
     if (!from && !to) {
       return {};
     }

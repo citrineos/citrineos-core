@@ -27,7 +27,7 @@ import {
   VariableAttribute,
   VariableCharacteristics,
   VariableMonitoring,
-  VariableMonitoringStatus
+  VariableMonitoringStatus,
 } from '.';
 import { VariableStatus } from './model/DeviceModel';
 
@@ -37,16 +37,16 @@ export class DefaultSequelizeInstance {
    */
   private static instance: Sequelize | null = null;
 
-  private constructor () {}
+  private constructor() {}
 
-  public static getInstance (config: SystemConfig, logger?: Logger<ILogObj>, sync: boolean = false): Sequelize {
+  public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>, sync: boolean = false): Sequelize {
     if (!DefaultSequelizeInstance.instance) {
       DefaultSequelizeInstance.instance = this.defaultSequelize(config, sync, logger);
     }
     return DefaultSequelizeInstance.instance;
   }
 
-  private static defaultSequelize (config: SystemConfig, sync?: boolean, logger?: Logger<ILogObj>) {
+  private static defaultSequelize(config: SystemConfig, sync?: boolean, logger?: Logger<ILogObj>) {
     const sequelizeLogger = logger ? logger.getSubLogger({ name: this.name }) : new Logger<ILogObj>({ name: this.name });
 
     sequelizeLogger.info('Creating default Sequelize instance');
@@ -80,12 +80,12 @@ export class DefaultSequelizeInstance {
         VariableMonitoring,
         VariableMonitoringStatus,
         VariableStatus,
-        Variable
+        Variable,
       ],
       logging: (_sql: string, _timing?: number) => {
         // TODO: Look into fixing that
         // sequelizeLogger.debug(timing, sql);
-      }
+      },
     });
 
     if (config.data.sequelize.sync && sync) {

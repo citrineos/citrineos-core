@@ -70,5 +70,3 @@ export interface LogParametersType {
    */
   latestTimestamp?: string;
 }
-
-

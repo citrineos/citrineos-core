@@ -69,7 +69,10 @@ export interface ChargingScheduleType {
    * @minItems 1
    * @maxItems 1024
    */
-  chargingSchedulePeriod: [ChargingSchedulePeriodType, ...ChargingSchedulePeriodType[]];
+  chargingSchedulePeriod: [
+    ChargingSchedulePeriodType,
+    ...ChargingSchedulePeriodType[],
+  ];
   /**
    * Charging_ Schedule. Min_ Charging_ Rate. Numeric
    * urn:x-oca:ocpp:uid:1:569239
@@ -255,7 +258,3 @@ export interface ChargingLimitType {
    */
   isGridCritical?: boolean;
 }
-
-
-
-

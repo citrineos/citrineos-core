@@ -20,13 +20,13 @@ export class Variable extends Model implements VariableType {
 
   @Column({
     type: DataType.STRING,
-    unique: 'name_instance'
+    unique: 'name_instance',
   })
   declare name: string;
 
   @Column({
     type: DataType.STRING,
-    unique: 'name_instance'
+    unique: 'name_instance',
   })
   declare instance?: string;
 

@@ -44,5 +44,3 @@ export interface CertificateHashDataType {
    */
   serialNumber: string;
 }
-
-
