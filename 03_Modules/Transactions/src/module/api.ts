@@ -4,6 +4,12 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
+  CreateOrUpdateTariffQuerySchema,
+  CreateOrUpdateTariffQueryString,
+  Tariff,
+  TariffSchema,
+  TariffQueryString,
+  TariffQuerySchema,
   TransactionEventQuerySchema,
   TransactionEventQuerystring,
 } from '@citrineos/data';
@@ -22,7 +28,6 @@ import {
   HttpMethod,
   IMessageConfirmation,
   Namespace,
-  TransactionEventRequest,
   TransactionType,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
@@ -53,7 +58,7 @@ export class TransactionsModuleApi
    * Message Endpoint Methods
    */
   @AsMessageEndpoint(CallAction.CostUpdated, CostUpdatedRequestSchema)
-  costUpdated(
+  async costUpdated(
     identifier: string,
     tenantId: string,
     request: CostUpdatedRequest,
@@ -87,24 +92,6 @@ export class TransactionsModuleApi
     );
   }
 
-  /**
-   * Data Endpoint Methods
-   */
-
-  @AsDataEndpoint(
-    Namespace.TransactionEventRequest,
-    HttpMethod.Get,
-    TransactionEventQuerySchema,
-  )
-  getTransactionEventsByStationIdAndTransactionId(
-    request: FastifyRequest<{ Querystring: TransactionEventQuerystring }>,
-  ): Promise<TransactionEventRequest[]> {
-    return this._module.transactionEventRepository.readAllByStationIdAndTransactionId(
-      request.query.stationId,
-      request.query.transactionId,
-    );
-  }
-
   @AsDataEndpoint(
     Namespace.TransactionType,
     HttpMethod.Get,
@@ -121,6 +108,42 @@ export class TransactionsModuleApi
 
   // TODO: Determine how to implement readAllTransactionsByStationIdAndChargingStates as a GET...
   // TODO: Determine how to implement existsActiveTransactionByIdToken as a GET...
+
+  @AsDataEndpoint(
+    Namespace.Tariff,
+    HttpMethod.Put,
+    CreateOrUpdateTariffQuerySchema,
+    TariffSchema,
+  )
+  putTariff(
+    request: FastifyRequest<{
+      Body: Tariff;
+      Querystring: CreateOrUpdateTariffQueryString;
+    }>,
+  ): Promise<Tariff> {
+    return this._module.tariffRepository.createOrUpdateTariff(request.body);
+  }
+
+  @AsDataEndpoint(Namespace.Tariff, HttpMethod.Get, TariffQuerySchema)
+  getTariffs(
+    request: FastifyRequest<{ Querystring: TariffQueryString }>,
+  ): Promise<Tariff[]> {
+    return this._module.tariffRepository.readAllByQuery(request.query);
+  }
+
+  @AsDataEndpoint(Namespace.Tariff, HttpMethod.Delete, TariffQuerySchema)
+  deleteTariffs(
+    request: FastifyRequest<{ Querystring: TariffQueryString }>,
+  ): Promise<string> {
+    return this._module.tariffRepository
+      .deleteAllByQuery(request.query)
+      .then(
+        (deletedCount: { toString: () => string }) =>
+          deletedCount.toString() +
+          ' rows successfully deleted from ' +
+          Namespace.Tariff,
+      );
+  }
 
   /**
    * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.

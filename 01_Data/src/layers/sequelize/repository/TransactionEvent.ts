@@ -58,7 +58,7 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
           return await transaction.save();
         }
       })
-      .then((model) => {
+      .then(async (model) => {
         const transactionDatabaseId = (model as Model<any, any>).id;
         const event = TransactionEvent.build(
           {
@@ -118,8 +118,8 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
       .then((row) => row as Transaction[]);
   }
 
-  async readAllActiveTransactionByIdToken(idToken: IdTokenType): Promise<Transaction[]> {
-    return await this.s.models[Transaction.MODEL_NAME]
+  readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]> {
+    return this.s.models[Transaction.MODEL_NAME]
       .findAll({
         where: { isActive: true },
         include: [
@@ -138,5 +138,13 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
         ],
       })
       .then((row) => row as Transaction[]);
+  }
+
+  readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]> {
+    return this.s.models[MeterValue.MODEL_NAME]
+      .findAll({
+        where: { transactionDatabaseId: transactionDataBaseId },
+      })
+      .then((row) => row as MeterValue[]);
   }
 }

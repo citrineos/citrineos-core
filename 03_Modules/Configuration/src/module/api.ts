@@ -23,6 +23,7 @@ import {
   GetDisplayMessagesRequestSchema,
   HttpMethod,
   IMessageConfirmation,
+  MessageInfoType,
   Namespace,
   PublishFirmwareRequest,
   PublishFirmwareRequestSchema,
@@ -44,6 +45,7 @@ import {
   ChargingStationKeyQuerySchema,
   ChargingStationKeyQuerystring,
 } from '@citrineos/data';
+import { validateLanguageTag } from '@citrineos/util';
 
 /**
  * Server API for the Configuration component.
@@ -128,25 +130,6 @@ export class ConfigurationModuleApi
     );
   }
 
-  @AsMessageEndpoint(
-    CallAction.SetDisplayMessage,
-    SetDisplayMessageRequestSchema,
-  )
-  setDisplayMessages(
-    identifier: string,
-    tenantId: string,
-    request: SetDisplayMessageRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.SetDisplayMessage,
-      request,
-      callbackUrl,
-    );
-  }
-
   @AsMessageEndpoint(CallAction.PublishFirmware, PublishFirmwareRequestSchema)
   publishFirmware(
     identifier: string,
@@ -158,6 +141,41 @@ export class ConfigurationModuleApi
       identifier,
       tenantId,
       CallAction.PublishFirmware,
+      request,
+      callbackUrl,
+    );
+  }
+
+  @AsMessageEndpoint(
+    CallAction.SetDisplayMessage,
+    SetDisplayMessageRequestSchema,
+  )
+  async setDisplayMessages(
+    identifier: string,
+    tenantId: string,
+    request: SetDisplayMessageRequest,
+    callbackUrl?: string,
+  ): Promise<IMessageConfirmation> {
+    const messageInfo = request.message as MessageInfoType;
+
+    const languageTag = messageInfo.message.language;
+    if (languageTag && !validateLanguageTag(languageTag)) {
+      const errorMsg =
+        'Language shall be specified as RFC-5646 tags, example: US English is: en-US.';
+      this._logger.error(errorMsg);
+      return { success: false, payload: errorMsg };
+    }
+
+    // According to OCPP 2.0.1, the CSMS MAY include a startTime and endTime when setting a message.
+    // startDateTime is from what date-time should this message be shown. If omitted: directly.
+    if (!messageInfo.startDateTime) {
+      messageInfo.startDateTime = new Date().toISOString();
+    }
+
+    return this._module.sendCall(
+      identifier,
+      tenantId,
+      CallAction.SetDisplayMessage,
       request,
       callbackUrl,
     );

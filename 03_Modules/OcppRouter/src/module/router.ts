@@ -37,18 +37,7 @@ import {
 import Ajv from 'ajv';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
-
-export interface Subscription {
-  stationId: string;
-  onConnect: boolean;
-  onClose: boolean;
-  onMessage: boolean;
-  sentMessage: boolean;
-  messageOptions?: {
-    regexFilter?: string;
-  };
-  url: string;
-}
+import { ISubscriptionRepository, sequelize } from '@citrineos/data';
 
 /**
  * Implementation of the ocpp router
@@ -69,35 +58,41 @@ export class MessageRouterImpl
     message: string,
   ) => Promise<boolean>;
 
-  private _onConnectionCallbacks: ((
-    identifier: string,
-    info?: Map<string, string>,
-  ) => Promise<boolean>)[] = [];
-  private _onCloseCallbacks: ((
-    identifier: string,
-    info?: Map<string, string>,
-  ) => Promise<boolean>)[] = [];
-  private _onMessageCallbacks: ((
-    identifier: string,
-    message: string,
-    info?: Map<string, string>,
-  ) => Promise<boolean>)[] = [];
-  private _sentMessageCallbacks: ((
-    identifier: string,
-    message: string,
-    error?: any,
-    info?: Map<string, string>,
-  ) => Promise<boolean>)[] = [];
+  // Structure of the maps: key = identifier, value = array of callbacks
+  private _onConnectionCallbacks: Map<
+    string,
+    ((info?: Map<string, string>) => Promise<boolean>)[]
+  > = new Map();
+  private _onCloseCallbacks: Map<
+    string,
+    ((info?: Map<string, string>) => Promise<boolean>)[]
+  > = new Map();
+  private _onMessageCallbacks: Map<
+    string,
+    ((message: string, info?: Map<string, string>) => Promise<boolean>)[]
+  > = new Map();
+  private _sentMessageCallbacks: Map<
+    string,
+    ((
+      message: string,
+      error?: any,
+      info?: Map<string, string>,
+    ) => Promise<boolean>)[]
+  > = new Map();
+
+  public subscriptionRepository: ISubscriptionRepository;
 
   /**
    * Constructor for the class.
    *
    * @param {SystemConfig} config - the system configuration
    * @param {ICache} cache - the cache object
-   * @param {IMessageSender} [sender] - the message sender (optional)
-   * @param {IMessageHandler} [handler] - the message handler (optional)
+   * @param {IMessageSender} [sender] - the message sender
+   * @param {IMessageHandler} [handler] - the message handler
+   * @param {Function} networkHook - the network hook needed to send messages to chargers
+   * @param {ISubscriptionRepository} [subscriptionRepository] - the subscription repository
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
-   * @param {Ajv} [ajv] - the Ajv object (optional)
+   * @param {Ajv} [ajv] - the Ajv object, for message validation (optional)
    */
   constructor(
     config: SystemConfig,
@@ -107,6 +102,7 @@ export class MessageRouterImpl
     networkHook: (identifier: string, message: string) => Promise<boolean>,
     logger?: Logger<ILogObj>,
     ajv?: Ajv,
+    subscriptionRepository?: ISubscriptionRepository,
   ) {
     super(config, cache, handler, sender, networkHook, logger, ajv);
 
@@ -114,57 +110,65 @@ export class MessageRouterImpl
     this._sender = sender;
     this._handler = handler;
     this._networkHook = networkHook;
+    this.subscriptionRepository =
+      subscriptionRepository ||
+      new sequelize.SubscriptionRepository(config, this._logger);
   }
 
   addOnConnectionCallback(
-    onConnectionCallback: (
-      identifier: string,
-      info?: Map<string, string>,
-    ) => Promise<boolean>,
+    identifier: string,
+    onConnectionCallback: (info?: Map<string, string>) => Promise<boolean>,
   ): void {
-    this._onConnectionCallbacks.push(onConnectionCallback);
+    this._onConnectionCallbacks.has(identifier)
+      ? this._onConnectionCallbacks.get(identifier)!.push(onConnectionCallback)
+      : this._onConnectionCallbacks.set(identifier, [onConnectionCallback]);
   }
 
   addOnCloseCallback(
-    onCloseCallback: (
-      identifier: string,
-      info?: Map<string, string>,
-    ) => Promise<boolean>,
+    identifier: string,
+    onCloseCallback: (info?: Map<string, string>) => Promise<boolean>,
   ): void {
-    this._onCloseCallbacks.push(onCloseCallback);
+    this._onCloseCallbacks.has(identifier)
+      ? this._onCloseCallbacks.get(identifier)!.push(onCloseCallback)
+      : this._onCloseCallbacks.set(identifier, [onCloseCallback]);
   }
 
   addOnMessageCallback(
+    identifier: string,
     onMessageCallback: (
-      identifier: string,
       message: string,
       info?: Map<string, string>,
     ) => Promise<boolean>,
   ): void {
-    this._onMessageCallbacks.push(onMessageCallback);
+    this._onMessageCallbacks.has(identifier)
+      ? this._onMessageCallbacks.get(identifier)!.push(onMessageCallback)
+      : this._onMessageCallbacks.set(identifier, [onMessageCallback]);
   }
 
   addSentMessageCallback(
+    identifier: string,
     sentMessageCallback: (
-      identifier: string,
       message: string,
       error: any,
       info?: Map<string, string>,
     ) => Promise<boolean>,
   ): void {
-    this._sentMessageCallbacks.push(sentMessageCallback);
+    this._sentMessageCallbacks.has(identifier)
+      ? this._sentMessageCallbacks.get(identifier)!.push(sentMessageCallback)
+      : this._sentMessageCallbacks.set(identifier, [sentMessageCallback]);
   }
 
-  /**
-   * Interface implementation
-   */
-
   async registerConnection(connectionIdentifier: string): Promise<boolean> {
-    await this._onConnectionCallbacks.forEach(async (callback) => {
-      await callback(connectionIdentifier);
-    });
+    const loadConnectionCallbackSubscriptions =
+      this._loadSubscriptionsForConnection(connectionIdentifier).then(() => {
+        this._onConnectionCallbacks
+          .get(connectionIdentifier)
+          ?.forEach(async (callback) => {
+            callback();
+          });
+      });
 
-    const requestSubscription = await this._handler.subscribe(
+    const requestSubscription = this._handler.subscribe(
       connectionIdentifier,
       undefined,
       {
@@ -174,7 +178,7 @@ export class MessageRouterImpl
       },
     );
 
-    const responseSubscription = await this._handler.subscribe(
+    const responseSubscription = this._handler.subscribe(
       connectionIdentifier,
       undefined,
       {
@@ -184,13 +188,25 @@ export class MessageRouterImpl
       },
     );
 
-    return requestSubscription && responseSubscription;
+    return Promise.all([
+      loadConnectionCallbackSubscriptions,
+      requestSubscription,
+      responseSubscription,
+    ])
+      .then((resolvedArray) => resolvedArray[1] && resolvedArray[2])
+      .catch((error) => {
+        this._logger.error(
+          `Error registering connection for ${connectionIdentifier}: ${error}`,
+        );
+        return false;
+      });
   }
 
   async deregisterConnection(connectionIdentifier: string): Promise<boolean> {
-    this._onCloseCallbacks.forEach((callback) => {
-      callback(connectionIdentifier);
+    this._onCloseCallbacks.get(connectionIdentifier)?.forEach((callback) => {
+      callback();
     });
+
     // TODO: ensure that all queue implementations in 02_Util only unsubscribe 1 queue per call
     // ...which will require refactoring this method to unsubscribe request and response queues separately
     return await this._handler.unsubscribe(connectionIdentifier);
@@ -199,8 +215,8 @@ export class MessageRouterImpl
   // TODO: identifier may not be unique, may require combination of tenantId and identifier.
   // find way to include tenantId here
   async onMessage(identifier: string, message: string): Promise<boolean> {
-    this._onMessageCallbacks.forEach((callback) => {
-      callback(identifier, message);
+    this._onMessageCallbacks.get(identifier)?.forEach((callback) => {
+      callback(message);
     });
     let rpcMessage: any;
     let messageTypeId: MessageTypeId | undefined = undefined;
@@ -240,8 +256,8 @@ export class MessageRouterImpl
     } catch (error) {
       this._logger.error('Error processing message:', message, error);
       if (
-        messageTypeId !== MessageTypeId.CallResult &&
-        messageTypeId !== MessageTypeId.CallError
+        messageTypeId != MessageTypeId.CallResult &&
+        messageTypeId != MessageTypeId.CallError
       ) {
         const callError =
           error instanceof OcppError
@@ -416,6 +432,148 @@ export class MessageRouterImpl
   /**
    * Private Methods
    */
+
+  /**
+   * Loads all subscriptions for a given connection into memory
+   *
+   * @param {string} connectionIdentifier - the identifier of the connection
+   * @return {Promise<void>} a promise that resolves once all subscriptions are loaded
+   */
+  private async _loadSubscriptionsForConnection(connectionIdentifier: string) {
+    this._onConnectionCallbacks.set(connectionIdentifier, []);
+    this._onCloseCallbacks.set(connectionIdentifier, []);
+    this._onMessageCallbacks.set(connectionIdentifier, []);
+    this._sentMessageCallbacks.set(connectionIdentifier, []);
+    const subscriptions =
+      await this.subscriptionRepository.readAllByStationId(
+        connectionIdentifier,
+      );
+    for (const subscription of subscriptions) {
+      if (subscription.onConnect) {
+        this._onConnectionCallbacks
+          .get(connectionIdentifier)!
+          .push((info?: Map<string, string>) =>
+            this._subscriptionCallback(
+              {
+                stationId: connectionIdentifier,
+                event: 'connected',
+                info: info,
+              },
+              subscription.url,
+            ),
+          );
+        this._logger.debug(
+          `Added onConnect callback to ${subscription.url} for station ${connectionIdentifier}`,
+        );
+      }
+      if (subscription.onClose) {
+        this._onCloseCallbacks
+          .get(connectionIdentifier)!
+          .push((info?: Map<string, string>) =>
+            this._subscriptionCallback(
+              { stationId: connectionIdentifier, event: 'closed', info: info },
+              subscription.url,
+            ),
+          );
+        this._logger.debug(
+          `Added onClose callback to ${subscription.url} for station ${connectionIdentifier}`,
+        );
+      }
+      if (subscription.onMessage) {
+        this._onMessageCallbacks
+          .get(connectionIdentifier)!
+          .push(async (message: string, info?: Map<string, string>) => {
+            if (
+              !subscription.messageRegexFilter ||
+              new RegExp(subscription.messageRegexFilter).test(message)
+            ) {
+              return this._subscriptionCallback(
+                {
+                  stationId: connectionIdentifier,
+                  event: 'message',
+                  origin: MessageOrigin.ChargingStation,
+                  message: message,
+                  info: info,
+                },
+                subscription.url,
+              );
+            } else {
+              // Ignore
+              return true;
+            }
+          });
+        this._logger.debug(
+          `Added onMessage callback to ${subscription.url} for station ${connectionIdentifier}`,
+        );
+      }
+      if (subscription.sentMessage) {
+        this._sentMessageCallbacks
+          .get(connectionIdentifier)!
+          .push(
+            async (
+              message: string,
+              error?: any,
+              info?: Map<string, string>,
+            ) => {
+              if (
+                !subscription.messageRegexFilter ||
+                new RegExp(subscription.messageRegexFilter).test(message)
+              ) {
+                return this._subscriptionCallback(
+                  {
+                    stationId: connectionIdentifier,
+                    event: 'message',
+                    origin: MessageOrigin.CentralSystem,
+                    message: message,
+                    error: error,
+                    info: info,
+                  },
+                  subscription.url,
+                );
+              } else {
+                // Ignore
+                return true;
+              }
+            },
+          );
+        this._logger.debug(
+          `Added sentMessage callback to ${subscription.url} for station ${connectionIdentifier}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Sends a message to a given URL that has been subscribed to a station connection event
+   *
+   * @param {Object} requestBody - request body containing stationId, event, origin, message, error, and info
+   * @param {string} url - the URL to fetch data from
+   * @return {Promise<boolean>} a Promise that resolves to a boolean indicating success
+   */
+  private _subscriptionCallback(
+    requestBody: {
+      stationId: string;
+      event: string;
+      origin?: MessageOrigin;
+      message?: string;
+      error?: any;
+      info?: Map<string, string>;
+    },
+    url: string,
+  ): Promise<boolean> {
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    })
+      .then((res) => res.status === 200)
+      .catch((error) => {
+        this._logger.error(error);
+        return false;
+      });
+  }
 
   /**
    * Handles an incoming Call message from a client connection.
@@ -644,13 +802,13 @@ export class MessageRouterImpl
   ): Promise<boolean> {
     try {
       const success = await this._networkHook(identifier, rawMessage);
-      this._sentMessageCallbacks.forEach((callback) => {
-        callback(identifier, rawMessage);
+      this._sentMessageCallbacks.get(identifier)?.forEach((callback) => {
+        callback(rawMessage);
       });
       return success;
     } catch (error) {
-      this._sentMessageCallbacks.forEach((callback) => {
-        callback(identifier, rawMessage, error);
+      this._sentMessageCallbacks.get(identifier)?.forEach((callback) => {
+        callback(rawMessage, error);
       });
       return false;
     }
@@ -662,11 +820,11 @@ export class MessageRouterImpl
   ): Promise<boolean> {
     const status = await this._cache.get<string>(BOOT_STATUS, identifier);
     if (
-      status === RegistrationStatusEnumType.Rejected &&
+      status == RegistrationStatusEnumType.Rejected &&
       // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
       !(
-        (message[2] as CallAction) === CallAction.TriggerMessage &&
-        (message[3] as TriggerMessageRequest).requestedMessage ===
+        (message[2] as CallAction) == CallAction.TriggerMessage &&
+        (message[3] as TriggerMessageRequest).requestedMessage ==
           MessageTriggerEnumType.BootNotification
       )
     ) {

@@ -218,10 +218,10 @@ export class CertificatesModule extends AbstractModule {
     switch (certificateType) {
       case CertificateSigningUseEnumType.ChargingStationCertificate: {
         // Verify CSR...
-        // @ts-expect-error: Unreachable code error
         if (
           !(csr as any).verify() ||
           !(await this.verifyChargingStationCertificateCSR(
+            // @ts-expect-error: Unreachable code error
             csr,
             message.context.stationId,
           ))

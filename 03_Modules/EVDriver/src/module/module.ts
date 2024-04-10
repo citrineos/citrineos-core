@@ -22,6 +22,8 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  MessageContentType,
+  MessageFormatEnumType,
   RequestStartTransactionResponse,
   RequestStopTransactionResponse,
   ReservationStatusUpdateRequest,
@@ -34,7 +36,9 @@ import {
 import {
   IAuthorizationRepository,
   IDeviceModelRepository,
+  ITariffRepository,
   sequelize,
+  Tariff,
   VariableAttribute,
 } from '@citrineos/data';
 import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
@@ -65,6 +69,7 @@ export class EVDriverModule extends AbstractModule {
 
   protected _authorizeRepository: IAuthorizationRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _tariffRepository: ITariffRepository;
 
   /**
    * This is the constructor function that initializes the {@link EVDriverModule}.
@@ -86,7 +91,13 @@ export class EVDriverModule extends AbstractModule {
    * If no `authorizeRepository` is provided, a default {@link sequelize.AuthorizationRepository} instance is created and used.
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is
+   * created and used.
+   *
+   * @param {ITariffRepository} [tariffRepository] - An optional parameter of type {@link ITariffRepository} which
+   * represents a repository for accessing and manipulating variable data.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize:tariffRepository} instance is
+   * created and used.
    */
   constructor(
     config: SystemConfig,
@@ -96,6 +107,7 @@ export class EVDriverModule extends AbstractModule {
     logger?: Logger<ILogObj>,
     authorizeRepository?: IAuthorizationRepository,
     deviceModelRepository?: IDeviceModelRepository,
+    tariffRepository?: ITariffRepository,
   ) {
     super(
       config,
@@ -121,6 +133,8 @@ export class EVDriverModule extends AbstractModule {
     this._deviceModelRepository =
       deviceModelRepository ||
       new sequelize.DeviceModelRepository(config, logger);
+    this._tariffRepository =
+      tariffRepository || new sequelize.TariffRepository(config, logger);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -297,11 +311,53 @@ export class EVDriverModule extends AbstractModule {
             };
           }
         }
+
+        if (
+          response.idTokenInfo.status == AuthorizationStatusEnumType.Accepted
+        ) {
+          const tariffAvailable: VariableAttribute[] =
+            await this._deviceModelRepository.readAllByQuery({
+              stationId: message.context.stationId,
+              component_name: 'TariffCostCtrlr',
+              variable_name: 'Available',
+              variable_instance: 'Tariff',
+              type: AttributeEnumType.Actual,
+            });
+
+          const displayMessageAvailable: VariableAttribute[] =
+            await this._deviceModelRepository.readAllByQuery({
+              stationId: message.context.stationId,
+              component_name: 'DisplayMessageCtrlr',
+              variable_name: 'Available',
+              type: AttributeEnumType.Actual,
+            });
+
+          // only send the tariff information if the Charging Station supports the tariff or DisplayMessage functionality
+          if (
+            (tariffAvailable.length > 0 && Boolean(tariffAvailable[0].value)) ||
+            (displayMessageAvailable.length > 0 &&
+              Boolean(displayMessageAvailable[0].value))
+          ) {
+            // TODO: refactor the workaround below after tariff implementation is finalized.
+            const tariff: Tariff | null =
+              await this._tariffRepository.findByStationId(
+                message.context.stationId,
+              );
+            if (tariff) {
+              if (!response.idTokenInfo.personalMessage) {
+                response.idTokenInfo.personalMessage = {
+                  format: MessageFormatEnumType.ASCII,
+                } as MessageContentType;
+              }
+              response.idTokenInfo.personalMessage.content = `${tariff.price}/${tariff.unit}`;
+            }
+          }
+        }
         return this.sendCallResultWithMessage(message, response);
       })
-      .then((messageConfirmation) =>
-        this._logger.debug('Authorize response sent:', messageConfirmation),
-      );
+      .then((messageConfirmation) => {
+        this._logger.debug('Authorize response sent:', messageConfirmation);
+      });
   }
 
   @AsHandler(CallAction.ReservationStatusUpdate)

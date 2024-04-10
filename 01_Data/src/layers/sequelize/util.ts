@@ -30,6 +30,9 @@ import {
   VariableMonitoringStatus,
 } from '.';
 import { VariableStatus } from './model/DeviceModel';
+import { MessageInfo } from './model/MessageInfo';
+import { Subscription } from './model/Subscription';
+import { Tariff } from './model/Tariff';
 
 export class DefaultSequelizeInstance {
   /**
@@ -72,9 +75,12 @@ export class DefaultSequelizeInstance {
         IdTokenInfo,
         Location,
         MeterValue,
+        MessageInfo,
         SecurityEvent,
+        Subscription,
         Transaction,
         TransactionEvent,
+        Tariff,
         VariableAttribute,
         VariableCharacteristics,
         VariableMonitoring,
@@ -82,7 +88,7 @@ export class DefaultSequelizeInstance {
         VariableStatus,
         Variable,
       ],
-      logging: (_sql: string, _timing?: number) => {
+      logging: (sql: string, timing?: number) => {
         // TODO: Look into fixing that
         // sequelizeLogger.debug(timing, sql);
       },
