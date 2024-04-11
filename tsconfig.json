@@ -4,7 +4,10 @@
     "rootDir": "./",
     "outDir": "./dist/"
   },
-  "exclude": ["DirectusExtensions"],
+  "exclude": [
+    "DirectusExtensions",
+    "./dist/**/*"
+  ],
   "references": [
     {
       "path": "./Server"
