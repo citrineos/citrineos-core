@@ -17,7 +17,8 @@ export class WebsocketNetworkConnection {
     protected _config: SystemConfig;
     protected _logger: Logger<ILogObj>;
     private _identifierConnections: Map<string, WebSocket> = new Map();
-    private _httpServers: (http.Server | https.Server)[];
+    // websocketServers id as key and http server as value
+    private _httpServersMap: Map<string, http.Server | https.Server>;
     private _authenticator: IAuthenticator;
     private _router: IMessageRouter;
 
@@ -35,7 +36,7 @@ export class WebsocketNetworkConnection {
         router.networkHook = this.sendMessage.bind(this);
         this._router = router;
 
-        this._httpServers = [];
+        this._httpServersMap = new Map<string, http.Server | https.Server>();
         this._config.util.networkConnection.websocketServers.forEach(websocketServerConfig => {
             let _httpServer;
             switch (websocketServerConfig.securityProfile) {
@@ -81,7 +82,7 @@ export class WebsocketNetworkConnection {
             _httpServer.listen(websocketServerConfig.port, websocketServerConfig.host, () => {
                 this._logger.info(`WebsocketServer running on ${protocol}://${websocketServerConfig.host}:${websocketServerConfig.port}/`)
             });
-            this._httpServers.push(_httpServer);
+            this._httpServersMap.set(websocketServerConfig.id, _httpServer);
         });
     }
 
@@ -125,8 +126,26 @@ export class WebsocketNetworkConnection {
     }
 
     shutdown(): void {
-        this._httpServers.forEach(server => server.close());
+        this._httpServersMap.forEach(server => server.close());
         this._router.shutdown();
+    }
+
+    updateCertificate(serverId: string, tlsKeys: string, tlsCertificateChain: string, mtlsCertificateAuthorityRoots?: string): void {
+        let httpsServer = this._httpServersMap.get(serverId);
+
+        if (httpsServer && httpsServer instanceof https.Server) {
+            httpsServer.setSecureContext({
+                key: tlsKeys,
+                cert: tlsCertificateChain
+            });
+            if(mtlsCertificateAuthorityRoots) {
+                httpsServer.setSecureContext({
+                    ca: mtlsCertificateAuthorityRoots
+                })
+            }
+        } else {
+            throw new TypeError(`Server ${serverId} is not a https server.`)
+        }
     }
 
     private _onHttpRequest(req: http.IncomingMessage, res: http.ServerResponse) {

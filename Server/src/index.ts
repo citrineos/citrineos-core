@@ -198,7 +198,7 @@ export class CitrineOSServer {
 
     this._networkConnection = new WebsocketNetworkConnection(this._config, this._cache, this._authenticator, router, this._logger)
 
-    this.apis.push(new AdminApi(router, this._server, this._logger));
+    this.apis.push(new AdminApi(router, this._server, this._logger, this._networkConnection, this._config.util.networkConnection.websocketServers));
 
     this.host = this._config.centralSystem.host;
     this.port = this._config.centralSystem.port;
@@ -228,6 +228,7 @@ export class CitrineOSServer {
         this._logger
       )
       this.modules.push(module)
+
       this.apis.push(
         new moduleConfig.ModuleApiClass(
           module,

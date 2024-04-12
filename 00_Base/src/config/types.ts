@@ -167,7 +167,8 @@ export const websocketServerSchema = z.object({
         case 2: // Basic Auth + TLS
             return obj.tlsKeysFilepath && obj.tlsCertificateChainFilepath;
         case 3: // mTLS
-            return obj.mtlsCertificateAuthorityRootsFilepath && obj.mtlsCertificateAuthorityKeysFilepath;
+            return obj.tlsKeysFilepath && obj.tlsCertificateChainFilepath && obj.mtlsCertificateAuthorityRootsFilepath
+                && obj.mtlsCertificateAuthorityKeysFilepath;
         default:
             return false;
     }
