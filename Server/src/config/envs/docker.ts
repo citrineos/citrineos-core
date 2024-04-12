@@ -99,7 +99,7 @@ export function createDockerConfig() {
                     host: "0.0.0.0",
                     port: 8090,
                     protocol: "ocpp2.0.1",
-                    // TODO: correct following paths. Currently, they point to resource folder just for testing purpose
+                    // TODO: replace the sample certs (fake info inside)
                     tlsKeysFilepath: "/usr/local/apps/citrineos/Server/src/assets/certificates/tlsKeySample.pem",
                     tlsCertificateChainFilepath: "/usr/local/apps/citrineos/Server/src/assets/certificates/tlsCertificateSample.pem"
                 }, {
@@ -110,7 +110,7 @@ export function createDockerConfig() {
                     host: "0.0.0.0",
                     port: 8091,
                     protocol: "ocpp2.0.1",
-                    // TODO: correct following paths. Currently, they point to resource folder just for testing purpose
+                    // TODO: replace the sample certs (fake info inside)
                     tlsKeysFilepath: "/usr/local/apps/citrineos/Server/src/assets/certificates/tlsKeySample.pem",
                     tlsCertificateChainFilepath: "/usr/local/apps/citrineos/Server/src/assets/certificates/tlsCertificateSample.pem",
                     mtlsCertificateAuthorityRootsFilepath: "/usr/local/apps/citrineos/Server/src/assets/certificates/mtlsCARootCrtSample.pem",

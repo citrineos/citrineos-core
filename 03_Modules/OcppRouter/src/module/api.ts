@@ -3,22 +3,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-    AbstractModuleApi,
-    AsDataEndpoint,
-    CallAction,
-    HttpMethod,
-    Namespace,
-} from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, CallAction, HttpMethod, Namespace } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IAdminApi } from './interface';
 import { MessageRouterImpl } from './router';
-import {
-    ChargingStationKeyQuerystring,
-    ModelKeyQuerystring,
-    Subscription
-} from '@citrineos/data';
+import { ChargingStationKeyQuerystring, ModelKeyQuerystring, Subscription } from '@citrineos/data';
 
 /**
  * Admin API for the OcppRouter.
