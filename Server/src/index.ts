@@ -35,7 +35,7 @@ import {type ILogObj, Logger} from 'tslog'
 import {systemConfig} from './config'
 import {ConfigurationModule, ConfigurationModuleApi} from '@citrineos/configuration'
 import {TransactionsModule, TransactionsModuleApi} from '@citrineos/transactions'
-import {CertificatesModule, CertificatesModuleApi} from '@citrineos/certificates'
+import {CertificatesModule, CertificatesModuleApi, ICertificatesModuleApi} from '@citrineos/certificates'
 import {EVDriverModule, EVDriverModuleApi} from '@citrineos/evdriver'
 import {ReportingModule, ReportingModuleApi} from '@citrineos/reporting'
 import {SmartChargingModule, SmartChargingModuleApi} from '@citrineos/smartcharging'
@@ -198,7 +198,7 @@ export class CitrineOSServer {
 
     this._networkConnection = new WebsocketNetworkConnection(this._config, this._cache, this._authenticator, router, this._logger)
 
-    this.apis.push(new AdminApi(router, this._server, this._logger, this._networkConnection, this._config.util.networkConnection.websocketServers));
+    this.apis.push(new AdminApi(router, this._server, this._logger));
 
     this.host = this._config.centralSystem.host;
     this.port = this._config.centralSystem.port;
@@ -229,13 +229,26 @@ export class CitrineOSServer {
       )
       this.modules.push(module)
 
-      this.apis.push(
-        new moduleConfig.ModuleApiClass(
-          module,
-          this._server,
-          this._logger
+      if (moduleConfig.ModuleApiClass === CertificatesModuleApi) {
+        this.apis.push(
+            new moduleConfig.ModuleApiClass(
+                module,
+                this._server,
+                this._logger,
+                this._networkConnection,
+                this._config.util.networkConnection.websocketServers
+            )
         )
-      )
+      } else {
+        this.apis.push(
+            new moduleConfig.ModuleApiClass(
+                module,
+                this._server,
+                this._logger
+            )
+        )
+      }
+
       // TODO: take actions to make sure module has correct subscriptions and log proof
       this._logger?.info(`${moduleConfig.ModuleClass.name} module started...`)
       if (this.eventGroup !== EventGroup.All) {

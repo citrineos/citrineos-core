@@ -100,8 +100,8 @@ export function createDockerConfig() {
                     port: 8090,
                     protocol: "ocpp2.0.1",
                     // TODO: correct following paths. Currently, they point to resource folder just for testing purpose
-                    tlsKeysFilepath: "/usr/local/apps/citrineos/Server/test/resources/certificates/tlsKeySample.pem",
-                    tlsCertificateChainFilepath: "/usr/local/apps/citrineos/Server/test/resources/certificates/tlsCertificateSample.pem"
+                    tlsKeysFilepath: "/usr/local/apps/citrineos/Server/src/assets/certificates/tlsKeySample.pem",
+                    tlsCertificateChainFilepath: "/usr/local/apps/citrineos/Server/src/assets/certificates/tlsCertificateSample.pem"
                 }, {
                     id: "3",
                     securityProfile: 3,
@@ -111,10 +111,10 @@ export function createDockerConfig() {
                     port: 8091,
                     protocol: "ocpp2.0.1",
                     // TODO: correct following paths. Currently, they point to resource folder just for testing purpose
-                    tlsKeysFilepath: "/usr/local/apps/citrineos/Server/test/resources/certificates/tlsKeySample.pem",
-                    tlsCertificateChainFilepath: "/usr/local/apps/citrineos/Server/test/resources/certificates/tlsCertificateSample.pem",
-                    mtlsCertificateAuthorityRootsFilepath: "/usr/local/apps/citrineos/Server/test/resources/certificates/mtlsCARootCrtSample.pem",
-                    mtlsCertificateAuthorityKeysFilepath: "/usr/local/apps/citrineos/Server/test/resources/certificates/mtlsCARootKeySample.pem"
+                    tlsKeysFilepath: "/usr/local/apps/citrineos/Server/src/assets/certificates/tlsKeySample.pem",
+                    tlsCertificateChainFilepath: "/usr/local/apps/citrineos/Server/src/assets/certificates/tlsCertificateSample.pem",
+                    mtlsCertificateAuthorityRootsFilepath: "/usr/local/apps/citrineos/Server/src/assets/certificates/mtlsCARootCrtSample.pem",
+                    mtlsCertificateAuthorityKeysFilepath: "/usr/local/apps/citrineos/Server/src/assets/certificates/mtlsCARootKeySample.pem"
                 }]
             }
         },

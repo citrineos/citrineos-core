@@ -61,7 +61,6 @@ services:
       - /usr/local/apps/citrineos/03_Modules/Transactions/node_modules
       - /usr/local/apps/citrineos/dist/
       - /usr/local/apps/citrineos/Server/dist/
-      - /usr/local/apps/citrineos/Server/test/resources/certificates/
       - /usr/local/apps/citrineos/00_Base/dist/
       - /usr/local/apps/citrineos/01_Data/dist/
       - /usr/local/apps/citrineos/02_Util/dist/

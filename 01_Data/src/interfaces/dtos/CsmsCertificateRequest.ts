@@ -4,12 +4,12 @@
 
 export class CsmsCertificateRequest {
     certificateChain: string;
-    privateKey: string;
-    caCertificate?: string;
+    privateKeys: string;
+    caCertificateRoots?: string;
 
     constructor(certificateChain: string, privateKey: string, caCertificate?: string) {
         this.certificateChain = certificateChain;
-        this.privateKey = privateKey;
-        this.caCertificate = caCertificate;
+        this.privateKeys = privateKey;
+        this.caCertificateRoots = caCertificate;
     }
 }

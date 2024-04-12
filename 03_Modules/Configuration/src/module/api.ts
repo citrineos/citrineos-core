@@ -96,7 +96,7 @@ export class ConfigurationModuleApi extends AbstractModuleApi<ConfigurationModul
     }
 
     @AsMessageEndpoint(CallAction.SetDisplayMessage, SetDisplayMessageRequestSchema)
-    async setDisplayMessages(
+    async setDisplayMessage(
         identifier: string,
         tenantId: string,
         request: SetDisplayMessageRequest,
