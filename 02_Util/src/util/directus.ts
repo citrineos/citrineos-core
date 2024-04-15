@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SystemConfig} from "@citrineos/base";
+import { SystemConfig } from "@citrineos/base";
 import { sequelize } from "@citrineos/data";
 import { authentication, DirectusFlow, DirectusOperation, RestClient, createDirectus, createFlow, createOperation, readFlows, rest, staticToken, updateFlow, updateOperation } from "@directus/sdk";
 import { RouteOptions } from "fastify";

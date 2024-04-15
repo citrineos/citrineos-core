@@ -50,17 +50,17 @@ export class CertificatesModuleApi extends AbstractModuleApi<CertificatesModule>
      * @param {CertificatesModule} CertificatesModule - The Certificates module.
      * @param {FastifyInstance} server - The Fastify server instance.
      * @param {Logger<ILogObj>} [logger] - The logger instance.
+     * @param {IFileAccess} fileAccess - The FileAccess
      * @param {WebsocketNetworkConnection} networkConnection - The NetworkConnection
      * @param {WebsocketServerConfig[]} websocketServersConfig - Configuration for websocket servers
-     * @param {IFileAccess} fileAccess - The FileAccess
      */
     constructor(CertificatesModule: CertificatesModule, server: FastifyInstance, logger?: Logger<ILogObj>,
-                networkConnection?: WebsocketNetworkConnection, websocketServersConfig?: WebsocketServerConfig[],
-                fileAccess?: IFileAccess) {
+                fileAccess?: IFileAccess, networkConnection?: WebsocketNetworkConnection,
+                websocketServersConfig?: WebsocketServerConfig[]) {
         super(CertificatesModule, server, logger);
+        this._fileAccess = fileAccess;
         this._networkConnection = networkConnection;
         this._websocketServersConfig = websocketServersConfig;
-        this._fileAccess = fileAccess;
     }
 
     /**

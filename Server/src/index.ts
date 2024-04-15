@@ -9,14 +9,15 @@ import {
   EventGroup,
   eventGroupFromString,
   type IAuthenticator,
-  type ICache, type IFileAccess,
+  type ICache,
+  type IFileAccess,
   type IMessageHandler,
   type IMessageSender,
   type IModule,
   type IModuleApi,
   type SystemConfig
 } from '@citrineos/base'
-import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring'
+import {MonitoringModule, MonitoringModuleApi} from '@citrineos/monitoring'
 import {
   Authenticator,
   DirectusUtil,
@@ -29,25 +30,25 @@ import {
   DirectusFiles,
   type Schema
 } from '@citrineos/util'
-import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts'
+import {type JsonSchemaToTsProvider} from '@fastify/type-provider-json-schema-to-ts'
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
-import fastify, { type FastifyInstance } from 'fastify'
-import { type ILogObj, Logger } from 'tslog'
-import { systemConfig } from './config'
-import { ConfigurationModule, ConfigurationModuleApi } from '@citrineos/configuration'
-import { TransactionsModule, TransactionsModuleApi } from '@citrineos/transactions'
-import { CertificatesModule, CertificatesModuleApi } from '@citrineos/certificates'
-import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver'
-import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting'
-import { SmartChargingModule, SmartChargingModuleApi } from '@citrineos/smartcharging'
-import { sequelize } from '@citrineos/data'
+import fastify, {type FastifyInstance} from 'fastify'
+import {type ILogObj, Logger} from 'tslog'
+import {systemConfig} from './config'
+import {ConfigurationModule, ConfigurationModuleApi} from '@citrineos/configuration'
+import {TransactionsModule, TransactionsModuleApi} from '@citrineos/transactions'
+import {CertificatesModule, CertificatesModuleApi} from '@citrineos/certificates'
+import {EVDriverModule, EVDriverModuleApi} from '@citrineos/evdriver'
+import {ReportingModule, ReportingModuleApi} from '@citrineos/reporting'
+import {SmartChargingModule, SmartChargingModuleApi} from '@citrineos/smartcharging'
+import {sequelize} from '@citrineos/data'
 import {
   type FastifyRouteSchemaDef,
   type FastifySchemaCompiler,
   type FastifyValidationResult
 } from 'fastify/types/schema'
-import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter'
+import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter'
 import { type RestClient } from '@directus/sdk'
 
 interface ModuleConfig {
@@ -65,6 +66,7 @@ export class CitrineOSServer {
   private readonly _server: FastifyInstance
   private readonly _cache: ICache
   private readonly _ajv: Ajv
+  private readonly _fileAccess: IFileAccess
   private readonly modules: IModule[] = []
   private readonly apis: IModuleApi[] = []
   private host?: string
@@ -82,7 +84,7 @@ export class CitrineOSServer {
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
    */
   // todo rename event group to type
-  constructor (appName: string, config: SystemConfig, server?: FastifyInstance, ajv?: Ajv, cache?: ICache, fileAccess?: IFileAccess) {
+  constructor(appName: string, config: SystemConfig, server?: FastifyInstance, ajv?: Ajv, cache?: ICache, fileAccess?: IFileAccess) {
     // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
     if (!config.util.messageBroker.amqp) {
@@ -123,7 +125,7 @@ export class CitrineOSServer {
     }
 
     // Initialize File Access Implementation
-    this.initFileAccess(fileAccess, directusUtil?.client)
+    this._fileAccess = this.initFileAccess(fileAccess, directusUtil?.client)
 
     // Register AJV for schema validation
     this.registerAjv()
@@ -137,13 +139,13 @@ export class CitrineOSServer {
     process.on('SIGQUIT', this.shutdown.bind(this))
   }
 
-  private initHealthCheck () {
+  private initHealthCheck() {
     this._server.get('/health', async () => {
-      return { status: 'healthy' }
+      return {status: 'healthy'}
     })
   }
 
-  private initAjv (ajv?: Ajv) {
+  private initAjv(ajv?: Ajv) {
     return ajv || new Ajv({
       removeAdditional: 'all',
       useDefaults: true,
@@ -152,14 +154,14 @@ export class CitrineOSServer {
     })
   }
 
-  private addAjvFormats () {
+  private addAjvFormats() {
     addFormats(this._ajv, {
       mode: 'fast',
       formats: ['date-time']
     })
   }
 
-  private initLogger () {
+  private initLogger() {
     return new Logger<ILogObj>({
       name: 'CitrineOS Logger',
       minLevel: systemConfig.logLevel,
@@ -169,11 +171,11 @@ export class CitrineOSServer {
     })
   }
 
-  private forceDbSync () {
+  private forceDbSync() {
     sequelize.DefaultSequelizeInstance.getInstance(this._config, this._logger, true)
   }
 
-  private initCache (cache?: ICache): ICache {
+  private initCache(cache?: ICache): ICache {
     return cache || (this._config.util.cache.redis
       ? new RedisCache({
         socket: {
@@ -184,13 +186,13 @@ export class CitrineOSServer {
       : new MemoryCache())
   }
 
-  private initSwagger () {
+  private initSwagger() {
     if (this._config.util.swagger) {
       initSwagger(this._config, this._server)
     }
   }
 
-  private registerAjv () {
+  private registerAjv() {
     // todo type schema instead of any
     const fastifySchemaCompiler: FastifySchemaCompiler<any> = (routeSchema: FastifyRouteSchemaDef<any>) => {
       return this._ajv?.compile(routeSchema.schema) as FastifyValidationResult
@@ -198,20 +200,20 @@ export class CitrineOSServer {
     this._server.setValidatorCompiler(fastifySchemaCompiler)
   }
 
-  private initNetworkConnection () {
+  private initNetworkConnection() {
     this._authenticator = new Authenticator(this._cache, new sequelize.LocationRepository(this._config, this._logger), new sequelize.DeviceModelRepository(this._config, this._logger), this._logger)
 
     const router = new MessageRouterImpl(this._config, this._cache, this._createSender(), this._createHandler(), async (identifier: string, message: string) => false, this._logger, this._ajv)
 
     this._networkConnection = new WebsocketNetworkConnection(this._config, this._cache, this._authenticator, router, this._logger)
 
-    this.apis.push(new AdminApi(router, this._server, this._logger))
+    this.apis.push(new AdminApi(router, this._server, this._logger));
 
-    this.host = this._config.centralSystem.host
-    this.port = this._config.centralSystem.port
+    this.host = this._config.centralSystem.host;
+    this.port = this._config.centralSystem.port;
   }
 
-  private initAllModules () {
+  private initAllModules() {
     [
       this.getModuleConfig(EventGroup.Certificates),
       this.getModuleConfig(EventGroup.Configuration),
@@ -225,7 +227,7 @@ export class CitrineOSServer {
     })
   }
 
-  private initModule (moduleConfig: ModuleConfig) {
+  private initModule(moduleConfig: ModuleConfig) {
     if (moduleConfig.configModule !== null) {
       const module = new moduleConfig.ModuleClass(
         this._config,
@@ -242,6 +244,7 @@ export class CitrineOSServer {
                 module,
                 this._server,
                 this._logger,
+                this._fileAccess,
                 this._networkConnection,
                 this._config.util.networkConnection.websocketServers
             )
@@ -267,7 +270,7 @@ export class CitrineOSServer {
     }
   }
 
-  private getModuleConfig (appName: EventGroup): ModuleConfig {
+  private getModuleConfig(appName: EventGroup): ModuleConfig {
     switch (appName) {
       case EventGroup.Certificates:
         return {
@@ -316,7 +319,7 @@ export class CitrineOSServer {
     }
   }
 
-  private initSystem (appName: string) {
+  private initSystem(appName: string) {
     this.eventGroup = eventGroupFromString(appName)
     if (this.eventGroup === EventGroup.All) {
       this.initNetworkConnection()
@@ -329,19 +332,19 @@ export class CitrineOSServer {
     }
   }
 
-  private initFileAccess (fileAccess?: IFileAccess, directusClient?: RestClient<Schema>): IFileAccess {
+  private initFileAccess(fileAccess?: IFileAccess, directusClient?: RestClient<Schema>): IFileAccess {
     return fileAccess || new DirectusFiles(this._config, this._logger, directusClient)
   }
 
-  protected _createSender (): IMessageSender {
+  protected _createSender(): IMessageSender {
     return new RabbitMqSender(this._config, this._logger)
   }
 
-  protected _createHandler (): IMessageHandler {
+  protected _createHandler(): IMessageHandler {
     return new RabbitMqReceiver(this._config, this._logger)
   }
 
-  shutdown () {
+  shutdown() {
     // todo shut down depending on setup
     // Shut down all modules and central system
     this.modules.forEach(module => {
@@ -358,7 +361,7 @@ export class CitrineOSServer {
     }, 2000)
   }
 
-  async run (): Promise<void> {
+  async run(): Promise<void> {
     try {
       await this._server.listen({
         host: this.host,
