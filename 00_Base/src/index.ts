@@ -11,6 +11,7 @@ export { AbstractMessageRouter, IAuthenticator, IMessageRouter } from './interfa
 export { AbstractMessageHandler, AbstractMessageSender, EventGroup, HandlerProperties, IMessage, IMessageConfirmation, IMessageContext, IMessageHandler, IMessageSender, Message, MessageOrigin, MessageState, RetryMessageError } from './interfaces/messages';
 export { AbstractModule, AsHandler, IModule } from './interfaces/modules';
 export { Call, CallAction, CallError, CallResult, ErrorCode, MessageTypeId, OcppError } from './ocpp/rpc/message';
+export { IFileAccess } from './interfaces/fileAccess'
 
 // Persistence Interfaces
 

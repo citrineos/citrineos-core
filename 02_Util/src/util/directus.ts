@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SystemConfig } from "@citrineos/base";
+import { SystemConfig} from "@citrineos/base";
 import { sequelize } from "@citrineos/data";
 import { authentication, DirectusFlow, DirectusOperation, RestClient, createDirectus, createFlow, createOperation, readFlows, rest, staticToken, updateFlow, updateOperation } from "@directus/sdk";
 import { RouteOptions } from "fastify";
 import { JSONSchemaFaker } from "json-schema-faker";
 import { Logger, ILogObj } from "tslog";
 
-interface Schema {
+export interface Schema {
     // No custom collections needed
 }
 
@@ -36,6 +36,10 @@ export class DirectusUtil {
                 .with(rest());
         }
         this._client = client;
+    }
+
+    public get client(): RestClient<Schema>{
+        return this._client;
     }
 
     public addDirectusMessageApiFlowsFastifyRouteHook(routeOptions: RouteOptions) {
