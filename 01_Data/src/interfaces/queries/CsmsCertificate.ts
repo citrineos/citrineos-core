@@ -5,7 +5,7 @@
 import { QuerySchema } from "@citrineos/base";
 
 export const CsmsCertificateSchema = QuerySchema([
-    ["certificateChain", "string"], ["privateKeys", "string"], ["caCertificateRoots", "string"]], ["certificateChain", "privateKeys"]);
+    ["contentType", "string"], ["certificateChain", "string"], ["privateKeys", "string"], ["caCertificateRoots", "string"]], ["contentType", "certificateChain", "privateKeys"]);
 
 export const UpdateCsmsCertificateQuerySchema = QuerySchema([
     ["id", "string"]], ["id"]);

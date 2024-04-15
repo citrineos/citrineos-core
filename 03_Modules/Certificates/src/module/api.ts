@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-    AbstractModuleApi, AsDataEndpoint,
+    AbstractModuleApi,
+    AsDataEndpoint,
     AsMessageEndpoint,
     CallAction,
     CertificateSignedRequest,
@@ -12,7 +13,9 @@ import {
     DeleteCertificateRequest,
     DeleteCertificateRequestSchema,
     GetInstalledCertificateIdsRequest,
-    GetInstalledCertificateIdsRequestSchema, HttpMethod,
+    GetInstalledCertificateIdsRequestSchema,
+    HttpMethod,
+    IFileAccess,
     IMessageConfirmation,
     InstallCertificateRequest,
     InstallCertificateRequestSchema,
@@ -23,8 +26,9 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { ICertificatesModuleApi } from './interface';
 import { CertificatesModule } from './module';
-import {WebsocketNetworkConnection} from "@citrineos/util";
+import { WebsocketNetworkConnection } from "@citrineos/util";
 import {
+    ContentType,
     CsmsCertificateRequest,
     CsmsCertificateSchema,
     UpdateCsmsCertificateQuerySchema,
@@ -36,8 +40,9 @@ import fs from "fs";
  * Server API for the Certificates module.
  */
 export class CertificatesModuleApi extends AbstractModuleApi<CertificatesModule> implements ICertificatesModuleApi {
-    private _networkConnection: WebsocketNetworkConnection | undefined;
-    private _websocketServersConfig: WebsocketServerConfig[] | undefined;
+    private readonly _networkConnection: WebsocketNetworkConnection | undefined;
+    private readonly _websocketServersConfig: WebsocketServerConfig[] | undefined;
+    private readonly _fileAccess: IFileAccess | undefined;
 
     /**
      * Constructs a new instance of the class.
@@ -47,12 +52,15 @@ export class CertificatesModuleApi extends AbstractModuleApi<CertificatesModule>
      * @param {Logger<ILogObj>} [logger] - The logger instance.
      * @param {WebsocketNetworkConnection} networkConnection - The NetworkConnection
      * @param {WebsocketServerConfig[]} websocketServersConfig - Configuration for websocket servers
+     * @param {IFileAccess} fileAccess - The FileAccess
      */
     constructor(CertificatesModule: CertificatesModule, server: FastifyInstance, logger?: Logger<ILogObj>,
-                networkConnection?: WebsocketNetworkConnection, websocketServersConfig?: WebsocketServerConfig[]) {
+                networkConnection?: WebsocketNetworkConnection, websocketServersConfig?: WebsocketServerConfig[],
+                fileAccess?: IFileAccess) {
         super(CertificatesModule, server, logger);
         this._networkConnection = networkConnection;
         this._websocketServersConfig = websocketServersConfig;
+        this._fileAccess = fileAccess;
     }
 
     /**
@@ -91,51 +99,34 @@ export class CertificatesModuleApi extends AbstractModuleApi<CertificatesModule>
         const serverId = request.query.id as string;
         this._logger.info(`Receive update CSMS certificate request for server ${serverId}`)
 
-        const csmsCertificateRequest = request.body as CsmsCertificateRequest;
+        const certRequest = request.body as CsmsCertificateRequest;
         const serverConfig: WebsocketServerConfig | undefined = this._websocketServersConfig ?
             this._websocketServersConfig.find(config => config.id === serverId) : undefined;
 
-        // Expect the server configuration existed and valid based on the given server id
         if (!serverConfig) {
             throw new Error(`websocketServer id ${serverId} does not exist.`)
         } else if (serverConfig && (serverConfig.securityProfile < 2)) {
             throw new Error(`websocketServer ${serverId} is not tls or mtls server.`)
         }
 
-        if (serverConfig.tlsKeysFilepath && serverConfig.tlsCertificateChainFilepath) {
-            let decodedTlsKeys: string = this._decode(csmsCertificateRequest.privateKeys);
-            let decodedTlsCertificateChain: string = this._decode(csmsCertificateRequest.certificateChain);
-            let decodedMtlsCertificateAuthorityRoots: string | undefined;
-
-            let rollbackFiles: RollBackFile[] = [];
-
-            try {
-                rollbackFiles = this._replaceFile(serverConfig.tlsKeysFilepath, decodedTlsKeys, rollbackFiles);
-                rollbackFiles = this._replaceFile(serverConfig.tlsCertificateChainFilepath, decodedTlsCertificateChain,
-                    rollbackFiles);
-
-                if (serverConfig.mtlsCertificateAuthorityRootsFilepath && csmsCertificateRequest.caCertificateRoots) {
-                    decodedMtlsCertificateAuthorityRoots = this._decode(csmsCertificateRequest.caCertificateRoots);
-                    rollbackFiles = this._replaceFile(serverConfig.mtlsCertificateAuthorityRootsFilepath,
-                        decodedMtlsCertificateAuthorityRoots, rollbackFiles);
-                }
-
-                this._networkConnection?.updateCertificate(serverId, decodedTlsKeys, decodedTlsCertificateChain,
-                    decodedMtlsCertificateAuthorityRoots);
-
-                this._logger.info(`Updated CSMS certificate for server ${serverId} successfully.`)
-            } catch (error) {
-                this._logger.error(`Failed to update certificate for server ${serverId}: `, error);
-
-                this._logger.info('Performing rollback...');
-                for (const {oldFilePath, newFilePath} of rollbackFiles) {
-                    fs.renameSync(newFilePath, oldFilePath);
-                    this._logger.info(`Rolled back ${newFilePath} to ${oldFilePath}`);
-                }
-
-                throw new Error(`Update CSMS certificate for server ${serverId} failed: ${error}`);
+        let tlsKeys: string;
+        let tlsCertificateChain: string;
+        let mtlsCARoots: string | undefined;
+        if (certRequest.contentType === ContentType.FileId) {
+            tlsKeys = this._fileAccess!.getFile(certRequest.privateKeys).toString();
+            tlsCertificateChain = this._fileAccess!.getFile(certRequest.certificateChain).toString();
+            if (serverConfig.mtlsCertificateAuthorityRootsFilepath && certRequest.caCertificateRoots) {
+                mtlsCARoots = this._fileAccess!.getFile(certRequest.caCertificateRoots).toString();
+            }
+        } else {
+            tlsKeys = this._decode(certRequest.privateKeys);
+            tlsCertificateChain = this._decode(certRequest.certificateChain);
+            if (serverConfig.mtlsCertificateAuthorityRootsFilepath && certRequest.caCertificateRoots) {
+                mtlsCARoots = this._decode(certRequest.caCertificateRoots);
             }
         }
+
+        this._updateCertificates(serverConfig, serverId, tlsKeys, tlsCertificateChain, mtlsCARoots);
     }
 
     private _decode(content: string): string {
@@ -151,6 +142,38 @@ export class CertificatesModuleApi extends AbstractModuleApi<CertificatesModule>
         fs.writeFileSync(targetFilePath, newContent);
 
         return rollbackFiles;
+    }
+
+    private _updateCertificates(serverConfig: WebsocketServerConfig, serverId: string, tlsKeys: string,
+                                tlsCertificateChain: string, mtlsCARoots?: string | undefined) {
+        let rollbackFiles: RollBackFile[] = [];
+
+        if (serverConfig.tlsKeysFilepath && serverConfig.tlsCertificateChainFilepath) {
+            try {
+                rollbackFiles = this._replaceFile(serverConfig.tlsKeysFilepath, tlsKeys, rollbackFiles);
+                rollbackFiles = this._replaceFile(serverConfig.tlsCertificateChainFilepath!, tlsCertificateChain,
+                    rollbackFiles);
+
+                if (serverConfig.mtlsCertificateAuthorityRootsFilepath && mtlsCARoots) {
+                    rollbackFiles = this._replaceFile(serverConfig.mtlsCertificateAuthorityRootsFilepath, mtlsCARoots,
+                        rollbackFiles);
+                }
+
+                this._networkConnection?.updateCertificate(serverId, tlsKeys, tlsCertificateChain, mtlsCARoots);
+
+                this._logger.info(`Updated CSMS certificate for server ${serverId} successfully.`)
+            } catch (error) {
+                this._logger.error(`Failed to update certificate for server ${serverId}: `, error);
+
+                this._logger.info('Performing rollback...');
+                for (const {oldFilePath, newFilePath} of rollbackFiles) {
+                    fs.renameSync(newFilePath, oldFilePath);
+                    this._logger.info(`Rolled back ${newFilePath} to ${oldFilePath}`);
+                }
+
+                throw new Error(`Update CSMS certificate for server ${serverId} failed: ${error}`);
+            }
+        }
     }
 
     /**

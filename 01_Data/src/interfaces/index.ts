@@ -20,4 +20,4 @@ export { default as AuthorizationRestrictionsSchema } from './projections/schema
 export { default as TariffSchema } from './projections/schemas/TariffSchema.json'
 
 // Date endpoints dtos
-export { CsmsCertificateRequest } from './dtos/CsmsCertificateRequest'
+export { CsmsCertificateRequest, ContentType } from './dtos/CsmsCertificateRequest'
