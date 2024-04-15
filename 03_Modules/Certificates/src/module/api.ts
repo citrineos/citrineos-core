@@ -3,7 +3,22 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AbstractModuleApi, AsMessageEndpoint, CallAction, CertificateSignedRequest, CertificateSignedRequestSchema, DeleteCertificateRequest, DeleteCertificateRequestSchema, GetInstalledCertificateIdsRequest, GetInstalledCertificateIdsRequestSchema, IMessageConfirmation, InstallCertificateRequest, InstallCertificateRequestSchema, Namespace } from '@citrineos/base';
+import {
+    AbstractModuleApi,
+    AsMessageEndpoint,
+    CallAction,
+    CertificateSignedRequest,
+    CertificateSignedRequestSchema,
+    DeleteCertificateRequest,
+    DeleteCertificateRequestSchema,
+    GetInstalledCertificateIdsRequest,
+    GetInstalledCertificateIdsRequestSchema,
+    IFileAccess,
+    IMessageConfirmation,
+    InstallCertificateRequest,
+    InstallCertificateRequestSchema,
+    Namespace
+} from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { ICertificatesModuleApi } from './interface';
@@ -13,6 +28,7 @@ import { CertificatesModule } from './module';
  * Server API for the Certificates module.
  */
 export class CertificatesModuleApi extends AbstractModuleApi<CertificatesModule> implements ICertificatesModuleApi {
+    private readonly _fileAccess: IFileAccess | undefined;
 
     /**
      * Constructs a new instance of the class.
@@ -20,9 +36,12 @@ export class CertificatesModuleApi extends AbstractModuleApi<CertificatesModule>
      * @param {CertificatesModule} CertificatesModule - The Certificates module.
      * @param {FastifyInstance} server - The Fastify server instance.
      * @param {Logger<ILogObj>} [logger] - The logger instance.
+     * @param {IFileAccess} fileAccess - The File Access
      */
-    constructor(CertificatesModule: CertificatesModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
+    constructor(CertificatesModule: CertificatesModule, server: FastifyInstance, logger?: Logger<ILogObj>,
+                fileAccess?: IFileAccess) {
         super(CertificatesModule, server, logger);
+        this._fileAccess = fileAccess;
     }
 
     /**

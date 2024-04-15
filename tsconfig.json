@@ -4,7 +4,7 @@
     "rootDir": "./",
     "outDir": "./dist/"
   },
-  "exclude": ["DirectusExtensions"],
+  "exclude": ["DirectusExtensions", "./dist/**/*"], // TODO remove "./dist/**/*" after PR 68 is merged in main
   "references": [
     {
       "path": "./Server"
