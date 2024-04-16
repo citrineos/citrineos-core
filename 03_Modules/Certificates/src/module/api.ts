@@ -113,10 +113,10 @@ export class CertificatesModuleApi extends AbstractModuleApi<CertificatesModule>
         let tlsCertificateChain: string;
         let mtlsCARoots: string | undefined;
         if (certRequest.contentType === ContentType.FileId) {
-            tlsKeys = this._fileAccess!.getFile(certRequest.privateKeys).toString();
-            tlsCertificateChain = this._fileAccess!.getFile(certRequest.certificateChain).toString();
+            tlsKeys = (await this._fileAccess!.getFile(certRequest.privateKeys)).toString();
+            tlsCertificateChain = (await this._fileAccess!.getFile(certRequest.certificateChain)).toString();
             if (serverConfig.mtlsCertificateAuthorityRootsFilepath && certRequest.caCertificateRoots) {
-                mtlsCARoots = this._fileAccess!.getFile(certRequest.caCertificateRoots).toString();
+                mtlsCARoots = (await this._fileAccess!.getFile(certRequest.caCertificateRoots)).toString();
             }
         } else {
             tlsKeys = this._decode(certRequest.privateKeys);
@@ -171,7 +171,7 @@ export class CertificatesModuleApi extends AbstractModuleApi<CertificatesModule>
                     this._logger.info(`Rolled back ${newFilePath} to ${oldFilePath}`);
                 }
 
-                throw new Error(`Update CSMS certificate for server ${serverId} failed: ${error}`);
+                throw error;
             }
         }
     }

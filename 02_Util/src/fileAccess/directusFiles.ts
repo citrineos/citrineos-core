@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { IFileAccess, SystemConfig } from "@citrineos/base";
-import { authentication, RestClient, createDirectus, rest, staticToken, uploadFiles } from "@directus/sdk";
+import { authentication, RestClient, createDirectus, rest, staticToken, readAssetArrayBuffer } from "@directus/sdk";
 import { Logger, ILogObj } from "tslog";
 import { Schema } from "../util/directus";
 
@@ -38,15 +38,17 @@ export class DirectusFiles implements IFileAccess {
     }
 
     async getFile(id: string): Promise<Buffer> {
-        const response = await fetch(this._directusUrl.concat(`/assets/${id}`));
-        const arrayBuffer = (await response.blob()).arrayBuffer();
-        return Buffer.from(await arrayBuffer);
+        this._logger.info(`Get file ${id}`);
+        try {
+            const result = await this._client.request(readAssetArrayBuffer(id));
+            return Buffer.from(result);
+        } catch (error) {
+            this._logger.error('Get file failed: ', error);
+            throw new Error(`Get file ${id} failed`)
+        }
     }
 
     async uploadFile(filePath: string, content: Buffer): Promise<string> {
-        const formData = new FormData();
-        formData.append('file', new Blob([content], { type: 'text/plain' }), filePath);
-        const file = await this._client.request(uploadFiles(formData));
-        return file["id"];
+        throw new Error("Not yet implemented.")
     }
 }
