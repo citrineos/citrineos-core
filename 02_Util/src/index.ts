@@ -5,7 +5,8 @@
 
 export { MemoryCache } from "./cache/memory";
 export { RedisCache } from "./cache/redis";
-export { DirectusFiles } from "./fileAccess/directusFiles"
+export { S3Storage } from "./fileAccess/s3Storage"
+export { FtpServer } from "./fileAccess/ftpServer"
 export * from "./queue";
 export * from "./networkconnection";
 

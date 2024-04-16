@@ -27,8 +27,6 @@ import {
   RabbitMqSender,
   RedisCache,
   WebsocketNetworkConnection,
-  DirectusFiles,
-  type Schema
 } from '@citrineos/util'
 import {type JsonSchemaToTsProvider} from '@fastify/type-provider-json-schema-to-ts'
 import Ajv from 'ajv'
@@ -49,7 +47,6 @@ import {
   type FastifyValidationResult
 } from 'fastify/types/schema'
 import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter'
-import { type RestClient } from '@directus/sdk'
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule
@@ -125,7 +122,7 @@ export class CitrineOSServer {
     }
 
     // Initialize File Access Implementation
-    this._fileAccess = this.initFileAccess(fileAccess, directusUtil?.client)
+    this._fileAccess = this.initFileAccess(fileAccess, directusUtil)
 
     // Register AJV for schema validation
     this.registerAjv()
@@ -332,8 +329,8 @@ export class CitrineOSServer {
     }
   }
 
-  private initFileAccess(fileAccess?: IFileAccess, directusClient?: RestClient<Schema>): IFileAccess {
-    return fileAccess || new DirectusFiles(this._config, this._logger, directusClient)
+  private initFileAccess(fileAccess?: IFileAccess, directus?: IFileAccess): IFileAccess {
+    return fileAccess || directus || new DirectusUtil(this._config, this._logger)
   }
 
   protected _createSender(): IMessageSender {

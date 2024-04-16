@@ -7,11 +7,11 @@ import {IFileAccess} from "@citrineos/base";
 export class S3Storage implements IFileAccess {
     getFile(id: string): Promise<Buffer> {
         // TODO: implement the logic
-        return Promise.resolve(Buffer.from(''));
+        throw new Error("Not yet implemented.")
     }
 
     uploadFile(filePath: string, content: Buffer): Promise<string> {
         // TODO: implement the logic
-        return Promise.resolve("");
+        throw new Error("Not yet implemented.")
     }
 }

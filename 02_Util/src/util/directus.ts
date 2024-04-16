@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SystemConfig } from "@citrineos/base";
+import { IFileAccess, SystemConfig } from "@citrineos/base";
 import { sequelize } from "@citrineos/data";
-import { authentication, DirectusFlow, DirectusOperation, RestClient, createDirectus, createFlow, createOperation, readFlows, rest, staticToken, updateFlow, updateOperation } from "@directus/sdk";
+import { authentication, DirectusFlow, DirectusOperation, RestClient, createDirectus, createFlow, createOperation, readFlows, rest, staticToken, updateFlow, updateOperation, readAssetArrayBuffer } from "@directus/sdk";
 import { RouteOptions } from "fastify";
 import { JSONSchemaFaker } from "json-schema-faker";
 import { Logger, ILogObj } from "tslog";
@@ -13,7 +13,7 @@ export interface Schema {
     // No custom collections needed
 }
 
-export class DirectusUtil {
+export class DirectusUtil implements IFileAccess {
 
     protected readonly _config: SystemConfig;
     protected readonly _logger: Logger<ILogObj>;
@@ -38,10 +38,6 @@ export class DirectusUtil {
         this._client = client;
     }
 
-    public get client(): RestClient<Schema>{
-        return this._client;
-    }
-
     public addDirectusMessageApiFlowsFastifyRouteHook(routeOptions: RouteOptions) {
         const messagePath = routeOptions.url // 'Url' here means the route specified when the endpoint was added to the fastify server, such as '/ocpp/configuration/reset'
         if (messagePath.split("/")[1] == "ocpp") { // Message API check: relies on implementation of _toMessagePath in AbstractModuleApi which prefixes url with '/ocpp/'
@@ -54,6 +50,22 @@ export class DirectusUtil {
             const bodySchema = routeOptions.schema!.body as object;
             this.addDirectusFlowForAction(action, messagePath, bodySchema);
         }
+    }
+
+    public async getFile(id: string): Promise<Buffer> {
+        this._logger.info(`Get file ${id}`);
+        try {
+            const result = await this._client.request(readAssetArrayBuffer(id));
+            return Buffer.from(result);
+        } catch (error) {
+            this._logger.error('Get file failed: ', error);
+            throw new Error(`Get file ${id} failed`)
+        }
+    }
+
+    public async uploadFile(filePath: string, content: Buffer): Promise<string> {
+        // TODO: implement the logic
+        throw new Error("Not yet implemented.")
     }
 
     private async addDirectusFlowForAction(action: string, messagePath: string, bodySchema: object) {
