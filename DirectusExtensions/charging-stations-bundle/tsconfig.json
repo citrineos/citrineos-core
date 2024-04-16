@@ -5,7 +5,7 @@
 		"src/**/*.json"
 	],
 	"compilerOptions": {
-		"outDir": "./dist/",
+		"outDir": "./dist",
 		"composite": true,
 		"rootDir": "./src"
 	}
