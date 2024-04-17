@@ -9,6 +9,12 @@
     "plugin:@typescript-eslint/recommended",
     "prettier"
   ],
+  "ignorePatterns": [
+    "**/DirectusExtensions/**/*.ts",
+    "**/Swarm/**/*.ts",
+    "**/dist/**",
+    "**/lib/**"
+  ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "project": "tsconfig.eslint.json",
@@ -29,7 +35,10 @@
         "accessibility": "explicit"
       }
     ],
-    "@typescript-eslint/indent": ["error", 2],
+    "@typescript-eslint/indent": [
+      "error",
+      2
+    ],
     "@typescript-eslint/member-delimiter-style": [
       "error",
       {
@@ -48,7 +57,11 @@
       "error",
       {
         "selector": "variable",
-        "format": ["PascalCase", "camelCase", "UPPER_CASE"],
+        "format": [
+          "PascalCase",
+          "camelCase",
+          "UPPER_CASE"
+        ],
         "leadingUnderscore": "allow",
         "trailingUnderscore": "forbid"
       }
@@ -72,8 +85,14 @@
     "@typescript-eslint/no-unused-expressions": "error",
     "@typescript-eslint/no-use-before-define": "error",
     "@typescript-eslint/prefer-function-type": "error",
-    "@typescript-eslint/quotes": ["error", "single"],
-    "@typescript-eslint/semi": ["error", "always"],
+    "@typescript-eslint/quotes": [
+      "error",
+      "single"
+    ],
+    "@typescript-eslint/semi": [
+      "error",
+      "always"
+    ],
     "@typescript-eslint/type-annotation-spacing": "error",
     "@typescript-eslint/unified-signatures": "error",
     "@typescript-eslint/no-explicit-any": "off",
@@ -89,12 +108,18 @@
       }
     ],
     "arrow-body-style": "error",
-    "brace-style": ["error", "1tbs"],
+    "brace-style": [
+      "error",
+      "1tbs"
+    ],
     "constructor-super": "error",
     "curly": "error",
     "dot-notation": "off",
     "eol-last": "error",
-    "eqeqeq": ["error", "smart"],
+    "eqeqeq": [
+      "error",
+      "smart"
+    ],
     "guard-for-in": "error",
     "id-denylist": "off",
     "id-match": "off",
@@ -135,7 +160,10 @@
     "no-eval": "error",
     "no-fallthrough": "error",
     "no-new-wrappers": "error",
-    "no-restricted-imports": ["error", "rxjs/Rx"],
+    "no-restricted-imports": [
+      "error",
+      "rxjs/Rx"
+    ],
     "no-shadow": "off",
     "no-throw-literal": "error",
     "no-trailing-spaces": "error",
@@ -153,7 +181,9 @@
       "error",
       "always",
       {
-        "markers": ["/"]
+        "markers": [
+          "/"
+        ]
       }
     ],
     "@typescript-eslint/tslint/config": [

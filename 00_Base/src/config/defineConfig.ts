@@ -10,24 +10,6 @@ import {
 } from './types';
 
 /**
- * Defines the application configuration by merging input configuration which is defined in a file with environment variables.
- * Takes environment variables over predefined
- * @param inputConfig The file defined input configuration.
- * @returns The final system configuration.
- * @throws Error if required environment variables are not set or if there are parsing errors.
- */
-export function defineConfig(inputConfig: SystemConfigInput): SystemConfig {
-  const appConfig = mergeConfigFromEnvVars<SystemConfigInput>(
-    inputConfig,
-    process.env,
-  );
-
-  validateFinalConfig(appConfig);
-
-  return systemConfigSchema.parse(appConfig);
-}
-
-/**
  * Finds a case-insensitive match for a key in an object.
  * @param obj The object to search.
  * @param targetKey The target key.
@@ -57,7 +39,9 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
   const prefix = 'citrineos_';
 
   for (const [fullEnvKey, value] of Object.entries(envVars)) {
-    if (!value) continue;
+    if (!value) {
+      continue;
+    }
     const lowercaseEnvKey = fullEnvKey.toLowerCase();
     console.log(lowercaseEnvKey);
     if (lowercaseEnvKey.startsWith(prefix)) {
@@ -80,7 +64,7 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
 
       const finalPart = path[path.length - 1];
       const keyToUse =
-        findCaseInsensitiveMatch(currentConfigPart, finalPart) || finalPart;
+          findCaseInsensitiveMatch(currentConfigPart, finalPart) || finalPart;
 
       try {
         currentConfigPart[keyToUse] = JSON.parse(value as string);
@@ -111,4 +95,22 @@ function validateFinalConfig(finalConfig: SystemConfigInput) {
       'CITRINEOS_DATA_SEQUELIZE_PASSWORD must be set if password not provided in config',
     );
   }
+}
+
+/**
+ * Defines the application configuration by merging input configuration which is defined in a file with environment variables.
+ * Takes environment variables over predefined
+ * @param inputConfig The file defined input configuration.
+ * @returns The final system configuration.
+ * @throws Error if required environment variables are not set or if there are parsing errors.
+ */
+export function defineConfig(inputConfig: SystemConfigInput): SystemConfig {
+  const appConfig = mergeConfigFromEnvVars<SystemConfigInput>(
+    inputConfig,
+    process.env,
+  );
+
+  validateFinalConfig(appConfig);
+
+  return systemConfigSchema.parse(appConfig);
 }

@@ -18,8 +18,8 @@
     "install-all": "npm i --verbose",
     "clean": "rm -rf package-lock.json **/package-lock.json **/dist/** **/lib/** **/node_modules/** **/tsconfig.tsbuildinfo",
     "build": "tsc --build --verbose",
-    "lint": "npx eslint --ext .ts --ignore-pattern \"**/dist/**\" --ignore-pattern \"**/lib/**\" ./",
-    "lint-fix": "npx eslint --ext .ts --ignore-pattern \"**/dist/**\" --ignore-pattern \"**/lib/**\" --fix ./",
+    "lint": "npx eslint --ext .ts ./",
+    "lint-fix": "npx eslint --ext .ts --fix ./",
     "prettier": "prettier --write ."
   },
   "dependencies": {

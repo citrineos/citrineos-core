@@ -71,6 +71,10 @@ export abstract class AbstractModule implements IModule {
     return this._handler;
   }
 
+  get config(): SystemConfig {
+    return this._config;
+  }
+
   /**
    * Sets the system configuration for the module.
    *
@@ -85,74 +89,8 @@ export abstract class AbstractModule implements IModule {
     this._logger.settings.minLevel = this._config.logLevel;
   }
 
-  get config(): SystemConfig {
-    return this._config;
-  }
-
   /**
    * Methods
-   */
-
-  /**
-   * Initializes the handler for handling requests and responses.
-   *
-   * @param {CallAction[]} requests - The array of call actions for requests.
-   * @param {CallAction[]} responses - The array of call actions for responses.
-   * @return {Promise<boolean>} Returns a promise that resolves to a boolean indicating if the initialization was successful.
-   */
-  protected async _initHandler(
-    requests: CallAction[],
-    responses: CallAction[],
-  ): Promise<boolean> {
-    this._handler.module = this;
-
-    let success = await this._handler.subscribe(
-      this._eventGroup.toString() + '_requests',
-      requests,
-      {
-        state: MessageState.Request.toString(),
-      },
-    );
-
-    success =
-      success &&
-      (await this._handler.subscribe(
-        this._eventGroup.toString() + '_responses',
-        responses,
-        {
-          state: MessageState.Response.toString(),
-        },
-      ));
-
-    return success;
-  }
-
-  /**
-   * Initializes the logger for the class.
-   *
-   * @return {Logger<ILogObj>} The initialized logger.
-   */
-  protected _initLogger(baseLogger?: Logger<ILogObj>): Logger<ILogObj> {
-    return baseLogger
-      ? baseLogger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({
-          name: this.constructor.name,
-          minLevel: this._config.logLevel,
-          hideLogPositionForProduction: this._config.env === 'production',
-        });
-  }
-
-  /**
-   * Interface methods.
-   */
-
-  /**
-   * Unimplemented method to handle incoming {@link IMessage}.
-   *
-   * **Note**: This method is **programmatically** overridden by the {@link ModuleHandlers} annotation.
-   *
-   * @param message The {@link IMessage} to handle. Can contain either a {@link OcppRequest} or a {@link OcppResponse} as payload.
-   * @param props The {@link HandlerProperties} for this {@link IMessage} containing implementation specific metadata. Metadata is not used in the base implementation.
    */
 
   /**
@@ -212,6 +150,19 @@ export abstract class AbstractModule implements IModule {
       }
     }
   }
+
+  /**
+   * Interface methods.
+   */
+
+  /**
+   * Unimplemented method to handle incoming {@link IMessage}.
+   *
+   * **Note**: This method is **programmatically** overridden by the {@link ModuleHandlers} annotation.
+   *
+   * @param message The {@link IMessage} to handle. Can contain either a {@link OcppRequest} or a {@link OcppResponse} as payload.
+   * @param props The {@link HandlerProperties} for this {@link IMessage} containing implementation specific metadata. Metadata is not used in the base implementation.
+   */
 
   async handleMessageApiCallback(
     message: IMessage<OcppResponse>,
@@ -404,5 +355,54 @@ export abstract class AbstractModule implements IModule {
     payload: OcppError,
   ): Promise<IMessageConfirmation> {
     return this._sender.sendResponse(message, payload);
+  }
+
+  /**
+   * Initializes the logger for the class.
+   *
+   * @return {Logger<ILogObj>} The initialized logger.
+   */
+  protected _initLogger(baseLogger?: Logger<ILogObj>): Logger<ILogObj> {
+    return baseLogger
+      ? baseLogger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({
+        name: this.constructor.name,
+        minLevel: this._config.logLevel,
+        hideLogPositionForProduction: this._config.env === 'production',
+      });
+  }
+
+  /**
+   * Initializes the handler for handling requests and responses.
+   *
+   * @param {CallAction[]} requests - The array of call actions for requests.
+   * @param {CallAction[]} responses - The array of call actions for responses.
+   * @return {Promise<boolean>} Returns a promise that resolves to a boolean indicating if the initialization was successful.
+   */
+  protected async _initHandler(
+    requests: CallAction[],
+    responses: CallAction[],
+  ): Promise<boolean> {
+    this._handler.module = this;
+
+    let success = await this._handler.subscribe(
+      this._eventGroup.toString() + '_requests',
+      requests,
+      {
+        state: MessageState.Request.toString(),
+      },
+    );
+
+    success =
+        success &&
+        (await this._handler.subscribe(
+          this._eventGroup.toString() + '_responses',
+          responses,
+          {
+            state: MessageState.Response.toString(),
+          },
+        ));
+
+    return success;
   }
 }

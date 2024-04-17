@@ -26,7 +26,6 @@ import { SmartChargingModule, SmartChargingModuleApi } from '@citrineos/smartcha
 import { sequelize } from '@citrineos/data';
 
 class CitrineOSServer {
-
     /**
      * Fields
      */
@@ -44,8 +43,7 @@ class CitrineOSServer {
      * @param {FastifyInstance} server - optional Fastify server instance
      * @param {Ajv} ajv - optional Ajv JSON schema validator instance
      */
-    constructor(config: SystemConfig, server?: FastifyInstance, ajv?: Ajv, cache?: ICache) {
-
+    constructor (config: SystemConfig, server?: FastifyInstance, ajv?: Ajv, cache?: ICache) {
         // Set system config
         // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
         if (!config.util.messageBroker.amqp) {
@@ -57,9 +55,7 @@ class CitrineOSServer {
         this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
         // Add health check
-        this._server.get('/health', async () => {
-            return { status: 'healthy' };
-        });
+        this._server.get('/health', async () => ({ status: 'healthy' }));
 
         // Create Ajv JSON schema validator instance
         this._ajv = ajv || new Ajv({ removeAdditional: "all", useDefaults: true, coerceTypes: "array", strict: false });
@@ -70,7 +66,7 @@ class CitrineOSServer {
             name: "CitrineOS Logger",
             minLevel: systemConfig.logLevel,
             hideLogPositionForProduction: systemConfig.env === "production",
-            //Disable colors for cloud deployment as some cloude logging environments such as cloudwatch can not interpret colors
+            // Disable colors for cloud deployment as some cloude logging environments such as cloudwatch can not interpret colors
             stylePrettyLogs: process.env.DEPLOYMENT_TARGET != "cloud"
         });
 
@@ -95,9 +91,7 @@ class CitrineOSServer {
         }
 
         // Register AJV for schema validation
-        this._server.setValidatorCompiler(({ schema, method, url, httpPart }) => {
-            return this._ajv.compile(schema);
-        });
+        this._server.setValidatorCompiler(({ schema, method, url, httpPart }) => this._ajv.compile(schema));
 
         this._authenticator = new Authenticator(this._cache, new sequelize.LocationRepository(config, this._logger), new sequelize.DeviceModelRepository(config, this._logger), this._logger);
 
@@ -112,16 +106,15 @@ class CitrineOSServer {
         process.on('SIGQUIT', this.shutdown.bind(this));
     }
 
-    protected _createSender(): IMessageSender {
+    protected _createSender (): IMessageSender {
         return new RabbitMqSender(this._config, this._logger);
     }
 
-    protected _createHandler(): IMessageHandler {
+    protected _createHandler (): IMessageHandler {
         return new RabbitMqReceiver(this._config, this._logger);
     }
 
-    shutdown() {
-
+    shutdown () {
         // Shut down ocpp router
         this._networkConnection.shutdown();
 
@@ -134,9 +127,9 @@ class CitrineOSServer {
         }, 2000);
     }
 
-    run(): Promise<void> {
+    async run (): Promise<void> {
         try {
-            return this._server.listen({
+            await this._server.listen({
                 port: this._config.centralSystem.port,
                 host: this._config.centralSystem.host
             }).then(address => {
@@ -147,13 +140,12 @@ class CitrineOSServer {
             });
             // TODO Push config to microservices
         } catch (error) {
-            return Promise.reject(error);
+            await Promise.reject(error);
         }
     }
 }
 
 class ModuleService {
-
     /**
      * Fields
      */
@@ -173,8 +165,7 @@ class ModuleService {
      * @param {FastifyInstance} server - optional Fastify server instance
      * @param {Ajv} ajv - optional Ajv JSON schema validator instance
      */
-    constructor(config: SystemConfig, appName: string, server?: FastifyInstance, ajv?: Ajv, cache?: ICache) {
-
+    constructor (config: SystemConfig, appName: string, server?: FastifyInstance, ajv?: Ajv, cache?: ICache) {
         // Set system config
         // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
         if (!config.util.messageBroker.amqp) {
@@ -186,9 +177,7 @@ class ModuleService {
         this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
         // Add health check
-        this._server.get('/health', async () => {
-            return { status: 'healthy' };
-        });
+        this._server.get('/health', async () => ({ status: 'healthy' }));
 
         // Create Ajv JSON schema validator instance
         this._ajv = ajv || new Ajv({ removeAdditional: "all", useDefaults: true, coerceTypes: "array", strict: false });
@@ -216,9 +205,7 @@ class ModuleService {
         }
 
         // Register AJV for schema validation
-        this._server.setValidatorCompiler(({ schema, method, url, httpPart }) => {
-            return this._ajv.compile(schema);
-        });
+        this._server.setValidatorCompiler(({ schema, method, url, httpPart }) => this._ajv.compile(schema));
 
         // Initialize module & API
         // Always initialize API after SwaggerUI
@@ -302,16 +289,15 @@ class ModuleService {
         process.on('SIGQUIT', this.shutdown.bind(this));
     }
 
-    protected _createSender(): IMessageSender {
+    protected _createSender (): IMessageSender {
         return new RabbitMqSender(this._config, this._logger);
     }
 
-    protected _createHandler(): IMessageHandler {
+    protected _createHandler (): IMessageHandler {
         return new RabbitMqReceiver(this._config, this._logger);
     }
 
-    shutdown() {
-
+    shutdown () {
         // Shut down all module
         this._module.shutdown();
 
@@ -324,9 +310,9 @@ class ModuleService {
         }, 2000);
     }
 
-    run(): Promise<void> {
+    async run (): Promise<void> {
         try {
-            return this._server.listen({
+            await this._server.listen({
                 port: this._port,
                 host: this._host
             }).then(address => {
@@ -336,12 +322,12 @@ class ModuleService {
                 process.exit(1);
             });
         } catch (error) {
-            return Promise.reject(error);
+            await Promise.reject(error);
         }
     }
 }
 
-if (process.env.APP_NAME == EventGroup.General) {
+if (process.env.APP_NAME === EventGroup.General) {
     new CitrineOSServer(systemConfig).run().catch(error => {
         console.error(error);
         process.exit(1);

@@ -28,8 +28,7 @@ import { IModuleApi } from './ModuleApi';
  * Abstract module api class implementation.
  */
 export abstract class AbstractModuleApi<T extends IModule>
-  implements IModuleApi
-{
+implements IModuleApi {
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
@@ -100,13 +99,13 @@ export abstract class AbstractModuleApi<T extends IModule>
    *
    * @param {CallAction} action - The action to be called.
    * @param {Function} method - The method to be executed.
-   * @param {object} schema - The schema for the route.
+   * @param {object} bodySchema - The schema for the route.
    * @return {void}
    */
   // eslint-disable-next-line @typescript-eslint/ban-types
   protected _addMessageRoute(
     action: CallAction,
-    method: Function,
+    method: (...args: any[]) => any,
     bodySchema: object,
   ): void {
     this._logger.debug(
@@ -125,15 +124,13 @@ export abstract class AbstractModuleApi<T extends IModule>
         Body: OcppRequest | OcppResponse;
         Querystring: IMessageQuerystring;
       }>,
-    ): Promise<IMessageConfirmation> => {
-      return method.call(
-        this,
-        request.query.identifier,
-        request.query.tenantId,
-        request.body,
-        request.query.callbackUrl,
-      );
-    };
+    ): Promise<IMessageConfirmation> => method.call(
+      this,
+      request.query.identifier,
+      request.query.tenantId,
+      request.body,
+      request.query.callbackUrl,
+    );
 
     const _opts = {
       schema: {
@@ -162,7 +159,7 @@ export abstract class AbstractModuleApi<T extends IModule>
   // eslint-disable-next-line @typescript-eslint/ban-types
   protected _addDataRoute(
     namespace: Namespace,
-    method: Function,
+    method: (...args: any[]) => any,
     httpMethod: HttpMethod,
     querySchema?: object,
     bodySchema?: object,
@@ -190,17 +187,15 @@ export abstract class AbstractModuleApi<T extends IModule>
     const _handler = async (
       request: FastifyRequest<{ Body: object; Querystring: object }>,
       reply: FastifyReply,
-    ): Promise<unknown> => {
-      return (
-        method.call(this, request, reply) as Promise<
-          undefined | string | object
-        >
-      ).catch((err) => {
-        // TODO: figure out better error codes & messages
-        this._logger.error('Error in handling data route', err);
-        reply.status(500).send(err);
-      });
-    };
+    ): Promise<unknown> => (
+      method.call(this, request, reply) as Promise<
+      undefined | string | object
+      >
+    ).catch((err) => {
+      // TODO: figure out better error codes & messages
+      this._logger.error('Error in handling data route', err);
+      reply.status(500).send(err);
+    });
 
     const _opts = {
       method: httpMethod,

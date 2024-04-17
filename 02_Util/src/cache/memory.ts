@@ -88,20 +88,20 @@ export class MemoryCache implements ICache {
       this._keySubscriptionPromiseMap.has(namespaceKey)
         ? this._keySubscriptionPromiseMap.get(namespaceKey)
         : this._keySubscriptionPromiseMap
-            .set(
-              namespaceKey,
-              new Promise<string | null>((resolve) => {
-                this._keySubscriptionMap.set(
-                  namespaceKey,
-                  (value: string | null) => {
-                    resolve(value);
-                    this._keySubscriptionMap.delete(namespaceKey);
-                    this._keySubscriptionPromiseMap.delete(namespaceKey);
-                  },
-                );
-              }),
-            )
-            .get(namespaceKey);
+          .set(
+            namespaceKey,
+            new Promise<string | null>((resolve) => {
+              this._keySubscriptionMap.set(
+                namespaceKey,
+                (value: string | null) => {
+                  resolve(value);
+                  this._keySubscriptionMap.delete(namespaceKey);
+                  this._keySubscriptionPromiseMap.delete(namespaceKey);
+                },
+              );
+            }),
+          )
+          .get(namespaceKey);
 
     return Promise.race([
       onChangeValuePromise?.then((value) => {

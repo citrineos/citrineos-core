@@ -25,6 +25,10 @@ import {
  *
  */
 export interface IModule {
+  config: SystemConfig;
+  cache: ICache;
+  sender: IMessageSender;
+  handler: IMessageHandler;
   sendCall(
     identifier: string,
     tenantId: string,
@@ -55,9 +59,4 @@ export interface IModule {
     props?: HandlerProperties,
   ): Promise<void>;
   shutdown(): void;
-
-  config: SystemConfig;
-  cache: ICache;
-  sender: IMessageSender;
-  handler: IMessageHandler;
 }

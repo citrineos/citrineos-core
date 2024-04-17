@@ -820,10 +820,10 @@ export class MessageRouterImpl
   ): Promise<boolean> {
     const status = await this._cache.get<string>(BOOT_STATUS, identifier);
     if (
-      status == RegistrationStatusEnumType.Rejected &&
+      status === RegistrationStatusEnumType.Rejected &&
       // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
       !(
-        (message[2] as CallAction) == CallAction.TriggerMessage &&
+        (message[2] as CallAction) === CallAction.TriggerMessage &&
         (message[3] as TriggerMessageRequest).requestedMessage ==
           MessageTriggerEnumType.BootNotification
       )

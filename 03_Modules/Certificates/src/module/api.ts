@@ -28,8 +28,7 @@ import { CertificatesModule } from './module';
  */
 export class CertificatesModuleApi
   extends AbstractModuleApi<CertificatesModule>
-  implements ICertificatesModuleApi
-{
+  implements ICertificatesModuleApi {
   /**
    * Constructs a new instance of the class.
    *

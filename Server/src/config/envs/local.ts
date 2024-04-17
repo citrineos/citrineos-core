@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
-import path from "path";
+import path from 'path';
 
 export function createLocalConfig() {
   return defineConfig({

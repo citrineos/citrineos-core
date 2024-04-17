@@ -33,8 +33,7 @@ import { getBatches, getSizeOfRequest } from '@citrineos/util';
  */
 export class ReportingModuleApi
   extends AbstractModuleApi<ReportingModule>
-  implements IReportingModuleApi
-{
+  implements IReportingModuleApi {
   private readonly _componentDeviceDataCtrlr = 'DeviceDataCtrlr';
 
   /**

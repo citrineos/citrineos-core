@@ -52,8 +52,7 @@ import { validateLanguageTag } from '@citrineos/util';
  */
 export class ConfigurationModuleApi
   extends AbstractModuleApi<ConfigurationModule>
-  implements IConfigurationModuleApi
-{
+  implements IConfigurationModuleApi {
   /**
    * Constructor for the class.
    *

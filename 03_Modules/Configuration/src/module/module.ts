@@ -164,8 +164,8 @@ export class ConfigurationModule extends AbstractModule {
     this._deviceModelRepository =
       deviceModelRepository ||
       new sequelize.DeviceModelRepository(config, this._logger);
-      this._messageInfoRepository = 
-      messageInfoRepository || 
+    this._messageInfoRepository =
+      messageInfoRepository ||
       new sequelize.MessageInfoRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(
@@ -243,11 +243,11 @@ export class ConfigurationModule extends AbstractModule {
       interval:
         bootStatus === RegistrationStatusEnumType.Accepted
           ? // Accepted === heartbeat interval
-            bootConfig?.heartbeatInterval
+          bootConfig?.heartbeatInterval
             ? bootConfig.heartbeatInterval
             : this._config.modules.configuration.heartbeatInterval
           : // Pending or Rejected === boot retry interval
-            bootConfig?.bootRetryInterval
+          bootConfig?.bootRetryInterval
             ? bootConfig.bootRetryInterval
             : this._config.modules.configuration.bootRetryInterval,
     };
@@ -666,7 +666,7 @@ export class ConfigurationModule extends AbstractModule {
     message: IMessage<NotifyDisplayMessagesRequest>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("NotifyDisplayMessages received: ", message, props);
+    this._logger.debug('NotifyDisplayMessages received: ', message, props);
 
     const messageInfoTypes = message.payload.messageInfo as MessageInfoType[];
     for (const messageInfoType of messageInfoTypes) {
@@ -763,13 +763,13 @@ export class ConfigurationModule extends AbstractModule {
     message: IMessage<SetDisplayMessageResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("SetDisplayMessage response received:", message, props);
+    this._logger.debug('SetDisplayMessage response received:', message, props);
 
     const status = message.payload.status as DisplayMessageStatusEnumType;
     // when charger station accepts the set message info request
     // we trigger a get all display messages request to update stored message info in db
-    if (status == DisplayMessageStatusEnumType.Accepted) {
-      await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId)
+    if (status === DisplayMessageStatusEnumType.Accepted) {
+      await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId);
       await this.sendCall(message.context.stationId, message.context.tenantId, CallAction.GetDisplayMessages, { requestId: Math.floor(Math.random() * 1000) } as GetDisplayMessagesRequest);
     }
   }
@@ -819,13 +819,13 @@ export class ConfigurationModule extends AbstractModule {
     message: IMessage<ClearDisplayMessageResponse>,
     props?: HandlerProperties
   ): Promise<void> {
-    this._logger.debug("ClearDisplayMessage response received:", message, props);
+    this._logger.debug('ClearDisplayMessage response received:', message, props);
 
     const status = message.payload.status as ClearMessageStatusEnumType;
     // when charger station accepts the clear message info request
     // we trigger a get all display messages request to update stored message info in db
-    if (status == ClearMessageStatusEnumType.Accepted) {
-      await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId)
+    if (status === ClearMessageStatusEnumType.Accepted) {
+      await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId);
       await this.sendCall(message.context.stationId, message.context.tenantId, CallAction.GetDisplayMessages, { requestId: Math.floor(Math.random() * 1000) } as GetDisplayMessagesRequest);
     }
   }

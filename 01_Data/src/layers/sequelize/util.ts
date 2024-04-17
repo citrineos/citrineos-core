@@ -88,7 +88,7 @@ export class DefaultSequelizeInstance {
         VariableStatus,
         Variable,
       ],
-      logging: (sql: string, timing?: number) => {
+      logging: (_sql: string, _timing?: number) => {
         // TODO: Look into fixing that
         // sequelizeLogger.debug(timing, sql);
       },

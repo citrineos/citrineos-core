@@ -23,8 +23,7 @@ import { ILogObj, Logger } from 'tslog';
  */
 export class RabbitMqSender
   extends AbstractMessageSender
-  implements IMessageSender
-{
+  implements IMessageSender {
   /**
    * Constants
    */

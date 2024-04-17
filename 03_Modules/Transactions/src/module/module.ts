@@ -61,13 +61,13 @@ export class TransactionsModule extends AbstractModule {
     CallAction.GetTransactionStatus,
   ];
 
-  private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
-  private readonly _costUpdatedInterval: number | undefined;
-
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _authorizeRepository: IAuthorizationRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _tariffRepository: ITariffRepository;
+
+  private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
+  private readonly _costUpdatedInterval: number | undefined;
 
   /**
    * This is the constructor function that initializes the {@link TransactionModule}.
@@ -207,21 +207,21 @@ export class TransactionsModule extends AbstractModule {
                 evseId: authorization.idTokenInfo.evseId,
                 groupIdToken: authorization.idTokenInfo.groupIdToken
                   ? {
-                      additionalInfo:
+                    additionalInfo:
                         authorization.idTokenInfo.groupIdToken.additionalInfo &&
                         authorization.idTokenInfo.groupIdToken.additionalInfo
                           .length > 0
                           ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                              (additionalInfo) => ({
-                                additionalIdToken:
+                            (additionalInfo) => ({
+                              additionalIdToken:
                                   additionalInfo.additionalIdToken,
-                                type: additionalInfo.type,
-                              }),
-                            ) as [AdditionalInfoType, ...AdditionalInfoType[]])
+                              type: additionalInfo.type,
+                            }),
+                          ) as [AdditionalInfoType, ...AdditionalInfoType[]])
                           : undefined,
-                      idToken: authorization.idTokenInfo.groupIdToken.idToken,
-                      type: authorization.idTokenInfo.groupIdToken.type,
-                    }
+                    idToken: authorization.idTokenInfo.groupIdToken.idToken,
+                    type: authorization.idTokenInfo.groupIdToken.type,
+                  }
                   : undefined,
                 language2: authorization.idTokenInfo.language2,
                 personalMessage: authorization.idTokenInfo.personalMessage,
@@ -259,9 +259,9 @@ export class TransactionsModule extends AbstractModule {
         })
         .then((transactionEventResponse) => {
           if (
-            transactionEvent.eventType == TransactionEventEnumType.Started &&
+            transactionEvent.eventType === TransactionEventEnumType.Started &&
             transactionEventResponse &&
-            transactionEventResponse.idTokenInfo?.status ==
+            transactionEventResponse.idTokenInfo?.status ===
               AuthorizationStatusEnumType.Accepted &&
             transactionEvent.idToken
           ) {
@@ -315,7 +315,7 @@ export class TransactionsModule extends AbstractModule {
           transactionId,
         );
 
-      if (message.payload.eventType == TransactionEventEnumType.Updated) {
+      if (message.payload.eventType === TransactionEventEnumType.Updated) {
         // I02 - Show EV Driver Running Total Cost During Charging
         if (
           transaction &&
@@ -350,7 +350,7 @@ export class TransactionsModule extends AbstractModule {
       }
 
       if (
-        message.payload.eventType == TransactionEventEnumType.Ended &&
+        message.payload.eventType === TransactionEventEnumType.Ended &&
         transaction
       ) {
         response.totalCost = await this._calculateTotalCost(
@@ -453,7 +453,7 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<number> {
     // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
     //  implementation is finalized
-    let totalCost: number = 0;
+    let totalCost = 0;
 
     const tariff: Tariff | null =
       await this._tariffRepository.findByStationId(stationId);
@@ -503,7 +503,7 @@ export class TransactionsModule extends AbstractModule {
         const overallValue = sampledValues.find(
           (sampledValue) =>
             sampledValue.phase === undefined &&
-            sampledValue.measurand ==
+            sampledValue.measurand ===
               MeasurandEnumType.Energy_Active_Import_Register,
         );
         if (
@@ -528,7 +528,7 @@ export class TransactionsModule extends AbstractModule {
     );
     const sortedValues = Array.from(valuesMap.values());
 
-    let totalKwh: number = 0;
+    let totalKwh = 0;
     for (let i = 1; i < sortedValues.length; i++) {
       totalKwh += sortedValues[i] - sortedValues[i - 1];
     }

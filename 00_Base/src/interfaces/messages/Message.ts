@@ -43,8 +43,7 @@ export interface IMessage<T extends OcppRequest | OcppResponse> {
  * Default implementation of IMessage
  */
 export class Message<T extends OcppRequest | OcppResponse>
-  implements IMessage<T>
-{
+implements IMessage<T> {
   /**
    * Fields
    */
@@ -87,35 +86,35 @@ export class Message<T extends OcppRequest | OcppResponse>
   get origin(): MessageOrigin {
     return this._origin;
   }
-  set origin(value: MessageOrigin) {
-    this._origin = value;
-  }
   get eventGroup(): EventGroup {
     return this._eventGroup;
-  }
-  set eventGroup(value: EventGroup) {
-    this._eventGroup = value;
   }
   get action(): CallAction {
     return this._action;
   }
-  set action(value: CallAction) {
-    this._action = value;
-  }
   get state(): MessageState {
     return this._state;
-  }
-  set state(value: MessageState) {
-    this._state = value;
   }
   get context(): IMessageContext {
     return this._context;
   }
-  set context(value: IMessageContext) {
-    this._context = value;
-  }
   get payload(): T {
     return this._payload;
+  }
+  set origin(value: MessageOrigin) {
+    this._origin = value;
+  }
+  set eventGroup(value: EventGroup) {
+    this._eventGroup = value;
+  }
+  set action(value: CallAction) {
+    this._action = value;
+  }
+  set state(value: MessageState) {
+    this._state = value;
+  }
+  set context(value: IMessageContext) {
+    this._context = value;
   }
   set payload(value: T) {
     this._payload = value;

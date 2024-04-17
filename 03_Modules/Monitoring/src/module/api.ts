@@ -52,8 +52,7 @@ import { getBatches, getSizeOfRequest } from '@citrineos/util';
  */
 export class MonitoringModuleApi
   extends AbstractModuleApi<MonitoringModule>
-  implements IMonitoringModuleApi
-{
+  implements IMonitoringModuleApi {
   private readonly _componentMonitoringCtrlr = 'MonitoringCtrlr';
   private readonly _componentDeviceDataCtrlr = 'DeviceDataCtrlr';
 

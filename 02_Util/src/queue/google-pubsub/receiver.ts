@@ -108,9 +108,9 @@ export class PubSubReceiver extends AbstractMessageHandler {
   unsubscribe(identifier: string): Promise<boolean> {
     return this._cache
       .get<string>(
-        `${PubSubReceiver.CACHE_PREFIX}${identifier}`,
-        CacheNamespace.Other,
-      )
+      `${PubSubReceiver.CACHE_PREFIX}${identifier}`,
+      CacheNamespace.Other,
+    )
       .then((value) => {
         if (value) {
           return this._client

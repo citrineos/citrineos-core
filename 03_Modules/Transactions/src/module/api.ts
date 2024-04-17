@@ -37,8 +37,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
  */
 export class TransactionsModuleApi
   extends AbstractModuleApi<TransactionsModule>
-  implements ITransactionsModuleApi
-{
+  implements ITransactionsModuleApi {
   /**
    * Constructor for the class.
    *

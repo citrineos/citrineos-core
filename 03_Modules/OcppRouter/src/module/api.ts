@@ -25,8 +25,7 @@ import {
  */
 export class AdminApi
   extends AbstractModuleApi<MessageRouterImpl>
-  implements IAdminApi
-{
+  implements IAdminApi {
   /**
    * Constructs a new instance of the class.
    *

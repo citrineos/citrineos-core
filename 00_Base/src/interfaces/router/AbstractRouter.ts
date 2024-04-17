@@ -93,6 +93,10 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     return this._handler;
   }
 
+  get config(): SystemConfig {
+    return this._config;
+  }
+
   set networkHook(
     value: (identifier: string, message: string) => Promise<boolean>,
   ) {
@@ -107,45 +111,9 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   set config(config: SystemConfig) {
     this._config = config;
     // Update all necessary settings for hot reload
-    this._logger.info(`Updating system configuration for ocpp router...`);
+    this._logger.info('Updating system configuration for ocpp router...');
     this._logger.settings.minLevel = this._config.logLevel;
   }
-
-  get config(): SystemConfig {
-    return this._config;
-  }
-
-  abstract onMessage(identifier: string, message: string): Promise<boolean>;
-
-  abstract registerConnection(connectionIdentifier: string): Promise<boolean>;
-  abstract deregisterConnection(connectionIdentifier: string): Promise<boolean>;
-
-  abstract sendCall(
-    identifier: string,
-    tenantId: string,
-    action: CallAction,
-    payload: OcppRequest,
-    correlationId?: string,
-    origin?: MessageOrigin,
-  ): Promise<IMessageConfirmation>;
-  abstract sendCallResult(
-    correlationId: string,
-    identifier: string,
-    tenantId: string,
-    action: CallAction,
-    payload: OcppResponse,
-    origin?: MessageOrigin,
-  ): Promise<IMessageConfirmation>;
-  abstract sendCallError(
-    correlationId: string,
-    identifier: string,
-    tenantId: string,
-    action: CallAction,
-    error: OcppError,
-    origin?: MessageOrigin,
-  ): Promise<IMessageConfirmation>;
-
-  abstract shutdown(): void;
 
   /**
    * Public Methods
@@ -254,4 +222,36 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       return { isValid: false }; // TODO: Implement config for this behavior
     }
   }
+
+  abstract onMessage(identifier: string, message: string): Promise<boolean>;
+
+  abstract registerConnection(connectionIdentifier: string): Promise<boolean>;
+  abstract deregisterConnection(connectionIdentifier: string): Promise<boolean>;
+
+  abstract sendCall(
+    identifier: string,
+    tenantId: string,
+    action: CallAction,
+    payload: OcppRequest,
+    correlationId?: string,
+    origin?: MessageOrigin,
+  ): Promise<IMessageConfirmation>;
+  abstract sendCallResult(
+    correlationId: string,
+    identifier: string,
+    tenantId: string,
+    action: CallAction,
+    payload: OcppResponse,
+    origin?: MessageOrigin,
+  ): Promise<IMessageConfirmation>;
+  abstract sendCallError(
+    correlationId: string,
+    identifier: string,
+    tenantId: string,
+    action: CallAction,
+    error: OcppError,
+    origin?: MessageOrigin,
+  ): Promise<IMessageConfirmation>;
+
+  abstract shutdown(): void;
 }

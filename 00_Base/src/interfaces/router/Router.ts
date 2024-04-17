@@ -9,6 +9,9 @@ import { IModule } from '../..';
  * Interface for the ocpp router
  */
 export interface IMessageRouter extends IModule {
+
+  networkHook: (identifier: string, message: string) => Promise<boolean>;
+
   /**
    * Register a connection to the message handler with the given connection identifier.
    *
@@ -19,6 +22,4 @@ export interface IMessageRouter extends IModule {
   deregisterConnection(connectionIdentifier: string): Promise<boolean>;
 
   onMessage(identifier: string, message: string): Promise<boolean>;
-
-  networkHook: (identifier: string, message: string) => Promise<boolean>;
 }

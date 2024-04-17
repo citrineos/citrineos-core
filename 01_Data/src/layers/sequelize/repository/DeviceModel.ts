@@ -280,12 +280,12 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
     const evseInclude =
       queryParams.component_evse_id ?? queryParams.component_evse_connectorId
         ? {
-            model: Evse,
-            where: {
-              ...(queryParams.component_evse_id ? { id: queryParams.component_evse_id } : {}),
-              ...(queryParams.component_evse_connectorId ? { connectorId: queryParams.component_evse_connectorId } : {}),
-            },
-          }
+          model: Evse,
+          where: {
+            ...(queryParams.component_evse_id ? { id: queryParams.component_evse_id } : {}),
+            ...(queryParams.component_evse_connectorId ? { connectorId: queryParams.component_evse_connectorId } : {}),
+          },
+        }
         : Evse;
     return {
       where: {
