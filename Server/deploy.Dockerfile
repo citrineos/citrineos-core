@@ -2,7 +2,7 @@ FROM node:18
 
 WORKDIR /usr/local/apps/citrineos
 
-COPY ../ .
+COPY .. .
 
 RUN npm i && npm run build
 
