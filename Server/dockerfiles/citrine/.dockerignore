@@ -1,0 +1,27 @@
+# Ignore node modules directories
+**/node_modules
+
+# Ignore distribution directories (lib for backwards compatibility)
+**/dist
+**/lib
+
+# Common ignore files
+.gitignore
+
+# Ignore lock files, logs, and Docker-specific files
+*.lock
+*.log
+*.tgz
+*.sh
+
+# Specific files and file types to ignore
+*.js
+*.cjs
+*.md
+*.yml
+*.tsbuildinfo
+
+# Specific directories to ignore
+**/Swarm
+**/data
+**/dockerfiles

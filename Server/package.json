@@ -4,6 +4,9 @@
   "description": "The OCPP server implementation which acts right on top of an asynchronous WebSocket.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "clean-all-windows": "del package-lock.json && cd ../00_Base && del package-lock.json && rmdir lib /s /q && cd ../02_Util && del package-lock.json && rmdir lib /s /q && cd ../01_Data && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Configuration && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/EVDriver && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Reporting && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Transactions && del package-lock.json && rmdir lib /s /q && cd ../03_Modules/Monitoring && del package-lock.json && rmdir lib /s /q",
     "start-unix:docker": "export APP_ENV=docker && npx nodemon",
