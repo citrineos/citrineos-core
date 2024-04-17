@@ -12,8 +12,7 @@ import { AsMessageEndpoint } from './AsMessageEndpoint';
  */
 export interface IMessageEndpointDefinition {
   action: CallAction;
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  method: Function;
+  method: (...args: any[]) => any;
   methodName: string;
   bodySchema: object;
 }

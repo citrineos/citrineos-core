@@ -16,7 +16,8 @@ export class SubscriptionRepository extends SequelizeRepository<Subscription> im
    * @returns Saved {@link Subscription} if successful, undefined otherwise
    */
   create(value: Subscription): Promise<Subscription | undefined> {
-    const { _id, ...rawSubscription } = value;
+    const { ...rawSubscription } = value;
+    rawSubscription.id = null;
     return super.create(Subscription.build({ ...rawSubscription }));
   }
 
