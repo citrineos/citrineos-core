@@ -207,21 +207,21 @@ export class TransactionsModule extends AbstractModule {
                 evseId: authorization.idTokenInfo.evseId,
                 groupIdToken: authorization.idTokenInfo.groupIdToken
                   ? {
-                    additionalInfo:
+                      additionalInfo:
                         authorization.idTokenInfo.groupIdToken.additionalInfo &&
                         authorization.idTokenInfo.groupIdToken.additionalInfo
                           .length > 0
                           ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                            (additionalInfo) => ({
-                              additionalIdToken:
+                              (additionalInfo) => ({
+                                additionalIdToken:
                                   additionalInfo.additionalIdToken,
-                              type: additionalInfo.type,
-                            }),
-                          ) as [AdditionalInfoType, ...AdditionalInfoType[]])
+                                type: additionalInfo.type,
+                              }),
+                            ) as [AdditionalInfoType, ...AdditionalInfoType[]])
                           : undefined,
-                    idToken: authorization.idTokenInfo.groupIdToken.idToken,
-                    type: authorization.idTokenInfo.groupIdToken.type,
-                  }
+                      idToken: authorization.idTokenInfo.groupIdToken.idToken,
+                      type: authorization.idTokenInfo.groupIdToken.type,
+                    }
                   : undefined,
                 language2: authorization.idTokenInfo.language2,
                 personalMessage: authorization.idTokenInfo.personalMessage,

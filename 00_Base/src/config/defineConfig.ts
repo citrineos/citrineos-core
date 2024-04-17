@@ -64,7 +64,7 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
 
       const finalPart = path[path.length - 1];
       const keyToUse =
-          findCaseInsensitiveMatch(currentConfigPart, finalPart) || finalPart;
+        findCaseInsensitiveMatch(currentConfigPart, finalPart) || finalPart;
 
       try {
         currentConfigPart[keyToUse] = JSON.parse(value as string);

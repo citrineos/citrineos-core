@@ -2,26 +2,17 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  Namespace,
-  CustomDataType,
-  ComponentType,
-  MessageInfoType,
-  MessagePriorityEnumType,
-  MessageStateEnumType,
-  MessageContentType
-} from '@citrineos/base';
+import { Namespace, CustomDataType, ComponentType, MessageInfoType, MessagePriorityEnumType, MessageStateEnumType, MessageContentType } from '@citrineos/base';
 import { Table, Model, AutoIncrement, Column, DataType, PrimaryKey, Index, BelongsTo, ForeignKey } from 'sequelize-typescript';
 import { Component } from '../DeviceModel';
 
 @Table
 export class MessageInfo extends Model implements MessageInfoType {
-
   static readonly MODEL_NAME: string = Namespace.MessageInfoType;
 
   /**
-     * Fields
-     */
+   * Fields
+   */
 
   @PrimaryKey
   @AutoIncrement
@@ -30,13 +21,13 @@ export class MessageInfo extends Model implements MessageInfoType {
 
   @Index
   @Column({
-    unique: 'stationId_id'
+    unique: 'stationId_id',
   })
   declare stationId: string;
 
   @Column({
     unique: 'stationId_id',
-    type: DataType.INTEGER
+    type: DataType.INTEGER,
   })
   declare id: number;
 
@@ -51,7 +42,7 @@ export class MessageInfo extends Model implements MessageInfoType {
     get() {
       const startDateTime: Date = this.getDataValue('startDateTime');
       return startDateTime ? startDateTime.toISOString() : null;
-    }
+    },
   })
   declare startDateTime?: string;
 
@@ -60,7 +51,7 @@ export class MessageInfo extends Model implements MessageInfoType {
     get() {
       const endDateTime: Date = this.getDataValue('endDateTime');
       return endDateTime ? endDateTime.toISOString() : null;
-    }
+    },
   })
   declare endDateTime?: string;
 
@@ -74,8 +65,8 @@ export class MessageInfo extends Model implements MessageInfoType {
   declare active: boolean;
 
   /**
-     * Relations
-     */
+   * Relations
+   */
 
   @BelongsTo(() => Component)
   declare component: ComponentType;

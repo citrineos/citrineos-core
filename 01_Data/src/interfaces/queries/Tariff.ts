@@ -5,7 +5,10 @@
 import { QuerySchema } from '@citrineos/base';
 
 export const TariffQuerySchema = QuerySchema([
-  ['stationId', 'string'], ['unit', 'string'], ['id', 'number']]);
+  ['stationId', 'string'],
+  ['unit', 'string'],
+  ['id', 'number'],
+]);
 
 export interface TariffQueryString {
   stationId?: string;
@@ -13,8 +16,7 @@ export interface TariffQueryString {
   id?: number;
 }
 
-export const CreateOrUpdateTariffQuerySchema = QuerySchema([
-  ['stationId', 'string']], ['stationId']);
+export const CreateOrUpdateTariffQuerySchema = QuerySchema([['stationId', 'string']], ['stationId']);
 
 export interface CreateOrUpdateTariffQueryString {
   stationId: string;

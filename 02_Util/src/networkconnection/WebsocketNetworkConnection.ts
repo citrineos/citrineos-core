@@ -331,7 +331,7 @@ export class WebsocketNetworkConnection {
    * This happens after successful protocol exchange with client.
    *
    * @param {WebSocket} ws - The WebSocket object representing the connection.
-     * @param {number} pingInterval - The ping interval in seconds.
+   * @param {number} pingInterval - The ping interval in seconds.
    * @param {IncomingMessage} req - The request object associated with the connection.
    * @return {void}
    */
@@ -381,7 +381,7 @@ export class WebsocketNetworkConnection {
    *
    * @param {string} identifier - The unique identifier for the connection.
    * @param {WebSocket} ws - The WebSocket object representing the connection.
-     * @param {number} pingInterval - The ping interval in seconds.
+   * @param {number} pingInterval - The ping interval in seconds.
    * @return {void} This function does not return anything.
    */
   private _registerWebsocketEvents(

@@ -76,9 +76,9 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     // Ensure that filter includes the x-match header set to all
     filter = filter
       ? {
-        'x-match': 'all',
-        ...filter,
-      }
+          'x-match': 'all',
+          ...filter,
+        }
       : { 'x-match': 'all' };
 
     const channel = this._channel || (await this._connect());
@@ -137,10 +137,10 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   unsubscribe(identifier: string): Promise<boolean> {
     return this._cache
       .get<Array<string>>(
-      `${RabbitMqReceiver.CACHE_PREFIX}${identifier}`,
-      CacheNamespace.Other,
-      () => Array<string>,
-    )
+        `${RabbitMqReceiver.CACHE_PREFIX}${identifier}`,
+        CacheNamespace.Other,
+        () => Array<string>,
+      )
       .then(async (queues) => {
         if (queues) {
           const channel = this._channel || (await this._connect());

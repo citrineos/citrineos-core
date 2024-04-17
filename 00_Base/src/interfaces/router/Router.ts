@@ -9,7 +9,6 @@ import { IModule } from '../..';
  * Interface for the ocpp router
  */
 export interface IMessageRouter extends IModule {
-
   networkHook: (identifier: string, message: string) => Promise<boolean>;
 
   /**

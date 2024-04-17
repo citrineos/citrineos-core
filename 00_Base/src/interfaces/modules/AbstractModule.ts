@@ -366,10 +366,10 @@ export abstract class AbstractModule implements IModule {
     return baseLogger
       ? baseLogger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({
-        name: this.constructor.name,
-        minLevel: this._config.logLevel,
-        hideLogPositionForProduction: this._config.env === 'production',
-      });
+          name: this.constructor.name,
+          minLevel: this._config.logLevel,
+          hideLogPositionForProduction: this._config.env === 'production',
+        });
   }
 
   /**
@@ -394,14 +394,14 @@ export abstract class AbstractModule implements IModule {
     );
 
     success =
-        success &&
-        (await this._handler.subscribe(
-          this._eventGroup.toString() + '_responses',
-          responses,
-          {
-            state: MessageState.Response.toString(),
-          },
-        ));
+      success &&
+      (await this._handler.subscribe(
+        this._eventGroup.toString() + '_responses',
+        responses,
+        {
+          state: MessageState.Response.toString(),
+        },
+      ));
 
     return success;
   }

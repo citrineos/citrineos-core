@@ -14,22 +14,22 @@ export class Subscription extends Model {
   declare stationId: string;
 
   @Column({
-    defaultValue: false
+    defaultValue: false,
   })
   declare onConnect: boolean;
 
   @Column({
-    defaultValue: false
+    defaultValue: false,
   })
   declare onClose: boolean;
 
   @Column({
-    defaultValue: false
+    defaultValue: false,
   })
   declare onMessage: boolean;
 
   @Column({
-    defaultValue: false
+    defaultValue: false,
   })
   declare sentMessage: boolean;
 

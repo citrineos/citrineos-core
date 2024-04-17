@@ -135,7 +135,7 @@ export interface OcppRequest {}
 export interface OcppResponse {}
 
 export const CALL_SCHEMA_MAP: Map<CallAction, object> = new Map<
-CallAction,
+  CallAction,
   object
 >([
   [CallAction.Authorize, AuthorizeRequestSchema],
@@ -177,7 +177,7 @@ CallAction,
 ]);
 
 export const CALL_RESULT_SCHEMA_MAP: Map<CallAction, object> = new Map<
-CallAction,
+  CallAction,
   object
 >([
   [CallAction.CancelReservation, CancelReservationResponseSchema],

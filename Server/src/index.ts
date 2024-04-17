@@ -247,11 +247,11 @@ export class CitrineOSServer {
       cache ||
       (this._config.util.cache.redis
         ? new RedisCache({
-          socket: {
-            host: this._config.util.cache.redis.host,
-            port: this._config.util.cache.redis.port,
-          },
-        })
+            socket: {
+              host: this._config.util.cache.redis.host,
+              port: this._config.util.cache.redis.port,
+            },
+          })
         : new MemoryCache())
     );
   }

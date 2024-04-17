@@ -28,7 +28,7 @@ import { IModuleApi } from './ModuleApi';
  * Abstract module api class implementation.
  */
 export abstract class AbstractModuleApi<T extends IModule>
-implements IModuleApi {
+  implements IModuleApi {
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
@@ -124,13 +124,14 @@ implements IModuleApi {
         Body: OcppRequest | OcppResponse;
         Querystring: IMessageQuerystring;
       }>,
-    ): Promise<IMessageConfirmation> => method.call(
-      this,
-      request.query.identifier,
-      request.query.tenantId,
-      request.body,
-      request.query.callbackUrl,
-    );
+    ): Promise<IMessageConfirmation> =>
+      method.call(
+        this,
+        request.query.identifier,
+        request.query.tenantId,
+        request.body,
+        request.query.callbackUrl,
+      );
 
     const _opts = {
       schema: {
@@ -187,15 +188,16 @@ implements IModuleApi {
     const _handler = async (
       request: FastifyRequest<{ Body: object; Querystring: object }>,
       reply: FastifyReply,
-    ): Promise<unknown> => (
-      method.call(this, request, reply) as Promise<
-      undefined | string | object
-      >
-    ).catch((err) => {
-      // TODO: figure out better error codes & messages
-      this._logger.error('Error in handling data route', err);
-      reply.status(500).send(err);
-    });
+    ): Promise<unknown> =>
+      (
+        method.call(this, request, reply) as Promise<
+          undefined | string | object
+        >
+      ).catch((err) => {
+        // TODO: figure out better error codes & messages
+        this._logger.error('Error in handling data route', err);
+        reply.status(500).send(err);
+      });
 
     const _opts = {
       method: httpMethod,
