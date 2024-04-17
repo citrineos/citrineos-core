@@ -3,7 +3,7 @@
   "include": ["src/**/*.ts", "src/**/*.json"],
   "exclude": ["./dist/**/*"],
   "compilerOptions": {
-    "outDir": "./dist/",
+    "outDir": "./dist",
     "rootDir": "./src",
     "composite": true
   },

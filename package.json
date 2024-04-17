@@ -16,10 +16,12 @@
   },
   "scripts": {
     "install-all": "npm i --verbose",
-    "clean": "rm -rf package-lock.json **/package-lock.json **/dist/** **/lib/** **/node_modules/** **/tsconfig.tsbuildinfo",
+    "fresh": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json dist **/dist **/**/dist node_modules **/node_modules **/**/node_modules tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
     "build": "tsc --build --verbose",
+    "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
+    "start:local-docker": "cd ./Server && npm run start:local-docker",
     "lint": "npx eslint --ext .ts ./",
-    "lint-fix": "npx eslint --ext .ts --fix ./",
+    "lint-fix": "npm run prettier && npx eslint --ext .ts --fix ./",
     "prettier": "prettier --write ."
   },
   "dependencies": {

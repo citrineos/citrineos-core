@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
+import { RegistrationStatusEnumType, defineConfig } from '@citrineos/base';
 
 export function createDockerConfig() {
   return defineConfig({
@@ -65,7 +65,7 @@ export function createDockerConfig() {
       },
       swagger: {
         path: '/docs',
-        logoPath: '/usr/local/apps/citrineos/server/src/assets/logo.png',
+        logoPath: '/usr/local/apps/citrineos/Server/src/assets/logo.png',
         exposeData: true,
         exposeMessage: true,
       },

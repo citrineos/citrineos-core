@@ -22,12 +22,10 @@ export default defineEndpoint({
           isOnline = false;
         } else {
           // If the event type is neither 'connected' nor 'closed', return an error
-          return res
-            .status(400)
-            .json({
-              message:
-                'Invalid event type, expecting only "connected" or "closed"',
-            });
+          return res.status(400).json({
+            message:
+              'Invalid event type, expecting only "connected" or "closed"',
+          });
         }
 
         // Update the `isOnline` field in the `ChargingStation` collection for the specified stationId

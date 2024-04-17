@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
+import { RegistrationStatusEnumType, defineConfig } from '@citrineos/base';
 import path from 'path';
 
 export function createLocalConfig() {
@@ -66,12 +66,12 @@ export function createLocalConfig() {
       },
       swagger: {
         path: '/docs',
-        logoPath: path.join(__dirname, '../../assets/logo.png'),
+        logoPath: path.resolve(__dirname, '../../assets/logo.png'),
         exposeData: true,
         exposeMessage: true,
       },
       directus: {
-        host: 'directus',
+        host: '0.0.0.0',
         port: 8055,
         generateFlows: false,
       },
