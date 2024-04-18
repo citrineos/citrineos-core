@@ -5,6 +5,6 @@
 import * as Buffer from "buffer";
 
 export interface IFileAccess {
-    uploadFile(filePath: string, content: Buffer): Promise<string>;
+    uploadFile(fileName: string, content: Buffer, filePath?: string): Promise<string>;
     getFile(id: string): Promise<Buffer>;
 }

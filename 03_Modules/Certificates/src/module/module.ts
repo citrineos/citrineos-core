@@ -31,7 +31,11 @@ import {
   SignCertificateResponse,
   SystemConfig
 } from "@citrineos/base";
-import { IDeviceModelRepository, sequelize } from "@citrineos/data";
+import {
+  ICertificateRepository,
+  IDeviceModelRepository,
+  sequelize
+} from "@citrineos/data";
 import { RabbitMqReceiver, RabbitMqSender, Timer } from "@citrineos/util";
 import deasyncPromise from "deasync-promise";
 import * as forge from "node-forge";
@@ -62,8 +66,13 @@ export class CertificatesModule extends AbstractModule {
   ];
 
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _certificateRepository: ICertificateRepository;
   private _securityCaCerts: Map<string, forge.pki.Certificate> = new Map();
   private _securityCaPrivateKeys: Map<string, forge.pki.rsa.PrivateKey> = new Map();
+
+  get certificateRepository(): ICertificateRepository {
+    return this._certificateRepository;
+  }
 
   /**
    * Constructor
@@ -92,7 +101,8 @@ export class CertificatesModule extends AbstractModule {
     sender: IMessageSender,
     handler: IMessageHandler,
     logger?: Logger<ILogObj>,
-    deviceModelRepository?: IDeviceModelRepository
+    deviceModelRepository?: IDeviceModelRepository,
+    certificateRepository?: ICertificateRepository
   ) {
     super(config, cache, handler || new RabbitMqReceiver(config, logger), sender || new RabbitMqSender(config, logger), EventGroup.Certificates, logger);
 
@@ -104,7 +114,7 @@ export class CertificatesModule extends AbstractModule {
     }
 
     this._deviceModelRepository = deviceModelRepository || new sequelize.DeviceModelRepository(config, logger);
-
+    this._certificateRepository = certificateRepository || new sequelize.CertificateRepository(config, logger);
 
     this._config.util.networkConnection.websocketServers.forEach(server => {
       if (server.securityProfile == 3) {

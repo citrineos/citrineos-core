@@ -14,5 +14,6 @@ export {
     Tariff,
     Transaction,
     Variable,
-    VariableAttribute
+    VariableAttribute,
+    Certificate
 } from "./layers/sequelize"; // todo export better as these seem to be used in other modules

@@ -30,11 +30,25 @@ import {
     MessageInfoType
 } from "@citrineos/base";
 import { AuthorizationQuerystring } from "./queries/Authorization";
-import { Transaction } from "../layers/sequelize/model/TransactionEvent";
-import { VariableAttribute } from "../layers/sequelize/model/DeviceModel/VariableAttribute";
 import { AuthorizationRestrictions, VariableAttributeQuerystring, TariffQueryString } from ".";
-import { Boot, Authorization, Location, SecurityEvent, Component, Variable, VariableMonitoring, EventData, ChargingStation, MessageInfo, Tariff, MeterValue } from "../layers/sequelize";
-import { Subscription } from "../layers/sequelize/model/Subscription/Subscription";
+import {
+    Boot,
+    Authorization,
+    Location,
+    SecurityEvent,
+    Component,
+    Variable,
+    VariableMonitoring,
+    EventData,
+    ChargingStation,
+    MessageInfo,
+    Tariff,
+    MeterValue,
+    Certificate,
+    Subscription,
+    Transaction,
+    VariableAttribute
+} from "../layers/sequelize";
 
 
 export interface IAuthorizationRepository extends ICrudRepository<AuthorizationData> {
@@ -114,4 +128,8 @@ export interface ITariffRepository extends ICrudRepository<Tariff> {
     readAllByQuery(query: TariffQueryString): Promise<Tariff[]>;
     deleteAllByQuery(query: TariffQueryString): Promise<number>;
     createOrUpdateTariff(tariff: Tariff): Promise<Tariff>;
+}
+
+export interface ICertificateRepository extends ICrudRepository<Certificate> {
+    createOrUpdateCertificate(certificate: Certificate): Promise<Certificate>;
 }
