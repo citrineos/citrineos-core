@@ -3,16 +3,9 @@
 
 # Ignore distribution directories (lib for backwards compatibility)
 **/dist
-**/lib
 
 # Common ignore files
-.gitignore
-
-# Ignore lock files, logs, and Docker-specific files
-*.lock
-*.log
-*.tgz
-*.sh
+package-lock.json
 
 # Specific files and file types to ignore
 *.js
@@ -20,8 +13,6 @@
 *.md
 *.yml
 *.tsbuildinfo
-
-# Specific directories to ignore
-**/Swarm
-**/data
-**/dockerfiles
+*.log
+*.tgz
+*.sh

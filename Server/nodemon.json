@@ -6,14 +6,10 @@
     "../02_Util",
     "../03_Modules"
   ],
-  "ext": ".ts,.js",
-  "exclude": [],
+  "ext": "ts,js",
   "ignore": [
     "**/dist/**",
     "**/node_modules/**"
   ],
-  "exec": "npm run build --prefix ../ &&node --inspect=0.0.0.0:9229 --nolazy -r ts-node/register",
-  "events": {
-    "crash": "nodemon --delay 500ms -L"
-  }
+  "exec": "node --inspect=0.0.0.0:9229 --nolazy -r ts-node/register"
 }

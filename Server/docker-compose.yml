@@ -44,8 +44,6 @@ services:
     build:
       context: ..
       dockerfile: ./Server/local.Dockerfile
-    command: >
-      sh -c "npm i && npm rebuild bcrypt --build-from-source && npm rebuild deasync --build-from-source && npm run start:local-docker"
     volumes:
       - ../package-lock.json:/usr/local/apps/citrineos/package-lock-host.json
       - ../package.json:/usr/local/apps/citrineos/package.json
@@ -111,8 +109,8 @@ services:
 
   directus:
     build:
-      context: ..
-      dockerfile: ./Server/directus.Dockerfile
+      context: ../DirectusExtensions
+      dockerfile: ./directus.Dockerfile
     ports:
       - 8055:8055
     volumes:
