@@ -4,8 +4,12 @@
     "src/**/*.ts",
     "src/**/*.json"
   ],
+  "exclude": [
+    "**/dist/**",
+    "**/node_modules/**"
+  ],
   "compilerOptions": {
-    "outDir": "./dist/",
+    "outDir": "./dist",
     "composite": true,
     "rootDir": "./src"
   }
