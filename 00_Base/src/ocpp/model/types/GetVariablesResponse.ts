@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { AttributeEnumType, GetVariableStatusEnumType } from "../enums";
-import { OcppResponse } from "../../..";
+import { AttributeEnumType, GetVariableStatusEnumType } from '../enums';
+import { OcppResponse } from '../../..';
 
 export interface GetVariablesResponse extends OcppResponse {
   customData?: CustomDataType;
@@ -120,6 +120,3 @@ export interface VariableType {
    */
   instance?: string;
 }
-
-
-

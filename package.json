@@ -2,13 +2,25 @@
   "name": "@citrineos/workspace",
   "version": "1.0.0",
   "private": true,
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@typescript-eslint/eslint-plugin-tslint": "^7.0.2",
+    "concurrently": "^8.2.2",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
+    "typescript-eslint": "^7.6.0"
+  },
   "scripts": {
-    "install-all": "npm i --verbose",
+    "install-all": "npm i --workspaces --verbose",
     "fresh": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json dist **/dist **/**/dist node_modules **/node_modules **/**/node_modules tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
-    "build": "tsc --build --verbose",
+    "build": "npm run compile --workspaces --verbose",
     "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
     "start-docker": "cd ./Server && npm run start-docker",
-    "start-docker-cloud": "cd ./Server && npm run start-docker-cloud"
+    "start-docker-cloud": "cd ./Server && npm run start-docker-cloud",
+    "lint": "npx eslint --ext .ts ./",
+    "lint-fix": "npm run prettier && npx eslint --ext .ts --fix ./",
+    "prettier": "prettier --write ."
   },
   "workspaces": [
     "00_Base",

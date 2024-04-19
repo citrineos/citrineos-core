@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { RequestStartStopStatusEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { RequestStartStopStatusEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface RequestStartTransactionResponse extends OcppRequest {
   customData?: CustomDataType;
@@ -47,5 +47,3 @@ export interface StatusInfoType {
    */
   additionalInfo?: string;
 }
-
-

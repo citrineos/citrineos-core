@@ -12,22 +12,14 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ReserveNowStatusEnumType": {
       "description": "This indicates the success or failure of the reservation.\r\n",
       "javaType": "ReserveNowStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "Faulted",
-        "Occupied",
-        "Rejected",
-        "Unavailable"
-      ],
+      "enum": ["Accepted", "Faulted", "Occupied", "Rejected", "Unavailable"],
       "tsEnumNames": [
         "Accepted",
         "Faulted",
@@ -56,9 +48,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -74,7 +64,5 @@
       "$ref": "#/definitions/StatusInfoType"
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

@@ -12,27 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "EnergyTransferModeEnumType": {
       "description": "Charging_ Needs. Requested. Energy_ Transfer_ Mode_ Code\r\nurn:x-oca:ocpp:uid:1:569209\r\nMode of energy transfer requested by the EV.\r\n",
       "javaType": "EnergyTransferModeEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "DC",
-        "AC_single_phase",
-        "AC_two_phase",
-        "AC_three_phase"
-      ],
-      "tsEnumNames": [
-        "DC",
-        "AC_single_phase",
-        "AC_two_phase",
-        "AC_three_phase"
-      ]
+      "enum": ["DC", "AC_single_phase", "AC_two_phase", "AC_three_phase"],
+      "tsEnumNames": ["DC", "AC_single_phase", "AC_two_phase", "AC_three_phase"]
     },
     "ACChargingParametersType": {
       "description": "AC_ Charging_ Parameters\r\nurn:x-oca:ocpp:uid:2:233250\r\nEV AC charging parameters.\r\n\r\n",
@@ -91,9 +79,7 @@
           "format": "date-time"
         }
       },
-      "required": [
-        "requestedEnergyTransfer"
-      ]
+      "required": ["requestedEnergyTransfer"]
     },
     "DCChargingParametersType": {
       "description": "DC_ Charging_ Parameters\r\nurn:x-oca:ocpp:uid:2:233251\r\nEV DC charging parameters\r\n\r\n\r\n",
@@ -143,10 +129,7 @@
           "maximum": 100
         }
       },
-      "required": [
-        "evMaxCurrent",
-        "evMaxVoltage"
-      ]
+      "required": ["evMaxCurrent", "evMaxVoltage"]
     }
   },
   "type": "object",
@@ -167,8 +150,5 @@
       "type": "integer"
     }
   },
-  "required": [
-    "evseId",
-    "chargingNeeds"
-  ]
+  "required": ["evseId", "chargingNeeds"]
 }

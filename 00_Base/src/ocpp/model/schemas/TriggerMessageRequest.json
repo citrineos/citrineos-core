@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "MessageTriggerEnumType": {
       "description": "Type of message to be triggered.\r\n",
@@ -66,9 +64,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id"]
     }
   },
   "type": "object",
@@ -84,7 +80,5 @@
       "$ref": "#/definitions/MessageTriggerEnumType"
     }
   },
-  "required": [
-    "requestedMessage"
-  ]
+  "required": ["requestedMessage"]
 }

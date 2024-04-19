@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "InstallCertificateUseEnumType": {
       "description": "Indicates the certificate type that is sent.\r\n",
@@ -50,8 +48,5 @@
       "maxLength": 5500
     }
   },
-  "required": [
-    "certificateType",
-    "certificate"
-  ]
+  "required": ["certificateType", "certificate"]
 }
