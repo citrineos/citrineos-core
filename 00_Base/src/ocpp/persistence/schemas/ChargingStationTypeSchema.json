@@ -1,66 +1,60 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "definitions": {
-        "CustomDataType": {
-            "additionalProperties": {},
-            "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
-            "properties": {
-                "vendorId": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "vendorId"
-            ],
-            "type": "object"
-        },
-        "ModemType": {
-            "description": "Wireless_ Communication_ Module\nurn:x-oca:ocpp:uid:2:233306\nDefines parameters required for initiating and maintaining wireless communication with other devices.",
-            "properties": {
-                "customData": {
-                    "$ref": "#/definitions/CustomDataType"
-                },
-                "iccid": {
-                    "description": "Wireless_ Communication_ Module. ICCID. CI20_ Text\nurn:x-oca:ocpp:uid:1:569327\nThis contains the ICCID of the modem’s SIM card.",
-                    "type": "string"
-                },
-                "imsi": {
-                    "description": "Wireless_ Communication_ Module. IMSI. CI20_ Text\nurn:x-oca:ocpp:uid:1:569328\nThis contains the IMSI of the modem’s SIM card.",
-                    "type": "string"
-                }
-            },
-            "type": "object"
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "CustomDataType": {
+      "additionalProperties": {},
+      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "properties": {
+        "vendorId": {
+          "type": "string"
         }
+      },
+      "required": ["vendorId"],
+      "type": "object"
     },
-    "description": "Charge_ Point\nurn:x-oca:ocpp:uid:2:233122\nThe physical system where an Electrical Vehicle (EV) can be charged.",
-    "properties": {
+    "ModemType": {
+      "description": "Wireless_ Communication_ Module\nurn:x-oca:ocpp:uid:2:233306\nDefines parameters required for initiating and maintaining wireless communication with other devices.",
+      "properties": {
         "customData": {
-            "$ref": "#/definitions/CustomDataType"
+          "$ref": "#/definitions/CustomDataType"
         },
-        "firmwareVersion": {
-            "description": "This contains the firmware version of the Charging Station.",
-            "type": "string"
+        "iccid": {
+          "description": "Wireless_ Communication_ Module. ICCID. CI20_ Text\nurn:x-oca:ocpp:uid:1:569327\nThis contains the ICCID of the modem’s SIM card.",
+          "type": "string"
         },
-        "model": {
-            "description": "Device. Model. CI20_ Text\nurn:x-oca:ocpp:uid:1:569325\nDefines the model of the device.",
-            "type": "string"
-        },
-        "modem": {
-            "$ref": "#/definitions/ModemType"
-        },
-        "serialNumber": {
-            "description": "Device. Serial_ Number. Serial_ Number\nurn:x-oca:ocpp:uid:1:569324\nVendor-specific device identifier.",
-            "type": "string"
-        },
-        "vendorName": {
-            "description": "Identifies the vendor (not necessarily in a unique manner).",
-            "type": "string"
+        "imsi": {
+          "description": "Wireless_ Communication_ Module. IMSI. CI20_ Text\nurn:x-oca:ocpp:uid:1:569328\nThis contains the IMSI of the modem’s SIM card.",
+          "type": "string"
         }
+      },
+      "type": "object"
+    }
+  },
+  "description": "Charge_ Point\nurn:x-oca:ocpp:uid:2:233122\nThe physical system where an Electrical Vehicle (EV) can be charged.",
+  "properties": {
+    "customData": {
+      "$ref": "#/definitions/CustomDataType"
     },
-    "required": [
-        "model",
-        "vendorName"
-    ],
-    "type": "object"
+    "firmwareVersion": {
+      "description": "This contains the firmware version of the Charging Station.",
+      "type": "string"
+    },
+    "model": {
+      "description": "Device. Model. CI20_ Text\nurn:x-oca:ocpp:uid:1:569325\nDefines the model of the device.",
+      "type": "string"
+    },
+    "modem": {
+      "$ref": "#/definitions/ModemType"
+    },
+    "serialNumber": {
+      "description": "Device. Serial_ Number. Serial_ Number\nurn:x-oca:ocpp:uid:1:569324\nVendor-specific device identifier.",
+      "type": "string"
+    },
+    "vendorName": {
+      "description": "Identifies the vendor (not necessarily in a unique manner).",
+      "type": "string"
+    }
+  },
+  "required": ["model", "vendorName"],
+  "type": "object"
 }
-

@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { LogEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { LogEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface GetLogRequest extends OcppRequest {
   customData?: CustomDataType;
@@ -70,5 +70,3 @@ export interface LogParametersType {
    */
   latestTimestamp?: string;
 }
-
-

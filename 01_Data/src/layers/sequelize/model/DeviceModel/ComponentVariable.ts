@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Table, Model, ForeignKey, Column, DataType } from "sequelize-typescript";
-import { Component } from "./Component";
-import { Variable } from "./Variable";
+import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { Component } from './Component';
+import { Variable } from './Variable';
 
 @Table
 export class ComponentVariable extends Model {

@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "AuthorizationStatusEnumType": {
       "description": "ID_ Token. Status. Authorization_ Status\r\nurn:x-oca:ocpp:uid:1:569372\r\nCurrent status of the ID Token.\r\n",
@@ -77,32 +75,16 @@
       "javaType": "MessageFormatEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "ASCII",
-        "HTML",
-        "URI",
-        "UTF8"
-      ],
-      "tsEnumNames": [
-        "ASCII",
-        "HTML",
-        "URI",
-        "UTF8"
-      ]
+      "enum": ["ASCII", "HTML", "URI", "UTF8"],
+      "tsEnumNames": ["ASCII", "HTML", "URI", "UTF8"]
     },
     "UpdateEnumType": {
       "description": "This contains the type of update (full or differential) of this request.\r\n",
       "javaType": "UpdateEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Differential",
-        "Full"
-      ],
-      "tsEnumNames": [
-        "Differential",
-        "Full"
-      ]
+      "enum": ["Differential", "Full"],
+      "tsEnumNames": ["Differential", "Full"]
     },
     "AdditionalInfoType": {
       "description": "Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.\r\n",
@@ -124,10 +106,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "additionalIdToken",
-        "type"
-      ]
+      "required": ["additionalIdToken", "type"]
     },
     "AuthorizationData": {
       "description": "Contains the identifier to use for authorization.\r\n",
@@ -145,9 +124,7 @@
           "$ref": "#/definitions/IdTokenInfoType"
         }
       },
-      "required": [
-        "idToken"
-      ]
+      "required": ["idToken"]
     },
     "IdTokenInfoType": {
       "description": "ID_ Token\r\nurn:x-oca:ocpp:uid:2:233247\r\nContains status information about an identifier.\r\nIt is advised to not stop charging for a token that expires during charging, as ExpiryDate is only used for caching purposes. If ExpiryDate is not given, the status has no end date.\r\n",
@@ -196,9 +173,7 @@
           "$ref": "#/definitions/MessageContentType"
         }
       },
-      "required": [
-        "status"
-      ]
+      "required": ["status"]
     },
     "IdTokenType": {
       "description": "Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.\r\n",
@@ -226,10 +201,7 @@
           "$ref": "#/definitions/IdTokenEnumType"
         }
       },
-      "required": [
-        "idToken",
-        "type"
-      ]
+      "required": ["idToken", "type"]
     },
     "MessageContentType": {
       "description": "Message_ Content\r\nurn:x-enexis:ecdm:uid:2:234490\r\nContains message details, for a message to be displayed on a Charging Station.\r\n\r\n",
@@ -254,10 +226,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "format",
-        "content"
-      ]
+      "required": ["format", "content"]
     }
   },
   "type": "object",
@@ -282,8 +251,5 @@
       "$ref": "#/definitions/UpdateEnumType"
     }
   },
-  "required": [
-    "versionNumber",
-    "updateType"
-  ]
+  "required": ["versionNumber", "updateType"]
 }

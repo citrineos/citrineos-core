@@ -1,11 +1,9 @@
 {
-    "watch": [
-        "src"
-    ],
-    "ext": ".ts,.js",
-    "ignore": [],
-    "exec": "npx ts-node ./src/index.ts",
-    "events": {
-        "crash": "nodemon --delay 500ms -L"
-    }
+  "watch": ["src"],
+  "ext": ".ts,.js",
+  "ignore": [],
+  "exec": "npx ts-node ./src/index.ts",
+  "events": {
+    "crash": "nodemon --delay 500ms -L"
+  }
 }

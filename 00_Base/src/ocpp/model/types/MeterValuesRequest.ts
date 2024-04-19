@@ -15,8 +15,13 @@
  * urn:x-enexis:ecdm:uid:2:234744
  *
  */
-import { LocationEnumType, MeasurandEnumType, PhaseEnumType, ReadingContextEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import {
+  LocationEnumType,
+  MeasurandEnumType,
+  PhaseEnumType,
+  ReadingContextEnumType,
+} from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface MeterValuesRequest extends OcppRequest {
   customData?: CustomDataType;
@@ -130,8 +135,3 @@ export interface UnitOfMeasureType {
    */
   multiplier?: number;
 }
-
-
-
-
-

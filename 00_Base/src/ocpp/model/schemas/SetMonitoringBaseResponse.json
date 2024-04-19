@@ -12,27 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "GenericDeviceModelStatusEnumType": {
       "description": "Indicates whether the Charging Station was able to accept the request.\r\n",
       "javaType": "GenericDeviceModelStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "Rejected",
-        "NotSupported",
-        "EmptyResultSet"
-      ],
-      "tsEnumNames": [
-        "Accepted",
-        "Rejected",
-        "NotSupported",
-        "EmptyResultSet"
-      ]
+      "enum": ["Accepted", "Rejected", "NotSupported", "EmptyResultSet"],
+      "tsEnumNames": ["Accepted", "Rejected", "NotSupported", "EmptyResultSet"]
     },
     "StatusInfoType": {
       "description": "Element providing more information about the status.\r\n",
@@ -54,9 +42,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -72,7 +58,5 @@
       "$ref": "#/definitions/StatusInfoType"
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

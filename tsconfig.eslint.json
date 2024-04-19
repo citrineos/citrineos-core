@@ -1,0 +1,50 @@
+{
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.stub.ts",
+    "./node_modules",
+    "**/__tests__/*",
+    "./dist",
+    "./**/dist",
+    "./**/**/dist"
+  ],
+  "include": [
+    "00_Base/**/*.ts",
+    "00_Base/**/*.json",
+    "01_Data/**/*.ts",
+    "01_Data/**/*.json",
+    "02_Util/**/*.ts",
+    "02_Util/**/*.json",
+    "03_Modules/Certificates/**/*.ts",
+    "03_Modules/Certificates/**/*.json",
+    "03_Modules/Configuration/**/*.ts",
+    "03_Modules/Configuration/**/*.json",
+    "03_Modules/EVDriver/**/*.ts",
+    "03_Modules/EVDriver/**/*.json",
+    "03_Modules/Monitoring/**/*.ts",
+    "03_Modules/Monitoring/**/*.json",
+    "03_Modules/OcppRouter/**/*.ts",
+    "03_Modules/OcppRouter/**/*.json",
+    "03_Modules/Reporting/**/*.ts",
+    "03_Modules/Reporting/**/*.json",
+    "03_Modules/SmartCharging/**/*.ts",
+    "03_Modules/SmartCharging/**/*.json",
+    "03_Modules/Transactions/**/*.ts",
+    "03_Modules/Transactions/**/*.json",
+    "Server/**/*.ts",
+    "Server/**/*.json"
+  ],
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "strict": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "sourceMap": true
+  }
+}

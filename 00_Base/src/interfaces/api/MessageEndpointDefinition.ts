@@ -3,17 +3,16 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CallAction } from "../../ocpp/rpc/message";
+import { CallAction } from '../../ocpp/rpc/message';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AsMessageEndpoint } from "./AsMessageEndpoint";
+import { AsMessageEndpoint } from './AsMessageEndpoint';
 
 /**
  * Interface for usage in {@link AsMessageEndpoint} decorator.
  */
 export interface IMessageEndpointDefinition {
-    action: CallAction;
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    method: Function;
-    methodName: string;
-    bodySchema: object;
+  action: CallAction;
+  method: (...args: any[]) => any;
+  methodName: string;
+  bodySchema: object;
 }

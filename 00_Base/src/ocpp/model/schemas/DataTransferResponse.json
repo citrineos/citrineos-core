@@ -12,21 +12,14 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "DataTransferStatusEnumType": {
       "description": "This indicates the success or failure of the data transfer.\r\n",
       "javaType": "DataTransferStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "Rejected",
-        "UnknownMessageId",
-        "UnknownVendorId"
-      ],
+      "enum": ["Accepted", "Rejected", "UnknownMessageId", "UnknownVendorId"],
       "tsEnumNames": [
         "Accepted",
         "Rejected",
@@ -54,9 +47,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -75,7 +66,5 @@
       "description": "Data without specified length or format, in response to request.\r\n"
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }
