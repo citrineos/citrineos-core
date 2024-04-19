@@ -7,7 +7,7 @@
 
 # Common ignore files
 .gitignore
-package-lock.json
+**/package-lock.json
 
 # Specific files and file types to ignore
 **/*.js

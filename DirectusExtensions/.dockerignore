@@ -1,18 +1,19 @@
 # Ignore node modules directories
 **/node_modules
 
-# Ignore distribution directories (lib for backwards compatibility)
+# Ignore distribution directories
 **/dist
 
 # Common ignore files
-package-lock.json
+**/package-lock.json
 
 # Specific files and file types to ignore
-*.js
-*.cjs
-*.md
-*.yml
-*.tsbuildinfo
-*.log
-*.tgz
-*.sh
+**/*.js
+**/*.cjs
+**/*.md
+**/*.yml
+**/*.tsbuildinfo
+**/*.log
+**/*.tgz
+**/*.sh
+**/*.Dockerfile
