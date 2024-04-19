@@ -43,7 +43,7 @@ services:
   citrine:
     build:
       context: ..
-      dockerfile: ./Server/local.Dockerfile
+      dockerfile: ./Server/deploy.Dockerfile
     volumes:
       - ../package-lock.json:/usr/local/apps/citrineos/package-lock-host.json
       - ../package.json:/usr/local/apps/citrineos/package.json

@@ -18,9 +18,9 @@ package-lock.json
 **/*.log
 **/*.tgz
 **/*.sh
+**/*.Dockerfile
 
 # Specific directories to ignore
 **/DirectusExtensions
 **/Swarm
 **/data
-**/dockerfiles

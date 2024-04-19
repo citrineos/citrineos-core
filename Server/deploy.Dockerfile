@@ -1,15 +1,18 @@
-FROM node:18
+FROM node:18 as build
 
 WORKDIR /usr/local/apps/citrineos
 
-COPY ../ .
+COPY . .
+RUN npm install --workspaces --verbose && npm run compile --workspaces --verbose
+RUN npm rebuild bcrypt --build-from-source && npm rebuild deasync --build-from-source
 
-RUN npm i && npm run build
+# The final stage, which copies built files and prepares the run environment
+# Using a slim image to reduce the final image size
+FROM node:18-slim
+COPY --from=build /usr/local/apps/citrineos /usr/local/apps/citrineos
 
-# TODO remove src files
+WORKDIR /usr/local/apps/citrineos
 
 EXPOSE ${PORT}
 
-WORKDIR /usr/local/apps/citrineos/Server
-
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "start-docker-cloud"]
