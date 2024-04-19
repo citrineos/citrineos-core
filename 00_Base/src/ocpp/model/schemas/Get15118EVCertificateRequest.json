@@ -12,23 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "CertificateActionEnumType": {
       "description": "Defines whether certificate needs to be installed or updated.\r\n",
       "javaType": "CertificateActionEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Install",
-        "Update"
-      ],
-      "tsEnumNames": [
-        "Install",
-        "Update"
-      ]
+      "enum": ["Install", "Update"],
+      "tsEnumNames": ["Install", "Update"]
     }
   },
   "type": "object",
@@ -51,9 +43,5 @@
       "maxLength": 5600
     }
   },
-  "required": [
-    "iso15118SchemaVersion",
-    "action",
-    "exiRequest"
-  ]
+  "required": ["iso15118SchemaVersion", "action", "exiRequest"]
 }

@@ -19,12 +19,12 @@ The system features:
 - Dynamic OCPP 2.0.1 message schema validation, prior to transmission using `AJV`
 - Generated OpenAPIv3 specification for easy developer access
 - Configurable logical modules with decorators
-    - `@AsHandler` to handle incoming OCPP 2.0.1 messages
-    - `@AsMessageEndpoint` to expose functions allowing to send messages to charging stations
-    - `@AsDataEndpoint` to expose CRUD access to entities defined in `10_Data`
+  - `@AsHandler` to handle incoming OCPP 2.0.1 messages
+  - `@AsMessageEndpoint` to expose functions allowing to send messages to charging stations
+  - `@AsDataEndpoint` to expose CRUD access to entities defined in `10_Data`
 - Utilities to connect and extend various message broker and cache mechanisms
-    - Currently supported brokers are `RabbitMQ` and Google Cloud `PubSub`
-    - Currently supported caches are `In Memory` and `Redis`
+  - Currently supported brokers are `RabbitMQ` and Google Cloud `PubSub`
+  - Currently supported caches are `In Memory` and `Redis`
 
 For more information on the project go to [citrineos.github.io](https://citrineos.github.io).
 
@@ -42,9 +42,9 @@ Before you begin, make sure you have the following installed on your system:
 
 1. Clone the CitrineOS repository to your local machine:
 
-    ```shell
-    git clone https://github.com/citrineos/citrineos-core
-    ```
+   ```shell
+   git clone https://github.com/citrineos/citrineos-core
+   ```
 
 1. Install project dependencies from root dir:
 
@@ -127,16 +127,16 @@ a common integrated development environment.
 Once Docker is running, the following services should be available:
 
 - **CitrineOS** (service name: citrineos) with ports
-    - `8080`: webserver http - [Swagger](http://localhost:8080/docs)
-    - `8081`: websocket server tcp connection without auth
-    - `8082`: websocket server tcp connection with basic http auth
+  - `8080`: webserver http - [Swagger](http://localhost:8080/docs)
+  - `8081`: websocket server tcp connection without auth
+  - `8082`: websocket server tcp connection with basic http auth
 - **RabbitMQ Broker** (service name: amqp-broker) with ports
-    - `5672`: amqp tcp connection
-    - `15672`: RabbitMQ [management interface](http://localhost:15672)
+  - `5672`: amqp tcp connection
+  - `15672`: RabbitMQ [management interface](http://localhost:15672)
 - **PostgreSQL** (service name: ocpp-db), PostgreSQL database for persistence
-    - `5432`: sql tcp connection
+  - `5432`: sql tcp connection
 - **Directus** (service name: directus) on port 8055 with endpoints
-    - `:8055/admin`: web interface (login = admin@citrineos.com:CitrineOS!)
+  - `:8055/admin`: web interface (login = admin@citrineos.com:CitrineOS!)
 
 These three services are defined in `docker-compose.yml` and they
 live inside the docker network `docker_default` with their respective

@@ -3,40 +3,38 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IdTokenInfoType, Namespace, CustomDataType, AuthorizationStatusEnumType, IdTokenType, MessageContentType } from "@citrineos/base";
-import { Table, Column, DataType, ForeignKey, Model, BelongsTo } from "sequelize-typescript";
-import { IdToken } from "./IdToken";
-
+import { AuthorizationStatusEnumType, type CustomDataType, type IdTokenInfoType, IdTokenType, MessageContentType, Namespace } from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { IdToken } from './IdToken';
 
 @Table
 export class IdTokenInfo extends Model implements IdTokenInfoType {
+  static readonly MODEL_NAME: string = Namespace.IdTokenInfoType;
 
-    static readonly MODEL_NAME: string = Namespace.IdTokenInfoType;
+  @Column(DataType.STRING)
+  declare status: AuthorizationStatusEnumType;
 
-    declare customData?: CustomDataType;
+  @Column(DataType.STRING)
+  declare cacheExpiryDateTime?: string;
 
-    @Column(DataType.STRING)
-    declare status: AuthorizationStatusEnumType;
+  @Column(DataType.INTEGER)
+  declare chargingPriority?: number;
 
-    @Column(DataType.STRING)
-    declare cacheExpiryDateTime?: string;
+  @Column(DataType.STRING)
+  declare language1?: string;
 
-    @Column(DataType.INTEGER)
-    declare chargingPriority?: number;
+  @ForeignKey(() => IdToken)
+  @Column(DataType.INTEGER)
+  declare groupIdTokenId?: number;
 
-    @Column(DataType.STRING)
-    declare language1?: string;
+  @BelongsTo(() => IdToken)
+  declare groupIdToken?: IdTokenType;
 
-    @ForeignKey(() => IdToken)
-    @Column(DataType.INTEGER)
-    declare groupIdTokenId?: number;
+  @Column(DataType.STRING)
+  declare language2?: string;
 
-    @BelongsTo(() => IdToken)
-    declare groupIdToken?: IdTokenType;
+  @Column(DataType.JSON)
+  declare personalMessage?: MessageContentType;
 
-    @Column(DataType.STRING)
-    declare language2?: string;
-
-    @Column(DataType.JSON)
-    declare personalMessage?: MessageContentType;
+  declare customData?: CustomDataType;
 }

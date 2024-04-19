@@ -3,20 +3,19 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { HttpMethod } from ".";
-import { Namespace } from "../..";
+import { HttpMethod } from '.';
+import { Namespace } from '../..';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AsDataEndpoint } from "./AsDataEndpoint";
+import { AsDataEndpoint } from './AsDataEndpoint';
 
 /**
  * Interface for usage in {@link AsDataEndpoint} decorator.
  */
 export interface IDataEndpointDefinition {
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    method: Function;
-    methodName: string;
-    namespace: Namespace;
-    httpMethod: HttpMethod;
-    querySchema?: object;
-    bodySchema?: object;
+  method: (...args: any[]) => any;
+  methodName: string;
+  namespace: Namespace;
+  httpMethod: HttpMethod;
+  querySchema?: object;
+  bodySchema?: object;
 }

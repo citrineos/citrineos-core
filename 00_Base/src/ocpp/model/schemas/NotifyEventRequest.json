@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "EventNotificationEnumType": {
       "description": "Specifies the event notification type of the message.\r\n\r\n",
@@ -39,16 +37,8 @@
       "javaType": "EventTriggerEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Alerting",
-        "Delta",
-        "Periodic"
-      ],
-      "tsEnumNames": [
-        "Alerting",
-        "Delta",
-        "Periodic"
-      ]
+      "enum": ["Alerting", "Delta", "Periodic"],
+      "tsEnumNames": ["Alerting", "Delta", "Periodic"]
     },
     "ComponentType": {
       "description": "A physical or logical component\r\n",
@@ -73,9 +63,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "name"
-      ]
+      "required": ["name"]
     },
     "EventDataType": {
       "description": "Class to report an event notification for a component-variable.\r\n",
@@ -168,9 +156,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id"]
     },
     "VariableType": {
       "description": "Reference key to a component-variable.\r\n",
@@ -192,9 +178,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "name"
-      ]
+      "required": ["name"]
     }
   },
   "type": "object",
@@ -226,9 +210,5 @@
       "minItems": 1
     }
   },
-  "required": [
-    "generatedAt",
-    "seqNo",
-    "eventData"
-  ]
+  "required": ["generatedAt", "seqNo", "eventData"]
 }

@@ -2,18 +2,18 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { RegistrationStatusEnumType, defineConfig } from "@citrineos/base";
+import { RegistrationStatusEnumType, defineConfig } from '@citrineos/base';
 
 export function createDockerConfig() {
   return defineConfig({
-    env: "development",
+    env: 'development',
     centralSystem: {
-      host: "0.0.0.0",
+      host: '0.0.0.0',
       port: 8080,
     },
     modules: {
       certificates: {
-        endpointPrefix: "/certificates",
+        endpointPrefix: '/certificates',
       },
       configuration: {
         heartbeatInterval: 60,
@@ -22,34 +22,34 @@ export function createDockerConfig() {
         getBaseReportOnPending: true,
         bootWithRejectedVariables: true,
         autoAccept: true,
-        endpointPrefix: "/configuration",
+        endpointPrefix: '/configuration',
       },
       evdriver: {
-        endpointPrefix: "/evdriver",
+        endpointPrefix: '/evdriver',
       },
       monitoring: {
-        endpointPrefix: "/monitoring",
+        endpointPrefix: '/monitoring',
       },
       reporting: {
-        endpointPrefix: "/reporting",
+        endpointPrefix: '/reporting',
       },
       smartcharging: {
-        endpointPrefix: "/smartcharging",
+        endpointPrefix: '/smartcharging',
       },
       transactions: {
-        endpointPrefix: "/transactions",
+        endpointPrefix: '/transactions',
         costUpdatedInterval: 60,
       },
     },
     data: {
       sequelize: {
-        host: "ocpp-db",
+        host: 'ocpp-db',
         port: 5432,
-        database: "citrine",
-        dialect: "postgres",
-        username: "citrine",
-        password: "citrine",
-        storage: "",
+        database: 'citrine',
+        dialect: 'postgres',
+        username: 'citrine',
+        password: 'citrine',
+        storage: '',
         sync: false,
       },
     },
@@ -59,40 +59,40 @@ export function createDockerConfig() {
       },
       messageBroker: {
         amqp: {
-          url: "amqp://guest:guest@amqp-broker:5672",
-          exchange: "citrineos",
+          url: 'amqp://guest:guest@amqp-broker:5672',
+          exchange: 'citrineos',
         },
       },
       swagger: {
-        path: "/docs",
-        logoPath: "/usr/local/apps/citrineos/Server/src/assets/logo.png",
+        path: '/docs',
+        logoPath: '/usr/local/apps/citrineos/Server/src/assets/logo.png',
         exposeData: true,
         exposeMessage: true,
       },
       directus: {
-        host: "directus",
+        host: 'directus',
         port: 8055,
         generateFlows: true,
       },
       networkConnection: {
         websocketServers: [
           {
-            id: "0",
+            id: '0',
             securityProfile: 0,
             allowUnknownChargingStations: true,
             pingInterval: 60,
-            host: "0.0.0.0",
+            host: '0.0.0.0',
             port: 8081,
-            protocol: "ocpp2.0.1",
+            protocol: 'ocpp2.0.1',
           },
           {
-            id: "1",
+            id: '1',
             securityProfile: 1,
             allowUnknownChargingStations: false,
             pingInterval: 60,
-            host: "0.0.0.0",
+            host: '0.0.0.0',
             port: 8082,
-            protocol: "ocpp2.0.1",
+            protocol: 'ocpp2.0.1',
           },
         ],
       },

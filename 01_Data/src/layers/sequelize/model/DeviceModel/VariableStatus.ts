@@ -2,34 +2,33 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {CustomDataType, Namespace, StatusInfoType} from "@citrineos/base";
-import {BelongsTo, Column, DataType, ForeignKey, Model, Table} from "sequelize-typescript";
-import {VariableAttribute} from "./VariableAttribute";
+import { type CustomDataType, Namespace, StatusInfoType } from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { VariableAttribute } from './VariableAttribute';
 
 @Table
 export class VariableStatus extends Model {
+  static readonly MODEL_NAME: string = Namespace.VariableStatus;
 
-    static readonly MODEL_NAME: string = Namespace.VariableStatus;
+  @Column(DataType.STRING(4000))
+  declare value: string;
 
-    declare customData?: CustomDataType;
+  @Column(DataType.STRING)
+  declare status: string;
 
-    @Column(DataType.STRING(4000))
-    declare value: string;
+  @Column(DataType.JSON)
+  declare statusInfo?: StatusInfoType;
 
-    @Column(DataType.STRING)
-    declare status: string;
+  /**
+   * Relations
+   */
 
-    @Column(DataType.JSON)
-    declare statusInfo?: StatusInfoType;
+  @BelongsTo(() => VariableAttribute)
+  declare variable: VariableAttribute;
 
-    /**
-    * Relations
-    */
+  @ForeignKey(() => VariableAttribute)
+  @Column(DataType.INTEGER)
+  declare variableAttributeId?: number;
 
-    @BelongsTo(() => VariableAttribute)
-    declare variable: VariableAttribute;
-
-    @ForeignKey(() => VariableAttribute)
-    @Column(DataType.INTEGER)
-    declare variableAttributeId?: number;
+  declare customData?: CustomDataType;
 }

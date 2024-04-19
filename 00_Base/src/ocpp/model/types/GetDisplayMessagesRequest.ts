@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { MessagePriorityEnumType, MessageStateEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { MessagePriorityEnumType, MessageStateEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface GetDisplayMessagesRequest extends OcppRequest {
   customData?: CustomDataType;
@@ -38,6 +38,3 @@ export interface CustomDataType {
   vendorId: string;
   [k: string]: unknown;
 }
-
-
-

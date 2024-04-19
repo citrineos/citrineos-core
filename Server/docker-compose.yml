@@ -1,4 +1,4 @@
-version: "3"
+version: '3'
 services:
   amqp-broker:
     image: rabbitmq:3-management
@@ -6,8 +6,8 @@ services:
       - 15672:15672
       - 5672:5672
     environment:
-      RABBITMQ_DEFAULT_USER: "guest"
-      RABBITMQ_DEFAULT_PASS: "guest"
+      RABBITMQ_DEFAULT_USER: 'guest'
+      RABBITMQ_DEFAULT_PASS: 'guest'
     volumes:
       - ./data/rabbitmq:/var/lib/rabbitmq
     healthcheck:
@@ -24,9 +24,9 @@ services:
     environment:
       POSTGRES_DB: citrine
       POSTGRES_USER: citrine
-      POSTGRES_PASSWORD: "citrine"
+      POSTGRES_PASSWORD: 'citrine'
     healthcheck:
-      test: "pg_isready --username=citrine"
+      test: 'pg_isready --username=citrine'
       interval: 5s
       timeout: 10s
       retries: 5
@@ -34,9 +34,9 @@ services:
   redis:
     image: redis:latest
     ports:
-      - "6379:6379"
+      - '6379:6379'
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -44,8 +44,25 @@ services:
     build:
       context: ..
       dockerfile: ./Server/local.Dockerfile
+    command: >
+      sh -c "npm i && npm rebuild bcrypt --build-from-source && npm rebuild deasync --build-from-source && npm run start:local-docker"
     volumes:
-      - ../:/usr/local/apps/citrineos
+      - ../package-lock.json:/usr/local/apps/citrineos/package-lock-host.json
+      - ../package.json:/usr/local/apps/citrineos/package.json
+      - ../tsconfig.json:/usr/local/apps/citrineos/tsconfig.json
+      - ../tsconfig.build.json:/usr/local/apps/citrineos/tsconfig.build.json
+      - ../Server:/usr/local/apps/citrineos/Server
+      - ../00_Base:/usr/local/apps/citrineos/00_Base
+      - ../01_Data:/usr/local/apps/citrineos/01_Data
+      - ../02_Util:/usr/local/apps/citrineos/02_Util
+      - ../03_Modules/Certificates:/usr/local/apps/citrineos/03_Modules/Certificates
+      - ../03_Modules/Configuration:/usr/local/apps/citrineos/03_Modules/Configuration
+      - ../03_Modules/EVDriver:/usr/local/apps/citrineos/03_Modules/EVDriver
+      - ../03_Modules/Monitoring:/usr/local/apps/citrineos/03_Modules/Monitoring
+      - ../03_Modules/OcppRouter:/usr/local/apps/citrineos/03_Modules/OcppRouter
+      - ../03_Modules/Reporting:/usr/local/apps/citrineos/03_Modules/Reporting
+      - ../03_Modules/SmartCharging:/usr/local/apps/citrineos/03_Modules/SmartCharging
+      - ../03_Modules/Transactions:/usr/local/apps/citrineos/03_Modules/Transactions
       - /usr/local/apps/citrineos/node_modules
       - /usr/local/apps/citrineos/Server/node_modules
       - /usr/local/apps/citrineos/00_Base/node_modules
@@ -73,10 +90,10 @@ services:
       - /usr/local/apps/citrineos/03_Modules/SmartCharging/dist/
       - /usr/local/apps/citrineos/03_Modules/Transactions/dist/
     environment:
-      APP_NAME: "all"
-      APP_ENV: "docker"
-      CITRINEOS_UTIL_DIRECTUS_USERNAME: "admin@citrineos.com"
-      CITRINEOS_UTIL_DIRECTUS_PASSWORD: "CitrineOS!"
+      APP_NAME: 'all'
+      APP_ENV: 'docker'
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
     depends_on:
       ocpp-db:
         condition: service_healthy
@@ -105,21 +122,21 @@ services:
       ocpp-db:
         condition: service_healthy
     environment:
-      APP_NAME: "all"
-      KEY: "1234567890"
-      SECRET: "0987654321"
-      ADMIN_EMAIL: "admin@citrineos.com"
-      ADMIN_PASSWORD: "CitrineOS!"
-      CONFIG_PATH: "/directus/config.cjs"
-      EXTENSIONS_AUTO_RELOAD: "true"
-      EXTENSIONS_CACHE_TTL: "1s"
-      DB_CLIENT: "pg"
+      APP_NAME: 'all'
+      KEY: '1234567890'
+      SECRET: '0987654321'
+      ADMIN_EMAIL: 'admin@citrineos.com'
+      ADMIN_PASSWORD: 'CitrineOS!'
+      CONFIG_PATH: '/directus/config.cjs'
+      EXTENSIONS_AUTO_RELOAD: 'true'
+      EXTENSIONS_CACHE_TTL: '1s'
+      DB_CLIENT: 'pg'
       DB_HOST: ocpp-db
       DB_PORT: 5432
-      DB_DATABASE: "citrine"
-      DB_USER: "citrine"
-      DB_PASSWORD: "citrine"
-      WEBSOCKETS_ENABLED: "true"
+      DB_DATABASE: 'citrine'
+      DB_USER: 'citrine'
+      DB_PASSWORD: 'citrine'
+      WEBSOCKETS_ENABLED: 'true'
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:8055/server/health || exit 1
       start_period: 15s

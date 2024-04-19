@@ -3,15 +3,26 @@
   "version": "1.0.0",
   "private": true,
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
     "@types/node": "^20.11.20",
+    "@typescript-eslint/eslint-plugin-tslint": "^7.0.2",
     "concurrently": "^8.2.2",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "^9.1.0",
     "nodemon": "^3.1.0",
-    "typescript": "^5.3.3"
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^7.6.0"
   },
   "scripts": {
     "install-all": "npm i --verbose",
-    "clean": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json dist **/dist **/**/dist node_modules **/node_modules **/**/node_modules tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
-    "build": "tsc --build --verbose"
+    "fresh": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json dist **/dist **/**/dist node_modules **/node_modules **/**/node_modules tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
+    "build": "tsc --build --verbose",
+    "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
+    "start:local-docker": "cd ./Server && npm run start:local-docker",
+    "lint": "npx eslint --ext .ts ./",
+    "lint-fix": "npm run prettier && npx eslint --ext .ts --fix ./",
+    "prettier": "prettier --write ."
   },
   "dependencies": {
     "@citrineos/server": "1.0.0"
