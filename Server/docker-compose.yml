@@ -26,11 +26,11 @@ services:
       POSTGRES_USER: citrine
       POSTGRES_PASSWORD: 'citrine'
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready', '-d', 'db_prod']
-      interval: 30s
-      timeout: 60s
+      test: 'pg_isready --username=citrine'
+      interval: 5s
+      timeout: 10s
       retries: 5
-      start_period: 80s
+
   redis:
     image: redis:latest
     ports:
@@ -96,7 +96,7 @@ services:
       CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
     depends_on:
       ocpp-db:
-        condition: service_started
+        condition: service_healthy
       amqp-broker:
         condition: service_healthy
       directus:
