@@ -35,6 +35,16 @@ export const systemConfigInputSchema = z.object({
         endpointPrefix: z.string().default(EventGroup.Certificates).optional(),
         host: z.string().default('localhost').optional(),
         port: z.number().int().positive().default(8081).optional(),
+        certificateAuthority: z.object({
+            caServer: z.enum(['hubject']).default('hubject'),
+            hubject: z.object({
+                baseUrl: z.string().default('https://open.plugncharge-test.hubject.com'),
+                tokenUrl: z.string().default('https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token'),
+                isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']).default('ISO15118-2')
+            }).optional()
+        }).refine(obj => obj.hubject, {
+            message: 'a certificateAuthority implementation must be set'
+        })
       })
       .optional(),
     configuration: z.object({
@@ -219,6 +229,16 @@ export const systemConfigSchema = z
           endpointPrefix: z.string(),
           host: z.string().optional(),
           port: z.number().int().positive().optional(),
+          certificateAuthority: z.object({
+              caServer: z.enum(['hubject']),
+              hubject: z.object({
+                  baseUrl: z.string(),
+                  tokenUrl: z.string(),
+                  isoVersion: z.enum(['ISO15118-2', 'ISO15118-20'])
+              }).optional()
+          }).refine(obj => obj.hubject, {
+              message: 'a certificateAuthority implementation must be set'
+          })
         })
         .optional(),
       evdriver: z.object({
