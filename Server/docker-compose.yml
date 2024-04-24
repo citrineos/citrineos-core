@@ -24,28 +24,43 @@ services:
     environment:
       POSTGRES_DB: citrine
       POSTGRES_USER: citrine
-      POSTGRES_PASSWORD: "citrine"
+      POSTGRES_PASSWORD: 'citrine'
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready", "-d", "db_prod" ]
-      interval: 30s
-      timeout: 60s
+      test: 'pg_isready --username=citrine'
+      interval: 5s
+      timeout: 10s
       retries: 5
-      start_period: 80s
+
   redis:
     image: redis:latest
     ports:
-      - "6379:6379"
+      - '6379:6379'
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 3
   citrine:
     build:
       context: ..
-      dockerfile: ./Server/local.Dockerfile
+      dockerfile: ./Server/deploy.Dockerfile
     volumes:
-      - ../:/usr/local/apps/citrineos
+      - ../package-lock.json:/usr/local/apps/citrineos/package-lock-host.json
+      - ../package.json:/usr/local/apps/citrineos/package.json
+      - ../tsconfig.json:/usr/local/apps/citrineos/tsconfig.json
+      - ../tsconfig.build.json:/usr/local/apps/citrineos/tsconfig.build.json
+      - ../Server:/usr/local/apps/citrineos/Server
+      - ../00_Base:/usr/local/apps/citrineos/00_Base
+      - ../01_Data:/usr/local/apps/citrineos/01_Data
+      - ../02_Util:/usr/local/apps/citrineos/02_Util
+      - ../03_Modules/Certificates:/usr/local/apps/citrineos/03_Modules/Certificates
+      - ../03_Modules/Configuration:/usr/local/apps/citrineos/03_Modules/Configuration
+      - ../03_Modules/EVDriver:/usr/local/apps/citrineos/03_Modules/EVDriver
+      - ../03_Modules/Monitoring:/usr/local/apps/citrineos/03_Modules/Monitoring
+      - ../03_Modules/OcppRouter:/usr/local/apps/citrineos/03_Modules/OcppRouter
+      - ../03_Modules/Reporting:/usr/local/apps/citrineos/03_Modules/Reporting
+      - ../03_Modules/SmartCharging:/usr/local/apps/citrineos/03_Modules/SmartCharging
+      - ../03_Modules/Transactions:/usr/local/apps/citrineos/03_Modules/Transactions
       - /usr/local/apps/citrineos/node_modules
       - /usr/local/apps/citrineos/Server/node_modules
       - /usr/local/apps/citrineos/00_Base/node_modules
@@ -73,13 +88,13 @@ services:
       - /usr/local/apps/citrineos/03_Modules/SmartCharging/dist/
       - /usr/local/apps/citrineos/03_Modules/Transactions/dist/
     environment:
-      APP_NAME: "all"
-      APP_ENV: "docker"
+      APP_NAME: 'all'
+      APP_ENV: 'docker'
       CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
       CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
     depends_on:
       ocpp-db:
-        condition: service_started
+        condition: service_healthy
       amqp-broker:
         condition: service_healthy
       directus:
@@ -94,8 +109,8 @@ services:
 
   directus:
     build:
-      context: ..
-      dockerfile: ./Server/directus.Dockerfile
+      context: ../DirectusExtensions
+      dockerfile: ./directus.Dockerfile
     ports:
       - 8055:8055
     volumes:

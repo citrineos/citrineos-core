@@ -6,5 +6,4 @@
 /**
  * Interface for the transaction module.
  */
-export interface IMonitoringModuleApi {
-}
+export interface IMonitoringModuleApi {}

@@ -12,23 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "OperationalStatusEnumType": {
       "description": "This contains the type of availability change that the Charging Station should perform.\r\n\r\n",
       "javaType": "OperationalStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Inoperative",
-        "Operative"
-      ],
-      "tsEnumNames": [
-        "Inoperative",
-        "Operative"
-      ]
+      "enum": ["Inoperative", "Operative"],
+      "tsEnumNames": ["Inoperative", "Operative"]
     },
     "EVSEType": {
       "description": "EVSE\r\nurn:x-oca:ocpp:uid:2:233123\r\nElectric Vehicle Supply Equipment\r\n",
@@ -48,9 +40,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id"]
     }
   },
   "type": "object",
@@ -66,7 +56,5 @@
       "$ref": "#/definitions/OperationalStatusEnumType"
     }
   },
-  "required": [
-    "operationalStatus"
-  ]
+  "required": ["operationalStatus"]
 }

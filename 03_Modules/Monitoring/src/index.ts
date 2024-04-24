@@ -3,6 +3,6 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { MonitoringModuleApi } from "./module/api";
-export { IMonitoringModuleApi } from "./module/interface";
-export { MonitoringModule } from "./module/module";
+export { MonitoringModuleApi } from './module/api';
+export { IMonitoringModuleApi } from './module/interface';
+export { MonitoringModule } from './module/module';

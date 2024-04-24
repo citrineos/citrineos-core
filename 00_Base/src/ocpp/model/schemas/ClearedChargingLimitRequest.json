@@ -12,27 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ChargingLimitSourceEnumType": {
       "description": "Source of the charging limit.\r\n",
       "javaType": "ChargingLimitSourceEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "EMS",
-        "Other",
-        "SO",
-        "CSO"
-      ],
-      "tsEnumNames": [
-        "EMS",
-        "Other",
-        "SO",
-        "CSO"
-      ]
+      "enum": ["EMS", "Other", "SO", "CSO"],
+      "tsEnumNames": ["EMS", "Other", "SO", "CSO"]
     }
   },
   "type": "object",
@@ -49,7 +37,5 @@
       "type": "integer"
     }
   },
-  "required": [
-    "chargingLimitSource"
-  ]
+  "required": ["chargingLimitSource"]
 }

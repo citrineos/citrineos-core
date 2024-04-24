@@ -1,73 +1,61 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "description": "Boot configuration used to determine boot process for a charging station",
-    "definitions": {
-        "RegistrationStatusEnumType": {
-            "description": "This contains whether the Charging Station has been registered\r\nwithin the CSMS.\r\n",
-            "javaType": "RegistrationStatusEnum",
-            "type": "string",
-            "additionalProperties": false,
-            "enum": [
-                "Accepted",
-                "Pending",
-                "Rejected"
-            ],
-            "tsEnumNames": [
-                "Accepted",
-                "Pending",
-                "Rejected"
-            ]
-        },
-        "StatusInfoType": {
-          "description": "Element providing more information about the status.\r\n",
-          "javaType": "StatusInfo",
-          "type": "object",
-          "properties": {
-            "reasonCode": {
-              "description": "A predefined code for the reason why the status is returned in this response. The string is case-insensitive.\r\n",
-              "type": "string",
-              "maxLength": 20
-            },
-            "additionalInfo": {
-              "description": "Additional text to provide detailed information.\r\n",
-              "type": "string",
-              "maxLength": 512
-            }
-          },
-          "required": [
-            "reasonCode"
-          ]
-        }
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Boot configuration used to determine boot process for a charging station",
+  "definitions": {
+    "RegistrationStatusEnumType": {
+      "description": "This contains whether the Charging Station has been registered\r\nwithin the CSMS.\r\n",
+      "javaType": "RegistrationStatusEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Pending", "Rejected"],
+      "tsEnumNames": ["Accepted", "Pending", "Rejected"]
     },
-    "properties": {
-        "heartbeatInterval": {
-            "type": "integer"
+    "StatusInfoType": {
+      "description": "Element providing more information about the status.\r\n",
+      "javaType": "StatusInfo",
+      "type": "object",
+      "properties": {
+        "reasonCode": {
+          "description": "A predefined code for the reason why the status is returned in this response. The string is case-insensitive.\r\n",
+          "type": "string",
+          "maxLength": 20
         },
-        "bootRetryInterval": {
-            "type": "integer"
-        },
-        "status": {
-            "$ref": "#/definitions/RegistrationStatusEnumType"
-        },
-        "statusInfo": {
-            "$ref": "#/definitions/StatusInfoType"
-        },
-        "getBaseReportOnPending": {
-            "type": "boolean"
-        },
-        "setVariableIds": {
-          "type": "array",
-          "additionalItems": false,
-          "items": {
-            "type": "integer"
-          }
-        },
-        "bootWithRejectedVariables": {
-            "type": "boolean"
+        "additionalInfo": {
+          "description": "Additional text to provide detailed information.\r\n",
+          "type": "string",
+          "maxLength": 512
         }
+      },
+      "required": ["reasonCode"]
+    }
+  },
+  "properties": {
+    "heartbeatInterval": {
+      "type": "integer"
     },
-    "required": [
-        "status"
-    ],
-    "type": "object"
+    "bootRetryInterval": {
+      "type": "integer"
+    },
+    "status": {
+      "$ref": "#/definitions/RegistrationStatusEnumType"
+    },
+    "statusInfo": {
+      "$ref": "#/definitions/StatusInfoType"
+    },
+    "getBaseReportOnPending": {
+      "type": "boolean"
+    },
+    "setVariableIds": {
+      "type": "array",
+      "additionalItems": false,
+      "items": {
+        "type": "integer"
+      }
+    },
+    "bootWithRejectedVariables": {
+      "type": "boolean"
+    }
+  },
+  "required": ["status"],
+  "type": "object"
 }

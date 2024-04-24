@@ -1,20 +1,20 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "properties": {
-        "allowedConnectorTypes": {
-            "type": "array",
-            "items": {
-                "type": "string"
-            }
-        },
-        "disallowedEvseIdPrefixes": {
-            "type": "array",
-            "items": {
-                "type": "string"
-            }
-        }
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "allowedConnectorTypes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
-    "required": [],
-    "additionalProperties": false
+    "disallowedEvseIdPrefixes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [],
+  "additionalProperties": false
 }

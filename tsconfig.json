@@ -2,9 +2,14 @@
   "extends": "./tsconfig.build.json",
   "compilerOptions": {
     "rootDir": "./",
-    "outDir": "./dist/"
+    "outDir": "./dist"
   },
-  "exclude": ["DirectusExtensions"],
+  "exclude": [
+    "./dist/**/*",
+    "**/node_modules/**",
+    "DirectusExtensions", // todo for now
+    "Swarm" // todo for now
+  ],
   "references": [
     {
       "path": "./Server"

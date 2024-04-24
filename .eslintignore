@@ -1,0 +1,4 @@
+./DirectusExtensions/
+./Swarm/
+**/dist/**
+**/lib/**

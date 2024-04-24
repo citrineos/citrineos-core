@@ -10,10 +10,10 @@
  *
  */
 export const enum APNAuthenticationEnumType {
-  CHAP = "CHAP",
-  NONE = "NONE",
-  PAP = "PAP",
-  AUTO = "AUTO"
+  CHAP = 'CHAP',
+  NONE = 'NONE',
+  PAP = 'PAP',
+  AUTO = 'AUTO',
 }
 
 /**
@@ -21,8 +21,8 @@ export const enum APNAuthenticationEnumType {
  *
  */
 export const enum ClearCacheStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
 }
 
 /**
@@ -30,14 +30,14 @@ export const enum ClearCacheStatusEnumType {
  *
  */
 export const enum OCPPInterfaceEnumType {
-  Wired0 = "Wired0",
-  Wired1 = "Wired1",
-  Wired2 = "Wired2",
-  Wired3 = "Wired3",
-  Wireless0 = "Wireless0",
-  Wireless1 = "Wireless1",
-  Wireless2 = "Wireless2",
-  Wireless3 = "Wireless3"
+  Wired0 = 'Wired0',
+  Wired1 = 'Wired1',
+  Wired2 = 'Wired2',
+  Wired3 = 'Wired3',
+  Wireless0 = 'Wireless0',
+  Wireless1 = 'Wireless1',
+  Wireless2 = 'Wireless2',
+  Wireless3 = 'Wireless3',
 }
 
 /**
@@ -47,13 +47,13 @@ export const enum OCPPInterfaceEnumType {
  *
  */
 export const enum AuthorizeCertificateStatusEnumType {
-  Accepted = "Accepted",
-  SignatureError = "SignatureError",
-  CertificateExpired = "CertificateExpired",
-  CertificateRevoked = "CertificateRevoked",
-  NoCertificateAvailable = "NoCertificateAvailable",
-  CertChainError = "CertChainError",
-  ContractCancelled = "ContractCancelled"
+  Accepted = 'Accepted',
+  SignatureError = 'SignatureError',
+  CertificateExpired = 'CertificateExpired',
+  CertificateRevoked = 'CertificateRevoked',
+  NoCertificateAvailable = 'NoCertificateAvailable',
+  CertChainError = 'CertChainError',
+  ContractCancelled = 'ContractCancelled',
 }
 
 /**
@@ -61,9 +61,9 @@ export const enum AuthorizeCertificateStatusEnumType {
  *
  */
 export const enum InstallCertificateStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  Failed = "Failed"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  Failed = 'Failed',
 }
 
 /**
@@ -71,9 +71,9 @@ export const enum InstallCertificateStatusEnumType {
  *
  */
 export const enum DeleteCertificateStatusEnumType {
-  Accepted = "Accepted",
-  Failed = "Failed",
-  NotFound = "NotFound"
+  Accepted = 'Accepted',
+  Failed = 'Failed',
+  NotFound = 'NotFound',
 }
 
 /**
@@ -81,8 +81,8 @@ export const enum DeleteCertificateStatusEnumType {
  *
  */
 export const enum GetInstalledCertificateStatusEnumType {
-  Accepted = "Accepted",
-  NotFound = "NotFound"
+  Accepted = 'Accepted',
+  NotFound = 'NotFound',
 }
 
 /**
@@ -92,10 +92,10 @@ export const enum GetInstalledCertificateStatusEnumType {
  *
  */
 export const enum EnergyTransferModeEnumType {
-  DC = "DC",
-  AC_single_phase = "AC_single_phase",
-  AC_two_phase = "AC_two_phase",
-  AC_three_phase = "AC_three_phase"
+  DC = 'DC',
+  AC_single_phase = 'AC_single_phase',
+  AC_two_phase = 'AC_two_phase',
+  AC_three_phase = 'AC_three_phase',
 }
 
 /**
@@ -105,9 +105,9 @@ export const enum EnergyTransferModeEnumType {
  *
  */
 export const enum ChargingProfileKindEnumType {
-  Absolute = "Absolute",
-  Recurring = "Recurring",
-  Relative = "Relative"
+  Absolute = 'Absolute',
+  Recurring = 'Recurring',
+  Relative = 'Relative',
 }
 
 /**
@@ -117,10 +117,10 @@ export const enum ChargingProfileKindEnumType {
  *
  */
 export const enum ChargingProfilePurposeEnumType {
-  ChargingStationExternalConstraints = "ChargingStationExternalConstraints",
-  ChargingStationMaxProfile = "ChargingStationMaxProfile",
-  TxDefaultProfile = "TxDefaultProfile",
-  TxProfile = "TxProfile"
+  ChargingStationExternalConstraints = 'ChargingStationExternalConstraints',
+  ChargingStationMaxProfile = 'ChargingStationMaxProfile',
+  TxDefaultProfile = 'TxDefaultProfile',
+  TxProfile = 'TxProfile',
 }
 
 /**
@@ -130,8 +130,8 @@ export const enum ChargingProfilePurposeEnumType {
  *
  */
 export const enum RecurrencyKindEnumType {
-  Daily = "Daily",
-  Weekly = "Weekly"
+  Daily = 'Daily',
+  Weekly = 'Weekly',
 }
 
 /**
@@ -141,8 +141,8 @@ export const enum RecurrencyKindEnumType {
  *
  */
 export const enum ChargingRateUnitEnumType {
-  W = "W",
-  A = "A"
+  W = 'W',
+  A = 'A',
 }
 
 /**
@@ -152,8 +152,8 @@ export const enum ChargingRateUnitEnumType {
  *
  */
 export const enum OCPPTransportEnumType {
-  JSON = "JSON",
-  SOAP = "SOAP"
+  JSON = 'JSON',
+  SOAP = 'SOAP',
 }
 
 /**
@@ -163,10 +163,10 @@ export const enum OCPPTransportEnumType {
  *
  */
 export const enum OCPPVersionEnumType {
-  OCPP12 = "OCPP12",
-  OCPP15 = "OCPP15",
-  OCPP16 = "OCPP16",
-  OCPP20 = "OCPP20"
+  OCPP12 = 'OCPP12',
+  OCPP15 = 'OCPP15',
+  OCPP16 = 'OCPP16',
+  OCPP20 = 'OCPP20',
 }
 
 /**
@@ -176,9 +176,9 @@ export const enum OCPPVersionEnumType {
  *
  */
 export const enum CostKindEnumType {
-  CarbonDioxideEmission = "CarbonDioxideEmission",
-  RelativePricePercentage = "RelativePricePercentage",
-  RenewableGenerationPercentage = "RenewableGenerationPercentage"
+  CarbonDioxideEmission = 'CarbonDioxideEmission',
+  RelativePricePercentage = 'RelativePricePercentage',
+  RenewableGenerationPercentage = 'RenewableGenerationPercentage',
 }
 
 /**
@@ -186,15 +186,15 @@ export const enum CostKindEnumType {
  *
  */
 export const enum DataEnumType {
-  string = "string",
-  decimal = "decimal",
-  integer = "integer",
-  dateTime = "dateTime",
-  boolean = "boolean",
-  OptionList = "OptionList",
-  SequenceList = "SequenceList",
-  MemberList = "MemberList",
-  passwordString = "passwordString"
+  string = 'string',
+  decimal = 'decimal',
+  integer = 'integer',
+  dateTime = 'dateTime',
+  boolean = 'boolean',
+  OptionList = 'OptionList',
+  SequenceList = 'SequenceList',
+  MemberList = 'MemberList',
+  passwordString = 'passwordString',
 }
 
 /**
@@ -202,9 +202,9 @@ export const enum DataEnumType {
  *
  */
 export const enum MutabilityEnumType {
-  ReadOnly = "ReadOnly",
-  WriteOnly = "WriteOnly",
-  ReadWrite = "ReadWrite"
+  ReadOnly = 'ReadOnly',
+  WriteOnly = 'WriteOnly',
+  ReadWrite = 'ReadWrite',
 }
 
 /**
@@ -212,8 +212,8 @@ export const enum MutabilityEnumType {
  *
  */
 export const enum CertificateActionEnumType {
-  Install = "Install",
-  Update = "Update"
+  Install = 'Install',
+  Update = 'Update',
 }
 
 /**
@@ -221,14 +221,14 @@ export const enum CertificateActionEnumType {
  *
  */
 export const enum IdTokenEnumType {
-  Central = "Central",
-  eMAID = "eMAID",
-  ISO14443 = "ISO14443",
-  ISO15693 = "ISO15693",
-  KeyCode = "KeyCode",
-  Local = "Local",
-  MacAddress = "MacAddress",
-  NoAuthorization = "NoAuthorization"
+  Central = 'Central',
+  eMAID = 'eMAID',
+  ISO14443 = 'ISO14443',
+  ISO15693 = 'ISO15693',
+  KeyCode = 'KeyCode',
+  Local = 'Local',
+  MacAddress = 'MacAddress',
+  NoAuthorization = 'NoAuthorization',
 }
 
 /**
@@ -238,16 +238,16 @@ export const enum IdTokenEnumType {
  *
  */
 export const enum AuthorizationStatusEnumType {
-  Accepted = "Accepted",
-  Blocked = "Blocked",
-  ConcurrentTx = "ConcurrentTx",
-  Expired = "Expired",
-  Invalid = "Invalid",
-  NoCredit = "NoCredit",
-  NotAllowedTypeEVSE = "NotAllowedTypeEVSE",
-  NotAtThisLocation = "NotAtThisLocation",
-  NotAtThisTime = "NotAtThisTime",
-  Unknown = "Unknown"
+  Accepted = 'Accepted',
+  Blocked = 'Blocked',
+  ConcurrentTx = 'ConcurrentTx',
+  Expired = 'Expired',
+  Invalid = 'Invalid',
+  NoCredit = 'NoCredit',
+  NotAllowedTypeEVSE = 'NotAllowedTypeEVSE',
+  NotAtThisLocation = 'NotAtThisLocation',
+  NotAtThisTime = 'NotAtThisTime',
+  Unknown = 'Unknown',
 }
 
 /**
@@ -255,8 +255,8 @@ export const enum AuthorizationStatusEnumType {
  *
  */
 export const enum GetDisplayMessagesStatusEnumType {
-  Accepted = "Accepted",
-  Unknown = "Unknown"
+  Accepted = 'Accepted',
+  Unknown = 'Unknown',
 }
 
 /**
@@ -264,8 +264,8 @@ export const enum GetDisplayMessagesStatusEnumType {
  *
  */
 export const enum ClearChargingProfileStatusEnumType {
-  Accepted = "Accepted",
-  Unknown = "Unknown"
+  Accepted = 'Accepted',
+  Unknown = 'Unknown',
 }
 
 /**
@@ -273,10 +273,10 @@ export const enum ClearChargingProfileStatusEnumType {
  *
  */
 export const enum InstallCertificateUseEnumType {
-  V2GRootCertificate = "V2GRootCertificate",
-  MORootCertificate = "MORootCertificate",
-  CSMSRootCertificate = "CSMSRootCertificate",
-  ManufacturerRootCertificate = "ManufacturerRootCertificate"
+  V2GRootCertificate = 'V2GRootCertificate',
+  MORootCertificate = 'MORootCertificate',
+  CSMSRootCertificate = 'CSMSRootCertificate',
+  ManufacturerRootCertificate = 'ManufacturerRootCertificate',
 }
 
 /**
@@ -285,8 +285,8 @@ export const enum InstallCertificateUseEnumType {
  *
  */
 export const enum CertificateSigningUseEnumType {
-  ChargingStationCertificate = "ChargingStationCertificate",
-  V2GCertificate = "V2GCertificate"
+  ChargingStationCertificate = 'ChargingStationCertificate',
+  V2GCertificate = 'V2GCertificate',
 }
 
 /**
@@ -294,11 +294,11 @@ export const enum CertificateSigningUseEnumType {
  *
  */
 export const enum GetCertificateIdUseEnumType {
-  V2GRootCertificate = "V2GRootCertificate",
-  MORootCertificate = "MORootCertificate",
-  CSMSRootCertificate = "CSMSRootCertificate",
-  V2GCertificateChain = "V2GCertificateChain",
-  ManufacturerRootCertificate = "ManufacturerRootCertificate"
+  V2GRootCertificate = 'V2GRootCertificate',
+  MORootCertificate = 'MORootCertificate',
+  CSMSRootCertificate = 'CSMSRootCertificate',
+  V2GCertificateChain = 'V2GCertificateChain',
+  ManufacturerRootCertificate = 'ManufacturerRootCertificate',
 }
 
 /**
@@ -306,10 +306,10 @@ export const enum GetCertificateIdUseEnumType {
  *
  */
 export const enum GenericDeviceModelStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  NotSupported = "NotSupported",
-  EmptyResultSet = "EmptyResultSet"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  NotSupported = 'NotSupported',
+  EmptyResultSet = 'EmptyResultSet',
 }
 
 /**
@@ -317,9 +317,9 @@ export const enum GenericDeviceModelStatusEnumType {
  *
  */
 export const enum TriggerMessageStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  NotImplemented = "NotImplemented"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  NotImplemented = 'NotImplemented',
 }
 
 /**
@@ -327,9 +327,9 @@ export const enum TriggerMessageStatusEnumType {
  *
  */
 export const enum UnpublishFirmwareStatusEnumType {
-  DownloadOngoing = "DownloadOngoing",
-  NoFirmware = "NoFirmware",
-  Unpublished = "Unpublished"
+  DownloadOngoing = 'DownloadOngoing',
+  NoFirmware = 'NoFirmware',
+  Unpublished = 'Unpublished',
 }
 
 /**
@@ -337,8 +337,8 @@ export const enum UnpublishFirmwareStatusEnumType {
  *
  */
 export const enum Iso15118EVCertificateStatusEnumType {
-  Accepted = "Accepted",
-  Failed = "Failed"
+  Accepted = 'Accepted',
+  Failed = 'Failed',
 }
 
 /**
@@ -346,9 +346,9 @@ export const enum Iso15118EVCertificateStatusEnumType {
  *
  */
 export const enum CustomerInformationStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  Invalid = "Invalid"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  Invalid = 'Invalid',
 }
 
 /**
@@ -358,10 +358,10 @@ export const enum CustomerInformationStatusEnumType {
  *
  */
 export const enum MessageFormatEnumType {
-  ASCII = "ASCII",
-  HTML = "HTML",
-  URI = "URI",
-  UTF8 = "UTF8"
+  ASCII = 'ASCII',
+  HTML = 'HTML',
+  URI = 'URI',
+  UTF8 = 'UTF8',
 }
 
 /**
@@ -371,9 +371,9 @@ export const enum MessageFormatEnumType {
  *
  */
 export const enum MessagePriorityEnumType {
-  AlwaysFront = "AlwaysFront",
-  InFront = "InFront",
-  NormalCycle = "NormalCycle"
+  AlwaysFront = 'AlwaysFront',
+  InFront = 'InFront',
+  NormalCycle = 'NormalCycle',
 }
 
 /**
@@ -383,10 +383,10 @@ export const enum MessagePriorityEnumType {
  *
  */
 export const enum MessageStateEnumType {
-  Charging = "Charging",
-  Faulted = "Faulted",
-  Idle = "Idle",
-  Unavailable = "Unavailable"
+  Charging = 'Charging',
+  Faulted = 'Faulted',
+  Idle = 'Idle',
+  Unavailable = 'Unavailable',
 }
 
 /**
@@ -394,27 +394,27 @@ export const enum MessageStateEnumType {
  *
  */
 export const enum TriggerReasonEnumType {
-  Authorized = "Authorized",
-  CablePluggedIn = "CablePluggedIn",
-  ChargingRateChanged = "ChargingRateChanged",
-  ChargingStateChanged = "ChargingStateChanged",
-  Deauthorized = "Deauthorized",
-  EnergyLimitReached = "EnergyLimitReached",
-  EVCommunicationLost = "EVCommunicationLost",
-  EVConnectTimeout = "EVConnectTimeout",
-  MeterValueClock = "MeterValueClock",
-  MeterValuePeriodic = "MeterValuePeriodic",
-  TimeLimitReached = "TimeLimitReached",
-  Trigger = "Trigger",
-  UnlockCommand = "UnlockCommand",
-  StopAuthorized = "StopAuthorized",
-  EVDeparted = "EVDeparted",
-  EVDetected = "EVDetected",
-  RemoteStop = "RemoteStop",
-  RemoteStart = "RemoteStart",
-  AbnormalCondition = "AbnormalCondition",
-  SignedDataReceived = "SignedDataReceived",
-  ResetCommand = "ResetCommand"
+  Authorized = 'Authorized',
+  CablePluggedIn = 'CablePluggedIn',
+  ChargingRateChanged = 'ChargingRateChanged',
+  ChargingStateChanged = 'ChargingStateChanged',
+  Deauthorized = 'Deauthorized',
+  EnergyLimitReached = 'EnergyLimitReached',
+  EVCommunicationLost = 'EVCommunicationLost',
+  EVConnectTimeout = 'EVConnectTimeout',
+  MeterValueClock = 'MeterValueClock',
+  MeterValuePeriodic = 'MeterValuePeriodic',
+  TimeLimitReached = 'TimeLimitReached',
+  Trigger = 'Trigger',
+  UnlockCommand = 'UnlockCommand',
+  StopAuthorized = 'StopAuthorized',
+  EVDeparted = 'EVDeparted',
+  EVDetected = 'EVDetected',
+  RemoteStop = 'RemoteStop',
+  RemoteStart = 'RemoteStart',
+  AbnormalCondition = 'AbnormalCondition',
+  SignedDataReceived = 'SignedDataReceived',
+  ResetCommand = 'ResetCommand',
 }
 
 /**
@@ -422,9 +422,9 @@ export const enum TriggerReasonEnumType {
  *
  */
 export const enum SetNetworkProfileStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  Failed = "Failed"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  Failed = 'Failed',
 }
 
 /**
@@ -433,9 +433,9 @@ export const enum SetNetworkProfileStatusEnumType {
  *
  */
 export const enum ClearMonitoringStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  NotFound = "NotFound"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  NotFound = 'NotFound',
 }
 
 /**
@@ -444,11 +444,11 @@ export const enum ClearMonitoringStatusEnumType {
  *
  */
 export const enum GetVariableStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  UnknownComponent = "UnknownComponent",
-  UnknownVariable = "UnknownVariable",
-  NotSupportedAttributeType = "NotSupportedAttributeType"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  UnknownComponent = 'UnknownComponent',
+  UnknownVariable = 'UnknownVariable',
+  NotSupportedAttributeType = 'NotSupportedAttributeType',
 }
 
 /**
@@ -456,12 +456,12 @@ export const enum GetVariableStatusEnumType {
  *
  */
 export const enum SetVariableStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  UnknownComponent = "UnknownComponent",
-  UnknownVariable = "UnknownVariable",
-  NotSupportedAttributeType = "NotSupportedAttributeType",
-  RebootRequired = "RebootRequired"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  UnknownComponent = 'UnknownComponent',
+  UnknownVariable = 'UnknownVariable',
+  NotSupportedAttributeType = 'NotSupportedAttributeType',
+  RebootRequired = 'RebootRequired',
 }
 
 /**
@@ -469,8 +469,8 @@ export const enum SetVariableStatusEnumType {
  *
  */
 export const enum CertificateSignedStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
 }
 
 /**
@@ -478,9 +478,9 @@ export const enum CertificateSignedStatusEnumType {
  *
  */
 export const enum NotifyEVChargingNeedsStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  Processing = "Processing"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  Processing = 'Processing',
 }
 
 /**
@@ -488,8 +488,8 @@ export const enum NotifyEVChargingNeedsStatusEnumType {
  *
  */
 export const enum ChargingProfileStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
 }
 
 /**
@@ -497,8 +497,8 @@ export const enum ChargingProfileStatusEnumType {
  *
  */
 export const enum ClearMessageStatusEnumType {
-  Accepted = "Accepted",
-  Unknown = "Unknown"
+  Accepted = 'Accepted',
+  Unknown = 'Unknown',
 }
 
 /**
@@ -508,14 +508,14 @@ export const enum ClearMessageStatusEnumType {
  *
  */
 export const enum ReadingContextEnumType {
-  Interruption_Begin = "Interruption.Begin",
-  Interruption_End = "Interruption.End",
-  Other = "Other",
-  Sample_Clock = "Sample.Clock",
-  Sample_Periodic = "Sample.Periodic",
-  Transaction_Begin = "Transaction.Begin",
-  Transaction_End = "Transaction.End",
-  Trigger = "Trigger"
+  Interruption_Begin = 'Interruption.Begin',
+  Interruption_End = 'Interruption.End',
+  Other = 'Other',
+  Sample_Clock = 'Sample.Clock',
+  Sample_Periodic = 'Sample.Periodic',
+  Transaction_Begin = 'Transaction.Begin',
+  Transaction_End = 'Transaction.End',
+  Trigger = 'Trigger',
 }
 
 /**
@@ -526,11 +526,11 @@ export const enum ReadingContextEnumType {
  *
  */
 export const enum LocationEnumType {
-  Body = "Body",
-  Cable = "Cable",
-  EV = "EV",
-  Inlet = "Inlet",
-  Outlet = "Outlet"
+  Body = 'Body',
+  Cable = 'Cable',
+  EV = 'EV',
+  Inlet = 'Inlet',
+  Outlet = 'Outlet',
 }
 
 /**
@@ -540,31 +540,31 @@ export const enum LocationEnumType {
  *
  */
 export const enum MeasurandEnumType {
-  Current_Export = "Current.Export",
-  Current_Import = "Current.Import",
-  Current_Offered = "Current.Offered",
-  Energy_Active_Export_Register = "Energy.Active.Export.Register",
-  Energy_Active_Import_Register = "Energy.Active.Import.Register",
-  Energy_Reactive_Export_Register = "Energy.Reactive.Export.Register",
-  Energy_Reactive_Import_Register = "Energy.Reactive.Import.Register",
-  Energy_Active_Export_Interval = "Energy.Active.Export.Interval",
-  Energy_Active_Import_Interval = "Energy.Active.Import.Interval",
-  Energy_Active_Net = "Energy.Active.Net",
-  Energy_Reactive_Export_Interval = "Energy.Reactive.Export.Interval",
-  Energy_Reactive_Import_Interval = "Energy.Reactive.Import.Interval",
-  Energy_Reactive_Net = "Energy.Reactive.Net",
-  Energy_Apparent_Net = "Energy.Apparent.Net",
-  Energy_Apparent_Import = "Energy.Apparent.Import",
-  Energy_Apparent_Export = "Energy.Apparent.Export",
-  Frequency = "Frequency",
-  Power_Active_Export = "Power.Active.Export",
-  Power_Active_Import = "Power.Active.Import",
-  Power_Factor = "Power.Factor",
-  Power_Offered = "Power.Offered",
-  Power_Reactive_Export = "Power.Reactive.Export",
-  Power_Reactive_Import = "Power.Reactive.Import",
-  SoC = "SoC",
-  Voltage = "Voltage"
+  Current_Export = 'Current.Export',
+  Current_Import = 'Current.Import',
+  Current_Offered = 'Current.Offered',
+  Energy_Active_Export_Register = 'Energy.Active.Export.Register',
+  Energy_Active_Import_Register = 'Energy.Active.Import.Register',
+  Energy_Reactive_Export_Register = 'Energy.Reactive.Export.Register',
+  Energy_Reactive_Import_Register = 'Energy.Reactive.Import.Register',
+  Energy_Active_Export_Interval = 'Energy.Active.Export.Interval',
+  Energy_Active_Import_Interval = 'Energy.Active.Import.Interval',
+  Energy_Active_Net = 'Energy.Active.Net',
+  Energy_Reactive_Export_Interval = 'Energy.Reactive.Export.Interval',
+  Energy_Reactive_Import_Interval = 'Energy.Reactive.Import.Interval',
+  Energy_Reactive_Net = 'Energy.Reactive.Net',
+  Energy_Apparent_Net = 'Energy.Apparent.Net',
+  Energy_Apparent_Import = 'Energy.Apparent.Import',
+  Energy_Apparent_Export = 'Energy.Apparent.Export',
+  Frequency = 'Frequency',
+  Power_Active_Export = 'Power.Active.Export',
+  Power_Active_Import = 'Power.Active.Import',
+  Power_Factor = 'Power.Factor',
+  Power_Offered = 'Power.Offered',
+  Power_Reactive_Export = 'Power.Reactive.Export',
+  Power_Reactive_Import = 'Power.Reactive.Import',
+  SoC = 'SoC',
+  Voltage = 'Voltage',
 }
 
 /**
@@ -574,16 +574,16 @@ export const enum MeasurandEnumType {
  *
  */
 export const enum PhaseEnumType {
-  L1 = "L1",
-  L2 = "L2",
-  L3 = "L3",
-  N = "N",
-  L1_N = "L1-N",
-  L2_N = "L2-N",
-  L3_N = "L3-N",
-  L1_L2 = "L1-L2",
-  L2_L3 = "L2-L3",
-  L3_L1 = "L3-L1"
+  L1 = 'L1',
+  L2 = 'L2',
+  L3 = 'L3',
+  N = 'N',
+  L1_N = 'L1-N',
+  L2_N = 'L2-N',
+  L3_N = 'L3-N',
+  L1_L2 = 'L1-L2',
+  L2_L3 = 'L2-L3',
+  L3_L1 = 'L3-L1',
 }
 
 /**
@@ -591,10 +591,10 @@ export const enum PhaseEnumType {
  *
  */
 export const enum ChargingLimitSourceEnumType {
-  EMS = "EMS",
-  Other = "Other",
-  SO = "SO",
-  CSO = "CSO"
+  EMS = 'EMS',
+  Other = 'Other',
+  SO = 'SO',
+  CSO = 'CSO',
 }
 
 /**
@@ -603,10 +603,10 @@ export const enum ChargingLimitSourceEnumType {
  *
  */
 export const enum EventNotificationEnumType {
-  HardWiredNotification = "HardWiredNotification",
-  HardWiredMonitor = "HardWiredMonitor",
-  PreconfiguredMonitor = "PreconfiguredMonitor",
-  CustomMonitor = "CustomMonitor"
+  HardWiredNotification = 'HardWiredNotification',
+  HardWiredMonitor = 'HardWiredMonitor',
+  PreconfiguredMonitor = 'PreconfiguredMonitor',
+  CustomMonitor = 'CustomMonitor',
 }
 
 /**
@@ -614,8 +614,8 @@ export const enum EventNotificationEnumType {
  *
  */
 export const enum GenericStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
 }
 
 /**
@@ -623,9 +623,9 @@ export const enum GenericStatusEnumType {
  *
  */
 export const enum MonitoringBaseEnumType {
-  All = "All",
-  FactoryDefault = "FactoryDefault",
-  HardWiredOnly = "HardWiredOnly"
+  All = 'All',
+  FactoryDefault = 'FactoryDefault',
+  HardWiredOnly = 'HardWiredOnly',
 }
 
 /**
@@ -633,8 +633,8 @@ export const enum MonitoringBaseEnumType {
  *
  */
 export const enum RequestStartStopStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
 }
 
 /**
@@ -642,12 +642,12 @@ export const enum RequestStartStopStatusEnumType {
  *
  */
 export const enum SetMonitoringStatusEnumType {
-  Accepted = "Accepted",
-  UnknownComponent = "UnknownComponent",
-  UnknownVariable = "UnknownVariable",
-  UnsupportedMonitorType = "UnsupportedMonitorType",
-  Rejected = "Rejected",
-  Duplicate = "Duplicate"
+  Accepted = 'Accepted',
+  UnknownComponent = 'UnknownComponent',
+  UnknownVariable = 'UnknownVariable',
+  UnsupportedMonitorType = 'UnsupportedMonitorType',
+  Rejected = 'Rejected',
+  Duplicate = 'Duplicate',
 }
 
 /**
@@ -656,11 +656,11 @@ export const enum SetMonitoringStatusEnumType {
  *
  */
 export const enum MonitorEnumType {
-  UpperThreshold = "UpperThreshold",
-  LowerThreshold = "LowerThreshold",
-  Delta = "Delta",
-  Periodic = "Periodic",
-  PeriodicClockAligned = "PeriodicClockAligned"
+  UpperThreshold = 'UpperThreshold',
+  LowerThreshold = 'LowerThreshold',
+  Delta = 'Delta',
+  Periodic = 'Periodic',
+  PeriodicClockAligned = 'PeriodicClockAligned',
 }
 
 /**
@@ -668,8 +668,8 @@ export const enum MonitorEnumType {
  *
  */
 export const enum ReservationUpdateStatusEnumType {
-  Expired = "Expired",
-  Removed = "Removed"
+  Expired = 'Expired',
+  Removed = 'Removed',
 }
 
 /**
@@ -677,11 +677,11 @@ export const enum ReservationUpdateStatusEnumType {
  *
  */
 export const enum ConnectorStatusEnumType {
-  Available = "Available",
-  Occupied = "Occupied",
-  Reserved = "Reserved",
-  Unavailable = "Unavailable",
-  Faulted = "Faulted"
+  Available = 'Available',
+  Occupied = 'Occupied',
+  Reserved = 'Reserved',
+  Unavailable = 'Unavailable',
+  Faulted = 'Faulted',
 }
 
 /**
@@ -689,20 +689,20 @@ export const enum ConnectorStatusEnumType {
  *
  */
 export const enum FirmwareStatusEnumType {
-  Downloaded = "Downloaded",
-  DownloadFailed = "DownloadFailed",
-  Downloading = "Downloading",
-  DownloadScheduled = "DownloadScheduled",
-  DownloadPaused = "DownloadPaused",
-  Idle = "Idle",
-  InstallationFailed = "InstallationFailed",
-  Installing = "Installing",
-  Installed = "Installed",
-  InstallRebooting = "InstallRebooting",
-  InstallScheduled = "InstallScheduled",
-  InstallVerificationFailed = "InstallVerificationFailed",
-  InvalidSignature = "InvalidSignature",
-  SignatureVerified = "SignatureVerified"
+  Downloaded = 'Downloaded',
+  DownloadFailed = 'DownloadFailed',
+  Downloading = 'Downloading',
+  DownloadScheduled = 'DownloadScheduled',
+  DownloadPaused = 'DownloadPaused',
+  Idle = 'Idle',
+  InstallationFailed = 'InstallationFailed',
+  Installing = 'Installing',
+  Installed = 'Installed',
+  InstallRebooting = 'InstallRebooting',
+  InstallScheduled = 'InstallScheduled',
+  InstallVerificationFailed = 'InstallVerificationFailed',
+  InvalidSignature = 'InvalidSignature',
+  SignatureVerified = 'SignatureVerified',
 }
 
 /**
@@ -711,16 +711,16 @@ export const enum FirmwareStatusEnumType {
  *
  */
 export const enum PublishFirmwareStatusEnumType {
-  Idle = "Idle",
-  DownloadScheduled = "DownloadScheduled",
-  Downloading = "Downloading",
-  Downloaded = "Downloaded",
-  Published = "Published",
-  DownloadFailed = "DownloadFailed",
-  DownloadPaused = "DownloadPaused",
-  InvalidChecksum = "InvalidChecksum",
-  ChecksumVerified = "ChecksumVerified",
-  PublishFailed = "PublishFailed"
+  Idle = 'Idle',
+  DownloadScheduled = 'DownloadScheduled',
+  Downloading = 'Downloading',
+  Downloaded = 'Downloaded',
+  Published = 'Published',
+  DownloadFailed = 'DownloadFailed',
+  DownloadPaused = 'DownloadPaused',
+  InvalidChecksum = 'InvalidChecksum',
+  ChecksumVerified = 'ChecksumVerified',
+  PublishFailed = 'PublishFailed',
 }
 
 /**
@@ -728,15 +728,15 @@ export const enum PublishFirmwareStatusEnumType {
  *
  */
 export const enum BootReasonEnumType {
-  ApplicationReset = "ApplicationReset",
-  FirmwareUpdate = "FirmwareUpdate",
-  LocalReset = "LocalReset",
-  PowerUp = "PowerUp",
-  RemoteReset = "RemoteReset",
-  ScheduledReset = "ScheduledReset",
-  Triggered = "Triggered",
-  Unknown = "Unknown",
-  Watchdog = "Watchdog"
+  ApplicationReset = 'ApplicationReset',
+  FirmwareUpdate = 'FirmwareUpdate',
+  LocalReset = 'LocalReset',
+  PowerUp = 'PowerUp',
+  RemoteReset = 'RemoteReset',
+  ScheduledReset = 'ScheduledReset',
+  Triggered = 'Triggered',
+  Unknown = 'Unknown',
+  Watchdog = 'Watchdog',
 }
 
 /**
@@ -744,14 +744,14 @@ export const enum BootReasonEnumType {
  *
  */
 export const enum UploadLogStatusEnumType {
-  BadMessage = "BadMessage",
-  Idle = "Idle",
-  NotSupportedOperation = "NotSupportedOperation",
-  PermissionDenied = "PermissionDenied",
-  Uploaded = "Uploaded",
-  UploadFailure = "UploadFailure",
-  Uploading = "Uploading",
-  AcceptedCanceled = "AcceptedCanceled"
+  BadMessage = 'BadMessage',
+  Idle = 'Idle',
+  NotSupportedOperation = 'NotSupportedOperation',
+  PermissionDenied = 'PermissionDenied',
+  Uploaded = 'Uploaded',
+  UploadFailure = 'UploadFailure',
+  Uploading = 'Uploading',
+  AcceptedCanceled = 'AcceptedCanceled',
 }
 
 /**
@@ -760,8 +760,8 @@ export const enum UploadLogStatusEnumType {
  *
  */
 export const enum OperationalStatusEnumType {
-  Inoperative = "Inoperative",
-  Operative = "Operative"
+  Inoperative = 'Inoperative',
+  Operative = 'Operative',
 }
 
 /**
@@ -770,8 +770,8 @@ export const enum OperationalStatusEnumType {
  *
  */
 export const enum LogEnumType {
-  DiagnosticsLog = "DiagnosticsLog",
-  SecurityLog = "SecurityLog"
+  DiagnosticsLog = 'DiagnosticsLog',
+  SecurityLog = 'SecurityLog',
 }
 
 /**
@@ -779,8 +779,8 @@ export const enum LogEnumType {
  *
  */
 export const enum ResetEnumType {
-  Immediate = "Immediate",
-  OnIdle = "OnIdle"
+  Immediate = 'Immediate',
+  OnIdle = 'OnIdle',
 }
 
 /**
@@ -789,9 +789,9 @@ export const enum ResetEnumType {
  *
  */
 export const enum TransactionEventEnumType {
-  Ended = "Ended",
-  Started = "Started",
-  Updated = "Updated"
+  Ended = 'Ended',
+  Started = 'Started',
+  Updated = 'Updated',
 }
 
 /**
@@ -799,8 +799,8 @@ export const enum TransactionEventEnumType {
  *
  */
 export const enum UpdateEnumType {
-  Differential = "Differential",
-  Full = "Full"
+  Differential = 'Differential',
+  Full = 'Full',
 }
 
 /**
@@ -809,9 +809,9 @@ export const enum UpdateEnumType {
  *
  */
 export const enum RegistrationStatusEnumType {
-  Accepted = "Accepted",
-  Pending = "Pending",
-  Rejected = "Rejected"
+  Accepted = 'Accepted',
+  Pending = 'Pending',
+  Rejected = 'Rejected',
 }
 
 /**
@@ -820,11 +820,11 @@ export const enum RegistrationStatusEnumType {
  *
  */
 export const enum UpdateFirmwareStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  AcceptedCanceled = "AcceptedCanceled",
-  InvalidCertificate = "InvalidCertificate",
-  RevokedCertificate = "RevokedCertificate"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  AcceptedCanceled = 'AcceptedCanceled',
+  InvalidCertificate = 'InvalidCertificate',
+  RevokedCertificate = 'RevokedCertificate',
 }
 
 /**
@@ -832,9 +832,9 @@ export const enum UpdateFirmwareStatusEnumType {
  *
  */
 export const enum LogStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  AcceptedCanceled = "AcceptedCanceled"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  AcceptedCanceled = 'AcceptedCanceled',
 }
 
 /**
@@ -842,28 +842,28 @@ export const enum LogStatusEnumType {
  *
  */
 export const enum ConnectorEnumType {
-  cCCS1 = "cCCS1",
-  cCCS2 = "cCCS2",
-  cG105 = "cG105",
-  cTesla = "cTesla",
-  cType1 = "cType1",
-  cType2 = "cType2",
-  s309_1P_16A = "s309-1P-16A",
-  s309_1P_32A = "s309-1P-32A",
-  s309_3P_16A = "s309-3P-16A",
-  s309_3P_32A = "s309-3P-32A",
-  sBS1361 = "sBS1361",
-  sCEE_7_7 = "sCEE-7-7",
-  sType2 = "sType2",
-  sType3 = "sType3",
-  Other1PhMax16A = "Other1PhMax16A",
-  Other1PhOver16A = "Other1PhOver16A",
-  Other3Ph = "Other3Ph",
-  Pan = "Pan",
-  wInductive = "wInductive",
-  wResonant = "wResonant",
-  Undetermined = "Undetermined",
-  Unknown = "Unknown"
+  cCCS1 = 'cCCS1',
+  cCCS2 = 'cCCS2',
+  cG105 = 'cG105',
+  cTesla = 'cTesla',
+  cType1 = 'cType1',
+  cType2 = 'cType2',
+  s309_1P_16A = 's309-1P-16A',
+  s309_1P_32A = 's309-1P-32A',
+  s309_3P_16A = 's309-3P-16A',
+  s309_3P_32A = 's309-3P-32A',
+  sBS1361 = 'sBS1361',
+  sCEE_7_7 = 'sCEE-7-7',
+  sType2 = 'sType2',
+  sType3 = 'sType3',
+  Other1PhMax16A = 'Other1PhMax16A',
+  Other1PhOver16A = 'Other1PhOver16A',
+  Other3Ph = 'Other3Ph',
+  Pan = 'Pan',
+  wInductive = 'wInductive',
+  wResonant = 'wResonant',
+  Undetermined = 'Undetermined',
+  Unknown = 'Unknown',
 }
 
 /**
@@ -871,9 +871,9 @@ export const enum ConnectorEnumType {
  *
  */
 export const enum ReportBaseEnumType {
-  ConfigurationInventory = "ConfigurationInventory",
-  FullInventory = "FullInventory",
-  SummaryInventory = "SummaryInventory"
+  ConfigurationInventory = 'ConfigurationInventory',
+  FullInventory = 'FullInventory',
+  SummaryInventory = 'SummaryInventory',
 }
 
 /**
@@ -881,8 +881,8 @@ export const enum ReportBaseEnumType {
  *
  */
 export const enum CancelReservationStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
 }
 
 /**
@@ -890,10 +890,10 @@ export const enum CancelReservationStatusEnumType {
  *
  */
 export const enum DataTransferStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  UnknownMessageId = "UnknownMessageId",
-  UnknownVendorId = "UnknownVendorId"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  UnknownMessageId = 'UnknownMessageId',
+  UnknownVendorId = 'UnknownVendorId',
 }
 
 /**
@@ -901,11 +901,11 @@ export const enum DataTransferStatusEnumType {
  *
  */
 export const enum ReserveNowStatusEnumType {
-  Accepted = "Accepted",
-  Faulted = "Faulted",
-  Occupied = "Occupied",
-  Rejected = "Rejected",
-  Unavailable = "Unavailable"
+  Accepted = 'Accepted',
+  Faulted = 'Faulted',
+  Occupied = 'Occupied',
+  Rejected = 'Rejected',
+  Unavailable = 'Unavailable',
 }
 
 /**
@@ -913,9 +913,9 @@ export const enum ReserveNowStatusEnumType {
  *
  */
 export const enum SendLocalListStatusEnumType {
-  Accepted = "Accepted",
-  Failed = "Failed",
-  VersionMismatch = "VersionMismatch"
+  Accepted = 'Accepted',
+  Failed = 'Failed',
+  VersionMismatch = 'VersionMismatch',
 }
 
 /**
@@ -923,10 +923,10 @@ export const enum SendLocalListStatusEnumType {
  *
  */
 export const enum UnlockStatusEnumType {
-  Unlocked = "Unlocked",
-  UnlockFailed = "UnlockFailed",
-  OngoingAuthorizedTransaction = "OngoingAuthorizedTransaction",
-  UnknownConnector = "UnknownConnector"
+  Unlocked = 'Unlocked',
+  UnlockFailed = 'UnlockFailed',
+  OngoingAuthorizedTransaction = 'OngoingAuthorizedTransaction',
+  UnknownConnector = 'UnknownConnector',
 }
 
 /**
@@ -934,12 +934,12 @@ export const enum UnlockStatusEnumType {
  *
  */
 export const enum DisplayMessageStatusEnumType {
-  Accepted = "Accepted",
-  NotSupportedMessageFormat = "NotSupportedMessageFormat",
-  Rejected = "Rejected",
-  NotSupportedPriority = "NotSupportedPriority",
-  NotSupportedState = "NotSupportedState",
-  UnknownTransaction = "UnknownTransaction"
+  Accepted = 'Accepted',
+  NotSupportedMessageFormat = 'NotSupportedMessageFormat',
+  Rejected = 'Rejected',
+  NotSupportedPriority = 'NotSupportedPriority',
+  NotSupportedState = 'NotSupportedState',
+  UnknownTransaction = 'UnknownTransaction',
 }
 
 /**
@@ -947,9 +947,9 @@ export const enum DisplayMessageStatusEnumType {
  *
  */
 export const enum ChangeAvailabilityStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  Scheduled = "Scheduled"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  Scheduled = 'Scheduled',
 }
 
 /**
@@ -957,9 +957,9 @@ export const enum ChangeAvailabilityStatusEnumType {
  *
  */
 export const enum ResetStatusEnumType {
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  Scheduled = "Scheduled"
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  Scheduled = 'Scheduled',
 }
 
 /**
@@ -967,8 +967,8 @@ export const enum ResetStatusEnumType {
  *
  */
 export const enum GetChargingProfileStatusEnumType {
-  Accepted = "Accepted",
-  NoProfiles = "NoProfiles"
+  Accepted = 'Accepted',
+  NoProfiles = 'NoProfiles',
 }
 
 /**
@@ -976,8 +976,8 @@ export const enum GetChargingProfileStatusEnumType {
  *
  */
 export const enum GetCertificateStatusEnumType {
-  Accepted = "Accepted",
-  Failed = "Failed"
+  Accepted = 'Accepted',
+  Failed = 'Failed',
 }
 
 /**
@@ -988,11 +988,11 @@ export const enum GetCertificateStatusEnumType {
  *
  */
 export const enum ChargingStateEnumType {
-  Charging = "Charging",
-  EVConnected = "EVConnected",
-  SuspendedEV = "SuspendedEV",
-  SuspendedEVSE = "SuspendedEVSE",
-  Idle = "Idle"
+  Charging = 'Charging',
+  EVConnected = 'EVConnected',
+  SuspendedEV = 'SuspendedEV',
+  SuspendedEVSE = 'SuspendedEVSE',
+  Idle = 'Idle',
 }
 
 /**
@@ -1002,25 +1002,25 @@ export const enum ChargingStateEnumType {
  *
  */
 export const enum ReasonEnumType {
-  DeAuthorized = "DeAuthorized",
-  EmergencyStop = "EmergencyStop",
-  EnergyLimitReached = "EnergyLimitReached",
-  EVDisconnected = "EVDisconnected",
-  GroundFault = "GroundFault",
-  ImmediateReset = "ImmediateReset",
-  Local = "Local",
-  LocalOutOfCredit = "LocalOutOfCredit",
-  MasterPass = "MasterPass",
-  Other = "Other",
-  OvercurrentFault = "OvercurrentFault",
-  PowerLoss = "PowerLoss",
-  PowerQuality = "PowerQuality",
-  Reboot = "Reboot",
-  Remote = "Remote",
-  SOCLimitReached = "SOCLimitReached",
-  StoppedByEV = "StoppedByEV",
-  TimeLimitReached = "TimeLimitReached",
-  Timeout = "Timeout"
+  DeAuthorized = 'DeAuthorized',
+  EmergencyStop = 'EmergencyStop',
+  EnergyLimitReached = 'EnergyLimitReached',
+  EVDisconnected = 'EVDisconnected',
+  GroundFault = 'GroundFault',
+  ImmediateReset = 'ImmediateReset',
+  Local = 'Local',
+  LocalOutOfCredit = 'LocalOutOfCredit',
+  MasterPass = 'MasterPass',
+  Other = 'Other',
+  OvercurrentFault = 'OvercurrentFault',
+  PowerLoss = 'PowerLoss',
+  PowerQuality = 'PowerQuality',
+  Reboot = 'Reboot',
+  Remote = 'Remote',
+  SOCLimitReached = 'SOCLimitReached',
+  StoppedByEV = 'StoppedByEV',
+  TimeLimitReached = 'TimeLimitReached',
+  Timeout = 'Timeout',
 }
 
 /**
@@ -1028,10 +1028,10 @@ export const enum ReasonEnumType {
  *
  */
 export const enum AttributeEnumType {
-  Actual = "Actual",
-  Target = "Target",
-  MinSet = "MinSet",
-  MaxSet = "MaxSet"
+  Actual = 'Actual',
+  Target = 'Target',
+  MinSet = 'MinSet',
+  MaxSet = 'MaxSet',
 }
 
 /**
@@ -1039,17 +1039,17 @@ export const enum AttributeEnumType {
  *
  */
 export const enum MessageTriggerEnumType {
-  BootNotification = "BootNotification",
-  LogStatusNotification = "LogStatusNotification",
-  FirmwareStatusNotification = "FirmwareStatusNotification",
-  Heartbeat = "Heartbeat",
-  MeterValues = "MeterValues",
-  SignChargingStationCertificate = "SignChargingStationCertificate",
-  SignV2GCertificate = "SignV2GCertificate",
-  StatusNotification = "StatusNotification",
-  TransactionEvent = "TransactionEvent",
-  SignCombinedCertificate = "SignCombinedCertificate",
-  PublishFirmwareStatusNotification = "PublishFirmwareStatusNotification"
+  BootNotification = 'BootNotification',
+  LogStatusNotification = 'LogStatusNotification',
+  FirmwareStatusNotification = 'FirmwareStatusNotification',
+  Heartbeat = 'Heartbeat',
+  MeterValues = 'MeterValues',
+  SignChargingStationCertificate = 'SignChargingStationCertificate',
+  SignV2GCertificate = 'SignV2GCertificate',
+  StatusNotification = 'StatusNotification',
+  TransactionEvent = 'TransactionEvent',
+  SignCombinedCertificate = 'SignCombinedCertificate',
+  PublishFirmwareStatusNotification = 'PublishFirmwareStatusNotification',
 }
 
 /**
@@ -1058,9 +1058,9 @@ export const enum MessageTriggerEnumType {
  *
  */
 export const enum EventTriggerEnumType {
-  Alerting = "Alerting",
-  Delta = "Delta",
-  Periodic = "Periodic"
+  Alerting = 'Alerting',
+  Delta = 'Delta',
+  Periodic = 'Periodic',
 }
 
 /**
@@ -1068,9 +1068,9 @@ export const enum EventTriggerEnumType {
  *
  */
 export const enum HashAlgorithmEnumType {
-  SHA256 = "SHA256",
-  SHA384 = "SHA384",
-  SHA512 = "SHA512"
+  SHA256 = 'SHA256',
+  SHA384 = 'SHA384',
+  SHA512 = 'SHA512',
 }
 
 /**
@@ -1080,21 +1080,21 @@ export const enum HashAlgorithmEnumType {
  *
  */
 export const enum VPNEnumType {
-  IKEv2 = "IKEv2",
-  IPSec = "IPSec",
-  L2TP = "L2TP",
-  PPTP = "PPTP"
+  IKEv2 = 'IKEv2',
+  IPSec = 'IPSec',
+  L2TP = 'L2TP',
+  PPTP = 'PPTP',
 }
 
 export const enum ComponentCriterionEnumType {
-  Active = "Active",
-  Available = "Available",
-  Enabled = "Enabled",
-  Problem = "Problem"
+  Active = 'Active',
+  Available = 'Available',
+  Enabled = 'Enabled',
+  Problem = 'Problem',
 }
 
 export const enum MonitoringCriterionEnumType {
-  ThresholdMonitoring = "ThresholdMonitoring",
-  DeltaMonitoring = "DeltaMonitoring",
-  PeriodicMonitoring = "PeriodicMonitoring"
+  ThresholdMonitoring = 'ThresholdMonitoring',
+  DeltaMonitoring = 'DeltaMonitoring',
+  PeriodicMonitoring = 'PeriodicMonitoring',
 }
