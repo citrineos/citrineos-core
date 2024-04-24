@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import {FastifyInstance, FastifyReply, FastifyRequest} from 'fastify';
 import 'reflect-metadata';
-import { ILogObj, Logger } from 'tslog';
+import {ILogObj, Logger} from 'tslog';
 import {
   HttpMethod,
   IDataEndpointDefinition,
@@ -13,16 +13,13 @@ import {
   METADATA_DATA_ENDPOINTS,
   METADATA_MESSAGE_ENDPOINTS,
 } from '.';
-import { OcppRequest, OcppResponse, SystemConfig } from '../..';
-import { Namespace } from '../../ocpp/persistence';
-import { CallAction } from '../../ocpp/rpc/message';
-import { IMessageConfirmation } from '../messages';
-import { IModule } from '../modules';
-import {
-  IMessageQuerystring,
-  IMessageQuerystringSchema,
-} from './MessageQuerystring';
-import { IModuleApi } from './ModuleApi';
+import {OcppRequest, OcppResponse, SystemConfig} from '../..';
+import {Namespace} from '../../ocpp/persistence';
+import {CallAction} from '../../ocpp/rpc/message';
+import {IMessageConfirmation} from '../messages';
+import {IModule} from '../modules';
+import {IMessageQuerystring, IMessageQuerystringSchema, } from './MessageQuerystring';
+import {IModuleApi} from './ModuleApi';
 
 /**
  * Abstract module api class implementation.
@@ -74,7 +71,10 @@ export abstract class AbstractModuleApi<T extends IModule>
         expose.method,
         expose.httpMethod,
         expose.querySchema,
+        expose.paramSchema,
+        expose.headerSchema,
         expose.bodySchema,
+        expose.responseSchema,
       );
     });
 
@@ -163,7 +163,10 @@ export abstract class AbstractModuleApi<T extends IModule>
     method: (...args: any[]) => any,
     httpMethod: HttpMethod,
     querySchema?: object,
+    paramSchema?: object,
+    headerSchema?: object,
     bodySchema?: object,
+    responseSchema?: object,
   ): void {
     this._logger.debug(
       `Adding data route for ${namespace}`,
@@ -177,6 +180,15 @@ export abstract class AbstractModuleApi<T extends IModule>
     if (bodySchema) {
       schema['body'] = bodySchema;
     }
+    if (paramSchema) {
+      schema['params'] = paramSchema;
+    }
+    if (headerSchema) {
+      schema['headers'] = headerSchema;
+    }
+    if (responseSchema) {
+      schema['response'] = responseSchema;
+    }
 
     /**
      * Handles the request and returns a Promise resolving to an object.
@@ -186,7 +198,10 @@ export abstract class AbstractModuleApi<T extends IModule>
      * @return {Promise<any>} - a Promise resolving to an object
      */
     const _handler = async (
-      request: FastifyRequest<{ Body: object; Querystring: object }>,
+      request: FastifyRequest<{
+        Body: object;
+        Querystring: object;
+      }>,
       reply: FastifyReply,
     ): Promise<unknown> =>
       (
