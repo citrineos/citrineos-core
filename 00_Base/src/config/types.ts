@@ -37,7 +37,6 @@ export const systemConfigInputSchema = z.object({
         port: z.number().int().positive().default(8081).optional(),
         certificateAuthority: z
           .object({
-            caServer: z.enum(['hubject']).default('hubject'),
             hubject: z
               .object({
                 baseUrl: z
@@ -51,11 +50,17 @@ export const systemConfigInputSchema = z.object({
                 isoVersion: z
                   .enum(['ISO15118-2', 'ISO15118-20'])
                   .default('ISO15118-2'),
-              })
-              .optional(),
+              }),
+              caServer: z.enum(['local', 'acme']).default('acme'),
+              acme: z
+                  .object({
+                      env: z.enum(['staging', 'production']).default('staging'),
+                      accountKeyFilePath: z.string(),
+                      email: z.string(),
+                  }).optional()
           })
-          .refine((obj) => obj.hubject, {
-            message: 'a certificateAuthority implementation must be set',
+          .refine((obj) => obj.caServer === 'acme' && !obj.acme, {
+            message: 'acme must be set when it is the caServer'
           }),
       })
       .optional(),
@@ -243,18 +248,24 @@ export const systemConfigSchema = z
           port: z.number().int().positive().optional(),
           certificateAuthority: z
             .object({
-              caServer: z.enum(['hubject']),
               hubject: z
                 .object({
                   baseUrl: z.string(),
                   tokenUrl: z.string(),
-                  isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']),
+                  isoVersion: z.enum(['ISO15118-2', 'ISO15118-20'])
+                }),
+              caServer: z.enum(['local', 'acme']).default('acme'),
+              acme: z
+                .object({
+                  env: z.enum(['staging', 'production']),
+                  accountKeyFilePath: z.string(),
+                  email: z.string(),
                 })
-                .optional(),
+                .optional()
             })
-            .refine((obj) => obj.hubject, {
-              message: 'a certificateAuthority implementation must be set',
-            }),
+            .refine((obj) => obj.caServer === 'acme' && !obj.acme, {
+                message: 'acme must be set when it is the caServer'
+            })
         })
         .optional(),
       evdriver: z.object({

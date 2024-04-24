@@ -16,13 +16,18 @@ export function createLocalConfig() {
       certificates: {
         endpointPrefix: '/certificates',
         certificateAuthority: {
-          caServer: 'hubject',
           hubject: {
             baseUrl: 'https://open.plugncharge-test.hubject.com',
             tokenUrl:
               'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
             isoVersion: 'ISO15118-2',
           },
+          caServer: 'acme',
+          acme: {
+            env: 'staging',
+            accountKeyFilePath: '/usr/local/apps/citrineos/Server/src/assets/certificates/acme_account_key.pem',
+            email: 'test@citrineos.com'
+          }
         },
       },
       configuration: {

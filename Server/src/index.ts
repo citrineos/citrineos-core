@@ -89,6 +89,7 @@ export class CitrineOSServer {
    * @param {SystemConfig} config - config
    * @param {FastifyInstance} server - optional Fastify server instance
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
+   * @param {ICache} cache - cache
    */
   // todo rename event group to type
   constructor(
@@ -229,7 +230,7 @@ export class CitrineOSServer {
       name: 'CitrineOS Logger',
       minLevel: systemConfig.logLevel,
       hideLogPositionForProduction: systemConfig.env === 'production',
-      // Disable colors for cloud deployment as some cloude logging environments such as cloudwatch can not interpret colors
+      // Disable colors for cloud deployment as some cloud logging environments such as cloudwatch can not interpret colors
       stylePrettyLogs: process.env.DEPLOYMENT_TARGET !== 'cloud',
     });
   }
