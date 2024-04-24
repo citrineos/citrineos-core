@@ -5,10 +5,12 @@
 
 import {
   AbstractModule,
-  AsHandler, AttributeEnumType,
+  AsHandler,
+  AttributeEnumType,
   CallAction,
   CertificateSignedRequest,
-  CertificateSignedResponse, CertificateSigningUseEnumType,
+  CertificateSignedResponse,
+  CertificateSigningUseEnumType,
   DeleteCertificateResponse,
   ErrorCode,
   EventGroup,
@@ -113,7 +115,11 @@ export class CertificatesModule extends AbstractModule {
       deviceModelRepository ||
       new sequelize.DeviceModelRepository(config, logger);
 
-    this._certificateAuthorityService = new CertificateAuthorityService(config, cache, this._logger);
+    this._certificateAuthorityService = new CertificateAuthorityService(
+      config,
+      cache,
+      this._logger,
+    );
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -190,19 +196,19 @@ export class CertificatesModule extends AbstractModule {
     }
 
     const certificatePem: string =
-        await this._certificateAuthorityService.getCertificateChain(
-            csrString,
-            stationId,
-            certificateType,
-        );
-    this.sendCall(
+      await this._certificateAuthorityService.getCertificateChain(
+        csrString,
         stationId,
-        message.context.tenantId,
-        CallAction.CertificateSigned,
-        {
-          certificateChain: certificatePem,
-          certificateType: certificateType,
-        } as CertificateSignedRequest,
+        certificateType,
+      );
+    this.sendCall(
+      stationId,
+      message.context.tenantId,
+      CallAction.CertificateSigned,
+      {
+        certificateChain: certificatePem,
+        certificateType: certificateType,
+      } as CertificateSignedRequest,
     );
   }
 
@@ -245,50 +251,58 @@ export class CertificatesModule extends AbstractModule {
   }
 
   private async _verifySignCertRequest(
-      csrString: string,
-      certificateType?: CertificateSigningUseEnumType,
-      stationId?: string,
+    csrString: string,
+    certificateType?: CertificateSigningUseEnumType,
+    stationId?: string,
   ): Promise<void> {
     // Verify certificate type
-    if (!certificateType || (certificateType !== CertificateSigningUseEnumType.V2GCertificate && certificateType !== CertificateSigningUseEnumType.ChargingStationCertificate)) {
-      throw new Error(
-          `Unsupported certificate type: ${certificateType}`
-      );
+    if (
+      !certificateType ||
+      (certificateType !== CertificateSigningUseEnumType.V2GCertificate &&
+        certificateType !==
+          CertificateSigningUseEnumType.ChargingStationCertificate)
+    ) {
+      throw new Error(`Unsupported certificate type: ${certificateType}`);
     }
 
     // Verify CSR
     const csr: forge.pki.CertificateSigningRequest =
-        forge.pki.certificationRequestFromPem(csrString);
+      forge.pki.certificationRequestFromPem(csrString);
 
     if (!csr.verify()) {
       throw new Error(
-          'Verify the signature on this csr using its public key failed',
+        'Verify the signature on this csr using its public key failed',
       );
     }
 
-    if (certificateType === CertificateSigningUseEnumType.ChargingStationCertificate) {
+    if (
+      certificateType ===
+      CertificateSigningUseEnumType.ChargingStationCertificate
+    ) {
       if (!stationId) {
         throw new Error(
-            'StationId must be provided when certificateType is ChargingStationCertificate',
+          'StationId must be provided when certificateType is ChargingStationCertificate',
         );
       }
 
-      const organizationName = await this._deviceModelRepository.readAllByQuery({
-        stationId: stationId,
-        component_name: 'SecurityCtrlr',
-        variable_name: 'OrganizationName',
-        type: AttributeEnumType.Actual,
-      });
+      const organizationName = await this._deviceModelRepository.readAllByQuery(
+        {
+          stationId: stationId,
+          component_name: 'SecurityCtrlr',
+          variable_name: 'OrganizationName',
+          type: AttributeEnumType.Actual,
+        },
+      );
       const organizationNameCsr = csr.subject.getField({
         name: 'organizationName',
       });
       if (
-          organizationName &&
-          organizationName.length > 0 &&
-          organizationName[0] !== organizationNameCsr
+        organizationName &&
+        organizationName.length > 0 &&
+        organizationName[0] !== organizationNameCsr
       ) {
         throw new Error(
-            `Expect organizationName ${organizationName[0]} but get ${organizationNameCsr} from the csr`,
+          `Expect organizationName ${organizationName[0]} but get ${organizationNameCsr} from the csr`,
         );
       }
     }

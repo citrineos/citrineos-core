@@ -5,33 +5,36 @@
 import { ICertificateAuthorityClient } from './interface';
 import { SystemConfig } from '@citrineos/base';
 import * as acme from 'acme-client';
-import {Client} from 'acme-client';
-import {ILogObj, Logger} from 'tslog';
+import { Client } from 'acme-client';
+import { ILogObj, Logger } from 'tslog';
+import fs from 'fs';
 
 export class Acme implements ICertificateAuthorityClient {
   private _client: Client | undefined;
   private _directoryUrl: string = acme.directory.letsencrypt.staging;
   private _logger: Logger<ILogObj>;
+  private _email: string | undefined;
 
   constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
     this._logger = logger
-        ? logger.getSubLogger({ name: this.constructor.name })
-        : new Logger<ILogObj>({ name: this.constructor.name });
+      ? logger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({ name: this.constructor.name });
 
-    acme.forge.createPrivateKey().then((privateKey) => {
-      this._logger.debug(`private key: ${privateKey}`);
+    this._email =
+      config.modules.certificates?.certificateAuthority?.acme?.email;
+    const accountKey = fs.readFileSync(
+      config.modules.certificates?.certificateAuthority?.acme
+        ?.accountKeyFilePath as string,
+    );
+    const acmeEnv: string | undefined =
+      config.modules.certificates?.certificateAuthority?.acme?.env;
+    if (!acmeEnv && acmeEnv === 'production') {
+      this._directoryUrl = acme.directory.letsencrypt.production;
+    }
 
-      const acmeEnv: string | undefined = config.modules.certificates?.certificateAuthority?.acme?.env;
-      if (!acmeEnv && acmeEnv === 'production') {
-        this._directoryUrl = acme.directory.letsencrypt.production;
-      }
-
-      this._client = new acme.Client({
-        directoryUrl: this._directoryUrl,
-        accountKey: privateKey
-      });
-    }).catch(error => {
-        throw new Error('Failed to create account key: ' + error);
+    this._client = new acme.Client({
+      directoryUrl: this._directoryUrl,
+      accountKey: accountKey.toString(),
     });
   }
 
@@ -40,7 +43,9 @@ export class Acme implements ICertificateAuthorityClient {
    * @return {Promise<string>} The CA certificate pem.
    */
   async getCACertificates(): Promise<string> {
-    const response = await fetch('https://letsencrypt.org/certs/isrgrootx1.pem');
+    const response = await fetch(
+      'https://letsencrypt.org/certs/isrgrootx1.pem',
+    );
 
     if (response.status !== 304) {
       throw new Error(`Failed to fetch certificate: ${response.statusText}`);
@@ -52,13 +57,13 @@ export class Acme implements ICertificateAuthorityClient {
   async getSignedCertificate(csrString: string): Promise<string> {
     const cert = await this._client?.auto({
       csr: csrString,
-      email: 'zihe.cheng@s44.team',
+      email: this._email,
       termsOfServiceAgreed: true,
       preferredChain: 'ISRG Root X1', // listed in https://ccadb.my.salesforce-sites.com/mozilla/CAAIdentifiersReport
       skipChallengeVerification: true,
       challengePriority: ['TLS-ALPN-01'],
       challengeCreateFn: async () => {},
-      challengeRemoveFn: async () => {}
+      challengeRemoveFn: async () => {},
     });
     this._logger.debug(`certificate: ${cert}`);
     if (!cert) {

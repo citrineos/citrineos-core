@@ -24,9 +24,10 @@ export function createDockerConfig() {
           caServer: 'acme',
           acme: {
             env: 'staging',
-            accountKeyFilePath: '/usr/local/apps/citrineos/Server/src/assets/certificates/acme_account_key.pem',
-            email: 'test@citrineos.com'
-          }
+            accountKeyFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/acme_account_key.pem',
+            email: 'test@citrineos.com',
+          },
         },
       },
       configuration: {

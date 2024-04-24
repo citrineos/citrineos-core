@@ -37,30 +37,30 @@ export const systemConfigInputSchema = z.object({
         port: z.number().int().positive().default(8081).optional(),
         certificateAuthority: z
           .object({
-            hubject: z
+            hubject: z.object({
+              baseUrl: z
+                .string()
+                .default('https://open.plugncharge-test.hubject.com'),
+              tokenUrl: z
+                .string()
+                .default(
+                  'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
+                ),
+              isoVersion: z
+                .enum(['ISO15118-2', 'ISO15118-20'])
+                .default('ISO15118-2'),
+            }),
+            caServer: z.enum(['local', 'acme']).default('acme'),
+            acme: z
               .object({
-                baseUrl: z
-                  .string()
-                  .default('https://open.plugncharge-test.hubject.com'),
-                tokenUrl: z
-                  .string()
-                  .default(
-                    'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
-                  ),
-                isoVersion: z
-                  .enum(['ISO15118-2', 'ISO15118-20'])
-                  .default('ISO15118-2'),
-              }),
-              caServer: z.enum(['local', 'acme']).default('acme'),
-              acme: z
-                  .object({
-                      env: z.enum(['staging', 'production']).default('staging'),
-                      accountKeyFilePath: z.string(),
-                      email: z.string(),
-                  }).optional()
+                env: z.enum(['staging', 'production']).default('staging'),
+                accountKeyFilePath: z.string(),
+                email: z.string(),
+              })
+              .optional(),
           })
           .refine((obj) => obj.caServer === 'acme' && !obj.acme, {
-            message: 'acme must be set when it is the caServer'
+            message: 'acme must be set when it is the caServer',
           }),
       })
       .optional(),
@@ -248,12 +248,11 @@ export const systemConfigSchema = z
           port: z.number().int().positive().optional(),
           certificateAuthority: z
             .object({
-              hubject: z
-                .object({
-                  baseUrl: z.string(),
-                  tokenUrl: z.string(),
-                  isoVersion: z.enum(['ISO15118-2', 'ISO15118-20'])
-                }),
+              hubject: z.object({
+                baseUrl: z.string(),
+                tokenUrl: z.string(),
+                isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']),
+              }),
               caServer: z.enum(['local', 'acme']).default('acme'),
               acme: z
                 .object({
@@ -261,11 +260,11 @@ export const systemConfigSchema = z
                   accountKeyFilePath: z.string(),
                   email: z.string(),
                 })
-                .optional()
+                .optional(),
             })
             .refine((obj) => obj.caServer === 'acme' && !obj.acme, {
-                message: 'acme must be set when it is the caServer'
-            })
+              message: 'acme must be set when it is the caServer',
+            }),
         })
         .optional(),
       evdriver: z.object({

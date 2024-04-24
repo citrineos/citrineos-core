@@ -10,29 +10,36 @@ import {
 import { ICertificateAuthorityClient } from '../client/interface';
 import { Hubject } from '../client/hubject';
 import * as forge from 'node-forge';
-import {Acme} from '../client/acme';
-import {ILogObj, Logger} from 'tslog';
-import {Local} from '../client/local';
+import { Acme } from '../client/acme';
+import { ILogObj, Logger } from 'tslog';
+import { Local } from '../client/local';
 
 export class CertificateAuthorityService {
   private readonly _v2gCertificateAuthority: ICertificateAuthorityClient;
   private readonly _chargingStationCertificateAuthority: ICertificateAuthorityClient;
   private readonly _logger: Logger<ILogObj>;
 
-  constructor(
-    config: SystemConfig,
-    cache: ICache,
-    logger?: Logger<ILogObj>
-  ) {
+  constructor(config: SystemConfig, cache: ICache, logger?: Logger<ILogObj>) {
     this._logger = logger
-        ? logger.getSubLogger({ name: this.constructor.name })
-        : new Logger<ILogObj>({ name: this.constructor.name });
+      ? logger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({ name: this.constructor.name });
 
-    const caServer = config.modules.certificates?.certificateAuthority?.caServer;
-    if (caServer === 'acme' && !config.modules.certificates?.certificateAuthority?.acme) {
-      this._chargingStationCertificateAuthority = new Acme(config, this._logger);
+    const caServer =
+      config.modules.certificates?.certificateAuthority?.caServer;
+    if (
+      caServer === 'acme' &&
+      !config.modules.certificates?.certificateAuthority?.acme
+    ) {
+      this._chargingStationCertificateAuthority = new Acme(
+        config,
+        this._logger,
+      );
     } else {
-      this._chargingStationCertificateAuthority = new Local(config, cache, this._logger);
+      this._chargingStationCertificateAuthority = new Local(
+        config,
+        cache,
+        this._logger,
+      );
     }
     this._v2gCertificateAuthority = new Hubject(config);
   }
@@ -52,9 +59,15 @@ export class CertificateAuthorityService {
       }
       case CertificateSigningUseEnumType.ChargingStationCertificate: {
         // TODO: remove getCACertificates, it is just for testing
-        const caCert: string = await this._chargingStationCertificateAuthority.getCACertificates(stationId);
+        const caCert: string =
+          await this._chargingStationCertificateAuthority.getCACertificates(
+            stationId,
+          );
         this._logger.debug(`caCert: ${caCert}`);
-        return await this._chargingStationCertificateAuthority.getSignedCertificate(csrString, stationId);
+        return await this._chargingStationCertificateAuthority.getSignedCertificate(
+          csrString,
+          stationId,
+        );
       }
       default: {
         throw new Error(`Unsupported certificate type: ${certificateType}`);

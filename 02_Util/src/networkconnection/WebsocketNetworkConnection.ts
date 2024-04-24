@@ -31,7 +31,7 @@ export class WebsocketNetworkConnection {
     'TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256',
     'TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384',
     'TLS_RSA_WITH_AES_128_GCM_SHA256',
-    'TLS_RSA_WITH_AES_256_GCM_SHA384'
+    'TLS_RSA_WITH_AES_256_GCM_SHA384',
   ].join(':');
 
   constructor(
@@ -83,7 +83,7 @@ export class WebsocketNetworkConnection {
                 cert: fs.readFileSync(
                   websocketServerConfig.tlsCertificateChainFilepath as string,
                 ),
-                ciphers: this._cipherSuits // OCPP 2.0.1, Part2-Specification, A00.FR.318
+                ciphers: this._cipherSuits, // OCPP 2.0.1, Part2-Specification, A00.FR.318
               },
               this._onHttpRequest.bind(this),
             );
