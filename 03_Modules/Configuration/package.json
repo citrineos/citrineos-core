@@ -36,6 +36,5 @@
     "@citrineos/data": "1.0.0",
     "@citrineos/util": "1.0.0",
     "uuid": "^9.0.1"
-  },
-  "workspace": "../../"
+  }
 }

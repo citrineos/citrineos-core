@@ -38,8 +38,8 @@ services:
       retries: 3
   directus:
     build:
-      context: ..
-      dockerfile: ./Server/directus.Dockerfile
+      context: ../DirectusExtensions
+      dockerfile: ./directus.Dockerfile
     ports:
       - 8055:8055
     volumes:
