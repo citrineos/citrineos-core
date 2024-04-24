@@ -1,0 +1,26 @@
+# Ignore node modules directories
+**/node_modules
+
+# Ignore distribution directories (lib for backwards compatibility)
+**/dist
+**/lib
+
+# Common ignore files
+.gitignore
+**/package-lock.json
+
+# Specific files and file types to ignore
+**/*.js
+**/*.cjs
+**/*.md
+**/*.yml
+**/*.tsbuildinfo
+**/*.log
+**/*.tgz
+**/*.sh
+**/*.Dockerfile
+
+# Specific directories to ignore
+**/DirectusExtensions
+**/Swarm
+**/data
