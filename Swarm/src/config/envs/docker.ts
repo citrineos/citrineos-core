@@ -27,7 +27,6 @@ export function createDockerConfig(): SystemConfig {
               'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
             isoVersion: 'ISO15118-2',
           },
-          caServer: 'acme',
           acme: {
             env: 'staging',
             accountKeyFilePath:

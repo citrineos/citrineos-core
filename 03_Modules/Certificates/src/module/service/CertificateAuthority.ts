@@ -15,8 +15,9 @@ import { ILogObj, Logger } from 'tslog';
 import { Local } from '../client/local';
 
 export class CertificateAuthorityService {
-  private readonly _v2gCertificateAuthority: ICertificateAuthorityClient;
-  private readonly _chargingStationCertificateAuthority: ICertificateAuthorityClient;
+  private readonly _hubjectCertificateAuthority: ICertificateAuthorityClient;
+  private readonly _acmeCertificateAuthority: ICertificateAuthorityClient;
+  private readonly _localCertificateAuthority: ICertificateAuthorityClient;
   private readonly _logger: Logger<ILogObj>;
 
   constructor(config: SystemConfig, cache: ICache, logger?: Logger<ILogObj>) {
@@ -24,26 +25,19 @@ export class CertificateAuthorityService {
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
 
-    const caServer =
-      config.modules.certificates?.certificateAuthority?.caServer;
-    if (
-      caServer === 'acme' &&
-      !config.modules.certificates?.certificateAuthority?.acme
-    ) {
-      this._chargingStationCertificateAuthority = new Acme(
-        config,
-        this._logger,
-      );
-    } else {
-      this._chargingStationCertificateAuthority = new Local(
-        config,
-        cache,
-        this._logger,
-      );
-    }
-    this._v2gCertificateAuthority = new Hubject(config);
+    this._acmeCertificateAuthority = new Acme(config, this._logger);
+    this._hubjectCertificateAuthority = new Hubject(config);
+    this._localCertificateAuthority = new Local(config, cache, this._logger);
   }
 
+  /**
+   * Retrieves the certificate chain for V2G- and Charging Station certificates.
+   *
+   * @param {string} csrString - The Certificate Signing Request string.
+   * @param {string} stationId - The station identifier.
+   * @param {CertificateSigningUseEnumType} [certificateType] - The type of certificate to retrieve.
+   * @return {Promise<string>} The certificate chain without the root certificate.
+   */
   async getCertificateChain(
     csrString: string,
     stationId: string,
@@ -53,18 +47,15 @@ export class CertificateAuthorityService {
     switch (certificateType) {
       case CertificateSigningUseEnumType.V2GCertificate: {
         const signedCert =
-          await this._v2gCertificateAuthority.getSignedCertificate(csrString);
-        const caCerts = await this._v2gCertificateAuthority.getCACertificates();
+          await this._hubjectCertificateAuthority.getSignedCertificate(
+            csrString,
+          );
+        const caCerts =
+          await this._hubjectCertificateAuthority.getCACertificates();
         return this._createCertificateChainWithoutRoot(signedCert, caCerts);
       }
       case CertificateSigningUseEnumType.ChargingStationCertificate: {
-        // TODO: remove getCACertificates, it is just for testing
-        const caCert: string =
-          await this._chargingStationCertificateAuthority.getCACertificates(
-            stationId,
-          );
-        this._logger.debug(`caCert: ${caCert}`);
-        return await this._chargingStationCertificateAuthority.getSignedCertificate(
+        return await this._localCertificateAuthority.getSignedCertificate(
           csrString,
           stationId,
         );
@@ -73,6 +64,10 @@ export class CertificateAuthorityService {
         throw new Error(`Unsupported certificate type: ${certificateType}`);
       }
     }
+  }
+
+  async getSignedCertificateByExternalCA(csrString: string): Promise<string> {
+    return await this._acmeCertificateAuthority.getSignedCertificate(csrString);
   }
 
   /**

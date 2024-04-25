@@ -10,10 +10,11 @@ import { ILogObj, Logger } from 'tslog';
 import fs from 'fs';
 
 export class Acme implements ICertificateAuthorityClient {
+  private readonly _directoryUrl: string = acme.directory.letsencrypt.staging;
+  private readonly _email: string | undefined;
+
   private _client: Client | undefined;
-  private _directoryUrl: string = acme.directory.letsencrypt.staging;
   private _logger: Logger<ILogObj>;
-  private _email: string | undefined;
 
   constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
     this._logger = logger
@@ -39,7 +40,7 @@ export class Acme implements ICertificateAuthorityClient {
   }
 
   /**
-   * Get LetsEncrypt CA certificates, ISRG Root X1.
+   * Get LetsEncrypt CA Root certificate, ISRG Root X1.
    * @return {Promise<string>} The CA certificate pem.
    */
   async getCACertificates(): Promise<string> {
@@ -54,6 +55,13 @@ export class Acme implements ICertificateAuthorityClient {
     return await response.text();
   }
 
+  /**
+   * Retrieves a signed certificate based on the provided CSR.
+   * The returned certificate will be signed by LetsEncrypt ISRG Root X1.
+   *
+   * @param {string} csrString - The certificate signing request.
+   * @return {Promise<string>} The signed certificate.
+   */
   async getSignedCertificate(csrString: string): Promise<string> {
     const cert = await this._client?.auto({
       csr: csrString,
@@ -61,7 +69,6 @@ export class Acme implements ICertificateAuthorityClient {
       termsOfServiceAgreed: true,
       preferredChain: 'ISRG Root X1', // listed in https://ccadb.my.salesforce-sites.com/mozilla/CAAIdentifiersReport
       skipChallengeVerification: true,
-      challengePriority: ['TLS-ALPN-01'],
       challengeCreateFn: async () => {},
       challengeRemoveFn: async () => {},
     });

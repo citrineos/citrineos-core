@@ -35,33 +35,26 @@ export const systemConfigInputSchema = z.object({
         endpointPrefix: z.string().default(EventGroup.Certificates).optional(),
         host: z.string().default('localhost').optional(),
         port: z.number().int().positive().default(8081).optional(),
-        certificateAuthority: z
-          .object({
-            hubject: z.object({
-              baseUrl: z
-                .string()
-                .default('https://open.plugncharge-test.hubject.com'),
-              tokenUrl: z
-                .string()
-                .default(
-                  'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
-                ),
-              isoVersion: z
-                .enum(['ISO15118-2', 'ISO15118-20'])
-                .default('ISO15118-2'),
-            }),
-            caServer: z.enum(['local', 'acme']).default('acme'),
-            acme: z
-              .object({
-                env: z.enum(['staging', 'production']).default('staging'),
-                accountKeyFilePath: z.string(),
-                email: z.string(),
-              })
-              .optional(),
-          })
-          .refine((obj) => obj.caServer === 'acme' && !obj.acme, {
-            message: 'acme must be set when it is the caServer',
+        certificateAuthority: z.object({
+          hubject: z.object({
+            baseUrl: z
+              .string()
+              .default('https://open.plugncharge-test.hubject.com'),
+            tokenUrl: z
+              .string()
+              .default(
+                'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
+              ),
+            isoVersion: z
+              .enum(['ISO15118-2', 'ISO15118-20'])
+              .default('ISO15118-2'),
           }),
+          acme: z.object({
+            env: z.enum(['staging', 'production']).default('staging'),
+            accountKeyFilePath: z.string(),
+            email: z.string(),
+          }),
+        }),
       })
       .optional(),
     configuration: z.object({
@@ -246,25 +239,18 @@ export const systemConfigSchema = z
           endpointPrefix: z.string(),
           host: z.string().optional(),
           port: z.number().int().positive().optional(),
-          certificateAuthority: z
-            .object({
-              hubject: z.object({
-                baseUrl: z.string(),
-                tokenUrl: z.string(),
-                isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']),
-              }),
-              caServer: z.enum(['local', 'acme']).default('acme'),
-              acme: z
-                .object({
-                  env: z.enum(['staging', 'production']),
-                  accountKeyFilePath: z.string(),
-                  email: z.string(),
-                })
-                .optional(),
-            })
-            .refine((obj) => obj.caServer === 'acme' && !obj.acme, {
-              message: 'acme must be set when it is the caServer',
+          certificateAuthority: z.object({
+            hubject: z.object({
+              baseUrl: z.string(),
+              tokenUrl: z.string(),
+              isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']),
             }),
+            acme: z.object({
+              env: z.enum(['staging', 'production']),
+              accountKeyFilePath: z.string(),
+              email: z.string(),
+            }),
+          }),
         })
         .optional(),
       evdriver: z.object({

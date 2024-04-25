@@ -48,6 +48,12 @@ export class Local implements ICertificateAuthorityClient {
     });
   }
 
+  /**
+   * Retrieves CSMSRootCertificate based a specific station.
+   *
+   * @param {string} stationId - The ID of the station.
+   * @return {Promise<string>} The CSMSRootCertificate in PEM format.
+   */
   async getCACertificates(stationId?: string): Promise<string> {
     if (!stationId) {
       throw new Error('stationId is required');
@@ -63,6 +69,14 @@ export class Local implements ICertificateAuthorityClient {
     return forge.pki.certificateToPem(rootCert);
   }
 
+  /**
+   * Load CSMSRootCertificate based on the station ID.
+   * Use it to sign certificate based on the CSR string.
+   *
+   * @param {string} csrString - The Certificate Signing Request (CSR) string.
+   * @param {string} [stationId] - The station ID.
+   * @return {Promise<string>} The signed certificate in PEM format.
+   */
   async getSignedCertificate(
     csrString: string,
     stationId?: string,
