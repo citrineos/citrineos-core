@@ -340,10 +340,10 @@ export class CitrineOSServer {
           new moduleConfig.ModuleApiClass(
             module,
             this._server,
-            this._logger,
             this._fileAccess,
             this._networkConnection,
             this._config.util.networkConnection.websocketServers,
+            this._logger,
           ),
         );
       } else {

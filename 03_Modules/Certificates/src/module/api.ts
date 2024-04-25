@@ -42,9 +42,9 @@ import fs from 'fs';
 export class CertificatesModuleApi
   extends AbstractModuleApi<CertificatesModule>
   implements ICertificatesModuleApi {
-  private readonly _networkConnection: WebsocketNetworkConnection | undefined;
-  private readonly _websocketServersConfig: WebsocketServerConfig[] | undefined;
-  private readonly _fileAccess: IFileAccess | undefined;
+  private readonly _networkConnection: WebsocketNetworkConnection;
+  private readonly _websocketServersConfig: WebsocketServerConfig[];
+  private readonly _fileAccess: IFileAccess;
 
   /**
    * Constructs a new instance of the class.
@@ -59,10 +59,10 @@ export class CertificatesModuleApi
   constructor(
     certificatesModule: CertificatesModule,
     server: FastifyInstance,
+    fileAccess: IFileAccess,
+    networkConnection: WebsocketNetworkConnection,
+    websocketServersConfig: WebsocketServerConfig[],
     logger?: Logger<ILogObj>,
-    fileAccess?: IFileAccess,
-    networkConnection?: WebsocketNetworkConnection,
-    websocketServersConfig?: WebsocketServerConfig[],
   ) {
     super(certificatesModule, server, logger);
     this._fileAccess = fileAccess;
@@ -172,10 +172,8 @@ export class CertificatesModuleApi
     );
 
     const certRequest = request.body as CsmsCertificateRequest;
-    const serverConfig: WebsocketServerConfig | undefined = this
-      ._websocketServersConfig
-      ? this._websocketServersConfig.find((config) => config.id === serverId)
-      : undefined;
+    const serverConfig: WebsocketServerConfig | undefined =
+      this._websocketServersConfig.find((config) => config.id === serverId);
 
     if (!serverConfig) {
       throw new Error(`websocketServer id ${serverId} does not exist.`);
@@ -188,17 +186,17 @@ export class CertificatesModuleApi
     let mtlsCARoots: string | undefined;
     if (certRequest.contentType === ContentType.FileId) {
       tlsKeys = (
-        await this._fileAccess!.getFile(certRequest.privateKeys)
+        await this._fileAccess.getFile(certRequest.privateKeys)
       ).toString();
       tlsCertificateChain = (
-        await this._fileAccess!.getFile(certRequest.certificateChain)
+        await this._fileAccess.getFile(certRequest.certificateChain)
       ).toString();
       if (
         serverConfig.mtlsCertificateAuthorityRootsFilepath &&
         certRequest.caCertificateRoots
       ) {
         mtlsCARoots = (
-          await this._fileAccess!.getFile(certRequest.caCertificateRoots)
+          await this._fileAccess.getFile(certRequest.caCertificateRoots)
         ).toString();
       }
     } else {
@@ -300,7 +298,7 @@ export class CertificatesModuleApi
           );
         }
 
-        this._networkConnection?.updateCertificate(
+        this._networkConnection.updateCertificate(
           serverId,
           tlsKeys,
           tlsCertificateChain,

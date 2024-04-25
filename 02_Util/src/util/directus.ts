@@ -102,7 +102,9 @@ export class DirectusUtil implements IFileAccess {
 
   public async uploadFile(filePath: string, content: Buffer): Promise<string> {
     // TODO: implement the logic
-    throw new Error('Not yet implemented.');
+    throw new Error(
+      `Upload file ${filePath} with content ${content} not yet implemented.`,
+    );
   }
 
   private async addDirectusFlowForAction(
