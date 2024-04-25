@@ -24,22 +24,22 @@ services:
     environment:
       POSTGRES_DB: citrine
       POSTGRES_USER: citrine
-      POSTGRES_PASSWORD: "citrine"
+      POSTGRES_PASSWORD: 'citrine'
   redis:
     build:
       context: ./
       dockerfile: ./docker/redis/Dockerfile
     ports:
-      - "6379:6379"
+      - '6379:6379'
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 3
   directus:
     build:
-      context: ..
-      dockerfile: ./Server/directus.Dockerfile
+      context: ../DirectusExtensions
+      dockerfile: ./directus.Dockerfile
     ports:
       - 8055:8055
     volumes:

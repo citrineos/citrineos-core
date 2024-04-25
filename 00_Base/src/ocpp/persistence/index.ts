@@ -3,25 +3,28 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { Namespace } from "./namespace";
+export { Namespace } from './namespace';
 export { default as AuthorizationDataSchema } from './schemas/AuthorizationDataSchema.json';
 export { default as BootConfigSchema } from './schemas/BootConfigSchema.json';
 export { default as ChargingStationTypeSchema } from './schemas/ChargingStationTypeSchema.json';
 export { default as ReportDataTypeSchema } from './schemas/ReportDataTypeSchema.json';
 export { default as SetVariableResultTypeSchema } from './schemas/SetVariableResultTypeSchema.json';
 
-export function QuerySchema(properties: [string, string][], required?: string[]): object {
-    const schema: Record<string, string | object> = {
-        "type": "object",
-        "properties": {}
+export function QuerySchema(
+  properties: [string, string][],
+  required?: string[],
+): object {
+  const schema: Record<string, string | object> = {
+    type: 'object',
+    properties: {},
+  };
+  properties.forEach((property: [string, string]) => {
+    (schema['properties'] as Record<string, string | object>)[property[0]] = {
+      type: property[1],
     };
-    properties.forEach((property: [string, string]) => {
-        (schema["properties"] as Record<string, string | object>)[property[0]] = {
-            "type": property[1]
-        };
-    });
-    if (required) {
-        schema["required"] = required;
-    }
-    return schema;
+  });
+  if (required) {
+    schema['required'] = required;
+  }
+  return schema;
 }

@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { UpdateFirmwareStatusEnumType } from "../enums";
-import { OcppResponse } from "../../..";
+import { UpdateFirmwareStatusEnumType } from '../enums';
+import { OcppResponse } from '../../..';
 
 export interface UpdateFirmwareResponse extends OcppResponse {
   customData?: CustomDataType;
@@ -42,5 +42,3 @@ export interface StatusInfoType {
    */
   additionalInfo?: string;
 }
-
-

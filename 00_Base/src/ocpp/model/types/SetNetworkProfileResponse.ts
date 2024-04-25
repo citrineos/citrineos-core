@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { SetNetworkProfileStatusEnumType } from "../enums";
-import { OcppResponse } from "../../..";
+import { SetNetworkProfileStatusEnumType } from '../enums';
+import { OcppResponse } from '../../..';
 
 export interface SetNetworkProfileResponse extends OcppResponse {
   customData?: CustomDataType;
@@ -42,5 +42,3 @@ export interface StatusInfoType {
    */
   additionalInfo?: string;
 }
-
-

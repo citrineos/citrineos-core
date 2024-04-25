@@ -3,14 +3,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ClassConstructor } from "class-transformer";
+import { ClassConstructor } from 'class-transformer';
 
 export enum CacheNamespace {
-  CentralSystem = "csms",
-  ChargingStation = "cs",
-  Transactions = "tx",
-  Connections = "conn",
-  Other = "other"
+  CentralSystem = 'csms',
+  ChargingStation = 'cs',
+  Transactions = 'tx',
+  Connections = 'conn',
+  Other = 'other',
 }
 
 /**
@@ -26,68 +26,96 @@ export interface ICache {
    * Monitors a key for potential changes to its value.
    * If key-value does not exist this method will wait for it to exist or return null at the end of the wait period.
    * If value is removed, the method will return null.
-   * 
+   *
    * @param {string} key - The key for the value.
    * @param {number} [waitSeconds] - The number of seconds after which the method should return if the value has not been modified by then.
    * @param {string} [namespace] - The namespace for the key.
    * @returns {Promise<string | null>} Returns the value as string once it is modified or waitSeconds has elapsed; or null if the key does not exist.
    * */
-  onChange<T>(key: string, waitSeconds: number, namespace?: string, classConstructor?: () => ClassConstructor<T>): Promise<T | null>;
+  onChange<T>(
+    key: string,
+    waitSeconds: number,
+    namespace?: string,
+    classConstructor?: () => ClassConstructor<T>,
+  ): Promise<T | null>;
 
   /**
    * Gets a value asynchronously from the underlying cache.
-   * 
+   *
    * @param {string} key - The key for the value.
    * @param {string} [namespace] - The namespace for the key.
    * @returns {Promise<string | null>} - Returns the value as string or null if the key does not exist.
    * */
 
-  get<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): Promise<T | null>;
+  get<T>(
+    key: string,
+    namespace?: string,
+    classConstructor?: () => ClassConstructor<T>,
+  ): Promise<T | null>;
 
   /**
    * Gets a value synchronously from the underlying cache.
-   * 
+   *
    * Note: The concrete implementation of this method might use run loop modification to achieve synchronous behavior.
-   * 
+   *
    * @param {string} key - The key for the value.
    * @param {string} [namespace] - The namespace for the key.
    * @returns {string | null} - Returns the value as string or null if the key does not exist.
    */
-  getSync<T>(key: string, namespace?: string, classConstructor?: () => ClassConstructor<T>): T | null;
+  getSync<T>(
+    key: string,
+    namespace?: string,
+    classConstructor?: () => ClassConstructor<T>,
+  ): T | null;
 
   /**
    * Sets a value asynchronously in the underlying cache.
-   * 
+   *
    * @param {string} key - The key for the value.
    * @param {string} value - The value to set.
    * @param {string} [namespace] - The namespace for the key.
    * @param {number} [expireSeconds] - The number of seconds after which the key should expire.
    * @returns {Promise<boolean>} - Returns true if the value was set successfully.
    * */
-  set(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean>;
+  set(
+    key: string,
+    value: string,
+    namespace?: string,
+    expireSeconds?: number,
+  ): Promise<boolean>;
 
   /**
    * Sets a value asynchronously in the underlying cache if it doesn't exist. Returns false if the key already exists.
-   * 
+   *
    * @param {string} key - The key for the value.
    * @param {string} value - The value to set.
    * @param {string} [namespace] - The namespace for the key.
    * @param {number} [expireSeconds] - The number of seconds after which the key should expire.
    * @returns {Promise<boolean>} - Returns true if the value was set successfully.
    * */
-  setIfNotExist(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean>;
+  setIfNotExist(
+    key: string,
+    value: string,
+    namespace?: string,
+    expireSeconds?: number,
+  ): Promise<boolean>;
 
   // TODO: Consider removing this method, no longer used
   /**
    * Sets a value synchronously in the underlying cache.
-   * 
+   *
    * Note: The concrete implementation of this method might use run loop modification to achieve synchronous behavior.
-   * 
+   *
    * @param {string} key - The key for the value.
    * @param {string} value - The value to set.
    * @param {string} [namespace] - The namespace for the key.
    * @param {number} [expireSeconds] - The number of seconds after which the key should expire.
    * @returns {boolean} - Returns true if the value was set successfully.
    */
-  setSync(key: string, value: string, namespace?: string, expireSeconds?: number): boolean;
+  setSync(
+    key: string,
+    value: string,
+    namespace?: string,
+    expireSeconds?: number,
+  ): boolean;
 }

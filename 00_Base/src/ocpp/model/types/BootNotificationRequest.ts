@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { BootReasonEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { BootReasonEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface BootNotificationRequest extends OcppRequest {
   customData?: CustomDataType;
@@ -83,5 +83,3 @@ export interface ModemType {
    */
   imsi?: string;
 }
-
-

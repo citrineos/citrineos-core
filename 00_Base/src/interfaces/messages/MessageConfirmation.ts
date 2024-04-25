@@ -5,11 +5,11 @@
 
 /**
  * MessageConfirmation
- * 
+ *
  * The interface for all message confirmations.
- * 
+ *
  */
 export interface IMessageConfirmation {
-    success: boolean,
-    payload?: string | object
+  success: boolean;
+  payload?: string | object;
 }

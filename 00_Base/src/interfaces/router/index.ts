@@ -3,6 +3,6 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { IMessageRouter } from "./Router";
-export { AbstractMessageRouter } from "./AbstractRouter";
-export { IAuthenticator } from "./Authenticator"
+export { IMessageRouter } from './Router';
+export { AbstractMessageRouter } from './AbstractRouter';
+export { IAuthenticator } from './Authenticator';

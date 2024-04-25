@@ -12,23 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ClearChargingProfileStatusEnumType": {
       "description": "Indicates if the Charging Station was able to execute the request.\r\n",
       "javaType": "ClearChargingProfileStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "Unknown"
-      ],
-      "tsEnumNames": [
-        "Accepted",
-        "Unknown"
-      ]
+      "enum": ["Accepted", "Unknown"],
+      "tsEnumNames": ["Accepted", "Unknown"]
     },
     "StatusInfoType": {
       "description": "Element providing more information about the status.\r\n",
@@ -50,9 +42,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -68,7 +58,5 @@
       "$ref": "#/definitions/StatusInfoType"
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

@@ -1,5 +1,5 @@
 <template>
-	<span>{{ calculatedValue }}{{ totalPrefix }}{{ total }}{{ suffix }}</span>
+  <span>{{ calculatedValue }}{{ totalPrefix }}{{ total }}{{ suffix }}</span>
 </template>
 
 <script lang="ts">
@@ -10,46 +10,45 @@
 import { defineComponent, ref } from 'vue';
 
 export default defineComponent({
-	props: {
-		value: {
-			type: Array<object | string>,
-			default: null,
-		},
-		column: {
-			type: String,
-			default: null,
-		},
-		showTotal: {
-			type: Boolean,
-			default: false,
-		},
-		totalPrefix: {
-			type: String,
-			default: null,
-		},
-		suffix: {
-			type: String,
-			default: null,
-		},
-	},
-	setup(props) {
-		const calculatedValue = ref(0);
-		const total = props.showTotal ? props.value.length : null;
+  props: {
+    value: {
+      type: Array<object | string>,
+      default: null,
+    },
+    column: {
+      type: String,
+      default: null,
+    },
+    showTotal: {
+      type: Boolean,
+      default: false,
+    },
+    totalPrefix: {
+      type: String,
+      default: null,
+    },
+    suffix: {
+      type: String,
+      default: null,
+    },
+  },
+  setup(props) {
+    const calculatedValue = ref(0);
+    const total = props.showTotal ? props.value.length : null;
 
-		props.value.forEach(item => {
-			const columns = props.column.split('.');
+    props.value.forEach((item) => {
+      const columns = props.column.split('.');
 
-			columns.forEach(col => {
-				item = item[col];
-			});
+      columns.forEach((col) => {
+        item = item[col];
+      });
 
-			if (item && item !== 'false') {
-				calculatedValue.value += 1;
-			}
-		});
+      if (item && item !== 'false') {
+        calculatedValue.value += 1;
+      }
+    });
 
-
-		return { calculatedValue, total };
-	},
+    return { calculatedValue, total };
+  },
 });
 </script>

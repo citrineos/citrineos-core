@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ConnectorEnumType, IdTokenEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { ConnectorEnumType, IdTokenEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface ReserveNowRequest extends OcppRequest {
   customData?: CustomDataType;
@@ -75,6 +75,3 @@ export interface AdditionalInfoType {
    */
   type: string;
 }
-
-
-

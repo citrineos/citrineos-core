@@ -2,9 +2,14 @@
   "extends": "./tsconfig.build.json",
   "compilerOptions": {
     "rootDir": "./",
-    "outDir": "./dist/"
+    "outDir": "./dist"
   },
-  "exclude": ["DirectusExtensions", "./dist/**/*"], // TODO remove "./dist/**/*" after PR 68 is merged in main
+  "exclude": [
+    "./dist/**/*",
+    "**/node_modules/**",
+    "DirectusExtensions", // todo for now
+    "Swarm" // todo for now
+  ],
   "references": [
     {
       "path": "./Server"

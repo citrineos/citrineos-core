@@ -12,25 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "HashAlgorithmEnumType": {
       "description": "Used algorithms for the hashes provided.\r\n",
       "javaType": "HashAlgorithmEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "SHA256",
-        "SHA384",
-        "SHA512"
-      ],
-      "tsEnumNames": [
-        "SHA256",
-        "SHA384",
-        "SHA512"
-      ]
+      "enum": ["SHA256", "SHA384", "SHA512"],
+      "tsEnumNames": ["SHA256", "SHA384", "SHA512"]
     },
     "IdTokenEnumType": {
       "description": "Enumeration of possible idToken types.\r\n",
@@ -78,10 +68,7 @@
           "maxLength": 50
         }
       },
-      "required": [
-        "additionalIdToken",
-        "type"
-      ]
+      "required": ["additionalIdToken", "type"]
     },
     "IdTokenType": {
       "description": "Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.\r\n",
@@ -109,10 +96,7 @@
           "$ref": "#/definitions/IdTokenEnumType"
         }
       },
-      "required": [
-        "idToken",
-        "type"
-      ]
+      "required": ["idToken", "type"]
     },
     "OCSPRequestDataType": {
       "javaType": "OCSPRequestData",
@@ -179,7 +163,5 @@
       "maxItems": 4
     }
   },
-  "required": [
-    "idToken"
-  ]
+  "required": ["idToken"]
 }

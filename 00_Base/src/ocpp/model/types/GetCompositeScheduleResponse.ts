@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ChargingRateUnitEnumType, GenericStatusEnumType } from "../enums";
-import { OcppResponse } from "../../..";
+import { ChargingRateUnitEnumType, GenericStatusEnumType } from '../enums';
+import { OcppResponse } from '../../..';
 
 export interface GetCompositeScheduleResponse extends OcppResponse {
   customData?: CustomDataType;
@@ -53,7 +53,10 @@ export interface CompositeScheduleType {
   /**
    * @minItems 1
    */
-  chargingSchedulePeriod: [ChargingSchedulePeriodType, ...ChargingSchedulePeriodType[]];
+  chargingSchedulePeriod: [
+    ChargingSchedulePeriodType,
+    ...ChargingSchedulePeriodType[],
+  ];
   /**
    * The ID of the EVSE for which the
    * schedule is requested. When evseid=0, the
@@ -112,6 +115,3 @@ export interface ChargingSchedulePeriodType {
    */
   phaseToUse?: number;
 }
-
-
-

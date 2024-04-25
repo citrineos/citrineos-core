@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "FirmwareType": {
       "description": "Firmware\r\nurn:x-enexis:ecdm:uid:2:233291\r\nRepresents a copy of the firmware that can be loaded/updated on the Charging Station.\r\n",
@@ -51,10 +49,7 @@
           "maxLength": 800
         }
       },
-      "required": [
-        "location",
-        "retrieveDateTime"
-      ]
+      "required": ["location", "retrieveDateTime"]
     }
   },
   "type": "object",
@@ -79,8 +74,5 @@
       "$ref": "#/definitions/FirmwareType"
     }
   },
-  "required": [
-    "requestId",
-    "firmware"
-  ]
+  "required": ["requestId", "firmware"]
 }

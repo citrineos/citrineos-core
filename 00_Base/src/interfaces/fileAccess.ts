@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import * as Buffer from "buffer";
+import * as Buffer from 'buffer';
 
 export interface IFileAccess {
-    uploadFile(fileName: string, content: Buffer, filePath?: string): Promise<string>;
-    getFile(id: string): Promise<Buffer>;
+  uploadFile(fileName: string, content: Buffer, filePath?: string): Promise<string>;
+  getFile(id: string): Promise<Buffer>;
 }

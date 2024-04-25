@@ -12,23 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "CertificateSigningUseEnumType": {
       "description": "Indicates the type of certificate that is to be signed. When omitted the certificate is to be used for both the 15118 connection (if implemented) and the Charging Station to CSMS connection.\r\n\r\n",
       "javaType": "CertificateSigningUseEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "ChargingStationCertificate",
-        "V2GCertificate"
-      ],
-      "tsEnumNames": [
-        "ChargingStationCertificate",
-        "V2GCertificate"
-      ]
+      "enum": ["ChargingStationCertificate", "V2GCertificate"],
+      "tsEnumNames": ["ChargingStationCertificate", "V2GCertificate"]
     }
   },
   "type": "object",
@@ -46,7 +38,5 @@
       "$ref": "#/definitions/CertificateSigningUseEnumType"
     }
   },
-  "required": [
-    "csr"
-  ]
+  "required": ["csr"]
 }

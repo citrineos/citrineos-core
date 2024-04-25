@@ -1,19 +1,15 @@
 {
-    "type": "object",
-    "properties": {
-        "stationId": {
-            "type": "string"
-        },
-        "unit": {
-            "type": "string"
-        },
-        "price": {
-            "type": "number"
-        }
+  "type": "object",
+  "properties": {
+    "stationId": {
+      "type": "string"
     },
-    "required": [
-        "stationId",
-        "unit",
-        "price"
-    ]
+    "unit": {
+      "type": "string"
+    },
+    "price": {
+      "type": "number"
+    }
+  },
+  "required": ["stationId", "unit", "price"]
 }
