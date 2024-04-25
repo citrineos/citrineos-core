@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/configuration",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "The configuration module for OCPP v2.0.1. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,7 +11,8 @@
     "prepublish": "npx eslint",
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "npm run clean && tsc -p tsconfig.json",
-    "clean": "rm -rf package-lock.json dist node_modules tsconfig.tsbuildinfo"
+    "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
+    "fresh": "rm -rf node_modules package-lock.json && npm run clean"
   },
   "keywords": [
     "ocpp",
@@ -31,10 +32,9 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@citrineos/base": "1.0.0",
-    "@citrineos/data": "1.0.0",
-    "@citrineos/util": "1.0.0",
+    "@citrineos/base": "1.1.1",
+    "@citrineos/data": "1.1.1",
+    "@citrineos/util": "1.1.1",
     "uuid": "^9.0.1"
-  },
-  "workspace": "../../"
+  }
 }

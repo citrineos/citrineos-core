@@ -7,5 +7,4 @@
  * TODO: add actual interface
  * Interface for the admin api.
  */
-export interface IAdminApi {
-}
+export interface IAdminApi {}

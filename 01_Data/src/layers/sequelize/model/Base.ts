@@ -4,5 +4,5 @@
 // SPDX-License-Identifier: Apache 2.0
 
 export interface IBaseModel<T> {
-    toType() : T;
+  toType: () => T;
 }

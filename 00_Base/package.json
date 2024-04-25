@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/base",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "The base module for OCPP v2.0.1 including all interfaces. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,7 +12,8 @@
     "generate-interfaces": "node json-schema-processor.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "npm run clean && tsc -p tsconfig.json",
-    "clean": "rm -rf package-lock.json dist node_modules tsconfig.tsbuildinfo"
+    "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
+    "fresh": "rm -rf node_modules package-lock.json && npm run clean"
   },
   "keywords": [
     "ocpp",
@@ -37,6 +38,5 @@
     "tslog": "^4.9.2",
     "uuid": "^9.0.0",
     "zod": "^3.22.2"
-  },
-  "workspace": "../"
+  }
 }

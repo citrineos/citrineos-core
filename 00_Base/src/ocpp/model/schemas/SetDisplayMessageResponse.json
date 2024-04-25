@@ -12,9 +12,7 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "DisplayMessageStatusEnumType": {
       "description": "This indicates whether the Charging Station is able to display the message.\r\n",
@@ -58,9 +56,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -76,7 +72,5 @@
       "$ref": "#/definitions/StatusInfoType"
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

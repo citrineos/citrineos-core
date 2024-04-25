@@ -12,25 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "SetNetworkProfileStatusEnumType": {
       "description": "Result of operation.\r\n",
       "javaType": "SetNetworkProfileStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "Rejected",
-        "Failed"
-      ],
-      "tsEnumNames": [
-        "Accepted",
-        "Rejected",
-        "Failed"
-      ]
+      "enum": ["Accepted", "Rejected", "Failed"],
+      "tsEnumNames": ["Accepted", "Rejected", "Failed"]
     },
     "StatusInfoType": {
       "description": "Element providing more information about the status.\r\n",
@@ -52,9 +42,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -70,7 +58,5 @@
       "$ref": "#/definitions/StatusInfoType"
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

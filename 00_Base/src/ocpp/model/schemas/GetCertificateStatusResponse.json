@@ -12,23 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "GetCertificateStatusEnumType": {
       "description": "This indicates whether the charging station was able to retrieve the OCSP certificate status.\r\n",
       "javaType": "GetCertificateStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Accepted",
-        "Failed"
-      ],
-      "tsEnumNames": [
-        "Accepted",
-        "Failed"
-      ]
+      "enum": ["Accepted", "Failed"],
+      "tsEnumNames": ["Accepted", "Failed"]
     },
     "StatusInfoType": {
       "description": "Element providing more information about the status.\r\n",
@@ -50,9 +42,7 @@
           "maxLength": 512
         }
       },
-      "required": [
-        "reasonCode"
-      ]
+      "required": ["reasonCode"]
     }
   },
   "type": "object",
@@ -73,7 +63,5 @@
       "maxLength": 5500
     }
   },
-  "required": [
-    "status"
-  ]
+  "required": ["status"]
 }

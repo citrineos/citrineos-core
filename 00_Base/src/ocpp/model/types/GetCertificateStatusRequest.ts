@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { HashAlgorithmEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { HashAlgorithmEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface GetCertificateStatusRequest extends OcppRequest {
   customData?: CustomDataType;
@@ -50,5 +50,3 @@ export interface OCSPRequestDataType {
    */
   responderURL: string;
 }
-
-

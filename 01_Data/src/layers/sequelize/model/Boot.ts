@@ -3,55 +3,55 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { BootConfig, CustomDataType, Namespace, RegistrationStatusEnumType, SetVariableResultType, StatusInfoType } from "@citrineos/base";
-import { Column, DataType, HasMany, Model, PrimaryKey, Table } from "sequelize-typescript";
-import { VariableAttribute } from "./DeviceModel";
+import { type BootConfig, type CustomDataType, Namespace, RegistrationStatusEnumType, type SetVariableResultType, StatusInfoType } from '@citrineos/base';
+import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import { VariableAttribute } from './DeviceModel';
 
 @Table
 export class Boot extends Model implements BootConfig {
+  static readonly MODEL_NAME: string = Namespace.BootConfig;
 
-    static readonly MODEL_NAME: string = Namespace.BootConfig;
+  /**
+   * StationId
+   */
+  @PrimaryKey
+  @Column(DataType.STRING)
+  declare id: string;
 
-    declare customData?: CustomDataType;
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('lastBootTime').toISOString();
+    },
+  })
+  declare lastBootTime?: string;
 
-    /**
-     * StationId
-     */
-    @PrimaryKey
-    @Column(DataType.STRING)
-    declare id: string;
+  @Column(DataType.INTEGER)
+  declare heartbeatInterval?: number;
 
-    @Column({
-        type: DataType.DATE,
-        get() {
-            return this.getDataValue('lastBootTime').toISOString();
-        }
-    })
-    declare lastBootTime?: string;
+  @Column(DataType.INTEGER)
+  declare bootRetryInterval?: number;
 
-    @Column(DataType.INTEGER)
-    declare heartbeatInterval?: number;
+  @Column(DataType.STRING)
+  declare status: RegistrationStatusEnumType;
 
-    @Column(DataType.INTEGER)
-    declare bootRetryInterval?: number;
+  @Column(DataType.JSON)
+  declare statusInfo?: StatusInfoType;
 
-    @Column(DataType.STRING)
-    declare status: RegistrationStatusEnumType;
+  @Column(DataType.BOOLEAN)
+  declare getBaseReportOnPending?: boolean;
 
-    @Column(DataType.JSON)
-    declare statusInfo?: StatusInfoType;
+  /**
+   * Variable attributes to be sent in SetVariablesRequest on pending boot
+   */
+  @HasMany(() => VariableAttribute)
+  declare pendingBootSetVariables?: VariableAttribute[];
 
-    @Column(DataType.BOOLEAN)
-    declare getBaseReportOnPending?: boolean;
-    /**
-     * Variable attributes to be sent in SetVariablesRequest on pending boot 
-     */
-    @HasMany(() => VariableAttribute)
-    declare pendingBootSetVariables?: VariableAttribute[];
+  @Column(DataType.JSON)
+  declare variablesRejectedOnLastBoot: SetVariableResultType[];
 
-    @Column(DataType.JSON)
-    declare variablesRejectedOnLastBoot: SetVariableResultType[];
+  @Column(DataType.BOOLEAN)
+  declare bootWithRejectedVariables?: boolean;
 
-    @Column(DataType.BOOLEAN)
-    declare bootWithRejectedVariables?: boolean;
+  declare customData?: CustomDataType;
 }

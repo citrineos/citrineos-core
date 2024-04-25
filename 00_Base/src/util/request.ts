@@ -11,8 +11,8 @@ import {
   MessageState,
   OcppError,
   OcppRequest,
-  OcppResponse
-} from "..";
+  OcppResponse,
+} from '..';
 
 export class RequestBuilder {
   static buildCall(
@@ -31,10 +31,10 @@ export class RequestBuilder {
       context: {
         stationId,
         correlationId,
-        tenantId
+        tenantId,
       },
       state: MessageState.Request,
-      payload
+      payload,
     };
   }
 
@@ -54,10 +54,10 @@ export class RequestBuilder {
       context: {
         stationId,
         correlationId,
-        tenantId
+        tenantId,
       },
       state: MessageState.Response,
-      payload
+      payload,
     };
   }
 
@@ -77,10 +77,10 @@ export class RequestBuilder {
       context: {
         stationId,
         correlationId,
-        tenantId
+        tenantId,
       },
       state: MessageState.Response,
-      payload
+      payload,
     };
   }
 }

@@ -10,8 +10,15 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ChargingLimitSourceEnumType, ChargingProfileKindEnumType, ChargingProfilePurposeEnumType, ChargingRateUnitEnumType, CostKindEnumType, RecurrencyKindEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import {
+  ChargingLimitSourceEnumType,
+  ChargingProfileKindEnumType,
+  ChargingProfilePurposeEnumType,
+  ChargingRateUnitEnumType,
+  CostKindEnumType,
+  RecurrencyKindEnumType,
+} from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface ReportChargingProfilesRequest extends OcppRequest {
   customData?: CustomDataType;
@@ -128,7 +135,10 @@ export interface ChargingScheduleType {
    * @minItems 1
    * @maxItems 1024
    */
-  chargingSchedulePeriod: [ChargingSchedulePeriodType, ...ChargingSchedulePeriodType[]];
+  chargingSchedulePeriod: [
+    ChargingSchedulePeriodType,
+    ...ChargingSchedulePeriodType[],
+  ];
   /**
    * Charging_ Schedule. Min_ Charging_ Rate. Numeric
    * urn:x-oca:ocpp:uid:1:569239
@@ -298,10 +308,3 @@ export interface CostType {
    */
   amountMultiplier?: number;
 }
-
-
-
-
-
-
-

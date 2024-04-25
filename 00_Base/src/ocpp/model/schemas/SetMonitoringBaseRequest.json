@@ -12,25 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "MonitoringBaseEnumType": {
       "description": "Specify which monitoring base will be set\r\n",
       "javaType": "MonitoringBaseEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "All",
-        "FactoryDefault",
-        "HardWiredOnly"
-      ],
-      "tsEnumNames": [
-        "All",
-        "FactoryDefault",
-        "HardWiredOnly"
-      ]
+      "enum": ["All", "FactoryDefault", "HardWiredOnly"],
+      "tsEnumNames": ["All", "FactoryDefault", "HardWiredOnly"]
     }
   },
   "type": "object",
@@ -43,7 +33,5 @@
       "$ref": "#/definitions/MonitoringBaseEnumType"
     }
   },
-  "required": [
-    "monitoringBase"
-  ]
+  "required": ["monitoringBase"]
 }

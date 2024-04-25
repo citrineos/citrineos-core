@@ -12,23 +12,15 @@
           "maxLength": 255
         }
       },
-      "required": [
-        "vendorId"
-      ]
+      "required": ["vendorId"]
     },
     "ReservationUpdateStatusEnumType": {
       "description": "The updated reservation status.\r\n",
       "javaType": "ReservationUpdateStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Expired",
-        "Removed"
-      ],
-      "tsEnumNames": [
-        "Expired",
-        "Removed"
-      ]
+      "enum": ["Expired", "Removed"],
+      "tsEnumNames": ["Expired", "Removed"]
     }
   },
   "type": "object",
@@ -45,8 +37,5 @@
       "$ref": "#/definitions/ReservationUpdateStatusEnumType"
     }
   },
-  "required": [
-    "reservationId",
-    "reservationUpdateStatus"
-  ]
+  "required": ["reservationId", "reservationUpdateStatus"]
 }

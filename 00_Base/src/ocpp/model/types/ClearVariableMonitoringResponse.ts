@@ -10,15 +10,18 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ClearMonitoringStatusEnumType } from "../enums";
-import { OcppResponse } from "../../..";
+import { ClearMonitoringStatusEnumType } from '../enums';
+import { OcppResponse } from '../../..';
 
 export interface ClearVariableMonitoringResponse extends OcppResponse {
   customData?: CustomDataType;
   /**
    * @minItems 1
    */
-  clearMonitoringResult: [ClearMonitoringResultType, ...ClearMonitoringResultType[]];
+  clearMonitoringResult: [
+    ClearMonitoringResultType,
+    ...ClearMonitoringResultType[],
+  ];
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -55,5 +58,3 @@ export interface StatusInfoType {
    */
   additionalInfo?: string;
 }
-
-

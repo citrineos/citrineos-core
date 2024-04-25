@@ -2,13 +2,11 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingStation, Location, SequelizeRepository } from "..";
-import { ILocationRepository } from "../../..";
-
-
+import { ChargingStation, type Location, SequelizeRepository } from '..';
+import { type ILocationRepository } from '../../..';
 
 export class LocationRepository extends SequelizeRepository<Location> implements ILocationRepository {
-    readChargingStationByStationId(stationId: string): Promise<ChargingStation | null> {
-        return ChargingStation.findByPk(stationId);
-    }
+  async readChargingStationByStationId(stationId: string): Promise<ChargingStation | null> {
+    return await ChargingStation.findByPk(stationId);
+  }
 }

@@ -3,29 +3,18 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingStateEnumType, CustomDataType, EVSEType, MeterValueType, Namespace, ReasonEnumType, TransactionEventRequest, TransactionType } from '@citrineos/base';
-import {
-  Table,
-  Column,
-  Model,
-  DataType,
-  ForeignKey,
-  HasMany,
-  BelongsTo
-} from 'sequelize-typescript';
+import { ChargingStateEnumType, type CustomDataType, EVSEType, type MeterValueType, Namespace, ReasonEnumType, type TransactionEventRequest, type TransactionType } from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
 
 @Table
 export class Transaction extends Model implements TransactionType {
-
   static readonly MODEL_NAME: string = Namespace.TransactionType;
 
-  declare customData?: CustomDataType;
-
   @Column({
-    unique: 'stationId_transactionId'
+    unique: 'stationId_transactionId',
   })
   declare stationId: string;
 
@@ -37,12 +26,12 @@ export class Transaction extends Model implements TransactionType {
   declare evseDatabaseId?: number;
 
   @Column({
-    unique: 'stationId_transactionId'
+    unique: 'stationId_transactionId',
   })
   declare transactionId: string;
 
   @Column({
-    defaultValue: true
+    defaultValue: true,
   })
   declare isActive: boolean;
 
@@ -66,4 +55,6 @@ export class Transaction extends Model implements TransactionType {
 
   @Column(DataType.INTEGER)
   declare remoteStartId?: number;
+
+  declare customData?: CustomDataType;
 }

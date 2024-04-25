@@ -10,8 +10,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ChargingProfilePurposeEnumType } from "../enums";
-import { OcppRequest } from "../../..";
+import { ChargingProfilePurposeEnumType } from '../enums';
+import { OcppRequest } from '../../..';
 
 export interface ClearChargingProfileRequest extends OcppRequest {
   customData?: CustomDataType;
@@ -54,5 +54,3 @@ export interface ClearChargingProfileType {
    */
   stackLevel?: number;
 }
-
-
