@@ -13,7 +13,7 @@ export class Acme implements ICertificateAuthorityClient {
   private readonly _directoryUrl: string = acme.directory.letsencrypt.staging;
   private readonly _email: string | undefined;
 
-  private _client: Client | undefined;
+  private _client: Client;
   private _logger: Logger<ILogObj>;
 
   constructor(config: SystemConfig, logger?: Logger<ILogObj>) {

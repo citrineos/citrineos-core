@@ -7,7 +7,7 @@ import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
 
 @Table
 export class Certificate extends Model {
-  static readonly MODEL_NAME: string = Namespace.ChargerCertificate;
+  static readonly MODEL_NAME: string = Namespace.RootCertificate;
 
   /**
    * Fields

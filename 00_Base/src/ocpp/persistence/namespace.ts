@@ -11,7 +11,7 @@ export enum Namespace {
   AuthorizationData = 'Authorization',
   AuthorizationRestrictions = 'AuthorizationRestrictions',
   BootConfig = 'Boot',
-  ChargerCertificate = 'ChargerCertificate',
+  RootCertificate = 'RootCertificate',
   CsmsCertificate = 'CsmsCertificate',
   ChargingStation = 'ChargingStation',
   ComponentType = 'Component',

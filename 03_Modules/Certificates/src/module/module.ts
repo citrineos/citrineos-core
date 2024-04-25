@@ -141,6 +141,10 @@ export class CertificatesModule extends AbstractModule {
     return this._certificateRepository;
   }
 
+  get certificateAuthorityService(): CertificateAuthorityService {
+    return this._certificateAuthorityService;
+  }
+
   /**
    * Handle requests
    */

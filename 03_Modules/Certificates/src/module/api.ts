@@ -29,8 +29,8 @@ import { CertificatesModule } from './module';
 import { WebsocketNetworkConnection } from '@citrineos/util';
 import {
   Certificate,
-  ChargerCertificateRequest,
-  ChargerCertificateSchema,
+  RootCertificateRequest,
+  RootCertificateSchema,
   ContentType,
   CsmsCertificateRequest,
   CsmsCertificateSchema,
@@ -224,19 +224,21 @@ export class CertificatesModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.ChargerCertificate,
+    Namespace.RootCertificate,
     HttpMethod.Post,
     undefined,
-    ChargerCertificateSchema,
+    RootCertificateSchema,
   )
-  async installChargerCertificate(
-    request: FastifyRequest<{ Body: ChargerCertificateRequest }>,
+  async installRootCertificate(
+    request: FastifyRequest<{ Body: RootCertificateRequest }>,
   ): Promise<Certificate> {
-    const certRequest = request.body as ChargerCertificateRequest;
+    const certRequest = request.body as RootCertificateRequest;
 
     this._logger.info(
       `Installing certificate on charger ${certRequest.stationId}`,
     );
+
+    // TODO allow install certificate by providing file id
 
     const certificateEntity = new Certificate();
     certificateEntity.stationId = certRequest.stationId;
@@ -261,8 +263,9 @@ export class CertificatesModuleApi
     }
 
     // Generate certificate
-    const [certificatePem, privateKeyPem] =
-      this._generateRootCertificate(certificateEntity);
+    const [certificatePem, privateKeyPem] = certRequest.selfSigned
+      ? this._generateSelfSignedRootCertificate(certificateEntity)
+      : await this._generateRootCertificateSignedByCAServer(certificateEntity);
 
     // Upload certificates to file storage
     certificateEntity.privateKeyFileId = await this._fileAccess.uploadFile(
@@ -413,14 +416,47 @@ export class CertificatesModuleApi
   }
 
   /**
+   * Generates a root certificate signed by a CA server.
+   *
+   * @param {Certificate} certificate - The certificate information used for generating the root certificate.
+   * @return {Promise<[string, string]>} An array containing the signed certificate and the private key.
+   */
+  private async _generateRootCertificateSignedByCAServer(
+    certificate: Certificate,
+  ): Promise<[string, string]> {
+    const csr = forge.pki.createCertificationRequest();
+    const keyPair = forge.pki.rsa.generateKeyPair({
+      bits: certificate.keyLength,
+    });
+
+    csr.publicKey = keyPair.publicKey;
+    csr.setSubject([
+      { name: 'commonName', value: certificate.commonName },
+      { name: 'organizationName', value: certificate.organizationName },
+    ]);
+    csr.sign(keyPair.privateKey);
+
+    const signedCertificate =
+      await this._module.certificateAuthorityService.getSignedCertificateByExternalCA(
+        forge.pki.certificationRequestToPem(csr),
+      );
+
+    return [signedCertificate, forge.pki.privateKeyToPem(keyPair.privateKey)];
+  }
+
+  /**
    * Generate root certificate.
    * @return generated root certificate and its private key
    * @param certificate
    */
-  private _generateRootCertificate(certificate: Certificate): [string, string] {
-    const keys = forge.pki.rsa.generateKeyPair({ bits: certificate.keyLength });
+  private _generateSelfSignedRootCertificate(
+    certificate: Certificate,
+  ): [string, string] {
+    const keyPair = forge.pki.rsa.generateKeyPair({
+      bits: certificate.keyLength,
+    });
     const cert = forge.pki.createCertificate();
-    cert.publicKey = keys.publicKey;
+    cert.publicKey = keyPair.publicKey;
     cert.serialNumber = certificate.serialNumber;
     cert.validity.notBefore = new Date();
     if (certificate.validBefore) {
@@ -453,11 +489,11 @@ export class CertificatesModuleApi
       },
     ]);
 
-    cert.sign(keys.privateKey, forge.md.sha256.create());
+    cert.sign(keyPair.privateKey, forge.md.sha256.create());
 
     return [
       forge.pki.certificateToPem(cert),
-      forge.pki.privateKeyToPem(keys.privateKey),
+      forge.pki.privateKeyToPem(keyPair.privateKey),
     ];
   }
 }

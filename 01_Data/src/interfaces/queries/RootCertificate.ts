@@ -4,7 +4,7 @@
 
 import { QuerySchema } from '@citrineos/base';
 
-export const ChargerCertificateSchema = QuerySchema(
+export const RootCertificateSchema = QuerySchema(
   [
     ['stationId', 'string'],
     ['certificateType', 'string'],
@@ -16,6 +16,9 @@ export const ChargerCertificateSchema = QuerySchema(
     ['commonName', 'string'],
     ['validBefore', 'string'],
     ['filePath', 'string'],
+    ['certificateFileId', 'string'],
+    ['privateKeyFileId', 'string'],
+    ['selfSigned', 'boolean'],
   ],
-  ['stationId', 'certificateType', 'organizationName'],
+  ['stationId', 'certificateType'],
 );
