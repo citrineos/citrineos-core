@@ -223,55 +223,80 @@ export class CertificatesModuleApi
     );
   }
 
-    @AsDataEndpoint(Namespace.ChargerCertificate, HttpMethod.Post, undefined, ChargerCertificateSchema)
-    async installChargerCertificate(request: FastifyRequest<{ Body: ChargerCertificateRequest }>): Promise<Certificate> {
-        const certRequest = request.body as ChargerCertificateRequest;
+  @AsDataEndpoint(
+    Namespace.ChargerCertificate,
+    HttpMethod.Post,
+    undefined,
+    ChargerCertificateSchema,
+  )
+  async installChargerCertificate(
+    request: FastifyRequest<{ Body: ChargerCertificateRequest }>,
+  ): Promise<Certificate> {
+    const certRequest = request.body as ChargerCertificateRequest;
 
-        this._logger.info(`Installing certificate on charger ${certRequest.stationId}`);
+    this._logger.info(
+      `Installing certificate on charger ${certRequest.stationId}`,
+    );
 
-        const certificateEntity = new Certificate();
-        certificateEntity.stationId = certRequest.stationId;
-        certificateEntity.serialNumber = certRequest.serialNumber ? certRequest.serialNumber: this._generateSerialNumber();
-        certificateEntity.certificateType = certRequest.certificateType;
-        certificateEntity.keyLength = certRequest.keyLength ? certRequest.keyLength : 2048;
-        certificateEntity.organizationName = certRequest.organizationName;
-        // Refer to OCPP 2.0.1 Part 2 A00.FR.511
-        certificateEntity.commonName = certRequest.commonName ? certRequest.commonName : certRequest.serialNumber;
-        if (certRequest.validBefore) {
-            certificateEntity.validBefore = certRequest.validBefore;
-        } else {
-            const defaultValidityDate: Date = new Date();
-            defaultValidityDate.setFullYear(defaultValidityDate.getFullYear() + 1);
-            certificateEntity.validBefore = defaultValidityDate.toISOString();
-        }
-
-        // Generate certificate
-        const [certificatePem, privateKeyPem] = this._generateRootCertificate(certificateEntity);
-
-        // Upload certificates to file storage
-        certificateEntity.privateKeyFileId = await this._fileAccess!.uploadFile(
-            `private_key_${certificateEntity.serialNumber}.pem`, Buffer.from(privateKeyPem),
-            certRequest.filePath);
-        certificateEntity.certificateFileId = await this._fileAccess!.uploadFile(
-            `root_certificate_${certificateEntity.serialNumber}.pem`, Buffer.from(certificatePem),
-            certRequest.filePath);
-
-        // Store certificates in db
-        await this._module.certificateRepository.createOrUpdateCertificate(certificateEntity);
-
-        // Send InstallCertificateRequest to the charger
-        const confirmation: IMessageConfirmation = await this.installCertificate(certRequest.stationId,
-            certRequest.tenantId, {
-                certificateType: certRequest.certificateType,
-                certificate: certificatePem
-            } as InstallCertificateRequest,
-            certRequest.callbackUrl)
-        if (!confirmation.success) {
-            throw new Error('Send InstallCertificateRequest failed.')
-        }
-
-        return certificateEntity;
+    const certificateEntity = new Certificate();
+    certificateEntity.stationId = certRequest.stationId;
+    certificateEntity.serialNumber = certRequest.serialNumber
+      ? certRequest.serialNumber
+      : this._generateSerialNumber();
+    certificateEntity.certificateType = certRequest.certificateType;
+    certificateEntity.keyLength = certRequest.keyLength
+      ? certRequest.keyLength
+      : 2048;
+    certificateEntity.organizationName = certRequest.organizationName;
+    // Refer to OCPP 2.0.1 Part 2 A00.FR.511
+    certificateEntity.commonName = certRequest.commonName
+      ? certRequest.commonName
+      : certRequest.serialNumber;
+    if (certRequest.validBefore) {
+      certificateEntity.validBefore = certRequest.validBefore;
+    } else {
+      const defaultValidityDate: Date = new Date();
+      defaultValidityDate.setFullYear(defaultValidityDate.getFullYear() + 1);
+      certificateEntity.validBefore = defaultValidityDate.toISOString();
     }
+
+    // Generate certificate
+    const [certificatePem, privateKeyPem] =
+      this._generateRootCertificate(certificateEntity);
+
+    // Upload certificates to file storage
+    certificateEntity.privateKeyFileId = await this._fileAccess.uploadFile(
+      `private_key_${certificateEntity.serialNumber}.pem`,
+      Buffer.from(privateKeyPem),
+      certRequest.filePath,
+    );
+    certificateEntity.certificateFileId = await this._fileAccess.uploadFile(
+      `root_certificate_${certificateEntity.serialNumber}.pem`,
+      Buffer.from(certificatePem),
+      certRequest.filePath,
+    );
+
+    // Store certificates in db
+    await this._module.certificateRepository.createOrUpdateCertificate(
+      certificateEntity,
+    );
+
+    // Send InstallCertificateRequest to the charger
+    const confirmation: IMessageConfirmation = await this.installCertificate(
+      certRequest.stationId,
+      certRequest.tenantId,
+      {
+        certificateType: certRequest.certificateType,
+        certificate: certificatePem,
+      } as InstallCertificateRequest,
+      certRequest.callbackUrl,
+    );
+    if (!confirmation.success) {
+      throw new Error('Send InstallCertificateRequest failed.');
+    }
+
+    return certificateEntity;
+  }
 
   /**
    * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
@@ -379,49 +404,62 @@ export class CertificatesModuleApi
     }
   }
 
-    /**
-     * Generate a serial number without leading 0s.
-     */
-    private _generateSerialNumber(): string {
-        const hexString = forge.util.bytesToHex(forge.random.getBytesSync(20));
-        return hexString.replace(/^0+/, '');
+  /**
+   * Generate a serial number without leading 0s.
+   */
+  private _generateSerialNumber(): string {
+    const hexString = forge.util.bytesToHex(forge.random.getBytesSync(20));
+    return hexString.replace(/^0+/, '');
+  }
+
+  /**
+   * Generate root certificate.
+   * @return generated root certificate and its private key
+   * @param certificate
+   */
+  private _generateRootCertificate(certificate: Certificate): [string, string] {
+    const keys = forge.pki.rsa.generateKeyPair({ bits: certificate.keyLength });
+    const cert = forge.pki.createCertificate();
+    cert.publicKey = keys.publicKey;
+    cert.serialNumber = certificate.serialNumber;
+    cert.validity.notBefore = new Date();
+    if (certificate.validBefore) {
+      cert.validity.notAfter = new Date(Date.parse(certificate.validBefore));
+    } else {
+      cert.validity.notAfter = new Date();
+      cert.validity.notAfter.setFullYear(
+        cert.validity.notAfter.getFullYear() + 1,
+      );
     }
 
-    /**
-     * Generate root certificate.
-     * @param certificate: certificate entity
-     * @return generated root certificate and its private key
-     */
-    private _generateRootCertificate(certificate: Certificate): [string, string] {
-        const keys = forge.pki.rsa.generateKeyPair({bits: certificate.keyLength});
-        const cert = forge.pki.createCertificate();
-        cert.publicKey = keys.publicKey;
-        cert.serialNumber = certificate.serialNumber;
-        cert.validity.notBefore = new Date();
-        cert.validity.notAfter = new Date(Date.parse(certificate.validBefore!));
+    const attrs = [
+      { name: 'commonName', value: certificate.commonName },
+      { name: 'organizationName', value: certificate.organizationName },
+    ];
+    cert.setSubject(attrs);
+    cert.setIssuer(attrs);
+    cert.setExtensions([
+      {
+        name: 'basicConstraints',
+        cA: true,
+      },
+      {
+        // Based on OCPP 2.0.1 Part 2 A00.FR.512, Key Usage should be used but no details defined.
+        name: 'keyUsage',
+        critical: true,
+        keyCertSign: true,
+        digitalSignature: true,
+        cRLSign: true,
+      },
+    ]);
 
-        const attrs = [
-            { name: 'commonName', value: certificate.commonName },
-            { name: 'organizationName', value: certificate.organizationName },
-        ];
-        cert.setSubject(attrs);
-        cert.setIssuer(attrs);
-        cert.setExtensions([{
-            name: 'basicConstraints',
-            cA: true,
-        }, {
-            // Based on OCPP 2.0.1 Part 2 A00.FR.512, Key Usage should be used but no details defined.
-            name: 'keyUsage',
-            critical: true,
-            keyCertSign: true,
-            digitalSignature: true,
-            cRLSign: true
-        }]);
+    cert.sign(keys.privateKey, forge.md.sha256.create());
 
-        cert.sign(keys.privateKey, forge.md.sha256.create());
-
-        return [forge.pki.certificateToPem(cert), forge.pki.privateKeyToPem(keys.privateKey)];
-    }
+    return [
+      forge.pki.certificateToPem(cert),
+      forge.pki.privateKeyToPem(keys.privateKey),
+    ];
+  }
 }
 
 interface RollBackFile {

@@ -101,26 +101,33 @@ export class DirectusUtil implements IFileAccess {
     }
   }
 
-  public async uploadFile(fileName: string, content: Buffer, filePath?: string): Promise<string> {
-      let fileType: string | undefined;
-      if (fileName.lastIndexOf('.') > -1 && fileName.lastIndexOf('.') < fileName.length - 1) {
-          fileType = fileName.substring((fileName.lastIndexOf('.')));
-      }  
-      const formData = new FormData();
-      if (fileType) {
-          formData.append('type', fileType);
-      }
-      if(filePath) {
-          formData.append('folder', filePath);
-      }
-      formData.append('file', new Blob([content]), fileName);  
-      try {
-          const file = await this._client.request(uploadFiles(formData));
-          return file["id"];
-      } catch (error) {
-          this._logger.error('Upload file failed: ', error);
-          throw new Error(`Upload file ${fileName} failed.`)
-      }
+  public async uploadFile(
+    fileName: string,
+    content: Buffer,
+    filePath?: string,
+  ): Promise<string> {
+    let fileType: string | undefined;
+    if (
+      fileName.lastIndexOf('.') > -1 &&
+      fileName.lastIndexOf('.') < fileName.length - 1
+    ) {
+      fileType = fileName.substring(fileName.lastIndexOf('.'));
+    }
+    const formData = new FormData();
+    if (fileType) {
+      formData.append('type', fileType);
+    }
+    if (filePath) {
+      formData.append('folder', filePath);
+    }
+    formData.append('file', new Blob([content]), fileName);
+    try {
+      const file = await this._client.request(uploadFiles(formData));
+      return file['id'];
+    } catch (error) {
+      this._logger.error('Upload file failed: ', error);
+      throw new Error(`Upload file ${fileName} failed.`);
+    }
   }
 
   private async addDirectusFlowForAction(

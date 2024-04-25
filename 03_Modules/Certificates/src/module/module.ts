@@ -31,11 +31,14 @@ import {
   SignCertificateResponse,
   SystemConfig,
 } from '@citrineos/base';
-import { ICertificateRepository, IDeviceModelRepository, sequelize } from '@citrineos/data';
+import {
+  ICertificateRepository,
+  IDeviceModelRepository,
+  sequelize,
+} from '@citrineos/data';
 import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import * as forge from 'node-forge';
-import fs from 'fs';
 import { ILogObj, Logger } from 'tslog';
 import { CertificateAuthorityService } from './service/CertificateAuthority';
 
@@ -64,10 +67,6 @@ export class CertificatesModule extends AbstractModule {
   protected _certificateRepository: ICertificateRepository;
   protected _certificateAuthorityService: CertificateAuthorityService;
 
-  get certificateRepository(): ICertificateRepository {
-    return this._certificateRepository;
-  }
-
   /**
    * Constructor
    */
@@ -90,6 +89,10 @@ export class CertificatesModule extends AbstractModule {
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
+   *
+   * @param {ICertificateRepository} [certificateRepository] - An optional parameter of type {@link ICertificateRepository} which
+   * represents a repository for accessing and manipulating variable data.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize.CertificateRepository} instance is created and used.
    */
   constructor(
     config: SystemConfig,
@@ -98,7 +101,7 @@ export class CertificatesModule extends AbstractModule {
     handler: IMessageHandler,
     logger?: Logger<ILogObj>,
     deviceModelRepository?: IDeviceModelRepository,
-    certificateRepository?: ICertificateRepository
+    certificateRepository?: ICertificateRepository,
   ) {
     super(
       config,
@@ -132,6 +135,10 @@ export class CertificatesModule extends AbstractModule {
     );
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
+  }
+
+  get certificateRepository(): ICertificateRepository {
+    return this._certificateRepository;
   }
 
   /**

@@ -22,4 +22,4 @@ export { default as TariffSchema } from './projections/schemas/TariffSchema.json
 
 // Date endpoints dtos
 export { CsmsCertificateRequest, ContentType } from './dtos/CsmsCertificateRequest';
-export { ChargerCertificateRequest } from './dtos/ChargerCertificateRequest'
+export { ChargerCertificateRequest } from './dtos/ChargerCertificateRequest';

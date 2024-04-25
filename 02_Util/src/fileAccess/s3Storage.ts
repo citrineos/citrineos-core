@@ -10,7 +10,11 @@ export class S3Storage implements IFileAccess {
     throw new Error(`Get file ${id} not yet implemented.`);
   }
 
-  uploadFile(fileName: string, content: Buffer, filePath?: string): Promise<string> {
+  uploadFile(
+    fileName: string,
+    content: Buffer,
+    filePath?: string,
+  ): Promise<string> {
     // TODO: implement the logic
     throw new Error(
       `Upload file ${fileName} to ${filePath} with content ${content} not yet implemented.`,
