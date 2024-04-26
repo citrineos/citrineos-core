@@ -28,13 +28,6 @@ export class WebsocketNetworkConnection {
   private _authenticator: IAuthenticator;
   private _router: IMessageRouter;
 
-  private readonly _cipherSuits: string = [
-    'TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256',
-    'TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384',
-    'TLS_RSA_WITH_AES_128_GCM_SHA256',
-    'TLS_RSA_WITH_AES_256_GCM_SHA384',
-  ].join(':');
-
   constructor(
     config: SystemConfig,
     cache: ICache,
@@ -68,7 +61,6 @@ export class WebsocketNetworkConnection {
                 ca: fs.readFileSync(
                   websocketServerConfig.mtlsCertificateAuthorityRootsFilepath as string,
                 ),
-                ciphers: this._cipherSuits, // OCPP 2.0.1, Part2-Specification, A00.FR.421
                 requestCert: true,
                 rejectUnauthorized: true,
               },
@@ -84,7 +76,6 @@ export class WebsocketNetworkConnection {
                 cert: fs.readFileSync(
                   websocketServerConfig.tlsCertificateChainFilepath as string,
                 ),
-                ciphers: this._cipherSuits, // OCPP 2.0.1, Part2-Specification, A00.FR.318
               },
               this._onHttpRequest.bind(this),
             );
