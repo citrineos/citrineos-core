@@ -5,10 +5,8 @@ import fs from 'fs';
 import { ILogObj, Logger } from 'tslog';
 
 export class Local implements ICertificateAuthorityClient {
-  private _securityCaCertKeyPairs: Map<
-    string,
-    [forge.pki.Certificate, forge.pki.rsa.PrivateKey]
-  > = new Map();
+  // Key: serverId, Value: [ca certs chain, sub ca private key]
+  private _securityCaCertsKeyMap: Map<string, [string, string]> = new Map();
   private _logger: Logger<ILogObj>;
   private _cache: ICache;
 
@@ -22,18 +20,14 @@ export class Local implements ICertificateAuthorityClient {
     config.util.networkConnection.websocketServers.forEach((server) => {
       if (server.securityProfile === 3) {
         try {
-          this._securityCaCertKeyPairs.set(server.id, [
-            forge.pki.certificateFromPem(
-              fs.readFileSync(
-                server.mtlsCertificateAuthorityRootsFilepath as string,
-                'utf8',
-              ),
+          this._securityCaCertsKeyMap.set(server.id, [
+            fs.readFileSync(
+              server.mtlsCertificateAuthorityRootsFilepath as string,
+              'utf8',
             ),
-            forge.pki.privateKeyFromPem(
-              fs.readFileSync(
-                server.mtlsCertificateAuthorityKeysFilepath as string,
-                'utf8',
-              ),
+            fs.readFileSync(
+              server.mtlsCertificateAuthorityKeyFilepath as string,
+              'utf8',
             ),
           ]);
         } catch (error) {
@@ -49,7 +43,8 @@ export class Local implements ICertificateAuthorityClient {
   }
 
   /**
-   * Retrieves CSMSRootCertificate based a specific station.
+   * Retrieves CSMSRootCertificate chain based on stationId.
+   * including a sub CA certificate + an external root CA certificate .
    *
    * @param {string} stationId - The ID of the station.
    * @return {Promise<string>} The CSMSRootCertificate in PEM format.
@@ -58,15 +53,16 @@ export class Local implements ICertificateAuthorityClient {
     if (!stationId) {
       throw new Error('stationId is required');
     }
+
     const clientConnection: string = (await this._cache.get(
       stationId,
       CacheNamespace.Connections,
     )) as string;
-    const [rootCert, _rootPrivateKey] = this._securityCaCertKeyPairs.get(
+    const [caCerts, _subCAPrivateKey] = this._securityCaCertsKeyMap.get(
       clientConnection,
-    ) as [forge.pki.Certificate, forge.pki.rsa.PrivateKey];
+    ) as [string, string];
 
-    return forge.pki.certificateToPem(rootCert);
+    return caCerts;
   }
 
   /**
@@ -88,16 +84,41 @@ export class Local implements ICertificateAuthorityClient {
       stationId,
       CacheNamespace.Connections,
     )) as string;
-    const [rootCert, rootPrivateKey] = this._securityCaCertKeyPairs.get(
+    const [caCerts, subCAPrivateKey] = this._securityCaCertsKeyMap.get(
       clientConnection,
-    ) as [forge.pki.Certificate, forge.pki.rsa.PrivateKey];
+    ) as [string, string];
 
     const csr: forge.pki.CertificateSigningRequest =
       forge.pki.certificationRequestFromPem(csrString);
 
-    return forge.pki.certificateToPem(
-      this._createSignedCertificate(csr, rootCert, rootPrivateKey),
+    const caCert: forge.pki.Certificate = forge.pki.certificateFromPem(
+      this._getCertificateForSigning(caCerts),
     );
+    const caPrivateKey: forge.pki.rsa.PrivateKey =
+      forge.pki.privateKeyFromPem(subCAPrivateKey);
+    return forge.pki.certificateToPem(
+      this._createSignedCertificate(csr, caCert, caPrivateKey),
+    );
+  }
+
+  /**
+   * Retrieves the CA certificate for signing from the provided ordered CA certificates PEM string.
+   * the order should follow: sub CA n .... sub CA 2, sub CA 1, root CA
+   *
+   * @param {string} caCertsPem - The PEM string containing the ordered CA certificates.
+   * @return {string | null} The CA certificate which is used for signing or null if not found.
+   */
+  private _getCertificateForSigning(caCertsPem: string): string {
+    const caCertsArray: string[] = caCertsPem
+      .split('-----END CERTIFICATE-----')
+      .filter((cert) => cert.trim().length > 0);
+
+    if (caCertsArray.length === 0) {
+      throw new Error('CA certificate for signing not found');
+    }
+
+    // Add "-----END CERTIFICATE-----" back because split removes it
+    return caCertsArray[0].concat('-----END CERTIFICATE-----');
   }
 
   /**
@@ -108,23 +129,31 @@ export class Local implements ICertificateAuthorityClient {
     return hexString.replace(/^0+/, '');
   }
 
+  /**
+   * Create a signed certificate for the provided CSR using the CA certificate, and its private key.
+   *
+   * @param {forge.pki.CertificateSigningRequest} csr - The CSR that need to be signed.
+   * @param {forge.pki.Certificate} caCert - The CA certificate.
+   * @param {forge.pki.rsa.PrivateKey} caPrivateKey - The private key of the CA certificate.
+   * @return {forge.pki.Certificate} The signed certificate.
+   */
   private _createSignedCertificate(
     csr: forge.pki.CertificateSigningRequest,
     caCert: forge.pki.Certificate,
     caPrivateKey: forge.pki.rsa.PrivateKey,
   ): forge.pki.Certificate {
-    const cert = forge.pki.createCertificate();
-    cert.publicKey = csr.publicKey as forge.pki.rsa.PublicKey;
-    cert.serialNumber = this._generateSerialNumber(); // Unique serial number for the certificate
-    cert.validity.notBefore = new Date();
-    cert.validity.notAfter = new Date();
-    cert.validity.notAfter.setFullYear(
-      cert.validity.notAfter.getFullYear() + 1,
-    ); // 1-year validity
-    // Set CA's attributes as issuer
-    cert.setIssuer(caCert.subject.attributes);
-    cert.setSubject(csr.subject.attributes);
-    cert.setExtensions([
+    // Create the certificate
+    const certificate: forge.pki.Certificate = forge.pki.createCertificate();
+    certificate.publicKey = csr.publicKey as forge.pki.rsa.PublicKey;
+    certificate.serialNumber = this._generateSerialNumber(); // Unique serial number for the certificate
+    certificate.validity.notBefore = new Date();
+    certificate.validity.notAfter = new Date();
+    certificate.validity.notAfter.setFullYear(
+      certificate.validity.notAfter.getFullYear() + 1,
+    ); // 1-year validity by default
+    certificate.setIssuer(caCert.subject.attributes); // Set CA's attributes as issuer
+    certificate.setSubject(csr.subject.attributes);
+    certificate.setExtensions([
       {
         name: 'basicConstraints',
         cA: false,
@@ -135,8 +164,10 @@ export class Local implements ICertificateAuthorityClient {
         keyEncipherment: true,
       },
     ]);
+
     // Sign the certificate
-    cert.sign(caPrivateKey);
-    return cert;
+    certificate.sign(caPrivateKey);
+
+    return certificate;
   }
 }

@@ -29,15 +29,15 @@ export class Hubject implements ICertificateAuthorityClient {
    * Retrieves a signed certificate based on the provided CSR.
    * DOC: https://hubject.stoplight.io/docs/open-plugncharge/486f0b8b3ded4-simple-enroll-iso-15118-2-and-iso-15118-20
    *
-   * @param {string} csr - The certificate signing request from SignCertificateRequest.
+   * @param {string} csrString - The certificate signing request from SignCertificateRequest.
    * @return {Promise<string>} The signed certificate.
    */
-  async getSignedCertificate(csr: string): Promise<string> {
+  async getSignedCertificate(csrString: string): Promise<string> {
     this._authorizationToken =
       this._authorizationToken ||
       (await this._getAuthorizationToken(this._tokenUrl));
     const url = `${this._baseUrl}/cpo/simpleenroll/${this._isoVersion}`;
-    const base64Csr: string = Buffer.from(csr).toString('base64');
+    const base64Csr: string = Buffer.from(csrString).toString('base64');
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -58,7 +58,7 @@ export class Hubject implements ICertificateAuthorityClient {
   }
 
   /**
-   * Retrieves the CA certificates.
+   * Retrieves the CA certificates including sub CAs and root CA.
    * DOC: https://hubject.stoplight.io/docs/open-plugncharge/e246aa213bc22-obtaining-ca-certificates-iso-15118-2-and-iso-15118-20
    *
    * @return {Promise<string>} The CA certificates.

@@ -15,8 +15,8 @@ import { ILogObj, Logger } from 'tslog';
 import { Local } from '../client/local';
 
 export class CertificateAuthorityService {
-  private readonly _hubjectCertificateAuthority: ICertificateAuthorityClient;
-  private readonly _acmeCertificateAuthority: ICertificateAuthorityClient;
+  private readonly _hubjectClient: ICertificateAuthorityClient;
+  private readonly _acmeClient: ICertificateAuthorityClient;
   private readonly _localCertificateAuthority: ICertificateAuthorityClient;
   private readonly _logger: Logger<ILogObj>;
 
@@ -25,8 +25,8 @@ export class CertificateAuthorityService {
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
 
-    this._acmeCertificateAuthority = new Acme(config, this._logger);
-    this._hubjectCertificateAuthority = new Hubject(config);
+    this._acmeClient = new Acme(config, this._logger);
+    this._hubjectClient = new Hubject(config);
     this._localCertificateAuthority = new Local(config, cache, this._logger);
   }
 
@@ -43,16 +43,16 @@ export class CertificateAuthorityService {
     stationId: string,
     certificateType?: CertificateSigningUseEnumType,
   ): Promise<string> {
-    this._logger.debug(`certificateType: ${certificateType}`);
+    this._logger.info(
+      `Getting certificate chain for certificateType: ${certificateType} and stationId: ${stationId}`,
+    );
+
     switch (certificateType) {
       case CertificateSigningUseEnumType.V2GCertificate: {
         const signedCert =
-          await this._hubjectCertificateAuthority.getSignedCertificate(
-            csrString,
-          );
-        const caCerts =
-          await this._hubjectCertificateAuthority.getCACertificates();
-        return this._createCertificateChainWithoutRoot(signedCert, caCerts);
+          await this._hubjectClient.getSignedCertificate(csrString);
+        const caCerts = await this._hubjectClient.getCACertificates();
+        return this._createCertificateChainWithoutRootCA(signedCert, caCerts);
       }
       case CertificateSigningUseEnumType.ChargingStationCertificate: {
         return await this._localCertificateAuthority.getSignedCertificate(
@@ -67,20 +67,21 @@ export class CertificateAuthorityService {
   }
 
   async getSignedCertificateByExternalCA(csrString: string): Promise<string> {
-    return await this._acmeCertificateAuthority.getSignedCertificate(csrString);
+    return await this._acmeClient.getSignedCertificate(csrString);
   }
 
   /**
-   * Create a certificate chain without the root certificate.
+   * Create a certificate chain including leaf and sub CA certificates except for the root certificate.
    *
-   * @param {string} signedCert - The signed certificate.
-   * @param {string} caCerts - The CA certificates.
-   * @return {string} The certificate chain pem without the root cert.
+   * @param {string} signedCert - The leaf certificate.
+   * @param {string} caCerts - CA certificates.
+   * @return {string} The certificate chain pem.
    */
-  private _createCertificateChainWithoutRoot(
+  private _createCertificateChainWithoutRootCA(
     signedCert: string,
     caCerts: string,
   ): string {
+    // The chain starts from the leaf certificate
     let certChainPem: string = signedCert;
     const caCertsArray: string[] = caCerts
       .split('-----END CERTIFICATE-----')
@@ -90,6 +91,7 @@ export class CertificateAuthorityService {
       // Add "-----END CERTIFICATE-----" back because split removes it
       const pemWithEnd = certPem + '-----END CERTIFICATE-----';
       const parsedCert = forge.pki.certificateFromPem(pemWithEnd);
+      // The issuer of the certificate should not be itself
       if (!parsedCert.isIssuer(parsedCert)) {
         certChainPem = certChainPem.concat(pemWithEnd);
       }

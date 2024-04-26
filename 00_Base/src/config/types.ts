@@ -20,7 +20,7 @@ export const websocketServerInputSchema = z.object({
   tlsKeysFilepath: z.string().optional(),
   tlsCertificateChainFilepath: z.string().optional(),
   mtlsCertificateAuthorityRootsFilepath: z.string().optional(),
-  mtlsCertificateAuthorityKeysFilepath: z.string().optional(),
+  mtlsCertificateAuthorityKeyFilepath: z.string().optional(), // The private key for the last sub CA certificate
 });
 
 export const systemConfigInputSchema = z.object({
@@ -207,7 +207,7 @@ export const websocketServerSchema = z
     tlsKeysFilepath: z.string().optional(),
     tlsCertificateChainFilepath: z.string().optional(),
     mtlsCertificateAuthorityRootsFilepath: z.string().optional(),
-    mtlsCertificateAuthorityKeysFilepath: z.string().optional(),
+    mtlsCertificateAuthorityKeyFilepath: z.string().optional(),
   })
   .refine((obj) => {
     switch (obj.securityProfile) {
@@ -219,7 +219,7 @@ export const websocketServerSchema = z
       case 3: // mTLS
         return (
           obj.mtlsCertificateAuthorityRootsFilepath &&
-          obj.mtlsCertificateAuthorityKeysFilepath
+          obj.mtlsCertificateAuthorityKeyFilepath
         );
       default:
         return false;

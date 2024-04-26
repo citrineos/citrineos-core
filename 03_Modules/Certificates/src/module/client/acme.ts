@@ -40,7 +40,7 @@ export class Acme implements ICertificateAuthorityClient {
   }
 
   /**
-   * Get LetsEncrypt CA Root certificate, ISRG Root X1.
+   * Get LetsEncrypt Root CA certificate, ISRG Root X1.
    * @return {Promise<string>} The CA certificate pem.
    */
   async getCACertificates(): Promise<string> {
@@ -57,7 +57,8 @@ export class Acme implements ICertificateAuthorityClient {
 
   /**
    * Retrieves a signed certificate based on the provided CSR.
-   * The returned certificate will be signed by LetsEncrypt ISRG Root X1.
+   * The returned certificate will be signed by Let's Encrypt, ISRG Root X1.
+   * which is listed in https://ccadb.my.salesforce-sites.com/mozilla/CAAIdentifiersReport
    *
    * @param {string} csrString - The certificate signing request.
    * @return {Promise<string>} The signed certificate.
@@ -67,8 +68,7 @@ export class Acme implements ICertificateAuthorityClient {
       csr: csrString,
       email: this._email,
       termsOfServiceAgreed: true,
-      preferredChain: 'ISRG Root X1', // listed in https://ccadb.my.salesforce-sites.com/mozilla/CAAIdentifiersReport
-      skipChallengeVerification: true,
+      preferredChain: 'ISRG Root X1',
       challengeCreateFn: async () => {},
       challengeRemoveFn: async () => {},
     });
