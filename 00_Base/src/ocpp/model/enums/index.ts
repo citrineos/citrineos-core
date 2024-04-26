@@ -673,7 +673,7 @@ export const enum ReservationUpdateStatusEnumType {
 }
 
 /**
- * This contains the current status of the Connector.
+ * This contains the current status of the ConnectorDTO.
  *
  */
 export const enum ConnectorStatusEnumType {
