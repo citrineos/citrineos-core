@@ -19,6 +19,8 @@ import {Token} from "../../model/Token";
 import {CommandResponse} from "../../model/CommandResponse";
 import {ActiveChargingProfileResult} from "../../model/ActiveChargingProfileResult";
 import {ActiveChargingProfile} from "../../model/ActiveChargingProfile";
+import {LocationReferences} from "../../model/LocationReferences";
+import {AuthorizationInfo} from "../../model/AuthorizationInfo";
 
 export class PostRealTimeTokenAuthorizationParamSchema {
     @IsString()
@@ -368,17 +370,19 @@ export class OcpiCredentialsModuleApi
     @AsOcpiEndpoint(
         '/ocpi/sender/2.2/tokens/{tokenUID}/authorize',
         HttpMethod.Post,
+        PostRealTimeTokenAuthorizationQuerySchema,
+        LocationReferences,
+        PostRealTimeTokenAuthorizationParamSchema,
         undefined,
-        undefined,
-        UidParamSchema,
-        undefined,
-        OcpiResponse<Token[]>, // todo pageable?
+        OcpiResponse<AuthorizationInfo>, // todo pageable?
     )
     async postRealTimeTokenAuthorization(
         request: FastifyRequest<{
-            Params: UidParamSchema
+            Body: LocationReferences,
+            Params: PostRealTimeTokenAuthorizationParamSchema,
+            Querystring: PostRealTimeTokenAuthorizationQuerySchema
         }>,
-    ): Promise<OcpiResponse<Token[]>> {
+    ): Promise<OcpiResponse<AuthorizationInfo>> {
         return new Promise(() => {
         }); // TODO
     }
