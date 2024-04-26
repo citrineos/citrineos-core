@@ -1,8 +1,8 @@
 import {IsDateString, IsNotEmpty, IsObject, IsString,} from "class-validator";
-import {ProfileChargingProfile} from "./ProfileChargingProfile";
+import {ChargingProfile} from "./ChargingProfile";
 
 
-export class Profile {
+export class ActiveChargingProfile {
     @IsString()
     @IsDateString()
     @IsNotEmpty()
@@ -10,6 +10,6 @@ export class Profile {
 
     @IsObject()
     @IsNotEmpty()
-    charging_profile: ProfileChargingProfile;
+    charging_profile: ChargingProfile;
 
 }
