@@ -28,6 +28,7 @@ import { ICertificatesModuleApi } from './interface';
 import { CertificatesModule } from './module';
 import { WebsocketNetworkConnection } from '@citrineos/util';
 import {
+  ChargingStation,
   Certificate,
   RootCertificateRequest,
   RootCertificateSchema,
@@ -39,7 +40,6 @@ import {
 } from '@citrineos/data';
 import fs from 'fs';
 import * as forge from 'node-forge';
-
 /**
  * Server API for the Certificates module.
  */
@@ -238,46 +238,88 @@ export class CertificatesModuleApi
       `Installing certificate on charger ${certRequest.stationId}`,
     );
 
-    // TODO allow install certificate by providing file id
-
     const certificateEntity = new Certificate();
     certificateEntity.stationId = certRequest.stationId;
-    certificateEntity.serialNumber = certRequest.serialNumber
-      ? certRequest.serialNumber
-      : this._generateSerialNumber();
     certificateEntity.certificateType = certRequest.certificateType;
-    certificateEntity.keyLength = certRequest.keyLength
-      ? certRequest.keyLength
-      : 2048;
-    certificateEntity.organizationName = certRequest.organizationName;
-    // Refer to OCPP 2.0.1 Part 2 A00.FR.511
-    certificateEntity.commonName = certRequest.commonName
-      ? certRequest.commonName
-      : certRequest.serialNumber;
-    if (certRequest.validBefore) {
-      certificateEntity.validBefore = certRequest.validBefore;
+
+    let certificatePem: string;
+    let privateKeyPem: string;
+
+    if (certRequest.certificateFileId && certRequest.privateKeyFileId) {
+      // Load certificate and private key from file storage
+      certificatePem = (
+        await this._fileAccess.getFile(certRequest.certificateFileId)
+      ).toString();
+      privateKeyPem = (
+        await this._fileAccess.getFile(certRequest.privateKeyFileId)
+      ).toString();
+
+      const certificate = forge.pki.certificateFromPem(certificatePem);
+      const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
+      certificateEntity.serialNumber = certificate.serialNumber;
+      certificateEntity.keyLength = privateKey.n.bitLength();
+      certificateEntity.organizationName = certificate.subject.getField({
+        shortName: 'O',
+      });
+      certificateEntity.commonName = certificate.subject.getField({
+        shortName: 'CN',
+      });
+      certificateEntity.validBefore =
+        certificate.validity.notAfter.toDateString();
+      certificateEntity.certificateFileId = certRequest.certificateFileId;
+      certificateEntity.privateKeyFileId = certRequest.privateKeyFileId;
     } else {
-      const defaultValidityDate: Date = new Date();
-      defaultValidityDate.setFullYear(defaultValidityDate.getFullYear() + 1);
-      certificateEntity.validBefore = defaultValidityDate.toISOString();
+      // Generate certificate and private key
+      certificateEntity.serialNumber = certRequest.serialNumber
+        ? certRequest.serialNumber
+        : this._generateSerialNumber();
+      certificateEntity.keyLength = certRequest.keyLength
+        ? certRequest.keyLength
+        : 2048;
+      certificateEntity.organizationName = certRequest.organizationName;
+      // Refer to OCPP 2.0.1 Part 2 A00.FR.511
+      if (certRequest.commonName) {
+        certificateEntity.commonName = certRequest.commonName;
+      } else {
+        const chargingStation: ChargingStation | null =
+          await this._module.locationRepository.readChargingStationByStationId(
+            certRequest.stationId,
+          );
+        if (chargingStation && chargingStation.serialNumber) {
+          certificateEntity.commonName = chargingStation.serialNumber;
+        } else {
+          throw new Error(
+            'commonName must be provided to generate certificate.',
+          );
+        }
+      }
+      if (certRequest.validBefore) {
+        certificateEntity.validBefore = certRequest.validBefore;
+      } else {
+        const defaultValidityDate: Date = new Date();
+        defaultValidityDate.setFullYear(defaultValidityDate.getFullYear() + 1);
+        certificateEntity.validBefore = defaultValidityDate.toISOString();
+      }
+
+      // Generate certificate
+      [certificatePem, privateKeyPem] = certRequest.selfSigned
+        ? this._generateSelfSignedRootCertificate(certificateEntity)
+        : await this._generateRootCertificateSignedByCAServer(
+            certificateEntity,
+          );
+
+      // Upload certificates to file storage
+      certificateEntity.privateKeyFileId = await this._fileAccess.uploadFile(
+        `private_key_${certificateEntity.serialNumber}.pem`,
+        Buffer.from(privateKeyPem),
+        certRequest.filePath,
+      );
+      certificateEntity.certificateFileId = await this._fileAccess.uploadFile(
+        `root_certificate_${certificateEntity.serialNumber}.pem`,
+        Buffer.from(certificatePem),
+        certRequest.filePath,
+      );
     }
-
-    // Generate certificate
-    const [certificatePem, privateKeyPem] = certRequest.selfSigned
-      ? this._generateSelfSignedRootCertificate(certificateEntity)
-      : await this._generateRootCertificateSignedByCAServer(certificateEntity);
-
-    // Upload certificates to file storage
-    certificateEntity.privateKeyFileId = await this._fileAccess.uploadFile(
-      `private_key_${certificateEntity.serialNumber}.pem`,
-      Buffer.from(privateKeyPem),
-      certRequest.filePath,
-    );
-    certificateEntity.certificateFileId = await this._fileAccess.uploadFile(
-      `root_certificate_${certificateEntity.serialNumber}.pem`,
-      Buffer.from(certificatePem),
-      certRequest.filePath,
-    );
 
     // Store certificates in db
     await this._module.certificateRepository.createOrUpdateCertificate(

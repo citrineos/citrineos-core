@@ -10,6 +10,7 @@ export class RootCertificateRequest {
   certificateType: InstallCertificateUseEnumType;
   tenantId: string;
   callbackUrl?: string;
+
   // Fields for generating a certificate
   // Refer to 1.4.1. Certificate Properties in OCPP 2.0.1 Part 2
   selfSigned?: boolean;
@@ -18,9 +19,11 @@ export class RootCertificateRequest {
   serialNumber?: string;
   keyLength?: number;
   validBefore?: string;
-  // Fields for reading and uploading certificate from file storage
+  // The file path to store the generated certificate.
   // If we use directus files as storage, filePath is the folder id
   filePath?: string;
+
+  // Fields for reading and uploading certificate from file storage
   certificateFileId?: string;
   privateKeyFileId?: string;
 
