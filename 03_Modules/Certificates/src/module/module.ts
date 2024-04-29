@@ -124,7 +124,7 @@ export class CertificatesModule extends AbstractModule {
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
-  get securityAuthorityService(): CertificateAuthorityService {
+  get certificateAuthorityService(): CertificateAuthorityService {
     return this._certificateAuthorityService;
   }
 
