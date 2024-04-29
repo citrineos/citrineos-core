@@ -1,6 +1,6 @@
-import {IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, Matches, MaxLength, MinLength} from "class-validator";
-import {DayOfWeek} from "./DayOfWeek";
-import {ReservationRestrictionType} from "./ReservationRestrictionType";
+import {IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, Matches, MaxLength, MinLength} from 'class-validator';
+import {DayOfWeek} from './DayOfWeek';
+import {ReservationRestrictionType} from './ReservationRestrictionType';
 
 
 export class TariffRestrictions {

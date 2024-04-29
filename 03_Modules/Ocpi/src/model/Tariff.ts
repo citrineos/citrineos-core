@@ -8,35 +8,35 @@ import {
     IsUrl,
     MaxLength,
     MinLength,
-} from "class-validator";
-import {Price} from "./Price";
-import {TariffElement} from "./TariffElement";
-import {EnergyMix} from "./EnergyMix";
-import {Displaytext} from "./Displaytext";
+} from 'class-validator';
+import {Price} from './Price';
+import {TariffElement} from './TariffElement';
+import {EnergyMix} from './EnergyMix';
+import {Displaytext} from './Displaytext';
 
 
 export class Tariff {
     @MaxLength(36)
     @IsString()
     @IsNotEmpty()
-    id: string;
+    id!: string;
 
     @MaxLength(2)
     @MinLength(2)
     @IsString()
     @IsNotEmpty()
-    country_code: string;
+    country_code!: string;
 
     @MaxLength(3)
     @IsString()
     @IsNotEmpty()
-    party_id: string;
+    party_id!: string;
 
     @MaxLength(3)
     @MinLength(3)
     @IsString()
     @IsNotEmpty()
-    currency: string;
+    currency!: string;
 
     @IsString()
     @IsOptional()
@@ -60,7 +60,7 @@ export class Tariff {
     @ArrayMinSize(1)
     @IsArray()
     @IsNotEmpty()
-    elements: TariffElement[];
+    elements!: TariffElement[];
 
     @IsOptional()
     energy_mix?: EnergyMix | null;
@@ -78,6 +78,6 @@ export class Tariff {
     @IsString()
     @IsDateString()
     @IsNotEmpty()
-    last_updated: Date;
+    last_updated!: Date;
 
 }

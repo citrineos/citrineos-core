@@ -1,4 +1,4 @@
-import {IsDateString, IsNotEmpty, IsString, MaxLength, MinLength,} from "class-validator";
+import {IsDateString, IsNotEmpty, IsString, MaxLength, MinLength, } from 'class-validator';
 
 
 export class Hubclientinfo {

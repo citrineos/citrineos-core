@@ -1,14 +1,14 @@
-import {CredentialsRepository} from "../repository/credentials.repository";
-import {FastifyRequest} from "fastify";
-import {AuthorizationHeaderSchema} from "../schema/authorizationHeaderSchema";
-import {OcpiResponse} from "../../../model/OcpiResponse";
-import {Credentials} from "../../../model/Credentials";
-import {Namespace} from "../util/namespace";
-import {HttpStatus} from "../../../util/http.status";
-import {VersionsControllerApi} from "../../../apis/VersionsControllerApi";
-import {VersionIdParamSchema} from "../versions.api";
-import {VersionRepository} from "../repository/version.repository";
-import {Version} from "../../../model/Version";
+import {CredentialsRepository} from '../repository/credentials.repository';
+import {FastifyRequest} from 'fastify';
+import {AuthorizationHeaderSchema} from '../schema/authorizationHeaderSchema';
+import {OcpiResponse} from '../../../model/OcpiResponse';
+import {Credentials} from '../../../model/Credentials';
+import {Namespace} from '../util/namespace';
+import {HttpStatus} from '../../../util/http.status';
+import {VersionsControllerApi} from '../../../apis/VersionsControllerApi';
+import {VersionIdParamSchema} from '../versions.api';
+import {VersionRepository} from '../repository/version.repository';
+import {Version} from '../../../model/Version';
 import {v4 as uuidv4} from 'uuid';
 
 export class CredentialsService {
@@ -22,8 +22,8 @@ export class CredentialsService {
 
     async getCredentials(
         request: FastifyRequest<{
-            Params: VersionIdParamSchema,
-            Headers: AuthorizationHeaderSchema
+            Params: VersionIdParamSchema;
+            Headers: AuthorizationHeaderSchema;
         }>,
     ): Promise<OcpiResponse<Credentials>> { // todo global exception handler
         try {
@@ -46,9 +46,9 @@ export class CredentialsService {
 
     async postCredentials(
         request: FastifyRequest<{
-            Params: VersionIdParamSchema,
-            Headers: AuthorizationHeaderSchema,
-            Body: Credentials
+            Params: VersionIdParamSchema;
+            Headers: AuthorizationHeaderSchema;
+            Body: Credentials;
         }>,
     ): Promise<OcpiResponse<Credentials>> {
         await this.credentialsRepository.validateAuthentication(request.headers.Authorization);
@@ -103,7 +103,7 @@ export class CredentialsService {
             const versionDetails = await this.versionsControllerApi.getVersion({
                 authorization: token,
                 versionId: versionId
-            })
+            });
             if (!versionDetails) {
                 throw new Error('todo'); // todo error handling
             }
@@ -115,7 +115,7 @@ export class CredentialsService {
                 ...existingVersion,
                 url: version.url,
                 endpoints: versionDetails.data?.endpoints
-            } as Version, versionId, Namespace.Version)
+            } as Version, versionId, Namespace.Version);
         } catch (e) {
             throw new Error('todo'); // todo error handling
         }
@@ -123,9 +123,9 @@ export class CredentialsService {
 
     async putCredentials(
         request: FastifyRequest<{
-            Params: VersionIdParamSchema,
-            Headers: AuthorizationHeaderSchema,
-            Body: Credentials
+            Params: VersionIdParamSchema;
+            Headers: AuthorizationHeaderSchema;
+            Body: Credentials;
         }>,
     ): Promise<OcpiResponse<Credentials>> {
         await this.credentialsRepository.validateAuthentication(request.headers.Authorization);
@@ -135,8 +135,8 @@ export class CredentialsService {
 
     async deleteCredentials(
         request: FastifyRequest<{
-            Params: VersionIdParamSchema,
-            Headers: AuthorizationHeaderSchema
+            Params: VersionIdParamSchema;
+            Headers: AuthorizationHeaderSchema;
         }>,
     ): Promise<OcpiResponse<void>> {
         try {

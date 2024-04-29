@@ -22,7 +22,7 @@ import {
 import {RabbitMqReceiver, RabbitMqSender, Timer} from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import {ILogObj, Logger} from 'tslog';
-import {LocationsControllerApi} from "../../apis/LocationsControllerApi";
+import {LocationsControllerApi} from '../../apis/LocationsControllerApi';
 
 /**
  * Component that handles transaction related messages.

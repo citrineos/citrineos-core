@@ -1,5 +1,5 @@
 
-import { 
+import {
 	Max,
 	Min,
 	IsInt,
@@ -8,7 +8,7 @@ import {
 	MinLength,
 	Matches,
 	IsString,
-} from "class-validator";
+} from 'class-validator';
 
 
 export class RegularHours {
@@ -16,20 +16,20 @@ export class RegularHours {
 	@Min(1)
 	@IsInt()
 	@IsNotEmpty()
-	weekday: number;
+	weekday!: number;
 
 	@MaxLength(5)
 	@MinLength(5)
 	@Matches(/([0-1][0-9]|2[0-3]):[0-5][0-9]/)
 	@IsString()
 	@IsNotEmpty()
-	period_begin: string;
+	period_begin!: string;
 
 	@MaxLength(5)
 	@MinLength(5)
 	@Matches(/([0-1][0-9]|2[0-3]):[0-5][0-9]/)
 	@IsString()
 	@IsNotEmpty()
-	period_end: string;
+	period_end!: string;
 
 }

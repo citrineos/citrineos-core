@@ -5,25 +5,32 @@
 
 import {ILogObj, Logger} from 'tslog';
 import {OcpiCredentialsModule} from './module';
-import {AbstractModuleApi, HttpMethod,} from '@citrineos/base';
+import {AbstractModuleApi, HttpMethod, } from '@citrineos/base';
 import {FastifyInstance, FastifyRequest} from 'fastify';
-import {AsOcpiEndpoint} from "../../util/as.ocpi.endpoint";
-import {Cdr} from "../../model/cDR";
-import {OcpiResponse} from "../../model/OcpiResponse";
-import {IsDate, IsInt, IsNotEmpty, IsOptional, IsString} from "class-validator";
-import {Connector} from "../../model/Connector";
-import {Evse} from "../../model/Evse";
-import {Session} from "inspector";
-import {Tariff} from "../../model/Tariff";
-import {Token} from "../../model/Token";
-import {CommandResponse} from "../../model/CommandResponse";
-import {ActiveChargingProfileResult} from "../../model/ActiveChargingProfileResult";
-import {ActiveChargingProfile} from "../../model/ActiveChargingProfile";
-import {LocationReferences} from "../../model/LocationReferences";
-import {AuthorizationInfo} from "../../model/AuthorizationInfo";
-import {FromToOffsetLimitQuerySchema} from "./schema/from.to.offset.limit.query.schema";
+import {AsOcpiEndpoint} from '../../util/as.ocpi.endpoint';
+import {OcpiResponse} from '../../model/OcpiResponse';
+import {IsEnum, IsNotEmpty, IsString} from 'class-validator';
+import {Connector} from '../../model/Connector';
+import {Evse} from '../../model/Evse';
+import {Session} from 'inspector';
+import {Tariff} from '../../model/Tariff';
+import {Token} from '../../model/Token';
+import {CommandResponse} from '../../model/CommandResponse';
+import {ActiveChargingProfileResult} from '../../model/ActiveChargingProfileResult';
+import {ActiveChargingProfile} from '../../model/ActiveChargingProfile';
+import {LocationReferences} from '../../model/LocationReferences';
+import {AuthorizationInfo} from '../../model/AuthorizationInfo';
+import {FromToOffsetLimitQuerySchema} from './schema/from.to.offset.limit.query.schema';
+import {VersionNumber} from '../../model/VersionNumber';
+import {Cdr} from '../../model/Cdr';
 
-export class PostRealTimeTokenAuthorizationParamSchema {
+export class VersionidParamSchema {
+    @IsEnum(VersionNumber)
+    @IsNotEmpty()
+    versionid!: VersionNumber;
+}
+
+export class PostRealTimeTokenAuthorizationParamSchema extends VersionidParamSchema {
     @IsString()
     @IsNotEmpty()
     tokenUID!: string;
@@ -32,16 +39,16 @@ export class PostRealTimeTokenAuthorizationParamSchema {
 export class PostRealTimeTokenAuthorizationQuerySchema {
     @IsString()
     @IsNotEmpty()
-    type: string = "RFID";
+    type = 'RFID';
 }
 
-export class UidParamSchema {
+export class UidParamSchema extends VersionidParamSchema {
     @IsString()
     @IsNotEmpty()
     uid!: string;
 }
 
-export class SessionIdParamSchema {
+export class SessionIdParamSchema extends VersionidParamSchema {
     @IsString()
     @IsNotEmpty()
     sessionId!: string;
@@ -53,22 +60,22 @@ export class CommandUidPathParamSchema extends UidParamSchema {
     command!: string;
 }
 
-export class LocationIdParamSchema {
+export class LocationIdParamSchema extends VersionidParamSchema {
     @IsString()
     @IsNotEmpty()
-    locationID!: string
+    locationID!: string;
 }
 
 export class LocationIdEveseUidParamSchema extends LocationIdParamSchema {
     @IsString()
     @IsNotEmpty()
-    evseUID!: string
+    evseUID!: string;
 }
 
 export class GetConnectorObjectFromDataOwnerParamSchema extends LocationIdEveseUidParamSchema {
     @IsString()
     @IsNotEmpty()
-    connectorID!: string
+    connectorID!: string;
 }
 
 
@@ -94,7 +101,7 @@ export class TemporaryNameModuleApi
 
     // ======================== CDRs ========================
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/cdrs/page/{uid}',
+        '/ocpi/sender/:versionId/cdrs/page/:uid',
         HttpMethod.Get,
         undefined,
         undefined,
@@ -112,16 +119,17 @@ export class TemporaryNameModuleApi
     }
 
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/cdrs',
+        '/ocpi/sender/:versionId/cdrs',
         HttpMethod.Get,
         FromToOffsetLimitQuerySchema,
         undefined,
-        undefined,
+        VersionidParamSchema,
         undefined,
         OcpiResponse<Cdr[]>, // todo proper pageable object?
     )
     async getCdrsFromDataOwner(
         request: FastifyRequest<{
+            Params: VersionidParamSchema;
             Querystring: FromToOffsetLimitQuerySchema;
         }>,
     ): Promise<OcpiResponse<Cdr[]>> {
@@ -131,7 +139,7 @@ export class TemporaryNameModuleApi
 
     // ======================== Locations ========================
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/locations/{locationID}/{evseUID}/{connectorID}',
+        '/ocpi/sender/:versionId/locations/:locationID/:evseUID/:connectorID',
         HttpMethod.Get,
         undefined,
         undefined,
@@ -149,7 +157,7 @@ export class TemporaryNameModuleApi
     }
 
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/locations/{locationID}/{evseUID}',
+        '/ocpi/sender/:versionId/locations/:locationID/:evseUID',
         HttpMethod.Get,
         undefined,
         undefined,
@@ -167,16 +175,17 @@ export class TemporaryNameModuleApi
     }
 
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/locations',
+        '/ocpi/sender/:versionId/locations',
         HttpMethod.Get,
         FromToOffsetLimitQuerySchema,
         undefined,
-        undefined,
+        VersionidParamSchema,
         undefined,
         OcpiResponse<Location[]>, // todo pageable
     )
     async getLocationListFromDataOwner(
         request: FastifyRequest<{
+            Params: VersionidParamSchema;
             Querystring: FromToOffsetLimitQuerySchema;
         }>,
     ): Promise<OcpiResponse<Location[]>> {
@@ -185,7 +194,7 @@ export class TemporaryNameModuleApi
     }
 
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/locations/{locationID}',
+        '/ocpi/sender/:versionId/locations/:locationID',
         HttpMethod.Get,
         undefined,
         undefined,
@@ -195,7 +204,7 @@ export class TemporaryNameModuleApi
     )
     async getLocationObjectFromDataOwner(
         request: FastifyRequest<{
-            Params: LocationIdParamSchema
+            Params: LocationIdParamSchema;
         }>,
     ): Promise<OcpiResponse<Location>> {
         return new Promise(() => {
@@ -203,7 +212,7 @@ export class TemporaryNameModuleApi
     }
 
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/locations/page/{uid}',
+        '/ocpi/sender/:versionId/locations/page/:uid',
         HttpMethod.Get,
         undefined,
         undefined,
@@ -213,7 +222,7 @@ export class TemporaryNameModuleApi
     )
     async getLocationPageFromDataOwner(
         request: FastifyRequest<{
-            Params: UidParamSchema
+            Params: UidParamSchema;
         }>,
     ): Promise<OcpiResponse<Location[]>> {
         return new Promise(() => {
@@ -222,17 +231,18 @@ export class TemporaryNameModuleApi
 
     // ======================== Sessions ========================
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/sessions',
+        '/ocpi/sender/:versionId/sessions',
         HttpMethod.Get,
         FromToOffsetLimitQuerySchema,
         undefined,
-        undefined,
+        VersionidParamSchema,
         undefined,
         OcpiResponse<Session[]>, // todo pageable?
     )
     async getSessionsFromDataOwner(
         request: FastifyRequest<{
-            Querystring: FromToOffsetLimitQuerySchema
+            Params: VersionidParamSchema;
+            Querystring: FromToOffsetLimitQuerySchema;
         }>,
     ): Promise<OcpiResponse<Session[]>> {
         return new Promise(() => {
@@ -240,7 +250,7 @@ export class TemporaryNameModuleApi
     }
 
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/sessions/page/{uid}',
+        '/ocpi/sender/:versionId/sessions/page/:uid',
         HttpMethod.Get,
         undefined,
         undefined,
@@ -250,25 +260,7 @@ export class TemporaryNameModuleApi
     )
     async getSessionsPageFromDataOwner(
         request: FastifyRequest<{
-            Params: UidParamSchema
-        }>,
-    ): Promise<OcpiResponse<Session[]>> {
-        return new Promise(() => {
-        }); // TODO
-    }
-
-    @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/sessions/page/{uid}',
-        HttpMethod.Get,
-        undefined,
-        undefined,
-        UidParamSchema,
-        undefined,
-        OcpiResponse<Session[]>, // todo pageable?
-    )
-    async getSessionsPageFromDataOwner(
-        request: FastifyRequest<{
-            Params: UidParamSchema
+            Params: UidParamSchema;
         }>,
     ): Promise<OcpiResponse<Session[]>> {
         return new Promise(() => {
@@ -277,17 +269,18 @@ export class TemporaryNameModuleApi
 
     // ======================== Tariffs ===========================
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/tariffs',
+        '/ocpi/sender/:versionId/tariffs',
         HttpMethod.Get,
         FromToOffsetLimitQuerySchema,
         undefined,
-        undefined,
+        VersionidParamSchema,
         undefined,
         OcpiResponse<Tariff[]>, // todo pageable?
     )
     async getTariffsFromDataOwner(
         request: FastifyRequest<{
-            Querystring: FromToOffsetLimitQuerySchema
+            Params: VersionidParamSchema;
+            Querystring: FromToOffsetLimitQuerySchema;
         }>,
     ): Promise<OcpiResponse<Tariff[]>> {
         return new Promise(() => {
@@ -295,7 +288,7 @@ export class TemporaryNameModuleApi
     }
 
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/tariffs/page/{uid}',
+        '/ocpi/sender/:versionId/tariffs/page/:uid',
         HttpMethod.Get,
         undefined,
         undefined,
@@ -305,7 +298,7 @@ export class TemporaryNameModuleApi
     )
     async getTariffsPageFromDataOwner(
         request: FastifyRequest<{
-            Params: UidParamSchema
+            Params: UidParamSchema;
         }>,
     ): Promise<OcpiResponse<Tariff[]>> {
         return new Promise(() => {
@@ -314,17 +307,18 @@ export class TemporaryNameModuleApi
 
     // ======================== Tokens ===========================
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/tokens',
+        '/ocpi/sender/:versionId/tokens',
         HttpMethod.Get,
         FromToOffsetLimitQuerySchema,
         undefined,
-        undefined,
+        VersionidParamSchema,
         undefined,
         OcpiResponse<Token[]>, // todo pageable?
     )
     async getTokensFromDataOwner(
         request: FastifyRequest<{
-            Querystring: FromToOffsetLimitQuerySchema
+            Params: VersionidParamSchema;
+            Querystring: FromToOffsetLimitQuerySchema;
         }>,
     ): Promise<OcpiResponse<Token[]>> {
         return new Promise(() => {
@@ -332,7 +326,7 @@ export class TemporaryNameModuleApi
     }
 
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/tokens/page/{uid}',
+        '/ocpi/sender/:versionId/tokens/page/:uid',
         HttpMethod.Get,
         undefined,
         undefined,
@@ -342,7 +336,7 @@ export class TemporaryNameModuleApi
     )
     async getTokensPageFromDataOwner(
         request: FastifyRequest<{
-            Params: UidParamSchema
+            Params: UidParamSchema;
         }>,
     ): Promise<OcpiResponse<Token[]>> {
         return new Promise(() => {
@@ -350,7 +344,7 @@ export class TemporaryNameModuleApi
     }
 
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/tokens/{tokenUID}/authorize',
+        '/ocpi/sender/:versionId/tokens/:tokenUID/authorize',
         HttpMethod.Post,
         PostRealTimeTokenAuthorizationQuerySchema,
         LocationReferences,
@@ -360,9 +354,9 @@ export class TemporaryNameModuleApi
     )
     async postRealTimeTokenAuthorization(
         request: FastifyRequest<{
-            Body: LocationReferences,
-            Params: PostRealTimeTokenAuthorizationParamSchema,
-            Querystring: PostRealTimeTokenAuthorizationQuerySchema
+            Body: LocationReferences;
+            Params: PostRealTimeTokenAuthorizationParamSchema;
+            Querystring: PostRealTimeTokenAuthorizationQuerySchema;
         }>,
     ): Promise<OcpiResponse<AuthorizationInfo>> {
         return new Promise(() => {
@@ -371,7 +365,7 @@ export class TemporaryNameModuleApi
 
     // ======================== Commands ===========================
     @AsOcpiEndpoint(
-        '/ocpi/sender/2.2/commands/{command}/{uid}',
+        '/ocpi/sender/:versionId/commands/:command/:uid',
         HttpMethod.Post,
         undefined,
         CommandResponse,
@@ -381,8 +375,8 @@ export class TemporaryNameModuleApi
     )
     async postAsyncResponse(
         request: FastifyRequest<{
-            Body: CommandResponse
-            Params: CommandUidPathParamSchema
+            Body: CommandResponse;
+            Params: CommandUidPathParamSchema;
         }>,
     ): Promise<OcpiResponse<void>> {
         return new Promise(() => {
@@ -391,7 +385,7 @@ export class TemporaryNameModuleApi
 
     // ======================== Charging Profiles ===========================
     @AsOcpiEndpoint(
-        '/ocpi/2.2/sender/chargingprofiles/result/{uid}',
+        '/ocpi/:versionId/sender/chargingprofiles/result/:uid',
         HttpMethod.Post,
         undefined,
         ActiveChargingProfileResult,
@@ -401,8 +395,8 @@ export class TemporaryNameModuleApi
     )
     async postGenericChargingProfileResult(
         request: FastifyRequest<{
-            Body: ActiveChargingProfileResult
-            Params: UidParamSchema
+            Body: ActiveChargingProfileResult;
+            Params: UidParamSchema;
         }>,
     ): Promise<OcpiResponse<void>> {
         return new Promise(() => {
@@ -410,7 +404,7 @@ export class TemporaryNameModuleApi
     }
 
     @AsOcpiEndpoint(
-        '/ocpi/2.2/sender/chargingprofiles/{sessionId}',
+        '/ocpi/:versionId/sender/chargingprofiles/:sessionId',
         HttpMethod.Put,
         undefined,
         ActiveChargingProfile,
@@ -420,8 +414,8 @@ export class TemporaryNameModuleApi
     )
     async putSenderChargingProfile(
         request: FastifyRequest<{
-            Body: ActiveChargingProfile
-            Params: SessionIdParamSchema
+            Body: ActiveChargingProfile;
+            Params: SessionIdParamSchema;
         }>,
     ): Promise<OcpiResponse<void>> {
         return new Promise(() => {

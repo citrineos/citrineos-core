@@ -1,8 +1,8 @@
 
-import { 
-} from "class-validator";
+import {
+} from 'class-validator';
 
 
 export class OcpiError {
-undefined
+undefined;
 }

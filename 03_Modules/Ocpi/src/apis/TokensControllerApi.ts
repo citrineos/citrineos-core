@@ -1,10 +1,9 @@
-import type {TokenDTO,} from "./models/index";
-import {TokenToJSON,} from "./models/index";
-import {BaseOcpiHeaders, setAuthHeader, validateAndgetOcpiHeaders} from "./util";
-import {BaseAPI, HTTPHeaders} from "./BaseApi";
-import {OcpiResponse} from "../model/OcpiResponse";
-import {Token} from "../model/Token";
-import {TokenType} from "../model/TokenType";
+import {BaseOcpiHeaders, setAuthHeader, validateAndgetOcpiHeaders} from './util';
+import {BaseAPI, HTTPHeaders} from './BaseApi';
+import {OcpiResponse} from '../model/OcpiResponse';
+import {Token} from '../model/Token';
+import {TokenType} from '../model/TokenType';
+import {VersionNumber} from '../model/VersionNumber';
 
 export interface GetTokenRequest extends BaseOcpiHeaders {
     countryCode: string;
@@ -17,7 +16,7 @@ export interface PatchTokenRequest extends BaseOcpiHeaders {
     countryCode: string;
     partyID: string;
     tokenUID: string;
-    requestBody: { [key: string]: object; };
+    requestBody: { [key: string]: object };
     type?: TokenType;
 }
 
@@ -25,57 +24,56 @@ export interface PutTokenRequest extends BaseOcpiHeaders {
     countryCode: string;
     partyID: string;
     tokenUID: string;
-    token: TokenDTO;
+    token: Token;
     type?: TokenType;
 }
 
-
 export class TokensControllerApi extends BaseAPI {
 
-    async getToken(requestParameters: GetTokenRequest): Promise<OcpiResponse<Token>> {
+    async getToken(requestParameters: GetTokenRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<Token>> {
 
-        BaseAPI.validateRequiredParam(requestParameters, "countryCode", "partyID", "tokenUID");
+        BaseAPI.validateRequiredParam(requestParameters, 'countryCode', 'partyID', 'tokenUID');
 
         const queryParameters: any = {};
 
         if (requestParameters.type != null) {
-            queryParameters["type"] = requestParameters.type;
+            queryParameters['type'] = requestParameters.type;
         }
 
         const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/receiver/2.2/tokens/{countryCode}/{partyID}/{tokenUID}`
-                .replace(`{${"countryCode"}}`, encodeURIComponent(String(requestParameters.countryCode)))
-                .replace(`{${"partyID"}}`, encodeURIComponent(String(requestParameters.partyID)))
-                .replace(`{${"tokenUID"}}`, encodeURIComponent(String(requestParameters.tokenUID))),
-            method: "GET",
+            path: `/ocpi/receiver/${versionId}/tokens/{countryCode}/{partyID}/{tokenUID}`
+                .replace(`{${'countryCode'}}`, encodeURIComponent(String(requestParameters.countryCode)))
+                .replace(`{${'partyID'}}`, encodeURIComponent(String(requestParameters.partyID)))
+                .replace(`{${'tokenUID'}}`, encodeURIComponent(String(requestParameters.tokenUID))),
+            method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         });
 
     }
 
-    async patchToken(requestParameters: PatchTokenRequest): Promise<OcpiResponse<void>> {
+    async patchToken(requestParameters: PatchTokenRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<void>> {
 
-        BaseAPI.validateRequiredParam(requestParameters, "countryCode", "partyID", "tokenUID", "requestBody");
+        BaseAPI.validateRequiredParam(requestParameters, 'countryCode', 'partyID', 'tokenUID', 'requestBody');
 
         const queryParameters: any = {};
 
         if (requestParameters.type != null) {
-            queryParameters["type"] = requestParameters.type;
+            queryParameters['type'] = requestParameters.type;
         }
 
         const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/receiver/2.2/tokens/{countryCode}/{partyID}/{tokenUID}`
-                .replace(`{${"countryCode"}}`, encodeURIComponent(String(requestParameters.countryCode)))
-                .replace(`{${"partyID"}}`, encodeURIComponent(String(requestParameters.partyID)))
-                .replace(`{${"tokenUID"}}`, encodeURIComponent(String(requestParameters.tokenUID))),
-            method: "PATCH",
+            path: `/ocpi/receiver/${versionId}/tokens/{countryCode}/{partyID}/{tokenUID}`
+                .replace(`{${'countryCode'}}`, encodeURIComponent(String(requestParameters.countryCode)))
+                .replace(`{${'partyID'}}`, encodeURIComponent(String(requestParameters.partyID)))
+                .replace(`{${'tokenUID'}}`, encodeURIComponent(String(requestParameters.tokenUID))),
+            method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
             body: requestParameters.requestBody,
@@ -83,28 +81,28 @@ export class TokensControllerApi extends BaseAPI {
 
     }
 
-    async putToken(requestParameters: PutTokenRequest): Promise<OcpiResponse<void>> {
+    async putToken(requestParameters: PutTokenRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<void>> {
 
-        BaseAPI.validateRequiredParam(requestParameters, "countryCode", "partyID", "tokenUID", "token");
+        BaseAPI.validateRequiredParam(requestParameters, 'countryCode', 'partyID', 'tokenUID', 'token');
 
         const queryParameters: any = {};
 
         if (requestParameters.type != null) {
-            queryParameters["type"] = requestParameters.type;
+            queryParameters['type'] = requestParameters.type;
         }
 
         const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/receiver/2.2/tokens/{countryCode}/{partyID}/{tokenUID}`
-                .replace(`{${"countryCode"}}`, encodeURIComponent(String(requestParameters.countryCode)))
-                .replace(`{${"partyID"}}`, encodeURIComponent(String(requestParameters.partyID)))
-                .replace(`{${"tokenUID"}}`, encodeURIComponent(String(requestParameters.tokenUID))),
-            method: "PUT",
+            path: `/ocpi/receiver/${versionId}/tokens/{countryCode}/{partyID}/{tokenUID}`
+                .replace(`{${'countryCode'}}`, encodeURIComponent(String(requestParameters.countryCode)))
+                .replace(`{${'partyID'}}`, encodeURIComponent(String(requestParameters.partyID)))
+                .replace(`{${'tokenUID'}}`, encodeURIComponent(String(requestParameters.tokenUID))),
+            method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: TokenToJSON(requestParameters.token),
+            body: requestParameters.token,
         });
 
     }

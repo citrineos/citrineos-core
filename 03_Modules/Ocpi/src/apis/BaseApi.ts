@@ -1,14 +1,14 @@
-import {OcpiResponse} from "../model/OcpiResponse";
+import {OcpiResponse} from '../model/OcpiResponse';
 
 export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
-export type InitOverrideFunction = (requestContext: { init: HTTPRequestInit, context: RequestOpts }) => Promise<RequestInit>
+export type InitOverrideFunction = (requestContext: { init: HTTPRequestInit; context: RequestOpts }) => Promise<RequestInit>;
 
 export type Json = any;
 export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD';
-export type HTTPHeaders = { [key: string]: string };
-export type HTTPQuery = { [key: string]: string | number | null | boolean | Array<string | number | null | boolean> | Set<string | number | null | boolean> | HTTPQuery };
+export interface HTTPHeaders { [key: string]: string }
+export interface HTTPQuery { [key: string]: string | number | null | boolean | Array<string | number | null | boolean> | Set<string | number | null | boolean> | HTTPQuery }
 export type HTTPBody = Json | FormData | URLSearchParams;
-export type HTTPRequestInit = { headers?: HTTPHeaders; method: HTTPMethod; credentials?: RequestCredentials; body?: HTTPBody };
+export interface HTTPRequestInit { headers?: HTTPHeaders; method: HTTPMethod; credentials?: RequestCredentials; body?: HTTPBody }
 
 export interface ApiResponse<T> {
     raw: Response;
@@ -32,12 +32,12 @@ export interface ConfigurationParameters {
     password?: string; // parameter for basic security
     apiKey?: string | Promise<string> | ((name: string) => string | Promise<string>); // parameter for apiKey security
     accessToken?: string | Promise<string> | ((name?: string, scopes?: string[]) => string | Promise<string>); // parameter for oauth2 security
-    headers?: HTTPHeaders; //header params we want to use on every request
-    credentials?: RequestCredentials; //value for the credentials param we want to use on each request
+    headers?: HTTPHeaders; // header params we want to use on every request
+    credentials?: RequestCredentials; // value for the credentials param we want to use on each request
 }
 
 export class ResponseError extends Error {
-    override name: "ResponseError" = "ResponseError";
+    override name: 'ResponseError' = 'ResponseError';
 
     constructor(public response: Response, msg?: string) {
         super(msg);
@@ -45,7 +45,7 @@ export class ResponseError extends Error {
 }
 
 export class FetchError extends Error {
-    override name: "FetchError" = "FetchError";
+    override name: 'FetchError' = 'FetchError';
 
     constructor(public cause: Error, msg?: string) {
         super(msg);
@@ -53,16 +53,14 @@ export class FetchError extends Error {
 }
 
 export class RequiredError extends Error {
-    override name: "RequiredError" = "RequiredError";
+    override name: 'RequiredError' = 'RequiredError';
 
     constructor(public field: string, msg?: string) {
         super(msg);
     }
 }
 
-export interface ResponseTransformer<T> {
-    (json: any): T;
-}
+export type ResponseTransformer<T> = (json: any) => T;
 
 export class JSONApiResponse<T> {
     constructor(public raw: Response, private transformer: ResponseTransformer<T> = (jsonValue: any) => jsonValue) {
@@ -160,7 +158,7 @@ function isBlob(value: any): value is Blob {
 }
 
 function isFormData(value: any): value is FormData {
-    return typeof FormData !== "undefined" && value instanceof FormData;
+    return typeof FormData !== 'undefined' && value instanceof FormData;
 }
 
 export class BaseAPI {
@@ -243,8 +241,8 @@ export class BaseAPI {
     }
 
     private fetchApi = async (url: string, init: RequestInit) => {
-        let fetchParams = {url, init};
-        let response: Response | undefined = undefined;
+        const fetchParams = {url, init};
+        let response: Response | undefined;
         try {
             response = await (this.configuration.fetchApi || fetch)(fetchParams.url, fetchParams.init);
         } catch (e) {
@@ -257,7 +255,7 @@ export class BaseAPI {
             }
         }
         return response;
-    }
+    };
 
     public static validateRequiredParam(requestParameters: any, ...paramNameList: string[]) {
         for (let i = 0; i < paramNameList.length; i++) {

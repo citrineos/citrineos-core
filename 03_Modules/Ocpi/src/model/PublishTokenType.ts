@@ -1,5 +1,5 @@
-import {IsOptional, IsString, MaxLength,} from "class-validator";
-import {TokenType} from "./TokenType";
+import {IsOptional, IsString, MaxLength, } from 'class-validator';
+import {TokenType} from './TokenType';
 
 
 export class PublishTokenType {

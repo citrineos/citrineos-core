@@ -1,12 +1,12 @@
-import {VersionRepository} from "../repository/version.repository";
-import {FastifyRequest} from "fastify";
-import {AuthorizationHeaderSchema} from "../schema/authorizationHeaderSchema";
-import {OcpiResponse} from "../../../model/OcpiResponse";
-import {Version, VersionDetailsDTO, VersionDTO} from "../../../model/Version";
-import {CredentialsRepository} from "../repository/credentials.repository";
-import {Namespace} from "../util/namespace";
-import {HttpStatus} from "../../../util/http.status";
-import {VersionIdParamSchema} from "../versions.api";
+import {VersionRepository} from '../repository/version.repository';
+import {FastifyRequest} from 'fastify';
+import {AuthorizationHeaderSchema} from '../schema/authorizationHeaderSchema';
+import {OcpiResponse} from '../../../model/OcpiResponse';
+import {Version, VersionDetailsDTO, VersionDTO} from '../../../model/Version';
+import {CredentialsRepository} from '../repository/credentials.repository';
+import {Namespace} from '../util/namespace';
+import {HttpStatus} from '../../../util/http.status';
+import {VersionIdParamSchema} from '../versions.api';
 
 export class VersionService {
 
@@ -28,7 +28,7 @@ export class VersionService {
             return OcpiResponse.build(
                 HttpStatus.OK,
                 versions.map(version => version.toVersionDTO())
-            )
+            );
         } catch (e) {
             throw new Error('todo'); // todo error handling
         }
@@ -36,8 +36,8 @@ export class VersionService {
 
     async getVersion(
         request: FastifyRequest<{
-            Headers: AuthorizationHeaderSchema,
-            Params: VersionIdParamSchema
+            Headers: AuthorizationHeaderSchema;
+            Params: VersionIdParamSchema;
         }>,
     ): Promise<OcpiResponse<VersionDetailsDTO>> {
         try {

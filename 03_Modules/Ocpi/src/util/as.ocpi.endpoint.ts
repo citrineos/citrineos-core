@@ -3,9 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {HttpMethod} from '.';
-import {Namespace} from '../../ocpp/persistence';
-import {AsDataEndpoint} from '@citrineos/base';
+import {AsDataEndpoint, HttpMethod, Namespace} from '@citrineos/base';
 
 /**
  * Decorator for use in module API class to expose methods as REST data endpoints.
@@ -20,7 +18,7 @@ import {AsDataEndpoint} from '@citrineos/base';
  * @return {void} - No return value.
  */
 export const AsOcpiEndpoint = function (
-  namespace: Namespace,
+  namespace: string,
   method: HttpMethod,
   querySchema?: object,
   bodySchema?: object,

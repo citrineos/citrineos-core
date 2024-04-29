@@ -1,13 +1,13 @@
-import {AbstractModuleApi, AsDataEndpoint, HttpMethod} from "@citrineos/base";
-import {OcpiCredentialsModule} from "./module";
-import {FastifyInstance, FastifyRequest} from "fastify";
-import {ILogObj, Logger} from "tslog";
-import {OcpiResponse} from "../../model/OcpiResponse";
-import {VersionDetailsDTO, VersionDTO} from "../../model/Version";
-import {AuthorizationHeaderSchema} from "./schema/authorizationHeaderSchema";
-import {IsEnum, IsNotEmpty} from "class-validator";
-import {VersionNumber} from "../../model/VersionNumber";
-import {VersionService} from "./service/version.service";
+import {AbstractModuleApi, AsDataEndpoint, HttpMethod} from '@citrineos/base';
+import {OcpiCredentialsModule} from './module';
+import {FastifyInstance, FastifyRequest} from 'fastify';
+import {ILogObj, Logger} from 'tslog';
+import {OcpiResponse} from '../../model/OcpiResponse';
+import {VersionDetailsDTO, VersionDTO} from '../../model/Version';
+import {AuthorizationHeaderSchema} from './schema/authorizationHeaderSchema';
+import {IsEnum, IsNotEmpty} from 'class-validator';
+import {VersionNumber} from '../../model/VersionNumber';
+import {VersionService} from './service/version.service';
 
 export class VersionIdParamSchema {
     @IsEnum(VersionNumber)
@@ -18,14 +18,6 @@ export class VersionIdParamSchema {
 export class VersionsModuleApi
     extends AbstractModuleApi<OcpiCredentialsModule> {
 
-    /**
-     * Constructor for the class.
-     *
-     * @param {TransactionModule} transactionModule - The transaction module.
-     * @param {FastifyInstance} server - The server instance.
-     * @param {Logger<ILogObj>} [logger] - Optional logger.
-     * @param versionService
-     */
     constructor(
         transactionModule: OcpiCredentialsModule,
         server: FastifyInstance,
@@ -53,7 +45,7 @@ export class VersionsModuleApi
     }
 
     @AsDataEndpoint(
-        '/ocpi/{versionId}',
+        '/ocpi/:versionId',
         HttpMethod.Get,
         undefined,
         undefined,
@@ -63,8 +55,8 @@ export class VersionsModuleApi
     )
     async getVersion(
         request: FastifyRequest<{
-            Headers: AuthorizationHeaderSchema,
-            Params: VersionIdParamSchema
+            Headers: AuthorizationHeaderSchema;
+            Params: VersionIdParamSchema;
         }>,
     ): Promise<OcpiResponse<VersionDetailsDTO>> {
         return this.versionService?.getVersion(request)!;

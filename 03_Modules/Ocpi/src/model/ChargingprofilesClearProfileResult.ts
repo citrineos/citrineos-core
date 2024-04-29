@@ -1,13 +1,7 @@
-
-import { 
-	IsString,
-	IsNotEmpty,
-} from "class-validator";
-
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class ChargingprofilesClearProfileResult {
-	@IsString()
-	@IsNotEmpty()
-	result: string;
-
+  @IsString()
+  @IsNotEmpty()
+  result!: string;
 }

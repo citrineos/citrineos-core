@@ -1,8 +1,8 @@
-import {VersionNumber} from "./VersionNumber";
-import {ArrayMinSize, IsArray, IsEnum, IsNotEmpty, IsString, IsUrl} from "class-validator";
-import {Column, DataType, Model, PrimaryKey, Table} from "sequelize-typescript";
-import {Endpoint} from "./Endpoint";
-import {Namespace} from "../modules/temp/util/namespace";
+import {VersionNumber} from './VersionNumber';
+import {ArrayMinSize, IsArray, IsEnum, IsNotEmpty, IsString, IsUrl} from 'class-validator';
+import {Column, DataType, Model, PrimaryKey, Table} from 'sequelize-typescript';
+import {Endpoint} from './Endpoint';
+import {Namespace} from '../modules/temp/util/namespace';
 
 @Table
 export class Version extends Model {

@@ -1,5 +1,5 @@
 {
-  "name": "@citrineos/monitoring",
+  "name": "@citrineos/ocpi",
   "version": "1.0.0",
   "description": "The monitoring module for OCPP v2.0.1. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "dist/index.js",

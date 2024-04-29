@@ -1,10 +1,10 @@
 
-import { 
+import {
 	IsString,
 	IsUrl,
 	IsNotEmpty,
 	MaxLength,
-} from "class-validator";
+} from 'class-validator';
 
 
 export class CommandsStopSessionRequest {

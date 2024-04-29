@@ -1,24 +1,16 @@
-import {AbstractModuleApi, AsDataEndpoint, HttpMethod} from "@citrineos/base";
-import {OcpiCredentialsModule} from "./module";
-import {FastifyInstance, FastifyRequest} from "fastify";
-import {ILogObj, Logger} from "tslog";
-import {OcpiResponse} from "../../model/OcpiResponse";
-import {AuthorizationHeaderSchema} from "./schema/authorizationHeaderSchema";
-import {Credentials} from "../../model/Credentials";
-import {CredentialsService} from "./service/credentials.service";
-import {VersionIdParamSchema} from "./versions.api";
+import {AbstractModuleApi, AsDataEndpoint, HttpMethod} from '@citrineos/base';
+import {OcpiCredentialsModule} from './module';
+import {FastifyInstance, FastifyRequest} from 'fastify';
+import {ILogObj, Logger} from 'tslog';
+import {OcpiResponse} from '../../model/OcpiResponse';
+import {AuthorizationHeaderSchema} from './schema/authorizationHeaderSchema';
+import {Credentials} from '../../model/Credentials';
+import {CredentialsService} from './service/credentials.service';
+import {VersionIdParamSchema} from './versions.api';
 
 export class CredentialsModuleApi
     extends AbstractModuleApi<OcpiCredentialsModule> {
 
-    /**
-     * Constructor for the class.
-     *
-     * @param {TransactionModule} module - The transaction module.
-     * @param {FastifyInstance} server - The server instance.
-     * @param {Logger<ILogObj>} [logger] - Optional logger.
-     * @param {CredentialsService} credentialsService - Credentials service.
-     */
     constructor(
         module: OcpiCredentialsModule,
         server: FastifyInstance,
@@ -29,7 +21,7 @@ export class CredentialsModuleApi
     }
 
     @AsDataEndpoint(
-        '/ocpi/{versionId}/credentials',
+        '/ocpi/:versionId/credentials',
         HttpMethod.Get,
         undefined,
         undefined,
@@ -39,15 +31,15 @@ export class CredentialsModuleApi
     )
     async getCredentials(
         request: FastifyRequest<{
-            Params: VersionIdParamSchema,
-            Headers: AuthorizationHeaderSchema
+            Params: VersionIdParamSchema;
+            Headers: AuthorizationHeaderSchema;
         }>,
     ): Promise<OcpiResponse<Credentials>> {
         return this.credentialsService?.getCredentials(request)!;
     }
 
     @AsDataEndpoint(
-        '/ocpi/{versionId}/credentials',
+        '/ocpi/:versionId/credentials',
         HttpMethod.Post,
         undefined,
         Credentials,
@@ -57,16 +49,16 @@ export class CredentialsModuleApi
     )
     async postCredentials(
         request: FastifyRequest<{
-            Params: VersionIdParamSchema,
-            Headers: AuthorizationHeaderSchema,
-            Body: Credentials
+            Params: VersionIdParamSchema;
+            Headers: AuthorizationHeaderSchema;
+            Body: Credentials;
         }>,
     ): Promise<OcpiResponse<Credentials>> {
         return this.credentialsService?.postCredentials(request)!;
     }
 
     @AsDataEndpoint(
-        '/ocpi/{versionId}/credentials',
+        '/ocpi/:versionId/credentials',
         HttpMethod.Put,
         undefined,
         Credentials,
@@ -76,16 +68,16 @@ export class CredentialsModuleApi
     )
     async putCredentials(
         request: FastifyRequest<{
-            Params: VersionIdParamSchema,
-            Headers: AuthorizationHeaderSchema,
-            Body: Credentials
+            Params: VersionIdParamSchema;
+            Headers: AuthorizationHeaderSchema;
+            Body: Credentials;
         }>,
     ): Promise<OcpiResponse<Credentials>> {
         return this.credentialsService?.putCredentials(request)!;
     }
 
     @AsDataEndpoint(
-        '/ocpi/{versionId}/credentials',
+        '/ocpi/:versionId/credentials',
         HttpMethod.Delete,
         undefined,
         undefined,
@@ -95,8 +87,8 @@ export class CredentialsModuleApi
     )
     async deleteCredentials(
         request: FastifyRequest<{
-            Params: VersionIdParamSchema
-            Headers: AuthorizationHeaderSchema,
+            Params: VersionIdParamSchema;
+            Headers: AuthorizationHeaderSchema;
         }>,
     ): Promise<OcpiResponse<void>> {
         return this.credentialsService?.deleteCredentials(request)!;

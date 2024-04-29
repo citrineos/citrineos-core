@@ -1,10 +1,10 @@
-import type {ConnectorDTO, EvseDTO, LocationDTO,} from "./models/index";
-import {BaseOcpiHeaders, setAuthHeader, validateAndgetOcpiHeaders} from "./util";
-import {BaseAPI, HTTPHeaders} from "./BaseApi";
-import {OcpiResponse} from "../model/OcpiResponse";
-import {Connector} from "../model/Connector";
-import {Evse} from "../model/Evse";
-import {Location} from "../model/Location";
+import {BaseOcpiHeaders, setAuthHeader, validateAndgetOcpiHeaders} from './util';
+import {BaseAPI, HTTPHeaders} from './BaseApi';
+import {OcpiResponse} from '../model/OcpiResponse';
+import {Connector} from '../model/Connector';
+import {Evse} from '../model/Evse';
+import {Location} from '../model/Location';
+import {VersionNumber} from '../model/VersionNumber';
 
 export interface GetConnectorRequest extends BaseOcpiHeaders {
     countryCode: string;
@@ -33,7 +33,7 @@ export interface PatchConnectorRequest extends BaseOcpiHeaders {
     locationID: string;
     evseUID: string;
     connectorID: string;
-    requestBody: { [key: string]: object; };
+    requestBody: { [key: string]: object };
 }
 
 export interface PatchEvseRequest extends BaseOcpiHeaders {
@@ -41,14 +41,14 @@ export interface PatchEvseRequest extends BaseOcpiHeaders {
     partyID: string;
     locationID: string;
     evseUID: string;
-    requestBody: { [key: string]: object; };
+    requestBody: { [key: string]: object };
 }
 
 export interface PatchLocationRequest extends BaseOcpiHeaders {
     countryCode: string;
     partyID: string;
     locationID: string;
-    requestBody: { [key: string]: object; };
+    requestBody: { [key: string]: object };
 }
 
 export interface PutConnectorRequest extends BaseOcpiHeaders {
@@ -57,7 +57,7 @@ export interface PutConnectorRequest extends BaseOcpiHeaders {
     locationID: string;
     evseUID: string;
     connectorID: string;
-    connector: ConnectorDTO;
+    connector: Connector;
 }
 
 export interface PutEvseRequest extends BaseOcpiHeaders {
@@ -65,190 +65,190 @@ export interface PutEvseRequest extends BaseOcpiHeaders {
     partyID: string;
     locationID: string;
     evseUID: string;
-    evse: EvseDTO;
+    evse: Evse;
 }
 
 export interface PutLocationRequest extends BaseOcpiHeaders {
     countryCode: string;
     partyID: string;
     locationID: string;
-    location: LocationDTO;
+    location: Location;
 }
 
 
 export class LocationsControllerApi extends BaseAPI {
 
-    async getConnector(requestParameters: GetConnectorRequest): Promise<OcpiResponse<Connector>> {
+    async getConnector(requestParameters: GetConnectorRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<Connector>> {
 
-        BaseAPI.validateRequiredParam(requestParameters, "countryCode", "partyID", "locationID", "evseUID", "connectorID");
+        BaseAPI.validateRequiredParam(requestParameters, 'countryCode', 'partyID', 'locationID', 'evseUID', 'connectorID');
 
         const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/receiver/2.2/locations/{countryCode}/{partyID}/{locationID}/{evseUID}/{connectorID}`
-                .replace(`{${"countryCode"}}`, encodeURIComponent(String(requestParameters.countryCode)))
-                .replace(`{${"partyID"}}`, encodeURIComponent(String(requestParameters.partyID)))
-                .replace(`{${"locationID"}}`, encodeURIComponent(String(requestParameters.locationID)))
-                .replace(`{${"evseUID"}}`, encodeURIComponent(String(requestParameters.evseUID)))
-                .replace(`{${"connectorID"}}`, encodeURIComponent(String(requestParameters.connectorID))),
-            method: "GET",
+            path: `/ocpi/receiver/${versionId}/locations/{countryCode}/{partyID}/{locationID}/{evseUID}/{connectorID}`
+                .replace(`{${'countryCode'}}`, encodeURIComponent(String(requestParameters.countryCode)))
+                .replace(`{${'partyID'}}`, encodeURIComponent(String(requestParameters.partyID)))
+                .replace(`{${'locationID'}}`, encodeURIComponent(String(requestParameters.locationID)))
+                .replace(`{${'evseUID'}}`, encodeURIComponent(String(requestParameters.evseUID)))
+                .replace(`{${'connectorID'}}`, encodeURIComponent(String(requestParameters.connectorID))),
+            method: 'GET',
             headers: headerParameters
         });
 
     }
 
-    async getEvse(requestParameters: GetEvseRequest): Promise<OcpiResponse<Evse>> {
+    async getEvse(requestParameters: GetEvseRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<Evse>> {
 
-        BaseAPI.validateRequiredParam(requestParameters, "countryCode", "partyID", "locationID", "evseUID");
+        BaseAPI.validateRequiredParam(requestParameters, 'countryCode', 'partyID', 'locationID', 'evseUID');
 
         const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/receiver/2.2/locations/{countryCode}/{partyID}/{locationID}/{evseUID}`
-                .replace(`{${"countryCode"}}`, encodeURIComponent(String(requestParameters.countryCode)))
-                .replace(`{${"partyID"}}`, encodeURIComponent(String(requestParameters.partyID)))
-                .replace(`{${"locationID"}}`, encodeURIComponent(String(requestParameters.locationID)))
-                .replace(`{${"evseUID"}}`, encodeURIComponent(String(requestParameters.evseUID))),
-            method: "GET",
+            path: `/ocpi/receiver/${versionId}/locations/{countryCode}/{partyID}/{locationID}/{evseUID}`
+                .replace(`{${'countryCode'}}`, encodeURIComponent(String(requestParameters.countryCode)))
+                .replace(`{${'partyID'}}`, encodeURIComponent(String(requestParameters.partyID)))
+                .replace(`{${'locationID'}}`, encodeURIComponent(String(requestParameters.locationID)))
+                .replace(`{${'evseUID'}}`, encodeURIComponent(String(requestParameters.evseUID))),
+            method: 'GET',
             headers: headerParameters
         });
 
     }
 
-    async getLocation(requestParameters: GetLocationRequest): Promise<OcpiResponse<Location>> {
+    async getLocation(requestParameters: GetLocationRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<Location>> {
 
-        BaseAPI.validateRequiredParam(requestParameters, "countryCode", "partyID", "locationID");
+        BaseAPI.validateRequiredParam(requestParameters, 'countryCode', 'partyID', 'locationID');
 
         const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/receiver/2.2/locations/{countryCode}/{partyID}/{locationID}`
-                .replace(`{${"countryCode"}}`, encodeURIComponent(String(requestParameters.countryCode)))
-                .replace(`{${"partyID"}}`, encodeURIComponent(String(requestParameters.partyID)))
-                .replace(`{${"locationID"}}`, encodeURIComponent(String(requestParameters.locationID))),
-            method: "GET",
+            path: `/ocpi/receiver/${versionId}/locations/{countryCode}/{partyID}/{locationID}`
+                .replace(`{${'countryCode'}}`, encodeURIComponent(String(requestParameters.countryCode)))
+                .replace(`{${'partyID'}}`, encodeURIComponent(String(requestParameters.partyID)))
+                .replace(`{${'locationID'}}`, encodeURIComponent(String(requestParameters.locationID))),
+            method: 'GET',
             headers: headerParameters
         });
 
     }
 
-    async patchConnector(requestParameters: PatchConnectorRequest): Promise<OcpiResponse<void>> {
+    async patchConnector(requestParameters: PatchConnectorRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<void>> {
 
-        BaseAPI.validateRequiredParam(requestParameters, "countryCode", "partyID", "locationID", "evseUID", "connectorID", "requestBody");
+        BaseAPI.validateRequiredParam(requestParameters, 'countryCode', 'partyID', 'locationID', 'evseUID', 'connectorID', 'requestBody');
 
         const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/receiver/2.2/locations/{countryCode}/{partyID}/{locationID}/{evseUID}/{connectorID}`
-                .replace(`{${"countryCode"}}`, encodeURIComponent(String(requestParameters.countryCode)))
-                .replace(`{${"partyID"}}`, encodeURIComponent(String(requestParameters.partyID)))
-                .replace(`{${"locationID"}}`, encodeURIComponent(String(requestParameters.locationID)))
-                .replace(`{${"evseUID"}}`, encodeURIComponent(String(requestParameters.evseUID)))
-                .replace(`{${"connectorID"}}`, encodeURIComponent(String(requestParameters.connectorID))),
-            method: "PATCH",
+            path: `/ocpi/receiver/${versionId}/locations/{countryCode}/{partyID}/{locationID}/{evseUID}/{connectorID}`
+                .replace(`{${'countryCode'}}`, encodeURIComponent(String(requestParameters.countryCode)))
+                .replace(`{${'partyID'}}`, encodeURIComponent(String(requestParameters.partyID)))
+                .replace(`{${'locationID'}}`, encodeURIComponent(String(requestParameters.locationID)))
+                .replace(`{${'evseUID'}}`, encodeURIComponent(String(requestParameters.evseUID)))
+                .replace(`{${'connectorID'}}`, encodeURIComponent(String(requestParameters.connectorID))),
+            method: 'PATCH',
             headers: headerParameters,
             body: requestParameters.requestBody,
         });
 
     }
 
-    async patchEvse(requestParameters: PatchEvseRequest): Promise<OcpiResponse<void>> {
+    async patchEvse(requestParameters: PatchEvseRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<void>> {
 
-        BaseAPI.validateRequiredParam(requestParameters, "countryCode", "partyID", "locationID", "evseUID", "requestBody");
+        BaseAPI.validateRequiredParam(requestParameters, 'countryCode', 'partyID', 'locationID', 'evseUID', 'requestBody');
 
         const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/receiver/2.2/locations/{countryCode}/{partyID}/{locationID}/{evseUID}`
-                .replace(`{${"countryCode"}}`, encodeURIComponent(String(requestParameters.countryCode)))
-                .replace(`{${"partyID"}}`, encodeURIComponent(String(requestParameters.partyID)))
-                .replace(`{${"locationID"}}`, encodeURIComponent(String(requestParameters.locationID)))
-                .replace(`{${"evseUID"}}`, encodeURIComponent(String(requestParameters.evseUID))),
-            method: "PATCH",
+            path: `/ocpi/receiver/${versionId}/locations/{countryCode}/{partyID}/{locationID}/{evseUID}`
+                .replace(`{${'countryCode'}}`, encodeURIComponent(String(requestParameters.countryCode)))
+                .replace(`{${'partyID'}}`, encodeURIComponent(String(requestParameters.partyID)))
+                .replace(`{${'locationID'}}`, encodeURIComponent(String(requestParameters.locationID)))
+                .replace(`{${'evseUID'}}`, encodeURIComponent(String(requestParameters.evseUID))),
+            method: 'PATCH',
             headers: headerParameters,
             body: requestParameters.requestBody,
         });
 
     }
 
-    async patchLocation(requestParameters: PatchLocationRequest): Promise<OcpiResponse<void>> {
+    async patchLocation(requestParameters: PatchLocationRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<void>> {
 
-        BaseAPI.validateRequiredParam(requestParameters, "countryCode", "partyID", "locationID", "requestBody");
+        BaseAPI.validateRequiredParam(requestParameters, 'countryCode', 'partyID', 'locationID', 'requestBody');
 
         const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/receiver/2.2/locations/{countryCode}/{partyID}/{locationID}`
-                .replace(`{${"countryCode"}}`, encodeURIComponent(String(requestParameters.countryCode)))
-                .replace(`{${"partyID"}}`, encodeURIComponent(String(requestParameters.partyID)))
-                .replace(`{${"locationID"}}`, encodeURIComponent(String(requestParameters.locationID))),
-            method: "PATCH",
+            path: `/ocpi/receiver/${versionId}/locations/{countryCode}/{partyID}/{locationID}`
+                .replace(`{${'countryCode'}}`, encodeURIComponent(String(requestParameters.countryCode)))
+                .replace(`{${'partyID'}}`, encodeURIComponent(String(requestParameters.partyID)))
+                .replace(`{${'locationID'}}`, encodeURIComponent(String(requestParameters.locationID))),
+            method: 'PATCH',
             headers: headerParameters,
             body: requestParameters.requestBody,
         });
 
     }
 
-    async putConnector(requestParameters: PutConnectorRequest): Promise<OcpiResponse<void>> {
+    async putConnector(requestParameters: PutConnectorRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<void>> {
 
-        BaseAPI.validateRequiredParam(requestParameters, "countryCode", "partyID", "locationID", "evseUID", "connectorID", "connector");
+        BaseAPI.validateRequiredParam(requestParameters, 'countryCode', 'partyID', 'locationID', 'evseUID', 'connectorID', 'connector');
 
         const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/receiver/2.2/locations/{countryCode}/{partyID}/{locationID}/{evseUID}/{connectorID}`
-                .replace(`{${"countryCode"}}`, encodeURIComponent(String(requestParameters.countryCode)))
-                .replace(`{${"partyID"}}`, encodeURIComponent(String(requestParameters.partyID)))
-                .replace(`{${"locationID"}}`, encodeURIComponent(String(requestParameters.locationID)))
-                .replace(`{${"evseUID"}}`, encodeURIComponent(String(requestParameters.evseUID)))
-                .replace(`{${"connectorID"}}`, encodeURIComponent(String(requestParameters.connectorID))),
-            method: "PUT",
+            path: `/ocpi/receiver/${versionId}/locations/{countryCode}/{partyID}/{locationID}/{evseUID}/{connectorID}`
+                .replace(`{${'countryCode'}}`, encodeURIComponent(String(requestParameters.countryCode)))
+                .replace(`{${'partyID'}}`, encodeURIComponent(String(requestParameters.partyID)))
+                .replace(`{${'locationID'}}`, encodeURIComponent(String(requestParameters.locationID)))
+                .replace(`{${'evseUID'}}`, encodeURIComponent(String(requestParameters.evseUID)))
+                .replace(`{${'connectorID'}}`, encodeURIComponent(String(requestParameters.connectorID))),
+            method: 'PUT',
             headers: headerParameters,
             body: requestParameters.connector,
         });
 
     }
 
-    async putEvse(requestParameters: PutEvseRequest): Promise<OcpiResponse<void>> {
+    async putEvse(requestParameters: PutEvseRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<void>> {
 
-        BaseAPI.validateRequiredParam(requestParameters, "countryCode", "partyID", "locationID", "evseUID", "evse");
+        BaseAPI.validateRequiredParam(requestParameters, 'countryCode', 'partyID', 'locationID', 'evseUID', 'evse');
 
         const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/receiver/2.2/locations/{countryCode}/{partyID}/{locationID}/{evseUID}`
-                .replace(`{${"countryCode"}}`, encodeURIComponent(String(requestParameters.countryCode)))
-                .replace(`{${"partyID"}}`, encodeURIComponent(String(requestParameters.partyID)))
-                .replace(`{${"locationID"}}`, encodeURIComponent(String(requestParameters.locationID)))
-                .replace(`{${"evseUID"}}`, encodeURIComponent(String(requestParameters.evseUID))),
-            method: "PUT",
+            path: `/ocpi/receiver/${versionId}/locations/{countryCode}/{partyID}/{locationID}/{evseUID}`
+                .replace(`{${'countryCode'}}`, encodeURIComponent(String(requestParameters.countryCode)))
+                .replace(`{${'partyID'}}`, encodeURIComponent(String(requestParameters.partyID)))
+                .replace(`{${'locationID'}}`, encodeURIComponent(String(requestParameters.locationID)))
+                .replace(`{${'evseUID'}}`, encodeURIComponent(String(requestParameters.evseUID))),
+            method: 'PUT',
             headers: headerParameters,
             body: requestParameters.evse,
         });
 
     }
 
-    async putLocation(requestParameters: PutLocationRequest): Promise<OcpiResponse<void>> {
+    async putLocation(requestParameters: PutLocationRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<void>> {
 
-        BaseAPI.validateRequiredParam(requestParameters, "countryCode", "partyID", "locationID", "location");
+        BaseAPI.validateRequiredParam(requestParameters, 'countryCode', 'partyID', 'locationID', 'location');
 
         const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/receiver/2.2/locations/{countryCode}/{partyID}/{locationID}`
-                .replace(`{${"countryCode"}}`, encodeURIComponent(String(requestParameters.countryCode)))
-                .replace(`{${"partyID"}}`, encodeURIComponent(String(requestParameters.partyID)))
-                .replace(`{${"locationID"}}`, encodeURIComponent(String(requestParameters.locationID))),
-            method: "PUT",
+            path: `/ocpi/receiver/${versionId}/locations/{countryCode}/{partyID}/{locationID}`
+                .replace(`{${'countryCode'}}`, encodeURIComponent(String(requestParameters.countryCode)))
+                .replace(`{${'partyID'}}`, encodeURIComponent(String(requestParameters.partyID)))
+                .replace(`{${'locationID'}}`, encodeURIComponent(String(requestParameters.locationID))),
+            method: 'PUT',
             headers: headerParameters,
             body: requestParameters.location,
         });

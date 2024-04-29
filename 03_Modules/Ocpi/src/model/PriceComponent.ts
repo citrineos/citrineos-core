@@ -1,22 +1,26 @@
-import {IsInt, IsNotEmpty, IsNumber, IsOptional, IsString,} from "class-validator";
-import {TariffDimensionType} from "./TariffDimensionType";
-
+import {
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { TariffDimensionType } from './TariffDimensionType';
 
 export class PriceComponent {
-    @IsString()
-    @IsNotEmpty()
-    type: TariffDimensionType;
+  @IsString()
+  @IsNotEmpty()
+  type!: TariffDimensionType;
 
-    @IsNumber()
-    @IsNotEmpty()
-    price: number;
+  @IsNumber()
+  @IsNotEmpty()
+  price!: number;
 
-    @IsNumber()
-    @IsOptional()
-    vat?: number | null;
+  @IsNumber()
+  @IsOptional()
+  vat?: number | null;
 
-    @IsInt()
-    @IsNotEmpty()
-    step_size: number;
-
+  @IsInt()
+  @IsNotEmpty()
+  step_size!: number;
 }

@@ -4,8 +4,8 @@ import {
 	IsNotEmpty,
 	Max,
 	IsNumber,
-} from "class-validator";
-import {EnergySourceCategory} from "./EnergySourceCategory";
+} from 'class-validator';
+import {EnergySourceCategory} from './EnergySourceCategory';
 
 
 export class EnergySources {
