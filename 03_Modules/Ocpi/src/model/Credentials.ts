@@ -1,29 +1,30 @@
-
-import {
-	MaxLength,
-	IsString,
-	IsNotEmpty,
-	IsUrl,
-	ArrayMinSize,
-	IsArray,
-} from "class-validator";
+import {ArrayMinSize, IsArray, IsNotEmpty, IsString, IsUrl, MaxLength,} from "class-validator";
 import {CredentialsRole} from "./CredentialsRole";
+import {Column, DataType, Index, Model, Table} from "sequelize-typescript";
+import {Namespace} from "../modules/temp/util/namespace";
 
+@Table
+export class Credentials extends Model {
 
-export class Credentials {
-	@MaxLength(64)
-	@IsString()
-	@IsNotEmpty()
-	token: string;
+    static readonly MODEL_NAME: string = Namespace.Credentials;
 
-	@IsString()
-	@IsUrl()
-	@IsNotEmpty()
-	url: string;
+    @Index
+    @Column(DataType.STRING)
+    @MaxLength(64)
+    @IsString()
+    @IsNotEmpty()
+    token: string;
 
-	@ArrayMinSize(1)
-	@IsArray()
-	@IsNotEmpty()
-	roles: CredentialsRole[];
+    @Column(DataType.STRING)
+    @IsString()
+    @IsUrl()
+    @IsNotEmpty()
+    url: string;
+
+    @Column(DataType.JSON)
+    @ArrayMinSize(1)
+    @IsArray()
+    @IsNotEmpty()
+    roles: CredentialsRole[];
 
 }

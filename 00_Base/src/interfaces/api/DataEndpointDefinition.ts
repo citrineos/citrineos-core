@@ -14,7 +14,7 @@ import {AsDataEndpoint} from './AsDataEndpoint';
 export interface IDataEndpointDefinition {
   method: (...args: any[]) => any;
   methodName: string;
-  namespace: Namespace;
+  namespace: Namespace | string;
   httpMethod: HttpMethod;
   querySchema?: object;
   bodySchema?: object;

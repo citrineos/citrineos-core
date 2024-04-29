@@ -55,20 +55,5 @@ export class OcpiTransactionsModuleApi
     super(transactionModule, server, logger);
   }
 
-  @AsOcpiEndpoint(
-      '/ocpi/receiver/2.2/cdrs',
-      HttpMethod.Post,
-      null,
-      CDR,
-      null,
-      null,
-      OcpiResponseUnit,
-  )
-  async putDeviceModelVariables(
-      request: FastifyRequest<{
-        Body: CDR;
-      }>,
-  ): Promise<sequelize.VariableAttribute[]> {
-    return new Promise(() => {}); // TODO
-  }
+
 }

@@ -19,7 +19,7 @@ import {Namespace} from '../../ocpp/persistence';
  * @return {void} - No return value.
  */
 export const AsDataEndpoint = function (
-  namespace: Namespace,
+  namespace: Namespace | string,
   method: HttpMethod,
   querySchema?: object,
   bodySchema?: object,

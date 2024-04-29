@@ -24,4 +24,17 @@ export class OcpiResponse<T> {
      */
     @IsDate()
     timestamp: Date;
+
+    static build<T>(
+        status_code: number,
+        data?: T,
+        status_message?: string
+    ): OcpiResponse<T> {
+        const response = new OcpiResponse<T>();
+        response.status_code = status_code;
+        response.status_message = status_message;
+        response.data = data;
+        response.timestamp = new Date();
+        return response;
+    }
 }

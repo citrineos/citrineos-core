@@ -21,11 +21,12 @@ import {ActiveChargingProfileResult} from "../../model/ActiveChargingProfileResu
 import {ActiveChargingProfile} from "../../model/ActiveChargingProfile";
 import {LocationReferences} from "../../model/LocationReferences";
 import {AuthorizationInfo} from "../../model/AuthorizationInfo";
+import {FromToOffsetLimitQuerySchema} from "./schema/from.to.offset.limit.query.schema";
 
 export class PostRealTimeTokenAuthorizationParamSchema {
     @IsString()
     @IsNotEmpty()
-    tokenUID: string;
+    tokenUID!: string;
 }
 
 export class PostRealTimeTokenAuthorizationQuerySchema {
@@ -37,63 +38,44 @@ export class PostRealTimeTokenAuthorizationQuerySchema {
 export class UidParamSchema {
     @IsString()
     @IsNotEmpty()
-    uid: string;
+    uid!: string;
 }
 
 export class SessionIdParamSchema {
     @IsString()
     @IsNotEmpty()
-    sessionId: string;
+    sessionId!: string;
 }
 
 export class CommandUidPathParamSchema extends UidParamSchema {
     @IsString()
     @IsNotEmpty()
-    command: string;
-}
-
-export class FromToOffsetLimitQuerySchema {
-    @IsDate()
-    @IsOptional()
-    date_from?: Date;
-
-    @IsDate()
-    @IsOptional()
-    date_to?: Date;
-
-    @IsInt()
-    @IsOptional()
-    offset?: number;
-
-    @IsInt()
-    @IsOptional()
-    limit?: number;
+    command!: string;
 }
 
 export class LocationIdParamSchema {
     @IsString()
     @IsNotEmpty()
-    locationID: string
+    locationID!: string
 }
 
 export class LocationIdEveseUidParamSchema extends LocationIdParamSchema {
-
     @IsString()
     @IsNotEmpty()
-    evseUID: string
+    evseUID!: string
 }
 
 export class GetConnectorObjectFromDataOwnerParamSchema extends LocationIdEveseUidParamSchema {
     @IsString()
     @IsNotEmpty()
-    connectorID: string
+    connectorID!: string
 }
 
 
 /**
  * Server API for the transaction module.
  */
-export class OcpiCredentialsModuleApi
+export class TemporaryNameModuleApi
     extends AbstractModuleApi<OcpiCredentialsModule> {
     /**
      * Constructor for the class.
