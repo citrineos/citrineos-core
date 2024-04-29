@@ -7,8 +7,9 @@ import {
 } from "class-validator";
 import {Endpoint} from "./Endpoint";
 import {VersionNumber} from "./VersionNumber";
+import {Table, Column, DataType, Model} from "sequelize-typescript";
 
-
+@Table
 export class VersionDetails {
 	@IsString()
 	@IsNotEmpty()

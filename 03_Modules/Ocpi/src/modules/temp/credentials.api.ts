@@ -3,9 +3,10 @@ import {OcpiCredentialsModule} from "./module";
 import {FastifyInstance, FastifyRequest} from "fastify";
 import {ILogObj, Logger} from "tslog";
 import {OcpiResponse} from "../../model/OcpiResponse";
-import {AuthorizationQuerySchema} from "./schema/authorization.query.schema";
+import {AuthorizationHeaderSchema} from "./schema/authorizationHeaderSchema";
 import {Credentials} from "../../model/Credentials";
 import {CredentialsService} from "./service/credentials.service";
+import {VersionIdParamSchema} from "./versions.api";
 
 export class CredentialsModuleApi
     extends AbstractModuleApi<OcpiCredentialsModule> {
@@ -28,34 +29,36 @@ export class CredentialsModuleApi
     }
 
     @AsDataEndpoint(
-        '/ocpi/2.2/credentials',
+        '/ocpi/{versionId}/credentials',
         HttpMethod.Get,
-        AuthorizationQuerySchema,
         undefined,
         undefined,
-        undefined,
+        VersionIdParamSchema,
+        AuthorizationHeaderSchema,
         OcpiResponse<Credentials>
     )
     async getCredentials(
         request: FastifyRequest<{
-            Querystring: AuthorizationQuerySchema
+            Params: VersionIdParamSchema,
+            Headers: AuthorizationHeaderSchema
         }>,
     ): Promise<OcpiResponse<Credentials>> {
         return this.credentialsService?.getCredentials(request)!;
     }
 
     @AsDataEndpoint(
-        '/ocpi/2.2/credentials',
+        '/ocpi/{versionId}/credentials',
         HttpMethod.Post,
-        AuthorizationQuerySchema,
+        undefined,
         Credentials,
-        undefined,
-        undefined,
+        VersionIdParamSchema,
+        AuthorizationHeaderSchema,
         OcpiResponse<Credentials>
     )
     async postCredentials(
         request: FastifyRequest<{
-            Querystring: AuthorizationQuerySchema,
+            Params: VersionIdParamSchema,
+            Headers: AuthorizationHeaderSchema,
             Body: Credentials
         }>,
     ): Promise<OcpiResponse<Credentials>> {
@@ -63,17 +66,18 @@ export class CredentialsModuleApi
     }
 
     @AsDataEndpoint(
-        '/ocpi/2.2/credentials',
+        '/ocpi/{versionId}/credentials',
         HttpMethod.Put,
-        AuthorizationQuerySchema,
+        undefined,
         Credentials,
-        undefined,
-        undefined,
+        VersionIdParamSchema,
+        AuthorizationHeaderSchema,
         OcpiResponse<Credentials>
     )
     async putCredentials(
         request: FastifyRequest<{
-            Querystring: AuthorizationQuerySchema,
+            Params: VersionIdParamSchema,
+            Headers: AuthorizationHeaderSchema,
             Body: Credentials
         }>,
     ): Promise<OcpiResponse<Credentials>> {
@@ -81,17 +85,18 @@ export class CredentialsModuleApi
     }
 
     @AsDataEndpoint(
-        '/ocpi/2.2/credentials',
+        '/ocpi/{versionId}/credentials',
         HttpMethod.Delete,
-        AuthorizationQuerySchema,
         undefined,
         undefined,
-        undefined,
+        VersionIdParamSchema,
+        AuthorizationHeaderSchema,
         OcpiResponse<void>
     )
     async deleteCredentials(
         request: FastifyRequest<{
-            Querystring: AuthorizationQuerySchema
+            Params: VersionIdParamSchema
+            Headers: AuthorizationHeaderSchema,
         }>,
     ): Promise<OcpiResponse<void>> {
         return this.credentialsService?.deleteCredentials(request)!;

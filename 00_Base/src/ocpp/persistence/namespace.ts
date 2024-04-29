@@ -33,6 +33,4 @@ export enum Namespace {
     VariableMonitoringStatus = 'VariableMonitoringStatus',
     VariableStatus = 'VariableStatus',
     VariableType = 'Variable',
-    // OCPI
-    Credentials = 'Credentials'
 }

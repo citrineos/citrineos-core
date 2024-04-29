@@ -3,10 +3,17 @@ import {OcpiCredentialsModule} from "./module";
 import {FastifyInstance, FastifyRequest} from "fastify";
 import {ILogObj, Logger} from "tslog";
 import {OcpiResponse} from "../../model/OcpiResponse";
-import {Version} from "../../model/Version";
-import {VersionDetails} from "../../model/VersionDetails";
-import {AuthorizationQuerySchema} from "./schema/authorization.query.schema";
+import {VersionDetailsDTO, VersionDTO} from "../../model/Version";
+import {AuthorizationHeaderSchema} from "./schema/authorizationHeaderSchema";
+import {IsEnum, IsNotEmpty} from "class-validator";
+import {VersionNumber} from "../../model/VersionNumber";
+import {VersionService} from "./service/version.service";
 
+export class VersionIdParamSchema {
+    @IsEnum(VersionNumber)
+    @IsNotEmpty()
+    versionId!: VersionNumber;
+}
 
 export class VersionsModuleApi
     extends AbstractModuleApi<OcpiCredentialsModule> {
@@ -17,49 +24,50 @@ export class VersionsModuleApi
      * @param {TransactionModule} transactionModule - The transaction module.
      * @param {FastifyInstance} server - The server instance.
      * @param {Logger<ILogObj>} [logger] - Optional logger.
+     * @param versionService
      */
     constructor(
         transactionModule: OcpiCredentialsModule,
         server: FastifyInstance,
         logger?: Logger<ILogObj>,
+        private versionService?: VersionService
     ) {
         super(transactionModule, server, logger);
     }
 
     @AsDataEndpoint(
-        '/ocpi/2.2',
-        HttpMethod.Get,
-        AuthorizationQuerySchema,
-        undefined,
-        undefined,
-        undefined,
-        OcpiResponse<VersionDetails>
-    )
-    async getVersion(
-        request: FastifyRequest<{
-            Querystring: AuthorizationQuerySchema;
-        }>,
-    ): Promise<OcpiResponse<VersionDetails>> {
-        return new Promise(() => {
-        }); // TODO
-    }
-
-    @AsDataEndpoint(
         '/ocpi/versions',
         HttpMethod.Get,
-        AuthorizationQuerySchema,
         undefined,
         undefined,
         undefined,
-        OcpiResponse<Version[]>, // todo proper pageable object?
+        AuthorizationHeaderSchema,
+        OcpiResponse<VersionDTO[]>, // todo proper pageable object?
     )
     async getVersions(
         request: FastifyRequest<{
-            Querystring: AuthorizationQuerySchema;
+            Headers: AuthorizationHeaderSchema;
         }>,
-    ): Promise<OcpiResponse<Version[]>> {
-        return new Promise(() => {
-        }); // TODO
+    ): Promise<OcpiResponse<VersionDTO[]>> {
+        return this.versionService?.getVersions(request)!;
+    }
+
+    @AsDataEndpoint(
+        '/ocpi/{versionId}',
+        HttpMethod.Get,
+        undefined,
+        undefined,
+        VersionIdParamSchema,
+        AuthorizationHeaderSchema,
+        OcpiResponse<VersionDetailsDTO>
+    )
+    async getVersion(
+        request: FastifyRequest<{
+            Headers: AuthorizationHeaderSchema,
+            Params: VersionIdParamSchema
+        }>,
+    ): Promise<OcpiResponse<VersionDetailsDTO>> {
+        return this.versionService?.getVersion(request)!;
     }
 
 }

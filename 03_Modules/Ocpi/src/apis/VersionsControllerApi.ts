@@ -1,11 +1,11 @@
 import {BaseAPI, HTTPHeaders} from "./BaseApi";
 import {setAuthHeader} from "./util";
 import {OcpiResponse} from "../model/OcpiResponse";
-import {VersionDetails} from "../model/VersionDetails";
-import {Version} from "../model/Version";
+import {VersionDetailsDTO, VersionDTO} from "../model/Version";
 
 export interface GetVersionRequest {
     authorization: string;
+    versionId: string;
 }
 
 export interface GetVersionsRequest {
@@ -15,7 +15,7 @@ export interface GetVersionsRequest {
 
 export class VersionsControllerApi extends BaseAPI {
 
-    async getVersion(requestParameters: GetVersionRequest): Promise<OcpiResponse<VersionDetails>> {
+    async getVersion(requestParameters: GetVersionRequest): Promise<OcpiResponse<VersionDetailsDTO>> {
 
         BaseAPI.validateRequiredParam(requestParameters, "authorization");
 
@@ -27,7 +27,7 @@ export class VersionsControllerApi extends BaseAPI {
 
         setAuthHeader(headerParameters);
         return await this.request({
-            path: `/ocpi/2.2`,
+            path: `/ocpi/${requestParameters.versionId}`,
             method: "GET",
             headers: headerParameters
         });
@@ -37,7 +37,7 @@ export class VersionsControllerApi extends BaseAPI {
     /**
      * This endpoint lists all the available OCPI versions and the corresponding URLs to where version specific details such as the supported endpoints can be found.
      */
-    async getVersions(requestParameters: GetVersionsRequest): Promise<OcpiResponse<Version>> {
+    async getVersions(requestParameters: GetVersionsRequest): Promise<OcpiResponse<VersionDTO[]>> {
         BaseAPI.validateRequiredParam(requestParameters, "authorization");
 
         const headerParameters: HTTPHeaders = {};

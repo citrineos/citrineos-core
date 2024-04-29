@@ -1,3 +1,4 @@
 export enum Namespace {
-    Credentials = 'Credentials'
+    Credentials = 'Credentials',
+    Version = 'Version'
 }
