@@ -105,9 +105,9 @@ export class Local implements ICertificateAuthorityClient {
    * Get sub CA from the certificate chain based on the station ID.
    * Use it to sign certificate based on the CSR string.
    *
-   * @param {string} csrString - The Certificate Signing Request (CSR) string.
+   * @param {string} csrString - The CSR string.
    * @param {string} [stationId] - The station ID.
-   * @return {Promise<string>} The signed certificate in PEM format.
+   * @return {Promise<string>} The signed certificate followed by sub CA in PEM format.
    */
   async getSignedCertificate(
     csrString: string,
@@ -127,17 +127,17 @@ export class Local implements ICertificateAuthorityClient {
         string | undefined,
       ];
 
-    const csr: forge.pki.CertificateSigningRequest =
-      forge.pki.certificationRequestFromPem(csrString);
+    const subCACertPem: string = this._getCertificateForSigning(certChain);
 
-    const subCACert: forge.pki.Certificate = forge.pki.certificateFromPem(
-      this._getCertificateForSigning(certChain),
+    const signedCertPem: string = forge.pki.certificateToPem(
+      this._createSignedCertificate(
+        forge.pki.certificationRequestFromPem(csrString),
+        forge.pki.certificateFromPem(subCACertPem),
+        forge.pki.privateKeyFromPem(subCAPrivateKey),
+      ),
     );
-    const privateKey: forge.pki.rsa.PrivateKey =
-      forge.pki.privateKeyFromPem(subCAPrivateKey);
-    return forge.pki.certificateToPem(
-      this._createSignedCertificate(csr, subCACert, privateKey),
-    );
+
+    return signedCertPem.trim() + '\n' + subCACertPem;
   }
 
   /**
