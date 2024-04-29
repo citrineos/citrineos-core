@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/evdriver",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "The EVDriver module for OCPP v2.0.1. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -25,10 +25,9 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@citrineos/base": "1.0.0",
-    "@citrineos/data": "1.0.0",
-    "@citrineos/util": "1.0.0",
+    "@citrineos/base": "1.1.1",
+    "@citrineos/data": "1.1.1",
+    "@citrineos/util": "1.1.1",
     "fastify": "^4.22.2"
-  },
-  "workspace": "../../"
+  }
 }
