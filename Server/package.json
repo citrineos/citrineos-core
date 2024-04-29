@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@citrineos/base": "1.0.0",
+    "@citrineos/ocpi": "1.0.0",
     "@citrineos/certificates": "1.0.0",
     "@citrineos/configuration": "1.0.0",
     "@citrineos/data": "1.0.0",

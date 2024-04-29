@@ -98,7 +98,7 @@ function querystringSingleKey(key: string, value: string | number | null | undef
     return `${encodeURIComponent(fullKey)}=${encodeURIComponent(String(value))}`;
 }
 
-export class Configuration {
+export class Configuration { // todo do we want to keep this configuration or adjust, seems only base path is being used
     constructor(private configuration: ConfigurationParameters = {}) {
     }
 

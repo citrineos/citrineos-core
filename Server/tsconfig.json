@@ -1,7 +1,13 @@
 {
   "extends": "../tsconfig.build.json",
-  "include": ["src/**/*.ts", "src/**/*.json"],
-  "exclude": ["**/dist/**", "**/node_modules/**"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.json"
+  ],
+  "exclude": [
+    "**/dist/**",
+    "**/node_modules/**"
+  ],
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
@@ -16,6 +22,9 @@
     },
     {
       "path": "../02_Util"
+    },
+    {
+      "path": "../03_Modules/Ocpi"
     },
     {
       "path": "../03_Modules/Certificates"

@@ -1,30 +1,4 @@
-import 'reflect-metadata';
-
-import { createKoaServer } from 'routing-controllers';
-import { TestController } from './controllers/test.controller';
-import { koaSwagger } from 'koa2-swagger-ui';
-import { swaggerDoc } from './swagger';
-import { CdrsController } from './controllers/cdrs.controller';
-
-const app = createKoaServer({
-  controllers: [TestController, CdrsController],
-});
-
-const swaggerSpec: any = swaggerDoc({
-  info: {
-    title: 'Citrine OCPI API',
-    version: '1.0.0',
-    description: 'TODO',
-  },
-});
-
-app.use(
-  koaSwagger({
-    routePrefix: '/api/docs',
-    swaggerOptions: {
-      spec: swaggerSpec,
-    },
-  }),
-);
-
-app.listen(3000);
+export { CredentialsModuleApi } from './modules/temp/credentials.api';
+export { OcpiModule } from './modules/temp/module';
+export { EverythingElseApi } from './modules/temp/everything.else.api';
+export { VersionsModuleApi } from './modules/temp/versions.api';

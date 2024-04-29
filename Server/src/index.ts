@@ -58,6 +58,12 @@ import {
   type FastifyValidationResult,
 } from 'fastify/types/schema';
 import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter';
+import {
+  CredentialsModuleApi,
+  EverythingElseApi,
+  OcpiModule,
+  VersionsModuleApi,
+} from '@citrineos/ocpi';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -401,6 +407,33 @@ export class CitrineOSServer {
       const moduleConfig: ModuleConfig = this.getModuleConfig(this.eventGroup);
       this.initModule(moduleConfig);
     }
+    this.initOcpi();
+  }
+
+  private initOcpi() {
+    // todo init properly
+    const module = new OcpiModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+    );
+    this.modules.push(module);
+    this.apis.push(
+      new CredentialsModuleApi(
+        this._config,
+        module,
+        this._server,
+        this._logger,
+      ),
+      new EverythingElseApi(module, this._server, this._logger),
+      new VersionsModuleApi(this._config, module, this._server, this._logger),
+    );
+    // TODO: take actions to make sure module has correct subscriptions and log proof
+    this._logger?.info(
+      'CredentialsModuleApi, EverythingElseApi, VersionsModuleApi module started...',
+    );
   }
 }
 

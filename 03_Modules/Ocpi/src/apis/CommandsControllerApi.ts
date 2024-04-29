@@ -1,117 +1,126 @@
-import type {
-    CancelReservationDTO,
-    ReserveNowDTO,
-    StartSessionDTO,
-    StopSessionDTO,
-    UnlockConnectorDTO,
-} from './models/index';
-import {BaseOcpiHeaders, setAuthHeader, validateAndgetOcpiHeaders} from './util';
-import {BaseAPI, HTTPHeaders} from './BaseApi';
-import {CommandResponse} from '../model/CommandResponse';
-import {OcpiResponse} from '../model/OcpiResponse';
-import {VersionNumber} from '../model/VersionNumber';
+import {
+  BaseOcpiHeaders,
+  setAuthHeader,
+  validateAndgetOcpiHeaders,
+} from './util';
+import { BaseAPI, HTTPHeaders } from './BaseApi';
+import { CommandResponse } from '../model/CommandResponse';
+import { OcpiResponse } from '../model/OcpiResponse';
+import { VersionNumber } from '../model/VersionNumber';
+import { CommandsCancelReservationRequest } from '../model/CommandsCancelReservationRequest';
+import { ReserveNow } from '../model/ReserveNow';
+import { CommandsStartSessionRequest } from '../model/CommandsStartSessionRequest';
+import { CommandsStopSessionRequest } from '../model/CommandsStopSessionRequest';
+import { CommandsUnlockConnectorRequest } from '../model/CommandsUnlockConnectorRequest';
 
 export interface PostCancelReservationRequest extends BaseOcpiHeaders {
-    cancelReservation: CancelReservationDTO;
+  cancelReservation: CommandsCancelReservationRequest;
 }
 
 export interface PostReserveNowRequest extends BaseOcpiHeaders {
-    reserveNow: ReserveNowDTO;
+  reserveNow: ReserveNow;
 }
 
 export interface PostStartSessionRequest extends BaseOcpiHeaders {
-    startSession: StartSessionDTO;
+  startSession: CommandsStartSessionRequest;
 }
 
 export interface PostStopSessionRequest extends BaseOcpiHeaders {
-    stopSession: StopSessionDTO;
+  stopSession: CommandsStopSessionRequest;
 }
 
 export interface PostUnlockConnectorRequest extends BaseOcpiHeaders {
-    unlockConnector: UnlockConnectorDTO;
+  unlockConnector: CommandsUnlockConnectorRequest;
 }
 
-
 export class CommandsControllerApi extends BaseAPI {
+  async postCancelReservation(
+    requestParameters: PostCancelReservationRequest,
+    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
+  ): Promise<OcpiResponse<CommandResponse>> {
+    BaseAPI.validateRequiredParam(requestParameters, 'cancelReservation');
 
-    async postCancelReservation(requestParameters: PostCancelReservationRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<CommandResponse>> {
+    const headerParameters: HTTPHeaders =
+      validateAndgetOcpiHeaders(requestParameters);
 
-        BaseAPI.validateRequiredParam(requestParameters, 'cancelReservation');
+    setAuthHeader(headerParameters);
+    return await this.request({
+      path: `/ocpi/receiver/${versionId}/commands/CANCEL_RESERVATION`,
+      method: 'POST',
+      headers: headerParameters,
+      body: requestParameters.cancelReservation,
+    });
+  }
 
-        const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
+  async postReserveNow(
+    requestParameters: PostReserveNowRequest,
+    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
+  ): Promise<OcpiResponse<CommandResponse>> {
+    BaseAPI.validateRequiredParam(requestParameters, 'reserveNow');
 
-        setAuthHeader(headerParameters);
-        return await this.request({
-            path: `/ocpi/receiver/${versionId}/commands/CANCEL_RESERVATION`,
-            method: 'POST',
-            headers: headerParameters,
-            body: requestParameters.cancelReservation,
-        });
+    const headerParameters: HTTPHeaders =
+      validateAndgetOcpiHeaders(requestParameters);
 
-    }
+    setAuthHeader(headerParameters);
+    return await this.request({
+      path: `/ocpi/receiver/${versionId}/commands/RESERVE_NOW`,
+      method: 'POST',
+      headers: headerParameters,
+      body: requestParameters.reserveNow,
+    });
+  }
 
-    async postReserveNow(requestParameters: PostReserveNowRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<CommandResponse>> {
+  async postStartSession(
+    requestParameters: PostStartSessionRequest,
+    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
+  ): Promise<OcpiResponse<CommandResponse>> {
+    BaseAPI.validateRequiredParam(requestParameters, 'startSession');
 
-        BaseAPI.validateRequiredParam(requestParameters, 'reserveNow');
+    const headerParameters: HTTPHeaders =
+      validateAndgetOcpiHeaders(requestParameters);
 
-        const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
+    setAuthHeader(headerParameters);
+    return await this.request({
+      path: `/ocpi/receiver/${versionId}/commands/START_SESSION`,
+      method: 'POST',
+      headers: headerParameters,
+      body: requestParameters.startSession,
+    });
+  }
 
-        setAuthHeader(headerParameters);
-        return await this.request({
-            path: `/ocpi/receiver/${versionId}/commands/RESERVE_NOW`,
-            method: 'POST',
-            headers: headerParameters,
-            body: requestParameters.reserveNow,
-        });
+  async postStopSession(
+    requestParameters: PostStopSessionRequest,
+    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
+  ): Promise<OcpiResponse<CommandResponse>> {
+    BaseAPI.validateRequiredParam(requestParameters, 'stopSession');
 
-    }
+    const headerParameters: HTTPHeaders =
+      validateAndgetOcpiHeaders(requestParameters);
 
-    async postStartSession(requestParameters: PostStartSessionRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<CommandResponse>> {
+    setAuthHeader(headerParameters);
+    return await this.request({
+      path: `/ocpi/receiver/${versionId}/commands/STOP_SESSION`,
+      method: 'POST',
+      headers: headerParameters,
+      body: requestParameters.stopSession,
+    });
+  }
 
-        BaseAPI.validateRequiredParam(requestParameters, 'startSession');
+  async postUnlockConnector(
+    requestParameters: PostUnlockConnectorRequest,
+    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
+  ): Promise<OcpiResponse<CommandResponse>> {
+    BaseAPI.validateRequiredParam(requestParameters, 'unlockConnector');
 
-        const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
+    const headerParameters: HTTPHeaders =
+      validateAndgetOcpiHeaders(requestParameters);
 
-        setAuthHeader(headerParameters);
-        return await this.request({
-            path: `/ocpi/receiver/${versionId}/commands/START_SESSION`,
-            method: 'POST',
-            headers: headerParameters,
-            body: requestParameters.startSession,
-        });
-
-    }
-
-    async postStopSession(requestParameters: PostStopSessionRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<CommandResponse>> {
-
-        BaseAPI.validateRequiredParam(requestParameters, 'stopSession');
-
-        const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
-
-        setAuthHeader(headerParameters);
-        return await this.request({
-            path: `/ocpi/receiver/${versionId}/commands/STOP_SESSION`,
-            method: 'POST',
-            headers: headerParameters,
-            body: requestParameters.stopSession,
-        });
-
-    }
-
-    async postUnlockConnector(requestParameters: PostUnlockConnectorRequest, versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE): Promise<OcpiResponse<CommandResponse>> {
-
-        BaseAPI.validateRequiredParam(requestParameters, 'unlockConnector');
-
-        const headerParameters: HTTPHeaders = validateAndgetOcpiHeaders(requestParameters);
-
-        setAuthHeader(headerParameters);
-        return await this.request({
-            path: `/ocpi/receiver/${versionId}/commands/UNLOCK_CONNECTOR`,
-            method: 'POST',
-            headers: headerParameters,
-            body: requestParameters.unlockConnector,
-        });
-
-    }
-
+    setAuthHeader(headerParameters);
+    return await this.request({
+      path: `/ocpi/receiver/${versionId}/commands/UNLOCK_CONNECTOR`,
+      method: 'POST',
+      headers: headerParameters,
+      body: requestParameters.unlockConnector,
+    });
+  }
 }
