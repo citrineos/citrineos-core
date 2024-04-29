@@ -21,13 +21,17 @@ export class VersionService {
             Headers: AuthorizationHeaderSchema;
         }>,
     ): Promise<OcpiResponse<VersionDTO[]>> {
-        const token = request.headers.Authorization;
-        await this.credentialsRepository.validateAuthentication(token);
-        const versions: Version[] = await this.versionRepository.readAllByQuery({}, Namespace.Version);
-        return OcpiResponse.build(
-            HttpStatus.OK,
-            versions.map(version => version.toVersionDTO())
-        )
+        try {
+            const token = request.headers.Authorization;
+            await this.credentialsRepository.validateAuthentication(token);
+            const versions: Version[] = await this.versionRepository.readAllByQuery({}, Namespace.Version);
+            return OcpiResponse.build(
+                HttpStatus.OK,
+                versions.map(version => version.toVersionDTO())
+            )
+        } catch (e) {
+            throw new Error('todo'); // todo error handling
+        }
     }
 
     async getVersion(
@@ -36,12 +40,16 @@ export class VersionService {
             Params: VersionIdParamSchema
         }>,
     ): Promise<OcpiResponse<VersionDetailsDTO>> {
-        const token = request.headers.Authorization;
-        await this.credentialsRepository.validateAuthentication(token);
-        const version: Version = await this.versionRepository.readByKey(request.params.versionId, Namespace.Version);
-        return OcpiResponse.build(
-            HttpStatus.OK,
-            version.toVersionDetailsDTO()
-        );
+        try {
+            const token = request.headers.Authorization;
+            await this.credentialsRepository.validateAuthentication(token);
+            const version: Version = await this.versionRepository.readByKey(request.params.versionId, Namespace.Version);
+            return OcpiResponse.build(
+                HttpStatus.OK,
+                version.toVersionDetailsDTO()
+            );
+        } catch (e) {
+            throw new Error('todo'); // todo error handling
+        }
     }
 }

@@ -26,14 +26,22 @@ export class CredentialsService {
             Headers: AuthorizationHeaderSchema
         }>,
     ): Promise<OcpiResponse<Credentials>> { // todo global exception handler
-        return OcpiResponse.build(
-            HttpStatus.OK,
-            await this.credentialsRepository.readByQuery({
+        try {
+            const credentials = await this.credentialsRepository.readByQuery({
                 where: {
                     token: request.headers.Authorization
                 }
-            }, Namespace.Credentials)
-        );
+            }, Namespace.Credentials);
+            if (!credentials) {
+                throw new Error('todo'); // todo error handling
+            }
+            return OcpiResponse.build(
+                HttpStatus.OK,
+                credentials
+            );
+        } catch (e) {
+            throw new Error('todo'); // todo error handling
+        }
     }
 
     async postCredentials(
@@ -131,11 +139,15 @@ export class CredentialsService {
             Headers: AuthorizationHeaderSchema
         }>,
     ): Promise<OcpiResponse<void>> {
-        await this.credentialsRepository.deleteAllByQuery({
-            where: {
-                token: request.query
-            }
-        }, Namespace.Credentials);
-        return OcpiResponse.build(HttpStatus.OK);
+        try {
+            await this.credentialsRepository.deleteAllByQuery({
+                where: {
+                    token: request.query
+                }
+            }, Namespace.Credentials);
+            return OcpiResponse.build(HttpStatus.OK);
+        } catch (e) {
+            throw new Error('todo'); // todo error handling
+        }
     }
 }
