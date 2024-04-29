@@ -1,5 +1,6 @@
-import {IsBoolean, IsDateString, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength,} from "class-validator";
+import {IsBoolean, IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength} from "class-validator";
 import {TokenEnergyContract} from "./TokenEnergyContract";
+import {WhitelistType} from "./WhitelistType";
 
 
 export class Token {
@@ -47,9 +48,9 @@ export class Token {
     @IsNotEmpty()
     valid: boolean;
 
-    @IsString()
+    @IsEnum(WhitelistType)
     @IsNotEmpty()
-    whitelist: string;
+    whitelist: WhitelistType;
 
     @MaxLength(2)
     @MinLength(2)
