@@ -160,7 +160,7 @@ export class CertificatesModuleApi
     UpdateTlsCertificateQuerySchema,
     TlsCertificateSchema,
   )
-  async putCsmsCertificate(
+  async putTlsCertificates(
     request: FastifyRequest<{
       Body: TlsCertificatesRequest;
       Querystring: UpdateTlsCertificateQueryString;
@@ -169,7 +169,7 @@ export class CertificatesModuleApi
     const serverId = (request.query as UpdateTlsCertificateQueryString)
       .id as string;
     this._logger.info(
-      `Receive update CSMS certificate request for server ${serverId}`,
+      `Receive update TLS certificates request for server ${serverId}`,
     );
 
     const certRequest = request.body as TlsCertificatesRequest;
