@@ -5,8 +5,11 @@ import fs from 'fs';
 import { ILogObj, Logger } from 'tslog';
 
 export class Local implements ICertificateAuthorityClient {
-  // Key: serverId, Value: [ca certs chain, sub ca private key]
-  private _securityCaCertsKeyMap: Map<string, [string, string]> = new Map();
+  // Key: serverId, Value: [certificate chain, sub ca private key, root ca]
+  private _securityCaCertsKeyMap: Map<
+    string,
+    [string, string, string | undefined]
+  > = new Map();
   private _logger: Logger<ILogObj>;
   private _cache: ICache;
 
@@ -19,16 +22,24 @@ export class Local implements ICertificateAuthorityClient {
 
     config.util.networkConnection.websocketServers.forEach((server) => {
       if (server.securityProfile === 3) {
+        let rootCA: string | undefined;
+        if (!server.rootCaCertificateFilePath) {
+          rootCA = fs.readFileSync(
+            server.rootCaCertificateFilePath as string,
+            'utf8',
+          );
+        }
         try {
           this._securityCaCertsKeyMap.set(server.id, [
             fs.readFileSync(
-              server.mtlsCertificateAuthorityRootsFilepath as string,
+              server.tlsCertificateChainFilePath as string,
               'utf8',
             ),
             fs.readFileSync(
-              server.mtlsCertificateAuthorityKeyFilepath as string,
+              server.mtlsCertificateAuthorityKeyFilePath as string,
               'utf8',
             ),
+            rootCA,
           ]);
         } catch (error) {
           this._logger.error(
@@ -42,12 +53,30 @@ export class Local implements ICertificateAuthorityClient {
     });
   }
 
+  updateSecurityCaCertsKeyMap(
+    serverId: string,
+    certificateChain: string,
+    privateKey: string,
+    rootCA?: string,
+  ) {
+    if (this._securityCaCertsKeyMap.has(serverId)) {
+      this._securityCaCertsKeyMap.set(serverId, [
+        certificateChain,
+        privateKey,
+        rootCA,
+      ]);
+    } else {
+      this._logger.error(
+        `server ${serverId} not found in securityCaCertsKeyMap`,
+      );
+    }
+  }
+
   /**
-   * Retrieves CSMSRootCertificate chain based on stationId.
-   * including a sub CA certificate + an external root CA certificate .
+   * Retrieve customized root CA based on stationId.
    *
    * @param {string} stationId - The ID of the station.
-   * @return {Promise<string>} The CSMSRootCertificate in PEM format.
+   * @return {Promise<string>} The root CA certificate in PEM format.
    */
   async getCACertificates(stationId?: string): Promise<string> {
     if (!stationId) {
@@ -58,15 +87,22 @@ export class Local implements ICertificateAuthorityClient {
       stationId,
       CacheNamespace.Connections,
     )) as string;
-    const [caCerts, _subCAPrivateKey] = this._securityCaCertsKeyMap.get(
-      clientConnection,
-    ) as [string, string];
+    const [_certChain, _subCAPrivateKey, caCert] =
+      this._securityCaCertsKeyMap.get(clientConnection) as [
+        string,
+        string,
+        string | undefined,
+      ];
 
-    return caCerts;
+    if (!caCert) {
+      throw new Error('Customized CA certificate not found');
+    }
+
+    return caCert;
   }
 
   /**
-   * Load CSMSRootCertificate based on the station ID.
+   * Get sub CA from the certificate chain based on the station ID.
    * Use it to sign certificate based on the CSR string.
    *
    * @param {string} csrString - The Certificate Signing Request (CSR) string.
@@ -84,41 +120,44 @@ export class Local implements ICertificateAuthorityClient {
       stationId,
       CacheNamespace.Connections,
     )) as string;
-    const [caCerts, subCAPrivateKey] = this._securityCaCertsKeyMap.get(
-      clientConnection,
-    ) as [string, string];
+    const [certChain, subCAPrivateKey, _rootCa] =
+      this._securityCaCertsKeyMap.get(clientConnection) as [
+        string,
+        string,
+        string | undefined,
+      ];
 
     const csr: forge.pki.CertificateSigningRequest =
       forge.pki.certificationRequestFromPem(csrString);
 
-    const caCert: forge.pki.Certificate = forge.pki.certificateFromPem(
-      this._getCertificateForSigning(caCerts),
+    const subCACert: forge.pki.Certificate = forge.pki.certificateFromPem(
+      this._getCertificateForSigning(certChain),
     );
-    const caPrivateKey: forge.pki.rsa.PrivateKey =
+    const privateKey: forge.pki.rsa.PrivateKey =
       forge.pki.privateKeyFromPem(subCAPrivateKey);
     return forge.pki.certificateToPem(
-      this._createSignedCertificate(csr, caCert, caPrivateKey),
+      this._createSignedCertificate(csr, subCACert, privateKey),
     );
   }
 
   /**
-   * Retrieves the CA certificate for signing from the provided ordered CA certificates PEM string.
-   * the order should follow: sub CA n .... sub CA 2, sub CA 1, root CA
+   * Retrieves the sub CA certificate for signing from the provided certificate chain PEM string.
+   * The chain looks is in order: leaf cert, sub CA n ... sub CA 1
    *
-   * @param {string} caCertsPem - The PEM string containing the ordered CA certificates.
-   * @return {string | null} The CA certificate which is used for signing or null if not found.
+   * @param {string} certChainPem - The PEM string containing the ordered certificates.
+   * @return {string | null} The sub CA certificate which is used for signing or null if not found.
    */
-  private _getCertificateForSigning(caCertsPem: string): string {
-    const caCertsArray: string[] = caCertsPem
+  private _getCertificateForSigning(certChainPem: string): string {
+    const certsArray: string[] = certChainPem
       .split('-----END CERTIFICATE-----')
       .filter((cert) => cert.trim().length > 0);
 
-    if (caCertsArray.length === 0) {
-      throw new Error('CA certificate for signing not found');
+    if (certsArray.length === 0) {
+      throw new Error('Sub CA certificate for signing not found');
     }
 
     // Add "-----END CERTIFICATE-----" back because split removes it
-    return caCertsArray[0].concat('-----END CERTIFICATE-----');
+    return certsArray[1].concat('-----END CERTIFICATE-----');
   }
 
   /**

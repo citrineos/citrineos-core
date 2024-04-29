@@ -70,6 +70,20 @@ export class CertificateAuthorityService {
     return await this._acmeClient.getSignedCertificate(csrString);
   }
 
+  updateSecurityCaCertsKeyMap(
+    serverId: string,
+    certificateChain: string,
+    privateKey: string,
+    rootCA?: string,
+  ) {
+    (this._localCertificateAuthority as Local).updateSecurityCaCertsKeyMap(
+      serverId,
+      certificateChain,
+      privateKey,
+      rootCA,
+    );
+  }
+
   /**
    * Create a certificate chain including leaf and sub CA certificates except for the root certificate.
    *
