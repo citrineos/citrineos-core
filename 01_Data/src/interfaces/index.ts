@@ -12,7 +12,7 @@ export { AuthorizationQuerystring, AuthorizationQuerySchema } from './queries/Au
 export { TransactionEventQuerystring, TransactionEventQuerySchema } from './queries/TransactionEvent';
 export { TariffQueryString, TariffQuerySchema, CreateOrUpdateTariffQuerySchema, CreateOrUpdateTariffQueryString } from './queries/Tariff';
 export { ModelKeyQuerystring, ModelKeyQuerystringSchema } from './queries/Model';
-export { UpdateCsmsCertificateQueryString, CsmsCertificateSchema, UpdateCsmsCertificateQuerySchema } from './queries/CsmsCertificate';
+export { UpdateTlsCertificateQueryString, TlsCertificateSchema, UpdateTlsCertificateQuerySchema } from './queries/TlsCertificate';
 export { RootCertificateSchema } from './queries/RootCertificate';
 
 // Data projection models
@@ -21,5 +21,5 @@ export { default as AuthorizationRestrictionsSchema } from './projections/schema
 export { default as TariffSchema } from './projections/schemas/TariffSchema.json';
 
 // Date endpoints dtos
-export { CsmsCertificateRequest, ContentType } from './dtos/CsmsCertificateRequest';
+export { TlsCertificatesRequest, ContentType } from './dtos/TlsCertificatesRequest';
 export { RootCertificateRequest } from './dtos/RootCertificateRequest';

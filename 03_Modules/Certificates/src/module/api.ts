@@ -33,10 +33,10 @@ import {
   RootCertificateRequest,
   RootCertificateSchema,
   ContentType,
-  CsmsCertificateRequest,
-  CsmsCertificateSchema,
-  UpdateCsmsCertificateQuerySchema,
-  UpdateCsmsCertificateQueryString,
+  TlsCertificatesRequest,
+  TlsCertificateSchema,
+  UpdateTlsCertificateQuerySchema,
+  UpdateTlsCertificateQueryString,
 } from '@citrineos/data';
 import fs from 'fs';
 import * as forge from 'node-forge';
@@ -159,23 +159,24 @@ export class CertificatesModuleApi
    */
 
   @AsDataEndpoint(
-    Namespace.CsmsCertificate,
+    Namespace.TlsCertificates,
     HttpMethod.Put,
-    UpdateCsmsCertificateQuerySchema,
-    CsmsCertificateSchema,
+    UpdateTlsCertificateQuerySchema,
+    TlsCertificateSchema,
   )
-  async putCsmsCertificate(
+  async putTlsCertificates(
     request: FastifyRequest<{
-      Body: CsmsCertificateRequest;
-      Querystring: UpdateCsmsCertificateQueryString;
+      Body: TlsCertificatesRequest;
+      Querystring: UpdateTlsCertificateQueryString;
     }>,
   ): Promise<void> {
-    const serverId = request.query.id as string;
+    const serverId = (request.query as UpdateTlsCertificateQueryString)
+      .id as string;
     this._logger.info(
-      `Receive update CSMS certificate request for server ${serverId}`,
+      `Receive update TLS certificates request for server ${serverId}`,
     );
 
-    const certRequest = request.body as CsmsCertificateRequest;
+    const certRequest = request.body as TlsCertificatesRequest;
     const serverConfig: WebsocketServerConfig | undefined =
       this._websocketServersConfig.find((config) => config.id === serverId);
 
@@ -185,41 +186,39 @@ export class CertificatesModuleApi
       throw new Error(`websocketServer ${serverId} is not tls or mtls server.`);
     }
 
-    let tlsKeys: string;
+    let tlsKey: string;
     let tlsCertificateChain: string;
-    let mtlsCARoots: string | undefined;
+    let rootCA: string | undefined;
     if (certRequest.contentType === ContentType.FileId) {
-      tlsKeys = (
-        await this._fileAccess.getFile(certRequest.privateKeys)
+      tlsKey = (
+        await this._fileAccess.getFile(certRequest.privateKey)
       ).toString();
       tlsCertificateChain = (
         await this._fileAccess.getFile(certRequest.certificateChain)
       ).toString();
-      if (
-        serverConfig.mtlsCertificateAuthorityRootsFilepath &&
-        certRequest.caCertificateRoots
-      ) {
-        mtlsCARoots = (
-          await this._fileAccess.getFile(certRequest.caCertificateRoots)
+      if (certRequest.rootCA) {
+        rootCA = (
+          await this._fileAccess.getFile(certRequest.rootCA)
         ).toString();
       }
-    } else {
-      tlsKeys = this._decode(certRequest.privateKeys);
+    } else if (certRequest.contentType === ContentType.EncodedRawContent) {
+      tlsKey = this._decode(certRequest.privateKey);
       tlsCertificateChain = this._decode(certRequest.certificateChain);
-      if (
-        serverConfig.mtlsCertificateAuthorityRootsFilepath &&
-        certRequest.caCertificateRoots
-      ) {
-        mtlsCARoots = this._decode(certRequest.caCertificateRoots);
+      if (certRequest.rootCA) {
+        rootCA = this._decode(certRequest.rootCA);
       }
+    } else {
+      throw new Error(
+        `contentType ${certRequest.contentType} is not supported.`,
+      );
     }
 
     this._updateCertificates(
       serverConfig,
       serverId,
-      tlsKeys,
+      tlsKey,
       tlsCertificateChain,
-      mtlsCARoots,
+      rootCA,
     );
   }
 
@@ -392,41 +391,58 @@ export class CertificatesModuleApi
   private _updateCertificates(
     serverConfig: WebsocketServerConfig,
     serverId: string,
-    tlsKeys: string,
+    tlsKey: string,
     tlsCertificateChain: string,
-    mtlsCARoots?: string | undefined,
+    subCAKey?: string,
+    rootCA?: string | undefined,
   ) {
     let rollbackFiles: RollBackFile[] = [];
 
     if (
-      serverConfig.tlsKeysFilepath &&
-      serverConfig.tlsCertificateChainFilepath
+      serverConfig.tlsKeyFilePath &&
+      serverConfig.tlsCertificateChainFilePath
     ) {
       try {
         rollbackFiles = this._replaceFile(
-          serverConfig.tlsKeysFilepath,
-          tlsKeys,
+          serverConfig.tlsKeyFilePath,
+          tlsKey,
           rollbackFiles,
         );
         rollbackFiles = this._replaceFile(
-          serverConfig.tlsCertificateChainFilepath,
+          serverConfig.tlsCertificateChainFilePath,
           tlsCertificateChain,
           rollbackFiles,
         );
-
-        if (serverConfig.mtlsCertificateAuthorityRootsFilepath && mtlsCARoots) {
+        if (serverConfig.mtlsCertificateAuthorityKeyFilePath && subCAKey) {
           rollbackFiles = this._replaceFile(
-            serverConfig.mtlsCertificateAuthorityRootsFilepath,
-            mtlsCARoots,
+            serverConfig.mtlsCertificateAuthorityKeyFilePath,
+            subCAKey,
+            rollbackFiles,
+          );
+        }
+        if (serverConfig.rootCaCertificateFilePath && rootCA) {
+          rollbackFiles = this._replaceFile(
+            serverConfig.rootCaCertificateFilePath,
+            rootCA,
             rollbackFiles,
           );
         }
 
-        this._networkConnection.updateCertificate(
+        // Update the security context of the server without restarting it
+        this._networkConnection.updateTlsCertificates(
           serverId,
-          tlsKeys,
+          tlsKey,
           tlsCertificateChain,
-          mtlsCARoots,
+          rootCA,
+        );
+
+        // Update the map which stores sub CA certs and keys for each websocket server.
+        // This map is used when signing charging station certificates for use case A02 in OCPP 2.0.1 Part 2.
+        this._module.securityAuthorityService.updateSecurityCaCertsKeyMap(
+          serverId,
+          tlsKey,
+          tlsCertificateChain,
+          rootCA,
         );
 
         this._logger.info(

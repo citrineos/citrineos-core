@@ -17,10 +17,11 @@ export const websocketServerInputSchema = z.object({
   protocol: z.string().default('ocpp2.0.1').optional(),
   securityProfile: z.number().int().min(0).max(3).default(0).optional(),
   allowUnknownChargingStations: z.boolean().default(false).optional(),
-  tlsKeysFilepath: z.string().optional(),
-  tlsCertificateChainFilepath: z.string().optional(),
-  mtlsCertificateAuthorityRootsFilepath: z.string().optional(),
-  mtlsCertificateAuthorityKeysFilepath: z.string().optional(),
+  tlsKeyFilePath: z.string().optional(), // Private key pem corresponding to the leaf certificate.
+  tlsCertificateChainFilePath: z.string().optional(), // Certificate chain pem consist of a leaf
+  mtlsCertificateAuthorityKeyFilePath: z.string().optional(), // The private key for the last sub CA certificate
+  rootCACertificateFilePath: z.string().optional(), // Root CA certificate that overrides default CA certificates
+  // allowed by Mozilla
 });
 
 export const systemConfigInputSchema = z.object({
@@ -204,10 +205,10 @@ export const websocketServerSchema = z
     protocol: z.string(),
     securityProfile: z.number().int().min(0).max(3),
     allowUnknownChargingStations: z.boolean(),
-    tlsKeysFilepath: z.string().optional(),
-    tlsCertificateChainFilepath: z.string().optional(),
-    mtlsCertificateAuthorityRootsFilepath: z.string().optional(),
-    mtlsCertificateAuthorityKeysFilepath: z.string().optional(),
+    tlsKeyFilePath: z.string().optional(), // Private key pem corresponding to the leaf certificate.
+    tlsCertificateChainFilePath: z.string().optional(), // Certificate chain pem consist of a leaf
+    mtlsCertificateAuthorityKeyFilePath: z.string().optional(), // The private key for the last sub CA certificate
+    rootCaCertificateFilePath: z.string().optional(),
   })
   .refine((obj) => {
     switch (obj.securityProfile) {
@@ -215,13 +216,12 @@ export const websocketServerSchema = z
       case 1: // Basic Auth
         return true;
       case 2: // Basic Auth + TLS
-        return obj.tlsKeysFilepath && obj.tlsCertificateChainFilepath;
+        return obj.tlsKeyFilePath && obj.tlsCertificateChainFilePath;
       case 3: // mTLS
         return (
-          obj.tlsKeysFilepath &&
-          obj.tlsCertificateChainFilepath &&
-          obj.mtlsCertificateAuthorityRootsFilepath &&
-          obj.mtlsCertificateAuthorityKeysFilepath
+          obj.tlsKeyFilePath &&
+          obj.tlsCertificateChainFilePath &&
+          obj.mtlsCertificateAuthorityKeyFilePath
         );
       default:
         return false;

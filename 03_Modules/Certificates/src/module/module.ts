@@ -146,12 +146,12 @@ export class CertificatesModule extends AbstractModule {
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
-  get certificateRepository(): ICertificateRepository {
-    return this._certificateRepository;
-  }
-
   get certificateAuthorityService(): CertificateAuthorityService {
     return this._certificateAuthorityService;
+  }
+
+  get certificateRepository(): ICertificateRepository {
+    return this._certificateRepository;
   }
 
   get locationRepository(): ILocationRepository {
@@ -200,9 +200,10 @@ export class CertificatesModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('Sign certificate request received:', message, props);
-    const stationId = message.context.stationId;
-    const csrString = message.payload.csr;
-    const certificateType = message.payload.certificateType;
+    const stationId: string = message.context.stationId;
+    const csrString: string = message.payload.csr;
+    const certificateType: CertificateSigningUseEnumType | undefined =
+      message.payload.certificateType;
 
     // OCTT Currently fails the CSMS on test case TC_A_14_CSMS if an invalid csr is rejected
     // Despite explicitly saying in the protocol "The CSMS may do some checks on the CSR"
@@ -212,13 +213,15 @@ export class CertificatesModule extends AbstractModule {
       status: GenericStatusEnumType.Accepted,
     } as SignCertificateResponse);
 
+    // Do Verification and send accept response before signing.
+    // Reject the request if the verification fails
     try {
-      await this._verifySignCertRequest(csrString, certificateType, stationId);
+      await this._verifySignCertRequest(csrString, stationId, certificateType);
       // this.sendCallResultWithMessage(message, {
       //   status: GenericStatusEnumType.Accepted,
       // } as SignCertificateResponse);
     } catch (error) {
-      this._logger.error('Sign certificate failed:', error);
+      this._logger.error('Verify Request failed:', error);
 
       // this.sendCallResultWithMessage(message, {
       //   status: GenericStatusEnumType.Rejected,
@@ -229,7 +232,7 @@ export class CertificatesModule extends AbstractModule {
       // } as SignCertificateResponse);
     }
 
-    const certificatePem: string =
+    const certificateChainPem: string =
       await this._certificateAuthorityService.getCertificateChain(
         csrString,
         stationId,
@@ -240,7 +243,7 @@ export class CertificatesModule extends AbstractModule {
       message.context.tenantId,
       CallAction.CertificateSigned,
       {
-        certificateChain: certificatePem,
+        certificateChain: certificateChainPem,
         certificateType: certificateType,
       } as CertificateSignedRequest,
     );
@@ -286,8 +289,8 @@ export class CertificatesModule extends AbstractModule {
 
   private async _verifySignCertRequest(
     csrString: string,
+    stationId: string,
     certificateType?: CertificateSigningUseEnumType,
-    stationId?: string,
   ): Promise<void> {
     // Verify certificate type
     if (
@@ -313,12 +316,7 @@ export class CertificatesModule extends AbstractModule {
       certificateType ===
       CertificateSigningUseEnumType.ChargingStationCertificate
     ) {
-      if (!stationId) {
-        throw new Error(
-          'StationId must be provided when certificateType is ChargingStationCertificate',
-        );
-      }
-
+      // Verify organization name match the one stored in the device model
       const organizationName = await this._deviceModelRepository.readAllByQuery(
         {
           stationId: stationId,
