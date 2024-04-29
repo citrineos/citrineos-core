@@ -1,7 +1,7 @@
 export enum ParkingRestriction {
-    EV_ONLY,
-    PLUGGED,
-    DISABLED,
-    CUSTOMERS,
-    MOTORCYCLES,
+  EV_ONLY,
+  PLUGGED,
+  DISABLED,
+  CUSTOMERS,
+  MOTORCYCLES,
 }

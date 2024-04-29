@@ -10,12 +10,7 @@ export class OcpiResponse<T> {
    */
   @IsString()
   status_message?: string;
-  /**
-   *
-   * @type {object}
-   * @memberof OcpiResponseDTO
-   */
-  data?: T;
+
   /**
    *
    * @type {string}
@@ -23,6 +18,13 @@ export class OcpiResponse<T> {
    */
   @IsDate()
   timestamp!: Date;
+
+  /**
+   *
+   * @type {object}
+   * @memberof OcpiResponseDTO
+   */
+  data?: T;
 
   static build<T>(
     status_code: number,

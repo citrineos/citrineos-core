@@ -1,58 +1,60 @@
-import {BaseAPI, HTTPHeaders} from './BaseApi';
-import {setAuthHeader} from './util';
-import {OcpiResponse} from '../model/OcpiResponse';
-import {VersionDetailsDTO, VersionDTO} from '../model/Version';
+import { BaseAPI, HTTPHeaders } from './BaseApi';
+import { setAuthHeader } from './util';
+import { OcpiResponse } from '../model/OcpiResponse';
+import { VersionDetailsDTO, VersionDTO } from '../model/Version';
 
 export interface GetVersionRequest {
-    authorization: string;
-    versionId: string;
+  authorization: string;
+  versionId: string;
 }
 
 export interface GetVersionsRequest {
-    authorization: string;
+  authorization: string;
 }
 
-
 export class VersionsControllerApi extends BaseAPI {
+  async getVersion(
+    requestParameters: GetVersionRequest,
+  ): Promise<OcpiResponse<VersionDetailsDTO>> {
+    BaseAPI.validateRequiredParam(requestParameters, 'authorization');
 
-    async getVersion(requestParameters: GetVersionRequest): Promise<OcpiResponse<VersionDetailsDTO>> {
+    const headerParameters: HTTPHeaders = {};
 
-        BaseAPI.validateRequiredParam(requestParameters, 'authorization');
-
-        const headerParameters: HTTPHeaders = {};
-
-        if (requestParameters.authorization != null) {
-            headerParameters['Authorization'] = String(requestParameters.authorization);
-        }
-
-        setAuthHeader(headerParameters);
-        return await this.request({
-            path: `/ocpi/${requestParameters.versionId}`,
-            method: 'GET',
-            headers: headerParameters
-        });
-
+    if (requestParameters.authorization != null) {
+      headerParameters['Authorization'] = String(
+        requestParameters.authorization,
+      );
     }
 
-    /**
-     * This endpoint lists all the available OCPI versions and the corresponding URLs to where version specific details such as the supported endpoints can be found.
-     */
-    async getVersions(requestParameters: GetVersionsRequest): Promise<OcpiResponse<VersionDTO[]>> {
-        BaseAPI.validateRequiredParam(requestParameters, 'authorization');
+    setAuthHeader(headerParameters);
+    return await this.request({
+      path: `/ocpi/${requestParameters.versionId}`,
+      method: 'GET',
+      headers: headerParameters,
+    });
+  }
 
-        const headerParameters: HTTPHeaders = {};
+  /**
+   * This endpoint lists all the available OCPI versions and the corresponding URLs to where version specific details such as the supported endpoints can be found.
+   */
+  async getVersions(
+    requestParameters: GetVersionsRequest,
+  ): Promise<OcpiResponse<VersionDTO[]>> {
+    BaseAPI.validateRequiredParam(requestParameters, 'authorization');
 
-        if (requestParameters.authorization != null) {
-            headerParameters['Authorization'] = String(requestParameters.authorization);
-        }
+    const headerParameters: HTTPHeaders = {};
 
-        setAuthHeader(headerParameters);
-        return await this.request({
-            path: '/ocpi/versions',
-            method: 'GET',
-            headers: headerParameters
-        });
-
+    if (requestParameters.authorization != null) {
+      headerParameters['Authorization'] = String(
+        requestParameters.authorization,
+      );
     }
 
+    setAuthHeader(headerParameters);
+    return await this.request({
+      path: '/ocpi/versions',
+      method: 'GET',
+      headers: headerParameters,
+    });
+  }
 }

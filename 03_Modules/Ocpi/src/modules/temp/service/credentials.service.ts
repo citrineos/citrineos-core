@@ -64,39 +64,39 @@ export class CredentialsService {
   }
 
   async putCredentials(
-      request: FastifyRequest<{
-        Params: VersionIdParamSchema;
-        Headers: AuthorizationHeaderSchema;
-        Body: Credentials;
-      }>,
+    request: FastifyRequest<{
+      Params: VersionIdParamSchema;
+      Headers: AuthorizationHeaderSchema;
+      Body: Credentials;
+    }>,
   ): Promise<OcpiResponse<Credentials>> {
     await this.credentialsRepository.validateAuthentication(
-        request.headers.Authorization,
+      request.headers.Authorization,
     );
     await this.getAndUpdateVersions(
-        request.body.url,
-        request.body.token,
-        request.params.versionId,
+      request.body.url,
+      request.body.token,
+      request.params.versionId,
     );
     return this.updateExistingCredentialsTokenWithNewGeneratedToken(
-        request.headers.Authorization,
+      request.headers.Authorization,
     );
   }
 
   async deleteCredentials(
-      request: FastifyRequest<{
-        Params: VersionIdParamSchema;
-        Headers: AuthorizationHeaderSchema;
-      }>,
+    request: FastifyRequest<{
+      Params: VersionIdParamSchema;
+      Headers: AuthorizationHeaderSchema;
+    }>,
   ): Promise<OcpiResponse<void>> {
     try {
       await this.credentialsRepository.deleteAllByQuery(
-          {
-            where: {
-              token: request.query,
-            },
+        {
+          where: {
+            token: request.query,
           },
-          Namespace.Credentials,
+        },
+        Namespace.Credentials,
       );
       return OcpiResponse.build(HttpStatus.OK);
     } catch (e) {

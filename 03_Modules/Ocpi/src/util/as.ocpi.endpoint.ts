@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {AsDataEndpoint, HttpMethod} from '@citrineos/base';
+import { AsDataEndpoint, HttpMethod } from '@citrineos/base';
 
 /**
  * Decorator for use in module API class to expose methods as REST data endpoints.

@@ -1,4 +1,4 @@
 export enum ConnectorFormat {
-    SOCKER = 'SOCKET',
-    CABLE = 'CABLE'
+  SOCKER = 'SOCKET',
+  CABLE = 'CABLE',
 }

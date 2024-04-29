@@ -108,7 +108,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Cdr[]>, // todo proper pageable object
   )
   async getCdrPageFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: UidParamSchema;
     }>,
   ): Promise<OcpiResponse<Cdr[]>> {
@@ -125,7 +125,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Cdr[]>, // todo proper pageable object?
   )
   async getCdrsFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: VersionidParamSchema;
       Querystring: FromToOffsetLimitQuerySchema;
     }>,
@@ -144,7 +144,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Connector>,
   )
   async getConnectorObjectFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: GetConnectorObjectFromDataOwnerParamSchema;
     }>,
   ): Promise<OcpiResponse<Connector>> {
@@ -161,7 +161,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Evse>,
   )
   async getEvseObjectFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: LocationIdEveseUidParamSchema;
     }>,
   ): Promise<OcpiResponse<Evse>> {
@@ -178,7 +178,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Location[]>, // todo pageable
   )
   async getLocationListFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: VersionidParamSchema;
       Querystring: FromToOffsetLimitQuerySchema;
     }>,
@@ -196,7 +196,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Location>,
   )
   async getLocationObjectFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: LocationIdParamSchema;
     }>,
   ): Promise<OcpiResponse<Location>> {
@@ -213,7 +213,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Location[]>, // todo pageable
   )
   async getLocationPageFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: UidParamSchema;
     }>,
   ): Promise<OcpiResponse<Location[]>> {
@@ -231,7 +231,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Session[]>, // todo pageable?
   )
   async getSessionsFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: VersionidParamSchema;
       Querystring: FromToOffsetLimitQuerySchema;
     }>,
@@ -249,7 +249,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Session[]>, // todo pageable?
   )
   async getSessionsPageFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: UidParamSchema;
     }>,
   ): Promise<OcpiResponse<Session[]>> {
@@ -267,7 +267,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Tariff[]>, // todo pageable?
   )
   async getTariffsFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: VersionidParamSchema;
       Querystring: FromToOffsetLimitQuerySchema;
     }>,
@@ -285,7 +285,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Tariff[]>, // todo pageable?
   )
   async getTariffsPageFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: UidParamSchema;
     }>,
   ): Promise<OcpiResponse<Tariff[]>> {
@@ -303,7 +303,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Token[]>, // todo pageable?
   )
   async getTokensFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: VersionidParamSchema;
       Querystring: FromToOffsetLimitQuerySchema;
     }>,
@@ -321,7 +321,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<Token[]>, // todo pageable?
   )
   async getTokensPageFromDataOwner(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Params: UidParamSchema;
     }>,
   ): Promise<OcpiResponse<Token[]>> {
@@ -338,7 +338,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<AuthorizationInfo>, // todo pageable?
   )
   async postRealTimeTokenAuthorization(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Body: LocationReferences;
       Params: PostRealTimeTokenAuthorizationParamSchema;
       Querystring: PostRealTimeTokenAuthorizationQuerySchema;
@@ -358,7 +358,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<void>, // todo pageable?
   )
   async postAsyncResponse(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Body: CommandResponse;
       Params: CommandUidPathParamSchema;
     }>,
@@ -377,7 +377,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<void>, // todo pageable?
   )
   async postGenericChargingProfileResult(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Body: ActiveChargingProfileResult;
       Params: UidParamSchema;
     }>,
@@ -395,7 +395,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     OcpiResponse<void>, // todo pageable?
   )
   async putSenderChargingProfile(
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
       Body: ActiveChargingProfile;
       Params: SessionIdParamSchema;
     }>,

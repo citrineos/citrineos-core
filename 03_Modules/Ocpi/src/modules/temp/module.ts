@@ -12,8 +12,8 @@ import {
   IMessageSender,
   SystemConfig,
 } from '@citrineos/base';
-import {RabbitMqReceiver, RabbitMqSender} from '@citrineos/util';
-import {ILogObj, Logger} from 'tslog';
+import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
+import { ILogObj, Logger } from 'tslog';
 
 /**
  * Component that handles transaction related messages.

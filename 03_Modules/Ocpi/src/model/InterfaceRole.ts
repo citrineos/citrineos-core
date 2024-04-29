@@ -1,4 +1,4 @@
 export enum InterfaceRole {
-    SENDER = 'SENDER',
-    RECEIVER = 'RECEIVER'
+  SENDER = 'SENDER',
+  RECEIVER = 'RECEIVER',
 }
