@@ -1,14 +1,14 @@
-name: Build Server on Pull Request
+name: Test Server on Pull Request
 
 on:
   pull_request:
 
-env:
-  IMAGE_NAME: citrineos-server
-
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
@@ -16,5 +16,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image
-        run: docker build . --file ./Server/deploy.Dockerfile --tag $IMAGE_NAME
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Build and Run Docker Compose
+        run: docker-compose -f /Server/docker-compose.yml up -d
+
+      - name: Install Newman
+        run: npm install -g newman
+
+      - name: Integration test
+        run: echo "Run tests"
+
+      - name: Clean up
+        run: docker-compose down
