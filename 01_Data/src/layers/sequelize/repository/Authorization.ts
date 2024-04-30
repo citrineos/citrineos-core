@@ -3,19 +3,32 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type AuthorizationData, type IdTokenType } from '@citrineos/base';
+import { CrudRepository, SystemConfig, type AuthorizationData, type IdTokenType } from '@citrineos/base';
 import { type BuildOptions, type Includeable } from 'sequelize';
 import { type AuthorizationQuerystring, type IAuthorizationRepository, type AuthorizationRestrictions } from '../../../interfaces';
 import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from '../model/Authorization';
 import { SequelizeRepository } from './Base';
+import { Sequelize } from 'sequelize-typescript';
+import { Logger, ILogObj } from 'tslog';
 
-export class AuthorizationRepository extends SequelizeRepository<Authorization> implements IAuthorizationRepository {
+export class SequelizeAuthorizationRepository extends SequelizeRepository<Authorization> implements IAuthorizationRepository {
+  idToken: CrudRepository<IdToken>;
+  idTokenInfo: CrudRepository<IdTokenInfo>;
+  additionalInfo: CrudRepository<AdditionalInfo>;
+
+  constructor(config: SystemConfig, namespace: string, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, idToken?: CrudRepository<IdToken>, idTokenInfo?: CrudRepository<IdTokenInfo>, additionalInfo: CrudRepository<AdditionalInfo>) {
+    super(config, namespace, logger, sequelizeInstance);
+    this.idToken = idToken ? idToken : new SequelizeRepository<IdToken>(config, namespace, logger, sequelizeInstance);
+    this.idTokenInfo = idTokenInfo ? idTokenInfo : new SequelizeRepository<IdTokenInfo>(config, namespace, logger, sequelizeInstance);
+    this.additionalInfo = additionalInfo ? additionalInfo : new SequelizeRepository<AdditionalInfo>(config, namespace, logger, sequelizeInstance);
+  }
+
   async createOrUpdateByQuery(value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined> {
     if (value.idToken.idToken !== query.idToken || value.idToken.type !== query.type) {
       throw new Error('Authorization idToken does not match query');
     }
 
-    const savedAuthorizationModel: Authorization | null = await this.readByQuery(query);
+    const savedAuthorizationModel: Authorization | null = await this.readAllByQuery(query).then((rows) => (rows.length > 0 ? rows[0] : null));
     const authorizationModel = savedAuthorizationModel ?? Authorization.build({}, this._createInclude(value));
 
     authorizationModel.idTokenId = (await this._updateIdToken(value.idToken, authorizationModel.idTokenId)).id;
@@ -26,10 +39,12 @@ export class AuthorizationRepository extends SequelizeRepository<Authorization> 
         ...value.idTokenInfo,
       });
       if (authorizationModel.idTokenInfoId) {
-        let savedIdTokenInfo = (await this.s.models[IdTokenInfo.MODEL_NAME].findOne({
-          where: { id: authorizationModel.idTokenInfoId },
-          include: [{ model: IdToken, include: [AdditionalInfo] }],
-        })) as IdTokenInfo;
+        let savedIdTokenInfo = await this.idTokenInfo
+          .readAllByQuery({
+            where: { id: authorizationModel.idTokenInfoId },
+            include: [{ model: IdToken, include: [AdditionalInfo] }],
+          })
+          .then((rows) => rows[0]); // There must be one, this field comes directly from a foreign key
         Object.keys(valueIdTokenInfo.dataValues).forEach((k) => {
           const updatedValue = valueIdTokenInfo.getDataValue(k);
           if (updatedValue !== undefined) {
@@ -46,46 +61,35 @@ export class AuthorizationRepository extends SequelizeRepository<Authorization> 
           savedIdTokenInfo.groupIdTokenId = undefined;
           savedIdTokenInfo.groupIdToken = undefined;
         }
-        savedIdTokenInfo = await savedIdTokenInfo.save();
+        savedIdTokenInfo = await this.idTokenInfo.create(savedIdTokenInfo);
       } else {
         if (value.idTokenInfo.groupIdToken) {
           const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken);
           valueIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
         }
-        authorizationModel.idTokenInfoId = (await valueIdTokenInfo.save()).id;
+        authorizationModel.idTokenInfoId = (await this.idTokenInfo.create(valueIdTokenInfo)).id;
       }
     } else if (authorizationModel.idTokenInfoId) {
       // Remove idTokenInfo
       authorizationModel.idTokenInfoId = undefined;
       authorizationModel.idTokenInfo = undefined;
     }
-    return await authorizationModel.save();
+    return await this.create(authorizationModel);
   }
 
-  async updateRestrictionsByQuery(value: AuthorizationRestrictions, query: AuthorizationQuerystring): Promise<Authorization | undefined> {
-    return await this.readByQuery(query).then(async (dbValue) => {
-      if (dbValue) {
-        return await super.updateByModel(
-          Authorization.build({
-            ...value,
-          }),
-          dbValue,
-        );
-      } else {
-        // Do nothing
-      }
-    });
+  async updateRestrictionsByQuery(value: AuthorizationRestrictions, query: AuthorizationQuerystring): Promise<Authorization[]> {
+    return await this.updateAllByQuery(value, query);
   }
 
-  async readByQuery(query: AuthorizationQuerystring): Promise<Authorization> {
-    return await super.readByQuery(this._constructQuery(query), Authorization.MODEL_NAME);
+  async readAllByQuery(query: AuthorizationQuerystring): Promise<Authorization[]> {
+    return await super.readAllByQuery(this._constructQuery(query));
   }
 
-  async existsByQuery(query: AuthorizationQuerystring): Promise<boolean> {
-    return await super.existsByQuery(this._constructQuery(query), Authorization.MODEL_NAME);
+  async existByQuery(query: AuthorizationQuerystring): Promise<number> {
+    return await super.existByQuery(this._constructQuery(query));
   }
 
-  async deleteAllByQuery(query: AuthorizationQuerystring): Promise<number> {
+  async deleteAllByQuery(query: AuthorizationQuerystring): Promise<Authorization[]> {
     return await super.deleteAllByQuery(this._constructQuery(query), Authorization.MODEL_NAME);
   }
 
@@ -140,16 +144,20 @@ export class AuthorizationRepository extends SequelizeRepository<Authorization> 
     );
     let savedIdTokenModel: IdToken | undefined;
     if (savedIdTokenId) {
-      savedIdTokenModel = (await this.s.models[IdToken.MODEL_NAME].findOne({
-        where: { id: savedIdTokenId },
-        include: [AdditionalInfo],
-      })) as IdToken;
+      savedIdTokenModel = await this.idToken
+        .readAllByQuery({
+          where: { id: savedIdTokenId },
+          include: [AdditionalInfo],
+        })
+        .then((rows) => rows[0]);
     }
     if (!savedIdTokenModel || savedIdTokenModel.idToken !== value.idToken || savedIdTokenModel.type !== value.type) {
-      savedIdTokenModel = (await this.s.models[IdToken.MODEL_NAME].findOne({
-        where: { idToken: value.idToken, type: value.type },
-        include: [AdditionalInfo],
-      })) as IdToken;
+      savedIdTokenModel = await this.idToken
+        .readAllByQuery({
+          where: { idToken: value.idToken, type: value.type },
+          include: [AdditionalInfo],
+        })
+        .then((rows) => (rows.length > 0 ? rows[0] : undefined));
     }
     if (savedIdTokenModel) {
       // idToken.idToken and idToken.type should be treated as immutable.
@@ -163,15 +171,15 @@ export class AuthorizationRepository extends SequelizeRepository<Authorization> 
       value.additionalInfo?.forEach((valueAdditionalInfo) => {
         // Create additionalInfo not in savedIdTokenModel.additionalInfo
         if (!savedIdTokenModel?.additionalInfo?.some((savedAdditionalInfo) => savedAdditionalInfo.additionalIdToken === valueAdditionalInfo.additionalIdToken && savedAdditionalInfo.type === valueAdditionalInfo.type)) {
-          AdditionalInfo.build({
+          this.additionalInfo.create(AdditionalInfo.build({
             idTokenId: savedIdTokenModel.id,
             ...valueAdditionalInfo,
-          }).save();
+          }));
         }
       });
-      return await savedIdTokenModel.save();
+      return await this.idToken.create(savedIdTokenModel);
     } else {
-      return await idTokenModel.save();
+      return await this.idToken.create(idTokenModel);
     }
   }
 }
