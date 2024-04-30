@@ -7,17 +7,18 @@ import {
   ICache,
   SystemConfig,
 } from '@citrineos/base';
-import { ICertificateAuthorityClient } from '../client/interface';
+import {
+  IChargingStationCertificateAuthorityClient,
+  IV2GCertificateAuthorityClient,
+} from '../client/interface';
 import { Hubject } from '../client/hubject';
 import * as forge from 'node-forge';
 import { Acme } from '../client/acme';
 import { ILogObj, Logger } from 'tslog';
-import { Local } from '../client/local';
 
 export class CertificateAuthorityService {
-  private readonly _hubjectClient: ICertificateAuthorityClient;
-  private readonly _acmeClient: ICertificateAuthorityClient;
-  private readonly _localCertificateAuthority: ICertificateAuthorityClient;
+  private readonly _v2gClient: IV2GCertificateAuthorityClient;
+  private readonly _chargingStationClient: IChargingStationCertificateAuthorityClient;
   private readonly _logger: Logger<ILogObj>;
 
   constructor(config: SystemConfig, cache: ICache, logger?: Logger<ILogObj>) {
@@ -25,9 +26,12 @@ export class CertificateAuthorityService {
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
 
-    this._acmeClient = new Acme(config, this._logger);
-    this._hubjectClient = new Hubject(config);
-    this._localCertificateAuthority = new Local(config, cache, this._logger);
+    this._chargingStationClient = this._instantiateChargingStationClient(
+      config,
+      cache,
+      this._logger,
+    );
+    this._v2gClient = this._instantiateV2GClient(config);
   }
 
   /**
@@ -50,12 +54,12 @@ export class CertificateAuthorityService {
     switch (certificateType) {
       case CertificateSigningUseEnumType.V2GCertificate: {
         const signedCert =
-          await this._hubjectClient.getSignedCertificate(csrString);
-        const caCerts = await this._hubjectClient.getCACertificates();
+          await this._v2gClient.getSignedCertificate(csrString);
+        const caCerts = await this._v2gClient.getCACertificates();
         return this._createCertificateChainWithoutRootCA(signedCert, caCerts);
       }
       case CertificateSigningUseEnumType.ChargingStationCertificate: {
-        return await this._localCertificateAuthority.getSignedCertificate(
+        return await this._chargingStationClient.getCertificateChain(
           csrString,
           stationId,
         );
@@ -67,7 +71,9 @@ export class CertificateAuthorityService {
   }
 
   async getSignedCertificateByExternalCA(csrString: string): Promise<string> {
-    return await this._acmeClient.getSignedCertificate(csrString);
+    return await this._chargingStationClient.signCertificateByExternalCA(
+      csrString,
+    );
   }
 
   /**
@@ -98,5 +104,37 @@ export class CertificateAuthorityService {
     });
 
     return certChainPem;
+  }
+
+  private _instantiateV2GClient(
+    config: SystemConfig,
+  ): IV2GCertificateAuthorityClient {
+    switch (config.modules.certificates?.v2gCA.name) {
+      case 'hubject': {
+        return new Hubject(config);
+      }
+      default: {
+        throw new Error(
+          `Unsupported V2G CA: ${config.modules.certificates?.v2gCA.name}`,
+        );
+      }
+    }
+  }
+
+  private _instantiateChargingStationClient(
+    config: SystemConfig,
+    cache: ICache,
+    logger?: Logger<ILogObj>,
+  ): IChargingStationCertificateAuthorityClient {
+    switch (config.modules.certificates?.chargingStationCA.name) {
+      case 'acme': {
+        return new Acme(config, cache, logger);
+      }
+      default: {
+        throw new Error(
+          `Unsupported Charging Station CA: ${config.modules.certificates?.chargingStationCA.name}`,
+        );
+      }
+    }
   }
 }

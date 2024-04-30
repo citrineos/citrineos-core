@@ -20,13 +20,17 @@ export function createLocalConfig(): SystemConfig {
         endpointPrefix: '/certificates',
         host: 'localhost',
         port: 8080,
-        certificateAuthority: {
+        v2gCA: {
+          name: 'hubject',
           hubject: {
             baseUrl: 'https://open.plugncharge-test.hubject.com',
             tokenUrl:
               'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
             isoVersion: 'ISO15118-2',
           },
+        },
+        chargingStationCA: {
+          name: 'acme',
           acme: {
             env: 'staging',
             accountKeyFilePath:

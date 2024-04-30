@@ -16,13 +16,17 @@ export function createDockerConfig() {
         endpointPrefix: 'certificates',
         host: '0.0.0.0',
         port: 8083,
-        certificateAuthority: {
+        v2gCA: {
+          name: 'hubject',
           hubject: {
             baseUrl: 'https://open.plugncharge-test.hubject.com',
             tokenUrl:
               'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
             isoVersion: 'ISO15118-2',
           },
+        },
+        chargingStationCA: {
+          name: 'acme',
           acme: {
             env: 'staging',
             accountKeyFilePath:
