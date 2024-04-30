@@ -8,19 +8,19 @@ import { Tariff } from '../model/Tariff';
 
 export class TariffRepository extends SequelizeRepository<Tariff> implements ITariffRepository {
   async findByStationId(stationId: string): Promise<Tariff | null> {
-    return Tariff.findOne({
+    return super.readAllByQuery({
       where: {
         stationId: stationId,
       },
-    });
+    }).then((tariffs) => tariffs.length > 0 ? tariffs[0] : null);
   }
 
   async createOrUpdateTariff(tariff: Tariff): Promise<Tariff> {
-    const [storedTariff, _tariffCreated] = await Tariff.upsert({
+    const [storedTariff, _tariffCreated] = await this.upsert(Tariff.build({
       stationId: tariff.stationId,
       unit: tariff.unit,
       price: tariff.price,
-    });
+    }));
     return storedTariff;
   }
 
@@ -32,12 +32,11 @@ export class TariffRepository extends SequelizeRepository<Tariff> implements ITa
           ...(query.unit ? { unit: query.unit } : {}),
           ...(query.id ? { id: query.id } : {}),
         },
-      },
-      Tariff.MODEL_NAME,
+      }
     );
   }
 
-  async deleteAllByQuery(query: TariffQueryString): Promise<number> {
+  async deleteAllByQuery(query: TariffQueryString): Promise<Tariff[]> {
     if (!query.id && !query.stationId && !query.unit) {
       throw new Error('Must specify at least one query parameter');
     }
@@ -48,8 +47,7 @@ export class TariffRepository extends SequelizeRepository<Tariff> implements ITa
           ...(query.unit ? { unit: query.unit } : {}),
           ...(query.id ? { id: query.id } : {}),
         },
-      },
-      Tariff.MODEL_NAME,
+      }
     );
   }
 }
