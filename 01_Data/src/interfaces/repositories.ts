@@ -41,10 +41,10 @@ import { TariffQueryString } from './queries/Tariff';
 
 export interface IAuthorizationRepository extends ICrudRepository<AuthorizationData> {
   createOrUpdateByQuery: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
-  updateRestrictionsByQuery: (value: AuthorizationRestrictions, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
-  readByQuery: (query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
-  existsByQuery: (query: AuthorizationQuerystring) => Promise<boolean>;
-  deleteAllByQuery: (query: AuthorizationQuerystring) => Promise<number>;
+  updateRestrictionsByQuery: (value: AuthorizationRestrictions, query: AuthorizationQuerystring) => Promise<Authorization[]>;
+  readAllByQuery: (query: AuthorizationQuerystring) => Promise<Authorization[]>;
+  existByQuery: (query: AuthorizationQuerystring) => Promise<number>;
+  deleteAllByQuery: (query: AuthorizationQuerystring) => Promise<Authorization[]>;
 }
 
 /**
@@ -73,19 +73,19 @@ export interface IDeviceModelRepository extends ICrudRepository<VariableAttribut
 }
 
 export interface ILocationRepository extends ICrudRepository<Location> {
-  readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | null>;
+  readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
 }
 
 export interface ISecurityEventRepository extends ICrudRepository<SecurityEvent> {
-  createByStationId: (value: SecurityEventNotificationRequest, stationId: string) => Promise<SecurityEvent | undefined>;
+  createByStationId: (value: SecurityEventNotificationRequest, stationId: string) => Promise<SecurityEvent>;
   readByStationIdAndTimestamps: (stationId: string, from?: Date, to?: Date) => Promise<SecurityEvent[]>;
-  deleteByKey: (key: string) => Promise<boolean>;
+  deleteByKey: (key: string) => Promise<SecurityEvent | undefined>;
 }
 
 export interface ISubscriptionRepository extends ICrudRepository<Subscription> {
-  create(value: Subscription): Promise<Subscription | undefined>;
+  create(value: Subscription): Promise<Subscription>;
   readAllByStationId(stationId: string): Promise<Subscription[]>;
-  deleteByKey(key: string): Promise<boolean>;
+  deleteByKey(key: string): Promise<Subscription | undefined>;
 }
 
 export interface ITransactionEventRepository extends ICrudRepository<TransactionEventRequest> {
@@ -114,6 +114,6 @@ export interface IMessageInfoRepository extends ICrudRepository<MessageInfoType>
 export interface ITariffRepository extends ICrudRepository<Tariff> {
   findByStationId(stationId: string): Promise<Tariff | null>;
   readAllByQuery(query: TariffQueryString): Promise<Tariff[]>;
-  deleteAllByQuery(query: TariffQueryString): Promise<number>;
+  deleteAllByQuery(query: TariffQueryString): Promise<Tariff[]>;
   createOrUpdateTariff(tariff: Tariff): Promise<Tariff>;
 }

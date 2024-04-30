@@ -32,19 +32,20 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     return await this.s.models[this.namespace].findOne({ where: { id: key } }).then((row) => row as T);
   }
 
-  async readAllByQuery(query: FindOptions<any>): Promise<T[]> {
-    return await this.s.models[this.namespace].findAll(query).then((row) => row as T[]);
+  async readAllByQuery(query: object): Promise<T[]> {
+    return await this.s.models[this.namespace].findAll(query as FindOptions<any>).then((row) => row as T[]);
   }
 
   protected async _updateByKey(value: Partial<T>, key: string): Promise<T | undefined> {
     return await this._updateAllByQuery(value, { where: { id: key } }).then((rows) => (rows.length === 1 ? rows[0] : undefined));
   }
 
-  protected async _updateAllByQuery(value: Partial<T>, query: UpdateOptions<any>): Promise<T[]> {
-    query.returning = true;
+  protected async _updateAllByQuery(value: Partial<T>, query: object): Promise<T[]> {
+    const updateOptions = query as UpdateOptions<any>;
+    updateOptions.returning = true;
     // Lengthy type conversion to satisfy sequelize-typescript
     return await (this.s.models[this.namespace] as ModelStatic<T>)
-      .update(value, query as Omit<UpdateOptions<Attributes<T>>, 'returning'> & { returning: Exclude<UpdateOptions<Attributes<T>>['returning'], undefined | false> })
+      .update(value, updateOptions as Omit<UpdateOptions<Attributes<T>>, 'returning'> & { returning: Exclude<UpdateOptions<Attributes<T>>['returning'], undefined | false> })
       .then((result) => result[1] as T[]);
   }
 
