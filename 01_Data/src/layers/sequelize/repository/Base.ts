@@ -9,7 +9,7 @@ import { DefaultSequelizeInstance } from '../util';
 import { type ILogObj, type Logger } from 'tslog';
 import { Attributes, FindOptions, ModelStatic, UpdateOptions } from 'sequelize';
 
-export abstract class SequelizeRepository<T extends Model<any, any>> extends CrudRepository<T> {
+export class SequelizeRepository<T extends Model<any, any>> extends CrudRepository<T> {
   protected s: Sequelize;
   private namespace: string;
 
