@@ -62,7 +62,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('created', [result]);
     return result;
   }
-  abstract _create(value: T, namespace?: string): Promise<T>;
+  protected abstract _create(value: T, namespace?: string): Promise<T>;
 
   /**
    * Creates a new entry in the database with the specified value and key.
@@ -82,7 +82,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('created', [result]);
     return result;
   }
-  abstract _createByKey(value: T, key: string, namespace?: string): Promise<T>;
+  protected abstract _createByKey(value: T, key: string, namespace?: string): Promise<T>;
 
   /**
    * Reads a value from storage based on the given key.
@@ -120,7 +120,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('updated', result ? [result] : []);
     return result;
   }
-  abstract _updateByKey(
+  protected abstract _updateByKey(
     value: Partial<T>,
     key: string,
     namespace?: string,
@@ -144,7 +144,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('updated', result);
     return result;
   }
-  abstract _updateAllByQuery(
+  protected abstract _updateAllByQuery(
     value: Partial<T>,
     query: object,
     namespace?: string,
@@ -167,7 +167,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
     }
     return result;
   }
-  abstract _upsert(value: T, namespace?: string): Promise<[T, boolean]>;
+  protected abstract _upsert(value: T, namespace?: string): Promise<[T, boolean]>;
 
   /**
    * Deletes a key from the specified namespace.
@@ -185,7 +185,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('deleted', result ? [result] : []);
     return result;
   }
-  abstract _deleteByKey(
+  protected abstract _deleteByKey(
     key: string,
     namespace?: string,
   ): Promise<T | undefined>;
@@ -206,7 +206,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('deleted', result);
     return result;
   }
-  abstract _deleteAllByQuery(query: object, namespace?: string): Promise<T[]>;
+  protected abstract _deleteAllByQuery(query: object, namespace?: string): Promise<T[]>;
 
   /**
    * Checks if a key exists in the specified namespace.
