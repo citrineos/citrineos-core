@@ -19,11 +19,11 @@ export abstract class SequelizeRepository<T extends Model<any, any>> extends Cru
     this.namespace = namespace;
   }
 
-  async _create(value: T): Promise<T> {
+  protected async _create(value: T): Promise<T> {
     return await value.save();
   }
 
-  async _createByKey(value: T, key: string): Promise<T> {
+  protected async _createByKey(value: T, key: string): Promise<T> {
     value.setDataValue('id', key);
     return await value.save();
   }
@@ -36,11 +36,11 @@ export abstract class SequelizeRepository<T extends Model<any, any>> extends Cru
     return await this.s.models[this.namespace].findAll(query).then((row) => row as T[]);
   }
 
-  async _updateByKey(value: Partial<T>, key: string): Promise<T | undefined> {
+  protected async _updateByKey(value: Partial<T>, key: string): Promise<T | undefined> {
     return await this._updateAllByQuery(value, { where: { id: key } }).then((rows) => (rows.length === 1 ? rows[0] : undefined));
   }
 
-  async _updateAllByQuery(value: Partial<T>, query: UpdateOptions<any>): Promise<T[]> {
+  protected async _updateAllByQuery(value: Partial<T>, query: UpdateOptions<any>): Promise<T[]> {
     query.returning = true;
     // Lengthy type conversion to satisfy sequelize-typescript
     return await (this.s.models[this.namespace] as ModelStatic<T>)
@@ -48,7 +48,7 @@ export abstract class SequelizeRepository<T extends Model<any, any>> extends Cru
       .then((result) => result[1] as T[]);
   }
 
-  async _upsert(value: T): Promise<[T, boolean]> {
+  protected async _upsert(value: T): Promise<[T, boolean]> {
     // There will be an exception if sql attempts to create and value is missing required fields.
     // However, the typing of upsert requires a Partial. This is a workaround.
     // The created boolean (second element of the result) can only be null if the SQL engine in use is SQLite. In that case, it is assumed the entry was created. 
@@ -56,7 +56,7 @@ export abstract class SequelizeRepository<T extends Model<any, any>> extends Cru
     return await this.s.models[this.namespace].upsert(value as Partial<T>).then((result) => [result[0] as T, result[1] == null ? true : result[1]]);
   }
 
-  async _deleteByKey(key: string): Promise<T | undefined> {
+  protected async _deleteByKey(key: string): Promise<T | undefined> {
     return this.s.transaction(async (t) => {
       const entryToDelete = await this.s.models[this.namespace].findOne({ where: { id: key } }).then((row) => row as T);
       const deletedCount = await this.s.models[this.namespace].destroy({ where: { id: key } });
@@ -70,7 +70,7 @@ export abstract class SequelizeRepository<T extends Model<any, any>> extends Cru
     });
   }
 
-  async _deleteAllByQuery(query: object): Promise<T[]> {
+  protected async _deleteAllByQuery(query: object): Promise<T[]> {
     return this.s.transaction(async (t) => {
       const entriesToDelete = await this.s.models[this.namespace].findAll(query).then((rows) => rows as T[]);
       const deletedCount = await this.s.models[this.namespace].destroy(query);
