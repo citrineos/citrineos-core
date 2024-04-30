@@ -3,49 +3,56 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ICrudRepository, type BootConfig, type RegistrationStatusEnumType, type StatusInfoType } from '@citrineos/base';
+import { CrudRepository, SystemConfig, type BootConfig, type RegistrationStatusEnumType, type StatusInfoType } from '@citrineos/base';
 import { type IBootRepository } from '../../../interfaces/repositories';
 import { Boot } from '../model/Boot';
 import { VariableAttribute } from '../model/DeviceModel';
+import { SequelizeRepository } from '..';
+import { Logger, ILogObj } from 'tslog';
+import { Sequelize } from 'sequelize-typescript';
 
-export class BootRepository implements IBootRepository {
-  boots: ICrudRepository<Boot>;
-  variableAttributes: ICrudRepository<VariableAttribute>;
+export class SequelizeBootRepository extends SequelizeRepository<Boot> implements IBootRepository {
+  variableAttributes: CrudRepository<VariableAttribute>;
 
-  constructor(boots: ICrudRepository<Boot>, variableAttributes: ICrudRepository<VariableAttribute>) {
-    this.boots = boots;
-    this.variableAttributes = variableAttributes;
+  constructor(config: SystemConfig, namespace: string, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, variableAttributes?: CrudRepository<VariableAttribute>) {
+    super(config, namespace, logger, sequelizeInstance);
+    this.variableAttributes = variableAttributes ? variableAttributes : new SequelizeVariableAttributeRepository(config, namespace, logger, sequelizeInstance);
   }
 
   async createOrUpdateByKey(value: BootConfig, key: string): Promise<Boot | undefined> {
-    return await this.boots.upsert({ id: key, ...value } as Boot).then(async (savedBootConfig) => {
-      if (savedBootConfig) {
-        if (value.pendingBootSetVariableIds) {
-          savedBootConfig.pendingBootSetVariables = await this.manageSetVariables(value.pendingBootSetVariableIds, key, savedBootConfig.id);
-        }
+    const result = await this._upsert({ id: key, ...value } as Boot); // Calling the protected method avoids emitting the event before the variables have been assigned below
+    const savedBootConfig = result[0];
+    if (savedBootConfig) {
+      if (value.pendingBootSetVariableIds) {
+        savedBootConfig.pendingBootSetVariables = await this.manageSetVariables(value.pendingBootSetVariableIds, key, savedBootConfig.id);
       }
-      return savedBootConfig;
-    });
+    }
+    if (result[1]) {
+      this.emit('created', [result[0]]);
+    } else {
+      this.emit('updated', [result[0]]);
+    }
+    return savedBootConfig;
   }
 
   async updateStatusByKey(status: RegistrationStatusEnumType, statusInfo: StatusInfoType | undefined, key: string): Promise<Boot | undefined> {
-    return await this.boots.updateByKey({ status, statusInfo }, key);
+    return await this.updateByKey({ status, statusInfo }, key);
   }
 
   async updateLastBootTimeByKey(lastBootTime: string, key: string): Promise<Boot | undefined> {
-    return await this.boots.updateByKey({ lastBootTime }, key);
+    return await this.updateByKey({ lastBootTime }, key);
   }
 
   async readByKey(key: string): Promise<Boot | undefined> {
-    return await this.boots.readByKey(key);
+    return await this.readByKey(key);
   }
 
   async existsByKey(key: string): Promise<boolean> {
-    return await this.boots.existsByKey(key);
+    return await this.existsByKey(key);
   }
 
-  async deleteByKey(key: string): Promise<boolean> {
-    return await this.boots.deleteByKey(key);
+  async deleteByKey(key: string): Promise<Boot | undefined> {
+    return await this.deleteByKey(key);
   }
 
   /**
@@ -67,6 +74,9 @@ export class BootRepository implements IBootRepository {
     for (const setVariableId of setVariableIds) {
       const setVariable: VariableAttribute | undefined = await this.variableAttributes.updateByKey({ bootConfigId }, setVariableId.toString());
       if (!setVariable) {
+        // When this is called from createOrUpdateByKey, this code should be impossible to reach
+        // Since the boot object would have already been upserted with the pendingBootSetVariableIds as foreign keys
+        // And if they were not valid foreign keys, it would have thrown an error
         throw new Error('SetVariableId does not exist ' + setVariableId);
       } else {
         managedSetVariables.push(setVariable);

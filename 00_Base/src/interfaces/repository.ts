@@ -6,10 +6,10 @@
 import { EventEmitter } from 'events';
 
 export type CrudEvent<T> = {
-  created: [T];
+  created: [T[]];
   updated: [T[]];
   deleted: [T[]];
-}
+};
 
 /**
  * Represents a generic CRUD repository.
@@ -17,13 +17,36 @@ export type CrudEvent<T> = {
  * @template T - The type of the values stored in the repository.
  */
 export abstract class CrudRepository<T> extends EventEmitter {
-  
   constructor() {
     super();
   }
 
-  on<K extends keyof CrudEvent<T>>(event: K, listener: (...args: CrudEvent<T>[K]) => void): this {
+  /**
+   * On method overridden to handle events from {@link CrudEvent}.
+   * @param event The name of the event. Must be a key in {@link CrudEvent}.
+   * @param listener The callback for the event. Argument types correspond to the contents of the event key in {@link CrudEvent}.
+   *
+   * @see {@link EventEmitter#on} for the original method.
+   */
+  on<K extends keyof CrudEvent<T>>(
+    event: K,
+    listener: (...args: CrudEvent<T>[K]) => void,
+  ): this {
     return super.on(event, listener as (...args: any[]) => void);
+  }
+
+  /**
+   * Emit method overridden to emit events from {@link CrudEvent}.
+   * @param event The name of the event. Must be a key in {@link CrudEvent}.
+   * @param args The arguments to pass with the event. Allowed types correspond to the contents of the event key in {@link CrudEvent}.
+   *
+   * @see {@link EventEmitter#emit} for the original method.
+   */
+  emit<K extends keyof CrudEvent<T>>(
+    event: K,
+    ...args: CrudEvent<T>[K]
+  ): boolean {
+    return super.emit(event, ...args);
   }
 
   /**
@@ -36,7 +59,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
    */
   public async create(value: T, namespace?: string): Promise<T> {
     const result = await this._create(value, namespace);
-    this.emit('created', result);
+    this.emit('created', [result]);
     return result;
   }
   abstract _create(value: T, namespace?: string): Promise<T>;
@@ -56,14 +79,10 @@ export abstract class CrudRepository<T> extends EventEmitter {
     namespace?: string,
   ): Promise<T> {
     const result = await this._createByKey(value, key, namespace);
-    this.emit('created', result);
+    this.emit('created', [result]);
     return result;
   }
-  abstract _createByKey(
-    value: T,
-    key: string,
-    namespace?: string,
-  ): Promise<T>;
+  abstract _createByKey(value: T, key: string, namespace?: string): Promise<T>;
 
   /**
    * Reads a value from storage based on the given key.
@@ -141,7 +160,11 @@ export abstract class CrudRepository<T> extends EventEmitter {
    */
   public async upsert(value: T, namespace?: string): Promise<[T, boolean]> {
     const result = await this._upsert(value, namespace);
-    this.emit(result[1] ? 'created' : 'updated', result[1] ? result[0] : [result[0]]);
+    if (result[1]) {
+      this.emit('created', [result[0]]);
+    } else {
+      this.emit('updated', [result[0]]);
+    }
     return result;
   }
   abstract _upsert(value: T, namespace?: string): Promise<[T, boolean]>;
@@ -154,12 +177,18 @@ export abstract class CrudRepository<T> extends EventEmitter {
    * @param namespace - Optional. The namespace from which to delete the key.
    * @returns A Promise that resolves to the deleted entry, or undefined there was no matching entry.
    */
-  public async deleteByKey(key: string, namespace?: string): Promise<T | undefined> {
+  public async deleteByKey(
+    key: string,
+    namespace?: string,
+  ): Promise<T | undefined> {
     const result = await this._deleteByKey(key, namespace);
     this.emit('deleted', result ? [result] : []);
     return result;
   }
-  abstract _deleteByKey(key: string, namespace?: string): Promise<T | undefined>;
+  abstract _deleteByKey(
+    key: string,
+    namespace?: string,
+  ): Promise<T | undefined>;
 
   /**
    * Deletes all values associated with a query from the specified namespace.
@@ -169,7 +198,10 @@ export abstract class CrudRepository<T> extends EventEmitter {
    * @param namespace - Optional. The namespace from which to delete the values.
    * @returns A Promise that resolves to the deleted entries.
    */
-  public async deleteAllByQuery(query: object,namespace?: string): Promise<T[]> {
+  public async deleteAllByQuery(
+    query: object,
+    namespace?: string,
+  ): Promise<T[]> {
     const result = await this._deleteAllByQuery(query, namespace);
     this.emit('deleted', result);
     return result;

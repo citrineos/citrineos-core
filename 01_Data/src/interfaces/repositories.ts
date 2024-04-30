@@ -56,7 +56,7 @@ export interface IBootRepository extends ICrudRepository<BootConfig> {
   updateLastBootTimeByKey: (lastBootTime: string, key: string) => Promise<Boot | undefined>;
   readByKey: (key: string) => Promise<Boot | undefined>;
   existsByKey: (key: string) => Promise<boolean>;
-  deleteByKey: (key: string) => Promise<boolean>;
+  deleteByKey: (key: string) => Promise<Boot | undefined>;
 }
 
 export interface IDeviceModelRepository extends ICrudRepository<VariableAttributeType> {
