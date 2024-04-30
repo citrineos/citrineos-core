@@ -5,13 +5,26 @@
 
 import { EventEmitter } from 'events';
 
+export type CrudEvent<T> = {
+  created: [T];
+  updated: [T[]];
+  deleted: [T[]];
+}
+
 /**
  * Represents a generic CRUD repository.
  *
  * @template T - The type of the values stored in the repository.
  */
 export abstract class CrudRepository<T> extends EventEmitter {
+  
+  constructor() {
+    super();
+  }
 
+  on<K extends keyof CrudEvent<T>>(event: K, listener: (...args: CrudEvent<T>[K]) => void): this {
+    return super.on(event, listener as (...args: any[]) => void);
+  }
 
   /**
    * Creates a new entry in the database with the specified value.
@@ -85,7 +98,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
     namespace?: string,
   ): Promise<T | undefined> {
     const result = await this._updateByKey(value, key, namespace);
-    this.emit('updated', result);
+    this.emit('updated', result ? [result] : []);
     return result;
   }
   abstract _updateByKey(
@@ -128,7 +141,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
    */
   public async upsert(value: T, namespace?: string): Promise<[T, boolean]> {
     const result = await this._upsert(value, namespace);
-    this.emit('upserted', result);
+    this.emit(result[1] ? 'created' : 'updated', result[1] ? result[0] : [result[0]]);
     return result;
   }
   abstract _upsert(value: T, namespace?: string): Promise<[T, boolean]>;
@@ -143,7 +156,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
    */
   public async deleteByKey(key: string, namespace?: string): Promise<T | undefined> {
     const result = await this._deleteByKey(key, namespace);
-    this.emit('deleted', result);
+    this.emit('deleted', result ? [result] : []);
     return result;
   }
   abstract _deleteByKey(key: string, namespace?: string): Promise<T | undefined>;

@@ -46,7 +46,7 @@ export {
 
 // Persistence Interfaces
 
-export { ICrudRepository } from './interfaces/repository';
+export { CrudEvent, CrudRepository } from './interfaces/repository';
 export * from './ocpp/persistence';
 
 // Configuration Types
