@@ -139,7 +139,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
     value: Partial<T>,
     query: object,
     namespace?: string,
-  ): Promise<T[] | undefined> {
+  ): Promise<T[]> {
     const result = await this._updateAllByQuery(value, query, namespace);
     this.emit('updated', result);
     return result;
