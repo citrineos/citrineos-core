@@ -227,7 +227,7 @@ export class WebsocketNetworkConnection {
    * @param {Duplex} socket - Websocket duplex stream.
    * @param {Buffer} head - Websocket buffer.
    * @param {WebSocketServer} wss - Websocket server.
-   * @param {number} securityProfile - The security profile to use for the websocket connection. See OCPP 2.0.1 Part 2-Specification A.1.3
+   * @param {WebsocketServerConfig} websocketServerConfig - websocket server config.
    */
   private async _upgradeRequest(
     req: http.IncomingMessage,

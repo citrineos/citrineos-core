@@ -454,11 +454,10 @@ export class CertificatesModuleApi
 
         // Update the map which stores sub CA certs and keys for each websocket server.
         // This map is used when signing charging station certificates for use case A02 in OCPP 2.0.1 Part 2.
-        this._module.certificateAuthorityService.updateSecurityCaCertsKeyMap(
+        this._module.certificateAuthorityService.updateSecurityCertChainKeyMap(
           serverId,
           tlsKey,
           tlsCertificateChain,
-          rootCA,
         );
 
         this._logger.info(
@@ -511,7 +510,7 @@ export class CertificatesModuleApi
     csr.sign(keyPair.privateKey);
 
     const signedCertificate =
-      await this._module.certificateAuthorityService.getSignedCertificateByExternalCA(
+      await this._module.certificateAuthorityService.signedSubCaCertificateByExternalCA(
         forge.pki.certificationRequestToPem(csr),
       );
 
