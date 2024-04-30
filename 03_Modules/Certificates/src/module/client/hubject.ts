@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ICertificateAuthorityClient } from './interface';
+import { IV2GCertificateAuthorityClient } from './interface';
 import { SystemConfig } from '@citrineos/base';
 
-export class Hubject implements ICertificateAuthorityClient {
+export class Hubject implements IV2GCertificateAuthorityClient {
   private readonly _baseUrl: string;
   private readonly _isoVersion: string;
   private readonly _tokenUrl: string;
@@ -13,16 +13,13 @@ export class Hubject implements ICertificateAuthorityClient {
   private _authorizationToken: string | undefined;
 
   constructor(config: SystemConfig) {
-    if (!config.modules.certificates?.certificateAuthority?.hubject) {
+    if (!config.modules.certificates?.v2gCA.hubject) {
       throw new Error('Missing Hubject configuration');
     }
 
-    this._baseUrl =
-      config.modules.certificates?.certificateAuthority.hubject.baseUrl;
-    this._tokenUrl =
-      config.modules.certificates?.certificateAuthority.hubject.tokenUrl;
-    this._isoVersion =
-      config.modules.certificates?.certificateAuthority.hubject.isoVersion;
+    this._baseUrl = config.modules.certificates?.v2gCA.hubject.baseUrl;
+    this._tokenUrl = config.modules.certificates?.v2gCA.hubject.tokenUrl;
+    this._isoVersion = config.modules.certificates?.v2gCA.hubject.isoVersion;
   }
 
   /**

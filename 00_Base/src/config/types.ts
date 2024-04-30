@@ -17,9 +17,10 @@ export const websocketServerInputSchema = z.object({
   protocol: z.string().default('ocpp2.0.1').optional(),
   securityProfile: z.number().int().min(0).max(3).default(0).optional(),
   allowUnknownChargingStations: z.boolean().default(false).optional(),
-  tlsKeyFilePath: z.string().optional(), // Private key pem corresponding to the leaf certificate.
-  tlsCertificateChainFilePath: z.string().optional(), // Certificate chain pem consist of a leaf
-  mtlsCertificateAuthorityKeyFilePath: z.string().optional(), // The private key for the last sub CA certificate
+  tlsKeyFilePath: z.string().optional(), // Leaf certificate's private key pem which decrypts the message from client
+  tlsCertificateChainFilePath: z.string().optional(), // Certificate chain pem consist of a leaf followed by sub CAs
+  mtlsCertificateAuthorityKeyFilePath: z.string().optional(), // Sub CA's private key which signs the leaf (e.g.,
+  // charging station certificate and csms certificate)
   rootCACertificateFilePath: z.string().optional(), // Root CA certificate that overrides default CA certificates
   // allowed by Mozilla
 });
@@ -36,26 +37,50 @@ export const systemConfigInputSchema = z.object({
         endpointPrefix: z.string().default(EventGroup.Certificates).optional(),
         host: z.string().default('localhost').optional(),
         port: z.number().int().positive().default(8081).optional(),
-        certificateAuthority: z.object({
-          hubject: z.object({
-            baseUrl: z
-              .string()
-              .default('https://open.plugncharge-test.hubject.com'),
-            tokenUrl: z
-              .string()
-              .default(
-                'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
-              ),
-            isoVersion: z
-              .enum(['ISO15118-2', 'ISO15118-20'])
-              .default('ISO15118-2'),
+        v2gCA: z
+          .object({
+            name: z.enum(['hubject']).default('hubject'),
+            hubject: z
+              .object({
+                baseUrl: z
+                  .string()
+                  .default('https://open.plugncharge-test.hubject.com'),
+                tokenUrl: z
+                  .string()
+                  .default(
+                    'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
+                  ),
+                isoVersion: z
+                  .enum(['ISO15118-2', 'ISO15118-20'])
+                  .default('ISO15118-2'),
+              })
+              .optional(),
+          })
+          .refine((obj) => {
+            if (obj.name === 'hubject') {
+              return obj.hubject;
+            } else {
+              return false;
+            }
           }),
-          acme: z.object({
-            env: z.enum(['staging', 'production']).default('staging'),
-            accountKeyFilePath: z.string(),
-            email: z.string(),
+        chargingStationCA: z
+          .object({
+            name: z.enum(['acme']).default('acme'),
+            acme: z
+              .object({
+                env: z.enum(['staging', 'production']).default('staging'),
+                accountKeyFilePath: z.string(),
+                email: z.string(),
+              })
+              .optional(),
+          })
+          .refine((obj) => {
+            if (obj.name === 'acme') {
+              return obj.acme;
+            } else {
+              return false;
+            }
           }),
-        }),
       })
       .optional(),
     configuration: z.object({
@@ -205,9 +230,9 @@ export const websocketServerSchema = z
     protocol: z.string(),
     securityProfile: z.number().int().min(0).max(3),
     allowUnknownChargingStations: z.boolean(),
-    tlsKeyFilePath: z.string().optional(), // Private key pem corresponding to the leaf certificate.
-    tlsCertificateChainFilePath: z.string().optional(), // Certificate chain pem consist of a leaf
-    mtlsCertificateAuthorityKeyFilePath: z.string().optional(), // The private key for the last sub CA certificate
+    tlsKeyFilePath: z.string().optional(),
+    tlsCertificateChainFilePath: z.string().optional(),
+    mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
     rootCaCertificateFilePath: z.string().optional(),
   })
   .refine((obj) => {
@@ -219,8 +244,8 @@ export const websocketServerSchema = z
         return obj.tlsKeyFilePath && obj.tlsCertificateChainFilePath;
       case 3: // mTLS
         return (
-          obj.tlsKeyFilePath &&
           obj.tlsCertificateChainFilePath &&
+          obj.tlsKeyFilePath &&
           obj.mtlsCertificateAuthorityKeyFilePath
         );
       default:
@@ -241,18 +266,42 @@ export const systemConfigSchema = z
           endpointPrefix: z.string(),
           host: z.string().optional(),
           port: z.number().int().positive().optional(),
-          certificateAuthority: z.object({
-            hubject: z.object({
-              baseUrl: z.string(),
-              tokenUrl: z.string(),
-              isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']),
+          v2gCA: z
+            .object({
+              name: z.enum(['hubject']),
+              hubject: z
+                .object({
+                  baseUrl: z.string(),
+                  tokenUrl: z.string(),
+                  isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']),
+                })
+                .optional(),
+            })
+            .refine((obj) => {
+              if (obj.name === 'hubject') {
+                return obj.hubject;
+              } else {
+                return false;
+              }
             }),
-            acme: z.object({
-              env: z.enum(['staging', 'production']),
-              accountKeyFilePath: z.string(),
-              email: z.string(),
+          chargingStationCA: z
+            .object({
+              name: z.enum(['acme']),
+              acme: z
+                .object({
+                  env: z.enum(['staging', 'production']),
+                  accountKeyFilePath: z.string(),
+                  email: z.string(),
+                })
+                .optional(),
+            })
+            .refine((obj) => {
+              if (obj.name === 'acme') {
+                return obj.acme;
+              } else {
+                return false;
+              }
             }),
-          }),
         })
         .optional(),
       evdriver: z.object({
