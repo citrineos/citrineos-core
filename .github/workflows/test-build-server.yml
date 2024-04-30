@@ -22,7 +22,7 @@ jobs:
         uses: docker/setup-qemu-action@v1
 
       - name: Build and Run Docker Compose
-        run: docker-compose -f /Server/docker-compose.yml up -d
+        run: docker-compose -f ../../Server/docker-compose.yml up -d
 
       - name: Install Newman
         run: npm install -g newman
