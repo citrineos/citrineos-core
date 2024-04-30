@@ -15,17 +15,17 @@ export class SubscriptionRepository extends SequelizeRepository<Subscription> im
    * @param value {@link Subscription} object which may have been deserialized from JSON
    * @returns Saved {@link Subscription} if successful, undefined otherwise
    */
-  create(value: Subscription): Promise<Subscription | undefined> {
+  create(value: Subscription): Promise<Subscription> {
     const { ...rawSubscription } = value;
     rawSubscription.id = null;
     return super.create(Subscription.build({ ...rawSubscription }));
   }
 
   readAllByStationId(stationId: string): Promise<Subscription[]> {
-    return super.readAllByQuery({ where: { stationId: stationId } }, Subscription.MODEL_NAME);
+    return super.readAllByQuery({ where: { stationId: stationId } });
   }
 
-  deleteByKey(key: string): Promise<boolean> {
-    return super.deleteByKey(key, Subscription.MODEL_NAME);
+  deleteByKey(key: string): Promise<Subscription | undefined> {
+    return super.deleteByKey(key);
   }
 }
