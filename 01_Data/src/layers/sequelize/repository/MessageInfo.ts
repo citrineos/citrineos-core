@@ -7,9 +7,9 @@ import { MessageInfo } from '../model/MessageInfo';
 import { IMessageInfoRepository } from '../../../interfaces';
 import { MessageInfoType } from '@citrineos/base';
 
-export class MessageInfoRepository extends SequelizeRepository<MessageInfo> implements IMessageInfoRepository {
+export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageInfo> implements IMessageInfoRepository {
   async deactivateAllByStationId(stationId: string): Promise<void> {
-    await MessageInfo.update(
+    await this.updateAllByQuery(
       {
         active: false,
       },
@@ -24,18 +24,12 @@ export class MessageInfoRepository extends SequelizeRepository<MessageInfo> impl
   }
 
   async createOrUpdateByMessageInfoTypeAndStationId(message: MessageInfoType, stationId: string, componentId?: number): Promise<MessageInfo> {
-    const [savedMessageInfo, _messageInfoCreated] = await MessageInfo.upsert({
+    const [savedMessageInfo, _messageInfoCreated] = await this.upsert(MessageInfo.build({
       stationId: stationId,
       componentId: componentId,
-      id: message.id,
-      priority: message.priority,
-      state: message.state,
-      startDateTime: message.startDateTime,
-      endDateTime: message.endDateTime,
-      transactionId: message.transactionId,
-      message: message.message,
+      ...message,
       active: true,
-    });
+    }));
     return savedMessageInfo;
   }
 }
