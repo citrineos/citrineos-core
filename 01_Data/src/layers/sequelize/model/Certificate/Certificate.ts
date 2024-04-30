@@ -3,41 +3,41 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { InstallCertificateUseEnumType, Namespace } from '@citrineos/base';
-import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
 @Table
 export class Certificate extends Model {
-  static readonly MODEL_NAME: string = Namespace.RootCertificate;
+  static readonly MODEL_NAME: string = Namespace.Certificate;
 
   /**
    * Fields
    */
-
-  @Index
   @Column({
     type: DataType.STRING,
-    unique: 'stationId_serialNumber',
-  })
-  declare stationId: string;
-
-  @Column({
-    type: DataType.STRING,
-    unique: 'stationId_serialNumber',
+    unique: 'serialNumber_certificateType_organizationName_commonName',
   })
   declare serialNumber: string;
 
-  // Extended fields from certificate generation
-  @Column(DataType.STRING)
-  declare certificateType?: InstallCertificateUseEnumType;
+  @Column({
+    type: DataType.STRING,
+    unique: 'serialNumber_certificateType_organizationName_commonName',
+  })
+  declare certificateType: InstallCertificateUseEnumType;
+
+  @Column({
+    type: DataType.STRING,
+    unique: 'serialNumber_certificateType_organizationName_commonName',
+  })
+  declare organizationName: string;
+
+  @Column({
+    type: DataType.STRING,
+    unique: 'serialNumber_certificateType_organizationName_commonName',
+  })
+  declare commonName: string;
 
   @Column(DataType.INTEGER)
   declare keyLength?: number;
-
-  @Column(DataType.STRING)
-  declare organizationName?: string;
-
-  @Column(DataType.STRING)
-  declare commonName?: string;
 
   @Column({
     type: DataType.DATE,
@@ -53,4 +53,10 @@ export class Certificate extends Model {
 
   @Column(DataType.STRING)
   declare privateKeyFileId?: string;
+
+  @Column(DataType.STRING)
+  declare stationId?: string;
+
+  @Column(DataType.STRING)
+  declare signedBy?: string; // certificate id
 }

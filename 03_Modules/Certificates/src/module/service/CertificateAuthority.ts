@@ -66,8 +66,23 @@ export class CertificateAuthorityService {
     }
   }
 
-  async getSignedCertificateByExternalCA(csrString: string): Promise<string> {
-    return await this._acmeClient.getSignedCertificate(csrString);
+  async getSignedCertificateByExternalCA(
+    csrString: string,
+    CA?: string,
+  ): Promise<string> {
+    if (CA === 'Hubject') {
+      return await this._hubjectClient.getSignedCertificate(csrString);
+    } else {
+      return await this._acmeClient.getSignedCertificate(csrString);
+    }
+  }
+
+  async getRootCACertificateFromExternalCA(CA?: string): Promise<string> {
+    if (CA === 'Hubject') {
+      return await this._hubjectClient.getCACertificates();
+    } else {
+      return await this._acmeClient.getCACertificates();
+    }
   }
 
   updateSecurityCaCertsKeyMap(

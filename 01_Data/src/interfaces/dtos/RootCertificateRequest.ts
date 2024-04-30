@@ -13,9 +13,9 @@ export class RootCertificateRequest {
 
   // Fields for generating a certificate
   // Refer to 1.4.1. Certificate Properties in OCPP 2.0.1 Part 2
-  selfSigned?: boolean;
-  organizationName?: string;
-  commonName?: string;
+  selfSigned: boolean;
+  organizationName: string;
+  commonName: string;
   serialNumber?: string;
   keyLength?: number;
   validBefore?: string;
@@ -23,24 +23,18 @@ export class RootCertificateRequest {
   // If we use directus files as storage, filePath is the folder id
   filePath?: string;
 
-  // Fields for reading and uploading certificate from file storage
-  certificateFileId?: string;
-  privateKeyFileId?: string;
-
   constructor(
     stationId: string,
     tenantId: string,
     certificateType: InstallCertificateUseEnumType,
+    selfSigned: boolean,
+    organizationName: string,
+    commonName: string,
     callbackUrl?: string,
-    selfSigned?: boolean,
-    organizationName?: string,
-    commonName?: string,
     serialNumber?: string,
     keyLength?: number,
     validBefore?: string,
     filePath?: string,
-    certificateFileId?: string,
-    privateKeyFileId?: string,
   ) {
     this.stationId = stationId;
     this.tenantId = tenantId;
@@ -53,7 +47,5 @@ export class RootCertificateRequest {
     this.validBefore = validBefore;
     this.filePath = filePath;
     this.callbackUrl = callbackUrl;
-    this.certificateFileId = certificateFileId;
-    this.privateKeyFileId = privateKeyFileId;
   }
 }

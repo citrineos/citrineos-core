@@ -16,9 +16,7 @@ export const RootCertificateSchema = QuerySchema(
     ['commonName', 'string'],
     ['validBefore', 'string'],
     ['filePath', 'string'],
-    ['certificateFileId', 'string'],
-    ['privateKeyFileId', 'string'],
     ['selfSigned', 'boolean'],
   ],
-  ['stationId', 'certificateType'],
+  ['selfSigned', 'commonName', 'organizationName', 'stationId', 'certificateType', 'tenantId'],
 );

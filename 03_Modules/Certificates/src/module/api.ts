@@ -28,13 +28,12 @@ import { ICertificatesModuleApi } from './interface';
 import { CertificatesModule } from './module';
 import { WebsocketNetworkConnection } from '@citrineos/util';
 import {
-  ChargingStation,
   Certificate,
+  ContentType,
   RootCertificateRequest,
   RootCertificateSchema,
-  ContentType,
-  TlsCertificatesRequest,
   TlsCertificateSchema,
+  TlsCertificatesRequest,
   UpdateTlsCertificateQuerySchema,
   UpdateTlsCertificateQueryString,
 } from '@citrineos/data';
@@ -222,108 +221,125 @@ export class CertificatesModuleApi
     );
   }
 
+  /**
+   * This endpoint is used to create root certificates, root CA and sub CA
+   * and install them on the charger by sending the InstallCertificateRequest
+   * @param request - RootCertificateRequest
+   * @return Promise<Certificate[]> - An array of generated certificates
+   */
   @AsDataEndpoint(
-    Namespace.RootCertificate,
+    Namespace.RootCertificates,
     HttpMethod.Post,
     undefined,
     RootCertificateSchema,
   )
-  async installRootCertificate(
+  async installRootCertificates(
     request: FastifyRequest<{ Body: RootCertificateRequest }>,
-  ): Promise<Certificate> {
+  ): Promise<Certificate[]> {
     const certRequest = request.body as RootCertificateRequest;
 
     this._logger.info(
-      `Installing certificate on charger ${certRequest.stationId}`,
+      `Installing root certificates on charger ${certRequest.stationId}`,
     );
 
-    const certificateEntity = new Certificate();
-    certificateEntity.stationId = certRequest.stationId;
-    certificateEntity.certificateType = certRequest.certificateType;
-
-    let certificatePem: string;
-    let privateKeyPem: string;
-
-    if (certRequest.certificateFileId && certRequest.privateKeyFileId) {
-      // Load certificate and private key from file storage
-      certificatePem = (
-        await this._fileAccess.getFile(certRequest.certificateFileId)
-      ).toString();
-      privateKeyPem = (
-        await this._fileAccess.getFile(certRequest.privateKeyFileId)
-      ).toString();
-
-      const certificate = forge.pki.certificateFromPem(certificatePem);
-      const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
-      certificateEntity.serialNumber = certificate.serialNumber;
-      certificateEntity.keyLength = privateKey.n.bitLength();
-      certificateEntity.organizationName = certificate.subject.getField({
-        shortName: 'O',
-      });
-      certificateEntity.commonName = certificate.subject.getField({
-        shortName: 'CN',
-      });
-      certificateEntity.validBefore =
-        certificate.validity.notAfter.toDateString();
-      certificateEntity.certificateFileId = certRequest.certificateFileId;
-      certificateEntity.privateKeyFileId = certRequest.privateKeyFileId;
+    const certificateFromReq = new Certificate();
+    certificateFromReq.certificateType = certRequest.certificateType;
+    certificateFromReq.serialNumber = certRequest.serialNumber
+      ? certRequest.serialNumber
+      : this._generateSerialNumber();
+    certificateFromReq.keyLength = certRequest.keyLength
+      ? certRequest.keyLength
+      : 2048;
+    certificateFromReq.organizationName = certRequest.organizationName;
+    certificateFromReq.commonName = certRequest.commonName;
+    if (certRequest.validBefore) {
+      certificateFromReq.validBefore = certRequest.validBefore;
     } else {
-      // Generate certificate and private key
-      certificateEntity.serialNumber = certRequest.serialNumber
-        ? certRequest.serialNumber
-        : this._generateSerialNumber();
-      certificateEntity.keyLength = certRequest.keyLength
-        ? certRequest.keyLength
-        : 2048;
-      certificateEntity.organizationName = certRequest.organizationName;
-      // Refer to OCPP 2.0.1 Part 2 A00.FR.511
-      if (certRequest.commonName) {
-        certificateEntity.commonName = certRequest.commonName;
-      } else {
-        const chargingStation: ChargingStation | null =
-          await this._module.locationRepository.readChargingStationByStationId(
-            certRequest.stationId,
-          );
-        if (chargingStation && chargingStation.serialNumber) {
-          certificateEntity.commonName = chargingStation.serialNumber;
-        } else {
-          throw new Error(
-            'commonName must be provided to generate certificate.',
-          );
-        }
-      }
-      if (certRequest.validBefore) {
-        certificateEntity.validBefore = certRequest.validBefore;
-      } else {
-        const defaultValidityDate: Date = new Date();
-        defaultValidityDate.setFullYear(defaultValidityDate.getFullYear() + 1);
-        certificateEntity.validBefore = defaultValidityDate.toISOString();
-      }
+      const defaultValidityDate: Date = new Date();
+      defaultValidityDate.setFullYear(defaultValidityDate.getFullYear() + 1);
+      certificateFromReq.validBefore = defaultValidityDate.toISOString();
+    }
 
-      // Generate certificate
-      [certificatePem, privateKeyPem] = certRequest.selfSigned
-        ? this._generateSelfSignedRootCertificate(certificateEntity)
-        : await this._generateRootCertificateSignedByCAServer(
-            certificateEntity,
-          );
+    let responseBody: Certificate[];
+    let rootChainPem;
+    if (certRequest.selfSigned) {
+      // Generate self-signed root certificate
+      const [rootCertificatePem, rootPrivateKeyPem] =
+        this._generateSelfSignedRootCertificate(certificateFromReq);
+      // Store root certificates in file storage
+      certificateFromReq.privateKeyFileId = await this._fileAccess.uploadFile(
+        `root_key_${certificateFromReq.serialNumber}.pem`,
+        Buffer.from(rootPrivateKeyPem),
+        certRequest.filePath,
+      );
+      certificateFromReq.certificateFileId = await this._fileAccess.uploadFile(
+        `root_certificate_${certificateFromReq.serialNumber}.pem`,
+        Buffer.from(rootCertificatePem),
+        certRequest.filePath,
+      );
+      // Store root certificates in db
+      await this._module.certificateRepository.createOrUpdateCertificate(
+        certificateFromReq,
+      );
+      // Generate sub CA certificate
+      const subCertificate: Certificate = new Certificate();
+      subCertificate.certificateType = certificateFromReq.certificateType;
+      subCertificate.serialNumber = this._generateSerialNumber();
+      subCertificate.keyLength = certificateFromReq.keyLength;
+      subCertificate.organizationName = certificateFromReq.organizationName;
+      subCertificate.commonName = certRequest.commonName + ' Sub CA';
+      subCertificate.validBefore = certificateFromReq.validBefore;
+      subCertificate.signedBy = certificateFromReq.id;
+      const [subCertificatePem, subPrivateKeyPem] =
+        this._generateSubCACertificate(rootPrivateKeyPem, rootCertificatePem);
+      // Store sub CA certificates in file storage
+      subCertificate.privateKeyFileId = await this._fileAccess.uploadFile(
+        `sub_CA_key_${subCertificate.serialNumber}.pem`,
+        Buffer.from(subPrivateKeyPem),
+        certRequest.filePath,
+      );
+      subCertificate.certificateFileId = await this._fileAccess.uploadFile(
+        `sub_CA_certificate_${subCertificate.serialNumber}.pem`,
+        Buffer.from(subCertificatePem),
+        certRequest.filePath,
+      );
+      // Store sub certificates in db
+      await this._module.certificateRepository.createOrUpdateCertificate(
+        subCertificate,
+      );
 
-      // Upload certificates to file storage
-      certificateEntity.privateKeyFileId = await this._fileAccess.uploadFile(
-        `private_key_${certificateEntity.serialNumber}.pem`,
+      responseBody = [subCertificate, certificateFromReq];
+      rootChainPem = subCertificatePem + '\n' + rootCertificatePem;
+    } else {
+      // Get root certificate from external CA
+      const externalRootCAPem =
+        await this._module.certificateAuthorityService.getRootCACertificateFromExternalCA();
+
+      // Generate sub CA certificate and private key
+      const [certificatePem, privateKeyPem] =
+        await this._generateSubCACertificateSignedByCAServer(
+          certificateFromReq,
+        );
+      // Upload certificate and private key to file storage
+      certificateFromReq.privateKeyFileId = await this._fileAccess.uploadFile(
+        `sub_CA_key_${certificateFromReq.serialNumber}.pem`,
         Buffer.from(privateKeyPem),
         certRequest.filePath,
       );
-      certificateEntity.certificateFileId = await this._fileAccess.uploadFile(
-        `root_certificate_${certificateEntity.serialNumber}.pem`,
+      certificateFromReq.certificateFileId = await this._fileAccess.uploadFile(
+        `sub_CA_certificate_${certificateFromReq.serialNumber}.pem`,
         Buffer.from(certificatePem),
         certRequest.filePath,
       );
-    }
 
-    // Store certificates in db
-    await this._module.certificateRepository.createOrUpdateCertificate(
-      certificateEntity,
-    );
+      // Store sub CA certificate in db
+      await this._module.certificateRepository.createOrUpdateCertificate(
+        certificateFromReq,
+      );
+
+      responseBody = [certificateFromReq];
+      rootChainPem = certificatePem + '\n' + externalRootCAPem;
+    }
 
     // Send InstallCertificateRequest to the charger
     const confirmation: IMessageConfirmation = await this.installCertificate(
@@ -331,7 +347,7 @@ export class CertificatesModuleApi
       certRequest.tenantId,
       {
         certificateType: certRequest.certificateType,
-        certificate: certificatePem,
+        certificate: rootChainPem,
       } as InstallCertificateRequest,
       certRequest.callbackUrl,
     );
@@ -339,7 +355,7 @@ export class CertificatesModuleApi
       throw new Error('Send InstallCertificateRequest failed.');
     }
 
-    return certificateEntity;
+    return responseBody;
   }
 
   /**
@@ -438,7 +454,7 @@ export class CertificatesModuleApi
 
         // Update the map which stores sub CA certs and keys for each websocket server.
         // This map is used when signing charging station certificates for use case A02 in OCPP 2.0.1 Part 2.
-        this._module.securityAuthorityService.updateSecurityCaCertsKeyMap(
+        this._module.certificateAuthorityService.updateSecurityCaCertsKeyMap(
           serverId,
           tlsKey,
           tlsCertificateChain,
@@ -479,7 +495,7 @@ export class CertificatesModuleApi
    * @param {Certificate} certificate - The certificate information used for generating the root certificate.
    * @return {Promise<[string, string]>} An array containing the signed certificate and the private key.
    */
-  private async _generateRootCertificateSignedByCAServer(
+  private async _generateSubCACertificateSignedByCAServer(
     certificate: Certificate,
   ): Promise<[string, string]> {
     const csr = forge.pki.createCertificationRequest();
@@ -552,6 +568,48 @@ export class CertificatesModuleApi
     return [
       forge.pki.certificateToPem(cert),
       forge.pki.privateKeyToPem(keyPair.privateKey),
+    ];
+  }
+
+  private _generateSubCACertificate(
+    rootKeyPem: string,
+    rootCertPem: string,
+  ): [string, string] {
+    const rootCert = forge.pki.certificateFromPem(rootCertPem);
+    const rootKey = forge.pki.privateKeyFromPem(rootKeyPem);
+
+    const subCAKeyPair = forge.pki.rsa.generateKeyPair({
+      bits: rootKey.n.bitLength(),
+    });
+    const subCACert = forge.pki.createCertificate();
+    const attrs = [
+      { name: 'commonName', value: rootCert.subject.getField('CN') + ' SubCA' },
+      { name: 'organizationName', value: rootCert.subject.getField('O') },
+    ];
+    subCACert.setSubject(attrs);
+    subCACert.setIssuer(rootCert.subject.attributes);
+    subCACert.publicKey = subCAKeyPair.publicKey;
+    subCACert.validity.notBefore = new Date();
+    subCACert.validity.notAfter = rootCert.validity.notAfter;
+    subCACert.setExtensions([
+      {
+        name: 'basicConstraints',
+        cA: false,
+      },
+      {
+        name: 'keyUsage',
+        critical: true,
+        keyCertSign: true,
+        digitalSignature: true,
+        cRLSign: true,
+      },
+    ]);
+
+    subCACert.sign(rootKey, forge.md.sha256.create());
+
+    return [
+      forge.pki.certificateToPem(subCACert),
+      forge.pki.privateKeyToPem(subCAKeyPair.privateKey),
     ];
   }
 }
