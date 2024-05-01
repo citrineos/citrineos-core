@@ -7,6 +7,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import 'reflect-metadata';
 import { ILogObj, Logger } from 'tslog';
 import {
+  ExceptionHandler,
   HttpMethod,
   IDataEndpointDefinition,
   IMessageEndpointDefinition,
@@ -257,5 +258,9 @@ export abstract class AbstractModuleApi<T extends IModule>
       const endpointPrefix = prefix || '';
       return `/data${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
     }
+  }
+
+  protected initFastifyExceptionHandler(handler: ExceptionHandler): void {
+    this._server.setErrorHandler(handler.handle); // todo do we need handler.handle.bind(this)? we may if we want to reference this class context in the handler
   }
 }

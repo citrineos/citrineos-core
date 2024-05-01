@@ -11,6 +11,7 @@ export {
   AsMessageEndpoint,
   HttpMethod,
   IModuleApi,
+  ExceptionHandler,
 } from './interfaces/api';
 export { CacheNamespace, ICache } from './interfaces/cache/cache';
 export {
@@ -132,6 +133,7 @@ import {
 import { CallAction } from './ocpp/rpc/message';
 
 export interface OcppRequest {}
+
 export interface OcppResponse {}
 
 export const CALL_SCHEMA_MAP: Map<CallAction, object> = new Map<

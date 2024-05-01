@@ -14,6 +14,7 @@ import { CredentialsService } from './service/credentials.service';
 import { VersionIdParamSchema } from './versions.api';
 import { CredentialsRepository } from './repository/credentials.repository';
 import { VersionRepository } from './repository/version.repository';
+import {GlobalExceptionHandler} from './exceptions/global.exception.handler';
 
 export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
   private credentialsService: CredentialsService;
@@ -38,6 +39,8 @@ export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
       finalCredentialsRepository,
       finalVersionRepository,
     );
+
+    this.initFastifyExceptionHandler(new GlobalExceptionHandler(this._logger));
   }
 
   @AsDataEndpoint(

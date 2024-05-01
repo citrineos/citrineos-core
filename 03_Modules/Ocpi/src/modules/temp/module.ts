@@ -12,8 +12,8 @@ import {
   IMessageSender,
   SystemConfig,
 } from '@citrineos/base';
-import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
-import { ILogObj, Logger } from 'tslog';
+import {RabbitMqReceiver, RabbitMqSender} from '@citrineos/util';
+import {ILogObj, Logger} from 'tslog';
 
 /**
  * Component that handles transaction related messages.
@@ -48,8 +48,8 @@ export class OcpiModule extends AbstractModule {
     super(
       config,
       cache,
-      handler || new RabbitMqReceiver(config, logger),
-      sender || new RabbitMqSender(config, logger),
+      (handler || new RabbitMqReceiver(config, logger)) as IMessageHandler,
+      (sender || new RabbitMqSender(config, logger)) as IMessageSender,
       EventGroup.Ocpi,
       logger,
     );
