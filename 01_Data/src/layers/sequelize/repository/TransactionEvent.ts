@@ -10,10 +10,10 @@ import { SequelizeRepository } from './Base';
 import { IdToken } from '../model/Authorization';
 import { Evse } from '../model/DeviceModel';
 import { Op } from 'sequelize';
-import { Sequelize, type Model } from 'sequelize-typescript';
+import { Sequelize } from 'sequelize-typescript';
 import { Logger, ILogObj } from 'tslog';
 
-export class TransactionEventRepository extends SequelizeRepository<TransactionEvent> implements ITransactionEventRepository {
+export class SequelizeTransactionEventRepository extends SequelizeRepository<TransactionEvent> implements ITransactionEventRepository {
   transaction: CrudRepository<Transaction>;
   evse: CrudRepository<Evse>;
   meterValue: CrudRepository<MeterValue>;
@@ -37,28 +37,56 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
   async createOrUpdateTransactionByTransactionEventAndStationId(value: TransactionEventRequest, stationId: string): Promise<Transaction> {
     let evse: Evse | undefined;
     if (value.evse) {
-      [evse] = await this.evse.upsert(Evse.build({ ...value.evse }));
+      [evse] = await this.evse.readOrCreateByQuery({ where: { id: value.evse.id, connectorId: value.evse.connectorId ? value.evse.connectorId : null } });
     }
-    let transaction = Transaction.build({
-      stationId,
-      isActive: value.eventType !== TransactionEventEnumType.Ended,
-      evseDatabaseId: evse ? evse.get('databaseId') : null,
-      ...value.transactionInfo,
+
+    const transaction = await this.s.transaction(async (sequelizeTransaction) => {
+      const result = await Transaction.upsert(
+        {
+          stationId,
+          isActive: value.eventType !== TransactionEventEnumType.Ended,
+          evseDatabaseId: evse ? evse.get('databaseId') : null,
+          ...value.transactionInfo,
+        },
+        { transaction: sequelizeTransaction },
+      );
+      const transaction = result[0];
+      const transactionDatabaseId = transaction.get('id');
+
+      const event = await TransactionEvent.create(
+        {
+          stationId,
+          transactionDatabaseId,
+          ...value,
+        },
+        { transaction: sequelizeTransaction },
+      );
+      if (event.meterValue && event.meterValue.length > 0) {
+        await Promise.all(
+          event.meterValue.map(async (meterValue) => {
+            await MeterValue.create(
+              {
+                transactionEventId: event.get('id'),
+                transactionDatabaseId: transactionDatabaseId,
+                ...meterValue,
+              },
+              { transaction: sequelizeTransaction },
+            );
+            this.meterValue.emit('created', [meterValue]);
+          }),
+        );
+      }
+      await event.reload({ include: [MeterValue] });
+      this.emit('created', [event]);
+      await transaction.reload({ include: [TransactionEvent, MeterValue] });
+      if (result[1]) {
+        this.transaction.emit('created', [transaction]);
+      } else {
+        this.transaction.emit('updated', [transaction]);
+      }
+      return transaction;
     });
 
-    [transaction] = await this.transaction.upsert(transaction);
-
-    const transactionDatabaseId = transaction.get('id');
-    const event = TransactionEvent.build(
-      {
-        stationId,
-        transactionDatabaseId,
-        ...value,
-      },
-      { include: [MeterValue] },
-    );
-    event.meterValue?.forEach((meterValue) => (meterValue.transactionDatabaseId = transactionDatabaseId));
-    await super.create(event);
     return transaction;
   }
 
@@ -126,7 +154,8 @@ export class TransactionEventRepository extends SequelizeRepository<TransactionE
   }
 
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]> {
-    return this.meterValue.readAllByQuery({
+    return this.meterValue
+      .readAllByQuery({
         where: { transactionDatabaseId: transactionDataBaseId },
       })
       .then((row) => row as MeterValue[]);

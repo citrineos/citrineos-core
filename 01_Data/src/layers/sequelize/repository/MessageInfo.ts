@@ -5,9 +5,16 @@
 import { SequelizeRepository } from './Base';
 import { MessageInfo } from '../model/MessageInfo';
 import { IMessageInfoRepository } from '../../../interfaces';
-import { MessageInfoType } from '@citrineos/base';
+import { MessageInfoType, SystemConfig } from '@citrineos/base';
+import { Sequelize } from 'sequelize-typescript';
+import { Logger, ILogObj } from 'tslog';
 
 export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageInfo> implements IMessageInfoRepository {
+
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = MessageInfo.MODEL_NAME, sequelizeInstance?: Sequelize) {
+    super(config, namespace, logger, sequelizeInstance);
+  }
+
   async deactivateAllByStationId(stationId: string): Promise<void> {
     await this.updateAllByQuery(
       {

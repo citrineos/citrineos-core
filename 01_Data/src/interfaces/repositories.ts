@@ -13,7 +13,7 @@ import {
   type EventDataType,
   type EVSEType,
   type GetVariableResultType,
-  type ICrudRepository,
+  type CrudRepository,
   type IdTokenType,
   type MonitoringDataType,
   type RegistrationStatusEnumType,
@@ -39,7 +39,7 @@ import { Subscription } from '../layers/sequelize/model/Subscription';
 import { Tariff } from '../layers/sequelize/model/Tariff';
 import { TariffQueryString } from './queries/Tariff';
 
-export interface IAuthorizationRepository extends ICrudRepository<AuthorizationData> {
+export interface IAuthorizationRepository extends CrudRepository<AuthorizationData> {
   createOrUpdateByQuery: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
   updateRestrictionsByQuery: (value: AuthorizationRestrictions, query: AuthorizationQuerystring) => Promise<Authorization[]>;
   readAllByQuery: (query: AuthorizationQuerystring) => Promise<Authorization[]>;
@@ -50,7 +50,7 @@ export interface IAuthorizationRepository extends ICrudRepository<AuthorizationD
 /**
  * Key is StationId
  */
-export interface IBootRepository extends ICrudRepository<BootConfig> {
+export interface IBootRepository extends CrudRepository<BootConfig> {
   createOrUpdateByKey: (value: BootConfig, key: string) => Promise<Boot | undefined>;
   updateStatusByKey: (status: RegistrationStatusEnumType, statusInfo: StatusInfoType | undefined, key: string) => Promise<Boot | undefined>;
   updateLastBootTimeByKey: (lastBootTime: string, key: string) => Promise<Boot | undefined>;
@@ -59,36 +59,36 @@ export interface IBootRepository extends ICrudRepository<BootConfig> {
   deleteByKey: (key: string) => Promise<Boot | undefined>;
 }
 
-export interface IDeviceModelRepository extends ICrudRepository<VariableAttributeType> {
+export interface IDeviceModelRepository extends CrudRepository<VariableAttributeType> {
   createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]>;
   createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string): Promise<VariableAttribute[]>;
   createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string): Promise<VariableAttribute[]>;
   updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined>;
   readAllSetVariableByStationId(stationId: string): Promise<SetVariableDataType[]>;
   readAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
-  existsByQuery(query: VariableAttributeQuerystring): Promise<boolean>;
-  deleteAllByQuery(query: VariableAttributeQuerystring): Promise<number>;
+  existByQuery(query: VariableAttributeQuerystring): Promise<number>;
+  deleteAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
   findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | null, Variable | null]>;
   findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component>;
 }
 
-export interface ILocationRepository extends ICrudRepository<Location> {
+export interface ILocationRepository extends CrudRepository<Location> {
   readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
 }
 
-export interface ISecurityEventRepository extends ICrudRepository<SecurityEvent> {
+export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {
   createByStationId: (value: SecurityEventNotificationRequest, stationId: string) => Promise<SecurityEvent>;
   readByStationIdAndTimestamps: (stationId: string, from?: Date, to?: Date) => Promise<SecurityEvent[]>;
   deleteByKey: (key: string) => Promise<SecurityEvent | undefined>;
 }
 
-export interface ISubscriptionRepository extends ICrudRepository<Subscription> {
+export interface ISubscriptionRepository extends CrudRepository<Subscription> {
   create(value: Subscription): Promise<Subscription>;
   readAllByStationId(stationId: string): Promise<Subscription[]>;
   deleteByKey(key: string): Promise<Subscription | undefined>;
 }
 
-export interface ITransactionEventRepository extends ICrudRepository<TransactionEventRequest> {
+export interface ITransactionEventRepository extends CrudRepository<TransactionEventRequest> {
   createOrUpdateTransactionByTransactionEventAndStationId(value: TransactionEventRequest, stationId: string): Promise<Transaction>;
   readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]>;
   readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
@@ -97,7 +97,7 @@ export interface ITransactionEventRepository extends ICrudRepository<Transaction
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
 }
 
-export interface IVariableMonitoringRepository extends ICrudRepository<VariableMonitoringType> {
+export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoringType> {
   createOrUpdateByMonitoringDataTypeAndStationId(value: MonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring[]>;
   createOrUpdateBySetMonitoringDataTypeAndStationId(value: SetMonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring>;
   rejectAllVariableMonitoringsByStationId(action: CallAction, stationId: string): Promise<void>;
@@ -106,12 +106,12 @@ export interface IVariableMonitoringRepository extends ICrudRepository<VariableM
   createEventDatumByComponentIdAndVariableIdAndStationId(event: EventDataType, componentId: string, variableId: string, stationId: string): Promise<EventData>;
 }
 
-export interface IMessageInfoRepository extends ICrudRepository<MessageInfoType> {
+export interface IMessageInfoRepository extends CrudRepository<MessageInfoType> {
   deactivateAllByStationId(stationId: string): Promise<void>;
   createOrUpdateByMessageInfoTypeAndStationId(value: MessageInfoType, stationId: string, componentId?: number): Promise<MessageInfo>;
 }
 
-export interface ITariffRepository extends ICrudRepository<Tariff> {
+export interface ITariffRepository extends CrudRepository<Tariff> {
   findByStationId(stationId: string): Promise<Tariff | null>;
   readAllByQuery(query: TariffQueryString): Promise<Tariff[]>;
   deleteAllByQuery(query: TariffQueryString): Promise<Tariff[]>;

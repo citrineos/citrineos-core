@@ -114,7 +114,7 @@ export class CertificatesModule extends AbstractModule {
 
     this._deviceModelRepository =
       deviceModelRepository ||
-      new sequelize.DeviceModelRepository(config, logger);
+      new sequelize.SequelizeDeviceModelRepository(config, logger);
 
     this._config.util.networkConnection.websocketServers.forEach((server) => {
       if (server.securityProfile === 3) {

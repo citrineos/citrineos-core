@@ -14,9 +14,9 @@ import { Sequelize } from 'sequelize-typescript';
 export class SequelizeBootRepository extends SequelizeRepository<Boot> implements IBootRepository {
   variableAttributes: CrudRepository<VariableAttribute>;
 
-  constructor(config: SystemConfig, namespace: string, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, variableAttributes?: CrudRepository<VariableAttribute>) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = Boot.MODEL_NAME, sequelizeInstance?: Sequelize, variableAttributes?: CrudRepository<VariableAttribute>) {
     super(config, namespace, logger, sequelizeInstance);
-    this.variableAttributes = variableAttributes ? variableAttributes : new SequelizeVariableAttributeRepository(config, namespace, logger, sequelizeInstance);
+    this.variableAttributes = variableAttributes ? variableAttributes : new SequelizeRepository<VariableAttribute>(config, VariableAttribute.MODEL_NAME, logger, sequelizeInstance);
   }
 
   async createOrUpdateByKey(value: BootConfig, key: string): Promise<Boot | undefined> {

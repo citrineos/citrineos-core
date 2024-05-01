@@ -3,13 +3,20 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type SecurityEventNotificationRequest } from '@citrineos/base';
+import { SystemConfig, type SecurityEventNotificationRequest } from '@citrineos/base';
 import { SecurityEvent } from '../model/SecurityEvent';
 import { SequelizeRepository } from './Base';
 import { Op } from 'sequelize';
 import { type ISecurityEventRepository } from '../../../interfaces/repositories';
+import { Sequelize } from 'sequelize-typescript';
+import { Logger, ILogObj } from 'tslog';
 
-export class SecurityEventRepository extends SequelizeRepository<SecurityEvent> implements ISecurityEventRepository {
+export class SequelizeSecurityEventRepository extends SequelizeRepository<SecurityEvent> implements ISecurityEventRepository {
+
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = SecurityEvent.MODEL_NAME, sequelizeInstance?: Sequelize) {
+    super(config, namespace, logger, sequelizeInstance);
+  }
+
   async createByStationId(value: SecurityEventNotificationRequest, stationId: string): Promise<SecurityEvent> {
     return await this.create(
       SecurityEvent.build({

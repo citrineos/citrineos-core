@@ -6,7 +6,7 @@ import { SequelizeRepository } from './Base';
 import { ITariffRepository, TariffQueryString } from '../../../interfaces';
 import { Tariff } from '../model/Tariff';
 
-export class TariffRepository extends SequelizeRepository<Tariff> implements ITariffRepository {
+export class SequelizeTariffRepository extends SequelizeRepository<Tariff> implements ITariffRepository {
   async findByStationId(stationId: string): Promise<Tariff | null> {
     return super.readAllByQuery({
       where: {

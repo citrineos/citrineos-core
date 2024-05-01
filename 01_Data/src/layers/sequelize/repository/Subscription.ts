@@ -3,10 +3,18 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
+import { Sequelize } from 'sequelize-typescript';
 import { SequelizeRepository, Subscription } from '..';
 import { ISubscriptionRepository } from '../../..';
+import { SystemConfig } from '@citrineos/base';
+import { Logger, ILogObj } from 'tslog';
 
-export class SubscriptionRepository extends SequelizeRepository<Subscription> implements ISubscriptionRepository {
+export class SequelizeSubscriptionRepository extends SequelizeRepository<Subscription> implements ISubscriptionRepository {
+
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = Subscription.MODEL_NAME, sequelizeInstance?: Sequelize) {
+    super(config, namespace, logger, sequelizeInstance);
+  }
+
   /**
    * Creates a new {@link Subscription} in the database.
    * Input is assumed to not have an id, and id will be removed if present.

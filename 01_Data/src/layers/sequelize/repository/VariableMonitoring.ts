@@ -10,7 +10,7 @@ import { Component, Variable } from '../model/DeviceModel';
 import { Sequelize } from 'sequelize-typescript';
 import { Logger, ILogObj } from 'tslog';
 
-export class VariableMonitoringRepository extends SequelizeRepository<VariableMonitoring> implements IVariableMonitoringRepository {
+export class SequelizeVariableMonitoringRepository extends SequelizeRepository<VariableMonitoring> implements IVariableMonitoringRepository {
   
   eventData: CrudRepository<EventData>;
   variableMonitoringStatus: CrudRepository<VariableMonitoringStatus>;

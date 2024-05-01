@@ -16,11 +16,19 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
   idTokenInfo: CrudRepository<IdTokenInfo>;
   additionalInfo: CrudRepository<AdditionalInfo>;
 
-  constructor(config: SystemConfig, namespace: string, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, idToken?: CrudRepository<IdToken>, idTokenInfo?: CrudRepository<IdTokenInfo>, additionalInfo: CrudRepository<AdditionalInfo>) {
+  constructor(
+    config: SystemConfig,
+    logger?: Logger<ILogObj>,
+    namespace = Authorization.MODEL_NAME,
+    sequelizeInstance?: Sequelize,
+    idToken?: CrudRepository<IdToken>,
+    idTokenInfo?: CrudRepository<IdTokenInfo>,
+    additionalInfo?: CrudRepository<AdditionalInfo>,
+  ) {
     super(config, namespace, logger, sequelizeInstance);
-    this.idToken = idToken ? idToken : new SequelizeRepository<IdToken>(config, namespace, logger, sequelizeInstance);
-    this.idTokenInfo = idTokenInfo ? idTokenInfo : new SequelizeRepository<IdTokenInfo>(config, namespace, logger, sequelizeInstance);
-    this.additionalInfo = additionalInfo ? additionalInfo : new SequelizeRepository<AdditionalInfo>(config, namespace, logger, sequelizeInstance);
+    this.idToken = idToken ? idToken : new SequelizeRepository<IdToken>(config, IdToken.MODEL_NAME, logger, sequelizeInstance);
+    this.idTokenInfo = idTokenInfo ? idTokenInfo : new SequelizeRepository<IdTokenInfo>(config, IdTokenInfo.MODEL_NAME, logger, sequelizeInstance);
+    this.additionalInfo = additionalInfo ? additionalInfo : new SequelizeRepository<AdditionalInfo>(config, AdditionalInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 
   async createOrUpdateByQuery(value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined> {
@@ -171,10 +179,12 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
       value.additionalInfo?.forEach((valueAdditionalInfo) => {
         // Create additionalInfo not in savedIdTokenModel.additionalInfo
         if (!savedIdTokenModel?.additionalInfo?.some((savedAdditionalInfo) => savedAdditionalInfo.additionalIdToken === valueAdditionalInfo.additionalIdToken && savedAdditionalInfo.type === valueAdditionalInfo.type)) {
-          this.additionalInfo.create(AdditionalInfo.build({
-            idTokenId: savedIdTokenModel.id,
-            ...valueAdditionalInfo,
-          }));
+          this.additionalInfo.create(
+            AdditionalInfo.build({
+              idTokenId: savedIdTokenModel.id,
+              ...valueAdditionalInfo,
+            }),
+          );
         }
       });
       return await this.idToken.create(savedIdTokenModel);
