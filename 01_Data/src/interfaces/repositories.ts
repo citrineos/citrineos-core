@@ -102,7 +102,7 @@ export interface IVariableMonitoringRepository extends ICrudRepository<VariableM
   createOrUpdateBySetMonitoringDataTypeAndStationId(value: SetMonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring>;
   rejectAllVariableMonitoringsByStationId(action: CallAction, stationId: string): Promise<void>;
   rejectVariableMonitoringByIdAndStationId(action: CallAction, id: number, stationId: string): Promise<void>;
-  updateResultByStationId(result: SetMonitoringResultType, stationId: string): Promise<VariableMonitoring | undefined>;
+  updateResultByStationId(result: SetMonitoringResultType, stationId: string): Promise<VariableMonitoring>;
   createEventDatumByComponentIdAndVariableIdAndStationId(event: EventDataType, componentId: string, variableId: string, stationId: string): Promise<EventData>;
 }
 
