@@ -82,7 +82,11 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('created', [result]);
     return result;
   }
-  protected abstract _createByKey(value: T, key: string, namespace?: string): Promise<T>;
+  protected abstract _createByKey(
+    value: T,
+    key: string,
+    namespace?: string,
+  ): Promise<T>;
 
   /**
    * Reads a value from storage based on the given key.
@@ -101,6 +105,25 @@ export abstract class CrudRepository<T> extends EventEmitter {
    * @returns A promise that resolves to the values associated with the query.
    */
   abstract readAllByQuery(query: object, namespace?: string): Promise<T[]>;
+
+  /**
+   * Reads the first matching value from storage based on the given query, or creates a matching value if none exists.
+   *
+   * @param query - The query to use.
+   * @param namespace - Optional namespace for the query.
+   * @returns A promise that resolves to an array where the first element is the value associated with the query, either an existing value or the newly created value, and the second element is a boolean indicating whether the entry was created.
+   */
+  public async readOrCreateByQuery(query: object, namespace?: string): Promise<[T, boolean]> {
+    const result = await this._readOrCreateByQuery(query, namespace);
+    if (result[1]) {
+      this.emit('created', [result[0]]);
+    }
+    return result;
+  }
+  protected abstract _readOrCreateByQuery(
+    query: object,
+    namespace?: string,
+  ): Promise<[T, boolean]>;
 
   /**
    * Updates the value associated with the given key in the specified namespace.
@@ -167,7 +190,10 @@ export abstract class CrudRepository<T> extends EventEmitter {
     }
     return result;
   }
-  protected abstract _upsert(value: T, namespace?: string): Promise<[T, boolean]>;
+  protected abstract _upsert(
+    value: T,
+    namespace?: string,
+  ): Promise<[T, boolean]>;
 
   /**
    * Deletes a key from the specified namespace.
@@ -206,7 +232,10 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('deleted', result);
     return result;
   }
-  protected abstract _deleteAllByQuery(query: object, namespace?: string): Promise<T[]>;
+  protected abstract _deleteAllByQuery(
+    query: object,
+    namespace?: string,
+  ): Promise<T[]>;
 
   /**
    * Checks if a key exists in the specified namespace.

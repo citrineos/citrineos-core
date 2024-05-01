@@ -36,6 +36,10 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     return await this.s.models[this.namespace].findAll(query as FindOptions<any>).then((row) => row as T[]);
   }
 
+  protected async _readOrCreateByQuery(query: object): Promise<[T, boolean]> {
+    return await this.s.models[this.namespace].findOrCreate(query as FindOptions<any>).then((result) => [result[0] as T, result[1]]);;
+  }
+
   protected async _updateByKey(value: Partial<T>, key: string): Promise<T | undefined> {
     return await this._updateAllByQuery(value, { where: { id: key } }).then((rows) => (rows.length === 1 ? rows[0] : undefined));
   }
