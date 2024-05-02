@@ -185,6 +185,7 @@ export class CertificatesModuleApi
     let tlsKey: string;
     let tlsCertificateChain: string;
     let rootCA: string | undefined;
+    let subCAKey: string | undefined;
     if (certRequest.contentType === ContentType.FileId) {
       tlsKey = (
         await this._fileAccess.getFile(certRequest.privateKey)
@@ -197,11 +198,19 @@ export class CertificatesModuleApi
           await this._fileAccess.getFile(certRequest.rootCA)
         ).toString();
       }
-    } else if (certRequest.contentType === ContentType.EncodedRawContent) {
+      if (certRequest.subCAKey) {
+        subCAKey = (
+          await this._fileAccess.getFile(certRequest.subCAKey)
+        ).toString();
+      }
+    } else if (certRequest.contentType === ContentType.EncodedPem) {
       tlsKey = this._decode(certRequest.privateKey);
       tlsCertificateChain = this._decode(certRequest.certificateChain);
       if (certRequest.rootCA) {
         rootCA = this._decode(certRequest.rootCA);
+      }
+      if (certRequest.subCAKey) {
+        subCAKey = this._decode(certRequest.subCAKey);
       }
     } else {
       throw new Error(
@@ -214,6 +223,7 @@ export class CertificatesModuleApi
       serverId,
       tlsKey,
       tlsCertificateChain,
+      subCAKey,
       rootCA,
     );
   }
@@ -257,10 +267,9 @@ export class CertificatesModuleApi
       oldFilePath: targetFilePath,
       newFilePath: targetFilePath.concat('.backup'),
     });
-
     // Write new content using target path
     fs.writeFileSync(targetFilePath, newContent);
-
+    this._logger.debug(`Backed up and overwrote file ${targetFilePath}`);
     return rollbackFiles;
   }
 
@@ -270,7 +279,7 @@ export class CertificatesModuleApi
     tlsKey: string,
     tlsCertificateChain: string,
     subCAKey?: string,
-    rootCA?: string | undefined,
+    rootCA?: string,
   ) {
     let rollbackFiles: RollBackFile[] = [];
 
@@ -296,9 +305,9 @@ export class CertificatesModuleApi
             rollbackFiles,
           );
         }
-        if (serverConfig.rootCaCertificateFilePath && rootCA) {
+        if (serverConfig.rootCACertificateFilePath && rootCA) {
           rollbackFiles = this._replaceFile(
-            serverConfig.rootCaCertificateFilePath,
+            serverConfig.rootCACertificateFilePath,
             rootCA,
             rollbackFiles,
           );
@@ -321,7 +330,7 @@ export class CertificatesModuleApi
         );
 
         this._logger.info(
-          `Updated CSMS certificate for server ${serverId} successfully.`,
+          `Updated TLS certificate for server ${serverId} successfully.`,
         );
       } catch (error) {
         this._logger.error(

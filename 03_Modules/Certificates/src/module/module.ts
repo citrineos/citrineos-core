@@ -173,7 +173,7 @@ export class CertificatesModule extends AbstractModule {
     const stationId: string = message.context.stationId;
     // when parsing pem string, node forge expect a csr
     // which has header and footer without new line characters.
-    const csrString: string = (message.payload.csr).replace(/\n/g, '');
+    const csrString: string = message.payload.csr.replace(/\n/g, '');
     const certificateType: CertificateSigningUseEnumType | undefined =
       message.payload.certificateType;
 
@@ -300,7 +300,9 @@ export class CertificatesModule extends AbstractModule {
       if (!organizationName || organizationName.length < 1) {
         throw new Error('Expected organizationName not found in DB');
       }
-      const organizationNameAttr = csr.subject.attributes.find(attr => attr.shortName === 'O');
+      const organizationNameAttr = csr.subject.attributes.find(
+        (attr) => attr.shortName === 'O',
+      );
       if (!organizationNameAttr) {
         throw new Error('organizationName attribute not found in CSR');
       }

@@ -128,7 +128,9 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     )) as string;
 
     if (!this._securityCertChainKeyMap.has(clientConnection)) {
-      throw new Error(`Cannot find tls certificate chain and sub CA key with serverId  ${clientConnection}`);
+      throw new Error(
+        `Cannot find tls certificate chain and sub CA key with serverId  ${clientConnection}`,
+      );
     }
     const [certChain, subCAPrivateKey] = this._securityCertChainKeyMap.get(
       clientConnection,
@@ -179,7 +181,9 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     }
 
     // Remove leading new line and add "-----END CERTIFICATE-----" back because split removes it
-    return certsArray[1].replace(/^\n+/, '').concat('-----END CERTIFICATE-----');
+    return certsArray[1]
+      .replace(/^\n+/, '')
+      .concat('-----END CERTIFICATE-----');
   }
 
   /**
