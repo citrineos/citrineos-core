@@ -286,7 +286,7 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
             },
           }
         : Evse;
-    const attributeType = (queryParams.type && (queryParams.type).toUpperCase() === 'NULL') ? null : queryParams.type;
+    const attributeType = queryParams.type && queryParams.type.toUpperCase() === 'NULL' ? null : queryParams.type;
     return {
       where: {
         ...(queryParams.stationId ? { stationId: queryParams.stationId } : {}),
@@ -312,7 +312,7 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
             ...(queryParams.variable_instance ? { instance: queryParams.variable_instance } : {}),
           },
           include: [VariableCharacteristics],
-        }
+        },
       ],
     };
   }
