@@ -32,8 +32,9 @@ jobs:
 
       - name: Get logs for all containers
         if: failure()
-        run: docker container ls -aq | xargs -I {} docker logs {}
-
+        run: | 
+          docker ps -a
+          docker container ls -aq | xargs -I {} docker logs {}
 
       - name: Clean up
         run: docker-compose down
