@@ -2,19 +2,21 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   HttpMethod,
+  Namespace,
   SystemConfig,
 } from '@citrineos/base';
 import { OcpiModule } from './module';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { OcpiResponse } from '../../model/OcpiResponse';
-import { AuthorizationHeaderSchema } from './schema/authorizationHeaderSchema';
+import { AuthorizationHeader } from './schema/authorization.header.schema';
 import { Credentials } from '../../model/Credentials';
 import { CredentialsService } from './service/credentials.service';
-import { VersionIdParamSchema } from './versions.api';
 import { CredentialsRepository } from './repository/credentials.repository';
 import { VersionRepository } from './repository/version.repository';
-import {GlobalExceptionHandler} from './exceptions/global.exception.handler';
+import { CredentialsExceptionHandler } from './exceptions/credentials.exception.handler';
+import { VersionIdParam } from './schema/version.id.param.schema';
+import { targetConstructorToSchema } from 'class-validator-jsonschema';
 
 export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
   private credentialsService: CredentialsService;
@@ -36,11 +38,14 @@ export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
       versionRepository || new VersionRepository(config, this._logger);
 
     this.credentialsService = new CredentialsService(
+      this._logger,
       finalCredentialsRepository,
       finalVersionRepository,
     );
 
-    this.initFastifyExceptionHandler(new GlobalExceptionHandler(this._logger));
+    this.initFastifyExceptionHandler(
+      new CredentialsExceptionHandler(this._logger),
+    );
   }
 
   @AsDataEndpoint(
@@ -48,14 +53,14 @@ export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Get,
     undefined,
     undefined,
-    VersionIdParamSchema,
-    AuthorizationHeaderSchema,
-    OcpiResponse<Credentials>,
+    targetConstructorToSchema(VersionIdParam),
+    targetConstructorToSchema(AuthorizationHeader),
+    targetConstructorToSchema(OcpiResponse<Credentials>),
   )
   async getCredentials(
     request: FastifyRequest<{
-      Params: VersionIdParamSchema;
-      Headers: AuthorizationHeaderSchema;
+      Params: VersionIdParam;
+      Headers: AuthorizationHeader;
     }>,
   ): Promise<OcpiResponse<Credentials>> {
     return this.credentialsService?.getCredentials(request);
@@ -65,15 +70,15 @@ export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
     '/ocpi/:versionId/credentials',
     HttpMethod.Post,
     undefined,
-    Credentials,
-    VersionIdParamSchema,
-    AuthorizationHeaderSchema,
-    OcpiResponse<Credentials>,
+    targetConstructorToSchema(Credentials),
+    targetConstructorToSchema(VersionIdParam),
+    targetConstructorToSchema(AuthorizationHeader),
+    targetConstructorToSchema(OcpiResponse<Credentials>),
   )
   async postCredentials(
     request: FastifyRequest<{
-      Params: VersionIdParamSchema;
-      Headers: AuthorizationHeaderSchema;
+      Params: VersionIdParam;
+      Headers: AuthorizationHeader;
       Body: Credentials;
     }>,
   ): Promise<OcpiResponse<Credentials>> {
@@ -84,15 +89,15 @@ export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
     '/ocpi/:versionId/credentials',
     HttpMethod.Put,
     undefined,
-    Credentials,
-    VersionIdParamSchema,
-    AuthorizationHeaderSchema,
-    OcpiResponse<Credentials>,
+    targetConstructorToSchema(Credentials),
+    targetConstructorToSchema(VersionIdParam),
+    targetConstructorToSchema(AuthorizationHeader),
+    targetConstructorToSchema(OcpiResponse<Credentials>),
   )
   async putCredentials(
     request: FastifyRequest<{
-      Params: VersionIdParamSchema;
-      Headers: AuthorizationHeaderSchema;
+      Params: VersionIdParam;
+      Headers: AuthorizationHeader;
       Body: Credentials;
     }>,
   ): Promise<OcpiResponse<Credentials>> {
@@ -104,16 +109,26 @@ export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Delete,
     undefined,
     undefined,
-    VersionIdParamSchema,
-    AuthorizationHeaderSchema,
-    OcpiResponse<void>,
+    targetConstructorToSchema(VersionIdParam),
+    targetConstructorToSchema(AuthorizationHeader),
+    targetConstructorToSchema(OcpiResponse<void>),
   )
   async deleteCredentials(
     request: FastifyRequest<{
-      Params: VersionIdParamSchema;
-      Headers: AuthorizationHeaderSchema;
+      Params: VersionIdParam;
+      Headers: AuthorizationHeader;
     }>,
   ): Promise<OcpiResponse<void>> {
     return this.credentialsService?.deleteCredentials(request);
+  }
+
+  /**
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   *
+   * @param {CallAction} input - The input {@link Namespace}.
+   * @return {string} - The generated URL path.
+   */
+  protected _toDataPath(input: Namespace | string): string {
+    return super._toDataPath(input, 'credentials');
   }
 }

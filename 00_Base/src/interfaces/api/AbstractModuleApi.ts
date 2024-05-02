@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import {FastifyInstance, FastifyReply, FastifyRequest} from 'fastify';
 import 'reflect-metadata';
-import { ILogObj, Logger } from 'tslog';
+import {ILogObj, Logger} from 'tslog';
 import {
   ExceptionHandler,
   HttpMethod,
@@ -14,16 +14,13 @@ import {
   METADATA_DATA_ENDPOINTS,
   METADATA_MESSAGE_ENDPOINTS,
 } from '.';
-import { OcppRequest, OcppResponse, SystemConfig } from '../..';
-import { Namespace } from '../../ocpp/persistence';
-import { CallAction } from '../../ocpp/rpc/message';
-import { IMessageConfirmation } from '../messages';
-import { IModule } from '../modules';
-import {
-  IMessageQuerystring,
-  IMessageQuerystringSchema,
-} from './MessageQuerystring';
-import { IModuleApi } from './ModuleApi';
+import {OcppRequest, OcppResponse, SystemConfig} from '../..';
+import {Namespace} from '../../ocpp/persistence';
+import {CallAction} from '../../ocpp/rpc/message';
+import {IMessageConfirmation} from '../messages';
+import {IModule} from '../modules';
+import {IMessageQuerystring, IMessageQuerystringSchema, } from './MessageQuerystring';
+import {IModuleApi} from './ModuleApi';
 
 /**
  * Abstract module api class implementation.
@@ -191,7 +188,9 @@ export abstract class AbstractModuleApi<T extends IModule>
       schema['headers'] = headerSchema;
     }
     if (responseSchema) {
-      schema['response'] = responseSchema;
+      schema['response'] = {
+        200: responseSchema,
+      };
     }
 
     /**
@@ -251,12 +250,11 @@ export abstract class AbstractModuleApi<T extends IModule>
    * @param {Namespace} input - The {@link Namespace} to convert to a URL path.
    * @returns {string} - String representation of URL path.
    */
-  protected _toDataPath(input: Namespace | string, prefix?: string): string {
+  protected _toDataPath(input: Namespace | string, prefix = ''): string {
     if (!Object.values(Namespace).includes(input as Namespace)) {
       return input;
     } else {
-      const endpointPrefix = prefix || '';
-      return `/data${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
+      return `/data${!prefix.startsWith('/') ? '/' : ''}${prefix}${!prefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
     }
   }
 

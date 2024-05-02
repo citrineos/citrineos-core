@@ -1,11 +1,11 @@
-import { IsDate, IsInt, IsOptional } from 'class-validator';
+import { IsDateString, IsInt, IsOptional } from 'class-validator';
 
-export class FromToOffsetLimitQuerySchema {
-  @IsDate()
+export class FromToOffsetLimitQuery {
+  @IsDateString()
   @IsOptional()
   date_from?: Date;
 
-  @IsDate()
+  @IsDateString()
   @IsOptional()
   date_to?: Date;
 

@@ -3,7 +3,8 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AsDataEndpoint, HttpMethod } from '@citrineos/base';
+import {AsDataEndpoint, HttpMethod} from '@citrineos/base';
+import {targetConstructorToSchema} from 'class-validator-jsonschema';
 
 /**
  * Decorator for use in module API class to expose methods as REST data endpoints.
@@ -26,6 +27,9 @@ export const AsOcpiEndpoint = function (
   headerSchema?: object,
   responseSchema?: object,
 ) {
+  if (headerSchema === null || headerSchema === undefined) {
+    headerSchema = {};
+  }
   // @ts-expect-error setting header
   headerSchema['authorization'] = { type: 'string', required: true }; // String authorization,
   // @ts-expect-error setting header
@@ -43,10 +47,12 @@ export const AsOcpiEndpoint = function (
   return AsDataEndpoint(
     url,
     method,
-    querySchema,
-    bodySchema,
-    paramSchema,
-    headerSchema,
-    responseSchema,
+    querySchema ? targetConstructorToSchema(querySchema as any) : undefined,
+    bodySchema ? targetConstructorToSchema(bodySchema as any) : undefined,
+    paramSchema ? targetConstructorToSchema(paramSchema as any) : undefined,
+    headerSchema ? targetConstructorToSchema(headerSchema as any) : undefined,
+    responseSchema
+      ? targetConstructorToSchema(responseSchema as any)
+      : undefined,
   );
 };

@@ -2,6 +2,7 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   HttpMethod,
+  Namespace,
   SystemConfig,
 } from '@citrineos/base';
 import { OcpiModule } from './module';
@@ -9,18 +10,13 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { OcpiResponse } from '../../model/OcpiResponse';
 import { VersionDetailsDTO, VersionDTO } from '../../model/Version';
-import { AuthorizationHeaderSchema } from './schema/authorizationHeaderSchema';
-import { IsEnum, IsNotEmpty } from 'class-validator';
-import { VersionNumber } from '../../model/VersionNumber';
+import { AuthorizationHeader } from './schema/authorization.header.schema';
 import { VersionService } from './service/version.service';
 import { CredentialsRepository } from './repository/credentials.repository';
 import { VersionRepository } from './repository/version.repository';
-
-export class VersionIdParamSchema {
-  @IsEnum(VersionNumber)
-  @IsNotEmpty()
-  versionId!: VersionNumber;
-}
+import { VersionsExceptionHandler } from './exceptions/versions.exception.handler';
+import { VersionIdParam } from './schema/version.id.param.schema';
+import { targetConstructorToSchema } from 'class-validator-jsonschema';
 
 export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
   private versionService?: VersionService;
@@ -45,6 +41,10 @@ export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
       finalCredentialsRepository,
       finalVersionRepository,
     );
+
+    this.initFastifyExceptionHandler(
+      new VersionsExceptionHandler(this._logger),
+    );
   }
 
   @AsDataEndpoint(
@@ -53,12 +53,12 @@ export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     undefined,
-    AuthorizationHeaderSchema,
-    OcpiResponse<VersionDTO[]>, // todo proper pageable object?
+    targetConstructorToSchema(AuthorizationHeader),
+    targetConstructorToSchema(OcpiResponse<VersionDTO[]>), // todo proper pageable object?
   )
   async getVersions(
     request: FastifyRequest<{
-      Headers: AuthorizationHeaderSchema;
+      Headers: AuthorizationHeader;
     }>,
   ): Promise<OcpiResponse<VersionDTO[]>> {
     return this.versionService!.getVersions(request);
@@ -69,16 +69,26 @@ export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Get,
     undefined,
     undefined,
-    VersionIdParamSchema,
-    AuthorizationHeaderSchema,
-    OcpiResponse<VersionDetailsDTO>,
+    targetConstructorToSchema(VersionIdParam),
+    targetConstructorToSchema(AuthorizationHeader),
+    targetConstructorToSchema(OcpiResponse<VersionDetailsDTO>),
   )
   async getVersion(
     request: FastifyRequest<{
-      Headers: AuthorizationHeaderSchema;
-      Params: VersionIdParamSchema;
+      Headers: AuthorizationHeader;
+      Params: VersionIdParam;
     }>,
   ): Promise<OcpiResponse<VersionDetailsDTO>> {
     return this.versionService!.getVersion(request);
+  }
+
+  /**
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   *
+   * @param {CallAction} input - The input {@link Namespace}.
+   * @return {string} - The generated URL path.
+   */
+  protected _toDataPath(input: Namespace | string): string {
+    return super._toDataPath(input, 'versions');
   }
 }

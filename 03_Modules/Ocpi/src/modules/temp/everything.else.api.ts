@@ -3,80 +3,36 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ILogObj, Logger } from 'tslog';
-import { OcpiModule } from './module';
-import { AbstractModuleApi, HttpMethod } from '@citrineos/base';
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { AsOcpiEndpoint } from '../../util/as.ocpi.endpoint';
-import { OcpiResponse } from '../../model/OcpiResponse';
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
-import { Connector } from '../../model/Connector';
-import { Evse } from '../../model/Evse';
-import { Session } from 'inspector';
-import { Tariff } from '../../model/Tariff';
-import { Token } from '../../model/Token';
-import { CommandResponse } from '../../model/CommandResponse';
-import { ActiveChargingProfileResult } from '../../model/ActiveChargingProfileResult';
-import { ActiveChargingProfile } from '../../model/ActiveChargingProfile';
-import { LocationReferences } from '../../model/LocationReferences';
-import { AuthorizationInfo } from '../../model/AuthorizationInfo';
-import { FromToOffsetLimitQuerySchema } from './schema/from.to.offset.limit.query.schema';
-import { VersionNumber } from '../../model/VersionNumber';
-import { Cdr } from '../../model/Cdr';
-
-export class VersionidParamSchema {
-  @IsEnum(VersionNumber)
-  @IsNotEmpty()
-  versionid!: VersionNumber;
-}
-
-export class PostRealTimeTokenAuthorizationParamSchema extends VersionidParamSchema {
-  @IsString()
-  @IsNotEmpty()
-  tokenUID!: string;
-}
-
-export class PostRealTimeTokenAuthorizationQuerySchema {
-  @IsString()
-  @IsNotEmpty()
-  type = 'RFID';
-}
-
-export class UidParamSchema extends VersionidParamSchema {
-  @IsString()
-  @IsNotEmpty()
-  uid!: string;
-}
-
-export class SessionIdParamSchema extends VersionidParamSchema {
-  @IsString()
-  @IsNotEmpty()
-  sessionId!: string;
-}
-
-export class CommandUidPathParamSchema extends UidParamSchema {
-  @IsString()
-  @IsNotEmpty()
-  command!: string;
-}
-
-export class LocationIdParamSchema extends VersionidParamSchema {
-  @IsString()
-  @IsNotEmpty()
-  locationID!: string;
-}
-
-export class LocationIdEveseUidParamSchema extends LocationIdParamSchema {
-  @IsString()
-  @IsNotEmpty()
-  evseUID!: string;
-}
-
-export class GetConnectorObjectFromDataOwnerParamSchema extends LocationIdEveseUidParamSchema {
-  @IsString()
-  @IsNotEmpty()
-  connectorID!: string;
-}
+import {ILogObj, Logger} from 'tslog';
+import {OcpiModule} from './module';
+import {AbstractModuleApi, HttpMethod, Namespace} from '@citrineos/base';
+import {FastifyInstance, FastifyRequest} from 'fastify';
+import {AsOcpiEndpoint} from '../../util/as.ocpi.endpoint';
+import {OcpiResponse} from '../../model/OcpiResponse';
+import {Connector} from '../../model/Connector';
+import {Evse} from '../../model/Evse';
+import {Session} from 'inspector';
+import {Tariff} from '../../model/Tariff';
+import {Token} from '../../model/Token';
+import {CommandResponse} from '../../model/CommandResponse';
+import {ActiveChargingProfileResult} from '../../model/ActiveChargingProfileResult';
+import {ActiveChargingProfile} from '../../model/ActiveChargingProfile';
+import {LocationReferences} from '../../model/LocationReferences';
+import {AuthorizationInfo} from '../../model/AuthorizationInfo';
+import {FromToOffsetLimitQuery} from './schema/from.to.offset.limit.query.schema';
+import {Cdr} from '../../model/Cdr';
+import {GlobalExceptionHandler} from './exceptions/global.exception.handler';
+import {
+  ConnectionIdEvseUidLocationIdVersionIdParam
+} from './schema/connection.id.evse.uid.location.id.version.id.param.schema';
+import {LocationIdEvseUidVersionIdParam} from './schema/location.id.evse.uid.version.id.param.schema';
+import {UidVersionIdParam} from './schema/uid.version.id.param.schema';
+import {VersionIdParam} from './schema/version.id.param.schema';
+import {LocationIdVersionIdParam} from './schema/location.id.version.id.param.schema';
+import {TokenTypeVersionIdParam} from './schema/token.type.version.id.param.schema';
+import {TokenUidVersionIdParam} from './schema/token.uid.version.param.schema';
+import {CommandVersionIdParam} from './schema/command.version.id.param.schema';
+import {SessionIdVersionIdParam} from './schema/session.id.version.id.param.schema';
 
 /**
  * Server API for the transaction module.
@@ -95,6 +51,8 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     logger?: Logger<ILogObj>,
   ) {
     super(ocpiModule, server, logger);
+
+    this.initFastifyExceptionHandler(new GlobalExceptionHandler(this._logger));
   }
 
   // ======================== CDRs ========================
@@ -103,13 +61,13 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Get,
     undefined,
     undefined,
-    UidParamSchema,
+    UidVersionIdParam,
     undefined,
     OcpiResponse<Cdr[]>, // todo proper pageable object
   )
   async getCdrPageFromDataOwner(
     _request: FastifyRequest<{
-      Params: UidParamSchema;
+      Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Cdr[]>> {
     return new Promise(() => {}); // TODO
@@ -118,16 +76,16 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   @AsOcpiEndpoint(
     '/ocpi/sender/:versionId/cdrs',
     HttpMethod.Get,
-    FromToOffsetLimitQuerySchema,
+    FromToOffsetLimitQuery,
     undefined,
-    VersionidParamSchema,
+    VersionIdParam,
     undefined,
     OcpiResponse<Cdr[]>, // todo proper pageable object?
   )
   async getCdrsFromDataOwner(
     _request: FastifyRequest<{
-      Params: VersionidParamSchema;
-      Querystring: FromToOffsetLimitQuerySchema;
+      Params: VersionIdParam;
+      Querystring: FromToOffsetLimitQuery;
     }>,
   ): Promise<OcpiResponse<Cdr[]>> {
     return new Promise(() => {}); // TODO
@@ -139,13 +97,13 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Get,
     undefined,
     undefined,
-    GetConnectorObjectFromDataOwnerParamSchema,
+    ConnectionIdEvseUidLocationIdVersionIdParam,
     undefined,
     OcpiResponse<Connector>,
   )
   async getConnectorObjectFromDataOwner(
     _request: FastifyRequest<{
-      Params: GetConnectorObjectFromDataOwnerParamSchema;
+      Params: ConnectionIdEvseUidLocationIdVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Connector>> {
     return new Promise(() => {}); // TODO
@@ -156,13 +114,13 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Get,
     undefined,
     undefined,
-    LocationIdEveseUidParamSchema,
+    LocationIdEvseUidVersionIdParam,
     undefined,
     OcpiResponse<Evse>,
   )
   async getEvseObjectFromDataOwner(
     _request: FastifyRequest<{
-      Params: LocationIdEveseUidParamSchema;
+      Params: LocationIdEvseUidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Evse>> {
     return new Promise(() => {}); // TODO
@@ -171,16 +129,16 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   @AsOcpiEndpoint(
     '/ocpi/sender/:versionId/locations',
     HttpMethod.Get,
-    FromToOffsetLimitQuerySchema,
+    FromToOffsetLimitQuery,
     undefined,
-    VersionidParamSchema,
+    VersionIdParam,
     undefined,
     OcpiResponse<Location[]>, // todo pageable
   )
   async getLocationListFromDataOwner(
     _request: FastifyRequest<{
-      Params: VersionidParamSchema;
-      Querystring: FromToOffsetLimitQuerySchema;
+      Params: VersionIdParam;
+      Querystring: FromToOffsetLimitQuery;
     }>,
   ): Promise<OcpiResponse<Location[]>> {
     return new Promise(() => {}); // TODO
@@ -191,13 +149,13 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Get,
     undefined,
     undefined,
-    LocationIdParamSchema,
+    LocationIdVersionIdParam,
     undefined,
     OcpiResponse<Location>,
   )
   async getLocationObjectFromDataOwner(
     _request: FastifyRequest<{
-      Params: LocationIdParamSchema;
+      Params: LocationIdVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Location>> {
     return new Promise(() => {}); // TODO
@@ -208,13 +166,13 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Get,
     undefined,
     undefined,
-    UidParamSchema,
+    UidVersionIdParam,
     undefined,
     OcpiResponse<Location[]>, // todo pageable
   )
   async getLocationPageFromDataOwner(
     _request: FastifyRequest<{
-      Params: UidParamSchema;
+      Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Location[]>> {
     return new Promise(() => {}); // TODO
@@ -224,16 +182,16 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   @AsOcpiEndpoint(
     '/ocpi/sender/:versionId/sessions',
     HttpMethod.Get,
-    FromToOffsetLimitQuerySchema,
+    FromToOffsetLimitQuery,
     undefined,
-    VersionidParamSchema,
+    VersionIdParam,
     undefined,
     OcpiResponse<Session[]>, // todo pageable?
   )
   async getSessionsFromDataOwner(
     _request: FastifyRequest<{
-      Params: VersionidParamSchema;
-      Querystring: FromToOffsetLimitQuerySchema;
+      Params: VersionIdParam;
+      Querystring: FromToOffsetLimitQuery;
     }>,
   ): Promise<OcpiResponse<Session[]>> {
     return new Promise(() => {}); // TODO
@@ -244,13 +202,13 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Get,
     undefined,
     undefined,
-    UidParamSchema,
+    UidVersionIdParam,
     undefined,
     OcpiResponse<Session[]>, // todo pageable?
   )
   async getSessionsPageFromDataOwner(
     _request: FastifyRequest<{
-      Params: UidParamSchema;
+      Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Session[]>> {
     return new Promise(() => {}); // TODO
@@ -260,16 +218,16 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   @AsOcpiEndpoint(
     '/ocpi/sender/:versionId/tariffs',
     HttpMethod.Get,
-    FromToOffsetLimitQuerySchema,
+    FromToOffsetLimitQuery,
     undefined,
-    VersionidParamSchema,
+    VersionIdParam,
     undefined,
     OcpiResponse<Tariff[]>, // todo pageable?
   )
   async getTariffsFromDataOwner(
     _request: FastifyRequest<{
-      Params: VersionidParamSchema;
-      Querystring: FromToOffsetLimitQuerySchema;
+      Params: VersionIdParam;
+      Querystring: FromToOffsetLimitQuery;
     }>,
   ): Promise<OcpiResponse<Tariff[]>> {
     return new Promise(() => {}); // TODO
@@ -280,13 +238,13 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Get,
     undefined,
     undefined,
-    UidParamSchema,
+    UidVersionIdParam,
     undefined,
     OcpiResponse<Tariff[]>, // todo pageable?
   )
   async getTariffsPageFromDataOwner(
     _request: FastifyRequest<{
-      Params: UidParamSchema;
+      Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Tariff[]>> {
     return new Promise(() => {}); // TODO
@@ -296,16 +254,16 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   @AsOcpiEndpoint(
     '/ocpi/sender/:versionId/tokens',
     HttpMethod.Get,
-    FromToOffsetLimitQuerySchema,
+    FromToOffsetLimitQuery,
     undefined,
-    VersionidParamSchema,
+    VersionIdParam,
     undefined,
     OcpiResponse<Token[]>, // todo pageable?
   )
   async getTokensFromDataOwner(
     _request: FastifyRequest<{
-      Params: VersionidParamSchema;
-      Querystring: FromToOffsetLimitQuerySchema;
+      Params: VersionIdParam;
+      Querystring: FromToOffsetLimitQuery;
     }>,
   ): Promise<OcpiResponse<Token[]>> {
     return new Promise(() => {}); // TODO
@@ -316,13 +274,13 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Get,
     undefined,
     undefined,
-    UidParamSchema,
+    UidVersionIdParam,
     undefined,
     OcpiResponse<Token[]>, // todo pageable?
   )
   async getTokensPageFromDataOwner(
     _request: FastifyRequest<{
-      Params: UidParamSchema;
+      Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Token[]>> {
     return new Promise(() => {}); // TODO
@@ -331,17 +289,17 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   @AsOcpiEndpoint(
     '/ocpi/sender/:versionId/tokens/:tokenUID/authorize',
     HttpMethod.Post,
-    PostRealTimeTokenAuthorizationQuerySchema,
+    TokenTypeVersionIdParam,
     LocationReferences,
-    PostRealTimeTokenAuthorizationParamSchema,
+    TokenUidVersionIdParam,
     undefined,
     OcpiResponse<AuthorizationInfo>, // todo pageable?
   )
   async postRealTimeTokenAuthorization(
     _request: FastifyRequest<{
       Body: LocationReferences;
-      Params: PostRealTimeTokenAuthorizationParamSchema;
-      Querystring: PostRealTimeTokenAuthorizationQuerySchema;
+      Params: TokenUidVersionIdParam;
+      Querystring: TokenTypeVersionIdParam;
     }>,
   ): Promise<OcpiResponse<AuthorizationInfo>> {
     return new Promise(() => {}); // TODO
@@ -353,14 +311,14 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Post,
     undefined,
     CommandResponse,
-    CommandUidPathParamSchema,
+    CommandVersionIdParam,
     undefined,
     OcpiResponse<void>, // todo pageable?
   )
   async postAsyncResponse(
     _request: FastifyRequest<{
       Body: CommandResponse;
-      Params: CommandUidPathParamSchema;
+      Params: CommandVersionIdParam;
     }>,
   ): Promise<OcpiResponse<void>> {
     return new Promise(() => {}); // TODO
@@ -372,14 +330,14 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Post,
     undefined,
     ActiveChargingProfileResult,
-    UidParamSchema,
+    UidVersionIdParam,
     undefined,
     OcpiResponse<void>, // todo pageable?
   )
   async postGenericChargingProfileResult(
     _request: FastifyRequest<{
       Body: ActiveChargingProfileResult;
-      Params: UidParamSchema;
+      Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<void>> {
     return new Promise(() => {}); // TODO
@@ -390,16 +348,26 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     HttpMethod.Put,
     undefined,
     ActiveChargingProfile,
-    SessionIdParamSchema,
+    SessionIdVersionIdParam,
     undefined,
     OcpiResponse<void>, // todo pageable?
   )
   async putSenderChargingProfile(
     _request: FastifyRequest<{
       Body: ActiveChargingProfile;
-      Params: SessionIdParamSchema;
+      Params: SessionIdVersionIdParam;
     }>,
   ): Promise<OcpiResponse<void>> {
     return new Promise(() => {}); // TODO
+  }
+
+  /**
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   *
+   * @param {CallAction} input - The input {@link Namespace}.
+   * @return {string} - The generated URL path.
+   */
+  protected _toDataPath(input: Namespace | string): string {
+    return super._toDataPath(input, 'other');
   }
 }

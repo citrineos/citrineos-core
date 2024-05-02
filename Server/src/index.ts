@@ -226,7 +226,7 @@ export class CitrineOSServer {
   private addAjvFormats() {
     addFormats(this._ajv, {
       mode: 'fast',
-      formats: ['date-time'],
+      formats: ['date-time', 'url'],
     });
   }
 

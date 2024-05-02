@@ -1,12 +1,12 @@
 import { VersionRepository } from '../repository/version.repository';
 import { FastifyRequest } from 'fastify';
-import { AuthorizationHeaderSchema } from '../schema/authorizationHeaderSchema';
+import { AuthorizationHeader } from '../schema/authorization.header.schema';
 import { OcpiResponse } from '../../../model/OcpiResponse';
 import { Version, VersionDetailsDTO, VersionDTO } from '../../../model/Version';
 import { CredentialsRepository } from '../repository/credentials.repository';
 import { Namespace } from '../util/namespace';
 import { HttpStatus } from '../../../util/http.status';
-import { VersionIdParamSchema } from '../versions.api';
+import { VersionIdParam } from '../schema/version.id.param.schema';
 
 export class VersionService {
   constructor(
@@ -16,7 +16,7 @@ export class VersionService {
 
   async getVersions(
     request: FastifyRequest<{
-      Headers: AuthorizationHeaderSchema;
+      Headers: AuthorizationHeader;
     }>,
   ): Promise<OcpiResponse<VersionDTO[]>> {
     try {
@@ -37,8 +37,8 @@ export class VersionService {
 
   async getVersion(
     request: FastifyRequest<{
-      Headers: AuthorizationHeaderSchema;
-      Params: VersionIdParamSchema;
+      Headers: AuthorizationHeader;
+      Params: VersionIdParam;
     }>,
   ): Promise<OcpiResponse<VersionDetailsDTO>> {
     try {
