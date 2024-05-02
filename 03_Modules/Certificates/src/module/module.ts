@@ -167,7 +167,9 @@ export class CertificatesModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('Sign certificate request received:', message, props);
     const stationId: string = message.context.stationId;
-    const csrString: string = message.payload.csr;
+    // when parsing pem string, node forge expect a csr
+    // which has header and footer without new line characters.
+    const csrString: string = (message.payload.csr).replace(/\n/g, '');
     const certificateType: CertificateSigningUseEnumType | undefined =
       message.payload.certificateType;
 
@@ -196,8 +198,8 @@ export class CertificatesModule extends AbstractModule {
       //     additionalInfo: (error as Error).message,
       //   },
       // } as SignCertificateResponse);
+      // return;
     }
-
     const certificateChainPem: string =
       await this._certificateAuthorityService.getCertificateChain(
         csrString,
@@ -291,16 +293,16 @@ export class CertificatesModule extends AbstractModule {
           type: AttributeEnumType.Actual,
         },
       );
-      const organizationNameCsr = csr.subject.getField({
-        name: 'organizationName',
-      });
-      if (
-        organizationName &&
-        organizationName.length > 0 &&
-        organizationName[0] !== organizationNameCsr
-      ) {
+      if (!organizationName || organizationName.length < 1) {
+        throw new Error('Expected organizationName not found in DB');
+      }
+      const organizationNameAttr = csr.subject.attributes.find(attr => attr.shortName === 'O');
+      if (!organizationNameAttr) {
+        throw new Error('organizationName attribute not found in CSR');
+      }
+      if (organizationName[0].value !== organizationNameAttr.value) {
         throw new Error(
-          `Expect organizationName ${organizationName[0]} but get ${organizationNameCsr} from the csr`,
+          `Expect organizationName ${organizationName[0].value} but get ${organizationNameAttr.value} from the csr`,
         );
       }
     }

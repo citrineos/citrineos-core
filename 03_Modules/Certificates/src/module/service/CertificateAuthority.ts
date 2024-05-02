@@ -12,9 +12,11 @@ import {
   IV2GCertificateAuthorityClient,
 } from '../client/interface';
 import { Hubject } from '../client/hubject';
-import * as forge from 'node-forge';
 import { Acme } from '../client/acme';
 import { ILogObj, Logger } from 'tslog';
+import * as pkijs from 'pkijs';
+import * as asn1js from 'asn1js';
+import { Certificate } from 'pkijs';
 
 export class CertificateAuthorityService {
   private readonly _v2gClient: IV2GCertificateAuthorityClient;
@@ -53,8 +55,9 @@ export class CertificateAuthorityService {
 
     switch (certificateType) {
       case CertificateSigningUseEnumType.V2GCertificate: {
-        const signedCert =
-          await this._v2gClient.getSignedCertificate(csrString);
+        const signedCert = await this._v2gClient.getSignedCertificate(
+            this._extractEncodedContentFromCSR(csrString),
+        );
         const caCerts = await this._v2gClient.getCACertificates();
         return this._createCertificateChainWithoutRootCA(signedCert, caCerts);
       }
@@ -87,23 +90,31 @@ export class CertificateAuthorityService {
     signedCert: string,
     caCerts: string,
   ): string {
-    // The chain starts from the leaf certificate
-    let certChainPem: string = signedCert;
-    const caCertsArray: string[] = caCerts
-      .split('-----END CERTIFICATE-----')
-      .filter((cert) => cert.trim().length > 0);
+    let certificateChain = '';
+    // Add Cert
+    const leafRaw = this._extractCertificateArrayFromPem(signedCert)?.[0];
+    if (leafRaw) {
+      certificateChain += this._createPemBlock(
+        'CERTIFICATE',
+        Buffer.from(leafRaw.toSchema().toBER(false)).toString('base64'),
+      );
+    } else {
+      throw new Error(`Cannot extract leaf certificate from the pem: ${signedCert}`);
+    }
 
-    caCertsArray.forEach((certPem) => {
-      // Add "-----END CERTIFICATE-----" back because split removes it
-      const pemWithEnd = certPem + '-----END CERTIFICATE-----';
-      const parsedCert = forge.pki.certificateFromPem(pemWithEnd);
-      // The issuer of the certificate should not be itself
-      if (!parsedCert.isIssuer(parsedCert)) {
-        certChainPem = certChainPem.concat(pemWithEnd);
-      }
+    // Add Chain
+    const chainWithoutRoot = this._extractCertificateArrayFromPem(
+      caCerts,
+    )?.slice(0, -1);
+    chainWithoutRoot?.forEach((certItem) => {
+      const cert = certItem as Certificate;
+      certificateChain += this._createPemBlock(
+        'CERTIFICATE',
+        Buffer.from(cert.toSchema().toBER(false)).toString('base64'),
+      );
     });
 
-    return certChainPem;
+    return certificateChain;
   }
 
   private _instantiateV2GClient(
@@ -136,5 +147,37 @@ export class CertificateAuthorityService {
         );
       }
     }
+  }
+
+  /**
+   * Decode the pem and extract certificates
+   * @param pem - base64 encoded certificate without header and footer
+   * @return array of pkijs.CertificateSetItem
+   */
+  private _extractCertificateArrayFromPem(
+    pem: string,
+  ): pkijs.CertificateSetItem[] | undefined {
+    const cmsSignedBuffer = Buffer.from(pem, 'base64');
+    const asn1 = asn1js.fromBER(cmsSignedBuffer);
+    const cmsContent = new pkijs.ContentInfo({ schema: asn1.result });
+    const cmsSigned = new pkijs.SignedData({ schema: cmsContent.content });
+    return cmsSigned.certificates;
+  }
+
+  /**
+   * extracts the base64-encoded content from a pem encoded csr
+   * @param csrPem
+   * @private
+   * @return {string} The parsed CSR or the original CSR if it cannot be parsed
+   */
+  private _extractEncodedContentFromCSR(csrPem: string): string {
+    return csrPem
+        .replace(/-----BEGIN CERTIFICATE REQUEST-----/, '')
+        .replace(/-----END CERTIFICATE REQUEST-----/, '')
+        .replace(/\n/g, '');
+  }
+
+  private _createPemBlock(type: string, content: string) {
+    return `-----BEGIN ${type}-----\n${content}\n-----END ${type}-----\n`;
   }
 }

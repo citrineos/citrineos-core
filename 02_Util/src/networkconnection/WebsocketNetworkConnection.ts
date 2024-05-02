@@ -49,33 +49,9 @@ export class WebsocketNetworkConnection {
         let _httpServer;
         switch (websocketServerConfig.securityProfile) {
           case 3: // mTLS
-            _httpServer = https.createServer(
-              {
-                key: fs.readFileSync(
-                  websocketServerConfig.tlsKeyFilePath as string,
-                ),
-                cert: fs.readFileSync(
-                  websocketServerConfig.tlsCertificateChainFilePath as string,
-                ),
-                ca: fs.readFileSync(
-                  websocketServerConfig.rootCaCertificateFilePath as string,
-                ),
-                requestCert: true,
-                rejectUnauthorized: true,
-              },
-              this._onHttpRequest.bind(this),
-            );
-            break;
           case 2: // TLS
             _httpServer = https.createServer(
-              {
-                key: fs.readFileSync(
-                  websocketServerConfig.tlsKeyFilePath as string,
-                ),
-                cert: fs.readFileSync(
-                  websocketServerConfig.tlsCertificateChainFilePath as string,
-                ),
-              },
+              this._generateServerOptions(websocketServerConfig),
               this._onHttpRequest.bind(this),
             );
             break;
@@ -513,5 +489,27 @@ export class WebsocketNetworkConnection {
    */
   private _getClientIdFromUrl(url: string): string {
     return url.split('/').pop() as string;
+  }
+
+  private _generateServerOptions(
+      config: WebsocketServerConfig,
+  ): https.ServerOptions {
+    const serverOptions: https.ServerOptions = {
+      key: fs.readFileSync(config.tlsKeyFilePath as string),
+      cert: fs.readFileSync(config.tlsCertificateChainFilePath as string),
+    };
+
+    if (config.rootCaCertificateFilePath) {
+      serverOptions.ca = fs.readFileSync(
+          config.rootCaCertificateFilePath as string,
+      );
+    }
+
+    if (config.securityProfile > 2) {
+      serverOptions.requestCert = true;
+      serverOptions.rejectUnauthorized = true;
+    }
+
+    return serverOptions;
   }
 }
