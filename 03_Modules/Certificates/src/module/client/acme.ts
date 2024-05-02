@@ -77,8 +77,10 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       'https://letsencrypt.org/certs/isrgrootx1.pem',
     );
 
-    if (response.status !== 304) {
-      throw new Error(`Failed to fetch certificate: ${response.statusText}`);
+    if (!response.ok && response.status !== 304) {
+      throw new Error(
+        `Failed to fetch certificate: ${response.statusText}: ${await response.text()}`,
+      );
     }
 
     return await response.text();
@@ -124,6 +126,10 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       stationId,
       CacheNamespace.Connections,
     )) as string;
+
+    if (!this._securityCertChainKeyMap.has(clientConnection)) {
+      throw new Error(`Cannot find tls certificate chain and sub CA key with serverId  ${clientConnection}`);
+    }
     const [certChain, subCAPrivateKey] = this._securityCertChainKeyMap.get(
       clientConnection,
     ) as [string, string];
@@ -137,7 +143,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       ),
     );
 
-    return signedCertPem.trim() + '\n' + subCACertPem;
+    return signedCertPem.replace(/\r/g, '') + subCACertPem;
   }
 
   updateCertificateChainKeyMap(
@@ -172,8 +178,8 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       throw new Error('Sub CA certificate for signing not found');
     }
 
-    // Add "-----END CERTIFICATE-----" back because split removes it
-    return certsArray[1].concat('-----END CERTIFICATE-----');
+    // Remove leading new line and add "-----END CERTIFICATE-----" back because split removes it
+    return certsArray[1].replace(/^\n+/, '').concat('-----END CERTIFICATE-----');
   }
 
   /**
@@ -185,11 +191,11 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
   }
 
   /**
-   * Create a signed certificate for the provided CSR using the CA certificate, and its private key.
+   * Create a signed certificate for the provided CSR using the sub CA certificate, and its private key.
    *
    * @param {forge.pki.CertificateSigningRequest} csr - The CSR that need to be signed.
-   * @param {forge.pki.Certificate} caCert - The CA certificate.
-   * @param {forge.pki.rsa.PrivateKey} caPrivateKey - The private key of the CA certificate.
+   * @param {forge.pki.Certificate} caCert - The sub CA certificate.
+   * @param {forge.pki.rsa.PrivateKey} caPrivateKey - The private key of the sub CA certificate.
    * @return {forge.pki.Certificate} The signed certificate.
    */
   private _createSignedCertificateFromCSR(

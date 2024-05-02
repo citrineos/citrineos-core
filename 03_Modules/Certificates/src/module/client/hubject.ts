@@ -4,15 +4,17 @@
 
 import { IV2GCertificateAuthorityClient } from './interface';
 import { SystemConfig } from '@citrineos/base';
+import { ILogObj, Logger } from 'tslog';
 
 export class Hubject implements IV2GCertificateAuthorityClient {
   private readonly _baseUrl: string;
   private readonly _isoVersion: string;
   private readonly _tokenUrl: string;
+  private _logger: Logger<ILogObj>;
 
   private _authorizationToken: string | undefined;
 
-  constructor(config: SystemConfig) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
     if (!config.modules.certificates?.v2gCA.hubject) {
       throw new Error('Missing Hubject configuration');
     }
@@ -20,6 +22,10 @@ export class Hubject implements IV2GCertificateAuthorityClient {
     this._baseUrl = config.modules.certificates?.v2gCA.hubject.baseUrl;
     this._tokenUrl = config.modules.certificates?.v2gCA.hubject.tokenUrl;
     this._isoVersion = config.modules.certificates?.v2gCA.hubject.isoVersion;
+
+    this._logger = logger
+      ? logger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
   /**
@@ -27,14 +33,13 @@ export class Hubject implements IV2GCertificateAuthorityClient {
    * DOC: https://hubject.stoplight.io/docs/open-plugncharge/486f0b8b3ded4-simple-enroll-iso-15118-2-and-iso-15118-20
    *
    * @param {string} csrString - The certificate signing request from SignCertificateRequest.
-   * @return {Promise<string>} The signed certificate.
+   * @return {Promise<string>} The signed certificate without header and footer.
    */
   async getSignedCertificate(csrString: string): Promise<string> {
     this._authorizationToken =
       this._authorizationToken ||
       (await this._getAuthorizationToken(this._tokenUrl));
     const url = `${this._baseUrl}/cpo/simpleenroll/${this._isoVersion}`;
-    const base64Csr: string = Buffer.from(csrString).toString('base64');
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -42,7 +47,7 @@ export class Hubject implements IV2GCertificateAuthorityClient {
         Authorization: this._authorizationToken,
         'Content-Type': 'application/pkcs10',
       },
-      body: base64Csr,
+      body: csrString,
     });
 
     if (response.status !== 200) {
@@ -51,7 +56,7 @@ export class Hubject implements IV2GCertificateAuthorityClient {
       );
     }
 
-    return Buffer.from(await response.text(), 'base64').toString('utf8');
+    return await response.text();
   }
 
   /**
@@ -80,23 +85,17 @@ export class Hubject implements IV2GCertificateAuthorityClient {
       );
     }
 
-    return Buffer.from(await response.text(), 'base64').toString('utf8');
+    return await response.text();
   }
 
   private async _getAuthorizationToken(tokenUrl: string): Promise<string> {
-    return fetch(tokenUrl, { method: 'GET' })
-      .then((response) => {
-        if (response.status !== 304) {
-          throw new Error(
-            `Get token response is unexpected: ${response.status}`,
-          );
-        }
-        return response.json();
-      })
-      .then((data) => this._parseBearerToken(data.data))
-      .catch((error) => {
-        throw new Error(`Get token failed: ${error}`);
-      });
+    const response = await fetch(tokenUrl, { method: 'GET' });
+    if (!response.ok && response.status !== 304) {
+      throw new Error(
+        `Get token response is unexpected: ${response.status}: ${await response.text()}`,
+      );
+    }
+    return this._parseBearerToken((await response.json()).data);
   }
 
   /**
