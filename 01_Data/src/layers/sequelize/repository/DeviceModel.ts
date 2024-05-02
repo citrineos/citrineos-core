@@ -290,9 +290,9 @@ export class DeviceModelRepository extends SequelizeRepository<VariableAttribute
     return {
       where: {
         ...(queryParams.stationId ? { stationId: queryParams.stationId } : {}),
-        ...(queryParams.type !== null ? { type: queryParams.type } : {}),
+        ...(queryParams.type ? { type: queryParams.type } : {}),
         ...(queryParams.value ? { value: queryParams.value } : {}),
-        ...(queryParams.status !== null ? { status: queryParams.status } : {}),
+        ...(queryParams.status ? { status: queryParams.status } : {}),
       },
       include: [
         {
