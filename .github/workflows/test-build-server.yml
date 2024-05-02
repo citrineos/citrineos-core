@@ -24,6 +24,9 @@ jobs:
       - name: Build and Run Docker Compose
         run: docker-compose -f ${{ github.workspace }}/Server/docker-compose.yml up -d
 
+      - name: Get logs for all containers
+        run: docker container ls -aq | xargs -I {} docker logs {}
+
       - name: Install Newman
         run: npm install -g newman
 
