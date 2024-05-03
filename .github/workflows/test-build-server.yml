@@ -42,4 +42,4 @@ jobs:
           docker container ls -aq | xargs -I {} docker logs {}
 
       - name: Clean up
-        run: docker-compose down
+        run: docker-compose -f ${{ github.workspace }}/Server/docker-compose.yml down
