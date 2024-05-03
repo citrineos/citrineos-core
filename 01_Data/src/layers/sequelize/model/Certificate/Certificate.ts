@@ -55,8 +55,5 @@ export class Certificate extends Model {
   declare privateKeyFileId?: string;
 
   @Column(DataType.STRING)
-  declare stationId?: string;
-
-  @Column(DataType.STRING)
   declare signedBy?: string; // certificate id
 }

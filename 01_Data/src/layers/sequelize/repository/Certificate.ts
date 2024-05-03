@@ -9,7 +9,7 @@ import { Certificate } from '../model/Certificate';
 export class CertificateRepository extends SequelizeRepository<Certificate> implements ICertificateRepository {
   async createOrUpdateCertificate(certificate: Certificate): Promise<Certificate> {
     const [storedCert, _certCreated] = await Certificate.upsert({
-      stationId: certificate.stationId,
+      signedBy: certificate.signedBy,
       serialNumber: certificate.serialNumber,
       certificateType: certificate.certificateType,
       keyLength: certificate.keyLength,

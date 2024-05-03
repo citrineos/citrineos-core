@@ -252,7 +252,7 @@ export class CertificatesModuleApi
       `Installing root certificates on charger ${certRequest.stationId}`,
     );
 
-    const certificateFromReq = new Certificate();
+    let certificateFromReq = new Certificate();
     certificateFromReq.certificateType = certRequest.certificateType;
     certificateFromReq.serialNumber = certRequest.serialNumber
       ? certRequest.serialNumber
@@ -273,7 +273,7 @@ export class CertificatesModuleApi
     let responseBody: Certificate[];
     let rootChainPem;
     if (certRequest.selfSigned) {
-      // Generate self-signed root certificate
+      // Generate self-signed root CA certificate
       const [rootCertificatePem, rootPrivateKeyPem] =
         this._generateSelfSignedRootCertificate(certificateFromReq);
       // Store root certificates in file storage
@@ -288,11 +288,11 @@ export class CertificatesModuleApi
         certRequest.filePath,
       );
       // Store root certificates in db
-      await this._module.certificateRepository.createOrUpdateCertificate(
+      certificateFromReq = await this._module.certificateRepository.createOrUpdateCertificate(
         certificateFromReq,
       );
       // Generate sub CA certificate
-      const subCertificate: Certificate = new Certificate();
+      let subCertificate: Certificate = new Certificate();
       subCertificate.certificateType = certificateFromReq.certificateType;
       subCertificate.serialNumber = this._generateSerialNumber();
       subCertificate.keyLength = certificateFromReq.keyLength;
@@ -314,12 +314,12 @@ export class CertificatesModuleApi
         certRequest.filePath,
       );
       // Store sub certificates in db
-      await this._module.certificateRepository.createOrUpdateCertificate(
+      subCertificate = await this._module.certificateRepository.createOrUpdateCertificate(
         subCertificate,
       );
 
       responseBody = [subCertificate, certificateFromReq];
-      rootChainPem = subCertificatePem + '\n' + rootCertificatePem;
+      rootChainPem = subCertificatePem + rootCertificatePem;
     } else {
       // Get root certificate from external CA
       const externalRootCAPem =
@@ -330,6 +330,7 @@ export class CertificatesModuleApi
         await this._generateSubCACertificateSignedByCAServer(
           certificateFromReq,
         );
+
       // Upload certificate and private key to file storage
       certificateFromReq.privateKeyFileId = await this._fileAccess.uploadFile(
         `sub_CA_key_${certificateFromReq.serialNumber}.pem`,
@@ -343,12 +344,12 @@ export class CertificatesModuleApi
       );
 
       // Store sub CA certificate in db
-      await this._module.certificateRepository.createOrUpdateCertificate(
+      certificateFromReq = await this._module.certificateRepository.createOrUpdateCertificate(
         certificateFromReq,
       );
 
       responseBody = [certificateFromReq];
-      rootChainPem = certificatePem + '\n' + externalRootCAPem;
+      rootChainPem = certificatePem + externalRootCAPem;
     }
 
     // Send InstallCertificateRequest to the charger

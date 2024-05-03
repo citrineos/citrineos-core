@@ -26,27 +26,6 @@ export class ChargingStation extends Model {
   declare locationId?: number;
 
   /**
-   * Fields from ChargingStationType
-   */
-  @Column
-  declare customData?: CustomDataType | undefined;
-
-  @Column(DataType.STRING)
-  declare firmwareVersion?: string;
-
-  @Column(DataType.STRING)
-  declare model?: string;
-
-  @Column(DataType.STRING)
-  declare modem?: ModemType;
-
-  @Column(DataType.STRING)
-  declare serialNumber?: string;
-
-  @Column(DataType.STRING)
-  declare vendorName?: string;
-
-  /**
    * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.
    */
   @BelongsTo(() => Location)
