@@ -76,6 +76,9 @@ export abstract class AbstractModuleApi<T extends IModule>
         expose.headerSchema,
         expose.bodySchema,
         expose.responseSchema,
+        expose.tags,
+        expose.description,
+        expose.security,
       );
     });
 
@@ -168,13 +171,16 @@ export abstract class AbstractModuleApi<T extends IModule>
     headerSchema?: object,
     bodySchema?: object,
     responseSchema?: object,
+    tags?: string[],
+    description?: string,
+    security?: object[],
   ): void {
     this._logger.debug(
       `Adding data route for ${namespace}`,
       this._toDataPath(namespace),
       httpMethod,
     );
-    const schema: Record<string, object> = {};
+    const schema: Record<string, any> = {};
     if (querySchema) {
       schema['querystring'] = querySchema;
     }
@@ -191,6 +197,15 @@ export abstract class AbstractModuleApi<T extends IModule>
       schema['response'] = {
         200: responseSchema,
       };
+    }
+    if (tags) {
+      schema['tags'] = tags;
+    }
+    if (description) {
+      schema['description'] = description;
+    }
+    if (security) {
+      schema['security'] = security;
     }
 
     /**

@@ -3,8 +3,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {AsDataEndpoint, HttpMethod} from '@citrineos/base';
-import {targetConstructorToSchema} from 'class-validator-jsonschema';
+import { AsDataEndpoint, HttpMethod, OcpiTag } from '@citrineos/base';
+import { targetConstructorToSchema } from 'class-validator-jsonschema';
+
+export const AuthorizationSecurity = [
+  {
+    authorization: [],
+  },
+];
 
 /**
  * Decorator for use in module API class to expose methods as REST data endpoints.
@@ -26,6 +32,9 @@ export const AsOcpiEndpoint = function (
   paramSchema?: object,
   headerSchema?: object,
   responseSchema?: object,
+  tags?: OcpiTag | OcpiTag[],
+  security?: object[],
+  description?: string,
 ) {
   if (headerSchema === null || headerSchema === undefined) {
     headerSchema = {};
@@ -54,5 +63,8 @@ export const AsOcpiEndpoint = function (
     responseSchema
       ? targetConstructorToSchema(responseSchema as any)
       : undefined,
+    Array.isArray(tags) ? tags.map((tag) => `ocpi-${tag}`) : [`ocpi-${tags}`],
+    security,
+    description,
   );
 };

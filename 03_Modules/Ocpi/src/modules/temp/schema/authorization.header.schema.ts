@@ -1,7 +1,7 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class AuthorizationHeader {
-  @IsNotEmpty()
   @IsString()
-  Authorization!: string;
+  @IsOptional()
+  Authorization?: string;
 }

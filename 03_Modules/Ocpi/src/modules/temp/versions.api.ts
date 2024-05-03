@@ -3,6 +3,7 @@ import {
   AsDataEndpoint,
   HttpMethod,
   Namespace,
+  OcpiTag,
   SystemConfig,
 } from '@citrineos/base';
 import { OcpiModule } from './module';
@@ -17,6 +18,8 @@ import { VersionRepository } from './repository/version.repository';
 import { VersionsExceptionHandler } from './exceptions/versions.exception.handler';
 import { VersionIdParam } from './schema/version.id.param.schema';
 import { targetConstructorToSchema } from 'class-validator-jsonschema';
+import { getOcpiTagString } from '@citrineos/base/dist/interfaces/api/OcpiTag';
+import { AuthorizationSecurity } from '../../util/as.ocpi.endpoint';
 
 export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
   private versionService?: VersionService;
@@ -55,6 +58,8 @@ export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     targetConstructorToSchema(AuthorizationHeader),
     targetConstructorToSchema(OcpiResponse<VersionDTO[]>), // todo proper pageable object?
+    getOcpiTagString(OcpiTag.Versions),
+    AuthorizationSecurity,
   )
   async getVersions(
     request: FastifyRequest<{
@@ -72,6 +77,8 @@ export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
     targetConstructorToSchema(VersionIdParam),
     targetConstructorToSchema(AuthorizationHeader),
     targetConstructorToSchema(OcpiResponse<VersionDetailsDTO>),
+    getOcpiTagString(OcpiTag.Versions),
+    AuthorizationSecurity,
   )
   async getVersion(
     request: FastifyRequest<{

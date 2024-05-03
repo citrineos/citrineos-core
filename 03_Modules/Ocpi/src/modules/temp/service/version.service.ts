@@ -21,7 +21,7 @@ export class VersionService {
   ): Promise<OcpiResponse<VersionDTO[]>> {
     try {
       const token = request.headers.Authorization;
-      await this.credentialsRepository.validateAuthentication(token);
+      await this.credentialsRepository.validateAuthentication(token!);
       const versions: Version[] = await this.versionRepository.readAllByQuery(
         {},
         Namespace.Version,
@@ -43,7 +43,7 @@ export class VersionService {
   ): Promise<OcpiResponse<VersionDetailsDTO>> {
     try {
       const token = request.headers.Authorization;
-      await this.credentialsRepository.validateAuthentication(token);
+      await this.credentialsRepository.validateAuthentication(token!);
       const version: Version = await this.versionRepository.readByKey(
         request.params.versionId,
         Namespace.Version,

@@ -1,4 +1,4 @@
-import { IsDate, IsNumber, IsString } from 'class-validator';
+import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class OcpiResponse<T> {
   @IsNumber()
@@ -9,6 +9,7 @@ export class OcpiResponse<T> {
    * @memberof OcpiResponseDTO
    */
   @IsString()
+  @IsOptional()
   status_message?: string;
 
   /**
@@ -24,6 +25,7 @@ export class OcpiResponse<T> {
    * @type {object}
    * @memberof OcpiResponseDTO
    */
+  @IsOptional()
   data?: T;
 
   static build<T>(

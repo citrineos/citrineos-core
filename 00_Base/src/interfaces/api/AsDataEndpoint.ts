@@ -3,12 +3,8 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  HttpMethod,
-  IDataEndpointDefinition,
-  METADATA_DATA_ENDPOINTS,
-} from '.';
-import { Namespace } from '../../ocpp/persistence';
+import {HttpMethod, IDataEndpointDefinition, METADATA_DATA_ENDPOINTS, } from '.';
+import {Namespace} from '../../ocpp/persistence';
 
 /**
  * Decorator for use in module API class to expose methods as REST data endpoints.
@@ -30,6 +26,9 @@ export const AsDataEndpoint = function (
   paramSchema?: object,
   headerSchema?: object,
   responseSchema?: object,
+  tags?: string | string[],
+  security?: object[],
+  description?: string,
 ) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (
@@ -54,6 +53,9 @@ export const AsDataEndpoint = function (
       paramSchema: paramSchema,
       headerSchema: headerSchema,
       responseSchema: responseSchema,
+      tags: (Array.isArray(tags) ? tags : [tags]) as string[],
+      description: description,
+      security: security,
     });
     Reflect.defineMetadata(
       METADATA_DATA_ENDPOINTS,
@@ -62,3 +64,4 @@ export const AsDataEndpoint = function (
     );
   };
 };
+

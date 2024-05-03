@@ -21,4 +21,8 @@ export interface IDataEndpointDefinition {
   paramSchema?: object;
   headerSchema?: object;
   responseSchema?: object;
+  description?: string;
+  tags?: string[];
+  summary?: string;
+  security?: object[];
 }

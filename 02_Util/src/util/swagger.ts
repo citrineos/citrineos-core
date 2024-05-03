@@ -6,10 +6,11 @@
 
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import { FastifyInstance } from 'fastify';
+import {FastifyInstance} from 'fastify';
 import fs from 'fs';
-import { SystemConfig } from '@citrineos/base';
-import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
+import {OcpiTag, SystemConfig} from '@citrineos/base';
+import {OpenAPIV2, OpenAPIV3, OpenAPIV3_1} from 'openapi-types';
+import {getOcpiTagString} from '@citrineos/base/dist/interfaces/api/OcpiTag';
 
 /**
  * This transformation is necessary because the plugin (@fastify/swagger) does not handle the local #ref objects correctly.
@@ -25,6 +26,7 @@ function OcppTransformObject({
   swaggerObject: Partial<OpenAPIV2.Document>;
   openapiObject: Partial<OpenAPIV3.Document | OpenAPIV3_1.Document>;
 }) {
+  console.log('OcppTransformObject: Transforming OpenAPI object...');
   if (openapiObject.paths && openapiObject.components) {
     for (const pathKey in openapiObject.paths) {
       const path: OpenAPIV3.PathsObject = openapiObject.paths[
@@ -36,11 +38,13 @@ function OcppTransformObject({
             methodKey
           ] as OpenAPIV3.OperationObject;
           if (method) {
-            // Set tags based on path key
-            method.tags = pathKey
-              .split('/')
-              .slice(2, -1)
-              .map((tag) => tag.charAt(0).toUpperCase() + tag.slice(1));
+            // Set tags based on path key if tags were not passed in
+            if (!method.tags) {
+              method.tags = pathKey
+                .split('/')
+                .slice(2, -1)
+                .map((tag) => tag.charAt(0).toUpperCase() + tag.slice(1));
+            }
 
             const requestBody: OpenAPIV3.RequestBodyObject =
               method.requestBody as OpenAPIV3.RequestBodyObject;
@@ -87,12 +91,39 @@ export function initSwagger(
         description: 'Central System API for OCPP 2.0.1 messaging.',
         version: '1.1.1',
       },
+      servers: [
+        {
+          url: `http://${systemConfig.centralSystem.host}:${systemConfig.centralSystem.port}`,
+          description: 'TODO',
+        },
+      ],
+      components: {
+        securitySchemes: {
+          authorization: {
+            type: 'http',
+            scheme: 'bearer',
+          },
+        },
+      },
+      tags: Object.values(OcpiTag).map((tag) => {
+        return {
+          name: getOcpiTagString(tag),
+          description: `OCPI ${getOcpiTagString(tag)} endpoints`,
+        };
+      }),
     },
     transformObject: OcppTransformObject,
   });
 
   const swaggerUiOptions: any = {
     routePrefix: systemConfig.util.swagger?.path,
+    securityDefinitions: {
+      authorization: {
+        name: 'authorization',
+        type: 'apiKey',
+        in: 'header',
+      },
+    },
     exposeRoute: true,
     uiConfig: {
       filter: true,

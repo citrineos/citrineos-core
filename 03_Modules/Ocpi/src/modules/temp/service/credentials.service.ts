@@ -50,7 +50,7 @@ export class CredentialsService {
     }>,
   ): Promise<OcpiResponse<Credentials>> {
     await this.credentialsRepository.validateAuthentication(
-      request.headers.Authorization,
+      request.headers.Authorization!,
     );
     await this.getAndUpdateVersions(
       request.body.url,
@@ -58,7 +58,7 @@ export class CredentialsService {
       request.params.versionId,
     );
     return this.updateExistingCredentialsTokenWithNewGeneratedToken(
-      request.headers.Authorization,
+      request.headers.Authorization!,
     );
   }
 
@@ -70,7 +70,7 @@ export class CredentialsService {
     }>,
   ): Promise<OcpiResponse<Credentials>> {
     await this.credentialsRepository.validateAuthentication(
-      request.headers.Authorization,
+      request.headers.Authorization!,
     );
     await this.getAndUpdateVersions(
       request.body.url,
@@ -78,7 +78,7 @@ export class CredentialsService {
       request.params.versionId,
     );
     return this.updateExistingCredentialsTokenWithNewGeneratedToken(
-      request.headers.Authorization,
+      request.headers.Authorization!,
     );
   }
 

@@ -5,7 +5,7 @@
 
 import {ILogObj, Logger} from 'tslog';
 import {OcpiModule} from './module';
-import {AbstractModuleApi, HttpMethod, Namespace} from '@citrineos/base';
+import {AbstractModuleApi, HttpMethod, Namespace, OcpiTag,} from '@citrineos/base';
 import {FastifyInstance, FastifyRequest} from 'fastify';
 import {AsOcpiEndpoint} from '../../util/as.ocpi.endpoint';
 import {OcpiResponse} from '../../model/OcpiResponse';
@@ -33,11 +33,14 @@ import {TokenTypeVersionIdParam} from './schema/token.type.version.id.param.sche
 import {TokenUidVersionIdParam} from './schema/token.uid.version.param.schema';
 import {CommandVersionIdParam} from './schema/command.version.id.param.schema';
 import {SessionIdVersionIdParam} from './schema/session.id.version.id.param.schema';
+import {HttpStatus} from '../../util/http.status';
 
 /**
  * Server API for the transaction module.
  */
 export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
+  genericResponse: OcpiResponse<any> = OcpiResponse.build(HttpStatus.OK);
+
   /**
    * Constructor for the class.
    *
@@ -64,13 +67,17 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     UidVersionIdParam,
     undefined,
     OcpiResponse<Cdr[]>, // todo proper pageable object
+    OcpiTag.Cdrs,
   )
   async getCdrPageFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Cdr[]>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   @AsOcpiEndpoint(
@@ -81,14 +88,18 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     VersionIdParam,
     undefined,
     OcpiResponse<Cdr[]>, // todo proper pageable object?
+    OcpiTag.Cdrs,
   )
   async getCdrsFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: VersionIdParam;
       Querystring: FromToOffsetLimitQuery;
     }>,
   ): Promise<OcpiResponse<Cdr[]>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   // ======================== Locations ========================
@@ -100,13 +111,17 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     ConnectionIdEvseUidLocationIdVersionIdParam,
     undefined,
     OcpiResponse<Connector>,
+    OcpiTag.Locations,
   )
   async getConnectorObjectFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: ConnectionIdEvseUidLocationIdVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Connector>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   @AsOcpiEndpoint(
@@ -117,13 +132,17 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     LocationIdEvseUidVersionIdParam,
     undefined,
     OcpiResponse<Evse>,
+    OcpiTag.Locations,
   )
   async getEvseObjectFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: LocationIdEvseUidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Evse>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   @AsOcpiEndpoint(
@@ -134,14 +153,18 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     VersionIdParam,
     undefined,
     OcpiResponse<Location[]>, // todo pageable
+    OcpiTag.Locations,
   )
   async getLocationListFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: VersionIdParam;
       Querystring: FromToOffsetLimitQuery;
     }>,
   ): Promise<OcpiResponse<Location[]>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   @AsOcpiEndpoint(
@@ -152,13 +175,17 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     LocationIdVersionIdParam,
     undefined,
     OcpiResponse<Location>,
+    OcpiTag.Locations,
   )
   async getLocationObjectFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: LocationIdVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Location>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   @AsOcpiEndpoint(
@@ -169,13 +196,17 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     UidVersionIdParam,
     undefined,
     OcpiResponse<Location[]>, // todo pageable
+    OcpiTag.Locations,
   )
   async getLocationPageFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Location[]>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   // ======================== Sessions ========================
@@ -187,14 +218,18 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     VersionIdParam,
     undefined,
     OcpiResponse<Session[]>, // todo pageable?
+    OcpiTag.Sessions,
   )
   async getSessionsFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: VersionIdParam;
       Querystring: FromToOffsetLimitQuery;
     }>,
   ): Promise<OcpiResponse<Session[]>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   @AsOcpiEndpoint(
@@ -205,13 +240,17 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     UidVersionIdParam,
     undefined,
     OcpiResponse<Session[]>, // todo pageable?
+    OcpiTag.Sessions,
   )
   async getSessionsPageFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Session[]>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   // ======================== Tariffs ===========================
@@ -223,14 +262,18 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     VersionIdParam,
     undefined,
     OcpiResponse<Tariff[]>, // todo pageable?
+    OcpiTag.Tariffs,
   )
   async getTariffsFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: VersionIdParam;
       Querystring: FromToOffsetLimitQuery;
     }>,
   ): Promise<OcpiResponse<Tariff[]>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   @AsOcpiEndpoint(
@@ -241,13 +284,17 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     UidVersionIdParam,
     undefined,
     OcpiResponse<Tariff[]>, // todo pageable?
+    OcpiTag.Tariffs,
   )
   async getTariffsPageFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Tariff[]>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   // ======================== Tokens ===========================
@@ -259,14 +306,18 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     VersionIdParam,
     undefined,
     OcpiResponse<Token[]>, // todo pageable?
+    OcpiTag.Tokens,
   )
   async getTokensFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: VersionIdParam;
       Querystring: FromToOffsetLimitQuery;
     }>,
   ): Promise<OcpiResponse<Token[]>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   @AsOcpiEndpoint(
@@ -277,13 +328,17 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     UidVersionIdParam,
     undefined,
     OcpiResponse<Token[]>, // todo pageable?
+    OcpiTag.Tokens,
   )
   async getTokensPageFromDataOwner(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Token[]>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   @AsOcpiEndpoint(
@@ -294,15 +349,19 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     TokenUidVersionIdParam,
     undefined,
     OcpiResponse<AuthorizationInfo>, // todo pageable?
+    OcpiTag.Tokens,
   )
   async postRealTimeTokenAuthorization(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Body: LocationReferences;
       Params: TokenUidVersionIdParam;
       Querystring: TokenTypeVersionIdParam;
     }>,
   ): Promise<OcpiResponse<AuthorizationInfo>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   // ======================== Commands ===========================
@@ -314,14 +373,18 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     CommandVersionIdParam,
     undefined,
     OcpiResponse<void>, // todo pageable?
+    OcpiTag.Commands,
   )
   async postAsyncResponse(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Body: CommandResponse;
       Params: CommandVersionIdParam;
     }>,
   ): Promise<OcpiResponse<void>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   // ======================== Charging Profiles ===========================
@@ -333,14 +396,18 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     UidVersionIdParam,
     undefined,
     OcpiResponse<void>, // todo pageable?
+    OcpiTag.ChargingProfiles,
   )
   async postGenericChargingProfileResult(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Body: ActiveChargingProfileResult;
       Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<void>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   @AsOcpiEndpoint(
@@ -351,14 +418,18 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     SessionIdVersionIdParam,
     undefined,
     OcpiResponse<void>, // todo pageable?
+    OcpiTag.ChargingProfiles,
   )
   async putSenderChargingProfile(
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
       Body: ActiveChargingProfile;
       Params: SessionIdVersionIdParam;
     }>,
   ): Promise<OcpiResponse<void>> {
-    return new Promise(() => {}); // TODO
+    console.log('todo', request);
+    return new Promise((resolve) => {
+      resolve(this.genericResponse);
+    }); // TODO
   }
 
   /**

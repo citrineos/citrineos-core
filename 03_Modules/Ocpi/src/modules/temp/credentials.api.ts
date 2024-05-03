@@ -3,6 +3,7 @@ import {
   AsDataEndpoint,
   HttpMethod,
   Namespace,
+  OcpiTag,
   SystemConfig,
 } from '@citrineos/base';
 import { OcpiModule } from './module';
@@ -17,6 +18,8 @@ import { VersionRepository } from './repository/version.repository';
 import { CredentialsExceptionHandler } from './exceptions/credentials.exception.handler';
 import { VersionIdParam } from './schema/version.id.param.schema';
 import { targetConstructorToSchema } from 'class-validator-jsonschema';
+import { getOcpiTagString } from '@citrineos/base/dist/interfaces/api/OcpiTag';
+import { AuthorizationSecurity } from '../../util/as.ocpi.endpoint';
 
 export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
   private credentialsService: CredentialsService;
@@ -56,6 +59,8 @@ export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
     targetConstructorToSchema(VersionIdParam),
     targetConstructorToSchema(AuthorizationHeader),
     targetConstructorToSchema(OcpiResponse<Credentials>),
+    getOcpiTagString(OcpiTag.Credentials),
+    AuthorizationSecurity,
   )
   async getCredentials(
     request: FastifyRequest<{
@@ -74,6 +79,8 @@ export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
     targetConstructorToSchema(VersionIdParam),
     targetConstructorToSchema(AuthorizationHeader),
     targetConstructorToSchema(OcpiResponse<Credentials>),
+    getOcpiTagString(OcpiTag.Credentials),
+    AuthorizationSecurity,
   )
   async postCredentials(
     request: FastifyRequest<{
@@ -93,6 +100,8 @@ export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
     targetConstructorToSchema(VersionIdParam),
     targetConstructorToSchema(AuthorizationHeader),
     targetConstructorToSchema(OcpiResponse<Credentials>),
+    getOcpiTagString(OcpiTag.Credentials),
+    AuthorizationSecurity,
   )
   async putCredentials(
     request: FastifyRequest<{
@@ -112,6 +121,8 @@ export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
     targetConstructorToSchema(VersionIdParam),
     targetConstructorToSchema(AuthorizationHeader),
     targetConstructorToSchema(OcpiResponse<void>),
+    getOcpiTagString(OcpiTag.Credentials),
+    AuthorizationSecurity,
   )
   async deleteCredentials(
     request: FastifyRequest<{
