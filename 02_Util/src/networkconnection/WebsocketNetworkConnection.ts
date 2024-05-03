@@ -533,9 +533,9 @@ export class WebsocketNetworkConnection {
       cert: fs.readFileSync(config.tlsCertificateChainFilePath as string),
     };
 
-    if (config.rootCaCertificateFilePath) {
+    if (config.rootCACertificateFilePath) {
       serverOptions.ca = fs.readFileSync(
-        config.rootCaCertificateFilePath as string,
+        config.rootCACertificateFilePath as string,
       );
     }
 

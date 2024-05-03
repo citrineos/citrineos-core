@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 export const enum ContentType {
-  EncodedRawContent = 'EncodedRawContent', // Base64 encoded raw content Of certificates and keys
+  EncodedPem = 'EncodedPem', // Base64 encoded string of certificates or keys (including header, raw content and footer)
   FileId = 'FileId', // Pem file id of certificates in the File Storage
 }
 

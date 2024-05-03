@@ -233,7 +233,7 @@ export const websocketServerSchema = z
     tlsKeyFilePath: z.string().optional(),
     tlsCertificateChainFilePath: z.string().optional(),
     mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
-    rootCaCertificateFilePath: z.string().optional(),
+    rootCACertificateFilePath: z.string().optional(),
   })
   .refine((obj) => {
     switch (obj.securityProfile) {
