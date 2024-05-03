@@ -288,9 +288,10 @@ export class CertificatesModuleApi
         certRequest.filePath,
       );
       // Store root certificates in db
-      certificateFromReq = await this._module.certificateRepository.createOrUpdateCertificate(
-        certificateFromReq,
-      );
+      certificateFromReq =
+        await this._module.certificateRepository.createOrUpdateCertificate(
+          certificateFromReq,
+        );
       // Generate sub CA certificate
       let subCertificate: Certificate = new Certificate();
       subCertificate.certificateType = certificateFromReq.certificateType;
@@ -314,9 +315,10 @@ export class CertificatesModuleApi
         certRequest.filePath,
       );
       // Store sub certificates in db
-      subCertificate = await this._module.certificateRepository.createOrUpdateCertificate(
-        subCertificate,
-      );
+      subCertificate =
+        await this._module.certificateRepository.createOrUpdateCertificate(
+          subCertificate,
+        );
 
       responseBody = [subCertificate, certificateFromReq];
       rootChainPem = subCertificatePem + rootCertificatePem;
@@ -344,9 +346,10 @@ export class CertificatesModuleApi
       );
 
       // Store sub CA certificate in db
-      certificateFromReq = await this._module.certificateRepository.createOrUpdateCertificate(
-        certificateFromReq,
-      );
+      certificateFromReq =
+        await this._module.certificateRepository.createOrUpdateCertificate(
+          certificateFromReq,
+        );
 
       responseBody = [certificateFromReq];
       rootChainPem = certificatePem + externalRootCAPem;

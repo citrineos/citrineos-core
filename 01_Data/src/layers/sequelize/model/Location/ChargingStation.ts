@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CustomDataType, ModemType, Namespace } from '@citrineos/base';
+import { Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { Location } from './Location';
 
