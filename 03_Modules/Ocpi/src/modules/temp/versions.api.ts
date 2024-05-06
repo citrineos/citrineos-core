@@ -4,7 +4,6 @@ import {
   AuthorizationSecurityList,
   getOcpiTagString,
   HttpMethod,
-  Namespace,
   OcpiResponse,
   OcpiTag,
   SystemConfig,

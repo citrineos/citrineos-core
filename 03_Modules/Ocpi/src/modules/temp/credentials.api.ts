@@ -1,6 +1,7 @@
 import {
   AbstractModuleApi,
-  AsDataEndpoint, AuthorizationSecurityList,
+  AsDataEndpoint,
+  AuthorizationSecurityList,
   Credentials,
   getOcpiTagString,
   HttpMethod,

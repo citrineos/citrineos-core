@@ -6,7 +6,7 @@
 
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import {FastifyInstance, FastifyRequest} from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import fs from 'fs';
 import {
   getOcpiTagString,
@@ -17,7 +17,7 @@ import {
   SystemConfig,
   UnauthorizedException,
 } from '@citrineos/base';
-import {OpenAPIV2, OpenAPIV3, OpenAPIV3_1} from 'openapi-types';
+import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
 import * as FastifyAuth from '@fastify/auth';
 
 /**

@@ -26,9 +26,7 @@ export class OcpiErrorResponse {
   @IsNotEmpty()
   timestamp!: Date;
 
-  static build<T>(
-      status_code: number,
-  ): OcpiErrorResponse {
+  static build(status_code: number): OcpiErrorResponse {
     const response = new OcpiErrorResponse();
     response.status_code = status_code;
     response.timestamp = new Date();

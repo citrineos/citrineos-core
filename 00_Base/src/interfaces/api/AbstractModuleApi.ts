@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {FastifyInstance, FastifyReply, FastifyRequest} from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import 'reflect-metadata';
-import {ILogObj, Logger} from 'tslog';
+import { ILogObj, Logger } from 'tslog';
 import {
   HttpMethod,
   IDataEndpointDefinition,
@@ -13,13 +13,21 @@ import {
   METADATA_DATA_ENDPOINTS,
   METADATA_MESSAGE_ENDPOINTS,
 } from '.';
-import {AuthorizationSecurity, OcppRequest, OcppResponse, SystemConfig, } from '../..';
-import {Namespace} from '../../ocpp/persistence';
-import {CallAction} from '../../ocpp/rpc/message';
-import {IMessageConfirmation} from '../messages';
-import {IModule} from '../modules';
-import {IMessageQuerystring, IMessageQuerystringSchema, } from './MessageQuerystring';
-import {IModuleApi} from './ModuleApi';
+import {
+  AuthorizationSecurity,
+  OcppRequest,
+  OcppResponse,
+  SystemConfig,
+} from '../..';
+import { Namespace } from '../../ocpp/persistence';
+import { CallAction } from '../../ocpp/rpc/message';
+import { IMessageConfirmation } from '../messages';
+import { IModule } from '../modules';
+import {
+  IMessageQuerystring,
+  IMessageQuerystringSchema,
+} from './MessageQuerystring';
+import { IModuleApi } from './ModuleApi';
 
 /**
  * Abstract module api class implementation.

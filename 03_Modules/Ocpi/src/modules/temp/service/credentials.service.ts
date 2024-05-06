@@ -2,13 +2,10 @@ import { CredentialsRepository } from '../repository/credentials.repository';
 import { FastifyRequest } from 'fastify';
 import { AuthorizationHeaderSchema } from '../schema/authorization.header.schema';
 import {
-  Businessdetails,
   Credentials,
-  CredentialsRole,
   HttpStatus,
   OcpiNamespace,
   OcpiResponse,
-  Role,
   Version,
 } from '@citrineos/base';
 import { VersionsControllerApi } from '../../../apis/VersionsControllerApi';
@@ -25,27 +22,7 @@ export class CredentialsService {
     private _logger: Logger<ILogObj>,
     private credentialsRepository: CredentialsRepository,
     private versionRepository: VersionRepository,
-  ) {
-  }
-
-  private tempCreateCredentials() {
-    const businessDetails = new Businessdetails();
-    businessDetails.name = 'example';
-
-    const credentialsRole = new CredentialsRole();
-    credentialsRole.role = Role.EMSP;
-    credentialsRole.business_details = businessDetails;
-    credentialsRole.party_id = 'partyId';
-    credentialsRole.country_code = 'US';
-
-    const credentials = new Credentials();
-    credentials.token = '123';
-    credentials.url = 'https://example.com';
-    credentials.roles = [credentialsRole];
-    this.credentialsRepository.create(credentials).then((creds) => {
-      console.log('credentials: ', creds);
-    });
-  }
+  ) {}
 
   async getCredentials(
     request: FastifyRequest<{

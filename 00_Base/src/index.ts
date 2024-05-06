@@ -4,8 +4,6 @@
 // SPDX-License-Identifier: Apache 2.0
 
 // Base Library Interfaces
-
-import { CredentialsRole } from './interfaces/api/ocpi/model/CredentialsRole';
 import {
   AuthorizeRequestSchema,
   BootNotificationRequestSchema,
@@ -250,4 +248,7 @@ export { ModuleId } from './interfaces/api/ocpi/model/ModuleId';
 export { Role } from './interfaces/api/ocpi/model/Role';
 export { VersionNumber } from './interfaces/api/ocpi/model/VersionNumber';
 export { OcpiNamespace } from './interfaces/api/ocpi/OcpiNamespace';
-export {AuthorizationSecurityList, AuthorizationSecurity} from './interfaces/api/ocpi/AuthorizationSecurity';
+export {
+  AuthorizationSecurityList,
+  AuthorizationSecurity,
+} from './interfaces/api/ocpi/AuthorizationSecurity';

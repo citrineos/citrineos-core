@@ -3,8 +3,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {HttpMethod, IDataEndpointDefinition, METADATA_DATA_ENDPOINTS, } from '.';
-import {Namespace} from '../../ocpp/persistence';
+import {
+  HttpMethod,
+  IDataEndpointDefinition,
+  METADATA_DATA_ENDPOINTS,
+} from '.';
+import { Namespace } from '../../ocpp/persistence';
 
 /**
  * Decorator for use in module API class to expose methods as REST data endpoints.
@@ -64,4 +68,3 @@ export const AsDataEndpoint = function (
     );
   };
 };
-
