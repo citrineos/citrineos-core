@@ -33,7 +33,7 @@ jobs:
         run: npm install -g newman
 
       - name: Integration test
-        run: newman run ${{ github.workspace }}/.github/workflows/tests/CI/collection.json -e ${{ github.workspace }}/.github/workflows/tests/CI/collection.json --reporters cli --bail
+        run: newman run ${{ github.workspace }}/.github/workflows/tests/CI/collection.json -e ${{ github.workspace }}/.github/workflows/tests/CI/environment.json --reporters cli --bail
 
       - name: Get logs for all containers
         if: failure()
