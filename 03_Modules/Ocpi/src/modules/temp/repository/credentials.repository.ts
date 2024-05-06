@@ -3,16 +3,34 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SequelizeRepository } from '@citrineos/data/dist/layers/sequelize/repository/Base';
-import { Credentials } from '../../../model/Credentials';
-import { Namespace } from '../util/namespace';
+import { SequelizeRepository } from '@citrineos/data';
+import { Credentials, UnauthorizedException } from '@citrineos/base';
+import { OcpiNamespace } from '@citrineos/base';
 
 export class CredentialsRepository extends SequelizeRepository<Credentials> {
-  public validateAuthentication(token: string): Promise<boolean> {
-    try {
-      return this.existsByKey(token, Namespace.Credentials);
-    } catch (e) {
-      return Promise.resolve(false); // todo throw 401/403?
+  public async authorizeToken(token: string): Promise<boolean> {
+    const exists = await this.credentialsExistForGivenToken(token);
+    if (!exists) {
+      return new Promise((resolve, reject) => {
+        reject(
+          new UnauthorizedException('Credentials not found for given token'),
+        );
+      });
+    } else {
+      return new Promise((resolve) => {
+        resolve(true);
+      });
     }
   }
+
+  private credentialsExistForGivenToken = async (
+    token: string,
+  ): Promise<boolean> => {
+    try {
+      const exists = await this.existsByKey(token, OcpiNamespace.Credentials);
+      return Promise.resolve(exists);
+    } catch (e) {
+      return Promise.resolve(false);
+    }
+  };
 }

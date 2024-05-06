@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { PublishTokenType } from './PublishTokenType';
 import { AdditionalGeoLocation } from './AdditionalGeoLocation';
-import { Businessdetails } from './Businessdetails';
+import { Businessdetails } from '../../../../00_Base/src/interfaces/api/ocpi/model/Businessdetails';
 import { Facilities } from './Facilities';
 import { Hours } from './Hours';
 import { GeoLocation } from './GeoLocation';

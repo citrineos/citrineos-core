@@ -1,12 +1,17 @@
 import { VersionRepository } from '../repository/version.repository';
 import { FastifyRequest } from 'fastify';
-import { AuthorizationHeader } from '../schema/authorization.header.schema';
-import { OcpiResponse } from '@citrineos/base';
-import { Version, VersionDetailsDTO, VersionDTO } from '../../../model/Version';
+import { AuthorizationHeaderSchema } from '../schema/authorization.header.schema';
+import {
+  HttpStatus,
+  OcpiResponse,
+  Version,
+  VersionDetailsDTO,
+  VersionDTO,
+} from '@citrineos/base';
 import { CredentialsRepository } from '../repository/credentials.repository';
-import { Namespace } from '../util/namespace';
-import { HttpStatus } from '@citrineos/base';
+import { OcpiNamespace } from '@citrineos/base';
 import { VersionIdParam } from '../schema/version.id.param.schema';
+import { getAuthorizationTokenFromRequest } from '@citrineos/util/dist/util/swagger';
 
 export class VersionService {
   constructor(
@@ -16,41 +21,33 @@ export class VersionService {
 
   async getVersions(
     request: FastifyRequest<{
-      Headers: AuthorizationHeader;
+      Headers: AuthorizationHeaderSchema;
     }>,
   ): Promise<OcpiResponse<VersionDTO[]>> {
-    try {
-      const token = request.headers.Authorization;
-      await this.credentialsRepository.validateAuthentication(token!);
-      const versions: Version[] = await this.versionRepository.readAllByQuery(
-        {},
-        Namespace.Version,
-      );
-      return OcpiResponse.build(
-        HttpStatus.OK,
-        versions.map((version) => version.toVersionDTO()),
-      );
-    } catch (e) {
-      throw new Error('todo'); // todo error handling
-    }
+    const token = getAuthorizationTokenFromRequest(request);
+    await this.credentialsRepository.authorizeToken(token);
+    const versions: Version[] = await this.versionRepository.readAllByQuery(
+      {},
+      OcpiNamespace.Version,
+    );
+    return OcpiResponse.build(
+      HttpStatus.OK,
+      versions.map((version) => version.toVersionDTO()),
+    );
   }
 
   async getVersion(
     request: FastifyRequest<{
-      Headers: AuthorizationHeader;
+      Headers: AuthorizationHeaderSchema;
       Params: VersionIdParam;
     }>,
   ): Promise<OcpiResponse<VersionDetailsDTO>> {
-    try {
-      const token = request.headers.Authorization;
-      await this.credentialsRepository.validateAuthentication(token!);
-      const version: Version = await this.versionRepository.readByKey(
-        request.params.versionId,
-        Namespace.Version,
-      );
-      return OcpiResponse.build(HttpStatus.OK, version.toVersionDetailsDTO());
-    } catch (e) {
-      throw new Error('todo'); // todo error handling
-    }
+    const token = getAuthorizationTokenFromRequest(request);
+    await this.credentialsRepository.authorizeToken(token);
+    const version: Version = await this.versionRepository.readByKey(
+      request.params.versionId,
+      OcpiNamespace.Version,
+    );
+    return OcpiResponse.build(HttpStatus.OK, version.toVersionDetailsDTO());
   }
 }

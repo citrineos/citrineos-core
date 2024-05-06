@@ -6,7 +6,7 @@ import {
 import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { OcpiResponse } from '@citrineos/base';
 import { Tariff } from '../model/Tariff';
-import { VersionNumber } from '../model/VersionNumber';
+import { VersionNumber } from '../../../../00_Base/src/interfaces/api/ocpi/model/VersionNumber';
 
 export interface DeleteTariffRequest extends BaseOcpiHeaders {
   countryCode: string;

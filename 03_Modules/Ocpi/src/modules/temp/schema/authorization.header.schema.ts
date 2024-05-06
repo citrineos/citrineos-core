@@ -1,6 +1,6 @@
 import { IsOptional, IsString } from 'class-validator';
 
-export class AuthorizationHeader {
+export class AuthorizationHeaderSchema {
   @IsString()
   @IsOptional()
   Authorization?: string;

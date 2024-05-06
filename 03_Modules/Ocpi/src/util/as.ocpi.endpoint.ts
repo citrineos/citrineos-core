@@ -6,12 +6,6 @@
 import { AsDataEndpoint, HttpMethod, OcpiTag } from '@citrineos/base';
 import { targetConstructorToSchema } from 'class-validator-jsonschema';
 
-export const AuthorizationSecurity = [
-  {
-    authorization: [],
-  },
-];
-
 /**
  * Decorator for use in module API class to expose methods as REST data endpoints.
  *

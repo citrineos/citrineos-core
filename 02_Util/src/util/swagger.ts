@@ -6,12 +6,19 @@
 
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import {FastifyInstance} from 'fastify';
+import {FastifyInstance, FastifyRequest} from 'fastify';
 import fs from 'fs';
-import {getOcpiTagString, HttpStatus, OcpiErrorResponse, OcpiTag, SystemConfig} from '@citrineos/base';
+import {
+  getOcpiTagString,
+  HttpHeader,
+  HttpStatus,
+  OcpiErrorResponse,
+  OcpiTag,
+  SystemConfig,
+  UnauthorizedException,
+} from '@citrineos/base';
 import {OpenAPIV2, OpenAPIV3, OpenAPIV3_1} from 'openapi-types';
 import * as FastifyAuth from '@fastify/auth';
-import {RawRequestDefaultExpression} from 'fastify/types/utils';
 
 /**
  * This transformation is necessary because the plugin (@fastify/swagger) does not handle the local #ref objects correctly.
@@ -120,6 +127,59 @@ const registerSwaggerUi = (
   server.register(fastifySwaggerUi, swaggerUiOptions);
 };
 
+export const convertHeadersToMap = (
+  headers: string[],
+): Record<string, string> => {
+  const headersMap: Record<string, string> = {};
+
+  for (let i = 0; i < headers.length; i += 2) {
+    const key = headers[i];
+    const value = headers[i + 1];
+    headersMap[key] = value;
+  }
+
+  return headersMap;
+};
+
+export const getHeaderValue = (
+  headers: string[],
+  key: string,
+): string | undefined => {
+  for (let i = 0; i < headers.length; i += 2) {
+    if (headers[i].toLowerCase() === key.toLowerCase()) {
+      return headers[i + 1];
+    }
+  }
+  return undefined;
+};
+
+const getTokenFromAuthHeader = (
+  authorizationHeader: string | undefined,
+): string | undefined => {
+  if (!!authorizationHeader) {
+    const token = authorizationHeader.split('Bearer ')[1];
+    return token;
+  }
+  return undefined;
+};
+
+const getAuthorizationTokenFromRawHeaders = (
+  headers: string[],
+): string | undefined => {
+  const authorizationHeader = getHeaderValue(headers, HttpHeader.Authorization);
+  return getTokenFromAuthHeader(authorizationHeader);
+};
+
+export const getAuthorizationTokenFromRequest = (
+  request: FastifyRequest,
+): string => {
+  const token = getAuthorizationTokenFromRawHeaders(request.raw.rawHeaders);
+  if (!token) {
+    throw new UnauthorizedException('Token not found in headers');
+  }
+  return token;
+};
+
 const registerFastifyAuth = async (server: FastifyInstance) => {
   await server.register(FastifyAuth as any).after();
   console.log((server as any).authorization);
@@ -127,27 +187,15 @@ const registerFastifyAuth = async (server: FastifyInstance) => {
   server.decorate(
     'authorization',
     function (request: any, reply: any, done: any) {
-      const convertHeadersToMap = (
-        headers: string[],
-      ): Record<string, string> => {
-        const headersMap: Record<string, string> = {};
-
-        for (let i = 0; i < headers.length; i += 2) {
-          const key = headers[i];
-          const value = headers[i + 1];
-          headersMap[key] = value;
+      try {
+        const token = getAuthorizationTokenFromRequest(request);
+        if (token === '123') {
+          // todo managing real auth but for now using hard coded token
+          done(); // pass an error if the authentication fails
+        } else {
+          throw new UnauthorizedException('Token not authorized');
         }
-
-        return headersMap;
-      };
-
-      const rawRequest: RawRequestDefaultExpression = request.raw;
-      const headers = convertHeadersToMap(rawRequest.rawHeaders);
-      const authorizationHeader = headers['Authorization'];
-      const token = authorizationHeader.split('Bearer ')[1];
-      if (token === '123') { // todo managing real auth but for now using hard coded token
-        done(); // pass an error if the authentication fails
-      } else {
+      } catch (e) {
         reply
           .code(HttpStatus.UNAUTHORIZED)
           .send(OcpiErrorResponse.build(HttpStatus.UNAUTHORIZED));

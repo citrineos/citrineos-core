@@ -5,67 +5,7 @@
 
 // Base Library Interfaces
 
-export {
-  AbstractModuleApi,
-  AsDataEndpoint,
-  AsMessageEndpoint,
-  HttpMethod,
-  IModuleApi,
-  ExceptionHandler,
-} from './interfaces/api';
-export { CacheNamespace, ICache } from './interfaces/cache/cache';
-export {
-  AbstractMessageRouter,
-  IAuthenticator,
-  IMessageRouter,
-} from './interfaces/router';
-export {
-  AbstractMessageHandler,
-  AbstractMessageSender,
-  EventGroup,
-  HandlerProperties,
-  IMessage,
-  IMessageConfirmation,
-  IMessageContext,
-  IMessageHandler,
-  IMessageSender,
-  Message,
-  MessageOrigin,
-  MessageState,
-  RetryMessageError,
-} from './interfaces/messages';
-export { AbstractModule, AsHandler, IModule } from './interfaces/modules';
-export {
-  Call,
-  CallAction,
-  CallError,
-  CallResult,
-  ErrorCode,
-  MessageTypeId,
-  OcppError,
-} from './ocpp/rpc/message';
-
-// Persistence Interfaces
-
-export { ICrudRepository } from './interfaces/repository';
-export * from './ocpp/persistence';
-
-// Configuration Types
-
-export { BootConfig, BOOT_STATUS } from './config/BootConfig';
-export { defineConfig } from './config/defineConfig';
-export { SystemConfig, WebsocketServerConfig } from './config/types';
-
-// Utils
-
-export { RequestBuilder } from './util/request';
-
-export const LOG_LEVEL_OCPP = 10;
-
-// OCPP 2.0.1 Interfaces
-
-export * from './ocpp/model';
-
+import { CredentialsRole } from './interfaces/api/ocpi/model/CredentialsRole';
 import {
   AuthorizeRequestSchema,
   BootNotificationRequestSchema,
@@ -131,6 +71,67 @@ import {
   UpdateFirmwareResponseSchema,
 } from './ocpp/model/index';
 import { CallAction } from './ocpp/rpc/message';
+
+export {
+  AbstractModuleApi,
+  AsDataEndpoint,
+  AsMessageEndpoint,
+  HttpMethod,
+  IModuleApi,
+  ExceptionHandler,
+} from './interfaces/api';
+export { CacheNamespace, ICache } from './interfaces/cache/cache';
+export {
+  AbstractMessageRouter,
+  IAuthenticator,
+  IMessageRouter,
+} from './interfaces/router';
+export {
+  AbstractMessageHandler,
+  AbstractMessageSender,
+  EventGroup,
+  HandlerProperties,
+  IMessage,
+  IMessageConfirmation,
+  IMessageContext,
+  IMessageHandler,
+  IMessageSender,
+  Message,
+  MessageOrigin,
+  MessageState,
+  RetryMessageError,
+} from './interfaces/messages';
+export { AbstractModule, AsHandler, IModule } from './interfaces/modules';
+export {
+  Call,
+  CallAction,
+  CallError,
+  CallResult,
+  ErrorCode,
+  MessageTypeId,
+  OcppError,
+} from './ocpp/rpc/message';
+
+// Persistence Interfaces
+
+export { ICrudRepository } from './interfaces/repository';
+export * from './ocpp/persistence';
+
+// Configuration Types
+
+export { BootConfig, BOOT_STATUS } from './config/BootConfig';
+export { defineConfig } from './config/defineConfig';
+export { SystemConfig, WebsocketServerConfig } from './config/types';
+
+// Utils
+
+export { RequestBuilder } from './util/request';
+
+export const LOG_LEVEL_OCPP = 10;
+
+// OCPP 2.0.1 Interfaces
+
+export * from './ocpp/model';
 
 export interface OcppRequest {}
 
@@ -229,5 +230,24 @@ export const CALL_RESULT_SCHEMA_MAP: Map<CallAction, object> = new Map<
 export { eventGroupFromString } from './interfaces/messages';
 export { OcpiTag, getOcpiTagString } from './interfaces/api/ocpi/OcpiTag';
 export { HttpStatus } from './interfaces/api/http.status';
-export {OcpiResponse} from './interfaces/api/ocpi/OcpiResponse';
-export {OcpiErrorResponse} from './interfaces/api/ocpi/OcpiErrorResponse';
+export { OcpiResponse } from './interfaces/api/ocpi/OcpiResponse';
+export { OcpiErrorResponse } from './interfaces/api/ocpi/OcpiErrorResponse';
+export { Credentials } from './interfaces/api/ocpi/Credentials';
+export {
+  VersionDTO,
+  VersionDetailsDTO,
+  Version,
+} from './interfaces/api/ocpi/Version';
+export { HttpHeader } from './interfaces/api/http.header';
+export { UnauthorizedException } from './interfaces/api/exceptions/unauthorized.exception';
+export { Businessdetails } from './interfaces/api/ocpi/model/Businessdetails';
+export { CredentialsRole } from './interfaces/api/ocpi/model/CredentialsRole';
+export { Endpoint } from './interfaces/api/ocpi/model/Endpoint';
+export { Imagecategory } from './interfaces/api/ocpi/model/Imagecategory';
+export { Image } from './interfaces/api/ocpi/model/Image';
+export { InterfaceRole } from './interfaces/api/ocpi/model/InterfaceRole';
+export { ModuleId } from './interfaces/api/ocpi/model/ModuleId';
+export { Role } from './interfaces/api/ocpi/model/Role';
+export { VersionNumber } from './interfaces/api/ocpi/model/VersionNumber';
+export { OcpiNamespace } from './interfaces/api/ocpi/OcpiNamespace';
+export {AuthorizationSecurityList, AuthorizationSecurity} from './interfaces/api/ocpi/AuthorizationSecurity';

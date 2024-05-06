@@ -20,7 +20,6 @@ import {LocationReferences} from '../../model/LocationReferences';
 import {AuthorizationInfo} from '../../model/AuthorizationInfo';
 import {FromToOffsetLimitQuery} from './schema/from.to.offset.limit.query.schema';
 import {Cdr} from '../../model/Cdr';
-import {GlobalExceptionHandler} from './exceptions/global.exception.handler';
 import {
   ConnectionIdEvseUidLocationIdVersionIdParam
 } from './schema/connection.id.evse.uid.location.id.version.id.param.schema';
@@ -32,6 +31,8 @@ import {TokenTypeVersionIdParam} from './schema/token.type.version.id.param.sche
 import {TokenUidVersionIdParam} from './schema/token.uid.version.param.schema';
 import {CommandVersionIdParam} from './schema/command.version.id.param.schema';
 import {SessionIdVersionIdParam} from './schema/session.id.version.id.param.schema';
+import {GlobalExceptionHandler} from './exceptions/global.exception.handler';
+import {AuthorizationHeaderSchema} from './schema/authorization.header.schema';
 
 /**
  * Server API for the transaction module.
@@ -53,7 +54,10 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   ) {
     super(ocpiModule, server, logger);
 
-    this.initFastifyExceptionHandler(new GlobalExceptionHandler(this._logger));
+    // todo do we need handler.handle.bind(this)? we may if we want to reference this class context in the handler
+    this._server.setErrorHandler(
+      new GlobalExceptionHandler(this._logger).handle,
+    );
   }
 
   // ======================== CDRs ========================
@@ -63,7 +67,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     UidVersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Cdr[]>, // todo proper pageable object
     OcpiTag.Cdrs,
   )
@@ -84,7 +88,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     FromToOffsetLimitQuery,
     undefined,
     VersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Cdr[]>, // todo proper pageable object?
     OcpiTag.Cdrs,
   )
@@ -107,7 +111,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     ConnectionIdEvseUidLocationIdVersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Connector>,
     OcpiTag.Locations,
   )
@@ -128,7 +132,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     LocationIdEvseUidVersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Evse>,
     OcpiTag.Locations,
   )
@@ -149,7 +153,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     FromToOffsetLimitQuery,
     undefined,
     VersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Location[]>, // todo pageable
     OcpiTag.Locations,
   )
@@ -171,7 +175,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     LocationIdVersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Location>,
     OcpiTag.Locations,
   )
@@ -192,7 +196,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     UidVersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Location[]>, // todo pageable
     OcpiTag.Locations,
   )
@@ -214,7 +218,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     FromToOffsetLimitQuery,
     undefined,
     VersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Session[]>, // todo pageable?
     OcpiTag.Sessions,
   )
@@ -236,7 +240,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     UidVersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Session[]>, // todo pageable?
     OcpiTag.Sessions,
   )
@@ -258,7 +262,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     FromToOffsetLimitQuery,
     undefined,
     VersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Tariff[]>, // todo pageable?
     OcpiTag.Tariffs,
   )
@@ -280,7 +284,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     UidVersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Tariff[]>, // todo pageable?
     OcpiTag.Tariffs,
   )
@@ -302,7 +306,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     FromToOffsetLimitQuery,
     undefined,
     VersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Token[]>, // todo pageable?
     OcpiTag.Tokens,
   )
@@ -324,7 +328,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     UidVersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<Token[]>, // todo pageable?
     OcpiTag.Tokens,
   )
@@ -345,7 +349,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     TokenTypeVersionIdParam,
     LocationReferences,
     TokenUidVersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<AuthorizationInfo>, // todo pageable?
     OcpiTag.Tokens,
   )
@@ -369,7 +373,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     CommandResponse,
     CommandVersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<void>, // todo pageable?
     OcpiTag.Commands,
   )
@@ -392,7 +396,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     ActiveChargingProfileResult,
     UidVersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<void>, // todo pageable?
     OcpiTag.ChargingProfiles,
   )
@@ -414,7 +418,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     ActiveChargingProfile,
     SessionIdVersionIdParam,
-    undefined,
+    AuthorizationHeaderSchema,
     OcpiResponse<void>, // todo pageable?
     OcpiTag.ChargingProfiles,
   )

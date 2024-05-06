@@ -1,25 +1,25 @@
 import {
   AbstractModuleApi,
   AsDataEndpoint,
+  AuthorizationSecurityList,
   getOcpiTagString,
   HttpMethod,
   Namespace,
   OcpiResponse,
   OcpiTag,
   SystemConfig,
+  VersionDetailsDTO,
+  VersionDTO,
 } from '@citrineos/base';
 import { OcpiModule } from './module';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { VersionDetailsDTO, VersionDTO } from '../../model/Version';
-import { AuthorizationHeader } from './schema/authorization.header.schema';
+import { AuthorizationHeaderSchema } from './schema/authorization.header.schema';
 import { VersionService } from './service/version.service';
 import { CredentialsRepository } from './repository/credentials.repository';
 import { VersionRepository } from './repository/version.repository';
-import { VersionsExceptionHandler } from './exceptions/versions.exception.handler';
 import { VersionIdParam } from './schema/version.id.param.schema';
 import { targetConstructorToSchema } from 'class-validator-jsonschema';
-import { AuthorizationSecurity } from '../../util/as.ocpi.endpoint';
 
 export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
   private versionService?: VersionService;
@@ -44,10 +44,6 @@ export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
       finalCredentialsRepository,
       finalVersionRepository,
     );
-
-    this.initFastifyExceptionHandler(
-      new VersionsExceptionHandler(this._logger),
-    );
   }
 
   @AsDataEndpoint(
@@ -56,14 +52,14 @@ export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     undefined,
-    targetConstructorToSchema(AuthorizationHeader),
+    targetConstructorToSchema(AuthorizationHeaderSchema),
     targetConstructorToSchema(OcpiResponse<VersionDTO[]>), // todo proper pageable object?
     getOcpiTagString(OcpiTag.Versions),
-    AuthorizationSecurity,
+    AuthorizationSecurityList,
   )
   async getVersions(
     request: FastifyRequest<{
-      Headers: AuthorizationHeader;
+      Headers: AuthorizationHeaderSchema;
     }>,
   ): Promise<OcpiResponse<VersionDTO[]>> {
     return this.versionService!.getVersions(request);
@@ -75,14 +71,14 @@ export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     targetConstructorToSchema(VersionIdParam),
-    targetConstructorToSchema(AuthorizationHeader),
+    targetConstructorToSchema(AuthorizationHeaderSchema),
     targetConstructorToSchema(OcpiResponse<VersionDetailsDTO>),
     getOcpiTagString(OcpiTag.Versions),
-    AuthorizationSecurity,
+    AuthorizationSecurityList,
   )
   async getVersion(
     request: FastifyRequest<{
-      Headers: AuthorizationHeader;
+      Headers: AuthorizationHeaderSchema;
       Params: VersionIdParam;
     }>,
   ): Promise<OcpiResponse<VersionDetailsDTO>> {

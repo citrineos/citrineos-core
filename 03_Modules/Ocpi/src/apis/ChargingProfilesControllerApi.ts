@@ -6,7 +6,7 @@ import {
 import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { ChargingProfileResponse } from '../model/ChargingProfileResponse';
 import { OcpiResponse } from '@citrineos/base';
-import { VersionNumber } from '../model/VersionNumber';
+import { VersionNumber } from '../../../../00_Base/src/interfaces/api/ocpi/model/VersionNumber';
 import { SetChargingProfile } from '../model/SetChargingProfile';
 
 export interface DeleteReceiverChargingProfileRequest extends BaseOcpiHeaders {

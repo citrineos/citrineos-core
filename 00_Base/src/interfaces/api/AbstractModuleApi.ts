@@ -7,14 +7,13 @@ import {FastifyInstance, FastifyReply, FastifyRequest} from 'fastify';
 import 'reflect-metadata';
 import {ILogObj, Logger} from 'tslog';
 import {
-  ExceptionHandler,
   HttpMethod,
   IDataEndpointDefinition,
   IMessageEndpointDefinition,
   METADATA_DATA_ENDPOINTS,
   METADATA_MESSAGE_ENDPOINTS,
 } from '.';
-import {OcppRequest, OcppResponse, SystemConfig} from '../..';
+import {AuthorizationSecurity, OcppRequest, OcppResponse, SystemConfig, } from '../..';
 import {Namespace} from '../../ocpp/persistence';
 import {CallAction} from '../../ocpp/rpc/message';
 import {IMessageConfirmation} from '../messages';
@@ -232,15 +231,28 @@ export abstract class AbstractModuleApi<T extends IModule>
         reply.status(500).send(err);
       });
 
-    const _opts = {
+    const _opts: any = {
       method: httpMethod,
       url: this._toDataPath(namespace),
       schema: schema,
-      preHandler: (this._server as unknown as any).auth([
-        (this._server as unknown as any).authorization,
-      ]),
       handler: _handler,
     };
+
+    if (
+      !!schema &&
+      !!schema.headers &&
+      !!schema.headers.properties &&
+      !!schema.headers.properties.Authorization
+    ) {
+      _opts['preHandler'] = (this._server as unknown as any).auth([
+        (this._server as unknown as any).authorization,
+      ]);
+      if (!_opts['security']) {
+        _opts.schema['security'] = [AuthorizationSecurity];
+      } else {
+        _opts.schema['security'].push(AuthorizationSecurity);
+      }
+    }
 
     if (this._module.config.util.swagger?.exposeData) {
       this._server.register(async (fastifyInstance) => {
@@ -274,9 +286,5 @@ export abstract class AbstractModuleApi<T extends IModule>
     } else {
       return `/data${!prefix.startsWith('/') ? '/' : ''}${prefix}${!prefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
     }
-  }
-
-  protected initFastifyExceptionHandler(handler: ExceptionHandler): void {
-    this._server.setErrorHandler(handler.handle); // todo do we need handler.handle.bind(this)? we may if we want to reference this class context in the handler
   }
 }

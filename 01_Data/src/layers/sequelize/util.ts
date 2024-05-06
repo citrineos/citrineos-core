@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type SystemConfig } from '@citrineos/base';
+import { Credentials, type SystemConfig, Version } from '@citrineos/base';
 import { type Dialect } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
@@ -87,6 +87,8 @@ export class DefaultSequelizeInstance {
         VariableMonitoringStatus,
         VariableStatus,
         Variable,
+        Credentials, // todo should we create a separate sequelize instance so that these models are not here?
+        Version, // todo should we create a separate sequelize instance so that these models are not here?
       ],
       logging: (_sql: string, _timing?: number) => {
         // TODO: Look into fixing that
@@ -94,7 +96,11 @@ export class DefaultSequelizeInstance {
       },
     });
 
-    if (config.data.sequelize.sync && sync) {
+    if (config.data.sequelize.alter) {
+      sequelize.sync({ alter: true }).then(() => {
+        sequelizeLogger.info('Database altered');
+      });
+    } else if (config.data.sequelize.sync && sync) {
       sequelize.sync({ force: true }).then(() => {
         sequelizeLogger.info('Database synchronized');
       });

@@ -7,7 +7,7 @@ import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { OcpiResponse } from '@citrineos/base';
 import { Token } from '../model/Token';
 import { TokenType } from '../model/TokenType';
-import { VersionNumber } from '../model/VersionNumber';
+import { VersionNumber } from '../../../../00_Base/src/interfaces/api/ocpi/model/VersionNumber';
 
 export interface GetTokenRequest extends BaseOcpiHeaders {
   countryCode: string;

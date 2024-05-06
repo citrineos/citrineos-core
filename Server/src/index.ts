@@ -131,8 +131,8 @@ export class CitrineOSServer {
     // Initialize parent logger
     this._logger = this.initLogger();
 
-    // Force sync database
-    this.forceDbSync();
+    // initialize sequelize
+    this.initSequelize();
 
     // Set cache implementation
     this._cache = this.initCache(cache);
@@ -248,11 +248,11 @@ export class CitrineOSServer {
     });
   }
 
-  private forceDbSync() {
+  private initSequelize() {
     sequelize.DefaultSequelizeInstance.getInstance(
       this._config,
       this._logger,
-      true,
+      true, // Force sync database
     );
   }
 

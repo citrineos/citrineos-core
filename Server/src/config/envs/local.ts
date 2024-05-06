@@ -52,6 +52,7 @@ export function createLocalConfig() {
         password: 'citrine',
         storage: '',
         sync: false,
+        alter: true
       },
     },
     util: {

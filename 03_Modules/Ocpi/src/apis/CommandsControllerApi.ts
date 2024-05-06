@@ -6,7 +6,7 @@ import {
 import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { CommandResponse } from '../model/CommandResponse';
 import { OcpiResponse } from '@citrineos/base';
-import { VersionNumber } from '../model/VersionNumber';
+import { VersionNumber } from '../../../../00_Base/src/interfaces/api/ocpi/model/VersionNumber';
 import { CommandsCancelReservationRequest } from '../model/CommandsCancelReservationRequest';
 import { ReserveNow } from '../model/ReserveNow';
 import { CommandsStartSessionRequest } from '../model/CommandsStartSessionRequest';

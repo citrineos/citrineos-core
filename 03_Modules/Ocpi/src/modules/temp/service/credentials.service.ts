@@ -1,40 +1,66 @@
 import { CredentialsRepository } from '../repository/credentials.repository';
 import { FastifyRequest } from 'fastify';
-import { AuthorizationHeader } from '../schema/authorization.header.schema';
-import { OcpiResponse } from '@citrineos/base';
-import { Credentials } from '../../../model/Credentials';
-import { Namespace } from '../util/namespace';
-import { HttpStatus } from '@citrineos/base';
+import { AuthorizationHeaderSchema } from '../schema/authorization.header.schema';
+import {
+  Businessdetails,
+  Credentials,
+  CredentialsRole,
+  HttpStatus,
+  OcpiNamespace,
+  OcpiResponse,
+  Role,
+  Version,
+} from '@citrineos/base';
 import { VersionsControllerApi } from '../../../apis/VersionsControllerApi';
 import { VersionRepository } from '../repository/version.repository';
-import { Version } from '../../../model/Version';
 import { v4 as uuidv4 } from 'uuid';
 import { Configuration } from '../../../apis/BaseApi';
 import { NotFoundException } from '../exceptions/not.found.exception';
 import { ILogObj, Logger } from 'tslog';
 import { VersionIdParam } from '../schema/version.id.param.schema';
+import { getAuthorizationTokenFromRequest } from '@citrineos/util';
 
 export class CredentialsService {
   constructor(
     private _logger: Logger<ILogObj>,
     private credentialsRepository: CredentialsRepository,
     private versionRepository: VersionRepository,
-  ) {}
+  ) {
+  }
+
+  private tempCreateCredentials() {
+    const businessDetails = new Businessdetails();
+    businessDetails.name = 'example';
+
+    const credentialsRole = new CredentialsRole();
+    credentialsRole.role = Role.EMSP;
+    credentialsRole.business_details = businessDetails;
+    credentialsRole.party_id = 'partyId';
+    credentialsRole.country_code = 'US';
+
+    const credentials = new Credentials();
+    credentials.token = '123';
+    credentials.url = 'https://example.com';
+    credentials.roles = [credentialsRole];
+    this.credentialsRepository.create(credentials).then((creds) => {
+      console.log('credentials: ', creds);
+    });
+  }
 
   async getCredentials(
     request: FastifyRequest<{
       Params: VersionIdParam;
-      Headers: AuthorizationHeader;
+      Headers: AuthorizationHeaderSchema;
     }>,
   ): Promise<OcpiResponse<Credentials>> {
     this._logger.info('getCredentials');
     const credentials = await this.credentialsRepository.readByQuery(
       {
         where: {
-          token: request.headers.Authorization,
+          token: getAuthorizationTokenFromRequest(request),
         },
       },
-      Namespace.Credentials,
+      OcpiNamespace.Credentials,
     );
     if (!credentials) {
       throw new NotFoundException('Credentials not found');
@@ -45,12 +71,12 @@ export class CredentialsService {
   async postCredentials(
     request: FastifyRequest<{
       Params: VersionIdParam;
-      Headers: AuthorizationHeader;
+      Headers: AuthorizationHeaderSchema;
       Body: Credentials;
     }>,
   ): Promise<OcpiResponse<Credentials>> {
-    await this.credentialsRepository.validateAuthentication(
-      request.headers.Authorization!,
+    await this.credentialsRepository.authorizeToken(
+      getAuthorizationTokenFromRequest(request),
     );
     await this.getAndUpdateVersions(
       request.body.url,
@@ -58,19 +84,19 @@ export class CredentialsService {
       request.params.versionId,
     );
     return this.updateExistingCredentialsTokenWithNewGeneratedToken(
-      request.headers.Authorization!,
+      getAuthorizationTokenFromRequest(request),
     );
   }
 
   async putCredentials(
     request: FastifyRequest<{
       Params: VersionIdParam;
-      Headers: AuthorizationHeader;
+      Headers: AuthorizationHeaderSchema;
       Body: Credentials;
     }>,
   ): Promise<OcpiResponse<Credentials>> {
-    await this.credentialsRepository.validateAuthentication(
-      request.headers.Authorization!,
+    await this.credentialsRepository.authorizeToken(
+      getAuthorizationTokenFromRequest(request),
     );
     await this.getAndUpdateVersions(
       request.body.url,
@@ -78,14 +104,14 @@ export class CredentialsService {
       request.params.versionId,
     );
     return this.updateExistingCredentialsTokenWithNewGeneratedToken(
-      request.headers.Authorization!,
+      getAuthorizationTokenFromRequest(request),
     );
   }
 
   async deleteCredentials(
     request: FastifyRequest<{
       Params: VersionIdParam;
-      Headers: AuthorizationHeader;
+      Headers: AuthorizationHeaderSchema;
     }>,
   ): Promise<OcpiResponse<void>> {
     try {
@@ -95,7 +121,7 @@ export class CredentialsService {
             token: request.query,
           },
         },
-        Namespace.Credentials,
+        OcpiNamespace.Credentials,
       );
       return OcpiResponse.build(HttpStatus.OK);
     } catch (e) {
@@ -109,7 +135,7 @@ export class CredentialsService {
     try {
       const existingCredentials = await this.credentialsRepository.readByKey(
         oldToken,
-        Namespace.Credentials,
+        OcpiNamespace.Credentials,
       );
       const generateNewToken = uuidv4();
       if (existingCredentials) {
@@ -123,7 +149,7 @@ export class CredentialsService {
                 token: oldToken,
               },
             },
-            Namespace.Credentials,
+            OcpiNamespace.Credentials,
           );
         if (!updatedCredentials) {
           throw new Error('todo'); // todo error handling
@@ -166,7 +192,7 @@ export class CredentialsService {
     }
     const existingVersion: Version = await this.versionRepository.readByKey(
       versionId,
-      Namespace.Version,
+      OcpiNamespace.Version,
     );
     if (!existingVersion) {
       throw new Error('todo'); // todo error handling
@@ -178,7 +204,7 @@ export class CredentialsService {
         endpoints: versionDetails.data?.endpoints,
       } as Version,
       versionId,
-      Namespace.Version,
+      OcpiNamespace.Version,
     );
   }
 }

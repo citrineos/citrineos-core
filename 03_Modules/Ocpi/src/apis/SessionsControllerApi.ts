@@ -6,7 +6,7 @@ import {
 import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { OcpiResponse } from '@citrineos/base';
 import { Session } from '../model/Session';
-import { VersionNumber } from '../model/VersionNumber';
+import { VersionNumber } from '../../../../00_Base/src/interfaces/api/ocpi/model/VersionNumber';
 
 export interface GetSessionRequest extends BaseOcpiHeaders {
   countryCode: string;
