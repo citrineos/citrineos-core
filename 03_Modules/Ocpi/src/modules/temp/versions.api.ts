@@ -84,14 +84,4 @@ export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
   ): Promise<OcpiResponse<VersionDetailsDTO>> {
     return this.versionService!.getVersion(request);
   }
-
-  /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
-   *
-   * @param {CallAction} input - The input {@link Namespace}.
-   * @return {string} - The generated URL path.
-   */
-  protected _toDataPath(input: Namespace | string): string {
-    return super._toDataPath(input, 'versions');
-  }
 }
