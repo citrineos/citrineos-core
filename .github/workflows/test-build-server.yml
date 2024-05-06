@@ -1,9 +1,7 @@
 name: Test Server on Pull Request
 
 on:
-  push:
-    branches:
-      - feature/ci
+  pull_request:
 
 jobs:
   build:
