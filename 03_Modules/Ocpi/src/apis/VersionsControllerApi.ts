@@ -1,6 +1,6 @@
 import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { setAuthHeader } from './util';
-import { OcpiResponse } from '../model/OcpiResponse';
+import { OcpiResponse } from '@citrineos/base';
 import { VersionDetailsDTO, VersionDTO } from '../model/Version';
 
 export interface GetVersionRequest {

@@ -4,7 +4,7 @@ import {
   validateAndgetOcpiHeaders,
 } from './util';
 import { BaseAPI, HTTPHeaders } from './BaseApi';
-import { OcpiResponse } from '../model/OcpiResponse';
+import { OcpiResponse } from '@citrineos/base';
 import { Connector } from '../model/Connector';
 import { Evse } from '../model/Evse';
 import { Location } from '../model/Location';

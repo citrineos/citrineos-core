@@ -64,6 +64,7 @@ import {
   OcpiModule,
   VersionsModuleApi,
 } from '@citrineos/ocpi';
+import deasyncPromise from 'deasync-promise';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -91,7 +92,7 @@ export class CitrineOSServer {
   /**
    * Constructor for the class.
    *
-   * @param {EventGroup} appName - app type
+   * @param {String} appName - event group
    * @param {SystemConfig} config - config
    * @param {FastifyInstance} server - optional Fastify server instance
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
@@ -104,6 +105,9 @@ export class CitrineOSServer {
     ajv?: Ajv,
     cache?: ICache,
   ) {
+    // Set event group
+    this.eventGroup = eventGroupFromString(appName);
+
     // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
     if (!config.util.messageBroker.amqp) {
@@ -133,9 +137,17 @@ export class CitrineOSServer {
     // Set cache implementation
     this._cache = this.initCache(cache);
 
-    // Initialize Swagger if enabled
-    this.initSwagger();
+    // Register AJV for schema validation
+    this.registerAjv();
 
+    this.addDirectusHooks();
+
+    process.on('SIGINT', this.shutdown.bind(this));
+    process.on('SIGTERM', this.shutdown.bind(this));
+    process.on('SIGQUIT', this.shutdown.bind(this));
+  }
+
+  addDirectusHooks() {
     // Add Directus Message API flow creation if enabled
     if (this._config.util.directus?.generateFlows) {
       const directusUtil = new DirectusUtil(this._config, this._logger);
@@ -149,17 +161,6 @@ export class CitrineOSServer {
         this._logger?.info('Directus actions initialization finished');
       });
     }
-
-    // Register AJV for schema validation
-    this.registerAjv();
-
-    // Initialize module & API
-    // Always initialize API after SwaggerUI
-    this.initSystem(appName);
-
-    process.on('SIGINT', this.shutdown.bind(this));
-    process.on('SIGTERM', this.shutdown.bind(this));
-    process.on('SIGQUIT', this.shutdown.bind(this));
   }
 
   shutdown() {
@@ -180,6 +181,13 @@ export class CitrineOSServer {
   }
 
   async run(): Promise<void> {
+    // Initialize Swagger if enabled
+    this.initSwagger();
+
+    // Initialize module & API
+    // Always initialize API after SwaggerUI
+    this.initSystem();
+
     try {
       await this._server
         .listen({
@@ -264,7 +272,7 @@ export class CitrineOSServer {
 
   private initSwagger() {
     if (this._config.util.swagger) {
-      initSwagger(this._config, this._server);
+      deasyncPromise(initSwagger(this._config, this._server));
     }
   }
 
@@ -347,8 +355,8 @@ export class CitrineOSServer {
     }
   }
 
-  private getModuleConfig(appName: EventGroup): ModuleConfig {
-    switch (appName) {
+  private getModuleConfig(eventGroup: EventGroup): ModuleConfig {
+    switch (eventGroup) {
       case EventGroup.Certificates:
         return {
           ModuleClass: CertificatesModule,
@@ -392,19 +400,18 @@ export class CitrineOSServer {
           configModule: this._config.modules.transactions,
         };
       default:
-        throw new Error('Unhandled module type: ' + appName);
+        throw new Error('Unhandled module type: ' + eventGroup);
     }
   }
 
-  private initSystem(appName: string) {
-    this.eventGroup = eventGroupFromString(appName);
+  private initSystem() {
     if (this.eventGroup === EventGroup.All) {
       this.initNetworkConnection();
       this.initAllModules();
     } else if (this.eventGroup === EventGroup.General) {
       this.initNetworkConnection();
     } else {
-      const moduleConfig: ModuleConfig = this.getModuleConfig(this.eventGroup);
+      const moduleConfig: ModuleConfig = this.getModuleConfig(this.eventGroup!);
       this.initModule(moduleConfig);
     }
     this.initOcpi();

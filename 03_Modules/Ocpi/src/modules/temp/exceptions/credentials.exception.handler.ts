@@ -1,8 +1,7 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { ExceptionHandler } from '@citrineos/base';
+import { ExceptionHandler, HttpStatus } from '@citrineos/base';
 import { NotFoundException } from './not.found.exception';
-import { HttpStatus } from '../../../util/http.status';
 
 export class CredentialsExceptionHandler implements ExceptionHandler {
   constructor(private _logger: Logger<ILogObj>) {}

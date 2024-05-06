@@ -1,10 +1,10 @@
 import { CredentialsRepository } from '../repository/credentials.repository';
 import { FastifyRequest } from 'fastify';
 import { AuthorizationHeader } from '../schema/authorization.header.schema';
-import { OcpiResponse } from '../../../model/OcpiResponse';
+import { OcpiResponse } from '@citrineos/base';
 import { Credentials } from '../../../model/Credentials';
 import { Namespace } from '../util/namespace';
-import { HttpStatus } from '../../../util/http.status';
+import { HttpStatus } from '@citrineos/base';
 import { VersionsControllerApi } from '../../../apis/VersionsControllerApi';
 import { VersionRepository } from '../repository/version.repository';
 import { Version } from '../../../model/Version';

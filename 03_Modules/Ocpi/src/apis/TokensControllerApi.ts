@@ -4,7 +4,7 @@ import {
   validateAndgetOcpiHeaders,
 } from './util';
 import { BaseAPI, HTTPHeaders } from './BaseApi';
-import { OcpiResponse } from '../model/OcpiResponse';
+import { OcpiResponse } from '@citrineos/base';
 import { Token } from '../model/Token';
 import { TokenType } from '../model/TokenType';
 import { VersionNumber } from '../model/VersionNumber';

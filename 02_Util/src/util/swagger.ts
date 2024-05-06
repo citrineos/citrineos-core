@@ -8,9 +8,10 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import {FastifyInstance} from 'fastify';
 import fs from 'fs';
-import {OcpiTag, SystemConfig} from '@citrineos/base';
+import {getOcpiTagString, HttpStatus, OcpiErrorResponse, OcpiTag, SystemConfig} from '@citrineos/base';
 import {OpenAPIV2, OpenAPIV3, OpenAPIV3_1} from 'openapi-types';
-import {getOcpiTagString} from '@citrineos/base/dist/interfaces/api/OcpiTag';
+import * as FastifyAuth from '@fastify/auth';
+import {RawRequestDefaultExpression} from 'fastify/types/utils';
 
 /**
  * This transformation is necessary because the plugin (@fastify/swagger) does not handle the local #ref objects correctly.
@@ -80,41 +81,10 @@ function OcppTransformObject({
   return openapiObject;
 }
 
-export function initSwagger(
+const registerSwaggerUi = (
   systemConfig: SystemConfig,
   server: FastifyInstance,
-) {
-  server.register(fastifySwagger, {
-    openapi: {
-      info: {
-        title: 'CitrineOS Central System API',
-        description: 'Central System API for OCPP 2.0.1 messaging.',
-        version: '1.1.1',
-      },
-      servers: [
-        {
-          url: `http://${systemConfig.centralSystem.host}:${systemConfig.centralSystem.port}`,
-          description: 'TODO',
-        },
-      ],
-      components: {
-        securitySchemes: {
-          authorization: {
-            type: 'http',
-            scheme: 'bearer',
-          },
-        },
-      },
-      tags: Object.values(OcpiTag).map((tag) => {
-        return {
-          name: getOcpiTagString(tag),
-          description: `OCPI ${getOcpiTagString(tag)} endpoints`,
-        };
-      }),
-    },
-    transformObject: OcppTransformObject,
-  });
-
+) => {
   const swaggerUiOptions: any = {
     routePrefix: systemConfig.util.swagger?.path,
     securityDefinitions: {
@@ -148,4 +118,85 @@ export function initSwagger(
   }
 
   server.register(fastifySwaggerUi, swaggerUiOptions);
+};
+
+const registerFastifyAuth = async (server: FastifyInstance) => {
+  await server.register(FastifyAuth as any).after();
+  console.log((server as any).authorization);
+
+  server.decorate(
+    'authorization',
+    function (request: any, reply: any, done: any) {
+      const convertHeadersToMap = (
+        headers: string[],
+      ): Record<string, string> => {
+        const headersMap: Record<string, string> = {};
+
+        for (let i = 0; i < headers.length; i += 2) {
+          const key = headers[i];
+          const value = headers[i + 1];
+          headersMap[key] = value;
+        }
+
+        return headersMap;
+      };
+
+      const rawRequest: RawRequestDefaultExpression = request.raw;
+      const headers = convertHeadersToMap(rawRequest.rawHeaders);
+      const authorizationHeader = headers['Authorization'];
+      const token = authorizationHeader.split('Bearer ')[1];
+      if (token === '123') { // todo managing real auth but for now using hard coded token
+        done(); // pass an error if the authentication fails
+      } else {
+        reply
+          .code(HttpStatus.UNAUTHORIZED)
+          .send(OcpiErrorResponse.build(HttpStatus.UNAUTHORIZED));
+      }
+    },
+  );
+};
+
+const registerFastifySwagger = (
+  systemConfig: SystemConfig,
+  server: FastifyInstance,
+) => {
+  server.register(fastifySwagger, {
+    openapi: {
+      info: {
+        title: 'CitrineOS Central System API',
+        description: 'Central System API for OCPP 2.0.1 messaging.',
+        version: '1.1.1',
+      },
+      servers: [
+        {
+          url: `http://${systemConfig.centralSystem.host}:${systemConfig.centralSystem.port}`,
+          description: 'TODO',
+        },
+      ],
+      components: {
+        securitySchemes: {
+          authorization: {
+            type: 'http',
+            scheme: 'bearer',
+          },
+        },
+      },
+      tags: Object.values(OcpiTag).map((tag) => {
+        return {
+          name: getOcpiTagString(tag),
+          description: `OCPI ${getOcpiTagString(tag)} endpoints`,
+        };
+      }),
+    },
+    transformObject: OcppTransformObject,
+  });
+};
+
+export async function initSwagger(
+  systemConfig: SystemConfig,
+  server: FastifyInstance,
+) {
+  registerFastifySwagger(systemConfig, server);
+  registerSwaggerUi(systemConfig, server);
+  await registerFastifyAuth(server);
 }

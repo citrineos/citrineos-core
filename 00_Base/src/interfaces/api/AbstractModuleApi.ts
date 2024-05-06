@@ -236,6 +236,9 @@ export abstract class AbstractModuleApi<T extends IModule>
       method: httpMethod,
       url: this._toDataPath(namespace),
       schema: schema,
+      preHandler: (this._server as unknown as any).auth([
+        (this._server as unknown as any).authorization,
+      ]),
       handler: _handler,
     };
 

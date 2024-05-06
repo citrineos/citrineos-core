@@ -227,4 +227,7 @@ export const CALL_RESULT_SCHEMA_MAP: Map<CallAction, object> = new Map<
 ]);
 
 export { eventGroupFromString } from './interfaces/messages';
-export { OcpiTag } from './interfaces/api/OcpiTag';
+export { OcpiTag, getOcpiTagString } from './interfaces/api/ocpi/OcpiTag';
+export { HttpStatus } from './interfaces/api/http.status';
+export {OcpiResponse} from './interfaces/api/ocpi/OcpiResponse';
+export {OcpiErrorResponse} from './interfaces/api/ocpi/OcpiErrorResponse';

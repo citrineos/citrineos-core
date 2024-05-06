@@ -5,7 +5,7 @@ import {
 } from './util';
 import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { CommandResponse } from '../model/CommandResponse';
-import { OcpiResponse } from '../model/OcpiResponse';
+import { OcpiResponse } from '@citrineos/base';
 import { VersionNumber } from '../model/VersionNumber';
 import { CommandsCancelReservationRequest } from '../model/CommandsCancelReservationRequest';
 import { ReserveNow } from '../model/ReserveNow';

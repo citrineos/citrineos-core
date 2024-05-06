@@ -9,7 +9,7 @@ import {
 import { OcpiModule } from './module';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { OcpiResponse } from '../../model/OcpiResponse';
+import { OcpiResponse } from '@citrineos/base';
 import { AuthorizationHeader } from './schema/authorization.header.schema';
 import { Credentials } from '../../model/Credentials';
 import { CredentialsService } from './service/credentials.service';
@@ -18,7 +18,7 @@ import { VersionRepository } from './repository/version.repository';
 import { CredentialsExceptionHandler } from './exceptions/credentials.exception.handler';
 import { VersionIdParam } from './schema/version.id.param.schema';
 import { targetConstructorToSchema } from 'class-validator-jsonschema';
-import { getOcpiTagString } from '@citrineos/base/dist/interfaces/api/OcpiTag';
+import { getOcpiTagString } from '@citrineos/base';
 import { AuthorizationSecurity } from '../../util/as.ocpi.endpoint';
 
 export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {

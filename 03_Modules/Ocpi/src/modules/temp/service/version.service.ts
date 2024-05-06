@@ -1,11 +1,11 @@
 import { VersionRepository } from '../repository/version.repository';
 import { FastifyRequest } from 'fastify';
 import { AuthorizationHeader } from '../schema/authorization.header.schema';
-import { OcpiResponse } from '../../../model/OcpiResponse';
+import { OcpiResponse } from '@citrineos/base';
 import { Version, VersionDetailsDTO, VersionDTO } from '../../../model/Version';
 import { CredentialsRepository } from '../repository/credentials.repository';
 import { Namespace } from '../util/namespace';
-import { HttpStatus } from '../../../util/http.status';
+import { HttpStatus } from '@citrineos/base';
 import { VersionIdParam } from '../schema/version.id.param.schema';
 
 export class VersionService {

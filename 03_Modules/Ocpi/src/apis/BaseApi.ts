@@ -1,4 +1,4 @@
-import { OcpiResponse } from '../model/OcpiResponse';
+import { OcpiResponse } from '@citrineos/base';
 
 export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
 export type InitOverrideFunction = (requestContext: {

@@ -5,10 +5,9 @@
 
 import {ILogObj, Logger} from 'tslog';
 import {OcpiModule} from './module';
-import {AbstractModuleApi, HttpMethod, Namespace, OcpiTag,} from '@citrineos/base';
+import {AbstractModuleApi, HttpMethod, HttpStatus, Namespace, OcpiResponse, OcpiTag, } from '@citrineos/base';
 import {FastifyInstance, FastifyRequest} from 'fastify';
 import {AsOcpiEndpoint} from '../../util/as.ocpi.endpoint';
-import {OcpiResponse} from '../../model/OcpiResponse';
 import {Connector} from '../../model/Connector';
 import {Evse} from '../../model/Evse';
 import {Session} from 'inspector';
@@ -33,7 +32,6 @@ import {TokenTypeVersionIdParam} from './schema/token.type.version.id.param.sche
 import {TokenUidVersionIdParam} from './schema/token.uid.version.param.schema';
 import {CommandVersionIdParam} from './schema/command.version.id.param.schema';
 import {SessionIdVersionIdParam} from './schema/session.id.version.id.param.schema';
-import {HttpStatus} from '../../util/http.status';
 
 /**
  * Server API for the transaction module.
