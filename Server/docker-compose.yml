@@ -135,6 +135,7 @@ services:
       DB_USER: 'citrine'
       DB_PASSWORD: 'citrine'
       WEBSOCKETS_ENABLED: 'true'
+      ACCESS_TOKEN_TTL: '1d'
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:8055/server/health || exit 1
       start_period: 15s
