@@ -55,6 +55,7 @@ services:
       DB_USER: 'citrine'
       DB_PASSWORD: 'citrine'
       WEBSOCKETS_ENABLED: 'true'
+      ACCESS_TOKEN_TTL: '1d'
   citrine:
     build:
       context: ..
