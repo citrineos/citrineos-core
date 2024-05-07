@@ -39,6 +39,11 @@ import {
 } from '@citrineos/data';
 import fs from 'fs';
 import * as forge from 'node-forge';
+
+const enum PemType {
+  Root = 'Root',
+  SubCA = 'SubCA',
+}
 /**
  * Server API for the Certificates module.
  */
@@ -243,7 +248,7 @@ export class CertificatesModuleApi
     undefined,
     RootCertificateSchema,
   )
-  async installRootCertificates(
+  async installRootCertificate(
     request: FastifyRequest<{ Body: RootCertificateRequest }>,
   ): Promise<Certificate[]> {
     const certRequest = request.body as RootCertificateRequest;
@@ -271,27 +276,19 @@ export class CertificatesModuleApi
     }
 
     let responseBody: Certificate[];
-    let rootChainPem;
+    let rootCAPem;
     if (certRequest.selfSigned) {
       // Generate self-signed root CA certificate
       const [rootCertificatePem, rootPrivateKeyPem] =
         this._generateSelfSignedRootCertificate(certificateFromReq);
-      // Store root certificates in file storage
-      certificateFromReq.privateKeyFileId = await this._fileAccess.uploadFile(
-        `root_key_${certificateFromReq.serialNumber}.pem`,
-        Buffer.from(rootPrivateKeyPem),
+      certificateFromReq = await this._storeCertificateAndKey(
+        certificateFromReq,
+        rootCertificatePem,
+        rootPrivateKeyPem,
+        PemType.Root,
         certRequest.filePath,
       );
-      certificateFromReq.certificateFileId = await this._fileAccess.uploadFile(
-        `root_certificate_${certificateFromReq.serialNumber}.pem`,
-        Buffer.from(rootCertificatePem),
-        certRequest.filePath,
-      );
-      // Store root certificates in db
-      certificateFromReq =
-        await this._module.certificateRepository.createOrUpdateCertificate(
-          certificateFromReq,
-        );
+
       // Generate sub CA certificate
       let subCertificate: Certificate = new Certificate();
       subCertificate.certificateType = certificateFromReq.certificateType;
@@ -301,27 +298,20 @@ export class CertificatesModuleApi
       subCertificate.commonName = certRequest.commonName + ' Sub CA';
       subCertificate.validBefore = certificateFromReq.validBefore;
       subCertificate.signedBy = certificateFromReq.id;
-      const [subCertificatePem, subPrivateKeyPem] =
-        this._generateSubCACertificate(rootPrivateKeyPem, rootCertificatePem);
-      // Store sub CA certificates in file storage
-      subCertificate.privateKeyFileId = await this._fileAccess.uploadFile(
-        `sub_CA_key_${subCertificate.serialNumber}.pem`,
-        Buffer.from(subPrivateKeyPem),
+      const [subCertificatePem, subPrivateKeyPem] = this._generateCertificate(
+        rootPrivateKeyPem,
+        rootCertificatePem,
+      );
+      subCertificate = await this._storeCertificateAndKey(
+        subCertificate,
+        subCertificatePem,
+        subPrivateKeyPem,
+        PemType.SubCA,
         certRequest.filePath,
       );
-      subCertificate.certificateFileId = await this._fileAccess.uploadFile(
-        `sub_CA_certificate_${subCertificate.serialNumber}.pem`,
-        Buffer.from(subCertificatePem),
-        certRequest.filePath,
-      );
-      // Store sub certificates in db
-      subCertificate =
-        await this._module.certificateRepository.createOrUpdateCertificate(
-          subCertificate,
-        );
 
       responseBody = [subCertificate, certificateFromReq];
-      rootChainPem = subCertificatePem + rootCertificatePem;
+      rootCAPem = rootCertificatePem;
     } else {
       // Get root certificate from external CA
       const externalRootCAPem =
@@ -332,27 +322,16 @@ export class CertificatesModuleApi
         await this._generateSubCACertificateSignedByCAServer(
           certificateFromReq,
         );
-
-      // Upload certificate and private key to file storage
-      certificateFromReq.privateKeyFileId = await this._fileAccess.uploadFile(
-        `sub_CA_key_${certificateFromReq.serialNumber}.pem`,
-        Buffer.from(privateKeyPem),
+      certificateFromReq = await this._storeCertificateAndKey(
+        certificateFromReq,
+        certificatePem,
+        privateKeyPem,
+        PemType.SubCA,
         certRequest.filePath,
       );
-      certificateFromReq.certificateFileId = await this._fileAccess.uploadFile(
-        `sub_CA_certificate_${certificateFromReq.serialNumber}.pem`,
-        Buffer.from(certificatePem),
-        certRequest.filePath,
-      );
-
-      // Store sub CA certificate in db
-      certificateFromReq =
-        await this._module.certificateRepository.createOrUpdateCertificate(
-          certificateFromReq,
-        );
 
       responseBody = [certificateFromReq];
-      rootChainPem = certificatePem + externalRootCAPem;
+      rootCAPem = externalRootCAPem;
     }
 
     // Send InstallCertificateRequest to the charger
@@ -361,7 +340,7 @@ export class CertificatesModuleApi
       certRequest.tenantId,
       {
         certificateType: certRequest.certificateType,
-        certificate: rootChainPem,
+        certificate: rootCAPem,
       } as InstallCertificateRequest,
       certRequest.callbackUrl,
     );
@@ -583,27 +562,30 @@ export class CertificatesModuleApi
     ];
   }
 
-  private _generateSubCACertificate(
-    rootKeyPem: string,
-    rootCertPem: string,
+  private _generateCertificate(
+    issuerKeyPem: string,
+    issuerCertPem: string,
   ): [string, string] {
-    const rootCert = forge.pki.certificateFromPem(rootCertPem);
-    const rootKey = forge.pki.privateKeyFromPem(rootKeyPem);
+    const issuerCert = forge.pki.certificateFromPem(issuerCertPem);
+    const issuerKey = forge.pki.privateKeyFromPem(issuerKeyPem);
 
-    const subCAKeyPair = forge.pki.rsa.generateKeyPair({
-      bits: rootKey.n.bitLength(),
+    const keyPair = forge.pki.rsa.generateKeyPair({
+      bits: issuerKey.n.bitLength(),
     });
-    const subCACert = forge.pki.createCertificate();
+    const certificate = forge.pki.createCertificate();
     const attrs = [
-      { name: 'commonName', value: rootCert.subject.getField('CN') + ' SubCA' },
-      { name: 'organizationName', value: rootCert.subject.getField('O') },
+      {
+        name: 'commonName',
+        value: issuerCert.subject.getField('CN') + ' SubCA',
+      },
+      { name: 'organizationName', value: issuerCert.subject.getField('O') },
     ];
-    subCACert.setSubject(attrs);
-    subCACert.setIssuer(rootCert.subject.attributes);
-    subCACert.publicKey = subCAKeyPair.publicKey;
-    subCACert.validity.notBefore = new Date();
-    subCACert.validity.notAfter = rootCert.validity.notAfter;
-    subCACert.setExtensions([
+    certificate.setSubject(attrs);
+    certificate.setIssuer(issuerCert.subject.attributes);
+    certificate.publicKey = keyPair.publicKey;
+    certificate.validity.notBefore = new Date();
+    certificate.validity.notAfter = issuerCert.validity.notAfter;
+    certificate.setExtensions([
       {
         name: 'basicConstraints',
         cA: false,
@@ -617,12 +599,45 @@ export class CertificatesModuleApi
       },
     ]);
 
-    subCACert.sign(rootKey, forge.md.sha256.create());
+    certificate.sign(issuerKey, forge.md.sha256.create());
 
     return [
-      forge.pki.certificateToPem(subCACert),
-      forge.pki.privateKeyToPem(subCAKeyPair.privateKey),
+      forge.pki.certificateToPem(certificate),
+      forge.pki.privateKeyToPem(keyPair.privateKey),
     ];
+  }
+
+  /**
+   * Store certificate in file storage and db.
+   * @param certificateEntity certificate to be stored in db
+   * @param certPem certificate pem to be stored in file storage
+   * @param keyPem private key pem to be stored in file storage
+   * @param filePrefix prefix for file name to be stored in file storage
+   * @param filePath file path in file storage (For directus files, it is the folder id)
+   * @return certificate stored in db
+   */
+  private async _storeCertificateAndKey(
+    certificateEntity: Certificate,
+    certPem: string,
+    keyPem: string,
+    filePrefix: PemType,
+    filePath?: string,
+  ): Promise<Certificate> {
+    // Store certificate and private key in file storage
+    certificateEntity.privateKeyFileId = await this._fileAccess.uploadFile(
+      `${filePrefix}_key_${certificateEntity.serialNumber}.pem`,
+      Buffer.from(keyPem),
+      filePath,
+    );
+    certificateEntity.certificateFileId = await this._fileAccess.uploadFile(
+      `${filePrefix}_certificate_${certificateEntity.serialNumber}.pem`,
+      Buffer.from(certPem),
+      filePath,
+    );
+    // Store certificate in db
+    return await this._module.certificateRepository.createOrUpdateCertificate(
+      certificateEntity,
+    );
   }
 }
 
