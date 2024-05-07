@@ -17,7 +17,7 @@ import {
   EventGroup,
   GetLocalListVersionResponse,
   HandlerProperties,
-  ICache,
+  ICache, IdTokenEnumType,
   IdTokenInfoType,
   IMessage,
   IMessageHandler,
@@ -167,6 +167,12 @@ export class EVDriverModule extends AbstractModule {
             // TODO determine how/if to set personalMessage
           },
         };
+
+        if (message.payload.idToken.type === IdTokenEnumType.NoAuthorization) {
+          response.idTokenInfo.status = AuthorizationStatusEnumType.Accepted;
+          return this.sendCallResultWithMessage(message, response);
+        }
+
         if (authorization) {
           if (authorization.idTokenInfo) {
             // Extract DTO fields from sequelize Model<any, any> objects
