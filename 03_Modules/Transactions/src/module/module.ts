@@ -133,15 +133,15 @@ export class TransactionsModule extends AbstractModule {
 
     this._transactionEventRepository =
       transactionEventRepository ||
-      new sequelize.TransactionEventRepository(config, logger);
+      new sequelize.SequelizeTransactionEventRepository(config, logger);
     this._authorizeRepository =
       authorizeRepository ||
-      new sequelize.AuthorizationRepository(config, logger);
+      new sequelize.SequelizeAuthorizationRepository(config, logger);
     this._deviceModelRepository =
       deviceModelRepository ||
-      new sequelize.DeviceModelRepository(config, logger);
+      new sequelize.SequelizeDeviceModelRepository(config, logger);
     this._tariffRepository =
-      tariffRepository || new sequelize.TariffRepository(config, logger);
+      tariffRepository || new sequelize.SequelizeTariffRepository(config, logger);
 
     this._sendCostUpdatedOnMeterValue =
       config.modules.transactions.sendCostUpdatedOnMeterValue;
@@ -187,14 +187,18 @@ export class TransactionsModule extends AbstractModule {
     const transactionId = transactionEvent.transactionInfo.transactionId;
     if (transactionEvent.idToken) {
       this._authorizeRepository
-        .readByQuery({ ...transactionEvent.idToken })
-        .then((authorization) => {
+        .readAllByQuery({ ...transactionEvent.idToken })
+        .then((authorizations) => {
           const response: TransactionEventResponse = {
             idTokenInfo: {
               status: AuthorizationStatusEnumType.Unknown,
               // TODO determine how/if to set personalMessage
             },
           };
+          if (authorizations.length !== 1) {
+            throw new Error(`Unexpected number of Authorizations for IdToken: ${authorizations.length}`);
+          }
+          const authorization = authorizations[0];
           if (authorization) {
             if (authorization.idTokenInfo) {
               // Extract DTO fields from sequelize Model<any, any> objects

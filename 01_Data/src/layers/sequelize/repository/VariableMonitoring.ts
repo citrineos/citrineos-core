@@ -15,7 +15,7 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
   eventData: CrudRepository<EventData>;
   variableMonitoringStatus: CrudRepository<VariableMonitoringStatus>;
 
-  constructor(config: SystemConfig, namespace: string, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, eventData?: CrudRepository<EventData>, variableMonitoringStatus?: CrudRepository<VariableMonitoringStatus>) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = VariableMonitoring.MODEL_NAME, sequelizeInstance?: Sequelize, eventData?: CrudRepository<EventData>, variableMonitoringStatus?: CrudRepository<VariableMonitoringStatus>) {
     super(config, namespace, logger, sequelizeInstance);
     this.eventData = eventData ? eventData : new SequelizeRepository<EventData>(config, namespace, logger, sequelizeInstance);
     this.variableMonitoringStatus = variableMonitoringStatus ? variableMonitoringStatus : new SequelizeRepository<VariableMonitoringStatus>(config, namespace, logger, sequelizeInstance);

@@ -129,12 +129,12 @@ export class EVDriverModule extends AbstractModule {
 
     this._authorizeRepository =
       authorizeRepository ||
-      new sequelize.AuthorizationRepository(config, logger);
+      new sequelize.SequelizeAuthorizationRepository(config, logger);
     this._deviceModelRepository =
       deviceModelRepository ||
-      new sequelize.DeviceModelRepository(config, logger);
+      new sequelize.SequelizeDeviceModelRepository(config, logger);
     this._tariffRepository =
-      tariffRepository || new sequelize.TariffRepository(config, logger);
+      tariffRepository || new sequelize.SequelizeTariffRepository(config, logger);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -159,14 +159,18 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('Authorize received:', message, props);
 
     this._authorizeRepository
-      .readByQuery({ ...message.payload.idToken })
-      .then(async (authorization) => {
+      .readAllByQuery({ ...message.payload.idToken })
+      .then(async (authorizations) => {
         const response: AuthorizeResponse = {
           idTokenInfo: {
             status: AuthorizationStatusEnumType.Unknown,
             // TODO determine how/if to set personalMessage
           },
         };
+        if (authorizations.length !== 1) {
+          throw new Error(`Unexpected number of Authorizations for IdToken: ${authorizations.length}`);
+        }
+        const authorization = authorizations[0];
         if (authorization) {
           if (authorization.idTokenInfo) {
             // Extract DTO fields from sequelize Model<any, any> objects

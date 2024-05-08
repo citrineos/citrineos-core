@@ -5,8 +5,16 @@
 import { SequelizeRepository } from './Base';
 import { ITariffRepository, TariffQueryString } from '../../../interfaces';
 import { Tariff } from '../model/Tariff';
+import { Sequelize } from 'sequelize-typescript';
+import { SystemConfig } from '@citrineos/base';
+import { Logger, ILogObj } from 'tslog';
 
 export class SequelizeTariffRepository extends SequelizeRepository<Tariff> implements ITariffRepository {
+
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = Tariff.MODEL_NAME, sequelizeInstance?: Sequelize) {
+    super(config, namespace, logger, sequelizeInstance);
+  }
+
   async findByStationId(stationId: string): Promise<Tariff | null> {
     return super.readAllByQuery({
       where: {

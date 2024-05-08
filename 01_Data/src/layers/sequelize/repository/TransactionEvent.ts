@@ -18,7 +18,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   evse: CrudRepository<Evse>;
   meterValue: CrudRepository<MeterValue>;
 
-  constructor(config: SystemConfig, namespace: string, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, transaction?: CrudRepository<Transaction>, evse?: CrudRepository<Evse>, meterValue?: CrudRepository<MeterValue>) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = TransactionEvent.MODEL_NAME, sequelizeInstance?: Sequelize, transaction?: CrudRepository<Transaction>, evse?: CrudRepository<Evse>, meterValue?: CrudRepository<MeterValue>) {
     super(config, namespace, logger, sequelizeInstance);
     this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, namespace, logger, sequelizeInstance);
     this.evse = evse ? evse : new SequelizeRepository<Evse>(config, namespace, logger, sequelizeInstance);
