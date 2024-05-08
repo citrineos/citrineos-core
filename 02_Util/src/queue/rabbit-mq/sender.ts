@@ -36,7 +36,7 @@ export class RabbitMqSender
   protected _channel?: amqplib.Channel;
 
   /**
-   * Constructor for the class.
+   * Util for the class.
    *
    * @param {SystemConfig} config - The system configuration.
    * @param {Logger<ILogObj>} [logger] - The logger object.

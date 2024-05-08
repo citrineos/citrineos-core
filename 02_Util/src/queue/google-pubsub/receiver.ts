@@ -43,7 +43,7 @@ export class PubSubReceiver extends AbstractMessageHandler {
   private _subscriptions: Subscription[] = [];
 
   /**
-   * Constructor
+   * Util
    *
    * @param topicPrefix Custom topic prefix, defaults to "ocpp"
    */

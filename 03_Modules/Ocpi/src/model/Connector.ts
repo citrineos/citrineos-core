@@ -9,9 +9,10 @@ import {
   IsUrl,
   MaxLength,
 } from 'class-validator';
-import { ConnectorType } from './ConnectorType';
-import { ConnectorFormat } from './ConnectorFormat';
-import { PowerType } from './PowerType';
+import {ConnectorType} from './ConnectorType';
+import {ConnectorFormat} from './ConnectorFormat';
+import {PowerType} from './PowerType';
+import {Type} from 'class-transformer';
 
 export class Connector {
   @MaxLength(36)
@@ -55,5 +56,6 @@ export class Connector {
   @IsString()
   @IsDateString()
   @IsNotEmpty()
+  @Type(() => Date)
   last_updated!: Date;
 }

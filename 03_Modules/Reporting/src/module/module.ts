@@ -86,7 +86,7 @@ export class ReportingModule extends AbstractModule {
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
 
   /**
-   * Constructor
+   * Util
    */
 
   /**

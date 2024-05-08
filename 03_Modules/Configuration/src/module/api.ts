@@ -54,7 +54,7 @@ export class ConfigurationModuleApi
   extends AbstractModuleApi<ConfigurationModule>
   implements IConfigurationModuleApi {
   /**
-   * Constructor for the class.
+   * Util for the class.
    *
    * @param {ConfigurationModule} ConfigurationComponent - The Configuration component.
    * @param {FastifyInstance} server - The server instance.

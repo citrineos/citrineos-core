@@ -31,7 +31,7 @@ export class KafkaSender
   private _producers: Array<Producer>;
 
   /**
-   * Constructor
+   * Util
    *
    * @param topicPrefix Custom topic prefix, defaults to "ocpp"
    */

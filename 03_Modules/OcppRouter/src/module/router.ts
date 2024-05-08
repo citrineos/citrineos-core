@@ -83,7 +83,7 @@ export class MessageRouterImpl
   public subscriptionRepository: ISubscriptionRepository;
 
   /**
-   * Constructor for the class.
+   * Util for the class.
    *
    * @param {SystemConfig} config - the system configuration
    * @param {ICache} cache - the cache object

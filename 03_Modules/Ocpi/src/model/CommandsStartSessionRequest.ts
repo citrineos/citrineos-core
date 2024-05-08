@@ -1,12 +1,6 @@
-import {
-  IsNotEmpty,
-  IsObject,
-  IsOptional,
-  IsString,
-  IsUrl,
-  MaxLength,
-} from 'class-validator';
-import { Token } from './Token';
+import {IsNotEmpty, IsObject, IsOptional, IsString, IsUrl, MaxLength,} from 'class-validator';
+import {Token} from './Token';
+import {Type} from 'class-transformer';
 
 export class CommandsStartSessionRequest {
   @IsString()
@@ -16,6 +10,8 @@ export class CommandsStartSessionRequest {
 
   @IsObject()
   @IsNotEmpty()
+  @Type(() => Token)
+  @ValidateNested()
   token!: Token;
 
   @MaxLength(36)

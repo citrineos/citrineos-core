@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {IsArray, IsNotEmpty, IsString, MaxLength} from 'class-validator';
 
 export class LocationReferences {
   @IsString()
@@ -7,5 +7,5 @@ export class LocationReferences {
   location_id!: string;
 
   @IsArray()
-  evse_uids!: [];
+  evse_uids!: string[];
 }

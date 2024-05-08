@@ -90,7 +90,7 @@ export class CitrineOSServer {
   private _networkConnection?: WebsocketNetworkConnection;
 
   /**
-   * Constructor for the class.
+   * Util for the class.
    *
    * @param {String} appName - event group
    * @param {SystemConfig} config - config

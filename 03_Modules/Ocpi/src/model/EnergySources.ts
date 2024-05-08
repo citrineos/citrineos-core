@@ -1,8 +1,8 @@
-import { IsNotEmpty, IsNumber, IsString, Max } from 'class-validator';
-import { EnergySourceCategory } from './EnergySourceCategory';
+import {IsEnum, IsNotEmpty, IsNumber, Max} from 'class-validator';
+import {EnergySourceCategory} from './EnergySourceCategory';
 
 export class EnergySources {
-  @IsString()
+  @IsEnum(EnergySourceCategory)
   @IsNotEmpty()
   source!: EnergySourceCategory;
 

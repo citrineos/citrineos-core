@@ -1,6 +1,6 @@
 import { CredentialsRepository } from '../repository/credentials.repository';
 import { FastifyRequest } from 'fastify';
-import { AuthorizationHeaderSchema } from '../schema/authorization.header.schema';
+import { AuthorizationHeader } from '../schema/authorizationHeader';
 import {
   Credentials,
   HttpStatus,
@@ -27,7 +27,7 @@ export class CredentialsService {
   async getCredentials(
     request: FastifyRequest<{
       Params: VersionIdParam;
-      Headers: AuthorizationHeaderSchema;
+      Headers: AuthorizationHeader;
     }>,
   ): Promise<OcpiResponse<Credentials>> {
     this._logger.info('getCredentials');
@@ -48,7 +48,7 @@ export class CredentialsService {
   async postCredentials(
     request: FastifyRequest<{
       Params: VersionIdParam;
-      Headers: AuthorizationHeaderSchema;
+      Headers: AuthorizationHeader;
       Body: Credentials;
     }>,
   ): Promise<OcpiResponse<Credentials>> {
@@ -68,7 +68,7 @@ export class CredentialsService {
   async putCredentials(
     request: FastifyRequest<{
       Params: VersionIdParam;
-      Headers: AuthorizationHeaderSchema;
+      Headers: AuthorizationHeader;
       Body: Credentials;
     }>,
   ): Promise<OcpiResponse<Credentials>> {
@@ -88,7 +88,7 @@ export class CredentialsService {
   async deleteCredentials(
     request: FastifyRequest<{
       Params: VersionIdParam;
-      Headers: AuthorizationHeaderSchema;
+      Headers: AuthorizationHeader;
     }>,
   ): Promise<OcpiResponse<void>> {
     try {

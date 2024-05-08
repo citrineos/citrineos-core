@@ -1,14 +1,8 @@
-import {
-  IsInt,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
-import { TariffDimensionType } from './TariffDimensionType';
+import {IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, } from 'class-validator';
+import {TariffDimensionType} from './TariffDimensionType';
 
 export class PriceComponent {
-  @IsString()
+  @IsEnum(TariffDimensionType)
   @IsNotEmpty()
   type!: TariffDimensionType;
 

@@ -1,13 +1,6 @@
-import {
-  IsDateString,
-  IsNotEmpty,
-  IsObject,
-  IsOptional,
-  IsString,
-  IsUrl,
-  MaxLength,
-} from 'class-validator';
-import { Token } from './Token';
+import {IsDateString, IsNotEmpty, IsObject, IsOptional, IsString, IsUrl, MaxLength,} from 'class-validator';
+import {Token} from './Token';
+import {Type} from 'class-transformer';
 
 export class CommandsReserveNowRequest {
   @IsString()
@@ -17,11 +10,14 @@ export class CommandsReserveNowRequest {
 
   @IsObject()
   @IsNotEmpty()
+  @Type(() => Token)
+  @ValidateNested()
   token!: Token;
 
   @IsString()
   @IsDateString()
   @IsNotEmpty()
+  @Type(() => Date)
   expiry_date!: Date;
 
   @MaxLength(36)

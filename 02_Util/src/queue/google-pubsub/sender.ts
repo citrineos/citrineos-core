@@ -30,7 +30,7 @@ export class PubSubSender
   protected _client: PubSub;
 
   /**
-   * Constructor
+   * Util
    *
    * @param topicPrefix Custom topic prefix, defaults to "ocpp"
    */

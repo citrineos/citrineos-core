@@ -7,9 +7,11 @@ import {
   IsString,
   MaxLength,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
-import { TokenEnergyContract } from './TokenEnergyContract';
-import { WhitelistType } from './WhitelistType';
+import {TokenEnergyContract} from './TokenEnergyContract';
+import {WhitelistType} from './WhitelistType';
+import {Type} from 'class-transformer';
 
 export class Token {
   @MaxLength(2)
@@ -71,10 +73,13 @@ export class Token {
   default_profile_type?: string | null;
 
   @IsOptional()
+  @Type(() => TokenEnergyContract)
+  @ValidateNested()
   energy_contract?: TokenEnergyContract | null;
 
   @IsString()
   @IsDateString()
   @IsNotEmpty()
+  @Type(() => Date)
   last_updated!: Date;
 }

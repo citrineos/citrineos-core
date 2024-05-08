@@ -1,5 +1,5 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
-import { TokenType } from './TokenType';
+import {IsEnum, IsOptional, IsString, MaxLength} from 'class-validator';
+import {TokenType} from './TokenType';
 
 export class PublishTokenType {
   @MaxLength(36)
@@ -7,7 +7,7 @@ export class PublishTokenType {
   @IsOptional()
   uid?: string | null;
 
-  @IsString()
+  @IsEnum(TokenType)
   @IsOptional()
   type?: TokenType | null;
 

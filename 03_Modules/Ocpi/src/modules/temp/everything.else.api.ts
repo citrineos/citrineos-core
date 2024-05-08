@@ -3,41 +3,34 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ILogObj, Logger } from 'tslog';
-import { OcpiModule } from './module';
+import {ILogObj, Logger} from 'tslog';
+import {OcpiModule} from './module';
+import {AbstractModuleApi, HttpMethod, HttpStatus, Namespace, OcpiResponse, OcpiTag} from '@citrineos/base';
+import {FastifyInstance, FastifyRequest} from 'fastify';
+import {AsOcpiEndpoint} from '../../util/as.ocpi.endpoint';
+import {Connector} from '../../model/Connector';
+import {Evse} from '../../model/Evse';
+import {Session} from 'inspector';
+import {Tariff} from '../../model/Tariff';
+import {Token} from '../../model/Token';
+import {CommandResponse} from '../../model/CommandResponse';
+import {LocationReferences} from '../../model/LocationReferences';
+import {AuthorizationInfo} from '../../model/AuthorizationInfo';
+import {FromToOffsetLimitQuery} from './schema/from.to.offset.limit.query.schema';
+import {Cdr} from '../../model/Cdr';
 import {
-  AbstractModuleApi,
-  HttpMethod,
-  HttpStatus,
-  Namespace,
-  OcpiResponse,
-  OcpiTag,
-} from '@citrineos/base';
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { AsOcpiEndpoint } from '../../util/as.ocpi.endpoint';
-import { Connector } from '../../model/Connector';
-import { Evse } from '../../model/Evse';
-import { Session } from 'inspector';
-import { Tariff } from '../../model/Tariff';
-import { Token } from '../../model/Token';
-import { CommandResponse } from '../../model/CommandResponse';
-import { ActiveChargingProfileResult } from '../../model/ActiveChargingProfileResult';
-import { ActiveChargingProfile } from '../../model/ActiveChargingProfile';
-import { LocationReferences } from '../../model/LocationReferences';
-import { AuthorizationInfo } from '../../model/AuthorizationInfo';
-import { FromToOffsetLimitQuery } from './schema/from.to.offset.limit.query.schema';
-import { Cdr } from '../../model/Cdr';
-import { ConnectionIdEvseUidLocationIdVersionIdParam } from './schema/connection.id.evse.uid.location.id.version.id.param.schema';
-import { LocationIdEvseUidVersionIdParam } from './schema/location.id.evse.uid.version.id.param.schema';
-import { UidVersionIdParam } from './schema/uid.version.id.param.schema';
-import { VersionIdParam } from './schema/version.id.param.schema';
-import { LocationIdVersionIdParam } from './schema/location.id.version.id.param.schema';
-import { TokenTypeVersionIdParam } from './schema/token.type.version.id.param.schema';
-import { TokenUidVersionIdParam } from './schema/token.uid.version.param.schema';
-import { CommandVersionIdParam } from './schema/command.version.id.param.schema';
-import { SessionIdVersionIdParam } from './schema/session.id.version.id.param.schema';
-import { GlobalExceptionHandler } from './exceptions/global.exception.handler';
-import { AuthorizationHeaderSchema } from './schema/authorization.header.schema';
+  ConnectionIdEvseUidLocationIdVersionIdParam
+} from './schema/connection.id.evse.uid.location.id.version.id.param.schema';
+import {LocationIdEvseUidVersionIdParam} from './schema/location.id.evse.uid.version.id.param.schema';
+import {UidVersionIdParam} from './schema/uid.version.id.param.schema';
+import {VersionIdParam} from './schema/version.id.param.schema';
+import {LocationIdVersionIdParam} from './schema/location.id.version.id.param.schema';
+import {TokenTypeVersionIdParam} from './schema/token.type.version.id.param.schema';
+import {TokenUidVersionIdParam} from './schema/token.uid.version.param.schema';
+import {CommandVersionIdParam} from './schema/command.version.id.param.schema';
+import {GlobalExceptionHandler} from './exceptions/global.exception.handler';
+import {AuthorizationHeader} from './schema/authorizationHeader';
+import {AuthorizationHeaderSchema} from "../../../dist/modules/temp/schema/authorization.header.schema";
 
 /**
  * Server API for the transaction module.
@@ -46,7 +39,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   genericResponse: OcpiResponse<any> = OcpiResponse.build(HttpStatus.OK);
 
   /**
-   * Constructor for the class.
+   * Util for the class.
    *
    * @param {TransactionModule} ocpiModule - The transaction module.
    * @param {FastifyInstance} server - The server instance.
@@ -116,7 +109,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     ConnectionIdEvseUidLocationIdVersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Connector>,
     OcpiTag.Locations,
   )
@@ -137,7 +130,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     LocationIdEvseUidVersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Evse>,
     OcpiTag.Locations,
   )
@@ -158,7 +151,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     FromToOffsetLimitQuery,
     undefined,
     VersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Location[]>, // todo pageable
     OcpiTag.Locations,
   )
@@ -180,7 +173,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     LocationIdVersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Location>,
     OcpiTag.Locations,
   )
@@ -201,7 +194,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     UidVersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Location[]>, // todo pageable
     OcpiTag.Locations,
   )
@@ -223,7 +216,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     FromToOffsetLimitQuery,
     undefined,
     VersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Session[]>, // todo pageable?
     OcpiTag.Sessions,
   )
@@ -245,7 +238,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     UidVersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Session[]>, // todo pageable?
     OcpiTag.Sessions,
   )
@@ -267,7 +260,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     FromToOffsetLimitQuery,
     undefined,
     VersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Tariff[]>, // todo pageable?
     OcpiTag.Tariffs,
   )
@@ -289,7 +282,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     UidVersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Tariff[]>, // todo pageable?
     OcpiTag.Tariffs,
   )
@@ -311,7 +304,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     FromToOffsetLimitQuery,
     undefined,
     VersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Token[]>, // todo pageable?
     OcpiTag.Tokens,
   )
@@ -333,7 +326,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     UidVersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Token[]>, // todo pageable?
     OcpiTag.Tokens,
   )
@@ -354,7 +347,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     TokenTypeVersionIdParam,
     LocationReferences,
     TokenUidVersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<AuthorizationInfo>, // todo pageable?
     OcpiTag.Tokens,
   )
@@ -378,7 +371,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     CommandResponse,
     CommandVersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<void>, // todo pageable?
     OcpiTag.Commands,
   )
@@ -386,51 +379,6 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     request: FastifyRequest<{
       Body: CommandResponse;
       Params: CommandVersionIdParam;
-    }>,
-  ): Promise<OcpiResponse<void>> {
-    console.log('todo', request);
-    return new Promise((resolve) => {
-      resolve(this.genericResponse);
-    }); // TODO
-  }
-
-  // ======================== Charging Profiles ===========================
-  @AsOcpiEndpoint(
-    '/ocpi/:versionId/sender/chargingprofiles/result/:uid',
-    HttpMethod.Post,
-    undefined,
-    ActiveChargingProfileResult,
-    UidVersionIdParam,
-    AuthorizationHeaderSchema,
-    OcpiResponse<void>, // todo pageable?
-    OcpiTag.ChargingProfiles,
-  )
-  async postGenericChargingProfileResult(
-    request: FastifyRequest<{
-      Body: ActiveChargingProfileResult;
-      Params: UidVersionIdParam;
-    }>,
-  ): Promise<OcpiResponse<void>> {
-    console.log('todo', request);
-    return new Promise((resolve) => {
-      resolve(this.genericResponse);
-    }); // TODO
-  }
-
-  @AsOcpiEndpoint(
-    '/ocpi/:versionId/sender/chargingprofiles/:sessionId',
-    HttpMethod.Put,
-    undefined,
-    ActiveChargingProfile,
-    SessionIdVersionIdParam,
-    AuthorizationHeaderSchema,
-    OcpiResponse<void>, // todo pageable?
-    OcpiTag.ChargingProfiles,
-  )
-  async putSenderChargingProfile(
-    request: FastifyRequest<{
-      Body: ActiveChargingProfile;
-      Params: SessionIdVersionIdParam;
     }>,
   ): Promise<OcpiResponse<void>> {
     console.log('todo', request);

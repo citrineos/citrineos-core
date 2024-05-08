@@ -8,11 +8,13 @@ import {
   IsUrl,
   MaxLength,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
-import { Price } from './Price';
-import { TariffElement } from './TariffElement';
-import { EnergyMix } from './EnergyMix';
-import { Displaytext } from './Displaytext';
+import {Price} from './Price';
+import {TariffElement} from './TariffElement';
+import {EnergyMix} from './EnergyMix';
+import {Displaytext} from './Displaytext';
+import {Type} from 'class-transformer';
 
 export class Tariff {
   @MaxLength(36)
@@ -43,6 +45,8 @@ export class Tariff {
 
   @IsArray()
   @IsOptional()
+  @Type(() => Displaytext)
+  @ValidateNested({each: true})
   tariff_alt_text?: Displaytext[] | null;
 
   @IsString()
@@ -51,31 +55,42 @@ export class Tariff {
   tariff_alt_url?: string | null;
 
   @IsOptional()
+  @Type(() => Price)
+  @ValidateNested()
   min_price?: Price | null;
 
   @IsOptional()
+  @Type(() => Price)
+  @ValidateNested()
   max_price?: Price | null;
 
   @ArrayMinSize(1)
   @IsArray()
   @IsNotEmpty()
+  @Type(() => TariffElement)
+  @ValidateNested({each: true})
   elements!: TariffElement[];
 
   @IsOptional()
+  @Type(() => EnergyMix)
+  @ValidateNested()
   energy_mix?: EnergyMix | null;
 
   @IsString()
   @IsDateString()
   @IsOptional()
+  @Type(() => Date)
   start_date_time?: Date | null;
 
   @IsString()
   @IsDateString()
   @IsOptional()
+  @Type(() => Date)
   end_date_time?: Date | null;
 
   @IsString()
   @IsDateString()
   @IsNotEmpty()
+  @Type(() => Date)
   last_updated!: Date;
 }

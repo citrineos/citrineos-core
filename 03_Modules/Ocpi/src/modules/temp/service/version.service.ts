@@ -1,6 +1,6 @@
 import { VersionRepository } from '../repository/version.repository';
 import { FastifyRequest } from 'fastify';
-import { AuthorizationHeaderSchema } from '../schema/authorization.header.schema';
+import { AuthorizationHeader } from '../schema/authorizationHeader';
 import {
   HttpStatus,
   OcpiResponse,
@@ -21,7 +21,7 @@ export class VersionService {
 
   async getVersions(
     request: FastifyRequest<{
-      Headers: AuthorizationHeaderSchema;
+      Headers: AuthorizationHeader;
     }>,
   ): Promise<OcpiResponse<VersionDTO[]>> {
     const token = getAuthorizationTokenFromRequest(request);
@@ -38,7 +38,7 @@ export class VersionService {
 
   async getVersion(
     request: FastifyRequest<{
-      Headers: AuthorizationHeaderSchema;
+      Headers: AuthorizationHeader;
       Params: VersionIdParam;
     }>,
   ): Promise<OcpiResponse<VersionDetailsDTO>> {

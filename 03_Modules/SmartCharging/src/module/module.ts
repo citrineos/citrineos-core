@@ -58,7 +58,7 @@ export class SmartChargingModule extends AbstractModule {
   ];
 
   /**
-   * Constructor
+   * Util
    */
 
   /**

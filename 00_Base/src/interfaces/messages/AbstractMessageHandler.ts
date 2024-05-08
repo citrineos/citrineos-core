@@ -29,7 +29,7 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
   protected _logger: Logger<ILogObj>;
 
   /**
-   * Constructor
+   * Util
    *
    * @param config The system configuration.
    * @param logger [Optional] The logger to use.

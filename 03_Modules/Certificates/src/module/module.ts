@@ -66,7 +66,7 @@ export class CertificatesModule extends AbstractModule {
     new Map();
 
   /**
-   * Constructor
+   * Util
    */
 
   /**

@@ -39,7 +39,7 @@ export class TransactionsModuleApi
   extends AbstractModuleApi<TransactionsModule>
   implements ITransactionsModuleApi {
   /**
-   * Constructor for the class.
+   * Util for the class.
    *
    * @param {TransactionModule} transactionModule - The transaction module.
    * @param {FastifyInstance} server - The server instance.

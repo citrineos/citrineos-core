@@ -1,6 +1,7 @@
 import {
   IsArray,
   IsDateString,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsObject,
@@ -8,12 +9,14 @@ import {
   IsString,
   MaxLength,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
-import { Price } from './Price';
-import { ChargingPeriod } from './ChargingPeriod';
-import { CdrToken } from './CdrToken';
-import { AuthMethod } from './AuthMethod';
-import { SessionStatus } from './SessionStatus';
+import {Price} from './Price';
+import {ChargingPeriod} from './ChargingPeriod';
+import {CdrToken} from './CdrToken';
+import {AuthMethod} from './AuthMethod';
+import {SessionStatus} from './SessionStatus';
+import {Type} from 'class-transformer';
 
 export class Session {
   @MaxLength(2)
@@ -35,11 +38,13 @@ export class Session {
   @IsString()
   @IsDateString()
   @IsNotEmpty()
+  @Type(() => Date)
   start_date_time!: Date;
 
   @IsString()
   @IsDateString()
   @IsOptional()
+  @Type(() => Date)
   end_date_time?: Date | null;
 
   @IsNumber()
@@ -48,9 +53,11 @@ export class Session {
 
   @IsObject()
   @IsNotEmpty()
+  @Type(() => CdrToken)
+  @ValidateNested()
   cdr_token!: CdrToken;
 
-  @IsString()
+  @IsEnum(AuthMethod)
   @IsNotEmpty()
   auth_method!: AuthMethod;
 
@@ -87,17 +94,22 @@ export class Session {
 
   @IsArray()
   @IsOptional()
+  @Type(() => ChargingPeriod)
+  @ValidateNested({each: true})
   charging_periods?: ChargingPeriod[] | null;
 
   @IsOptional()
+  @Type(() => Price)
+  @ValidateNested()
   total_cost?: Price | null;
 
-  @IsString()
+  @IsEnum(SessionStatus)
   @IsNotEmpty()
   status!: SessionStatus;
 
   @IsString()
   @IsDateString()
   @IsNotEmpty()
+  @Type(() => Date)
   last_updated!: Date;
 }

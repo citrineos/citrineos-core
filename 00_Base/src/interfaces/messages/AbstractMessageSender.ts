@@ -15,7 +15,7 @@ export abstract class AbstractMessageSender {
   protected _logger: Logger<ILogObj>;
 
   /**
-   * Constructor
+   * Util
    *
    * @param config The system configuration.
    * @param logger [Optional] The logger to use.

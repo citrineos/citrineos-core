@@ -7,8 +7,10 @@ import {
   IsString,
   IsUrl,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
-import { SignedValue } from './SignedValue';
+import {SignedValue} from './SignedValue';
+import {Type} from 'class-transformer';
 
 export class SignedData {
   @MaxLength(36)
@@ -28,6 +30,8 @@ export class SignedData {
   @ArrayMinSize(1)
   @IsArray()
   @IsNotEmpty()
+  @Type(() => SignedValue)
+  @ValidateNested({each: true})
   signed_values!: SignedValue[];
 
   @MaxLength(512)

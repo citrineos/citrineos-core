@@ -13,7 +13,7 @@ import {
 import { OcpiModule } from './module';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { AuthorizationHeaderSchema } from './schema/authorization.header.schema';
+import { AuthorizationHeader } from './schema/authorizationHeader';
 import { VersionService } from './service/version.service';
 import { CredentialsRepository } from './repository/credentials.repository';
 import { VersionRepository } from './repository/version.repository';
@@ -51,14 +51,14 @@ export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     undefined,
-    targetConstructorToSchema(AuthorizationHeaderSchema),
+    targetConstructorToSchema(AuthorizationHeader),
     targetConstructorToSchema(OcpiResponse<VersionDTO[]>), // todo proper pageable object?
     getOcpiTagString(OcpiTag.Versions),
     AuthorizationSecurityList,
   )
   async getVersions(
     request: FastifyRequest<{
-      Headers: AuthorizationHeaderSchema;
+      Headers: AuthorizationHeader;
     }>,
   ): Promise<OcpiResponse<VersionDTO[]>> {
     return this.versionService!.getVersions(request);
@@ -70,14 +70,14 @@ export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
     undefined,
     undefined,
     targetConstructorToSchema(VersionIdParam),
-    targetConstructorToSchema(AuthorizationHeaderSchema),
+    targetConstructorToSchema(AuthorizationHeader),
     targetConstructorToSchema(OcpiResponse<VersionDetailsDTO>),
     getOcpiTagString(OcpiTag.Versions),
     AuthorizationSecurityList,
   )
   async getVersion(
     request: FastifyRequest<{
-      Headers: AuthorizationHeaderSchema;
+      Headers: AuthorizationHeader;
       Params: VersionIdParam;
     }>,
   ): Promise<OcpiResponse<VersionDetailsDTO>> {

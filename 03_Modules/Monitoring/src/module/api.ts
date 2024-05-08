@@ -57,7 +57,7 @@ export class MonitoringModuleApi
   private readonly _componentDeviceDataCtrlr = 'DeviceDataCtrlr';
 
   /**
-   * Constructor for the class.
+   * Util for the class.
    *
    * @param {MonitoringModule} monitoringModule - The monitoring module.
    * @param {FastifyInstance} server - The server instance.

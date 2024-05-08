@@ -1,6 +1,7 @@
-import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
+import {IsDate, IsNumber, IsOptional, IsString, ValidateNested} from 'class-validator';
+import {Type} from "class-transformer";
 
-export class OcpiResponse<T> {
+export abstract class OcpiResponse<T> {
   @IsNumber()
   status_code!: number;
   /**
@@ -26,7 +27,9 @@ export class OcpiResponse<T> {
    * @memberof OcpiResponseDTO
    */
   @IsOptional()
-  data?: T;
+  @ValidateNested()
+  // @Type(() => T)  // Use class-transformer to indicate the type
+  abstract data?: T;
 
   static build<T>(
     status_code: number,

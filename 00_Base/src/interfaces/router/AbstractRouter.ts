@@ -43,7 +43,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   ) => Promise<boolean>;
 
   /**
-   * Constructor of abstract ocpp router.
+   * Util of abstract ocpp router.
    *
    * @param {Ajv} ajv - The Ajv instance to use for schema validation.
    */

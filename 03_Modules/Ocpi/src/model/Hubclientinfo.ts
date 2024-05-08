@@ -1,10 +1,5 @@
-import {
-  IsDateString,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import {IsDateString, IsNotEmpty, IsString, MaxLength, MinLength, } from 'class-validator';
+import {Type} from 'class-transformer';
 
 export class Hubclientinfo {
   @MaxLength(3)
@@ -29,5 +24,6 @@ export class Hubclientinfo {
   @IsString()
   @IsDateString()
   @IsNotEmpty()
+  @Type(() => Date)
   last_updated!: Date;
 }

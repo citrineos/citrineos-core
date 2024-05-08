@@ -102,7 +102,7 @@ export class ConfigurationModule extends AbstractModule {
   protected _messageInfoRepository: IMessageInfoRepository;
 
   /**
-   * Constructor
+   * Util
    */
 
   /**
