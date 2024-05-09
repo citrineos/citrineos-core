@@ -8,8 +8,7 @@
     "dist"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node --inspect-brk -r ts-node/register src/index.ts"
+    "start": "nodemon src/index.ts"
   },
   "keywords": [
     "ocpp",

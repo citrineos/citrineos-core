@@ -23,6 +23,7 @@ import {Tariff} from './Tariff';
 import {Type} from 'class-transformer';
 import {OcpiResponse} from "@citrineos/base";
 import {JSONSchema} from "../util/class.validator";
+import {Optional} from "../util/optional";
 
 export class Cdr {
   @MaxLength(2)
@@ -103,7 +104,7 @@ export class Cdr {
   @ValidateNested({each: true})
   charging_periods!: ChargingPeriod[];
 
-  @IsOptional()
+  @Optional()
   @Type(() => SignedData)
   @ValidateNested()
   signed_data?: SignedData | null;
@@ -116,7 +117,7 @@ export class Cdr {
   @IsOptional()
   @Type(() => Price)
   @ValidateNested()
-  total_fixed_cost?: Price | null;
+  total_fixed_cost?: Price | undefined;
 
   @IsNumber()
   @IsNotEmpty()
