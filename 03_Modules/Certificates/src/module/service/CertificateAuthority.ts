@@ -79,6 +79,16 @@ export class CertificateAuthorityService {
     );
   }
 
+  async getSignedContractData(
+    iso15118SchemaVersion: string,
+    exiRequest: string,
+  ): Promise<string> {
+    return await this._v2gClient.getSignedContractData(
+      iso15118SchemaVersion,
+      exiRequest,
+    );
+  }
+
   /**
    * Create a certificate chain including leaf and sub CA certificates except for the root certificate.
    *

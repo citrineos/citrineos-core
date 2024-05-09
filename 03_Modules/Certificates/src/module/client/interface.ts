@@ -5,6 +5,10 @@
 export interface IV2GCertificateAuthorityClient {
   getSignedCertificate(csrString: string): Promise<string>;
   getCACertificates(): Promise<string>;
+  getSignedContractData(
+    certificateInstallationReq: string,
+    xsdMsgDefNamespace: string,
+  ): Promise<string>;
 }
 
 export interface IChargingStationCertificateAuthorityClient {

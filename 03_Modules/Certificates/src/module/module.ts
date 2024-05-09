@@ -16,6 +16,7 @@ import {
   EventGroup,
   GenericStatusEnumType,
   Get15118EVCertificateRequest,
+  Get15118EVCertificateResponse,
   GetCertificateStatusEnumType,
   GetCertificateStatusRequest,
   GetCertificateStatusResponse,
@@ -26,7 +27,7 @@ import {
   IMessageHandler,
   IMessageSender,
   InstallCertificateResponse,
-  OcppError,
+  Iso15118EVCertificateStatusEnumType,
   SignCertificateRequest,
   SignCertificateResponse,
   SystemConfig,
@@ -129,21 +130,33 @@ export class CertificatesModule extends AbstractModule {
    */
 
   @AsHandler(CallAction.Get15118EVCertificate)
-  protected _handleGet15118EVCertificate(
+  protected async _handleGet15118EVCertificate(
     message: IMessage<Get15118EVCertificateRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('Get15118EVCertificate received:', message, props);
+    const request: Get15118EVCertificateRequest = message.payload;
 
-    this._logger.error('Get15118EVCertificate not implemented');
-    this.sendCallErrorWithMessage(
-      message,
-      new OcppError(
-        message.context.correlationId,
-        ErrorCode.NotImplemented,
-        'Get15118EVCertificate not implemented',
-      ),
-    );
+    try {
+      const exiResponse =
+        await this._certificateAuthorityService.getSignedContractData(
+          request.iso15118SchemaVersion,
+          request.exiRequest,
+        );
+      this.sendCallResultWithMessage(message, {
+        status: Iso15118EVCertificateStatusEnumType.Accepted,
+        exiResponse: exiResponse,
+      } as Get15118EVCertificateResponse);
+    } catch (error) {
+      this.sendCallResultWithMessage(message, {
+        status: Iso15118EVCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ErrorCode.GenericError,
+          additionalInfo: error instanceof Error ? error.message : undefined,
+        },
+        exiResponse: '',
+      } as Get15118EVCertificateResponse);
+    }
   }
 
   @AsHandler(CallAction.GetCertificateStatus)
