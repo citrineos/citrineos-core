@@ -12,8 +12,6 @@ export class Hubject implements IV2GCertificateAuthorityClient {
   private readonly _tokenUrl: string;
   private _logger: Logger<ILogObj>;
 
-  private _authorizationToken: string | undefined;
-
   constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
     if (!config.modules.certificates?.v2gCA.hubject) {
       throw new Error('Missing Hubject configuration');
@@ -36,15 +34,12 @@ export class Hubject implements IV2GCertificateAuthorityClient {
    * @return {Promise<string>} The signed certificate without header and footer.
    */
   async getSignedCertificate(csrString: string): Promise<string> {
-    this._authorizationToken =
-      this._authorizationToken ||
-      (await this._getAuthorizationToken(this._tokenUrl));
     const url = `${this._baseUrl}/cpo/simpleenroll/${this._isoVersion}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         Accept: 'application/pkcs10',
-        Authorization: this._authorizationToken,
+        Authorization: await this._getAuthorizationToken(this._tokenUrl),
         'Content-Type': 'application/pkcs10',
       },
       body: csrString,
@@ -66,15 +61,12 @@ export class Hubject implements IV2GCertificateAuthorityClient {
    * @return {Promise<string>} The CA certificates.
    */
   async getCACertificates(): Promise<string> {
-    this._authorizationToken =
-      this._authorizationToken ||
-      (await this._getAuthorizationToken(this._tokenUrl));
     const url = `${this._baseUrl}/cpo/cacerts/${this._isoVersion}`;
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         Accept: 'application/pkcs10, application/pkcs7',
-        Authorization: this._authorizationToken,
+        Authorization: await this._getAuthorizationToken(this._tokenUrl),
         'Content-Transfer-Encoding': 'application/pkcs10',
       },
     });
