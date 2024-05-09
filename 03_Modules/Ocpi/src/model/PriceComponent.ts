@@ -1,5 +1,6 @@
-import {IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, } from 'class-validator';
+import {IsEnum, IsInt, IsNotEmpty, IsNumber,} from 'class-validator';
 import {TariffDimensionType} from './TariffDimensionType';
+import {Optional} from "../util/optional";
 
 export class PriceComponent {
   @IsEnum(TariffDimensionType)
@@ -11,7 +12,7 @@ export class PriceComponent {
   price!: number;
 
   @IsNumber()
-  @IsOptional()
+  @Optional()
   vat?: number | null;
 
   @IsInt()

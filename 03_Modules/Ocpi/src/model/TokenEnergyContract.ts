@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {IsNotEmpty, IsString, MaxLength} from 'class-validator';
+import {Optional} from "../util/optional";
 
 export class TokenEnergyContract {
   @MaxLength(64)
@@ -8,6 +9,6 @@ export class TokenEnergyContract {
 
   @MaxLength(64)
   @IsString()
-  @IsOptional()
+  @Optional()
   contract_id?: string | null;
 }

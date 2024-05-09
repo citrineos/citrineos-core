@@ -2,8 +2,9 @@ import {LocationReferences} from './LocationReferences';
 import {Displaytext} from './Displaytext';
 import {Token} from './Token';
 import {AuthorizationInfoAllowed} from './AuthorizationInfoAllowed';
-import {IsEnum, IsNotEmpty, IsOptional, IsString, ValidateNested} from 'class-validator';
+import {IsEnum, IsNotEmpty, IsString, ValidateNested} from 'class-validator';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class AuthorizationInfo {
   @IsEnum(AuthorizationInfoAllowed)
@@ -15,12 +16,12 @@ export class AuthorizationInfo {
   @IsString()
   authorizationReference!: string;
 
-  @IsOptional()
+  @Optional()
   @Type(() => Displaytext)
   @ValidateNested()
   info?: Displaytext;
 
-  @IsOptional()
+  @Optional()
   @Type(() => LocationReferences)
   @ValidateNested()
   location?: LocationReferences;

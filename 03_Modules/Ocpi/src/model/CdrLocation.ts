@@ -1,6 +1,7 @@
-import {IsNotEmpty, IsObject, IsOptional, IsString, MaxLength, MinLength, ValidateNested,} from 'class-validator';
+import {IsNotEmpty, IsObject, IsString, MaxLength, MinLength, ValidateNested,} from 'class-validator';
 import {GeoLocation} from './GeoLocation';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class CdrLocation {
   @MaxLength(36)
@@ -10,7 +11,7 @@ export class CdrLocation {
 
   @MaxLength(255)
   @IsString()
-  @IsOptional()
+  @Optional()
   name?: string | null;
 
   @MaxLength(45)
@@ -25,12 +26,12 @@ export class CdrLocation {
 
   @MaxLength(10)
   @IsString()
-  @IsOptional()
+  @Optional()
   postal_code?: string | null;
 
   @MaxLength(20)
   @IsString()
-  @IsOptional()
+  @Optional()
   state?: string | null;
 
   @MaxLength(3)

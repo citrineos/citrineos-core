@@ -1,28 +1,29 @@
-import {IsEnum, IsOptional, IsString, MaxLength} from 'class-validator';
+import {IsEnum, IsString, MaxLength} from 'class-validator';
 import {TokenType} from './TokenType';
+import {Optional} from "../util/optional";
 
 export class PublishTokenType {
   @MaxLength(36)
   @IsString()
-  @IsOptional()
+  @Optional()
   uid?: string | null;
 
   @IsEnum(TokenType)
-  @IsOptional()
+  @Optional()
   type?: TokenType | null;
 
   @MaxLength(64)
   @IsString()
-  @IsOptional()
+  @Optional()
   visual_number?: string | null;
 
   @MaxLength(64)
   @IsString()
-  @IsOptional()
+  @Optional()
   issuer?: string | null;
 
   @MaxLength(36)
   @IsString()
-  @IsOptional()
+  @Optional()
   group_id?: string | null;
 }

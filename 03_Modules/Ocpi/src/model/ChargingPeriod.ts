@@ -1,15 +1,7 @@
-import {
-  ArrayMinSize,
-  IsArray,
-  IsDateString,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MaxLength,
-  ValidateNested,
-} from 'class-validator';
+import {ArrayMinSize, IsArray, IsDateString, IsNotEmpty, IsString, MaxLength, ValidateNested,} from 'class-validator';
 import {CdrDimention} from './CdrDimention';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class ChargingPeriod {
   @IsString()
@@ -27,6 +19,6 @@ export class ChargingPeriod {
 
   @MaxLength(36)
   @IsString()
-  @IsOptional()
+  @Optional()
   tariff_id?: string | null;
 }

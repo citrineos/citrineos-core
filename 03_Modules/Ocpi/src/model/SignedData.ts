@@ -1,16 +1,7 @@
-import {
-  ArrayMinSize,
-  IsArray,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  MaxLength,
-  ValidateNested,
-} from 'class-validator';
+import {ArrayMinSize, IsArray, IsInt, IsNotEmpty, IsString, IsUrl, MaxLength, ValidateNested,} from 'class-validator';
 import {SignedValue} from './SignedValue';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class SignedData {
   @MaxLength(36)
@@ -19,12 +10,12 @@ export class SignedData {
   encoding_method!: string;
 
   @IsInt()
-  @IsOptional()
+  @Optional()
   encoding_method_version?: number | null;
 
   @MaxLength(512)
   @IsString()
-  @IsOptional()
+  @Optional()
   public_key?: string | null;
 
   @ArrayMinSize(1)
@@ -37,6 +28,6 @@ export class SignedData {
   @MaxLength(512)
   @IsUrl()
   @IsString()
-  @IsOptional()
+  @Optional()
   url?: string | null;
 }

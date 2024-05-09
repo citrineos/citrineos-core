@@ -4,7 +4,6 @@ import {
   IsDateString,
   IsNotEmpty,
   IsObject,
-  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -19,6 +18,7 @@ import {GeoLocation} from './GeoLocation';
 import {Evse} from './Evse';
 import {EnergyMix} from './EnergyMix';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class Location {
   @MaxLength(2)
@@ -42,14 +42,14 @@ export class Location {
   publish!: boolean;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   @Type(() => PublishTokenType)
   @ValidateNested({each: true})
   publish_allowed_to?: PublishTokenType[] | null;
 
   @MaxLength(255)
   @IsString()
-  @IsOptional()
+  @Optional()
   name?: string | null;
 
   @MaxLength(45)
@@ -64,12 +64,12 @@ export class Location {
 
   @MaxLength(10)
   @IsString()
-  @IsOptional()
+  @Optional()
   postal_code?: string | null;
 
   @MaxLength(20)
   @IsString()
-  @IsOptional()
+  @Optional()
   state?: string | null;
 
   @MaxLength(3)
@@ -85,40 +85,40 @@ export class Location {
   coordinates!: GeoLocation;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   @Type(() => AdditionalGeoLocation)
   @ValidateNested({each: true})
   related_locations?: AdditionalGeoLocation[] | null;
 
   @IsString()
-  @IsOptional()
+  @Optional()
   parking_type?: string | null;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   @Type(() => Evse)
   @ValidateNested({each: true})
   evses?: Evse[] | null;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   directions?: null;
 
-  @IsOptional()
+  @Optional()
   @Type(() => Businessdetails)
   @ValidateNested()
   operator?: Businessdetails | null;
 
-  @IsOptional()
+  @Optional()
   @Type(() => Businessdetails)
   @ValidateNested()
   suboperator?: Businessdetails | null;
 
-  @IsOptional()
+  @Optional()
   owner?: Businessdetails | null;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   @Type(() => Facilities)
   @ValidateNested({each: true})
   facilities?: Facilities[] | null;
@@ -128,19 +128,19 @@ export class Location {
   @IsNotEmpty()
   time_zone!: string;
 
-  @IsOptional()
+  @Optional()
   @Type(() => Hours)
   @ValidateNested()
   opening_times?: Hours | null;
 
-  @IsOptional()
+  @Optional()
   charging_when_closed?: null;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   images?: null;
 
-  @IsOptional()
+  @Optional()
   @Type(() => EnergyMix)
   @ValidateNested()
   energy_mix?: EnergyMix | null;

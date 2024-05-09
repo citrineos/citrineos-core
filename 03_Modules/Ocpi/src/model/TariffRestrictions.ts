@@ -1,73 +1,74 @@
-import {IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, Matches, MaxLength, MinLength,} from 'class-validator';
+import {IsArray, IsEnum, IsInt, IsNumber, IsString, Matches, MaxLength, MinLength,} from 'class-validator';
 import {DayOfWeek} from './DayOfWeek';
 import {ReservationRestrictionType} from './ReservationRestrictionType';
+import {Optional} from "../util/optional";
 
 export class TariffRestrictions {
   @MaxLength(5)
   @MinLength(5)
   @Matches(/([0-1][0-9]|2[0-3]):[0-5][0-9]/)
   @IsString()
-  @IsOptional()
+  @Optional()
   start_time?: string | null;
 
   @MaxLength(5)
   @MinLength(5)
   @Matches(/([0-1][0-9]|2[0-3]):[0-5][0-9]/)
   @IsString()
-  @IsOptional()
+  @Optional()
   end_time?: string | null;
 
   @MaxLength(10)
   @MinLength(10)
   @Matches(/([12][0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])/)
   @IsString()
-  @IsOptional()
+  @Optional()
   start_date?: string | null;
 
   @MaxLength(10)
   @MinLength(10)
   @Matches(/([12][0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])/)
   @IsString()
-  @IsOptional()
+  @Optional()
   end_date?: string | null;
 
   @IsNumber()
-  @IsOptional()
+  @Optional()
   min_kwh?: number | null;
 
   @IsNumber()
-  @IsOptional()
+  @Optional()
   max_kwh?: number | null;
 
   @IsNumber()
-  @IsOptional()
+  @Optional()
   min_current?: number | null;
 
   @IsNumber()
-  @IsOptional()
+  @Optional()
   max_current?: number | null;
 
   @IsNumber()
-  @IsOptional()
+  @Optional()
   min_power?: number | null;
 
   @IsNumber()
-  @IsOptional()
+  @Optional()
   max_power?: number | null;
 
   @IsInt()
-  @IsOptional()
+  @Optional()
   min_duration?: number | null;
 
   @IsInt()
-  @IsOptional()
+  @Optional()
   max_duration?: number | null;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   day_of_week?: DayOfWeek[] | null;
 
   @IsEnum(ReservationRestrictionType)
-  @IsOptional()
+  @Optional()
   reservation?: ReservationRestrictionType | null;
 }

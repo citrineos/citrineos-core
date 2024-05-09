@@ -3,7 +3,6 @@ import {
   IsArray,
   IsDateString,
   IsNotEmpty,
-  IsOptional,
   IsString,
   IsUrl,
   MaxLength,
@@ -15,6 +14,7 @@ import {TariffElement} from './TariffElement';
 import {EnergyMix} from './EnergyMix';
 import {Displaytext} from './Displaytext';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class Tariff {
   @MaxLength(36)
@@ -40,26 +40,26 @@ export class Tariff {
   currency!: string;
 
   @IsString()
-  @IsOptional()
+  @Optional()
   type?: string | null;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   @Type(() => Displaytext)
   @ValidateNested({each: true})
   tariff_alt_text?: Displaytext[] | null;
 
   @IsString()
   @IsUrl()
-  @IsOptional()
+  @Optional()
   tariff_alt_url?: string | null;
 
-  @IsOptional()
+  @Optional()
   @Type(() => Price)
   @ValidateNested()
   min_price?: Price | null;
 
-  @IsOptional()
+  @Optional()
   @Type(() => Price)
   @ValidateNested()
   max_price?: Price | null;
@@ -71,20 +71,20 @@ export class Tariff {
   @ValidateNested({each: true})
   elements!: TariffElement[];
 
-  @IsOptional()
+  @Optional()
   @Type(() => EnergyMix)
   @ValidateNested()
   energy_mix?: EnergyMix | null;
 
   @IsString()
   @IsDateString()
-  @IsOptional()
+  @Optional()
   @Type(() => Date)
   start_date_time?: Date | null;
 
   @IsString()
   @IsDateString()
-  @IsOptional()
+  @Optional()
   @Type(() => Date)
   end_date_time?: Date | null;
 

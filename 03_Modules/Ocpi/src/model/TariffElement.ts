@@ -1,7 +1,8 @@
-import {ArrayMinSize, IsArray, IsNotEmpty, IsOptional, ValidateNested} from 'class-validator';
+import {ArrayMinSize, IsArray, IsNotEmpty, ValidateNested} from 'class-validator';
 import {PriceComponent} from './PriceComponent';
 import {TariffRestrictions} from './TariffRestrictions';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class TariffElement {
   @ArrayMinSize(1)
@@ -11,7 +12,7 @@ export class TariffElement {
   @ValidateNested({each: true})
   price_components!: PriceComponent[];
 
-  @IsOptional()
+  @Optional()
   @Type(() => TariffRestrictions)
   @ValidateNested()
   restrictions?: TariffRestrictions | null;

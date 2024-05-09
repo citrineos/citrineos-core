@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import {IsNotEmpty, IsNumber} from 'class-validator';
+import {Optional} from "../util/optional";
 
 export class Price {
   @IsNumber()
@@ -6,6 +7,6 @@ export class Price {
   excl_vat!: number;
 
   @IsNumber()
-  @IsOptional()
+  @Optional()
   incl_vat?: number | null;
 }

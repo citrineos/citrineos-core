@@ -27,11 +27,21 @@ function nestedClassToJsonSchema(clz: Constructor<any>, options: Partial<Options
 
 
 const additionalConverters: ISchemaConverters = {
+  /* [IS_ARRAY]: (meta: ValidationMetadata, options: Options) => {
+    if (meta.propertyName === 'tariffs' || meta.propertyName === 'signed_data') {
+      console.log('IS_ARRAY', meta, options);
+    }
+    return {
+      items: {},
+      type: 'array',
+      confused: true
+    };
+  } */
   [ValidationTypes.NESTED_VALIDATION]: (meta: ValidationMetadata, options: Options) => {
     if (typeof meta.target === 'function') {
 
-      if (meta.propertyName === 'total_fixed_cost' || meta.propertyName === 'total_cost') {
-        console.log('here');
+      if (meta.propertyName === 'tariffs') {
+        console.log('NESTED_VALIDATION', meta, options);
       }
 
       const typeMeta = options.classTransformerMetadataStorage

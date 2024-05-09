@@ -3,7 +3,6 @@ import {
   IsDateString,
   IsEnum,
   IsNotEmpty,
-  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -12,6 +11,7 @@ import {
 import {TokenEnergyContract} from './TokenEnergyContract';
 import {WhitelistType} from './WhitelistType';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class Token {
   @MaxLength(2)
@@ -41,7 +41,7 @@ export class Token {
 
   @MaxLength(64)
   @IsString()
-  @IsOptional()
+  @Optional()
   visual_number?: string | null;
 
   @MaxLength(64)
@@ -51,7 +51,7 @@ export class Token {
 
   @MaxLength(36)
   @IsString()
-  @IsOptional()
+  @Optional()
   group_id?: string | null;
 
   @IsBoolean()
@@ -65,14 +65,14 @@ export class Token {
   @MaxLength(2)
   @MinLength(2)
   @IsString()
-  @IsOptional()
+  @Optional()
   language?: string | null;
 
   @IsString()
-  @IsOptional()
+  @Optional()
   default_profile_type?: string | null;
 
-  @IsOptional()
+  @Optional()
   @Type(() => TokenEnergyContract)
   @ValidateNested()
   energy_contract?: TokenEnergyContract | null;

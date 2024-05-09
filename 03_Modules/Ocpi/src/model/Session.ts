@@ -5,7 +5,6 @@ import {
   IsNotEmpty,
   IsNumber,
   IsObject,
-  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -17,6 +16,7 @@ import {CdrToken} from './CdrToken';
 import {AuthMethod} from './AuthMethod';
 import {SessionStatus} from './SessionStatus';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class Session {
   @MaxLength(2)
@@ -43,7 +43,7 @@ export class Session {
 
   @IsString()
   @IsDateString()
-  @IsOptional()
+  @Optional()
   @Type(() => Date)
   end_date_time?: Date | null;
 
@@ -63,7 +63,7 @@ export class Session {
 
   @MaxLength(36)
   @IsString()
-  @IsOptional()
+  @Optional()
   authorization_reference?: string | null;
 
   @MaxLength(36)
@@ -83,7 +83,7 @@ export class Session {
 
   @MaxLength(255)
   @IsString()
-  @IsOptional()
+  @Optional()
   meter_id?: string | null;
 
   @MaxLength(3)
@@ -93,12 +93,12 @@ export class Session {
   currency!: string;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   @Type(() => ChargingPeriod)
   @ValidateNested({each: true})
   charging_periods?: ChargingPeriod[] | null;
 
-  @IsOptional()
+  @Optional()
   @Type(() => Price)
   @ValidateNested()
   total_cost?: Price | null;

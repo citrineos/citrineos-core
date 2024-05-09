@@ -5,21 +5,21 @@ import {
   IsInt,
   IsNotEmpty,
   IsNumber,
-  IsOptional,
   IsString,
   ValidateNested,
 } from 'class-validator';
 import {ChargingProfilePeriod} from './ChargingProfilePeriod';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class ChargingProfile {
   @IsString()
   @IsDateString()
-  @IsOptional()
+  @Optional()
   start_date_time?: Date | null;
 
   @IsInt()
-  @IsOptional()
+  @Optional()
   duration?: number | null;
 
   @IsString()
@@ -28,11 +28,11 @@ export class ChargingProfile {
 
   @IsDivisibleBy(0.1)
   @IsNumber()
-  @IsOptional()
+  @Optional()
   min_charging_rate?: number | null;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   @Type(() => ChargingProfilePeriod)
   @ValidateNested({each: true})
   charging_profile_period?: ChargingProfilePeriod[] | null;

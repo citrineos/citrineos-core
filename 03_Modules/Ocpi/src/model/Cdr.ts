@@ -7,7 +7,6 @@ import {
   IsNotEmpty,
   IsNumber,
   IsObject,
-  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -56,7 +55,7 @@ export class Cdr {
 
   @MaxLength(36)
   @IsString()
-  @IsOptional()
+  @Optional()
   session_id?: string | null;
 
   @IsObject()
@@ -71,7 +70,7 @@ export class Cdr {
 
   @MaxLength(36)
   @IsString()
-  @IsOptional()
+  @Optional()
   authorization_reference?: string | null;
 
   @IsObject()
@@ -82,7 +81,7 @@ export class Cdr {
 
   @MaxLength(255)
   @IsString()
-  @IsOptional()
+  @Optional()
   meter_id?: string | null;
 
   @MaxLength(3)
@@ -92,7 +91,7 @@ export class Cdr {
   currency!: string;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   @Type(() => Tariff)
   @ValidateNested({each: true})
   tariffs?: Tariff[] | null;
@@ -114,7 +113,7 @@ export class Cdr {
   @ValidateNested()
   total_cost!: Price;
 
-  @IsOptional()
+  @Optional()
   @Type(() => Price)
   @ValidateNested()
   total_fixed_cost?: Price | undefined;
@@ -123,7 +122,7 @@ export class Cdr {
   @IsNotEmpty()
   total_energy!: number;
 
-  @IsOptional()
+  @Optional()
   @Type(() => Price)
   @ValidateNested()
   total_energy_cost?: Price | null;
@@ -132,45 +131,45 @@ export class Cdr {
   @IsNotEmpty()
   total_time!: number;
 
-  @IsOptional()
+  @Optional()
   @Type(() => Price)
   @ValidateNested()
   total_time_cost?: Price | null;
 
   @IsNumber()
-  @IsOptional()
+  @Optional()
   total_parking_time?: number | null;
 
-  @IsOptional()
+  @Optional()
   @Type(() => Price)
   @ValidateNested()
   total_parking_cost?: Price | null;
 
-  @IsOptional()
+  @Optional()
   @Type(() => Price)
   @ValidateNested()
   total_reservation_cost?: Price | null;
 
   @MaxLength(255)
   @IsString()
-  @IsOptional()
+  @Optional()
   remark?: string | null;
 
   @MaxLength(39)
   @IsString()
-  @IsOptional()
+  @Optional()
   invoice_reference_id?: string | null;
 
-  @IsOptional()
+  @Optional()
   @IsBoolean()
   credit?: boolean | null;
 
   @MaxLength(39)
   @IsString()
-  @IsOptional()
+  @Optional()
   credit_reference_id?: string | null;
 
-  @IsOptional()
+  @Optional()
   @IsBoolean()
   home_charging_compensation?: boolean | null;
 

@@ -4,7 +4,6 @@ import {
   IsDateString,
   IsEnum,
   IsNotEmpty,
-  IsOptional,
   IsString,
   MaxLength,
   ValidateNested,
@@ -17,6 +16,7 @@ import {Connector} from './Connector';
 import {GeoLocation} from './GeoLocation';
 import {Displaytext} from './Displaytext';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class Evse {
   @MaxLength(36)
@@ -26,7 +26,7 @@ export class Evse {
 
   @MaxLength(48)
   @IsString()
-  @IsOptional()
+  @Optional()
   evse_id?: string | null;
 
   @IsEnum(EvseStatus)
@@ -34,13 +34,13 @@ export class Evse {
   status!: EvseStatus;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   @Type(() => EvseStatusSchedule)
   @ValidateNested({each: true})
   status_schedule?: EvseStatusSchedule[] | null;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   @Type(() => Capability)
   @ValidateNested({each: true})
   capabilities?: Capability[] | null;
@@ -54,33 +54,33 @@ export class Evse {
 
   @MaxLength(4)
   @IsString()
-  @IsOptional()
+  @Optional()
   floor_level?: string | null;
 
-  @IsOptional()
+  @Optional()
   @Type(() => GeoLocation)
   @ValidateNested()
   coordinates?: GeoLocation | null;
 
   @MaxLength(16)
   @IsString()
-  @IsOptional()
+  @Optional()
   physical_reference?: string | null;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   @Type(() => Displaytext)
   @ValidateNested()
   directions?: Displaytext[] | null;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   @Type(() => ParkingRestriction)
   @ValidateNested()
   parking_restrictions?: ParkingRestriction[] | null;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   images?: null;
 
   @IsString()

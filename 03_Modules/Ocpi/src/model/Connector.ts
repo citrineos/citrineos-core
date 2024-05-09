@@ -13,6 +13,7 @@ import {ConnectorType} from './ConnectorType';
 import {ConnectorFormat} from './ConnectorFormat';
 import {PowerType} from './PowerType';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class Connector {
   @MaxLength(36)
@@ -41,16 +42,16 @@ export class Connector {
   max_amperage!: number;
 
   @IsInt()
-  @IsOptional()
+  @Optional()
   max_electric_power?: number | null;
 
   @IsArray()
-  @IsOptional()
+  @Optional()
   tariff_ids?: null;
 
   @IsString()
   @IsUrl()
-  @IsOptional()
+  @Optional()
   terms_and_conditions?: string | null;
 
   @IsString()

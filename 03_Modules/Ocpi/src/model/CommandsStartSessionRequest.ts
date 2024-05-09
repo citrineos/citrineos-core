@@ -1,6 +1,7 @@
-import {IsNotEmpty, IsObject, IsOptional, IsString, IsUrl, MaxLength,} from 'class-validator';
+import {IsNotEmpty, IsObject, IsString, IsUrl, MaxLength, ValidateNested,} from 'class-validator';
 import {Token} from './Token';
 import {Type} from 'class-transformer';
+import {Optional} from "../util/optional";
 
 export class CommandsStartSessionRequest {
   @IsString()
@@ -21,16 +22,16 @@ export class CommandsStartSessionRequest {
 
   @MaxLength(36)
   @IsString()
-  @IsOptional()
+  @Optional()
   evse_uid?: string | null;
 
   @MaxLength(36)
   @IsString()
-  @IsOptional()
+  @Optional()
   connector_id?: string | null;
 
   @MaxLength(36)
   @IsString()
-  @IsOptional()
+  @Optional()
   authorization_reference?: string | null;
 }
