@@ -56,7 +56,7 @@ export class CertificateAuthorityService {
     switch (certificateType) {
       case CertificateSigningUseEnumType.V2GCertificate: {
         const signedCert = await this._v2gClient.getSignedCertificate(
-            this._extractEncodedContentFromCSR(csrString),
+          this._extractEncodedContentFromCSR(csrString),
         );
         const caCerts = await this._v2gClient.getCACertificates();
         return this._createCertificateChainWithoutRootCA(signedCert, caCerts);
@@ -99,7 +99,9 @@ export class CertificateAuthorityService {
         Buffer.from(leafRaw.toSchema().toBER(false)).toString('base64'),
       );
     } else {
-      throw new Error(`Cannot extract leaf certificate from the pem: ${signedCert}`);
+      throw new Error(
+        `Cannot extract leaf certificate from the pem: ${signedCert}`,
+      );
     }
 
     // Add Chain
@@ -172,9 +174,9 @@ export class CertificateAuthorityService {
    */
   private _extractEncodedContentFromCSR(csrPem: string): string {
     return csrPem
-        .replace(/-----BEGIN CERTIFICATE REQUEST-----/, '')
-        .replace(/-----END CERTIFICATE REQUEST-----/, '')
-        .replace(/\n/g, '');
+      .replace(/-----BEGIN CERTIFICATE REQUEST-----/, '')
+      .replace(/-----END CERTIFICATE REQUEST-----/, '')
+      .replace(/\n/g, '');
   }
 
   private _createPemBlock(type: string, content: string) {

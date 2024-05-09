@@ -492,7 +492,7 @@ export class WebsocketNetworkConnection {
   }
 
   private _generateServerOptions(
-      config: WebsocketServerConfig,
+    config: WebsocketServerConfig,
   ): https.ServerOptions {
     const serverOptions: https.ServerOptions = {
       key: fs.readFileSync(config.tlsKeyFilePath as string),
@@ -501,7 +501,7 @@ export class WebsocketNetworkConnection {
 
     if (config.rootCaCertificateFilePath) {
       serverOptions.ca = fs.readFileSync(
-          config.rootCaCertificateFilePath as string,
+        config.rootCaCertificateFilePath as string,
       );
     }
 
