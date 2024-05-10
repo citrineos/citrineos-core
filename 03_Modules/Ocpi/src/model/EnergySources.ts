@@ -1,8 +1,9 @@
-import {IsEnum, IsNotEmpty, IsNumber, Max} from 'class-validator';
+import {IsNotEmpty, IsNumber, Max} from 'class-validator';
 import {EnergySourceCategory} from './EnergySourceCategory';
+import {Enum} from "../util/enum";
 
 export class EnergySources {
-  @IsEnum(EnergySourceCategory)
+  @Enum(EnergySourceCategory, 'EnergySourceCategory')
   @IsNotEmpty()
   source!: EnergySourceCategory;
 

@@ -1,25 +1,13 @@
-import { VersionNumber } from './model/VersionNumber';
-import {
-  ArrayMinSize,
-  IsArray,
-  IsEnum,
-  IsNotEmpty,
-  IsString,
-  IsUrl,
-} from 'class-validator';
-import {
-  Column,
-  DataType,
-  Model,
-  PrimaryKey,
-  Table,
-} from 'sequelize-typescript';
-import { Endpoint } from './model/Endpoint';
-import { OcpiNamespace } from './OcpiNamespace';
+import {VersionNumber} from './VersionNumber';
+import {ArrayMinSize, IsArray, IsNotEmpty, IsString, IsUrl,} from 'class-validator';
+import {Column, DataType, Model, PrimaryKey, Table,} from 'sequelize-typescript';
+import {Endpoint} from './Endpoint';
+import {OcpiNamespace} from 'src/util/OcpiNamespace';
+import {Enum} from "../util/enum";
 
 export class VersionDTO {
   @IsNotEmpty()
-  @IsEnum(VersionNumber)
+  @Enum(VersionNumber, 'VersionNumber')
   version!: VersionNumber;
 
   @IsString()
@@ -29,7 +17,7 @@ export class VersionDTO {
 
 export class VersionDetailsDTO {
   @IsNotEmpty()
-  @IsEnum(VersionNumber)
+  @Enum(VersionNumber, 'VersionNumber')
   version!: VersionNumber;
 
   @ArrayMinSize(1)
@@ -48,7 +36,7 @@ export class Version extends Model {
     unique: 'version_number_type',
   })
   @IsNotEmpty()
-  @IsEnum(VersionNumber)
+  @Enum(VersionNumber, 'VersionNumber')
   version!: VersionNumber;
 
   @Column(DataType.STRING)

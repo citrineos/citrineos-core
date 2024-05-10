@@ -1,8 +1,9 @@
-import { IsEnum, IsNotEmpty } from 'class-validator';
-import { TokenType } from '../../../model/TokenType';
+import {IsNotEmpty} from 'class-validator';
+import {TokenType} from '../../../model/TokenType';
+import {Enum} from "../../../util/enum";
 
 export class TokenTypeVersionIdParam {
-  @IsEnum(TokenType)
+  @Enum(TokenType, 'TokenType')
   @IsNotEmpty()
   type = TokenType;
 }

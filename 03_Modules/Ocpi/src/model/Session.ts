@@ -1,7 +1,6 @@
 import {
   IsArray,
   IsDateString,
-  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsObject,
@@ -17,6 +16,7 @@ import {AuthMethod} from './AuthMethod';
 import {SessionStatus} from './SessionStatus';
 import {Type} from 'class-transformer';
 import {Optional} from "../util/optional";
+import {Enum} from "../util/enum";
 
 export class Session {
   @MaxLength(2)
@@ -57,7 +57,7 @@ export class Session {
   @ValidateNested()
   cdr_token!: CdrToken;
 
-  @IsEnum(AuthMethod)
+  @Enum(AuthMethod, 'AuthMethod')
   @IsNotEmpty()
   auth_method!: AuthMethod;
 
@@ -103,7 +103,7 @@ export class Session {
   @ValidateNested()
   total_cost?: Price | null;
 
-  @IsEnum(SessionStatus)
+  @Enum(SessionStatus, 'SessionStatus')
   @IsNotEmpty()
   status!: SessionStatus;
 

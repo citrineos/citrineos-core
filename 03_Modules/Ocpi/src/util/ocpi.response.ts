@@ -1,5 +1,5 @@
-import {IsDate, IsNumber, IsOptional, IsString, ValidateNested} from 'class-validator';
-import {Type} from "class-transformer";
+import {IsDate, IsNumber, IsString, ValidateNested} from 'class-validator';
+import {Optional} from "./optional";
 
 export abstract class OcpiResponse<T> {
   @IsNumber()
@@ -10,7 +10,7 @@ export abstract class OcpiResponse<T> {
    * @memberof OcpiResponseDTO
    */
   @IsString()
-  @IsOptional()
+  @Optional()
   status_message?: string;
 
   /**
@@ -26,7 +26,7 @@ export abstract class OcpiResponse<T> {
    * @type {object}
    * @memberof OcpiResponseDTO
    */
-  @IsOptional()
+  @Optional()
   @ValidateNested()
   // @Type(() => T)  // Use class-transformer to indicate the type
   abstract data?: T;

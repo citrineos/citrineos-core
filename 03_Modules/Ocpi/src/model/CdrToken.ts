@@ -1,6 +1,7 @@
-import {IsEnum, IsNotEmpty, IsString, MaxLength} from 'class-validator';
+import {IsNotEmpty, IsString, MaxLength} from 'class-validator';
 import {TokenType} from './TokenType';
 import {Optional} from "../util/optional";
+import {Enum} from "../util/enum";
 
 export class CdrToken {
   @MaxLength(36)
@@ -8,7 +9,7 @@ export class CdrToken {
   @IsNotEmpty()
   uid!: string;
 
-  @IsEnum(TokenType)
+  @Enum(TokenType, 'TokenType')
   @Optional()
   type?: TokenType | null;
 

@@ -7,8 +7,8 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
-import { OcpiNamespace } from './OcpiNamespace';
-import { CredentialsRole } from './model/CredentialsRole';
+import { OcpiNamespace } from 'src/util/OcpiNamespace';
+import { CredentialsRole } from './CredentialsRole';
 
 @Table
 export class Credentials extends Model {

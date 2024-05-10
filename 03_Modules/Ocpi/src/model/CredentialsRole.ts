@@ -1,15 +1,10 @@
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
-import { Businessdetails } from './Businessdetails';
-import { Role } from './Role';
+import {IsNotEmpty, IsString, MaxLength, MinLength,} from 'class-validator';
+import {Businessdetails} from './Businessdetails';
+import {Role} from './Role';
+import {Enum} from "../util/enum";
 
 export class CredentialsRole {
-  @IsEnum(Role)
+  @Enum(Role, 'Role')
   @IsNotEmpty()
   role!: Role;
 

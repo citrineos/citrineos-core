@@ -8,7 +8,7 @@ import { OcpiResponse } from '@citrineos/base';
 import { Connector } from '../model/Connector';
 import { Evse } from '../model/Evse';
 import { Location } from '../model/Location';
-import { VersionNumber } from '../../../../00_Base/src/interfaces/api/ocpi/model/VersionNumber';
+import { VersionNumber } from '../model/VersionNumber';
 
 export interface GetConnectorRequest extends BaseOcpiHeaders {
   countryCode: string;

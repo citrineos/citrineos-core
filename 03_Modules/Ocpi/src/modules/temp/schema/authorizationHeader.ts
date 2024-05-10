@@ -1,7 +1,8 @@
-import {IsOptional, IsString} from 'class-validator';
+import {IsString} from 'class-validator';
+import {Optional} from "../../../util/optional";
 
 export class AuthorizationHeader {
   @IsString()
-  @IsOptional()
+  @Optional()
   Authorization?: string;
 }

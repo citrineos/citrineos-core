@@ -1,7 +1,8 @@
-import {IsEnum, IsInt, IsNotEmpty, ValidateNested} from 'class-validator';
+import {IsInt, IsNotEmpty, ValidateNested} from 'class-validator';
 import {Displaytext} from './Displaytext';
 import {Type} from 'class-transformer';
 import {Optional} from "../util/optional";
+import {Enum} from "../util/enum";
 
 export enum CommandResponseType {
   ACCEPTED = 'ACCEPTED',
@@ -11,7 +12,7 @@ export enum CommandResponseType {
 }
 
 export class CommandResponse {
-  @IsEnum(CommandResponseType)
+  @Enum(CommandResponseType, 'CommandResponseType')
   @IsNotEmpty()
   result!: CommandResponseType;
 

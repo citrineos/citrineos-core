@@ -1,19 +1,20 @@
-import { IsDateString, IsInt, IsOptional } from 'class-validator';
+import {IsDateString, IsInt} from 'class-validator';
+import {Optional} from "../../../util/optional";
 
 export class FromToOffsetLimitQuery {
   @IsDateString()
-  @IsOptional()
+  @Optional()
   date_from?: Date;
 
   @IsDateString()
-  @IsOptional()
+  @Optional()
   date_to?: Date;
 
   @IsInt()
-  @IsOptional()
+  @Optional()
   offset?: number;
 
   @IsInt()
-  @IsOptional()
+  @Optional()
   limit?: number;
 }

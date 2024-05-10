@@ -1,8 +1,9 @@
-import {IsEnum, IsNotEmpty, IsNumber} from 'class-validator';
+import {IsNotEmpty, IsNumber} from 'class-validator';
 import {CdrDimensionType} from './CdrDimensionType';
+import {Enum} from "../util/enum";
 
 export class CdrDimention {
-  @IsEnum(CdrDimensionType)
+  @Enum(CdrDimensionType, 'CdrDimensionType')
   @IsNotEmpty()
   type!: CdrDimensionType;
 

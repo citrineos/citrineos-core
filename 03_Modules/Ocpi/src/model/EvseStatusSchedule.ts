@@ -1,7 +1,8 @@
-import {IsDateString, IsEnum, IsNotEmpty, IsString,} from 'class-validator';
+import {IsDateString, IsNotEmpty, IsString,} from 'class-validator';
 import {EvseStatus} from './EvseStatus';
 import {Type} from 'class-transformer';
 import {Optional} from "../util/optional";
+import {Enum} from "../util/enum";
 
 export class EvseStatusSchedule {
   @IsString()
@@ -17,7 +18,7 @@ export class EvseStatusSchedule {
   @Type(() => Date)
   period_end!: Date | null;
 
-  @IsEnum(EvseStatus)
+  @Enum(EvseStatus, 'EvseStatus')
   @IsNotEmpty()
   status!: EvseStatus;
 }

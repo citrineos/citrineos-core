@@ -1,11 +1,12 @@
-import {IsEnum, IsNotEmpty, ValidateNested} from 'class-validator';
+import {IsNotEmpty, ValidateNested} from 'class-validator';
 import {ActiveChargingProfile} from './ActiveChargingProfile';
 import {ChargingProfileResultType} from './ChargingProfileResponse';
 import {Type} from 'class-transformer';
 import {Optional} from "../util/optional";
+import {Enum} from "../util/enum";
 
 export class ActiveChargingProfileResult {
-  @IsEnum(ChargingProfileResultType)
+  @Enum(ChargingProfileResultType, 'ChargingProfileResultType')
   @IsNotEmpty()
   result!: ChargingProfileResultType;
 

@@ -27,6 +27,8 @@
     "@citrineos/util": "1.1.1",
     "@koa/multer": "^3.0.2",
     "@koa/router": "^12.0.1",
+    "@types/event-emitter": "^0.3.5",
+    "@types/node": "^20.12.11",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "class-validator-jsonschema": "^5.0.0",

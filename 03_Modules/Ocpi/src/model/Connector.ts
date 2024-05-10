@@ -1,19 +1,10 @@
-import {
-  IsArray,
-  IsDateString,
-  IsEnum,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  MaxLength,
-} from 'class-validator';
+import {IsArray, IsDateString, IsInt, IsNotEmpty, IsString, IsUrl, MaxLength,} from 'class-validator';
 import {ConnectorType} from './ConnectorType';
 import {ConnectorFormat} from './ConnectorFormat';
 import {PowerType} from './PowerType';
 import {Type} from 'class-transformer';
 import {Optional} from "../util/optional";
+import {Enum} from "../util/enum";
 
 export class Connector {
   @MaxLength(36)
@@ -21,15 +12,15 @@ export class Connector {
   @IsNotEmpty()
   id!: string;
 
-  @IsEnum(ConnectorType)
+  @Enum(ConnectorType, 'ConnectorType')
   @IsNotEmpty()
   standard!: ConnectorType;
 
-  @IsEnum(ConnectorFormat)
+  @Enum(ConnectorFormat, 'ConnectorFormat')
   @IsNotEmpty()
   format!: ConnectorFormat;
 
-  @IsEnum(PowerType)
+  @Enum(PowerType, 'PowerType')
   @IsNotEmpty()
   power_type!: PowerType;
 

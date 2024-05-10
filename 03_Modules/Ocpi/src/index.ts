@@ -5,7 +5,6 @@ import {koaSwagger} from 'koa2-swagger-ui';
 import Koa from 'koa';
 import {targetConstructorToSchema, validationMetadatasToSchemas} from 'class-validator-jsonschema';
 import {Constructor} from "./util/util";
-import {defaultClassValidatorJsonSchemaOptions} from "./util/class.validator";
 import {ChargingProfilesController} from "./controllers/charging.profiles.controller";
 
 
@@ -14,6 +13,8 @@ import {ChargingProfilesController} from "./controllers/charging.profiles.contro
 // export {OcpiModule} from './modules/temp/module';
 // export {EverythingElseApi} from './modules/temp/everything.else.api';
 // export {VersionsModuleApi} from './modules/temp/versions.api';
+import {defaultClassValidatorJsonSchemaOptions} from "./util/class.validator";
+import {SchemaStore} from "./util/schema.store";
 
 const routePrefix = '/ocpi';
 
@@ -27,16 +28,22 @@ const app = useKoaServer(koa, {
   routePrefix: routePrefix
 });
 
-
 const storage = getMetadataArgsStorage();
-const schemas = validationMetadatasToSchemas(defaultClassValidatorJsonSchemaOptions);
+const generatedSchemas = validationMetadatasToSchemas(defaultClassValidatorJsonSchemaOptions);
+
 const spec = routingControllersToSpec(storage, {}, {
   info: {title: 'CitrineOS OCPI 2.2.1', version: '1.0.0'},
   servers: [{url: routePrefix}],
   components: {
-    schemas: schemas as any
+    schemas: {
+      ...generatedSchemas,
+      ...SchemaStore.getAllSchemas()
+    }
   },
 });
+
+
+// const spec = routingControllersToSpec(storage, {}, generated as any);
 
 app.use(
   koaSwagger({

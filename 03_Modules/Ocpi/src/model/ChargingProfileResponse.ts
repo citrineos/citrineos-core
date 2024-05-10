@@ -1,4 +1,5 @@
-import { IsEnum, IsInt, IsNotEmpty } from 'class-validator';
+import {IsInt, IsNotEmpty} from 'class-validator';
+import {Enum} from "../util/enum";
 
 export enum ChargingProfileResultType {
   ACCEPTED = 'ACCEPTED',
@@ -9,7 +10,7 @@ export enum ChargingProfileResultType {
 }
 
 export class ChargingProfileResponse {
-  @IsEnum(ChargingProfileResultType)
+  @Enum(ChargingProfileResultType, 'ChargingProfileResultType')
   @IsNotEmpty()
   result!: ChargingProfileResultType;
 

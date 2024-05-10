@@ -1,14 +1,7 @@
-import {
-  IsEnum,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  Max,
-  MaxLength,
-} from 'class-validator';
-import { Imagecategory } from './Imagecategory';
+import {IsInt, IsNotEmpty, IsString, IsUrl, Max, MaxLength,} from 'class-validator';
+import {Imagecategory} from './Imagecategory';
+import {Optional} from "../util/optional";
+import {Enum} from "../util/enum";
 
 export class Image {
   @IsString()
@@ -18,10 +11,10 @@ export class Image {
 
   @IsString()
   @IsUrl()
-  @IsOptional()
+  @Optional()
   thumbnail?: string | null;
 
-  @IsEnum(Imagecategory)
+  @Enum(Imagecategory, 'Imagecategory')
   @IsNotEmpty()
   category!: Imagecategory;
 
@@ -32,11 +25,11 @@ export class Image {
 
   @Max(99999)
   @IsInt()
-  @IsOptional()
+  @Optional()
   width?: number | null;
 
   @Max(99999)
   @IsInt()
-  @IsOptional()
+  @Optional()
   height?: number | null;
 }

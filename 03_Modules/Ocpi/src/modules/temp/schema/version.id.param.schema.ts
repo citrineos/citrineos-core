@@ -1,8 +1,9 @@
-import { IsEnum, IsNotEmpty } from 'class-validator';
-import { VersionNumber } from '../../../../../../00_Base/src/interfaces/api/ocpi/model/VersionNumber';
+import {IsNotEmpty} from 'class-validator';
+import {VersionNumber} from '../../../model/VersionNumber';
+import {Enum} from "../../../util/enum";
 
 export class VersionIdParam {
-  @IsEnum(VersionNumber)
+  @Enum(VersionNumber, 'VersionNumber')
   @IsNotEmpty()
   versionId!: VersionNumber;
 }

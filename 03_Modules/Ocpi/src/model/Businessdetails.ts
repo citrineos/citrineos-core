@@ -1,11 +1,6 @@
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  MaxLength,
-} from 'class-validator';
-import { Image } from './Image';
+import {IsNotEmpty, IsString, IsUrl, MaxLength,} from 'class-validator';
+import {Image} from './Image';
+import {Optional} from "../util/optional";
 
 export class Businessdetails {
   @MaxLength(100)
@@ -15,9 +10,9 @@ export class Businessdetails {
 
   @IsString()
   @IsUrl()
-  @IsOptional()
+  @Optional()
   website?: string | null;
 
-  @IsOptional()
+  @Optional()
   logo?: Image | null;
 }

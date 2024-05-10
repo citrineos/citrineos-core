@@ -1,13 +1,4 @@
-import {
-  ArrayMinSize,
-  IsArray,
-  IsDateString,
-  IsEnum,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-  ValidateNested,
-} from 'class-validator';
+import {ArrayMinSize, IsArray, IsDateString, IsNotEmpty, IsString, MaxLength, ValidateNested,} from 'class-validator';
 import {EvseStatusSchedule} from './EvseStatusSchedule';
 import {Capability} from './Capability';
 import {ParkingRestriction} from './ParkingRestriction';
@@ -17,6 +8,7 @@ import {GeoLocation} from './GeoLocation';
 import {Displaytext} from './Displaytext';
 import {Type} from 'class-transformer';
 import {Optional} from "../util/optional";
+import {Enum} from "../util/enum";
 
 export class Evse {
   @MaxLength(36)
@@ -29,7 +21,7 @@ export class Evse {
   @Optional()
   evse_id?: string | null;
 
-  @IsEnum(EvseStatus)
+  @Enum(EvseStatus, 'EvseStatus')
   @IsNotEmpty()
   status!: EvseStatus;
 

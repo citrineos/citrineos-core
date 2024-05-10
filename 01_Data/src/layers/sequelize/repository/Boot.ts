@@ -61,6 +61,7 @@ export class BootRepository extends SequelizeRepository<Boot> implements IBootRe
     });
   }
 
+  async readByKey(key: string): Promise<Boot>;
   async readByKey(key: string): Promise<Boot> {
     return await super.readByKey(key, Boot.MODEL_NAME);
   }

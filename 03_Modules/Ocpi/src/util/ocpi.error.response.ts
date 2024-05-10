@@ -1,15 +1,9 @@
-import {
-  IsDateString,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import {IsDateString, IsInt, IsNotEmpty, IsString, Max, Min, ValidateNested,} from 'class-validator';
+import {Optional} from "./optional";
 
 export class OcpiErrorResponse {
-  @IsOptional()
+  @Optional()
+  @ValidateNested() // needed for json schema
   data?: null;
 
   @Max(4999)
@@ -18,7 +12,7 @@ export class OcpiErrorResponse {
   @IsNotEmpty()
   status_code!: number;
 
-  @IsOptional()
+  @Optional()
   status_message?: null;
 
   @IsString()

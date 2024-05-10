@@ -3,7 +3,6 @@ import {
   IsArray,
   IsBoolean,
   IsDateString,
-  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsObject,
@@ -21,8 +20,8 @@ import {AuthMethod} from './AuthMethod';
 import {Tariff} from './Tariff';
 import {Type} from 'class-transformer';
 import {OcpiResponse} from "@citrineos/base";
-import {JSONSchema} from "../util/class.validator";
 import {Optional} from "../util/optional";
+import {Enum} from "../util/enum";
 
 export class Cdr {
   @MaxLength(2)
@@ -64,7 +63,7 @@ export class Cdr {
   @ValidateNested()
   cdr_token!: CdrToken;
 
-  @IsEnum(AuthMethod)
+  @Enum(AuthMethod, 'AuthMethod')
   @IsNotEmpty()
   auth_method!: AuthMethod;
 
@@ -197,12 +196,6 @@ export class CdrResponse extends OcpiResponse<Cdr> {
 }
 
 export class CdrListResponse extends OcpiResponse<Cdr[]> {
-  @JSONSchema({
-    type: 'array',
-    items: {
-      $ref: '#/components/schemas/Cdr',
-    }
-  })
   @IsArray()
   @ValidateNested({each: true})
   @Type(() => Cdr)
