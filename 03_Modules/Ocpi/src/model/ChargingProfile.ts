@@ -8,9 +8,9 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import {ChargingProfilePeriod} from './ChargingProfilePeriod';
-import {Type} from 'class-transformer';
-import {Optional} from "../util/optional";
+import { ChargingProfilePeriod } from './ChargingProfilePeriod';
+import { Type } from 'class-transformer';
+import { Optional } from '../util/optional';
 
 export class ChargingProfile {
   @IsString()
@@ -34,6 +34,6 @@ export class ChargingProfile {
   @IsArray()
   @Optional()
   @Type(() => ChargingProfilePeriod)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   charging_profile_period?: ChargingProfilePeriod[] | null;
 }

@@ -1,7 +1,7 @@
-import {IsNotEmpty, IsString, MaxLength} from 'class-validator';
-import {TokenType} from './TokenType';
-import {Optional} from "../util/optional";
-import {Enum} from "../util/enum";
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { TokenType } from './TokenType';
+import { Optional } from '../util/optional';
+import { Enum } from '../util/enum';
 
 export class CdrToken {
   @MaxLength(36)

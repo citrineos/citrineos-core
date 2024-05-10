@@ -1,14 +1,19 @@
-import {IsArray, IsBoolean, IsNotEmpty, ValidateNested} from 'class-validator';
-import {RegularHours} from './RegularHours';
-import {ExceptionalPeriod} from './ExceptionalPeriod';
-import {Type} from 'class-transformer';
-import {Optional} from "../util/optional";
+import {
+  IsArray,
+  IsBoolean,
+  IsNotEmpty,
+  ValidateNested,
+} from 'class-validator';
+import { RegularHours } from './RegularHours';
+import { ExceptionalPeriod } from './ExceptionalPeriod';
+import { Type } from 'class-transformer';
+import { Optional } from '../util/optional';
 
 export class Hours {
   @IsArray()
   @Optional()
   @Type(() => RegularHours)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   regular_hours?: RegularHours[] | null;
 
   @IsBoolean()
@@ -18,12 +23,12 @@ export class Hours {
   @IsArray()
   @Optional()
   @Type(() => ExceptionalPeriod)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   exceptional_openings?: ExceptionalPeriod[] | null;
 
   @IsArray()
   @Optional()
   @Type(() => ExceptionalPeriod)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   exceptional_closings?: ExceptionalPeriod[] | null;
 }

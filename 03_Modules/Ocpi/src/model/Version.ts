@@ -1,9 +1,21 @@
-import {VersionNumber} from './VersionNumber';
-import {ArrayMinSize, IsArray, IsNotEmpty, IsString, IsUrl,} from 'class-validator';
-import {Column, DataType, Model, PrimaryKey, Table,} from 'sequelize-typescript';
-import {Endpoint} from './Endpoint';
-import {OcpiNamespace} from 'src/util/OcpiNamespace';
-import {Enum} from "../util/enum";
+import { VersionNumber } from './VersionNumber';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsNotEmpty,
+  IsString,
+  IsUrl,
+} from 'class-validator';
+import {
+  Column,
+  DataType,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
+import { Endpoint } from './Endpoint';
+import { Enum } from '../util/enum';
+import { OcpiNamespace } from '../util/ocpi.namespace';
 
 export class VersionDTO {
   @IsNotEmpty()

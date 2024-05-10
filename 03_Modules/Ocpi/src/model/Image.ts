@@ -1,7 +1,14 @@
-import {IsInt, IsNotEmpty, IsString, IsUrl, Max, MaxLength,} from 'class-validator';
-import {Imagecategory} from './Imagecategory';
-import {Optional} from "../util/optional";
-import {Enum} from "../util/enum";
+import {
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  IsUrl,
+  Max,
+  MaxLength,
+} from 'class-validator';
+import { Imagecategory } from './Imagecategory';
+import { Optional } from '../util/optional';
+import { Enum } from '../util/enum';
 
 export class Image {
   @IsString()

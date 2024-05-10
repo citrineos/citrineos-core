@@ -1,6 +1,6 @@
-import {IsNotEmpty, IsString, IsUrl, MaxLength,} from 'class-validator';
-import {Image} from './Image';
-import {Optional} from "../util/optional";
+import { IsNotEmpty, IsString, IsUrl, MaxLength } from 'class-validator';
+import { Image } from './Image';
+import { Optional } from '../util/optional';
 
 export class Businessdetails {
   @MaxLength(100)

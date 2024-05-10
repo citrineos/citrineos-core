@@ -1,5 +1,5 @@
 import { IsDateString, IsNotEmpty, IsString } from 'class-validator';
-import {Type} from 'class-transformer';
+import { Type } from 'class-transformer';
 
 export class ExceptionalPeriod {
   @IsString()

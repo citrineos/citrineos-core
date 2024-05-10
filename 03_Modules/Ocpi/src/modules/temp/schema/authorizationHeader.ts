@@ -1,5 +1,5 @@
-import {IsString} from 'class-validator';
-import {Optional} from "../../../util/optional";
+import { IsString } from 'class-validator';
+import { Optional } from '../../../util/optional';
 
 export class AuthorizationHeader {
   @IsString()

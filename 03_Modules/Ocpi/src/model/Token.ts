@@ -1,9 +1,17 @@
-import {IsBoolean, IsDateString, IsNotEmpty, IsString, MaxLength, MinLength, ValidateNested,} from 'class-validator';
-import {TokenEnergyContract} from './TokenEnergyContract';
-import {WhitelistType} from './WhitelistType';
-import {Type} from 'class-transformer';
-import {Optional} from "../util/optional";
-import {Enum} from "../util/enum";
+import {
+  IsBoolean,
+  IsDateString,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
+import { TokenEnergyContract } from './TokenEnergyContract';
+import { WhitelistType } from './WhitelistType';
+import { Type } from 'class-transformer';
+import { Optional } from '../util/optional';
+import { Enum } from '../util/enum';
 
 export class Token {
   @MaxLength(2)

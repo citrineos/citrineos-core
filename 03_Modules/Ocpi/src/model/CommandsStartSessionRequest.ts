@@ -1,7 +1,14 @@
-import {IsNotEmpty, IsObject, IsString, IsUrl, MaxLength, ValidateNested,} from 'class-validator';
-import {Token} from './Token';
-import {Type} from 'class-transformer';
-import {Optional} from "../util/optional";
+import {
+  IsNotEmpty,
+  IsObject,
+  IsString,
+  IsUrl,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
+import { Token } from './Token';
+import { Type } from 'class-transformer';
+import { Optional } from '../util/optional';
 
 export class CommandsStartSessionRequest {
   @IsString()

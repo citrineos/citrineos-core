@@ -1,5 +1,5 @@
-import {IsDateString, IsInt} from 'class-validator';
-import {Optional} from "../../../util/optional";
+import { IsDateString, IsInt } from 'class-validator';
+import { Optional } from '../../../util/optional';
 
 export class FromToOffsetLimitQuery {
   @IsDateString()

@@ -1,7 +1,14 @@
-import {IsNotEmpty, IsObject, IsString, MaxLength, MinLength, ValidateNested,} from 'class-validator';
-import {GeoLocation} from './GeoLocation';
-import {Type} from 'class-transformer';
-import {Optional} from "../util/optional";
+import {
+  IsNotEmpty,
+  IsObject,
+  IsString,
+  MaxLength,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
+import { GeoLocation } from './GeoLocation';
+import { Type } from 'class-transformer';
+import { Optional } from '../util/optional';
 
 export class CdrLocation {
   @MaxLength(36)

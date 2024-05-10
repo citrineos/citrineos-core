@@ -9,14 +9,14 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import {Price} from './Price';
-import {ChargingPeriod} from './ChargingPeriod';
-import {CdrToken} from './CdrToken';
-import {AuthMethod} from './AuthMethod';
-import {SessionStatus} from './SessionStatus';
-import {Type} from 'class-transformer';
-import {Optional} from "../util/optional";
-import {Enum} from "../util/enum";
+import { Price } from './Price';
+import { ChargingPeriod } from './ChargingPeriod';
+import { CdrToken } from './CdrToken';
+import { AuthMethod } from './AuthMethod';
+import { SessionStatus } from './SessionStatus';
+import { Type } from 'class-transformer';
+import { Optional } from '../util/optional';
+import { Enum } from '../util/enum';
 
 export class Session {
   @MaxLength(2)
@@ -95,7 +95,7 @@ export class Session {
   @IsArray()
   @Optional()
   @Type(() => ChargingPeriod)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   charging_periods?: ChargingPeriod[] | null;
 
   @Optional()

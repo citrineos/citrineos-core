@@ -1,5 +1,13 @@
-import {IsDateString, IsInt, IsNotEmpty, IsString, Max, Min, ValidateNested,} from 'class-validator';
-import {Optional} from "./optional";
+import {
+  IsDateString,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  Max,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import { Optional } from './optional';
 
 export class OcpiErrorResponse {
   @Optional()

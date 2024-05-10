@@ -1,5 +1,5 @@
-import {IsNotEmpty, IsString, MaxLength} from 'class-validator';
-import {Optional} from "../util/optional";
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { Optional } from '../util/optional';
 
 export class TokenEnergyContract {
   @MaxLength(64)

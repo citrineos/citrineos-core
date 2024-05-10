@@ -1,8 +1,15 @@
-import {IsArray, IsBoolean, IsNotEmpty, IsString, MaxLength, ValidateNested,} from 'class-validator';
-import {EnergySources} from './EnergySources';
-import {EnvironmentalImpact} from './EnvironmentalImpact';
-import {Type} from 'class-transformer';
-import {Optional} from "../util/optional";
+import {
+  IsArray,
+  IsBoolean,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
+import { EnergySources } from './EnergySources';
+import { EnvironmentalImpact } from './EnvironmentalImpact';
+import { Type } from 'class-transformer';
+import { Optional } from '../util/optional';
 
 export class EnergyMix {
   @IsBoolean()
@@ -12,13 +19,13 @@ export class EnergyMix {
   @IsArray()
   @Optional()
   @Type(() => EnergySources)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   energy_sources?: EnergySources[] | null;
 
   @IsArray()
   @Optional()
   @Type(() => EnvironmentalImpact)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   environ_impact?: EnvironmentalImpact[] | null;
 
   @MaxLength(64)

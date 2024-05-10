@@ -9,16 +9,16 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import {PublishTokenType} from './PublishTokenType';
-import {AdditionalGeoLocation} from './AdditionalGeoLocation';
-import {Businessdetails} from './Businessdetails';
-import {Facilities} from './Facilities';
-import {Hours} from './Hours';
-import {GeoLocation} from './GeoLocation';
-import {Evse} from './Evse';
-import {EnergyMix} from './EnergyMix';
-import {Type} from 'class-transformer';
-import {Optional} from "../util/optional";
+import { PublishTokenType } from './PublishTokenType';
+import { AdditionalGeoLocation } from './AdditionalGeoLocation';
+import { Businessdetails } from './Businessdetails';
+import { Facilities } from './Facilities';
+import { Hours } from './Hours';
+import { GeoLocation } from './GeoLocation';
+import { Evse } from './Evse';
+import { EnergyMix } from './EnergyMix';
+import { Type } from 'class-transformer';
+import { Optional } from '../util/optional';
 
 export class Location {
   @MaxLength(2)
@@ -44,7 +44,7 @@ export class Location {
   @IsArray()
   @Optional()
   @Type(() => PublishTokenType)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   publish_allowed_to?: PublishTokenType[] | null;
 
   @MaxLength(255)
@@ -87,7 +87,7 @@ export class Location {
   @IsArray()
   @Optional()
   @Type(() => AdditionalGeoLocation)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   related_locations?: AdditionalGeoLocation[] | null;
 
   @IsString()
@@ -97,7 +97,7 @@ export class Location {
   @IsArray()
   @Optional()
   @Type(() => Evse)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   evses?: Evse[] | null;
 
   @IsArray()
@@ -120,7 +120,7 @@ export class Location {
   @IsArray()
   @Optional()
   @Type(() => Facilities)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   facilities?: Facilities[] | null;
 
   @MaxLength(255)

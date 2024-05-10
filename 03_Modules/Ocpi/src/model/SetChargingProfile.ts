@@ -1,6 +1,12 @@
-import {IsNotEmpty, IsObject, IsString, IsUrl, ValidateNested} from 'class-validator';
-import {ChargingProfile} from './ChargingProfile';
-import {Type} from 'class-transformer';
+import {
+  IsNotEmpty,
+  IsObject,
+  IsString,
+  IsUrl,
+  ValidateNested,
+} from 'class-validator';
+import { ChargingProfile } from './ChargingProfile';
+import { Type } from 'class-transformer';
 
 export class SetChargingProfile {
   @IsObject()

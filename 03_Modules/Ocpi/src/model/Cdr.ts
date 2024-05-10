@@ -11,17 +11,17 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import {CdrToken} from './CdrToken';
-import {CdrLocation} from './CdrLocation';
-import {ChargingPeriod} from './ChargingPeriod';
-import {SignedData} from './SignedData';
-import {Price} from './Price';
-import {AuthMethod} from './AuthMethod';
-import {Tariff} from './Tariff';
-import {Type} from 'class-transformer';
-import {OcpiResponse} from "@citrineos/base";
-import {Optional} from "../util/optional";
-import {Enum} from "../util/enum";
+import { CdrToken } from './CdrToken';
+import { CdrLocation } from './CdrLocation';
+import { ChargingPeriod } from './ChargingPeriod';
+import { SignedData } from './SignedData';
+import { Price } from './Price';
+import { AuthMethod } from './AuthMethod';
+import { Tariff } from './Tariff';
+import { Type } from 'class-transformer';
+import { OcpiResponse } from '@citrineos/base';
+import { Optional } from '../util/optional';
+import { Enum } from '../util/enum';
 
 export class Cdr {
   @MaxLength(2)
@@ -92,14 +92,14 @@ export class Cdr {
   @IsArray()
   @Optional()
   @Type(() => Tariff)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   tariffs?: Tariff[] | null;
 
   @ArrayMinSize(1)
   @IsArray()
   @IsNotEmpty()
   @Type(() => ChargingPeriod)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   charging_periods!: ChargingPeriod[];
 
   @Optional()
@@ -197,7 +197,7 @@ export class CdrResponse extends OcpiResponse<Cdr> {
 
 export class CdrListResponse extends OcpiResponse<Cdr[]> {
   @IsArray()
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   @Type(() => Cdr)
   data!: Cdr[];
 }

@@ -1,5 +1,5 @@
-import {IsNotEmpty, IsNumber} from 'class-validator';
-import {Optional} from "../util/optional";
+import { IsNotEmpty, IsNumber } from 'class-validator';
+import { Optional } from '../util/optional';
 
 export class Price {
   @IsNumber()

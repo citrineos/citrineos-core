@@ -1,8 +1,16 @@
-import {IsArray, IsInt, IsNumber, IsString, Matches, MaxLength, MinLength,} from 'class-validator';
-import {DayOfWeek} from './DayOfWeek';
-import {ReservationRestrictionType} from './ReservationRestrictionType';
-import {Optional} from "../util/optional";
-import {Enum} from "../util/enum";
+import {
+  IsArray,
+  IsInt,
+  IsNumber,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+import { DayOfWeek } from './DayOfWeek';
+import { ReservationRestrictionType } from './ReservationRestrictionType';
+import { Optional } from '../util/optional';
+import { Enum } from '../util/enum';
 
 export class TariffRestrictions {
   @MaxLength(5)

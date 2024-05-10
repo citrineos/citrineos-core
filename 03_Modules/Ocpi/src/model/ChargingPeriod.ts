@@ -1,7 +1,15 @@
-import {ArrayMinSize, IsArray, IsDateString, IsNotEmpty, IsString, MaxLength, ValidateNested,} from 'class-validator';
-import {CdrDimention} from './CdrDimention';
-import {Type} from 'class-transformer';
-import {Optional} from "../util/optional";
+import {
+  ArrayMinSize,
+  IsArray,
+  IsDateString,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
+import { CdrDimention } from './CdrDimention';
+import { Type } from 'class-transformer';
+import { Optional } from '../util/optional';
 
 export class ChargingPeriod {
   @IsString()
@@ -14,7 +22,7 @@ export class ChargingPeriod {
   @IsArray()
   @IsNotEmpty()
   @Type(() => CdrDimention)
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   dimensions!: CdrDimention[];
 
   @MaxLength(36)

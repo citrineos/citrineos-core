@@ -1,7 +1,15 @@
-import {IsDateString, IsNotEmpty, IsObject, IsString, IsUrl, MaxLength, ValidateNested,} from 'class-validator';
-import {Token} from './Token';
-import {Type} from 'class-transformer';
-import {Optional} from "../util/optional";
+import {
+  IsDateString,
+  IsNotEmpty,
+  IsObject,
+  IsString,
+  IsUrl,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
+import { Token } from './Token';
+import { Type } from 'class-transformer';
+import { Optional } from '../util/optional';
 
 export class CommandsReserveNowRequest {
   @IsString()

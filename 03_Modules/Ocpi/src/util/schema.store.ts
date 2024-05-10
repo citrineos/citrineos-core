@@ -1,6 +1,6 @@
 export const SchemaStore = {
   components: {
-    schemas: {}
+    schemas: {},
   },
 
   addSchema(name: string, schema: object) {
@@ -13,5 +13,5 @@ export const SchemaStore = {
 
   getAllSchemas() {
     return this.components.schemas;
-  }
+  },
 };

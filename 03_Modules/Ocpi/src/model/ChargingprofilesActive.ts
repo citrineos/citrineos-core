@@ -1,6 +1,12 @@
-import {IsDateString, IsNotEmpty, IsObject, IsString, ValidateNested} from 'class-validator';
-import {ActiveChargingProfile} from './ActiveChargingProfile';
-import {Type} from 'class-transformer';
+import {
+  IsDateString,
+  IsNotEmpty,
+  IsObject,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { ActiveChargingProfile } from './ActiveChargingProfile';
+import { Type } from 'class-transformer';
 
 export class ChargingprofilesActive {
   @IsString()
