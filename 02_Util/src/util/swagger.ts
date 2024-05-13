@@ -198,7 +198,7 @@ const registerFastifyAuth = async (server: FastifyInstance) => {
       } catch (e) {
         reply
           .code(HttpStatus.UNAUTHORIZED)
-          .send(OcpiErrorResponse.build(HttpStatus.UNAUTHORIZED));
+          // .send(buildOcpiErrorResponse(HttpStatus.UNAUTHORIZED));
       }
     },
   );

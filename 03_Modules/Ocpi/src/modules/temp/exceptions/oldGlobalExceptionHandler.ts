@@ -7,7 +7,7 @@ import {
 } from '@citrineos/base';
 import { NotFoundException } from './not.found.exception';
 
-export class GlobalExceptionHandler implements ExceptionHandler {
+export class OldGlobalExceptionHandler implements ExceptionHandler {
   constructor(private _logger: Logger<ILogObj>) {}
 
   handle = (

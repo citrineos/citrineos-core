@@ -3,14 +3,16 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {HeaderParam} from 'routing-controllers';
+import {HeaderParam, UseBefore} from 'routing-controllers';
 import {ParamOptions} from 'routing-controllers/types/decorator-options/ParamOptions';
+import {AuthMiddleware} from "../middleware/auth.middleware";
 
 function applyHeaders(headers: { [key: string]: ParamOptions }) {
   return function (object: any, methodName: string) {
     for (const [key, options] of Object.entries(headers)) {
       HeaderParam(key, options)(object, methodName);
     }
+    UseBefore(AuthMiddleware)(object, methodName);
   };
 }
 

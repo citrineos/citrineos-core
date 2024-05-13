@@ -14,6 +14,8 @@ import {defaultClassValidatorJsonSchemaOptions} from './util/class.validator';
 import {SchemaStore} from './util/schema.store';
 import {authorizationChecker} from './util/authorization.checker';
 import {routingControllersToSpec} from './util/openapi';
+import {AuthMiddleware} from "./util/middleware/auth.middleware";
+import {GlobalExceptionHandler} from "./util/middleware/global.exception.handler";
 
 const routePrefix = '/ocpi';
 
@@ -23,6 +25,8 @@ const app = useKoaServer(koa, {
   authorizationChecker: authorizationChecker,
   controllers: [CdrsController, ChargingProfilesController],
   routePrefix: routePrefix,
+  middlewares: [AuthMiddleware, GlobalExceptionHandler],
+  defaultErrorHandler: false, // Important: Disable the default error handler
 });
 
 const storage = getMetadataArgsStorage();
@@ -65,6 +69,10 @@ app.use(
     },
   }),
 );
+
+app.on('error', (err, ctx) => {
+  console.log('Error intercepted by Koa:', err.message);
+});
 
 app.listen(8085);
 console.log('Server started on port 8085');

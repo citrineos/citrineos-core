@@ -1,13 +1,5 @@
-import {
-  IsDateString,
-  IsInt,
-  IsNotEmpty,
-  IsString,
-  Max,
-  Min,
-  ValidateNested,
-} from 'class-validator';
-import { Optional } from './decorators/optional';
+import {IsDateString, IsInt, IsNotEmpty, IsString, Max, Min, ValidateNested,} from 'class-validator';
+import {Optional} from './decorators/optional';
 
 export class OcpiErrorResponse {
   @Optional()
@@ -21,17 +13,18 @@ export class OcpiErrorResponse {
   status_code!: number;
 
   @Optional()
-  status_message?: null;
+  status_message?: string;
 
   @IsString()
   @IsDateString()
   @IsNotEmpty()
   timestamp!: Date;
-
-  static build(status_code: number): OcpiErrorResponse {
-    const response = new OcpiErrorResponse();
-    response.status_code = status_code;
-    response.timestamp = new Date();
-    return response;
-  }
 }
+
+export const buildOcpiErrorResponse = (status_code: number, status_message?: string) => {
+  const response = new OcpiErrorResponse();
+  response.status_code = status_code;
+  response.status_message = status_message;
+  response.timestamp = new Date();
+  return response;
+};

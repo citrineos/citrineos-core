@@ -1,5 +1,5 @@
-import { IsDate, IsNumber, IsString, ValidateNested } from 'class-validator';
-import { Optional } from './decorators/optional';
+import {IsDate, IsNumber, IsString, ValidateNested} from 'class-validator';
+import {Optional} from './decorators/optional';
 
 export abstract class OcpiResponse<T> {
   @IsNumber()
@@ -30,17 +30,17 @@ export abstract class OcpiResponse<T> {
   @ValidateNested()
   // @Type(() => T)  // Use class-transformer to indicate the type
   abstract data?: T;
-
-  static build<T>(
-    status_code: number,
-    data?: T,
-    status_message?: string,
-  ): OcpiResponse<T> {
-    const response = new OcpiResponse<T>();
-    response.status_code = status_code;
-    response.status_message = status_message;
-    response.data = data;
-    response.timestamp = new Date();
-    return response;
-  }
 }
+
+export const buildOcpiResponse = <T>(
+  status_code: number,
+  data?: T,
+  status_message?: string,
+) => {
+  const response = new OcpiResponse<T>();
+  response.status_code = status_code;
+  response.status_message = status_message;
+  response.data = data;
+  response.timestamp = new Date();
+  return response;
+};
