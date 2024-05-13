@@ -1,7 +1,9 @@
 name: Test Server on Pull Request
 
 on:
-  pull_request:
+  push:
+    branches:
+      - feature/ci
 
 jobs:
   build:
@@ -18,11 +20,6 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
-
-      - name: Set permissions on the uploads directory
-        run: |
-          sudo chown 1000:1000 ${{ github.workspace }}/Server/data/directus/uploads
-          sudo chmod 775 ${{ github.workspace }}/Server/data/directus/uploads
 
       - name: Build and Run Docker Compose
         run: docker-compose -f ${{ github.workspace }}/Server/docker-compose.yml up -d
