@@ -58,7 +58,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     );
     const acmeEnv: string | undefined =
       config.modules.certificates?.chargingStationCA?.acme?.env;
-    if (!acmeEnv && acmeEnv === 'production') {
+    if (acmeEnv === 'production') {
       this._directoryUrl = acme.directory.letsencrypt.production;
     }
 

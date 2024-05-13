@@ -173,10 +173,10 @@ export class CertificatesModule extends AbstractModule {
     const certificateType: CertificateSigningUseEnumType | undefined =
       message.payload.certificateType;
 
-    // OCTT Currently fails the CSMS on test case TC_A_14_CSMS if an invalid csr is rejected
-    // Despite explicitly saying in the protocol "The CSMS may do some checks on the CSR"
-    // So it is necessary to accept before checking the csr. when this is fixed, this line can be removed
-    // And the other sendCallResultWithMessage for SignCertificateResponse can be uncommented
+    // TODO - OCTT Currently fails the CSMS on test case TC_A_14_CSMS if an invalid csr is rejected
+    //  Despite explicitly saying in the protocol "The CSMS may do some checks on the CSR"
+    //  So it is necessary to accept before checking the csr. when this is fixed, this line can be removed
+    //  And the other sendCallResultWithMessage for SignCertificateResponse can be uncommented
     this.sendCallResultWithMessage(message, {
       status: GenericStatusEnumType.Accepted,
     } as SignCertificateResponse);
@@ -185,12 +185,13 @@ export class CertificatesModule extends AbstractModule {
     // Reject the request if the verification fails
     try {
       await this._verifySignCertRequest(csrString, stationId, certificateType);
+      // TODO - uncomment when OCTT test failure is fixed
       // this.sendCallResultWithMessage(message, {
       //   status: GenericStatusEnumType.Accepted,
       // } as SignCertificateResponse);
     } catch (error) {
       this._logger.error('Verify Request failed:', error);
-
+      // TODO - uncomment when OCTT test failure is fixed
       // this.sendCallResultWithMessage(message, {
       //   status: GenericStatusEnumType.Rejected,
       //   statusInfo: {
