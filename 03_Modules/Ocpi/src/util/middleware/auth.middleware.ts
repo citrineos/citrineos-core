@@ -1,13 +1,11 @@
-import {KoaMiddlewareInterface, Middleware} from 'routing-controllers';
-import {HttpStatus} from "@citrineos/base";
-import {Context} from "vm";
-import {buildOcpiErrorResponse} from "../ocpi.error.response";
+import { KoaMiddlewareInterface, Middleware } from 'routing-controllers';
+import { HttpStatus } from '@citrineos/base';
+import { Context } from 'vm';
+import { buildOcpiErrorResponse } from '../ocpi.error.response';
 
-const permittedRoutes: string[] = [
-  '/docs',
-];
+const permittedRoutes: string[] = ['/docs'];
 
-@Middleware({type: 'before'})
+@Middleware({ type: 'before' })
 export class AuthMiddleware implements KoaMiddlewareInterface {
   async use(ctx: Context, next: (err?: any) => Promise<any>): Promise<any> {
     const authHeader = ctx.request.headers['authorization'];
@@ -34,10 +32,13 @@ export class AuthMiddleware implements KoaMiddlewareInterface {
 
   private async validateToken(token: string): Promise<boolean> {
     // todo placeholder implement token validation logic here
-    return token === '123';  // Example logic
+    return token === '123'; // Example logic
   }
 
   throwError(ctx: Context) {
-    ctx.throw(HttpStatus.UNAUTHORIZED, JSON.stringify(buildOcpiErrorResponse(HttpStatus.UNAUTHORIZED)));
+    ctx.throw(
+      HttpStatus.UNAUTHORIZED,
+      JSON.stringify(buildOcpiErrorResponse(HttpStatus.UNAUTHORIZED)),
+    );
   }
 }

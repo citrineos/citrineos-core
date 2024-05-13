@@ -1,5 +1,5 @@
-import {IsDate, IsNumber, IsString, ValidateNested} from 'class-validator';
-import {Optional} from './decorators/optional';
+import { IsDate, IsNumber, IsString, ValidateNested } from 'class-validator';
+import { Optional } from './decorators/optional';
 
 export abstract class OcpiResponse<T> {
   @IsNumber()

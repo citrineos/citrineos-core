@@ -196,9 +196,8 @@ const registerFastifyAuth = async (server: FastifyInstance) => {
           throw new UnauthorizedException('Token not authorized');
         }
       } catch (e) {
-        reply
-          .code(HttpStatus.UNAUTHORIZED)
-          // .send(buildOcpiErrorResponse(HttpStatus.UNAUTHORIZED));
+        reply.code(HttpStatus.UNAUTHORIZED);
+        // .send(buildOcpiErrorResponse(HttpStatus.UNAUTHORIZED));
       }
     },
   );

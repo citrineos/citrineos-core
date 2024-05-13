@@ -1,24 +1,29 @@
-import {CredentialsRepository} from '../repository/credentials.repository';
-import {FastifyRequest} from 'fastify';
-import {AuthorizationHeader} from '../schema/authorizationHeader';
-import {Credentials, HttpStatus, OcpiNamespace, OcpiResponse, Version,} from '@citrineos/base';
-import {VersionsControllerApi} from '../../../apis/VersionsControllerApi';
-import {VersionRepository} from '../repository/version.repository';
-import {v4 as uuidv4} from 'uuid';
-import {Configuration} from '../../../apis/BaseApi';
-import {NotFoundException} from '../exceptions/not.found.exception';
-import {ILogObj, Logger} from 'tslog';
-import {VersionIdParam} from '../schema/version.id.param.schema';
-import {getAuthorizationTokenFromRequest} from '@citrineos/util';
-import {buildOcpiResponse} from "../../../util/ocpi.response";
+import { CredentialsRepository } from '../repository/credentials.repository';
+import { FastifyRequest } from 'fastify';
+import { AuthorizationHeader } from '../schema/authorizationHeader';
+import {
+  Credentials,
+  HttpStatus,
+  OcpiNamespace,
+  OcpiResponse,
+  Version,
+} from '@citrineos/base';
+import { VersionsControllerApi } from '../../../apis/VersionsControllerApi';
+import { VersionRepository } from '../repository/version.repository';
+import { v4 as uuidv4 } from 'uuid';
+import { Configuration } from '../../../apis/BaseApi';
+import { NotFoundException } from '../exceptions/not.found.exception';
+import { ILogObj, Logger } from 'tslog';
+import { VersionIdParam } from '../schema/version.id.param.schema';
+import { getAuthorizationTokenFromRequest } from '@citrineos/util';
+import { buildOcpiResponse } from '../../../util/ocpi.response';
 
 export class CredentialsService {
   constructor(
     private _logger: Logger<ILogObj>,
     private credentialsRepository: CredentialsRepository,
     private versionRepository: VersionRepository,
-  ) {
-  }
+  ) {}
 
   async getCredentials(
     request: FastifyRequest<{

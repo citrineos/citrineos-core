@@ -1,11 +1,18 @@
-import {KoaMiddlewareInterface, Middleware, UnauthorizedError} from "routing-controllers";
-import {Context} from "vm";
-import {HttpStatus, OcpiErrorResponse} from "@citrineos/base";
-import {buildOcpiErrorResponse} from "../ocpi.error.response";
+import {
+  KoaMiddlewareInterface,
+  Middleware,
+  UnauthorizedError,
+} from 'routing-controllers';
+import { Context } from 'vm';
+import { HttpStatus, OcpiErrorResponse } from '@citrineos/base';
+import { buildOcpiErrorResponse } from '../ocpi.error.response';
 
-@Middleware({type: 'before', priority: 10})
+@Middleware({ type: 'before', priority: 10 })
 export class GlobalExceptionHandler implements KoaMiddlewareInterface {
-  public async use(ctx: Context, next: (err?: any) => Promise<any>): Promise<any> {
+  public async use(
+    ctx: Context,
+    next: (err?: any) => Promise<any>,
+  ): Promise<any> {
     try {
       await next();
     } catch (err) {
@@ -16,15 +23,24 @@ export class GlobalExceptionHandler implements KoaMiddlewareInterface {
         switch (err.constructor.name) {
           case UnauthorizedError.name:
             ctx.status = HttpStatus.UNAUTHORIZED;
-            ctx.body = JSON.stringify(buildOcpiErrorResponse(HttpStatus.UNAUTHORIZED));
+            ctx.body = JSON.stringify(
+              buildOcpiErrorResponse(HttpStatus.UNAUTHORIZED),
+            );
             break;
           case 'ParamRequiredError':
             ctx.status = HttpStatus.BAD_REQUEST;
-            ctx.body = JSON.stringify(buildOcpiErrorResponse(HttpStatus.BAD_REQUEST, (err as any).message));
+            ctx.body = JSON.stringify(
+              buildOcpiErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                (err as any).message,
+              ),
+            );
             break;
           default:
             ctx.status = HttpStatus.INTERNAL_SERVER_ERROR;
-            ctx.body = JSON.stringify(buildOcpiErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR));
+            ctx.body = JSON.stringify(
+              buildOcpiErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR),
+            );
         }
       }
     }

@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {HeaderParam, UseBefore} from 'routing-controllers';
-import {ParamOptions} from 'routing-controllers/types/decorator-options/ParamOptions';
-import {AuthMiddleware} from "../middleware/auth.middleware";
+import { HeaderParam, UseBefore } from 'routing-controllers';
+import { ParamOptions } from 'routing-controllers/types/decorator-options/ParamOptions';
+import { AuthMiddleware } from '../middleware/auth.middleware';
 
 function applyHeaders(headers: { [key: string]: ParamOptions }) {
   return function (object: any, methodName: string) {
@@ -22,13 +22,13 @@ function applyHeaders(headers: { [key: string]: ParamOptions }) {
  */
 export const AsOcpiEndpoint = function () {
   const headers: { [key: string]: ParamOptions } = {
-    authorization: {required: true},
-    'X-Request-ID': {required: true},
-    'X-Correlation-ID': {required: true},
-    'OCPI-from-country-code': {required: true},
-    'OCPI-from-party-id': {required: true},
-    'OCPI-to-country-code': {required: true},
-    'OCPI-to-party-id': {required: true},
+    authorization: { required: true },
+    'X-Request-ID': { required: true },
+    'X-Correlation-ID': { required: true },
+    'OCPI-from-country-code': { required: true },
+    'OCPI-from-party-id': { required: true },
+    'OCPI-to-country-code': { required: true },
+    'OCPI-to-party-id': { required: true },
   };
   return applyHeaders(headers);
 };

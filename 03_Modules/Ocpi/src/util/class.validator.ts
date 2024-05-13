@@ -23,6 +23,13 @@ function getPropType(target: object, property: string) {
 
 export { JSONSchema } from 'class-validator-jsonschema';
 
+function nestedClassToJsonSchema(
+  clz: Constructor<any>,
+  options: Partial<IOptions>,
+): SchemaObject {
+  return targetConstructorToSchema(clz, options) as any;
+}
+
 function targetToSchema(type: any, options: IOptions): any | void {
   if (typeof type === 'function') {
     if (
@@ -201,6 +208,21 @@ const additionalConverters: ISchemaConverters = {
 
       if (isOptional && isArray) {
         return null; // to be handled in IS_ARRAY
+      }
+
+      if (!(options as any).definitions) {
+        (options as any).definitions = {};
+      }
+
+      if (
+        schema &&
+        schema.$ref &&
+        !(options as any).definitions[childType.name]
+      ) {
+        (options as any).definitions[childType.name] = nestedClassToJsonSchema(
+          childType,
+          options,
+        );
       }
 
       if (isOptional) {

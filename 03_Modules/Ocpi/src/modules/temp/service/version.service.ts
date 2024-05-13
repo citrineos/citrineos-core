@@ -1,18 +1,24 @@
-import {VersionRepository} from '../repository/version.repository';
-import {FastifyRequest} from 'fastify';
-import {AuthorizationHeader} from '../schema/authorizationHeader';
-import {HttpStatus, OcpiNamespace, OcpiResponse, Version, VersionDetailsDTO, VersionDTO,} from '@citrineos/base';
-import {CredentialsRepository} from '../repository/credentials.repository';
-import {VersionIdParam} from '../schema/version.id.param.schema';
-import {getAuthorizationTokenFromRequest} from '@citrineos/util/dist/util/swagger';
-import {buildOcpiResponse} from "../../../util/ocpi.response";
+import { VersionRepository } from '../repository/version.repository';
+import { FastifyRequest } from 'fastify';
+import { AuthorizationHeader } from '../schema/authorizationHeader';
+import {
+  HttpStatus,
+  OcpiNamespace,
+  OcpiResponse,
+  Version,
+  VersionDetailsDTO,
+  VersionDTO,
+} from '@citrineos/base';
+import { CredentialsRepository } from '../repository/credentials.repository';
+import { VersionIdParam } from '../schema/version.id.param.schema';
+import { getAuthorizationTokenFromRequest } from '@citrineos/util/dist/util/swagger';
+import { buildOcpiResponse } from '../../../util/ocpi.response';
 
 export class VersionService {
   constructor(
     private credentialsRepository: CredentialsRepository,
     private versionRepository: VersionRepository,
-  ) {
-  }
+  ) {}
 
   async getVersions(
     request: FastifyRequest<{

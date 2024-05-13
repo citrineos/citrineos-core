@@ -21,7 +21,7 @@ export class ChargingProfilesController extends BaseController {
     @Params() _uidVersionIdParam: UidVersionIdParam,
     @Body() _activeChargingProfileResult: ActiveChargingProfileResult,
   ): Promise<OcpiEmptyResponse> {
-    return this.generateMockResponse(OcpiEmptyResponse);
+    return this.generateMockOcpiResponse(OcpiEmptyResponse);
   }
 
   @Put('/ocpi/:versionId/sender/chargingprofiles/:sessionId')
@@ -34,6 +34,6 @@ export class ChargingProfilesController extends BaseController {
     @Params() _sessionIdVersionIdParam: SessionIdVersionIdParam,
     @Body() _activeChargingProfile: ActiveChargingProfile,
   ): Promise<OcpiEmptyResponse> {
-    return this.generateMockResponse(OcpiEmptyResponse);
+    return this.generateMockOcpiResponse(OcpiEmptyResponse);
   }
 }

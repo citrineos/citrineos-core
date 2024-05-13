@@ -1,17 +1,30 @@
-import { JSONSchemaFaker, Schema } from 'json-schema-faker';
-import { targetConstructorToSchema } from 'class-validator-jsonschema';
+import {JSONSchemaFaker} from 'json-schema-faker';
+import {classToJsonSchema} from "../util/class.validator";
+import {schemas} from "../schemas";
+import {SchemaObject} from "openapi3-ts";
 
 export class BaseController {
-  generateMockResponse(model: any): Promise<any> {
+  generateMockOcpiResponse(model: any, array: boolean = false): Promise<any> {
     JSONSchemaFaker.option({
       useExamplesValue: true,
       useDefaultValue: true,
     });
-    const response = JSONSchemaFaker.generate(
-      targetConstructorToSchema(model) as Schema,
-    );
-    return new Promise((resolve) => {
-      resolve(response);
-    });
+    const schema: SchemaObject = classToJsonSchema(model);
+    (schema as any).components = {
+      schemas
+    };
+    console.log('schema', schema);
+    try {
+      const response = JSONSchemaFaker.generate(schema as any);
+      console.log('response', response);
+      return new Promise((resolve) => {
+        resolve(response);
+      });
+    } catch (err) {
+      console.log('err', err);
+      return new Promise((resolve, reject) => {
+        reject(null);
+      });
+    }
   }
 }

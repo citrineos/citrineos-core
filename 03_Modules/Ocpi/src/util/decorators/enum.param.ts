@@ -1,4 +1,4 @@
-import {Param} from 'routing-controllers';
+import { Param } from 'routing-controllers';
 
 export const ENUM_PARAM = 'EnumParam';
 
@@ -9,15 +9,16 @@ export const ENUM_PARAM = 'EnumParam';
  * @param clazz
  * @param options
  */
-export const EnumParam = (
-  name: string,
-  enumType: any,
-  enumName: string
-) =>
+export const EnumParam = (name: string, enumType: any, enumName: string) =>
   function (object: NonNullable<unknown>, methodName: string, index: number) {
     // Apply the standard @Params() decorator
     Param(name)(object, methodName, index);
 
     // Add custom metadata for additional use cases
-    Reflect.defineMetadata(ENUM_PARAM, enumName, object, `${methodName}.${name}`);
+    Reflect.defineMetadata(
+      ENUM_PARAM,
+      enumName,
+      object,
+      `${methodName}.${name}`,
+    );
   };
