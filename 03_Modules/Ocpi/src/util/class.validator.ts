@@ -18,10 +18,10 @@ function getPropType(target: object, property: string) {
 
 export {JSONSchema} from 'class-validator-jsonschema';
 
-function nestedClassToJsonSchema(
+export const nestedClassToJsonSchema = (
   clz: Constructor<any>,
   options: Partial<IOptions>,
-): SchemaObject {
+): SchemaObject => {
   return targetConstructorToSchema(clz, options) as any;
 }
 
@@ -207,19 +207,15 @@ const additionalConverters: ISchemaConverters = {
         return null; // to be handled in IS_ARRAY
       }
 
-      if (!(options as any).definitions) {
-        (options as any).definitions = {};
-      }
-
       if (
         schema &&
         schema.$ref &&
-        !(options as any).definitions[childType.name]
+        !SchemaStore.getSchema(childType.name)
       ) {
-        (options as any).definitions[childType.name] = nestedClassToJsonSchema(
+        SchemaStore.addSchema(childType.name, nestedClassToJsonSchema(
           childType,
           options,
-        );
+        ));
       }
 
       if (isOptional) {

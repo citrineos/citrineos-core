@@ -1,25 +1,20 @@
-import { CdrsController } from './controllers/cdrs.controller';
-import { getMetadataArgsStorage, useKoaServer } from 'routing-controllers';
-import { koaSwagger } from 'koa2-swagger-ui';
+import {CdrsController} from './controllers/cdrs.controller';
+import {getMetadataArgsStorage, useKoaServer} from 'routing-controllers';
+import {koaSwagger} from 'koa2-swagger-ui';
 import Koa from 'koa';
-import {
-  targetConstructorToSchema,
-  validationMetadatasToSchemas,
-} from 'class-validator-jsonschema';
-import { Constructor } from './util/util';
-import { ChargingProfilesController } from './controllers/charging.profiles.controller';
+import {targetConstructorToSchema,} from 'class-validator-jsonschema';
+import {Constructor} from './util/util';
+import {ChargingProfilesController} from './controllers/charging.profiles.controller';
 
 // export {CredentialsModuleApi} from './modules/temp/credentials.api';
 // export {OcpiModule} from './modules/temp/module';
 // export {EverythingElseApi} from './modules/temp/everything.else.api';
 // export {VersionsModuleApi} from './modules/temp/versions.api';
-import { defaultClassValidatorJsonSchemaOptions } from './util/class.validator';
-import { SchemaStore } from './util/schema.store';
-import { authorizationChecker } from './util/authorization.checker';
-import { routingControllersToSpec } from './util/openapi';
-import { AuthMiddleware } from './util/middleware/auth.middleware';
-import { GlobalExceptionHandler } from './util/middleware/global.exception.handler';
-import { schemas } from './schemas';
+import {authorizationChecker} from './util/authorization.checker';
+import {routingControllersToSpec} from './util/openapi';
+import {AuthMiddleware} from './util/middleware/auth.middleware';
+import {GlobalExceptionHandler} from './util/middleware/global.exception.handler';
+import {schemas} from './schemas';
 
 const routePrefix = '/ocpi';
 
@@ -39,24 +34,25 @@ const spec = routingControllersToSpec(
   storage,
   {},
   {
-    info: { title: 'CitrineOS OCPI 2.2.1', version: '1.0.0' },
-    servers: [{ url: routePrefix }],
+    info: {title: 'CitrineOS OCPI 2.2.1', version: '1.0.0'},
+    servers: [{url: routePrefix}],
     security: [
       {
         authorization: [],
       },
-    ],
-    components: {
-      securitySchemes: {
-        authorization: {
-          type: 'http',
-          scheme: 'bearer',
-        },
-      },
-      schemas,
-    },
+    ]
   },
 );
+
+spec['components'] = {
+  securitySchemes: {
+    authorization: {
+      type: 'http',
+      scheme: 'bearer',
+    },
+  },
+  schemas,
+};
 
 app.use(
   koaSwagger({

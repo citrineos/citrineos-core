@@ -8,6 +8,7 @@ const generatedSchemas = validationMetadatasToSchemas(
   defaultClassValidatorJsonSchemaOptions,
 );
 
+
 export const schemas = {
   [VersionNumberEnumName]: {
     type: 'string',

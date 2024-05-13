@@ -1,13 +1,12 @@
-import { Body, Controller, Params, Post, Put } from 'routing-controllers';
-import { BaseController } from './base.controller';
-import { HttpStatus } from '@citrineos/base';
-import { ActiveChargingProfileResult } from '../model/ActiveChargingProfileResult';
-import { UidVersionIdParam } from '../modules/temp/schema/uid.version.id.param.schema';
-import { ActiveChargingProfile } from '../model/ActiveChargingProfile';
-import { SessionIdVersionIdParam } from '../modules/temp/schema/session.id.version.id.param.schema';
-import { ResponseSchema } from 'routing-controllers-openapi';
-import { OcpiEmptyResponse } from '../util/ocpi.empty.response';
-import { AsOcpiEndpoint } from '../util/decorators/as.ocpi.endpoint';
+import {Body, Controller, Param, Post, Put} from 'routing-controllers';
+import {BaseController} from './base.controller';
+import {HttpStatus, VersionNumber} from '@citrineos/base';
+import {ActiveChargingProfileResult} from '../model/ActiveChargingProfileResult';
+import {ActiveChargingProfile} from '../model/ActiveChargingProfile';
+import {ResponseSchema} from 'routing-controllers-openapi';
+import {OcpiEmptyResponse} from '../util/ocpi.empty.response';
+import {AsOcpiEndpoint} from '../util/decorators/as.ocpi.endpoint';
+import {VersionNumberParam} from "../util/decorators/version.number.param";
 
 @Controller()
 export class ChargingProfilesController extends BaseController {
@@ -18,7 +17,8 @@ export class ChargingProfilesController extends BaseController {
     description: 'Successful response',
   })
   async postGenericChargingProfileResult(
-    @Params() _uidVersionIdParam: UidVersionIdParam,
+    @VersionNumberParam() _versionId: VersionNumber,
+    @Param('uid') _uid: string,
     @Body() _activeChargingProfileResult: ActiveChargingProfileResult,
   ): Promise<OcpiEmptyResponse> {
     return this.generateMockOcpiResponse(OcpiEmptyResponse);
@@ -31,7 +31,8 @@ export class ChargingProfilesController extends BaseController {
     description: 'Successful response',
   })
   async putSenderChargingProfile(
-    @Params() _sessionIdVersionIdParam: SessionIdVersionIdParam,
+    @VersionNumberParam() _versionId: VersionNumber,
+    @Param('sessionId') _sessionId: string,
     @Body() _activeChargingProfile: ActiveChargingProfile,
   ): Promise<OcpiEmptyResponse> {
     return this.generateMockOcpiResponse(OcpiEmptyResponse);
