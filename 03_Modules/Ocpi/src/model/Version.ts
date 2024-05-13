@@ -14,7 +14,7 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { Endpoint } from './Endpoint';
-import { Enum } from '../util/enum';
+import { Enum } from '../util/decorators/enum';
 import { OcpiNamespace } from '../util/ocpi.namespace';
 
 export class VersionDTO {

@@ -9,8 +9,8 @@ import {
 } from 'class-validator';
 import { DayOfWeek } from './DayOfWeek';
 import { ReservationRestrictionType } from './ReservationRestrictionType';
-import { Optional } from '../util/optional';
-import { Enum } from '../util/enum';
+import { Optional } from '../util/decorators/optional';
+import { Enum } from '../util/decorators/enum';
 
 export class TariffRestrictions {
   @MaxLength(5)

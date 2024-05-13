@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsString, IsUrl } from 'class-validator';
 import { ModuleId } from './ModuleId';
 import { InterfaceRole } from './InterfaceRole';
-import { Enum } from '../util/enum';
+import { Enum } from '../util/decorators/enum';
 
 export class Endpoint {
   @IsString()

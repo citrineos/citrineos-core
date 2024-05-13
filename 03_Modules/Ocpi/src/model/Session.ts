@@ -15,8 +15,8 @@ import { CdrToken } from './CdrToken';
 import { AuthMethod } from './AuthMethod';
 import { SessionStatus } from './SessionStatus';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
-import { Enum } from '../util/enum';
+import { Optional } from '../util/decorators/optional';
+import { Enum } from '../util/decorators/enum';
 
 export class Session {
   @MaxLength(2)

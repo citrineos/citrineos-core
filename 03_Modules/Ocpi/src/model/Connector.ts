@@ -11,8 +11,8 @@ import { ConnectorType } from './ConnectorType';
 import { ConnectorFormat } from './ConnectorFormat';
 import { PowerType } from './PowerType';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
-import { Enum } from '../util/enum';
+import { Optional } from '../util/decorators/optional';
+import { Enum } from '../util/decorators/enum';
 
 export class Connector {
   @MaxLength(36)

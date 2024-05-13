@@ -14,7 +14,7 @@ import { TariffElement } from './TariffElement';
 import { EnergyMix } from './EnergyMix';
 import { Displaytext } from './Displaytext';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
+import { Optional } from '../util/decorators/optional';
 
 export class Tariff {
   @MaxLength(36)

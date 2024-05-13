@@ -5,3 +5,5 @@ export enum VersionNumber {
   TWO_DOT_TWO = '2.2',
   TWO_DOT_TWO_DOT_ONE = '2.2.1',
 }
+
+export const VersionNumberEnumName = 'VersionNumber';

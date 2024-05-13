@@ -15,8 +15,8 @@ import { Connector } from './Connector';
 import { GeoLocation } from './GeoLocation';
 import { Displaytext } from './Displaytext';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
-import { Enum } from '../util/enum';
+import { Optional } from '../util/decorators/optional';
+import { Enum } from '../util/decorators/enum';
 
 export class Evse {
   @MaxLength(36)

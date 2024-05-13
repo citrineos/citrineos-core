@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 import { GeoLocation } from './GeoLocation';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
+import { Optional } from '../util/decorators/optional';
 
 export class CdrLocation {
   @MaxLength(36)

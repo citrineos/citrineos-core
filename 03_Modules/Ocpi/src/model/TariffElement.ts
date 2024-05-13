@@ -7,7 +7,7 @@ import {
 import { PriceComponent } from './PriceComponent';
 import { TariffRestrictions } from './TariffRestrictions';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
+import { Optional } from '../util/decorators/optional';
 
 export class TariffElement {
   @ArrayMinSize(1)

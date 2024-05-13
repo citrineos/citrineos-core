@@ -1,7 +1,7 @@
 import { IsInt, IsNotEmpty, IsNumber } from 'class-validator';
 import { TariffDimensionType } from './TariffDimensionType';
-import { Optional } from '../util/optional';
-import { Enum } from '../util/enum';
+import { Optional } from '../util/decorators/optional';
+import { Enum } from '../util/decorators/enum';
 
 export class PriceComponent {
   @Enum(TariffDimensionType, 'TariffDimensionType')

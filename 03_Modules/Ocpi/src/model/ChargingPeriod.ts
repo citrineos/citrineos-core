@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { CdrDimention } from './CdrDimention';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
+import { Optional } from '../util/decorators/optional';
 
 export class ChargingPeriod {
   @IsString()

@@ -7,7 +7,7 @@ import {
 import { RegularHours } from './RegularHours';
 import { ExceptionalPeriod } from './ExceptionalPeriod';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
+import { Optional } from '../util/decorators/optional';
 
 export class Hours {
   @IsArray()

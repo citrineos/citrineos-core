@@ -14,7 +14,7 @@ import {
   OcpiTag,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { AsOcpiEndpoint } from '../../util/as.ocpi.endpoint';
+import { AsOcpiEndpoint } from '../../util/decorators/as.ocpi.endpoint';
 import { Connector } from '../../model/Connector';
 import { Evse } from '../../model/Evse';
 import { Session } from 'inspector';

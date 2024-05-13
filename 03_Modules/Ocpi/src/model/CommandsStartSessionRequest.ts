@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 import { Token } from './Token';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
+import { Optional } from '../util/decorators/optional';
 
 export class CommandsStartSessionRequest {
   @IsString()

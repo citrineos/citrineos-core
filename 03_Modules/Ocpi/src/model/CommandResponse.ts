@@ -1,8 +1,8 @@
 import { IsInt, IsNotEmpty, ValidateNested } from 'class-validator';
 import { Displaytext } from './Displaytext';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
-import { Enum } from '../util/enum';
+import { Optional } from '../util/decorators/optional';
+import { Enum } from '../util/decorators/enum';
 
 export enum CommandResponseType {
   ACCEPTED = 'ACCEPTED',

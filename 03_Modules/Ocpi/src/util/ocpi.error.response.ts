@@ -7,7 +7,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { Optional } from './optional';
+import { Optional } from './decorators/optional';
 
 export class OcpiErrorResponse {
   @Optional()

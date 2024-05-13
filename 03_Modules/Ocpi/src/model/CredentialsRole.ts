@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
 import { Businessdetails } from './Businessdetails';
 import { Role } from './Role';
-import { Enum } from '../util/enum';
+import { Enum } from '../util/decorators/enum';
 
 export class CredentialsRole {
   @Enum(Role, 'Role')

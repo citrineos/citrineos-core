@@ -20,8 +20,8 @@ import { AuthMethod } from './AuthMethod';
 import { Tariff } from './Tariff';
 import { Type } from 'class-transformer';
 import { OcpiResponse } from '@citrineos/base';
-import { Optional } from '../util/optional';
-import { Enum } from '../util/enum';
+import { Optional } from '../util/decorators/optional';
+import { Enum } from '../util/decorators/enum';
 
 export class Cdr {
   @MaxLength(2)

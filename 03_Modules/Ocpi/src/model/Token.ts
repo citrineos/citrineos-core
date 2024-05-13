@@ -10,8 +10,8 @@ import {
 import { TokenEnergyContract } from './TokenEnergyContract';
 import { WhitelistType } from './WhitelistType';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
-import { Enum } from '../util/enum';
+import { Optional } from '../util/decorators/optional';
+import { Enum } from '../util/decorators/enum';
 
 export class Token {
   @MaxLength(2)

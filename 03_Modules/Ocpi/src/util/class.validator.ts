@@ -15,7 +15,7 @@ import { defaultMetadataStorage } from 'class-transformer/cjs/storage.js';
 import { ReferenceObject } from 'openapi3-ts/src/model/OpenApi';
 import { SchemaStore } from './schema.store';
 
-const refPointerPrefix = '#/components/schemas/';
+export const refPointerPrefix = '#/components/schemas/';
 
 function getPropType(target: object, property: string) {
   return Reflect.getMetadata('design:type', target, property);
@@ -61,6 +61,10 @@ const getIsArray = (meta: ValidationMetadata): boolean => {
 
 const additionalConverters: ISchemaConverters = {
   [IS_ENUM]: (meta: ValidationMetadata, _: IOptions) => {
+    if (meta.propertyName === 'versionId') {
+      console.log('h');
+    }
+
     const enumObject = meta.constraints[0]; // Assuming the first constraint is the enum object
 
     const enumName = Reflect.getMetadata(

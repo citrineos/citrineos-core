@@ -7,8 +7,8 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Imagecategory } from './Imagecategory';
-import { Optional } from '../util/optional';
-import { Enum } from '../util/enum';
+import { Optional } from '../util/decorators/optional';
+import { Enum } from '../util/decorators/enum';
 
 export class Image {
   @IsString()

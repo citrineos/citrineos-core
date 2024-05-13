@@ -4,8 +4,8 @@ import { Token } from './Token';
 import { AuthorizationInfoAllowed } from './AuthorizationInfoAllowed';
 import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
-import { Enum } from '../util/enum';
+import { Optional } from '../util/decorators/optional';
+import { Enum } from '../util/decorators/enum';
 
 export class AuthorizationInfo {
   @Enum(AuthorizationInfoAllowed, 'AuthorizationInfoAllowed')

@@ -1,5 +1,5 @@
 import { IsInt, IsNotEmpty } from 'class-validator';
-import { Enum } from '../util/enum';
+import { Enum } from '../util/decorators/enum';
 
 export enum ChargingProfileResultType {
   ACCEPTED = 'ACCEPTED',

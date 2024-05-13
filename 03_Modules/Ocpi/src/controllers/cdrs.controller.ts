@@ -1,43 +1,40 @@
-import {
-  Controller,
-  Get,
-  HeaderParams,
-  Params,
-  QueryParams,
-} from 'routing-controllers';
-import { HttpStatus, OcpiResponse } from '@citrineos/base';
-import { Cdr, CdrListResponse, CdrResponse } from '../model/Cdr';
-import { BaseController } from './base.controller';
-import { UidVersionIdParam } from '../modules/temp/schema/uid.version.id.param.schema';
-import { AuthorizationHeader } from '../modules/temp/schema/authorizationHeader';
-import { VersionIdParam } from '../modules/temp/schema/version.id.param.schema';
-import { FromToOffsetLimitQuery } from '../modules/temp/schema/from.to.offset.limit.query.schema';
-import { ResponseSchema } from 'routing-controllers-openapi';
+import {Controller, Get, Param, QueryParams} from 'routing-controllers';
+import {HttpStatus, OcpiResponse, VersionNumber} from '@citrineos/base';
+import {Cdr, CdrListResponse, CdrResponse} from '../model/Cdr';
+import {BaseController} from './base.controller';
+import {FromToOffsetLimitQuery} from '../modules/temp/schema/from.to.offset.limit.query.schema';
+import {ResponseSchema} from 'routing-controllers-openapi';
+import {AsOcpiEndpoint} from '../util/decorators/as.ocpi.endpoint';
+import {EnumParam} from '../util/decorators/enum.param';
+import {VersionNumberEnumName} from "../model/VersionNumber";
 
 @Controller()
 export class CdrsController extends BaseController {
   @Get('/sender/:versionId/cdrs/page/:uid')
+  @AsOcpiEndpoint()
   @ResponseSchema(CdrListResponse, {
     statusCode: HttpStatus.OK,
     description: 'Successful response',
   })
   async getCdrPageFromDataOwner(
-    @HeaderParams() _authorizationHeader: AuthorizationHeader,
-    @Params() _uid: UidVersionIdParam,
+    @EnumParam('versionId', VersionNumber, VersionNumberEnumName) _versionId: VersionNumber,
+    @Param('uid') _uid: string,
   ): Promise<OcpiResponse<Cdr[]>> {
+    console.log('getCdrPageFromDataOwner', _versionId, _uid);
     return this.generateMockResponse(OcpiResponse<Cdr[]>);
   }
 
   @Get('/sender/:versionId/cdrs')
+  @AsOcpiEndpoint()
   @ResponseSchema(CdrResponse, {
     statusCode: HttpStatus.OK,
     description: 'Successful response',
   })
   async getCdrsFromDataOwner(
-    @HeaderParams() _authorizationHeader: AuthorizationHeader,
-    @Params() _versionId: VersionIdParam,
+    @EnumParam('versionId', VersionNumber, VersionNumberEnumName) _versionId: VersionNumber,
     @QueryParams() _query?: FromToOffsetLimitQuery,
   ): Promise<OcpiResponse<Cdr>> {
+    console.log('getCdrsFromDataOwner', _versionId, _query);
     return this.generateMockResponse(OcpiResponse<Cdr>);
   }
 }

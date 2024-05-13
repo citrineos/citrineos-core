@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { SignedValue } from './SignedValue';
 import { Type } from 'class-transformer';
-import { Optional } from '../util/optional';
+import { Optional } from '../util/decorators/optional';
 
 export class SignedData {
   @MaxLength(36)
