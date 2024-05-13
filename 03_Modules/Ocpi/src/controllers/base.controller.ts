@@ -5,6 +5,9 @@ import {SchemaObject} from "openapi3-ts";
 
 export class BaseController {
   generateMockOcpiResponse(model: any, array: boolean = false): Promise<any> {
+    (JSONSchemaFaker.format as any)('url', (url: any) => {
+      return url;
+    });
     JSONSchemaFaker.option({
       useExamplesValue: true,
       useDefaultValue: true,

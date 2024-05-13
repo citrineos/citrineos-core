@@ -1,12 +1,13 @@
-import { Controller, Get, Param, QueryParams } from 'routing-controllers';
-import { HttpStatus, OcpiResponse, VersionNumber } from '@citrineos/base';
-import { Cdr, CdrListResponse, CdrResponse } from '../model/Cdr';
-import { BaseController } from './base.controller';
-import { FromToOffsetLimitQuery } from '../modules/temp/schema/from.to.offset.limit.query.schema';
-import { ResponseSchema } from 'routing-controllers-openapi';
-import { AsOcpiEndpoint } from '../util/decorators/as.ocpi.endpoint';
-import { EnumParam } from '../util/decorators/enum.param';
-import { VersionNumberEnumName } from '../model/VersionNumber';
+import {Controller, Get, Param, QueryParams} from 'routing-controllers';
+import {HttpStatus, OcpiResponse, VersionNumber} from '@citrineos/base';
+import {Cdr, CdrListResponse, CdrResponse} from '../model/Cdr';
+import {BaseController} from './base.controller';
+import {FromToOffsetLimitQuery} from '../modules/temp/schema/from.to.offset.limit.query.schema';
+import {ResponseSchema} from 'routing-controllers-openapi';
+import {AsOcpiEndpoint} from '../util/decorators/as.ocpi.endpoint';
+import {VersionNumberParam} from "../util/decorators/version.number.param";
+import {EnumParam} from "../util/decorators/enum.param";
+import {VersionNumberEnumName} from "../model/VersionNumber";
 
 @Controller()
 export class CdrsController extends BaseController {
@@ -17,8 +18,7 @@ export class CdrsController extends BaseController {
     description: 'Successful response',
   })
   async getCdrPageFromDataOwner(
-    @EnumParam('versionId', VersionNumber, VersionNumberEnumName)
-    _versionId: VersionNumber,
+    @VersionNumberParam() _versionId: VersionNumber,
     @Param('uid') _uid: string,
   ): Promise<OcpiResponse<Cdr[]>> {
     console.log('getCdrPageFromDataOwner', _versionId, _uid);
@@ -32,8 +32,7 @@ export class CdrsController extends BaseController {
     description: 'Successful response',
   })
   async getCdrsFromDataOwner(
-    @EnumParam('versionId', VersionNumber, VersionNumberEnumName)
-    _versionId: VersionNumber,
+    @VersionNumberParam() _versionId: VersionNumber,
     @QueryParams() _query?: FromToOffsetLimitQuery,
   ): Promise<OcpiResponse<Cdr>> {
     console.log('getCdrsFromDataOwner', _versionId, _query);
