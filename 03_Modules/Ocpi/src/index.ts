@@ -14,7 +14,7 @@ import {authorizationChecker} from './util/authorization.checker';
 import {routingControllersToSpec} from './util/openapi';
 import {AuthMiddleware} from './util/middleware/auth.middleware';
 import {GlobalExceptionHandler} from './util/middleware/global.exception.handler';
-import {schemas} from './schemas';
+import {getAllSchemas} from './schemas';
 
 const routePrefix = '/ocpi';
 
@@ -51,7 +51,7 @@ spec['components'] = {
       scheme: 'bearer',
     },
   },
-  schemas,
+  schemas: getAllSchemas(),
 };
 
 app.use(

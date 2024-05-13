@@ -1,6 +1,6 @@
 import {JSONSchemaFaker} from 'json-schema-faker';
 import {classToJsonSchema} from "../util/class.validator";
-import {schemas} from "../schemas";
+import {getAllSchemas} from "../schemas";
 import {SchemaObject} from "openapi3-ts";
 
 export class BaseController {
@@ -14,7 +14,7 @@ export class BaseController {
     });
     const schema: SchemaObject = classToJsonSchema(model);
     (schema as any).components = {
-      schemas
+      schemas: getAllSchemas()
     };
     console.log('schema', schema);
     try {

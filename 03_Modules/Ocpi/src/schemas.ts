@@ -9,11 +9,11 @@ const generatedSchemas = validationMetadatasToSchemas(
 );
 
 
-export const schemas = {
+export const getAllSchemas = () => ({
   [VersionNumberEnumName]: {
     type: 'string',
     enum: Object.values(VersionNumber),
   } as SchemaObject,
   ...generatedSchemas,
   ...SchemaStore.getAllSchemas(),
-};
+});
