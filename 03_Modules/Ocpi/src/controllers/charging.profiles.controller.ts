@@ -1,12 +1,13 @@
-import {Body, Controller, Param, Post, Put} from 'routing-controllers';
-import {BaseController} from './base.controller';
-import {HttpStatus, VersionNumber} from '@citrineos/base';
-import {ActiveChargingProfileResult} from '../model/ActiveChargingProfileResult';
-import {ActiveChargingProfile} from '../model/ActiveChargingProfile';
-import {ResponseSchema} from 'routing-controllers-openapi';
-import {OcpiEmptyResponse} from '../util/ocpi.empty.response';
-import {AsOcpiEndpoint} from '../util/decorators/as.ocpi.endpoint';
-import {VersionNumberParam} from "../util/decorators/version.number.param";
+import { Body, Controller, Param, Post, Put } from 'routing-controllers';
+import { BaseController } from './base.controller';
+import { HttpStatus } from '@citrineos/base';
+import { ActiveChargingProfileResult } from '../model/ActiveChargingProfileResult';
+import { ActiveChargingProfile } from '../model/ActiveChargingProfile';
+import { ResponseSchema } from 'routing-controllers-openapi';
+import { OcpiEmptyResponse } from '../util/ocpi.empty.response';
+import { AsOcpiEndpoint } from '../util/decorators/as.ocpi.endpoint';
+import { VersionNumberParam } from '../util/decorators/version.number.param';
+import { VersionNumber } from '../model/VersionNumber';
 
 @Controller()
 export class ChargingProfilesController extends BaseController {

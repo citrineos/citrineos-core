@@ -1,7 +1,7 @@
 import { IsDate, IsNumber, IsString, ValidateNested } from 'class-validator';
 import { Optional } from './decorators/optional';
 
-export abstract class OcpiResponse<T> {
+export class OcpiResponse<T> {
   @IsNumber()
   status_code!: number;
   /**
@@ -29,7 +29,7 @@ export abstract class OcpiResponse<T> {
   @Optional()
   @ValidateNested()
   // @Type(() => T)  // Use class-transformer to indicate the type
-  abstract data?: T;
+  data?: T;
 }
 
 export const buildOcpiResponse = <T>(

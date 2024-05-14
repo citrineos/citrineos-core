@@ -1,13 +1,6 @@
 import { CredentialsRepository } from '../repository/credentials.repository';
 import { FastifyRequest } from 'fastify';
 import { AuthorizationHeader } from '../schema/authorizationHeader';
-import {
-  Credentials,
-  HttpStatus,
-  OcpiNamespace,
-  OcpiResponse,
-  Version,
-} from '@citrineos/base';
 import { VersionsControllerApi } from '../../../apis/VersionsControllerApi';
 import { VersionRepository } from '../repository/version.repository';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,7 +9,11 @@ import { NotFoundException } from '../exceptions/not.found.exception';
 import { ILogObj, Logger } from 'tslog';
 import { VersionIdParam } from '../schema/version.id.param.schema';
 import { getAuthorizationTokenFromRequest } from '@citrineos/util';
-import { buildOcpiResponse } from '../../../util/ocpi.response';
+import { buildOcpiResponse, OcpiResponse } from '../../../util/ocpi.response';
+import { OcpiNamespace } from '../../../util/ocpi.namespace';
+import { Credentials } from '../../../model/Credentials';
+import { HttpStatus } from '@citrineos/base';
+import { Version } from '../../../model/Version';
 
 export class CredentialsService {
   constructor(
@@ -57,8 +54,8 @@ export class CredentialsService {
       getAuthorizationTokenFromRequest(request),
     );
     await this.getAndUpdateVersions(
-      request.body.url,
-      request.body.token,
+      (request.body as any).url,
+      (request.body as any).token,
       request.params.versionId,
     );
     return this.updateExistingCredentialsTokenWithNewGeneratedToken(
@@ -77,8 +74,8 @@ export class CredentialsService {
       getAuthorizationTokenFromRequest(request),
     );
     await this.getAndUpdateVersions(
-      request.body.url,
-      request.body.token,
+      (request.body as any).url,
+      (request.body as any).token,
       request.params.versionId,
     );
     return this.updateExistingCredentialsTokenWithNewGeneratedToken(
@@ -157,7 +154,7 @@ export class CredentialsService {
     if (!versions || !versions.data) {
       throw new NotFoundException('Versions not found');
     }
-    const version = versions.data?.find((v) => v.version === versionId);
+    const version = versions.data?.find((v: any) => v.version === versionId);
     if (!version) {
       throw new Error('todo'); // todo error handling
     }

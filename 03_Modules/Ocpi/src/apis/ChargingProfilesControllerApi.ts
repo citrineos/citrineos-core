@@ -5,7 +5,7 @@ import {
 } from './util';
 import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { ChargingProfileResponse } from '../model/ChargingProfileResponse';
-import { OcpiResponse } from '@citrineos/base';
+import { OcpiResponse } from '../util/ocpi.response';
 import { VersionNumber } from '../model/VersionNumber';
 import { SetChargingProfile } from '../model/SetChargingProfile';
 

@@ -4,8 +4,9 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { SequelizeRepository } from '@citrineos/data';
-import { Credentials, UnauthorizedException } from '@citrineos/base';
-import { OcpiNamespace } from '@citrineos/base';
+import { UnauthorizedException } from '@citrineos/base';
+import { Credentials } from '../../../model/Credentials';
+import { OcpiNamespace } from '../../../util/ocpi.namespace';
 
 export class CredentialsRepository extends SequelizeRepository<Credentials> {
   public async authorizeToken(token: string): Promise<boolean> {

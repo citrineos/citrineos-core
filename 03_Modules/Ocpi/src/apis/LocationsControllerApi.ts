@@ -4,11 +4,11 @@ import {
   validateAndgetOcpiHeaders,
 } from './util';
 import { BaseAPI, HTTPHeaders } from './BaseApi';
-import { OcpiResponse } from '@citrineos/base';
 import { Connector } from '../model/Connector';
 import { Evse } from '../model/Evse';
 import { Location } from '../model/Location';
 import { VersionNumber } from '../model/VersionNumber';
+import { OcpiResponse } from '../util/ocpi.response';
 
 export interface GetConnectorRequest extends BaseOcpiHeaders {
   countryCode: string;

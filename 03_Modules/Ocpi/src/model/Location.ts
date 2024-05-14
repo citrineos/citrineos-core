@@ -119,7 +119,7 @@ export class Location {
 
   @IsArray()
   @Optional()
-  @Type(() => Facilities)
+  // @Type(() => Facilities) todo handle array of enum
   @ValidateNested({ each: true })
   facilities?: Facilities[] | null;
 

@@ -4,6 +4,6 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { SequelizeRepository } from '@citrineos/data';
-import { Version } from '@citrineos/base';
+import { Version } from '../../../model/Version';
 
 export class VersionRepository extends SequelizeRepository<Version> {}

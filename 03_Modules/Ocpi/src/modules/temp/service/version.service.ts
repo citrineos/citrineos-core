@@ -1,18 +1,13 @@
 import { VersionRepository } from '../repository/version.repository';
 import { FastifyRequest } from 'fastify';
 import { AuthorizationHeader } from '../schema/authorizationHeader';
-import {
-  HttpStatus,
-  OcpiNamespace,
-  OcpiResponse,
-  Version,
-  VersionDetailsDTO,
-  VersionDTO,
-} from '@citrineos/base';
+import { HttpStatus } from '@citrineos/base';
 import { CredentialsRepository } from '../repository/credentials.repository';
 import { VersionIdParam } from '../schema/version.id.param.schema';
 import { getAuthorizationTokenFromRequest } from '@citrineos/util/dist/util/swagger';
-import { buildOcpiResponse } from '../../../util/ocpi.response';
+import { buildOcpiResponse, OcpiResponse } from '../../../util/ocpi.response';
+import { Version, VersionDetailsDTO, VersionDTO } from '../../../model/Version';
+import { OcpiNamespace } from '../../../util/ocpi.namespace';
 
 export class VersionService {
   constructor(

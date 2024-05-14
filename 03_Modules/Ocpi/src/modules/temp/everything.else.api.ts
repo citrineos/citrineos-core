@@ -7,14 +7,12 @@ import { ILogObj, Logger } from 'tslog';
 import { OcpiModule } from './module';
 import {
   AbstractModuleApi,
+  AsDataEndpoint,
   HttpMethod,
   HttpStatus,
   Namespace,
-  OcpiResponse,
-  OcpiTag,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { AsOcpiEndpoint } from '../../util/decorators/as.ocpi.endpoint';
 import { Connector } from '../../model/Connector';
 import { Evse } from '../../model/Evse';
 import { Session } from 'inspector';
@@ -35,8 +33,8 @@ import { TokenUidVersionIdParam } from './schema/token.uid.version.param.schema'
 import { CommandVersionIdParam } from './schema/command.version.id.param.schema';
 import { OldGlobalExceptionHandler } from './exceptions/oldGlobalExceptionHandler';
 import { AuthorizationHeader } from './schema/authorizationHeader';
-import { AuthorizationHeaderSchema } from '../../../dist/modules/temp/schema/authorization.header.schema';
-import { buildOcpiResponse } from '../../util/ocpi.response';
+import { buildOcpiResponse, OcpiResponse } from '../../util/ocpi.response';
+import { OcpiTag } from '../../util/ocpi.tag';
 
 /**
  * Server API for the transaction module.
@@ -65,13 +63,13 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   }
 
   // ======================== CDRs ========================
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/cdrs/page/:uid',
     HttpMethod.Get,
     undefined,
     undefined,
     UidVersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Cdr[]>, // todo proper pageable object
     OcpiTag.Cdrs,
   )
@@ -86,13 +84,13 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     }); // TODO
   }
 
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/cdrs',
     HttpMethod.Get,
     FromToOffsetLimitQuery,
     undefined,
     VersionIdParam,
-    AuthorizationHeaderSchema,
+    AuthorizationHeader,
     OcpiResponse<Cdr[]>, // todo proper pageable object?
     OcpiTag.Cdrs,
   )
@@ -109,7 +107,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   }
 
   // ======================== Locations ========================
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/locations/:locationID/:evseUID/:connectorID',
     HttpMethod.Get,
     undefined,
@@ -130,7 +128,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     }); // TODO
   }
 
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/locations/:locationID/:evseUID',
     HttpMethod.Get,
     undefined,
@@ -151,7 +149,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     }); // TODO
   }
 
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/locations',
     HttpMethod.Get,
     FromToOffsetLimitQuery,
@@ -173,7 +171,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     }); // TODO
   }
 
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/locations/:locationID',
     HttpMethod.Get,
     undefined,
@@ -194,7 +192,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     }); // TODO
   }
 
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/locations/page/:uid',
     HttpMethod.Get,
     undefined,
@@ -216,7 +214,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   }
 
   // ======================== Sessions ========================
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/sessions',
     HttpMethod.Get,
     FromToOffsetLimitQuery,
@@ -238,7 +236,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     }); // TODO
   }
 
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/sessions/page/:uid',
     HttpMethod.Get,
     undefined,
@@ -260,7 +258,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   }
 
   // ======================== Tariffs ===========================
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/tariffs',
     HttpMethod.Get,
     FromToOffsetLimitQuery,
@@ -282,7 +280,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     }); // TODO
   }
 
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/tariffs/page/:uid',
     HttpMethod.Get,
     undefined,
@@ -304,7 +302,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   }
 
   // ======================== Tokens ===========================
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/tokens',
     HttpMethod.Get,
     FromToOffsetLimitQuery,
@@ -326,7 +324,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     }); // TODO
   }
 
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/tokens/page/:uid',
     HttpMethod.Get,
     undefined,
@@ -347,7 +345,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     }); // TODO
   }
 
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/tokens/:tokenUID/authorize',
     HttpMethod.Post,
     TokenTypeVersionIdParam,
@@ -371,7 +369,7 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
   }
 
   // ======================== Commands ===========================
-  @AsOcpiEndpoint(
+  @AsDataEndpoint(
     '/ocpi/sender/:versionId/commands/:command/:uid',
     HttpMethod.Post,
     undefined,

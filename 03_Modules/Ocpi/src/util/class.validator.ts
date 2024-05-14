@@ -1,14 +1,19 @@
-import {getMetadataStorage, IS_ARRAY, IS_ENUM, ValidationTypes,} from 'class-validator';
-import {targetConstructorToSchema} from 'class-validator-jsonschema';
-import {ISchemaConverters} from 'class-validator-jsonschema/build/defaultConverters';
-import {IOptions} from 'class-validator-jsonschema/build/options';
-import {Constructor} from './util';
-import type {SchemaObject} from 'openapi3-ts';
-import {ValidationMetadata} from 'class-validator/types/metadata/ValidationMetadata';
+import {
+  getMetadataStorage,
+  IS_ARRAY,
+  IS_ENUM,
+  ValidationTypes,
+} from 'class-validator';
+import { targetConstructorToSchema } from 'class-validator-jsonschema';
+import { ISchemaConverters } from 'class-validator-jsonschema/build/defaultConverters';
+import { IOptions } from 'class-validator-jsonschema/build/options';
+import { Constructor } from './util';
+import type { SchemaObject } from 'openapi3-ts';
+import { ReferenceObject } from 'openapi3-ts';
+import { ValidationMetadata } from 'class-validator/types/metadata/ValidationMetadata';
 // @ts-expect-error importing js directly from class-transformer
-import {defaultMetadataStorage} from 'class-transformer/cjs/storage.js';
-import {ReferenceObject} from 'openapi3-ts/src/model/OpenApi';
-import {SchemaStore} from './schema.store';
+import { defaultMetadataStorage } from 'class-transformer/cjs/storage.js';
+import { SchemaStore } from './schema.store';
 
 export const refPointerPrefix = '#/components/schemas/';
 
@@ -16,14 +21,12 @@ function getPropType(target: object, property: string) {
   return Reflect.getMetadata('design:type', target, property);
 }
 
-export {JSONSchema} from 'class-validator-jsonschema';
+export { JSONSchema } from 'class-validator-jsonschema';
 
 export const nestedClassToJsonSchema = (
   clz: Constructor<any>,
   options: Partial<IOptions>,
-): SchemaObject => {
-  return targetConstructorToSchema(clz, options) as any;
-}
+): SchemaObject => targetConstructorToSchema(clz, options) as any;
 
 function targetToSchema(type: any, options: IOptions): any | void {
   if (typeof type === 'function') {
@@ -31,14 +34,14 @@ function targetToSchema(type: any, options: IOptions): any | void {
       type.prototype === String.prototype ||
       type.prototype === Symbol.prototype
     ) {
-      return {type: 'string'};
+      return { type: 'string' };
     } else if (type.prototype === Number.prototype) {
-      return {type: 'number'};
+      return { type: 'number' };
     } else if (type.prototype === Boolean.prototype) {
-      return {type: 'boolean'};
+      return { type: 'boolean' };
     }
 
-    return {$ref: options.refPointerPrefix + type.name};
+    return { $ref: options.refPointerPrefix + type.name };
   }
 }
 
@@ -117,9 +120,9 @@ const additionalConverters: ISchemaConverters = {
     if (isOptional) {
       const typeMeta = options.classTransformerMetadataStorage
         ? options.classTransformerMetadataStorage.findTypeMetadata(
-          meta.target as any,
-          meta.propertyName,
-        )
+            meta.target as any,
+            meta.propertyName,
+          )
         : null;
 
       const childType = typeMeta
@@ -175,9 +178,9 @@ const additionalConverters: ISchemaConverters = {
     if (typeof meta.target === 'function') {
       const typeMeta = options.classTransformerMetadataStorage
         ? options.classTransformerMetadataStorage.findTypeMetadata(
-          meta.target,
-          meta.propertyName,
-        )
+            meta.target,
+            meta.propertyName,
+          )
         : null;
 
       const childType = typeMeta
@@ -207,15 +210,11 @@ const additionalConverters: ISchemaConverters = {
         return null; // to be handled in IS_ARRAY
       }
 
-      if (
-        schema &&
-        schema.$ref &&
-        !SchemaStore.getSchema(childType.name)
-      ) {
-        SchemaStore.addSchema(childType.name, nestedClassToJsonSchema(
-          childType,
-          options,
-        ));
+      if (schema && schema.$ref && !SchemaStore.getSchema(childType.name)) {
+        SchemaStore.addSchema(
+          childType.name,
+          nestedClassToJsonSchema(childType, options),
+        );
       }
 
       if (isOptional) {
@@ -225,7 +224,7 @@ const additionalConverters: ISchemaConverters = {
           } as any,
         ];
         if (schema && schema.$ref) {
-          const obj: SchemaObject | ReferenceObject = {$ref: schema.$ref};
+          const obj: SchemaObject | ReferenceObject = { $ref: schema.$ref };
           anyOf.unshift(obj);
         }
         if (anyOf.length === 1) {
@@ -250,7 +249,7 @@ export const defaultClassValidatorJsonSchemaOptions: Partial<IOptions> = {
 };
 
 export function classToJsonSchema(clz: Constructor<any>): SchemaObject {
-  const options = {...defaultClassValidatorJsonSchemaOptions};
+  const options = { ...defaultClassValidatorJsonSchemaOptions };
   const schema = targetConstructorToSchema(clz, options) as any;
   return schema;
 }

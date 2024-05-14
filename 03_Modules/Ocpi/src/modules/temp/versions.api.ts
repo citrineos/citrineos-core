@@ -2,13 +2,8 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   AuthorizationSecurityList,
-  getOcpiTagString,
   HttpMethod,
-  OcpiResponse,
-  OcpiTag,
   SystemConfig,
-  VersionDetailsDTO,
-  VersionDTO,
 } from '@citrineos/base';
 import { OcpiModule } from './module';
 import { FastifyInstance, FastifyRequest } from 'fastify';
@@ -19,6 +14,9 @@ import { CredentialsRepository } from './repository/credentials.repository';
 import { VersionRepository } from './repository/version.repository';
 import { VersionIdParam } from './schema/version.id.param.schema';
 import { targetConstructorToSchema } from 'class-validator-jsonschema';
+import { OcpiResponse } from '../../util/ocpi.response';
+import { getOcpiTagString, OcpiTag } from '../../util/ocpi.tag';
+import { VersionDetailsDTO, VersionDTO } from '../../model/Version';
 
 export class VersionsModuleApi extends AbstractModuleApi<OcpiModule> {
   private versionService?: VersionService;

@@ -41,7 +41,7 @@ export class Evse {
 
   @IsArray()
   @Optional()
-  @Type(() => Capability)
+  // @Type(() => Capability) // todo handle array of enum
   @ValidateNested({ each: true })
   capabilities?: Capability[] | null;
 
@@ -75,7 +75,7 @@ export class Evse {
 
   @IsArray()
   @Optional()
-  @Type(() => ParkingRestriction)
+  // @Type(() => ParkingRestriction) // todo handle array of enum
   @ValidateNested()
   parking_restrictions?: ParkingRestriction[] | null;
 

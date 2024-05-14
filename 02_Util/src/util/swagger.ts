@@ -9,11 +9,8 @@ import fastifySwaggerUi from '@fastify/swagger-ui';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import fs from 'fs';
 import {
-  getOcpiTagString,
   HttpHeader,
   HttpStatus,
-  OcpiErrorResponse,
-  OcpiTag,
   SystemConfig,
   UnauthorizedException,
 } from '@citrineos/base';
@@ -228,12 +225,6 @@ const registerFastifySwagger = (
           },
         },
       },
-      tags: Object.values(OcpiTag).map((tag) => {
-        return {
-          name: getOcpiTagString(tag),
-          description: `OCPI ${getOcpiTagString(tag)} endpoints`,
-        };
-      }),
     },
     transformObject: OcppTransformObject,
   });

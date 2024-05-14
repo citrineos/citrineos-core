@@ -5,7 +5,7 @@ import {
 } from './util';
 import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { Cdr } from '../model/Cdr';
-import { OcpiResponse } from '@citrineos/base';
+import { OcpiResponse } from '../util/ocpi.response';
 import { VersionNumber } from '../model/VersionNumber';
 
 export interface GetCdrRequest extends BaseOcpiHeaders {

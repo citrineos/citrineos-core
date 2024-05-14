@@ -226,32 +226,10 @@ export const CALL_RESULT_SCHEMA_MAP: Map<CallAction, object> = new Map<
 ]);
 
 export { eventGroupFromString } from './interfaces/messages';
-export {
-  OcpiTag,
-  getOcpiTagString,
-} from '../../03_Modules/Ocpi/src/util/ocpi.tag';
 export { HttpStatus } from './interfaces/api/http.status';
-export { OcpiResponse } from '../../03_Modules/Ocpi/src/util/ocpi.response';
-export { OcpiErrorResponse } from '../../03_Modules/Ocpi/src/util/ocpi.error.response';
-export { Credentials } from '../../03_Modules/Ocpi/src/model/Credentials';
-export {
-  VersionDTO,
-  VersionDetailsDTO,
-  Version,
-} from '../../03_Modules/Ocpi/src/model/Version';
 export { HttpHeader } from './interfaces/api/http.header';
 export { UnauthorizedException } from './interfaces/api/exceptions/unauthorized.exception';
-export { Businessdetails } from '../../03_Modules/Ocpi/src/model/Businessdetails';
-export { CredentialsRole } from '../../03_Modules/Ocpi/src/model/CredentialsRole';
-export { Endpoint } from '../../03_Modules/Ocpi/src/model/Endpoint';
-export { Imagecategory } from '../../03_Modules/Ocpi/src/model/Imagecategory';
-export { Image } from '../../03_Modules/Ocpi/src/model/Image';
-export { InterfaceRole } from '../../03_Modules/Ocpi/src/model/InterfaceRole';
-export { ModuleId } from '../../03_Modules/Ocpi/src/model/ModuleId';
-export { Role } from '../../03_Modules/Ocpi/src/model/Role';
-export { VersionNumber } from '../../03_Modules/Ocpi/src/model/VersionNumber';
-export { OcpiNamespace } from '../../03_Modules/Ocpi/src/util/ocpi.namespace';
 export {
   AuthorizationSecurityList,
   AuthorizationSecurity,
-} from './interfaces/api/ocpi/AuthorizationSecurity';
+} from './interfaces/api/AuthorizationSecurity';

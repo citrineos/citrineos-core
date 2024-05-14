@@ -1,13 +1,13 @@
-import {Controller, Get, Param, QueryParams} from 'routing-controllers';
-import {HttpStatus, OcpiResponse, VersionNumber} from '@citrineos/base';
-import {Cdr, CdrListResponse, CdrResponse} from '../model/Cdr';
-import {BaseController} from './base.controller';
-import {FromToOffsetLimitQuery} from '../modules/temp/schema/from.to.offset.limit.query.schema';
-import {ResponseSchema} from 'routing-controllers-openapi';
-import {AsOcpiEndpoint} from '../util/decorators/as.ocpi.endpoint';
-import {VersionNumberParam} from "../util/decorators/version.number.param";
-import {EnumParam} from "../util/decorators/enum.param";
-import {VersionNumberEnumName} from "../model/VersionNumber";
+import { Controller, Get, Param, QueryParams } from 'routing-controllers';
+import { HttpStatus } from '@citrineos/base';
+import { Cdr, CdrListResponse, CdrResponse } from '../model/Cdr';
+import { BaseController } from './base.controller';
+import { FromToOffsetLimitQuery } from '../modules/temp/schema/from.to.offset.limit.query.schema';
+import { ResponseSchema } from 'routing-controllers-openapi';
+import { AsOcpiEndpoint } from '../util/decorators/as.ocpi.endpoint';
+import { VersionNumberParam } from '../util/decorators/version.number.param';
+import { VersionNumber } from '../model/VersionNumber';
+import { OcpiResponse } from '../util/ocpi.response';
 
 @Controller()
 export class CdrsController extends BaseController {

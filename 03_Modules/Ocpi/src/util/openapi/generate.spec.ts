@@ -10,8 +10,12 @@ import { mergeDeep } from './merge.deep';
 import { capitalize } from './capitalize';
 import { smartcase } from './smart.case';
 import { ENUM_PARAM } from '../decorators/enum.param';
-import {defaultClassValidatorJsonSchemaOptions, nestedClassToJsonSchema, refPointerPrefix} from '../class.validator';
-import {SchemaStore} from "../schema.store";
+import {
+  defaultClassValidatorJsonSchemaOptions,
+  nestedClassToJsonSchema,
+  refPointerPrefix,
+} from '../class.validator';
+import { SchemaStore } from '../schema.store';
 
 /** Return full Express path of given route. */
 export function getFullExpressPath(route: IRoute): string {
@@ -145,10 +149,13 @@ function getParamSchema(
     } else if (type.name !== 'Object') {
       // todo why this not working?
       if (!SchemaStore.getSchema(type.name)) {
-        SchemaStore.addSchema(type.name, nestedClassToJsonSchema(
-          type as any,
-          defaultClassValidatorJsonSchemaOptions,
-        ));
+        SchemaStore.addSchema(
+          type.name,
+          nestedClassToJsonSchema(
+            type as any,
+            defaultClassValidatorJsonSchemaOptions,
+          ),
+        );
       }
       return { $ref: '#/components/schemas/' + type.name };
     }

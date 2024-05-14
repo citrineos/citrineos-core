@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Credentials, type SystemConfig, Version } from '@citrineos/base';
+import { type SystemConfig } from '@citrineos/base';
 import { type Dialect } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
@@ -87,8 +87,6 @@ export class DefaultSequelizeInstance {
         VariableMonitoringStatus,
         VariableStatus,
         Variable,
-        Credentials, // todo should we create a separate sequelize instance so that these models are not here?
-        Version, // todo should we create a separate sequelize instance so that these models are not here?
       ],
       logging: (_sql: string, _timing?: number) => {
         // TODO: Look into fixing that

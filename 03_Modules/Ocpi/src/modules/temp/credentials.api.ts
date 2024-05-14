@@ -2,12 +2,8 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   AuthorizationSecurityList,
-  Credentials,
-  getOcpiTagString,
   HttpMethod,
   Namespace,
-  OcpiResponse,
-  OcpiTag,
   SystemConfig,
 } from '@citrineos/base';
 import { OcpiModule } from './module';
@@ -19,6 +15,9 @@ import { CredentialsRepository } from './repository/credentials.repository';
 import { VersionRepository } from './repository/version.repository';
 import { VersionIdParam } from './schema/version.id.param.schema';
 import { targetConstructorToSchema } from 'class-validator-jsonschema';
+import { OcpiResponse } from '../../util/ocpi.response';
+import { Credentials } from '../../model/Credentials';
+import { getOcpiTagString, OcpiTag } from '../../util/ocpi.tag';
 
 export class CredentialsModuleApi extends AbstractModuleApi<OcpiModule> {
   private credentialsService: CredentialsService;
