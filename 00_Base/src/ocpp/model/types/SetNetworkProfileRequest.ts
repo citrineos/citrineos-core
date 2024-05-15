@@ -10,13 +10,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import {
-  APNAuthenticationEnumType,
-  OCPPInterfaceEnumType,
-  OCPPTransportEnumType,
-  OCPPVersionEnumType,
-  VPNEnumType,
-} from '../enums';
+import { APNAuthenticationEnumType, OCPPInterfaceEnumType, OCPPTransportEnumType, OCPPVersionEnumType, VPNEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface SetNetworkProfileRequest extends OcppRequest {

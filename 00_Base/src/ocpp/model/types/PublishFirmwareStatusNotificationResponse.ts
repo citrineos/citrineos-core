@@ -12,8 +12,7 @@
 
 import { OcppResponse } from '../../..';
 
-export interface PublishFirmwareStatusNotificationResponse
-  extends OcppResponse {
+export interface PublishFirmwareStatusNotificationResponse extends OcppResponse {
   customData?: CustomDataType;
 }
 /**

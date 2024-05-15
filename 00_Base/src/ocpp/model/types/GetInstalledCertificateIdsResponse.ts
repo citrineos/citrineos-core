@@ -10,11 +10,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import {
-  GetCertificateIdUseEnumType,
-  GetInstalledCertificateStatusEnumType,
-  HashAlgorithmEnumType,
-} from '../enums';
+import { GetCertificateIdUseEnumType, GetInstalledCertificateStatusEnumType, HashAlgorithmEnumType } from '../enums';
 import { OcppResponse } from '../../..';
 
 export interface GetInstalledCertificateIdsResponse extends OcppResponse {
@@ -24,10 +20,7 @@ export interface GetInstalledCertificateIdsResponse extends OcppResponse {
   /**
    * @minItems 1
    */
-  certificateHashDataChain?: [
-    CertificateHashDataChainType,
-    ...CertificateHashDataChainType[],
-  ];
+  certificateHashDataChain?: [CertificateHashDataChainType, ...CertificateHashDataChainType[]];
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -64,17 +57,8 @@ export interface CertificateHashDataChainType {
   childCertificateHashData?:
     | [CertificateHashDataType]
     | [CertificateHashDataType, CertificateHashDataType]
-    | [
-        CertificateHashDataType,
-        CertificateHashDataType,
-        CertificateHashDataType,
-      ]
-    | [
-        CertificateHashDataType,
-        CertificateHashDataType,
-        CertificateHashDataType,
-        CertificateHashDataType,
-      ];
+    | [CertificateHashDataType, CertificateHashDataType, CertificateHashDataType]
+    | [CertificateHashDataType, CertificateHashDataType, CertificateHashDataType, CertificateHashDataType];
 }
 export interface CertificateHashDataType {
   customData?: CustomDataType;
