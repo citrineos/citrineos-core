@@ -198,7 +198,7 @@ services:
     environment:
       CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
       APP_NAME: 'smartcharging'
-  transactions:
+  tenant:
     build:
       context: ../..
       dockerfile: .deploy.Dockerfile
@@ -213,6 +213,28 @@ services:
       - 8089:8089
     expose:
       - 8089
+    volumes:
+      - ./:/usr/tenant
+      - /usr/tenant/node_modules
+    environment:
+      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
+      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
+      APP_NAME: 'tenant'
+  transactions:
+    build:
+      context: ../..
+      dockerfile: .deploy.Dockerfile
+    depends_on:
+      ocpp-db:
+        condition: service_started
+      amqp-broker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - 8090:8090
+    expose:
+      - 8090
     volumes:
       - ./:/usr/transactions
       - /usr/transactions/node_modules
