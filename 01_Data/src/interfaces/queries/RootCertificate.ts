@@ -4,12 +4,8 @@
 
 import { QuerySchema } from '@citrineos/base';
 
-export const RootCertificateSchema = QuerySchema(
+export const GenerateRootCertificatesSchema = QuerySchema(
   [
-    ['stationId', 'string'],
-    ['certificateType', 'string'],
-    ['tenantId', 'string'],
-    ['callbackUrl', 'string'],
     ['serialNumber', 'string'],
     ['keyLength', 'number'],
     ['organizationName', 'string'],
@@ -18,5 +14,16 @@ export const RootCertificateSchema = QuerySchema(
     ['filePath', 'string'],
     ['selfSigned', 'boolean'],
   ],
-  ['selfSigned', 'commonName', 'organizationName', 'stationId', 'certificateType', 'tenantId'],
+  ['selfSigned', 'commonName', 'organizationName'],
+);
+
+export const InstallRootCertificateSchema = QuerySchema(
+  [
+    ['stationId', 'string'],
+    ['certificateType', 'string'],
+    ['tenantId', 'string'],
+    ['callbackUrl', 'string'],
+    ['fileId', 'string'],
+  ],
+  ['stationId', 'certificateType', 'tenantId'],
 );

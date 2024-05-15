@@ -5,6 +5,7 @@
 import {
   CertificateSigningUseEnumType,
   ICache,
+  InstallCertificateUseEnumType,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -79,8 +80,29 @@ export class CertificateAuthorityService {
     );
   }
 
-  async getRootCACertificateFromExternalCA(): Promise<string> {
-    return await this._chargingStationClient.getRootCACertificate();
+  async getRootCACertificateFromExternalCA(
+    certificateType: InstallCertificateUseEnumType,
+  ): Promise<string> {
+    switch (certificateType) {
+      case InstallCertificateUseEnumType.V2GRootCertificate: {
+        const caCerts = await this._v2gClient.getCACertificates();
+        const rootCACert = this._extractCertificateArrayFromPem(caCerts)?.pop();
+        if (rootCACert) {
+          return this._createPemBlock(
+            'CERTIFICATE',
+            Buffer.from(rootCACert.toSchema().toBER(false)).toString('base64'),
+          );
+        } else {
+          throw new Error('V2GRootCertificate not found');
+        }
+      }
+      case InstallCertificateUseEnumType.CSMSRootCertificate:
+        return await this._chargingStationClient.getRootCACertificate();
+      default:
+        throw new Error(
+          `Certificate type: ${certificateType} not implemented.`,
+        );
+    }
   }
 
   updateSecurityCertChainKeyMap(
@@ -120,7 +142,7 @@ export class CertificateAuthorityService {
       );
     }
 
-    // Add Chain
+    // Add Chain without Root CA Certificate
     const chainWithoutRoot = this._extractCertificateArrayFromPem(
       caCerts,
     )?.slice(0, -1);

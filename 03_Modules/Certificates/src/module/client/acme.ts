@@ -95,6 +95,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
    * @return {Promise<string>} The signed certificate.
    */
   async signCertificateByExternalCA(csrString: string): Promise<string> {
+    // preferredChain should be consistent with root CA cert from getRootCACertificate method
     const cert = await this._client?.auto({
       csr: csrString,
       email: this._email,

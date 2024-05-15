@@ -11,7 +11,6 @@ export class CertificateRepository extends SequelizeRepository<Certificate> impl
     const [storedCert, _certCreated] = await Certificate.upsert({
       signedBy: certificate.signedBy,
       serialNumber: certificate.serialNumber,
-      certificateType: certificate.certificateType,
       keyLength: certificate.keyLength,
       organizationName: certificate.organizationName,
       commonName: certificate.commonName,

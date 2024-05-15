@@ -29,12 +29,14 @@ import { CertificatesModule } from './module';
 import { WebsocketNetworkConnection } from '@citrineos/util';
 import {
   Certificate,
-  RootCertificateRequest,
-  RootCertificateSchema,
+  GenerateRootCertificatesRequest,
+  GenerateRootCertificatesSchema,
   TlsCertificatesRequest,
   TlsCertificateSchema,
   UpdateTlsCertificateQuerySchema,
   UpdateTlsCertificateQueryString,
+  InstallRootCertificateSchema,
+  InstallRootCertificateRequest,
 } from '@citrineos/data';
 import fs from 'fs';
 import * as forge from 'node-forge';
@@ -218,26 +220,21 @@ export class CertificatesModuleApi
   /**
    * This endpoint is used to create root certificates, root CA and sub CA
    * and install them on the charger by sending the InstallCertificateRequest
-   * @param request - RootCertificateRequest
+   * @param request - GenerateRootCertificatesRequest
    * @return Promise<Certificate[]> - An array of generated certificates
    */
   @AsDataEndpoint(
     Namespace.RootCertificates,
     HttpMethod.Post,
     undefined,
-    RootCertificateSchema,
+    GenerateRootCertificatesSchema,
   )
-  async installRootCertificate(
-    request: FastifyRequest<{ Body: RootCertificateRequest }>,
+  async generateRootCertificates(
+    request: FastifyRequest<{ Body: GenerateRootCertificatesRequest }>,
   ): Promise<Certificate[]> {
-    const certRequest = request.body as RootCertificateRequest;
-
-    this._logger.info(
-      `Installing root certificates on charger ${certRequest.stationId}`,
-    );
+    const certRequest = request.body as GenerateRootCertificatesRequest;
 
     let certificateFromReq = new Certificate();
-    certificateFromReq.certificateType = certRequest.certificateType;
     certificateFromReq.serialNumber = certRequest.serialNumber
       ? certRequest.serialNumber
       : this._generateSerialNumber();
@@ -255,7 +252,6 @@ export class CertificatesModuleApi
     }
 
     let responseBody: Certificate[];
-    let rootCAPem;
     if (certRequest.selfSigned) {
       // Generate self-signed root CA certificate
       const [rootCertificatePem, rootPrivateKeyPem] =
@@ -270,7 +266,6 @@ export class CertificatesModuleApi
 
       // Generate sub CA certificate
       let subCertificate: Certificate = new Certificate();
-      subCertificate.certificateType = certificateFromReq.certificateType;
       subCertificate.serialNumber = this._generateSerialNumber();
       subCertificate.keyLength = certificateFromReq.keyLength;
       subCertificate.organizationName = certificateFromReq.organizationName;
@@ -290,13 +285,8 @@ export class CertificatesModuleApi
       );
 
       responseBody = [subCertificate, certificateFromReq];
-      rootCAPem = rootCertificatePem;
     } else {
-      // Get root certificate from external CA
-      const externalRootCAPem =
-        await this._module.certificateAuthorityService.getRootCACertificateFromExternalCA();
-
-      // Generate sub CA certificate and private key
+      // Generate sub CA certificate and private key singed by external CA server
       const [certificatePem, privateKeyPem] =
         await this._generateSubCACertificateSignedByCAServer(
           certificateFromReq,
@@ -310,24 +300,56 @@ export class CertificatesModuleApi
       );
 
       responseBody = [certificateFromReq];
-      rootCAPem = externalRootCAPem;
-    }
-
-    // Send InstallCertificateRequest to the charger
-    const confirmation: IMessageConfirmation = await this.installCertificate(
-      certRequest.stationId,
-      certRequest.tenantId,
-      {
-        certificateType: certRequest.certificateType,
-        certificate: rootCAPem,
-      } as InstallCertificateRequest,
-      certRequest.callbackUrl,
-    );
-    if (!confirmation.success) {
-      throw new Error('Send InstallCertificateRequest failed.');
     }
 
     return responseBody;
+  }
+
+  @AsDataEndpoint(
+    Namespace.RootCertificates,
+    HttpMethod.Put,
+    undefined,
+    InstallRootCertificateSchema,
+  )
+  async installRootCertificate(
+    request: FastifyRequest<{
+      Body: InstallRootCertificateRequest;
+    }>,
+  ): Promise<void> {
+    const installReq = request.body as InstallRootCertificateRequest;
+    this._logger.info(
+      `Installing ${installReq.certificateType} on charger ${installReq.stationId}`,
+    );
+
+    let rootCAPem: string;
+    if (installReq.fileId) {
+      rootCAPem = (
+        await this._fileAccess.getFile(installReq.fileId)
+      ).toString();
+    } else {
+      rootCAPem =
+        await this._module.certificateAuthorityService.getRootCACertificateFromExternalCA(
+          installReq.certificateType,
+        );
+    }
+
+    // Send InstallCertificateRequest to the charger
+    await this.installCertificate(
+      installReq.stationId,
+      installReq.tenantId,
+      {
+        certificateType: installReq.certificateType,
+        certificate: rootCAPem,
+      } as InstallCertificateRequest,
+      installReq.callbackUrl,
+    ).then((confirmation) => {
+      if (!confirmation.success) {
+        throw new Error(
+          `Send InstallCertificateRequest failed: ${confirmation.payload}`,
+        );
+      }
+      this._logger.debug('InstallCertificate confirmation sent:', confirmation);
+    });
   }
 
   /**
@@ -423,9 +445,9 @@ export class CertificatesModuleApi
         // This map is used when signing charging station certificates for use case A02 in OCPP 2.0.1 Part 2.
         if (serverConfig.securityProfile === 3) {
           this._module.certificateAuthorityService.updateSecurityCertChainKeyMap(
-              serverId,
-              tlsKey,
-              tlsCertificateChain,
+            serverId,
+            tlsKey,
+            tlsCertificateChain,
           );
         }
 

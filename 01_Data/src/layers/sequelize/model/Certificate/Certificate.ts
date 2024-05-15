@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { InstallCertificateUseEnumType, Namespace } from '@citrineos/base';
+import { Namespace } from '@citrineos/base';
 import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
 @Table
@@ -14,25 +14,19 @@ export class Certificate extends Model {
    */
   @Column({
     type: DataType.STRING,
-    unique: 'serialNumber_certificateType_organizationName_commonName',
+    unique: 'serialNumber_organizationName_commonName',
   })
   declare serialNumber: string;
 
   @Column({
     type: DataType.STRING,
-    unique: 'serialNumber_certificateType_organizationName_commonName',
-  })
-  declare certificateType: InstallCertificateUseEnumType;
-
-  @Column({
-    type: DataType.STRING,
-    unique: 'serialNumber_certificateType_organizationName_commonName',
+    unique: 'serialNumber_organizationName_commonName',
   })
   declare organizationName: string;
 
   @Column({
     type: DataType.STRING,
-    unique: 'serialNumber_certificateType_organizationName_commonName',
+    unique: 'serialNumber_organizationName_commonName',
   })
   declare commonName: string;
 
