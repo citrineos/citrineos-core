@@ -10,7 +10,10 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ChargingLimitSourceEnumType, ChargingProfilePurposeEnumType } from '../enums';
+import {
+  ChargingLimitSourceEnumType,
+  ChargingProfilePurposeEnumType,
+} from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface GetChargingProfilesRequest extends OcppRequest {
@@ -68,7 +71,11 @@ export interface ChargingProfileCriterionType {
   chargingLimitSource?:
     | [ChargingLimitSourceEnumType]
     | [ChargingLimitSourceEnumType, ChargingLimitSourceEnumType]
-    | [ChargingLimitSourceEnumType, ChargingLimitSourceEnumType, ChargingLimitSourceEnumType]
+    | [
+        ChargingLimitSourceEnumType,
+        ChargingLimitSourceEnumType,
+        ChargingLimitSourceEnumType,
+      ]
     | [
         ChargingLimitSourceEnumType,
         ChargingLimitSourceEnumType,

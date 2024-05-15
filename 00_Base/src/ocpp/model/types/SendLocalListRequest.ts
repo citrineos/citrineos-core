@@ -10,7 +10,12 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { AuthorizationStatusEnumType, IdTokenEnumType, MessageFormatEnumType, UpdateEnumType } from '../enums';
+import {
+  AuthorizationStatusEnumType,
+  IdTokenEnumType,
+  MessageFormatEnumType,
+  UpdateEnumType,
+} from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface SendLocalListRequest extends OcppRequest {

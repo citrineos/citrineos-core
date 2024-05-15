@@ -10,7 +10,14 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ChargingProfileKindEnumType, ChargingProfilePurposeEnumType, ChargingRateUnitEnumType, CostKindEnumType, IdTokenEnumType, RecurrencyKindEnumType } from '../enums';
+import {
+  ChargingProfileKindEnumType,
+  ChargingProfilePurposeEnumType,
+  ChargingRateUnitEnumType,
+  CostKindEnumType,
+  IdTokenEnumType,
+  RecurrencyKindEnumType,
+} from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface RequestStartTransactionRequest extends OcppRequest {
@@ -155,7 +162,10 @@ export interface ChargingScheduleType {
    * @minItems 1
    * @maxItems 1024
    */
-  chargingSchedulePeriod: [ChargingSchedulePeriodType, ...ChargingSchedulePeriodType[]];
+  chargingSchedulePeriod: [
+    ChargingSchedulePeriodType,
+    ...ChargingSchedulePeriodType[],
+  ];
   /**
    * Charging_ Schedule. Min_ Charging_ Rate. Numeric
    * urn:x-oca:ocpp:uid:1:569239

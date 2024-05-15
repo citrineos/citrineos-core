@@ -53,7 +53,10 @@ export interface CompositeScheduleType {
   /**
    * @minItems 1
    */
-  chargingSchedulePeriod: [ChargingSchedulePeriodType, ...ChargingSchedulePeriodType[]];
+  chargingSchedulePeriod: [
+    ChargingSchedulePeriodType,
+    ...ChargingSchedulePeriodType[],
+  ];
   /**
    * The ID of the EVSE for which the
    * schedule is requested. When evseid=0, the

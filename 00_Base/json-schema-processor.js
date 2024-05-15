@@ -7,6 +7,7 @@
 const fs = require('fs');
 const jsts = require('json-schema-to-typescript');
 const prettier = require('prettier');
+const { exec } = require('child_process');
 
 if (process.argv.length === 2) {
   console.error('Expected input path argument!');
@@ -89,12 +90,24 @@ fs.readdir(path, (error, files) => {
       fs.writeFileSync(
         `./src/ocpp/model/enums/index.ts`,
         licenseComment +
-          Object.values(globalEnumDefinitions).sort().join('\n\n') + '\n',
+          Object.values(globalEnumDefinitions).sort().join('\n\n') +
+          '\n',
       );
       fs.writeFileSync(
         `./src/ocpp/model/index.ts`,
         licenseComment + exportStatements.join('\n') + '\n',
       );
+      exec(`cd .. && npm run lint-fix`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error executing npm script: ${error.message}`);
+          return;
+        }
+        if (stderr) {
+          console.error(`stderr: ${stderr}`);
+          return;
+        }
+        console.log(`stdout: ${stdout}`);
+      });
     }
   });
 });
@@ -120,6 +133,7 @@ async function processJsonSchema(data, writeToFile = true) {
     jsts
       .compile(jsonSchema, id, {
         style: { singleQuote: true, trailingComma: 'all' },
+        format: true,
       })
       .then((ts) => {
         // Add licence comment
@@ -165,7 +179,10 @@ async function processJsonSchema(data, writeToFile = true) {
           ts.substring(index);
 
         if (writeToFile) {
-          fs.writeFileSync(`./src/ocpp/model/types/${id}.ts`, ts.replace(/\n+$/, '\n'));
+          fs.writeFileSync(
+            `./src/ocpp/model/types/${id}.ts`,
+            ts.replace(/\n+$/, '\n'),
+          );
 
           // Format JSON with Prettier
           prettier
