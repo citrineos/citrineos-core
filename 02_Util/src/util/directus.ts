@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SystemConfig } from '@citrineos/base';
+import { IFileAccess, SystemConfig } from '@citrineos/base';
 import { sequelize } from '@citrineos/data';
 import {
   authentication,
@@ -17,6 +17,8 @@ import {
   staticToken,
   updateFlow,
   updateOperation,
+  readAssetArrayBuffer,
+  uploadFiles,
 } from '@directus/sdk';
 import { RouteOptions } from 'fastify';
 import { JSONSchemaFaker } from 'json-schema-faker';
@@ -26,7 +28,7 @@ interface Schema {
   // No custom collections needed
 }
 
-export class DirectusUtil {
+export class DirectusUtil implements IFileAccess {
   protected readonly _config: SystemConfig;
   protected readonly _logger: Logger<ILogObj>;
   private readonly _client: RestClient<Schema>;
@@ -85,6 +87,46 @@ export class DirectusUtil {
       // These body schemas are the ones generated directly from the specification using the json-schema-processor in 00_Base
       const bodySchema = routeOptions.schema?.body as object;
       this.addDirectusFlowForAction(action, messagePath, bodySchema);
+    }
+  }
+
+  public async getFile(id: string): Promise<Buffer> {
+    this._logger.info(`Get file ${id}`);
+    try {
+      const result = await this._client.request(readAssetArrayBuffer(id));
+      return Buffer.from(result);
+    } catch (error) {
+      this._logger.error('Get file failed: ', error);
+      throw new Error(`Get file ${id} failed`);
+    }
+  }
+
+  public async uploadFile(
+    fileName: string,
+    content: Buffer,
+    filePath?: string,
+  ): Promise<string> {
+    let fileType: string | undefined;
+    if (
+      fileName.lastIndexOf('.') > -1 &&
+      fileName.lastIndexOf('.') < fileName.length - 1
+    ) {
+      fileType = fileName.substring(fileName.lastIndexOf('.'));
+    }
+    const formData = new FormData();
+    if (fileType) {
+      formData.append('type', fileType);
+    }
+    if (filePath) {
+      formData.append('folder', filePath);
+    }
+    formData.append('file', new Blob([content]), fileName);
+    try {
+      const file = await this._client.request(uploadFiles(formData));
+      return file['id'];
+    } catch (error) {
+      this._logger.error('Upload file failed: ', error);
+      throw new Error(`Upload file ${fileName} failed.`);
     }
   }
 

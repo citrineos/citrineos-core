@@ -17,15 +17,24 @@ import * as https from 'https';
 import fs from 'fs';
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from 'ws';
 import { ILogObj, Logger } from 'tslog';
+import { SecureContextOptions } from 'tls';
 
 export class WebsocketNetworkConnection {
   protected _cache: ICache;
   protected _config: SystemConfig;
   protected _logger: Logger<ILogObj>;
   private _identifierConnections: Map<string, WebSocket> = new Map();
-  private _httpServers: (http.Server | https.Server)[];
+  // websocketServers id as key and http server as value
+  private _httpServersMap: Map<string, http.Server | https.Server>;
   private _authenticator: IAuthenticator;
   private _router: IMessageRouter;
+
+  private readonly _ciphers = [
+    'TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256',
+    'TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384',
+    'TLS_RSA_WITH_AES_128_GCM_SHA256',
+    'TLS_RSA_WITH_AES_256_GCM_SHA384',
+  ].join(':');
 
   constructor(
     config: SystemConfig,
@@ -43,7 +52,7 @@ export class WebsocketNetworkConnection {
     router.networkHook = this.sendMessage.bind(this);
     this._router = router;
 
-    this._httpServers = [];
+    this._httpServersMap = new Map<string, http.Server | https.Server>();
     this._config.util.networkConnection.websocketServers.forEach(
       (websocketServerConfig) => {
         let _httpServer;
@@ -107,7 +116,7 @@ export class WebsocketNetworkConnection {
             );
           },
         );
-        this._httpServers.push(_httpServer);
+        this._httpServersMap.set(websocketServerConfig.id, _httpServer);
       },
     );
   }
@@ -166,8 +175,41 @@ export class WebsocketNetworkConnection {
   }
 
   shutdown(): void {
-    this._httpServers.forEach((server) => server.close());
+    this._httpServersMap.forEach((server) => server.close());
     this._router.shutdown();
+  }
+
+  /**
+   * Updates certificates for a specific server with the provided TLS key, certificate chain, and optional
+   * root CA.
+   *
+   * @param {string} serverId - The ID of the server to update.
+   * @param {string} tlsKey - The TLS key to set.
+   * @param {string} tlsCertificateChain - The TLS certificate chain to set.
+   * @param {string} [rootCA] - The root CA to set (optional).
+   * @return {void} void
+   */
+  updateTlsCertificates(
+    serverId: string,
+    tlsKey: string,
+    tlsCertificateChain: string,
+    rootCA?: string,
+  ): void {
+    let httpsServer = this._httpServersMap.get(serverId);
+
+    if (httpsServer && httpsServer instanceof https.Server) {
+      const secureContextOptions: SecureContextOptions = {
+        key: tlsKey,
+        cert: tlsCertificateChain,
+        ciphers: this._ciphers,
+      };
+      if (rootCA) {
+        secureContextOptions.ca = rootCA;
+      }
+      httpsServer.setSecureContext(secureContextOptions);
+    } else {
+      throw new TypeError(`Server ${serverId} is not a https server.`);
+    }
   }
 
   private _onHttpRequest(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -497,11 +539,12 @@ export class WebsocketNetworkConnection {
     const serverOptions: https.ServerOptions = {
       key: fs.readFileSync(config.tlsKeyFilePath as string),
       cert: fs.readFileSync(config.tlsCertificateChainFilePath as string),
+      ciphers: this._ciphers,
     };
 
-    if (config.rootCaCertificateFilePath) {
+    if (config.rootCACertificateFilePath) {
       serverOptions.ca = fs.readFileSync(
-        config.rootCaCertificateFilePath as string,
+        config.rootCACertificateFilePath as string,
       );
     }
 

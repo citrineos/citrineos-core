@@ -5,10 +5,10 @@
 import { IChargingStationCertificateAuthorityClient } from './interface';
 import { CacheNamespace, ICache, SystemConfig } from '@citrineos/base';
 import * as acme from 'acme-client';
-import { Client } from 'acme-client';
 import { ILogObj, Logger } from 'tslog';
 import fs from 'fs';
 import forge from 'node-forge';
+import { Client } from 'acme-client';
 
 export class Acme implements IChargingStationCertificateAuthorityClient {
   private readonly _directoryUrl: string = acme.directory.letsencrypt.staging;
@@ -95,6 +95,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
    * @return {Promise<string>} The signed certificate.
    */
   async signCertificateByExternalCA(csrString: string): Promise<string> {
+    // preferredChain should be consistent with root CA cert from getRootCACertificate method
     const cert = await this._client?.auto({
       csr: csrString,
       email: this._email,
@@ -146,6 +147,21 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     );
 
     return signedCertPem.replace(/\r/g, '') + subCACertPem;
+  }
+
+  updateCertificateChainKeyMap(
+    serverId: string,
+    certificateChain: string,
+    privateKey: string,
+  ): void {
+    if (this._securityCertChainKeyMap.has(serverId)) {
+      this._securityCertChainKeyMap.set(serverId, [
+        certificateChain,
+        privateKey,
+      ]);
+    } else {
+      this._logger.error(`Server ${serverId} not found in the map`);
+    }
   }
 
   /**

@@ -15,4 +15,9 @@ export interface IChargingStationCertificateAuthorityClient {
   getRootCACertificate(): Promise<string>;
   getCertificateChain(csrString: string, stationId: string): Promise<string>;
   signCertificateByExternalCA(csrString: string): Promise<string>;
+  updateCertificateChainKeyMap(
+    serverId: string,
+    certificateChain: string,
+    privateKey: string,
+  ): void;
 }
