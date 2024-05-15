@@ -1,95 +1,45 @@
-import {
-  OcpiParams,
-  setAuthHeader,
-  getOcpiHeaders,
-} from './util';
-import { BaseAPI, HTTPHeaders } from './BaseApi';
-import { OcpiResponse } from '../util/ocpi.response';
-import { Tariff } from '../model/Tariff';
-import { VersionNumber } from '../model/VersionNumber';
-
-export interface DeleteTariffRequest extends OcpiParams {
-  countryCode: string;
-  partyID: string;
-  tariffID: string;
-}
-
-export interface GetTariffRequest extends OcpiParams {
-  countryCode: string;
-  partyID: string;
-  tariffID: string;
-}
-
-export interface PutTariffRequest extends OcpiParams {
-  countryCode: string;
-  partyID: string;
-  tariffID: string;
-  tariff: Tariff;
-}
+import {getOcpiHeaders, OcpiParams, setAuthHeader,} from './util';
+import {BaseAPI, HTTPHeaders, OcpiModules} from './BaseApi';
+import {OcpiResponse} from '../util/ocpi.response';
+import {Tariff} from '../model/Tariff';
+import {GetTariffParams} from "./params/get.tariff.params";
+import {PutTariffParams} from "./params/put.tariff.params";
+import {DeleteTariffParams} from "./params/delete.tariff.params";
 
 export class TariffsControllerApi extends BaseAPI {
-  async deleteTariff(
-    requestParameters: DeleteTariffRequest,
-    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
-  ): Promise<OcpiResponse<void>> {
-    this.validateRequiredParam(
-      requestParameters,
-      'countryCode',
-      'partyID',
-      'tariffID',
-    );
 
-    const headerParameters: HTTPHeaders =
-      getOcpiHeaders(requestParameters);
-
-    setAuthHeader(headerParameters);
-    return await this.request({
-      path: `${this.getBasePath(versionId)}/tariffs/{countryCode}/{partyID}/{tariffID}`
-        .replace(
-          `{${'countryCode'}}`,
-          encodeURIComponent(String(requestParameters.countryCode)),
-        )
-        .replace(
-          `{${'partyID'}}`,
-          encodeURIComponent(String(requestParameters.partyID)),
-        )
-        .replace(
-          `{${'tariffID'}}`,
-          encodeURIComponent(String(requestParameters.tariffID)),
-        ),
-      method: 'DELETE',
-      headers: headerParameters,
-    });
-  }
+  CONTROLLER_PATH = OcpiModules.Tariffs;
 
   async getTariff(
-    requestParameters: GetTariffRequest,
-    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
+    params: GetTariffParams
   ): Promise<OcpiResponse<Tariff>> {
+
+    this.validateOcpiParams(params);
+
     this.validateRequiredParam(
-      requestParameters,
+      params,
       'countryCode',
-      'partyID',
-      'tariffID',
+      'partyId',
+      'tariffId',
     );
 
     const headerParameters: HTTPHeaders =
-      getOcpiHeaders(requestParameters);
+      getOcpiHeaders(params);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `${this.getBasePath(versionId)}/tariffs/{countryCode}/{partyID}/{tariffID}`
+      path: `${this.getBasePath(params)}/{countryCode}/{partyId}/{tariffId}`
         .replace(
-          `{${'countryCode'}}`,
-          encodeURIComponent(String(requestParameters.countryCode)),
+          'countryCode',
+          encodeURIComponent(String(params.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
-          encodeURIComponent(String(requestParameters.partyID)),
+          'partyId',
+          encodeURIComponent(String(params.partyId)),
         )
         .replace(
-          `{${'tariffID'}}`,
-          encodeURIComponent(String(requestParameters.tariffID)),
+          'tariffId',
+          encodeURIComponent(String(params.tariffId)),
         ),
       method: 'GET',
       headers: headerParameters,
@@ -97,38 +47,76 @@ export class TariffsControllerApi extends BaseAPI {
   }
 
   async putTariff(
-    requestParameters: PutTariffRequest,
-    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
+    params: PutTariffParams
   ): Promise<OcpiResponse<void>> {
+
+    this.validateOcpiParams(params);
+
     this.validateRequiredParam(
-      requestParameters,
+      params,
       'countryCode',
-      'partyID',
-      'tariffID',
+      'partyId',
+      'tariffId',
       'tariff',
     );
 
     const headerParameters: HTTPHeaders =
-      getOcpiHeaders(requestParameters);
+      getOcpiHeaders(params);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `${this.getBasePath(versionId)}/tariffs/{countryCode}/{partyID}/{tariffID}`
+      path: `${this.getBasePath(params)}/{countryCode}/{partyId}/{tariffId}`
         .replace(
-          `{${'countryCode'}}`,
-          encodeURIComponent(String(requestParameters.countryCode)),
+          'countryCode',
+          encodeURIComponent(String(params.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
-          encodeURIComponent(String(requestParameters.partyID)),
+          'partyId',
+          encodeURIComponent(String(params.partyId)),
         )
         .replace(
-          `{${'tariffID'}}`,
-          encodeURIComponent(String(requestParameters.tariffID)),
+          'tariffId',
+          encodeURIComponent(String(params.tariffId)),
         ),
       method: 'PUT',
       headers: headerParameters,
-      body: requestParameters.tariff,
+      body: params.tariff,
+    });
+  }
+
+  async deleteTariff(
+    params: DeleteTariffParams,
+  ): Promise<OcpiResponse<void>> {
+
+    this.validateOcpiParams(params);
+
+    this.validateRequiredParam(
+      params,
+      'countryCode',
+      'partyId',
+      'tariffId',
+    );
+
+    const headerParameters: HTTPHeaders =
+      getOcpiHeaders(params);
+
+    setAuthHeader(headerParameters);
+    return await this.request({
+      path: `${this.getBasePath(params)}/{countryCode}/{partyId}/{tariffId}`
+        .replace(
+          'countryCode',
+          encodeURIComponent(String(params.countryCode)),
+        )
+        .replace(
+          'partyId',
+          encodeURIComponent(String(params.partyId)),
+        )
+        .replace(
+          'tariffId',
+          encodeURIComponent(String(params.tariffId)),
+        ),
+      method: 'DELETE',
+      headers: headerParameters,
     });
   }
 }

@@ -57,15 +57,15 @@ export class TokensControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/tokens/{countryCode}/{partyID}/{tokenUID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'tokenUID'}}`,
+          'tokenUID',
           encodeURIComponent(String(requestParameters.tokenUID)),
         ),
       method: 'GET',
@@ -99,15 +99,15 @@ export class TokensControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/tokens/{countryCode}/{partyID}/{tokenUID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'tokenUID'}}`,
+          'tokenUID',
           encodeURIComponent(String(requestParameters.tokenUID)),
         ),
       method: 'PATCH',
@@ -142,15 +142,15 @@ export class TokensControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/tokens/{countryCode}/{partyID}/{tokenUID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'tokenUID'}}`,
+          'tokenUID',
           encodeURIComponent(String(requestParameters.tokenUID)),
         ),
       method: 'PUT',

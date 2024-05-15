@@ -48,7 +48,7 @@ export class ChargingProfilesControllerApi extends BaseAPI {
     setAuthHeader(headerParameters);
     return await this.request({
       path: `/ocpi/${versionId}/receiver/chargingprofiles/{sessionId}`.replace(
-        `{${'sessionId'}}`,
+        'sessionId',
         encodeURIComponent(String(requestParameters.sessionId)),
       ),
       method: 'DELETE',
@@ -84,7 +84,7 @@ export class ChargingProfilesControllerApi extends BaseAPI {
     setAuthHeader(headerParameters);
     return await this.request({
       path: `/ocpi/${versionId}/receiver/chargingprofiles/{sessionId}`.replace(
-        `{${'sessionId'}}`,
+        'sessionId',
         encodeURIComponent(String(requestParameters.sessionId)),
       ),
       method: 'GET',
@@ -109,7 +109,7 @@ export class ChargingProfilesControllerApi extends BaseAPI {
     setAuthHeader(headerParameters);
     return await this.request({
       path: `/ocpi/${versionId}/receiver/chargingprofiles/{sessionId}`.replace(
-        `{${'sessionId'}}`,
+        'sessionId',
         encodeURIComponent(String(requestParameters.sessionId)),
       ),
       method: 'PUT',

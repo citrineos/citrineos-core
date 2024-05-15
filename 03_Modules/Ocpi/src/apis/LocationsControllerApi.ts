@@ -100,23 +100,23 @@ export class LocationsControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/locations/{countryCode}/{partyID}/{locationID}/{evseUID}/{connectorID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'locationID'}}`,
+          'locationID',
           encodeURIComponent(String(requestParameters.locationID)),
         )
         .replace(
-          `{${'evseUID'}}`,
+          'evseUID',
           encodeURIComponent(String(requestParameters.evseUID)),
         )
         .replace(
-          `{${'connectorID'}}`,
+          'connectorID',
           encodeURIComponent(String(requestParameters.connectorID)),
         ),
       method: 'GET',
@@ -143,19 +143,19 @@ export class LocationsControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/locations/{countryCode}/{partyID}/{locationID}/{evseUID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'locationID'}}`,
+          'locationID',
           encodeURIComponent(String(requestParameters.locationID)),
         )
         .replace(
-          `{${'evseUID'}}`,
+          'evseUID',
           encodeURIComponent(String(requestParameters.evseUID)),
         ),
       method: 'GET',
@@ -181,15 +181,15 @@ export class LocationsControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/locations/{countryCode}/{partyID}/{locationID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'locationID'}}`,
+          'locationID',
           encodeURIComponent(String(requestParameters.locationID)),
         ),
       method: 'GET',
@@ -218,23 +218,23 @@ export class LocationsControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/locations/{countryCode}/{partyID}/{locationID}/{evseUID}/{connectorID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'locationID'}}`,
+          'locationID',
           encodeURIComponent(String(requestParameters.locationID)),
         )
         .replace(
-          `{${'evseUID'}}`,
+          'evseUID',
           encodeURIComponent(String(requestParameters.evseUID)),
         )
         .replace(
-          `{${'connectorID'}}`,
+          'connectorID',
           encodeURIComponent(String(requestParameters.connectorID)),
         ),
       method: 'PATCH',
@@ -263,19 +263,19 @@ export class LocationsControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/locations/{countryCode}/{partyID}/{locationID}/{evseUID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'locationID'}}`,
+          'locationID',
           encodeURIComponent(String(requestParameters.locationID)),
         )
         .replace(
-          `{${'evseUID'}}`,
+          'evseUID',
           encodeURIComponent(String(requestParameters.evseUID)),
         ),
       method: 'PATCH',
@@ -303,15 +303,15 @@ export class LocationsControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/locations/{countryCode}/{partyID}/{locationID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'locationID'}}`,
+          'locationID',
           encodeURIComponent(String(requestParameters.locationID)),
         ),
       method: 'PATCH',
@@ -341,23 +341,23 @@ export class LocationsControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/locations/{countryCode}/{partyID}/{locationID}/{evseUID}/{connectorID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'locationID'}}`,
+          'locationID',
           encodeURIComponent(String(requestParameters.locationID)),
         )
         .replace(
-          `{${'evseUID'}}`,
+          'evseUID',
           encodeURIComponent(String(requestParameters.evseUID)),
         )
         .replace(
-          `{${'connectorID'}}`,
+          'connectorID',
           encodeURIComponent(String(requestParameters.connectorID)),
         ),
       method: 'PUT',
@@ -386,19 +386,19 @@ export class LocationsControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/locations/{countryCode}/{partyID}/{locationID}/{evseUID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'locationID'}}`,
+          'locationID',
           encodeURIComponent(String(requestParameters.locationID)),
         )
         .replace(
-          `{${'evseUID'}}`,
+          'evseUID',
           encodeURIComponent(String(requestParameters.evseUID)),
         ),
       method: 'PUT',
@@ -426,15 +426,15 @@ export class LocationsControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/locations/{countryCode}/{partyID}/{locationID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'locationID'}}`,
+          'locationID',
           encodeURIComponent(String(requestParameters.locationID)),
         ),
       method: 'PUT',

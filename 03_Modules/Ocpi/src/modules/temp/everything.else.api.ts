@@ -62,50 +62,6 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
     );
   }
 
-  // ======================== CDRs ========================
-  @AsDataEndpoint(
-    '/ocpi/sender/:versionId/cdrs/page/:uid',
-    HttpMethod.Get,
-    undefined,
-    undefined,
-    UidVersionIdParam,
-    AuthorizationHeader,
-    OcpiResponse<Cdr[]>, // todo proper pageable object
-    OcpiTag.Cdrs,
-  )
-  async getCdrPageFromDataOwner(
-    request: FastifyRequest<{
-      Params: UidVersionIdParam;
-    }>,
-  ): Promise<OcpiResponse<Cdr[]>> {
-    console.log('todo', request);
-    return new Promise((resolve) => {
-      resolve(this.genericResponse);
-    }); // TODO
-  }
-
-  @AsDataEndpoint(
-    '/ocpi/sender/:versionId/cdrs',
-    HttpMethod.Get,
-    FromToOffsetLimitQuery,
-    undefined,
-    VersionIdParam,
-    AuthorizationHeader,
-    OcpiResponse<Cdr[]>, // todo proper pageable object?
-    OcpiTag.Cdrs,
-  )
-  async getCdrsFromDataOwner(
-    request: FastifyRequest<{
-      Params: VersionIdParam;
-      Querystring: FromToOffsetLimitQuery;
-    }>,
-  ): Promise<OcpiResponse<Cdr[]>> {
-    console.log('todo', request);
-    return new Promise((resolve) => {
-      resolve(this.genericResponse);
-    }); // TODO
-  }
-
   // ======================== Locations ========================
   @AsDataEndpoint(
     '/ocpi/sender/:versionId/locations/:locationID/:evseUID/:connectorID',
@@ -251,50 +207,6 @@ export class EverythingElseApi extends AbstractModuleApi<OcpiModule> {
       Params: UidVersionIdParam;
     }>,
   ): Promise<OcpiResponse<Session[]>> {
-    console.log('todo', request);
-    return new Promise((resolve) => {
-      resolve(this.genericResponse);
-    }); // TODO
-  }
-
-  // ======================== Tariffs ===========================
-  @AsDataEndpoint(
-    '/ocpi/sender/:versionId/tariffs',
-    HttpMethod.Get,
-    FromToOffsetLimitQuery,
-    undefined,
-    VersionIdParam,
-    AuthorizationHeader,
-    OcpiResponse<Tariff[]>, // todo pageable?
-    OcpiTag.Tariffs,
-  )
-  async getTariffsFromDataOwner(
-    request: FastifyRequest<{
-      Params: VersionIdParam;
-      Querystring: FromToOffsetLimitQuery;
-    }>,
-  ): Promise<OcpiResponse<Tariff[]>> {
-    console.log('todo', request);
-    return new Promise((resolve) => {
-      resolve(this.genericResponse);
-    }); // TODO
-  }
-
-  @AsDataEndpoint(
-    '/ocpi/sender/:versionId/tariffs/page/:uid',
-    HttpMethod.Get,
-    undefined,
-    undefined,
-    UidVersionIdParam,
-    AuthorizationHeader,
-    OcpiResponse<Tariff[]>, // todo pageable?
-    OcpiTag.Tariffs,
-  )
-  async getTariffsPageFromDataOwner(
-    request: FastifyRequest<{
-      Params: UidVersionIdParam;
-    }>,
-  ): Promise<OcpiResponse<Tariff[]>> {
     console.log('todo', request);
     return new Promise((resolve) => {
       resolve(this.genericResponse);

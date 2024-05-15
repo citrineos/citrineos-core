@@ -1,6 +1,11 @@
 import {OcpiResponse} from '../util/ocpi.response';
 import {OcpiParams} from "./util/ocpi.params";
 
+export enum OcpiModules {
+  Cdrs = 'cdrs',
+  Tariffs = 'tariffs',
+}
+
 export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
 export type InitOverrideFunction = (requestContext: {
   init: HTTPRequestInit;
@@ -234,6 +239,9 @@ function isFormData(value: any): value is FormData {
 }
 
 export class BaseAPI {
+
+  CONTROLLER_PATH = 'null';
+
   private static readonly jsonRegex = new RegExp(
     // eslint-disable-next-line no-control-regex
     '^(:?application/json|[^;/ \t]+/[^;/ \t]+[+]json)[ \t]*(:?;.*)?$',
@@ -244,12 +252,12 @@ export class BaseAPI {
   }
 
   validateRequiredParam(
-    requestParameters: any,
+    params: any,
     ...paramNameList: string[]
   ) {
     for (let i = 0; i < paramNameList.length; i++) {
       const paramName = paramNameList[i];
-      if (requestParameters[paramName] == null) {
+      if ((params as any)[paramName] == null) {
         throw new RequiredError(
           paramName,
           this.getRequiredParametersErrorMsgString(paramName)
@@ -309,7 +317,7 @@ export class BaseAPI {
   }
 
   protected getBasePath(params: OcpiParams) {
-    return `/ocpi/${params.versionId}/`;
+    return `/ocpi/${params.versionId}/${this.CONTROLLER_PATH}`;
   }
 
   protected async baseRequest(context: RequestOpts): Promise<Response> {

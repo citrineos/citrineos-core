@@ -1,32 +1,13 @@
 import {getOcpiHeaders, setAuthHeader,} from './util';
-import {BaseAPI, HTTPHeaders, RequiredError} from './BaseApi';
+import {BaseAPI, HTTPHeaders, OcpiModules} from './BaseApi';
 import {Cdr} from '../model/Cdr';
 import {OcpiResponse} from '../util/ocpi.response';
-import {IsNotEmpty, IsString, ValidateNested} from "class-validator";
-import {OcpiParams} from "./util/ocpi.params";
-import {Type} from "class-transformer";
-
-
-export class PostCdrParams extends OcpiParams {
-  @IsNotEmpty()
-  @Type(() => Cdr)
-  @ValidateNested()
-  cdr!: Cdr;
-}
-
-export class GetCdrParams extends OcpiParams {
-  @IsNotEmpty()
-  @IsString()
-  url!: string;
-}
+import {GetCdrParams} from "./params/cdr/get.cdr.params";
+import {PostCdrParams} from "./params/cdr/post.cdr.params";
 
 export class CdrsControllerApi extends BaseAPI {
 
-  CONTROLLER_PATH = 'cdrs';
-
-  override getBasePath(params: OcpiParams) {
-    return `${super.getBasePath(params)}/${this.CONTROLLER_PATH}`;
-  }
+  CONTROLLER_PATH = OcpiModules.Cdrs;
 
   async getCdr(
     params: GetCdrParams
@@ -51,9 +32,7 @@ export class CdrsControllerApi extends BaseAPI {
 
     this.validateOcpiParams(params);
 
-    if (!params.cdr) {
-      throw new RequiredError('cdr', this.getRequiredParametersErrorMsgString('cdr'));
-    }
+    this.validateRequiredParam(params, 'cdr');
 
     const headerParameters: HTTPHeaders =
       getOcpiHeaders(params);

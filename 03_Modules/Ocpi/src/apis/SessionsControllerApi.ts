@@ -47,15 +47,15 @@ export class SessionsControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/sessions/{countryCode}/{partyID}/{sessionID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'sessionID'}}`,
+          'sessionID',
           encodeURIComponent(String(requestParameters.sessionID)),
         ),
       method: 'GET',
@@ -82,15 +82,15 @@ export class SessionsControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/sessions/{countryCode}/{partyID}/{sessionID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'sessionID'}}`,
+          'sessionID',
           encodeURIComponent(String(requestParameters.sessionID)),
         ),
       method: 'PATCH',
@@ -118,15 +118,15 @@ export class SessionsControllerApi extends BaseAPI {
     return await this.request({
       path: `${this.getBasePath(versionId)}/sessions/{countryCode}/{partyID}/{sessionID}`
         .replace(
-          `{${'countryCode'}}`,
+          'countryCode',
           encodeURIComponent(String(requestParameters.countryCode)),
         )
         .replace(
-          `{${'partyID'}}`,
+          'partyID',
           encodeURIComponent(String(requestParameters.partyID)),
         )
         .replace(
-          `{${'sessionID'}}`,
+          'sessionID',
           encodeURIComponent(String(requestParameters.sessionID)),
         ),
       method: 'PUT',

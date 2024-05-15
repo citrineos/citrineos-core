@@ -3,18 +3,20 @@ import {
   IsArray,
   IsDateString,
   IsNotEmpty,
+  IsObject,
   IsString,
   IsUrl,
   MaxLength,
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { Price } from './Price';
-import { TariffElement } from './TariffElement';
-import { EnergyMix } from './EnergyMix';
-import { Displaytext } from './Displaytext';
-import { Type } from 'class-transformer';
-import { Optional } from '../util/decorators/optional';
+import {Price} from './Price';
+import {TariffElement} from './TariffElement';
+import {EnergyMix} from './EnergyMix';
+import {Displaytext} from './Displaytext';
+import {Type} from 'class-transformer';
+import {Optional} from '../util/decorators/optional';
+import {OcpiResponse} from "../util/ocpi.response";
 
 export class Tariff {
   @MaxLength(36)
@@ -46,7 +48,7 @@ export class Tariff {
   @IsArray()
   @Optional()
   @Type(() => Displaytext)
-  @ValidateNested({ each: true })
+  @ValidateNested({each: true})
   tariff_alt_text?: Displaytext[] | null;
 
   @IsString()
@@ -68,7 +70,7 @@ export class Tariff {
   @IsArray()
   @IsNotEmpty()
   @Type(() => TariffElement)
-  @ValidateNested({ each: true })
+  @ValidateNested({each: true})
   elements!: TariffElement[];
 
   @Optional()
@@ -93,4 +95,20 @@ export class Tariff {
   @IsNotEmpty()
   @Type(() => Date)
   last_updated!: Date;
+}
+
+
+export class TariffResponse extends OcpiResponse<Tariff> {
+  @IsObject()
+  @IsNotEmpty()
+  @Type(() => Tariff)
+  @ValidateNested()
+  data!: Tariff;
+}
+
+export class TariffListResponse extends OcpiResponse<Tariff[]> {
+  @IsArray()
+  @ValidateNested({each: true})
+  @Type(() => Tariff)
+  data!: Tariff[];
 }
