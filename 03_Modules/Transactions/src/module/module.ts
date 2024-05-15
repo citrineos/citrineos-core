@@ -462,7 +462,7 @@ export class TransactionsModule extends AbstractModule {
     //  implementation is finalized
     let totalCost = 0;
 
-    const tariff: Tariff | null =
+    const tariff: Tariff | undefined =
       await this._tariffRepository.findByStationId(stationId);
     if (tariff) {
       this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);

@@ -346,7 +346,7 @@ export class EVDriverModule extends AbstractModule {
               Boolean(displayMessageAvailable[0].value))
           ) {
             // TODO: refactor the workaround below after tariff implementation is finalized.
-            const tariff: Tariff | null =
+            const tariff: Tariff | undefined =
               await this._tariffRepository.findByStationId(
                 message.context.stationId,
               );
