@@ -16,7 +16,6 @@ import {
   CrudRepository,
   SystemConfig,
 } from '@citrineos/base';
-import { type VariableAttributeQuerystring } from '../../../interfaces/queries/VariableAttribute';
 import { SequelizeRepository } from './Base';
 import { type IDeviceModelRepository, type VariableAttributeQuerystring } from '../../../interfaces';
 import { Op } from 'sequelize';
