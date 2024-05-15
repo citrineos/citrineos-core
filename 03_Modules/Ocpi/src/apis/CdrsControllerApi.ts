@@ -1,57 +1,77 @@
-import {
-  BaseOcpiHeaders,
-  setAuthHeader,
-  validateAndgetOcpiHeaders,
-} from './util';
-import { BaseAPI, HTTPHeaders } from './BaseApi';
-import { Cdr } from '../model/Cdr';
-import { OcpiResponse } from '../util/ocpi.response';
-import { VersionNumber } from '../model/VersionNumber';
+import {getOcpiHeaders, setAuthHeader,} from './util';
+import {BaseAPI, HTTPHeaders, RequiredError} from './BaseApi';
+import {Cdr} from '../model/Cdr';
+import {OcpiResponse} from '../util/ocpi.response';
+import {IsNotEmpty, IsString, ValidateNested} from "class-validator";
+import {OcpiParams} from "./util/ocpi.params";
+import {Type} from "class-transformer";
 
-export interface GetCdrRequest extends BaseOcpiHeaders {
-  cdrID: string;
+
+export class PostCdrParams extends OcpiParams {
+  @IsNotEmpty()
+  @Type(() => Cdr)
+  @ValidateNested()
+  cdr!: Cdr;
 }
 
-export interface PostCdrRequest extends BaseOcpiHeaders {
-  cDR: Cdr;
+export class GetCdrParams extends OcpiParams {
+  @IsNotEmpty()
+  @IsString()
+  url!: string;
 }
 
 export class CdrsControllerApi extends BaseAPI {
+
+  CONTROLLER_PATH = 'cdrs';
+
+  override getBasePath(params: OcpiParams) {
+    return `${super.getBasePath(params)}/${this.CONTROLLER_PATH}`;
+  }
+
   async getCdr(
-    requestParameters: GetCdrRequest,
-    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
+    params: GetCdrParams
   ): Promise<OcpiResponse<Cdr>> {
-    BaseAPI.validateRequiredParam(requestParameters, 'cdrID');
+
+    this.validateOcpiParams(params);
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(params);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/receiver/${versionId}/cdrs/{cdrID}`.replace(
-        `{${'cdrID'}}`,
-        encodeURIComponent(String(requestParameters.cdrID)),
-      ),
+      path: this.getBasePath(params),
       method: 'GET',
       headers: headerParameters,
     });
   }
 
   async postCdr(
-    requestParameters: PostCdrRequest,
-    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
-  ): Promise<OcpiResponse<Cdr>> {
-    BaseAPI.validateRequiredParam(requestParameters, 'cDR');
+    params: PostCdrParams,
+  ): Promise<string> {
+
+    this.validateOcpiParams(params);
+
+    if (!params.cdr) {
+      throw new RequiredError('cdr', this.getRequiredParametersErrorMsgString('cdr'));
+    }
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(params);
 
     setAuthHeader(headerParameters);
-    return await this.request({
-      path: `/ocpi/receiver/${versionId}/cdrs`,
+    const response = await this.baseRequest({
+      path: this.getBasePath(params),
       method: 'POST',
       headers: headerParameters,
-      body: requestParameters['cDR'],
+      body: params.cdr,
     });
+
+    const cdrLocationUrl = response.headers.get('Location');
+
+    if (!cdrLocationUrl) {
+      throw new Error('No Location header in OCPI response');
+    }
+
+    return cdrLocationUrl;
   }
 }

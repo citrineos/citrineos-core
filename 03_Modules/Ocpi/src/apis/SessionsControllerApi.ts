@@ -1,27 +1,27 @@
 import {
-  BaseOcpiHeaders,
+  OcpiParams,
   setAuthHeader,
-  validateAndgetOcpiHeaders,
+  getOcpiHeaders,
 } from './util';
 import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { OcpiResponse } from '../util/ocpi.response';
 import { Session } from '../model/Session';
 import { VersionNumber } from '../model/VersionNumber';
 
-export interface GetSessionRequest extends BaseOcpiHeaders {
+export interface GetSessionRequest extends OcpiParams {
   countryCode: string;
   partyID: string;
   sessionID: string;
 }
 
-export interface PatchSessionRequest extends BaseOcpiHeaders {
+export interface PatchSessionRequest extends OcpiParams {
   countryCode: string;
   partyID: string;
   sessionID: string;
   requestBody: { [key: string]: object };
 }
 
-export interface PutSessionRequest extends BaseOcpiHeaders {
+export interface PutSessionRequest extends OcpiParams {
   countryCode: string;
   partyID: string;
   sessionID: string;
@@ -33,7 +33,7 @@ export class SessionsControllerApi extends BaseAPI {
     requestParameters: GetSessionRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<Session>> {
-    BaseAPI.validateRequiredParam(
+    this.validateRequiredParam(
       requestParameters,
       'countryCode',
       'partyID',
@@ -41,11 +41,11 @@ export class SessionsControllerApi extends BaseAPI {
     );
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/receiver/${versionId}/sessions/{countryCode}/{partyID}/{sessionID}`
+      path: `${this.getBasePath(versionId)}/sessions/{countryCode}/{partyID}/{sessionID}`
         .replace(
           `{${'countryCode'}}`,
           encodeURIComponent(String(requestParameters.countryCode)),
@@ -67,7 +67,7 @@ export class SessionsControllerApi extends BaseAPI {
     requestParameters: PatchSessionRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<void>> {
-    BaseAPI.validateRequiredParam(
+    this.validateRequiredParam(
       requestParameters,
       'countryCode',
       'partyID',
@@ -76,11 +76,11 @@ export class SessionsControllerApi extends BaseAPI {
     );
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/receiver/${versionId}/sessions/{countryCode}/{partyID}/{sessionID}`
+      path: `${this.getBasePath(versionId)}/sessions/{countryCode}/{partyID}/{sessionID}`
         .replace(
           `{${'countryCode'}}`,
           encodeURIComponent(String(requestParameters.countryCode)),
@@ -103,7 +103,7 @@ export class SessionsControllerApi extends BaseAPI {
     requestParameters: PutSessionRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<void>> {
-    BaseAPI.validateRequiredParam(
+    this.validateRequiredParam(
       requestParameters,
       'countryCode',
       'partyID',
@@ -112,11 +112,11 @@ export class SessionsControllerApi extends BaseAPI {
     );
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/receiver/${versionId}/sessions/{countryCode}/{partyID}/{sessionID}`
+      path: `${this.getBasePath(versionId)}/sessions/{countryCode}/{partyID}/{sessionID}`
         .replace(
           `{${'countryCode'}}`,
           encodeURIComponent(String(requestParameters.countryCode)),

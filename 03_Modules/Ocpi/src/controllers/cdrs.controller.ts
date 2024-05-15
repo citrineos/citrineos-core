@@ -1,41 +1,27 @@
-import { Controller, Get, Param, QueryParams } from 'routing-controllers';
-import { HttpStatus } from '@citrineos/base';
-import { Cdr, CdrListResponse, CdrResponse } from '../model/Cdr';
-import { BaseController } from './base.controller';
-import { FromToOffsetLimitQuery } from '../modules/temp/schema/from.to.offset.limit.query.schema';
-import { ResponseSchema } from 'routing-controllers-openapi';
-import { AsOcpiEndpoint } from '../util/decorators/as.ocpi.endpoint';
-import { VersionNumberParam } from '../util/decorators/version.number.param';
-import { VersionNumber } from '../model/VersionNumber';
-import { OcpiResponse } from '../util/ocpi.response';
+import {Controller, Get, QueryParams} from 'routing-controllers';
+import {HttpStatus} from '@citrineos/base';
+import {Cdr, CdrResponse} from '../model/Cdr';
+import {BaseController} from './base.controller';
+import {FromToOffsetLimitQuery} from '../modules/temp/schema/from.to.offset.limit.query.schema';
+import {ResponseSchema} from 'routing-controllers-openapi';
+import {AsOcpiEndpoint} from '../util/decorators/as.ocpi.endpoint';
+import {OcpiResponse} from '../util/ocpi.response';
 
-@Controller()
+@Controller('/cdrs')
 export class CdrsController extends BaseController {
-  @Get('/sender/:versionId/cdrs/page/:uid')
-  @AsOcpiEndpoint()
-  @ResponseSchema(CdrListResponse, {
-    statusCode: HttpStatus.OK,
-    description: 'Successful response',
-  })
-  async getCdrPageFromDataOwner(
-    @VersionNumberParam() _versionId: VersionNumber,
-    @Param('uid') _uid: string,
-  ): Promise<OcpiResponse<Cdr[]>> {
-    console.log('getCdrPageFromDataOwner', _versionId, _uid);
-    return this.generateMockOcpiResponse(CdrListResponse);
-  }
 
-  @Get('/sender/:versionId/cdrs')
+  // todo pg 101 https://evroaming.org/app/uploads/2021/11/OCPI-2.2.1.pdf
+  // todo This request is paginated, it supports the pagination related URL parameters
+  @Get()
   @AsOcpiEndpoint()
   @ResponseSchema(CdrResponse, {
     statusCode: HttpStatus.OK,
     description: 'Successful response',
   })
   async getCdrsFromDataOwner(
-    @VersionNumberParam() _versionId: VersionNumber,
     @QueryParams() _query?: FromToOffsetLimitQuery,
   ): Promise<OcpiResponse<Cdr>> {
-    console.log('getCdrsFromDataOwner', _versionId, _query);
+    console.log('getCdrsFromDataOwner', _query);
     return this.generateMockOcpiResponse(CdrResponse);
   }
 }

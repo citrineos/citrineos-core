@@ -1,27 +1,26 @@
-import { CdrsController } from './controllers/cdrs.controller';
-import { getMetadataArgsStorage, useKoaServer } from 'routing-controllers';
-import { koaSwagger } from 'koa2-swagger-ui';
+import {CdrsController} from './controllers/cdrs.controller';
+import {getMetadataArgsStorage, useKoaServer} from 'routing-controllers';
+import {koaSwagger} from 'koa2-swagger-ui';
 import Koa from 'koa';
-import { ChargingProfilesController } from './controllers/charging.profiles.controller';
-import { authorizationChecker } from './util/authorization.checker';
-import { routingControllersToSpec } from './util/openapi';
-import { AuthMiddleware } from './util/middleware/auth.middleware';
-import { GlobalExceptionHandler } from './util/middleware/global.exception.handler';
-import { getAllSchemas } from './schemas';
+import {ChargingProfilesController} from './controllers/charging.profiles.controller';
+import {authorizationChecker} from './util/authorization.checker';
+import {routingControllersToSpec} from './util/openapi';
+import {AuthMiddleware} from './util/middleware/auth.middleware';
+import {GlobalExceptionHandler} from './util/middleware/global.exception.handler';
+import {getAllSchemas} from './schemas';
+import {VersionNumber} from "./model/VersionNumber";
 
-export { CredentialsModuleApi } from './modules/temp/credentials.api';
-export { OcpiModule } from './modules/temp/module';
-export { EverythingElseApi } from './modules/temp/everything.else.api';
-export { VersionsModuleApi } from './modules/temp/versions.api';
-
-const routePrefix = '/ocpi';
+export {CredentialsModuleApi} from './modules/temp/credentials.api';
+export {OcpiModule} from './modules/temp/module';
+export {EverythingElseApi} from './modules/temp/everything.else.api';
+export {VersionsModuleApi} from './modules/temp/versions.api';
 
 const koa = new Koa();
 
 const app = useKoaServer(koa, {
   authorizationChecker: authorizationChecker,
   controllers: [CdrsController, ChargingProfilesController],
-  routePrefix: routePrefix,
+  routePrefix: '/ocpi/:versionId', // dynamic API version in the prefix
   middlewares: [AuthMiddleware, GlobalExceptionHandler],
   defaultErrorHandler: false, // Important: Disable the default error handler
 });
@@ -32,8 +31,10 @@ const spec = routingControllersToSpec(
   storage,
   {},
   {
-    info: { title: 'CitrineOS OCPI 2.2.1', version: '1.0.0' },
-    servers: [{ url: routePrefix }],
+    info: {title: 'CitrineOS OCPI 2.2.1', version: '1.0.0'},
+    servers: Object.values(VersionNumber).map(version => ({
+      url: `/ocpi/${version}`
+    })),
     security: [
       {
         authorization: [],

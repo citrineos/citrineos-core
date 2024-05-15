@@ -1,7 +1,7 @@
 import {
-  BaseOcpiHeaders,
+  OcpiParams,
   setAuthHeader,
-  validateAndgetOcpiHeaders,
+  getOcpiHeaders,
 } from './util';
 import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { ChargingProfileResponse } from '../model/ChargingProfileResponse';
@@ -9,18 +9,18 @@ import { OcpiResponse } from '../util/ocpi.response';
 import { VersionNumber } from '../model/VersionNumber';
 import { SetChargingProfile } from '../model/SetChargingProfile';
 
-export interface DeleteReceiverChargingProfileRequest extends BaseOcpiHeaders {
+export interface DeleteReceiverChargingProfileRequest extends OcpiParams {
   sessionId: string;
   responseUrl: string;
 }
 
-export interface GetReceiverChargingProfileRequest extends BaseOcpiHeaders {
+export interface GetReceiverChargingProfileRequest extends OcpiParams {
   sessionId: string;
   duration: number;
   responseUrl: string;
 }
 
-export interface PutReceiverChargingProfileRequest extends BaseOcpiHeaders {
+export interface PutReceiverChargingProfileRequest extends OcpiParams {
   sessionId: string;
   setChargingProfile: SetChargingProfile;
 }
@@ -30,7 +30,7 @@ export class ChargingProfilesControllerApi extends BaseAPI {
     requestParameters: DeleteReceiverChargingProfileRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<void>> {
-    BaseAPI.validateRequiredParam(
+    this.validateRequiredParam(
       requestParameters,
       'sessionId',
       'responseUrl',
@@ -43,7 +43,7 @@ export class ChargingProfilesControllerApi extends BaseAPI {
     }
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
@@ -61,7 +61,7 @@ export class ChargingProfilesControllerApi extends BaseAPI {
     requestParameters: GetReceiverChargingProfileRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<ChargingProfileResponse>> {
-    BaseAPI.validateRequiredParam(
+    this.validateRequiredParam(
       requestParameters,
       'sessionId',
       'duration',
@@ -79,7 +79,7 @@ export class ChargingProfilesControllerApi extends BaseAPI {
     }
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
@@ -97,14 +97,14 @@ export class ChargingProfilesControllerApi extends BaseAPI {
     requestParameters: PutReceiverChargingProfileRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<void>> {
-    BaseAPI.validateRequiredParam(
+    this.validateRequiredParam(
       requestParameters,
       'sessionId',
       'setChargingProfile',
     );
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({

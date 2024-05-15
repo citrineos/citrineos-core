@@ -1,7 +1,7 @@
 import {
-  BaseOcpiHeaders,
+  OcpiParams,
   setAuthHeader,
-  validateAndgetOcpiHeaders,
+  getOcpiHeaders,
 } from './util';
 import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { CommandResponse } from '../model/CommandResponse';
@@ -13,23 +13,23 @@ import { CommandsStartSessionRequest } from '../model/CommandsStartSessionReques
 import { CommandsStopSessionRequest } from '../model/CommandsStopSessionRequest';
 import { CommandsUnlockConnectorRequest } from '../model/CommandsUnlockConnectorRequest';
 
-export interface PostCancelReservationRequest extends BaseOcpiHeaders {
+export interface PostCancelReservationRequest extends OcpiParams {
   cancelReservation: CommandsCancelReservationRequest;
 }
 
-export interface PostReserveNowRequest extends BaseOcpiHeaders {
+export interface PostReserveNowRequest extends OcpiParams {
   reserveNow: ReserveNow;
 }
 
-export interface PostStartSessionRequest extends BaseOcpiHeaders {
+export interface PostStartSessionRequest extends OcpiParams {
   startSession: CommandsStartSessionRequest;
 }
 
-export interface PostStopSessionRequest extends BaseOcpiHeaders {
+export interface PostStopSessionRequest extends OcpiParams {
   stopSession: CommandsStopSessionRequest;
 }
 
-export interface PostUnlockConnectorRequest extends BaseOcpiHeaders {
+export interface PostUnlockConnectorRequest extends OcpiParams {
   unlockConnector: CommandsUnlockConnectorRequest;
 }
 
@@ -38,14 +38,14 @@ export class CommandsControllerApi extends BaseAPI {
     requestParameters: PostCancelReservationRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<CommandResponse>> {
-    BaseAPI.validateRequiredParam(requestParameters, 'cancelReservation');
+    this.validateRequiredParam(requestParameters, 'cancelReservation');
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/receiver/${versionId}/commands/CANCEL_RESERVATION`,
+      path: `${this.getBasePath(versionId)}/commands/CANCEL_RESERVATION`,
       method: 'POST',
       headers: headerParameters,
       body: requestParameters.cancelReservation,
@@ -56,14 +56,14 @@ export class CommandsControllerApi extends BaseAPI {
     requestParameters: PostReserveNowRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<CommandResponse>> {
-    BaseAPI.validateRequiredParam(requestParameters, 'reserveNow');
+    this.validateRequiredParam(requestParameters, 'reserveNow');
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/receiver/${versionId}/commands/RESERVE_NOW`,
+      path: `${this.getBasePath(versionId)}/commands/RESERVE_NOW`,
       method: 'POST',
       headers: headerParameters,
       body: requestParameters.reserveNow,
@@ -74,14 +74,14 @@ export class CommandsControllerApi extends BaseAPI {
     requestParameters: PostStartSessionRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<CommandResponse>> {
-    BaseAPI.validateRequiredParam(requestParameters, 'startSession');
+    this.validateRequiredParam(requestParameters, 'startSession');
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/receiver/${versionId}/commands/START_SESSION`,
+      path: `${this.getBasePath(versionId)}/commands/START_SESSION`,
       method: 'POST',
       headers: headerParameters,
       body: requestParameters.startSession,
@@ -92,14 +92,14 @@ export class CommandsControllerApi extends BaseAPI {
     requestParameters: PostStopSessionRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<CommandResponse>> {
-    BaseAPI.validateRequiredParam(requestParameters, 'stopSession');
+    this.validateRequiredParam(requestParameters, 'stopSession');
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/receiver/${versionId}/commands/STOP_SESSION`,
+      path: `${this.getBasePath(versionId)}/commands/STOP_SESSION`,
       method: 'POST',
       headers: headerParameters,
       body: requestParameters.stopSession,
@@ -110,14 +110,14 @@ export class CommandsControllerApi extends BaseAPI {
     requestParameters: PostUnlockConnectorRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<CommandResponse>> {
-    BaseAPI.validateRequiredParam(requestParameters, 'unlockConnector');
+    this.validateRequiredParam(requestParameters, 'unlockConnector');
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/receiver/${versionId}/commands/UNLOCK_CONNECTOR`,
+      path: `${this.getBasePath(versionId)}/commands/UNLOCK_CONNECTOR`,
       method: 'POST',
       headers: headerParameters,
       body: requestParameters.unlockConnector,

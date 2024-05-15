@@ -1,74 +1,39 @@
-import { BaseAPI, HTTPHeaders } from './BaseApi';
-
-export interface BaseOcpiHeaders {
-  authorization: string;
-  xRequestID: string;
-  xCorrelationID: string;
-  oCPIFromCountryCode: string;
-  oCPIFromPartyId: string;
-  oCPIToCountryCode: string;
-  oCPIToPartyId: string;
-}
+import {HTTPHeaders} from './BaseApi';
+import {OcpiParams} from "./util/ocpi.params";
 
 export const setAuthHeader = (headerParameters: HTTPHeaders) => {
-  const tokenString = 'todo'; // todo get token from registration
+  const tokenString = 'todo'; // todo get token from credentials
   headerParameters['Authorization'] = `Bearer ${tokenString}`;
 };
 
-export const validateAndgetOcpiHeaders = <T>(
-  requestParameters: T,
+export const getOcpiHeaders = (
+  params: OcpiParams,
 ): HTTPHeaders => {
-  BaseAPI.validateRequiredParam(
-    requestParameters,
-    'authorization',
-    'xRequestID',
-    'xCorrelationID',
-    'oCPIFromCountryCode',
-    'oCPIFromPartyId',
-    'oCPIToCountryCode',
-    'oCPIToPartyId',
-  );
+
   const headerParameters: HTTPHeaders = {};
-  if ((requestParameters as any)['authorization'] != null) {
-    headerParameters['authorization'] = String(
-      (requestParameters as any)['authorization'],
-    );
+
+  if (params.xRequestID != null) {
+    headerParameters['X-Request-ID'] = String(params.xRequestID);
   }
 
-  if ((requestParameters as any)['xRequestID'] != null) {
-    headerParameters['X-Request-ID'] = String(
-      (requestParameters as any)['xRequestID'],
-    );
+  if (params.xCorrelationID != null) {
+    headerParameters['X-Correlation-ID'] = String(params.xCorrelationID);
   }
 
-  if ((requestParameters as any)['xCorrelationID'] != null) {
-    headerParameters['X-Correlation-ID'] = String(
-      (requestParameters as any)['xCorrelationID'],
-    );
+  if (params.fromCountryCode != null) {
+    headerParameters['OCPI-from-country-code'] = String(params.fromCountryCode);
   }
 
-  if ((requestParameters as any)['oCPIFromCountryCode'] != null) {
-    headerParameters['OCPI-from-country-code'] = String(
-      (requestParameters as any)['oCPIFromCountryCode'],
-    );
+  if (params.fromPartyId != null) {
+    headerParameters['OCPI-from-party-id'] = String(params.fromPartyId);
   }
 
-  if ((requestParameters as any)['oCPIFromPartyId'] != null) {
-    headerParameters['OCPI-from-party-id'] = String(
-      (requestParameters as any)['oCPIFromPartyId'],
-    );
+  if (params.toCountryCode != null) {
+    headerParameters['OCPI-to-country-code'] = String(params.toCountryCode);
   }
 
-  if ((requestParameters as any)['oCPIToCountryCode'] != null) {
-    headerParameters['OCPI-to-country-code'] = String(
-      (requestParameters as any)['oCPIToCountryCode'],
-    );
-  }
-
-  if ((requestParameters as any)['oCPIToPartyId'] != null) {
-    headerParameters['OCPI-to-party-id'] = String(
-      (requestParameters as any)['oCPIToPartyId'],
-    );
+  if (params.toPartyId != null) {
+    headerParameters['OCPI-to-party-id'] = String(params.toPartyId);
   }
 
   return headerParameters;

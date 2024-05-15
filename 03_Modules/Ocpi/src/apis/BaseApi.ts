@@ -1,4 +1,5 @@
-import { OcpiResponse } from '../util/ocpi.response';
+import {OcpiResponse} from '../util/ocpi.response';
+import {OcpiParams} from "./util/ocpi.params";
 
 export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
 export type InitOverrideFunction = (requestContext: {
@@ -111,7 +112,8 @@ export class JSONApiResponse<T> {
   constructor(
     public raw: Response,
     private transformer: ResponseTransformer<T> = (jsonValue: any) => jsonValue,
-  ) {}
+  ) {
+  }
 
   async value(): Promise<T> {
     return this.transformer(await this.raw.json());
@@ -163,7 +165,8 @@ function querystringSingleKey(
 
 export class Configuration {
   // todo do we want to keep this configuration or adjust, seems only base path is being used
-  constructor(private configuration: ConfigurationParameters = {}) {}
+  constructor(private configuration: ConfigurationParameters = {}) {
+  }
 
   get basePath(): string {
     return this.configuration.basePath != null
@@ -237,9 +240,10 @@ export class BaseAPI {
     'i',
   );
 
-  constructor(protected configuration = DefaultConfig) {}
+  constructor(protected configuration = DefaultConfig) {
+  }
 
-  static validateRequiredParam(
+  validateRequiredParam(
     requestParameters: any,
     ...paramNameList: string[]
   ) {
@@ -248,10 +252,43 @@ export class BaseAPI {
       if (requestParameters[paramName] == null) {
         throw new RequiredError(
           paramName,
-          `Required parameter "${paramName}" was null or undefined`,
+          this.getRequiredParametersErrorMsgString(paramName)
         );
       }
     }
+  }
+
+  validateOcpiParams(
+    params: OcpiParams,
+  ) {
+    if (!params.fromCountryCode || !params.fromCountryCode.length || params.fromCountryCode.length !== 2) {
+      throw new RequiredError(
+        params.fromCountryCode,
+        'Required parameter fromCountryCode must be a 2 character string',
+      );
+    }
+    if (!params.toCountryCode || !params.toCountryCode.length || params.toCountryCode.length !== 2) {
+      throw new RequiredError(
+        params.toCountryCode,
+        'Required parameter toCountryCode must be a 2 character string',
+      );
+    }
+    if (!params.fromPartyId || !params.fromPartyId.length || params.fromPartyId.length !== 3) {
+      throw new RequiredError(
+        params.fromPartyId,
+        'Required parameter fromPartyId must be a 3 character string',
+      );
+    }
+    if (!params.toPartyId || !params.toPartyId.length || params.toPartyId.length !== 3) {
+      throw new RequiredError(
+        params.toPartyId,
+        'Required parameter toPartyId must be a 3 character string',
+      );
+    }
+  }
+
+  getRequiredParametersErrorMsgString(...params: string[]): string {
+    return `Required parameters [${params.join(',')}] are null or undefined`;
   }
 
   /**
@@ -271,9 +308,17 @@ export class BaseAPI {
     return BaseAPI.jsonRegex.test(mime);
   }
 
+  protected getBasePath(params: OcpiParams) {
+    return `/ocpi/${params.versionId}/`;
+  }
+
+  protected async baseRequest(context: RequestOpts): Promise<Response> {
+    const {url, init} = await this.createFetchParams(context);
+    return await this.fetchApi(url, init);
+  }
+
   protected async request<T>(context: RequestOpts): Promise<OcpiResponse<T>> {
-    const { url, init } = await this.createFetchParams(context);
-    const response = await this.fetchApi(url, init);
+    const response = await this.baseRequest(context);
     if (response && response.status >= 200 && response.status < 300) {
       const ocpiResponse: OcpiResponse<T> = new OcpiResponse();
       ocpiResponse.status_code = response.status;
@@ -334,11 +379,11 @@ export class BaseAPI {
       body,
     };
 
-    return { url, init };
+    return {url, init};
   }
 
   private fetchApi = async (url: string, init: RequestInit) => {
-    const fetchParams = { url, init };
+    const fetchParams = {url, init};
     let response: Response | undefined;
     try {
       response = await (this.configuration.fetchApi || fetch)(

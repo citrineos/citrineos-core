@@ -16,7 +16,7 @@ export class VersionsControllerApi extends BaseAPI {
   async getVersion(
     requestParameters: GetVersionRequest,
   ): Promise<OcpiResponse<VersionDetailsDTO>> {
-    BaseAPI.validateRequiredParam(requestParameters, 'authorization');
+    this.validateRequiredParam(requestParameters, 'authorization');
 
     const headerParameters: HTTPHeaders = {};
 
@@ -40,7 +40,7 @@ export class VersionsControllerApi extends BaseAPI {
   async getVersions(
     requestParameters: GetVersionsRequest,
   ): Promise<OcpiResponse<VersionDTO[]>> {
-    BaseAPI.validateRequiredParam(requestParameters, 'authorization');
+    this.validateRequiredParam(requestParameters, 'authorization');
 
     const headerParameters: HTTPHeaders = {};
 

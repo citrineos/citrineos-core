@@ -1,26 +1,26 @@
 import {
-  BaseOcpiHeaders,
+  OcpiParams,
   setAuthHeader,
-  validateAndgetOcpiHeaders,
+  getOcpiHeaders,
 } from './util';
 import { BaseAPI, HTTPHeaders } from './BaseApi';
 import { OcpiResponse } from '../util/ocpi.response';
 import { Tariff } from '../model/Tariff';
 import { VersionNumber } from '../model/VersionNumber';
 
-export interface DeleteTariffRequest extends BaseOcpiHeaders {
+export interface DeleteTariffRequest extends OcpiParams {
   countryCode: string;
   partyID: string;
   tariffID: string;
 }
 
-export interface GetTariffRequest extends BaseOcpiHeaders {
+export interface GetTariffRequest extends OcpiParams {
   countryCode: string;
   partyID: string;
   tariffID: string;
 }
 
-export interface PutTariffRequest extends BaseOcpiHeaders {
+export interface PutTariffRequest extends OcpiParams {
   countryCode: string;
   partyID: string;
   tariffID: string;
@@ -32,7 +32,7 @@ export class TariffsControllerApi extends BaseAPI {
     requestParameters: DeleteTariffRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<void>> {
-    BaseAPI.validateRequiredParam(
+    this.validateRequiredParam(
       requestParameters,
       'countryCode',
       'partyID',
@@ -40,11 +40,11 @@ export class TariffsControllerApi extends BaseAPI {
     );
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/receiver/${versionId}/tariffs/{countryCode}/{partyID}/{tariffID}`
+      path: `${this.getBasePath(versionId)}/tariffs/{countryCode}/{partyID}/{tariffID}`
         .replace(
           `{${'countryCode'}}`,
           encodeURIComponent(String(requestParameters.countryCode)),
@@ -66,7 +66,7 @@ export class TariffsControllerApi extends BaseAPI {
     requestParameters: GetTariffRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<Tariff>> {
-    BaseAPI.validateRequiredParam(
+    this.validateRequiredParam(
       requestParameters,
       'countryCode',
       'partyID',
@@ -74,11 +74,11 @@ export class TariffsControllerApi extends BaseAPI {
     );
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/receiver/${versionId}/tariffs/{countryCode}/{partyID}/{tariffID}`
+      path: `${this.getBasePath(versionId)}/tariffs/{countryCode}/{partyID}/{tariffID}`
         .replace(
           `{${'countryCode'}}`,
           encodeURIComponent(String(requestParameters.countryCode)),
@@ -100,7 +100,7 @@ export class TariffsControllerApi extends BaseAPI {
     requestParameters: PutTariffRequest,
     versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
   ): Promise<OcpiResponse<void>> {
-    BaseAPI.validateRequiredParam(
+    this.validateRequiredParam(
       requestParameters,
       'countryCode',
       'partyID',
@@ -109,11 +109,11 @@ export class TariffsControllerApi extends BaseAPI {
     );
 
     const headerParameters: HTTPHeaders =
-      validateAndgetOcpiHeaders(requestParameters);
+      getOcpiHeaders(requestParameters);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/receiver/${versionId}/tariffs/{countryCode}/{partyID}/{tariffID}`
+      path: `${this.getBasePath(versionId)}/tariffs/{countryCode}/{partyID}/{tariffID}`
         .replace(
           `{${'countryCode'}}`,
           encodeURIComponent(String(requestParameters.countryCode)),
