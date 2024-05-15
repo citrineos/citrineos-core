@@ -107,6 +107,21 @@ export abstract class CrudRepository<T> extends EventEmitter {
   abstract readAllByQuery(query: object, namespace?: string): Promise<T[]>;
 
   /**
+   * Attempts to read a value from storage based on the given query, or throws an exception if more than one value is found.
+   *
+   * @param query - The query to use.
+   * @param namespace - Optional namespace for the query.
+   * @returns A promise that resolves to the value associated with the query if it exists. An exception is thrown if more than one value is found.
+   */
+    public async readOnlyOneByQuery(query: object, namespace?: string): Promise<T | undefined> {
+      const results = await this.readAllByQuery(query, namespace);
+      if (results.length > 1) {
+        throw new Error(`More than one value found for query: ${JSON.stringify(query)}`);
+      }
+      return results[0];
+    }
+
+  /**
    * Reads the first matching value from storage based on the given query, or creates a matching value if none exists.
    *
    * @param query - The query to use.

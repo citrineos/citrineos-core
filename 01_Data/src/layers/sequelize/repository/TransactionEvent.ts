@@ -112,15 +112,9 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
 
   async readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined> {
     return await this.transaction
-      .readAllByQuery({
+      .readOnlyOneByQuery({
         where: { stationId, transactionId },
         include: [MeterValue],
-      })
-      .then((rows) => {
-        if (rows.length > 1) {
-          throw new Error(`More than one transaction found for stationId ${stationId} and transactionId ${transactionId}`);
-        }
-        return rows[0];
       });
   }
 

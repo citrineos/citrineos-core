@@ -233,18 +233,12 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
 
   async updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined> {
     const savedVariableAttribute = await super
-      .readAllByQuery({
+      .readOnlyOneByQuery({
         where: { stationId, type: result.attributeType ?? AttributeEnumType.Actual },
         include: [
           { model: Component, where: { name: result.component.name, instance: result.component.instance ? result.component.instance : null } },
           { model: Variable, where: { name: result.variable.name, instance: result.variable.instance ? result.variable.instance : null } },
         ],
-      })
-      .then((variableAttributes) => {
-        if (variableAttributes.length > 1) {
-          throw new Error('Illegal state: more than one variable attribute found');
-        }
-        return variableAttributes[0];
       });
     if (savedVariableAttribute) {
       await this.variableStatus.create(
@@ -292,37 +286,19 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
 
   async findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]> {
     const component = await this.component
-      .readAllByQuery({
+      .readOnlyOneByQuery({
         where: { name: componentType.name, instance: componentType.instance ? componentType.instance : undefined },
-      })
-      .then((components) => {
-        if (components.length > 1) {
-          throw new Error('Illegal state: more than one component found');
-        }
-        return components[0];
       });
     const variable = await this.variable
-      .readAllByQuery({
+      .readOnlyOneByQuery({
         where: { name: variableType.name, instance: variableType.instance ? variableType.instance : undefined },
-      })
-      .then((variables) => {
-        if (variables.length > 1) {
-          throw new Error('Illegal state: more than one variable found');
-        }
-        return variables[0];
       });
     if (variable) {
       const variableCharacteristics = await this.variableCharacteristics
-        .readAllByQuery({
+        .readOnlyOneByQuery({
           where: { variableId: variable.get('id') },
-        })
-        .then((results) => {
-          if (results.length > 1) {
-            throw new Error('Illegal state: more than one variable characteristics found');
-          }
-          return results[0];
         });
-      variable.variableCharacteristics = variableCharacteristics ?? undefined;
+      variable.variableCharacteristics = variableCharacteristics;
     }
 
     return [component, variable];

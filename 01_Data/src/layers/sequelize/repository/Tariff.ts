@@ -16,16 +16,10 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
 
   async findByStationId(stationId: string): Promise<Tariff | undefined> {
     return super
-      .readAllByQuery({
+      .readOnlyOneByQuery({
         where: {
           stationId: stationId,
         },
-      })
-      .then((tariffs) => {
-        if (tariffs.length > 1) {
-          throw new Error('Multiple tariffs found for stationId ' + stationId);
-        }
-        return tariffs[0];
       });
   }
 

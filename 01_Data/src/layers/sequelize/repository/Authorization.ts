@@ -28,12 +28,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
       throw new Error('Authorization idToken does not match query');
     }
 
-    const savedAuthorizationModel: Authorization | null = await this.readAllByQuery(query).then((rows) => {
-      if (rows.length > 1) {
-        throw new Error(`Authorization ${query.idToken} invalid, found ${rows.length} matches`);
-      }
-      return rows[0];
-    });
+    const savedAuthorizationModel: Authorization | undefined = await this.readOnlyOneByQuery(query);
     const authorizationModel = savedAuthorizationModel ?? Authorization.build({}, this._createInclude(value));
 
     authorizationModel.idTokenId = (await this._updateIdToken(value.idToken, authorizationModel.idTokenId)).id;
@@ -44,19 +39,18 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
         ...value.idTokenInfo,
       });
       if (authorizationModel.idTokenInfoId) {
-        const results = await this.idTokenInfo.readAllByQuery({
+        let savedIdTokenInfo = await this.idTokenInfo.readOnlyOneByQuery({
           where: { id: authorizationModel.idTokenInfoId },
           include: [{ model: IdToken, include: [AdditionalInfo] }],
         });
-        if (results.length !== 1) {
-          throw new Error(`Authorization idTokenInfoId ${authorizationModel.idTokenInfoId} invalid, found ${results.length} matches`);
+        if (!savedIdTokenInfo) {
+          throw new Error(`IdTokenInfo for foreign key ${authorizationModel.idTokenInfoId} not found`);
         }
-        let savedIdTokenInfo = results[0];
         Object.keys(valueIdTokenInfo.dataValues).forEach((k) => {
           const updatedValue = valueIdTokenInfo.getDataValue(k);
           if (updatedValue !== undefined) {
             // Null can still be used to remove data
-            savedIdTokenInfo.setDataValue(k, valueIdTokenInfo.getDataValue(k));
+            savedIdTokenInfo!.setDataValue(k, valueIdTokenInfo.getDataValue(k));
           }
         });
         if (value.idTokenInfo.groupIdToken) {
@@ -151,26 +145,16 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     );
     let savedIdTokenModel: IdToken | undefined;
     if (savedIdTokenId) {
-      const results = await this.idToken.readAllByQuery({
+      savedIdTokenModel = await this.idToken.readOnlyOneByQuery({
         where: { id: savedIdTokenId },
         include: [AdditionalInfo],
       });
-      if (results.length !== 1) {
-        throw new Error(`IdTokenId ${savedIdTokenId} invalid, found ${results.length} matches`);
-      }
-      savedIdTokenModel = results[0];
     }
     if (!savedIdTokenModel || savedIdTokenModel.idToken !== value.idToken || savedIdTokenModel.type !== value.type) {
       savedIdTokenModel = await this.idToken
-        .readAllByQuery({
+        .readOnlyOneByQuery({
           where: { idToken: value.idToken, type: value.type },
           include: [AdditionalInfo],
-        })
-        .then((rows) => {
-          if (rows.length !== 1) {
-            throw new Error(`IdToken ${value.idToken} invalid, found ${rows.length} matches`);
-          }
-          return rows[0];
         });
     }
     if (savedIdTokenModel) {
