@@ -21,5 +21,5 @@ export { default as AuthorizationRestrictionsSchema } from './projections/schema
 export { default as TariffSchema } from './projections/schemas/TariffSchema.json';
 
 // Date endpoints DTOs
-export { TlsCertificatesRequest, ContentType } from './dtos/TlsCertificatesRequest';
+export { TlsCertificatesRequest } from './dtos/TlsCertificatesRequest';
 export { RootCertificateRequest } from './dtos/RootCertificateRequest';
