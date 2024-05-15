@@ -28,7 +28,6 @@ import { ICertificatesModuleApi } from './interface';
 import { CertificatesModule } from './module';
 import { WebsocketNetworkConnection } from '@citrineos/util';
 import {
-  ContentType,
   TlsCertificatesRequest,
   TlsCertificateSchema,
   UpdateTlsCertificateQuerySchema,
@@ -182,41 +181,21 @@ export class CertificatesModuleApi
       throw new Error(`websocketServer ${serverId} is not tls or mtls server.`);
     }
 
-    let tlsKey: string;
-    let tlsCertificateChain: string;
-    let rootCA: string | undefined;
-    let subCAKey: string | undefined;
-    if (certRequest.contentType === ContentType.FileId) {
-      tlsKey = (
-        await this._fileAccess.getFile(certRequest.privateKey)
+    const tlsKey: string = (
+      await this._fileAccess.getFile(certRequest.privateKey)
+    ).toString();
+    let tlsCertificateChain = '';
+    for (const fileId of certRequest.certificateChain) {
+      tlsCertificateChain += (
+        await this._fileAccess.getFile(fileId)
       ).toString();
-      tlsCertificateChain = (
-        await this._fileAccess.getFile(certRequest.certificateChain)
-      ).toString();
-      if (certRequest.rootCA) {
-        rootCA = (
-          await this._fileAccess.getFile(certRequest.rootCA)
-        ).toString();
-      }
-      if (certRequest.subCAKey) {
-        subCAKey = (
-          await this._fileAccess.getFile(certRequest.subCAKey)
-        ).toString();
-      }
-    } else if (certRequest.contentType === ContentType.EncodedPem) {
-      tlsKey = this._decode(certRequest.privateKey);
-      tlsCertificateChain = this._decode(certRequest.certificateChain);
-      if (certRequest.rootCA) {
-        rootCA = this._decode(certRequest.rootCA);
-      }
-      if (certRequest.subCAKey) {
-        subCAKey = this._decode(certRequest.subCAKey);
-      }
-    } else {
-      throw new Error(
-        `contentType ${certRequest.contentType} is not supported.`,
-      );
     }
+    const rootCA: string | undefined = certRequest.rootCA
+      ? (await this._fileAccess.getFile(certRequest.rootCA)).toString()
+      : undefined;
+    const subCAKey: string | undefined = certRequest.subCAKey
+      ? (await this._fileAccess.getFile(certRequest.subCAKey)).toString()
+      : undefined;
 
     this._updateCertificates(
       serverConfig,
@@ -250,10 +229,6 @@ export class CertificatesModuleApi
     const endpointPrefix =
       this._module.config.modules.certificates?.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
-  }
-
-  private _decode(content: string): string {
-    return Buffer.from(content, 'base64').toString('binary');
   }
 
   private _replaceFile(
@@ -321,13 +296,15 @@ export class CertificatesModuleApi
           rootCA,
         );
 
-        // Update the map which stores sub CA certs and keys for each websocket server.
+        // Update the map which stores sub CA certs and keys for websocket server securityProfile 3.
         // This map is used when signing charging station certificates for use case A02 in OCPP 2.0.1 Part 2.
-        this._module.certificateAuthorityService.updateSecurityCertChainKeyMap(
-          serverId,
-          tlsKey,
-          tlsCertificateChain,
-        );
+        if (serverConfig.securityProfile === 3) {
+          this._module.certificateAuthorityService.updateSecurityCertChainKeyMap(
+              serverId,
+              tlsKey,
+              tlsCertificateChain,
+          );
+        }
 
         this._logger.info(
           `Updated TLS certificate for server ${serverId} successfully.`,
