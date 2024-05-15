@@ -18,10 +18,10 @@ import {
 } from '@citrineos/base';
 import { type VariableAttributeQuerystring } from '../../../interfaces/queries/VariableAttribute';
 import { SequelizeRepository } from './Base';
-import { type IDeviceModelRepository } from '../../../interfaces';
+import { type IDeviceModelRepository, type VariableAttributeQuerystring } from '../../../interfaces';
 import { Op } from 'sequelize';
 import { Component, Evse, Variable, VariableAttribute, VariableCharacteristics } from '../model/DeviceModel';
-import { VariableStatus } from '../model/DeviceModel/VariableStatus';
+import { VariableStatus } from '../model/DeviceModel';
 import { ComponentVariable } from '../model/DeviceModel/ComponentVariable';
 import { Sequelize } from 'sequelize-typescript';
 import { Logger, ILogObj } from 'tslog';
@@ -336,12 +336,15 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
             },
           }
         : Evse;
+    const attributeType = queryParams.type && queryParams.type.toUpperCase() === 'NULL' ? null : queryParams.type;
     return {
       where: {
         ...(queryParams.stationId ? { stationId: queryParams.stationId } : {}),
-        ...(queryParams.type !== null ? { type: queryParams.type } : {}),
+        ...(queryParams.type === undefined ? {} : { type: attributeType }),
         ...(queryParams.value ? { value: queryParams.value } : {}),
-        ...(queryParams.status !== null ? { status: queryParams.status } : {}),
+        // TODO: Currently, the status param doesn't work since status of VariableAttribute are stored in
+        //  VariableStatuses table separately. The table stores status history. We need find a proper way to filter it.
+        ...(queryParams.status === undefined ? {} : { status: queryParams.status }),
       },
       include: [
         {
