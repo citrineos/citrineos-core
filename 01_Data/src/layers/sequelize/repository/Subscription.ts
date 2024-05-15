@@ -10,9 +10,8 @@ import { SystemConfig } from '@citrineos/base';
 import { Logger, ILogObj } from 'tslog';
 
 export class SequelizeSubscriptionRepository extends SequelizeRepository<Subscription> implements ISubscriptionRepository {
-
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = Subscription.MODEL_NAME, sequelizeInstance?: Sequelize) {
-    super(config, namespace, logger, sequelizeInstance);
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+    super(config, Subscription.MODEL_NAME, logger, sequelizeInstance);
   }
 
   /**

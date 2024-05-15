@@ -11,25 +11,26 @@ import { Sequelize } from 'sequelize-typescript';
 import { Logger, ILogObj } from 'tslog';
 
 export class SequelizeVariableMonitoringRepository extends SequelizeRepository<VariableMonitoring> implements IVariableMonitoringRepository {
-  
   eventData: CrudRepository<EventData>;
   variableMonitoringStatus: CrudRepository<VariableMonitoringStatus>;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = VariableMonitoring.MODEL_NAME, sequelizeInstance?: Sequelize, eventData?: CrudRepository<EventData>, variableMonitoringStatus?: CrudRepository<VariableMonitoringStatus>) {
-    super(config, namespace, logger, sequelizeInstance);
-    this.eventData = eventData ? eventData : new SequelizeRepository<EventData>(config, namespace, logger, sequelizeInstance);
-    this.variableMonitoringStatus = variableMonitoringStatus ? variableMonitoringStatus : new SequelizeRepository<VariableMonitoringStatus>(config, namespace, logger, sequelizeInstance);
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, eventData?: CrudRepository<EventData>, variableMonitoringStatus?: CrudRepository<VariableMonitoringStatus>) {
+    super(config, VariableMonitoring.MODEL_NAME, logger, sequelizeInstance);
+    this.eventData = eventData ? eventData : new SequelizeRepository<EventData>(config, EventData.MODEL_NAME, logger, sequelizeInstance);
+    this.variableMonitoringStatus = variableMonitoringStatus ? variableMonitoringStatus : new SequelizeRepository<VariableMonitoringStatus>(config, VariableMonitoringStatus.MODEL_NAME, logger, sequelizeInstance);
   }
 
   async createOrUpdateByMonitoringDataTypeAndStationId(value: MonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring[]> {
     return await Promise.all(
       value.variableMonitoring.map(async (variableMonitoring) => {
-        const [savedVariableMonitoring, _variableMonitoringCreated] = await this.upsert(VariableMonitoring.build({
-          stationId,
-          variableId,
-          componentId,
-          ...variableMonitoring
-        }));
+        const [savedVariableMonitoring, _variableMonitoringCreated] = await this.upsert(
+          VariableMonitoring.build({
+            stationId,
+            variableId,
+            componentId,
+            ...variableMonitoring,
+          }),
+        );
 
         await this.createVariableMonitoringStatus(SetMonitoringStatusEnumType.Accepted, CallAction.NotifyMonitoringReport, savedVariableMonitoring.get('databaseId'));
 
@@ -39,20 +40,24 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
   }
 
   async createVariableMonitoringStatus(status: SetMonitoringStatusEnumType, action: CallAction, variableMonitoringId: number): Promise<void> {
-    await this.variableMonitoringStatus.create(VariableMonitoringStatus.build({
-      status,
-      statusInfo: { reasonCode: action },
-      variableMonitoringId,
-    }));
+    await this.variableMonitoringStatus.create(
+      VariableMonitoringStatus.build({
+        status,
+        statusInfo: { reasonCode: action },
+        variableMonitoringId,
+      }),
+    );
   }
 
   async createOrUpdateBySetMonitoringDataTypeAndStationId(value: SetMonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring> {
-    const [savedVariableMonitoring, _variableMonitoringCreated] = await this.upsert(VariableMonitoring.build({
-      stationId,
-      variableId,
-      componentId,
-      ...value,
-    }));
+    const [savedVariableMonitoring, _variableMonitoringCreated] = await this.upsert(
+      VariableMonitoring.build({
+        stationId,
+        variableId,
+        componentId,
+        ...value,
+      }),
+    );
     return savedVariableMonitoring;
   }
 
@@ -85,8 +90,8 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
   }
 
   async updateResultByStationId(result: SetMonitoringResultType, stationId: string): Promise<VariableMonitoring> {
-    const savedVariableMonitoring = await super.readAllByQuery(
-      {
+    const savedVariableMonitoring = await super
+      .readAllByQuery({
         where: { stationId, type: result.type, severity: result.severity },
         include: [
           {
@@ -104,22 +109,27 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
             },
           },
         ],
-      },
-    ).then((variableMonitorings) => variableMonitorings[0]); // TODO: Make sure this uniqueness constraint is actually enforced.
+      })
+      .then((variableMonitorings) => variableMonitorings[0]); // TODO: Make sure this uniqueness constraint is actually enforced.
 
     if (savedVariableMonitoring) {
       // The Id is only returned from Charging Station when status is accepted.
       if (result.status === SetMonitoringStatusEnumType.Accepted) {
-        await this.updateByKey({
-          id: result.id,
-        }, savedVariableMonitoring.get('databaseId').toString());
+        await this.updateByKey(
+          {
+            id: result.id,
+          },
+          savedVariableMonitoring.get('databaseId').toString(),
+        );
       }
 
-      await this.variableMonitoringStatus.create(VariableMonitoringStatus.build({
-        status: result.status,
-        statusInfo: result.statusInfo,
-        variableMonitoringId: savedVariableMonitoring.get('databaseId'),
-      }));
+      await this.variableMonitoringStatus.create(
+        VariableMonitoringStatus.build({
+          status: result.status,
+          statusInfo: result.statusInfo,
+          variableMonitoringId: savedVariableMonitoring.get('databaseId'),
+        }),
+      );
       // Reload in order to include the statuses
       return await this.readAllByQuery({
         where: { databaseId: savedVariableMonitoring.get('databaseId') },
@@ -131,11 +141,13 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
   }
 
   async createEventDatumByComponentIdAndVariableIdAndStationId(event: EventDataType, componentId: string, variableId: string, stationId: string): Promise<EventData> {
-    return await this.eventData.create(EventData.build({
-      stationId,
-      variableId,
-      componentId,
-      ...event
-    }));
+    return await this.eventData.create(
+      EventData.build({
+        stationId,
+        variableId,
+        componentId,
+        ...event,
+      }),
+    );
   }
 }

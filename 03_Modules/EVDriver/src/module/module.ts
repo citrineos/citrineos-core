@@ -134,7 +134,8 @@ export class EVDriverModule extends AbstractModule {
       deviceModelRepository ||
       new sequelize.SequelizeDeviceModelRepository(config, logger);
     this._tariffRepository =
-      tariffRepository || new sequelize.SequelizeTariffRepository(config, logger);
+      tariffRepository ||
+      new sequelize.SequelizeTariffRepository(config, logger);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -168,7 +169,9 @@ export class EVDriverModule extends AbstractModule {
           },
         };
         if (authorizations.length !== 1) {
-          throw new Error(`Unexpected number of Authorizations for IdToken: ${authorizations.length}`);
+          throw new Error(
+            `Unexpected number of Authorizations for IdToken: ${authorizations.length}`,
+          );
         }
         const authorization = authorizations[0];
         if (authorization) {

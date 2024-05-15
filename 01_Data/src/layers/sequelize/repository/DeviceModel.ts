@@ -39,7 +39,6 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
   constructor(
     config: SystemConfig,
     logger?: Logger<ILogObj>,
-    namespace = VariableAttribute.MODEL_NAME,
     sequelizeInstance?: Sequelize,
     variable?: CrudRepository<Variable>,
     component?: CrudRepository<Component>,
@@ -48,7 +47,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     variableCharacteristics?: CrudRepository<VariableCharacteristics>,
     variableStatus?: CrudRepository<VariableStatus>,
   ) {
-    super(config, namespace, logger, sequelizeInstance);
+    super(config, VariableAttribute.MODEL_NAME, logger, sequelizeInstance);
     this.variable = variable ? variable : new SequelizeRepository<Variable>(config, Variable.MODEL_NAME, logger, sequelizeInstance);
     this.component = component ? component : new SequelizeRepository<Component>(config, Component.MODEL_NAME, logger, sequelizeInstance);
     this.evse = evse ? evse : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
@@ -233,22 +232,29 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
   }
 
   async updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined> {
-    const savedVariableAttribute = await super.readAllByQuery(
-      {
+    const savedVariableAttribute = await super
+      .readAllByQuery({
         where: { stationId, type: result.attributeType ?? AttributeEnumType.Actual },
         include: [
           { model: Component, where: { name: result.component.name, instance: result.component.instance ? result.component.instance : null } },
           { model: Variable, where: { name: result.variable.name, instance: result.variable.instance ? result.variable.instance : null } },
         ],
-      }
-    ).then((variableAttributes) => variableAttributes.length > 0 ? variableAttributes[0] : undefined);
+      })
+      .then((variableAttributes) => {
+        if (variableAttributes.length > 1) {
+          throw new Error('Illegal state: more than one variable attribute found');
+        }
+        return variableAttributes[0];
+      });
     if (savedVariableAttribute) {
-      await this.variableStatus.create(VariableStatus.build({
-        value: savedVariableAttribute.value,
-        status: result.attributeStatus,
-        statusInfo: result.attributeStatusInfo,
-        variableAttributeId: savedVariableAttribute.get('id'),
-      }));
+      await this.variableStatus.create(
+        VariableStatus.build({
+          value: savedVariableAttribute.value,
+          status: result.attributeStatus,
+          statusInfo: result.attributeStatusInfo,
+          variableAttributeId: savedVariableAttribute.get('id'),
+        }),
+      );
       // Reload in order to include the statuses
       return await savedVariableAttribute.reload({
         include: [VariableStatus],
@@ -259,15 +265,13 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
   }
 
   async readAllSetVariableByStationId(stationId: string): Promise<SetVariableDataType[]> {
-    const variableAttributeArray = await super.readAllByQuery(
-      {
-        where: {
-          stationId,
-          bootConfigSetId: { [Op.ne]: null },
-        },
-        include: [{ model: Component, include: [Evse] }, Variable],
-      }
-    );
+    const variableAttributeArray = await super.readAllByQuery({
+      where: {
+        stationId,
+        bootConfigSetId: { [Op.ne]: null },
+      },
+      include: [{ model: Component, include: [Evse] }, Variable],
+    });
 
     return variableAttributeArray.map((variableAttribute) => this.createSetVariableDataType(variableAttribute));
   }
@@ -286,17 +290,38 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return await super.deleteAllByQuery(this.constructQuery(query));
   }
 
-  async findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | null, Variable | null]> {
-    const component = await this.component.readAllByQuery({
-      where: { name: componentType.name, instance: componentType.instance ? componentType.instance : null },
-    }).then((components) => components.length > 0 ? components[0] : null);
-    const variable = await this.variable.readAllByQuery({
-      where: { name: variableType.name, instance: variableType.instance ? variableType.instance : null },
-    }).then((variables) => variables.length > 0 ? variables[0] : null);
+  async findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]> {
+    const component = await this.component
+      .readAllByQuery({
+        where: { name: componentType.name, instance: componentType.instance ? componentType.instance : undefined },
+      })
+      .then((components) => {
+        if (components.length > 1) {
+          throw new Error('Illegal state: more than one component found');
+        }
+        return components[0];
+      });
+    const variable = await this.variable
+      .readAllByQuery({
+        where: { name: variableType.name, instance: variableType.instance ? variableType.instance : undefined },
+      })
+      .then((variables) => {
+        if (variables.length > 1) {
+          throw new Error('Illegal state: more than one variable found');
+        }
+        return variables[0];
+      });
     if (variable) {
-      const variableCharacteristics = await this.variableCharacteristics.readAllByQuery({
-        where: { variableId: variable.get('id') },
-      }).then((variableCharacteristics) => variableCharacteristics.length > 0 ? variableCharacteristics[0] : undefined);
+      const variableCharacteristics = await this.variableCharacteristics
+        .readAllByQuery({
+          where: { variableId: variable.get('id') },
+        })
+        .then((results) => {
+          if (results.length > 1) {
+            throw new Error('Illegal state: more than one variable characteristics found');
+          }
+          return results[0];
+        });
       variable.variableCharacteristics = variableCharacteristics ?? undefined;
     }
 

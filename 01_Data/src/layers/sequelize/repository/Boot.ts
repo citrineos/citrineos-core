@@ -14,8 +14,8 @@ import { Sequelize } from 'sequelize-typescript';
 export class SequelizeBootRepository extends SequelizeRepository<Boot> implements IBootRepository {
   variableAttributes: CrudRepository<VariableAttribute>;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = Boot.MODEL_NAME, sequelizeInstance?: Sequelize, variableAttributes?: CrudRepository<VariableAttribute>) {
-    super(config, namespace, logger, sequelizeInstance);
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, variableAttributes?: CrudRepository<VariableAttribute>) {
+    super(config, Boot.MODEL_NAME, logger, sequelizeInstance);
     this.variableAttributes = variableAttributes ? variableAttributes : new SequelizeRepository<VariableAttribute>(config, VariableAttribute.MODEL_NAME, logger, sequelizeInstance);
   }
 
@@ -41,18 +41,6 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
 
   async updateLastBootTimeByKey(lastBootTime: string, key: string): Promise<Boot | undefined> {
     return await this.updateByKey({ lastBootTime }, key);
-  }
-
-  async readByKey(key: string): Promise<Boot | undefined> {
-    return await this.readByKey(key);
-  }
-
-  async existsByKey(key: string): Promise<boolean> {
-    return await this.existsByKey(key);
-  }
-
-  async deleteByKey(key: string): Promise<Boot | undefined> {
-    return await this.deleteByKey(key);
   }
 
   /**

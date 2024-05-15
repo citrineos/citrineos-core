@@ -37,7 +37,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   }
 
   protected async _readOrCreateByQuery(query: object): Promise<[T, boolean]> {
-    return await this.s.models[this.namespace].findOrCreate(query as FindOptions<any>).then((result) => [result[0] as T, result[1]]);;
+    return await this.s.models[this.namespace].findOrCreate(query as FindOptions<any>).then((result) => [result[0] as T, result[1]]);
   }
 
   protected async _updateByKey(value: Partial<T>, key: string): Promise<T | undefined> {
@@ -56,7 +56,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   protected async _upsert(value: T): Promise<[T, boolean]> {
     // There will be an exception if sql attempts to create and value is missing required fields.
     // However, the typing of upsert requires a Partial. This is a workaround.
-    // The created boolean (second element of the result) can only be null if the SQL engine in use is SQLite. In that case, it is assumed the entry was created. 
+    // The created boolean (second element of the result) can only be null if the SQL engine in use is SQLite. In that case, it is assumed the entry was created.
     // This is a compromise for compilation's sake, it's highly recommended you do NOT use SQLite.
     return await this.s.models[this.namespace].upsert(value as Partial<T>).then((result) => [result[0] as T, result[1] == null ? true : result[1]]);
   }

@@ -68,7 +68,7 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
   readAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
   existByQuery(query: VariableAttributeQuerystring): Promise<number>;
   deleteAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
-  findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | null, Variable | null]>;
+  findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]>;
   findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component>;
 }
 
@@ -112,7 +112,7 @@ export interface IMessageInfoRepository extends CrudRepository<MessageInfoType> 
 }
 
 export interface ITariffRepository extends CrudRepository<Tariff> {
-  findByStationId(stationId: string): Promise<Tariff | null>;
+  findByStationId(stationId: string): Promise<Tariff | undefined>;
   readAllByQuery(query: TariffQueryString): Promise<Tariff[]>;
   deleteAllByQuery(query: TariffQueryString): Promise<Tariff[]>;
   createOrUpdateTariff(tariff: Tariff): Promise<Tariff>;

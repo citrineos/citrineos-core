@@ -10,9 +10,8 @@ import { Sequelize } from 'sequelize-typescript';
 import { Logger, ILogObj } from 'tslog';
 
 export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageInfo> implements IMessageInfoRepository {
-
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = MessageInfo.MODEL_NAME, sequelizeInstance?: Sequelize) {
-    super(config, namespace, logger, sequelizeInstance);
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+    super(config, MessageInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 
   async deactivateAllByStationId(stationId: string): Promise<void> {
@@ -31,12 +30,14 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
   }
 
   async createOrUpdateByMessageInfoTypeAndStationId(message: MessageInfoType, stationId: string, componentId?: number): Promise<MessageInfo> {
-    const [savedMessageInfo, _messageInfoCreated] = await this.upsert(MessageInfo.build({
-      stationId: stationId,
-      componentId: componentId,
-      ...message,
-      active: true,
-    }));
+    const [savedMessageInfo, _messageInfoCreated] = await this.upsert(
+      MessageInfo.build({
+        stationId: stationId,
+        componentId: componentId,
+        ...message,
+        active: true,
+      }),
+    );
     return savedMessageInfo;
   }
 }

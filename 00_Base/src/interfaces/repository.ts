@@ -5,11 +5,11 @@
 
 import { EventEmitter } from 'events';
 
-export type CrudEvent<T> = {
+export interface CrudEvent<T> {
   created: [T[]];
   updated: [T[]];
   deleted: [T[]];
-};
+}
 
 /**
  * Represents a generic CRUD repository.
@@ -113,7 +113,10 @@ export abstract class CrudRepository<T> extends EventEmitter {
    * @param namespace - Optional namespace for the query.
    * @returns A promise that resolves to an array where the first element is the value associated with the query, either an existing value or the newly created value, and the second element is a boolean indicating whether the entry was created.
    */
-  public async readOrCreateByQuery(query: object, namespace?: string): Promise<[T, boolean]> {
+  public async readOrCreateByQuery(
+    query: object,
+    namespace?: string,
+  ): Promise<[T, boolean]> {
     const result = await this._readOrCreateByQuery(query, namespace);
     if (result[1]) {
       this.emit('created', [result[0]]);

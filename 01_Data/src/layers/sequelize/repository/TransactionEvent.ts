@@ -18,7 +18,15 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   evse: CrudRepository<Evse>;
   meterValue: CrudRepository<MeterValue>;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = TransactionEvent.MODEL_NAME, sequelizeInstance?: Sequelize, transaction?: CrudRepository<Transaction>, evse?: CrudRepository<Evse>, meterValue?: CrudRepository<MeterValue>) {
+  constructor(
+    config: SystemConfig,
+    logger?: Logger<ILogObj>,
+    namespace = TransactionEvent.MODEL_NAME,
+    sequelizeInstance?: Sequelize,
+    transaction?: CrudRepository<Transaction>,
+    evse?: CrudRepository<Evse>,
+    meterValue?: CrudRepository<MeterValue>,
+  ) {
     super(config, namespace, logger, sequelizeInstance);
     this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, namespace, logger, sequelizeInstance);
     this.evse = evse ? evse : new SequelizeRepository<Evse>(config, namespace, logger, sequelizeInstance);
@@ -40,7 +48,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       [evse] = await this.evse.readOrCreateByQuery({ where: { id: value.evse.id, connectorId: value.evse.connectorId ? value.evse.connectorId : null } });
     }
 
-    const transaction = await this.s.transaction(async (sequelizeTransaction) => {
+    const savedTransaction = await this.s.transaction(async (sequelizeTransaction) => {
       const result = await Transaction.upsert(
         {
           stationId,
@@ -87,7 +95,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       return transaction;
     });
 
-    return transaction;
+    return savedTransaction;
   }
 
   async readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]> {
@@ -108,7 +116,12 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         where: { stationId, transactionId },
         include: [MeterValue],
       })
-      .then((rows) => (rows.length > 0 ? rows[0] : undefined));
+      .then((rows) => {
+        if (rows.length > 1) {
+          throw new Error(`More than one transaction found for stationId ${stationId} and transactionId ${transactionId}`);
+        }
+        return rows[0];
+      });
   }
 
   /**
