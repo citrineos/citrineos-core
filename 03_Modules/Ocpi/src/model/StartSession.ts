@@ -1,20 +1,10 @@
-import {
-  IsNotEmpty,
-  IsObject,
-  IsString,
-  IsUrl,
-  MaxLength,
-  ValidateNested,
-} from 'class-validator';
-import { Token } from './Token';
-import { Type } from 'class-transformer';
-import { Optional } from '../util/decorators/optional';
+import {IsNotEmpty, IsObject, IsString, MaxLength, ValidateNested,} from 'class-validator';
+import {Token} from './Token';
+import {Type} from 'class-transformer';
+import {Optional} from '../util/decorators/optional';
+import {ResponseUrl} from "./ResponseUrl";
 
-export class CommandsStartSessionRequest {
-  @IsString()
-  @IsUrl()
-  @IsNotEmpty()
-  response_url!: string;
+export class StartSession extends ResponseUrl {
 
   @IsObject()
   @IsNotEmpty()

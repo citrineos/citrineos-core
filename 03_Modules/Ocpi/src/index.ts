@@ -9,6 +9,8 @@ import {AuthMiddleware} from './util/middleware/auth.middleware';
 import {GlobalExceptionHandler} from './util/middleware/global.exception.handler';
 import {getAllSchemas} from './schemas';
 import {VersionNumber} from "./model/VersionNumber";
+import {TariffsController} from "./controllers/tariffs.controller";
+import {CommandsController} from "./controllers/commands.controller";
 
 export {CredentialsModuleApi} from './modules/temp/credentials.api';
 export {OcpiModule} from './modules/temp/module';
@@ -19,9 +21,17 @@ const koa = new Koa();
 
 const app = useKoaServer(koa, {
   authorizationChecker: authorizationChecker,
-  controllers: [CdrsController, ChargingProfilesController],
+  controllers: [
+    CdrsController,
+    ChargingProfilesController,
+    TariffsController,
+    CommandsController
+  ],
   routePrefix: '/ocpi/:versionId', // dynamic API version in the prefix
-  middlewares: [AuthMiddleware, GlobalExceptionHandler],
+  middlewares: [
+    AuthMiddleware,
+    GlobalExceptionHandler
+  ],
   defaultErrorHandler: false, // Important: Disable the default error handler
 });
 

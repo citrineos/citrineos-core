@@ -1,4 +1,4 @@
-import {OcpiParams} from "../util/ocpi.params";
+import {OcpiParams} from "../../util/ocpi.params";
 import {IsNotEmpty, IsString, Length} from "class-validator";
 
 export class DeleteTariffParams extends OcpiParams {

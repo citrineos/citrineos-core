@@ -7,8 +7,8 @@ import {ResponseSchema} from 'routing-controllers-openapi';
 import {OcpiEmptyResponse} from '../util/ocpi.empty.response';
 import {AsOcpiEndpoint} from '../util/decorators/as.ocpi.endpoint';
 import {OcpiModules} from "../apis/BaseApi";
-import {ChargingProfileResponse} from "../model/ChargingProfileResponse";
 import {ClearChargingProfileResult} from "../model/ChargingprofilesClearProfileResult";
+import {ChargingProfileResult} from "../model/ChargingProfileResponse";
 
 @Controller(`/${OcpiModules.ChargingProfiles}`)
 export class ChargingProfilesController extends BaseController {
@@ -20,7 +20,7 @@ export class ChargingProfilesController extends BaseController {
   })
   async postGenericChargingProfileResult(
     @Param('id') _id: string,
-    @Body() _activeChargingProfileResult: ActiveChargingProfileResult | ChargingProfileResponse | ClearChargingProfileResult
+    @Body() _activeChargingProfileResult: ActiveChargingProfileResult | ChargingProfileResult | ClearChargingProfileResult
   ): Promise<OcpiEmptyResponse> {
     return this.generateMockOcpiResponse(OcpiEmptyResponse);
   }

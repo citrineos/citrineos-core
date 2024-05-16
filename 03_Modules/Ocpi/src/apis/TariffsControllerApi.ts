@@ -2,9 +2,9 @@ import {getOcpiHeaders, OcpiParams, setAuthHeader,} from './util';
 import {BaseAPI, HTTPHeaders, OcpiModules} from './BaseApi';
 import {OcpiResponse} from '../util/ocpi.response';
 import {Tariff} from '../model/Tariff';
-import {GetTariffParams} from "./params/get.tariff.params";
-import {PutTariffParams} from "./params/put.tariff.params";
-import {DeleteTariffParams} from "./params/delete.tariff.params";
+import {GetTariffParams} from "./params/tariff/get.tariff.params";
+import {PutTariffParams} from "./params/tariff/put.tariff.params";
+import {DeleteTariffParams} from "./params/tariff/delete.tariff.params";
 
 export class TariffsControllerApi extends BaseAPI {
 
