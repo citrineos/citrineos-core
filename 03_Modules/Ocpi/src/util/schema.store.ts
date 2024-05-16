@@ -1,3 +1,6 @@
+import {Constructor} from "./util";
+import {defaultClassValidatorJsonSchemaOptions, nestedClassToJsonSchema} from "./class.validator";
+
 export const SchemaStore = {
   components: {
     schemas: {},
@@ -14,4 +17,16 @@ export const SchemaStore = {
   getAllSchemas() {
     return this.components.schemas;
   },
+
+  addToSchemaStore(type: Constructor) {
+    if (!this.getSchema(type.name)) {
+      this.addSchema(
+        type.name,
+        nestedClassToJsonSchema(
+          type as any,
+          defaultClassValidatorJsonSchemaOptions,
+        ),
+      );
+  }
+}
 };

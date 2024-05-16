@@ -6,6 +6,7 @@ export enum OcpiModules {
   Tariffs = 'tariffs',
   ChargingProfiles = 'chargingprofiles',
   Commands = 'commands',
+  Locations = 'locations',
 }
 
 export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];

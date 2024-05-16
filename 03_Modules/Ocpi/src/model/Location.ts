@@ -19,6 +19,8 @@ import { Evse } from './Evse';
 import { EnergyMix } from './EnergyMix';
 import { Type } from 'class-transformer';
 import { Optional } from '../util/decorators/optional';
+import {OcpiResponse} from "../util/ocpi.response";
+import {Cdr} from "./Cdr";
 
 export class Location {
   @MaxLength(2)
@@ -150,4 +152,19 @@ export class Location {
   @IsNotEmpty()
   @Type(() => Date)
   last_updated!: Date;
+}
+
+export class LocationResponse extends OcpiResponse<Location> {
+  @IsObject()
+  @IsNotEmpty()
+  @Type(() => Location)
+  @ValidateNested()
+  data!: Location;
+}
+
+export class LocationListResponse extends OcpiResponse<Location[]> {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => Location)
+  data!: Location[];
 }

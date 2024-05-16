@@ -2,10 +2,10 @@ import {Controller, Get, QueryParams} from 'routing-controllers';
 import {HttpStatus} from '@citrineos/base';
 import {BaseController} from './base.controller';
 import {FromToOffsetLimitQuery} from '../modules/temp/schema/from.to.offset.limit.query.schema';
-import {ResponseSchema} from 'routing-controllers-openapi';
 import {AsOcpiEndpoint} from '../util/decorators/as.ocpi.endpoint';
 import {OcpiModules} from "../apis/BaseApi";
 import {TariffListResponse} from "../model/Tariff";
+import {ResponseSchema} from "../util/openapi";
 
 @Controller(`/${OcpiModules.Tariffs}`)
 export class TariffsController extends BaseController {

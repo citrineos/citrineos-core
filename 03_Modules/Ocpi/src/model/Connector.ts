@@ -3,16 +3,19 @@ import {
   IsDateString,
   IsInt,
   IsNotEmpty,
+  IsObject,
   IsString,
   IsUrl,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
-import { ConnectorType } from './ConnectorType';
-import { ConnectorFormat } from './ConnectorFormat';
-import { PowerType } from './PowerType';
-import { Type } from 'class-transformer';
-import { Optional } from '../util/decorators/optional';
-import { Enum } from '../util/decorators/enum';
+import {ConnectorType} from './ConnectorType';
+import {ConnectorFormat} from './ConnectorFormat';
+import {PowerType} from './PowerType';
+import {Type} from 'class-transformer';
+import {Optional} from '../util/decorators/optional';
+import {Enum} from '../util/decorators/enum';
+import {OcpiResponse} from "../util/ocpi.response";
 
 export class Connector {
   @MaxLength(36)
@@ -58,4 +61,19 @@ export class Connector {
   @IsNotEmpty()
   @Type(() => Date)
   last_updated!: Date;
+}
+
+export class ConnectorResponse extends OcpiResponse<Connector> {
+  @IsObject()
+  @IsNotEmpty()
+  @Type(() => Connector)
+  @ValidateNested()
+  data!: Connector;
+}
+
+export class ConnectorListResponse extends OcpiResponse<Connector[]> {
+  @IsArray()
+  @ValidateNested({each: true})
+  @Type(() => Connector)
+  data!: Connector[];
 }

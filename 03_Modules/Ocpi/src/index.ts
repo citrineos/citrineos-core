@@ -11,6 +11,7 @@ import {getAllSchemas} from './schemas';
 import {VersionNumber} from "./model/VersionNumber";
 import {TariffsController} from "./controllers/tariffs.controller";
 import {CommandsController} from "./controllers/commands.controller";
+import {LocationsController} from "./controllers/locations.controller";
 
 export {CredentialsModuleApi} from './modules/temp/credentials.api';
 export {OcpiModule} from './modules/temp/module';
@@ -25,7 +26,8 @@ const app = useKoaServer(koa, {
     CdrsController,
     ChargingProfilesController,
     TariffsController,
-    CommandsController
+    CommandsController,
+    LocationsController
   ],
   routePrefix: '/ocpi/:versionId', // dynamic API version in the prefix
   middlewares: [

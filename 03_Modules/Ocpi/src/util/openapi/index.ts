@@ -1,16 +1,14 @@
 import * as oa from 'openapi3-ts';
-import {
-  MetadataArgsStorage,
-  RoutingControllersOptions,
-} from 'routing-controllers';
+import {MetadataArgsStorage, RoutingControllersOptions,} from 'routing-controllers';
 
-import { getSpec } from './generate.spec';
-import { parseRoutes } from './parse.metadata';
-import { mergeDeep } from './merge.deep';
+import {getSpec} from './generate.spec';
+import {parseRoutes} from './parse.metadata';
+import {mergeDeep} from './merge.deep';
 
 export * from './decorators';
 export * from './generate.spec';
 export * from './parse.metadata';
+
 
 // todo create fork with changes instead
 /**
@@ -26,12 +24,17 @@ export function routingControllersToSpec(
   routingControllerOptions: RoutingControllersOptions = {},
   additionalProperties: Partial<oa.OpenAPIObject> = {},
 ): oa.OpenAPIObject {
-  const routes = parseRoutes(storage, routingControllerOptions);
-  const spec = getSpec(
-    routes,
-    (additionalProperties.components?.schemas || {}) as {
-      [p: string]: oa.SchemaObject;
-    },
-  );
-  return mergeDeep(spec, additionalProperties);
+  try {
+    const routes = parseRoutes(storage, routingControllerOptions);
+    const spec = getSpec(
+      routes,
+      (additionalProperties.components?.schemas || {}) as {
+        [p: string]: oa.SchemaObject;
+      },
+    );
+    return mergeDeep(spec, additionalProperties);
+  } catch (error) {
+    console.error('routingControllersToSpec', error);
+    throw error;
+  }
 }

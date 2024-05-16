@@ -1,13 +1,10 @@
-import {
-  OperationObject,
-  ReferenceObject,
-  ResponsesObject,
-  SchemaObject,
-} from 'openapi3-ts';
+import {OperationObject, ReferenceObject, ResponsesObject, SchemaObject,} from 'openapi3-ts';
 import 'reflect-metadata';
-import { IRoute } from './parse.metadata';
-import { getContentType, getStatusCode } from './generate.spec';
-import { mergeDeep } from './merge.deep';
+import {IRoute} from './parse.metadata';
+import {getContentType, getStatusCode} from './generate.spec';
+import {mergeDeep} from './merge.deep';
+import {SchemaStore} from "../schema.store";
+import {Constructor} from "../util";
 
 const OPEN_API_KEY = Symbol('routing-controllers-openapi:OpenAPI');
 
@@ -72,7 +69,7 @@ export function applyOpenAPIDecorator(
   originalOperation: OperationObject,
   route: IRoute,
 ): OperationObject {
-  const { action } = route;
+  const {action} = route;
   const openAPIParams = [
     ...getOpenAPIMetadata(action.target),
     ...getOpenAPIMetadata(action.target.prototype, action.method),
@@ -86,6 +83,7 @@ export function applyOpenAPIDecorator(
     originalOperation,
   ) as OperationObject;
 }
+
 
 /**
  * Supplement action with response body type annotation.
@@ -108,6 +106,7 @@ export function ResponseSchema(
 
     let responseSchemaName = '';
     if (typeof responseClass === 'function' && responseClass.name) {
+      SchemaStore.addToSchemaStore(responseClass as Constructor);
       responseSchemaName = responseClass.name;
     } else if (typeof responseClass === 'string') {
       responseSchemaName = responseClass;
@@ -118,7 +117,7 @@ export function ResponseSchema(
         $ref: `#/components/schemas/${responseSchemaName}`,
       };
       const schema: SchemaObject | ReferenceObject = isArray
-        ? { items: reference, type: 'array' }
+        ? {items: reference, type: 'array'}
         : reference;
       const responses: ResponsesObject = {
         [statusCode]: {
@@ -134,7 +133,7 @@ export function ResponseSchema(
       const oldSchema =
         source.responses[statusCode]?.content[contentType].schema;
 
-      if (oldSchema?.$ref || oldSchema?.items || oldSchema?.oneOf) {
+      if (oldSchema && (oldSchema?.$ref || oldSchema?.items || oldSchema?.oneOf)) {
         // case where we're adding multiple schemas under single statuscode/contentType
         const newStatusCodeResponse = mergeDeep(
           {},
@@ -143,16 +142,16 @@ export function ResponseSchema(
         );
         const newSchema = oldSchema.oneOf
           ? {
-              oneOf: [...oldSchema.oneOf, schema],
-            }
-          : { oneOf: [oldSchema, schema] };
+            oneOf: [...oldSchema.oneOf, schema],
+          }
+          : {oneOf: [oldSchema, schema]};
 
         newStatusCodeResponse.content[contentType].schema = newSchema;
         source.responses[statusCode] = newStatusCodeResponse;
         return source;
       }
 
-      return mergeDeep({}, source, { responses });
+      return mergeDeep({}, source, {responses});
     }
 
     return source;
