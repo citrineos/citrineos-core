@@ -1,6 +1,6 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import {IsNotEmpty, IsString} from 'class-validator';
 
-export class ChargingprofilesClearProfileResult {
+export class ClearChargingProfileResult {
   @IsString()
   @IsNotEmpty()
   result!: string;

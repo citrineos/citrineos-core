@@ -4,6 +4,7 @@ import {OcpiParams} from "./util/ocpi.params";
 export enum OcpiModules {
   Cdrs = 'cdrs',
   Tariffs = 'tariffs',
+  ChargingProfiles = 'chargingprofiles',
 }
 
 export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];

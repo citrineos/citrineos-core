@@ -1,55 +1,41 @@
-import {
-  OcpiParams,
-  setAuthHeader,
-  getOcpiHeaders,
-} from './util';
-import { BaseAPI, HTTPHeaders } from './BaseApi';
-import { ChargingProfileResponse } from '../model/ChargingProfileResponse';
-import { OcpiResponse } from '../util/ocpi.response';
-import { VersionNumber } from '../model/VersionNumber';
-import { SetChargingProfile } from '../model/SetChargingProfile';
-
-export interface DeleteReceiverChargingProfileRequest extends OcpiParams {
-  sessionId: string;
-  responseUrl: string;
-}
-
-export interface GetReceiverChargingProfileRequest extends OcpiParams {
-  sessionId: string;
-  duration: number;
-  responseUrl: string;
-}
-
-export interface PutReceiverChargingProfileRequest extends OcpiParams {
-  sessionId: string;
-  setChargingProfile: SetChargingProfile;
-}
+import {getOcpiHeaders, OcpiParams, setAuthHeader,} from './util';
+import {BaseAPI, HTTPHeaders, OcpiModules} from './BaseApi';
+import {ChargingProfileResponse} from '../model/ChargingProfileResponse';
+import {OcpiResponse} from '../util/ocpi.response';
+import {DeleteChargingProfileParams} from "./params/charging.profile/delete.charging.profile.params";
+import {GetChargingProfileParams} from "./params/charging.profile/get.charging.profile.params";
+import {PutChargingProfileParams} from "./params/charging.profile/put.charging.profile.params";
 
 export class ChargingProfilesControllerApi extends BaseAPI {
-  async deleteReceiverChargingProfile(
-    requestParameters: DeleteReceiverChargingProfileRequest,
-    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
-  ): Promise<OcpiResponse<void>> {
+
+  CONTROLLER_PATH = OcpiModules.ChargingProfiles;
+
+  async deleteChargingProfile(
+    params: DeleteChargingProfileParams
+  ): Promise<OcpiResponse<ChargingProfileResponse>> {
+
+    this.validateOcpiParams(params);
+
     this.validateRequiredParam(
-      requestParameters,
+      params,
       'sessionId',
       'responseUrl',
     );
 
     const queryParameters: any = {};
 
-    if (requestParameters.responseUrl != null) {
-      queryParameters['response_url'] = requestParameters.responseUrl;
+    if (params.responseUrl != null) {
+      queryParameters['response_url'] = params.responseUrl;
     }
 
     const headerParameters: HTTPHeaders =
-      getOcpiHeaders(requestParameters);
+      getOcpiHeaders(params);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/${versionId}/receiver/chargingprofiles/{sessionId}`.replace(
+      path: '/chargingprofiles/{sessionId}'.replace(
         'sessionId',
-        encodeURIComponent(String(requestParameters.sessionId)),
+        encodeURIComponent(String(params.sessionId)),
       ),
       method: 'DELETE',
       headers: headerParameters,
@@ -57,12 +43,14 @@ export class ChargingProfilesControllerApi extends BaseAPI {
     });
   }
 
-  async getReceiverChargingProfile(
-    requestParameters: GetReceiverChargingProfileRequest,
-    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
+  async getChargingProfile(
+    params: GetChargingProfileParams
   ): Promise<OcpiResponse<ChargingProfileResponse>> {
+
+    this.validateOcpiParams(params);
+
     this.validateRequiredParam(
-      requestParameters,
+      params,
       'sessionId',
       'duration',
       'responseUrl',
@@ -70,22 +58,22 @@ export class ChargingProfilesControllerApi extends BaseAPI {
 
     const queryParameters: any = {};
 
-    if (requestParameters.duration != null) {
-      queryParameters['duration'] = requestParameters.duration;
+    if (params.duration != null) {
+      queryParameters['duration'] = params.duration;
     }
 
-    if (requestParameters.responseUrl != null) {
-      queryParameters['response_url'] = requestParameters.responseUrl;
+    if (params.responseUrl != null) {
+      queryParameters['response_url'] = params.responseUrl;
     }
 
     const headerParameters: HTTPHeaders =
-      getOcpiHeaders(requestParameters);
+      getOcpiHeaders(params);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/${versionId}/receiver/chargingprofiles/{sessionId}`.replace(
+      path: '/chargingprofiles/{sessionId}'.replace(
         'sessionId',
-        encodeURIComponent(String(requestParameters.sessionId)),
+        encodeURIComponent(String(params.sessionId)),
       ),
       method: 'GET',
       headers: headerParameters,
@@ -93,28 +81,30 @@ export class ChargingProfilesControllerApi extends BaseAPI {
     });
   }
 
-  async putReceiverChargingProfile(
-    requestParameters: PutReceiverChargingProfileRequest,
-    versionId: string = VersionNumber.TWO_DOT_TWO_DOT_ONE,
-  ): Promise<OcpiResponse<void>> {
+  async putChargingProfile(
+    params: PutChargingProfileParams
+  ): Promise<OcpiResponse<ChargingProfileResponse>> {
+
+    this.validateOcpiParams(params);
+
     this.validateRequiredParam(
-      requestParameters,
+      params,
       'sessionId',
       'setChargingProfile',
     );
 
     const headerParameters: HTTPHeaders =
-      getOcpiHeaders(requestParameters);
+      getOcpiHeaders(params);
 
     setAuthHeader(headerParameters);
     return await this.request({
-      path: `/ocpi/${versionId}/receiver/chargingprofiles/{sessionId}`.replace(
+      path: '/chargingprofiles/{sessionId}'.replace(
         'sessionId',
-        encodeURIComponent(String(requestParameters.sessionId)),
+        encodeURIComponent(String(params.sessionId)),
       ),
       method: 'PUT',
       headers: headerParameters,
-      body: requestParameters.setChargingProfile,
+      body: params.setChargingProfile,
     });
   }
 }

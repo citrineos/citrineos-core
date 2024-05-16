@@ -48,7 +48,7 @@ export class TariffsControllerApi extends BaseAPI {
 
   async putTariff(
     params: PutTariffParams
-  ): Promise<OcpiResponse<void>> {
+  ): Promise<OcpiResponse<Tariff>> {
 
     this.validateOcpiParams(params);
 
