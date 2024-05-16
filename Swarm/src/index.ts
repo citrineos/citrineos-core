@@ -54,6 +54,7 @@ import {
   SmartChargingModuleApi,
 } from '@citrineos/smartcharging';
 import { sequelize } from '@citrineos/data';
+import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
 
 class CitrineOSServer {
   /**
@@ -449,6 +450,26 @@ class ModuleService {
           this._port = this._config.modules.smartcharging.port as number;
           break;
         } else throw new Error('No config for SmartCharging module');
+      case EventGroup.Tenant:
+        if (this._config.modules.tenant) {
+          this._module = new TenantModule(
+            this._config,
+            this._cache,
+            this._createSender(),
+            this._createHandler(),
+            this._logger,
+          );
+          this._api = new TenantModuleApi(
+            this._module as TenantModule,
+            this._server,
+            this._logger,
+          );
+          // TODO: take actions to make sure module has correct subscriptions and log proof
+          this._logger.info('Tenant module started...');
+          this._host = this._config.modules.tenant.host as string;
+          this._port = this._config.modules.tenant.port as number;
+          break;
+        } else throw new Error('No config for Tenant module');
       case EventGroup.Transactions:
         if (this._config.modules.transactions) {
           this._module = new TransactionsModule(
