@@ -52,10 +52,15 @@ export function createDockerConfig(): SystemConfig {
         host: '0.0.0.0',
         port: 8088,
       },
+      tenant: {
+        endpointPrefix: 'tenant',
+        host: '0.0.0.0',
+        port: 8089,
+      },
       transactions: {
         endpointPrefix: 'transactions',
         host: '0.0.0.0',
-        port: 8089,
+        port: 8090,
         costUpdatedInterval: 60,
       },
     },
