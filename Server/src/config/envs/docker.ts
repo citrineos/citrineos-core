@@ -112,6 +112,38 @@ export function createDockerConfig() {
             port: 8082,
             protocol: 'ocpp2.0.1',
           },
+          {
+            id: '2',
+            securityProfile: 2,
+            allowUnknownChargingStations: false,
+            pingInterval: 60,
+            host: '0.0.0.0',
+            port: 8443,
+            protocol: 'ocpp2.0.1',
+            tlsKeyFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/leafKey.pem',
+            tlsCertificateChainFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/certChain.pem',
+            rootCACertificateFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/rootCertificate.pem',
+          },
+          {
+            id: '3',
+            securityProfile: 3,
+            allowUnknownChargingStations: false,
+            pingInterval: 60,
+            host: '0.0.0.0',
+            port: 8444,
+            protocol: 'ocpp2.0.1',
+            tlsKeyFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/leafKey.pem',
+            tlsCertificateChainFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/certChain.pem',
+            mtlsCertificateAuthorityKeyFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/subCAKey.pem',
+            rootCACertificateFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/rootCertificate.pem',
+          },
         ],
       },
     },
