@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace } from '@citrineos/base';
-import { Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 
 /**
@@ -13,6 +13,13 @@ import { ChargingStation } from './ChargingStation';
 @Table
 export class Location extends Model {
   static readonly MODEL_NAME: string = Namespace.Location;
+
+  @PrimaryKey
+  @Column({
+    type: DataType.INTEGER,
+    autoIncrement: true,
+  })
+  declare id: number;
 
   @Column(DataType.STRING)
   declare name: string;
