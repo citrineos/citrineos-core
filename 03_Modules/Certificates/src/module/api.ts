@@ -300,7 +300,7 @@ export class CertificatesModuleApi
       leafCertificate.serialNumber = this._generateSerialNumber();
       leafCertificate.keyLength = subCertificate.keyLength;
       leafCertificate.organizationName = subCertificate.organizationName;
-      leafCertificate.commonName = certRequest.commonName + ` ${PemType.SubCA}`;
+      leafCertificate.commonName = certRequest.commonName;
       leafCertificate.validBefore = subCertificate.validBefore;
       leafCertificate.signedBy = subCertificate.id;
       const [leafCertificatePem, leafPrivateKeyPem] = this._generateCertificate(
@@ -652,11 +652,6 @@ export class CertificatesModuleApi
       },
     ];
     if (issuerCertPem) {
-      const aki =
-        forge.pki.certificateFromPem(
-          issuerCertPem,
-        ).generateSubjectKeyIdentifier;
-      this._logger.debug(`aki: ${aki().getBytes()}`);
       extensions.push({
         name: 'authorityKeyIdentifier',
         keyIdentifier: forge.pki
