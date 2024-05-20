@@ -29,13 +29,6 @@ export class WebsocketNetworkConnection {
   private _authenticator: IAuthenticator;
   private _router: IMessageRouter;
 
-  private readonly _ciphers = [
-    'TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256',
-    'TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384',
-    'TLS_RSA_WITH_AES_128_GCM_SHA256',
-    'TLS_RSA_WITH_AES_256_GCM_SHA384',
-  ].join(':');
-
   constructor(
     config: SystemConfig,
     cache: ICache,
@@ -201,7 +194,6 @@ export class WebsocketNetworkConnection {
       const secureContextOptions: SecureContextOptions = {
         key: tlsKey,
         cert: tlsCertificateChain,
-        ciphers: this._ciphers,
       };
       if (rootCA) {
         secureContextOptions.ca = rootCA;
@@ -539,7 +531,6 @@ export class WebsocketNetworkConnection {
     const serverOptions: https.ServerOptions = {
       key: fs.readFileSync(config.tlsKeyFilePath as string),
       cert: fs.readFileSync(config.tlsCertificateChainFilePath as string),
-      ciphers: this._ciphers,
     };
 
     if (config.rootCACertificateFilePath) {

@@ -4,7 +4,7 @@
 
 import { QuerySchema } from '@citrineos/base';
 
-export const GenerateRootCertificatesSchema = QuerySchema(
+export const GenerateCertificateChainSchema = QuerySchema(
   [
     ['serialNumber', 'string'],
     ['keyLength', 'number'],
