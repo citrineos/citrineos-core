@@ -13,6 +13,10 @@ import { Client } from 'acme-client';
 export class Acme implements IChargingStationCertificateAuthorityClient {
   private readonly _directoryUrl: string = acme.directory.letsencrypt.staging;
   private readonly _email: string | undefined;
+  private readonly _preferredChain = {
+    name: 'ISRG Root X1',
+    file: 'isrgrootx1',
+  };
   // Key: serverId, Value: [cert chain, sub ca private key]
   private _securityCertChainKeyMap: Map<string, [string, string]> = new Map();
 
@@ -74,7 +78,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
    */
   async getRootCACertificate(): Promise<string> {
     const response = await fetch(
-      'https://letsencrypt.org/certs/isrgrootx1.pem',
+      `https://letsencrypt.org/certs/${this._preferredChain.file}.pem`,
     );
 
     if (!response.ok && response.status !== 304) {
@@ -95,19 +99,43 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
    * @return {Promise<string>} The signed certificate.
    */
   async signCertificateByExternalCA(csrString: string): Promise<string> {
-    // preferredChain should be consistent with root CA cert from getRootCACertificate method
+    const folderPath =
+      '/usr/local/apps/citrineos/Server/src/assets/.well-known/acme-challenge';
+
     const cert = await this._client?.auto({
       csr: csrString,
       email: this._email,
       termsOfServiceAgreed: true,
-      preferredChain: 'ISRG Root X1',
-      challengeCreateFn: async () => {},
-      challengeRemoveFn: async () => {},
+      preferredChain: this._preferredChain.name,
+      challengePriority: ['http-01'],
+      skipChallengeVerification: true,
+      challengeCreateFn: async (authz, challenge, keyAuthorization) => {
+        this._logger.debug('Triggered challengeCreateFn()');
+        const filePath = `${folderPath}/${challenge.token}`;
+        if (!fs.existsSync(folderPath)) {
+          fs.mkdirSync(folderPath, { recursive: true });
+          this._logger.debug(`Directory created: ${folderPath}`);
+        } else {
+          this._logger.debug(`Directory already exists: ${folderPath}`);
+        }
+        const fileContents = keyAuthorization;
+        this._logger.debug(
+          `Creating challenge response ${fileContents} for ${authz.identifier.value} at path: ${filePath}`,
+        );
+        fs.writeFileSync(filePath, fileContents);
+      },
+      challengeRemoveFn: async (_authz, _challenge, _keyAuthorization) => {
+        this._logger.debug(
+          `Triggered challengeRemoveFn(). Would remove "${folderPath}`,
+        );
+        fs.rmSync(folderPath, { recursive: true, force: true });
+      },
     });
-    this._logger.debug(`certificate: ${cert}`);
+
     if (!cert) {
       throw new Error('Failed to get signed certificate');
     }
+    this._logger.debug(`Certificate singed by external CA: ${cert}`);
     return cert;
   }
 
@@ -213,10 +241,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     certificate.publicKey = csr.publicKey as forge.pki.rsa.PublicKey;
     certificate.serialNumber = this._generateSerialNumber(); // Unique serial number for the certificate
     certificate.validity.notBefore = new Date();
-    certificate.validity.notAfter = new Date();
-    certificate.validity.notAfter.setFullYear(
-      certificate.validity.notAfter.getFullYear() + 1,
-    ); // 1-year validity by default
+    certificate.validity.notAfter = caCert.validity.notAfter;
     certificate.setIssuer(caCert.subject.attributes); // Set CA's attributes as issuer
     certificate.setSubject(csr.subject.attributes);
     certificate.setExtensions([
@@ -226,8 +251,16 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       },
       {
         name: 'keyUsage',
+        critical: true,
         digitalSignature: true,
         keyEncipherment: true,
+      },
+      {
+        name: 'subjectKeyIdentifier',
+      },
+      {
+        name: 'authorityKeyIdentifier',
+        keyIdentifier: caCert.generateSubjectKeyIdentifier().getBytes(),
       },
     ]);
 

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export class GenerateRootCertificatesRequest {
+export class GenerateCertificateChainRequest {
   // Fields for generating a certificate
   // Refer to 1.4.1. Certificate Properties in OCPP 2.0.1 Part 2
   selfSigned: boolean;
