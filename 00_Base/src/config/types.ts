@@ -77,6 +77,13 @@ export const systemConfigInputSchema = z.object({
         port: z.number().int().positive().default(8081).optional(),
       })
       .optional(),
+    tenant: z
+      .object({
+        endpointPrefix: z.string().default(EventGroup.Tenant).optional(),
+        host: z.string().default('localhost').optional(),
+        port: z.number().int().positive().default(8081).optional(),
+      })
+      .optional(),
     transactions: z.object({
       endpointPrefix: z.string().default(EventGroup.Transactions).optional(),
       host: z.string().default('localhost').optional(),
@@ -261,6 +268,11 @@ export const systemConfigSchema = z
           port: z.number().int().positive().optional(),
         })
         .optional(),
+      tenant: z.object({
+        endpointPrefix: z.string(),
+        host: z.string().optional(),
+        port: z.number().int().positive().optional(),
+      }),
       transactions: z
         .object({
           endpointPrefix: z.string(),

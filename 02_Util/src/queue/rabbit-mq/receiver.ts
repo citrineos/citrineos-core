@@ -70,6 +70,19 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     actions?: CallAction[],
     filter?: { [k: string]: string },
   ): Promise<boolean> {
+    // If actions are a defined but empty list, it is likely a module
+    // with no available actions and should not have a queue.
+    //
+    // If actions are undefined, it is likely a charger,
+    // which is "allowed" not to have actions.
+    if (actions && actions.length === 0) {
+      this._logger.debug(
+        `Skipping queue binding for module ${identifier} as there are no available actions.`,
+      );
+
+      return true;
+    }
+
     const exchange = this._config.util.messageBroker.amqp?.exchange as string;
     const queueName = `${RabbitMqReceiver.QUEUE_PREFIX}${identifier}_${Date.now()}`;
 
