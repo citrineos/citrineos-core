@@ -15,11 +15,11 @@ jobs:
     strategy:
       matrix:
         image:
-          - name: server-citrine
+          - name: citrineos-server
             context: ./
             dockerfile: ./Server/deploy.Dockerfile
             config: ''
-          - name: server-directus
+          - name: citrineos-directus
             context: ./DirectusExtensions
             dockerfile: ./DirectusExtensions/directus.Dockerfile
             config: ./Server/directus-env-config.cjs
@@ -47,6 +47,7 @@ jobs:
             --tag ${{ matrix.image.name }} \
             --cache-from type=local,src=/tmp/.buildx-cache \
             --cache-to type=local,dest=/tmp/.buildx-cache \
+            --load \
             ${{ matrix.image.context }}
 
       - name: Copy config file to Directus container
