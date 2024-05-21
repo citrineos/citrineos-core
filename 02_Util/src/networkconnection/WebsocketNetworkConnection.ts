@@ -431,6 +431,11 @@ export class WebsocketNetworkConnection {
       this._router.deregisterConnection(identifier);
     });
 
+    ws.on('ping', async (message) => {
+      this._logger.debug(`Ping received for ${identifier} with message ${JSON.stringify(message)}`);
+      ws.pong(message);
+    });
+
     ws.on('pong', async () => {
       this._logger.debug('Pong received for', identifier);
       const clientConnection: string | null = await this._cache.get(
