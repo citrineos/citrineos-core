@@ -6,6 +6,8 @@
 
 const fs = require('fs');
 const jsts = require('json-schema-to-typescript');
+const prettier = require('prettier');
+const { exec } = require('child_process');
 
 if (process.argv.length === 2) {
   console.error('Expected input path argument!');
@@ -17,8 +19,7 @@ const globalEnums = new Set();
 const globalDefinitions = {};
 const globalEnumDefinitions = {};
 
-const licenseComment = `// Copyright Contributors to the CitrineOS Project
-
+const licenseComment = `// Copyright 2023 S44, LLC
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
@@ -48,10 +49,10 @@ fs.readdir(path, (error, files) => {
             splitEnum(entry);
           if (enumName == 'DataEnumType') {
             // Adding missing type for DataEnumType... type in OCPP 2.0.1 appendix but not in part 3 JSON schemas
-            let lastLineIndex = enumDefinition.lastIndexOf(`"`);
+            let lastLineIndex = enumDefinition.lastIndexOf(`'`);
             enumDefinition =
               enumDefinition.substring(0, lastLineIndex) +
-              `",\n  passwordString = "passwordString` +
+              `',\n  passwordString = 'passwordString` +
               enumDefinition.substring(lastLineIndex);
           }
           globalEnumDefinitions[enumName] = enumDefinition;
@@ -63,7 +64,7 @@ fs.readdir(path, (error, files) => {
     const exportMap = {};
 
     // Export all enum types
-    exportStatements.push(`export *  from './enums';`);
+    exportStatements.push(`export * from './enums';`);
 
     // Prepare all definitions for export
     for (let key in globalDefinitions) {
@@ -89,12 +90,24 @@ fs.readdir(path, (error, files) => {
       fs.writeFileSync(
         `./src/ocpp/model/enums/index.ts`,
         licenseComment +
-          Object.values(globalEnumDefinitions).sort().join('\n\n'),
+          Object.values(globalEnumDefinitions).sort().join('\n\n') +
+          '\n',
       );
       fs.writeFileSync(
         `./src/ocpp/model/index.ts`,
-        licenseComment + exportStatements.join('\n'),
+        licenseComment + exportStatements.join('\n') + '\n',
       );
+      exec(`cd .. && npm run lint-fix`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error executing npm script: ${error.message}`);
+          return;
+        }
+        if (stderr) {
+          console.error(`stderr: ${stderr}`);
+          return;
+        }
+        console.log(`stdout: ${stdout}`);
+      });
     }
   });
 });
@@ -117,58 +130,77 @@ async function processJsonSchema(data, writeToFile = true) {
   }
 
   return new Promise((resolve, reject) => {
-    jsts.compile(jsonSchema, id).then((ts) => {
-      // Add licence comment
-      ts = licenseComment + ts;
+    jsts
+      .compile(jsonSchema, id, {
+        style: { singleQuote: true, trailingComma: 'all' },
+        format: true,
+      })
+      .then((ts) => {
+        // Add licence comment
+        ts = licenseComment + ts;
 
-      // Extend the generated interface with Request or Response
-      if (schemaType) {
-        const interfaceNamePattern = new RegExp(`export interface ${id}`, 'g');
-        ts = ts.replace(
-          interfaceNamePattern,
-          `export interface ${id} extends ${schemaType}`,
+        // Extend the generated interface with Request or Response
+        if (schemaType) {
+          const interfaceNamePattern = new RegExp(
+            `export interface ${id}`,
+            'g',
+          );
+          ts = ts.replace(
+            interfaceNamePattern,
+            `export interface ${id} extends ${schemaType}`,
+          );
+        }
+
+        // Extract enums
+        const enums = extractEnums(ts);
+        if (enums) {
+          for (let i = 0; i < enums.length; i++) {
+            const entry = enums[i];
+            ts = ts.replace(entry, '');
+            enums[i] = entry.trimEnd();
+          }
+        }
+
+        // Collect all definitions
+        const { definitions, enumDefinitions } = collectDefinitions(
+          jsonSchema,
+          id,
         );
-      }
 
-      // Extract enums
-      const enums = extractEnums(ts);
-      if (enums) {
-        enums.forEach((entry) => {
-          ts = ts.replace(entry, '');
+        // Add import statement for enums & schemaType
+        const searchString = '\nexport';
+        const index = ts.indexOf(searchString);
+        ts =
+          ts.substring(0, index) +
+          (enumDefinitions.length > 0
+            ? `\nimport { ${enumDefinitions.join(', ')} } from '../enums';\n`
+            : '\n') +
+          `import { ${schemaType} } from '../../..';\n` +
+          ts.substring(index);
+
+        if (writeToFile) {
+          fs.writeFileSync(
+            `./src/ocpp/model/types/${id}.ts`,
+            ts.replace(/\n+$/, '\n'),
+          );
+
+          // Format JSON with Prettier
+          prettier
+            .format(JSON.stringify(jsonSchema, null, 2), { parser: 'json' })
+            .then((formattedJson) => {
+              fs.writeFileSync(
+                `./src/ocpp/model/schemas/${id}.json`,
+                formattedJson,
+              );
+            });
+        }
+
+        resolve({
+          definitions,
+          enumDefinitions,
+          enums: enums == null ? [] : enums,
         });
-      }
-
-      // Collect all definitions
-      const { definitions, enumDefinitions } = collectDefinitions(
-        jsonSchema,
-        id,
-      );
-
-      // Add import statement for enums & schemaType
-      const searchString = '\nexport';
-      const index = ts.indexOf(searchString);
-      ts =
-        ts.substring(0, index) +
-        (enumDefinitions.length > 0
-          ? `\nimport { ${enumDefinitions.join(', ')} } from "../enums";\n`
-          : '\n') +
-        `import { ${schemaType} } from "../../..";\n` +
-        ts.substring(index);
-
-      if (writeToFile) {
-        fs.writeFileSync(`./src/ocpp/model/types/${id}.ts`, ts);
-        fs.writeFileSync(
-          `./src/ocpp/model/schemas/${id}.json`,
-          JSON.stringify(jsonSchema, null, 2),
-        );
-      }
-
-      resolve({
-        definitions,
-        enumDefinitions,
-        enums: enums == null ? [] : enums,
       });
-    });
   });
 }
 
@@ -209,9 +241,9 @@ function processNode(node) {
 
 function extractEnums(ts) {
   const pattern =
-    /^\/\*\*\s*\n([^\*]|(\*(?!\/)))*\*\/\nexport const enum (\w)* {(\n|\s|\w|-|\.|=|"|,)*}/gm;
+    /^\/\*\*\s*\n([^\*]|(\*(?!\/)))*\*\/\nexport const enum (\w)* {(\s|\w|-|\.|=|'|,)*}\n*/gm;
   const undocumentedPattern =
-    /^export const enum (\w)* {(\n|\s|\w|-|\.|=|"|,)*}/gm;
+    /^export const enum (\w)* {(\s|\w|-|\.|=|'|,)*}\n*/gm;
   const matches = ts.match(pattern);
   let undocumentedMatches = ts.match(undocumentedPattern);
 
