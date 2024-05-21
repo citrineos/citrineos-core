@@ -5,10 +5,6 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
-env:
-  SERVER_IMAGE_NAME: citrineos-server
-  DIRECTUS_IMAGE_NAME: citrineos-directus
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -19,10 +15,11 @@ jobs:
     strategy:
       matrix:
         image:
-          - name: ${{ env.SERVER_IMAGE_NAME }}
+          - name: citrineos-server
             context: ./Server
             dockerfile: ./Server/deploy.Dockerfile
-          - name: ${{ env.DIRECTUS_IMAGE_NAME }}
+            config: ''
+          - name: citrineos-directus
             context: ./DirectusExtensions
             dockerfile: ./DirectusExtensions/directus.Dockerfile
             config: ./Server/directus-env-config.cjs
@@ -51,7 +48,7 @@ jobs:
             ${{ matrix.image.context }}
 
       - name: Copy config file to Directus container
-        if: matrix.image.name == env.DIRECTUS_IMAGE_NAME
+        if: ${{ matrix.image.name == 'citrineos-directus' }}
         run: |
           container_id=$(docker create ${{ matrix.image.name }})
           docker cp ${{ matrix.image.config }} $container_id:/directus/config.cjs
