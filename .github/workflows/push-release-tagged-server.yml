@@ -16,22 +16,46 @@ jobs:
       packages: write
       contents: read
 
+    strategy:
+      matrix:
+        image:
+          - name: ${{ env.SERVER_IMAGE_NAME }}
+            context: ./Server
+            dockerfile: ./Server/deploy.Dockerfile
+          - name: ${{ env.DIRECTUS_IMAGE_NAME }}
+            context: ./DirectusExtensions
+            dockerfile: ./DirectusExtensions/directus.Dockerfile
+            config: ./Server/directus-env-config.cjs
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Server image
-        run: docker build . --file ./Server/deploy.Dockerfile --tag SERVER_IMAGE_NAME
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
-      - name: Build Directus image
-        run: docker build . --file ./DirectusExtensions/directus.Dockerfile --tag $DIRECTUS_IMAGE_NAME
-      - name: Copy config file to Directus container
+      - name: Build image
         run: |
-          container_id=$(docker create $DIRECTUS_IMAGE_NAME)
-          docker cp ./Server/directus-env-config.cjs $container_id:/directus/config.cjs
-          docker commit $container_id $DIRECTUS_IMAGE_NAME
+          docker build \
+            --file ${{ matrix.image.dockerfile }} \
+            --tag ${{ matrix.image.name }} \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache \
+            ${{ matrix.image.context }}
+
+      - name: Copy config file to Directus container
+        if: matrix.image.name == env.DIRECTUS_IMAGE_NAME
+        run: |
+          container_id=$(docker create ${{ matrix.image.name }})
+          docker cp ${{ matrix.image.config }} $container_id:/directus/config.cjs
+          docker commit $container_id ${{ matrix.image.name }}
           docker rm $container_id
 
       - name: Log in to GitHub Container Registry
@@ -43,7 +67,7 @@ jobs:
 
       - name: Push image
         run: |
-          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/${SERVER_IMAGE_NAME}
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/${{ matrix.image.name }}
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
 
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
@@ -51,23 +75,7 @@ jobs:
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
 
-          docker tag $SERVER_IMAGE_NAME $IMAGE_ID:$VERSION
-          docker tag $SERVER_IMAGE_NAME $IMAGE_ID:latest
+          docker tag ${{ matrix.image.name }} $IMAGE_ID:$VERSION
+          docker tag ${{ matrix.image.name }} $IMAGE_ID:latest
           docker push $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:latest
-          docker push $IMAGE_ID:latest
-
-      - name: Push Directus image
-        run: |
-          DIRECTUS_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/${DIRECTUS_IMAGE_NAME}
-          DIRECTUS_IMAGE_ID=$(echo $DIRECTUS_IMAGE_ID | tr '[A-Z]' '[a-z]')
-
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          VERSION=$(echo $VERSION | sed -e 's/^v//')
-          echo DIRECTUS_IMAGE_ID=$DIRECTUS_IMAGE_ID
-          echo VERSION=$VERSION
-
-          docker tag $DIRECTUS_IMAGE_NAME $DIRECTUS_IMAGE_ID:$VERSION
-          docker tag $DIRECTUS_IMAGE_NAME $DIRECTUS_IMAGE_ID:latest
-          docker push $DIRECTUS_IMAGE_ID:$VERSION
-          docker push $DIRECTUS_IMAGE_ID:latest
