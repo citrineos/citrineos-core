@@ -38,11 +38,15 @@ import {
   ILocationRepository,
   sequelize,
 } from '@citrineos/data';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import {
+  CertificateAuthorityService,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  Timer,
+} from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import * as forge from 'node-forge';
 import { ILogObj, Logger } from 'tslog';
-import { CertificateAuthorityService } from './service/CertificateAuthority';
 
 /**
  * Component that handles provisioning related messages.
@@ -100,6 +104,9 @@ export class CertificatesModule extends AbstractModule {
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
    * represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
+   *
+   * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
+   * type {@link CertificateAuthorityService} which handles certificate authority operations.
    */
   constructor(
     config: SystemConfig,
@@ -110,6 +117,7 @@ export class CertificatesModule extends AbstractModule {
     deviceModelRepository?: IDeviceModelRepository,
     certificateRepository?: ICertificateRepository,
     locationRepository?: ILocationRepository,
+    certificateAuthorityService?: CertificateAuthorityService,
   ) {
     super(
       config,
@@ -138,11 +146,9 @@ export class CertificatesModule extends AbstractModule {
     this._locationRepository =
       locationRepository || new sequelize.LocationRepository(config, logger);
 
-    this._certificateAuthorityService = new CertificateAuthorityService(
-      config,
-      cache,
-      this._logger,
-    );
+    this._certificateAuthorityService =
+      certificateAuthorityService ||
+      new CertificateAuthorityService(config, cache, this._logger);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -153,10 +159,6 @@ export class CertificatesModule extends AbstractModule {
 
   get certificateRepository(): ICertificateRepository {
     return this._certificateRepository;
-  }
-
-  get locationRepository(): ILocationRepository {
-    return this._locationRepository;
   }
 
   /**

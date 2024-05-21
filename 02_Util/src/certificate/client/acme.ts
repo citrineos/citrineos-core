@@ -55,13 +55,14 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       }
     });
 
-    this._email = config.modules.certificates?.chargingStationCA.acme?.email;
+    this._email =
+      config.util.certificateAuthority.chargingStationCA.acme?.email;
     const accountKey = fs.readFileSync(
-      config.modules.certificates?.chargingStationCA?.acme
+      config.util.certificateAuthority.chargingStationCA?.acme
         ?.accountKeyFilePath as string,
     );
     const acmeEnv: string | undefined =
-      config.modules.certificates?.chargingStationCA?.acme?.env;
+      config.util.certificateAuthority.chargingStationCA?.acme?.env;
     if (!acmeEnv && acmeEnv === 'production') {
       this._directoryUrl = acme.directory.letsencrypt.production;
     }

@@ -37,50 +37,6 @@ export const systemConfigInputSchema = z.object({
         endpointPrefix: z.string().default(EventGroup.Certificates).optional(),
         host: z.string().default('localhost').optional(),
         port: z.number().int().positive().default(8081).optional(),
-        v2gCA: z
-          .object({
-            name: z.enum(['hubject']).default('hubject'),
-            hubject: z
-              .object({
-                baseUrl: z
-                  .string()
-                  .default('https://open.plugncharge-test.hubject.com'),
-                tokenUrl: z
-                  .string()
-                  .default(
-                    'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
-                  ),
-                isoVersion: z
-                  .enum(['ISO15118-2', 'ISO15118-20'])
-                  .default('ISO15118-2'),
-              })
-              .optional(),
-          })
-          .refine((obj) => {
-            if (obj.name === 'hubject') {
-              return obj.hubject;
-            } else {
-              return false;
-            }
-          }),
-        chargingStationCA: z
-          .object({
-            name: z.enum(['acme']).default('acme'),
-            acme: z
-              .object({
-                env: z.enum(['staging', 'production']).default('staging'),
-                accountKeyFilePath: z.string(),
-                email: z.string(),
-              })
-              .optional(),
-          })
-          .refine((obj) => {
-            if (obj.name === 'acme') {
-              return obj.acme;
-            } else {
-              return false;
-            }
-          }),
       })
       .optional(),
     configuration: z.object({
@@ -212,6 +168,52 @@ export const systemConfigInputSchema = z.object({
     networkConnection: z.object({
       websocketServers: z.array(websocketServerInputSchema.optional()),
     }),
+    certificateAuthority: z.object({
+      v2gCA: z
+        .object({
+          name: z.enum(['hubject']).default('hubject'),
+          hubject: z
+            .object({
+              baseUrl: z
+                .string()
+                .default('https://open.plugncharge-test.hubject.com'),
+              tokenUrl: z
+                .string()
+                .default(
+                  'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
+                ),
+              isoVersion: z
+                .enum(['ISO15118-2', 'ISO15118-20'])
+                .default('ISO15118-2'),
+            })
+            .optional(),
+        })
+        .refine((obj) => {
+          if (obj.name === 'hubject') {
+            return obj.hubject;
+          } else {
+            return false;
+          }
+        }),
+      chargingStationCA: z
+        .object({
+          name: z.enum(['acme']).default('acme'),
+          acme: z
+            .object({
+              env: z.enum(['staging', 'production']).default('staging'),
+              accountKeyFilePath: z.string(),
+              email: z.string(),
+            })
+            .optional(),
+        })
+        .refine((obj) => {
+          if (obj.name === 'acme') {
+            return obj.acme;
+          } else {
+            return false;
+          }
+        }),
+    }),
   }),
   logLevel: z.number().min(0).max(6).default(0).optional(),
   maxCallLengthSeconds: z.number().int().positive().default(5).optional(),
@@ -266,42 +268,6 @@ export const systemConfigSchema = z
           endpointPrefix: z.string(),
           host: z.string().optional(),
           port: z.number().int().positive().optional(),
-          v2gCA: z
-            .object({
-              name: z.enum(['hubject']),
-              hubject: z
-                .object({
-                  baseUrl: z.string(),
-                  tokenUrl: z.string(),
-                  isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']),
-                })
-                .optional(),
-            })
-            .refine((obj) => {
-              if (obj.name === 'hubject') {
-                return obj.hubject;
-              } else {
-                return false;
-              }
-            }),
-          chargingStationCA: z
-            .object({
-              name: z.enum(['acme']),
-              acme: z
-                .object({
-                  env: z.enum(['staging', 'production']),
-                  accountKeyFilePath: z.string(),
-                  email: z.string(),
-                })
-                .optional(),
-            })
-            .refine((obj) => {
-              if (obj.name === 'acme') {
-                return obj.acme;
-              } else {
-                return false;
-              }
-            }),
         })
         .optional(),
       evdriver: z.object({
@@ -450,6 +416,44 @@ export const systemConfigSchema = z
             }
           });
         }),
+      }),
+      certificateAuthority: z.object({
+        v2gCA: z
+          .object({
+            name: z.enum(['hubject']),
+            hubject: z
+              .object({
+                baseUrl: z.string(),
+                tokenUrl: z.string(),
+                isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']),
+              })
+              .optional(),
+          })
+          .refine((obj) => {
+            if (obj.name === 'hubject') {
+              return obj.hubject;
+            } else {
+              return false;
+            }
+          }),
+        chargingStationCA: z
+          .object({
+            name: z.enum(['acme']),
+            acme: z
+              .object({
+                env: z.enum(['staging', 'production']),
+                accountKeyFilePath: z.string(),
+                email: z.string(),
+              })
+              .optional(),
+          })
+          .refine((obj) => {
+            if (obj.name === 'acme') {
+              return obj.acme;
+            } else {
+              return false;
+            }
+          }),
       }),
     }),
     logLevel: z.number().min(0).max(6),

@@ -3,21 +3,30 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
+  AuthorizeCertificateStatusEnumType,
   CertificateSigningUseEnumType,
   ICache,
   InstallCertificateUseEnumType,
+  OCSPRequestDataType,
   SystemConfig,
 } from '@citrineos/base';
 import {
   IChargingStationCertificateAuthorityClient,
   IV2GCertificateAuthorityClient,
-} from '../client/interface';
-import { Hubject } from '../client/hubject';
-import { Acme } from '../client/acme';
+} from './client/interface';
+import { Hubject } from './client/hubject';
+import { Acme } from './client/acme';
 import { ILogObj, Logger } from 'tslog';
 import * as pkijs from 'pkijs';
 import * as asn1js from 'asn1js';
 import { Certificate } from 'pkijs';
+import jsrsasign from 'jsrsasign';
+import X509 = jsrsasign.X509;
+import getOCSPResponseInfo = jsrsasign.KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo;
+import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
+import Request = jsrsasign.KJUR.asn1.ocsp.Request;
+import moment from 'moment';
+import {createPemBlock} from './CertificateUtil';
 
 export class CertificateAuthorityService {
   private readonly _v2gClient: IV2GCertificateAuthorityClient;
@@ -98,7 +107,7 @@ export class CertificateAuthorityService {
         const caCerts = await this._v2gClient.getCACertificates();
         const rootCACert = this._extractCertificateArrayFromPem(caCerts)?.pop();
         if (rootCACert) {
-          return this._createPemBlock(
+          return createPemBlock(
             'CERTIFICATE',
             Buffer.from(rootCACert.toSchema().toBER(false)).toString('base64'),
           );
@@ -127,6 +136,135 @@ export class CertificateAuthorityService {
     );
   }
 
+  /*
+   * Validate the certificate chain using real time OCSP check.
+   *
+   * @param certificateChainPem - certificate chain pem
+   * @return AuthorizeCertificateStatusEnumType
+   */
+  public async validateCertificateChainPem(
+    certificateChainPem: string,
+  ): Promise<AuthorizeCertificateStatusEnumType> {
+    const certificatePems: string[] =
+      this._parseCertificateChainPem(certificateChainPem);
+    if (certificatePems.length < 1) {
+      return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+    }
+
+    // Find the root certificate of the certificate chain
+    const rootCerts: string[] = await this._v2gClient.getRootCertificates();
+    const lastCertInChain = new X509();
+    lastCertInChain.readCertPEM(certificatePems[certificatePems.length - 1]);
+    let rootCertPem;
+    for (const rootCert of rootCerts) {
+      const root = new X509();
+      root.readCertPEM(rootCert);
+      if (
+        root.getSubjectString() === lastCertInChain.getIssuerString() &&
+        root.getExtSubjectKeyIdentifier().kid.hex ===
+          lastCertInChain.getExtAuthorityKeyIdentifier().kid.hex
+      ) {
+        rootCertPem = rootCert;
+        break;
+      }
+    }
+    if (!rootCertPem) {
+      this._logger.error(
+        `Cannot find root certificate for certificate ${lastCertInChain}`,
+      );
+      return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+    } else {
+      certificatePems.push(rootCertPem);
+    }
+
+    // OCSP validation for each certificate
+    for (let i = 0; i < certificatePems.length - 1; i++) {
+      const subjectCert = new X509();
+      subjectCert.readCertPEM(certificatePems[i]);
+
+      const notAfter = moment(subjectCert.getNotAfter(), 'YYMMDDHHmmssZ');
+      this._logger.debug(
+        `Contract Certificate notAfter: ${notAfter.toISOString()}`,
+      );
+      if (notAfter.isBefore(moment())) {
+        return AuthorizeCertificateStatusEnumType.CertificateExpired;
+      }
+
+      const ocspUrls = subjectCert.getExtAIAInfo()?.ocsp;
+      if (ocspUrls && ocspUrls.length > 0) {
+        const ocspRequest = new OCSPRequest({
+          reqList: [
+            {
+              issuerCert: certificatePems[i + 1],
+              subjectCert: certificatePems[i],
+            },
+          ],
+        });
+
+        this._logger.debug(`OCSP response URL: ${ocspUrls[0]}`);
+        const certStatus = await this._sendOCSPRequest(
+          ocspRequest,
+          ocspUrls[0],
+        );
+        if (certStatus === 'revoked') {
+          return AuthorizeCertificateStatusEnumType.CertificateRevoked;
+        } else if (certStatus !== 'good') {
+          return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+        }
+      }
+    }
+
+    return AuthorizeCertificateStatusEnumType.Accepted;
+  }
+
+  public async validateCertificateHashData(
+    ocspRequestData: OCSPRequestDataType[],
+  ): Promise<AuthorizeCertificateStatusEnumType> {
+    for (const reqData of ocspRequestData) {
+      const ocspRequest = new jsrsasign.KJUR.asn1.ocsp.Request({
+        alg: reqData.hashAlgorithm,
+        keyhash: reqData.issuerKeyHash,
+        namehash: reqData.issuerNameHash,
+        serial: reqData.serialNumber,
+      });
+
+      const certStatus = await this._sendOCSPRequest(
+        ocspRequest,
+        reqData.responderURL,
+      );
+      if (certStatus === 'revoked') {
+        return AuthorizeCertificateStatusEnumType.CertificateRevoked;
+      } else if (certStatus !== 'good') {
+        return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+      }
+    }
+
+    return AuthorizeCertificateStatusEnumType.Accepted;
+  }
+
+  private async _sendOCSPRequest(
+    ocspRequest: OCSPRequest | Request,
+    responderURL: string,
+  ): Promise<string> {
+    const response = await fetch(responderURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/ocsp-request',
+        Accept: 'application/ocsp-response',
+      },
+      body: ocspRequest.getEncodedHex(),
+    });
+
+    if (!response.ok) {
+      this._logger.error(
+        `Failed to fetch OCSP response: ${response.status} with error: ${await response.text()}`,
+      );
+    }
+
+    const ocspResponse = getOCSPResponseInfo(await response.text());
+    return ocspResponse.certStatus;
+  }
+
   /**
    * Create a certificate chain including leaf and sub CA certificates except for the root certificate.
    *
@@ -142,7 +280,7 @@ export class CertificateAuthorityService {
     // Add Cert
     const leafRaw = this._extractCertificateArrayFromPem(signedCert)?.[0];
     if (leafRaw) {
-      certificateChain += this._createPemBlock(
+      certificateChain += createPemBlock(
         'CERTIFICATE',
         Buffer.from(leafRaw.toSchema().toBER(false)).toString('base64'),
       );
@@ -158,7 +296,7 @@ export class CertificateAuthorityService {
     )?.slice(0, -1);
     chainWithoutRoot?.forEach((certItem) => {
       const cert = certItem as Certificate;
-      certificateChain += this._createPemBlock(
+      certificateChain += createPemBlock(
         'CERTIFICATE',
         Buffer.from(cert.toSchema().toBER(false)).toString('base64'),
       );
@@ -170,13 +308,13 @@ export class CertificateAuthorityService {
   private _instantiateV2GClient(
     config: SystemConfig,
   ): IV2GCertificateAuthorityClient {
-    switch (config.modules.certificates?.v2gCA.name) {
+    switch (config.util.certificateAuthority.v2gCA.name) {
       case 'hubject': {
         return new Hubject(config);
       }
       default: {
         throw new Error(
-          `Unsupported V2G CA: ${config.modules.certificates?.v2gCA.name}`,
+          `Unsupported V2G CA: ${config.util.certificateAuthority.v2gCA.name}`,
         );
       }
     }
@@ -187,21 +325,40 @@ export class CertificateAuthorityService {
     cache: ICache,
     logger?: Logger<ILogObj>,
   ): IChargingStationCertificateAuthorityClient {
-    switch (config.modules.certificates?.chargingStationCA.name) {
+    switch (config.util.certificateAuthority.chargingStationCA.name) {
       case 'acme': {
         return new Acme(config, cache, logger);
       }
       default: {
         throw new Error(
-          `Unsupported Charging Station CA: ${config.modules.certificates?.chargingStationCA.name}`,
+          `Unsupported Charging Station CA: ${config.util.certificateAuthority.chargingStationCA.name}`,
         );
       }
     }
   }
 
+  /*
+   * Parse the certificate chain pem and extract certificates
+   * @param pem - certificate chain pem containing multiple certificate blocks
+   * @return array of pkijs.Certificate
+   */
+  private _parseCertificateChainPem(pem: string): string[] {
+    const certs: string[] = [];
+
+    // Split the PEM into individual certificates
+    const pemCerts = pem.split('-----END CERTIFICATE-----\n');
+
+    // Parse each certificate
+    pemCerts.forEach((pemCert) => {
+      certs.push(pemCert + '-----END CERTIFICATE-----\n');
+    });
+
+    return certs;
+  }
+
   /**
    * Decode the pem and extract certificates
-   * @param pem - base64 encoded certificate without header and footer
+   * @param pem - base64 encoded certificate chain string without header and footer
    * @return array of pkijs.CertificateSetItem
    */
   private _extractCertificateArrayFromPem(
@@ -225,9 +382,5 @@ export class CertificateAuthorityService {
       .replace(/-----BEGIN CERTIFICATE REQUEST-----/, '')
       .replace(/-----END CERTIFICATE REQUEST-----/, '')
       .replace(/\n/g, '');
-  }
-
-  private _createPemBlock(type: string, content: string) {
-    return `-----BEGIN ${type}-----\n${content}\n-----END ${type}-----\n`;
   }
 }

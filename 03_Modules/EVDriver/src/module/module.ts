@@ -9,6 +9,7 @@ import {
   AsHandler,
   AttributeEnumType,
   AuthorizationStatusEnumType,
+  AuthorizeCertificateStatusEnumType,
   AuthorizeRequest,
   AuthorizeResponse,
   CallAction,
@@ -41,7 +42,12 @@ import {
   Tariff,
   VariableAttribute,
 } from '@citrineos/data';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import {
+  CertificateAuthorityService,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  Timer,
+} from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 
@@ -71,6 +77,8 @@ export class EVDriverModule extends AbstractModule {
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _tariffRepository: ITariffRepository;
 
+  private _certificateAuthorityService: CertificateAuthorityService;
+
   /**
    * This is the constructor function that initializes the {@link EVDriverModule}.
    *
@@ -98,6 +106,9 @@ export class EVDriverModule extends AbstractModule {
    * represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:tariffRepository} instance is
    * created and used.
+   *
+   * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
+   * type {@link CertificateAuthorityService} which handles certificate authority operations.
    */
   constructor(
     config: SystemConfig,
@@ -108,6 +119,7 @@ export class EVDriverModule extends AbstractModule {
     authorizeRepository?: IAuthorizationRepository,
     deviceModelRepository?: IDeviceModelRepository,
     tariffRepository?: ITariffRepository,
+    certificateAuthorityService?: CertificateAuthorityService,
   ) {
     super(
       config,
@@ -136,6 +148,10 @@ export class EVDriverModule extends AbstractModule {
     this._tariffRepository =
       tariffRepository || new sequelize.TariffRepository(config, logger);
 
+    this._certificateAuthorityService =
+      certificateAuthorityService ||
+      new CertificateAuthorityService(config, cache, logger);
+
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
@@ -152,21 +168,52 @@ export class EVDriverModule extends AbstractModule {
    */
 
   @AsHandler(CallAction.Authorize)
-  protected _handleAuthorize(
+  protected async _handleAuthorize(
     message: IMessage<AuthorizeRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('Authorize received:', message, props);
+    const request: AuthorizeRequest = message.payload;
+    const response: AuthorizeResponse = {
+      idTokenInfo: {
+        status: AuthorizationStatusEnumType.Unknown,
+        // TODO determine how/if to set personalMessage
+      },
+    };
+
+    // Validate Contract Certificates based on OCPP 2.0.1 Part 2 C07
+    // TODO - implement validation using cached OCSP data described in C07.FR.05
+    // Charger passes the contract certificate chain when it cannot validate,
+    // CSMS needs to do the validation in this case, see C07.FR.06
+    if (request.certificate) {
+      response.certificateStatus =
+        await this._certificateAuthorityService.validateCertificateChainPem(
+          request.certificate,
+        );
+    }
+    if (
+      request.iso15118CertificateHashData &&
+      request.iso15118CertificateHashData.length > 0
+    ) {
+      response.certificateStatus =
+        await this._certificateAuthorityService.validateCertificateHashData(
+          request.iso15118CertificateHashData,
+        );
+    }
+    if (
+      response.certificateStatus !== AuthorizeCertificateStatusEnumType.Accepted
+    ) {
+      this.sendCallResultWithMessage(message, response).then(
+        (messageConfirmation) => {
+          this._logger.debug('Authorize response sent:', messageConfirmation);
+        },
+      );
+      return;
+    }
 
     this._authorizeRepository
-      .readByQuery({ ...message.payload.idToken })
+      .readByQuery({ ...request.idToken })
       .then(async (authorization) => {
-        const response: AuthorizeResponse = {
-          idTokenInfo: {
-            status: AuthorizationStatusEnumType.Unknown,
-            // TODO determine how/if to set personalMessage
-          },
-        };
         if (authorization) {
           if (authorization.idTokenInfo) {
             // Extract DTO fields from sequelize Model<any, any> objects
