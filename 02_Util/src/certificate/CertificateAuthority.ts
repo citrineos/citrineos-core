@@ -17,8 +17,6 @@ import {
 import { Hubject } from './client/hubject';
 import { Acme } from './client/acme';
 import { ILogObj, Logger } from 'tslog';
-import * as pkijs from 'pkijs';
-import * as asn1js from 'asn1js';
 import { Certificate } from 'pkijs';
 import jsrsasign from 'jsrsasign';
 import X509 = jsrsasign.X509;
@@ -26,7 +24,12 @@ import getOCSPResponseInfo = jsrsasign.KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseIn
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 import moment from 'moment';
-import {createPemBlock} from './CertificateUtil';
+import {
+  createPemBlock,
+  extractCertificateArrayFromPem,
+  extractEncodedContentFromCSR,
+  parseCertificateChainPem,
+} from './CertificateUtil';
 
 export class CertificateAuthorityService {
   private readonly _v2gClient: IV2GCertificateAuthorityClient;
@@ -66,7 +69,7 @@ export class CertificateAuthorityService {
     switch (certificateType) {
       case CertificateSigningUseEnumType.V2GCertificate: {
         const signedCert = await this._v2gClient.getSignedCertificate(
-          this._extractEncodedContentFromCSR(csrString),
+          extractEncodedContentFromCSR(csrString),
         );
         const caCerts = await this._v2gClient.getCACertificates();
         return this._createCertificateChainWithoutRootCA(signedCert, caCerts);
@@ -105,7 +108,7 @@ export class CertificateAuthorityService {
     switch (certificateType) {
       case InstallCertificateUseEnumType.V2GRootCertificate: {
         const caCerts = await this._v2gClient.getCACertificates();
-        const rootCACert = this._extractCertificateArrayFromPem(caCerts)?.pop();
+        const rootCACert = extractCertificateArrayFromPem(caCerts)?.pop();
         if (rootCACert) {
           return createPemBlock(
             'CERTIFICATE',
@@ -146,7 +149,7 @@ export class CertificateAuthorityService {
     certificateChainPem: string,
   ): Promise<AuthorizeCertificateStatusEnumType> {
     const certificatePems: string[] =
-      this._parseCertificateChainPem(certificateChainPem);
+      parseCertificateChainPem(certificateChainPem);
     if (certificatePems.length < 1) {
       return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
     }
@@ -278,7 +281,7 @@ export class CertificateAuthorityService {
   ): string {
     let certificateChain = '';
     // Add Cert
-    const leafRaw = this._extractCertificateArrayFromPem(signedCert)?.[0];
+    const leafRaw = extractCertificateArrayFromPem(signedCert)?.[0];
     if (leafRaw) {
       certificateChain += createPemBlock(
         'CERTIFICATE',
@@ -291,9 +294,10 @@ export class CertificateAuthorityService {
     }
 
     // Add Chain without Root CA Certificate
-    const chainWithoutRoot = this._extractCertificateArrayFromPem(
-      caCerts,
-    )?.slice(0, -1);
+    const chainWithoutRoot = extractCertificateArrayFromPem(caCerts)?.slice(
+      0,
+      -1,
+    );
     chainWithoutRoot?.forEach((certItem) => {
       const cert = certItem as Certificate;
       certificateChain += createPemBlock(
@@ -335,52 +339,5 @@ export class CertificateAuthorityService {
         );
       }
     }
-  }
-
-  /*
-   * Parse the certificate chain pem and extract certificates
-   * @param pem - certificate chain pem containing multiple certificate blocks
-   * @return array of pkijs.Certificate
-   */
-  private _parseCertificateChainPem(pem: string): string[] {
-    const certs: string[] = [];
-
-    // Split the PEM into individual certificates
-    const pemCerts = pem.split('-----END CERTIFICATE-----\n');
-
-    // Parse each certificate
-    pemCerts.forEach((pemCert) => {
-      certs.push(pemCert + '-----END CERTIFICATE-----\n');
-    });
-
-    return certs;
-  }
-
-  /**
-   * Decode the pem and extract certificates
-   * @param pem - base64 encoded certificate chain string without header and footer
-   * @return array of pkijs.CertificateSetItem
-   */
-  private _extractCertificateArrayFromPem(
-    pem: string,
-  ): pkijs.CertificateSetItem[] | undefined {
-    const cmsSignedBuffer = Buffer.from(pem, 'base64');
-    const asn1 = asn1js.fromBER(cmsSignedBuffer);
-    const cmsContent = new pkijs.ContentInfo({ schema: asn1.result });
-    const cmsSigned = new pkijs.SignedData({ schema: cmsContent.content });
-    return cmsSigned.certificates;
-  }
-
-  /**
-   * extracts the base64-encoded content from a pem encoded csr
-   * @param csrPem
-   * @private
-   * @return {string} The parsed CSR or the original CSR if it cannot be parsed
-   */
-  private _extractEncodedContentFromCSR(csrPem: string): string {
-    return csrPem
-      .replace(/-----BEGIN CERTIFICATE REQUEST-----/, '')
-      .replace(/-----END CERTIFICATE REQUEST-----/, '')
-      .replace(/\n/g, '');
   }
 }

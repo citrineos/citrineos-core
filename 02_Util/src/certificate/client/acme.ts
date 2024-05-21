@@ -9,6 +9,10 @@ import { ILogObj, Logger } from 'tslog';
 import fs from 'fs';
 import forge from 'node-forge';
 import { Client } from 'acme-client';
+import {
+  createSignedCertificateFromCSR,
+  getSubCAForSigning,
+} from '../CertificateUtil';
 
 export class Acme implements IChargingStationCertificateAuthorityClient {
   private readonly _directoryUrl: string = acme.directory.letsencrypt.staging;
@@ -166,9 +170,9 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       clientConnection,
     ) as [string, string];
 
-    const subCACertPem: string = this._getSubCAForSigning(certChain);
+    const subCACertPem: string = getSubCAForSigning(certChain);
     const signedCertPem: string = forge.pki.certificateToPem(
-      this._createSignedCertificateFromCSR(
+      createSignedCertificateFromCSR(
         forge.pki.certificationRequestFromPem(csrString),
         forge.pki.certificateFromPem(subCACertPem),
         forge.pki.privateKeyFromPem(subCAPrivateKey),
@@ -191,83 +195,5 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     } else {
       this._logger.error(`Server ${serverId} not found in the map`);
     }
-  }
-
-  /**
-   * Retrieves sub CA certificate for signing from the provided certificate chain PEM string.
-   * The chain is in order: leaf cert, sub CA n ... sub CA 1
-   *
-   * @param {string} certChainPem - The PEM string containing the ordered CA certificates.
-   * @return {string} The sub CA certificate which is used for signing.
-   */
-  private _getSubCAForSigning(certChainPem: string): string {
-    const certsArray: string[] = certChainPem
-      .split('-----END CERTIFICATE-----')
-      .filter((cert) => cert.trim().length > 0);
-
-    if (certsArray.length < 2) {
-      // no certificate or only one leaf certificate
-      throw new Error('Sub CA certificate for signing not found');
-    }
-
-    // Remove leading new line and add "-----END CERTIFICATE-----" back because split removes it
-    return certsArray[1]
-      .replace(/^\n+/, '')
-      .concat('-----END CERTIFICATE-----');
-  }
-
-  /**
-   * Generate a serial number without leading 0s.
-   */
-  private _generateSerialNumber(): string {
-    const hexString = forge.util.bytesToHex(forge.random.getBytesSync(20));
-    return hexString.replace(/^0+/, '');
-  }
-
-  /**
-   * Create a signed certificate for the provided CSR using the sub CA certificate, and its private key.
-   *
-   * @param {forge.pki.CertificateSigningRequest} csr - The CSR that need to be signed.
-   * @param {forge.pki.Certificate} caCert - The sub CA certificate.
-   * @param {forge.pki.rsa.PrivateKey} caPrivateKey - The private key of the sub CA certificate.
-   * @return {forge.pki.Certificate} The signed certificate.
-   */
-  private _createSignedCertificateFromCSR(
-    csr: forge.pki.CertificateSigningRequest,
-    caCert: forge.pki.Certificate,
-    caPrivateKey: forge.pki.rsa.PrivateKey,
-  ): forge.pki.Certificate {
-    // Create the certificate
-    const certificate: forge.pki.Certificate = forge.pki.createCertificate();
-    certificate.publicKey = csr.publicKey as forge.pki.rsa.PublicKey;
-    certificate.serialNumber = this._generateSerialNumber(); // Unique serial number for the certificate
-    certificate.validity.notBefore = new Date();
-    certificate.validity.notAfter = caCert.validity.notAfter;
-    certificate.setIssuer(caCert.subject.attributes); // Set CA's attributes as issuer
-    certificate.setSubject(csr.subject.attributes);
-    certificate.setExtensions([
-      {
-        name: 'basicConstraints',
-        cA: false,
-      },
-      {
-        name: 'keyUsage',
-        critical: true,
-        digitalSignature: true,
-        keyEncipherment: true,
-      },
-      {
-        name: 'subjectKeyIdentifier',
-      },
-      {
-        name: 'authorityKeyIdentifier',
-        keyIdentifier: caCert.generateSubjectKeyIdentifier().getBytes(),
-      },
-    ]);
-
-    // Sign the certificate
-    certificate.sign(caPrivateKey);
-
-    return certificate;
   }
 }
