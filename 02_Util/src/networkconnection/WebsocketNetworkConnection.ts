@@ -235,15 +235,7 @@ export class WebsocketNetworkConnection {
       websocketServerConfig.securityProfile > 0
     ) {
       // Validate username/password from authorization header
-      // - The Authorization header is formatted as follows:
-      // AUTHORIZATION: Basic <Base64 encoded(<Configured ChargingStationId>:<Configured BasicAuthPassword>)>
-      const authHeader = req.headers.authorization;
-      const [username, password] = Buffer.from(
-        authHeader?.split(' ')[1] || '',
-        'base64',
-      )
-        .toString()
-        .split(':');
+      const {username, password} = this.extractCredentials(req);
       if (username && password) {
         if (
           !(await this._authenticator.authenticate(
@@ -260,7 +252,7 @@ export class WebsocketNetworkConnection {
       } else {
         this._logger.warn(
           'Auth header missing or incorrectly formatted: ',
-          JSON.stringify(authHeader),
+          JSON.stringify(req.headers.authorization),
         );
         this._rejectUpgradeUnauthorized(socket);
         return;
@@ -286,6 +278,34 @@ export class WebsocketNetworkConnection {
     wss.handleUpgrade(req, socket, head, (ws) => {
       wss.emit('connection', ws, req);
     });
+  }
+
+  /**
+   * Extracts credentials from the Authorization header.
+   *
+   * The Authorization header is formatted as follows:
+   * AUTHORIZATION: Basic <Base64 encoded(<Configured ChargingStationId>:<Configured BasicAuthPassword>)>
+   *
+   * @param {http.IncomingMessage} req - The request object.
+   * @returns Extracted credentials.
+   */
+  private extractCredentials(req: http.IncomingMessage): {username?: string; password?: string} {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Basic ')) {
+      return {};
+    }
+
+    const base64Credentials = authHeader.split(' ')[1];
+    const decodedCredentials = Buffer.from(base64Credentials, 'base64').toString();
+
+    const [username, password] = this.splitOnce(decodedCredentials, ':');
+
+    return {username, password};
+  }
+
+  private splitOnce(value: string, separator: string): [string, string?] {
+    const idx = value.indexOf(separator);
+    return idx == -1 ? [value] : [value.substring(0, idx), value.substring(idx + separator.length)];
   }
 
   /**
@@ -409,6 +429,11 @@ export class WebsocketNetworkConnection {
       this._cache.remove(identifier, CacheNamespace.Connections);
       this._identifierConnections.delete(identifier);
       this._router.deregisterConnection(identifier);
+    });
+
+    ws.on('ping', async (message) => {
+      this._logger.debug(`Ping received for ${identifier} with message ${JSON.stringify(message)}`);
+      ws.pong(message);
     });
 
     ws.on('pong', async () => {
