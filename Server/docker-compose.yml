@@ -31,15 +31,6 @@ services:
       timeout: 10s
       retries: 5
 
-  redis:
-    image: redis:latest
-    ports:
-      - '6379:6379'
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 3
   citrine:
     build:
       context: ..
@@ -98,8 +89,6 @@ services:
       amqp-broker:
         condition: service_healthy
       directus:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     ports:
       - 8080:8080
