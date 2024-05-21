@@ -15,11 +15,11 @@ jobs:
     strategy:
       matrix:
         image:
-          - name: citrineos-server
+          - name: server-citrine
             context: ./
             dockerfile: ./Server/deploy.Dockerfile
             config: ''
-          - name: citrineos-directus
+          - name: server-directus
             context: ./DirectusExtensions
             dockerfile: ./DirectusExtensions/directus.Dockerfile
             config: ./Server/directus-env-config.cjs
