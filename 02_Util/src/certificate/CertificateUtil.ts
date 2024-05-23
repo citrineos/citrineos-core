@@ -6,6 +6,8 @@ import * as pkijs from 'pkijs';
 import * as asn1js from 'asn1js';
 import forge from 'node-forge';
 import { Certificate } from '@citrineos/data';
+import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
+import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 
 export function createPemBlock(type: string, content: string) {
   return `-----BEGIN ${type}-----\n${content}\n-----END ${type}-----\n`;
@@ -242,4 +244,26 @@ export function createSignedCertificateFromCSR(
   certificate.sign(caPrivateKey);
 
   return certificate;
+}
+
+export async function sendOCSPRequest(
+  ocspRequest: OCSPRequest | Request,
+  responderURL: string,
+): Promise<string> {
+  const response = await fetch(responderURL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/ocsp-request',
+      Accept: 'application/ocsp-response',
+    },
+    body: ocspRequest.getEncodedHex(),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch OCSP response from ${responderURL}: ${response.status} with error: ${await response.text()}`,
+    );
+  }
+
+  return await response.text();
 }

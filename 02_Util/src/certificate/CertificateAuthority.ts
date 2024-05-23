@@ -22,13 +22,13 @@ import jsrsasign from 'jsrsasign';
 import X509 = jsrsasign.X509;
 import getOCSPResponseInfo = jsrsasign.KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
-import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 import moment from 'moment';
 import {
   createPemBlock,
   extractCertificateArrayFromPem,
   extractEncodedContentFromCSR,
   parseCertificateChainPem,
+  sendOCSPRequest,
 } from './CertificateUtil';
 
 export class CertificateAuthorityService {
@@ -164,8 +164,8 @@ export class CertificateAuthorityService {
         const root = new X509();
         root.readCertPEM(rootCert);
         if (
-            root.getSubjectString() === lastCertInChain.getIssuerString() &&
-            root.getExtSubjectKeyIdentifier().kid.hex ===
+          root.getSubjectString() === lastCertInChain.getIssuerString() &&
+          root.getExtSubjectKeyIdentifier().kid.hex ===
             lastCertInChain.getExtAuthorityKeyIdentifier().kid.hex
         ) {
           rootCertPem = rootCert;
@@ -174,7 +174,7 @@ export class CertificateAuthorityService {
       }
       if (!rootCertPem) {
         this._logger.error(
-            `Cannot find root certificate for certificate ${lastCertInChain}`,
+          `Cannot find root certificate for certificate ${lastCertInChain}`,
         );
         return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
       } else {
@@ -188,7 +188,7 @@ export class CertificateAuthorityService {
 
         const notAfter = moment(subjectCert.getNotAfter(), 'YYMMDDHHmmssZ');
         this._logger.debug(
-            `Contract Certificate notAfter: ${notAfter.toISOString()}`,
+          `Contract Certificate notAfter: ${notAfter.toISOString()}`,
         );
         if (notAfter.isBefore(moment())) {
           return AuthorizeCertificateStatusEnumType.CertificateExpired;
@@ -206,10 +206,9 @@ export class CertificateAuthorityService {
           });
 
           this._logger.debug(`OCSP response URL: ${ocspUrls[0]}`);
-          const ocspResponse = getOCSPResponseInfo(await this._sendOCSPRequest(
-              ocspRequest,
-              ocspUrls[0],
-          ));
+          const ocspResponse = getOCSPResponseInfo(
+            await sendOCSPRequest(ocspRequest, ocspUrls[0]),
+          );
           const certStatus = ocspResponse.certStatus;
           if (certStatus === 'revoked') {
             return AuthorizeCertificateStatusEnumType.CertificateRevoked;
@@ -239,10 +238,9 @@ export class CertificateAuthorityService {
       this._logger.debug(`OCSP request: ${ocspRequest.getEncodedHex()}`);
 
       try {
-        const ocspResponse = getOCSPResponseInfo(await this._sendOCSPRequest(
-            ocspRequest,
-            reqData.responderURL,
-        ));
+        const ocspResponse = getOCSPResponseInfo(
+          await sendOCSPRequest(ocspRequest, reqData.responderURL),
+        );
         const certStatus = ocspResponse.certStatus;
         if (certStatus === 'revoked') {
           return AuthorizeCertificateStatusEnumType.CertificateRevoked;
@@ -256,28 +254,6 @@ export class CertificateAuthorityService {
     }
 
     return AuthorizeCertificateStatusEnumType.Accepted;
-  }
-
-  private async _sendOCSPRequest(
-    ocspRequest: OCSPRequest | Request,
-    responderURL: string,
-  ): Promise<string> {
-    const response = await fetch(responderURL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/ocsp-request',
-        Accept: 'application/ocsp-response',
-      },
-      body: ocspRequest.getEncodedHex(),
-    });
-
-    if (!response.ok) {
-      this._logger.error(
-        `Failed to fetch OCSP response: ${response.status} with error: ${await response.text()}`,
-      );
-    }
-
-    return await response.text();
   }
 
   /**

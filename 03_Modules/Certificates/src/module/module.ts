@@ -47,6 +47,8 @@ import {
 import deasyncPromise from 'deasync-promise';
 import * as forge from 'node-forge';
 import { ILogObj, Logger } from 'tslog';
+import jsrsasign from 'jsrsasign';
+import { sendOCSPRequest } from '@citrineos/util/dist/certificate/CertificateUtil';
 
 /**
  * Component that handles provisioning related messages.
@@ -196,17 +198,34 @@ export class CertificatesModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.GetCertificateStatus)
-  protected _handleGetCertificateStatus(
+  protected async _handleGetCertificateStatus(
     message: IMessage<GetCertificateStatusRequest>,
     props?: HandlerProperties,
-  ): void {
-    this._logger.debug('GetCertificateStatus received:', message, props);
-
-    this._logger.error('GetCertificateStatus not implemented');
-    this.sendCallResultWithMessage(message, {
-      status: GetCertificateStatusEnumType.Failed,
-      statusInfo: { reasonCode: ErrorCode.NotImplemented },
-    } as GetCertificateStatusResponse);
+  ): Promise<void> {
+    this._logger.debug('GetCertificateStatusRequest received:', message, props);
+    const reqData = message.payload.ocspRequestData;
+    try {
+      const ocspRequest = new jsrsasign.KJUR.asn1.ocsp.Request({
+        alg: reqData.hashAlgorithm,
+        keyhash: reqData.issuerKeyHash,
+        namehash: reqData.issuerNameHash,
+        serial: reqData.serialNumber,
+      });
+      const ocspResponse = await sendOCSPRequest(
+        ocspRequest,
+        reqData.responderURL,
+      );
+      this.sendCallResultWithMessage(message, {
+        status: GetCertificateStatusEnumType.Accepted,
+        ocspResponse: ocspResponse,
+      } as GetCertificateStatusResponse);
+    } catch (error) {
+      this._logger.error(`GetCertificateStatus failed: ${error}`);
+      this.sendCallResultWithMessage(message, {
+        status: GetCertificateStatusEnumType.Failed,
+        statusInfo: { reasonCode: ErrorCode.GenericError },
+      } as GetCertificateStatusResponse);
+    }
   }
 
   @AsHandler(CallAction.SignCertificate)
