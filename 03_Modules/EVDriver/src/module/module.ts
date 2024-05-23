@@ -182,33 +182,37 @@ export class EVDriverModule extends AbstractModule {
     };
 
     // Validate Contract Certificates based on OCPP 2.0.1 Part 2 C07
-    // TODO - implement validation using cached OCSP data described in C07.FR.05
-    // Charger passes the contract certificate chain when it cannot validate,
-    // CSMS needs to do the validation in this case, see C07.FR.06
-    if (request.certificate) {
-      response.certificateStatus =
-        await this._certificateAuthorityService.validateCertificateChainPem(
-          request.certificate,
+    if (request.iso15118CertificateHashData || request.certificate) {
+      // TODO - implement validation using cached OCSP data described in C07.FR.05
+      if (
+        request.iso15118CertificateHashData &&
+        request.iso15118CertificateHashData.length > 0
+      ) {
+        response.certificateStatus =
+          await this._certificateAuthorityService.validateCertificateHashData(
+            request.iso15118CertificateHashData,
+          );
+      }
+      // If Charging Station is not able to validate a contract certificate,
+      // it SHALL pass the contract certificate chain to the CSMS in certificate attribute (in PEM
+      // format) of AuthorizeRequest for validation by CSMS, see C07.FR.06
+      if (request.certificate) {
+        response.certificateStatus =
+          await this._certificateAuthorityService.validateCertificateChainPem(
+            request.certificate,
+          );
+      }
+      if (
+        response.certificateStatus !==
+        AuthorizeCertificateStatusEnumType.Accepted
+      ) {
+        this.sendCallResultWithMessage(message, response).then(
+          (messageConfirmation) => {
+            this._logger.debug('Authorize response sent:', messageConfirmation);
+          },
         );
-    }
-    if (
-      request.iso15118CertificateHashData &&
-      request.iso15118CertificateHashData.length > 0
-    ) {
-      response.certificateStatus =
-        await this._certificateAuthorityService.validateCertificateHashData(
-          request.iso15118CertificateHashData,
-        );
-    }
-    if (
-      response.certificateStatus !== AuthorizeCertificateStatusEnumType.Accepted
-    ) {
-      this.sendCallResultWithMessage(message, response).then(
-        (messageConfirmation) => {
-          this._logger.debug('Authorize response sent:', messageConfirmation);
-        },
-      );
-      return;
+        return;
+      }
     }
 
     this._authorizeRepository

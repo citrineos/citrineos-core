@@ -141,7 +141,7 @@ export class Hubject implements IV2GCertificateAuthorityClient {
    * Retrieves all root certificates from Hubject.
    * Refer to https://hubject.stoplight.io/docs/open-plugncharge/fdc9bdfdd4fb2-get-all-root-certificates
    *
-   * @return {Promise<pkijs.Certificate[]>} Array of root certificate string without header and footer.
+   * @return {Promise<string[]>} Array of root certificate.
    */
   async getRootCertificates(): Promise<string[]> {
     const url = `${this._baseUrl}/v1/root/rootCerts`;

@@ -154,67 +154,73 @@ export class CertificateAuthorityService {
       return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
     }
 
-    // Find the root certificate of the certificate chain
-    const rootCerts: string[] = await this._v2gClient.getRootCertificates();
-    const lastCertInChain = new X509();
-    lastCertInChain.readCertPEM(certificatePems[certificatePems.length - 1]);
-    let rootCertPem;
-    for (const rootCert of rootCerts) {
-      const root = new X509();
-      root.readCertPEM(rootCert);
-      if (
-        root.getSubjectString() === lastCertInChain.getIssuerString() &&
-        root.getExtSubjectKeyIdentifier().kid.hex ===
-          lastCertInChain.getExtAuthorityKeyIdentifier().kid.hex
-      ) {
-        rootCertPem = rootCert;
-        break;
-      }
-    }
-    if (!rootCertPem) {
-      this._logger.error(
-        `Cannot find root certificate for certificate ${lastCertInChain}`,
-      );
-      return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
-    } else {
-      certificatePems.push(rootCertPem);
-    }
-
-    // OCSP validation for each certificate
-    for (let i = 0; i < certificatePems.length - 1; i++) {
-      const subjectCert = new X509();
-      subjectCert.readCertPEM(certificatePems[i]);
-
-      const notAfter = moment(subjectCert.getNotAfter(), 'YYMMDDHHmmssZ');
-      this._logger.debug(
-        `Contract Certificate notAfter: ${notAfter.toISOString()}`,
-      );
-      if (notAfter.isBefore(moment())) {
-        return AuthorizeCertificateStatusEnumType.CertificateExpired;
-      }
-
-      const ocspUrls = subjectCert.getExtAIAInfo()?.ocsp;
-      if (ocspUrls && ocspUrls.length > 0) {
-        const ocspRequest = new OCSPRequest({
-          reqList: [
-            {
-              issuerCert: certificatePems[i + 1],
-              subjectCert: certificatePems[i],
-            },
-          ],
-        });
-
-        this._logger.debug(`OCSP response URL: ${ocspUrls[0]}`);
-        const certStatus = await this._sendOCSPRequest(
-          ocspRequest,
-          ocspUrls[0],
-        );
-        if (certStatus === 'revoked') {
-          return AuthorizeCertificateStatusEnumType.CertificateRevoked;
-        } else if (certStatus !== 'good') {
-          return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+    try {
+      // Find the root certificate of the certificate chain
+      const rootCerts: string[] = await this._v2gClient.getRootCertificates();
+      const lastCertInChain = new X509();
+      lastCertInChain.readCertPEM(certificatePems[certificatePems.length - 1]);
+      let rootCertPem;
+      for (const rootCert of rootCerts) {
+        const root = new X509();
+        root.readCertPEM(rootCert);
+        if (
+            root.getSubjectString() === lastCertInChain.getIssuerString() &&
+            root.getExtSubjectKeyIdentifier().kid.hex ===
+            lastCertInChain.getExtAuthorityKeyIdentifier().kid.hex
+        ) {
+          rootCertPem = rootCert;
+          break;
         }
       }
+      if (!rootCertPem) {
+        this._logger.error(
+            `Cannot find root certificate for certificate ${lastCertInChain}`,
+        );
+        return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+      } else {
+        certificatePems.push(rootCertPem);
+      }
+
+      // OCSP validation for each certificate
+      for (let i = 0; i < certificatePems.length - 1; i++) {
+        const subjectCert = new X509();
+        subjectCert.readCertPEM(certificatePems[i]);
+
+        const notAfter = moment(subjectCert.getNotAfter(), 'YYMMDDHHmmssZ');
+        this._logger.debug(
+            `Contract Certificate notAfter: ${notAfter.toISOString()}`,
+        );
+        if (notAfter.isBefore(moment())) {
+          return AuthorizeCertificateStatusEnumType.CertificateExpired;
+        }
+
+        const ocspUrls = subjectCert.getExtAIAInfo()?.ocsp;
+        if (ocspUrls && ocspUrls.length > 0) {
+          const ocspRequest = new OCSPRequest({
+            reqList: [
+              {
+                issuerCert: certificatePems[i + 1],
+                subjectCert: certificatePems[i],
+              },
+            ],
+          });
+
+          this._logger.debug(`OCSP response URL: ${ocspUrls[0]}`);
+          const ocspResponse = getOCSPResponseInfo(await this._sendOCSPRequest(
+              ocspRequest,
+              ocspUrls[0],
+          ));
+          const certStatus = ocspResponse.certStatus;
+          if (certStatus === 'revoked') {
+            return AuthorizeCertificateStatusEnumType.CertificateRevoked;
+          } else if (certStatus !== 'good') {
+            return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+          }
+        }
+      }
+    } catch (error) {
+      this._logger.error(`Failed to validate certificate chain: ${error}`);
+      return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
     }
 
     return AuthorizeCertificateStatusEnumType.Accepted;
@@ -230,14 +236,21 @@ export class CertificateAuthorityService {
         namehash: reqData.issuerNameHash,
         serial: reqData.serialNumber,
       });
+      this._logger.debug(`OCSP request: ${ocspRequest.getEncodedHex()}`);
 
-      const certStatus = await this._sendOCSPRequest(
-        ocspRequest,
-        reqData.responderURL,
-      );
-      if (certStatus === 'revoked') {
-        return AuthorizeCertificateStatusEnumType.CertificateRevoked;
-      } else if (certStatus !== 'good') {
+      try {
+        const ocspResponse = getOCSPResponseInfo(await this._sendOCSPRequest(
+            ocspRequest,
+            reqData.responderURL,
+        ));
+        const certStatus = ocspResponse.certStatus;
+        if (certStatus === 'revoked') {
+          return AuthorizeCertificateStatusEnumType.CertificateRevoked;
+        } else if (certStatus !== 'good') {
+          return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+        }
+      } catch (error) {
+        this._logger.error(`Failed to fetch OCSP response: ${error}`);
         return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
       }
     }
@@ -264,8 +277,7 @@ export class CertificateAuthorityService {
       );
     }
 
-    const ocspResponse = getOCSPResponseInfo(await response.text());
-    return ocspResponse.certStatus;
+    return await response.text();
   }
 
   /**
