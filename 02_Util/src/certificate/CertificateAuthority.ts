@@ -5,7 +5,6 @@
 import {
   AuthorizeCertificateStatusEnumType,
   CertificateSigningUseEnumType,
-  ICache,
   InstallCertificateUseEnumType,
   OCSPRequestDataType,
   SystemConfig,
@@ -25,25 +24,32 @@ import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 import moment from 'moment';
 import {
   createPemBlock,
-  extractCertificateArrayFromPem,
+  dateTimeFormat,
+  extractCertificateArrayFromEncodedString,
   extractEncodedContentFromCSR,
   parseCertificateChainPem,
   sendOCSPRequest,
 } from './CertificateUtil';
+import * as pkijs from 'pkijs';
+import { Crypto } from '@peculiar/webcrypto';
+
+const cryptoEngine = new pkijs.CryptoEngine({
+  crypto: new Crypto(),
+});
+pkijs.setEngine('crypto', cryptoEngine as pkijs.ICryptoEngine);
 
 export class CertificateAuthorityService {
   private readonly _v2gClient: IV2GCertificateAuthorityClient;
   private readonly _chargingStationClient: IChargingStationCertificateAuthorityClient;
   private readonly _logger: Logger<ILogObj>;
 
-  constructor(config: SystemConfig, cache: ICache, logger?: Logger<ILogObj>) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
 
     this._chargingStationClient = this._instantiateChargingStationClient(
       config,
-      cache,
       this._logger,
     );
     this._v2gClient = this._instantiateV2GClient(config);
@@ -75,10 +81,7 @@ export class CertificateAuthorityService {
         return this._createCertificateChainWithoutRootCA(signedCert, caCerts);
       }
       case CertificateSigningUseEnumType.ChargingStationCertificate: {
-        return await this._chargingStationClient.getCertificateChain(
-          csrString,
-          stationId,
-        );
+        return await this._chargingStationClient.getCertificateChain(csrString);
       }
       default: {
         throw new Error(`Unsupported certificate type: ${certificateType}`);
@@ -108,7 +111,8 @@ export class CertificateAuthorityService {
     switch (certificateType) {
       case InstallCertificateUseEnumType.V2GRootCertificate: {
         const caCerts = await this._v2gClient.getCACertificates();
-        const rootCACert = extractCertificateArrayFromPem(caCerts)?.pop();
+        const rootCACert =
+          extractCertificateArrayFromEncodedString(caCerts)?.pop();
         if (rootCACert) {
           return createPemBlock(
             'CERTIFICATE',
@@ -186,7 +190,7 @@ export class CertificateAuthorityService {
         const subjectCert = new X509();
         subjectCert.readCertPEM(certificatePems[i]);
 
-        const notAfter = moment(subjectCert.getNotAfter(), 'YYMMDDHHmmssZ');
+        const notAfter = moment(subjectCert.getNotAfter(), dateTimeFormat);
         this._logger.debug(
           `Contract Certificate notAfter: ${notAfter.toISOString()}`,
         );
@@ -269,7 +273,7 @@ export class CertificateAuthorityService {
   ): string {
     let certificateChain = '';
     // Add Cert
-    const leafRaw = extractCertificateArrayFromPem(signedCert)?.[0];
+    const leafRaw = extractCertificateArrayFromEncodedString(signedCert)?.[0];
     if (leafRaw) {
       certificateChain += createPemBlock(
         'CERTIFICATE',
@@ -282,10 +286,9 @@ export class CertificateAuthorityService {
     }
 
     // Add Chain without Root CA Certificate
-    const chainWithoutRoot = extractCertificateArrayFromPem(caCerts)?.slice(
-      0,
-      -1,
-    );
+    const chainWithoutRoot = extractCertificateArrayFromEncodedString(
+      caCerts,
+    )?.slice(0, -1);
     chainWithoutRoot?.forEach((certItem) => {
       const cert = certItem as Certificate;
       certificateChain += createPemBlock(
@@ -314,12 +317,11 @@ export class CertificateAuthorityService {
 
   private _instantiateChargingStationClient(
     config: SystemConfig,
-    cache: ICache,
     logger?: Logger<ILogObj>,
   ): IChargingStationCertificateAuthorityClient {
     switch (config.util.certificateAuthority.chargingStationCA.name) {
       case 'acme': {
-        return new Acme(config, cache, logger);
+        return new Acme(config, logger);
       }
       default: {
         throw new Error(

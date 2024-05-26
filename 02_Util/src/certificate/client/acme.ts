@@ -3,15 +3,14 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { IChargingStationCertificateAuthorityClient } from './interface';
-import { CacheNamespace, ICache, SystemConfig } from '@citrineos/base';
+import { SystemConfig } from '@citrineos/base';
 import * as acme from 'acme-client';
 import { ILogObj, Logger } from 'tslog';
 import fs from 'fs';
-import forge from 'node-forge';
 import { Client } from 'acme-client';
 import {
   createSignedCertificateFromCSR,
-  getSubCAForSigning,
+  parseCertificateChainPem,
 } from '../CertificateUtil';
 
 export class Acme implements IChargingStationCertificateAuthorityClient {
@@ -25,15 +24,12 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
   private _securityCertChainKeyMap: Map<string, [string, string]> = new Map();
 
   private _client: Client | undefined;
-  private _cache: ICache;
   private _logger: Logger<ILogObj>;
 
-  constructor(config: SystemConfig, cache: ICache, logger?: Logger<ILogObj>) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
-
-    this._cache = cache;
 
     config.util.networkConnection.websocketServers.forEach((server) => {
       if (server.securityProfile === 3) {
@@ -145,41 +141,36 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
   }
 
   /**
-   * Get sub CA from the certificate chain based on the station ID.
+   * Get sub CA from the certificate chain.
    * Use it to sign certificate based on the CSR string.
    *
    * @param {string} csrString - The Certificate Signing Request (CSR) string.
-   * @param {string} [stationId] - The station ID.
    * @return {Promise<string>} - The signed certificate followed by sub CA in PEM format.
    */
-  async getCertificateChain(
-    csrString: string,
-    stationId: string,
-  ): Promise<string> {
-    const clientConnection: string = (await this._cache.get(
-      stationId,
-      CacheNamespace.Connections,
-    )) as string;
-
-    if (!this._securityCertChainKeyMap.has(clientConnection)) {
-      throw new Error(
-        `Cannot find tls certificate chain and sub CA key with serverId  ${clientConnection}`,
-      );
-    }
-    const [certChain, subCAPrivateKey] = this._securityCertChainKeyMap.get(
-      clientConnection,
-    ) as [string, string];
-
-    const subCACertPem: string = getSubCAForSigning(certChain);
-    const signedCertPem: string = forge.pki.certificateToPem(
-      createSignedCertificateFromCSR(
-        forge.pki.certificationRequestFromPem(csrString),
-        forge.pki.certificateFromPem(subCACertPem),
-        forge.pki.privateKeyFromPem(subCAPrivateKey),
-      ),
+  async getCertificateChain(csrString: string): Promise<string> {
+    const [serverId, [certChain, subCAPrivateKey]] =
+      this._securityCertChainKeyMap.entries().next().value;
+    this._logger.debug(
+      `Found certificate chain in server ${serverId}: ${certChain}`,
     );
 
-    return signedCertPem.replace(/\r/g, '') + subCACertPem;
+    const certChainArray: string[] = parseCertificateChainPem(certChain);
+    if (certChainArray.length < 2) {
+      throw new Error(
+        `The size of the chain is ${certChainArray.length}. Sub CA certificate for signing not found`,
+      );
+    }
+    this._logger.info(`Found Sub CA certificate: ${certChainArray[1]}`);
+
+    const signedCertPem: string = createSignedCertificateFromCSR(
+      csrString,
+      certChainArray[1],
+      subCAPrivateKey,
+    ).getPEM();
+
+    // Generate and return certificate chain for signed certificate
+    certChainArray[0] = signedCertPem.replace(/\n+$/, '');
+    return certChainArray.join('\n');
   }
 
   updateCertificateChainKeyMap(
@@ -192,6 +183,9 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
         certificateChain,
         privateKey,
       ]);
+      this._logger.info(
+        `Updated certificate chain key map for server ${serverId}`,
+      );
     } else {
       this._logger.error(`Server ${serverId} not found in the map`);
     }

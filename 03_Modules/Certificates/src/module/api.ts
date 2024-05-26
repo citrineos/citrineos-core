@@ -26,24 +26,26 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { ICertificatesModuleApi } from './interface';
 import { CertificatesModule } from './module';
-import { WebsocketNetworkConnection } from '@citrineos/util';
-import {
-  Certificate,
-  GenerateCertificateChainRequest,
-  GenerateCertificateChainSchema,
-  TlsCertificatesRequest,
-  TlsCertificateSchema,
-  UpdateTlsCertificateQuerySchema,
-  UpdateTlsCertificateQueryString,
-  InstallRootCertificateSchema,
-  InstallRootCertificateRequest,
-} from '@citrineos/data';
-import fs from 'fs';
-import * as forge from 'node-forge';
 import {
   generateCertificate,
-  generateSerialNumber,
-} from '@citrineos/util/dist/certificate/CertificateUtil';
+  generateCSR,
+  WebsocketNetworkConnection,
+} from '@citrineos/util';
+import {
+  Certificate,
+  CountryNameEnumType,
+  GenerateCertificateChainRequest,
+  GenerateCertificateChainSchema,
+  InstallRootCertificateRequest,
+  InstallRootCertificateSchema,
+  SignatureAlgorithmEnumType,
+  TlsCertificateSchema,
+  TlsCertificatesRequest,
+  UpdateTlsCertificateQuerySchema,
+  UpdateTlsCertificateQueryString,
+} from '@citrineos/data';
+import fs from 'fs';
+import moment from 'moment';
 
 const enum PemType {
   Root = 'Root',
@@ -246,7 +248,7 @@ export class CertificatesModuleApi
     let certificateFromReq = new Certificate();
     certificateFromReq.serialNumber = certRequest.serialNumber
       ? certRequest.serialNumber
-      : generateSerialNumber();
+      : moment().valueOf();
     certificateFromReq.keyLength = certRequest.keyLength
       ? certRequest.keyLength
       : 2048;
@@ -259,14 +261,21 @@ export class CertificatesModuleApi
       defaultValidityDate.setFullYear(defaultValidityDate.getFullYear() + 1);
       certificateFromReq.validBefore = defaultValidityDate.toISOString();
     }
+    certificateFromReq.countryName = certRequest.countryName
+      ? certRequest.countryName
+      : CountryNameEnumType.US;
+    certificateFromReq.signatureAlgorithm = certRequest.signatureAlgorithm
+      ? certRequest.signatureAlgorithm
+      : SignatureAlgorithmEnumType.ECDSA;
+    certificateFromReq.isCA = true;
+    certificateFromReq.pathLen = certRequest.pathLen ? certRequest.pathLen : 1;
 
     let responseBody: Certificate[];
     if (certRequest.selfSigned) {
       // Generate self-signed root CA certificate
       const [rootCertificatePem, rootPrivateKeyPem] = generateCertificate(
         certificateFromReq,
-        true,
-        1,
+        this._logger,
       );
       certificateFromReq = await this._storeCertificateAndKey(
         certificateFromReq,
@@ -278,16 +287,19 @@ export class CertificatesModuleApi
 
       // Generate sub CA certificate
       let subCertificate: Certificate = new Certificate();
-      subCertificate.serialNumber = generateSerialNumber();
+      subCertificate.serialNumber = certificateFromReq.serialNumber + 1;
       subCertificate.keyLength = certificateFromReq.keyLength;
       subCertificate.organizationName = certificateFromReq.organizationName;
       subCertificate.commonName = certRequest.commonName + ` ${PemType.SubCA}`;
       subCertificate.validBefore = certificateFromReq.validBefore;
       subCertificate.signedBy = certificateFromReq.id;
+      subCertificate.countryName = certificateFromReq.countryName;
+      subCertificate.signatureAlgorithm = certificateFromReq.signatureAlgorithm;
+      subCertificate.isCA = true;
+      subCertificate.pathLen = 0;
       const [subCertificatePem, subPrivateKeyPem] = generateCertificate(
         subCertificate,
-        true,
-        0,
+        this._logger,
         rootPrivateKeyPem,
         rootCertificatePem,
       );
@@ -301,16 +313,18 @@ export class CertificatesModuleApi
 
       // Generate leaf certificate
       let leafCertificate: Certificate = new Certificate();
-      leafCertificate.serialNumber = generateSerialNumber();
+      leafCertificate.serialNumber = subCertificate.serialNumber + 1;
       leafCertificate.keyLength = subCertificate.keyLength;
       leafCertificate.organizationName = subCertificate.organizationName;
       leafCertificate.commonName = certRequest.commonName;
       leafCertificate.validBefore = subCertificate.validBefore;
       leafCertificate.signedBy = subCertificate.id;
+      leafCertificate.countryName = subCertificate.countryName;
+      leafCertificate.signatureAlgorithm = subCertificate.signatureAlgorithm;
+      leafCertificate.isCA = false;
       const [leafCertificatePem, leafPrivateKeyPem] = generateCertificate(
         leafCertificate,
-        false,
-        undefined,
+        this._logger,
         subPrivateKeyPem,
         subCertificatePem,
       );
@@ -325,6 +339,9 @@ export class CertificatesModuleApi
       responseBody = [leafCertificate, subCertificate, certificateFromReq];
     } else {
       // Generate sub CA certificate and private key singed by external CA server
+      // commonName should be a valid domain name
+      certificateFromReq.commonName = certRequest.commonName;
+      certificateFromReq.pathLen = 0;
       const [certificatePem, privateKeyPem] =
         await this._generateSubCACertificateSignedByCAServer(
           certificateFromReq,
@@ -339,16 +356,20 @@ export class CertificatesModuleApi
 
       // Generate leaf certificate
       let leafCertificate: Certificate = new Certificate();
-      leafCertificate.serialNumber = generateSerialNumber();
+      leafCertificate.serialNumber = certificateFromReq.serialNumber + 1;
       leafCertificate.keyLength = certificateFromReq.keyLength;
       leafCertificate.organizationName = certificateFromReq.organizationName;
       leafCertificate.commonName = certRequest.commonName;
       leafCertificate.validBefore = certificateFromReq.validBefore;
       leafCertificate.signedBy = certificateFromReq.id;
+      leafCertificate.countryName = certificateFromReq.countryName;
+      leafCertificate.signatureAlgorithm =
+        certificateFromReq.signatureAlgorithm;
+      leafCertificate.isCA = false;
+      leafCertificate.pathLen = undefined;
       const [leafCertificatePem, leafPrivateKeyPem] = generateCertificate(
         leafCertificate,
-        false,
-        undefined,
+        this._logger,
         privateKeyPem,
         certificatePem,
       );
@@ -507,8 +528,8 @@ export class CertificatesModuleApi
         if (serverConfig.securityProfile === 3) {
           this._module.certificateAuthorityService.updateSecurityCertChainKeyMap(
             serverId,
-            tlsKey,
             tlsCertificateChain,
+            tlsKey,
           );
         }
 
@@ -541,24 +562,12 @@ export class CertificatesModuleApi
   private async _generateSubCACertificateSignedByCAServer(
     certificate: Certificate,
   ): Promise<[string, string]> {
-    const csr = forge.pki.createCertificationRequest();
-    const keyPair = forge.pki.rsa.generateKeyPair({
-      bits: certificate.keyLength,
-    });
-
-    csr.publicKey = keyPair.publicKey;
-    csr.setSubject([
-      { name: 'commonName', value: certificate.commonName },
-      { name: 'organizationName', value: certificate.organizationName },
-    ]);
-    csr.sign(keyPair.privateKey);
-
+    const [csrPem, privateKeyPem] = generateCSR(certificate);
     const signedCertificate =
       await this._module.certificateAuthorityService.signedSubCaCertificateByExternalCA(
-        forge.pki.certificationRequestToPem(csr),
+        csrPem,
       );
-
-    return [signedCertificate, forge.pki.privateKeyToPem(keyPair.privateKey)];
+    return [signedCertificate, privateKeyPem];
   }
 
   /**

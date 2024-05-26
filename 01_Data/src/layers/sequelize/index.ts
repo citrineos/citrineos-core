@@ -13,7 +13,7 @@ export { ChargingStation, Location } from './model/Location';
 export { MessageInfo } from './model/MessageInfo';
 export { Tariff } from './model/Tariff/Tariffs';
 export { Subscription } from './model/Subscription';
-export { Certificate } from './model/Certificate';
+export { Certificate, SignatureAlgorithmEnumType, CountryNameEnumType } from './model/Certificate';
 
 // Sequelize Repositories
 export { SequelizeRepository } from './repository/Base';

@@ -138,7 +138,7 @@ services:
       DB_PASSWORD: 'citrine'
       WEBSOCKETS_ENABLED: 'true'
     healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:8055/server/health || exit 1
+      test: wget --no-verbose --tries=1 --spider http://127.0.0.1:8055/server/health || exit 1
       start_period: 15s
       interval: 15s
       timeout: 15s

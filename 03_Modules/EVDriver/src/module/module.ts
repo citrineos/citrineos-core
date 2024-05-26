@@ -150,7 +150,7 @@ export class EVDriverModule extends AbstractModule {
 
     this._certificateAuthorityService =
       certificateAuthorityService ||
-      new CertificateAuthorityService(config, cache, logger);
+      new CertificateAuthorityService(config, logger);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }

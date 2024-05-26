@@ -14,7 +14,7 @@ export interface IV2GCertificateAuthorityClient {
 
 export interface IChargingStationCertificateAuthorityClient {
   getRootCACertificate(): Promise<string>;
-  getCertificateChain(csrString: string, stationId: string): Promise<string>;
+  getCertificateChain(csrString: string): Promise<string>;
   signCertificateByExternalCA(csrString: string): Promise<string>;
   updateCertificateChainKeyMap(
     serverId: string,

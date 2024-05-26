@@ -4,10 +4,24 @@
 
 import * as pkijs from 'pkijs';
 import * as asn1js from 'asn1js';
-import forge from 'node-forge';
-import { Certificate } from '@citrineos/data';
+import { Certificate, SignatureAlgorithmEnumType } from '@citrineos/data';
+import jsrsasign from 'jsrsasign';
+import KJUR = jsrsasign.KJUR;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 import Request = jsrsasign.KJUR.asn1.ocsp.Request;
+import X509 = jsrsasign.X509;
+import { CertificationRequest } from 'pkijs';
+import { fromBase64, stringToArrayBuffer } from 'pvutils';
+import { fromBER } from 'asn1js';
+import moment from 'moment';
+import { ILogObj, Logger } from 'tslog';
+import KEYUTIL = jsrsasign.KEYUTIL;
+
+export const dateTimeFormat = 'YYMMDDHHmmssZ';
+
+export function getValidityTimeString(time: moment.Moment) {
+  return time.utc().format('YYMMDDHHmmss').concat('Z');
+}
 
 export function createPemBlock(type: string, content: string) {
   return `-----BEGIN ${type}-----\n${content}\n-----END ${type}-----\n`;
@@ -16,19 +30,13 @@ export function createPemBlock(type: string, content: string) {
 /*
  * Parse the certificate chain and extract certificates
  * @param pem - certificate chain pem containing multiple certificate blocks
- * @return array of pkijs.Certificate
+ * @return array of certificate pem blocks
  */
 export function parseCertificateChainPem(pem: string): string[] {
   const certs: string[] = [];
-
-  // Split the PEM into individual certificates
-  const pemCerts = pem.split('-----END CERTIFICATE-----\n');
-
-  // Parse each certificate
-  pemCerts.forEach((pemCert) => {
-    certs.push(pemCert + '-----END CERTIFICATE-----\n');
-  });
-
+  pem
+    .match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g)
+    ?.forEach((certPem) => certs.push(certPem));
   return certs;
 }
 
@@ -37,7 +45,7 @@ export function parseCertificateChainPem(pem: string): string[] {
  * @param pem - base64 encoded certificate chain string without header and footer
  * @return array of pkijs.CertificateSetItem
  */
-export function extractCertificateArrayFromPem(
+export function extractCertificateArrayFromEncodedString(
   pem: string,
 ): pkijs.CertificateSetItem[] | undefined {
   const cmsSignedBuffer = Buffer.from(pem, 'base64');
@@ -61,189 +69,164 @@ export function extractEncodedContentFromCSR(csrPem: string): string {
 }
 
 /**
- * Generate a serial number without leading 0s.
- */
-export function generateSerialNumber(): string {
-  const hexString = forge.util.bytesToHex(forge.random.getBytesSync(20));
-  return hexString.replace(/^0+/, '');
-}
-
-/**
  * Generate certificate and its private key
  *
  * @param certificateEntity - the certificate
- * @param isCA - true if the certificate is a root or sub CA certificate
+ * @param logger - the logger
  * @param issuerKeyPem - the issuer private key
  * @param issuerCertPem - the issuer certificate
- * @param pathLenConstraint - A pathLenConstraint of zero indicates that no intermediate CA certificates may
- * follow in a valid certification path. Where it appears, the pathLenConstraint field MUST be greater than or
- * equal to zero. Where pathLenConstraint does not appear, no limit is imposed.
- * Reference: https://www.rfc-editor.org/rfc/rfc5280#section-4.2.1.9
  *
- * @return generated certificate and its private key
+ * @return generated certificate pem and its private key pem
  */
 export function generateCertificate(
   certificateEntity: Certificate,
-  isCA: boolean,
-  pathLenConstraint?: number,
+  logger: Logger<ILogObj>,
   issuerKeyPem?: string,
   issuerCertPem?: string,
 ): [string, string] {
-  // create key pair
-  const keyPair = forge.pki.rsa.generateKeyPair({
-    bits: certificateEntity.keyLength,
-  });
-
-  // create certificate
-  const certificate = forge.pki.createCertificate();
-  certificate.publicKey = keyPair.publicKey;
-  certificate.serialNumber = certificateEntity.serialNumber;
-  certificate.validity.notBefore = new Date();
-  if (certificateEntity.validBefore) {
-    certificate.validity.notAfter = new Date(
-      Date.parse(certificateEntity.validBefore),
+  // Generate a key pair
+  let keyPair;
+  logger.debug(
+    `Private key signAlgorithm: ${certificateEntity.signatureAlgorithm}`,
+  );
+  if (certificateEntity.signatureAlgorithm === SignatureAlgorithmEnumType.RSA) {
+    keyPair = jsrsasign.KEYUTIL.generateKeypair(
+      'RSA',
+      certificateEntity.keyLength ? certificateEntity.keyLength : 2048,
     );
   } else {
-    certificate.validity.notAfter = new Date();
-    certificate.validity.notAfter.setFullYear(
-      certificate.validity.notAfter.getFullYear() + 1,
-    );
+    keyPair = jsrsasign.KEYUTIL.generateKeypair('EC', 'secp256r1');
   }
+  const privateKeyPem = jsrsasign.KEYUTIL.getPEM(keyPair.prvKeyObj, 'PKCS8PRV');
+  const publicKeyPem = jsrsasign.KEYUTIL.getPEM(keyPair.pubKeyObj);
+  logger.debug(`Created publicKeyPem: ${publicKeyPem}`);
 
-  // set subject
-  const attrs = [
-    {
-      name: 'commonName',
-      value: certificateEntity.commonName,
-    },
-    { name: 'organizationName', value: certificateEntity.organizationName },
-  ];
-  certificate.setSubject(attrs);
-
-  // set issuer
+  let issuerCertObj: X509 | undefined;
   if (issuerCertPem) {
-    certificate.setIssuer(
-      forge.pki.certificateFromPem(issuerCertPem).subject.attributes,
-    );
-  } else {
-    certificate.setIssuer(attrs);
+    issuerCertObj = new X509();
+    issuerCertObj.readCertPEM(issuerCertPem);
   }
 
-  // set extensions
-  const basicConstraints: any = {
-    name: 'basicConstraints',
-    cA: isCA,
+  // Prepare certificate attributes
+  let subjectNotAfter = certificateEntity.validBefore ? moment(certificateEntity.validBefore) : moment().add(1, 'year');
+  const subjectString = `/CN=${certificateEntity.commonName}/O=${certificateEntity.organizationName}/C=${certificateEntity.countryName}`;
+  let issuerParam = { str: subjectString };
+  if (issuerCertObj) {
+    const issuerNotAfter = moment(issuerCertObj.getNotAfter(), dateTimeFormat);
+    if (subjectNotAfter.isAfter(issuerNotAfter)) {
+      subjectNotAfter = issuerNotAfter;
+    }
+    issuerParam = { str: issuerCertObj.getSubjectString() };
+  }
+
+  // Prepare certificate extensions
+  const keyUsages = ['digitalSignature', 'keyCertSign', 'crlSign'];
+  if (!certificateEntity.isCA) {
+    keyUsages.push('keyEncipherment');
+  }
+  let basicConstraints: any = {
+    extname: 'basicConstraints',
+    critical: true,
+    cA: certificateEntity.isCA,
   };
-  if (pathLenConstraint) {
-    basicConstraints.pathLenConstraint = pathLenConstraint;
+  if (certificateEntity.pathLen) {
+    basicConstraints = {
+      extname: 'basicConstraints',
+      cA: certificateEntity.isCA,
+      pathLen: certificateEntity.pathLen,
+    };
   }
-  const extensions: any[] = [
+  const extensions = [
     basicConstraints,
-    {
-      name: 'keyUsage',
-      critical: true,
-      keyCertSign: true,
-      digitalSignature: true,
-      crlSign: true,
-      keyEncipherment: !isCA,
-    },
-    {
-      name: 'subjectKeyIdentifier',
-    },
+    { extname: 'keyUsage', critical: true, names: keyUsages },
+    { extname: 'subjectKeyIdentifier', kid: publicKeyPem },
   ];
-  if (issuerCertPem) {
-    extensions.push({
-      name: 'authorityKeyIdentifier',
-      keyIdentifier: forge.pki
-        .certificateFromPem(issuerCertPem)
-        .generateSubjectKeyIdentifier()
-        .getBytes(),
+  if (issuerCertObj) {
+    extensions.push({ extname: 'authorityKeyIdentifier',
+      kid: issuerCertPem,
+      isscert: issuerCertPem });
+  }
+
+  // Prepare certificate sign parameters
+  const signAlgorithm =
+    certificateEntity.signatureAlgorithm === SignatureAlgorithmEnumType.RSA
+      ? SignatureAlgorithmEnumType.RSA
+      : SignatureAlgorithmEnumType.ECDSA;
+  logger.debug(`Certificate SignAlgorithm: ${signAlgorithm}`);
+  const caKey = issuerKeyPem ? issuerKeyPem : privateKeyPem;
+
+  // Generate certificate
+  const certificate: KJUR.asn1.x509.Certificate =
+    new KJUR.asn1.x509.Certificate({
+      version: 3,
+      serial: { int: moment().valueOf() },
+      notbefore: getValidityTimeString(moment()),
+      notafter: getValidityTimeString(subjectNotAfter),
+      issuer: issuerParam,
+      subject: { str: subjectString },
+      sbjpubkey: keyPair.pubKeyObj,
+      ext: extensions,
+      sigalg: signAlgorithm,
+      cakey: caKey,
     });
-  }
-  certificate.setExtensions(extensions);
 
-  // sign
-  if (issuerKeyPem) {
-    certificate.sign(
-      forge.pki.privateKeyFromPem(issuerKeyPem),
-      forge.md.sha256.create(),
-    );
-  } else {
-    certificate.sign(keyPair.privateKey, forge.md.sha256.create());
-  }
-
-  return [
-    forge.pki.certificateToPem(certificate),
-    forge.pki.privateKeyToPem(keyPair.privateKey),
-  ];
+  return [certificate.getPEM(), privateKeyPem];
 }
 
 /**
- * Retrieves sub CA certificate for signing from the provided certificate chain PEM string.
- * The chain is in order: leaf cert, sub CA n ... sub CA 1
+ * Create a signed certificate for the provided CSR using the issuer certificate, and its private key.
  *
- * @param {string} certChainPem - The PEM string containing the ordered CA certificates.
- * @return {string} The sub CA certificate which is used for signing.
- */
-export function getSubCAForSigning(certChainPem: string): string {
-  const certsArray: string[] = certChainPem
-    .split('-----END CERTIFICATE-----')
-    .filter((cert) => cert.trim().length > 0);
-
-  if (certsArray.length < 2) {
-    // no certificate or only one leaf certificate
-    throw new Error('Sub CA certificate for signing not found');
-  }
-
-  // Remove leading new line and add "-----END CERTIFICATE-----" back because split removes it
-  return certsArray[1].replace(/^\n+/, '').concat('-----END CERTIFICATE-----');
-}
-
-/**
- * Create a signed certificate for the provided CSR using the sub CA certificate, and its private key.
- *
- * @param {forge.pki.CertificateSigningRequest} csr - The CSR that need to be signed.
- * @param {forge.pki.Certificate} caCert - The sub CA certificate.
- * @param {forge.pki.rsa.PrivateKey} caPrivateKey - The private key of the sub CA certificate.
- * @return {forge.pki.Certificate} The signed certificate.
+ * @param csrPem - The CSR that need to be signed.
+ * @param issuerCertPem - The issuer certificate.
+ * @param issuerPrivateKeyPem - The issuer private key.
+ * @return {KJUR.asn1.x509.Certificate} The signed certificate.
  */
 export function createSignedCertificateFromCSR(
-  csr: forge.pki.CertificateSigningRequest,
-  caCert: forge.pki.Certificate,
-  caPrivateKey: forge.pki.rsa.PrivateKey,
-): forge.pki.Certificate {
-  // Create the certificate
-  const certificate: forge.pki.Certificate = forge.pki.createCertificate();
-  certificate.publicKey = csr.publicKey as forge.pki.rsa.PublicKey;
-  certificate.serialNumber = generateSerialNumber(); // Unique serial number for the certificate
-  certificate.validity.notBefore = new Date();
-  certificate.validity.notAfter = caCert.validity.notAfter;
-  certificate.setIssuer(caCert.subject.attributes); // Set CA's attributes as issuer
-  certificate.setSubject(csr.subject.attributes);
-  certificate.setExtensions([
-    {
-      name: 'basicConstraints',
-      cA: false,
-    },
-    {
-      name: 'keyUsage',
-      critical: true,
-      digitalSignature: true,
-      keyEncipherment: true,
-    },
-    {
-      name: 'subjectKeyIdentifier',
-    },
-    {
-      name: 'authorityKeyIdentifier',
-      keyIdentifier: caCert.generateSubjectKeyIdentifier().getBytes(),
-    },
-  ]);
+  csrPem: string,
+  issuerCertPem: string,
+  issuerPrivateKeyPem: string,
+): KJUR.asn1.x509.Certificate {
+  const csrObj: KJUR.asn1.csr.ParamResponse =
+    jsrsasign.KJUR.asn1.csr.CSRUtil.getParam(csrPem);
+  const issuerCertObj = new X509();
+  issuerCertObj.readCertPEM(issuerCertPem);
 
-  // Sign the certificate
-  certificate.sign(caPrivateKey);
+  let subjectNotAfter = moment().add(1, 'year');
+  const issuerNotAfter = moment(issuerCertObj.getNotAfter(), dateTimeFormat);
+  if (subjectNotAfter.isAfter(issuerNotAfter)) {
+    subjectNotAfter = issuerNotAfter;
+  }
 
-  return certificate;
+  let extensions: any[];
+  if (csrObj.extreq) {
+    extensions = csrObj.extreq;
+  } else {
+    extensions = [
+      { extname: 'basicConstraints', cA: false },
+      {
+        extname: 'keyUsage',
+        critical: true,
+        names: ['digitalSignature', 'keyEncipherment'],
+      },
+    ];
+  }
+  extensions.push({ extname: 'subjectKeyIdentifier', kid: csrObj.sbjpubkey });
+  extensions.push({ extname: 'authorityKeyIdentifier',
+    kid: issuerCertPem,
+    isscert: issuerCertPem });
+
+  return new KJUR.asn1.x509.Certificate({
+    version: 3,
+    serial: { int: moment().valueOf() },
+    issuer: { str: issuerCertObj.getSubjectString() },
+    subject: { str: csrObj.subject.str },
+    notbefore: getValidityTimeString(moment()),
+    notafter: getValidityTimeString(subjectNotAfter),
+    sbjpubkey: csrObj.sbjpubkey,
+    ext: extensions,
+    sigalg: csrObj.sigalg,
+    cakey: issuerPrivateKeyPem,
+  });
 }
 
 export async function sendOCSPRequest(
@@ -266,4 +249,64 @@ export async function sendOCSPRequest(
   }
 
   return await response.text();
+}
+
+export function parseCSRForVerification(csrPem: string): CertificationRequest {
+  const certificateBuffer = stringToArrayBuffer(
+    fromBase64(extractEncodedContentFromCSR(csrPem)),
+  );
+  const asn1 = fromBER(certificateBuffer);
+  return new CertificationRequest({ schema: asn1.result });
+}
+
+export function generateCSR(certificate: Certificate): [string, string] {
+  let keyPair;
+  if (certificate.signatureAlgorithm === SignatureAlgorithmEnumType.RSA) {
+    keyPair = KEYUTIL.generateKeypair(
+      'RSA',
+      certificate.keyLength ? certificate.keyLength : 2048,
+    );
+  } else {
+    keyPair = KEYUTIL.generateKeypair('EC', 'secp256r1');
+  }
+  const privateKeyPem = jsrsasign.KEYUTIL.getPEM(keyPair.prvKeyObj, 'PKCS8PRV');
+  const publicKeyPem = jsrsasign.KEYUTIL.getPEM(keyPair.pubKeyObj);
+
+  let basicConstraintParam: any;
+  if (certificate.pathLen) {
+    basicConstraintParam = {
+      cA: certificate.isCA,
+      pathLen: certificate.pathLen,
+    };
+  } else {
+    basicConstraintParam = { cA: certificate.isCA };
+  }
+  const csr = new KJUR.asn1.csr.CertificationRequest({
+    subject: {
+      str: `/CN=${certificate.commonName}/O=${certificate.organizationName}/C=${certificate.countryName}`,
+    },
+    sbjpubkey: publicKeyPem,
+    extreq: [
+      { extname: 'basicConstraints', array: [basicConstraintParam] },
+      {
+        extname: 'keyUsage',
+        array: [
+          {
+            names: [
+              'digitalSignature',
+              'keyEncipherment',
+              'keyCertSign',
+              'crlSign',
+            ],
+          },
+        ],
+      },
+    ],
+    sigalg: certificate.signatureAlgorithm
+      ? certificate.signatureAlgorithm
+      : SignatureAlgorithmEnumType.ECDSA,
+    sbjprvkey: privateKeyPem,
+  });
+
+  return [csr.getPEM(), privateKeyPem];
 }
