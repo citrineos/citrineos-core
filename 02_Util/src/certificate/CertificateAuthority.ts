@@ -154,6 +154,9 @@ export class CertificateAuthorityService {
   ): Promise<AuthorizeCertificateStatusEnumType> {
     const certificatePems: string[] =
       parseCertificateChainPem(certificateChainPem);
+    this._logger.debug(
+      `Found ${certificatePems.length} certificates in chain.`,
+    );
     if (certificatePems.length < 1) {
       return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
     }
@@ -189,11 +192,9 @@ export class CertificateAuthorityService {
       for (let i = 0; i < certificatePems.length - 1; i++) {
         const subjectCert = new X509();
         subjectCert.readCertPEM(certificatePems[i]);
+        this._logger.debug(`Subject Certificate: ${subjectCert.getInfo()}`);
 
         const notAfter = moment(subjectCert.getNotAfter(), dateTimeFormat);
-        this._logger.debug(
-          `Contract Certificate notAfter: ${notAfter.toISOString()}`,
-        );
         if (notAfter.isBefore(moment())) {
           return AuthorizeCertificateStatusEnumType.CertificateExpired;
         }
@@ -239,7 +240,7 @@ export class CertificateAuthorityService {
         namehash: reqData.issuerNameHash,
         serial: reqData.serialNumber,
       });
-      this._logger.debug(`OCSP request: ${ocspRequest.getEncodedHex()}`);
+      this._logger.debug(`OCSP request: ${JSON.stringify(ocspRequest)}`);
 
       try {
         const ocspResponse = getOCSPResponseInfo(

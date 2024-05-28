@@ -108,7 +108,9 @@ export function generateCertificate(
   }
 
   // Prepare certificate attributes
-  let subjectNotAfter = certificateEntity.validBefore ? moment(certificateEntity.validBefore) : moment().add(1, 'year');
+  let subjectNotAfter = certificateEntity.validBefore
+    ? moment(certificateEntity.validBefore)
+    : moment().add(1, 'year');
   const subjectString = `/CN=${certificateEntity.commonName}/O=${certificateEntity.organizationName}/C=${certificateEntity.countryName}`;
   let issuerParam = { str: subjectString };
   if (issuerCertObj) {
@@ -142,9 +144,11 @@ export function generateCertificate(
     { extname: 'subjectKeyIdentifier', kid: publicKeyPem },
   ];
   if (issuerCertObj) {
-    extensions.push({ extname: 'authorityKeyIdentifier',
+    extensions.push({
+      extname: 'authorityKeyIdentifier',
       kid: issuerCertPem,
-      isscert: issuerCertPem });
+      isscert: issuerCertPem,
+    });
   }
 
   // Prepare certificate sign parameters
@@ -211,9 +215,11 @@ export function createSignedCertificateFromCSR(
     ];
   }
   extensions.push({ extname: 'subjectKeyIdentifier', kid: csrObj.sbjpubkey });
-  extensions.push({ extname: 'authorityKeyIdentifier',
+  extensions.push({
+    extname: 'authorityKeyIdentifier',
     kid: issuerCertPem,
-    isscert: issuerCertPem });
+    isscert: issuerCertPem,
+  });
 
   return new KJUR.asn1.x509.Certificate({
     version: 3,
