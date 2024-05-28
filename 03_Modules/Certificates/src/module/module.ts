@@ -367,7 +367,7 @@ export class CertificatesModule extends AbstractModule {
       const organizationName = await this._deviceModelRepository.readAllByQuery(
         {
           stationId: stationId,
-          component_name: 'ISO15118Ctrlr',
+          component_name: 'SecurityCtrlr',
           variable_name: 'OrganizationName',
           type: AttributeEnumType.Actual,
         },
