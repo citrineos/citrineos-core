@@ -13,6 +13,7 @@ export { ChargingStation, Location } from './model/Location';
 export { MessageInfo } from './model/MessageInfo';
 export { Tariff } from './model/Tariff/Tariffs';
 export { Subscription } from './model/Subscription';
+export { Certificate } from './model/Certificate';
 
 // Sequelize Repositories
 export { SequelizeRepository } from './repository/Base';
@@ -26,6 +27,7 @@ export { VariableMonitoringRepository } from './repository/VariableMonitoring';
 export { MessageInfoRepository } from './repository/MessageInfo';
 export { TariffRepository } from './repository/Tariff';
 export { SubscriptionRepository } from './repository/Subscription';
+export { CertificateRepository } from './repository/Certificate';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util';

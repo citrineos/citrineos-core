@@ -31,7 +31,12 @@ import {
   SignCertificateResponse,
   SystemConfig,
 } from '@citrineos/base';
-import { IDeviceModelRepository, sequelize } from '@citrineos/data';
+import {
+  ICertificateRepository,
+  IDeviceModelRepository,
+  ILocationRepository,
+  sequelize,
+} from '@citrineos/data';
 import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import * as forge from 'node-forge';
@@ -60,6 +65,8 @@ export class CertificatesModule extends AbstractModule {
   ];
 
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _certificateRepository: ICertificateRepository;
+  protected _locationRepository: ILocationRepository;
   protected _certificateAuthorityService: CertificateAuthorityService;
 
   /**
@@ -84,6 +91,14 @@ export class CertificatesModule extends AbstractModule {
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
+   *
+   * @param {ICertificateRepository} [certificateRepository] - An optional parameter of type {@link ICertificateRepository} which
+   * represents a repository for accessing and manipulating variable data.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize.CertificateRepository} instance is created and used.
+   *
+   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
+   * represents a repository for accessing and manipulating variable data.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
    */
   constructor(
     config: SystemConfig,
@@ -92,6 +107,8 @@ export class CertificatesModule extends AbstractModule {
     handler: IMessageHandler,
     logger?: Logger<ILogObj>,
     deviceModelRepository?: IDeviceModelRepository,
+    certificateRepository?: ICertificateRepository,
+    locationRepository?: ILocationRepository,
   ) {
     super(
       config,
@@ -114,6 +131,11 @@ export class CertificatesModule extends AbstractModule {
     this._deviceModelRepository =
       deviceModelRepository ||
       new sequelize.DeviceModelRepository(config, logger);
+    this._certificateRepository =
+      certificateRepository ||
+      new sequelize.CertificateRepository(config, logger);
+    this._locationRepository =
+      locationRepository || new sequelize.LocationRepository(config, logger);
 
     this._certificateAuthorityService = new CertificateAuthorityService(
       config,
@@ -126,6 +148,14 @@ export class CertificatesModule extends AbstractModule {
 
   get certificateAuthorityService(): CertificateAuthorityService {
     return this._certificateAuthorityService;
+  }
+
+  get certificateRepository(): ICertificateRepository {
+    return this._certificateRepository;
+  }
+
+  get locationRepository(): ILocationRepository {
+    return this._locationRepository;
   }
 
   /**
