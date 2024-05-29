@@ -160,8 +160,8 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('Authorize received:', message, props);
 
     this._authorizeRepository
-      .readOnlyByQuery({ ...message.payload.idToken })
-      .then(async (authorizations) => {
+      .readOnlyOneByQuery({ ...message.payload.idToken })
+      .then(async (authorization) => {
         const response: AuthorizeResponse = {
           idTokenInfo: {
             status: AuthorizationStatusEnumType.Unknown,
