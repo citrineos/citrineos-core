@@ -196,6 +196,10 @@ export class CertificatesModuleApi
       throw new Error(`websocketServer id ${serverId} does not exist.`);
     } else if (serverConfig && serverConfig.securityProfile < 2) {
       throw new Error(`websocketServer ${serverId} is not tls or mtls server.`);
+    } else if (serverConfig.securityProfile === 3 && !certRequest.subCAKey) {
+      throw new Error(
+        `WebsocketServer ${serverId} is mtls server but subCAKey is missing.`,
+      );
     }
 
     const tlsKey: string = (
@@ -525,11 +529,11 @@ export class CertificatesModuleApi
 
         // Update the map which stores sub CA certs and keys for websocket server securityProfile 3.
         // This map is used when signing charging station certificates for use case A02 in OCPP 2.0.1 Part 2.
-        if (serverConfig.securityProfile === 3) {
+        if (serverConfig.securityProfile === 3 && subCAKey) {
           this._module.certificateAuthorityService.updateSecurityCertChainKeyMap(
             serverId,
             tlsCertificateChain,
-            tlsKey,
+            subCAKey,
           );
         }
 

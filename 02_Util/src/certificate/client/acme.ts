@@ -161,6 +161,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       );
     }
     this._logger.info(`Found Sub CA certificate: ${certChainArray[1]}`);
+    this._logger.debug(`Found Sub CA private key: ${subCAPrivateKey}`);
 
     const signedCertPem: string = createSignedCertificateFromCSR(
       csrString,
