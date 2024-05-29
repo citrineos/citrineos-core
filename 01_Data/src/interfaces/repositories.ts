@@ -118,6 +118,6 @@ export interface ITariffRepository extends CrudRepository<Tariff> {
   createOrUpdateTariff(tariff: Tariff): Promise<Tariff>;
 }
 
-export interface ICertificateRepository extends ICrudRepository<Certificate> {
+export interface ICertificateRepository extends CrudRepository<Certificate> {
   createOrUpdateCertificate(certificate: Certificate): Promise<Certificate>;
 }

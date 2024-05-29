@@ -27,7 +27,7 @@ export { SequelizeVariableMonitoringRepository } from './repository/VariableMoni
 export { SequelizeMessageInfoRepository } from './repository/MessageInfo';
 export { SequelizeTariffRepository } from './repository/Tariff';
 export { SequelizeSubscriptionRepository } from './repository/Subscription';
-export { CertificateRepository } from './repository/Certificate';
+export { SequelizeCertificateRepository } from './repository/Certificate';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util';
