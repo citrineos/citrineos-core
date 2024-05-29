@@ -79,6 +79,18 @@ export class CertificateAuthorityService {
     );
   }
 
+  updateSecurityCertChainKeyMap(
+    serverId: string,
+    certificateChain: string,
+    privateKey: string,
+  ) {
+    this._chargingStationClient.updateCertificateChainKeyMap(
+      serverId,
+      certificateChain,
+      privateKey,
+    );
+  }
+
   /**
    * Create a certificate chain including leaf and sub CA certificates except for the root certificate.
    *

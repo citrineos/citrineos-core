@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SystemConfig } from '@citrineos/base';
+import { IFileAccess, SystemConfig } from '@citrineos/base';
 import { sequelize } from '@citrineos/data';
 import {
   authentication,
@@ -17,6 +17,7 @@ import {
   staticToken,
   updateFlow,
   updateOperation,
+  readAssetArrayBuffer,
 } from '@directus/sdk';
 import { RouteOptions } from 'fastify';
 import { JSONSchemaFaker } from 'json-schema-faker';
@@ -26,7 +27,7 @@ interface Schema {
   // No custom collections needed
 }
 
-export class DirectusUtil {
+export class DirectusUtil implements IFileAccess {
   protected readonly _config: SystemConfig;
   protected readonly _logger: Logger<ILogObj>;
   private readonly _client: RestClient<Schema>;
@@ -86,6 +87,24 @@ export class DirectusUtil {
       const bodySchema = routeOptions.schema?.body as object;
       this.addDirectusFlowForAction(action, messagePath, bodySchema);
     }
+  }
+
+  public async getFile(id: string): Promise<Buffer> {
+    this._logger.info(`Get file ${id}`);
+    try {
+      const result = await this._client.request(readAssetArrayBuffer(id));
+      return Buffer.from(result);
+    } catch (error) {
+      this._logger.error('Get file failed: ', error);
+      throw new Error(`Get file ${id} failed`);
+    }
+  }
+
+  public async uploadFile(filePath: string, content: Buffer): Promise<string> {
+    // TODO: implement the logic
+    throw new Error(
+      `Upload file ${filePath} with content ${content} not yet implemented.`,
+    );
   }
 
   private async addDirectusFlowForAction(
