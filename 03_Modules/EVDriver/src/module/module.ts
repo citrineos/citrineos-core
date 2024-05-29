@@ -17,7 +17,7 @@ import {
   EventGroup,
   GetLocalListVersionResponse,
   HandlerProperties,
-  ICache,
+  ICache, IdTokenEnumType,
   IdTokenInfoType,
   IMessage,
   IMessageHandler,
@@ -160,7 +160,7 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('Authorize received:', message, props);
 
     this._authorizeRepository
-      .readAllByQuery({ ...message.payload.idToken })
+      .readOnlyByQuery({ ...message.payload.idToken })
       .then(async (authorizations) => {
         const response: AuthorizeResponse = {
           idTokenInfo: {
@@ -168,12 +168,12 @@ export class EVDriverModule extends AbstractModule {
             // TODO determine how/if to set personalMessage
           },
         };
-        if (authorizations.length !== 1) {
-          throw new Error(
-            `Unexpected number of Authorizations for IdToken: ${authorizations.length}`,
-          );
+
+        if (message.payload.idToken.type === IdTokenEnumType.NoAuthorization) {
+          response.idTokenInfo.status = AuthorizationStatusEnumType.Accepted;
+          return this.sendCallResultWithMessage(message, response);
         }
-        const authorization = authorizations[0];
+
         if (authorization) {
           if (authorization.idTokenInfo) {
             // Extract DTO fields from sequelize Model<any, any> objects
