@@ -18,6 +18,7 @@ import {
   GetLocalListVersionResponse,
   HandlerProperties,
   ICache,
+  IdTokenEnumType,
   IdTokenInfoType,
   IMessage,
   IMessageHandler,
@@ -172,6 +173,10 @@ export class EVDriverModule extends AbstractModule {
           throw new Error(
             `Unexpected number of Authorizations for IdToken: ${authorizations.length}`,
           );
+        }
+        if (message.payload.idToken.type === IdTokenEnumType.NoAuthorization) {
+          response.idTokenInfo.status = AuthorizationStatusEnumType.Accepted;
+          return this.sendCallResultWithMessage(message, response);
         }
         const authorization = authorizations[0];
         if (authorization) {
