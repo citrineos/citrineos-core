@@ -33,7 +33,7 @@ import { type AuthorizationQuerystring } from './queries/Authorization';
 import { MeterValue, type Transaction } from '../layers/sequelize/model/TransactionEvent';
 import { type VariableAttribute } from '../layers/sequelize/model/DeviceModel/VariableAttribute';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
-import { type Authorization, type Boot, type ChargingStation, type Component, type EventData, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';
+import { type Authorization, type Boot, type Certificate, type ChargingStation, type Component, type EventData, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';
 import { MessageInfo } from '../layers/sequelize/model/MessageInfo';
 import { Subscription } from '../layers/sequelize/model/Subscription';
 import { Tariff } from '../layers/sequelize/model/Tariff';
@@ -116,4 +116,8 @@ export interface ITariffRepository extends CrudRepository<Tariff> {
   readAllByQuery(query: TariffQueryString): Promise<Tariff[]>;
   deleteAllByQuery(query: TariffQueryString): Promise<Tariff[]>;
   createOrUpdateTariff(tariff: Tariff): Promise<Tariff>;
+}
+
+export interface ICertificateRepository extends ICrudRepository<Certificate> {
+  createOrUpdateCertificate(certificate: Certificate): Promise<Certificate>;
 }

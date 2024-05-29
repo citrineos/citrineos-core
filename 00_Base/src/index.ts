@@ -43,6 +43,7 @@ export {
   MessageTypeId,
   OcppError,
 } from './ocpp/rpc/message';
+export { IFileAccess } from './interfaces/fileAccess';
 
 // Persistence Interfaces
 

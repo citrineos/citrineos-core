@@ -149,7 +149,7 @@ export class ConfigurationModuleApi
     CallAction.SetDisplayMessage,
     SetDisplayMessageRequestSchema,
   )
-  async setDisplayMessages(
+  async setDisplayMessage(
     identifier: string,
     tenantId: string,
     request: SetDisplayMessageRequest,
