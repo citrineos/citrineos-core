@@ -21,7 +21,7 @@ The system features:
 - Configurable logical modules with decorators
   - `@AsHandler` to handle incoming OCPP 2.0.1 messages
   - `@AsMessageEndpoint` to expose functions allowing to send messages to charging stations
-  - `@AsDataEndpoint` to expose CRUD access to entities defined in `10_Data`
+  - `@AsDataEndpoint` to expose CRUD access to entities defined in `01_Data`
 - Utilities to connect and extend various message broker and cache mechanisms
   - Currently supported brokers are `RabbitMQ` and Google Cloud `PubSub`
   - Currently supported caches are `In Memory` and `Redis`
