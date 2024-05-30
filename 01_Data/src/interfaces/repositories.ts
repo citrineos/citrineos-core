@@ -43,6 +43,7 @@ export interface IAuthorizationRepository extends CrudRepository<AuthorizationDa
   createOrUpdateByQuery: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
   updateRestrictionsByQuery: (value: AuthorizationRestrictions, query: AuthorizationQuerystring) => Promise<Authorization[]>;
   readAllByQuery: (query: AuthorizationQuerystring) => Promise<Authorization[]>;
+  readOnlyOneByQuery: (query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
   existByQuery: (query: AuthorizationQuerystring) => Promise<number>;
   deleteAllByQuery: (query: AuthorizationQuerystring) => Promise<Authorization[]>;
 }

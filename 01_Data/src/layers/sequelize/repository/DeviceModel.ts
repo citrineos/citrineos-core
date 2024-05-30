@@ -78,22 +78,32 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
 
     return await Promise.all(
       value.variableAttribute.map(async (variableAttribute) => {
-        // Even though defaults are set on the VariableAttribute model, those only apply when creating an object
-        // So we need to set them here to ensure they are set correctly when updating
-        const [savedVariableAttribute, _variableAttributeCreated] = await this.upsert(
-          VariableAttribute.build({
-            stationId,
+        const [savedVariableAttribute, variableAttributeCreated] = await this.readOrCreateByQuery({
+          where: {
+            // the composite unique index of VariableAttribute
+            stationId: stationId,
             variableId: variable.id,
             componentId: component.id,
-            evseDatabaseId: component.evseDatabaseId,
             type: variableAttribute.type ?? AttributeEnumType.Actual,
+          },
+          defaults: {
+            // used to define what must be created in case nothing was found. If the defaults do not
+            // contain values for every column, Sequelize will take the values given to where (if present).
+            evseDatabaseId: component.evseDatabaseId,
             dataType,
             value: variableAttribute.value,
             mutability: variableAttribute.mutability ?? MutabilityEnumType.ReadWrite,
             persistent: variableAttribute.persistent ? variableAttribute.persistent : false,
             constant: variableAttribute.constant ? variableAttribute.constant : false,
-          }),
-        );
+          },
+        });
+        if (!variableAttributeCreated) {
+          return await this.updateByKey({
+            evseDatabaseId: component.evseDatabaseId,
+            dataType: dataType ?? savedVariableAttribute.dataType,
+            ...variableAttribute,
+          }, savedVariableAttribute.id) as VariableAttribute;
+        }
         return savedVariableAttribute;
       }),
     );

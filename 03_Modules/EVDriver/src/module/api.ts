@@ -51,7 +51,7 @@ export class EVDriverModuleApi
   /**
    * Constructs a new instance of the class.
    *
-   * @param {EVDriverModule} EVDriverModule - The EVDriver module.
+   * @param {EVDriverModule} evDriverModule - The EVDriver module.
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger for logging.
    */

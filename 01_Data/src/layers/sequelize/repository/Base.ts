@@ -24,12 +24,13 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   }
 
   protected async _createByKey(value: T, key: string): Promise<T> {
-    value.setDataValue('id', key);
+    const primaryKey = this.s.models[this.namespace].primaryKeyAttribute;
+    value.setDataValue(primaryKey, key);
     return await value.save();
   }
 
-  async readByKey(key: string): Promise<T | undefined> {
-    return await this.s.models[this.namespace].findOne({ where: { id: key } }).then((row) => row as T);
+  async readByKey(key: string): Promise<T> {
+    return await this.s.models[this.namespace].findByPk(key).then((row) => row as T);
   }
 
   async readAllByQuery(query: object): Promise<T[]> {
@@ -41,7 +42,8 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   }
 
   protected async _updateByKey(value: Partial<T>, key: string): Promise<T | undefined> {
-    return await this._updateAllByQuery(value, { where: { id: key } }).then((rows) => (rows.length === 1 ? rows[0] : undefined));
+    const primaryKey = this.s.models[this.namespace].primaryKeyAttribute;
+    return await this._updateAllByQuery(value, { where: { [primaryKey]: key } }).then((rows) => (rows.length === 1 ? rows[0] : undefined));
   }
 
   protected async _updateAllByQuery(value: Partial<T>, query: object): Promise<T[]> {
@@ -63,14 +65,13 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
 
   protected async _deleteByKey(key: string): Promise<T | undefined> {
     return this.s.transaction(async (t) => {
-      const entryToDelete = await this.s.models[this.namespace].findOne({ where: { id: key } }).then((row) => row as T);
-      const deletedCount = await this.s.models[this.namespace].destroy({ where: { id: key } });
-      if (entryToDelete && deletedCount === 1) {
+      const entryToDelete = await this.s.models[this.namespace].findByPk(key).then((row) => row as T);
+
+      if (entryToDelete) {
+        await entryToDelete.destroy({ transaction: t });
         return entryToDelete;
-      } else if (!entryToDelete && deletedCount === 0) {
-        return undefined;
       } else {
-        throw new Error(`Deleted ${deletedCount} entries, expected ${entryToDelete ? 1 : 0}`);
+        return undefined;
       }
     });
   }
@@ -88,7 +89,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   }
 
   async existsByKey(key: string): Promise<boolean> {
-    return await this.s.models[this.namespace].findOne({ where: { id: key } }).then((row) => row !== null);
+    return await this.s.models[this.namespace].findByPk(key).then((row) => row !== null);
   }
 
   async existByQuery(query: object): Promise<number> {

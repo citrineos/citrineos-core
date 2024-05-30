@@ -21,6 +21,7 @@ import {
   IMessageSender,
   LogStatusNotificationRequest,
   LogStatusNotificationResponse,
+  MutabilityEnumType,
   NotifyCustomerInformationRequest,
   NotifyCustomerInformationResponse,
   NotifyMonitoringReportRequest,
@@ -261,6 +262,14 @@ export class ReportingModule extends AbstractModule {
     for (const reportDataType of message.payload.reportData
       ? message.payload.reportData
       : []) {
+      // To keep consistency with VariableAttributeType defined in OCPP 2.0.1:
+      // mutability: Default is ReadWrite when omitted.
+      // if it is not present, we set it to ReadWrite
+      for (const variableAttr of reportDataType.variableAttribute) {
+        if (!variableAttr.mutability) {
+          variableAttr.mutability = MutabilityEnumType.ReadWrite;
+        }
+      }
       const variableAttributes =
         await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
           reportDataType,

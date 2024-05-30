@@ -86,6 +86,10 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     return await super.readAllByQuery(this._constructQuery(query));
   }
 
+  async readOnlyOneByQuery(query: AuthorizationQuerystring): Promise<Authorization | undefined> {
+    return await super.readOnlyOneByQuery(this._constructQuery(query));
+  }
+
   async existByQuery(query: AuthorizationQuerystring): Promise<number> {
     return await super.existByQuery(this._constructQuery(query));
   }

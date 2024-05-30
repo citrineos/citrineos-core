@@ -16,6 +16,7 @@ import {
   EventGroup,
   GenericStatusEnumType,
   Get15118EVCertificateRequest,
+  Get15118EVCertificateResponse,
   GetCertificateStatusEnumType,
   GetCertificateStatusRequest,
   GetCertificateStatusResponse,
@@ -26,7 +27,7 @@ import {
   IMessageHandler,
   IMessageSender,
   InstallCertificateResponse,
-  OcppError,
+  Iso15118EVCertificateStatusEnumType,
   SignCertificateRequest,
   SignCertificateResponse,
   SystemConfig,
@@ -37,11 +38,25 @@ import {
   ILocationRepository,
   sequelize,
 } from '@citrineos/data';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import {
+  CertificateAuthorityService,
+  parseCSRForVerification,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  sendOCSPRequest,
+  Timer,
+} from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
-import * as forge from 'node-forge';
 import { ILogObj, Logger } from 'tslog';
-import { CertificateAuthorityService } from './service/CertificateAuthority';
+import jsrsasign from 'jsrsasign';
+import * as pkijs from 'pkijs';
+import { CertificationRequest } from 'pkijs';
+import { Crypto } from '@peculiar/webcrypto';
+
+const cryptoEngine = new pkijs.CryptoEngine({
+  crypto: new Crypto(),
+});
+pkijs.setEngine('crypto', cryptoEngine as pkijs.ICryptoEngine);
 
 /**
  * Component that handles provisioning related messages.
@@ -99,6 +114,9 @@ export class CertificatesModule extends AbstractModule {
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
    * represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
+   *
+   * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
+   * type {@link CertificateAuthorityService} which handles certificate authority operations.
    */
   constructor(
     config: SystemConfig,
@@ -109,6 +127,7 @@ export class CertificatesModule extends AbstractModule {
     deviceModelRepository?: IDeviceModelRepository,
     certificateRepository?: ICertificateRepository,
     locationRepository?: ILocationRepository,
+    certificateAuthorityService?: CertificateAuthorityService,
   ) {
     super(
       config,
@@ -137,11 +156,9 @@ export class CertificatesModule extends AbstractModule {
     this._locationRepository =
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
 
-    this._certificateAuthorityService = new CertificateAuthorityService(
-      config,
-      cache,
-      this._logger,
-    );
+    this._certificateAuthorityService =
+      certificateAuthorityService ||
+      new CertificateAuthorityService(config, this._logger);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -154,44 +171,69 @@ export class CertificatesModule extends AbstractModule {
     return this._certificateRepository;
   }
 
-  get locationRepository(): ILocationRepository {
-    return this._locationRepository;
-  }
-
   /**
    * Handle requests
    */
 
   @AsHandler(CallAction.Get15118EVCertificate)
-  protected _handleGet15118EVCertificate(
+  protected async _handleGet15118EVCertificate(
     message: IMessage<Get15118EVCertificateRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('Get15118EVCertificate received:', message, props);
+    const request: Get15118EVCertificateRequest = message.payload;
 
-    this._logger.error('Get15118EVCertificate not implemented');
-    this.sendCallErrorWithMessage(
-      message,
-      new OcppError(
-        message.context.correlationId,
-        ErrorCode.NotImplemented,
-        'Get15118EVCertificate not implemented',
-      ),
-    );
+    try {
+      const exiResponse =
+        await this._certificateAuthorityService.getSignedContractData(
+          request.iso15118SchemaVersion,
+          request.exiRequest,
+        );
+      this.sendCallResultWithMessage(message, {
+        status: Iso15118EVCertificateStatusEnumType.Accepted,
+        exiResponse: exiResponse,
+      } as Get15118EVCertificateResponse);
+    } catch (error) {
+      this.sendCallResultWithMessage(message, {
+        status: Iso15118EVCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ErrorCode.GenericError,
+          additionalInfo: error instanceof Error ? error.message : undefined,
+        },
+        exiResponse: '',
+      } as Get15118EVCertificateResponse);
+    }
   }
 
   @AsHandler(CallAction.GetCertificateStatus)
-  protected _handleGetCertificateStatus(
+  protected async _handleGetCertificateStatus(
     message: IMessage<GetCertificateStatusRequest>,
     props?: HandlerProperties,
-  ): void {
-    this._logger.debug('GetCertificateStatus received:', message, props);
-
-    this._logger.error('GetCertificateStatus not implemented');
-    this.sendCallResultWithMessage(message, {
-      status: GetCertificateStatusEnumType.Failed,
-      statusInfo: { reasonCode: ErrorCode.NotImplemented },
-    } as GetCertificateStatusResponse);
+  ): Promise<void> {
+    this._logger.debug('GetCertificateStatusRequest received:', message, props);
+    const reqData = message.payload.ocspRequestData;
+    try {
+      const ocspRequest = new jsrsasign.KJUR.asn1.ocsp.Request({
+        alg: reqData.hashAlgorithm,
+        keyhash: reqData.issuerKeyHash,
+        namehash: reqData.issuerNameHash,
+        serial: reqData.serialNumber,
+      });
+      const ocspResponse = await sendOCSPRequest(
+        ocspRequest,
+        reqData.responderURL,
+      );
+      this.sendCallResultWithMessage(message, {
+        status: GetCertificateStatusEnumType.Accepted,
+        ocspResponse: ocspResponse,
+      } as GetCertificateStatusResponse);
+    } catch (error) {
+      this._logger.error(`GetCertificateStatus failed: ${error}`);
+      this.sendCallResultWithMessage(message, {
+        status: GetCertificateStatusEnumType.Failed,
+        statusInfo: { reasonCode: ErrorCode.GenericError },
+      } as GetCertificateStatusResponse);
+    }
   }
 
   @AsHandler(CallAction.SignCertificate)
@@ -201,13 +243,11 @@ export class CertificatesModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('Sign certificate request received:', message, props);
     const stationId: string = message.context.stationId;
-    // when parsing pem string, node forge expect a csr
-    // which has header and footer without new line characters.
     const csrString: string = message.payload.csr.replace(/\n/g, '');
     const certificateType: CertificateSigningUseEnumType | undefined =
       message.payload.certificateType;
 
-    // TODO - OCTT Currently fails the CSMS on test case TC_A_14_CSMS if an invalid csr is rejected
+    // TODO OCTT Currently fails the CSMS on test case TC_A_14_CSMS if an invalid csr is rejected
     //  Despite explicitly saying in the protocol "The CSMS may do some checks on the CSR"
     //  So it is necessary to accept before checking the csr. when this is fixed, this line can be removed
     //  And the other sendCallResultWithMessage for SignCertificateResponse can be uncommented
@@ -215,32 +255,36 @@ export class CertificatesModule extends AbstractModule {
       status: GenericStatusEnumType.Accepted,
     } as SignCertificateResponse);
 
-    // Do Verification and send accept response before signing.
-    // Reject the request if the verification fails
+    let certificateChainPem: string;
     try {
       await this._verifySignCertRequest(csrString, stationId, certificateType);
-      // TODO - uncomment when OCTT test failure is fixed
-      // this.sendCallResultWithMessage(message, {
-      //   status: GenericStatusEnumType.Accepted,
-      // } as SignCertificateResponse);
+
+      certificateChainPem =
+        await this._certificateAuthorityService.getCertificateChain(
+          csrString,
+          stationId,
+          certificateType,
+        );
     } catch (error) {
-      this._logger.error('Verify Request failed:', error);
-      // TODO - uncomment when OCTT test failure is fixed
+      this._logger.error('Sign certificate failed:', error);
+
+      // TODO uncomment after OCTT issue is fixed
       // this.sendCallResultWithMessage(message, {
       //   status: GenericStatusEnumType.Rejected,
       //   statusInfo: {
-      //   reasonCode: 'INVALID_REQUEST_ERROR',
-      //     additionalInfo: (error as Error).message,
+      //     reasonCode: ErrorCode.GenericError,
+      //     additionalInfo: error instanceof Error ? error.message : undefined,
       //   },
       // } as SignCertificateResponse);
-      // return;
+
+      return;
     }
-    const certificateChainPem: string =
-      await this._certificateAuthorityService.getCertificateChain(
-        csrString,
-        stationId,
-        certificateType,
-      );
+
+    // TODO uncomment after OCTT issue is fixed
+    // this.sendCallResultWithMessage(message, {
+    //   status: GenericStatusEnumType.Accepted,
+    // } as SignCertificateResponse);
+
     this.sendCall(
       stationId,
       message.context.tenantId,
@@ -306,10 +350,10 @@ export class CertificatesModule extends AbstractModule {
     }
 
     // Verify CSR
-    const csr: forge.pki.CertificateSigningRequest =
-      forge.pki.certificationRequestFromPem(csrString);
+    const csr: CertificationRequest = parseCSRForVerification(csrString);
+    this._logger.info(`Verifying CSR: ${JSON.stringify(csr)}`);
 
-    if (!csr.verify()) {
+    if (!(await csr.verify())) {
       throw new Error(
         'Verify the signature on this csr using its public key failed',
       );
@@ -331,17 +375,25 @@ export class CertificatesModule extends AbstractModule {
       if (!organizationName || organizationName.length < 1) {
         throw new Error('Expected organizationName not found in DB');
       }
-      const organizationNameAttr = csr.subject.attributes.find(
-        (attr) => attr.shortName === 'O',
+      // Find organizationName (its key is '2.5.4.10') attribute in CSR
+      const organizationNameAttr = csr.subject.typesAndValues.find(
+        (attr) => attr.type === '2.5.4.10',
       );
       if (!organizationNameAttr) {
         throw new Error('organizationName attribute not found in CSR');
       }
-      if (organizationName[0].value !== organizationNameAttr.value) {
+      if (
+        organizationName[0].value !==
+        organizationNameAttr.value.valueBlock.value
+      ) {
         throw new Error(
           `Expect organizationName ${organizationName[0].value} but get ${organizationNameAttr.value} from the csr`,
         );
       }
     }
+
+    this._logger.info(
+      `Verified SignCertRequest for station ${stationId} successfully.`,
+    );
   }
 }

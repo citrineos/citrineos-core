@@ -3,12 +3,15 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { IChargingStationCertificateAuthorityClient } from './interface';
-import { CacheNamespace, ICache, SystemConfig } from '@citrineos/base';
+import { SystemConfig } from '@citrineos/base';
 import * as acme from 'acme-client';
 import { ILogObj, Logger } from 'tslog';
 import fs from 'fs';
-import forge from 'node-forge';
 import { Client } from 'acme-client';
+import {
+  createSignedCertificateFromCSR,
+  parseCertificateChainPem,
+} from '../CertificateUtil';
 
 export class Acme implements IChargingStationCertificateAuthorityClient {
   private readonly _directoryUrl: string = acme.directory.letsencrypt.staging;
@@ -21,15 +24,12 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
   private _securityCertChainKeyMap: Map<string, [string, string]> = new Map();
 
   private _client: Client | undefined;
-  private _cache: ICache;
   private _logger: Logger<ILogObj>;
 
-  constructor(config: SystemConfig, cache: ICache, logger?: Logger<ILogObj>) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
-
-    this._cache = cache;
 
     config.util.networkConnection.websocketServers.forEach((server) => {
       if (server.securityProfile === 3) {
@@ -55,14 +55,15 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       }
     });
 
-    this._email = config.modules.certificates?.chargingStationCA.acme?.email;
+    this._email =
+      config.util.certificateAuthority.chargingStationCA.acme?.email;
     const accountKey = fs.readFileSync(
-      config.modules.certificates?.chargingStationCA?.acme
+      config.util.certificateAuthority.chargingStationCA?.acme
         ?.accountKeyFilePath as string,
     );
     const acmeEnv: string | undefined =
-      config.modules.certificates?.chargingStationCA?.acme?.env;
-    if (acmeEnv === 'production') {
+      config.util.certificateAuthority.chargingStationCA?.acme?.env;
+    if (!acmeEnv && acmeEnv === 'production') {
       this._directoryUrl = acme.directory.letsencrypt.production;
     }
 
@@ -140,41 +141,36 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
   }
 
   /**
-   * Get sub CA from the certificate chain based on the station ID.
+   * Get sub CA from the certificate chain.
    * Use it to sign certificate based on the CSR string.
    *
    * @param {string} csrString - The Certificate Signing Request (CSR) string.
-   * @param {string} [stationId] - The station ID.
    * @return {Promise<string>} - The signed certificate followed by sub CA in PEM format.
    */
-  async getCertificateChain(
-    csrString: string,
-    stationId: string,
-  ): Promise<string> {
-    const clientConnection: string = (await this._cache.get(
-      stationId,
-      CacheNamespace.Connections,
-    )) as string;
-
-    if (!this._securityCertChainKeyMap.has(clientConnection)) {
-      throw new Error(
-        `Cannot find tls certificate chain and sub CA key with serverId  ${clientConnection}`,
-      );
-    }
-    const [certChain, subCAPrivateKey] = this._securityCertChainKeyMap.get(
-      clientConnection,
-    ) as [string, string];
-
-    const subCACertPem: string = this._getSubCAForSigning(certChain);
-    const signedCertPem: string = forge.pki.certificateToPem(
-      this._createSignedCertificateFromCSR(
-        forge.pki.certificationRequestFromPem(csrString),
-        forge.pki.certificateFromPem(subCACertPem),
-        forge.pki.privateKeyFromPem(subCAPrivateKey),
-      ),
+  async getCertificateChain(csrString: string): Promise<string> {
+    const [serverId, [certChain, subCAPrivateKey]] =
+      this._securityCertChainKeyMap.entries().next().value;
+    this._logger.debug(
+      `Found certificate chain in server ${serverId}: ${certChain}`,
     );
 
-    return signedCertPem.replace(/\r/g, '') + subCACertPem;
+    const certChainArray: string[] = parseCertificateChainPem(certChain);
+    if (certChainArray.length < 2) {
+      throw new Error(
+        `The size of the chain is ${certChainArray.length}. Sub CA certificate for signing not found`,
+      );
+    }
+    this._logger.info(`Found Sub CA certificate: ${certChainArray[1]}`);
+
+    const signedCertPem: string = createSignedCertificateFromCSR(
+      csrString,
+      certChainArray[1],
+      subCAPrivateKey,
+    ).getPEM();
+
+    // Generate and return certificate chain for signed certificate
+    certChainArray[0] = signedCertPem.replace(/\n+$/, '');
+    return certChainArray.join('\n');
   }
 
   updateCertificateChainKeyMap(
@@ -187,86 +183,11 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
         certificateChain,
         privateKey,
       ]);
+      this._logger.info(
+        `Updated certificate chain key map for server ${serverId}`,
+      );
     } else {
       this._logger.error(`Server ${serverId} not found in the map`);
     }
-  }
-
-  /**
-   * Retrieves sub CA certificate for signing from the provided certificate chain PEM string.
-   * The chain is in order: leaf cert, sub CA n ... sub CA 1
-   *
-   * @param {string} certChainPem - The PEM string containing the ordered CA certificates.
-   * @return {string} The sub CA certificate which is used for signing.
-   */
-  private _getSubCAForSigning(certChainPem: string): string {
-    const certsArray: string[] = certChainPem
-      .split('-----END CERTIFICATE-----')
-      .filter((cert) => cert.trim().length > 0);
-
-    if (certsArray.length < 2) {
-      // no certificate or only one leaf certificate
-      throw new Error('Sub CA certificate for signing not found');
-    }
-
-    // Remove leading new line and add "-----END CERTIFICATE-----" back because split removes it
-    return certsArray[1]
-      .replace(/^\n+/, '')
-      .concat('-----END CERTIFICATE-----');
-  }
-
-  /**
-   * Generate a serial number without leading 0s.
-   */
-  private _generateSerialNumber(): string {
-    const hexString = forge.util.bytesToHex(forge.random.getBytesSync(20));
-    return hexString.replace(/^0+/, '');
-  }
-
-  /**
-   * Create a signed certificate for the provided CSR using the sub CA certificate, and its private key.
-   *
-   * @param {forge.pki.CertificateSigningRequest} csr - The CSR that need to be signed.
-   * @param {forge.pki.Certificate} caCert - The sub CA certificate.
-   * @param {forge.pki.rsa.PrivateKey} caPrivateKey - The private key of the sub CA certificate.
-   * @return {forge.pki.Certificate} The signed certificate.
-   */
-  private _createSignedCertificateFromCSR(
-    csr: forge.pki.CertificateSigningRequest,
-    caCert: forge.pki.Certificate,
-    caPrivateKey: forge.pki.rsa.PrivateKey,
-  ): forge.pki.Certificate {
-    // Create the certificate
-    const certificate: forge.pki.Certificate = forge.pki.createCertificate();
-    certificate.publicKey = csr.publicKey as forge.pki.rsa.PublicKey;
-    certificate.serialNumber = this._generateSerialNumber(); // Unique serial number for the certificate
-    certificate.validity.notBefore = new Date();
-    certificate.validity.notAfter = caCert.validity.notAfter;
-    certificate.setIssuer(caCert.subject.attributes); // Set CA's attributes as issuer
-    certificate.setSubject(csr.subject.attributes);
-    certificate.setExtensions([
-      {
-        name: 'basicConstraints',
-        cA: false,
-      },
-      {
-        name: 'keyUsage',
-        critical: true,
-        digitalSignature: true,
-        keyEncipherment: true,
-      },
-      {
-        name: 'subjectKeyIdentifier',
-      },
-      {
-        name: 'authorityKeyIdentifier',
-        keyIdentifier: caCert.generateSubjectKeyIdentifier().getBytes(),
-      },
-    ]);
-
-    // Sign the certificate
-    certificate.sign(caPrivateKey);
-
-    return certificate;
   }
 }
