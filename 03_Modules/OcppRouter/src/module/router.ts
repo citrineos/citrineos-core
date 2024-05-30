@@ -112,7 +112,7 @@ export class MessageRouterImpl
     this._networkHook = networkHook;
     this.subscriptionRepository =
       subscriptionRepository ||
-      new sequelize.SubscriptionRepository(config, this._logger);
+      new sequelize.SequelizeSubscriptionRepository(config, this._logger);
   }
 
   addOnConnectionCallback(

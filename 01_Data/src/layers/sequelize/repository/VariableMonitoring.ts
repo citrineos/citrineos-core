@@ -5,23 +5,32 @@
 import { SequelizeRepository } from './Base';
 import { EventData, VariableMonitoring, VariableMonitoringStatus } from '../model/VariableMonitoring';
 import { type IVariableMonitoringRepository } from '../../../interfaces';
-import { CallAction, type EventDataType, type MonitoringDataType, type SetMonitoringDataType, type SetMonitoringResultType, SetMonitoringStatusEnumType } from '@citrineos/base';
+import { CallAction, type EventDataType, type MonitoringDataType, type SetMonitoringDataType, type SetMonitoringResultType, SetMonitoringStatusEnumType, CrudRepository, SystemConfig } from '@citrineos/base';
 import { Component, Variable } from '../model/DeviceModel';
+import { Sequelize } from 'sequelize-typescript';
+import { Logger, ILogObj } from 'tslog';
 
-export class VariableMonitoringRepository extends SequelizeRepository<VariableMonitoring> implements IVariableMonitoringRepository {
+export class SequelizeVariableMonitoringRepository extends SequelizeRepository<VariableMonitoring> implements IVariableMonitoringRepository {
+  eventData: CrudRepository<EventData>;
+  variableMonitoringStatus: CrudRepository<VariableMonitoringStatus>;
+
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, eventData?: CrudRepository<EventData>, variableMonitoringStatus?: CrudRepository<VariableMonitoringStatus>) {
+    super(config, VariableMonitoring.MODEL_NAME, logger, sequelizeInstance);
+    this.eventData = eventData ? eventData : new SequelizeRepository<EventData>(config, EventData.MODEL_NAME, logger, sequelizeInstance);
+    this.variableMonitoringStatus = variableMonitoringStatus ? variableMonitoringStatus : new SequelizeRepository<VariableMonitoringStatus>(config, VariableMonitoringStatus.MODEL_NAME, logger, sequelizeInstance);
+  }
+
   async createOrUpdateByMonitoringDataTypeAndStationId(value: MonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring[]> {
     return await Promise.all(
       value.variableMonitoring.map(async (variableMonitoring) => {
-        const [savedVariableMonitoring, _variableMonitoringCreated] = await VariableMonitoring.upsert({
-          stationId,
-          variableId,
-          componentId,
-          id: variableMonitoring.id,
-          transaction: variableMonitoring.transaction,
-          value: variableMonitoring.value,
-          type: variableMonitoring.type,
-          severity: variableMonitoring.severity,
-        });
+        const [savedVariableMonitoring, _variableMonitoringCreated] = await this.upsert(
+          VariableMonitoring.build({
+            stationId,
+            variableId,
+            componentId,
+            ...variableMonitoring,
+          }),
+        );
 
         await this.createVariableMonitoringStatus(SetMonitoringStatusEnumType.Accepted, CallAction.NotifyMonitoringReport, savedVariableMonitoring.get('databaseId'));
 
@@ -31,29 +40,29 @@ export class VariableMonitoringRepository extends SequelizeRepository<VariableMo
   }
 
   async createVariableMonitoringStatus(status: SetMonitoringStatusEnumType, action: CallAction, variableMonitoringId: number): Promise<void> {
-    await VariableMonitoringStatus.create({
-      status,
-      statusInfo: { reasonCode: action },
-      variableMonitoringId,
-    });
+    await this.variableMonitoringStatus.create(
+      VariableMonitoringStatus.build({
+        status,
+        statusInfo: { reasonCode: action },
+        variableMonitoringId,
+      }),
+    );
   }
 
   async createOrUpdateBySetMonitoringDataTypeAndStationId(value: SetMonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring> {
-    const [savedVariableMonitoring, _variableMonitoringCreated] = await VariableMonitoring.upsert({
-      stationId,
-      variableId,
-      componentId,
-      id: value.id,
-      transaction: value.transaction,
-      value: value.value,
-      type: value.type,
-      severity: value.severity,
-    });
+    const [savedVariableMonitoring, _variableMonitoringCreated] = await this.upsert(
+      VariableMonitoring.build({
+        stationId,
+        variableId,
+        componentId,
+        ...value,
+      }),
+    );
     return savedVariableMonitoring;
   }
 
   async rejectAllVariableMonitoringsByStationId(action: CallAction, stationId: string): Promise<void> {
-    await VariableMonitoring.findAll({
+    await this.readAllByQuery({
       where: {
         stationId,
       },
@@ -68,7 +77,7 @@ export class VariableMonitoringRepository extends SequelizeRepository<VariableMo
     // use findAll since according to the OCPP 2.0.1 installed VariableMonitors should have unique id’s
     // but the id’s of removed Installed monitors should have unique id’s
     // but the id’s of removed monitors MAY be reused.
-    await VariableMonitoring.findAll({
+    await this.readAllByQuery({
       where: {
         id,
         stationId,
@@ -80,9 +89,9 @@ export class VariableMonitoringRepository extends SequelizeRepository<VariableMo
     });
   }
 
-  async updateResultByStationId(result: SetMonitoringResultType, stationId: string): Promise<VariableMonitoring | undefined> {
-    const savedVariableMonitoring = await super.readByQuery(
-      {
+  async updateResultByStationId(result: SetMonitoringResultType, stationId: string): Promise<VariableMonitoring> {
+    const savedVariableMonitoring = await super
+      .readAllByQuery({
         where: { stationId, type: result.type, severity: result.severity },
         include: [
           {
@@ -100,48 +109,45 @@ export class VariableMonitoringRepository extends SequelizeRepository<VariableMo
             },
           },
         ],
-      },
-      VariableMonitoring.MODEL_NAME,
-    );
+      })
+      .then((variableMonitorings) => variableMonitorings[0]); // TODO: Make sure this uniqueness constraint is actually enforced.
 
     if (savedVariableMonitoring) {
       // The Id is only returned from Charging Station when status is accepted.
       if (result.status === SetMonitoringStatusEnumType.Accepted) {
-        await savedVariableMonitoring.update({
-          id: result.id,
-        });
+        await this.updateByKey(
+          {
+            id: result.id,
+          },
+          savedVariableMonitoring.get('databaseId').toString(),
+        );
       }
 
-      await VariableMonitoringStatus.create({
-        status: result.status,
-        statusInfo: result.statusInfo,
-        variableMonitoringId: savedVariableMonitoring.get('databaseId'),
-      });
+      await this.variableMonitoringStatus.create(
+        VariableMonitoringStatus.build({
+          status: result.status,
+          statusInfo: result.statusInfo,
+          variableMonitoringId: savedVariableMonitoring.get('databaseId'),
+        }),
+      );
       // Reload in order to include the statuses
-      return await savedVariableMonitoring.reload({
+      return await this.readAllByQuery({
+        where: { databaseId: savedVariableMonitoring.get('databaseId') },
         include: [VariableMonitoringStatus],
-      });
+      }).then((variableMonitorings) => variableMonitorings[0]);
     } else {
       throw new Error(`Unable to update set monitoring result: ${result}`);
     }
   }
 
   async createEventDatumByComponentIdAndVariableIdAndStationId(event: EventDataType, componentId: string, variableId: string, stationId: string): Promise<EventData> {
-    return await EventData.create({
-      stationId,
-      variableId,
-      componentId,
-      eventId: event.eventId,
-      timestamp: event.timestamp,
-      trigger: event.trigger,
-      cause: event.cause,
-      actualValue: event.actualValue,
-      techCode: event.techCode,
-      techInfo: event.techInfo,
-      cleared: event.cleared,
-      transactionId: event.transactionId,
-      variableMonitoringId: event.variableMonitoringId,
-      eventNotificationType: event.eventNotificationType,
-    });
+    return await this.eventData.create(
+      EventData.build({
+        stationId,
+        variableId,
+        componentId,
+        ...event,
+      }),
+    );
   }
 }

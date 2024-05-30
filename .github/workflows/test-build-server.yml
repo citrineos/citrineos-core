@@ -1,14 +1,14 @@
-name: Build Server on Pull Request
+name: Test Server on Pull Request
 
 on:
   pull_request:
 
-env:
-  IMAGE_NAME: citrineos-server
-
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
@@ -16,5 +16,40 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image
-        run: docker build . --file ./Server/deploy.Dockerfile --tag $IMAGE_NAME
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set permissions on the uploads directory
+        run: |
+          sudo chown 1000:1000 ${{ github.workspace }}/Server/data/directus/uploads
+
+      - name: Build and Run Docker Compose
+        run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml up -d
+
+      - name: Install Newman
+        run: |
+          npm install -g newman
+          sleep 10
+
+      - name: Integration test
+        run: |
+          RETRY_COUNT=0
+          MAX_RETRIES=5
+          RETRY_DELAY=10
+          until [ $RETRY_COUNT -ge $MAX_RETRIES ]
+          do
+            newman run ${{ github.workspace }}/.github/workflows/tests/CI/collection.json -e ${{ github.workspace }}/.github/workflows/tests/CI/environment.json --reporters cli && break
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            echo "Retry $RETRY_COUNT/$MAX_RETRIES in $RETRY_DELAY seconds..."
+            sleep $RETRY_DELAY
+          done
+        shell: bash
+
+      - name: Get logs for all containers
+        if: failure()
+        run: |
+          docker ps -a
+          docker container ls -aq | xargs -I {} docker logs {}
+
+      - name: Clean up
+        run: docker-compose -f ${{ github.workspace }}/Server/docker-compose.yml down

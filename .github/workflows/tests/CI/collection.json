@@ -1,0 +1,44 @@
+{
+  "info": {
+    "name": "API Collection",
+    "_postman_id": "a1234567-b89c-4d12-95a3-b4567e89c0d1",
+    "description": "A collection contains CI tests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Check Health",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "none"
+        },
+        "url": {
+          "raw": "{{host}}:{{port}}/health",
+          "protocol": "http",
+          "host": ["{{host}}"],
+          "port": "{{port}}",
+          "path": ["health"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  }
+}

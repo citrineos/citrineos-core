@@ -9,6 +9,9 @@ import { Variable } from './Variable';
 
 @Table
 export class ComponentVariable extends Model {
+  // Namespace enum not used as this is not a model required by CitrineOS
+  static readonly MODEL_NAME: string = 'ComponentVariable';
+
   @ForeignKey(() => Component)
   @Column(DataType.INTEGER)
   declare componentId: number;

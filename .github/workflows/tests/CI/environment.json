@@ -1,0 +1,16 @@
+{
+  "id": "4454509f-00c2-4b1b-837a-e45d9814dbf6",
+  "name": "Local Environment",
+  "values": [
+    {
+      "key": "host",
+      "value": "localhost",
+      "enabled": true
+    },
+    {
+      "key": "port",
+      "value": "8080",
+      "enabled": true
+    }
+  ]
+}

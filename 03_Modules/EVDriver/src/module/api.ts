@@ -51,7 +51,7 @@ export class EVDriverModuleApi
   /**
    * Constructs a new instance of the class.
    *
-   * @param {EVDriverModule} EVDriverModule - The EVDriver module.
+   * @param {EVDriverModule} evDriverModule - The EVDriver module.
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger for logging.
    */
@@ -96,7 +96,7 @@ export class EVDriverModuleApi
       Body: AuthorizationRestrictions;
       Querystring: AuthorizationQuerystring;
     }>,
-  ): Promise<AuthorizationData | undefined> {
+  ): Promise<AuthorizationData[]> {
     return this._module.authorizeRepository.updateRestrictionsByQuery(
       request.body,
       request.query,
@@ -110,8 +110,8 @@ export class EVDriverModuleApi
   )
   getAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
-  ): Promise<AuthorizationData | undefined> {
-    return this._module.authorizeRepository.readByQuery(request.query);
+  ): Promise<AuthorizationData[]> {
+    return this._module.authorizeRepository.readAllByQuery(request.query);
   }
 
   @AsDataEndpoint(
