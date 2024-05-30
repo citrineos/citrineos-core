@@ -3,11 +3,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
+import { z } from 'zod';
 import {
   type SystemConfig,
   SystemConfigInput,
-  systemConfigSchema,
+  systemConfigSchema
 } from './types';
+
+const CITRINE_ENV_VAR_PREFIX = 'citrineos_';
 
 /**
  * Finds a case-insensitive match for a key in an object.
@@ -23,6 +26,38 @@ function findCaseInsensitiveMatch<T>(
   return Object.keys(obj).find((key) => key.toLowerCase() === lowerTargetKey);
 }
 
+const getZodSchemaKeyMap = (schema: z.ZodType): Record<string, any> => {
+  if (schema instanceof z.ZodEffects) {
+    return getZodSchemaKeyMap(schema._def?.schema);
+  }
+
+  if (schema instanceof z.ZodNullable || schema instanceof z.ZodOptional) {
+    return getZodSchemaKeyMap(schema.unwrap());
+  }
+
+  if (schema instanceof z.ZodArray) {
+    return getZodSchemaKeyMap(schema.element);
+  }
+
+  if (schema instanceof z.ZodObject) {
+    const entries = Object.entries<z.ZodType>(schema.shape);
+
+    return entries.reduce((acc, [key, value]) => {
+      const nested = getZodSchemaKeyMap(value);
+
+      if (Object.keys(nested).length > 0) {
+        acc[key] = nested;
+      } else {
+        acc[key.toLowerCase()] = key;
+      }
+
+      return acc;
+    }, {} as Record<string, any>);
+  }
+
+  return {};
+};
+
 /**
  * Merges configuration from environment variables into the default configuration. Allows any to keep it as generic as possible.
  * @param defaultConfig The default configuration.
@@ -33,49 +68,47 @@ function findCaseInsensitiveMatch<T>(
 function mergeConfigFromEnvVars<T extends Record<string, any>>(
   defaultConfig: T,
   envVars: NodeJS.ProcessEnv,
+  configKeyMap: Record<string, any>
 ): T {
   const config: T = { ...defaultConfig };
-
-  const prefix = 'citrineos_';
 
   for (const [fullEnvKey, value] of Object.entries(envVars)) {
     if (!value) {
       continue;
     }
     const lowercaseEnvKey = fullEnvKey.toLowerCase();
-    console.log(lowercaseEnvKey);
-    if (lowercaseEnvKey.startsWith(prefix)) {
-      const envKeyWithoutPrefix = lowercaseEnvKey.substring(prefix.length);
+    if (lowercaseEnvKey.startsWith(CITRINE_ENV_VAR_PREFIX)) {
+      const envKeyWithoutPrefix = lowercaseEnvKey.substring(CITRINE_ENV_VAR_PREFIX.length);
       const path = envKeyWithoutPrefix.split('_');
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let currentConfigPart: any = config;
+      let currentConfigPart: Record<string, any> = config;
+      let currentConfigKeyMap: Record<string, any> = configKeyMap;
 
       for (let i = 0; i < path.length - 1; i++) {
         const part = path[i];
-        const matchingKey = findCaseInsensitiveMatch(currentConfigPart, part);
+        const matchingKey = findCaseInsensitiveMatch(currentConfigKeyMap, part);
         if (matchingKey && typeof currentConfigPart[matchingKey] === 'object') {
           currentConfigPart = currentConfigPart[matchingKey];
+          currentConfigKeyMap = currentConfigKeyMap[matchingKey];
         } else {
           currentConfigPart[part] = {};
           currentConfigPart = currentConfigPart[part];
+          currentConfigKeyMap = currentConfigKeyMap[part];
         }
       }
 
       const finalPart = path[path.length - 1];
-      const keyToUse =
-        findCaseInsensitiveMatch(currentConfigPart, finalPart) || finalPart;
+      const keyToUse = currentConfigKeyMap[finalPart.toLowerCase()] || finalPart;
 
       try {
         currentConfigPart[keyToUse] = JSON.parse(value as string);
       } catch {
-        console.error(
-          `Error parsing value '${value}' for environment variable '${fullEnvKey}'.`,
-        );
+        console.debug(`Mapping '${value}' as string for environment variable '${fullEnvKey}'`);
         currentConfigPart[keyToUse] = value;
       }
     }
   }
+
   return config as T;
 }
 
@@ -105,9 +138,11 @@ function validateFinalConfig(finalConfig: SystemConfigInput) {
  * @throws Error if required environment variables are not set or if there are parsing errors.
  */
 export function defineConfig(inputConfig: SystemConfigInput): SystemConfig {
+  const configKeyMap: Record<string, any> = getZodSchemaKeyMap(systemConfigSchema);
   const appConfig = mergeConfigFromEnvVars<SystemConfigInput>(
     inputConfig,
     process.env,
+    configKeyMap
   );
 
   validateFinalConfig(appConfig);
