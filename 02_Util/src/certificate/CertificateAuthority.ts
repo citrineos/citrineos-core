@@ -246,6 +246,8 @@ export class CertificateAuthorityService {
         const ocspResponse = getOCSPResponseInfo(
           await sendOCSPRequest(ocspRequest, reqData.responderURL),
         );
+        // Cert statuses: good, revoked, unknown
+        // source: https://kjur.github.io/jsrsasign/api/symbols/KJUR.asn1.ocsp.OCSPUtil.html#.getOCSPResponseInfo
         const certStatus = ocspResponse.certStatus;
         if (certStatus === 'revoked') {
           return AuthorizeCertificateStatusEnumType.CertificateRevoked;
