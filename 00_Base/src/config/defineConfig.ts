@@ -7,7 +7,7 @@ import { z } from 'zod';
 import {
   type SystemConfig,
   SystemConfigInput,
-  systemConfigSchema
+  systemConfigSchema,
 } from './types';
 
 const CITRINE_ENV_VAR_PREFIX = 'citrineos_';
@@ -42,17 +42,20 @@ const getZodSchemaKeyMap = (schema: z.ZodType): Record<string, any> => {
   if (schema instanceof z.ZodObject) {
     const entries = Object.entries<z.ZodType>(schema.shape);
 
-    return entries.reduce((acc, [key, value]) => {
-      const nested = getZodSchemaKeyMap(value);
+    return entries.reduce(
+      (acc, [key, value]) => {
+        const nested = getZodSchemaKeyMap(value);
 
-      if (Object.keys(nested).length > 0) {
-        acc[key] = nested;
-      } else {
-        acc[key.toLowerCase()] = key;
-      }
+        if (Object.keys(nested).length > 0) {
+          acc[key] = nested;
+        } else {
+          acc[key.toLowerCase()] = key;
+        }
 
-      return acc;
-    }, {} as Record<string, any>);
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
   }
 
   return {};
@@ -68,7 +71,7 @@ const getZodSchemaKeyMap = (schema: z.ZodType): Record<string, any> => {
 function mergeConfigFromEnvVars<T extends Record<string, any>>(
   defaultConfig: T,
   envVars: NodeJS.ProcessEnv,
-  configKeyMap: Record<string, any>
+  configKeyMap: Record<string, any>,
 ): T {
   const config: T = { ...defaultConfig };
 
@@ -78,7 +81,9 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
     }
     const lowercaseEnvKey = fullEnvKey.toLowerCase();
     if (lowercaseEnvKey.startsWith(CITRINE_ENV_VAR_PREFIX)) {
-      const envKeyWithoutPrefix = lowercaseEnvKey.substring(CITRINE_ENV_VAR_PREFIX.length);
+      const envKeyWithoutPrefix = lowercaseEnvKey.substring(
+        CITRINE_ENV_VAR_PREFIX.length,
+      );
       const path = envKeyWithoutPrefix.split('_');
 
       let currentConfigPart: Record<string, any> = config;
@@ -98,12 +103,15 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
       }
 
       const finalPart = path[path.length - 1];
-      const keyToUse = currentConfigKeyMap[finalPart.toLowerCase()] || finalPart;
+      const keyToUse =
+        currentConfigKeyMap[finalPart.toLowerCase()] || finalPart;
 
       try {
         currentConfigPart[keyToUse] = JSON.parse(value as string);
       } catch {
-        console.debug(`Mapping '${value}' as string for environment variable '${fullEnvKey}'`);
+        console.debug(
+          `Mapping '${value}' as string for environment variable '${fullEnvKey}'`,
+        );
         currentConfigPart[keyToUse] = value;
       }
     }
@@ -138,11 +146,12 @@ function validateFinalConfig(finalConfig: SystemConfigInput) {
  * @throws Error if required environment variables are not set or if there are parsing errors.
  */
 export function defineConfig(inputConfig: SystemConfigInput): SystemConfig {
-  const configKeyMap: Record<string, any> = getZodSchemaKeyMap(systemConfigSchema);
+  const configKeyMap: Record<string, any> =
+    getZodSchemaKeyMap(systemConfigSchema);
   const appConfig = mergeConfigFromEnvVars<SystemConfigInput>(
     inputConfig,
     process.env,
-    configKeyMap
+    configKeyMap,
   );
 
   validateFinalConfig(appConfig);

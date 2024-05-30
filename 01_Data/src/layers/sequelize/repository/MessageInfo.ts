@@ -5,11 +5,17 @@
 import { SequelizeRepository } from './Base';
 import { MessageInfo } from '../model/MessageInfo';
 import { IMessageInfoRepository } from '../../../interfaces';
-import { MessageInfoType } from '@citrineos/base';
+import { MessageInfoType, SystemConfig } from '@citrineos/base';
+import { Sequelize } from 'sequelize-typescript';
+import { Logger, ILogObj } from 'tslog';
 
-export class MessageInfoRepository extends SequelizeRepository<MessageInfo> implements IMessageInfoRepository {
+export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageInfo> implements IMessageInfoRepository {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+    super(config, MessageInfo.MODEL_NAME, logger, sequelizeInstance);
+  }
+
   async deactivateAllByStationId(stationId: string): Promise<void> {
-    await MessageInfo.update(
+    await this.updateAllByQuery(
       {
         active: false,
       },
@@ -24,18 +30,14 @@ export class MessageInfoRepository extends SequelizeRepository<MessageInfo> impl
   }
 
   async createOrUpdateByMessageInfoTypeAndStationId(message: MessageInfoType, stationId: string, componentId?: number): Promise<MessageInfo> {
-    const [savedMessageInfo, _messageInfoCreated] = await MessageInfo.upsert({
-      stationId: stationId,
-      componentId: componentId,
-      id: message.id,
-      priority: message.priority,
-      state: message.state,
-      startDateTime: message.startDateTime,
-      endDateTime: message.endDateTime,
-      transactionId: message.transactionId,
-      message: message.message,
-      active: true,
-    });
+    const [savedMessageInfo, _messageInfoCreated] = await this.upsert(
+      MessageInfo.build({
+        stationId: stationId,
+        componentId: componentId,
+        ...message,
+        active: true,
+      }),
+    );
     return savedMessageInfo;
   }
 }

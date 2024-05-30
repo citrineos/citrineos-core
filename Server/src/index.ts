@@ -281,8 +281,8 @@ export class CitrineOSServer {
   private initNetworkConnection() {
     this._authenticator = new Authenticator(
       this._cache,
-      new sequelize.LocationRepository(this._config, this._logger),
-      new sequelize.DeviceModelRepository(this._config, this._logger),
+      new sequelize.SequelizeLocationRepository(this._config, this._logger),
+      new sequelize.SequelizeDeviceModelRepository(this._config, this._logger),
       this._logger,
     );
 

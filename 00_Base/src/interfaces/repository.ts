@@ -3,21 +3,66 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
+import { EventEmitter } from 'events';
+
+export interface CrudEvent<T> {
+  created: [T[]];
+  updated: [T[]];
+  deleted: [T[]];
+}
+
 /**
  * Represents a generic CRUD repository.
  *
  * @template T - The type of the values stored in the repository.
  */
-export interface ICrudRepository<T> {
+export abstract class CrudRepository<T> extends EventEmitter {
+  constructor() {
+    super();
+  }
+
+  /**
+   * On method overridden to handle events from {@link CrudEvent}.
+   * @param event The name of the event. Must be a key in {@link CrudEvent}.
+   * @param listener The callback for the event. Argument types correspond to the contents of the event key in {@link CrudEvent}.
+   *
+   * @see {@link EventEmitter#on} for the original method.
+   */
+  on<K extends keyof CrudEvent<T>>(
+    event: K,
+    listener: (...args: CrudEvent<T>[K]) => void,
+  ): this {
+    return super.on(event, listener as (...args: any[]) => void);
+  }
+
+  /**
+   * Emit method overridden to emit events from {@link CrudEvent}.
+   * @param event The name of the event. Must be a key in {@link CrudEvent}.
+   * @param args The arguments to pass with the event. Allowed types correspond to the contents of the event key in {@link CrudEvent}.
+   *
+   * @see {@link EventEmitter#emit} for the original method.
+   */
+  emit<K extends keyof CrudEvent<T>>(
+    event: K,
+    ...args: CrudEvent<T>[K]
+  ): boolean {
+    return super.emit(event, ...args);
+  }
+
   /**
    * Creates a new entry in the database with the specified value.
    * If a namespace is provided, the entry will be created within that namespace.
    *
    * @param value - The value of the entry.
    * @param namespace - The optional namespace to create the entry in.
-   * @returns A Promise that resolves to the created entry, or undefined if an error occurred.
+   * @returns A Promise that resolves to the created entry.
    */
-  create(value: T, namespace?: string): Promise<T | undefined>;
+  public async create(value: T, namespace?: string): Promise<T> {
+    const result = await this._create(value, namespace);
+    this.emit('created', [result]);
+    return result;
+  }
+  protected abstract _create(value: T, namespace?: string): Promise<T>;
 
   /**
    * Creates a new entry in the database with the specified value and key.
@@ -26,13 +71,22 @@ export interface ICrudRepository<T> {
    * @param value - The value of the entry.
    * @param key - The key of the entry.
    * @param namespace - The optional namespace to create the entry in.
-   * @returns A Promise that resolves to the created entry, or undefined if an error occurred.
+   * @returns A Promise that resolves to the created entry.
    */
-  createByKey?(
+  public async createByKey(
     value: T,
     key: string,
     namespace?: string,
-  ): Promise<T | undefined>;
+  ): Promise<T> {
+    const result = await this._createByKey(value, key, namespace);
+    this.emit('created', [result]);
+    return result;
+  }
+  protected abstract _createByKey(
+    value: T,
+    key: string,
+    namespace?: string,
+  ): Promise<T>;
 
   /**
    * Reads a value from storage based on the given key.
@@ -41,16 +95,58 @@ export interface ICrudRepository<T> {
    * @param namespace - Optional namespace for the key.
    * @returns A promise that resolves to the value associated with the key, or undefined if the key does not exist.
    */
-  readByKey?(key: string, namespace?: string): Promise<T | undefined>;
+  abstract readByKey(key: string, namespace?: string): Promise<T | undefined>;
 
   /**
-   * Reads a value from storage based on the given query.
+   * Reads values from storage based on the given query.
    *
    * @param query - The query to use.
    * @param namespace - Optional namespace for the query.
-   * @returns A promise that resolves to the value associated with the query, or undefined if the value does not exist.
+   * @returns A promise that resolves to the values associated with the query.
    */
-  readByQuery(query: object, namespace?: string): Promise<T | undefined>;
+  abstract readAllByQuery(query: object, namespace?: string): Promise<T[]>;
+
+  /**
+   * Attempts to read a value from storage based on the given query, or throws an exception if more than one value is found.
+   *
+   * @param query - The query to use.
+   * @param namespace - Optional namespace for the query.
+   * @returns A promise that resolves to the value associated with the query if it exists. An exception is thrown if more than one value is found.
+   */
+  public async readOnlyOneByQuery(
+    query: object,
+    namespace?: string,
+  ): Promise<T | undefined> {
+    const results = await this.readAllByQuery(query, namespace);
+    if (results.length > 1) {
+      throw new Error(
+        `More than one value found for query: ${JSON.stringify(query)}`,
+      );
+    }
+    return results[0];
+  }
+
+  /**
+   * Reads the first matching value from storage based on the given query, or creates a matching value if none exists.
+   *
+   * @param query - The query to use.
+   * @param namespace - Optional namespace for the query.
+   * @returns A promise that resolves to an array where the first element is the value associated with the query, either an existing value or the newly created value, and the second element is a boolean indicating whether the entry was created.
+   */
+  public async readOrCreateByQuery(
+    query: object,
+    namespace?: string,
+  ): Promise<[T, boolean]> {
+    const result = await this._readOrCreateByQuery(query, namespace);
+    if (result[1]) {
+      this.emit('created', [result[0]]);
+    }
+    return result;
+  }
+  protected abstract _readOrCreateByQuery(
+    query: object,
+    namespace?: string,
+  ): Promise<[T, boolean]>;
 
   /**
    * Updates the value associated with the given key in the specified namespace.
@@ -61,26 +157,66 @@ export interface ICrudRepository<T> {
    * @param namespace - The namespace in which to update the key.
    * @returns A promise that resolves to the updated value, or undefined if the key does not exist.
    */
-  updateByKey?(
-    value: T,
+  public async updateByKey(
+    value: Partial<T>,
+    key: string,
+    namespace?: string,
+  ): Promise<T | undefined> {
+    const result = await this._updateByKey(value, key, namespace);
+    this.emit('updated', result ? [result] : []);
+    return result;
+  }
+  protected abstract _updateByKey(
+    value: Partial<T>,
     key: string,
     namespace?: string,
   ): Promise<T | undefined>;
 
   /**
-   * Updates the value associated with the given query in the specified namespace.
+   * Updates the values associated with the given query in the specified namespace.
    * If no namespace is provided, the default namespace is used.
    *
    * @param value - The new value to associate with the query.
    * @param query - The query to use.
-   * @param namespace - Optional namespace for the kqueryey.
-   * @returns A promise that resolves to the value associated with the key, or undefined if the key does not exist.
+   * @param namespace - Optional namespace for the query.
+   * @returns A promise that resolves to the updated values associated with the query.
    */
-  updateByQuery(
-    value: T,
+  public async updateAllByQuery(
+    value: Partial<T>,
     query: object,
     namespace?: string,
-  ): Promise<T | undefined>;
+  ): Promise<T[]> {
+    const result = await this._updateAllByQuery(value, query, namespace);
+    this.emit('updated', result);
+    return result;
+  }
+  protected abstract _updateAllByQuery(
+    value: Partial<T>,
+    query: object,
+    namespace?: string,
+  ): Promise<T[]>;
+
+  /**
+   * Creates or updates an entry in the database depending on whether the value matches any unique indices.
+   * If no namespace is provided, the default namespace is used.
+   *
+   * @param value - The value of the entry.
+   * @param namespace - The optional namespace to create the entry in.
+   * @returns A Promise that resolves to an array where the first element is the result of the upsert, and the second element is a boolean indicating whether the entry was created.
+   */
+  public async upsert(value: T, namespace?: string): Promise<[T, boolean]> {
+    const result = await this._upsert(value, namespace);
+    if (result[1]) {
+      this.emit('created', [result[0]]);
+    } else {
+      this.emit('updated', [result[0]]);
+    }
+    return result;
+  }
+  protected abstract _upsert(
+    value: T,
+    namespace?: string,
+  ): Promise<[T, boolean]>;
 
   /**
    * Deletes a key from the specified namespace.
@@ -88,9 +224,20 @@ export interface ICrudRepository<T> {
    *
    * @param key - The key to delete.
    * @param namespace - Optional. The namespace from which to delete the key.
-   * @returns A Promise that resolves to a boolean indicating whether the key was successfully deleted.
+   * @returns A Promise that resolves to the deleted entry, or undefined there was no matching entry.
    */
-  deleteByKey?(key: string, namespace?: string): Promise<boolean>;
+  public async deleteByKey(
+    key: string,
+    namespace?: string,
+  ): Promise<T | undefined> {
+    const result = await this._deleteByKey(key, namespace);
+    this.emit('deleted', result ? [result] : []);
+    return result;
+  }
+  protected abstract _deleteByKey(
+    key: string,
+    namespace?: string,
+  ): Promise<T | undefined>;
 
   /**
    * Deletes all values associated with a query from the specified namespace.
@@ -98,9 +245,20 @@ export interface ICrudRepository<T> {
    *
    * @param query - The query to use.
    * @param namespace - Optional. The namespace from which to delete the values.
-   * @returns A Promise that resolves to the number of rows successfully deleted.
+   * @returns A Promise that resolves to the deleted entries.
    */
-  deleteAllByQuery(query: object, namespace?: string): Promise<number>;
+  public async deleteAllByQuery(
+    query: object,
+    namespace?: string,
+  ): Promise<T[]> {
+    const result = await this._deleteAllByQuery(query, namespace);
+    this.emit('deleted', result);
+    return result;
+  }
+  protected abstract _deleteAllByQuery(
+    query: object,
+    namespace?: string,
+  ): Promise<T[]>;
 
   /**
    * Checks if a key exists in the specified namespace.
@@ -110,15 +268,15 @@ export interface ICrudRepository<T> {
    * @param namespace - Optional. The namespace in which to check the key.
    * @returns A Promise that resolves to a boolean indicating whether the key exists.
    */
-  existsByKey?(key: string, namespace?: string): Promise<boolean>;
+  abstract existsByKey(key: string, namespace?: string): Promise<boolean>;
 
   /**
-   * Checks if a specific value associated with a query exists in the specified namespace.
+   * Checks how many values associated with a query exists in the specified namespace.
    * If no namespace is provided, the query is checked in the default namespace.
    *
    * @param query - The query to use.
    * @param namespace - Optional. The namespace in which to check the query.
-   * @returns A Promise that resolves to a boolean indicating whether the value exists.
+   * @returns A Promise that resolves to the number of values matching the query.
    */
-  existsByQuery(query: object, namespace?: string): Promise<boolean>;
+  abstract existByQuery(query: object, namespace?: string): Promise<number>;
 }

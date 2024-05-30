@@ -161,13 +161,14 @@ export class ConfigurationModule extends AbstractModule {
     }
 
     this._bootRepository =
-      bootRepository || new sequelize.BootRepository(config, this._logger);
+      bootRepository ||
+      new sequelize.SequelizeBootRepository(config, this._logger);
     this._deviceModelRepository =
       deviceModelRepository ||
-      new sequelize.DeviceModelRepository(config, this._logger);
+      new sequelize.SequelizeDeviceModelRepository(config, this._logger);
     this._messageInfoRepository =
       messageInfoRepository ||
-      new sequelize.MessageInfoRepository(config, this._logger);
+      new sequelize.SequelizeMessageInfoRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(
       this._deviceModelRepository,

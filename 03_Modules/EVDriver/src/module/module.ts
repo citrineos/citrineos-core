@@ -142,12 +142,13 @@ export class EVDriverModule extends AbstractModule {
 
     this._authorizeRepository =
       authorizeRepository ||
-      new sequelize.AuthorizationRepository(config, logger);
+      new sequelize.SequelizeAuthorizationRepository(config, logger);
     this._deviceModelRepository =
       deviceModelRepository ||
-      new sequelize.DeviceModelRepository(config, logger);
+      new sequelize.SequelizeDeviceModelRepository(config, logger);
     this._tariffRepository =
-      tariffRepository || new sequelize.TariffRepository(config, logger);
+      tariffRepository ||
+      new sequelize.SequelizeTariffRepository(config, logger);
 
     this._certificateAuthorityService =
       certificateAuthorityService ||
@@ -223,7 +224,7 @@ export class EVDriverModule extends AbstractModule {
     }
 
     this._authorizeRepository
-      .readByQuery({ ...request.idToken })
+      .readOnlyOneByQuery({ ...request.idToken })
       .then(async (authorization) => {
         if (authorization) {
           if (authorization.idTokenInfo) {
@@ -397,7 +398,7 @@ export class EVDriverModule extends AbstractModule {
               Boolean(displayMessageAvailable[0].value))
           ) {
             // TODO: refactor the workaround below after tariff implementation is finalized.
-            const tariff: Tariff | null =
+            const tariff: Tariff | undefined =
               await this._tariffRepository.findByStationId(
                 message.context.stationId,
               );

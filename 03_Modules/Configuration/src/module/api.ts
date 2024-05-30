@@ -306,7 +306,7 @@ export class ConfigurationModuleApi
   )
   deleteBootConfig(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
-  ): Promise<boolean> {
+  ): Promise<Boot | undefined> {
     return this._module.bootRepository.deleteByKey(request.query.stationId);
   }
 

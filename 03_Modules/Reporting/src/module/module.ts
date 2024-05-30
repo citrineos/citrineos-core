@@ -143,13 +143,13 @@ export class ReportingModule extends AbstractModule {
 
     this._deviceModelRepository =
       deviceModelRepository ||
-      new sequelize.DeviceModelRepository(config, this._logger);
+      new sequelize.SequelizeDeviceModelRepository(config, this._logger);
     this._securityEventRepository =
       securityEventRepository ||
-      new sequelize.SecurityEventRepository(config, this._logger);
+      new sequelize.SequelizeSecurityEventRepository(config, this._logger);
     this._variableMonitoringRepository =
       variableMonitoringRepository ||
-      new sequelize.VariableMonitoringRepository(config, this._logger);
+      new sequelize.SequelizeVariableMonitoringRepository(config, this._logger);
     this._deviceModelService = new DeviceModelService(
       this._deviceModelRepository,
     );

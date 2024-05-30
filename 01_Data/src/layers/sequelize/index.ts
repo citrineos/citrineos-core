@@ -17,17 +17,17 @@ export { Certificate, SignatureAlgorithmEnumType, CountryNameEnumType } from './
 
 // Sequelize Repositories
 export { SequelizeRepository } from './repository/Base';
-export { AuthorizationRepository } from './repository/Authorization';
-export { BootRepository } from './repository/Boot';
-export { DeviceModelRepository } from './repository/DeviceModel';
-export { LocationRepository } from './repository/Location';
-export { TransactionEventRepository } from './repository/TransactionEvent';
-export { SecurityEventRepository } from './repository/SecurityEvent';
-export { VariableMonitoringRepository } from './repository/VariableMonitoring';
-export { MessageInfoRepository } from './repository/MessageInfo';
-export { TariffRepository } from './repository/Tariff';
-export { SubscriptionRepository } from './repository/Subscription';
-export { CertificateRepository } from './repository/Certificate';
+export { SequelizeAuthorizationRepository } from './repository/Authorization';
+export { SequelizeBootRepository } from './repository/Boot';
+export { SequelizeDeviceModelRepository } from './repository/DeviceModel';
+export { SequelizeLocationRepository } from './repository/Location';
+export { SequelizeTransactionEventRepository } from './repository/TransactionEvent';
+export { SequelizeSecurityEventRepository } from './repository/SecurityEvent';
+export { SequelizeVariableMonitoringRepository } from './repository/VariableMonitoring';
+export { SequelizeMessageInfoRepository } from './repository/MessageInfo';
+export { SequelizeTariffRepository } from './repository/Tariff';
+export { SequelizeSubscriptionRepository } from './repository/Subscription';
+export { SequelizeCertificateRepository } from './repository/Certificate';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util';
