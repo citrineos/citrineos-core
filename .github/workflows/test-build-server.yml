@@ -29,7 +29,7 @@ jobs:
       - name: Install Newman
         run: | 
           npm install -g newman
-          sleep 10
+          sleep 120
 
       - name: Integration test
         run: newman run ${{ github.workspace }}/.github/workflows/tests/CI/collection.json -e ${{ github.workspace }}/.github/workflows/tests/CI/environment.json --reporters cli
