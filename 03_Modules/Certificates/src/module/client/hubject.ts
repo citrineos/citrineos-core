@@ -80,6 +80,61 @@ export class Hubject implements IV2GCertificateAuthorityClient {
     return await response.text();
   }
 
+  async getSignedContractData(
+    xsdMsgDefNamespace: string,
+    certificateInstallationReq: string,
+  ): Promise<string> {
+    const url = `${this._baseUrl}/v1/ccp/signedContractData`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        Authorization: await this._getAuthorizationToken(this._tokenUrl),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        certificateInstallationReq: certificateInstallationReq,
+        xsdMsgDefNamespace: xsdMsgDefNamespace,
+      }),
+    });
+
+    if (response.status !== 200) {
+      const errorResponse = await response.text();
+      this._logger.error(
+        `Unexpected response ${response.status} from Hubject: ${errorResponse}`,
+      );
+      let errorMessages = 'Failed to get signed contract data';
+      if (errorResponse && errorResponse.includes('errorMessages')) {
+        errorMessages = JSON.parse(errorResponse).errorMessages;
+      }
+      throw new Error(errorMessages);
+    }
+
+    const contractData: SignedContractDataResponse = JSON.parse(
+      await response.text(),
+    ) as SignedContractDataResponse;
+
+    let certificateInstallationRes: string | undefined;
+    if (
+      contractData.CCPResponse.emaidContent &&
+      contractData.CCPResponse.emaidContent.length > 0
+    ) {
+      for (const emaidContent of contractData.CCPResponse.emaidContent) {
+        if (
+          emaidContent.messageDef &&
+          emaidContent.messageDef.certificateInstallationRes
+        ) {
+          certificateInstallationRes =
+            emaidContent.messageDef.certificateInstallationRes;
+        }
+      }
+    }
+    if (!certificateInstallationRes) {
+      throw new Error('Failed to find CertificateInstallationRes in response.');
+    }
+    return certificateInstallationRes;
+  }
+
   private async _getAuthorizationToken(tokenUrl: string): Promise<string> {
     const response = await fetch(tokenUrl, { method: 'GET' });
     if (!response.ok && response.status !== 304) {
@@ -102,4 +157,22 @@ export class Hubject implements IV2GCertificateAuthorityClient {
     tokenValue = tokenValue.split('\n')[0];
     return 'Bearer ' + tokenValue;
   }
+}
+
+interface SignedContractDataResponse {
+  CCPResponse: CCPResponse;
+}
+
+interface CCPResponse {
+  emaidContent?: EmaidContent[];
+}
+
+interface EmaidContent {
+  messageDef: MessageDef;
+}
+
+interface MessageDef {
+  metaData: string;
+  certificateInstallationRes: string;
+  emaid: string;
 }
