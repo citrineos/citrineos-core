@@ -25,7 +25,7 @@ export abstract class SequelizeRepository<T extends Model<any, any>> implements 
   }
 
   async readByKey(key: string, namespace: string): Promise<T> {
-    return await this.s.models[namespace].findOne({ where: { id: key } }).then((row) => row as T);
+    return await this.s.models[namespace].findByPk(key).then((row) => row as T);
   }
 
   async readByQuery(query: object, namespace: string): Promise<T> {
@@ -49,7 +49,11 @@ export abstract class SequelizeRepository<T extends Model<any, any>> implements 
   }
 
   async deleteByKey(key: string, namespace: string): Promise<boolean> {
-    return await this.s.models[namespace].destroy({ where: { id: key } }).then((count) => count > 0);
+    const primaryKey = this.s.models[namespace].primaryKeyAttribute;
+    return this.s.transaction().then(async (t) => {
+      await this.s.models[namespace].destroy({ where: { [primaryKey]: key }, transaction: t });
+      return true;
+    });
   }
 
   async deleteAllByQuery(query: object, namespace: string): Promise<number> {

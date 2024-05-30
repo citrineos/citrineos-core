@@ -19,6 +19,7 @@ import {
   GetLocalListVersionResponse,
   HandlerProperties,
   ICache,
+  IdTokenEnumType,
   IdTokenInfoType,
   IMessage,
   IMessageHandler,
@@ -180,6 +181,12 @@ export class EVDriverModule extends AbstractModule {
         // TODO determine how/if to set personalMessage
       },
     };
+
+    if (message.payload.idToken.type === IdTokenEnumType.NoAuthorization) {
+      response.idTokenInfo.status = AuthorizationStatusEnumType.Accepted;
+      this.sendCallResultWithMessage(message, response);
+      return;
+    }
 
     // Validate Contract Certificates based on OCPP 2.0.1 Part 2 C07
     if (request.iso15118CertificateHashData || request.certificate) {

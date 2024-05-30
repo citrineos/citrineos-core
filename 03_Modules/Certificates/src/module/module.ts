@@ -266,7 +266,7 @@ export class CertificatesModule extends AbstractModule {
           certificateType,
         );
     } catch (error) {
-      this._logger.error('Sing certificate failed:', error);
+      this._logger.error('Sign certificate failed:', error);
 
       // TODO uncomment after OCTT issue is fixed
       // this.sendCallResultWithMessage(message, {
