@@ -20,24 +20,6 @@ export function createLocalConfig(): SystemConfig {
         endpointPrefix: '/certificates',
         host: 'localhost',
         port: 8080,
-        v2gCA: {
-          name: 'hubject',
-          hubject: {
-            baseUrl: 'https://open.plugncharge-test.hubject.com',
-            tokenUrl:
-              'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
-            isoVersion: 'ISO15118-2',
-          },
-        },
-        chargingStationCA: {
-          name: 'acme',
-          acme: {
-            env: 'staging',
-            accountKeyFilePath:
-              '/usr/local/apps/citrineos/Swarm/src/assets/certificates/acme_account_key.pem',
-            email: 'test@citrineos.com',
-          },
-        },
       },
       configuration: {
         heartbeatInterval: 60,
@@ -132,6 +114,26 @@ export function createLocalConfig(): SystemConfig {
             protocol: 'ocpp2.0.1',
           },
         ],
+      },
+      certificateAuthority: {
+        v2gCA: {
+          name: 'hubject',
+          hubject: {
+            baseUrl: 'https://open.plugncharge-test.hubject.com',
+            tokenUrl:
+              'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
+            isoVersion: 'ISO15118-2',
+          },
+        },
+        chargingStationCA: {
+          name: 'acme',
+          acme: {
+            env: 'staging',
+            accountKeyFilePath:
+              '/usr/local/apps/citrineos/Swarm/src/assets/certificates/acme_account_key.pem',
+            email: 'test@citrineos.com',
+          },
+        },
       },
     },
     logLevel: 2, // debug

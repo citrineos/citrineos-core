@@ -26,20 +26,26 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { ICertificatesModuleApi } from './interface';
 import { CertificatesModule } from './module';
-import { WebsocketNetworkConnection } from '@citrineos/util';
+import {
+  generateCertificate,
+  generateCSR,
+  WebsocketNetworkConnection,
+} from '@citrineos/util';
 import {
   Certificate,
+  CountryNameEnumType,
   GenerateCertificateChainRequest,
   GenerateCertificateChainSchema,
-  TlsCertificatesRequest,
+  InstallRootCertificateRequest,
+  InstallRootCertificateSchema,
+  SignatureAlgorithmEnumType,
   TlsCertificateSchema,
+  TlsCertificatesRequest,
   UpdateTlsCertificateQuerySchema,
   UpdateTlsCertificateQueryString,
-  InstallRootCertificateSchema,
-  InstallRootCertificateRequest,
 } from '@citrineos/data';
 import fs from 'fs';
-import * as forge from 'node-forge';
+import moment from 'moment';
 
 const enum PemType {
   Root = 'Root',
@@ -190,6 +196,10 @@ export class CertificatesModuleApi
       throw new Error(`websocketServer id ${serverId} does not exist.`);
     } else if (serverConfig && serverConfig.securityProfile < 2) {
       throw new Error(`websocketServer ${serverId} is not tls or mtls server.`);
+    } else if (serverConfig.securityProfile === 3 && !certRequest.subCAKey) {
+      throw new Error(
+        `WebsocketServer ${serverId} is mtls server but subCAKey is missing.`,
+      );
     }
 
     const tlsKey: string = (
@@ -242,7 +252,7 @@ export class CertificatesModuleApi
     let certificateFromReq = new Certificate();
     certificateFromReq.serialNumber = certRequest.serialNumber
       ? certRequest.serialNumber
-      : this._generateSerialNumber();
+      : moment().valueOf();
     certificateFromReq.keyLength = certRequest.keyLength
       ? certRequest.keyLength
       : 2048;
@@ -255,14 +265,21 @@ export class CertificatesModuleApi
       defaultValidityDate.setFullYear(defaultValidityDate.getFullYear() + 1);
       certificateFromReq.validBefore = defaultValidityDate.toISOString();
     }
+    certificateFromReq.countryName = certRequest.countryName
+      ? certRequest.countryName
+      : CountryNameEnumType.US;
+    certificateFromReq.signatureAlgorithm = certRequest.signatureAlgorithm
+      ? certRequest.signatureAlgorithm
+      : SignatureAlgorithmEnumType.ECDSA;
+    certificateFromReq.isCA = true;
+    certificateFromReq.pathLen = certRequest.pathLen ? certRequest.pathLen : 1;
 
     let responseBody: Certificate[];
     if (certRequest.selfSigned) {
       // Generate self-signed root CA certificate
-      const [rootCertificatePem, rootPrivateKeyPem] = this._generateCertificate(
+      const [rootCertificatePem, rootPrivateKeyPem] = generateCertificate(
         certificateFromReq,
-        true,
-        1,
+        this._logger,
       );
       certificateFromReq = await this._storeCertificateAndKey(
         certificateFromReq,
@@ -274,16 +291,19 @@ export class CertificatesModuleApi
 
       // Generate sub CA certificate
       let subCertificate: Certificate = new Certificate();
-      subCertificate.serialNumber = this._generateSerialNumber();
+      subCertificate.serialNumber = certificateFromReq.serialNumber + 1;
       subCertificate.keyLength = certificateFromReq.keyLength;
       subCertificate.organizationName = certificateFromReq.organizationName;
       subCertificate.commonName = certRequest.commonName + ` ${PemType.SubCA}`;
       subCertificate.validBefore = certificateFromReq.validBefore;
       subCertificate.signedBy = certificateFromReq.id;
-      const [subCertificatePem, subPrivateKeyPem] = this._generateCertificate(
+      subCertificate.countryName = certificateFromReq.countryName;
+      subCertificate.signatureAlgorithm = certificateFromReq.signatureAlgorithm;
+      subCertificate.isCA = true;
+      subCertificate.pathLen = 0;
+      const [subCertificatePem, subPrivateKeyPem] = generateCertificate(
         subCertificate,
-        true,
-        0,
+        this._logger,
         rootPrivateKeyPem,
         rootCertificatePem,
       );
@@ -297,16 +317,18 @@ export class CertificatesModuleApi
 
       // Generate leaf certificate
       let leafCertificate: Certificate = new Certificate();
-      leafCertificate.serialNumber = this._generateSerialNumber();
+      leafCertificate.serialNumber = subCertificate.serialNumber + 1;
       leafCertificate.keyLength = subCertificate.keyLength;
       leafCertificate.organizationName = subCertificate.organizationName;
       leafCertificate.commonName = certRequest.commonName;
       leafCertificate.validBefore = subCertificate.validBefore;
       leafCertificate.signedBy = subCertificate.id;
-      const [leafCertificatePem, leafPrivateKeyPem] = this._generateCertificate(
+      leafCertificate.countryName = subCertificate.countryName;
+      leafCertificate.signatureAlgorithm = subCertificate.signatureAlgorithm;
+      leafCertificate.isCA = false;
+      const [leafCertificatePem, leafPrivateKeyPem] = generateCertificate(
         leafCertificate,
-        false,
-        undefined,
+        this._logger,
         subPrivateKeyPem,
         subCertificatePem,
       );
@@ -321,6 +343,9 @@ export class CertificatesModuleApi
       responseBody = [leafCertificate, subCertificate, certificateFromReq];
     } else {
       // Generate sub CA certificate and private key singed by external CA server
+      // commonName should be a valid domain name
+      certificateFromReq.commonName = certRequest.commonName;
+      certificateFromReq.pathLen = 0;
       const [certificatePem, privateKeyPem] =
         await this._generateSubCACertificateSignedByCAServer(
           certificateFromReq,
@@ -335,16 +360,20 @@ export class CertificatesModuleApi
 
       // Generate leaf certificate
       let leafCertificate: Certificate = new Certificate();
-      leafCertificate.serialNumber = this._generateSerialNumber();
+      leafCertificate.serialNumber = certificateFromReq.serialNumber + 1;
       leafCertificate.keyLength = certificateFromReq.keyLength;
       leafCertificate.organizationName = certificateFromReq.organizationName;
       leafCertificate.commonName = certRequest.commonName;
       leafCertificate.validBefore = certificateFromReq.validBefore;
       leafCertificate.signedBy = certificateFromReq.id;
-      const [leafCertificatePem, leafPrivateKeyPem] = this._generateCertificate(
+      leafCertificate.countryName = certificateFromReq.countryName;
+      leafCertificate.signatureAlgorithm =
+        certificateFromReq.signatureAlgorithm;
+      leafCertificate.isCA = false;
+      leafCertificate.pathLen = undefined;
+      const [leafCertificatePem, leafPrivateKeyPem] = generateCertificate(
         leafCertificate,
-        false,
-        undefined,
+        this._logger,
         privateKeyPem,
         certificatePem,
       );
@@ -500,11 +529,11 @@ export class CertificatesModuleApi
 
         // Update the map which stores sub CA certs and keys for websocket server securityProfile 3.
         // This map is used when signing charging station certificates for use case A02 in OCPP 2.0.1 Part 2.
-        if (serverConfig.securityProfile === 3) {
+        if (serverConfig.securityProfile === 3 && subCAKey) {
           this._module.certificateAuthorityService.updateSecurityCertChainKeyMap(
             serverId,
-            tlsKey,
             tlsCertificateChain,
+            subCAKey,
           );
         }
 
@@ -529,15 +558,7 @@ export class CertificatesModuleApi
   }
 
   /**
-   * Generate a serial number without leading 0s.
-   */
-  private _generateSerialNumber(): string {
-    const hexString = forge.util.bytesToHex(forge.random.getBytesSync(20));
-    return hexString.replace(/^0+/, '');
-  }
-
-  /**
-   * Generates a root certificate signed by a CA server.
+   * Generates a sub CA certificate signed by a CA server.
    *
    * @param {Certificate} certificate - The certificate information used for generating the root certificate.
    * @return {Promise<[string, string]>} An array containing the signed certificate and the private key.
@@ -545,137 +566,12 @@ export class CertificatesModuleApi
   private async _generateSubCACertificateSignedByCAServer(
     certificate: Certificate,
   ): Promise<[string, string]> {
-    const csr = forge.pki.createCertificationRequest();
-    const keyPair = forge.pki.rsa.generateKeyPair({
-      bits: certificate.keyLength,
-    });
-
-    csr.publicKey = keyPair.publicKey;
-    csr.setSubject([
-      { name: 'commonName', value: certificate.commonName },
-      { name: 'organizationName', value: certificate.organizationName },
-    ]);
-    csr.sign(keyPair.privateKey);
-
+    const [csrPem, privateKeyPem] = generateCSR(certificate);
     const signedCertificate =
       await this._module.certificateAuthorityService.signedSubCaCertificateByExternalCA(
-        forge.pki.certificationRequestToPem(csr),
+        csrPem,
       );
-
-    return [signedCertificate, forge.pki.privateKeyToPem(keyPair.privateKey)];
-  }
-
-  /**
-   * Generate certificate and its private key
-   *
-   * @param certificateEntity - the certificate
-   * @param isCA - true if the certificate is a root or sub CA certificate
-   * @param issuerKeyPem - the issuer private key
-   * @param issuerCertPem - the issuer certificate
-   * @param pathLenConstraint - A pathLenConstraint of zero indicates that no intermediate CA certificates may
-   * follow in a valid certification path. Where it appears, the pathLenConstraint field MUST be greater than or
-   * equal to zero. Where pathLenConstraint does not appear, no limit is imposed.
-   * Reference: https://www.rfc-editor.org/rfc/rfc5280#section-4.2.1.9
-   *
-   * @return generated certificate and its private key
-   */
-  private _generateCertificate(
-    certificateEntity: Certificate,
-    isCA: boolean,
-    pathLenConstraint?: number,
-    issuerKeyPem?: string,
-    issuerCertPem?: string,
-  ): [string, string] {
-    this._logger.info(
-      `Creating certificate ${certificateEntity}, isCA ${isCA} with issuer cert ${issuerCertPem} and issuer key ${!!issuerKeyPem}`,
-    );
-    // create key pair
-    const keyPair = forge.pki.rsa.generateKeyPair({
-      bits: certificateEntity.keyLength,
-    });
-
-    // create certificate
-    const certificate = forge.pki.createCertificate();
-    certificate.publicKey = keyPair.publicKey;
-    certificate.serialNumber = certificateEntity.serialNumber;
-    certificate.validity.notBefore = new Date();
-    if (certificateEntity.validBefore) {
-      certificate.validity.notAfter = new Date(
-        Date.parse(certificateEntity.validBefore),
-      );
-    } else {
-      certificate.validity.notAfter = new Date();
-      certificate.validity.notAfter.setFullYear(
-        certificate.validity.notAfter.getFullYear() + 1,
-      );
-    }
-
-    // set subject
-    const attrs = [
-      {
-        name: 'commonName',
-        value: certificateEntity.commonName,
-      },
-      { name: 'organizationName', value: certificateEntity.organizationName },
-    ];
-    certificate.setSubject(attrs);
-
-    // set issuer
-    if (issuerCertPem) {
-      certificate.setIssuer(
-        forge.pki.certificateFromPem(issuerCertPem).subject.attributes,
-      );
-    } else {
-      certificate.setIssuer(attrs);
-    }
-
-    // set extensions
-    const basicConstraints: any = {
-      name: 'basicConstraints',
-      cA: isCA,
-    };
-    if (pathLenConstraint) {
-      basicConstraints.pathLenConstraint = pathLenConstraint;
-    }
-    const extensions: any[] = [
-      basicConstraints,
-      {
-        name: 'keyUsage',
-        critical: true,
-        keyCertSign: true,
-        digitalSignature: true,
-        crlSign: true,
-        keyEncipherment: !isCA,
-      },
-      {
-        name: 'subjectKeyIdentifier',
-      },
-    ];
-    if (issuerCertPem) {
-      extensions.push({
-        name: 'authorityKeyIdentifier',
-        keyIdentifier: forge.pki
-          .certificateFromPem(issuerCertPem)
-          .generateSubjectKeyIdentifier()
-          .getBytes(),
-      });
-    }
-    certificate.setExtensions(extensions);
-
-    // sign
-    if (issuerKeyPem) {
-      certificate.sign(
-        forge.pki.privateKeyFromPem(issuerKeyPem),
-        forge.md.sha256.create(),
-      );
-    } else {
-      certificate.sign(keyPair.privateKey, forge.md.sha256.create());
-    }
-
-    return [
-      forge.pki.certificateToPem(certificate),
-      forge.pki.privateKeyToPem(keyPair.privateKey),
-    ];
+    return [signedCertificate, privateKeyPem];
   }
 
   /**

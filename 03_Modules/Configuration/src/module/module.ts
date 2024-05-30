@@ -52,6 +52,7 @@ import {
   SetVariablesResponse,
   SetVariableStatusEnumType,
   SystemConfig,
+  TriggerMessageResponse,
   UnpublishFirmwareResponse,
   UpdateFirmwareResponse,
 } from '@citrineos/base';
@@ -825,10 +826,10 @@ export class ConfigurationModule extends AbstractModule {
 
   @AsHandler(CallAction.TriggerMessage)
   protected _handleTriggerMessage(
-    message: IMessage<ChangeAvailabilityResponse>,
+    message: IMessage<TriggerMessageResponse>,
     props?: HandlerProperties,
   ): void {
-    this._logger.debug('ChangeAvailability response received:', message, props);
+    this._logger.debug('TriggerMessage response received:', message, props);
   }
 
   @AsHandler(CallAction.ClearDisplayMessage)

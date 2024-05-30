@@ -199,6 +199,9 @@ export class WebsocketNetworkConnection {
         secureContextOptions.ca = rootCA;
       }
       httpsServer.setSecureContext(secureContextOptions);
+      this._logger.info(
+        `Updated TLS certificates in SecureContextOptions for server ${serverId}`,
+      );
     } else {
       throw new TypeError(`Server ${serverId} is not a https server.`);
     }

@@ -9,11 +9,12 @@ export interface IV2GCertificateAuthorityClient {
     certificateInstallationReq: string,
     xsdMsgDefNamespace: string,
   ): Promise<string>;
+  getRootCertificates(): Promise<string[]>;
 }
 
 export interface IChargingStationCertificateAuthorityClient {
   getRootCACertificate(): Promise<string>;
-  getCertificateChain(csrString: string, stationId: string): Promise<string>;
+  getCertificateChain(csrString: string): Promise<string>;
   signCertificateByExternalCA(csrString: string): Promise<string>;
   updateCertificateChainKeyMap(
     serverId: string,

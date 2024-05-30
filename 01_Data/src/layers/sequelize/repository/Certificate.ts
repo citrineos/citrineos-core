@@ -15,6 +15,10 @@ export class CertificateRepository extends SequelizeRepository<Certificate> impl
       organizationName: certificate.organizationName,
       commonName: certificate.commonName,
       validBefore: certificate.validBefore,
+      signatureAlgorithm: certificate.signatureAlgorithm,
+      countryName: certificate.countryName,
+      isCA: certificate.isCA,
+      pathLen: certificate.pathLen,
       certificateFileId: certificate.certificateFileId,
       privateKeyFileId: certificate.privateKeyFileId,
     });

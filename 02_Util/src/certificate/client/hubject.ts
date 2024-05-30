@@ -5,6 +5,7 @@
 import { IV2GCertificateAuthorityClient } from './interface';
 import { SystemConfig } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
+import { createPemBlock } from '../CertificateUtil';
 
 export class Hubject implements IV2GCertificateAuthorityClient {
   private readonly _baseUrl: string;
@@ -13,13 +14,14 @@ export class Hubject implements IV2GCertificateAuthorityClient {
   private _logger: Logger<ILogObj>;
 
   constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
-    if (!config.modules.certificates?.v2gCA.hubject) {
+    if (!config.util.certificateAuthority.v2gCA.hubject) {
       throw new Error('Missing Hubject configuration');
     }
 
-    this._baseUrl = config.modules.certificates?.v2gCA.hubject.baseUrl;
-    this._tokenUrl = config.modules.certificates?.v2gCA.hubject.tokenUrl;
-    this._isoVersion = config.modules.certificates?.v2gCA.hubject.isoVersion;
+    this._baseUrl = config.util.certificateAuthority.v2gCA.hubject.baseUrl;
+    this._tokenUrl = config.util.certificateAuthority.v2gCA.hubject.tokenUrl;
+    this._isoVersion =
+      config.util.certificateAuthority.v2gCA.hubject.isoVersion;
 
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
@@ -135,6 +137,39 @@ export class Hubject implements IV2GCertificateAuthorityClient {
     return certificateInstallationRes;
   }
 
+  /**
+   * Retrieves all root certificates from Hubject.
+   * Refer to https://hubject.stoplight.io/docs/open-plugncharge/fdc9bdfdd4fb2-get-all-root-certificates
+   *
+   * @return {Promise<string[]>} Array of root certificate.
+   */
+  async getRootCertificates(): Promise<string[]> {
+    const url = `${this._baseUrl}/v1/root/rootCerts`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: await this._getAuthorizationToken(this._tokenUrl),
+      },
+    });
+
+    if (response.status !== 200) {
+      throw new Error(
+        `Get root certificates response is unexpected: ${response.status}: ${await response.text()}`,
+      );
+    }
+
+    const certificates: string[] = [];
+    const rootCollection: RootCertificateCollection = JSON.parse(
+      await response.text(),
+    );
+    for (const root of rootCollection.rootCertificates) {
+      certificates.push(createPemBlock('CERTIFICATE', root.caCertificate));
+    }
+
+    return certificates;
+  }
+
   private async _getAuthorizationToken(tokenUrl: string): Promise<string> {
     const response = await fetch(tokenUrl, { method: 'GET' });
     if (!response.ok && response.status !== 304) {
@@ -175,4 +210,21 @@ interface MessageDef {
   metaData: string;
   certificateInstallationRes: string;
   emaid: string;
+}
+
+interface RootCertificateCollection {
+  rootCertificates: RootCertificate[];
+}
+
+interface RootCertificate {
+  rootCertificateId: string;
+  distinguishedName: string;
+  caCertificate: string;
+  commonName: string;
+  rootAuthorityKeyIdentifier: string;
+  rootIssuerSerialNumber: string;
+  validFrom: string;
+  validTo: string;
+  organizationName: string;
+  rootType: string;
 }

@@ -32,7 +32,18 @@ jobs:
           sleep 10
 
       - name: Integration test
-        run: newman run ${{ github.workspace }}/.github/workflows/tests/CI/collection.json -e ${{ github.workspace }}/.github/workflows/tests/CI/environment.json --reporters cli
+        run: |
+          RETRY_COUNT=0
+          MAX_RETRIES=5
+          RETRY_DELAY=10
+          until [ $RETRY_COUNT -ge $MAX_RETRIES ]
+          do
+            newman run ${{ github.workspace }}/.github/workflows/tests/CI/collection.json -e ${{ github.workspace }}/.github/workflows/tests/CI/environment.json --reporters cli && break
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            echo "Retry $RETRY_COUNT/$MAX_RETRIES in $RETRY_DELAY seconds..."
+            sleep $RETRY_DELAY
+          done
+        shell: bash
 
       - name: Get logs for all containers
         if: failure()
