@@ -154,7 +154,8 @@ export class CertificatesModule extends AbstractModule {
       certificateRepository ||
       new sequelize.SequelizeCertificateRepository(config, logger);
     this._locationRepository =
-      locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
+      locationRepository ||
+      new sequelize.SequelizeLocationRepository(config, logger);
 
     this._certificateAuthorityService =
       certificateAuthorityService ||

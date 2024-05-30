@@ -15,12 +15,11 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
   }
 
   async findByStationId(stationId: string): Promise<Tariff | undefined> {
-    return super
-      .readOnlyOneByQuery({
-        where: {
-          stationId: stationId,
-        },
-      });
+    return super.readOnlyOneByQuery({
+      where: {
+        stationId: stationId,
+      },
+    });
   }
 
   async createOrUpdateTariff(tariff: Tariff): Promise<Tariff> {

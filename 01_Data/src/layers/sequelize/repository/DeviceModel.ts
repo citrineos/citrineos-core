@@ -98,11 +98,14 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
           },
         });
         if (!variableAttributeCreated) {
-          return await this.updateByKey({
-            evseDatabaseId: component.evseDatabaseId,
-            dataType: dataType ?? savedVariableAttribute.dataType,
-            ...variableAttribute,
-          }, savedVariableAttribute.id) as VariableAttribute;
+          return (await this.updateByKey(
+            {
+              evseDatabaseId: component.evseDatabaseId,
+              dataType: dataType ?? savedVariableAttribute.dataType,
+              ...variableAttribute,
+            },
+            savedVariableAttribute.id,
+          )) as VariableAttribute;
         }
         return savedVariableAttribute;
       }),
@@ -241,14 +244,13 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
   }
 
   async updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined> {
-    const savedVariableAttribute = await super
-      .readOnlyOneByQuery({
-        where: { stationId, type: result.attributeType ?? AttributeEnumType.Actual },
-        include: [
-          { model: Component, where: { name: result.component.name, instance: result.component.instance ? result.component.instance : null } },
-          { model: Variable, where: { name: result.variable.name, instance: result.variable.instance ? result.variable.instance : null } },
-        ],
-      });
+    const savedVariableAttribute = await super.readOnlyOneByQuery({
+      where: { stationId, type: result.attributeType ?? AttributeEnumType.Actual },
+      include: [
+        { model: Component, where: { name: result.component.name, instance: result.component.instance ? result.component.instance : null } },
+        { model: Variable, where: { name: result.variable.name, instance: result.variable.instance ? result.variable.instance : null } },
+      ],
+    });
     if (savedVariableAttribute) {
       await this.variableStatus.create(
         VariableStatus.build({
@@ -294,19 +296,16 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
   }
 
   async findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]> {
-    const component = await this.component
-      .readOnlyOneByQuery({
-        where: { name: componentType.name, instance: componentType.instance ? componentType.instance : undefined },
-      });
-    const variable = await this.variable
-      .readOnlyOneByQuery({
-        where: { name: variableType.name, instance: variableType.instance ? variableType.instance : undefined },
-      });
+    const component = await this.component.readOnlyOneByQuery({
+      where: { name: componentType.name, instance: componentType.instance ? componentType.instance : undefined },
+    });
+    const variable = await this.variable.readOnlyOneByQuery({
+      where: { name: variableType.name, instance: variableType.instance ? variableType.instance : undefined },
+    });
     if (variable) {
-      const variableCharacteristics = await this.variableCharacteristics
-        .readOnlyOneByQuery({
-          where: { variableId: variable.get('id') },
-        });
+      const variableCharacteristics = await this.variableCharacteristics.readOnlyOneByQuery({
+        where: { variableId: variable.get('id') },
+      });
       variable.variableCharacteristics = variableCharacteristics;
     }
 

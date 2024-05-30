@@ -111,11 +111,10 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   }
 
   async readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined> {
-    return await this.transaction
-      .readOnlyOneByQuery({
-        where: { stationId, transactionId },
-        include: [MeterValue],
-      });
+    return await this.transaction.readOnlyOneByQuery({
+      where: { stationId, transactionId },
+      include: [MeterValue],
+    });
   }
 
   /**

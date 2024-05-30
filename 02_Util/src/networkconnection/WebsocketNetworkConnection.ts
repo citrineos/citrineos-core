@@ -248,7 +248,7 @@ export class WebsocketNetworkConnection {
       websocketServerConfig.securityProfile > 0
     ) {
       // Validate username/password from authorization header
-      const {username, password} = this.extractCredentials(req);
+      const { username, password } = this.extractCredentials(req);
       if (username && password) {
         if (
           !(await this._authenticator.authenticate(
@@ -302,23 +302,31 @@ export class WebsocketNetworkConnection {
    * @param {http.IncomingMessage} req - The request object.
    * @returns Extracted credentials.
    */
-  private extractCredentials(req: http.IncomingMessage): {username?: string; password?: string} {
+  private extractCredentials(req: http.IncomingMessage): {
+    username?: string;
+    password?: string;
+  } {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Basic ')) {
       return {};
     }
 
     const base64Credentials = authHeader.split(' ')[1];
-    const decodedCredentials = Buffer.from(base64Credentials, 'base64').toString();
+    const decodedCredentials = Buffer.from(
+      base64Credentials,
+      'base64',
+    ).toString();
 
     const [username, password] = this.splitOnce(decodedCredentials, ':');
 
-    return {username, password};
+    return { username, password };
   }
 
   private splitOnce(value: string, separator: string): [string, string?] {
     const idx = value.indexOf(separator);
-    return idx == -1 ? [value] : [value.substring(0, idx), value.substring(idx + separator.length)];
+    return idx == -1
+      ? [value]
+      : [value.substring(0, idx), value.substring(idx + separator.length)];
   }
 
   /**
@@ -445,7 +453,9 @@ export class WebsocketNetworkConnection {
     });
 
     ws.on('ping', async (message) => {
-      this._logger.debug(`Ping received for ${identifier} with message ${JSON.stringify(message)}`);
+      this._logger.debug(
+        `Ping received for ${identifier} with message ${JSON.stringify(message)}`,
+      );
       ws.pong(message);
     });
 

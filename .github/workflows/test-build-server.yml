@@ -27,7 +27,7 @@ jobs:
         run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml up -d
 
       - name: Install Newman
-        run: | 
+        run: |
           npm install -g newman
           sleep 10
 
@@ -47,7 +47,7 @@ jobs:
 
       - name: Get logs for all containers
         if: failure()
-        run: | 
+        run: |
           docker ps -a
           docker container ls -aq | xargs -I {} docker logs {}
 

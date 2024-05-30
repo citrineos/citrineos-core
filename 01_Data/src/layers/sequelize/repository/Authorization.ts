@@ -155,11 +155,10 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
       });
     }
     if (!savedIdTokenModel || savedIdTokenModel.idToken !== value.idToken || savedIdTokenModel.type !== value.type) {
-      savedIdTokenModel = await this.idToken
-        .readOnlyOneByQuery({
-          where: { idToken: value.idToken, type: value.type },
-          include: [AdditionalInfo],
-        });
+      savedIdTokenModel = await this.idToken.readOnlyOneByQuery({
+        where: { idToken: value.idToken, type: value.type },
+        include: [AdditionalInfo],
+      });
     }
     if (savedIdTokenModel) {
       // idToken.idToken and idToken.type should be treated as immutable.
