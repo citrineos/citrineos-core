@@ -29,6 +29,7 @@ import {
   HttpMethod,
   IMessageConfirmation,
   MonitorEnumType,
+  MutabilityEnumType,
   Namespace,
   ReportDataType,
   ReportDataTypeSchema,
@@ -447,6 +448,16 @@ export class MonitoringModuleApi
       Querystring: CreateOrUpdateVariableAttributeQuerystring;
     }>,
   ): Promise<sequelize.VariableAttribute[]> {
+    // To keep consistency with VariableAttributeType in OCPP 2.0.1:
+    // (1) persistent and constant: Default when omitted is false.
+    // if they are not present, we set them to false by adding default value in ReportDataTypeSchema
+    // (2) mutability: Default is ReadWrite when omitted.
+    // if it is not present, we set it to ReadWrite
+    for (const variableAttr of request.body.variableAttribute) {
+      if (!variableAttr.mutability) {
+        variableAttr.mutability = MutabilityEnumType.ReadWrite;
+      }
+    }
     return this._module.deviceModelRepository
       .createOrUpdateDeviceModelByStationId(
         request.body,

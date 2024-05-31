@@ -84,8 +84,7 @@ services:
     environment:
       APP_NAME: 'all'
       APP_ENV: 'docker'
-      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
-      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
+      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
     depends_on:
       ocpp-db:
         condition: service_healthy
@@ -97,6 +96,8 @@ services:
       - 8080:8080
       - 8081:8081
       - 8082:8082
+      - 8443:8443
+      - 8444:8444
       - 9229:9229
 
   directus:

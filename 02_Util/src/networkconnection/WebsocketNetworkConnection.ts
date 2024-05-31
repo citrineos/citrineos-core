@@ -17,13 +17,15 @@ import * as https from 'https';
 import fs from 'fs';
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from 'ws';
 import { ILogObj, Logger } from 'tslog';
+import { SecureContextOptions } from 'tls';
 
 export class WebsocketNetworkConnection {
   protected _cache: ICache;
   protected _config: SystemConfig;
   protected _logger: Logger<ILogObj>;
   private _identifierConnections: Map<string, WebSocket> = new Map();
-  private _httpServers: (http.Server | https.Server)[];
+  // websocketServers id as key and http server as value
+  private _httpServersMap: Map<string, http.Server | https.Server>;
   private _authenticator: IAuthenticator;
   private _router: IMessageRouter;
 
@@ -43,39 +45,15 @@ export class WebsocketNetworkConnection {
     router.networkHook = this.sendMessage.bind(this);
     this._router = router;
 
-    this._httpServers = [];
+    this._httpServersMap = new Map<string, http.Server | https.Server>();
     this._config.util.networkConnection.websocketServers.forEach(
       (websocketServerConfig) => {
         let _httpServer;
         switch (websocketServerConfig.securityProfile) {
           case 3: // mTLS
-            _httpServer = https.createServer(
-              {
-                key: fs.readFileSync(
-                  websocketServerConfig.tlsKeysFilepath as string,
-                ),
-                cert: fs.readFileSync(
-                  websocketServerConfig.tlsCertificateChainFilepath as string,
-                ),
-                ca: fs.readFileSync(
-                  websocketServerConfig.mtlsCertificateAuthorityRootsFilepath as string,
-                ),
-                requestCert: true,
-                rejectUnauthorized: true,
-              },
-              this._onHttpRequest.bind(this),
-            );
-            break;
           case 2: // TLS
             _httpServer = https.createServer(
-              {
-                key: fs.readFileSync(
-                  websocketServerConfig.tlsKeysFilepath as string,
-                ),
-                cert: fs.readFileSync(
-                  websocketServerConfig.tlsCertificateChainFilepath as string,
-                ),
-              },
+              this._generateServerOptions(websocketServerConfig),
               this._onHttpRequest.bind(this),
             );
             break;
@@ -131,7 +109,7 @@ export class WebsocketNetworkConnection {
             );
           },
         );
-        this._httpServers.push(_httpServer);
+        this._httpServersMap.set(websocketServerConfig.id, _httpServer);
       },
     );
   }
@@ -190,8 +168,43 @@ export class WebsocketNetworkConnection {
   }
 
   shutdown(): void {
-    this._httpServers.forEach((server) => server.close());
+    this._httpServersMap.forEach((server) => server.close());
     this._router.shutdown();
+  }
+
+  /**
+   * Updates certificates for a specific server with the provided TLS key, certificate chain, and optional
+   * root CA.
+   *
+   * @param {string} serverId - The ID of the server to update.
+   * @param {string} tlsKey - The TLS key to set.
+   * @param {string} tlsCertificateChain - The TLS certificate chain to set.
+   * @param {string} [rootCA] - The root CA to set (optional).
+   * @return {void} void
+   */
+  updateTlsCertificates(
+    serverId: string,
+    tlsKey: string,
+    tlsCertificateChain: string,
+    rootCA?: string,
+  ): void {
+    let httpsServer = this._httpServersMap.get(serverId);
+
+    if (httpsServer && httpsServer instanceof https.Server) {
+      const secureContextOptions: SecureContextOptions = {
+        key: tlsKey,
+        cert: tlsCertificateChain,
+      };
+      if (rootCA) {
+        secureContextOptions.ca = rootCA;
+      }
+      httpsServer.setSecureContext(secureContextOptions);
+      this._logger.info(
+        `Updated TLS certificates in SecureContextOptions for server ${serverId}`,
+      );
+    } else {
+      throw new TypeError(`Server ${serverId} is not a https server.`);
+    }
   }
 
   private _onHttpRequest(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -217,7 +230,7 @@ export class WebsocketNetworkConnection {
    * @param {Duplex} socket - Websocket duplex stream.
    * @param {Buffer} head - Websocket buffer.
    * @param {WebSocketServer} wss - Websocket server.
-   * @param {number} securityProfile - The security profile to use for the websocket connection. See OCPP 2.0.1 Part 2-Specification A.1.3
+   * @param {WebsocketServerConfig} websocketServerConfig - websocket server config.
    */
   private async _upgradeRequest(
     req: http.IncomingMessage,
@@ -548,5 +561,27 @@ export class WebsocketNetworkConnection {
    */
   private _getClientIdFromUrl(url: string): string {
     return url.split('/').pop() as string;
+  }
+
+  private _generateServerOptions(
+    config: WebsocketServerConfig,
+  ): https.ServerOptions {
+    const serverOptions: https.ServerOptions = {
+      key: fs.readFileSync(config.tlsKeyFilePath as string),
+      cert: fs.readFileSync(config.tlsCertificateChainFilePath as string),
+    };
+
+    if (config.rootCACertificateFilePath) {
+      serverOptions.ca = fs.readFileSync(
+        config.rootCACertificateFilePath as string,
+      );
+    }
+
+    if (config.securityProfile > 2) {
+      serverOptions.requestCert = true;
+      serverOptions.rejectUnauthorized = true;
+    }
+
+    return serverOptions;
   }
 }

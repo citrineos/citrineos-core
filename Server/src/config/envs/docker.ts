@@ -97,7 +97,59 @@ export function createDockerConfig() {
             port: 8082,
             protocol: 'ocpp2.0.1',
           },
+          {
+            id: '2',
+            securityProfile: 2,
+            allowUnknownChargingStations: false,
+            pingInterval: 60,
+            host: '0.0.0.0',
+            port: 8443,
+            protocol: 'ocpp2.0.1',
+            tlsKeyFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/leafKey.pem',
+            tlsCertificateChainFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/certChain.pem',
+            rootCACertificateFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/rootCertificate.pem',
+          },
+          {
+            id: '3',
+            securityProfile: 3,
+            allowUnknownChargingStations: false,
+            pingInterval: 60,
+            host: '0.0.0.0',
+            port: 8444,
+            protocol: 'ocpp2.0.1',
+            tlsKeyFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/leafKey.pem',
+            tlsCertificateChainFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/certChain.pem',
+            mtlsCertificateAuthorityKeyFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/subCAKey.pem',
+            rootCACertificateFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/rootCertificate.pem',
+          },
         ],
+      },
+      certificateAuthority: {
+        v2gCA: {
+          name: 'hubject',
+          hubject: {
+            baseUrl: 'https://open.plugncharge-test.hubject.com',
+            tokenUrl:
+              'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
+            isoVersion: 'ISO15118-2',
+          },
+        },
+        chargingStationCA: {
+          name: 'acme',
+          acme: {
+            env: 'staging',
+            accountKeyFilePath:
+              '/usr/local/apps/citrineos/Server/src/assets/certificates/acme_account_key.pem',
+            email: 'test@citrineos.com',
+          },
+        },
       },
     },
     logLevel: 2, // debug

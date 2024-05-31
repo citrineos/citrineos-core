@@ -3,10 +3,17 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
+import { Sequelize } from 'sequelize-typescript';
 import { SequelizeRepository, Subscription } from '..';
 import { ISubscriptionRepository } from '../../..';
+import { SystemConfig } from '@citrineos/base';
+import { Logger, ILogObj } from 'tslog';
 
-export class SubscriptionRepository extends SequelizeRepository<Subscription> implements ISubscriptionRepository {
+export class SequelizeSubscriptionRepository extends SequelizeRepository<Subscription> implements ISubscriptionRepository {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+    super(config, Subscription.MODEL_NAME, logger, sequelizeInstance);
+  }
+
   /**
    * Creates a new {@link Subscription} in the database.
    * Input is assumed to not have an id, and id will be removed if present.
@@ -15,17 +22,17 @@ export class SubscriptionRepository extends SequelizeRepository<Subscription> im
    * @param value {@link Subscription} object which may have been deserialized from JSON
    * @returns Saved {@link Subscription} if successful, undefined otherwise
    */
-  create(value: Subscription): Promise<Subscription | undefined> {
+  create(value: Subscription): Promise<Subscription> {
     const { ...rawSubscription } = value;
     rawSubscription.id = null;
     return super.create(Subscription.build({ ...rawSubscription }));
   }
 
   readAllByStationId(stationId: string): Promise<Subscription[]> {
-    return super.readAllByQuery({ where: { stationId: stationId } }, Subscription.MODEL_NAME);
+    return super.readAllByQuery({ where: { stationId: stationId } });
   }
 
-  deleteByKey(key: string): Promise<boolean> {
-    return super.deleteByKey(key, Subscription.MODEL_NAME);
+  deleteByKey(key: string): Promise<Subscription | undefined> {
+    return super.deleteByKey(key);
   }
 }

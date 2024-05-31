@@ -10,6 +10,7 @@ import {
   eventGroupFromString,
   type IAuthenticator,
   type ICache,
+  type IFileAccess,
   type IMessageHandler,
   type IMessageSender,
   type IModule,
@@ -75,6 +76,7 @@ export class CitrineOSServer {
   private readonly _server: FastifyInstance;
   private readonly _cache: ICache;
   private readonly _ajv: Ajv;
+  private readonly _fileAccess: IFileAccess;
   private readonly modules: IModule[] = [];
   private readonly apis: IModuleApi[] = [];
   private host?: string;
@@ -90,6 +92,7 @@ export class CitrineOSServer {
    * @param {SystemConfig} config - config
    * @param {FastifyInstance} server - optional Fastify server instance
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
+   * @param {ICache} cache - cache
    */
   // todo rename event group to type
   constructor(
@@ -98,6 +101,7 @@ export class CitrineOSServer {
     server?: FastifyInstance,
     ajv?: Ajv,
     cache?: ICache,
+    fileAccess?: IFileAccess,
   ) {
     // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
@@ -132,8 +136,9 @@ export class CitrineOSServer {
     this.initSwagger();
 
     // Add Directus Message API flow creation if enabled
+    let directusUtil;
     if (this._config.util.directus?.generateFlows) {
-      const directusUtil = new DirectusUtil(this._config, this._logger);
+      directusUtil = new DirectusUtil(this._config, this._logger);
       this._server.addHook(
         'onRoute',
         directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(
@@ -144,6 +149,9 @@ export class CitrineOSServer {
         this._logger?.info('Directus actions initialization finished');
       });
     }
+
+    // Initialize File Access Implementation
+    this._fileAccess = this.initFileAccess(fileAccess, directusUtil);
 
     // Register AJV for schema validation
     this.registerAjv();
@@ -230,7 +238,7 @@ export class CitrineOSServer {
       name: 'CitrineOS Logger',
       minLevel: systemConfig.logLevel,
       hideLogPositionForProduction: systemConfig.env === 'production',
-      // Disable colors for cloud deployment as some cloude logging environments such as cloudwatch can not interpret colors
+      // Disable colors for cloud deployment as some cloud logging environments such as cloudwatch can not interpret colors
       stylePrettyLogs: process.env.DEPLOYMENT_TARGET !== 'cloud',
     });
   }
@@ -274,8 +282,8 @@ export class CitrineOSServer {
   private initNetworkConnection() {
     this._authenticator = new Authenticator(
       this._cache,
-      new sequelize.LocationRepository(this._config, this._logger),
-      new sequelize.DeviceModelRepository(this._config, this._logger),
+      new sequelize.SequelizeLocationRepository(this._config, this._logger),
+      new sequelize.SequelizeDeviceModelRepository(this._config, this._logger),
       this._logger,
     );
 
@@ -329,9 +337,23 @@ export class CitrineOSServer {
         this._logger,
       );
       this.modules.push(module);
-      this.apis.push(
-        new moduleConfig.ModuleApiClass(module, this._server, this._logger),
-      );
+      if (moduleConfig.ModuleApiClass === CertificatesModuleApi) {
+        this.apis.push(
+          new moduleConfig.ModuleApiClass(
+            module,
+            this._server,
+            this._fileAccess,
+            this._networkConnection,
+            this._config.util.networkConnection.websocketServers,
+            this._logger,
+          ),
+        );
+      } else {
+        this.apis.push(
+          new moduleConfig.ModuleApiClass(module, this._server, this._logger),
+        );
+      }
+
       // TODO: take actions to make sure module has correct subscriptions and log proof
       this._logger?.info(`${moduleConfig.ModuleClass.name} module started...`);
       if (this.eventGroup !== EventGroup.All) {
@@ -409,6 +431,15 @@ export class CitrineOSServer {
       const moduleConfig: ModuleConfig = this.getModuleConfig(this.eventGroup);
       this.initModule(moduleConfig);
     }
+  }
+
+  private initFileAccess(
+    fileAccess?: IFileAccess,
+    directus?: IFileAccess,
+  ): IFileAccess {
+    return (
+      fileAccess || directus || new DirectusUtil(this._config, this._logger)
+    );
   }
 }
 

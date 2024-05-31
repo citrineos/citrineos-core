@@ -3,15 +3,21 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type SecurityEventNotificationRequest } from '@citrineos/base';
+import { SystemConfig, type SecurityEventNotificationRequest } from '@citrineos/base';
 import { SecurityEvent } from '../model/SecurityEvent';
 import { SequelizeRepository } from './Base';
 import { Op } from 'sequelize';
 import { type ISecurityEventRepository } from '../../../interfaces/repositories';
+import { Sequelize } from 'sequelize-typescript';
+import { Logger, ILogObj } from 'tslog';
 
-export class SecurityEventRepository extends SequelizeRepository<SecurityEvent> implements ISecurityEventRepository {
-  async createByStationId(value: SecurityEventNotificationRequest, stationId: string): Promise<SecurityEvent | undefined> {
-    return await super.create(
+export class SequelizeSecurityEventRepository extends SequelizeRepository<SecurityEvent> implements ISecurityEventRepository {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+    super(config, SecurityEvent.MODEL_NAME, logger, sequelizeInstance);
+  }
+
+  async createByStationId(value: SecurityEventNotificationRequest, stationId: string): Promise<SecurityEvent> {
+    return await this.create(
       SecurityEvent.build({
         stationId,
         ...value,
@@ -21,18 +27,16 @@ export class SecurityEventRepository extends SequelizeRepository<SecurityEvent> 
 
   async readByStationIdAndTimestamps(stationId: string, from?: Date, to?: Date): Promise<SecurityEvent[]> {
     const timestampQuery = this.generateTimestampQuery(from?.toISOString(), to?.toISOString());
-    return await this.s.models[SecurityEvent.MODEL_NAME]
-      .findAll({
-        where: {
-          stationId,
-          ...timestampQuery,
-        },
-      })
-      .then((row) => row as SecurityEvent[]);
+    return await this.readAllByQuery({
+      where: {
+        stationId,
+        ...timestampQuery,
+      },
+    }).then((row) => row as SecurityEvent[]);
   }
 
-  async deleteByKey(key: string): Promise<boolean> {
-    return await super.deleteByKey(key, SecurityEvent.MODEL_NAME);
+  async deleteByKey(key: string): Promise<SecurityEvent | undefined> {
+    return await super.deleteByKey(key);
   }
 
   /**

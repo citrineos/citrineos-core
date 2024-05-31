@@ -52,6 +52,7 @@ import {
   SetVariablesResponse,
   SetVariableStatusEnumType,
   SystemConfig,
+  TriggerMessageResponse,
   UnpublishFirmwareResponse,
   UpdateFirmwareResponse,
 } from '@citrineos/base';
@@ -160,13 +161,14 @@ export class ConfigurationModule extends AbstractModule {
     }
 
     this._bootRepository =
-      bootRepository || new sequelize.BootRepository(config, this._logger);
+      bootRepository ||
+      new sequelize.SequelizeBootRepository(config, this._logger);
     this._deviceModelRepository =
       deviceModelRepository ||
-      new sequelize.DeviceModelRepository(config, this._logger);
+      new sequelize.SequelizeDeviceModelRepository(config, this._logger);
     this._messageInfoRepository =
       messageInfoRepository ||
-      new sequelize.MessageInfoRepository(config, this._logger);
+      new sequelize.SequelizeMessageInfoRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(
       this._deviceModelRepository,
@@ -825,10 +827,10 @@ export class ConfigurationModule extends AbstractModule {
 
   @AsHandler(CallAction.TriggerMessage)
   protected _handleTriggerMessage(
-    message: IMessage<ChangeAvailabilityResponse>,
+    message: IMessage<TriggerMessageResponse>,
     props?: HandlerProperties,
   ): void {
-    this._logger.debug('ChangeAvailability response received:', message, props);
+    this._logger.debug('TriggerMessage response received:', message, props);
   }
 
   @AsHandler(CallAction.ClearDisplayMessage)
