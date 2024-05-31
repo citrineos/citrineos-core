@@ -244,13 +244,15 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
   }
 
   async updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined> {
-    const savedVariableAttribute = await super.readOnlyOneByQuery({
+    const savedVariableAttributes = await super.readAllByQuery({
       where: { stationId, type: result.attributeType ?? AttributeEnumType.Actual },
       include: [
         { model: Component, where: { name: result.component.name, instance: result.component.instance ? result.component.instance : null } },
         { model: Variable, where: { name: result.variable.name, instance: result.variable.instance ? result.variable.instance : null } },
       ],
     });
+    console.log(`${savedVariableAttributes}`);
+    const savedVariableAttribute = savedVariableAttributes[0];
     if (savedVariableAttribute) {
       await this.variableStatus.create(
         VariableStatus.build({

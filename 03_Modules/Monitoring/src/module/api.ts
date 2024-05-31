@@ -458,6 +458,8 @@ export class MonitoringModuleApi
         variableAttr.mutability = MutabilityEnumType.ReadWrite;
       }
     }
+    this._logger.error(`${request.body}`)
+    this._logger.error(`${request.query}`)
     return this._module.deviceModelRepository
       .createOrUpdateDeviceModelByStationId(
         request.body,
