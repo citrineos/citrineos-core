@@ -88,12 +88,11 @@ export abstract class AbstractModuleApi<T extends IModule>
     this._addDataRoute.call(
       this,
       Namespace.SystemConfig,
-      (request: FastifyRequest<{ Body: SystemConfig }>) => 
+      (request: FastifyRequest<{ Body: SystemConfig }>) =>
         new Promise<void>((resolve) => {
           module.config = request.body;
           resolve();
-        }
-      ),
+        }),
       HttpMethod.Put,
     );
   }
