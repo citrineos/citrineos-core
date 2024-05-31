@@ -115,7 +115,7 @@ export function createDockerConfig() {
             allowUnknownChargingStations: false,
             pingInterval: 60,
             host: '0.0.0.0',
-            port: 8444,
+            port: 443,
             protocol: 'ocpp2.0.1',
             tlsKeyFilePath:
               '/usr/local/apps/citrineos/Server/src/assets/certificates/leafKey.pem',
