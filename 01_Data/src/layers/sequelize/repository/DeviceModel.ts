@@ -251,7 +251,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
         { model: Variable, where: { name: result.variable.name, instance: result.variable.instance ? result.variable.instance : null } },
       ],
     });
-    console.log(`${savedVariableAttributes}`);
+    console.log(`${JSON.stringify(savedVariableAttributes)}`);
     const savedVariableAttribute = savedVariableAttributes[0];
     if (savedVariableAttribute) {
       await this.variableStatus.create(
