@@ -217,8 +217,7 @@ services:
       - ./:/usr/tenant
       - /usr/tenant/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_USERNAME: 'admin@citrineos.com'
-      CITRINEOS_UTIL_DIRECTUS_PASSWORD: 'CitrineOS!'
+      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
       APP_NAME: 'tenant'
   transactions:
     build:
