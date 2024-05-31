@@ -18,6 +18,9 @@ import fs from 'fs';
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from 'ws';
 import { ILogObj, Logger } from 'tslog';
 import { SecureContextOptions } from 'tls';
+import * as net from 'net';
+import * as tls from 'tls';
+import { Buffer } from 'buffer';
 
 export class WebsocketNetworkConnection {
   protected _cache: ICache;
@@ -85,6 +88,24 @@ export class WebsocketNetworkConnection {
           this._onError(wss, error),
         );
         _socketServer.on('close', (wss: WebSocketServer) => this._onClose(wss));
+
+        _httpServer.on('tlsClientError', (err: Error, socket: tls.TLSSocket) => {
+          console.error('TLS client error:', err);
+        });
+        
+        _httpServer.on('request', (req: http.IncomingMessage, res: http.ServerResponse) => {
+          console.log(`Received request for ${req.url}`);
+        });
+        
+        _httpServer.on('connection', (socket: net.Socket) => {
+          console.log('New connection established at ' + new Date().toISOString());
+          socket.on('error', (err: Error) => {
+            console.error('Socket error:', err);
+          });
+          socket.on('close', (hadError: boolean) => {
+            console.log('Connection closed', hadError ? 'due to an error' : '');
+          });
+        });
 
         _httpServer.on('upgrade', (request, socket, head) =>
           this._upgradeRequest(
@@ -569,6 +590,14 @@ export class WebsocketNetworkConnection {
     const serverOptions: https.ServerOptions = {
       key: fs.readFileSync(config.tlsKeyFilePath as string),
       cert: fs.readFileSync(config.tlsCertificateChainFilePath as string),
+      ciphers: [
+        'TLS_AES_128_GCM_SHA256',
+        'ECDHE-ECDSA-AES128-GCM-SHA256',
+        'ECDHE-ECDSA-AES256-GCM-SHA384',
+        'RSA-AES128-GCM-SHA256',
+      ].join(':'),
+      honorCipherOrder: true,
+      ticketKeys: Buffer.alloc(48, 'ticket')
     };
 
     if (config.rootCACertificateFilePath) {
