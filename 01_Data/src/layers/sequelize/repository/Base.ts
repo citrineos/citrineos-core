@@ -76,6 +76,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     });
   }
 
+
   protected async _deleteAllByQuery(query: object): Promise<T[]> {
     return this.s.transaction(async (t) => {
       const entriesToDelete = await this.s.models[this.namespace].findAll(query).then((rows) => rows as T[]);

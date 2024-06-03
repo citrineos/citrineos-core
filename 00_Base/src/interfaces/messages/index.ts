@@ -32,6 +32,7 @@ export enum EventGroup {
   Reporting = 'reporting',
   SmartCharging = 'smartcharging',
   Transactions = 'transactions',
+  Ocpi = 'ocpi',
 }
 
 export const eventGroupFromString = (source: string): EventGroup => {
