@@ -68,7 +68,7 @@
       }
     ],
     "@typescript-eslint/no-misused-new": "error",
-    "@typescript-eslint/no-non-null-assertion": "warn",
+    "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/no-shadow": [
       "error",
       {
