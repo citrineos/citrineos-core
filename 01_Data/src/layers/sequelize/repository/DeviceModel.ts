@@ -69,7 +69,6 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
       const [variableCharacteristics, _variableCharacteristicsCreated] = await this.variableCharacteristics.upsert(
         VariableCharacteristics.build({
           ...value.variableCharacteristics,
-          variable,
           variableId: variable.id,
         }),
       );
