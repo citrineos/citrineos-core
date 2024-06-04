@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/member-ordering */
 // Copyright (c) 2023 S44, LLC
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
 
+/* eslint-disable @typescript-eslint/member-ordering */
 import { EventEmitter } from 'events';
 
 export interface CrudEvent<T> {
