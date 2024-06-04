@@ -22,7 +22,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
   async createOrUpdateByKey(value: BootConfig, key: string): Promise<Boot | undefined> {
     let savedBootConfig: Boot | undefined;
     let created;
-    this.s.transaction(async (transaction) => {
+    await this.s.transaction(async (transaction) => {
       savedBootConfig = await this.s.models[this.namespace].findByPk(key, { transaction }).then((row) => row as Boot);
       created = !savedBootConfig;
       if (!savedBootConfig) {

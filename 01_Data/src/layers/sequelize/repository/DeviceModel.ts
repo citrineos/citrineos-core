@@ -72,7 +72,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
         variableId: variable.id,
       });
       console.log(`variableCharacteristics: ${JSON.stringify(vc)}`);
-      this.s.transaction(async (transaction) => {
+      await this.s.transaction(async (transaction) => {
        const savedVariableCharacteristics = await this.s.models[VariableCharacteristics.MODEL_NAME].findOne({
           where: {
             variableId: variable.id,
