@@ -71,7 +71,7 @@ export class Authenticator implements IAuthenticator {
 
   private async _checkPassword(username: string, password: string) {
     return await this._deviceModelRepository
-      .readAllByQuery({
+      .readAllByVAQuerystring({
         stationId: username,
         component_name: 'SecurityCtrlr',
         variable_name: 'BasicAuthPassword',

@@ -337,7 +337,7 @@ export class TransactionsModule extends AbstractModule {
 
         // I06 - Update Tariff Information During Transaction
         const tariffAvailableAttributes: VariableAttribute[] =
-          await this._deviceModelRepository.readAllByQuery({
+          await this._deviceModelRepository.readAllByVAQuerystring({
             stationId: stationId,
             component_name: 'TariffCostCtrlr',
             variable_instance: 'Tariff',
