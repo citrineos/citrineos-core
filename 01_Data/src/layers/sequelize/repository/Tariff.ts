@@ -23,14 +23,21 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
   }
 
   async createOrUpdateTariff(tariff: Tariff): Promise<Tariff> {
-    const [storedTariff, _tariffCreated] = await this.upsert(
-      Tariff.build({
-        stationId: tariff.stationId,
-        unit: tariff.unit,
-        price: tariff.price,
-      }),
-    );
-    return storedTariff;
+    //TODO check if searchg correclty
+    return await this.s.transaction(async (transaction) => {
+      const savedTariff = await this.s.models[Tariff.MODEL_NAME].findOne({
+        where: {
+          stationId: tariff.stationId,
+          unit: tariff.unit,
+        },
+        transaction,
+      });
+      if (savedTariff) {
+        await savedTariff.update(tariff, { transaction });
+        return (await savedTariff.reload({ transaction })) as Tariff;
+      }
+      return await tariff.save({ transaction });
+    });
   }
 
   async readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {

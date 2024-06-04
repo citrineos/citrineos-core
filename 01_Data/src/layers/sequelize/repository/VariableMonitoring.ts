@@ -5,10 +5,10 @@
 import { SequelizeRepository } from './Base';
 import { EventData, VariableMonitoring, VariableMonitoringStatus } from '../model/VariableMonitoring';
 import { type IVariableMonitoringRepository } from '../../../interfaces';
-import { CallAction, type EventDataType, type MonitoringDataType, type SetMonitoringDataType, type SetMonitoringResultType, SetMonitoringStatusEnumType, CrudRepository, SystemConfig } from '@citrineos/base';
+import { CallAction, CrudRepository, type EventDataType, type MonitoringDataType, type SetMonitoringDataType, type SetMonitoringResultType, SetMonitoringStatusEnumType, SystemConfig } from '@citrineos/base';
 import { Component, Variable } from '../model/DeviceModel';
 import { Sequelize } from 'sequelize-typescript';
-import { Logger, ILogObj } from 'tslog';
+import { ILogObj, Logger } from 'tslog';
 
 export class SequelizeVariableMonitoringRepository extends SequelizeRepository<VariableMonitoring> implements IVariableMonitoringRepository {
   eventData: CrudRepository<EventData>;
@@ -23,15 +23,30 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
   async createOrUpdateByMonitoringDataTypeAndStationId(value: MonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring[]> {
     return await Promise.all(
       value.variableMonitoring.map(async (variableMonitoring) => {
-        const [savedVariableMonitoring, _variableMonitoringCreated] = await this.upsert(
-          VariableMonitoring.build({
-            stationId,
-            variableId,
-            componentId,
-            ...variableMonitoring,
-          }),
-        );
+        const savedVariableMonitoring: VariableMonitoring = await this.s.transaction(async (transaction) => {
+          const existingVariableMonitoring = await this.s.models[VariableMonitoring.MODEL_NAME].findOne({
+            where: { stationId, variableId, componentId },
+            transaction,
+          });
 
+          let result: VariableMonitoring | null = null;
+          if (!existingVariableMonitoring) {
+            // If the record does not exist, build and save a new instance
+            const vm = VariableMonitoring.build({
+              stationId,
+              variableId,
+              componentId,
+              ...variableMonitoring,
+            });
+            result = await vm.save({ transaction });
+          } else {
+            // If the record exists, update it
+            await savedVariableMonitoring.update(value, { transaction });
+            // Reload the instance to get the updated data after the update
+            result = await savedVariableMonitoring.reload({ transaction });
+          }
+          return result as VariableMonitoring;
+        });
         await this.createVariableMonitoringStatus(SetMonitoringStatusEnumType.Accepted, CallAction.NotifyMonitoringReport, savedVariableMonitoring.get('databaseId'));
 
         return savedVariableMonitoring;
@@ -50,15 +65,36 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
   }
 
   async createOrUpdateBySetMonitoringDataTypeAndStationId(value: SetMonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring> {
-    const [savedVariableMonitoring, _variableMonitoringCreated] = await this.upsert(
-      VariableMonitoring.build({
-        stationId,
-        variableId,
-        componentId,
-        ...value,
-      }),
-    );
-    return savedVariableMonitoring;
+    let result: VariableMonitoring | null = null;
+
+    await this.s.transaction(async (transaction) => {
+      const savedVariableMonitoring = await this.s.models[VariableMonitoring.MODEL_NAME].findOne({
+        where: { stationId, variableId, componentId },
+        transaction,
+      });
+
+      if (!savedVariableMonitoring) {
+        const variableMonitoring = VariableMonitoring.build({
+          stationId,
+          variableId,
+          componentId,
+          ...value,
+        });
+        result = await variableMonitoring.save({ transaction });
+      } else {
+        const updatedVariableMonitoring = await savedVariableMonitoring.update(value, {
+          transaction,
+          returning: true,
+        });
+        result = updatedVariableMonitoring as VariableMonitoring;
+      }
+    });
+
+    if (!result) {
+      throw new Error('VariableMonitoring could not be created or updated');
+    }
+
+    return result;
   }
 
   async rejectAllVariableMonitoringsByStationId(action: CallAction, stationId: string): Promise<void> {
