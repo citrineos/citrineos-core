@@ -197,28 +197,6 @@ export abstract class CrudRepository<T> extends EventEmitter {
   ): Promise<T[]>;
 
   /**
-   * Creates or updates an entry in the database depending on whether the value matches any unique indices.
-   * If no namespace is provided, the default namespace is used.
-   *
-   * @param value - The value of the entry.
-   * @param namespace - The optional namespace to create the entry in.
-   * @returns A Promise that resolves to an array where the first element is the result of the upsert, and the second element is a boolean indicating whether the entry was created.
-   */
-  public async upsert(value: T, namespace?: string): Promise<[T, boolean]> {
-    const result = await this._upsert(value, namespace);
-    if (result[1]) {
-      this.emit('created', [result[0]]);
-    } else {
-      this.emit('updated', [result[0]]);
-    }
-    return result;
-  }
-  protected abstract _upsert(
-    value: T,
-    namespace?: string,
-  ): Promise<[T, boolean]>;
-
-  /**
    * Deletes a key from the specified namespace.
    * If no namespace is provided, the key is deleted from the default namespace.
    *

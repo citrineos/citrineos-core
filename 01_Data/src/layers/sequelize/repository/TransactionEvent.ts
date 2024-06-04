@@ -49,16 +49,30 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     }
 
     const savedTransaction = await this.s.transaction(async (sequelizeTransaction) => {
-      const result = await Transaction.upsert(
-        {
+      //TODO create of update here
+      let transaction: Transaction;
+      let created = false;
+      const existingTransaction = await this.s.models[Transaction.MODEL_NAME].findOne({
+        where: {
           stationId,
           isActive: value.eventType !== TransactionEventEnumType.Ended,
-          evseDatabaseId: evse ? evse.get('databaseId') : null,
-          ...value.transactionInfo,
         },
-        { transaction: sequelizeTransaction },
-      );
-      const transaction = result[0];
+        transaction: sequelizeTransaction,
+      });
+      const updatedTransaction = Transaction.build({
+        stationId,
+        isActive: value.eventType !== TransactionEventEnumType.Ended,
+        evseDatabaseId: evse ? evse.get('databaseId') : null,
+        ...value.transactionInfo,
+      });
+      if (!existingTransaction) {
+        transaction = await updatedTransaction.save({ transaction: sequelizeTransaction });
+        created = true;
+      } else {
+        await existingTransaction.update({ ...updatedTransaction }, { transaction: sequelizeTransaction });
+        transaction = (await existingTransaction.reload({ transaction: sequelizeTransaction, include: [TransactionEvent, MeterValue] })) as Transaction;
+      }
+
       const transactionDatabaseId = transaction.get('id');
 
       const event = await TransactionEvent.create(
@@ -87,7 +101,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       await event.reload({ include: [MeterValue] });
       this.emit('created', [event]);
       await transaction.reload({ include: [TransactionEvent, MeterValue] });
-      if (result[1]) {
+      if (created) {
         this.transaction.emit('created', [transaction]);
       } else {
         this.transaction.emit('updated', [transaction]);
