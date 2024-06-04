@@ -371,8 +371,7 @@ export class CertificatesModule extends AbstractModule {
           component_name: 'SecurityCtrlr',
           variable_name: 'OrganizationName',
           type: AttributeEnumType.Actual,
-        },
-      );
+        });
       if (!organizationName || organizationName.length < 1) {
         throw new Error('Expected organizationName not found in DB');
       }
