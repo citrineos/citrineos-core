@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/member-ordering */
 // Copyright (c) 2023 S44, LLC
 // Copyright Contributors to the CitrineOS Project
 //

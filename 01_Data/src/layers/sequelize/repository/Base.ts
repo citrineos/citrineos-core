@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/member-ordering */
 // Copyright (c) 2023 S44, LLC
 // Copyright Contributors to the CitrineOS Project
 //
@@ -77,7 +78,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   }
 
   protected async _deleteAllByQuery(query: object): Promise<T[]> {
-    return this.s.transaction(async (t) => {
+    return this.s.transaction(async (_transaction) => {
       const entriesToDelete = await this.s.models[this.namespace].findAll(query).then((rows) => rows as T[]);
       const deletedCount = await this.s.models[this.namespace].destroy(query);
       if (entriesToDelete.length === deletedCount) {

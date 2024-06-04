@@ -48,9 +48,9 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
         }
         Object.keys(valueIdTokenInfo.dataValues).forEach((k) => {
           const updatedValue = valueIdTokenInfo.getDataValue(k);
-          if (updatedValue !== undefined) {
+          if (updatedValue !== undefined && savedIdTokenInfo) {
             // Null can still be used to remove data
-            savedIdTokenInfo!.setDataValue(k, valueIdTokenInfo.getDataValue(k));
+            savedIdTokenInfo.setDataValue(k, valueIdTokenInfo.getDataValue(k));
           }
         });
         if (value.idTokenInfo.groupIdToken) {
