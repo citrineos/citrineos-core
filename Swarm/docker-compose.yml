@@ -227,9 +227,9 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - 8089:8089
+      - 8090:8090
     expose:
-      - 8089
+      - 8090
     volumes:
       - ./:/usr/tenant
       - /usr/tenant/node_modules
@@ -248,9 +248,9 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - 8090:8090
+      - 8089:8089
     expose:
-      - 8090
+      - 8089
     volumes:
       - ./:/usr/transactions
       - /usr/transactions/node_modules
