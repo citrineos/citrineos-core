@@ -60,7 +60,10 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     // However, the typing of upsert requires a Partial. This is a workaround.
     // The created boolean (second element of the result) can only be null if the SQL engine in use is SQLite. In that case, it is assumed the entry was created.
     // This is a compromise for compilation's sake, it's highly recommended you do NOT use SQLite.
-    return await this.s.models[this.namespace].upsert(value as Partial<T>).then((result) => [result[0] as T, result[1] == null ? true : result[1]]);
+    return await this.s.models[this.namespace].upsert(value as Partial<T>).then((result) => {
+      console.log(`Upsert result: ${JSON.stringify(result)}`);
+      return [result[0] as T, result[1] == null ? true : result[1]];
+    });
   }
 
   protected async _deleteByKey(key: string): Promise<T | undefined> {

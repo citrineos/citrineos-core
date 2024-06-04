@@ -66,13 +66,16 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
 
     let dataType: DataEnumType | null = null;
     if (value.variableCharacteristics) {
+      dataType = value.variableCharacteristics.dataType;
+      const vc = VariableCharacteristics.build({
+        ...value.variableCharacteristics,
+        variableId: variable.id,
+      });
+      console.log(`variableCharacteristics: ${JSON.stringify(vc)}`);
       const [variableCharacteristics, _variableCharacteristicsCreated] = await this.variableCharacteristics.upsert(
-        VariableCharacteristics.build({
-          ...value.variableCharacteristics,
-          variableId: variable.id,
-        }),
+        vc,
       );
-      dataType = variableCharacteristics.dataType;
+      // dataType = variableCharacteristics.dataType;
     }
 
     return await Promise.all(
