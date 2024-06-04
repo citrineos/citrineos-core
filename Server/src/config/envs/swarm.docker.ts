@@ -51,12 +51,12 @@ export function createDockerConfig() {
       tenant: {
         endpointPrefix: 'tenant',
         host: '0.0.0.0',
-        port: 8089,
+        port: 8090,
       },
       transactions: {
         endpointPrefix: 'transactions',
         host: '0.0.0.0',
-        port: 8090,
+        port: 8089,
       },
     },
     data: {
