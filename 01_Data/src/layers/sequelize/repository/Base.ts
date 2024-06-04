@@ -11,7 +11,7 @@ import { Attributes, FindOptions, ModelStatic, UpdateOptions } from 'sequelize';
 
 export class SequelizeRepository<T extends Model<any, any>> extends CrudRepository<T> {
   protected s: Sequelize;
-  private namespace: string;
+  protected namespace: string;
 
   constructor(config: SystemConfig, namespace: string, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super();
@@ -29,7 +29,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     return await value.save();
   }
 
-  async readByKey(key: string): Promise<T> {
+  async readByKey(key: string): Promise<T | undefined> {
     return await this.s.models[this.namespace].findByPk(key).then((row) => row as T);
   }
 
@@ -67,11 +67,11 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   }
 
   protected async _deleteByKey(key: string): Promise<T | undefined> {
-    return this.s.transaction(async (t) => {
-      const entryToDelete = await this.s.models[this.namespace].findByPk(key).then((row) => row as T);
+    return this.s.transaction(async (transaction) => {
+      const entryToDelete = await this.s.models[this.namespace].findByPk(key, { transaction }).then((row) => row as T);
 
       if (entryToDelete) {
-        await entryToDelete.destroy({ transaction: t });
+        await entryToDelete.destroy({ transaction });
         return entryToDelete;
       } else {
         return undefined;
@@ -80,9 +80,9 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   }
 
   protected async _deleteAllByQuery(query: object): Promise<T[]> {
-    return this.s.transaction(async (t) => {
-      const entriesToDelete = await this.s.models[this.namespace].findAll(query).then((rows) => rows as T[]);
-      const deletedCount = await this.s.models[this.namespace].destroy(query);
+    return this.s.transaction(async (transaction) => {
+      const entriesToDelete = await this.s.models[this.namespace].findAll({ ...query, transaction }).then((rows) => rows as T[]);
+      const deletedCount = await this.s.models[this.namespace].destroy({ ...query, transaction });
       if (entriesToDelete.length === deletedCount) {
         return entriesToDelete;
       } else {
