@@ -39,17 +39,24 @@ export class ChargingNeeds extends Model implements ChargingNeedsType {
    * Relations
    */
   @ForeignKey(() => Evse)
-  @Column(DataType.INTEGER)
-  declare evseId: number;
+  @Column({
+    type: DataType.INTEGER,
+    unique: 'transactionDatabaseId_evseDatabaseId',
+  })
+  declare evseDatabaseId: number;
 
   @BelongsTo(() => Evse)
   declare evse: EVSEType;
 
   @ForeignKey(() => Transaction)
-  declare transactionDatabaseId?: string;
+  @Column({
+    type: DataType.STRING,
+    unique: 'transactionDatabaseId_evseDatabaseId',
+  })
+  declare transactionDatabaseId: string;
 
   @BelongsTo(() => Transaction)
-  declare transaction?: TransactionType;
+  declare transaction: TransactionType;
 
   declare customData?: CustomDataType | undefined;
 }

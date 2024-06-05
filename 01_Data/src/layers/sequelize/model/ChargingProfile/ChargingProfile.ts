@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingProfileKindEnumType, ChargingProfilePurposeEnumType, ChargingProfileType, ChargingScheduleType, CustomDataType, EVSEType, Namespace, RecurrencyKindEnumType, TransactionType } from '@citrineos/base';
+import { ChargingProfileKindEnumType, ChargingProfilePurposeEnumType, ChargingProfileType, ChargingScheduleType, CustomDataType, Namespace, RecurrencyKindEnumType, TransactionType } from '@citrineos/base';
 import { AutoIncrement, BelongsTo, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
-import { Evse } from '../DeviceModel';
 import { Transaction } from '../TransactionEvent';
 import { ChargingSchedule } from './ChargingSchedule';
 
@@ -22,7 +21,7 @@ export class ChargingProfile extends Model implements ChargingProfileType {
 
   @Column({
     type: DataType.INTEGER,
-    unique: 'evseDatabaseId_id',
+    unique: 'evseId_id',
   })
   declare id: number;
 
@@ -56,6 +55,12 @@ export class ChargingProfile extends Model implements ChargingProfileType {
   })
   declare validTo?: string;
 
+  @Column({
+    type: DataType.INTEGER,
+    unique: 'evseId_id',
+  })
+  declare evseId: number;
+
   // this value indicates whether the ChargingProfile is set on charger
   @Column({
     type: DataType.BOOLEAN,
@@ -69,18 +74,8 @@ export class ChargingProfile extends Model implements ChargingProfileType {
   @HasMany(() => ChargingSchedule)
   declare chargingSchedule: [ChargingScheduleType] | [ChargingScheduleType, ChargingScheduleType] | [ChargingScheduleType, ChargingScheduleType, ChargingScheduleType];
 
-  @ForeignKey(() => Evse)
-  @Column({
-    type: DataType.INTEGER,
-    unique: 'evseDatabaseId_id',
-  })
-  declare evseDatabaseId: number;
-
-  @BelongsTo(() => Evse)
-  declare evse: EVSEType;
-
   @ForeignKey(() => Transaction)
-  declare transactionDatabaseId?: string;
+  declare transactionDatabaseId?: number;
 
   @BelongsTo(() => Transaction)
   declare transaction?: TransactionType;

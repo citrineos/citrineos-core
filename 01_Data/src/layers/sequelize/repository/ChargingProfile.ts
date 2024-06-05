@@ -37,31 +37,23 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, Transaction.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async existChargingNeedsByTransactionDBId(transactionDataBaseId: number): Promise<number> {
-    return await this.chargingNeeds.existByQuery({
-      where: {
-        transactionDatabaseId: transactionDataBaseId,
-      },
-    });
-  }
-
-  async createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, evseDBId: number): Promise<ChargingProfile> {
+  async createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, evseId: number, transactionDBId?: number): Promise<ChargingProfile> {
     const [savedChargingProfile, profileCreated] = await this.readOrCreateByQuery({
       where: {
-        evseDatabaseId: evseDBId,
+        evseId: evseId,
         id: chargingProfile.id,
       },
       defaults: {
         ...chargingProfile,
-        transactionDatabaseId: chargingProfile.transactionId,
+        transactionDatabaseId: transactionDBId,
       },
     });
     if (!profileCreated) {
       await this.updateByKey(
         {
           ...chargingProfile,
-          transactionDatabaseId: chargingProfile.transactionId,
-          evseDatabaseId: evseDBId,
+          transactionDatabaseId: transactionDBId,
+          evseId: evseId,
         },
         savedChargingProfile.databaseId.toString(),
       );
@@ -113,16 +105,16 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     return await this.chargingNeeds.create(
       ChargingNeeds.build({
         ...chargingNeedsReq.chargingNeeds,
-        evseId: evse.databaseId,
+        evseDatabaseId: evse.databaseId,
         maxScheduleTuples: chargingNeedsReq.maxScheduleTuples,
       }),
     );
   }
 
-  async findChargingNeedsByEvseIdAndTransactionDBId(evseDBId: number, transactionDataBaseId: number | null): Promise<ChargingNeeds | undefined> {
+  async findChargingNeedsByEvseDBIdAndTransactionDBId(evseDBId: number, transactionDataBaseId: number | null): Promise<ChargingNeeds | undefined> {
     const chargingNeedsArray = await this.chargingNeeds.readAllByQuery({
       where: {
-        evseId: evseDBId,
+        evseDatabaseId: evseDBId,
         transactionDatabaseId: transactionDataBaseId,
       },
     });

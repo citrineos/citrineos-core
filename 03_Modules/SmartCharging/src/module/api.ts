@@ -108,18 +108,6 @@ export class SmartChargingModuleApi
     );
 
     const chargingProfile: ChargingProfileType = request.chargingProfile;
-    const evse =
-      await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
-        request.evseId,
-        null,
-      );
-    if (!evse) {
-      return {
-        success: false,
-        payload: `Evse ${request.evseId} not found.`,
-      };
-    }
-    this._logger.info(`Found evse: ${JSON.stringify(evse)}`);
 
     // Validate Charging Profile Stack Level
     if (chargingProfile.stackLevel < 0) {
@@ -153,6 +141,8 @@ export class SmartChargingModuleApi
     }
 
     // Validate Charging Profile Purpose
+    let receivedChargingNeeds;
+    let transactionDatabaseId;
     if (
       chargingProfile.chargingProfilePurpose ===
       ChargingProfilePurposeEnumType.TxProfile
@@ -182,7 +172,6 @@ export class SmartChargingModuleApi
         };
       }
 
-      // OCPP 2.0.1 Part 2 K01.FR.39
       const transaction =
         await this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(
           identifier,
@@ -194,6 +183,35 @@ export class SmartChargingModuleApi
           payload: `Transaction ${chargingProfile.transactionId} not found on station ${identifier}.`,
         };
       }
+      transactionDatabaseId = transaction.id;
+      // OCPP 2.0.1 Part 2 K01.FR.34
+      const evse =
+        await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
+          request.evseId,
+          null,
+        );
+      if (!evse) {
+        return {
+          success: false,
+          payload: `Evse ${request.evseId} not found.`,
+        };
+      }
+      this._logger.info(`Found evse: ${JSON.stringify(evse)}`);
+      receivedChargingNeeds =
+        await this._module.chargingProfileRepository.findChargingNeedsByEvseDBIdAndTransactionDBId(
+          evse.databaseId,
+          transaction.id,
+        );
+      if (
+        !receivedChargingNeeds &&
+        chargingProfile.chargingSchedule.length > 1
+      ) {
+        return {
+          success: false,
+          payload: `The CSMS has not received a NotifyEVChargingNeedsReq set for the current transaction ${transaction.id}. ChargingProfile SHALL contain only one ChargingScheduleType.`,
+        };
+      }
+      // OCPP 2.0.1 Part 2 K01.FR.39
       const numOfExistedChargingProfile =
         await this._module.chargingProfileRepository.existByQuery({
           stackLevel: chargingProfile.stackLevel,
@@ -220,16 +238,27 @@ export class SmartChargingModuleApi
     } else {
       if (
         chargingProfile.chargingProfilePurpose ===
-          ChargingProfilePurposeEnumType.ChargingStationMaxProfile &&
-        chargingProfile.chargingProfileKind ===
-          ChargingProfileKindEnumType.Relative
+        ChargingProfilePurposeEnumType.ChargingStationMaxProfile
       ) {
-        return {
-          success: false,
-          payload:
-            'When chargingProfilePurpose is ChargingStationMaxProfile,' +
-            ' chargingProfileKind SHALL NOT be Relative',
-        };
+        if (
+          chargingProfile.chargingProfileKind ===
+          ChargingProfileKindEnumType.Relative
+        ) {
+          return {
+            success: false,
+            payload:
+              'When chargingProfilePurpose is ChargingStationMaxProfile,' +
+              ' chargingProfileKind SHALL NOT be Relative',
+          };
+        }
+        if (request.evseId !== 0) {
+          return {
+            success: false,
+            payload:
+              'When chargingProfilePurpose is ChargingStationMaxProfile,' +
+              ' evseId SHALL be 0',
+          };
+        }
       }
       // OCPP 2.0.1 Part 2 K01.FR.06
       const existedChargingProfiles =
@@ -237,7 +266,7 @@ export class SmartChargingModuleApi
           where: {
             stackLevel: chargingProfile.stackLevel,
             chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
-            evseDatabaseId: evse.databaseId,
+            evseId: request.evseId,
             isActive: true,
           },
         });
@@ -274,41 +303,6 @@ export class SmartChargingModuleApi
     }
 
     // Validate Charging Schedules
-    // OCPP 2.0.1 Part 2 K01.FR.34
-    let chargingNeeds;
-    const activeTransaction =
-      await this._module.transactionEventRepository.readActiveTransactionByStationIdAndEvseDBId(
-        identifier,
-        evse.databaseId,
-      );
-    this._logger.info(
-      `Found active transaction: ${JSON.stringify(activeTransaction)}`,
-    );
-    if (activeTransaction) {
-      const numberOfChargingNeeds =
-        await this._module.chargingProfileRepository.existChargingNeedsByTransactionDBId(
-          activeTransaction.id,
-        );
-      if (
-        numberOfChargingNeeds === 0 &&
-        chargingProfile.chargingSchedule.length > 1
-      ) {
-        return {
-          success: false,
-          payload: `The CSMS has not received a NotifyEVChargingNeedsReq set for the current transaction ${activeTransaction.id}. ChargingProfile SHALL contain only one ChargingScheduleType.`,
-        };
-      }
-
-      chargingNeeds =
-        await this._module.chargingProfileRepository.findChargingNeedsByEvseIdAndTransactionDBId(
-          evse.databaseId,
-          activeTransaction.id,
-        );
-      this._logger.info(
-        `Found charging needs: ${JSON.stringify(chargingNeeds)}`,
-      );
-    }
-
     const acPhaseSwitchingSupported: VariableAttribute[] =
       await this._module.deviceModelRepository.readAllByQuery({
         stationId: identifier,
@@ -429,13 +423,13 @@ export class SmartChargingModuleApi
 
       if (chargingSchedule.salesTariff) {
         if (
-          chargingNeeds &&
-          chargingNeeds.maxScheduleTuples &&
+          receivedChargingNeeds &&
+          receivedChargingNeeds.maxScheduleTuples &&
           chargingSchedule.salesTariff.salesTariffEntry.length >
-            chargingNeeds.maxScheduleTuples
+            receivedChargingNeeds.maxScheduleTuples
         ) {
           throw new Error(
-            `ChargingSchedule ${chargingSchedule.id}: The number of SalesTariffEntry elements (${chargingSchedule.salesTariff.salesTariffEntry.length}) SHALL not exceed maxScheduleTuples (${chargingNeeds.maxScheduleTuples}).`,
+            `ChargingSchedule ${chargingSchedule.id}: The number of SalesTariffEntry elements (${chargingSchedule.salesTariff.salesTariffEntry.length}) SHALL not exceed maxScheduleTuples (${receivedChargingNeeds.maxScheduleTuples}).`,
           );
         }
 
@@ -464,7 +458,8 @@ export class SmartChargingModuleApi
 
     await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
       chargingProfile,
-      evse.databaseId,
+      request.evseId,
+      transactionDatabaseId,
     );
 
     return this._module.sendCall(

@@ -164,14 +164,4 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       })
       .then((row) => row as MeterValue[]);
   }
-
-  async readActiveTransactionByStationIdAndEvseDBId(stationId: string, evseDBId: number): Promise<Transaction | null> {
-    return await Transaction.findOne({
-      where: {
-        isActive: true,
-        stationId,
-        evseDatabaseId: evseDBId,
-      },
-    });
-  }
 }
