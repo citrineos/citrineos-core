@@ -303,15 +303,24 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
       where: { name: variableType.name, instance: variableType.instance ? variableType.instance : undefined },
     });
     if (variable) {
-      const variableCharacteristics = await this.variableCharacteristics.readOnlyOneByQuery({
+      variable.variableCharacteristics = await this.variableCharacteristics.readOnlyOneByQuery({
         where: { variableId: variable.get('id') },
       });
-      variable.variableCharacteristics = variableCharacteristics;
     }
 
     return [component, variable];
   }
 
+  async findEvseByIdAndConnectorId(id: number, connectorId: number | null): Promise<Evse | undefined> {
+    const storedEvses = await this.evse.readAllByQuery({
+      where: {
+        // unique constraints
+        id: id,
+        connectorId: connectorId,
+      },
+    });
+    return storedEvses.length > 0 ? storedEvses[0] : undefined;
+  }
   /**
    * Private Methods
    */

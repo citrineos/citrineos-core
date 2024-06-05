@@ -48,7 +48,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       [evse] = await this.evse.readOrCreateByQuery({ where: { id: value.evse.id, connectorId: value.evse.connectorId ? value.evse.connectorId : null } });
     }
 
-    const savedTransaction = await this.s.transaction(async (sequelizeTransaction) => {
+    return await this.s.transaction(async (sequelizeTransaction) => {
       const result = await Transaction.upsert(
         {
           stationId,
@@ -94,8 +94,6 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       }
       return transaction;
     });
-
-    return savedTransaction;
   }
 
   async readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]> {
@@ -165,5 +163,15 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         where: { transactionDatabaseId: transactionDataBaseId },
       })
       .then((row) => row as MeterValue[]);
+  }
+
+  async readActiveTransactionByStationIdAndEvseDBId(stationId: string, evseDBId: number): Promise<Transaction | null> {
+    return await Transaction.findOne({
+      where: {
+        isActive: true,
+        stationId,
+        evseDatabaseId: evseDBId,
+      },
+    });
   }
 }

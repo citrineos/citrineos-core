@@ -1,0 +1,55 @@
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
+import { ACChargingParametersType, ChargingNeedsType, CustomDataType, DCChargingParametersType, EnergyTransferModeEnumType, EVSEType, Namespace, TransactionType } from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { Evse } from '../DeviceModel';
+import { Transaction } from '../TransactionEvent';
+
+@Table
+export class ChargingNeeds extends Model implements ChargingNeedsType {
+  static readonly MODEL_NAME: string = Namespace.ChargingNeeds;
+
+  /**
+   * Fields
+   */
+  @Column(DataType.JSONB)
+  declare acChargingParameters: ACChargingParametersType;
+
+  @Column(DataType.JSONB)
+  declare dcChargingParameters: DCChargingParametersType;
+
+  @Column({
+    type: DataType.DATE,
+    get() {
+      const departureTime: Date = this.getDataValue('departureTime');
+      return departureTime ? departureTime.toISOString() : null;
+    },
+  })
+  declare departureTime: string;
+
+  @Column(DataType.STRING)
+  declare requestedEnergyTransfer: EnergyTransferModeEnumType;
+
+  @Column(DataType.INTEGER)
+  declare maxScheduleTuples?: number;
+
+  /**
+   * Relations
+   */
+  @ForeignKey(() => Evse)
+  @Column(DataType.INTEGER)
+  declare evseId: number;
+
+  @BelongsTo(() => Evse)
+  declare evse: EVSEType;
+
+  @ForeignKey(() => Transaction)
+  declare transactionDatabaseId?: string;
+
+  @BelongsTo(() => Transaction)
+  declare transaction?: TransactionType;
+
+  declare customData?: CustomDataType | undefined;
+}
