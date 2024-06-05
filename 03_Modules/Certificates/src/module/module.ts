@@ -365,7 +365,7 @@ export class CertificatesModule extends AbstractModule {
       CertificateSigningUseEnumType.ChargingStationCertificate
     ) {
       // Verify organization name match the one stored in the device model
-      const organizationName = await this._deviceModelRepository.readAllByQuery(
+      const organizationName = await this._deviceModelRepository.readAllByQuerystring(
         {
           stationId: stationId,
           component_name: 'SecurityCtrlr',

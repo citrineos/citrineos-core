@@ -33,7 +33,7 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
     return storedTariff;
   }
 
-  async readAllByQuery(query: TariffQueryString): Promise<Tariff[]> {
+  async readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {
     return super.readAllByQuery({
       where: {
         ...(query.stationId ? { stationId: query.stationId } : {}),
@@ -43,7 +43,7 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
     });
   }
 
-  async deleteAllByQuery(query: TariffQueryString): Promise<Tariff[]> {
+  async deleteAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {
     if (!query.id && !query.stationId && !query.unit) {
       throw new Error('Must specify at least one query parameter');
     }
