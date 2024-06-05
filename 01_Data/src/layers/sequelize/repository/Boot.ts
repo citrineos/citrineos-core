@@ -36,11 +36,12 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
       if (value.pendingBootSetVariableIds) {
         savedBootConfig.pendingBootSetVariables = await this.manageSetVariables(value.pendingBootSetVariableIds, key, savedBootConfig.id);
       }
-    }
-    if (created) {
-      this.emit('created', [savedBootConfig!]);
-    } else {
-      this.emit('updated', [savedBootConfig!]);
+
+      if (created) {
+        this.emit('created', [savedBootConfig]);
+      } else {
+        this.emit('updated', [savedBootConfig]);
+      }
     }
     return savedBootConfig;
   }

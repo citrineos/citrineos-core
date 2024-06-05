@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type ChargingStateEnumType, type EVSEType, type IdTokenType, TransactionEventEnumType, type TransactionEventRequest, CrudRepository, SystemConfig } from '@citrineos/base';
+import { type ChargingStateEnumType, CrudRepository, type EVSEType, type IdTokenType, SystemConfig, TransactionEventEnumType, type TransactionEventRequest } from '@citrineos/base';
 import { type ITransactionEventRepository } from '../../../interfaces';
 import { MeterValue, Transaction, TransactionEvent } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';
@@ -11,7 +11,7 @@ import { IdToken } from '../model/Authorization';
 import { Evse } from '../model/DeviceModel';
 import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { Logger, ILogObj } from 'tslog';
+import { ILogObj, Logger } from 'tslog';
 
 export class SequelizeTransactionEventRepository extends SequelizeRepository<TransactionEvent> implements ITransactionEventRepository {
   transaction: CrudRepository<Transaction>;
@@ -45,11 +45,16 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   async createOrUpdateTransactionByTransactionEventAndStationId(value: TransactionEventRequest, stationId: string): Promise<Transaction> {
     let evse: Evse | undefined;
     if (value.evse) {
-      [evse] = await this.evse.readOrCreateByQuery({ where: { id: value.evse.id, connectorId: value.evse.connectorId ? value.evse.connectorId : null } });
+      [evse] = await this.evse.readOrCreateByQuery({
+        where: {
+          id: value.evse.id,
+          connectorId: value.evse.connectorId ? value.evse.connectorId : null,
+        },
+      });
     }
 
     const savedTransaction = await this.s.transaction(async (sequelizeTransaction) => {
-      //TODO create of update here
+      // TODO create of update here
       let transaction: Transaction;
       let created = false;
       const existingTransaction = await this.s.models[Transaction.MODEL_NAME].findOne({
@@ -70,7 +75,10 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         created = true;
       } else {
         await existingTransaction.update({ ...updatedTransaction }, { transaction: sequelizeTransaction });
-        transaction = (await existingTransaction.reload({ transaction: sequelizeTransaction, include: [TransactionEvent, MeterValue] })) as Transaction;
+        transaction = (await existingTransaction.reload({
+          transaction: sequelizeTransaction,
+          include: [TransactionEvent, MeterValue],
+        })) as Transaction;
       }
 
       const transactionDatabaseId = transaction.get('id');
@@ -142,7 +150,14 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
    * @returns List of transactions which meet the requirements.
    */
   async readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: EVSEType, chargingStates?: ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
-    const includeObj = evse ? [{ model: Evse, where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null } }] : [];
+    const includeObj = evse
+      ? [
+          {
+            model: Evse,
+            where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null },
+          },
+        ]
+      : [];
     return await this.transaction
       .readAllByQuery({
         where: { stationId, ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}) },
