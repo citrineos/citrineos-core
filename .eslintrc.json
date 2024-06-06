@@ -36,6 +36,19 @@
       }
     ],
     "@typescript-eslint/indent": "off",
+    "@typescript-eslint/member-delimiter-style": [
+      "error",
+      {
+        "multiline": {
+          "delimiter": "semi",
+          "requireLast": true
+        },
+        "singleline": {
+          "delimiter": "semi",
+          "requireLast": false
+        }
+      }
+    ],
     "@typescript-eslint/member-ordering": "warn",
     "@typescript-eslint/naming-convention": [
       "error",
@@ -47,6 +60,7 @@
       }
     ],
     "@typescript-eslint/no-empty-function": "off",
+    "@typescript-eslint/no-empty-interface": "error",
     "@typescript-eslint/no-inferrable-types": [
       "error",
       {
@@ -64,6 +78,9 @@
     "@typescript-eslint/no-unused-expressions": "error",
     "@typescript-eslint/no-use-before-define": "error",
     "@typescript-eslint/prefer-function-type": "error",
+    "@typescript-eslint/quotes": ["error", "single"],
+    "@typescript-eslint/semi": ["error", "always"],
+    "@typescript-eslint/type-annotation-spacing": "error",
     "@typescript-eslint/unified-signatures": "error",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/strict-boolean-expressions": "off",
@@ -78,9 +95,11 @@
       }
     ],
     "arrow-body-style": "error",
+    "brace-style": ["error", "1tbs"],
     "constructor-super": "error",
     "curly": "error",
     "dot-notation": "off",
+    "eol-last": "error",
     "eqeqeq": ["error", "smart"],
     "guard-for-in": "error",
     "id-denylist": "off",
@@ -125,6 +144,7 @@
     "no-restricted-imports": ["error", "rxjs/Rx"],
     "no-shadow": "off",
     "no-throw-literal": "error",
+    "no-trailing-spaces": "error",
     "no-undef-init": "error",
     "no-underscore-dangle": "off",
     "no-unused-expressions": "off",
