@@ -10,7 +10,6 @@ export class GenerateCertificateChainRequest {
   selfSigned: boolean;
   organizationName: string;
   commonName: string;
-  serialNumber?: number;
   keyLength?: number;
   validBefore?: string;
   countryName?: CountryNameEnumType;
@@ -24,7 +23,6 @@ export class GenerateCertificateChainRequest {
     selfSigned: boolean,
     organizationName: string,
     commonName: string,
-    serialNumber?: number,
     keyLength?: number,
     validBefore?: string,
     countryName?: CountryNameEnumType,
@@ -35,7 +33,6 @@ export class GenerateCertificateChainRequest {
     this.selfSigned = selfSigned;
     this.organizationName = organizationName;
     this.commonName = commonName;
-    this.serialNumber = serialNumber;
     this.keyLength = keyLength;
     this.validBefore = validBefore;
     this.countryName = countryName;

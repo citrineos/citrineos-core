@@ -16,12 +16,10 @@ export class SequelizeCertificateRepository extends SequelizeRepository<Certific
 
   async createOrUpdateCertificate(certificate: Certificate): Promise<Certificate> {
     return await this.s.transaction(async (transaction) => {
-      // TODO what to search by
       const savedCert = await this.s.models[Certificate.MODEL_NAME].findOne({
         where: {
           serialNumber: certificate.serialNumber,
-          organizationName: certificate.organizationName,
-          commonName: certificate.commonName,
+          issuerName: certificate.issuerName,
         },
         transaction,
       });
