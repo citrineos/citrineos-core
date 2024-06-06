@@ -48,7 +48,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       [evse] = await this.evse.readOrCreateByQuery({ where: { id: value.evse.id, connectorId: value.evse.connectorId ? value.evse.connectorId : null } });
     }
 
-      const savedTransaction = await this.s.transaction(async (sequelizeTransaction) => {
+    const savedTransaction = await this.s.transaction(async (sequelizeTransaction) => {
       const result = await Transaction.upsert(
         {
           stationId,
