@@ -428,9 +428,10 @@ export class SmartChargingModuleApi
           chargingSchedule.salesTariff.salesTariffEntry.length >
             receivedChargingNeeds.maxScheduleTuples
         ) {
-          throw new Error(
-            `ChargingSchedule ${chargingSchedule.id}: The number of SalesTariffEntry elements (${chargingSchedule.salesTariff.salesTariffEntry.length}) SHALL not exceed maxScheduleTuples (${receivedChargingNeeds.maxScheduleTuples}).`,
-          );
+          return {
+            success: false,
+            payload: `ChargingSchedule ${chargingSchedule.id}: The number of SalesTariffEntry elements (${chargingSchedule.salesTariff.salesTariffEntry.length}) SHALL not exceed maxScheduleTuples (${receivedChargingNeeds.maxScheduleTuples}).`,
+          };
         }
 
         for (const salesTariffEntry of chargingSchedule.salesTariff

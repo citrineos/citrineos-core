@@ -167,6 +167,7 @@ export class SmartChargingModule extends AbstractModule {
     const chargingNeeds =
       await this._chargingProfileRepository.createChargingNeeds(
         message.payload,
+        message.context.stationId
       );
     this._logger.info(
       `Charging needs created: ${JSON.stringify(chargingNeeds)}`,

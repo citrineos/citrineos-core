@@ -92,7 +92,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     return savedChargingProfile;
   }
 
-  async createChargingNeeds(chargingNeedsReq: NotifyEVChargingNeedsRequest): Promise<ChargingNeeds> {
+  async createChargingNeeds(chargingNeedsReq: NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds> {
     const evse = (
       await this.evse.readOrCreateByQuery({
         where: {
@@ -102,10 +102,22 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
       })
     )[0];
 
+    const activeTransaction =  await Transaction.findOne({
+      where: {
+        isActive: true,
+        stationId,
+        evseDatabaseId: evse.databaseId,
+      },
+    });
+    if (!activeTransaction) {
+      throw new Error(`No active transaction found on station ${stationId} evse ${evse.databaseId}`);
+    }
+
     return await this.chargingNeeds.create(
       ChargingNeeds.build({
         ...chargingNeedsReq.chargingNeeds,
         evseDatabaseId: evse.databaseId,
+        transactionDatabaseId: activeTransaction.id,
         maxScheduleTuples: chargingNeedsReq.maxScheduleTuples,
       }),
     );

@@ -50,10 +50,10 @@ export class ChargingNeeds extends Model implements ChargingNeedsType {
 
   @ForeignKey(() => Transaction)
   @Column({
-    type: DataType.STRING,
+    type: DataType.INTEGER,
     unique: 'transactionDatabaseId_evseDatabaseId',
   })
-  declare transactionDatabaseId: string;
+  declare transactionDatabaseId: number;
 
   @BelongsTo(() => Transaction)
   declare transaction: TransactionType;
