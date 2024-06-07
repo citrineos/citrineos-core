@@ -23,12 +23,12 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     this.additionalInfo = additionalInfo ? additionalInfo : new SequelizeRepository<AdditionalInfo>(config, AdditionalInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createOrUpdateByQuery(value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined> {
+  async createOrUpdateByQuerystring(value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined> {
     if (value.idToken.idToken !== query.idToken || value.idToken.type !== query.type) {
       throw new Error('Authorization idToken does not match query');
     }
 
-    const savedAuthorizationModel: Authorization | undefined = await this.readOnlyOneByQuery(query);
+    const savedAuthorizationModel: Authorization | undefined = await this.readOnlyOneByQuerystring(query);
     const authorizationModel = savedAuthorizationModel ?? Authorization.build({}, this._createInclude(value));
 
     authorizationModel.idTokenId = (await this._updateIdToken(value.idToken, authorizationModel.idTokenId)).id;
@@ -78,23 +78,23 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     return await this.create(authorizationModel);
   }
 
-  async updateRestrictionsByQuery(value: AuthorizationRestrictions, query: AuthorizationQuerystring): Promise<Authorization[]> {
+  async updateRestrictionsByQuerystring(value: AuthorizationRestrictions, query: AuthorizationQuerystring): Promise<Authorization[]> {
     return await this.updateAllByQuery(value, query);
   }
 
-  async readAllByQuery(query: AuthorizationQuerystring): Promise<Authorization[]> {
+  async readAllByQuerystring(query: AuthorizationQuerystring): Promise<Authorization[]> {
     return await super.readAllByQuery(this._constructQuery(query));
   }
 
-  async readOnlyOneByQuery(query: AuthorizationQuerystring): Promise<Authorization | undefined> {
+  async readOnlyOneByQuerystring(query: AuthorizationQuerystring): Promise<Authorization | undefined> {
     return await super.readOnlyOneByQuery(this._constructQuery(query));
   }
 
-  async existByQuery(query: AuthorizationQuerystring): Promise<number> {
+  async existByQuerystring(query: AuthorizationQuerystring): Promise<number> {
     return await super.existByQuery(this._constructQuery(query));
   }
 
-  async deleteAllByQuery(query: AuthorizationQuerystring): Promise<Authorization[]> {
+  async deleteAllByQuerystring(query: AuthorizationQuerystring): Promise<Authorization[]> {
     return await super.deleteAllByQuery(this._constructQuery(query), Authorization.MODEL_NAME);
   }
 

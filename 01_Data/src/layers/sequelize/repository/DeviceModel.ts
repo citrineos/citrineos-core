@@ -281,17 +281,17 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return variableAttributeArray.map((variableAttribute) => this.createSetVariableDataType(variableAttribute));
   }
 
-  async readAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]> {
+  async readAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]> {
     const readQuery = this.constructQuery(query);
     readQuery.include.push(VariableStatus);
     return await super.readAllByQuery(readQuery);
   }
 
-  async existByQuery(query: VariableAttributeQuerystring): Promise<number> {
+  async existByQuerystring(query: VariableAttributeQuerystring): Promise<number> {
     return await super.existByQuery(this.constructQuery(query));
   }
 
-  async deleteAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]> {
+  async deleteAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]> {
     return await super.deleteAllByQuery(this.constructQuery(query));
   }
 
