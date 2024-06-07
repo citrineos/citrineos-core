@@ -37,12 +37,11 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
         ...message,
         active: true,
       });
-      // TODO is this searching correctly?
+
       const savedMessageInfo = await this.s.models[MessageInfo.MODEL_NAME].findOne({
         where: {
           stationId: stationId,
-          componentId: componentId,
-          message: message.message,
+          id: message.id,
         },
         transaction: transaction,
       });

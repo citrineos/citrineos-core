@@ -23,7 +23,6 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
   }
 
   async createOrUpdateTariff(tariff: Tariff): Promise<Tariff> {
-    // TODO check if searchg correclty
     return await this.s.transaction(async (transaction) => {
       const savedTariff = await this.s.models[Tariff.MODEL_NAME].findOne({
         where: {
