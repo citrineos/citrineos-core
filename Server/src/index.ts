@@ -58,7 +58,11 @@ import {
   type FastifySchemaCompiler,
   type FastifyValidationResult,
 } from 'fastify/types/schema';
-import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter';
+import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter';
+import Koa from 'koa';
+import {OcpiServer} from '@citrineos/ocpi-base';
+import { CommandsModule } from '@citrineos/ocpi-commands';
+import { VersionsModule } from '@citrineos/ocpi-versions';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -195,6 +199,7 @@ export class CitrineOSServer {
           this._logger?.error(error);
           process.exit(1);
         });
+      this.startOcpiServer(this._config.ocpiServer.host, this._config.ocpiServer.port);
       // TODO Push config to microservices
     } catch (error) {
       await Promise.reject(error);
@@ -325,6 +330,16 @@ export class CitrineOSServer {
     });
   }
 
+  private startOcpiServer(host: string, port: number) {
+    const ocpiSerer = new OcpiServer({
+      modules: [
+        new CommandsModule(),
+        new VersionsModule()
+      ]
+    });
+    ocpiSerer.run(host, port);
+  }
+
   private initModule(moduleConfig: ModuleConfig) {
     if (moduleConfig.configModule !== null) {
       const module = new moduleConfig.ModuleClass(
@@ -337,14 +352,14 @@ export class CitrineOSServer {
       this.modules.push(module);
       if (moduleConfig.ModuleApiClass === CertificatesModuleApi) {
         this.apis.push(
-          new moduleConfig.ModuleApiClass(
-            module,
-            this._server,
-            this._fileAccess,
-            this._networkConnection,
-            this._config.util.networkConnection.websocketServers,
-            this._logger,
-          ),
+            new moduleConfig.ModuleApiClass(
+                module,
+                this._server,
+                this._fileAccess,
+                this._networkConnection,
+                this._config.util.networkConnection.websocketServers,
+                this._logger,
+            ),
         );
       } else {
         this.apis.push(

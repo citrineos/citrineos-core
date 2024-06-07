@@ -26,7 +26,6 @@
     "00_Base",
     "01_Data",
     "02_Util",
-    "03_Modules/citrineos-ocpi",
     "03_Modules/Certificates",
     "03_Modules/Configuration",
     "03_Modules/EVDriver",
@@ -35,6 +34,9 @@
     "03_Modules/Reporting",
     "03_Modules/SmartCharging",
     "03_Modules/Transactions",
-    "Server"
+    "Server",
+    "../citrineos-ocpi/00_Base",
+    "../citrineos-ocpi/03_Modules/Commands",
+    "../citrineos-ocpi/03_Modules/Versions"
   ]
 }

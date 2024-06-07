@@ -37,6 +37,7 @@ export abstract class AbstractModuleApi<T extends IModule>
     this._module = module;
     this._server = server;
 
+
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });

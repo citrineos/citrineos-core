@@ -152,5 +152,9 @@ export function createDockerConfig() {
     logLevel: 2, // debug
     maxCallLengthSeconds: 5,
     maxCachingSeconds: 10,
+    ocpiServer: {
+      host: '0.0.0.0',
+      port: 8085,
+    }
   });
 }
