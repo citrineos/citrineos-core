@@ -37,9 +37,9 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
               componentId,
               ...variableMonitoring,
             });
-            const savedVariableMonitoring = await vm.save({ transaction });
-            this.emit('created', [savedVariableMonitoring]);
-            return savedVariableMonitoring;
+            const createdVariableMonitoring = await vm.save({ transaction });
+            this.emit('created', [createdVariableMonitoring]);
+            return createdVariableMonitoring;
           } else {
             // If the record exists, update it
             return (await this.updateByKey({ ...value }, existingVariableMonitoring.dataValues.databaseId)) as VariableMonitoring;
