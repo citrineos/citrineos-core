@@ -321,6 +321,22 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     });
     return storedEvses.length > 0 ? storedEvses[0] : undefined;
   }
+
+  async findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance?: string): Promise<VariableCharacteristics | undefined> {
+    const variableCharacteristics = await this.variableCharacteristics.readAllByQuery({
+      include: [
+        {
+          model: Variable,
+          where: {
+            name: variableName,
+            instance: variableInstance,
+          },
+        },
+      ],
+    });
+    return variableCharacteristics.length > 0 ? variableCharacteristics[0] : undefined;
+  }
+
   /**
    * Private Methods
    */

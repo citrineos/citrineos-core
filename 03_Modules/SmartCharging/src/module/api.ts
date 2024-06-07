@@ -11,6 +11,7 @@ import {
   AsMessageEndpoint,
   AttributeEnumType,
   CallAction,
+  ChargingLimitSourceEnumType,
   ChargingProfileKindEnumType,
   ChargingProfilePurposeEnumType,
   ChargingProfileType,
@@ -59,12 +60,25 @@ export class SmartChargingModuleApi
     CallAction.ClearChargingProfile,
     ClearChargingProfileRequestSchema,
   )
-  clearChargingProfile(
+  async clearChargingProfile(
     identifier: string,
     tenantId: string,
     request: ClearChargingProfileRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
+    if (!request.chargingProfileId && !request.chargingProfileCriteria) {
+      return {
+        success: false,
+        payload: 'Either chargingProfileId or chargingProfileCriteria must be provided',
+      };
+    }
+    if (request.chargingProfileCriteria?.chargingProfilePurpose === ChargingProfilePurposeEnumType.ChargingStationExternalConstraints) {
+        return {
+            success: false,
+            payload: 'The CSMS SHALL NOT set chargingProfilePurpose to ChargingStationExternalConstraints.',
+        };
+    }
+
     return this._module.sendCall(
       identifier,
       tenantId,
@@ -75,21 +89,31 @@ export class SmartChargingModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.GetChargingProfiles,
-    GetChargingProfilesRequestSchema,
-  )
-  getChargingProfile(
-    identifier: string,
-    tenantId: string,
-    request: GetChargingProfilesRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
       CallAction.GetChargingProfiles,
-      request,
-      callbackUrl,
+      GetChargingProfilesRequestSchema,
+  )
+  async getChargingProfile(
+      identifier: string,
+      tenantId: string,
+      request: GetChargingProfilesRequest,
+      callbackUrl?: string,
+  ): Promise<IMessageConfirmation> {
+    if (request.chargingProfile.chargingProfileId && request.chargingProfile.chargingProfileId.length > 1) {
+      const variableCharacteristics = await this._module.deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance('Entries', 'ChargingProfiles');
+      if (variableCharacteristics && variableCharacteristics.maxLimit && request.chargingProfile.chargingProfileId.length > variableCharacteristics.maxLimit) {
+        return {
+          success: false,
+          payload: `The max length of chargingProfileId is ${variableCharacteristics.maxLimit}`,
+        };
+      }
+    }
+
+    return this._module.sendCall(
+        identifier,
+        tenantId,
+        CallAction.GetChargingProfiles,
+        request,
+        callbackUrl,
     );
   }
 
@@ -142,7 +166,6 @@ export class SmartChargingModuleApi
 
     // Validate Charging Profile Purpose
     let receivedChargingNeeds;
-    let transactionDatabaseId;
     if (
       chargingProfile.chargingProfilePurpose ===
       ChargingProfilePurposeEnumType.TxProfile
@@ -183,7 +206,6 @@ export class SmartChargingModuleApi
           payload: `Transaction ${chargingProfile.transactionId} not found on station ${identifier}.`,
         };
       }
-      transactionDatabaseId = transaction.id;
       // OCPP 2.0.1 Part 2 K01.FR.34
       const evse =
         await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
@@ -459,8 +481,9 @@ export class SmartChargingModuleApi
 
     await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
       chargingProfile,
+      identifier,
       request.evseId,
-      transactionDatabaseId,
+      ChargingLimitSourceEnumType.CSO,
     );
 
     return this._module.sendCall(
