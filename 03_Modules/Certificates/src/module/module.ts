@@ -365,14 +365,13 @@ export class CertificatesModule extends AbstractModule {
       CertificateSigningUseEnumType.ChargingStationCertificate
     ) {
       // Verify organization name match the one stored in the device model
-      const organizationName = await this._deviceModelRepository.readAllByQuery(
+      const organizationName = await this._deviceModelRepository.readAllByQuerystring(
         {
           stationId: stationId,
           component_name: 'SecurityCtrlr',
           variable_name: 'OrganizationName',
           type: AttributeEnumType.Actual,
-        },
-      );
+        });
       if (!organizationName || organizationName.length < 1) {
         throw new Error('Expected organizationName not found in DB');
       }

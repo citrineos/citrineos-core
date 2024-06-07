@@ -43,12 +43,12 @@ import { TariffQueryString } from './queries/Tariff';
 import { ChargingProfile } from '../layers/sequelize';
 
 export interface IAuthorizationRepository extends CrudRepository<AuthorizationData> {
-  createOrUpdateByQuery: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
-  updateRestrictionsByQuery: (value: AuthorizationRestrictions, query: AuthorizationQuerystring) => Promise<Authorization[]>;
-  readAllByQuery: (query: AuthorizationQuerystring) => Promise<Authorization[]>;
-  readOnlyOneByQuery: (query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
-  existByQuery: (query: AuthorizationQuerystring) => Promise<number>;
-  deleteAllByQuery: (query: AuthorizationQuerystring) => Promise<Authorization[]>;
+  createOrUpdateByQuerystring: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
+  updateRestrictionsByQuerystring: (value: AuthorizationRestrictions, query: AuthorizationQuerystring) => Promise<Authorization[]>;
+  readAllByQuerystring: (query: AuthorizationQuerystring) => Promise<Authorization[]>;
+  readOnlyOneByQuerystring: (query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
+  existByQuerystring: (query: AuthorizationQuerystring) => Promise<number>;
+  deleteAllByQuerystring: (query: AuthorizationQuerystring) => Promise<Authorization[]>;
 }
 
 /**
@@ -69,9 +69,9 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
   createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string): Promise<VariableAttribute[]>;
   updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined>;
   readAllSetVariableByStationId(stationId: string): Promise<SetVariableDataType[]>;
-  readAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
-  existByQuery(query: VariableAttributeQuerystring): Promise<number>;
-  deleteAllByQuery(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
+  readAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
+  existByQuerystring(query: VariableAttributeQuerystring): Promise<number>;
+  deleteAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
   findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]>;
   findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component>;
   findEvseByIdAndConnectorId(id: number, connectorId: number | null): Promise<Evse | undefined>;
@@ -118,8 +118,8 @@ export interface IMessageInfoRepository extends CrudRepository<MessageInfoType> 
 
 export interface ITariffRepository extends CrudRepository<Tariff> {
   findByStationId(stationId: string): Promise<Tariff | undefined>;
-  readAllByQuery(query: TariffQueryString): Promise<Tariff[]>;
-  deleteAllByQuery(query: TariffQueryString): Promise<Tariff[]>;
+  readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]>;
+  deleteAllByQuerystring(query: TariffQueryString): Promise<Tariff[]>;
   createOrUpdateTariff(tariff: Tariff): Promise<Tariff>;
 }
 

@@ -79,7 +79,7 @@ export class EVDriverModuleApi
       Querystring: AuthorizationQuerystring;
     }>,
   ): Promise<AuthorizationData | undefined> {
-    return this._module.authorizeRepository.createOrUpdateByQuery(
+    return this._module.authorizeRepository.createOrUpdateByQuerystring(
       request.body,
       request.query,
     );
@@ -97,7 +97,7 @@ export class EVDriverModuleApi
       Querystring: AuthorizationQuerystring;
     }>,
   ): Promise<AuthorizationData[]> {
-    return this._module.authorizeRepository.updateRestrictionsByQuery(
+    return this._module.authorizeRepository.updateRestrictionsByQuerystring(
       request.body,
       request.query,
     );
@@ -111,7 +111,7 @@ export class EVDriverModuleApi
   getAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
   ): Promise<AuthorizationData[]> {
-    return this._module.authorizeRepository.readAllByQuery(request.query);
+    return this._module.authorizeRepository.readAllByQuerystring(request.query);
   }
 
   @AsDataEndpoint(
@@ -123,7 +123,7 @@ export class EVDriverModuleApi
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
   ): Promise<string> {
     return this._module.authorizeRepository
-      .deleteAllByQuery(request.query)
+      .deleteAllByQuerystring(request.query)
       .then(
         (deletedCount) =>
           deletedCount.toString() +

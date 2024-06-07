@@ -62,7 +62,6 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('created', [result]);
     return result;
   }
-  protected abstract _create(value: T, namespace?: string): Promise<T>;
 
   /**
    * Creates a new entry in the database with the specified value and key.
@@ -82,29 +81,6 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('created', [result]);
     return result;
   }
-  protected abstract _createByKey(
-    value: T,
-    key: string,
-    namespace?: string,
-  ): Promise<T>;
-
-  /**
-   * Reads a value from storage based on the given key.
-   *
-   * @param key - The key to look up in storage.
-   * @param namespace - Optional namespace for the key.
-   * @returns A promise that resolves to the value associated with the key, or undefined if the key does not exist.
-   */
-  abstract readByKey(key: string, namespace?: string): Promise<T | undefined>;
-
-  /**
-   * Reads values from storage based on the given query.
-   *
-   * @param query - The query to use.
-   * @param namespace - Optional namespace for the query.
-   * @returns A promise that resolves to the values associated with the query.
-   */
-  abstract readAllByQuery(query: object, namespace?: string): Promise<T[]>;
 
   /**
    * Attempts to read a value from storage based on the given query, or throws an exception if more than one value is found.
@@ -143,10 +119,6 @@ export abstract class CrudRepository<T> extends EventEmitter {
     }
     return result;
   }
-  protected abstract _readOrCreateByQuery(
-    query: object,
-    namespace?: string,
-  ): Promise<[T, boolean]>;
 
   /**
    * Updates the value associated with the given key in the specified namespace.
@@ -166,11 +138,6 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('updated', result ? [result] : []);
     return result;
   }
-  protected abstract _updateByKey(
-    value: Partial<T>,
-    key: string,
-    namespace?: string,
-  ): Promise<T | undefined>;
 
   /**
    * Updates the values associated with the given query in the specified namespace.
@@ -190,33 +157,6 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('updated', result);
     return result;
   }
-  protected abstract _updateAllByQuery(
-    value: Partial<T>,
-    query: object,
-    namespace?: string,
-  ): Promise<T[]>;
-
-  /**
-   * Creates or updates an entry in the database depending on whether the value matches any unique indices.
-   * If no namespace is provided, the default namespace is used.
-   *
-   * @param value - The value of the entry.
-   * @param namespace - The optional namespace to create the entry in.
-   * @returns A Promise that resolves to an array where the first element is the result of the upsert, and the second element is a boolean indicating whether the entry was created.
-   */
-  public async upsert(value: T, namespace?: string): Promise<[T, boolean]> {
-    const result = await this._upsert(value, namespace);
-    if (result[1]) {
-      this.emit('created', [result[0]]);
-    } else {
-      this.emit('updated', [result[0]]);
-    }
-    return result;
-  }
-  protected abstract _upsert(
-    value: T,
-    namespace?: string,
-  ): Promise<[T, boolean]>;
 
   /**
    * Deletes a key from the specified namespace.
@@ -234,10 +174,6 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('deleted', result ? [result] : []);
     return result;
   }
-  protected abstract _deleteByKey(
-    key: string,
-    namespace?: string,
-  ): Promise<T | undefined>;
 
   /**
    * Deletes all values associated with a query from the specified namespace.
@@ -255,10 +191,24 @@ export abstract class CrudRepository<T> extends EventEmitter {
     this.emit('deleted', result);
     return result;
   }
-  protected abstract _deleteAllByQuery(
-    query: object,
-    namespace?: string,
-  ): Promise<T[]>;
+
+  /**
+   * Reads a value from storage based on the given key.
+   *
+   * @param key - The key to look up in storage.
+   * @param namespace - Optional namespace for the key.
+   * @returns A promise that resolves to the value associated with the key, or undefined if the key does not exist.
+   */
+  abstract readByKey(key: string, namespace?: string): Promise<T | undefined>;
+
+  /**
+   * Reads values from storage based on the given query.
+   *
+   * @param query - The query to use.
+   * @param namespace - Optional namespace for the query.
+   * @returns A promise that resolves to the values associated with the query.
+   */
+  abstract readAllByQuery(query: object, namespace?: string): Promise<T[]>;
 
   /**
    * Checks if a key exists in the specified namespace.
@@ -279,4 +229,39 @@ export abstract class CrudRepository<T> extends EventEmitter {
    * @returns A Promise that resolves to the number of values matching the query.
    */
   abstract existByQuery(query: object, namespace?: string): Promise<number>;
+
+  protected abstract _create(value: T, namespace?: string): Promise<T>;
+
+  protected abstract _createByKey(
+    value: T,
+    key: string,
+    namespace?: string,
+  ): Promise<T>;
+
+  protected abstract _readOrCreateByQuery(
+    query: object,
+    namespace?: string,
+  ): Promise<[T, boolean]>;
+
+  protected abstract _updateByKey(
+    value: Partial<T>,
+    key: string,
+    namespace?: string,
+  ): Promise<T | undefined>;
+
+  protected abstract _updateAllByQuery(
+    value: Partial<T>,
+    query: object,
+    namespace?: string,
+  ): Promise<T[]>;
+
+  protected abstract _deleteByKey(
+    key: string,
+    namespace?: string,
+  ): Promise<T | undefined>;
+
+  protected abstract _deleteAllByQuery(
+    query: object,
+    namespace?: string,
+  ): Promise<T[]>;
 }
