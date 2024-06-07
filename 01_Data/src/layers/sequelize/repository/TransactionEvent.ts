@@ -53,8 +53,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       });
     }
 
-    const savedTransaction = await this.s.transaction(async (sequelizeTransaction) => {
-      // TODO create of update here
+    return await this.s.transaction(async (sequelizeTransaction) => {
       let transaction: Transaction;
       let created = false;
       const existingTransaction = await this.s.models[Transaction.MODEL_NAME].findOne({
@@ -70,18 +69,18 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         evseDatabaseId: evse ? evse.get('databaseId') : null,
         ...value.transactionInfo,
       });
-      if (!existingTransaction) {
-        transaction = await updatedTransaction.save({ transaction: sequelizeTransaction });
-        created = true;
-      } else {
+      if (existingTransaction) {
         await existingTransaction.update({ ...updatedTransaction }, { transaction: sequelizeTransaction });
         transaction = (await existingTransaction.reload({
           transaction: sequelizeTransaction,
           include: [TransactionEvent, MeterValue],
         })) as Transaction;
+      } else {
+        transaction = await updatedTransaction.save({ transaction: sequelizeTransaction });
+        created = true;
       }
 
-      const transactionDatabaseId = transaction.get('id');
+      const transactionDatabaseId = transaction.id;
 
       const event = await TransactionEvent.create(
         {
@@ -109,6 +108,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       await event.reload({ include: [MeterValue] });
       this.emit('created', [event]);
       await transaction.reload({ include: [TransactionEvent, MeterValue] });
+
       if (created) {
         this.transaction.emit('created', [transaction]);
       } else {
@@ -116,8 +116,6 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       }
       return transaction;
     });
-
-    return savedTransaction;
   }
 
   async readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]> {

@@ -7,7 +7,7 @@ import { ITariffRepository, TariffQueryString } from '../../../interfaces';
 import { Tariff } from '../model/Tariff';
 import { Sequelize } from 'sequelize-typescript';
 import { SystemConfig } from '@citrineos/base';
-import { Logger, ILogObj } from 'tslog';
+import { ILogObj, Logger } from 'tslog';
 
 export class SequelizeTariffRepository extends SequelizeRepository<Tariff> implements ITariffRepository {
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
@@ -33,10 +33,9 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
         transaction,
       });
       if (savedTariff) {
-        await savedTariff.update(tariff, { transaction });
-        return (await savedTariff.reload({ transaction })) as Tariff;
+        return (await this.updateByKey({ ...tariff }, savedTariff.dataValues.id)) as Tariff;
       }
-      return await tariff.save({ transaction });
+      return await this.create(tariff);
     });
   }
 

@@ -29,7 +29,7 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
             transaction,
           });
 
-          let result: VariableMonitoring | null = null;
+          const result: VariableMonitoring | null = null;
           if (!existingVariableMonitoring) {
             // If the record does not exist, build and save a new instance
             const vm = VariableMonitoring.build({
@@ -38,14 +38,11 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
               componentId,
               ...variableMonitoring,
             });
-            result = await vm.save({ transaction });
+            return await this.create(vm);
           } else {
             // If the record exists, update it
-            await savedVariableMonitoring.update(value, { transaction });
-            // Reload the instance to get the updated data after the update
-            result = await savedVariableMonitoring.reload({ transaction });
+            return (await this.updateByKey({ ...value }, existingVariableMonitoring.dataValues.databaseId)) as VariableMonitoring;
           }
-          return result as VariableMonitoring;
         });
         await this.createVariableMonitoringStatus(SetMonitoringStatusEnumType.Accepted, CallAction.NotifyMonitoringReport, savedVariableMonitoring.get('databaseId'));
 

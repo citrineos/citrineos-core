@@ -47,10 +47,9 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
         transaction: transaction,
       });
       if (savedMessageInfo) {
-        await savedMessageInfo.update(messageInfo, { transaction });
-        return (await savedMessageInfo.reload({ transaction })) as MessageInfo;
+        return (await this.updateByKey({ ...messageInfo }, savedMessageInfo.dataValues.databaseId)) as MessageInfo;
       }
-      return await messageInfo.save({ transaction });
+      return this.create(messageInfo);
     });
   }
 }
