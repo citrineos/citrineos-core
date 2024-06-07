@@ -494,7 +494,7 @@ export class MonitoringModuleApi
   getDeviceModelVariables(
     request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>,
   ): Promise<sequelize.VariableAttribute[] | undefined> {
-    return this._module.deviceModelRepository.readAllByQuery(request.query);
+    return this._module.deviceModelRepository.readAllByQuerystring(request.query);
   }
 
   @AsDataEndpoint(
@@ -506,7 +506,7 @@ export class MonitoringModuleApi
     request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>,
   ): Promise<string> {
     return this._module.deviceModelRepository
-      .deleteAllByQuery(request.query)
+      .deleteAllByQuerystring(request.query)
       .then(
         (deletedCount) =>
           deletedCount.toString() +

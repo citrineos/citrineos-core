@@ -178,6 +178,7 @@ export class MemoryCache implements ICache {
         }, expireSeconds * 1000),
       );
     }
+    this.resolveOnChange(namespaceKey, value);
     return true;
   }
 
@@ -204,6 +205,7 @@ export class MemoryCache implements ICache {
         }, expireSeconds * 1000),
       );
     }
+    this.resolveOnChange(namespaceKey, value);
     return true;
   }
 
@@ -227,6 +229,14 @@ export class MemoryCache implements ICache {
         }, expireSeconds * 1000),
       );
     }
+    this.resolveOnChange(namespaceKey, value);
     return true;
+  }
+
+  private resolveOnChange(namespaceKey: string, value: string) {
+    const resolveOnChangeCallback = this._keySubscriptionMap.get(namespaceKey);
+    if (resolveOnChangeCallback) {
+      resolveOnChangeCallback(value);
+    }
   }
 }

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace } from '@citrineos/base';
-import { Table, Model, Column, DataType, Index } from 'sequelize-typescript';
+import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
 import { TariffUnitEnumType } from './index';
 
 @Table
@@ -15,10 +15,16 @@ export class Tariff extends Model {
    */
 
   @Index
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    unique: 'stationId_unit',
+  })
   declare stationId: string;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    unique: 'stationId_unit',
+  })
   declare unit: TariffUnitEnumType;
 
   @Column(DataType.DECIMAL)
