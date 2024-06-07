@@ -276,7 +276,7 @@ export class ReportingModule extends AbstractModule {
           message.context.stationId,
         );
       for (const variableAttribute of variableAttributes) {
-        // Reload is necessary because the upsert method used in createOrUpdateDeviceModelByStationId does not allow eager loading
+        // Reload is necessary because in createOrUpdateDeviceModelByStationId does not do eager loading
         await variableAttribute.reload({
           include: [Component, Variable],
         });
