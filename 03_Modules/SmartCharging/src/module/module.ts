@@ -11,7 +11,8 @@ import {
   ChargingProfileCriterionType,
   ChargingProfileStatusEnumType,
   ChargingProfileType,
-  ClearChargingProfileResponse, ClearChargingProfileStatusEnumType,
+  ClearChargingProfileResponse,
+  ClearChargingProfileStatusEnumType,
   ClearedChargingLimitResponse,
   EventGroup,
   GenericStatusEnumType,
@@ -277,36 +278,43 @@ export class SmartChargingModule extends AbstractModule {
       props,
     );
 
-    if (message.payload.status === ClearChargingProfileStatusEnumType.Accepted) {
+    if (
+      message.payload.status === ClearChargingProfileStatusEnumType.Accepted
+    ) {
       const stationId: string = message.context.stationId;
       // Set existed profiles to isActive false
       await this._chargingProfileRepository.updateAllByQuery(
-          {
-            isActive: false,
+        {
+          isActive: false,
+        },
+        {
+          where: {
+            stationId: stationId,
+            isActive: true,
           },
-          {
-            where: {
-              stationId: stationId,
-              isActive: true,
-            },
-            returning: false,
-          },
+          returning: false,
+        },
       );
       // Request charging profiles to get the latest data
       this.sendCall(
-          stationId,
-          message.context.tenantId,
-          CallAction.GetChargingProfiles,
-          {
-            requestId: Math.floor(Math.random() * 1000),
-            chargingProfile: {
-              chargingLimitSource: [ChargingLimitSourceEnumType.CSO, ChargingLimitSourceEnumType.EMS, ChargingLimitSourceEnumType.SO, ChargingLimitSourceEnumType.Other],
-            } as ChargingProfileCriterionType,
-          } as GetChargingProfilesRequest,
+        stationId,
+        message.context.tenantId,
+        CallAction.GetChargingProfiles,
+        {
+          requestId: Math.floor(Math.random() * 1000),
+          chargingProfile: {
+            chargingLimitSource: [
+              ChargingLimitSourceEnumType.CSO,
+              ChargingLimitSourceEnumType.EMS,
+              ChargingLimitSourceEnumType.SO,
+              ChargingLimitSourceEnumType.Other,
+            ],
+          } as ChargingProfileCriterionType,
+        } as GetChargingProfilesRequest,
       );
     } else {
       this._logger.error(
-          `Failed to clear charging profile: ${JSON.stringify(message.payload)}`,
+        `Failed to clear charging profile: ${JSON.stringify(message.payload)}`,
       );
     }
   }

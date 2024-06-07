@@ -69,14 +69,19 @@ export class SmartChargingModuleApi
     if (!request.chargingProfileId && !request.chargingProfileCriteria) {
       return {
         success: false,
-        payload: 'Either chargingProfileId or chargingProfileCriteria must be provided',
+        payload:
+          'Either chargingProfileId or chargingProfileCriteria must be provided',
       };
     }
-    if (request.chargingProfileCriteria?.chargingProfilePurpose === ChargingProfilePurposeEnumType.ChargingStationExternalConstraints) {
-        return {
-            success: false,
-            payload: 'The CSMS SHALL NOT set chargingProfilePurpose to ChargingStationExternalConstraints.',
-        };
+    if (
+      request.chargingProfileCriteria?.chargingProfilePurpose ===
+      ChargingProfilePurposeEnumType.ChargingStationExternalConstraints
+    ) {
+      return {
+        success: false,
+        payload:
+          'The CSMS SHALL NOT set chargingProfilePurpose to ChargingStationExternalConstraints.',
+      };
     }
 
     return this._module.sendCall(
@@ -89,18 +94,30 @@ export class SmartChargingModuleApi
   }
 
   @AsMessageEndpoint(
-      CallAction.GetChargingProfiles,
-      GetChargingProfilesRequestSchema,
+    CallAction.GetChargingProfiles,
+    GetChargingProfilesRequestSchema,
   )
   async getChargingProfile(
-      identifier: string,
-      tenantId: string,
-      request: GetChargingProfilesRequest,
-      callbackUrl?: string,
+    identifier: string,
+    tenantId: string,
+    request: GetChargingProfilesRequest,
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    if (request.chargingProfile.chargingProfileId && request.chargingProfile.chargingProfileId.length > 1) {
-      const variableCharacteristics = await this._module.deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance('Entries', 'ChargingProfiles');
-      if (variableCharacteristics && variableCharacteristics.maxLimit && request.chargingProfile.chargingProfileId.length > variableCharacteristics.maxLimit) {
+    if (
+      request.chargingProfile.chargingProfileId &&
+      request.chargingProfile.chargingProfileId.length > 1
+    ) {
+      const variableCharacteristics =
+        await this._module.deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
+          'Entries',
+          'ChargingProfiles',
+        );
+      if (
+        variableCharacteristics &&
+        variableCharacteristics.maxLimit &&
+        request.chargingProfile.chargingProfileId.length >
+          variableCharacteristics.maxLimit
+      ) {
         return {
           success: false,
           payload: `The max length of chargingProfileId is ${variableCharacteristics.maxLimit}`,
@@ -109,11 +126,11 @@ export class SmartChargingModuleApi
     }
 
     return this._module.sendCall(
-        identifier,
-        tenantId,
-        CallAction.GetChargingProfiles,
-        request,
-        callbackUrl,
+      identifier,
+      tenantId,
+      CallAction.GetChargingProfiles,
+      request,
+      callbackUrl,
     );
   }
 
