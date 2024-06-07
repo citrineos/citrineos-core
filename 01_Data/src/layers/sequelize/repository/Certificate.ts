@@ -24,7 +24,9 @@ export class SequelizeCertificateRepository extends SequelizeRepository<Certific
         transaction,
       });
       if (!savedCert) {
-        return await this.create(certificate);
+        const savedCertificate = await certificate.save({ transaction });
+        this.emit('created', [savedCertificate]);
+        return savedCertificate;
       } else {
         return (
           await this.updateAllByQuery(certificate, {

@@ -80,7 +80,9 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
         });
 
         if (!savedVariableCharacteristics) {
-          return await this.variableCharacteristics.create(vc);
+          const savedVariableCharacteristics = await vc.save({ transaction });
+          this.variableCharacteristics.emit('created', [savedVariableCharacteristics]);
+          return savedVariableCharacteristics;
         } else {
           return await this.variableCharacteristics.updateAllByQuery(
             { ...vc },

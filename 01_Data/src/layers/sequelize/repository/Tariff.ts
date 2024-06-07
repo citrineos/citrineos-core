@@ -34,7 +34,9 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
       if (savedTariff) {
         return (await this.updateByKey({ ...tariff }, savedTariff.dataValues.id)) as Tariff;
       }
-      return await this.create(tariff);
+      const createdTariff = await tariff.save({ transaction });
+      this.emit('created', [createdTariff]);
+      return createdTariff;
     });
   }
 
