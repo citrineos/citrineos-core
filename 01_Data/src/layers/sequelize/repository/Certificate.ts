@@ -24,11 +24,18 @@ export class SequelizeCertificateRepository extends SequelizeRepository<Certific
         transaction,
       });
       if (!savedCert) {
-        await certificate.save({ transaction });
+        return await this.create(certificate);
       } else {
-        await certificate.update(certificate, { transaction });
+        return (
+          await this.updateAllByQuery(certificate, {
+            where: {
+              serialNumber: certificate.serialNumber,
+              issuerName: certificate.issuerName,
+            },
+            transaction,
+          })
+        )[0];
       }
-      return await certificate.reload({ transaction });
     });
   }
 }

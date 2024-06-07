@@ -71,7 +71,6 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
         ...value.variableCharacteristics,
         variableId: variable.id,
       });
-      console.log(`variableCharacteristics: ${JSON.stringify(vc)}`);
       await this.s.transaction(async (transaction) => {
         const savedVariableCharacteristics = await this.s.models[VariableCharacteristics.MODEL_NAME].findOne({
           where: {
@@ -81,9 +80,17 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
         });
 
         if (!savedVariableCharacteristics) {
-          await vc.save({ transaction });
+          return await this.variableCharacteristics.create(vc);
         } else {
-          await savedVariableCharacteristics.update({ ...vc }, { transaction });
+          return await this.variableCharacteristics.updateAllByQuery(
+            { ...vc },
+            {
+              where: {
+                variableId: variable.id,
+              },
+              transaction,
+            },
+          );
         }
       });
     }
