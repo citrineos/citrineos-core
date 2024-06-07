@@ -34,7 +34,7 @@ export class ChargingSchedule extends Model implements ChargingScheduleType {
   @Column(DataType.INTEGER)
   declare duration?: number;
 
-  @Column(DataType.INTEGER)
+  @Column(DataType.DECIMAL)
   declare minChargingRate?: number;
 
   @Column(DataType.STRING)

@@ -350,9 +350,10 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
       where: { name: variableType.name, instance: variableType.instance ? variableType.instance : undefined },
     });
     if (variable) {
-      variable.variableCharacteristics = await this.variableCharacteristics.readOnlyOneByQuery({
+      const variableCharacteristics = await this.variableCharacteristics.readOnlyOneByQuery({
         where: { variableId: variable.get('id') },
       });
+      variable.variableCharacteristics = variableCharacteristics;
     }
 
     return [component, variable];

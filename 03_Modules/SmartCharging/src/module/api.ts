@@ -343,7 +343,7 @@ export class SmartChargingModuleApi
 
     // Validate Charging Schedules
     const acPhaseSwitchingSupported: VariableAttribute[] =
-      await this._module.deviceModelRepository.readAllByQuery({
+      await this._module.deviceModelRepository.readAllByQuerystring({
         stationId: identifier,
         component_evse_id: request.evseId,
         component_name: 'SmartChargingCtrlr',
@@ -354,7 +354,7 @@ export class SmartChargingModuleApi
       `Found ACPhaseSwitchingSupported: ${JSON.stringify(acPhaseSwitchingSupported)}`,
     );
     const periodsPerSchedules: VariableAttribute[] =
-      await this._module.deviceModelRepository.readAllByQuery({
+      await this._module.deviceModelRepository.readAllByQuerystring({
         stationId: identifier,
         component_name: 'SmartChargingCtrlr',
         variable_name: 'PeriodsPerSchedule',
