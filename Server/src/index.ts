@@ -59,8 +59,7 @@ import {
   type FastifyValidationResult,
 } from 'fastify/types/schema';
 import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter';
-import Koa from 'koa';
-import {OcpiServer} from '@citrineos/ocpi-base';
+import {OcpiServer, CitrineOcppClient} from '@citrineos/ocpi-base';
 import { CommandsModule } from '@citrineos/ocpi-commands';
 import { VersionsModule } from '@citrineos/ocpi-versions';
 
@@ -331,7 +330,15 @@ export class CitrineOSServer {
   }
 
   private startOcpiServer(host: string, port: number) {
-    const ocpiSerer = new OcpiServer({
+    const ocppClient = new CitrineOcppClient(
+        this._config,
+        this._cache,
+        this._createHandler(),
+        this._createSender(),
+        EventGroup.All,
+        this._logger,
+    );
+    const ocpiSerer = new OcpiServer(ocppClient, {
       modules: [
         new CommandsModule(),
         new VersionsModule()
