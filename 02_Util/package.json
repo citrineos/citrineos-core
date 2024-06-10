@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/util",
-  "version": "1.1.1",
+  "version": "1.3.0",
   "description": "The OCPP util module which supplies helpful utilities like cache and queue connectors, etc.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -35,8 +35,8 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@citrineos/base": "1.1.1",
-    "@citrineos/data": "1.1.1",
+    "@citrineos/base": "1.3.0",
+    "@citrineos/data": "1.3.0",
     "@directus/sdk": "^15.0.3",
     "@fastify/swagger": "^8.10.1",
     "@fastify/swagger-ui": "^1.9.3",
@@ -48,7 +48,7 @@
     "deasync-promise": "^1.0.1",
     "fastify": "^4.26.2",
     "json-schema-faker": "^0.5.6",
-    "jsrsasign": "^10.5.14",
+    "jsrsasign": "^11.0.0",
     "kafkajs": "^2.2.4",
     "mqtt": "^5.1.2",
     "pkijs": "^3.0.16",
