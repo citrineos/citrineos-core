@@ -90,10 +90,10 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         },
         { transaction: sequelizeTransaction },
       );
-      if (event.meterValue && event.meterValue.length > 0) {
+      if (value.meterValue && value.meterValue.length > 0) {
         await Promise.all(
-          event.meterValue.map(async (meterValue) => {
-            await MeterValue.create(
+          value.meterValue.map(async (meterValue) => {
+            const savedMeterValue = await MeterValue.create(
               {
                 transactionEventId: event.get('id'),
                 transactionDatabaseId: transactionDatabaseId,
@@ -101,7 +101,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
               },
               { transaction: sequelizeTransaction },
             );
-            this.meterValue.emit('created', [meterValue]);
+            this.meterValue.emit('created', [savedMeterValue]);
           }),
         );
       }
