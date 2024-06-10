@@ -28,9 +28,9 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     meterValue?: CrudRepository<MeterValue>,
   ) {
     super(config, namespace, logger, sequelizeInstance);
-    this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, namespace, logger, sequelizeInstance);
-    this.evse = evse ? evse : new SequelizeRepository<Evse>(config, namespace, logger, sequelizeInstance);
-    this.meterValue = meterValue ? meterValue : new SequelizeRepository<MeterValue>(config, namespace, logger, sequelizeInstance);
+    this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, Transaction.MODEL_NAME, logger, sequelizeInstance);
+    this.evse = evse ? evse : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
+    this.meterValue = meterValue ? meterValue : new SequelizeRepository<MeterValue>(config, MeterValue.MODEL_NAME, logger, sequelizeInstance);
   }
 
   /**
@@ -105,9 +105,9 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
           }),
         );
       }
-      await event.reload({ include: [MeterValue] });
+      await event.reload({ include: [MeterValue], transaction: sequelizeTransaction });
       this.emit('created', [event]);
-      await transaction.reload({ include: [TransactionEvent, MeterValue] });
+      await transaction.reload({ include: [TransactionEvent, MeterValue], transaction: sequelizeTransaction });
 
       if (created) {
         this.transaction.emit('created', [transaction]);
