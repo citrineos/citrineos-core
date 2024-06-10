@@ -165,6 +165,8 @@ export class CitrineOSServer {
     process.on('SIGINT', this.shutdown.bind(this));
     process.on('SIGTERM', this.shutdown.bind(this));
     process.on('SIGQUIT', this.shutdown.bind(this));
+
+    // this.startOcpiServer(config.ocpiServer.host, config.ocpiServer.port);
   }
 
   shutdown() {
@@ -198,7 +200,7 @@ export class CitrineOSServer {
           this._logger?.error(error);
           process.exit(1);
         });
-      this.startOcpiServer(this._config.ocpiServer.host, this._config.ocpiServer.port);
+      // this.startOcpiServer(this._config.ocpiServer.host, this._config.ocpiServer.port);
       // TODO Push config to microservices
     } catch (error) {
       await Promise.reject(error);
@@ -330,18 +332,24 @@ export class CitrineOSServer {
   }
 
   private startOcpiServer(host: string, port: number) {
-    const ocppClient = new CitrineOcppClient(
-        this._config,
-        this._cache,
-        this._createHandler(),
-        this._createSender(),
-        EventGroup.All,
-        this._logger,
-    );
-    const ocpiSerer = new OcpiServer(ocppClient, {
+    const ocpiSerer = new OcpiServer({
       modules: [
-        new CommandsModule(),
-        new VersionsModule()
+        new CommandsModule(
+            this._config,
+            this._cache,
+            this._createHandler(),
+            this._createSender(),
+            EventGroup.Commands,
+            this._logger,
+        ),
+        new VersionsModule(
+            this._config,
+            this._cache,
+            this._createHandler(),
+            this._createSender(),
+            EventGroup.Versions,
+            this._logger,
+        )
       ]
     });
     ocpiSerer.run(host, port);
