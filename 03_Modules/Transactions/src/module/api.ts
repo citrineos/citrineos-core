@@ -37,7 +37,8 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
  */
 export class TransactionsModuleApi
   extends AbstractModuleApi<TransactionsModule>
-  implements ITransactionsModuleApi {
+  implements ITransactionsModuleApi
+{
   /**
    * Constructor for the class.
    *
@@ -127,7 +128,7 @@ export class TransactionsModuleApi
   getTariffs(
     request: FastifyRequest<{ Querystring: TariffQueryString }>,
   ): Promise<Tariff[]> {
-    return this._module.tariffRepository.readAllByQuery(request.query);
+    return this._module.tariffRepository.readAllByQuerystring(request.query);
   }
 
   @AsDataEndpoint(Namespace.Tariff, HttpMethod.Delete, TariffQuerySchema)
@@ -135,7 +136,7 @@ export class TransactionsModuleApi
     request: FastifyRequest<{ Querystring: TariffQueryString }>,
   ): Promise<string> {
     return this._module.tariffRepository
-      .deleteAllByQuery(request.query)
+      .deleteAllByQuerystring(request.query)
       .then(
         (deletedCount: { toString: () => string }) =>
           deletedCount.toString() +

@@ -7,7 +7,7 @@ import { ITariffRepository, TariffQueryString } from '../../../interfaces';
 import { Tariff } from '../model/Tariff';
 import { Sequelize } from 'sequelize-typescript';
 import { SystemConfig } from '@citrineos/base';
-import { Logger, ILogObj } from 'tslog';
+import { ILogObj, Logger } from 'tslog';
 
 export class SequelizeTariffRepository extends SequelizeRepository<Tariff> implements ITariffRepository {
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
@@ -23,17 +23,24 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
   }
 
   async createOrUpdateTariff(tariff: Tariff): Promise<Tariff> {
-    const [storedTariff, _tariffCreated] = await this.upsert(
-      Tariff.build({
-        stationId: tariff.stationId,
-        unit: tariff.unit,
-        price: tariff.price,
-      }),
-    );
-    return storedTariff;
+    return await this.s.transaction(async (transaction) => {
+      const savedTariff = await this.s.models[Tariff.MODEL_NAME].findOne({
+        where: {
+          stationId: tariff.stationId,
+          unit: tariff.unit,
+        },
+        transaction,
+      });
+      if (savedTariff) {
+        return (await this.updateByKey({ ...tariff }, savedTariff.dataValues.id)) as Tariff;
+      }
+      const createdTariff = await tariff.save({ transaction });
+      this.emit('created', [createdTariff]);
+      return createdTariff;
+    });
   }
 
-  async readAllByQuery(query: TariffQueryString): Promise<Tariff[]> {
+  async readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {
     return super.readAllByQuery({
       where: {
         ...(query.stationId ? { stationId: query.stationId } : {}),
@@ -43,7 +50,7 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
     });
   }
 
-  async deleteAllByQuery(query: TariffQueryString): Promise<Tariff[]> {
+  async deleteAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {
     if (!query.id && !query.stationId && !query.unit) {
       throw new Error('Must specify at least one query parameter');
     }

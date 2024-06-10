@@ -53,7 +53,8 @@ import { getBatches, getSizeOfRequest } from '@citrineos/util';
  */
 export class MonitoringModuleApi
   extends AbstractModuleApi<MonitoringModule>
-  implements IMonitoringModuleApi {
+  implements IMonitoringModuleApi
+{
   private readonly _componentMonitoringCtrlr = 'MonitoringCtrlr';
   private readonly _componentDeviceDataCtrlr = 'DeviceDataCtrlr';
 
@@ -496,7 +497,9 @@ export class MonitoringModuleApi
   getDeviceModelVariables(
     request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>,
   ): Promise<sequelize.VariableAttribute[] | undefined> {
-    return this._module.deviceModelRepository.readAllByQuery(request.query);
+    return this._module.deviceModelRepository.readAllByQuerystring(
+      request.query,
+    );
   }
 
   @AsDataEndpoint(
@@ -508,7 +511,7 @@ export class MonitoringModuleApi
     request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>,
   ): Promise<string> {
     return this._module.deviceModelRepository
-      .deleteAllByQuery(request.query)
+      .deleteAllByQuerystring(request.query)
       .then(
         (deletedCount) =>
           deletedCount.toString() +

@@ -46,6 +46,7 @@ import {
 } from '@citrineos/data';
 import fs from 'fs';
 import moment from 'moment';
+import jsrsasign from 'jsrsasign';
 
 const enum PemType {
   Root = 'Root',
@@ -57,7 +58,8 @@ const enum PemType {
  */
 export class CertificatesModuleApi
   extends AbstractModuleApi<CertificatesModule>
-  implements ICertificatesModuleApi {
+  implements ICertificatesModuleApi
+{
   private readonly _networkConnection: WebsocketNetworkConnection;
   private readonly _websocketServersConfig: WebsocketServerConfig[];
   private readonly _fileAccess: IFileAccess;
@@ -250,9 +252,7 @@ export class CertificatesModuleApi
     const certRequest = request.body as GenerateCertificateChainRequest;
 
     let certificateFromReq = new Certificate();
-    certificateFromReq.serialNumber = certRequest.serialNumber
-      ? certRequest.serialNumber
-      : moment().valueOf();
+    certificateFromReq.serialNumber = moment().valueOf();
     certificateFromReq.keyLength = certRequest.keyLength
       ? certRequest.keyLength
       : 2048;
@@ -602,6 +602,9 @@ export class CertificatesModuleApi
       filePath,
     );
     // Store certificate in db
+    const certObj = new jsrsasign.X509();
+    certObj.readCertPEM(certPem);
+    certificateEntity.issuerName = certObj.getIssuerString();
     return await this._module.certificateRepository.createOrUpdateCertificate(
       certificateEntity,
     );

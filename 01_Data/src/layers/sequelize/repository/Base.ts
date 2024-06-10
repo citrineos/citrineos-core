@@ -19,6 +19,22 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     this.namespace = namespace;
   }
 
+  async readByKey(key: string): Promise<T | undefined> {
+    return await this.s.models[this.namespace].findByPk(key).then((row) => row as T);
+  }
+
+  async readAllByQuery(query: object): Promise<T[]> {
+    return await this.s.models[this.namespace].findAll(query as FindOptions<any>).then((row) => row as T[]);
+  }
+
+  async existsByKey(key: string): Promise<boolean> {
+    return await this.s.models[this.namespace].findByPk(key).then((row) => row !== null);
+  }
+
+  async existByQuery(query: object): Promise<number> {
+    return await this.s.models[this.namespace].findAll(query).then((row) => row.length);
+  }
+
   protected async _create(value: T): Promise<T> {
     return await value.save();
   }
@@ -27,14 +43,6 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     const primaryKey = this.s.models[this.namespace].primaryKeyAttribute;
     value.setDataValue(primaryKey, key);
     return await value.save();
-  }
-
-  async readByKey(key: string): Promise<T | undefined> {
-    return await this.s.models[this.namespace].findByPk(key).then((row) => row as T);
-  }
-
-  async readAllByQuery(query: object): Promise<T[]> {
-    return await this.s.models[this.namespace].findAll(query as FindOptions<any>).then((row) => row as T[]);
   }
 
   protected async _readOrCreateByQuery(query: object): Promise<[T, boolean]> {
@@ -51,19 +59,13 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     updateOptions.returning = true;
     // Lengthy type conversion to satisfy sequelize-typescript
     return await (this.s.models[this.namespace] as ModelStatic<T>)
-      .update(value, updateOptions as Omit<UpdateOptions<Attributes<T>>, 'returning'> & { returning: Exclude<UpdateOptions<Attributes<T>>['returning'], undefined | false> })
+      .update(
+        value,
+        updateOptions as Omit<UpdateOptions<Attributes<T>>, 'returning'> & {
+          returning: Exclude<UpdateOptions<Attributes<T>>['returning'], undefined | false>;
+        },
+      )
       .then((result) => result[1] as T[]);
-  }
-
-  protected async _upsert(value: T): Promise<[T, boolean]> {
-    // There will be an exception if sql attempts to create and value is missing required fields.
-    // However, the typing of upsert requires a Partial. This is a workaround.
-    // The created boolean (second element of the result) can only be null if the SQL engine in use is SQLite. In that case, it is assumed the entry was created.
-    // This is a compromise for compilation's sake, it's highly recommended you do NOT use SQLite.
-    return await this.s.models[this.namespace].upsert(value as Partial<T>).then((result) => {
-      console.log(`Upsert result: ${JSON.stringify(result)}`);
-      return [result[0] as T, result[1] == null ? true : result[1]];
-    });
   }
 
   protected async _deleteByKey(key: string): Promise<T | undefined> {
@@ -71,7 +73,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
       const entryToDelete = await this.s.models[this.namespace].findByPk(key, { transaction }).then((row) => row as T);
 
       if (entryToDelete) {
-        await entryToDelete.destroy({ transaction });
+        await entryToDelete.destroy({ transaction: transaction });
         return entryToDelete;
       } else {
         return undefined;
@@ -81,7 +83,12 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
 
   protected async _deleteAllByQuery(query: object): Promise<T[]> {
     return this.s.transaction(async (transaction) => {
-      const entriesToDelete = await this.s.models[this.namespace].findAll({ ...query, transaction }).then((rows) => rows as T[]);
+      const entriesToDelete = await this.s.models[this.namespace]
+        .findAll({
+          ...query,
+          transaction,
+        })
+        .then((rows) => rows as T[]);
       const deletedCount = await this.s.models[this.namespace].destroy({ ...query, transaction });
       if (entriesToDelete.length === deletedCount) {
         return entriesToDelete;
@@ -89,13 +96,5 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
         throw new Error(`Deleted ${deletedCount} entries, expected ${entriesToDelete.length}`);
       }
     });
-  }
-
-  async existsByKey(key: string): Promise<boolean> {
-    return await this.s.models[this.namespace].findByPk(key).then((row) => row !== null);
-  }
-
-  async existByQuery(query: object): Promise<number> {
-    return await this.s.models[this.namespace].findAll(query).then((row) => row.length);
   }
 }

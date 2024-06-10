@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "1.1.1",
+  "version": "1.2.2",
   "private": false,
   "devDependencies": {
     "@eslint/js": "^9.0.0",
