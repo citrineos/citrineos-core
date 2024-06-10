@@ -60,7 +60,7 @@ import {
   VariableAttribute,
 } from '@citrineos/data';
 import {generatePassword, isValidPassword, validateLanguageTag} from '@citrineos/util';
-import {v4 as uuidv4} from "uuid";
+import {v4 as uuidv4} from 'uuid';
 
 /**
  * Server API for the Configuration component.
@@ -394,7 +394,7 @@ export class ConfigurationModuleApi
 
     const setVariablesResponse: SetVariablesResponse = JSON.parse(responseJsonString);
     const passwordUpdated = setVariablesResponse.setVariableResult
-        .every(result => result.attributeStatus == SetVariableStatusEnumType.Accepted);
+        .every(result => result.attributeStatus === SetVariableStatusEnumType.Accepted);
     if (!passwordUpdated) {
       throw new Error(`Failure updating password on ${stationId} station`);
     }
