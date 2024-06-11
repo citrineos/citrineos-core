@@ -166,7 +166,7 @@ export class CitrineOSServer {
     process.on('SIGTERM', this.shutdown.bind(this));
     process.on('SIGQUIT', this.shutdown.bind(this));
 
-    // this.startOcpiServer(config.ocpiServer.host, config.ocpiServer.port);
+    this.startOcpiServer(config.ocpiServer.host, config.ocpiServer.port);
   }
 
   shutdown() {
@@ -200,7 +200,6 @@ export class CitrineOSServer {
           this._logger?.error(error);
           process.exit(1);
         });
-      // this.startOcpiServer(this._config.ocpiServer.host, this._config.ocpiServer.port);
       // TODO Push config to microservices
     } catch (error) {
       await Promise.reject(error);
