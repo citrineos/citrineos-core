@@ -62,5 +62,5 @@ export function getNumberOfFractionDigit(num: number): number {
  * @returns Set
  */
 export function stringToSet(input: string): Set<string> {
-  return new Set(input.split(',').map(item => item.trim()));
+  return new Set(input.split(',').map((item) => item.trim()));
 }

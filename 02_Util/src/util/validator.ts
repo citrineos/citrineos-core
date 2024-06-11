@@ -98,6 +98,9 @@ export async function validateChargingProfileType(
         evse.databaseId,
         transaction.id,
       );
+    logger.info(
+      `Found ChargingNeeds: ${JSON.stringify(receivedChargingNeeds)}`,
+    );
   }
 
   const periodsPerSchedules: VariableAttribute[] =

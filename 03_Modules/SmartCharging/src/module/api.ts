@@ -18,6 +18,7 @@ import {
   ClearChargingProfileRequestSchema,
   ClearedChargingLimitRequestSchema,
   CustomerInformationRequest,
+  DataEnumType,
   GetChargingProfilesRequest,
   GetChargingProfilesRequestSchema,
   GetCompositeScheduleRequest,
@@ -30,14 +31,15 @@ import {
 import { FastifyInstance } from 'fastify';
 import { VariableAttribute } from '@citrineos/data';
 import { validateChargingProfileType } from '@citrineos/util/dist/util/validator';
-import { stringToSet } from "@citrineos/util/dist/util/parser";
+import { stringToSet } from '@citrineos/util/dist/util/parser';
 
 /**
  * Server API for the SmartCharging module.
  */
 export class SmartChargingModuleApi
   extends AbstractModuleApi<SmartChargingModule>
-  implements ISmartChargingModuleApi {
+  implements ISmartChargingModuleApi
+{
   /**
    * Constructs a new instance of the class.
    *
@@ -166,10 +168,10 @@ export class SmartChargingModuleApi
 
       // OCPP 2.0.1 Part 2 K01.FR.09
       const transaction =
-          await this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(
-              identifier,
-              chargingProfile.transactionId,
-          );
+        await this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(
+          identifier,
+          chargingProfile.transactionId,
+        );
       if (!transaction) {
         return {
           success: false,
@@ -309,6 +311,14 @@ export class SmartChargingModuleApi
     this._logger.info(
       `Found ACPhaseSwitchingSupported: ${JSON.stringify(acPhaseSwitchingSupported)}`,
     );
+    const chargingScheduleChargingRateUnit =
+      await this._module.deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
+        'RateUnit',
+        null,
+      );
+    this._logger.info(
+      `Found RateUnit: ${JSON.stringify(chargingScheduleChargingRateUnit)}`,
+    );
     for (const chargingSchedule of chargingProfile.chargingSchedule) {
       // OCPP 2.0.1 Part 2 K01.FR.31
       if (chargingSchedule.chargingSchedulePeriod[0].startPeriod !== 0) {
@@ -345,18 +355,26 @@ export class SmartChargingModuleApi
       }
 
       // OCPP 2.0.1 Part 2 K01.FR.26
-      const chargingScheduleChargingRateUnit = await this._module.deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance('RateUnit', null);
-      if (chargingScheduleChargingRateUnit && chargingScheduleChargingRateUnit.valuesList) {
+      if (
+        chargingScheduleChargingRateUnit &&
+        chargingScheduleChargingRateUnit.dataType === DataEnumType.MemberList &&
+        chargingScheduleChargingRateUnit.valuesList
+      ) {
         try {
-          const chargingRateUnits = stringToSet(chargingScheduleChargingRateUnit.valuesList);
+          const chargingRateUnits = stringToSet(
+            chargingScheduleChargingRateUnit.valuesList,
+          );
           if (!chargingRateUnits.has(chargingSchedule.chargingRateUnit)) {
             return {
               success: false,
               payload: `ChargingSchedule ${chargingSchedule.id}: chargingRateUnit SHALL be one of ${chargingScheduleChargingRateUnit.valuesList}.`,
-            }
+            };
           }
         } catch (error) {
-          this._logger.error(`Failed to validate chargingRateUnit. Found unexpected valueList in RateUnit: ${JSON.stringify(chargingScheduleChargingRateUnit.valuesList)}`, error);
+          this._logger.error(
+            `Failed to validate chargingRateUnit. Found unexpected valueList in RateUnit: ${JSON.stringify(chargingScheduleChargingRateUnit.valuesList)}`,
+            error,
+          );
         }
       }
 
