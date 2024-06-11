@@ -59,7 +59,7 @@ import {
   type FastifyValidationResult,
 } from 'fastify/types/schema';
 import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter';
-import {OcpiServer, CitrineOcppClient} from '@citrineos/ocpi-base';
+import {OcpiServer} from '@citrineos/ocpi-base';
 import { CommandsModule } from '@citrineos/ocpi-commands';
 import { VersionsModule } from '@citrineos/ocpi-versions';
 
