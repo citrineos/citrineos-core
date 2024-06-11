@@ -224,7 +224,7 @@ export class EVDriverModule extends AbstractModule {
     }
 
     this._authorizeRepository
-      .readOnlyOneByQuery({ ...request.idToken })
+      .readOnlyOneByQuerystring({ ...request.idToken })
       .then(async (authorization) => {
         if (authorization) {
           if (authorization.idTokenInfo) {
@@ -277,7 +277,7 @@ export class EVDriverModule extends AbstractModule {
                 if (authorization.allowedConnectorTypes) {
                   evseIds = new Set();
                   const connectorTypes: VariableAttribute[] =
-                    await this._deviceModelRepository.readAllByQuery({
+                    await this._deviceModelRepository.readAllByQuerystring({
                       stationId: message.context.stationId,
                       component_name: 'Connector',
                       variable_name: 'ConnectorType',
@@ -307,7 +307,7 @@ export class EVDriverModule extends AbstractModule {
                   if (authorization.disallowedEvseIdPrefixes) {
                     evseIds = evseIds ? evseIds : new Set();
                     const evseIdAttributes: VariableAttribute[] =
-                      await this._deviceModelRepository.readAllByQuery({
+                      await this._deviceModelRepository.readAllByQuerystring({
                         stationId: message.context.stationId,
                         component_name: 'EVSE',
                         variable_name: 'EvseId',
@@ -375,7 +375,7 @@ export class EVDriverModule extends AbstractModule {
           response.idTokenInfo.status === AuthorizationStatusEnumType.Accepted
         ) {
           const tariffAvailable: VariableAttribute[] =
-            await this._deviceModelRepository.readAllByQuery({
+            await this._deviceModelRepository.readAllByQuerystring({
               stationId: message.context.stationId,
               component_name: 'TariffCostCtrlr',
               variable_name: 'Available',
@@ -384,7 +384,7 @@ export class EVDriverModule extends AbstractModule {
             });
 
           const displayMessageAvailable: VariableAttribute[] =
-            await this._deviceModelRepository.readAllByQuery({
+            await this._deviceModelRepository.readAllByQuerystring({
               stationId: message.context.stationId,
               component_name: 'DisplayMessageCtrlr',
               variable_name: 'Available',
