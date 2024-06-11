@@ -7,7 +7,7 @@ import { ICertificateRepository } from '../../../interfaces';
 import { Certificate } from '../model/Certificate';
 import { SystemConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { Logger, ILogObj } from 'tslog';
+import { ILogObj, Logger } from 'tslog';
 
 export class SequelizeCertificateRepository extends SequelizeRepository<Certificate> implements ICertificateRepository {
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
@@ -15,20 +15,29 @@ export class SequelizeCertificateRepository extends SequelizeRepository<Certific
   }
 
   async createOrUpdateCertificate(certificate: Certificate): Promise<Certificate> {
-    const [storedCert, _certCreated] = await Certificate.upsert({
-      signedBy: certificate.signedBy,
-      serialNumber: certificate.serialNumber,
-      keyLength: certificate.keyLength,
-      organizationName: certificate.organizationName,
-      commonName: certificate.commonName,
-      validBefore: certificate.validBefore,
-      signatureAlgorithm: certificate.signatureAlgorithm,
-      countryName: certificate.countryName,
-      isCA: certificate.isCA,
-      pathLen: certificate.pathLen,
-      certificateFileId: certificate.certificateFileId,
-      privateKeyFileId: certificate.privateKeyFileId,
+    return await this.s.transaction(async (transaction) => {
+      const savedCert = await this.s.models[Certificate.MODEL_NAME].findOne({
+        where: {
+          serialNumber: certificate.serialNumber,
+          issuerName: certificate.issuerName,
+        },
+        transaction,
+      });
+      if (!savedCert) {
+        const savedCertificate = await certificate.save({ transaction });
+        this.emit('created', [savedCertificate]);
+        return savedCertificate;
+      } else {
+        return (
+          await this.updateAllByQuery(certificate, {
+            where: {
+              serialNumber: certificate.serialNumber,
+              issuerName: certificate.issuerName,
+            },
+            transaction,
+          })
+        )[0];
+      }
     });
-    return storedCert;
   }
 }

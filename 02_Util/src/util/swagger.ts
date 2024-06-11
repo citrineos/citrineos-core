@@ -85,7 +85,7 @@ export function initSwagger(
       info: {
         title: 'CitrineOS Central System API',
         description: 'Central System API for OCPP 2.0.1 messaging.',
-        version: '1.1.1',
+        version: '1.2.3',
       },
     },
     transformObject: OcppTransformObject,
