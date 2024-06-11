@@ -59,7 +59,7 @@ import {
   type FastifyValidationResult,
 } from 'fastify/types/schema';
 import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter';
-import {OcpiServer, CitrineOcppClient} from '@citrineos/ocpi-base';
+import {OcpiServer} from '@citrineos/ocpi-base';
 import { CommandsModule } from '@citrineos/ocpi-commands';
 import { VersionsModule } from '@citrineos/ocpi-versions';
 
@@ -166,7 +166,7 @@ export class CitrineOSServer {
     process.on('SIGTERM', this.shutdown.bind(this));
     process.on('SIGQUIT', this.shutdown.bind(this));
 
-    // this.startOcpiServer(config.ocpiServer.host, config.ocpiServer.port);
+    this.startOcpiServer(config.ocpiServer.host, config.ocpiServer.port);
   }
 
   shutdown() {
@@ -200,7 +200,6 @@ export class CitrineOSServer {
           this._logger?.error(error);
           process.exit(1);
         });
-      // this.startOcpiServer(this._config.ocpiServer.host, this._config.ocpiServer.port);
       // TODO Push config to microservices
     } catch (error) {
       await Promise.reject(error);
