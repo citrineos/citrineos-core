@@ -54,3 +54,13 @@ export function getNumberOfFractionDigit(num: number): number {
     return match[1].length;
   }
 }
+
+/**
+ * Convert string to set. For example, 'a,b,c' -> new Set(['a', 'b', 'c'])
+ *
+ * @param input - The string to convert
+ * @returns Set
+ */
+export function stringToSet(input: string): Set<string> {
+  return new Set(input.split(',').map(item => item.trim()));
+}

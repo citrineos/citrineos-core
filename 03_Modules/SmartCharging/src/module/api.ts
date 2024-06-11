@@ -30,6 +30,7 @@ import {
 import { FastifyInstance } from 'fastify';
 import { VariableAttribute } from '@citrineos/data';
 import { validateChargingProfileType } from '@citrineos/util/dist/util/validator';
+import { stringToSet } from "@citrineos/util/dist/util/parser";
 
 /**
  * Server API for the SmartCharging module.
@@ -162,17 +163,21 @@ export class SmartChargingModuleApi
             'Missing transactionId for chargingProfilePurpose TxProfile.',
         };
       }
-      if (
-        !(await this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(
-          identifier,
-          chargingProfile.transactionId,
-        ))
-      ) {
+
+      // OCPP 2.0.1 Part 2 K01.FR.09
+      const transaction =
+          await this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(
+              identifier,
+              chargingProfile.transactionId,
+          );
+      if (!transaction) {
         return {
           success: false,
           payload: `Transaction ${chargingProfile.transactionId} not found on station ${identifier}.`,
         };
       }
+      transactionDatabaseId = transaction.id;
+
       // OCPP 2.0.1 Part 2 K01.FR.16
       if (request.evseId <= 0) {
         return {
@@ -181,18 +186,6 @@ export class SmartChargingModuleApi
         };
       }
 
-      const transaction =
-        await this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(
-          identifier,
-          chargingProfile.transactionId,
-        );
-      if (!transaction) {
-        return {
-          success: false,
-          payload: `Transaction ${chargingProfile.transactionId} not found on station ${identifier}.`,
-        };
-      }
-      transactionDatabaseId = transaction.id;
       const evse =
         await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
           request.evseId,
@@ -274,7 +267,7 @@ export class SmartChargingModuleApi
           },
         });
       this._logger.info(
-        `Found existed charging profiles: ${JSON.stringify(existedChargingProfiles)}`,
+        `Found existing charging profiles: ${JSON.stringify(existedChargingProfiles)}`,
       );
       if (existedChargingProfiles.length > 0) {
         // validFrom must be smaller than or equal to the time when it is set on charger
@@ -348,6 +341,22 @@ export class SmartChargingModuleApi
             success: false,
             payload: `ChargingSchedule ${chargingSchedule.id}: startSchedule SHALL be absent when chargingProfileKind is Relative.`,
           };
+        }
+      }
+
+      // OCPP 2.0.1 Part 2 K01.FR.26
+      const chargingScheduleChargingRateUnit = await this._module.deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance('RateUnit', null);
+      if (chargingScheduleChargingRateUnit && chargingScheduleChargingRateUnit.valuesList) {
+        try {
+          const chargingRateUnits = stringToSet(chargingScheduleChargingRateUnit.valuesList);
+          if (!chargingRateUnits.has(chargingSchedule.chargingRateUnit)) {
+            return {
+              success: false,
+              payload: `ChargingSchedule ${chargingSchedule.id}: chargingRateUnit SHALL be one of ${chargingScheduleChargingRateUnit.valuesList}.`,
+            }
+          }
+        } catch (error) {
+          this._logger.error(`Failed to validate chargingRateUnit. Found unexpected valueList in RateUnit: ${JSON.stringify(chargingScheduleChargingRateUnit.valuesList)}`, error);
         }
       }
 

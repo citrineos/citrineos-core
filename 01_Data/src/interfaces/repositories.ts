@@ -32,7 +32,7 @@ import {
   NotifyEVChargingNeedsRequest,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
-import { MeterValue, type Transaction } from '../layers/sequelize';
+import { MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
 import { type VariableAttribute } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { type Authorization, type Boot, type Certificate, ChargingNeeds, type ChargingStation, type Component, type EventData, Evse, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';
@@ -75,6 +75,7 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
   findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]>;
   findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component>;
   findEvseByIdAndConnectorId(id: number, connectorId: number | null): Promise<Evse | undefined>;
+  findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance: string | null): Promise<VariableCharacteristics | undefined>;
 }
 
 export interface ILocationRepository extends CrudRepository<Location> {
