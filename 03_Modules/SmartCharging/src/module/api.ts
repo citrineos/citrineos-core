@@ -29,7 +29,7 @@ import {
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { VariableAttribute } from '@citrineos/data';
-import { getNumberOfFractionDigit } from '@citrineos/util/dist/util/parser';
+import { validateChargingProfileType } from '@citrineos/util/dist/util/validator';
 
 /**
  * Server API for the SmartCharging module.
@@ -106,18 +106,26 @@ export class SmartChargingModuleApi
     this._logger.info(
       `Received SetChargingProfile: ${JSON.stringify(request)}`,
     );
-
     const chargingProfile: ChargingProfileType = request.chargingProfile;
-
-    // Validate Charging Profile Stack Level
-    if (chargingProfile.stackLevel < 0) {
+    // Validate ChargingProfileType's constraints
+    try {
+      await validateChargingProfileType(
+        chargingProfile,
+        identifier,
+        this._module.deviceModelRepository,
+        this._module.chargingProfileRepository,
+        this._module.transactionEventRepository,
+        this._logger,
+        request.evseId,
+      );
+    } catch (error) {
       return {
         success: false,
-        payload: 'Stack Level SHALL be >= 0.',
+        payload: error instanceof Error ? error.message : JSON.stringify(error),
       };
     }
 
-    // Validate Charging Profile valid period
+    // Validate use case specific constraints
     const now = new Date();
     const validFrom = chargingProfile.validFrom
       ? new Date(chargingProfile.validFrom)
@@ -140,13 +148,13 @@ export class SmartChargingModuleApi
       };
     }
 
-    // Validate Charging Profile Purpose
     let receivedChargingNeeds;
     let transactionDatabaseId;
     if (
       chargingProfile.chargingProfilePurpose ===
       ChargingProfilePurposeEnumType.TxProfile
     ) {
+      // OCPP 2.0.1 Part 2 K01.FR.03
       if (!chargingProfile.transactionId) {
         return {
           success: false,
@@ -165,6 +173,7 @@ export class SmartChargingModuleApi
           payload: `Transaction ${chargingProfile.transactionId} not found on station ${identifier}.`,
         };
       }
+      // OCPP 2.0.1 Part 2 K01.FR.16
       if (request.evseId <= 0) {
         return {
           success: false,
@@ -184,7 +193,6 @@ export class SmartChargingModuleApi
         };
       }
       transactionDatabaseId = transaction.id;
-      // OCPP 2.0.1 Part 2 K01.FR.34
       const evse =
         await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
           request.evseId,
@@ -202,6 +210,7 @@ export class SmartChargingModuleApi
           evse.databaseId,
           transaction.id,
         );
+      // OCPP 2.0.1 Part 2 K01.FR.34
       if (
         !receivedChargingNeeds &&
         chargingProfile.chargingSchedule.length > 1
@@ -229,6 +238,7 @@ export class SmartChargingModuleApi
       chargingProfile.chargingProfilePurpose ===
       ChargingProfilePurposeEnumType.ChargingStationExternalConstraints
     ) {
+      // OCPP 2.0.1 Part 2 K01.FR.22
       return {
         success: false,
         payload:
@@ -240,6 +250,7 @@ export class SmartChargingModuleApi
         chargingProfile.chargingProfilePurpose ===
         ChargingProfilePurposeEnumType.ChargingStationMaxProfile
       ) {
+        // OCPP 2.0.1 Part 2 K01.FR.38
         if (
           chargingProfile.chargingProfileKind ===
           ChargingProfileKindEnumType.Relative
@@ -249,14 +260,6 @@ export class SmartChargingModuleApi
             payload:
               'When chargingProfilePurpose is ChargingStationMaxProfile,' +
               ' chargingProfileKind SHALL NOT be Relative',
-          };
-        }
-        if (request.evseId !== 0) {
-          return {
-            success: false,
-            payload:
-              'When chargingProfilePurpose is ChargingStationMaxProfile,' +
-              ' evseId SHALL be 0',
           };
         }
       }
@@ -302,7 +305,6 @@ export class SmartChargingModuleApi
       }
     }
 
-    // Validate Charging Schedules
     const acPhaseSwitchingSupported: VariableAttribute[] =
       await this._module.deviceModelRepository.readAllByQuerystring({
         stationId: identifier,
@@ -314,31 +316,8 @@ export class SmartChargingModuleApi
     this._logger.info(
       `Found ACPhaseSwitchingSupported: ${JSON.stringify(acPhaseSwitchingSupported)}`,
     );
-    const periodsPerSchedules: VariableAttribute[] =
-      await this._module.deviceModelRepository.readAllByQuerystring({
-        stationId: identifier,
-        component_name: 'SmartChargingCtrlr',
-        variable_name: 'PeriodsPerSchedule',
-        type: AttributeEnumType.Actual,
-      });
-    this._logger.info(
-      `Found PeriodsPerSchedule: ${JSON.stringify(periodsPerSchedules)}`,
-    );
-    let periodsPerSchedule;
-    if (periodsPerSchedules.length > 0 && periodsPerSchedules[0].value) {
-      periodsPerSchedule = Number(periodsPerSchedules[0].value);
-    }
     for (const chargingSchedule of chargingProfile.chargingSchedule) {
-      if (
-        chargingSchedule.minChargingRate &&
-        getNumberOfFractionDigit(chargingSchedule.minChargingRate) > 1
-      ) {
-        return {
-          success: false,
-          payload: `chargingSchedule ${chargingSchedule.id}: minChargingRate accepts at most one digit fraction (e.g. 8.1).`,
-        };
-      }
-
+      // OCPP 2.0.1 Part 2 K01.FR.31
       if (chargingSchedule.chargingSchedulePeriod[0].startPeriod !== 0) {
         return {
           success: false,
@@ -372,16 +351,7 @@ export class SmartChargingModuleApi
         }
       }
 
-      if (
-        periodsPerSchedule &&
-        chargingSchedule.chargingSchedulePeriod.length > periodsPerSchedule
-      ) {
-        return {
-          success: false,
-          payload: `ChargingSchedule ${chargingSchedule.id}: The number of chargingSchedulePeriod SHALL not exceed ${periodsPerSchedule}.`,
-        };
-      }
-
+      // OCPP 2.0.1 Part 2 K01.FR.35
       chargingSchedule.chargingSchedulePeriod.sort((period1, period2) => {
         if (period1.startPeriod > period2.startPeriod) {
           return 1;
@@ -396,62 +366,18 @@ export class SmartChargingModuleApi
         if (chargingSchedulePeriod.phaseToUse) {
           // OCPP 2.0.1 Part 2 K01.FR.19
           if (chargingSchedulePeriod.numberPhases !== 1) {
-            return {
-              success: false,
-              payload: `ChargingSchedule ${chargingSchedule.id}: PhaseToUse SHALL only be set with numberPhases = 1.`,
-            };
+            throw new Error(
+              `ChargingSchedule ${chargingSchedule.id}: PhaseToUse SHALL only be set with numberPhases = 1.`,
+            );
           }
           // OCPP 2.0.1 Part 2 K01.FR.20
           if (
             acPhaseSwitchingSupported.length === 0 ||
             !acPhaseSwitchingSupported[0].value
           ) {
-            return {
-              success: false,
-              payload: `ChargingSchedule ${chargingSchedule.id}: PhaseToUse SHALL only be set if ACPhaseSwitchingSupported is defined and true.`,
-            };
-          }
-        }
-
-        if (getNumberOfFractionDigit(chargingSchedulePeriod.limit) > 1) {
-          return {
-            success: false,
-            payload: `ChargingSchedule ${chargingSchedule.id}: chargingSchedulePeriod limit accepts at most one digit fraction (e.g. 8.1).`,
-          };
-        }
-      }
-
-      if (chargingSchedule.salesTariff) {
-        if (
-          receivedChargingNeeds &&
-          receivedChargingNeeds.maxScheduleTuples &&
-          chargingSchedule.salesTariff.salesTariffEntry.length >
-            receivedChargingNeeds.maxScheduleTuples
-        ) {
-          return {
-            success: false,
-            payload: `ChargingSchedule ${chargingSchedule.id}: The number of SalesTariffEntry elements (${chargingSchedule.salesTariff.salesTariffEntry.length}) SHALL not exceed maxScheduleTuples (${receivedChargingNeeds.maxScheduleTuples}).`,
-          };
-        }
-
-        for (const salesTariffEntry of chargingSchedule.salesTariff
-          .salesTariffEntry) {
-          if (salesTariffEntry.consumptionCost) {
-            for (const consumptionCost of salesTariffEntry.consumptionCost) {
-              if (consumptionCost.cost) {
-                for (const cost of consumptionCost.cost) {
-                  if (
-                    cost.amountMultiplier &&
-                    (cost.amountMultiplier > 3 || cost.amountMultiplier < -3)
-                  ) {
-                    return {
-                      success: false,
-                      payload: `ChargingSchedule ${chargingSchedule.id}: amountMultiplier SHALL be in [-3, 3].`,
-                    };
-                  }
-                }
-              }
-            }
+            throw new Error(
+              `ChargingSchedule ${chargingSchedule.id}: PhaseToUse SHALL only be set if ACPhaseSwitchingSupported is defined and true.`,
+            );
           }
         }
       }

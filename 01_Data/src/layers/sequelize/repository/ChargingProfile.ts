@@ -102,7 +102,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
       })
     )[0];
 
-    const activeTransaction =  await Transaction.findOne({
+    const activeTransaction = await Transaction.findOne({
       where: {
         isActive: true,
         stationId,
