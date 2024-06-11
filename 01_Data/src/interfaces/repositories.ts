@@ -76,7 +76,7 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
   findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]>;
   findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component>;
   findEvseByIdAndConnectorId(id: number, connectorId: number | null): Promise<Evse | undefined>;
-  findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance: string): Promise<VariableCharacteristics | undefined>;
+  findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance: string | null): Promise<VariableCharacteristics | undefined>;
 }
 
 export interface ILocationRepository extends CrudRepository<Location> {

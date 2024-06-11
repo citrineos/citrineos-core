@@ -28,9 +28,9 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     meterValue?: CrudRepository<MeterValue>,
   ) {
     super(config, namespace, logger, sequelizeInstance);
-    this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, namespace, logger, sequelizeInstance);
-    this.evse = evse ? evse : new SequelizeRepository<Evse>(config, namespace, logger, sequelizeInstance);
-    this.meterValue = meterValue ? meterValue : new SequelizeRepository<MeterValue>(config, namespace, logger, sequelizeInstance);
+    this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, Transaction.MODEL_NAME, logger, sequelizeInstance);
+    this.evse = evse ? evse : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
+    this.meterValue = meterValue ? meterValue : new SequelizeRepository<MeterValue>(config, MeterValue.MODEL_NAME, logger, sequelizeInstance);
   }
 
   /**
@@ -90,10 +90,10 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         },
         { transaction: sequelizeTransaction },
       );
-      if (event.meterValue && event.meterValue.length > 0) {
+      if (value.meterValue && value.meterValue.length > 0) {
         await Promise.all(
-          event.meterValue.map(async (meterValue) => {
-            await MeterValue.create(
+          value.meterValue.map(async (meterValue) => {
+            const savedMeterValue = await MeterValue.create(
               {
                 transactionEventId: event.get('id'),
                 transactionDatabaseId: transactionDatabaseId,
@@ -101,13 +101,13 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
               },
               { transaction: sequelizeTransaction },
             );
-            this.meterValue.emit('created', [meterValue]);
+            this.meterValue.emit('created', [savedMeterValue]);
           }),
         );
       }
-      await event.reload({ include: [MeterValue] });
+      await event.reload({ include: [MeterValue], transaction: sequelizeTransaction });
       this.emit('created', [event]);
-      await transaction.reload({ include: [TransactionEvent, MeterValue] });
+      await transaction.reload({ include: [TransactionEvent, MeterValue], transaction: sequelizeTransaction });
 
       if (created) {
         this.transaction.emit('created', [transaction]);
