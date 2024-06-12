@@ -23,7 +23,8 @@ import { ILogObj, Logger } from 'tslog';
  */
 export class PubSubSender
   extends AbstractMessageSender
-  implements IMessageSender {
+  implements IMessageSender
+{
   /**
    * Fields
    */

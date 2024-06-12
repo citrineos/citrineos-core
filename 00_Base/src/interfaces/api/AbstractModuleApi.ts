@@ -28,7 +28,8 @@ import { IModuleApi } from './ModuleApi';
  * Abstract module api class implementation.
  */
 export abstract class AbstractModuleApi<T extends IModule>
-  implements IModuleApi {
+  implements IModuleApi
+{
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
