@@ -393,18 +393,20 @@ export class SmartChargingModuleApi
         if (chargingSchedulePeriod.phaseToUse) {
           // OCPP 2.0.1 Part 2 K01.FR.19
           if (chargingSchedulePeriod.numberPhases !== 1) {
-            throw new Error(
-              `ChargingSchedule ${chargingSchedule.id}: PhaseToUse SHALL only be set with numberPhases = 1.`,
-            );
+            return {
+              success: false,
+              payload: `ChargingSchedule ${chargingSchedule.id}: PhaseToUse SHALL only be set with numberPhases = 1.`,
+            }
           }
           // OCPP 2.0.1 Part 2 K01.FR.20
           if (
             acPhaseSwitchingSupported.length === 0 ||
             !acPhaseSwitchingSupported[0].value
           ) {
-            throw new Error(
-              `ChargingSchedule ${chargingSchedule.id}: PhaseToUse SHALL only be set if ACPhaseSwitchingSupported is defined and true.`,
-            );
+            return {
+              success: false,
+              payload: `ChargingSchedule ${chargingSchedule.id}: PhaseToUse SHALL only be set if ACPhaseSwitchingSupported is defined and true.`,
+            }
           }
         }
       }
