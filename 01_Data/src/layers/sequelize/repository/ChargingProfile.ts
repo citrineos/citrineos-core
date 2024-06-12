@@ -37,7 +37,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, Transaction.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId: number, chargingLimitSource: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile> {
+  async createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId?: number, chargingLimitSource?: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile> {
     let transactionDBId;
     if (chargingProfile.transactionId) {
       const activeTransaction = await Transaction.findOne({
@@ -52,13 +52,13 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     const [savedChargingProfile, profileCreated] = await this.readOrCreateByQuery({
       where: {
         stationId: stationId,
-        evseId: evseId,
         id: chargingProfile.id,
       },
       defaults: {
         ...chargingProfile,
+        evseId: evseId,
         transactionDatabaseId: transactionDBId,
-        chargingLimitSource: chargingLimitSource,
+        chargingLimitSource: chargingLimitSource ? chargingLimitSource : ChargingLimitSourceEnumType.CSO,
         isActive: isActive === undefined ? false : isActive,
       },
     });
@@ -69,7 +69,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
           stationId: stationId,
           transactionDatabaseId: transactionDBId,
           evseId: evseId,
-          chargingLimitSource: chargingLimitSource,
+          chargingLimitSource: chargingLimitSource ? chargingLimitSource : ChargingLimitSourceEnumType.CSO,
           isActive: isActive === undefined ? false : isActive,
         },
         savedChargingProfile.databaseId.toString(),

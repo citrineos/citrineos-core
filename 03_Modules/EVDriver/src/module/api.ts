@@ -16,6 +16,7 @@ import {
   CallAction,
   CancelReservationRequest,
   CancelReservationRequestSchema,
+  ChargingProfilePurposeEnumType,
   ClearCacheRequest,
   ClearCacheRequestSchema,
   GetLocalListVersionRequest,
@@ -41,13 +42,15 @@ import {
   AuthorizationRestrictionsSchema,
   ChargingStationKeyQuerySchema,
 } from '@citrineos/data';
+import { validateChargingProfileType } from '@citrineos/util/dist/util/validator';
 
 /**
  * Server API for the provisioning component.
  */
 export class EVDriverModuleApi
   extends AbstractModuleApi<EVDriverModule>
-  implements IEVDriverModuleApi {
+  implements IEVDriverModuleApi
+{
   /**
    * Constructs a new instance of the class.
    *
@@ -140,12 +143,76 @@ export class EVDriverModuleApi
     CallAction.RequestStartTransaction,
     RequestStartTransactionRequestSchema,
   )
-  requestStartTransaction(
+  async requestStartTransaction(
     identifier: string,
     tenantId: string,
     request: RequestStartTransactionRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
+    if (request.chargingProfile) {
+      const chargingProfile = request.chargingProfile;
+      // Ocpp 2.0.1 Part 2 K05.FR.02
+      if (
+        chargingProfile.chargingProfilePurpose !==
+        ChargingProfilePurposeEnumType.TxProfile
+      ) {
+        return {
+          success: false,
+          payload:
+            'The Purpose of the ChargingProfile SHALL always be TxProfile.',
+        };
+      }
+
+      // Ocpp 2.0.1 Part 2 K05 Description 8 Remarks
+      if (chargingProfile.transactionId) {
+        chargingProfile.transactionId = undefined;
+        this._logger.error(
+          `A transactionId cannot be provided in the ChargingProfile`,
+        );
+      }
+
+      // Validate ChargingProfileType's constraints
+      try {
+        await validateChargingProfileType(
+          chargingProfile,
+          identifier,
+          this._module.deviceModelRepository,
+          this._module.chargingProfileRepository,
+          this._module.transactionEventRepository,
+          this._logger,
+          request.evseId,
+        );
+      } catch (error) {
+        return {
+          success: false,
+          payload:
+            error instanceof Error ? error.message : JSON.stringify(error),
+        };
+      }
+
+      // OCPP 2.0.1 Part 2 K05.FR.04
+      const smartChargingEnabled =
+        await this._module.deviceModelRepository.readAllByQuerystring({
+          component_name: 'SmartChargingCtrlr',
+          variable_name: 'Enabled',
+          stationId: identifier,
+        });
+      if (
+        smartChargingEnabled.length > 0 &&
+        smartChargingEnabled[0].value === 'false'
+      ) {
+        this._logger.error(
+          `SmartCharging is not enabled on charger ${identifier}. The charging profile will be ignored.`,
+        );
+      } else {
+        await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
+          chargingProfile,
+          identifier,
+          request.evseId,
+        );
+      }
+    }
+
     return this._module.sendCall(
       identifier,
       tenantId,
