@@ -14,7 +14,7 @@ export { MessageInfo } from './model/MessageInfo';
 export { Tariff } from './model/Tariff/Tariffs';
 export { Subscription } from './model/Subscription';
 export { Certificate, SignatureAlgorithmEnumType, CountryNameEnumType } from './model/Certificate';
-export { ChargingProfile, ChargingNeeds, ChargingSchedule, SalesTariff } from './model/ChargingProfile';
+export { ChargingProfile, ChargingNeeds, ChargingSchedule, CompositeSchedule, SalesTariff } from './model/ChargingProfile';
 
 // Sequelize Repositories
 export { SequelizeRepository } from './repository/Base';

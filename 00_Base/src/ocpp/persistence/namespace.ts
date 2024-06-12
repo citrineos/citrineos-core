@@ -18,6 +18,7 @@ export enum Namespace {
   ChargingSchedule = 'ChargingSchedule',
   ChargingStation = 'ChargingStation',
   ComponentType = 'Component',
+  CompositeSchedule = 'CompositeSchedule',
   EVSEType = 'Evse',
   EventDataType = 'EventData',
   IdTokenInfoType = 'IdTokenInfo',
