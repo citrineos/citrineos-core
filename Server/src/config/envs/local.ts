@@ -114,8 +114,10 @@ export function createLocalConfig() {
           name: 'acme',
           acme: {
             env: 'staging',
-            accountKeyFilePath:
-              '/usr/local/apps/citrineos/Server/src/assets/certificates/acme_account_key.pem',
+            accountKeyFilePath: path.resolve(
+              __dirname,
+              '../../assets/certificates/acme_account_key.pem',
+            ),
             email: 'test@citrineos.com',
           },
         },

@@ -26,7 +26,7 @@ export class DeviceModelService {
     stationId: string,
   ): Promise<number | null> {
     const itemsPerMessageSetVariablesAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuery({
+      await this._deviceModelRepository.readAllByQuerystring({
         stationId: stationId,
         component_name: 'DeviceDataCtrlr',
         variable_name: 'ItemsPerMessage',
@@ -57,7 +57,7 @@ export class DeviceModelService {
     stationId: string,
   ): Promise<number | null> {
     const itemsPerMessageGetVariablesAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuery({
+      await this._deviceModelRepository.readAllByQuerystring({
         stationId: stationId,
         component_name: 'DeviceDataCtrlr',
         variable_name: 'ItemsPerMessage',

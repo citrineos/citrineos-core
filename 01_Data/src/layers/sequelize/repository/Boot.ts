@@ -20,17 +20,28 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
   }
 
   async createOrUpdateByKey(value: BootConfig, key: string): Promise<Boot | undefined> {
-    const result = await this._upsert({ id: key, ...value } as Boot); // Calling the protected method avoids emitting the event before the variables have been assigned below
-    const savedBootConfig = result[0];
+    let savedBootConfig: Boot | undefined;
+    let created;
+    await this.s.transaction(async (transaction) => {
+      savedBootConfig = await this.s.models[this.namespace].findByPk(key, { transaction }).then((row) => row as Boot);
+      created = !savedBootConfig;
+      if (!savedBootConfig) {
+        savedBootConfig = await Boot.build({ id: key, ...value }).save({ transaction });
+      } else {
+        savedBootConfig = (await this.updateAllByQuery(Boot.build({ ...value }), { where: { id: key }, transaction }))[0];
+      }
+    });
+
     if (savedBootConfig) {
       if (value.pendingBootSetVariableIds) {
         savedBootConfig.pendingBootSetVariables = await this.manageSetVariables(value.pendingBootSetVariableIds, key, savedBootConfig.id);
       }
-    }
-    if (result[1]) {
-      this.emit('created', [result[0]]);
-    } else {
-      this.emit('updated', [result[0]]);
+
+      if (created) {
+        this.emit('created', [savedBootConfig]);
+      } else {
+        this.emit('updated', [savedBootConfig]);
+      }
     }
     return savedBootConfig;
   }

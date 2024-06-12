@@ -188,7 +188,7 @@ export class TransactionsModule extends AbstractModule {
     const transactionId = transactionEvent.transactionInfo.transactionId;
     if (transactionEvent.idToken) {
       this._authorizeRepository
-        .readAllByQuery({ ...transactionEvent.idToken })
+        .readAllByQuerystring({ ...transactionEvent.idToken })
         .then((authorizations) => {
           const response: TransactionEventResponse = {
             idTokenInfo: {
@@ -337,7 +337,7 @@ export class TransactionsModule extends AbstractModule {
 
         // I06 - Update Tariff Information During Transaction
         const tariffAvailableAttributes: VariableAttribute[] =
-          await this._deviceModelRepository.readAllByQuery({
+          await this._deviceModelRepository.readAllByQuerystring({
             stationId: stationId,
             component_name: 'TariffCostCtrlr',
             variable_instance: 'Tariff',
