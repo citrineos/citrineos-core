@@ -534,18 +534,20 @@ export class SmartChargingModuleApi
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     // OCPP 2.0.1 Part 2 K08.FR.05
-    const evse =
-      await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
-        request.evseId,
-        null,
-      );
-    if (!evse) {
-      return {
-        success: false,
-        payload: `EVSE ${request.evseId} not found`,
-      };
+    if (request.evseId !== 0) {
+      const evse =
+          await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
+              request.evseId,
+              null,
+          );
+      if (!evse) {
+        return {
+          success: false,
+          payload: `EVSE ${request.evseId} not found`,
+        };
+      }
+      this._logger.info(`Found evse: ${JSON.stringify(evse)}`);
     }
-    this._logger.info(`Found evse: ${JSON.stringify(evse)}`);
 
     // OCPP 2.0.1 Part 2 K08.FR.07
     if (request.chargingRateUnit) {
