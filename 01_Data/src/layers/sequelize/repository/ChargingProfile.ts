@@ -58,7 +58,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
         ...chargingProfile,
         evseId: evseId,
         transactionDatabaseId: transactionDBId,
-        chargingLimitSource: chargingLimitSource ? chargingLimitSource : ChargingLimitSourceEnumType.CSO,
+        chargingLimitSource: chargingLimitSource ?? ChargingLimitSourceEnumType.CSO,
         isActive: isActive === undefined ? false : isActive,
       },
     });
@@ -69,7 +69,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
           stationId: stationId,
           transactionDatabaseId: transactionDBId,
           evseId: evseId,
-          chargingLimitSource: chargingLimitSource ? chargingLimitSource : ChargingLimitSourceEnumType.CSO,
+          chargingLimitSource: chargingLimitSource ?? ChargingLimitSourceEnumType.CSO,
           isActive: isActive === undefined ? false : isActive,
         },
         savedChargingProfile.databaseId.toString(),

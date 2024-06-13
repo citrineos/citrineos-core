@@ -150,7 +150,7 @@ export function createDockerConfig() {
       },
     },
     logLevel: 2, // debug
-    maxCallLengthSeconds: 5,
-    maxCachingSeconds: 10,
+    maxCallLengthSeconds: 100,
+    maxCachingSeconds: 100,
   });
 }

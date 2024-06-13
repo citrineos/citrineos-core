@@ -149,6 +149,7 @@ export class EVDriverModuleApi
     request: RequestStartTransactionRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
+    let payloadMessage;
     if (request.chargingProfile) {
       const chargingProfile = request.chargingProfile;
       // Ocpp 2.0.1 Part 2 K05.FR.02
@@ -166,7 +167,7 @@ export class EVDriverModuleApi
       // Ocpp 2.0.1 Part 2 K05 Description 8 Remarks
       if (chargingProfile.transactionId) {
         chargingProfile.transactionId = undefined;
-        this._logger.error(
+        this._logger.warn(
           `A transactionId cannot be provided in the ChargingProfile`,
         );
       }
@@ -201,9 +202,8 @@ export class EVDriverModuleApi
         smartChargingEnabled.length > 0 &&
         smartChargingEnabled[0].value === 'false'
       ) {
-        this._logger.error(
-          `SmartCharging is not enabled on charger ${identifier}. The charging profile will be ignored.`,
-        );
+        payloadMessage = `SmartCharging is not enabled on charger ${identifier}. The charging profile will be ignored.`;
+        this._logger.warn(payloadMessage);
       } else {
         await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
           chargingProfile,
@@ -213,13 +213,18 @@ export class EVDriverModuleApi
       }
     }
 
-    return this._module.sendCall(
+    const confirmation: IMessageConfirmation = await this._module.sendCall(
       identifier,
       tenantId,
       CallAction.RequestStartTransaction,
       request,
       callbackUrl,
     );
+    if (payloadMessage) {
+      return { success: true, payload: payloadMessage };
+    } else {
+      return confirmation;
+    }
   }
 
   @AsMessageEndpoint(
