@@ -281,6 +281,9 @@ export class TransactionsModule extends AbstractModule {
               );
             }
 
+            // TODO there should only be one active transaction per evse of a station. 
+            // old transactions should be marked inactive and an alert should be raised (this can only happen in the field with charger bugs or missed messages)
+
             // Check for ConcurrentTx
             return this._transactionEventRepository
               .readAllActiveTransactionsByIdToken(transactionEvent.idToken)
