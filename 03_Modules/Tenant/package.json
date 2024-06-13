@@ -25,9 +25,9 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@citrineos/base": "1.1.1",
-    "@citrineos/data": "1.1.1",
-    "@citrineos/util": "1.1.1",
+    "@citrineos/base": "1.2.3",
+    "@citrineos/data": "1.2.3",
+    "@citrineos/util": "1.2.3",
     "fastify": "^4.22.2"
   }
 }
