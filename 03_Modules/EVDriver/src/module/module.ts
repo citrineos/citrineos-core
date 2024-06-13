@@ -52,6 +52,7 @@ import {
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
+  generateRequestId,
   RabbitMqReceiver,
   RabbitMqSender,
   Timer,
@@ -119,7 +120,8 @@ export class EVDriverModule extends AbstractModule {
    *
    * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository}
    * which represents a repository for accessing and manipulating transaction data.
-   * If no `transactionRepository` is provided, a default {@link sequelize:transactionEventRepository} instance is created and used.
+   * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance is
+   * created and used.
    *
    * @param {IChargingProfileRepository} [chargingProfileRepository] - An optional parameter of type {@link IChargingProfileRepository}
    * which represents a repository for accessing and manipulating charging profile data.
@@ -490,8 +492,10 @@ export class EVDriverModule extends AbstractModule {
       props,
     );
     if (message.payload.status === RequestStartStopStatusEnumType.Accepted) {
+      // Start transaction with charging profile succeeds,
+      // we need to update db entity with the latest data from charger
       const stationId: string = message.context.stationId;
-      // Set existing profiles to isActive false
+      // 1. Clear all existing profiles: find existing active profiles and set them to isActive false
       await this._chargingProfileRepository.updateAllByQuery(
         {
           isActive: false,
@@ -506,13 +510,13 @@ export class EVDriverModule extends AbstractModule {
           returning: false,
         },
       );
-      // Request charging profiles to get the latest data
+      // 2. Request charging profiles to get the latest data
       this.sendCall(
         stationId,
         message.context.tenantId,
         CallAction.GetChargingProfiles,
         {
-          requestId: Math.floor(Math.random() * 1000),
+          requestId: generateRequestId(),
           chargingProfile: {
             chargingProfilePurpose: ChargingProfilePurposeEnumType.TxProfile,
             chargingLimitSource: [ChargingLimitSourceEnumType.CSO],
