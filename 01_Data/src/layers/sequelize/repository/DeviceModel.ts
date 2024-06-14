@@ -359,6 +359,32 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return [component, variable];
   }
 
+  async findEvseByIdAndConnectorId(id: number, connectorId: number | null): Promise<Evse | undefined> {
+    const storedEvses = await this.evse.readAllByQuery({
+      where: {
+        // unique constraints
+        id: id,
+        connectorId: connectorId,
+      },
+    });
+    return storedEvses.length > 0 ? storedEvses[0] : undefined;
+  }
+
+  async findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance?: string | null): Promise<VariableCharacteristics | undefined> {
+    const variableCharacteristics = await this.variableCharacteristics.readAllByQuery({
+      include: [
+        {
+          model: Variable,
+          where: {
+            name: variableName,
+            instance: variableInstance,
+          },
+        },
+      ],
+    });
+    return variableCharacteristics.length > 0 ? variableCharacteristics[0] : undefined;
+  }
+
   /**
    * Private Methods
    */

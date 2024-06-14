@@ -37,3 +37,30 @@ export function getBatches(
 
   return batchMap;
 }
+
+/**
+ * Get the number of fraction digits in a number, e.g, 1.23 -> 2
+ *
+ * @param num - The number to get the number of fraction digits
+ * @returns The number of fraction digits
+ */
+export function getNumberOfFractionDigit(num: number): number {
+  const numString = num.toString();
+  const match = numString.match(/\.(\d+)/);
+
+  if (!match) {
+    return 0;
+  } else {
+    return match[1].length;
+  }
+}
+
+/**
+ * Convert string to set. For example, 'a,b,c' -> new Set(['a', 'b', 'c'])
+ *
+ * @param input - The string to convert
+ * @returns Set
+ */
+export function stringToSet(input: string): Set<string> {
+  return new Set(input.split(',').map((item) => item.trim()));
+}
