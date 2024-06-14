@@ -83,14 +83,17 @@ export abstract class AbstractModuleApi<T extends IModule>
     this._addDataRoute.call(
       this,
       Namespace.SystemConfig,
-      () => module.config,
+      () => new Promise((resolve) => resolve(module.config)),
       HttpMethod.Get,
     );
     this._addDataRoute.call(
       this,
       Namespace.SystemConfig,
       (request: FastifyRequest<{ Body: SystemConfig }>) =>
-        (module.config = request.body),
+        new Promise<void>((resolve) => {
+          module.config = request.body;
+          resolve();
+        }),
       HttpMethod.Put,
     );
   }
@@ -161,7 +164,7 @@ export abstract class AbstractModuleApi<T extends IModule>
   // eslint-disable-next-line @typescript-eslint/ban-types
   protected _addDataRoute(
     namespace: Namespace,
-    method: (...args: any[]) => any,
+    method: (...args: any[]) => Promise<any>,
     httpMethod: HttpMethod,
     querySchema?: object,
     bodySchema?: object,
