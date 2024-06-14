@@ -42,6 +42,7 @@
     "@citrineos/monitoring": "1.3.0",
     "@citrineos/reporting": "1.3.0",
     "@citrineos/smartcharging": "1.3.0",
+    "@citrineos/tenant": "1.3.0",
     "@citrineos/transactions": "1.3.0",
     "@citrineos/util": "1.3.0",
     "@directus/extensions": "^1.0.2",
