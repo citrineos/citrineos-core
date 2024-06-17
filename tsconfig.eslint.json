@@ -31,11 +31,8 @@
     "03_Modules/SmartCharging/**/*.json",
     "03_Modules/Transactions/**/*.ts",
     "03_Modules/Transactions/**/*.json",
-<<<<<<< Updated upstream
     "03_Modules/citrineos-ocpi/**/*.ts",
     "03_Modules/citrineos-ocpi/**/*.json",
-=======
->>>>>>> Stashed changes
     "Server/**/*.ts",
     "Server/**/*.json"
   ],
