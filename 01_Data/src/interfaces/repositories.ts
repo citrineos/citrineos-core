@@ -103,6 +103,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: EVSEType, chargingStates?: ChargingStateEnumType[]): Promise<Transaction[]>;
   readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]>;
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
+  readActiveTransactionByStationIdAndEvseId(stationId: string, evseId: number): Promise<Transaction | undefined>;
 }
 
 export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoringType> {

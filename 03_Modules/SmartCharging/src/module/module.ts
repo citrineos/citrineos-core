@@ -9,8 +9,13 @@ import {
   CallAction,
   ChargingLimitSourceEnumType,
   ChargingProfileCriterionType,
+  ChargingProfileKindEnumType,
+  ChargingProfilePurposeEnumType,
   ChargingProfileStatusEnumType,
   ChargingProfileType,
+  ChargingRateUnitEnumType,
+  ChargingSchedulePeriodType,
+  ChargingScheduleType,
   ClearChargingProfileResponse,
   ClearChargingProfileStatusEnumType,
   ClearedChargingLimitResponse,
@@ -33,6 +38,7 @@ import {
   NotifyEVChargingScheduleResponse,
   ReportChargingProfilesRequest,
   ReportChargingProfilesResponse,
+  SetChargingProfileRequest,
   SetChargingProfileResponse,
   SystemConfig,
 } from '@citrineos/base';
@@ -171,29 +177,99 @@ export class SmartChargingModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('NotifyEVChargingNeeds received:', message, props);
+    const request = message.payload;
+    const stationId = message.context.stationId;
+    const activeTransaction =
+      await this._transactionEventRepository.readActiveTransactionByStationIdAndEvseId(
+        stationId,
+        request.evseId,
+      );
+    this._logger.info(
+      `Found active transaction on station ${stationId} evse ${request.evseId}: ${JSON.stringify(activeTransaction)}`,
+    );
 
-    // TODO: this db operation is to support to run the use case K01 setChargingProfile
-    //  we still need to complete the implementation of this use case
+    // OCPP 2.0.1 Part 2 K17.FR.06 and expect an active transaction
+    if (
+      (!request.chargingNeeds.dcChargingParameters &&
+        !request.chargingNeeds.acChargingParameters) ||
+      !activeTransaction
+    ) {
+      this.sendCallResultWithMessage(message, {
+        status: NotifyEVChargingNeedsStatusEnumType.Rejected,
+      } as NotifyEVChargingNeedsResponse).then((messageConfirmation) =>
+        this._logger.debug(
+          'NotifyEVChargingNeeds response sent: ',
+          messageConfirmation,
+        ),
+      );
+      return;
+    }
+
     const chargingNeeds =
       await this._chargingProfileRepository.createChargingNeeds(
-        message.payload,
-        message.context.stationId,
+        request,
+        stationId,
       );
     this._logger.info(
       `Charging needs created: ${JSON.stringify(chargingNeeds)}`,
     );
 
-    // Create response
-    const response: NotifyEVChargingNeedsResponse = {
-      status: NotifyEVChargingNeedsStatusEnumType.Rejected,
+    this.sendCallResultWithMessage(message, {
+      status: NotifyEVChargingNeedsStatusEnumType.Accepted,
+    } as NotifyEVChargingNeedsResponse).then((messageConfirmation) =>
+      this._logger.debug(
+        'NotifyEVChargingNeeds response sent: ',
+        messageConfirmation,
+      ),
+    );
+
+    // TODO: (K16.FR.12 and K17) Charging Station sends a NotifyEVChargingNeedsRequest
+    //  CSMS calculates new charging schedule, that tries to accommodate the EV charging needs and
+    //  still fits within the schedule boundaries imposed by other parameters.
+    //  The CSMS SHALL send a SetChargingProfileRequest based on the needs
+    //  Details in K17.FR.07: The CSMS SHALL send a SetChargingProfileRequest with:
+    //  1. chargingProfilePurpose = TxProfile
+    //  2. and at most three chargingSchedule
+    //  3. and optional salesTariff elements,
+    //  4. that each contain no more periods than specified by maxScheduleTuples in NotifyEVChargingNeedsRequest
+    //  and by device model variable SmartChargingCtrlr.PeriodsPerSchedule.
+    const chargingProfile: ChargingProfileType = {
+      id: 1, // TODO tbd
+      stackLevel: 0,
+      chargingProfilePurpose: ChargingProfilePurposeEnumType.TxProfile,
+      chargingProfileKind: ChargingProfileKindEnumType.Relative,
+      chargingSchedule: [
+        {
+          id: 1, // TODO tbd
+          chargingRateUnit: ChargingRateUnitEnumType.W, // TODO tbd
+          chargingSchedulePeriod: [
+            {
+              startPeriod: 0,
+              limit: 1, // TODO tbd
+            } as ChargingSchedulePeriodType,
+          ],
+          minChargingRate: 8.1, // TODO tbd,
+        } as ChargingScheduleType,
+      ],
+      transactionId: activeTransaction.transactionId,
+    };
+    const setChargingProfileRequest: SetChargingProfileRequest = {
+      evseId: request.evseId,
+      chargingProfile: chargingProfile,
     };
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) =>
-        this._logger.debug(
-          'NotifyEVChargingNeeds response sent: ',
-          messageConfirmation,
-        ),
+    await this.chargingProfileRepository.createOrUpdateChargingProfile(
+      chargingProfile,
+      stationId,
+      request.evseId,
+    );
+
+    // TODO: (K17.FR.08) The CSMS SHOULD send a SetChargingProfileRequest to the Charging Station within 60 seconds.
+    this.sendCall(
+      stationId,
+      message.context.tenantId,
+      CallAction.SetChargingProfile,
+      setChargingProfileRequest,
     );
   }
 
@@ -203,6 +279,12 @@ export class SmartChargingModule extends AbstractModule {
     props?: HandlerProperties,
   ): void {
     this._logger.debug('NotifyEVChargingSchedule received:', message, props);
+
+    // TODO: (K17.FR.11) check EV charging profile is within limits of CSMS ChargingSchedule
+    //  1. Reject if it is not within limits and CSMS starts new renegotiation as per use case K16 (K16.FR.08)
+    //  i.e., send an set charging profile request (K17.FR.13)
+    //  2. Accept if it is within limits
+    //  we need to figure out where we can find the limits of ChargingSchedule
 
     // Create response
     const response: NotifyEVChargingScheduleResponse = {

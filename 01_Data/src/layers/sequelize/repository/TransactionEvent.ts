@@ -193,4 +193,23 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       })
       .then((row) => row as MeterValue[]);
   }
+
+  async readActiveTransactionByStationIdAndEvseId(stationId: string, evseId: number): Promise<Transaction | undefined> {
+    return (
+      await this.transaction.readAllByQuery({
+        where: {
+          stationId: stationId,
+          isActive: true,
+        },
+        include: [
+          {
+            model: Evse,
+            where: {
+              id: evseId,
+            },
+          },
+        ],
+      })
+    )[0];
+  }
 }
