@@ -34,6 +34,7 @@ import { VariableStatus } from './model/DeviceModel';
 import { MessageInfo } from './model/MessageInfo';
 import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
+import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
 
 export class DefaultSequelizeInstance {
   /**
@@ -74,6 +75,7 @@ export class DefaultSequelizeInstance {
         Evse,
         EventData,
         IdToken,
+        IdTokenAdditionalInfo,
         IdTokenInfo,
         Location,
         MeterValue,
