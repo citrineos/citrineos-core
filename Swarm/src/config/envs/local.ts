@@ -52,6 +52,11 @@ export function createLocalConfig(): SystemConfig {
         host: 'localhost',
         port: 8080,
       },
+      tenant: {
+        endpointPrefix: '/tenant',
+        host: 'localhost',
+        port: 8080,
+      },
       transactions: {
         endpointPrefix: '/transactions',
         host: 'localhost',

@@ -31,13 +31,14 @@ export enum EventGroup {
   Monitoring = 'monitoring',
   Reporting = 'reporting',
   SmartCharging = 'smartcharging',
+  Tenant = 'tenant',
   Transactions = 'transactions',
 }
 
 export const eventGroupFromString = (source: string): EventGroup => {
   const eventGroup: EventGroup = source as EventGroup;
   if (!eventGroup) {
-    throw new Error(`Invalid event group soruce ${source}"`);
+    throw new Error(`Invalid event group source ${source}"`);
   }
   return eventGroup;
 };
