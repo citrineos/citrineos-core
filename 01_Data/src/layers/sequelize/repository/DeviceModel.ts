@@ -133,7 +133,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     );
   }
 
-  async findOrCreateEvseAndComponentAndVariable(componentType: ComponentType, variableType: VariableType, stationId: string): Promise<[Component, Variable]> {
+  async findOrCreateEvseAndComponentAndVariable(componentType: ComponentType, variableType: VariableType, stationId?: string): Promise<[Component, Variable]> {
     const component = await this.findOrCreateEvseAndComponent(componentType, stationId);
 
     const [variable] = await this.variable.readOrCreateByQuery({
@@ -151,7 +151,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return [component, variable];
   }
 
-  async findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component> {
+  async findOrCreateEvseAndComponent(componentType: ComponentType, stationId?: string): Promise<Component> {
     const evse = componentType.evse
       ? (
           await this.evse.readOrCreateByQuery({
@@ -176,7 +176,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
       await this.component.updateByKey({ evseDatabaseId: evse.databaseId }, component.get('id'));
     }
 
-    if (componentCreated) {
+    if (componentCreated && stationId) { // Only execute if this method is called in the context of a specific station
       // Excerpt from OCPP 2.0.1 Part 1 Architecture & Topology - 4.2 :
       // "When a Charging Station does not report: Present, Available and/or Enabled
       // the Central System SHALL assume them to be readonly and set to true."
