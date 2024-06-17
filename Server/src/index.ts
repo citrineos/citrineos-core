@@ -62,6 +62,7 @@ import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter';
 import {OcpiServer} from '@citrineos/ocpi-base';
 import { CommandsModule } from '@citrineos/ocpi-commands';
 import { VersionsModule } from '@citrineos/ocpi-versions';
+import { ChargingProfilesModule } from '@citrineos/ocpi-charging-profiles';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -342,6 +343,14 @@ export class CitrineOSServer {
             this._logger,
         ),
         new VersionsModule(
+            this._config,
+            this._cache,
+            this._createHandler(),
+            this._createSender(),
+            EventGroup.Versions,
+            this._logger,
+        ),
+        new ChargingProfilesModule(
             this._config,
             this._cache,
             this._createHandler(),

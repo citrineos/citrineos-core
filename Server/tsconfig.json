@@ -49,6 +49,9 @@
     },
     {
       "path": "../../citrineos-ocpi/03_Modules/Versions"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/ChargingProfiles"
     }
   ]
 }
