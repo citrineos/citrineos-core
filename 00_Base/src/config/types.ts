@@ -104,6 +104,7 @@ export const systemConfigInputSchema = z.object({
       password: z.string().optional(),
       storage: z.string().default('csms.sqlite').optional(),
       sync: z.boolean().default(false).optional(),
+      alter: z.boolean().default(false).optional(),
     }),
   }),
   util: z.object({
@@ -351,6 +352,7 @@ export const systemConfigSchema = z
         password: z.string(),
         storage: z.string(),
         sync: z.boolean(),
+        alter: z.boolean().optional(),
       }),
     }),
     util: z.object({

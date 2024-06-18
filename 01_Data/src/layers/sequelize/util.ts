@@ -104,7 +104,11 @@ export class DefaultSequelizeInstance {
       },
     });
 
-    if (config.data.sequelize.sync && sync) {
+    if (config.data.sequelize.alter) {
+      sequelize.sync({ alter: true }).then(() => {
+        sequelizeLogger.info('Database altered');
+      });
+    } else if (config.data.sequelize.sync && sync) {
       sequelize.sync({ force: true }).then(() => {
         sequelizeLogger.info('Database synchronized');
       });
