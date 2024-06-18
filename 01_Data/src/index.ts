@@ -8,6 +8,7 @@ export * from './interfaces';
 export {
   Boot,
   Component,
+  Evse,
   SequelizeDeviceModelRepository,
   MeterValue,
   Subscription,
