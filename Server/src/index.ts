@@ -348,6 +348,11 @@ export class CitrineOSServer {
             handler: this._createHandler(),
             sender: this._createSender(),
           },
+          {
+            module: ChargingProfilesModule,
+            handler: this._createHandler(),
+            sender: this._createSender(),
+          },
         ],
     );
     ocpiServer.run(host, port);
