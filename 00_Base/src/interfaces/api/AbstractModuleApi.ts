@@ -28,7 +28,8 @@ import { IModuleApi } from './ModuleApi';
  * Abstract module api class implementation.
  */
 export abstract class AbstractModuleApi<T extends IModule>
-  implements IModuleApi {
+  implements IModuleApi
+{
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
@@ -36,7 +37,6 @@ export abstract class AbstractModuleApi<T extends IModule>
   constructor(module: T, server: FastifyInstance, logger?: Logger<ILogObj>) {
     this._module = module;
     this._server = server;
-
 
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })

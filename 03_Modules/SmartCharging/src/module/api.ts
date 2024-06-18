@@ -30,7 +30,8 @@ import { FastifyInstance } from 'fastify';
  */
 export class SmartChargingModuleApi
   extends AbstractModuleApi<SmartChargingModule>
-  implements ISmartChargingModuleApi {
+  implements ISmartChargingModuleApi
+{
   /**
    * Constructs a new instance of the class.
    *

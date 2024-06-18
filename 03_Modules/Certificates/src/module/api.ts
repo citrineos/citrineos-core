@@ -58,7 +58,8 @@ const enum PemType {
  */
 export class CertificatesModuleApi
   extends AbstractModuleApi<CertificatesModule>
-  implements ICertificatesModuleApi {
+  implements ICertificatesModuleApi
+{
   private readonly _networkConnection: WebsocketNetworkConnection;
   private readonly _websocketServersConfig: WebsocketServerConfig[];
   private readonly _fileAccess: IFileAccess;

@@ -47,7 +47,7 @@
     "@citrineos/ocpi-base": "1.1.1",
     "@citrineos/ocpi-commands": "1.1.1",
     "@citrineos/ocpi-versions": "1.1.1",
-    "@citrineos/ocpi-charging-profiles" : "1.1.1",
+    "@citrineos/ocpi-charging-profiles": "1.1.1",
     "@directus/extensions": "^1.0.2",
     "@fastify/type-provider-json-schema-to-ts": "^2.2.2",
     "ajv": "^8.12.0",

@@ -58,12 +58,12 @@ import {
   type FastifySchemaCompiler,
   type FastifyValidationResult,
 } from 'fastify/types/schema';
-import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter';
-import {OcpiServer} from '@citrineos/ocpi-base';
+import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter';
+import { OcpiServer } from '@citrineos/ocpi-base';
 import { CommandsModule } from '@citrineos/ocpi-commands';
 import { VersionsModule } from '@citrineos/ocpi-versions';
 import { ChargingProfilesModule } from '@citrineos/ocpi-charging-profiles';
-import {OcpiServerConfig} from "@citrineos/ocpi-base";
+import { OcpiServerConfig } from '@citrineos/ocpi-base';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -334,26 +334,26 @@ export class CitrineOSServer {
 
   private startOcpiServer(host: string, port: number) {
     const ocpiServer = new OcpiServer(
-        this._config as OcpiServerConfig,
-        this._cache,
-        this._logger,
-        [
-          {
-            module: CommandsModule,
-            handler: this._createHandler(),
-            sender: this._createSender(),
-          },
-          {
-            module: VersionsModule,
-            handler: this._createHandler(),
-            sender: this._createSender(),
-          },
-          {
-            module: ChargingProfilesModule,
-            handler: this._createHandler(),
-            sender: this._createSender(),
-          },
-        ],
+      this._config as OcpiServerConfig,
+      this._cache,
+      this._logger,
+      [
+        {
+          module: CommandsModule,
+          handler: this._createHandler(),
+          sender: this._createSender(),
+        },
+        {
+          module: VersionsModule,
+          handler: this._createHandler(),
+          sender: this._createSender(),
+        },
+        {
+          module: ChargingProfilesModule,
+          handler: this._createHandler(),
+          sender: this._createSender(),
+        },
+      ],
     );
     ocpiServer.run(host, port);
   }
@@ -370,14 +370,14 @@ export class CitrineOSServer {
       this.modules.push(module);
       if (moduleConfig.ModuleApiClass === CertificatesModuleApi) {
         this.apis.push(
-            new moduleConfig.ModuleApiClass(
-                module,
-                this._server,
-                this._fileAccess,
-                this._networkConnection,
-                this._config.util.networkConnection.websocketServers,
-                this._logger,
-            ),
+          new moduleConfig.ModuleApiClass(
+            module,
+            this._server,
+            this._fileAccess,
+            this._networkConnection,
+            this._config.util.networkConnection.websocketServers,
+            this._logger,
+          ),
         );
       } else {
         this.apis.push(
