@@ -63,6 +63,7 @@ import {OcpiServer} from '@citrineos/ocpi-base';
 import { CommandsModule } from '@citrineos/ocpi-commands';
 import { VersionsModule } from '@citrineos/ocpi-versions';
 import { ChargingProfilesModule } from '@citrineos/ocpi-charging-profiles';
+import {OcpiServerConfig} from "@citrineos/ocpi-base";
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -332,35 +333,24 @@ export class CitrineOSServer {
   }
 
   private startOcpiServer(host: string, port: number) {
-    const ocpiSerer = new OcpiServer({
-      modules: [
-        new CommandsModule(
-            this._config,
-            this._cache,
-            this._createHandler(),
-            this._createSender(),
-            EventGroup.Commands,
-            this._logger,
-        ),
-        new VersionsModule(
-            this._config,
-            this._cache,
-            this._createHandler(),
-            this._createSender(),
-            EventGroup.Versions,
-            this._logger,
-        ),
-        new ChargingProfilesModule(
-            this._config,
-            this._cache,
-            this._createHandler(),
-            this._createSender(),
-            EventGroup.Versions,
-            this._logger,
-        )
-      ]
-    });
-    ocpiSerer.run(host, port);
+    const ocpiServer = new OcpiServer(
+        this._config as OcpiServerConfig,
+        this._cache,
+        this._logger,
+        [
+          {
+            module: CommandsModule,
+            handler: this._createHandler(),
+            sender: this._createSender(),
+          },
+          {
+            module: VersionsModule,
+            handler: this._createHandler(),
+            sender: this._createSender(),
+          },
+        ],
+    );
+    ocpiServer.run(host, port);
   }
 
   private initModule(moduleConfig: ModuleConfig) {
