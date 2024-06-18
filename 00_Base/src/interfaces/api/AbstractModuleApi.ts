@@ -23,6 +23,7 @@ import {
   IMessageQuerystringSchema,
 } from './MessageQuerystring';
 import { IModuleApi } from './ModuleApi';
+import {AuthorizationSecurity} from "./AuthorizationSecurity";
 
 /**
  * Abstract module api class implementation.
@@ -75,7 +76,13 @@ export abstract class AbstractModuleApi<T extends IModule>
         expose.method,
         expose.httpMethod,
         expose.querySchema,
+        expose.paramSchema,
+        expose.headerSchema,
         expose.bodySchema,
+        expose.responseSchema,
+        expose.tags,
+        expose.description,
+        expose.security,
       );
     });
 
@@ -164,22 +171,48 @@ export abstract class AbstractModuleApi<T extends IModule>
   // eslint-disable-next-line @typescript-eslint/ban-types
   protected _addDataRoute(
     namespace: Namespace,
-    method: (...args: any[]) => Promise<any>,
+    method: (...args: any[]) => any,
     httpMethod: HttpMethod,
     querySchema?: object,
+    paramSchema?: object,
+    headerSchema?: object,
     bodySchema?: object,
+    responseSchema?: object,
+    tags?: string[],
+    description?: string,
+    security?: object[],
   ): void {
     this._logger.debug(
       `Adding data route for ${namespace}`,
       this._toDataPath(namespace),
       httpMethod,
     );
-    const schema: Record<string, object> = {};
+    const schema: Record<string, any> = {};
     if (querySchema) {
       schema['querystring'] = querySchema;
     }
     if (bodySchema) {
       schema['body'] = bodySchema;
+    }
+    if (paramSchema) {
+      schema['params'] = paramSchema;
+    }
+    if (headerSchema) {
+      schema['headers'] = headerSchema;
+    }
+    if (responseSchema) {
+      schema['response'] = {
+        200: responseSchema,
+      };
+    }
+    if (tags) {
+      schema['tags'] = tags;
+    }
+    if (description) {
+      schema['description'] = description;
+    }
+    if (security) {
+      schema['security'] = security;
     }
 
     /**
@@ -190,7 +223,10 @@ export abstract class AbstractModuleApi<T extends IModule>
      * @return {Promise<any>} - a Promise resolving to an object
      */
     const _handler = async (
-      request: FastifyRequest<{ Body: object; Querystring: object }>,
+      request: FastifyRequest<{
+        Body: object;
+        Querystring: object;
+      }>,
       reply: FastifyReply,
     ): Promise<unknown> =>
       (
@@ -203,12 +239,28 @@ export abstract class AbstractModuleApi<T extends IModule>
         reply.status(500).send(err);
       });
 
-    const _opts = {
+    const _opts: any = {
       method: httpMethod,
       url: this._toDataPath(namespace),
       schema: schema,
       handler: _handler,
     };
+
+    if (
+      !!schema &&
+      !!schema.headers &&
+      !!schema.headers.properties &&
+      !!schema.headers.properties.Authorization
+    ) {
+      _opts['preHandler'] = (this._server as unknown as any).auth([
+        (this._server as unknown as any).authorization,
+      ]);
+      if (!_opts['security']) {
+        _opts.schema['security'] = [AuthorizationSecurity];
+      } else {
+        _opts.schema['security'].push(AuthorizationSecurity);
+      }
+    }
 
     if (this._module.config.util.swagger?.exposeData) {
       this._server.register(async (fastifyInstance) => {
