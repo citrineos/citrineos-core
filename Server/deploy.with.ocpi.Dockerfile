@@ -1,6 +1,6 @@
 # Dockerfile assumes that it is in Server/deploy.with.ocpi.Dockerfile being run with context ../ and with citrineos-ocpi
 # being in same directory as citrineos-core.
-FROM node:18 as build
+FROM --platform=linux/amd64 node:18 as build
 
 # COPY OCPI
 WORKDIR /usr/local/apps/citrineos-ocpi
@@ -29,7 +29,7 @@ RUN npm rebuild bcrypt --build-from-source && npm rebuild deasync --build-from-s
 
 # The final stage, which copies built files and prepares the run environment
 # Using a slim image to reduce the final image size
-FROM node:18-slim
+FROM --platform=linux/amd64 node:18-slim
 COPY --from=build /usr/local/apps /usr/local/apps
 
 WORKDIR /usr/local/apps/citrineos-core
