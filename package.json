@@ -37,7 +37,8 @@
     "03_Modules/Transactions",
     "Server",
     "../citrineos-ocpi/00_Base",
-    "../citrineos-ocpi/03_Modules/Commands",
-    "../citrineos-ocpi/03_Modules/Versions"
+    "../citrineos-ocpi/03_Modules/Versions",
+    "../citrineos-ocpi/03_Modules/Credentials",
+    "../citrineos-ocpi/03_Modules/Commands"
   ]
 }
