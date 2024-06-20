@@ -96,6 +96,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
       const savedChargingSchedule = await this.chargingSchedule.create(
         ChargingSchedule.build({
           chargingProfileDatabaseId: savedChargingProfile.databaseId,
+          stationId: stationId,
           ...chargingSchedule,
         }),
       );
