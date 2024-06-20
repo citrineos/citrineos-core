@@ -193,4 +193,8 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       })
       .then((row) => row as MeterValue[]);
   }
+
+  findByTransactionId(transactionId: string): Promise<Transaction | undefined> {
+    return this.transaction.readOnlyOneByQuery({ where: { transactionId } });
+  }
 }

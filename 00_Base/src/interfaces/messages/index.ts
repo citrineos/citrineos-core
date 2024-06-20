@@ -39,7 +39,8 @@ export enum EventGroup {
   Sessions = 'sessions',
   Tariffs = 'tariffs',
   Tokens = 'tokens',
-  Versions = 'versions'
+  Versions = 'versions',
+  Credentials = 'credentials',
 }
 
 export const eventGroupFromString = (source: string): EventGroup => {

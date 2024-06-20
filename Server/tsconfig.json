@@ -1,7 +1,13 @@
 {
   "extends": "../tsconfig.build.json",
-  "include": ["src/**/*.ts", "src/**/*.json"],
-  "exclude": ["**/dist/**", "**/node_modules/**"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.json"
+  ],
+  "exclude": [
+    "**/dist/**",
+    "**/node_modules/**"
+  ],
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
@@ -45,10 +51,13 @@
       "path": "../../citrineos-ocpi/00_Base"
     },
     {
-      "path": "../../citrineos-ocpi/03_Modules/Commands"
+      "path": "../../citrineos-ocpi/03_Modules/Versions"
     },
     {
-      "path": "../../citrineos-ocpi/03_Modules/Versions"
+      "path": "../../citrineos-ocpi/03_Modules/Credentials"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Commands"
     }
   ]
 }
