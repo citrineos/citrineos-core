@@ -221,7 +221,7 @@ export abstract class AbstractModule implements IModule {
     payload: OcppRequest,
     callbackUrl?: string,
     correlationId?: string,
-    origin?: MessageOrigin,
+    origin: MessageOrigin = MessageOrigin.CentralSystem,
   ): Promise<IMessageConfirmation> {
     const _correlationId: string =
       correlationId === undefined ? uuidv4() : correlationId;
@@ -280,7 +280,7 @@ export abstract class AbstractModule implements IModule {
     tenantId: string,
     action: CallAction,
     payload: OcppResponse,
-    origin?: MessageOrigin,
+    origin: MessageOrigin = MessageOrigin.CentralSystem,
   ): Promise<IMessageConfirmation> {
     return this._sender.sendResponse(
       RequestBuilder.buildCallResult(
@@ -327,7 +327,7 @@ export abstract class AbstractModule implements IModule {
     tenantId: string,
     action: CallAction,
     payload: OcppError,
-    origin?: MessageOrigin,
+    origin: MessageOrigin = MessageOrigin.CentralSystem,
   ): Promise<IMessageConfirmation> {
     return this._sender.sendResponse(
       RequestBuilder.buildCallError(

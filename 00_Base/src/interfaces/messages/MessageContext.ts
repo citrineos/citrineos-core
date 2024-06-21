@@ -12,4 +12,5 @@ export interface IMessageContext {
   correlationId: string;
   tenantId: string;
   stationId: string;
+  timestamp?: string; // Required when origin is 'cs'. String produced by Date().toISOString().
 }

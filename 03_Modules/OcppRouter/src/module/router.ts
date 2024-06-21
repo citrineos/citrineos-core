@@ -214,7 +214,7 @@ export class MessageRouterImpl
 
   // TODO: identifier may not be unique, may require combination of tenantId and identifier.
   // find way to include tenantId here
-  async onMessage(identifier: string, message: string): Promise<boolean> {
+  async onMessage(identifier: string, message: string, timestamp: Date): Promise<boolean> {
     this._onMessageCallbacks.get(identifier)?.forEach((callback) => {
       callback(message);
     });
@@ -236,13 +236,13 @@ export class MessageRouterImpl
       }
       switch (messageTypeId) {
         case MessageTypeId.Call:
-          this._onCall(identifier, rpcMessage as Call);
+          this._onCall(identifier, rpcMessage as Call, timestamp);
           break;
         case MessageTypeId.CallResult:
-          this._onCallResult(identifier, rpcMessage as CallResult);
+          this._onCallResult(identifier, rpcMessage as CallResult, timestamp);
           break;
         case MessageTypeId.CallError:
-          this._onCallError(identifier, rpcMessage as CallError);
+          this._onCallError(identifier, rpcMessage as CallError, timestamp);
           break;
         default:
           throw new OcppError(
@@ -580,9 +580,10 @@ export class MessageRouterImpl
    *
    * @param {string} identifier - The client identifier.
    * @param {Call} message - The Call message received.
+   * @param {Date} timestamp Time at which the message was received from the charger.
    * @return {void}
    */
-  _onCall(identifier: string, message: Call): void {
+  _onCall(identifier: string, message: Call, timestamp: Date): void {
     const messageId = message[1];
     const action = message[2] as CallAction;
     const payload = message[3];
@@ -634,7 +635,7 @@ export class MessageRouterImpl
           );
         }
         // Route call
-        return this._routeCall(identifier, message);
+        return this._routeCall(identifier, message, timestamp);
       })
       .then((confirmation) => {
         if (!confirmation.success) {
@@ -661,9 +662,10 @@ export class MessageRouterImpl
    *
    * @param {string} identifier - The client identifier that made the call.
    * @param {CallResult} message - The OCPP CallResult message.
+   * @param {Date} timestamp Time at which the message was received from the charger.
    * @return {void}
    */
-  _onCallResult(identifier: string, message: CallResult): void {
+  _onCallResult(identifier: string, message: CallResult, timestamp: Date): void {
     const messageId = message[1];
     const payload = message[2];
 
@@ -708,7 +710,7 @@ export class MessageRouterImpl
           );
         }
         // Route call result
-        return this._routeCallResult(identifier, message, action);
+        return this._routeCallResult(identifier, message, action, timestamp);
       })
       .then((confirmation) => {
         if (!confirmation.success) {
@@ -731,9 +733,10 @@ export class MessageRouterImpl
    *
    * @param {string} identifier - The client identifier.
    * @param {CallError} message - The error message.
+   * @param {Date} timestamp Time at which the message was received from the charger.
    * @return {void} This function doesn't return anything.
    */
-  _onCallError(identifier: string, message: CallError): void {
+  _onCallError(identifier: string, message: CallError, timestamp: Date): void {
     const messageId = message[1];
 
     this._logger.debug('Process CallError', identifier, message);
@@ -762,7 +765,7 @@ export class MessageRouterImpl
         }
         const action: CallAction =
           CallAction[actionString as keyof typeof CallAction]; // Parse CallAction
-        return this._routeCallError(identifier, message, action);
+        return this._routeCallError(identifier, message, action, timestamp);
       })
       .then((confirmation) => {
         if (!confirmation.success) {
@@ -836,6 +839,7 @@ export class MessageRouterImpl
   private async _routeCall(
     connectionIdentifier: string,
     message: Call,
+    timestamp: Date,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
     const action = message[2] as CallAction;
@@ -849,6 +853,7 @@ export class MessageRouterImpl
       payload,
       EventGroup.General, // TODO: Change to appropriate event group
       MessageOrigin.ChargingStation,
+      timestamp
     );
 
     return this._sender.send(_message);
@@ -858,25 +863,21 @@ export class MessageRouterImpl
     connectionIdentifier: string,
     message: CallResult,
     action: CallAction,
+    timestamp: Date
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
     const payload = message[2] as OcppResponse;
 
-    // TODO: Add tenantId to context
-    const context: IMessageContext = {
-      correlationId: messageId,
-      stationId: connectionIdentifier,
-      tenantId: '',
-    };
-
-    const _message: IMessage<OcppRequest> = {
-      origin: MessageOrigin.CentralSystem,
-      eventGroup: EventGroup.General,
+    const _message: IMessage<OcppResponse> = RequestBuilder.buildCallResult(
+      connectionIdentifier,
+      messageId,
+      '', // TODO: Add tenantId to method 
       action,
-      state: MessageState.Response,
-      context,
       payload,
-    };
+      EventGroup.General,
+      MessageOrigin.CentralSystem,
+      timestamp
+    );
 
     return this._sender.send(_message);
   }
@@ -885,6 +886,7 @@ export class MessageRouterImpl
     connectionIdentifier: string,
     message: CallError,
     action: CallAction,
+    timestamp: Date,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
     const payload = new OcppError(
@@ -894,27 +896,22 @@ export class MessageRouterImpl
       message[4],
     );
 
-    // TODO: Add tenantId to context
-    const context: IMessageContext = {
-      correlationId: messageId,
-      stationId: connectionIdentifier,
-      tenantId: '',
-    };
-
-    const _message: IMessage<OcppError> = {
-      origin: MessageOrigin.CentralSystem,
-      eventGroup: EventGroup.General,
+    const _message: IMessage<OcppError> = RequestBuilder.buildCallError(
+      connectionIdentifier,
+      messageId,
+      '', // TODO: Add tenantId to method 
       action,
-      state: MessageState.Response,
-      context,
       payload,
-    };
+      EventGroup.General,
+      MessageOrigin.CentralSystem,
+      timestamp,
+    );
 
     // Fulfill callback for api, if needed
     this._handleMessageApiCallback(_message);
 
     // No error routing currently done
-    throw new Error('Method not implemented.');
+    throw new Error('Error routing not implemented.');
   }
 
   private async _handleMessageApiCallback(

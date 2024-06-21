@@ -495,7 +495,7 @@ export class WebsocketNetworkConnection {
    * @return {void} This function does not return anything.
    */
   private _onMessage(identifier: string, message: string): void {
-    this._router.onMessage(identifier, message);
+    this._router.onMessage(identifier, message, new Date());
   }
 
   /**
