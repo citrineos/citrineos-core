@@ -316,10 +316,12 @@ export class SmartChargingModuleApi
       // OCPP 2.0.1 Part 2 K01.FR.39
       const numOfExistedChargingProfile =
         await this._module.chargingProfileRepository.existByQuery({
-          stackLevel: chargingProfile.stackLevel,
-          transactionDatabaseId: transaction.id,
-          chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
-          isActive: true,
+          where: {
+            stackLevel: chargingProfile.stackLevel,
+            transactionDatabaseId: transaction.id,
+            chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
+            isActive: true,
+          }
         });
       if (numOfExistedChargingProfile > 0) {
         return {

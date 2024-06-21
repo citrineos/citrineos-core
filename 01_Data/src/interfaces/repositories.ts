@@ -135,4 +135,5 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   createChargingNeeds(chargingNeeds: NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds>;
   findChargingNeedsByEvseDBIdAndTransactionDBId(evseDBId: number, transactionDataBaseId: number): Promise<ChargingNeeds | undefined>;
   createCompositeSchedule(compositeSchedule: CompositeScheduleType, stationId: string): Promise<CompositeSchedule>;
+  getNextChargingScheduleId(stationId: string): Promise<number>;
 }
