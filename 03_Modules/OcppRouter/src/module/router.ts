@@ -184,7 +184,7 @@ export class MessageRouterImpl
       {
         stationId: connectionIdentifier,
         state: MessageState.Response.toString(),
-        origin: MessageOrigin.ChargingStation.toString(),
+        origin: MessageOrigin.ChargingStationManagementSystem.toString(),
       },
     );
 
@@ -523,7 +523,7 @@ export class MessageRouterImpl
                   {
                     stationId: connectionIdentifier,
                     event: 'message',
-                    origin: MessageOrigin.CentralSystem,
+                    origin: MessageOrigin.ChargingStationManagementSystem,
                     message: message,
                     error: error,
                     info: info,
@@ -875,7 +875,7 @@ export class MessageRouterImpl
       action,
       payload,
       EventGroup.General,
-      MessageOrigin.CentralSystem,
+      MessageOrigin.ChargingStation,
       timestamp
     );
 
@@ -903,7 +903,7 @@ export class MessageRouterImpl
       action,
       payload,
       EventGroup.General,
-      MessageOrigin.CentralSystem,
+      MessageOrigin.ChargingStation,
       timestamp,
     );
 
