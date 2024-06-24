@@ -434,7 +434,7 @@ export class TransactionsModule extends AbstractModule {
         value: statusNotificationRequest.connectorStatus
       }]
     };
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, stationId);
+    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, stationId, statusNotificationRequest.timestamp);
 
     // Create response
     const response: StatusNotificationResponse = {};

@@ -167,7 +167,7 @@ export class MonitoringModule extends AbstractModule {
           }
         ]
       };
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, stationId);
+      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, stationId, message.payload.generatedAt);
     }
 
     // Create response
