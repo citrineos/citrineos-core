@@ -40,4 +40,5 @@ export enum Namespace {
   VariableMonitoringStatus = 'VariableMonitoringStatus',
   VariableStatus = 'VariableStatus',
   VariableType = 'Variable',
+  PasswordType = 'Password',
 }
