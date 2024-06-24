@@ -22,7 +22,8 @@ import { ILogObj, Logger } from 'tslog';
  */
 export class KafkaSender
   extends AbstractMessageSender
-  implements IMessageSender {
+  implements IMessageSender
+{
   /**
    * Fields
    */

@@ -47,7 +47,8 @@ import {
  */
 export class EVDriverModuleApi
   extends AbstractModuleApi<EVDriverModule>
-  implements IEVDriverModuleApi {
+  implements IEVDriverModuleApi
+{
   /**
    * Constructs a new instance of the class.
    *

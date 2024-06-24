@@ -33,6 +33,7 @@
     "03_Modules/OcppRouter",
     "03_Modules/Reporting",
     "03_Modules/SmartCharging",
+    "03_Modules/Tenant",
     "03_Modules/Transactions",
     "Server"
   ]

@@ -227,7 +227,7 @@ export class ReportingModule extends AbstractModule {
       : []) {
       const stationId: string = message.context.stationId;
       const [component, variable] =
-        await this._deviceModelRepository.findComponentAndVariable(
+        await this._deviceModelRepository.findOrCreateEvseAndComponentAndVariable(
           monitorType.component,
           monitorType.variable,
         );
