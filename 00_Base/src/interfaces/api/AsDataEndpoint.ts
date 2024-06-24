@@ -24,6 +24,12 @@ export const AsDataEndpoint = function (
   method: HttpMethod,
   querySchema?: object,
   bodySchema?: object,
+  paramSchema?: object,
+  headerSchema?: object,
+  responseSchema?: object,
+  tags?: string | string[],
+  security?: object[],
+  description?: string,
 ) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (
@@ -45,6 +51,12 @@ export const AsDataEndpoint = function (
       httpMethod: method,
       querySchema: querySchema,
       bodySchema: bodySchema,
+      paramSchema: paramSchema,
+      headerSchema: headerSchema,
+      responseSchema: responseSchema,
+      tags: (Array.isArray(tags) ? tags : [tags]) as string[],
+      description: description,
+      security: security,
     });
     Reflect.defineMetadata(
       METADATA_DATA_ENDPOINTS,
