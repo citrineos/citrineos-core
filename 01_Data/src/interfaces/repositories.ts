@@ -73,6 +73,7 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
   existByQuerystring(query: VariableAttributeQuerystring): Promise<number>;
   deleteAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
   findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]>;
+  findOrCreateEvseAndComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component, Variable]>;
   findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component>;
   findEvseByIdAndConnectorId(id: number, connectorId: number | null): Promise<Evse | undefined>;
   findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance: string | null): Promise<VariableCharacteristics | undefined>;

@@ -24,6 +24,7 @@ import {
   MeterValuesRequest,
   MeterValuesResponse,
   ReadingContextEnumType,
+  ReportDataType,
   SampledValueType,
   StatusNotificationRequest,
   StatusNotificationResponse,
@@ -401,11 +402,39 @@ export class TransactionsModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.StatusNotification)
-  protected _handleStatusNotification(
+  protected async _handleStatusNotification(
     message: IMessage<StatusNotificationRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('StatusNotification received:', message, props);
+
+    const stationId = message.context.stationId;
+    const statusNotificationRequest = message.payload;
+    const [component, variable] =
+      await this._deviceModelRepository.findComponentAndVariable(
+        {
+          name: 'Connector',
+          evse: {
+            id: statusNotificationRequest.evseId,
+            connectorId: statusNotificationRequest.connectorId,
+          },
+        },
+        {
+          name: 'AvailabilityState',
+        },
+      );
+    if (!component || !variable) {
+      throw new Error("Missing component or variable for status notification.");
+    }
+
+    const reportDataType: ReportDataType = {
+      component : component,
+      variable: variable,
+      variableAttribute: [{
+        value: statusNotificationRequest.connectorStatus
+      }]
+    };
+    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, stationId);
 
     // Create response
     const response: StatusNotificationResponse = {};

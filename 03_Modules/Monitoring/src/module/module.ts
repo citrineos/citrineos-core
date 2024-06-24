@@ -23,6 +23,7 @@ import {
   IMessageSender,
   NotifyEventRequest,
   NotifyEventResponse,
+  ReportDataType,
   SetMonitoringBaseResponse,
   SetMonitoringLevelResponse,
   SetVariableMonitoringResponse,
@@ -142,12 +143,12 @@ export class MonitoringModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('NotifyEvent received:', message, props);
+    const stationId = message.context.stationId;
 
     const events = message.payload.eventData as EventDataType[];
     for (const event of events) {
-      const stationId = message.context.stationId;
       const [component, variable] =
-        await this._deviceModelRepository.findComponentAndVariable(
+        await this._deviceModelRepository.findOrCreateEvseAndComponentAndVariable(
           event.component,
           event.variable,
         );
@@ -157,6 +158,16 @@ export class MonitoringModule extends AbstractModule {
         variable?.id,
         stationId,
       );
+      const reportDataType: ReportDataType = {
+        component,
+        variable,
+        variableAttribute: [
+          {
+            value: event.actualValue
+          }
+        ]
+      };
+      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, stationId);
     }
 
     // Create response
