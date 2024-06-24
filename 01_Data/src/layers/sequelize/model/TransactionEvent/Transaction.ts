@@ -3,7 +3,16 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingStateEnumType, type CustomDataType, EVSEType, type MeterValueType, Namespace, ReasonEnumType, type TransactionEventRequest, type TransactionType } from '@citrineos/base';
+import {
+  ChargingStateEnumType,
+  type CustomDataType,
+  EVSEType,
+  type MeterValueType,
+  Namespace,
+  ReasonEnumType,
+  type TransactionEventRequest,
+  type TransactionType
+} from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
@@ -41,19 +50,34 @@ export class Transaction extends Model implements TransactionType {
   @HasMany(() => MeterValue)
   declare meterValues?: MeterValueType[];
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
   declare chargingState?: ChargingStateEnumType;
 
-  @Column(DataType.BIGINT)
+  @Column({
+    type: DataType.BIGINT,
+    allowNull: true,
+  })
   declare timeSpentCharging?: number;
 
-  @Column(DataType.DECIMAL)
+  @Column({
+    type: DataType.DECIMAL,
+    allowNull: true,
+  })
   declare totalKwh?: number;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
   declare stoppedReason?: ReasonEnumType;
 
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+  })
   declare remoteStartId?: number;
 
   declare customData?: CustomDataType;
