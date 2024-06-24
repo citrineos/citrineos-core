@@ -54,7 +54,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     this.variableStatus = variableStatus ? variableStatus : new SequelizeRepository<VariableStatus>(config, VariableStatus.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]> {
+  async createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string, isoTimestamp: string): Promise<VariableAttribute[]> {
     // Doing this here so that no records are created if the data is invalid
     const variableAttributeTypes = value.variableAttribute.map((attr) => attr.type ?? AttributeEnumType.Actual);
     if (variableAttributeTypes.length !== new Set(variableAttributeTypes).size) {
@@ -113,6 +113,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
             evseDatabaseId: component.evseDatabaseId,
             dataType,
             value: variableAttribute.value,
+            timestamp: isoTimestamp,
             mutability: variableAttribute.mutability ?? MutabilityEnumType.ReadWrite,
             persistent: variableAttribute.persistent ? variableAttribute.persistent : false,
             constant: variableAttribute.constant ? variableAttribute.constant : false,
@@ -213,7 +214,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return component;
   }
 
-  async createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string): Promise<VariableAttribute[]> {
+  async createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string, isoTimestamp: string): Promise<VariableAttribute[]> {
     const savedVariableAttributes: VariableAttribute[] = [];
     for (const result of getVariablesResult) {
       const savedVariableAttribute = (
@@ -233,6 +234,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
             ],
           },
           stationId,
+          isoTimestamp,
         )
       )[0];
       this.variableStatus.create(
@@ -251,7 +253,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return savedVariableAttributes;
   }
 
-  async createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string): Promise<VariableAttribute[]> {
+  async createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string, isoTimestamp: string): Promise<VariableAttribute[]> {
     const savedVariableAttributes: VariableAttribute[] = [];
     for (const data of setVariablesData) {
       const savedVariableAttribute = (
@@ -271,6 +273,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
             ],
           },
           stationId,
+          isoTimestamp,
         )
       )[0];
       savedVariableAttributes.push(savedVariableAttribute);
@@ -278,7 +281,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return savedVariableAttributes;
   }
 
-  async updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined> {
+  async updateResultByStationId(result: SetVariableResultType, stationId: string, isoTimestamp: string): Promise<VariableAttribute | undefined> {
     const savedVariableAttribute = await super.readOnlyOneByQuery({
       where: { stationId, type: result.attributeType ?? AttributeEnumType.Actual },
       include: [
@@ -307,6 +310,8 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
           variableAttributeId: savedVariableAttribute.get('id'),
         }),
       );
+      savedVariableAttribute.set('timestamp', isoTimestamp);
+      await savedVariableAttribute.save();
       // Reload in order to include the statuses
       return await savedVariableAttribute.reload({
         include: [VariableStatus],
