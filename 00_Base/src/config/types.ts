@@ -79,6 +79,13 @@ export const systemConfigInputSchema = z.object({
         port: z.number().int().positive().default(8081).optional(),
       })
       .optional(),
+    tenant: z
+      .object({
+        endpointPrefix: z.string().default(EventGroup.Tenant).optional(),
+        host: z.string().default('localhost').optional(),
+        port: z.number().int().positive().default(8081).optional(),
+      })
+      .optional(),
     transactions: z.object({
       endpointPrefix: z.string().default(EventGroup.Transactions).optional(),
       host: z.string().default('localhost').optional(),
@@ -97,6 +104,7 @@ export const systemConfigInputSchema = z.object({
       password: z.string().optional(),
       storage: z.string().default('csms.sqlite').optional(),
       sync: z.boolean().default(false).optional(),
+      alter: z.boolean().default(false).optional(),
     }),
   }),
   util: z.object({
@@ -315,6 +323,11 @@ export const systemConfigSchema = z
           port: z.number().int().positive().optional(),
         })
         .optional(),
+      tenant: z.object({
+        endpointPrefix: z.string(),
+        host: z.string().optional(),
+        port: z.number().int().positive().optional(),
+      }),
       transactions: z
         .object({
           endpointPrefix: z.string(),
@@ -344,6 +357,7 @@ export const systemConfigSchema = z
         password: z.string(),
         storage: z.string(),
         sync: z.boolean(),
+        alter: z.boolean().optional(),
       }),
     }),
     util: z.object({

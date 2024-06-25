@@ -52,6 +52,7 @@ import {CommandsModule} from '@citrineos/ocpi-commands';
 import {VersionsModule} from '@citrineos/ocpi-versions';
 import {CredentialsModule} from '@citrineos/ocpi-credentials';
 import {Sequelize} from "sequelize-typescript";
+import {TenantModule, TenantModuleApi} from '@citrineos/tenant';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -562,6 +563,12 @@ export class CitrineOSServer {
           ModuleClass: SmartChargingModule,
           ModuleApiClass: SmartChargingModuleApi,
           configModule: this._config.modules.smartcharging,
+        };
+      case EventGroup.Tenant:
+        return {
+          ModuleClass: TenantModule,
+          ModuleApiClass: TenantModuleApi,
+          configModule: this._config.modules.tenant,
         };
       case EventGroup.Transactions:
         return {

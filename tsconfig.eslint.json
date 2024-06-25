@@ -29,6 +29,8 @@
     "03_Modules/Reporting/**/*.json",
     "03_Modules/SmartCharging/**/*.ts",
     "03_Modules/SmartCharging/**/*.json",
+    "03_Modules/Tenant/**/*.ts",
+    "03_Modules/Tenant/**/*.json",
     "03_Modules/Transactions/**/*.ts",
     "03_Modules/Transactions/**/*.json",
     "03_Modules/citrineos-ocpi/**/*.ts",

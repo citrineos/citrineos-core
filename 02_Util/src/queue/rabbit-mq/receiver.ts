@@ -77,7 +77,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     // which is "allowed" not to have actions.
     if (actions && actions.length === 0) {
       this._logger.debug(
-          `Skipping queue binding for module ${identifier} as there are no available actions.`,
+        `Skipping queue binding for module ${identifier} as there are no available actions.`,
       );
 
       return true;

@@ -28,16 +28,21 @@ import {
   type VariableAttributeType,
   type VariableMonitoringType,
   type VariableType,
+  ChargingProfileType,
+  NotifyEVChargingNeedsRequest,
+  ChargingLimitSourceEnumType,
+  CompositeScheduleType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
-import { MeterValue, type Transaction } from '../layers/sequelize/model/TransactionEvent';
-import { type VariableAttribute } from '../layers/sequelize/model/DeviceModel/VariableAttribute';
+import { CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
+import { type VariableAttribute } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
-import { type Authorization, type Boot, type Certificate, type ChargingStation, type Component, type EventData, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';
-import { MessageInfo } from '../layers/sequelize/model/MessageInfo';
-import { Subscription } from '../layers/sequelize/model/Subscription';
-import { Tariff } from '../layers/sequelize/model/Tariff';
+import { type Authorization, type Boot, type Certificate, ChargingNeeds, type ChargingStation, type Component, type EventData, Evse, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';
+import { MessageInfo } from '../layers/sequelize';
+import { Subscription } from '../layers/sequelize';
+import { Tariff } from '../layers/sequelize';
 import { TariffQueryString } from './queries/Tariff';
+import { ChargingProfile } from '../layers/sequelize';
 
 export interface IAuthorizationRepository extends CrudRepository<AuthorizationData> {
   createOrUpdateByQuerystring: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
@@ -70,7 +75,10 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
   existByQuerystring(query: VariableAttributeQuerystring): Promise<number>;
   deleteAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
   findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]>;
+  findOrCreateEvseAndComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component, Variable]>;
   findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component>;
+  findEvseByIdAndConnectorId(id: number, connectorId: number | null): Promise<Evse | undefined>;
+  findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance: string | null): Promise<VariableCharacteristics | undefined>;
 }
 
 export interface ILocationRepository extends CrudRepository<Location> {
@@ -121,4 +129,11 @@ export interface ITariffRepository extends CrudRepository<Tariff> {
 
 export interface ICertificateRepository extends CrudRepository<Certificate> {
   createOrUpdateCertificate(certificate: Certificate): Promise<Certificate>;
+}
+
+export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
+  createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId?: number, chargingLimitSource?: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile>;
+  createChargingNeeds(chargingNeeds: NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds>;
+  findChargingNeedsByEvseDBIdAndTransactionDBId(evseDBId: number, transactionDataBaseId: number): Promise<ChargingNeeds | undefined>;
+  createCompositeSchedule(compositeSchedule: CompositeScheduleType, stationId: string): Promise<CompositeSchedule>;
 }

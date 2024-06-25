@@ -36,6 +36,9 @@ export function createDockerConfig() {
       smartcharging: {
         endpointPrefix: '/smartcharging',
       },
+      tenant: {
+        endpointPrefix: '/tenant',
+      },
       transactions: {
         endpointPrefix: '/transactions',
         costUpdatedInterval: 60,

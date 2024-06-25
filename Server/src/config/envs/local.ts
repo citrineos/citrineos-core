@@ -37,6 +37,9 @@ export function createLocalConfig() {
       smartcharging: {
         endpointPrefix: '/smartcharging',
       },
+      tenant: {
+        endpointPrefix: '/tenant',
+      },
       transactions: {
         endpointPrefix: '/transactions',
         costUpdatedInterval: 60,
@@ -51,7 +54,8 @@ export function createLocalConfig() {
         username: 'citrine',
         password: 'citrine',
         storage: '',
-        sync: true,
+        sync: false,
+        alter: true
       },
     },
     util: {

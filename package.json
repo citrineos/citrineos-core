@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "1.2.3",
+  "version": "1.3.0",
   "private": false,
   "devDependencies": {
     "@eslint/js": "^9.0.0",
@@ -34,6 +34,7 @@
     "03_Modules/OcppRouter",
     "03_Modules/Reporting",
     "03_Modules/SmartCharging",
+    "03_Modules/Tenant",
     "03_Modules/Transactions",
     "Server",
     "../citrineos-ocpi/00_Base",

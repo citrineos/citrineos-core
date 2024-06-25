@@ -13,14 +13,19 @@ import {
   Authorization,
   Boot,
   Certificate,
+  ChargingNeeds,
+  ChargingProfile,
+  ChargingSchedule,
   ChargingStation,
   Component,
+  CompositeSchedule,
   EventData,
   Evse,
   IdToken,
   IdTokenInfo,
   Location,
   MeterValue,
+  SalesTariff,
   SecurityEvent,
   Transaction,
   TransactionEvent,
@@ -34,6 +39,7 @@ import { VariableStatus } from './model/DeviceModel';
 import { MessageInfo } from './model/MessageInfo';
 import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
+import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
 
 export class DefaultSequelizeInstance {
   /**
@@ -68,16 +74,22 @@ export class DefaultSequelizeInstance {
         Authorization,
         Boot,
         Certificate,
+        ChargingNeeds,
+        ChargingProfile,
+        ChargingSchedule,
         ChargingStation,
         Component,
         ComponentVariable,
+        CompositeSchedule,
         Evse,
         EventData,
         IdToken,
+        IdTokenAdditionalInfo,
         IdTokenInfo,
         Location,
         MeterValue,
         MessageInfo,
+        SalesTariff,
         SecurityEvent,
         Subscription,
         Transaction,
@@ -96,7 +108,11 @@ export class DefaultSequelizeInstance {
       },
     });
 
-    if (config.data.sequelize.sync && sync) {
+    if (config.data.sequelize.alter) {
+      sequelize.sync({ alter: true }).then(() => {
+        sequelizeLogger.info('Database altered');
+      });
+    } else if (config.data.sequelize.sync && sync) {
       sequelize.sync({ force: true }).then(() => {
         sequelizeLogger.info('Database synchronized');
       });
