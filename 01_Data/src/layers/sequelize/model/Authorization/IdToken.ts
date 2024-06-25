@@ -3,16 +3,17 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type AdditionalInfoType, type CustomDataType, IdTokenEnumType, type IdTokenType, Namespace } from '@citrineos/base';
-import { Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
+import { type CustomDataType, IdTokenEnumType, type IdTokenType, Namespace } from '@citrineos/base';
+import { BelongsToMany, Column, DataType, Model, Table } from 'sequelize-typescript';
 import { AdditionalInfo } from './AdditionalInfo';
+import { IdTokenAdditionalInfo } from './IdTokenAdditionalInfo';
 
 @Table
 export class IdToken extends Model implements IdTokenType {
   static readonly MODEL_NAME: string = Namespace.IdTokenType;
 
-  @HasMany(() => AdditionalInfo)
-  declare additionalInfo?: [AdditionalInfoType, ...AdditionalInfoType[]];
+  @BelongsToMany(() => AdditionalInfo, () => IdTokenAdditionalInfo)
+  declare additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]];
 
   @Column({
     type: DataType.STRING,
