@@ -188,7 +188,7 @@ export class TransactionsModule extends AbstractModule {
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
     if (transactionEvent.idToken) {
-      this._authorizeRepository
+      await this._authorizeRepository
         .readAllByQuerystring({ ...transactionEvent.idToken })
         .then((authorizations) => {
           const response: TransactionEventResponse = {
