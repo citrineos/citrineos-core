@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingProfileType, CrudRepository, NotifyEVChargingNeedsRequest, SystemConfig } from '@citrineos/base';
+import { ChargingLimitSourceEnumType, ChargingProfileType, CrudRepository, NotifyEVChargingNeedsRequest, SystemConfig } from '@citrineos/base';
 import { SequelizeRepository } from './Base';
 import { IChargingProfileRepository } from '../../../interfaces';
 import { Evse } from '../model/DeviceModel';
@@ -37,23 +37,40 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, Transaction.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, evseId: number, transactionDBId?: number): Promise<ChargingProfile> {
+  async createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId: number, chargingLimitSource: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile> {
+    let transactionDBId;
+    if (chargingProfile.transactionId) {
+      const activeTransaction = await Transaction.findOne({
+        where: {
+          stationId,
+          transactionId: chargingProfile.transactionId,
+        },
+      });
+      transactionDBId = activeTransaction?.id;
+    }
+
     const [savedChargingProfile, profileCreated] = await this.readOrCreateByQuery({
       where: {
+        stationId: stationId,
         evseId: evseId,
         id: chargingProfile.id,
       },
       defaults: {
         ...chargingProfile,
         transactionDatabaseId: transactionDBId,
+        chargingLimitSource: chargingLimitSource,
+        isActive: isActive === undefined ? false : isActive,
       },
     });
     if (!profileCreated) {
       await this.updateByKey(
         {
           ...chargingProfile,
+          stationId: stationId,
           transactionDatabaseId: transactionDBId,
           evseId: evseId,
+          chargingLimitSource: chargingLimitSource,
+          isActive: isActive === undefined ? false : isActive,
         },
         savedChargingProfile.databaseId.toString(),
       );

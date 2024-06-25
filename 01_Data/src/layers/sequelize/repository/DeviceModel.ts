@@ -370,7 +370,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return storedEvses.length > 0 ? storedEvses[0] : undefined;
   }
 
-  async findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance?: string | null): Promise<VariableCharacteristics | undefined> {
+  async findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance: string | null): Promise<VariableCharacteristics | undefined> {
     const variableCharacteristics = await this.variableCharacteristics.readAllByQuery({
       include: [
         {

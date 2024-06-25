@@ -7,11 +7,16 @@ import {
   AbstractModule,
   AsHandler,
   CallAction,
+  ChargingLimitSourceEnumType,
+  ChargingProfileCriterionType,
   ChargingProfileStatusEnumType,
+  ChargingProfileType,
   ClearChargingProfileResponse,
+  ClearChargingProfileStatusEnumType,
   ClearedChargingLimitResponse,
   EventGroup,
   GenericStatusEnumType,
+  GetChargingProfilesRequest,
   GetChargingProfilesResponse,
   GetCompositeScheduleResponse,
   HandlerProperties,
@@ -228,11 +233,23 @@ export class SmartChargingModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.ReportChargingProfiles)
-  protected _handleReportChargingProfiles(
+  protected async _handleReportChargingProfiles(
     message: IMessage<ReportChargingProfilesRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('ReportChargingProfiles received:', message, props);
+
+    const chargingProfiles = message.payload
+      .chargingProfile as ChargingProfileType[];
+    for (const chargingProfile of chargingProfiles) {
+      await this._chargingProfileRepository.createOrUpdateChargingProfile(
+        chargingProfile,
+        message.context.stationId,
+        message.payload.evseId,
+        message.payload.chargingLimitSource,
+        true,
+      );
+    }
 
     // Create response
     const response: ReportChargingProfilesResponse = {};
@@ -251,15 +268,55 @@ export class SmartChargingModule extends AbstractModule {
    */
 
   @AsHandler(CallAction.ClearChargingProfile)
-  protected _handleClearChargingProfile(
+  protected async _handleClearChargingProfile(
     message: IMessage<ClearChargingProfileResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug(
       'ClearChargingProfile response received:',
       message,
       props,
     );
+
+    if (
+      message.payload.status === ClearChargingProfileStatusEnumType.Accepted
+    ) {
+      const stationId: string = message.context.stationId;
+      // Set existed profiles to isActive false
+      await this._chargingProfileRepository.updateAllByQuery(
+        {
+          isActive: false,
+        },
+        {
+          where: {
+            stationId: stationId,
+            isActive: true,
+          },
+          returning: false,
+        },
+      );
+      // Request charging profiles to get the latest data
+      this.sendCall(
+        stationId,
+        message.context.tenantId,
+        CallAction.GetChargingProfiles,
+        {
+          requestId: Math.floor(Math.random() * 1000),
+          chargingProfile: {
+            chargingLimitSource: [
+              ChargingLimitSourceEnumType.CSO,
+              ChargingLimitSourceEnumType.EMS,
+              ChargingLimitSourceEnumType.SO,
+              ChargingLimitSourceEnumType.Other,
+            ],
+          } as ChargingProfileCriterionType,
+        } as GetChargingProfilesRequest,
+      );
+    } else {
+      this._logger.error(
+        `Failed to clear charging profile: ${JSON.stringify(message.payload)}`,
+      );
+    }
   }
 
   @AsHandler(CallAction.GetChargingProfiles)
@@ -275,15 +332,43 @@ export class SmartChargingModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.SetChargingProfile)
-  protected _handleSetChargingProfile(
+  protected async _handleSetChargingProfile(
     message: IMessage<SetChargingProfileResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('SetChargingProfile response received:', message, props);
     const response: SetChargingProfileResponse = message.payload;
     if (response.status === ChargingProfileStatusEnumType.Rejected) {
       this._logger.error(
         `Failed to set charging profile: ${JSON.stringify(response)}`,
+      );
+    } else {
+      const stationId: string = message.context.stationId;
+      // Set existed profiles to isActive false
+      await this._chargingProfileRepository.updateAllByQuery(
+        {
+          isActive: false,
+        },
+        {
+          where: {
+            stationId: stationId,
+            isActive: true,
+            chargingLimitSource: ChargingLimitSourceEnumType.CSO,
+          },
+          returning: false,
+        },
+      );
+      // Request charging profiles to get the latest data
+      this.sendCall(
+        stationId,
+        message.context.tenantId,
+        CallAction.GetChargingProfiles,
+        {
+          requestId: Math.floor(Math.random() * 1000),
+          chargingProfile: {
+            chargingLimitSource: [ChargingLimitSourceEnumType.CSO],
+          } as ChargingProfileCriterionType,
+        } as GetChargingProfilesRequest,
       );
     }
   }
