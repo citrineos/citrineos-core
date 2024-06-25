@@ -409,14 +409,7 @@ export class SmartChargingModuleApi
     this._logger.info(
       `Found ACPhaseSwitchingSupported: ${JSON.stringify(acPhaseSwitchingSupported)}`,
     );
-    const chargingScheduleChargingRateUnit =
-      await this._module.deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
-        'RateUnit',
-        null,
-      );
-    this._logger.info(
-      `Found RateUnit: ${JSON.stringify(chargingScheduleChargingRateUnit)}`,
-    );
+    const rateUnitMemberList = await this._getChargingRateUnitMemberList();
     for (const chargingSchedule of chargingProfile.chargingSchedule) {
       // OCPP 2.0.1 Part 2 K01.FR.31
       if (chargingSchedule.chargingSchedulePeriod[0].startPeriod !== 0) {
@@ -454,26 +447,13 @@ export class SmartChargingModuleApi
 
       // OCPP 2.0.1 Part 2 K01.FR.26
       if (
-        chargingScheduleChargingRateUnit &&
-        chargingScheduleChargingRateUnit.dataType === DataEnumType.MemberList &&
-        chargingScheduleChargingRateUnit.valuesList
+        rateUnitMemberList &&
+        !rateUnitMemberList.has(chargingSchedule.chargingRateUnit)
       ) {
-        try {
-          const chargingRateUnits = stringToSet(
-            chargingScheduleChargingRateUnit.valuesList,
-          );
-          if (!chargingRateUnits.has(chargingSchedule.chargingRateUnit)) {
-            return {
-              success: false,
-              payload: `ChargingSchedule ${chargingSchedule.id}: chargingRateUnit SHALL be one of ${chargingScheduleChargingRateUnit.valuesList}.`,
-            };
-          }
-        } catch (error) {
-          this._logger.error(
-            `Failed to validate chargingRateUnit. Found unexpected valueList in RateUnit: ${JSON.stringify(chargingScheduleChargingRateUnit.valuesList)}`,
-            error,
-          );
-        }
+        return {
+          success: false,
+          payload: `ChargingSchedule ${chargingSchedule.id}: chargingRateUnit SHALL be one of ${JSON.stringify(rateUnitMemberList)}.`,
+        };
       }
 
       // OCPP 2.0.1 Part 2 K01.FR.35
@@ -549,12 +529,42 @@ export class SmartChargingModuleApi
     CallAction.GetCompositeSchedule,
     GetCompositeScheduleRequestSchema,
   )
-  getCompositeSchedule(
+  async getCompositeSchedule(
     identifier: string,
     tenantId: string,
     request: GetCompositeScheduleRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
+    // OCPP 2.0.1 Part 2 K08.FR.05
+    if (request.evseId !== 0) {
+      const evse =
+          await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
+              request.evseId,
+              null,
+          );
+      if (!evse) {
+        return {
+          success: false,
+          payload: `EVSE ${request.evseId} not found`,
+        };
+      }
+      this._logger.info(`Found evse: ${JSON.stringify(evse)}`);
+    }
+
+    // OCPP 2.0.1 Part 2 K08.FR.07
+    if (request.chargingRateUnit) {
+      const rateUnitMemberList = await this._getChargingRateUnitMemberList();
+      if (
+        rateUnitMemberList &&
+        !rateUnitMemberList.has(request.chargingRateUnit)
+      ) {
+        return {
+          success: false,
+          payload: `chargingRateUnit SHALL be one of [${Array.from(rateUnitMemberList)}].`,
+        };
+      }
+    }
+
     return this._module.sendCall(
       identifier,
       tenantId,
@@ -590,5 +600,25 @@ export class SmartChargingModuleApi
     const endpointPrefix =
       this._module.config.modules.smartcharging?.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
+  }
+
+  private async _getChargingRateUnitMemberList(): Promise<
+    Set<string> | undefined
+  > {
+    const chargingScheduleChargingRateUnit =
+      await this._module.deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
+        'RateUnit',
+        null,
+      );
+    this._logger.info(
+      `Found RateUnit: ${JSON.stringify(chargingScheduleChargingRateUnit)}`,
+    );
+    if (
+      chargingScheduleChargingRateUnit &&
+      chargingScheduleChargingRateUnit.dataType === DataEnumType.MemberList &&
+      chargingScheduleChargingRateUnit.valuesList
+    ) {
+      return stringToSet(chargingScheduleChargingRateUnit.valuesList);
+    }
   }
 }

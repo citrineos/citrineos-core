@@ -7,3 +7,4 @@ export { ChargingProfile } from './ChargingProfile';
 export { ChargingNeeds } from './ChargingNeeds';
 export { ChargingSchedule } from './ChargingSchedule';
 export { SalesTariff } from './SalesTariff';
+export { CompositeSchedule } from './CompositeSchedule';

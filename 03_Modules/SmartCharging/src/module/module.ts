@@ -391,14 +391,35 @@ export class SmartChargingModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.GetCompositeSchedule)
-  protected _handleGetCompositeSchedule(
+  protected async _handleGetCompositeSchedule(
     message: IMessage<GetCompositeScheduleResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug(
       'GetCompositeSchedule response received:',
       message,
       props,
     );
+    const response = message.payload;
+    if (response.status === GenericStatusEnumType.Accepted) {
+      if (response.schedule) {
+        const compositeSchedule =
+          await this._chargingProfileRepository.createCompositeSchedule(
+            response.schedule,
+            message.context.stationId,
+          );
+        this._logger.info(
+          `Composite schedule created: ${JSON.stringify(compositeSchedule)}`,
+        );
+      } else {
+        this._logger.error(
+          `Missing schedule in response: ${response.status} ${JSON.stringify(response.statusInfo)}`,
+        );
+      }
+    } else {
+      this._logger.error(
+        `Failed to get composite schedule: ${response.status} ${JSON.stringify(response.statusInfo)}`,
+      );
+    }
   }
 }
