@@ -150,13 +150,15 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
   }
 
   private async _updateIdToken(value: IdTokenType): Promise<IdToken> {
-    const savedIdTokenModel = (await this.idToken.readOrCreateByQuery({
-      where: { idToken: value.idToken, type: value.type },
-    }))[0];
+    const savedIdTokenModel = (
+      await this.idToken.readOrCreateByQuery({
+        where: { idToken: value.idToken, type: value.type },
+      })
+    )[0];
 
     const additionalInfoIds: number[] = [];
 
-    // Create any additionalInfos that don't exist, 
+    // Create any additionalInfos that don't exist,
     // and any relations between them and the IdToken that don't exist
     if (value.additionalInfo) {
       for (const valueAdditionalInfo of value.additionalInfo) {

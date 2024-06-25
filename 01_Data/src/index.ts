@@ -36,4 +36,4 @@ export {
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
 } from './layers/sequelize'; // TODO ensure all needed modules are properly exported
-export {RepositoryStore} from './layers/sequelize/repository/RepositoryStore';
+export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore';

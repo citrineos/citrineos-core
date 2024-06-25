@@ -178,7 +178,8 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
       await this.component.updateByKey({ evseDatabaseId: evse.databaseId }, component.get('id'));
     }
 
-    if (componentCreated && stationId) { // Only execute if this method is called in the context of a specific station
+    if (componentCreated && stationId) {
+      // Only execute if this method is called in the context of a specific station
       // Excerpt from OCPP 2.0.1 Part 1 Architecture & Topology - 4.2 :
       // "When a Charging Station does not report: Present, Available and/or Enabled
       // the Central System SHALL assume them to be readonly and set to true."

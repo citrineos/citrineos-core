@@ -63,7 +63,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         },
         transaction: sequelizeTransaction,
       });
-      
+
       const updatedTransaction = Transaction.build({
         stationId,
         isActive: value.eventType !== TransactionEventEnumType.Ended,

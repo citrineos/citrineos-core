@@ -168,11 +168,14 @@ export class MonitoringModule extends AbstractModule {
         variable,
         variableAttribute: [
           {
-            value: event.actualValue
-          }
-        ]
+            value: event.actualValue,
+          },
+        ],
       };
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, stationId);
+      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+        reportDataType,
+        stationId,
+      );
     }
 
     // Create response

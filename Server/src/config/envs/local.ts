@@ -43,7 +43,7 @@ export function createLocalConfig() {
       transactions: {
         endpointPrefix: '/transactions',
         costUpdatedInterval: 60,
-      }
+      },
     },
     data: {
       sequelize: {
@@ -55,7 +55,7 @@ export function createLocalConfig() {
         password: 'citrine',
         storage: '',
         sync: false,
-        alter: true
+        alter: true,
       },
     },
     util: {

@@ -17,7 +17,7 @@ import {
   type IModuleApi,
   type SystemConfig,
 } from '@citrineos/base';
-import {MonitoringModule, MonitoringModuleApi} from '@citrineos/monitoring';
+import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
 import {
   Authenticator,
   DirectusUtil,
@@ -28,31 +28,43 @@ import {
   RedisCache,
   WebsocketNetworkConnection,
 } from '@citrineos/util';
-import {type JsonSchemaToTsProvider} from '@fastify/type-provider-json-schema-to-ts';
+import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import fastify, {type FastifyInstance} from 'fastify';
-import {type ILogObj, Logger} from 'tslog';
-import {systemConfig} from './config';
-import {ConfigurationModule, ConfigurationModuleApi,} from '@citrineos/configuration';
-import {TransactionsModule, TransactionsModuleApi,} from '@citrineos/transactions';
-import {CertificatesModule, CertificatesModuleApi,} from '@citrineos/certificates';
-import {EVDriverModule, EVDriverModuleApi} from '@citrineos/evdriver';
-import {ReportingModule, ReportingModuleApi} from '@citrineos/reporting';
-import {SmartChargingModule, SmartChargingModuleApi,} from '@citrineos/smartcharging';
-import {RepositoryStore, sequelize} from '@citrineos/data';
+import fastify, { type FastifyInstance } from 'fastify';
+import { type ILogObj, Logger } from 'tslog';
+import { systemConfig } from './config';
+import {
+  ConfigurationModule,
+  ConfigurationModuleApi,
+} from '@citrineos/configuration';
+import {
+  TransactionsModule,
+  TransactionsModuleApi,
+} from '@citrineos/transactions';
+import {
+  CertificatesModule,
+  CertificatesModuleApi,
+} from '@citrineos/certificates';
+import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
+import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
+import {
+  SmartChargingModule,
+  SmartChargingModuleApi,
+} from '@citrineos/smartcharging';
+import { RepositoryStore, sequelize } from '@citrineos/data';
 import {
   type FastifyRouteSchemaDef,
   type FastifySchemaCompiler,
   type FastifyValidationResult,
 } from 'fastify/types/schema';
-import {AdminApi, MessageRouterImpl} from '@citrineos/ocpprouter';
-import {OcpiServer, OcpiServerConfig} from '@citrineos/ocpi-base';
-import {CommandsModule} from '@citrineos/ocpi-commands';
-import {VersionsModule} from '@citrineos/ocpi-versions';
-import {CredentialsModule} from '@citrineos/ocpi-credentials';
-import {Sequelize} from "sequelize-typescript";
-import {TenantModule, TenantModuleApi} from '@citrineos/tenant';
+import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter';
+import { OcpiServer, OcpiServerConfig } from '@citrineos/ocpi-base';
+import { CommandsModule } from '@citrineos/ocpi-commands';
+import { VersionsModule } from '@citrineos/ocpi-versions';
+import { CredentialsModule } from '@citrineos/ocpi-credentials';
+import { Sequelize } from 'sequelize-typescript';
+import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -210,8 +222,28 @@ export class CitrineOSServer {
     return new RabbitMqReceiver(this._config, this._logger);
   }
 
+  protected getOcpiModuleConfig() {
+    return [
+      {
+        module: VersionsModule,
+        handler: this._createHandler(),
+        sender: this._createSender(),
+      },
+      {
+        module: CredentialsModule,
+        handler: this._createHandler(),
+        sender: this._createSender(),
+      },
+      {
+        module: CommandsModule,
+        handler: this._createHandler(),
+        sender: this._createSender(),
+      },
+    ];
+  }
+
   private initHealthCheck() {
-    this._server.get('/health', async () => ({status: 'healthy'}));
+    this._server.get('/health', async () => ({ status: 'healthy' }));
   }
 
   private initAjv(ajv?: Ajv) {
@@ -256,11 +288,11 @@ export class CitrineOSServer {
       cache ||
       (this._config.util.cache.redis
         ? new RedisCache({
-          socket: {
-            host: this._config.util.cache.redis.host,
-            port: this._config.util.cache.redis.port,
-          },
-        })
+            socket: {
+              host: this._config.util.cache.redis.host,
+              port: this._config.util.cache.redis.port,
+            },
+          })
         : new MemoryCache())
     );
   }
@@ -313,7 +345,6 @@ export class CitrineOSServer {
   }
 
   private initAllModules() {
-
     if (this._config.modules.certificates) {
       const module = new CertificatesModule(
         this._config,
@@ -323,7 +354,7 @@ export class CitrineOSServer {
         this._logger,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.certificateRepository,
-        this._repositoryStore.locationRepository
+        this._repositoryStore.locationRepository,
       );
       this.modules.push(module);
       this.apis.push(
@@ -347,13 +378,11 @@ export class CitrineOSServer {
         this._logger,
         this._repositoryStore.bootRepository,
         this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.messageInfoRepository
+        this._repositoryStore.messageInfoRepository,
       );
       this.modules.push(module);
       this.apis.push(
-        new ConfigurationModuleApi(
-          module, this._server, this._logger
-        ),
+        new ConfigurationModuleApi(module, this._server, this._logger),
       );
     }
 
@@ -366,14 +395,10 @@ export class CitrineOSServer {
         this._logger,
         this._repositoryStore.authorizationRepository,
         this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.tariffRepository
+        this._repositoryStore.tariffRepository,
       );
       this.modules.push(module);
-      this.apis.push(
-        new EVDriverModuleApi(
-          module, this._server, this._logger
-        ),
-      );
+      this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
     }
 
     if (this._config.modules.monitoring) {
@@ -384,13 +409,11 @@ export class CitrineOSServer {
         this._createHandler(),
         this._logger,
         this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.variableMonitoringRepository
+        this._repositoryStore.variableMonitoringRepository,
       );
       this.modules.push(module);
       this.apis.push(
-        new MonitoringModuleApi(
-          module, this._server, this._logger
-        ),
+        new MonitoringModuleApi(module, this._server, this._logger),
       );
     }
 
@@ -403,13 +426,11 @@ export class CitrineOSServer {
         this._logger,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.securityEventRepository,
-        this._repositoryStore.variableMonitoringRepository
+        this._repositoryStore.variableMonitoringRepository,
       );
       this.modules.push(module);
       this.apis.push(
-        new ReportingModuleApi(
-          module, this._server, this._logger
-        ),
+        new ReportingModuleApi(module, this._server, this._logger),
       );
     }
 
@@ -423,9 +444,7 @@ export class CitrineOSServer {
       );
       this.modules.push(module);
       this.apis.push(
-        new SmartChargingModuleApi(
-          module, this._server, this._logger
-        ),
+        new SmartChargingModuleApi(module, this._server, this._logger),
       );
     }
 
@@ -439,16 +458,13 @@ export class CitrineOSServer {
         this._repositoryStore.transactionEventRepository,
         this._repositoryStore.authorizationRepository,
         this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.tariffRepository
+        this._repositoryStore.tariffRepository,
       );
       this.modules.push(module);
       this.apis.push(
-        new TransactionsModuleApi(
-          module, this._server, this._logger
-        ),
+        new TransactionsModuleApi(module, this._server, this._logger),
       );
     }
-
 
     // TODO: take actions to make sure module has correct subscriptions and log proof
     if (this.eventGroup !== EventGroup.All) {
@@ -457,33 +473,13 @@ export class CitrineOSServer {
     }
   }
 
-  protected getOcpiModuleConfig() {
-    return [
-      {
-        module: VersionsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: CredentialsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: CommandsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-    ];
-  }
-
   private startOcpiServer(host: string, port: number) {
     const ocpiServer = new OcpiServer(
       this._config as OcpiServerConfig,
       this._cache,
       this._logger,
       this.getOcpiModuleConfig(),
-      this._repositoryStore
+      this._repositoryStore,
     );
     ocpiServer.run(host, port);
   }
@@ -607,7 +603,7 @@ export class CitrineOSServer {
     this._repositoryStore = new RepositoryStore(
       this._config,
       this._logger,
-      this._sequelizeInstance
+      this._sequelizeInstance,
     );
   }
 }

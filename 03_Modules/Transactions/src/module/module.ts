@@ -282,7 +282,7 @@ export class TransactionsModule extends AbstractModule {
               );
             }
 
-            // TODO there should only be one active transaction per evse of a station. 
+            // TODO there should only be one active transaction per evse of a station.
             // old transactions should be marked inactive and an alert should be raised (this can only happen in the field with charger bugs or missed messages)
 
             // Check for ConcurrentTx
@@ -427,17 +427,22 @@ export class TransactionsModule extends AbstractModule {
         },
       );
     if (!component || !variable) {
-      throw new Error("Missing component or variable for status notification.");
+      throw new Error('Missing component or variable for status notification.');
     }
 
     const reportDataType: ReportDataType = {
-      component : component,
+      component: component,
       variable: variable,
-      variableAttribute: [{
-        value: statusNotificationRequest.connectorStatus
-      }]
+      variableAttribute: [
+        {
+          value: statusNotificationRequest.connectorStatus,
+        },
+      ],
     };
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, stationId);
+    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+      reportDataType,
+      stationId,
+    );
 
     // Create response
     const response: StatusNotificationResponse = {};
