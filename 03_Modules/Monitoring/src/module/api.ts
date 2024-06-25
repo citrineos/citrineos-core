@@ -315,6 +315,7 @@ export class MonitoringModuleApi
     await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(
       setVariableData,
       identifier,
+      new Date().toISOString(), // Will be set again when SetVariablesResponse is received
     );
 
     let itemsPerMessageSetVariables =
@@ -459,10 +460,12 @@ export class MonitoringModuleApi
         variableAttr.mutability = MutabilityEnumType.ReadWrite;
       }
     }
+    const timestamp = new Date().toISOString();
     return this._module.deviceModelRepository
       .createOrUpdateDeviceModelByStationId(
         request.body,
         request.query.stationId,
+        timestamp,
       )
       .then(async (variableAttributes) => {
         if (request.query.setOnCharger) {
@@ -480,6 +483,7 @@ export class MonitoringModuleApi
                 variable: variableAttribute.variable,
               },
               request.query.stationId,
+              timestamp,
             );
           }
         }

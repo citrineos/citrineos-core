@@ -18,7 +18,7 @@ export enum MessageState {
 }
 
 export enum MessageOrigin {
-  CentralSystem = 'csms',
+  ChargingStationManagementSystem = 'csms',
   ChargingStation = 'cs',
 }
 

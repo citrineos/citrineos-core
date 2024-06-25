@@ -22,7 +22,8 @@ export class RequestBuilder {
     action: CallAction,
     payload: OcppRequest,
     eventGroup: EventGroup,
-    origin: MessageOrigin = MessageOrigin.CentralSystem,
+    origin: MessageOrigin,
+    timestamp: Date = new Date(),
   ): IMessage<OcppRequest> {
     return {
       origin: origin,
@@ -32,6 +33,7 @@ export class RequestBuilder {
         stationId,
         correlationId,
         tenantId,
+        timestamp: timestamp.toISOString(),
       },
       state: MessageState.Request,
       payload,
@@ -45,7 +47,8 @@ export class RequestBuilder {
     action: CallAction,
     payload: OcppResponse,
     eventGroup: EventGroup,
-    origin: MessageOrigin = MessageOrigin.ChargingStation,
+    origin: MessageOrigin,
+    timestamp: Date = new Date(),
   ): IMessage<OcppResponse> {
     return {
       origin: origin,
@@ -55,6 +58,7 @@ export class RequestBuilder {
         stationId,
         correlationId,
         tenantId,
+        timestamp: timestamp.toISOString(),
       },
       state: MessageState.Response,
       payload,
@@ -68,7 +72,8 @@ export class RequestBuilder {
     action: CallAction,
     payload: OcppError,
     eventGroup: EventGroup,
-    origin: MessageOrigin = MessageOrigin.ChargingStation,
+    origin: MessageOrigin,
+    timestamp: Date = new Date(),
   ): IMessage<OcppError> {
     return {
       origin: origin,
@@ -78,6 +83,7 @@ export class RequestBuilder {
         stationId,
         correlationId,
         tenantId,
+        timestamp: timestamp.toISOString(),
       },
       state: MessageState.Response,
       payload,

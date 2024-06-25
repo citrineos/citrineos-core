@@ -78,6 +78,14 @@ export class VariableAttribute extends Model implements VariableAttributeType {
   })
   declare constant?: boolean;
 
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('timestamp').toISOString();
+    },
+  })
+  declare timestamp: string;
+
   /**
    * Relations
    */
