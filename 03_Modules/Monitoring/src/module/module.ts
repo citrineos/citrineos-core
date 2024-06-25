@@ -36,7 +36,12 @@ import {
   IVariableMonitoringRepository,
   sequelize,
 } from '@citrineos/data';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import {
+  generateRequestId,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  Timer,
+} from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './services';
@@ -330,7 +335,7 @@ export class MonitoringModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetMonitoringReport,
         {
-          requestId: Math.floor(Math.random() * 1000),
+          requestId: generateRequestId(),
         } as GetMonitoringReportRequest,
       );
     }

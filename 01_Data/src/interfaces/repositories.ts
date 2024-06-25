@@ -131,7 +131,7 @@ export interface ICertificateRepository extends CrudRepository<Certificate> {
 }
 
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
-  createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId: number, chargingLimitSource?: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile>;
+  createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId?: number, chargingLimitSource?: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile>;
   createChargingNeeds(chargingNeeds: NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds>;
   findChargingNeedsByEvseDBIdAndTransactionDBId(evseDBId: number, transactionDataBaseId: number): Promise<ChargingNeeds | undefined>;
 }

@@ -36,7 +36,12 @@ import {
   SetChargingProfileResponse,
   SystemConfig,
 } from '@citrineos/base';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import {
+  generateRequestId,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  Timer,
+} from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import {
@@ -95,7 +100,7 @@ export class SmartChargingModule extends AbstractModule {
    *
    * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository}
    * which represents a repository for accessing and manipulating transaction data.
-   * If no `transactionRepository` is provided, a default {@link sequelize:transactionEventRepository} instance is created and used.
+   * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance is created and used.
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository}
    * which represents a repository for accessing and manipulating variable data.
@@ -301,7 +306,7 @@ export class SmartChargingModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetChargingProfiles,
         {
-          requestId: Math.floor(Math.random() * 1000),
+          requestId: generateRequestId(),
           chargingProfile: {
             chargingLimitSource: [
               ChargingLimitSourceEnumType.CSO,
@@ -364,7 +369,7 @@ export class SmartChargingModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetChargingProfiles,
         {
-          requestId: Math.floor(Math.random() * 1000),
+          requestId: generateRequestId(),
           chargingProfile: {
             chargingLimitSource: [ChargingLimitSourceEnumType.CSO],
           } as ChargingProfileCriterionType,
