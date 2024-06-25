@@ -27,7 +27,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     return await this.s.models[this.namespace].findAll(query as FindOptions<any>).then((row) => row as T[]);
   }
 
-  async readBySqlString(sqlString: string): Promise<object[]> {
+  async readAllBySqlString(sqlString: string): Promise<object[]> {
     return await this.s.query(`${sqlString}`, { type: QueryTypes.SELECT });
   }
 
