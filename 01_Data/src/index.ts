@@ -8,3 +8,5 @@ export * from './interfaces';
 export * from 'sequelize-typescript';
 export { Boot, Component, SequelizeDeviceModelRepository, MeterValue, Subscription, Tariff, Transaction, Variable, VariableAttribute, Certificate, CountryNameEnumType, SignatureAlgorithmEnumType, SequelizeTransactionEventRepository } from './layers/sequelize'; // todo export better as these seem to be used in other modules
 export { SequelizeRepository } from './layers/sequelize';
+export { DefaultSequelizeInstance } from './layers/sequelize/util';
+export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore';
