@@ -14,7 +14,7 @@
   "scripts": {
     "install-all": "npm i --workspaces --verbose",
     "fresh": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json dist **/dist **/**/dist node_modules **/node_modules **/**/node_modules tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
-    "build": "npm run compile --workspaces --verbose",
+    "build": "tsc --build --verbose",
     "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
     "start-docker": "cd ./Server && npm run start-docker",
     "start-docker-cloud": "cd ./Server && npm run start-docker-cloud",
