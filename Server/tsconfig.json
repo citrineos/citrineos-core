@@ -55,6 +55,9 @@
     },
     {
       "path": "../../citrineos-ocpi/03_Modules/Commands"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Locations"
     }
   ]
 }
