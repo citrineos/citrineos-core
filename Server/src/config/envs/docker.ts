@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { RegistrationStatusEnumType, defineConfig } from '@citrineos/base';
+import {defineConfig, RegistrationStatusEnumType} from '@citrineos/base';
 
 export function createDockerConfig() {
   return defineConfig({
@@ -106,11 +106,11 @@ export function createDockerConfig() {
             port: 8443,
             protocol: 'ocpp2.0.1',
             tlsKeyFilePath:
-              '/usr/local/apps/citrineos/Server/src/assets/certificates/leafKey.pem',
+              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/leafKey.pem',
             tlsCertificateChainFilePath:
-              '/usr/local/apps/citrineos/Server/src/assets/certificates/certChain.pem',
+              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/certChain.pem',
             rootCACertificateFilePath:
-              '/usr/local/apps/citrineos/Server/src/assets/certificates/rootCertificate.pem',
+              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/rootCertificate.pem',
           },
           {
             id: '3',
@@ -121,13 +121,13 @@ export function createDockerConfig() {
             port: 8444,
             protocol: 'ocpp2.0.1',
             tlsKeyFilePath:
-              '/usr/local/apps/citrineos/Server/src/assets/certificates/leafKey.pem',
+              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/leafKey.pem',
             tlsCertificateChainFilePath:
-              '/usr/local/apps/citrineos/Server/src/assets/certificates/certChain.pem',
+              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/certChain.pem',
             mtlsCertificateAuthorityKeyFilePath:
-              '/usr/local/apps/citrineos/Server/src/assets/certificates/subCAKey.pem',
+              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/subCAKey.pem',
             rootCACertificateFilePath:
-              '/usr/local/apps/citrineos/Server/src/assets/certificates/rootCertificate.pem',
+              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/rootCertificate.pem',
           },
         ],
       },
@@ -146,7 +146,7 @@ export function createDockerConfig() {
           acme: {
             env: 'staging',
             accountKeyFilePath:
-              '/usr/local/apps/citrineos/Server/src/assets/certificates/acme_account_key.pem',
+              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/acme_account_key.pem',
             email: 'test@citrineos.com',
           },
         },
