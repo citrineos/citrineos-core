@@ -12,6 +12,7 @@ export {
   SequelizeDeviceModelRepository,
   MeterValue,
   Subscription,
+  SequelizeRepository,
   Tariff,
   Transaction,
   Variable,

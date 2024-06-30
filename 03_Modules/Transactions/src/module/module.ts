@@ -12,6 +12,7 @@ import {
   CallAction,
   CostUpdatedRequest,
   CostUpdatedResponse,
+  CrudRepository,
   EventGroup,
   GetTransactionStatusResponse,
   HandlerProperties,
@@ -34,14 +35,19 @@ import {
   TransactionEventResponse,
 } from '@citrineos/base';
 import {
+  Component,
+  Evse,
   IAuthorizationRepository,
   IDeviceModelRepository,
+  ILocationRepository,
   ITariffRepository,
   ITransactionEventRepository,
   MeterValue,
   sequelize,
+  SequelizeRepository,
   Tariff,
   Transaction,
+  Variable,
   VariableAttribute,
 } from '@citrineos/data';
 import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
@@ -65,6 +71,8 @@ export class TransactionsModule extends AbstractModule {
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _authorizeRepository: IAuthorizationRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _componentRepository: CrudRepository<Component>;
+  protected _locationRepository: ILocationRepository;
   protected _tariffRepository: ITariffRepository;
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
@@ -86,21 +94,29 @@ export class TransactionsModule extends AbstractModule {
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
-   * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository} which represents a repository for accessing and manipulating authorization data.
+   * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository} which represents a repository for accessing and manipulating transaction event data.
    * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance
    * is created and used.
    *
-   * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating variable data.
+   * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating authorization data.
    * If no `authorizeRepository` is provided, a default {@link sequelize:authorizeRepository} instance is
    * created and used.
    *
-   * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
+   * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable attribute data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is
+   * created and used.
+   * 
+   * @param {CrudRepository<Component>} [componentRepository] - An optional parameter of type {@link CrudRepository<Component>} which represents a repository for accessing and manipulating component data.
+   * If no `componentRepository` is provided, a default {@link sequelize:componentRepository} instance is
+   * created and used.
+   *
+   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which represents a repository for accessing and manipulating location and charging station data.
+   * If no `locationRepository` is provided, a default {@link sequelize:locationRepository} instance is
    * created and used.
    *
    * @param {ITariffRepository} [tariffRepository] - An optional parameter of type {@link ITariffRepository} which
-   * represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize:tariffRepository} instance is
+   * represents a repository for accessing and manipulating tariff data.
+   * If no `tariffRepository` is provided, a default {@link sequelize:tariffRepository} instance is
    * created and used.
    */
   constructor(
@@ -112,6 +128,8 @@ export class TransactionsModule extends AbstractModule {
     transactionEventRepository?: ITransactionEventRepository,
     authorizeRepository?: IAuthorizationRepository,
     deviceModelRepository?: IDeviceModelRepository,
+    componentRepository?: CrudRepository<Component>,
+    locationRepository?: ILocationRepository,
     tariffRepository?: ITariffRepository,
   ) {
     super(
@@ -141,6 +159,12 @@ export class TransactionsModule extends AbstractModule {
     this._deviceModelRepository =
       deviceModelRepository ||
       new sequelize.SequelizeDeviceModelRepository(config, logger);
+    this._componentRepository =
+      componentRepository ||
+      new SequelizeRepository<Component>(config, Component.MODEL_NAME, logger);
+    this._locationRepository =
+      locationRepository ||
+      new sequelize.SequelizeLocationRepository(config, logger);
     this._tariffRepository =
       tariffRepository ||
       new sequelize.SequelizeTariffRepository(config, logger);
@@ -282,7 +306,7 @@ export class TransactionsModule extends AbstractModule {
               );
             }
 
-            // TODO there should only be one active transaction per evse of a station. 
+            // TODO there should only be one active transaction per evse of a station.
             // old transactions should be marked inactive and an alert should be raised (this can only happen in the field with charger bugs or missed messages)
 
             // Check for ConcurrentTx
@@ -413,35 +437,55 @@ export class TransactionsModule extends AbstractModule {
 
     const stationId = message.context.stationId;
     const statusNotificationRequest = message.payload;
-    const [component, variable] =
-      await this._deviceModelRepository.findComponentAndVariable(
+
+    this._locationRepository.addStatusNotificationToChargingStation(
+      stationId,
+      statusNotificationRequest,
+    );
+
+    const component = await this._componentRepository.readOnlyOneByQuery({
+      where: {
+        name: 'Connector',
+      },
+      include: [
         {
-          name: 'Connector',
-          evse: {
+          model: Evse,
+          where: {
             id: statusNotificationRequest.evseId,
             connectorId: statusNotificationRequest.connectorId,
           },
         },
         {
-          name: 'AvailabilityState',
+          model: Variable,
+          where: {
+            name: 'AvailabilityState',
+          },
         },
-      );
+      ],
+    });
+    const variable = component?.variables?.[0];
     if (!component || !variable) {
-      throw new Error("Missing component or variable for status notification.");
+      this._logger.warn(
+        'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
+      );
+    } else {
+      const reportDataType: ReportDataType = {
+        component: component,
+        variable: variable,
+        variableAttribute: [
+          {
+            value: statusNotificationRequest.connectorStatus,
+          },
+        ],
+      };
+      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+        reportDataType,
+        stationId,
+      );
     }
-
-    const reportDataType: ReportDataType = {
-      component : component,
-      variable: variable,
-      variableAttribute: [{
-        value: statusNotificationRequest.connectorStatus
-      }]
-    };
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, stationId);
 
     // Create response
     const response: StatusNotificationResponse = {};
-
     this.sendCallResultWithMessage(message, response).then(
       (messageConfirmation) => {
         this._logger.debug(
