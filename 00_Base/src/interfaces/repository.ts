@@ -211,6 +211,20 @@ export abstract class CrudRepository<T> extends EventEmitter {
   abstract readAllByQuery(query: object, namespace?: string): Promise<T[]>;
 
   /**
+   * Attempts to read next id.
+   *
+   * @param idColumn - The name of the id column. The column must be integer.
+   * @param query - The query to use.
+   * @param namespace - Optional namespace for the query.
+   * @returns An integer that is the next id to use
+   */
+  abstract readNextId(
+    idColumn: string,
+    query?: object,
+    namespace?: string,
+  ): Promise<number>;
+
+  /**
    * Checks if a key exists in the specified namespace.
    * If no namespace is provided, the key is checked in the default namespace.
    *

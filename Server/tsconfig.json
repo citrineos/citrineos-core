@@ -67,6 +67,9 @@
     },
     {
       "path": "../../citrineos-ocpi/03_Modules/Sessions"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/ChargingProfiles"
     }
   ]
 }
