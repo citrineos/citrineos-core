@@ -50,34 +50,19 @@ export class Transaction extends Model implements TransactionType {
   @HasMany(() => MeterValue)
   declare meterValues?: MeterValueType[];
 
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
+  @Column( DataType.STRING)
   declare chargingState?: ChargingStateEnumType;
 
-  @Column({
-    type: DataType.BIGINT,
-    allowNull: true,
-  })
+  @Column(DataType.BIGINT)
   declare timeSpentCharging?: number;
 
-  @Column({
-    type: DataType.DECIMAL,
-    allowNull: true,
-  })
+  @Column(DataType.DECIMAL)
   declare totalKwh?: number;
 
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
+  @Column(DataType.STRING)
   declare stoppedReason?: ReasonEnumType;
 
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: true,
-  })
+  @Column(DataType.INTEGER)
   declare remoteStartId?: number;
 
   declare customData?: CustomDataType;
