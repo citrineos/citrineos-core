@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {defineConfig, RegistrationStatusEnumType} from '@citrineos/base';
+import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
 
 export function createDockerConfig() {
   return defineConfig({

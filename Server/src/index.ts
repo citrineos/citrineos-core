@@ -65,6 +65,8 @@ import { VersionsModule } from '@citrineos/ocpi-versions';
 import { CredentialsModule } from '@citrineos/ocpi-credentials';
 import { Sequelize } from 'sequelize-typescript';
 import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
+import { LocationsModule } from '@citrineos/ocpi-locations';
+import { SessionsModule } from '@citrineos/ocpi-sessions';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -236,6 +238,16 @@ export class CitrineOSServer {
       },
       {
         module: CommandsModule,
+        handler: this._createHandler(),
+        sender: this._createSender(),
+      },
+      {
+        module: LocationsModule,
+        handler: this._createHandler(),
+        sender: this._createSender(),
+      },
+      {
+        module: SessionsModule,
         handler: this._createHandler(),
         sender: this._createSender(),
       },

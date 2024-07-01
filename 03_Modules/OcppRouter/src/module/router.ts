@@ -640,12 +640,12 @@ export class MessageRouterImpl
         }
       })
       .catch((error) => {
-        const callError = error instanceof OcppError ? error : new OcppError(
-          messageId,
-          ErrorCode.InternalError,
-          'Call failed',
-          { details: error },
-        );
+        const callError =
+          error instanceof OcppError
+            ? error
+            : new OcppError(messageId, ErrorCode.InternalError, 'Call failed', {
+                details: error,
+              });
         // TODO: identifier may not be unique, may require combination of tenantId and identifier.
         // find way to include tenantId here
         this.sendCallError(
