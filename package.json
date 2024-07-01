@@ -21,7 +21,8 @@
     "start-docker-cloud": "cd ./Server && npm run start-docker-cloud",
     "lint": "npx eslint --ext .ts ./",
     "lint-fix": "npm run prettier && npx eslint --ext .ts --fix ./",
-    "prettier": "prettier --write ."
+    "prettier": "prettier --write .",
+    "fresh-and-install-all": "npm run fresh && npm run install-all"
   },
   "workspaces": [
     "00_Base",
@@ -40,6 +41,8 @@
     "../citrineos-ocpi/00_Base",
     "../citrineos-ocpi/03_Modules/Versions",
     "../citrineos-ocpi/03_Modules/Credentials",
-    "../citrineos-ocpi/03_Modules/Commands"
+    "../citrineos-ocpi/03_Modules/Commands",
+    "../citrineos-ocpi/03_Modules/Locations",
+    "../citrineos-ocpi/03_Modules/Sessions"
   ]
 }
