@@ -32,7 +32,7 @@ import {
   SystemConfig,
   TransactionEventEnumType,
   TransactionEventRequest,
-  TransactionEventResponse,
+  TransactionEventResponse, TriggerReasonEnumType,
 } from '@citrineos/base';
 import {
   Component,
@@ -211,7 +211,7 @@ export class TransactionsModule extends AbstractModule {
 
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
-    if (transactionEvent.idToken) {
+    if (transactionEvent.idToken && transactionEvent.triggerReason !== TriggerReasonEnumType.RemoteStart) {
       this._authorizeRepository
         .readAllByQuerystring({ ...transactionEvent.idToken })
         .then((authorizations) => {
