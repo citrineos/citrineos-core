@@ -17,6 +17,7 @@ import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from '
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
+import {ChargingStation} from "../Location";
 
 @Table
 export class Transaction extends Model implements TransactionType {
@@ -25,7 +26,11 @@ export class Transaction extends Model implements TransactionType {
   @Column({
     unique: 'stationId_transactionId',
   })
-  declare stationId: string;
+  @ForeignKey(() => ChargingStation)
+  stationId!: string;
+
+  @BelongsTo(() => ChargingStation)
+  station!: ChargingStation;
 
   @BelongsTo(() => Evse)
   declare evse?: EVSEType;
