@@ -134,7 +134,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   async readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined> {
     return await this.transaction.readOnlyOneByQuery({
       where: { stationId, transactionId },
-      include: [MeterValue],
+      include: [MeterValue, Evse],
     });
   }
 
@@ -222,5 +222,31 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         },
       },
     });
+  }
+
+  async readAllTransactionsByQuery(query: object): Promise<Transaction[]> {
+    return await this.transaction.readAllByQuery(query);
+  }
+
+  async getEvseIdsWithActiveTransactionByStationId(
+    stationId: string,
+  ): Promise<number[]> {
+    const activeTransactions =
+      await this.transaction.readAllByQuery({
+        where: {
+          stationId: stationId,
+          isActive: true,
+        },
+        include: [Evse],
+      });
+
+    const evseIds: number[] = [];
+    activeTransactions.forEach((transaction) => {
+      const evseId = transaction.evse?.id;
+      if (evseId) {
+        evseIds.push(evseId);
+      }
+    });
+    return evseIds;
   }
 }

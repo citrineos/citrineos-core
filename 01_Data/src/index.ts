@@ -26,6 +26,7 @@ export {
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
   SequelizeCertificateRepository,
+  SequelizeChargingProfileRepository,
   SequelizeDeviceModelRepository,
   SequelizeLocationRepository,
   SequelizeMessageInfoRepository,

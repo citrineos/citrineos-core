@@ -7,7 +7,7 @@ import { CrudRepository, type SystemConfig } from '@citrineos/base';
 import { type Model, type Sequelize } from 'sequelize-typescript';
 import { DefaultSequelizeInstance } from '../util';
 import { type ILogObj, type Logger } from 'tslog';
-import { Attributes, FindOptions, ModelStatic, QueryTypes, UpdateOptions } from 'sequelize';
+import { AggregateOptions, Attributes, FindOptions, ModelStatic, QueryTypes, UpdateOptions } from 'sequelize';
 
 export class SequelizeRepository<T extends Model<any, any>> extends CrudRepository<T> {
   protected s: Sequelize;
@@ -29,6 +29,18 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
 
   async readAllBySqlString(sqlString: string): Promise<object[]> {
     return await this.s.query(`${sqlString}`, { type: QueryTypes.SELECT });
+  }
+
+  async readNextId(idColumn: string, query?: object): Promise<number> {
+    const options = query ? (query as AggregateOptions<any>) : undefined;
+    const maxValue = await this.s.models[this.namespace].max(idColumn, options);
+    if (!maxValue) {
+      return 1;
+    }
+    if (typeof maxValue !== 'number' || isNaN(maxValue)) {
+      throw new Error(`Max value ${maxValue} on ${idColumn} is invalid.`);
+    }
+    return maxValue + 1;
   }
 
   async existsByKey(key: string): Promise<boolean> {

@@ -163,4 +163,12 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
       }),
     );
   }
+
+  async getNextChargingScheduleId(stationId: string): Promise<number> {
+    return await this.chargingSchedule.readNextId('id', { where: { stationId } });
+  }
+
+  async getNextChargingProfileId(stationId: string): Promise<number> {
+    return await this.readNextId('id', { where: { stationId } });
+  }
 }
