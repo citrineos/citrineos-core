@@ -5,11 +5,12 @@
 
 import {
   CreateOrUpdateTariffQuerySchema,
-  CreateOrUpdateTariffQueryString,
+  PriceComponent,
   Tariff,
-  TariffSchema,
-  TariffQueryString,
+  TariffElement,
   TariffQuerySchema,
+  TariffQueryString,
+  TariffSchema,
   TransactionEventQuerySchema,
   TransactionEventQuerystring,
 } from '@citrineos/data';
@@ -31,6 +32,8 @@ import {
   TransactionType,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
+import { UpsertTariffRequest } from "./model/tariffs";
+import { plainToInstance } from 'class-transformer';
 
 /**
  * Server API for the transaction module.
@@ -115,13 +118,72 @@ export class TransactionsModuleApi
     CreateOrUpdateTariffQuerySchema,
     TariffSchema,
   )
-  putTariff(
+  async upsertTariff(
     request: FastifyRequest<{
-      Body: Tariff;
-      Querystring: CreateOrUpdateTariffQueryString;
+      Body: any;
     }>,
   ): Promise<Tariff> {
-    return this._module.tariffRepository.createOrUpdateTariff(request.body);
+    const tariff = this.buildTariff(plainToInstance(UpsertTariffRequest, request.body));
+    return await this._module.tariffRepository.upsertTariff(tariff);
+  }
+
+  // TODO: move to service layer
+  private buildTariff(request: UpsertTariffRequest): Tariff {
+    return Tariff.newInstance({
+      id: request.id,
+      stationId: request.stationId,
+      countryCode: request.countryCode,
+      partyId: request.partyId,
+      currency: request.currency,
+      type: request.type,
+      tariffAltText: request.tariffAltText,
+      tariffAltUrl: request.tariffAltUrl,
+      ...(request.minPrice && {
+        minPrice: {
+          exclVat: request.minPrice.exclVat,
+          inclVat: request.minPrice.inclVat,
+        }
+      }),
+      ...(request.maxPrice && {
+        maxPrice: {
+          exclVat: request.maxPrice.exclVat,
+          inclVat: request.maxPrice.inclVat,
+        }
+      }),
+      elements: request.elements.map(element => {
+        return {
+          priceComponents: element.priceComponents.map(component => {
+            return new PriceComponent({
+              type: component.type,
+              price: component.price,
+              vat: component.vat,
+              stepSize: component.stepSize
+            })
+          }),
+          restrictions: {
+            startTime: element.restrictions?.startTime,
+            endTime: element.restrictions?.endTime,
+            startDate: element.restrictions?.startDate,
+            endDate: element.restrictions?.endDate,
+            minKwh: element.restrictions?.minKwh,
+            maxKwh: element.restrictions?.maxKwh,
+            minCurrent: element.restrictions?.minCurrent,
+            maxCurrent: element.restrictions?.maxCurrent,
+            minPower: element.restrictions?.minPower,
+            maxPower: element.restrictions?.maxPower,
+            minDuration: element.restrictions?.minDuration,
+            maxDuration: element.restrictions?.maxDuration,
+            dayOfWeek: element.restrictions?.dayOfWeek,
+            reservation: element.restrictions?.reservation
+          }
+        } as TariffElement
+      }),
+      energyMix: request.energyMix,
+      startDateTime: request.startDateTime,
+      endDateTime: request.endDateTime,
+      lastUpdated: request.lastUpdated,
+      authorizationAmount: request.authorizationAmount
+    });
   }
 
   @AsDataEndpoint(Namespace.Tariff, HttpMethod.Get, TariffQuerySchema)

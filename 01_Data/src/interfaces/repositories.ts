@@ -32,6 +32,7 @@ import {
   NotifyEVChargingNeedsRequest,
   ChargingLimitSourceEnumType,
   CompositeScheduleType,
+  TariffKey,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
 import { CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
@@ -43,6 +44,7 @@ import { Subscription } from '../layers/sequelize';
 import { Tariff } from '../layers/sequelize';
 import { TariffQueryString } from './queries/Tariff';
 import { ChargingProfile } from '../layers/sequelize';
+import {TariffElement} from "../layers/sequelize/model/Tariff/TariffElement";
 
 export interface IAuthorizationRepository extends CrudRepository<AuthorizationData> {
   createOrUpdateByQuerystring: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
@@ -122,10 +124,14 @@ export interface IMessageInfoRepository extends CrudRepository<MessageInfoType> 
 }
 
 export interface ITariffRepository extends CrudRepository<Tariff> {
+  findByKey(key: TariffKey): Promise<Tariff | undefined>;
   findByStationId(stationId: string): Promise<Tariff | undefined>;
   readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]>;
   deleteAllByQuerystring(query: TariffQueryString): Promise<Tariff[]>;
-  createOrUpdateTariff(tariff: Tariff): Promise<Tariff>;
+  upsertTariff(tariff: Tariff): Promise<Tariff>;
+}
+
+export interface ITariffElementRepository extends CrudRepository<TariffElement> {
 }
 
 export interface ICertificateRepository extends CrudRepository<Certificate> {

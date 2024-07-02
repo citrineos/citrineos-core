@@ -7,6 +7,7 @@ import {
   IMessageInfoRepository,
   ISecurityEventRepository,
   ISubscriptionRepository,
+  ITariffElementRepository,
   ITariffRepository,
   ITransactionEventRepository,
   IVariableMonitoringRepository,
@@ -26,6 +27,7 @@ import { SequelizeTransactionEventRepository } from './TransactionEvent';
 import { SequelizeVariableMonitoringRepository } from './VariableMonitoring';
 import { Sequelize } from 'sequelize-typescript';
 import { TransactionEvent } from '../model/TransactionEvent';
+import {SequelizeTariffElementRepository} from "./TariffElement";
 
 export class RepositoryStore {
   sequelizeInstance: Sequelize;
@@ -38,6 +40,7 @@ export class RepositoryStore {
   securityEventRepository: ISecurityEventRepository;
   subscriptionRepository: ISubscriptionRepository;
   tariffRepository: ITariffRepository;
+  tariffElementRepository: ITariffElementRepository;
   transactionEventRepository: ITransactionEventRepository;
   variableMonitoringRepository: IVariableMonitoringRepository;
 
@@ -52,6 +55,7 @@ export class RepositoryStore {
     this.securityEventRepository = new SequelizeSecurityEventRepository(config, logger, sequelizeInstance);
     this.subscriptionRepository = new SequelizeSubscriptionRepository(config, logger, sequelizeInstance);
     this.tariffRepository = new SequelizeTariffRepository(config, logger, sequelizeInstance);
+    this.tariffElementRepository = new SequelizeTariffElementRepository(config, logger, sequelizeInstance);
     this.transactionEventRepository = new SequelizeTransactionEventRepository(config, logger, TransactionEvent.MODEL_NAME, sequelizeInstance);
     this.variableMonitoringRepository = new SequelizeVariableMonitoringRepository(config, logger, sequelizeInstance);
   }

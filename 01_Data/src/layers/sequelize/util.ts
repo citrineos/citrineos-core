@@ -40,6 +40,7 @@ import { MessageInfo } from './model/MessageInfo';
 import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
 import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
+import { TariffElement } from "./model/Tariff/TariffElement";
 
 export class DefaultSequelizeInstance {
   /**
@@ -95,6 +96,7 @@ export class DefaultSequelizeInstance {
         Transaction,
         TransactionEvent,
         Tariff,
+        TariffElement,
         VariableAttribute,
         VariableCharacteristics,
         VariableMonitoring,

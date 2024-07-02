@@ -443,7 +443,9 @@ export class EVDriverModule extends AbstractModule {
                   format: MessageFormatEnumType.ASCII,
                 } as MessageContentType;
               }
-              response.idTokenInfo.personalMessage.content = `${tariff.price}/${tariff.unit}`;
+              // TODO: fix
+              let priceComponent = tariff.elements[0].priceComponents.find(component => component.isEnergy())!;
+              response.idTokenInfo.personalMessage.content = `${priceComponent.price}/${priceComponent.type.toString()}`;
             }
           }
         }

@@ -1,15 +1,286 @@
 {
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "id": {
+      "type": "string",
+      "maxLength": 36
+    },
     "stationId": {
       "type": "string"
     },
-    "unit": {
-      "type": "string"
+    "countryCode": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 2
     },
-    "price": {
+    "partyId": {
+      "type": "string",
+      "maxLength": 3
+    },
+    "currency": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 3
+    },
+    "type": {
+      "type": "string",
+      "nullable": true
+    },
+    "tariffAltText": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Displaytext"
+      },
+      "nullable": true
+    },
+    "tariffAltUrl": {
+      "type": "string",
+      "format": "uri",
+      "nullable": true
+    },
+    "minPrice": {
+      "$ref": "#/definitions/Price"
+    },
+    "maxPrice": {
+      "$ref": "#/definitions/Price"
+    },
+    "elements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/TariffElement"
+      },
+      "minItems": 1
+    },
+    "energyMix": {
+      "$ref": "#/definitions/EnergyMix"
+    },
+    "startDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+    },
+    "endDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authorizationAmount": {
       "type": "number"
     }
   },
-  "required": ["stationId", "unit", "price"]
+  "required": [
+    "stationId",
+    "countryCode",
+    "partyId",
+    "currency",
+    "elements",
+    "authorizationAmount"
+  ],
+  "definitions": {
+    "Displaytext": {
+      "type": "object",
+      "properties": {
+        "language": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 2
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 512
+        }
+      },
+      "required": ["language", "text"]
+    },
+    "Price": {
+      "type": "object",
+      "properties": {
+        "exclVat": {
+          "type": "number"
+        },
+        "inclVat": {
+          "type": "number"
+        }
+      },
+      "required": ["exclVat"]
+    },
+    "TariffElement": {
+      "type": "object",
+      "properties": {
+        "priceComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PriceComponent"
+          }
+        },
+        "restrictions": {
+          "$ref": "#/definitions/TariffRestrictions"
+        }
+      },
+      "required": ["priceComponents"]
+    },
+    "PriceComponent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "price": {
+          "$ref": "#/definitions/Price"
+        }
+      },
+      "required": ["type", "price"]
+    },
+    "TariffRestrictions": {
+      "type": "object",
+      "properties": {
+        "startTime": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 5,
+          "pattern": "([0-1][0-9]|2[0-3]):[0-5][0-9]",
+          "nullable": true
+        },
+        "endTime": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 5,
+          "pattern": "([0-1][0-9]|2[0-3]):[0-5][0-9]",
+          "nullable": true
+        },
+        "startDate": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "([12][0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])",
+          "nullable": true
+        },
+        "endDate": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "([12][0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])",
+          "nullable": true
+        },
+        "minKwh": {
+          "type": "number",
+          "nullable": true
+        },
+        "maxKwh": {
+          "type": "number",
+          "nullable": true
+        },
+        "minCurrent": {
+          "type": "number",
+          "nullable": true
+        },
+        "maxCurrent": {
+          "type": "number",
+          "nullable": true
+        },
+        "minPower": {
+          "type": "number",
+          "nullable": true
+        },
+        "maxPower": {
+          "type": "number",
+          "nullable": true
+        },
+        "minDuration": {
+          "type": "integer",
+          "nullable": true
+        },
+        "maxDuration": {
+          "type": "integer",
+          "nullable": true
+        },
+        "dayOfWeek": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "nullable": true
+        },
+        "reservation": {
+          "type": "string",
+          "nullable": true
+        }
+      }
+    },
+    "EnergyMix": {
+      "type": "object",
+      "properties": {
+        "isGreenEnergy": {
+          "type": "boolean"
+        },
+        "energySources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EnergySources"
+          }
+        },
+        "environmentalImpact": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EnvironmentalImpact"
+          }
+        },
+        "supplierName": {
+          "type": "string",
+          "maxLength": 64,
+          "nullable": true
+        },
+        "energyProductName": {
+          "type": "string",
+          "maxLength": 64,
+          "nullable": true
+        }
+      },
+      "required": ["isGreenEnergy", "energySources"]
+    },
+    "EnergySources": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": [
+            "NUCLEAR",
+            "GENERAL_FOSSIL",
+            "COAL",
+            "GAS",
+            "GENERAL_GREEN",
+            "SOLAR",
+            "WIND",
+            "WATER"
+          ]
+        },
+        "percentage": {
+          "type": "number",
+          "maximum": 100
+        }
+      },
+      "required": ["source", "percentage"]
+    },
+    "EnvironmentalImpact": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": [
+            "NUCLEAR_WASTE",
+            "CARBON_DIOXIDE"
+          ]
+        },
+        "amount": {
+          "type": "number"
+        }
+      },
+      "required": ["category", "amount"]
+    }
+  }
 }

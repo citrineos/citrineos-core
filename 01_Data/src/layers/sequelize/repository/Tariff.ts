@@ -4,14 +4,22 @@
 
 import { SequelizeRepository } from './Base';
 import { ITariffRepository, TariffQueryString } from '../../../interfaces';
-import { Tariff } from '../model/Tariff';
+import {Tariff} from '../model/Tariff';
 import { Sequelize } from 'sequelize-typescript';
-import { SystemConfig } from '@citrineos/base';
+import {SystemConfig, TariffKey} from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
+import {TariffElement} from "../model/Tariff/TariffElement";
 
 export class SequelizeTariffRepository extends SequelizeRepository<Tariff> implements ITariffRepository {
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, Tariff.MODEL_NAME, logger, sequelizeInstance);
+  }
+
+  async findByKey({id, countryCode, partyId}: TariffKey): Promise<Tariff | undefined> {
+    return this.readOnlyOneByQuery({
+      where: {id, countryCode, partyId},
+      include: TariffElement,
+    });
   }
 
   async findByStationId(stationId: string): Promise<Tariff | undefined> {
@@ -22,30 +30,36 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
     });
   }
 
-  async createOrUpdateTariff(tariff: Tariff): Promise<Tariff> {
+  async upsertTariff(tariff: Tariff): Promise<Tariff> {
     return await this.s.transaction(async (transaction) => {
-      const savedTariff = await this.s.models[Tariff.MODEL_NAME].findOne({
-        where: {
-          stationId: tariff.stationId,
-          unit: tariff.unit,
-        },
-        transaction,
+      const savedTariff = await this.readOnlyOneByQuery({
+        where: {id: tariff.id, countryCode: tariff.countryCode, partyId: tariff.partyId},
+        include: TariffElement,
+        transaction
       });
-      if (savedTariff) {
-        return (await this.updateByKey({ ...tariff }, savedTariff.dataValues.id)) as Tariff;
+
+      if (!savedTariff) {
+        const createdTariff = await tariff.save({ transaction });
+        this.emit('created', [createdTariff]);
+        return createdTariff;
       }
-      const createdTariff = await tariff.save({ transaction });
-      this.emit('created', [createdTariff]);
-      return createdTariff;
+
+      // TODO: optimize
+      await TariffElement.destroy({where: {tariffId: savedTariff.id}, transaction});
+      await TariffElement.bulkCreate(tariff.elementsData.map(element => ({...element, tariffId: savedTariff.id}), {transaction}));
+      const updatedTariff = await savedTariff.set(tariff.data).save({transaction});
+
+      this.emit('updated', [updatedTariff]);
+      return updatedTariff;
     });
   }
 
   async readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {
     return super.readAllByQuery({
       where: {
-        ...(query.stationId ? { stationId: query.stationId } : {}),
-        ...(query.unit ? { unit: query.unit } : {}),
-        ...(query.id ? { id: query.id } : {}),
+        ...(query.stationId && { stationId: query.stationId }),
+        // ...(query.unit && { unit: query.unit }), // TODO: tariff dimension type?
+        ...(query.id && { id: query.id }),
       },
     });
   }
@@ -56,9 +70,9 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
     }
     return super.deleteAllByQuery({
       where: {
-        ...(query.stationId ? { stationId: query.stationId } : {}),
-        ...(query.unit ? { unit: query.unit } : {}),
-        ...(query.id ? { id: query.id } : {}),
+        ...(query.stationId && { stationId: query.stationId }),
+        // ...(query.unit && { unit: query.unit }), // TODO: tariff dimension type?
+        ...(query.id && { id: query.id }),
       },
     });
   }
