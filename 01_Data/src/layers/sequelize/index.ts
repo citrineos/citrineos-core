@@ -9,7 +9,7 @@ export { Authorization, IdToken, IdTokenInfo, AdditionalInfo } from './model/Aut
 export { Transaction, TransactionEvent, MeterValue } from './model/TransactionEvent';
 export { SecurityEvent } from './model/SecurityEvent';
 export { VariableMonitoring, EventData, VariableMonitoringStatus } from './model/VariableMonitoring';
-export { ChargingStation, Location } from './model/Location';
+export { ChargingStation, Location, StatusNotification } from './model/Location';
 export { MessageInfo } from './model/MessageInfo';
 export { Tariff } from './model/Tariff/Tariffs';
 export { Subscription } from './model/Subscription';

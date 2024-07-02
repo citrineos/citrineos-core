@@ -470,6 +470,8 @@ export class CitrineOSServer {
         this._repositoryStore.transactionEventRepository,
         this._repositoryStore.authorizationRepository,
         this._repositoryStore.deviceModelRepository,
+        this._repositoryStore.componentRepository,
+        this._repositoryStore.locationRepository,
         this._repositoryStore.tariffRepository,
       );
       this.modules.push(module);

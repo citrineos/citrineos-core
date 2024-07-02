@@ -3,21 +3,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  ChargingStateEnumType,
-  type CustomDataType,
-  EVSEType,
-  type MeterValueType,
-  Namespace,
-  ReasonEnumType,
-  type TransactionEventRequest,
-  type TransactionType
-} from '@citrineos/base';
+import { ChargingStateEnumType, type CustomDataType, EVSEType, type MeterValueType, Namespace, ReasonEnumType, type TransactionEventRequest, type TransactionType } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
-import {ChargingStation} from "../Location";
+import { ChargingStation } from '../Location';
 
 @Table
 export class Transaction extends Model implements TransactionType {
@@ -55,7 +46,7 @@ export class Transaction extends Model implements TransactionType {
   @HasMany(() => MeterValue)
   declare meterValues?: MeterValueType[];
 
-  @Column( DataType.STRING)
+  @Column(DataType.STRING)
   declare chargingState?: ChargingStateEnumType;
 
   @Column(DataType.BIGINT)

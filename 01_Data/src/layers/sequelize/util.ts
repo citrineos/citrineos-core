@@ -40,6 +40,7 @@ import { MessageInfo } from './model/MessageInfo';
 import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
 import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
+import { StatusNotification } from './model/Location/StatusNotification';
 
 export class DefaultSequelizeInstance {
   /**
@@ -91,6 +92,7 @@ export class DefaultSequelizeInstance {
         MessageInfo,
         SalesTariff,
         SecurityEvent,
+        StatusNotification,
         Subscription,
         Transaction,
         TransactionEvent,

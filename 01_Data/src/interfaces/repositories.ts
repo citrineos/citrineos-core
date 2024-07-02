@@ -32,6 +32,7 @@ import {
   NotifyEVChargingNeedsRequest,
   ChargingLimitSourceEnumType,
   CompositeScheduleType,
+  StatusNotificationRequest,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
 import { CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
@@ -84,6 +85,7 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
 export interface ILocationRepository extends CrudRepository<Location> {
   readLocationById: (id: number) => Promise<Location | undefined>;
   readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
+  addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotificationRequest): Promise<void>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {

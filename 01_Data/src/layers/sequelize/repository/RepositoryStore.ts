@@ -11,7 +11,7 @@ import {
   ITransactionEventRepository,
   IVariableMonitoringRepository,
 } from '../../../interfaces';
-import { SystemConfig } from '@citrineos/base';
+import { CrudRepository, SystemConfig } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { SequelizeAuthorizationRepository } from './Authorization';
 import { SequelizeBootRepository } from './Boot';
@@ -26,6 +26,8 @@ import { SequelizeTransactionEventRepository } from './TransactionEvent';
 import { SequelizeVariableMonitoringRepository } from './VariableMonitoring';
 import { Sequelize } from 'sequelize-typescript';
 import { TransactionEvent } from '../model/TransactionEvent';
+import { Component } from '../model/DeviceModel';
+import { SequelizeRepository } from './Base';
 
 export class RepositoryStore {
   sequelizeInstance: Sequelize;
@@ -40,6 +42,7 @@ export class RepositoryStore {
   tariffRepository: ITariffRepository;
   transactionEventRepository: ITransactionEventRepository;
   variableMonitoringRepository: IVariableMonitoringRepository;
+  componentRepository: CrudRepository<Component>;
 
   constructor(config: SystemConfig, logger: Logger<ILogObj>, sequelizeInstance: Sequelize) {
     this.sequelizeInstance = sequelizeInstance;
@@ -54,5 +57,6 @@ export class RepositoryStore {
     this.tariffRepository = new SequelizeTariffRepository(config, logger, sequelizeInstance);
     this.transactionEventRepository = new SequelizeTransactionEventRepository(config, logger, TransactionEvent.MODEL_NAME, sequelizeInstance);
     this.variableMonitoringRepository = new SequelizeVariableMonitoringRepository(config, logger, sequelizeInstance);
+    this.componentRepository = new SequelizeRepository<Component>(config, Component.MODEL_NAME, logger);
   }
 }
