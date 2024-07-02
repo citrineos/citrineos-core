@@ -346,10 +346,10 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
 
   async findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]> {
     const component = await this.component.readOnlyOneByQuery({
-      where: { name: componentType.name, instance: componentType.instance ? componentType.instance : undefined },
+      where: { name: componentType.name, instance: componentType.instance ? componentType.instance : null },
     });
     const variable = await this.variable.readOnlyOneByQuery({
-      where: { name: variableType.name, instance: variableType.instance ? variableType.instance : undefined },
+      where: { name: variableType.name, instance: variableType.instance ? variableType.instance : null },
     });
     if (variable) {
       const variableCharacteristics = await this.variableCharacteristics.readOnlyOneByQuery({
