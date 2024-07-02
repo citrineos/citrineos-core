@@ -438,10 +438,15 @@ export class TransactionsModule extends AbstractModule {
     const stationId = message.context.stationId;
     const statusNotificationRequest = message.payload;
 
-    this._locationRepository.addStatusNotificationToChargingStation(
-      stationId,
-      statusNotificationRequest,
-    );
+    const chargingStation = await this._locationRepository.readChargingStationByStationId(stationId);
+    if (chargingStation) {
+      await this._locationRepository.addStatusNotificationToChargingStation(
+        stationId,
+        statusNotificationRequest,
+      );
+    } else {
+      this._logger.warn(`Charging station ${stationId} not found. Status notification cannot be associated with a charging station.`);
+    }
 
     const component = await this._componentRepository.readOnlyOneByQuery({
       where: {
