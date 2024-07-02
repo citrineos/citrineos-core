@@ -63,7 +63,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         },
         transaction: sequelizeTransaction,
       });
-      
+
       const updatedTransaction = Transaction.build({
         stationId,
         isActive: value.eventType !== TransactionEventEnumType.Ended,
@@ -193,5 +193,34 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         where: { transactionDatabaseId: transactionDataBaseId },
       })
       .then((row) => row as MeterValue[]);
+  }
+
+  findByTransactionId(transactionId: string): Promise<Transaction | undefined> {
+    return this.transaction.readOnlyOneByQuery({ where: { transactionId } });
+  }
+
+  async getTransactions(dateFrom: Date, dateTo: Date, offset: number, limit: number): Promise<Transaction[]> {
+    return this.transaction.readAllByQuery({
+      where: {
+        updatedAt: {
+          [Op.gte]: dateFrom,
+          [Op.lt]: dateTo,
+        },
+      },
+      offset,
+      limit,
+      include: [{ model: TransactionEvent, include: [IdToken] }, MeterValue, Evse],
+    });
+  }
+
+  async getTransactionsCount(dateFrom: Date, dateTo: Date): Promise<number> {
+    return Transaction.count({
+      where: {
+        updatedAt: {
+          [Op.gte]: dateFrom,
+          [Op.lt]: dateTo,
+        },
+      },
+    });
   }
 }

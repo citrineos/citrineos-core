@@ -5,19 +5,35 @@
 
 export * as sequelize from './layers/sequelize';
 export * from './interfaces';
+export * from 'sequelize-typescript';
 export {
   Boot,
+  ChargingStation,
   Component,
-  Evse,
-  SequelizeDeviceModelRepository,
+  DefaultSequelizeInstance,
+  Location,
   MeterValue,
-  Subscription,
   Tariff,
   Transaction,
+  Subscription,
+  Evse,
   Variable,
   VariableAttribute,
   Certificate,
   CountryNameEnumType,
-  SignatureAlgorithmEnumType,
   TransactionEvent,
-} from './layers/sequelize'; // todo export better as these seem to be used in other modules
+  SignatureAlgorithmEnumType,
+  SequelizeAuthorizationRepository,
+  SequelizeBootRepository,
+  SequelizeCertificateRepository,
+  SequelizeDeviceModelRepository,
+  SequelizeLocationRepository,
+  SequelizeMessageInfoRepository,
+  SequelizeRepository,
+  SequelizeSecurityEventRepository,
+  SequelizeSubscriptionRepository,
+  SequelizeTariffRepository,
+  SequelizeTransactionEventRepository,
+  SequelizeVariableMonitoringRepository,
+} from './layers/sequelize'; // TODO ensure all needed modules are properly exported
+export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore';

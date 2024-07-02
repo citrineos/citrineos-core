@@ -474,7 +474,7 @@ export class SmartChargingModuleApi
             return {
               success: false,
               payload: `ChargingSchedule ${chargingSchedule.id}: PhaseToUse SHALL only be set with numberPhases = 1.`,
-            }
+            };
           }
           // OCPP 2.0.1 Part 2 K01.FR.20
           if (
@@ -484,7 +484,7 @@ export class SmartChargingModuleApi
             return {
               success: false,
               payload: `ChargingSchedule ${chargingSchedule.id}: PhaseToUse SHALL only be set if ACPhaseSwitchingSupported is defined and true.`,
-            }
+            };
           }
         }
       }
@@ -538,10 +538,10 @@ export class SmartChargingModuleApi
     // OCPP 2.0.1 Part 2 K08.FR.05
     if (request.evseId !== 0) {
       const evse =
-          await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
-              request.evseId,
-              null,
-          );
+        await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
+          request.evseId,
+          null,
+        );
       if (!evse) {
         return {
           success: false,
