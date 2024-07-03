@@ -113,7 +113,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
             evseDatabaseId: component.evseDatabaseId,
             dataType,
             value: variableAttribute.value,
-            timestamp: isoTimestamp,
+            generatedAt: isoTimestamp,
             mutability: variableAttribute.mutability ?? MutabilityEnumType.ReadWrite,
             persistent: variableAttribute.persistent ? variableAttribute.persistent : false,
             constant: variableAttribute.constant ? variableAttribute.constant : false,
@@ -310,7 +310,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
           variableAttributeId: savedVariableAttribute.get('id'),
         }),
       );
-      savedVariableAttribute.set('timestamp', isoTimestamp);
+      savedVariableAttribute.set('generatedAt', isoTimestamp);
       await savedVariableAttribute.save();
       // Reload in order to include the statuses
       return await savedVariableAttribute.reload({
