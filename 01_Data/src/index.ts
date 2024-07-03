@@ -5,4 +5,20 @@
 
 export * as sequelize from './layers/sequelize';
 export * from './interfaces';
-export { Boot, Component, SequelizeDeviceModelRepository, MeterValue, Subscription, Tariff, Transaction, Variable, VariableAttribute, Certificate, CountryNameEnumType, SignatureAlgorithmEnumType } from './layers/sequelize'; // todo export better as these seem to be used in other modules
+export {
+  Boot,
+  Component,
+  Evse,
+  SequelizeDeviceModelRepository,
+  MeterValue,
+  Subscription,
+  SequelizeRepository,
+  Tariff,
+  Transaction,
+  Variable,
+  VariableAttribute,
+  Certificate,
+  CountryNameEnumType,
+  SignatureAlgorithmEnumType,
+  TransactionEvent,
+} from './layers/sequelize'; // todo export better as these seem to be used in other modules

@@ -67,7 +67,8 @@ import {v4 as uuidv4} from 'uuid';
  */
 export class ConfigurationModuleApi
   extends AbstractModuleApi<ConfigurationModule>
-  implements IConfigurationModuleApi {
+  implements IConfigurationModuleApi
+{
   /**
    * Constructor for the class.
    *

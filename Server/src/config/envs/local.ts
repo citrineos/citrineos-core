@@ -37,6 +37,9 @@ export function createLocalConfig() {
       smartcharging: {
         endpointPrefix: '/smartcharging',
       },
+      tenant: {
+        endpointPrefix: '/tenant',
+      },
       transactions: {
         endpointPrefix: '/transactions',
         costUpdatedInterval: 60,
@@ -52,6 +55,7 @@ export function createLocalConfig() {
         password: 'citrine',
         storage: '',
         sync: false,
+        alter: true
       },
     },
     util: {
@@ -111,8 +115,10 @@ export function createLocalConfig() {
           name: 'acme',
           acme: {
             env: 'staging',
-            accountKeyFilePath:
-              '/usr/local/apps/citrineos/Server/src/assets/certificates/acme_account_key.pem',
+            accountKeyFilePath: path.resolve(
+              __dirname,
+              '../../assets/certificates/acme_account_key.pem',
+            ),
             email: 'test@citrineos.com',
           },
         },

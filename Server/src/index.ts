@@ -59,6 +59,7 @@ import {
   type FastifyValidationResult,
 } from 'fastify/types/schema';
 import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter';
+import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -319,6 +320,7 @@ export class CitrineOSServer {
       this.getModuleConfig(EventGroup.Monitoring),
       this.getModuleConfig(EventGroup.Reporting),
       this.getModuleConfig(EventGroup.SmartCharging),
+      this.getModuleConfig(EventGroup.Tenant),
       this.getModuleConfig(EventGroup.Transactions),
     ].forEach((moduleConfig) => {
       this.initModule(moduleConfig);
@@ -400,6 +402,12 @@ export class CitrineOSServer {
           ModuleClass: SmartChargingModule,
           ModuleApiClass: SmartChargingModuleApi,
           configModule: this._config.modules.smartcharging,
+        };
+      case EventGroup.Tenant:
+        return {
+          ModuleClass: TenantModule,
+          ModuleApiClass: TenantModuleApi,
+          configModule: this._config.modules.tenant,
         };
       case EventGroup.Transactions:
         return {
