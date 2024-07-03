@@ -196,7 +196,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   }
 
   findByTransactionId(transactionId: string): Promise<Transaction | undefined> {
-    return this.transaction.readOnlyOneByQuery({ where: { transactionId } });
+    return this.transaction.readOnlyOneByQuery({ where: { transactionId }, include: [Evse] });
   }
 
   async getTransactions(dateFrom: Date, dateTo: Date, offset: number, limit: number): Promise<Transaction[]> {
