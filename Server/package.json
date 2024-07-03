@@ -40,6 +40,7 @@
     "@citrineos/ocpi-commands": "1.1.1",
     "@citrineos/ocpi-locations": "1.3.0",
     "@citrineos/ocpi-sessions": "1.3.0",
+    "@citrineos/ocpi-charging-profiles": "1.1.1",
     "@citrineos/base": "1.3.0",
     "@citrineos/certificates": "1.3.0",
     "@citrineos/configuration": "1.3.0",
