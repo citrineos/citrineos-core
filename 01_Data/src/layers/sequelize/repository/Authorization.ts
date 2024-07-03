@@ -37,7 +37,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
       const valueIdTokenInfo = IdTokenInfo.build({
         ...value.idTokenInfo,
       });
-      //explicitly overwrite id with undefined to avoid mapping null onto the existing id in the for loop
+      // Explicitly overwrite id with undefined to avoid mapping null onto the existing id in the for loop
       valueIdTokenInfo.id = valueIdTokenInfo.id ?? undefined;
       if (authorizationModel.idTokenInfoId) {
         let savedIdTokenInfo = await this.idTokenInfo.readOnlyOneByQuery({
