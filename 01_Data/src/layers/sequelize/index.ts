@@ -11,7 +11,7 @@ export { SecurityEvent } from './model/SecurityEvent';
 export { VariableMonitoring, EventData, VariableMonitoringStatus } from './model/VariableMonitoring';
 export { ChargingStation, Location, StatusNotification } from './model/Location';
 export { MessageInfo } from './model/MessageInfo';
-export { Tariff } from './model/Tariff/Tariffs';
+export { Tariff } from './model/Tariff';
 export { Subscription } from './model/Subscription';
 export { Certificate, SignatureAlgorithmEnumType, CountryNameEnumType } from './model/Certificate';
 export { ChargingProfile, ChargingNeeds, ChargingSchedule, CompositeSchedule, SalesTariff } from './model/ChargingProfile';
