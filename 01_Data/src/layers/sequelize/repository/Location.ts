@@ -7,7 +7,7 @@ import { Sequelize } from 'sequelize-typescript';
 import { Logger, ILogObj } from 'tslog';
 import { ChargingStation, Location, SequelizeRepository } from '..';
 import { type ILocationRepository } from '../../..';
-import { StatusNotification } from '../model/Location/StatusNotification';
+import { StatusNotification } from '../model/Location';
 import { Op } from 'sequelize';
 
 export class SequelizeLocationRepository extends SequelizeRepository<Location> implements ILocationRepository {

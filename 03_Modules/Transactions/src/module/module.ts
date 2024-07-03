@@ -105,6 +105,14 @@ export class TransactionsModule extends AbstractModule {
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable attribute data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is
    * created and used.
+   * 
+   * @param {CrudRepository<Component>} [componentRepository] - An optional parameter of type {@link CrudRepository<Component>} which represents a repository for accessing and manipulating component data.
+   * If no `componentRepository` is provided, a default {@link sequelize:componentRepository} instance is
+   * created and used.
+   *
+   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which represents a repository for accessing and manipulating location and charging station data.
+   * If no `locationRepository` is provided, a default {@link sequelize:locationRepository} instance is
+   * created and used.
    *
    * @param {CrudRepository<Component>} [componentRepository] - An optional parameter of type {@link CrudRepository<Component>} which represents a repository for accessing and manipulating component data.
    * If no `componentRepository` is provided, a default {@link sequelize:componentRepository} instance is
