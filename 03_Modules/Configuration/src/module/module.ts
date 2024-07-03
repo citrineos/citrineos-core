@@ -64,7 +64,12 @@ import {
   IMessageInfoRepository,
   sequelize,
 } from '@citrineos/data';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import {
+  generateRequestId,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  Timer,
+} from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
@@ -794,7 +799,7 @@ export class ConfigurationModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetDisplayMessages,
         {
-          requestId: Math.floor(Math.random() * 1000),
+          requestId: generateRequestId(),
         } as GetDisplayMessagesRequest,
       );
     }
@@ -863,7 +868,7 @@ export class ConfigurationModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetDisplayMessages,
         {
-          requestId: Math.floor(Math.random() * 1000),
+          requestId: generateRequestId(),
         } as GetDisplayMessagesRequest,
       );
     }

@@ -59,10 +59,11 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       const existingTransaction = await this.s.models[Transaction.MODEL_NAME].findOne({
         where: {
           stationId,
-          isActive: value.eventType !== TransactionEventEnumType.Ended,
+          transactionId: value.transactionInfo.transactionId,
         },
         transaction: sequelizeTransaction,
       });
+      
       const updatedTransaction = Transaction.build({
         stationId,
         isActive: value.eventType !== TransactionEventEnumType.Ended,

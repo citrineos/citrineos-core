@@ -144,6 +144,8 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
       },
     });
 
+    // TODO discuss & verify appropriate way to remove associations between components and variables (not currently possible)
+
     // This can happen asynchronously
     this.componentVariable.readOrCreateByQuery({
       where: { componentId: component.id, variableId: variable.id },
@@ -349,10 +351,10 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
 
   async findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]> {
     const component = await this.component.readOnlyOneByQuery({
-      where: { name: componentType.name, instance: componentType.instance ? componentType.instance : undefined },
+      where: { name: componentType.name, instance: componentType.instance ? componentType.instance : null },
     });
     const variable = await this.variable.readOnlyOneByQuery({
-      where: { name: variableType.name, instance: variableType.instance ? variableType.instance : undefined },
+      where: { name: variableType.name, instance: variableType.instance ? variableType.instance : null },
     });
     if (variable) {
       const variableCharacteristics = await this.variableCharacteristics.readOnlyOneByQuery({
@@ -375,7 +377,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return storedEvses.length > 0 ? storedEvses[0] : undefined;
   }
 
-  async findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance?: string | null): Promise<VariableCharacteristics | undefined> {
+  async findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance: string | null): Promise<VariableCharacteristics | undefined> {
     const variableCharacteristics = await this.variableCharacteristics.readAllByQuery({
       include: [
         {

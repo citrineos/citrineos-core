@@ -7,11 +7,16 @@ import {
   AbstractModule,
   AsHandler,
   CallAction,
+  ChargingLimitSourceEnumType,
+  ChargingProfileCriterionType,
   ChargingProfileStatusEnumType,
+  ChargingProfileType,
   ClearChargingProfileResponse,
+  ClearChargingProfileStatusEnumType,
   ClearedChargingLimitResponse,
   EventGroup,
   GenericStatusEnumType,
+  GetChargingProfilesRequest,
   GetChargingProfilesResponse,
   GetCompositeScheduleResponse,
   HandlerProperties,
@@ -31,7 +36,12 @@ import {
   SetChargingProfileResponse,
   SystemConfig,
 } from '@citrineos/base';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import {
+  generateRequestId,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  Timer,
+} from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import {
@@ -90,7 +100,7 @@ export class SmartChargingModule extends AbstractModule {
    *
    * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository}
    * which represents a repository for accessing and manipulating transaction data.
-   * If no `transactionRepository` is provided, a default {@link sequelize:transactionEventRepository} instance is created and used.
+   * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance is created and used.
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository}
    * which represents a repository for accessing and manipulating variable data.
@@ -228,11 +238,23 @@ export class SmartChargingModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.ReportChargingProfiles)
-  protected _handleReportChargingProfiles(
+  protected async _handleReportChargingProfiles(
     message: IMessage<ReportChargingProfilesRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('ReportChargingProfiles received:', message, props);
+
+    const chargingProfiles = message.payload
+      .chargingProfile as ChargingProfileType[];
+    for (const chargingProfile of chargingProfiles) {
+      await this._chargingProfileRepository.createOrUpdateChargingProfile(
+        chargingProfile,
+        message.context.stationId,
+        message.payload.evseId,
+        message.payload.chargingLimitSource,
+        true,
+      );
+    }
 
     // Create response
     const response: ReportChargingProfilesResponse = {};
@@ -251,15 +273,55 @@ export class SmartChargingModule extends AbstractModule {
    */
 
   @AsHandler(CallAction.ClearChargingProfile)
-  protected _handleClearChargingProfile(
+  protected async _handleClearChargingProfile(
     message: IMessage<ClearChargingProfileResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug(
       'ClearChargingProfile response received:',
       message,
       props,
     );
+
+    if (
+      message.payload.status === ClearChargingProfileStatusEnumType.Accepted
+    ) {
+      const stationId: string = message.context.stationId;
+      // Set existed profiles to isActive false
+      await this._chargingProfileRepository.updateAllByQuery(
+        {
+          isActive: false,
+        },
+        {
+          where: {
+            stationId: stationId,
+            isActive: true,
+          },
+          returning: false,
+        },
+      );
+      // Request charging profiles to get the latest data
+      this.sendCall(
+        stationId,
+        message.context.tenantId,
+        CallAction.GetChargingProfiles,
+        {
+          requestId: generateRequestId(),
+          chargingProfile: {
+            chargingLimitSource: [
+              ChargingLimitSourceEnumType.CSO,
+              ChargingLimitSourceEnumType.EMS,
+              ChargingLimitSourceEnumType.SO,
+              ChargingLimitSourceEnumType.Other,
+            ],
+          } as ChargingProfileCriterionType,
+        } as GetChargingProfilesRequest,
+      );
+    } else {
+      this._logger.error(
+        `Failed to clear charging profile: ${JSON.stringify(message.payload)}`,
+      );
+    }
   }
 
   @AsHandler(CallAction.GetChargingProfiles)
@@ -275,15 +337,43 @@ export class SmartChargingModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.SetChargingProfile)
-  protected _handleSetChargingProfile(
+  protected async _handleSetChargingProfile(
     message: IMessage<SetChargingProfileResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('SetChargingProfile response received:', message, props);
     const response: SetChargingProfileResponse = message.payload;
     if (response.status === ChargingProfileStatusEnumType.Rejected) {
       this._logger.error(
         `Failed to set charging profile: ${JSON.stringify(response)}`,
+      );
+    } else {
+      const stationId: string = message.context.stationId;
+      // Set existed profiles to isActive false
+      await this._chargingProfileRepository.updateAllByQuery(
+        {
+          isActive: false,
+        },
+        {
+          where: {
+            stationId: stationId,
+            isActive: true,
+            chargingLimitSource: ChargingLimitSourceEnumType.CSO,
+          },
+          returning: false,
+        },
+      );
+      // Request charging profiles to get the latest data
+      this.sendCall(
+        stationId,
+        message.context.tenantId,
+        CallAction.GetChargingProfiles,
+        {
+          requestId: generateRequestId(),
+          chargingProfile: {
+            chargingLimitSource: [ChargingLimitSourceEnumType.CSO],
+          } as ChargingProfileCriterionType,
+        } as GetChargingProfilesRequest,
       );
     }
   }
@@ -301,14 +391,35 @@ export class SmartChargingModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.GetCompositeSchedule)
-  protected _handleGetCompositeSchedule(
+  protected async _handleGetCompositeSchedule(
     message: IMessage<GetCompositeScheduleResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug(
       'GetCompositeSchedule response received:',
       message,
       props,
     );
+    const response = message.payload;
+    if (response.status === GenericStatusEnumType.Accepted) {
+      if (response.schedule) {
+        const compositeSchedule =
+          await this._chargingProfileRepository.createCompositeSchedule(
+            response.schedule,
+            message.context.stationId,
+          );
+        this._logger.info(
+          `Composite schedule created: ${JSON.stringify(compositeSchedule)}`,
+        );
+      } else {
+        this._logger.error(
+          `Missing schedule in response: ${response.status} ${JSON.stringify(response.statusInfo)}`,
+        );
+      }
+    } else {
+      this._logger.error(
+        `Failed to get composite schedule: ${response.status} ${JSON.stringify(response.statusInfo)}`,
+      );
+    }
   }
 }

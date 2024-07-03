@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingProfileKindEnumType, ChargingProfilePurposeEnumType, ChargingProfileType, ChargingScheduleType, CustomDataType, Namespace, RecurrencyKindEnumType, TransactionType } from '@citrineos/base';
+import { ChargingLimitSourceEnumType, ChargingProfileKindEnumType, ChargingProfilePurposeEnumType, ChargingProfileType, ChargingScheduleType, CustomDataType, Namespace, RecurrencyKindEnumType, TransactionType } from '@citrineos/base';
 import { AutoIncrement, BelongsTo, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { Transaction } from '../TransactionEvent';
 import { ChargingSchedule } from './ChargingSchedule';
@@ -20,8 +20,14 @@ export class ChargingProfile extends Model implements ChargingProfileType {
   declare databaseId: number;
 
   @Column({
+    type: DataType.STRING,
+    unique: 'stationId_id',
+  })
+  declare stationId: string;
+
+  @Column({
     type: DataType.INTEGER,
-    unique: 'evseId_id',
+    unique: 'stationId_id',
   })
   declare id: number;
 
@@ -55,11 +61,8 @@ export class ChargingProfile extends Model implements ChargingProfileType {
   })
   declare validTo?: string;
 
-  @Column({
-    type: DataType.INTEGER,
-    unique: 'evseId_id',
-  })
-  declare evseId: number;
+  @Column(DataType.INTEGER)
+  declare evseId?: number;
 
   // this value indicates whether the ChargingProfile is set on charger
   @Column({
@@ -67,6 +70,12 @@ export class ChargingProfile extends Model implements ChargingProfileType {
     defaultValue: false,
   })
   declare isActive: boolean;
+
+  @Column({
+    type: DataType.STRING,
+    defaultValue: ChargingLimitSourceEnumType.CSO,
+  })
+  declare chargingLimitSource?: ChargingLimitSourceEnumType;
 
   /**
    * Relations

@@ -618,13 +618,6 @@ export class MessageRouterImpl
           this._config.maxCallLengthSeconds,
         );
       })
-      .catch((error) => {
-        if (error instanceof OcppError) {
-          // TODO: identifier may not be unique, may require combination of tenantId and identifier.
-          // find way to include actual tenantId.
-          this.sendCallError(messageId, identifier, 'undefined', action, error);
-        }
-      })
       .then((successfullySet) => {
         if (!successfullySet) {
           throw new OcppError(
@@ -648,12 +641,23 @@ export class MessageRouterImpl
         }
       })
       .catch((error) => {
-        if (error instanceof OcppError) {
-          // TODO: identifier may not be unique, may require combination of tenantId and identifier.
-          // find way to include tenantId here
-          this.sendCallError(messageId, identifier, 'undefined', action, error);
+        const callError = error instanceof OcppError ? error : new OcppError(
+          messageId,
+          ErrorCode.InternalError,
+          'Call failed',
+          { details: error },
+        );
+        // TODO: identifier may not be unique, may require combination of tenantId and identifier.
+        // find way to include tenantId here
+        this.sendCallError(
+          messageId,
+          identifier,
+          'undefined',
+          action,
+          callError,
+        ).finally(() => {
           this._cache.remove(identifier, CacheNamespace.Transactions);
-        }
+        });
       });
   }
 
@@ -723,6 +727,7 @@ export class MessageRouterImpl
         }
       })
       .catch((error) => {
+        // TODO: There's no such thing as a CallError in response to a CallResult. The above call error exceptions should be replaced.
         // TODO: Ideally the error log is also stored in the database in a failed invocations table to ensure these are visible outside of a log file.
         this._logger.error('Failed processing call result: ', error);
       });
@@ -769,12 +774,7 @@ export class MessageRouterImpl
       })
       .then((confirmation) => {
         if (!confirmation.success) {
-          throw new OcppError(
-            messageId,
-            ErrorCode.InternalError,
-            'CallError failed',
-            { details: confirmation.payload },
-          );
+          this._logger.warn('Unable to route call error: ', confirmation);
         }
       })
       .catch((error) => {
@@ -911,7 +911,8 @@ export class MessageRouterImpl
     this._handleMessageApiCallback(_message);
 
     // No error routing currently done
-    throw new Error('Error routing not implemented.');
+    this._logger.warn('Error routing not implemented');
+    return { success: false };
   }
 
   private async _handleMessageApiCallback(

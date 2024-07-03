@@ -30,9 +30,12 @@ import {
   type VariableType,
   ChargingProfileType,
   NotifyEVChargingNeedsRequest,
+  ChargingLimitSourceEnumType,
+  CompositeScheduleType,
+  StatusNotificationRequest,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
-import { MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
+import { CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
 import { type VariableAttribute } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { type Authorization, type Boot, type Certificate, ChargingNeeds, type ChargingStation, type Component, type EventData, Evse, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';
@@ -81,6 +84,7 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
 
 export interface ILocationRepository extends CrudRepository<Location> {
   readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
+  addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotificationRequest): Promise<void>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {
@@ -129,8 +133,9 @@ export interface ICertificateRepository extends CrudRepository<Certificate> {
   createOrUpdateCertificate(certificate: Certificate): Promise<Certificate>;
 }
 
-export interface IChargingProfileRepository extends CrudRepository<ChargingProfileType> {
-  createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, evseId: number, transactionDBId?: number): Promise<ChargingProfile>;
+export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
+  createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId?: number, chargingLimitSource?: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile>;
   createChargingNeeds(chargingNeeds: NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds>;
   findChargingNeedsByEvseDBIdAndTransactionDBId(evseDBId: number, transactionDataBaseId: number): Promise<ChargingNeeds | undefined>;
+  createCompositeSchedule(compositeSchedule: CompositeScheduleType, stationId: string): Promise<CompositeSchedule>;
 }
