@@ -568,7 +568,7 @@ export class TransactionsModule extends AbstractModule {
         { totalKwh: totalKwh },
         { where: { id: transactionDbId }, returning: false },
       );
-      totalCost = this._roundCost(totalKwh * tariff.price);
+      totalCost = this._roundCost(totalKwh * tariff.pricePerKwh);
     } else {
       this._logger.error(`Tariff not found for station ${stationId}`);
     }

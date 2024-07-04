@@ -45,6 +45,7 @@
     "../citrineos-ocpi/03_Modules/Locations",
     "../citrineos-ocpi/03_Modules/Sessions",
     "../citrineos-ocpi/03_Modules/ChargingProfiles",
-    "../citrineos-ocpi/03_Modules/Cdrs"
+    "../citrineos-ocpi/03_Modules/Cdrs",
+    "../citrineos-ocpi/03_Modules/Tariffs"
   ]
 }

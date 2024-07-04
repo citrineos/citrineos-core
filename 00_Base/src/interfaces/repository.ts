@@ -199,7 +199,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
    * @param namespace - Optional namespace for the key.
    * @returns A promise that resolves to the value associated with the key, or undefined if the key does not exist.
    */
-  abstract readByKey(key: string, namespace?: string): Promise<T | undefined>;
+  abstract readByKey(key: string | number, namespace?: string): Promise<T | undefined>;
 
   /**
    * Reads values from storage based on the given query.

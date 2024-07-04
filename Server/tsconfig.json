@@ -64,6 +64,9 @@
     },
     {
       "path": "../../citrineos-ocpi/03_Modules/ChargingProfiles"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Tariffs"
     }
   ]
 }
