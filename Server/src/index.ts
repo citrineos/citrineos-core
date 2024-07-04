@@ -69,6 +69,7 @@ import { LocationsModule } from '@citrineos/ocpi-locations';
 import { SessionsModule } from '@citrineos/ocpi-sessions';
 import { ChargingProfilesModule } from '@citrineos/ocpi-charging-profiles';
 import { TariffsModule } from "@citrineos/ocpi-tariffs";
+import { CdrsModule } from "@citrineos/ocpi-tariffs";
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -263,6 +264,11 @@ export class CitrineOSServer {
         handler: this._createHandler(),
         sender: this._createSender()
       },
+      {
+        module: CdrsModule,
+        handler: this._createHandler(),
+        sender: this._createSender()
+      }
     ];
   }
 
