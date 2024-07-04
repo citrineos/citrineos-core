@@ -69,7 +69,7 @@ import { LocationsModule } from '@citrineos/ocpi-locations';
 import { SessionsModule } from '@citrineos/ocpi-sessions';
 import { ChargingProfilesModule } from '@citrineos/ocpi-charging-profiles';
 import { TariffsModule } from "@citrineos/ocpi-tariffs";
-import { CdrsModule } from "@citrineos/ocpi-tariffs";
+import { CdrsModule } from "@citrineos/ocpi-cdrs";
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
