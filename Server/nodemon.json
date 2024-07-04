@@ -10,7 +10,8 @@
     "../../citrineos-ocpi/03_Modules/Credentials",
     "../../citrineos-ocpi/03_Modules/Commands",
     "../../citrineos-ocpi/03_Modules/Locations",
-    "../../citrineos-ocpi/03_Modules/Sessions"
+    "../../citrineos-ocpi/03_Modules/Sessions",
+    "../../citrineos-ocpi/03_Modules/ChargingProfiles"
   ],
   "ext": "ts,js",
   "ignore": ["**/dist/**", "**/node_modules/**"],
