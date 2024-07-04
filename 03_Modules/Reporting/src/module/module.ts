@@ -258,6 +258,7 @@ export class ReportingModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.info('NotifyReport received:', message, props);
+    const timestamp = message.payload.generatedAt;
 
     for (const reportDataType of message.payload.reportData
       ? message.payload.reportData
@@ -274,6 +275,7 @@ export class ReportingModule extends AbstractModule {
         await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
           reportDataType,
           message.context.stationId,
+          timestamp,
         );
       for (const variableAttribute of variableAttributes) {
         // Reload is necessary because in createOrUpdateDeviceModelByStationId does not do eager loading
@@ -289,6 +291,7 @@ export class ReportingModule extends AbstractModule {
             variable: variableAttribute.variable,
           },
           message.context.stationId,
+          timestamp,
         );
       }
     }

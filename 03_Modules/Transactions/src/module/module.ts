@@ -486,6 +486,7 @@ export class TransactionsModule extends AbstractModule {
       await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
         reportDataType,
         stationId,
+        statusNotificationRequest.timestamp,
       );
     }
 

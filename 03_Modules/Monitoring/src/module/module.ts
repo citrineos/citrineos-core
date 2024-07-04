@@ -172,7 +172,7 @@ export class MonitoringModule extends AbstractModule {
           }
         ]
       };
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, stationId);
+      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(reportDataType, stationId, message.payload.generatedAt);
     }
 
     // Create response
@@ -350,6 +350,7 @@ export class MonitoringModule extends AbstractModule {
     this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(
       message.payload.getVariableResult,
       message.context.stationId,
+      message.context.timestamp,
     );
   }
 
@@ -364,6 +365,7 @@ export class MonitoringModule extends AbstractModule {
       this._deviceModelRepository.updateResultByStationId(
         setVariableResultType,
         message.context.stationId,
+        message.context.timestamp,
       );
     });
   }
