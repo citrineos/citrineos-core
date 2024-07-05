@@ -67,6 +67,12 @@
     },
     {
       "path": "../../citrineos-ocpi/03_Modules/Tariffs"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Tokens"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Cdrs"
     }
   ]
 }
