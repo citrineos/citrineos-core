@@ -41,7 +41,7 @@
     "@citrineos/ocpi-locations": "1.3.0",
     "@citrineos/ocpi-sessions": "1.3.0",
     "@citrineos/ocpi-tariffs": "1.1.1",
-    "@citrineos/ocpi-cdrs": "1.1.1",
+    "@citrineos/ocpi-cdrs": "1.3.0",
     "@citrineos/ocpi-charging-profiles": "1.1.1",
     "@citrineos/ocpi-tokens": "1.1.1",
     "@citrineos/base": "1.3.0",
