@@ -67,10 +67,10 @@ export interface IBootRepository extends CrudRepository<BootConfig> {
 }
 
 export interface IDeviceModelRepository extends CrudRepository<VariableAttributeType> {
-  createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]>;
-  createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string): Promise<VariableAttribute[]>;
-  createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string): Promise<VariableAttribute[]>;
-  updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined>;
+  createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string, isoTimestamp: string): Promise<VariableAttribute[]>;
+  createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string, isoTimestamp: string): Promise<VariableAttribute[]>;
+  createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string, isoTimestamp: string): Promise<VariableAttribute[]>;
+  updateResultByStationId(result: SetVariableResultType, stationId: string, isoTimestamp: string): Promise<VariableAttribute | undefined>;
   readAllSetVariableByStationId(stationId: string): Promise<SetVariableDataType[]>;
   readAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
   existByQuerystring(query: VariableAttributeQuerystring): Promise<number>;

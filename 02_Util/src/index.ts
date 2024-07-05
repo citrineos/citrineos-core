@@ -17,3 +17,5 @@ export { getSizeOfRequest, getBatches } from './util/parser';
 export { DirectusUtil } from './util/directus';
 export { validateLanguageTag } from './util/validator';
 export { generateRequestId } from './util/idGenerator';
+
+export { isValidPassword, generatePassword } from './security/authentication';

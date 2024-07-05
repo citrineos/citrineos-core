@@ -7,6 +7,7 @@ export * from './repositories';
 
 // Data endpoints query models
 export { ChargingStationKeyQuerystring, ChargingStationKeyQuerySchema } from './queries/ChargingStation';
+export { UpdateChargingStationPasswordQueryString, UpdateChargingStationPasswordQuerySchema } from './queries/UpdateChargingStationPasswordQuery';
 export { VariableAttributeQuerystring, VariableAttributeQuerySchema, CreateOrUpdateVariableAttributeQuerystring, CreateOrUpdateVariableAttributeQuerySchema } from './queries/VariableAttribute';
 export { AuthorizationQuerystring, AuthorizationQuerySchema } from './queries/Authorization';
 export { TransactionEventQuerystring, TransactionEventQuerySchema } from './queries/TransactionEvent';
