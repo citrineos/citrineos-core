@@ -68,8 +68,9 @@ import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
 import { LocationsModule } from '@citrineos/ocpi-locations';
 import { SessionsModule } from '@citrineos/ocpi-sessions';
 import { ChargingProfilesModule } from '@citrineos/ocpi-charging-profiles';
-import { TariffsModule } from "@citrineos/ocpi-tariffs";
-import { CdrsModule } from "@citrineos/ocpi-cdrs";
+import { TariffsModule } from '@citrineos/ocpi-tariffs';
+import { CdrsModule } from '@citrineos/ocpi-cdrs';
+import { TokensModule } from '@citrineos/ocpi-tokens';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -266,6 +267,11 @@ export class CitrineOSServer {
       },
       {
         module: CdrsModule,
+        handler: this._createHandler(),
+        sender: this._createSender()
+      },
+      {
+        module: TokensModule,
         handler: this._createHandler(),
         sender: this._createSender()
       }

@@ -7,6 +7,7 @@ export * as sequelize from './layers/sequelize';
 export * from './interfaces';
 export * from 'sequelize-typescript';
 export {
+  Authorization,
   Boot,
   ChargingStation,
   Component,
