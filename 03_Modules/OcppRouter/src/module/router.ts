@@ -184,7 +184,7 @@ export class MessageRouterImpl
       {
         stationId: connectionIdentifier,
         state: MessageState.Response.toString(),
-        origin: MessageOrigin.ChargingStationManagementSystem.toString(),
+        origin: MessageOrigin.ChargingStation.toString(),
       },
     );
 
