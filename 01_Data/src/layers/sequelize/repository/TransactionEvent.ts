@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type ChargingStateEnumType, CrudRepository, type EVSEType, type IdTokenType, SystemConfig, TransactionEventEnumType, type TransactionEventRequest } from '@citrineos/base';
+import { type ChargingStateEnumType, CrudRepository, type EVSEType, type IdTokenType, SystemConfig, TransactionEventEnumType, type TransactionEventRequest, IdTokenEnumType } from '@citrineos/base';
 import { type ITransactionEventRepository } from '../../../interfaces';
 import { MeterValue, Transaction, TransactionEvent } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';
@@ -16,6 +16,7 @@ import { ILogObj, Logger } from 'tslog';
 export class SequelizeTransactionEventRepository extends SequelizeRepository<TransactionEvent> implements ITransactionEventRepository {
   transaction: CrudRepository<Transaction>;
   evse: CrudRepository<Evse>;
+  idToken: CrudRepository<IdToken>;
   meterValue: CrudRepository<MeterValue>;
 
   constructor(
@@ -25,11 +26,13 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     sequelizeInstance?: Sequelize,
     transaction?: CrudRepository<Transaction>,
     evse?: CrudRepository<Evse>,
+    idToken?: CrudRepository<IdToken>,
     meterValue?: CrudRepository<MeterValue>,
   ) {
     super(config, namespace, logger, sequelizeInstance);
     this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, Transaction.MODEL_NAME, logger, sequelizeInstance);
     this.evse = evse ? evse : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
+    this.idToken = idToken ? idToken : new SequelizeRepository<IdToken>(config, IdToken.MODEL_NAME, logger, sequelizeInstance);
     this.meterValue = meterValue ? meterValue : new SequelizeRepository<MeterValue>(config, MeterValue.MODEL_NAME, logger, sequelizeInstance);
   }
 
@@ -83,14 +86,35 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
 
       const transactionDatabaseId = transaction.id;
 
-      const event = await TransactionEvent.create(
+      let event = await TransactionEvent.build(
         {
           stationId,
           transactionDatabaseId,
           ...value,
         },
-        { transaction: sequelizeTransaction },
       );
+
+      if (value.idToken && value.idToken.type != IdTokenEnumType.NoAuthorization) {
+        // TODO: ensure that Authorization is passed into this method if idToken exists
+        // At this point, token MUST already be authorized and thus exist in the database
+        // It can be either the primary idToken of an Authorization or a group idToken
+        const idToken = await this.idToken.readOnlyOneByQuery({
+          where: {
+            idToken: value.idToken.idToken,
+            type: value.idToken.type,
+          },
+          transaction: sequelizeTransaction,
+        });
+        if (!idToken) {
+          // TODO: Log Warning...
+          // TODO: Save raw transaction event in TransactionEvent model
+        } else {
+          event.idTokenId = idToken.id;
+        }
+      }
+
+      event = await event.save({ transaction: sequelizeTransaction });
+
       if (value.meterValue && value.meterValue.length > 0) {
         await Promise.all(
           value.meterValue.map(async (meterValue) => {
