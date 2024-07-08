@@ -125,6 +125,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
               evseDatabaseId: component.evseDatabaseId,
               dataType: dataType ?? savedVariableAttribute.dataType,
               ...variableAttribute,
+              generatedAt: isoTimestamp
             },
             savedVariableAttribute.id,
           )) as VariableAttribute;
