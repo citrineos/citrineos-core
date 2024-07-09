@@ -21,12 +21,10 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
-  MeasurandEnumType,
   MeterValuesRequest,
   MeterValuesResponse,
-  ReadingContextEnumType,
+  MeterValueUtils,
   ReportDataType,
-  SampledValueType,
   StatusNotificationRequest,
   StatusNotificationResponse,
   SystemConfig,
@@ -42,7 +40,6 @@ import {
   ILocationRepository,
   ITariffRepository,
   ITransactionEventRepository,
-  MeterValue,
   sequelize,
   SequelizeRepository,
   Tariff,
@@ -563,7 +560,7 @@ export class TransactionsModule extends AbstractModule {
     if (tariff) {
       this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);
       if (!totalKwh) {
-        totalKwh = this._getTotalKwh(
+        totalKwh = MeterValueUtils.getTotalKwh(
           await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
             transactionDbId,
           ),
@@ -582,65 +579,6 @@ export class TransactionsModule extends AbstractModule {
     }
 
     return totalCost;
-  }
-
-  /**
-   * Calculate the total Kwh
-   *
-   * @param {array} meterValues - meterValues of a transaction.
-   * @return {number} total Kwh based on the overall values (i.e., without phase) in the simpledValues.
-   */
-  private _getTotalKwh(meterValues: MeterValue[]): number {
-    const contexts: ReadingContextEnumType[] = [
-      ReadingContextEnumType.Transaction_Begin,
-      ReadingContextEnumType.Sample_Periodic,
-      ReadingContextEnumType.Transaction_End,
-    ];
-
-    let valuesMap = new Map();
-
-    meterValues
-      .filter(
-        (meterValue) =>
-          meterValue.sampledValue[0].context &&
-          contexts.indexOf(meterValue.sampledValue[0].context) !== -1,
-      )
-      .forEach((meterValue) => {
-        const sampledValues = meterValue.sampledValue as SampledValueType[];
-        const overallValue = sampledValues.find(
-          (sampledValue) =>
-            sampledValue.phase === undefined &&
-            sampledValue.measurand ===
-            MeasurandEnumType.Energy_Active_Import_Register,
-        );
-        if (
-          overallValue &&
-          overallValue.unitOfMeasure?.unit?.toUpperCase() === 'KWH'
-        ) {
-          valuesMap.set(Date.parse(meterValue.timestamp), overallValue.value);
-        } else if (
-          overallValue &&
-          overallValue.unitOfMeasure?.unit?.toUpperCase() === 'WH'
-        ) {
-          valuesMap.set(
-            Date.parse(meterValue.timestamp),
-            overallValue.value / 1000,
-          );
-        }
-      });
-
-    // sort the map based on timestamps
-    valuesMap = new Map(
-      [...valuesMap.entries()].sort((v1, v2) => v1[0] - v2[0]),
-    );
-    const sortedValues = Array.from(valuesMap.values());
-
-    let totalKwh = 0;
-    for (let i = 1; i < sortedValues.length; i++) {
-      totalKwh += sortedValues[i] - sortedValues[i - 1];
-    }
-
-    return totalKwh;
   }
 
   /**

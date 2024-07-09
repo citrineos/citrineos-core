@@ -7,11 +7,13 @@ import {
   type ChargingStateEnumType,
   CrudRepository,
   type EVSEType,
+  IdTokenEnumType,
   type IdTokenType,
-  MeasurandEnumType,
-  MeterValueType,
-  ReadingContextEnumType,
-  SampledValueType, SystemConfig, TransactionEventEnumType, type TransactionEventRequest, IdTokenEnumType } from '@citrineos/base';
+  MeterValueUtils,
+  SystemConfig,
+  TransactionEventEnumType,
+  type TransactionEventRequest
+} from '@citrineos/base';
 import { type ITransactionEventRepository } from '../../../interfaces';
 import { MeterValue, Transaction, TransactionEvent } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';
@@ -122,7 +124,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         }
       }
 
-      event = await event.save({ transaction: sequelizeTransaction });
+      event = await event.save({transaction: sequelizeTransaction});
 
       if (value.meterValue && value.meterValue.length > 0) {
         await Promise.all(
@@ -156,64 +158,11 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   }
 
   private async calculateAndUpdateTotalKwh(transaction: Transaction): Promise<number> {
-    const totalKwh = this.getTotalKwh(transaction.meterValues ?? []);
+    const totalKwh = MeterValueUtils.getTotalKwh(transaction.meterValues ?? []);
 
     await transaction.update(
       {totalKwh}
     );
-
-    return totalKwh;
-  }
-
-  private getTotalKwh(meterValues: MeterValueType[]): number {
-    const contexts: ReadingContextEnumType[] = [
-      ReadingContextEnumType.Transaction_Begin,
-      ReadingContextEnumType.Sample_Periodic,
-      ReadingContextEnumType.Transaction_End,
-    ];
-
-    let valuesMap = new Map();
-
-    meterValues
-      .filter(
-        (meterValue) =>
-          meterValue.sampledValue[0].context &&
-          contexts.indexOf(meterValue.sampledValue[0].context) !== -1,
-      )
-      .forEach((meterValue) => {
-        const sampledValues = meterValue.sampledValue as SampledValueType[];
-        const overallValue = sampledValues.find(
-          (sampledValue) =>
-            sampledValue.phase === undefined &&
-            sampledValue.measurand ===
-            MeasurandEnumType.Energy_Active_Import_Register,
-        );
-        if (
-          overallValue &&
-          overallValue.unitOfMeasure?.unit?.toUpperCase() === 'KWH'
-        ) {
-          valuesMap.set(Date.parse(meterValue.timestamp), overallValue.value);
-        } else if (
-          overallValue &&
-          overallValue.unitOfMeasure?.unit?.toUpperCase() === 'WH'
-        ) {
-          valuesMap.set(
-            Date.parse(meterValue.timestamp),
-            overallValue.value / 1000,
-          );
-        }
-      });
-
-    // sort the map based on timestamps
-    valuesMap = new Map(
-      [...valuesMap.entries()].sort((v1, v2) => v1[0] - v2[0]),
-    );
-    const sortedValues = Array.from(valuesMap.values());
-
-    let totalKwh = 0;
-    for (let i = 1; i < sortedValues.length; i++) {
-      totalKwh += sortedValues[i] - sortedValues[i - 1];
-    }
 
     return totalKwh;
   }
