@@ -19,7 +19,7 @@ import { MeterValue, Transaction, TransactionEvent } from '../model/TransactionE
 import { SequelizeRepository } from './Base';
 import { IdToken } from '../model/Authorization';
 import { Evse } from '../model/DeviceModel';
-import { Op } from 'sequelize';
+import { Op, WhereOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 
@@ -97,15 +97,15 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
 
       const transactionDatabaseId = transaction.id;
 
-      let event = await TransactionEvent.build(
+      let event = TransactionEvent.build(
         {
           stationId,
           transactionDatabaseId,
           ...value,
-        },
+        }
       );
 
-      if (value.idToken && value.idToken.type != IdTokenEnumType.NoAuthorization) {
+      if (value.idToken && value.idToken.type !== IdTokenEnumType.NoAuthorization) {
         // TODO: ensure that Authorization is passed into this method if idToken exists
         // At this point, token MUST already be authorized and thus exist in the database
         // It can be either the primary idToken of an Authorization or a group idToken
@@ -155,16 +155,6 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       }
       return transaction;
     });
-  }
-
-  private async calculateAndUpdateTotalKwh(transaction: Transaction): Promise<number> {
-    const totalKwh = MeterValueUtils.getTotalKwh(transaction.meterValues ?? []);
-
-    await transaction.update(
-      {totalKwh}
-    );
-
-    return totalKwh;
   }
 
   async readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]> {
@@ -247,29 +237,49 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     return this.transaction.readOnlyOneByQuery({ where: { transactionId }, include: [{ model: TransactionEvent, include: [IdToken] }, MeterValue, Evse]});
   }
 
-  async getTransactions(dateFrom: Date, dateTo: Date, offset: number, limit: number): Promise<Transaction[]> {
-    return this.transaction.readAllByQuery({
-      where: {
-        updatedAt: {
-          [Op.gte]: dateFrom,
-          ...(dateTo ? { [Op.lt]: dateTo } : {})
-        }
-      },
-      offset,
-      limit,
+  async getTransactions(dateFrom?: Date, dateTo?: Date, offset?: number, limit?: number): Promise<Transaction[]> {
+    const queryOptions: any = {
+      where: {},
       include: [{model: TransactionEvent, include: [IdToken]}, MeterValue, Evse],
-    });
+    };
+
+    if (dateFrom) {
+      queryOptions.where.updatedAt = queryOptions.where.updatedAt || {};
+      queryOptions.where.updatedAt[Op.gte] = dateFrom;
+    }
+
+    if (dateTo) {
+      queryOptions.where.updatedAt = queryOptions.where.updatedAt || {};
+      queryOptions.where.updatedAt[Op.lt] = dateTo;
+    }
+
+    if (offset) {
+      queryOptions.offset = offset;
+    }
+
+    if (limit) {
+      queryOptions.limit = limit;
+    }
+
+    return this.transaction.readAllByQuery(queryOptions);
   }
 
   async getTransactionsCount(dateFrom: Date, dateTo: Date): Promise<number> {
-    return Transaction.count({
-      where: {
-        updatedAt: {
-          [Op.gte]: dateFrom,
-          ...(dateTo ? { [Op.lt]: dateTo } : {})
-        },
-      },
-    });
+    const queryOptions: WhereOptions<any> = {
+      where: {}
+    };
+
+    if (dateFrom) {
+      queryOptions.where.updatedAt = queryOptions.where.updatedAt || {};
+      queryOptions.where.updatedAt[Op.gte] = dateFrom;
+    }
+
+    if (dateTo) {
+      queryOptions.where.updatedAt = queryOptions.where.updatedAt || {};
+      queryOptions.where.updatedAt[Op.lt] = dateTo;
+    }
+
+    return Transaction.count(queryOptions);
   }
 
   async readAllTransactionsByQuery(query: object): Promise<Transaction[]> {
@@ -296,5 +306,15 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       }
     });
     return evseIds;
+  }
+
+  private async calculateAndUpdateTotalKwh(transaction: Transaction): Promise<number> {
+    const totalKwh = MeterValueUtils.getTotalKwh(transaction.meterValues ?? []);
+
+    await transaction.update(
+      {totalKwh}
+    );
+
+    return totalKwh;
   }
 }
