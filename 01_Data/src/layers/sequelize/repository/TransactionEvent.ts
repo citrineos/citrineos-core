@@ -252,8 +252,8 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       where: {
         updatedAt: {
           [Op.gte]: dateFrom,
-          [Op.lt]: dateTo,
-        },
+          ...(dateTo ? { [Op.lt]: dateTo } : {})
+        }
       },
       offset,
       limit,
@@ -266,7 +266,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       where: {
         updatedAt: {
           [Op.gte]: dateFrom,
-          [Op.lt]: dateTo,
+          ...(dateTo ? { [Op.lt]: dateTo } : {})
         },
       },
     });
