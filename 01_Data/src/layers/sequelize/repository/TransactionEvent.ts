@@ -234,7 +234,10 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   }
 
   findByTransactionId(transactionId: string): Promise<Transaction | undefined> {
-    return this.transaction.readOnlyOneByQuery({ where: { transactionId }, include: [{ model: TransactionEvent, include: [IdToken] }, MeterValue, Evse]});
+    return this.transaction.readOnlyOneByQuery({
+      where: {transactionId},
+      include: [{model: TransactionEvent, include: [IdToken]}, MeterValue, Evse]
+    });
   }
 
   async getTransactions(dateFrom?: Date, dateTo?: Date, offset?: number, limit?: number): Promise<Transaction[]> {
@@ -264,7 +267,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     return this.transaction.readAllByQuery(queryOptions);
   }
 
-  async getTransactionsCount(dateFrom: Date, dateTo: Date): Promise<number> {
+  async getTransactionsCount(dateFrom?: Date, dateTo?: Date): Promise<number> {
     const queryOptions: WhereOptions<any> = {
       where: {}
     };
