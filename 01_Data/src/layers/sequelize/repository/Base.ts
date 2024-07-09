@@ -67,7 +67,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
 
   protected async _updateByKey(value: Partial<T>, key: string): Promise<T | undefined> {
     const primaryKey = this.s.models[this.namespace].primaryKeyAttribute;
-    return await this._updateAllByQuery(value, { where: { [primaryKey]: key } }).then((rows) => (rows.length === 1 ? rows[0] : undefined));
+    return await this._updateAllByQuery(value, { where: { [primaryKey]: key } }).then((rows) => (rows && rows.length === 1 ? rows[0] : undefined));
   }
 
   async findAndCount(options: Omit<FindAndCountOptions<Attributes<T>>, 'group'>): Promise<{ rows: T[]; count: number }> {
