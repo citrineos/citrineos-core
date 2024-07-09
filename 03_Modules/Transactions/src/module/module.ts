@@ -105,7 +105,7 @@ export class TransactionsModule extends AbstractModule {
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable attribute data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is
    * created and used.
-   * 
+   *
    * @param {CrudRepository<Component>} [componentRepository] - An optional parameter of type {@link CrudRepository<Component>} which represents a repository for accessing and manipulating component data.
    * If no `componentRepository` is provided, a default {@link sequelize:componentRepository} instance is
    * created and used.
@@ -221,7 +221,7 @@ export class TransactionsModule extends AbstractModule {
     const transactionId = transactionEvent.transactionInfo.transactionId;
     if (transactionEvent.idToken) {
       this._authorizeRepository
-        .readAllByQuerystring({ ...transactionEvent.idToken })
+        .readAllByQuerystring({...transactionEvent.idToken})
         .then((authorizations) => {
           const response: TransactionEventResponse = {
             idTokenInfo: {
@@ -241,27 +241,27 @@ export class TransactionsModule extends AbstractModule {
               const idTokenInfo: IdTokenInfoType = {
                 status: authorization.idTokenInfo.status,
                 cacheExpiryDateTime:
-                  authorization.idTokenInfo.cacheExpiryDateTime,
+                authorization.idTokenInfo.cacheExpiryDateTime,
                 chargingPriority: authorization.idTokenInfo.chargingPriority,
                 language1: authorization.idTokenInfo.language1,
                 evseId: authorization.idTokenInfo.evseId,
                 groupIdToken: authorization.idTokenInfo.groupIdToken
                   ? {
-                      additionalInfo:
-                        authorization.idTokenInfo.groupIdToken.additionalInfo &&
-                        authorization.idTokenInfo.groupIdToken.additionalInfo
-                          .length > 0
-                          ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                              (additionalInfo) => ({
-                                additionalIdToken:
-                                  additionalInfo.additionalIdToken,
-                                type: additionalInfo.type,
-                              }),
-                            ) as [AdditionalInfoType, ...AdditionalInfoType[]])
-                          : undefined,
-                      idToken: authorization.idTokenInfo.groupIdToken.idToken,
-                      type: authorization.idTokenInfo.groupIdToken.type,
-                    }
+                    additionalInfo:
+                      authorization.idTokenInfo.groupIdToken.additionalInfo &&
+                      authorization.idTokenInfo.groupIdToken.additionalInfo
+                        .length > 0
+                        ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
+                          (additionalInfo) => ({
+                            additionalIdToken:
+                            additionalInfo.additionalIdToken,
+                            type: additionalInfo.type,
+                          }),
+                        ) as [AdditionalInfoType, ...AdditionalInfoType[]])
+                        : undefined,
+                    idToken: authorization.idTokenInfo.groupIdToken.idToken,
+                    type: authorization.idTokenInfo.groupIdToken.type,
+                  }
                   : undefined,
                 language2: authorization.idTokenInfo.language2,
                 personalMessage: authorization.idTokenInfo.personalMessage,
@@ -302,7 +302,7 @@ export class TransactionsModule extends AbstractModule {
             transactionEvent.eventType === TransactionEventEnumType.Started &&
             transactionEventResponse &&
             transactionEventResponse.idTokenInfo?.status ===
-              AuthorizationStatusEnumType.Accepted &&
+            AuthorizationStatusEnumType.Accepted &&
             transactionEvent.idToken
           ) {
             if (this._costUpdatedInterval) {
@@ -368,6 +368,7 @@ export class TransactionsModule extends AbstractModule {
           response.totalCost = await this._calculateTotalCost(
             stationId,
             transaction.id,
+            transaction.totalKwh
           );
         }
 
@@ -399,6 +400,7 @@ export class TransactionsModule extends AbstractModule {
         response.totalCost = await this._calculateTotalCost(
           stationId,
           transaction.id,
+          transaction.totalKwh
         );
       }
 
@@ -550,6 +552,7 @@ export class TransactionsModule extends AbstractModule {
   private async _calculateTotalCost(
     stationId: string,
     transactionDbId: number,
+    totalKwh?: number
   ): Promise<number> {
     // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
     //  implementation is finalized
@@ -559,16 +562,20 @@ export class TransactionsModule extends AbstractModule {
       await this._tariffRepository.findByStationId(stationId);
     if (tariff) {
       this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);
-      const totalKwh = this._getTotalKwh(
-        await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-          transactionDbId,
-        ),
-      );
+      if (!totalKwh) {
+        totalKwh = this._getTotalKwh(
+          await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
+            transactionDbId,
+          ),
+        );
+
+        await Transaction.update(
+          {totalKwh: totalKwh},
+          {where: {id: transactionDbId}, returning: false},
+        );
+      }
+
       this._logger.debug(`TotalKwh: ${totalKwh}`);
-      await Transaction.update(
-        { totalKwh: totalKwh },
-        { where: { id: transactionDbId }, returning: false },
-      );
       totalCost = this._roundCost(totalKwh * tariff.pricePerKwh);
     } else {
       this._logger.error(`Tariff not found for station ${stationId}`);
@@ -604,7 +611,7 @@ export class TransactionsModule extends AbstractModule {
           (sampledValue) =>
             sampledValue.phase === undefined &&
             sampledValue.measurand ===
-              MeasurandEnumType.Energy_Active_Import_Register,
+            MeasurandEnumType.Energy_Active_Import_Register,
         );
         if (
           overallValue &&
