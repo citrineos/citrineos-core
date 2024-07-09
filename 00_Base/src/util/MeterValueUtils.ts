@@ -49,15 +49,21 @@ export class MeterValueUtils {
     );
   }
 
-  private static normalizeToKwh(value: SampledValueType): number | null {
-    const unit = value.unitOfMeasure?.unit?.toUpperCase();
-    if (unit === 'KWH') {
-      return value.value;
+  private static normalizeToKwh(overallValue: SampledValueType): number | null {
+    let powerOfTen = overallValue.unitOfMeasure?.multiplier ?? 0;
+    const unit = overallValue.unitOfMeasure?.unit?.toUpperCase();
+    switch (unit) {
+      case 'KWH':
+        break;
+      case 'WH':
+      case undefined:
+        powerOfTen -= 3;
+        break
+      default:
+        throw new Error("Unknown unit for Energy.Active.Import.Register: " + unit);
     }
-    if (unit === 'WH') {
-      return value.value / 1000;
-    }
-    return null;
+
+    return overallValue.value * (10 ** powerOfTen);
   }
 
   private static getSortedKwhByTimestampAscending(valuesMap: Map<number, number>): number[] {
