@@ -248,13 +248,18 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   }
 
   async getTransactions(dateFrom: Date, dateTo: Date, offset: number, limit: number): Promise<Transaction[]> {
+    const dateQuery = dateFrom || dateTo ?
+      {
+        where: {
+          updatedAt: {
+            ...(dateFrom ? { [Op.gte]: dateFrom } : {}),
+            ...(dateTo ? { [Op.lt]: dateTo } : {})
+          }
+        },
+      } : {};
+
     return this.transaction.readAllByQuery({
-      where: {
-        updatedAt: {
-          [Op.gte]: dateFrom,
-          ...(dateTo ? { [Op.lt]: dateTo } : {})
-        }
-      },
+      ...dateQuery,
       offset,
       limit,
       include: [{model: TransactionEvent, include: [IdToken]}, MeterValue, Evse],
@@ -262,12 +267,16 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   }
 
   async getTransactionsCount(dateFrom: Date, dateTo: Date): Promise<number> {
+    if (!dateFrom && !dateTo) {
+      return Transaction.count();
+    }
+
     return Transaction.count({
       where: {
         updatedAt: {
-          [Op.gte]: dateFrom,
+          ...(dateFrom ? { [Op.gte]: dateFrom } : {}),
           ...(dateTo ? { [Op.lt]: dateTo } : {})
-        },
+        }
       },
     });
   }
