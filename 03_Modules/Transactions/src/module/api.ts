@@ -4,12 +4,10 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  CreateOrUpdateTariffQuerySchema,
-  CreateOrUpdateTariffQueryString,
   Tariff,
-  TariffSchema,
-  TariffQueryString,
   TariffQuerySchema,
+  TariffQueryString,
+  TariffSchema,
   TransactionEventQuerySchema,
   TransactionEventQuerystring,
 } from '@citrineos/data';
@@ -31,13 +29,16 @@ import {
   TransactionType,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
+import { UpsertTariffRequest } from "./model/tariffs";
+import { plainToInstance } from 'class-transformer';
 
 /**
  * Server API for the transaction module.
  */
 export class TransactionsModuleApi
   extends AbstractModuleApi<TransactionsModule>
-  implements ITransactionsModuleApi {
+  implements ITransactionsModuleApi
+{
   /**
    * Constructor for the class.
    *
@@ -111,16 +112,30 @@ export class TransactionsModuleApi
   @AsDataEndpoint(
     Namespace.Tariff,
     HttpMethod.Put,
-    CreateOrUpdateTariffQuerySchema,
+    undefined,
     TariffSchema,
   )
-  putTariff(
+  async upsertTariff(
     request: FastifyRequest<{
-      Body: Tariff;
-      Querystring: CreateOrUpdateTariffQueryString;
+      Body: any;
     }>,
   ): Promise<Tariff> {
-    return this._module.tariffRepository.createOrUpdateTariff(request.body);
+    const tariff = this.buildTariff(plainToInstance(UpsertTariffRequest, request.body));
+    return await this._module.tariffRepository.upsertTariff(tariff);
+  }
+
+  // TODO: move to service layer
+  private buildTariff(request: UpsertTariffRequest): Tariff {
+    return Tariff.newInstance({
+      id: request.id,
+      currency: request.currency,
+      pricePerKwh: request.pricePerKwh,
+      pricePerMin: request.pricePerMin,
+      pricePerSession: request.pricePerSession,
+      taxRate: request.taxRate,
+      authorizationAmount: request.authorizationAmount,
+      paymentFee: request.paymentFee,
+    });
   }
 
   @AsDataEndpoint(Namespace.Tariff, HttpMethod.Get, TariffQuerySchema)

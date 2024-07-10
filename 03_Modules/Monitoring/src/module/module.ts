@@ -23,6 +23,7 @@ import {
   IMessageSender,
   NotifyEventRequest,
   NotifyEventResponse,
+  ReportDataType,
   SetMonitoringBaseResponse,
   SetMonitoringLevelResponse,
   SetVariableMonitoringResponse,
@@ -35,7 +36,12 @@ import {
   IVariableMonitoringRepository,
   sequelize,
 } from '@citrineos/data';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import {
+  generateRequestId,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  Timer,
+} from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './services';
@@ -142,12 +148,12 @@ export class MonitoringModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('NotifyEvent received:', message, props);
+    const stationId = message.context.stationId;
 
     const events = message.payload.eventData as EventDataType[];
     for (const event of events) {
-      const stationId = message.context.stationId;
       const [component, variable] =
-        await this._deviceModelRepository.findComponentAndVariable(
+        await this._deviceModelRepository.findOrCreateEvseAndComponentAndVariable(
           event.component,
           event.variable,
         );
@@ -156,6 +162,20 @@ export class MonitoringModule extends AbstractModule {
         component?.id,
         variable?.id,
         stationId,
+      );
+      const reportDataType: ReportDataType = {
+        component,
+        variable,
+        variableAttribute: [
+          {
+            value: event.actualValue,
+          },
+        ],
+      };
+      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+        reportDataType,
+        stationId,
+        message.payload.generatedAt,
       );
     }
 
@@ -319,7 +339,7 @@ export class MonitoringModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetMonitoringReport,
         {
-          requestId: Math.floor(Math.random() * 1000),
+          requestId: generateRequestId(),
         } as GetMonitoringReportRequest,
       );
     }
@@ -334,6 +354,7 @@ export class MonitoringModule extends AbstractModule {
     this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(
       message.payload.getVariableResult,
       message.context.stationId,
+      message.context.timestamp,
     );
   }
 
@@ -348,6 +369,7 @@ export class MonitoringModule extends AbstractModule {
       this._deviceModelRepository.updateResultByStationId(
         setVariableResultType,
         message.context.stationId,
+        message.context.timestamp,
       );
     });
   }

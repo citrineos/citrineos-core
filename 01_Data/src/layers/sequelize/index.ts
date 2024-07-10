@@ -9,11 +9,12 @@ export { Authorization, IdToken, IdTokenInfo, AdditionalInfo } from './model/Aut
 export { Transaction, TransactionEvent, MeterValue } from './model/TransactionEvent';
 export { SecurityEvent } from './model/SecurityEvent';
 export { VariableMonitoring, EventData, VariableMonitoringStatus } from './model/VariableMonitoring';
-export { ChargingStation, Location } from './model/Location';
+export { ChargingStation, Location, StatusNotification } from './model/Location';
 export { MessageInfo } from './model/MessageInfo';
-export { Tariff } from './model/Tariff/Tariffs';
+export { Tariff } from './model/Tariff';
 export { Subscription } from './model/Subscription';
 export { Certificate, SignatureAlgorithmEnumType, CountryNameEnumType } from './model/Certificate';
+export { ChargingProfile, ChargingNeeds, ChargingSchedule, CompositeSchedule, SalesTariff } from './model/ChargingProfile';
 
 // Sequelize Repositories
 export { SequelizeRepository } from './repository/Base';
@@ -28,6 +29,7 @@ export { SequelizeMessageInfoRepository } from './repository/MessageInfo';
 export { SequelizeTariffRepository } from './repository/Tariff';
 export { SequelizeSubscriptionRepository } from './repository/Subscription';
 export { SequelizeCertificateRepository } from './repository/Certificate';
+export { SequelizeChargingProfileRepository } from './repository/ChargingProfile';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util';

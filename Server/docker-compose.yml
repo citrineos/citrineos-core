@@ -33,8 +33,8 @@ services:
 
   citrine:
     build:
-      context: ..
-      dockerfile: ./Server/deploy.Dockerfile
+      context: ../../
+      dockerfile: ./citrineos-core/Server/deploy.with.ocpi.Dockerfile
     volumes:
       - ../package-lock.json:/usr/local/apps/citrineos/package-lock-host.json
       - ../package.json:/usr/local/apps/citrineos/package.json
@@ -93,6 +93,7 @@ services:
       - 8080:8080
       - 8081:8081
       - 8082:8082
+      - 8085:8085
       - 8443:8443
       - 8444:8444
       - 9229:9229

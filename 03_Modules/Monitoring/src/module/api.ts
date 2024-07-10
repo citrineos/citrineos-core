@@ -53,7 +53,8 @@ import { getBatches, getSizeOfRequest } from '@citrineos/util';
  */
 export class MonitoringModuleApi
   extends AbstractModuleApi<MonitoringModule>
-  implements IMonitoringModuleApi {
+  implements IMonitoringModuleApi
+{
   private readonly _componentMonitoringCtrlr = 'MonitoringCtrlr';
   private readonly _componentDeviceDataCtrlr = 'DeviceDataCtrlr';
 
@@ -314,6 +315,7 @@ export class MonitoringModuleApi
     await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(
       setVariableData,
       identifier,
+      new Date().toISOString(), // Will be set again when SetVariablesResponse is received
     );
 
     let itemsPerMessageSetVariables =
@@ -458,10 +460,12 @@ export class MonitoringModuleApi
         variableAttr.mutability = MutabilityEnumType.ReadWrite;
       }
     }
+    const timestamp = new Date().toISOString();
     return this._module.deviceModelRepository
       .createOrUpdateDeviceModelByStationId(
         request.body,
         request.query.stationId,
+        timestamp,
       )
       .then(async (variableAttributes) => {
         if (request.query.setOnCharger) {
@@ -479,6 +483,7 @@ export class MonitoringModuleApi
                 variable: variableAttribute.variable,
               },
               request.query.stationId,
+              timestamp,
             );
           }
         }
@@ -494,7 +499,9 @@ export class MonitoringModuleApi
   getDeviceModelVariables(
     request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>,
   ): Promise<sequelize.VariableAttribute[] | undefined> {
-    return this._module.deviceModelRepository.readAllByQuerystring(request.query);
+    return this._module.deviceModelRepository.readAllByQuerystring(
+      request.query,
+    );
   }
 
   @AsDataEndpoint(

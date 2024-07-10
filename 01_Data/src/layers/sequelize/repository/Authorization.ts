@@ -4,23 +4,34 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { CrudRepository, SystemConfig, type AuthorizationData, type IdTokenType } from '@citrineos/base';
-import { type BuildOptions, type Includeable } from 'sequelize';
+import { Op, type BuildOptions, type Includeable } from 'sequelize';
 import { type AuthorizationQuerystring, type IAuthorizationRepository, type AuthorizationRestrictions } from '../../../interfaces';
 import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from '../model/Authorization';
 import { SequelizeRepository } from './Base';
 import { Sequelize } from 'sequelize-typescript';
 import { Logger, ILogObj } from 'tslog';
+import { IdTokenAdditionalInfo } from '../model/Authorization/IdTokenAdditionalInfo';
 
 export class SequelizeAuthorizationRepository extends SequelizeRepository<Authorization> implements IAuthorizationRepository {
   idToken: CrudRepository<IdToken>;
   idTokenInfo: CrudRepository<IdTokenInfo>;
   additionalInfo: CrudRepository<AdditionalInfo>;
+  idTokenAdditionalInfo: CrudRepository<IdTokenAdditionalInfo>;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, idToken?: CrudRepository<IdToken>, idTokenInfo?: CrudRepository<IdTokenInfo>, additionalInfo?: CrudRepository<AdditionalInfo>) {
+  constructor(
+    config: SystemConfig,
+    logger?: Logger<ILogObj>,
+    sequelizeInstance?: Sequelize,
+    idToken?: CrudRepository<IdToken>,
+    idTokenInfo?: CrudRepository<IdTokenInfo>,
+    additionalInfo?: CrudRepository<AdditionalInfo>,
+    idTokenAdditionalInfo?: CrudRepository<IdTokenAdditionalInfo>,
+  ) {
     super(config, Authorization.MODEL_NAME, logger, sequelizeInstance);
     this.idToken = idToken ? idToken : new SequelizeRepository<IdToken>(config, IdToken.MODEL_NAME, logger, sequelizeInstance);
     this.idTokenInfo = idTokenInfo ? idTokenInfo : new SequelizeRepository<IdTokenInfo>(config, IdTokenInfo.MODEL_NAME, logger, sequelizeInstance);
     this.additionalInfo = additionalInfo ? additionalInfo : new SequelizeRepository<AdditionalInfo>(config, AdditionalInfo.MODEL_NAME, logger, sequelizeInstance);
+    this.idTokenAdditionalInfo = idTokenAdditionalInfo ? idTokenAdditionalInfo : new SequelizeRepository<IdTokenAdditionalInfo>(config, IdTokenAdditionalInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 
   async createOrUpdateByQuerystring(value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined> {
@@ -31,13 +42,14 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     const savedAuthorizationModel: Authorization | undefined = await this.readOnlyOneByQuerystring(query);
     const authorizationModel = savedAuthorizationModel ?? Authorization.build({}, this._createInclude(value));
 
-    authorizationModel.idTokenId = (await this._updateIdToken(value.idToken, authorizationModel.idTokenId)).id;
+    authorizationModel.idTokenId = (await this._updateIdToken(value.idToken)).id;
 
     if (value.idTokenInfo) {
       const valueIdTokenInfo = IdTokenInfo.build({
-        id: undefined,
         ...value.idTokenInfo,
       });
+      // Explicitly overwrite id with undefined to avoid mapping null onto the existing id in the for loop
+      valueIdTokenInfo.id = valueIdTokenInfo.id ?? undefined;
       if (authorizationModel.idTokenInfoId) {
         let savedIdTokenInfo = await this.idTokenInfo.readOnlyOneByQuery({
           where: { id: authorizationModel.idTokenInfoId },
@@ -55,7 +67,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
           }
         });
         if (value.idTokenInfo.groupIdToken) {
-          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken, savedIdTokenInfo.groupIdTokenId);
+          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken);
           if (!savedIdTokenInfo.groupIdTokenId) {
             savedIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
           }
@@ -138,52 +150,34 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     return { include };
   }
 
-  private async _updateIdToken(value: IdTokenType, savedIdTokenId?: number) {
-    const idTokenModel = IdToken.build(
-      {
-        id: undefined,
-        ...value,
-      },
-      {
-        include: [AdditionalInfo],
-      },
-    );
-    let savedIdTokenModel: IdToken | undefined;
-    if (savedIdTokenId) {
-      savedIdTokenModel = await this.idToken.readOnlyOneByQuery({
-        where: { id: savedIdTokenId },
-        include: [AdditionalInfo],
-      });
-    }
-    if (!savedIdTokenModel || savedIdTokenModel.idToken !== value.idToken || savedIdTokenModel.type !== value.type) {
-      savedIdTokenModel = await this.idToken.readOnlyOneByQuery({
+  private async _updateIdToken(value: IdTokenType): Promise<IdToken> {
+    const savedIdTokenModel = (
+      await this.idToken.readOrCreateByQuery({
         where: { idToken: value.idToken, type: value.type },
-        include: [AdditionalInfo],
-      });
+      })
+    )[0];
+
+    const additionalInfoIds: number[] = [];
+
+    // Create any additionalInfos that don't exist,
+    // and any relations between them and the IdToken that don't exist
+    if (value.additionalInfo) {
+      for (const valueAdditionalInfo of value.additionalInfo) {
+        const savedAdditionalInfo = (
+          await this.additionalInfo.readOrCreateByQuery({
+            where: {
+              additionalIdToken: valueAdditionalInfo.additionalIdToken,
+              type: valueAdditionalInfo.type,
+            },
+          })
+        )[0];
+        await this.idTokenAdditionalInfo.readOrCreateByQuery({ where: { idTokenId: savedIdTokenModel.id, additionalInfoId: savedAdditionalInfo.id } });
+        additionalInfoIds.push(savedAdditionalInfo.id);
+      }
     }
-    if (savedIdTokenModel) {
-      // idToken.idToken and idToken.type should be treated as immutable.
-      // Therefore, only update additionalInfo
-      savedIdTokenModel.additionalInfo?.forEach((savedAdditionalInfo) => {
-        // Remove additionalInfo not in value.additionalInfo
-        if (!value?.additionalInfo?.some((valueAdditionalInfo) => valueAdditionalInfo.additionalIdToken === savedAdditionalInfo.additionalIdToken && valueAdditionalInfo.type === savedAdditionalInfo.type)) {
-          (savedAdditionalInfo as AdditionalInfo).destroy();
-        }
-      });
-      value.additionalInfo?.forEach((valueAdditionalInfo) => {
-        // Create additionalInfo not in savedIdTokenModel.additionalInfo
-        if (!savedIdTokenModel?.additionalInfo?.some((savedAdditionalInfo) => savedAdditionalInfo.additionalIdToken === valueAdditionalInfo.additionalIdToken && savedAdditionalInfo.type === valueAdditionalInfo.type)) {
-          this.additionalInfo.create(
-            AdditionalInfo.build({
-              idTokenId: savedIdTokenModel.id,
-              ...valueAdditionalInfo,
-            }),
-          );
-        }
-      });
-      return await this.idToken.create(savedIdTokenModel);
-    } else {
-      return await this.idToken.create(idTokenModel);
-    }
+    // Remove all associations between idToken and additionalInfo that no longer exist
+    await this.idTokenAdditionalInfo.deleteAllByQuery({ where: { idTokenId: savedIdTokenModel.id, additionalInfoId: { [Op.notIn]: additionalInfoIds } } });
+
+    return savedIdTokenModel.reload({ include: [AdditionalInfo] });
   }
 }

@@ -59,6 +59,7 @@ export { SystemConfig, WebsocketServerConfig } from './config/types';
 // Utils
 
 export { RequestBuilder } from './util/request';
+export { MeterValueUtils } from './util/MeterValueUtils';
 
 export const LOG_LEVEL_OCPP = 10;
 
@@ -132,8 +133,11 @@ import {
 } from './ocpp/model/index';
 import { CallAction } from './ocpp/rpc/message';
 
-export interface OcppRequest {}
-export interface OcppResponse {}
+export interface OcppRequest {
+}
+
+export interface OcppResponse {
+}
 
 export const CALL_SCHEMA_MAP: Map<CallAction, object> = new Map<
   CallAction,
@@ -226,3 +230,7 @@ export const CALL_RESULT_SCHEMA_MAP: Map<CallAction, object> = new Map<
 ]);
 
 export { eventGroupFromString } from './interfaces/messages';
+
+export { UnauthorizedException } from './interfaces/api/exceptions/unauthorized.exception';
+export { HttpHeader } from './interfaces/api/http.header';
+export { HttpStatus } from './interfaces/api/http.status';

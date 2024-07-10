@@ -1,6 +1,21 @@
 {
-  "watch": ["src", "../00_Base", "../01_Data", "../02_Util", "../03_Modules"],
+  "watch": [
+    "src",
+    "../00_Base",
+    "../01_Data",
+    "../02_Util",
+    "../03_Modules",
+    "../../citrineos-ocpi/00_Base",
+    "../../citrineos-ocpi/03_Modules/Versions",
+    "../../citrineos-ocpi/03_Modules/Credentials",
+    "../../citrineos-ocpi/03_Modules/Commands",
+    "../../citrineos-ocpi/03_Modules/Locations",
+    "../../citrineos-ocpi/03_Modules/Sessions",
+    "../../citrineos-ocpi/03_Modules/ChargingProfiles",
+    "../../citrineos-ocpi/03_Modules/Tokens",
+    "../../citrineos-ocpi/03_Modules/Cdrs"
+  ],
   "ext": "ts,js",
   "ignore": ["**/dist/**", "**/node_modules/**"],
-  "exec": "node --inspect=0.0.0.0:9229 --nolazy -r ts-node/register"
+  "exec": "npm run build --prefix ../ && node --inspect=0.0.0.0:9229 --nolazy -r ts-node/register"
 }

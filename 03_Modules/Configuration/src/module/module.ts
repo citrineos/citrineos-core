@@ -64,7 +64,12 @@ import {
   IMessageInfoRepository,
   sequelize,
 } from '@citrineos/data';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import {
+  generateRequestId,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  Timer,
+} from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
@@ -202,6 +207,7 @@ export class ConfigurationModule extends AbstractModule {
 
     const stationId = message.context.stationId;
     const tenantId = message.context.tenantId;
+    const timestamp = message.context.timestamp
     const chargingStation = message.payload.chargingStation;
 
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
@@ -310,6 +316,7 @@ export class ConfigurationModule extends AbstractModule {
         ],
       },
       stationId,
+      timestamp,
     );
     await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
       {
@@ -330,6 +337,7 @@ export class ConfigurationModule extends AbstractModule {
         ],
       },
       stationId,
+      timestamp,
     );
     if (chargingStation.firmwareVersion) {
       await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
@@ -351,6 +359,7 @@ export class ConfigurationModule extends AbstractModule {
           ],
         },
         stationId,
+        timestamp,
       );
     }
     if (chargingStation.serialNumber) {
@@ -373,6 +382,7 @@ export class ConfigurationModule extends AbstractModule {
           ],
         },
         stationId,
+        timestamp,
       );
     }
     if (chargingStation.modem) {
@@ -396,6 +406,7 @@ export class ConfigurationModule extends AbstractModule {
             ],
           },
           stationId,
+          timestamp,
         );
       }
       if (chargingStation.modem.iccid) {
@@ -418,6 +429,7 @@ export class ConfigurationModule extends AbstractModule {
             ],
           },
           stationId,
+          timestamp,
         );
       }
     }
@@ -787,7 +799,7 @@ export class ConfigurationModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetDisplayMessages,
         {
-          requestId: Math.floor(Math.random() * 1000),
+          requestId: generateRequestId(),
         } as GetDisplayMessagesRequest,
       );
     }
@@ -856,7 +868,7 @@ export class ConfigurationModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetDisplayMessages,
         {
-          requestId: Math.floor(Math.random() * 1000),
+          requestId: generateRequestId(),
         } as GetDisplayMessagesRequest,
       );
     }

@@ -198,6 +198,27 @@ services:
     environment:
       CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
       APP_NAME: 'smartcharging'
+  tenant:
+    build:
+      context: ../..
+      dockerfile: .deploy.Dockerfile
+    depends_on:
+      ocpp-db:
+        condition: service_started
+      amqp-broker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - 8090:8090
+    expose:
+      - 8090
+    volumes:
+      - ./:/usr/tenant
+      - /usr/tenant/node_modules
+    environment:
+      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
+      APP_NAME: 'tenant'
   transactions:
     build:
       context: ../..

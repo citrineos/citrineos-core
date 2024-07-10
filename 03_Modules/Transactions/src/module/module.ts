@@ -12,6 +12,7 @@ import {
   CallAction,
   CostUpdatedRequest,
   CostUpdatedResponse,
+  CrudRepository,
   EventGroup,
   GetTransactionStatusResponse,
   HandlerProperties,
@@ -20,11 +21,10 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
-  MeasurandEnumType,
   MeterValuesRequest,
   MeterValuesResponse,
-  ReadingContextEnumType,
-  SampledValueType,
+  MeterValueUtils,
+  ReportDataType,
   StatusNotificationRequest,
   StatusNotificationResponse,
   SystemConfig,
@@ -33,14 +33,18 @@ import {
   TransactionEventResponse,
 } from '@citrineos/base';
 import {
+  Component,
+  Evse,
   IAuthorizationRepository,
   IDeviceModelRepository,
+  ILocationRepository,
   ITariffRepository,
   ITransactionEventRepository,
-  MeterValue,
   sequelize,
+  SequelizeRepository,
   Tariff,
   Transaction,
+  Variable,
   VariableAttribute,
 } from '@citrineos/data';
 import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
@@ -64,6 +68,8 @@ export class TransactionsModule extends AbstractModule {
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _authorizeRepository: IAuthorizationRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _componentRepository: CrudRepository<Component>;
+  protected _locationRepository: ILocationRepository;
   protected _tariffRepository: ITariffRepository;
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
@@ -85,21 +91,37 @@ export class TransactionsModule extends AbstractModule {
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
-   * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository} which represents a repository for accessing and manipulating authorization data.
+   * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository} which represents a repository for accessing and manipulating transaction event data.
    * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance
    * is created and used.
    *
-   * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating variable data.
+   * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating authorization data.
    * If no `authorizeRepository` is provided, a default {@link sequelize:authorizeRepository} instance is
    * created and used.
    *
-   * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
+   * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable attribute data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is
    * created and used.
    *
+   * @param {CrudRepository<Component>} [componentRepository] - An optional parameter of type {@link CrudRepository<Component>} which represents a repository for accessing and manipulating component data.
+   * If no `componentRepository` is provided, a default {@link sequelize:componentRepository} instance is
+   * created and used.
+   *
+   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which represents a repository for accessing and manipulating location and charging station data.
+   * If no `locationRepository` is provided, a default {@link sequelize:locationRepository} instance is
+   * created and used.
+   *
+   * @param {CrudRepository<Component>} [componentRepository] - An optional parameter of type {@link CrudRepository<Component>} which represents a repository for accessing and manipulating component data.
+   * If no `componentRepository` is provided, a default {@link sequelize:componentRepository} instance is
+   * created and used.
+   *
+   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which represents a repository for accessing and manipulating location and charging station data.
+   * If no `locationRepository` is provided, a default {@link sequelize:locationRepository} instance is
+   * created and used.
+   *
    * @param {ITariffRepository} [tariffRepository] - An optional parameter of type {@link ITariffRepository} which
-   * represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize:tariffRepository} instance is
+   * represents a repository for accessing and manipulating tariff data.
+   * If no `tariffRepository` is provided, a default {@link sequelize:tariffRepository} instance is
    * created and used.
    */
   constructor(
@@ -111,6 +133,8 @@ export class TransactionsModule extends AbstractModule {
     transactionEventRepository?: ITransactionEventRepository,
     authorizeRepository?: IAuthorizationRepository,
     deviceModelRepository?: IDeviceModelRepository,
+    componentRepository?: CrudRepository<Component>,
+    locationRepository?: ILocationRepository,
     tariffRepository?: ITariffRepository,
   ) {
     super(
@@ -140,6 +164,12 @@ export class TransactionsModule extends AbstractModule {
     this._deviceModelRepository =
       deviceModelRepository ||
       new sequelize.SequelizeDeviceModelRepository(config, logger);
+    this._componentRepository =
+      componentRepository ||
+      new SequelizeRepository<Component>(config, Component.MODEL_NAME, logger);
+    this._locationRepository =
+      locationRepository ||
+      new sequelize.SequelizeLocationRepository(config, logger);
     this._tariffRepository =
       tariffRepository ||
       new sequelize.SequelizeTariffRepository(config, logger);
@@ -188,7 +218,7 @@ export class TransactionsModule extends AbstractModule {
     const transactionId = transactionEvent.transactionInfo.transactionId;
     if (transactionEvent.idToken) {
       this._authorizeRepository
-        .readAllByQuerystring({ ...transactionEvent.idToken })
+        .readAllByQuerystring({...transactionEvent.idToken})
         .then((authorizations) => {
           const response: TransactionEventResponse = {
             idTokenInfo: {
@@ -208,27 +238,27 @@ export class TransactionsModule extends AbstractModule {
               const idTokenInfo: IdTokenInfoType = {
                 status: authorization.idTokenInfo.status,
                 cacheExpiryDateTime:
-                  authorization.idTokenInfo.cacheExpiryDateTime,
+                authorization.idTokenInfo.cacheExpiryDateTime,
                 chargingPriority: authorization.idTokenInfo.chargingPriority,
                 language1: authorization.idTokenInfo.language1,
                 evseId: authorization.idTokenInfo.evseId,
                 groupIdToken: authorization.idTokenInfo.groupIdToken
                   ? {
-                      additionalInfo:
-                        authorization.idTokenInfo.groupIdToken.additionalInfo &&
-                        authorization.idTokenInfo.groupIdToken.additionalInfo
-                          .length > 0
-                          ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                              (additionalInfo) => ({
-                                additionalIdToken:
-                                  additionalInfo.additionalIdToken,
-                                type: additionalInfo.type,
-                              }),
-                            ) as [AdditionalInfoType, ...AdditionalInfoType[]])
-                          : undefined,
-                      idToken: authorization.idTokenInfo.groupIdToken.idToken,
-                      type: authorization.idTokenInfo.groupIdToken.type,
-                    }
+                    additionalInfo:
+                      authorization.idTokenInfo.groupIdToken.additionalInfo &&
+                      authorization.idTokenInfo.groupIdToken.additionalInfo
+                        .length > 0
+                        ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
+                          (additionalInfo) => ({
+                            additionalIdToken:
+                            additionalInfo.additionalIdToken,
+                            type: additionalInfo.type,
+                          }),
+                        ) as [AdditionalInfoType, ...AdditionalInfoType[]])
+                        : undefined,
+                    idToken: authorization.idTokenInfo.groupIdToken.idToken,
+                    type: authorization.idTokenInfo.groupIdToken.type,
+                  }
                   : undefined,
                 language2: authorization.idTokenInfo.language2,
                 personalMessage: authorization.idTokenInfo.personalMessage,
@@ -269,7 +299,7 @@ export class TransactionsModule extends AbstractModule {
             transactionEvent.eventType === TransactionEventEnumType.Started &&
             transactionEventResponse &&
             transactionEventResponse.idTokenInfo?.status ===
-              AuthorizationStatusEnumType.Accepted &&
+            AuthorizationStatusEnumType.Accepted &&
             transactionEvent.idToken
           ) {
             if (this._costUpdatedInterval) {
@@ -280,6 +310,9 @@ export class TransactionsModule extends AbstractModule {
                 message.context.tenantId,
               );
             }
+
+            // TODO there should only be one active transaction per evse of a station.
+            // old transactions should be marked inactive and an alert should be raised (this can only happen in the field with charger bugs or missed messages)
 
             // Check for ConcurrentTx
             return this._transactionEventRepository
@@ -332,6 +365,7 @@ export class TransactionsModule extends AbstractModule {
           response.totalCost = await this._calculateTotalCost(
             stationId,
             transaction.id,
+            transaction.totalKwh
           );
         }
 
@@ -363,6 +397,7 @@ export class TransactionsModule extends AbstractModule {
         response.totalCost = await this._calculateTotalCost(
           stationId,
           transaction.id,
+          transaction.totalKwh
         );
       }
 
@@ -401,15 +436,72 @@ export class TransactionsModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.StatusNotification)
-  protected _handleStatusNotification(
+  protected async _handleStatusNotification(
     message: IMessage<StatusNotificationRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('StatusNotification received:', message, props);
+
+    const stationId = message.context.stationId;
+    const statusNotificationRequest = message.payload;
+
+    const chargingStation =
+      await this._locationRepository.readChargingStationByStationId(stationId);
+    if (chargingStation) {
+      await this._locationRepository.addStatusNotificationToChargingStation(
+        stationId,
+        statusNotificationRequest,
+      );
+    } else {
+      this._logger.warn(
+        `Charging station ${stationId} not found. Status notification cannot be associated with a charging station.`,
+      );
+    }
+
+    const component = await this._componentRepository.readOnlyOneByQuery({
+      where: {
+        name: 'Connector',
+      },
+      include: [
+        {
+          model: Evse,
+          where: {
+            id: statusNotificationRequest.evseId,
+            connectorId: statusNotificationRequest.connectorId,
+          },
+        },
+        {
+          model: Variable,
+          where: {
+            name: 'AvailabilityState',
+          },
+        },
+      ],
+    });
+    const variable = component?.variables?.[0];
+    if (!component || !variable) {
+      this._logger.warn(
+        'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
+      );
+    } else {
+      const reportDataType: ReportDataType = {
+        component: component,
+        variable: variable,
+        variableAttribute: [
+          {
+            value: statusNotificationRequest.connectorStatus,
+          },
+        ],
+      };
+      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+        reportDataType,
+        stationId,
+        statusNotificationRequest.timestamp,
+      );
+    }
 
     // Create response
     const response: StatusNotificationResponse = {};
-
     this.sendCallResultWithMessage(message, response).then(
       (messageConfirmation) => {
         this._logger.debug(
@@ -457,6 +549,7 @@ export class TransactionsModule extends AbstractModule {
   private async _calculateTotalCost(
     stationId: string,
     transactionDbId: number,
+    totalKwh?: number
   ): Promise<number> {
     // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
     //  implementation is finalized
@@ -466,81 +559,26 @@ export class TransactionsModule extends AbstractModule {
       await this._tariffRepository.findByStationId(stationId);
     if (tariff) {
       this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);
-      const totalKwh = this._getTotalKwh(
-        await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-          transactionDbId,
-        ),
-      );
+      if (!totalKwh) {
+        totalKwh = MeterValueUtils.getTotalKwh(
+          await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
+            transactionDbId,
+          ),
+        );
+
+        await Transaction.update(
+          {totalKwh: totalKwh},
+          {where: {id: transactionDbId}, returning: false},
+        );
+      }
+
       this._logger.debug(`TotalKwh: ${totalKwh}`);
-      await Transaction.update(
-        { totalKwh: totalKwh },
-        { where: { id: transactionDbId }, returning: false },
-      );
-      totalCost = this._roundCost(totalKwh * tariff.price);
+      totalCost = this._roundCost(totalKwh * tariff.pricePerKwh);
     } else {
       this._logger.error(`Tariff not found for station ${stationId}`);
     }
 
     return totalCost;
-  }
-
-  /**
-   * Calculate the total Kwh
-   *
-   * @param {array} meterValues - meterValues of a transaction.
-   * @return {number} total Kwh based on the overall values (i.e., without phase) in the simpledValues.
-   */
-  private _getTotalKwh(meterValues: MeterValue[]): number {
-    const contexts: ReadingContextEnumType[] = [
-      ReadingContextEnumType.Transaction_Begin,
-      ReadingContextEnumType.Sample_Periodic,
-      ReadingContextEnumType.Transaction_End,
-    ];
-
-    let valuesMap = new Map();
-
-    meterValues
-      .filter(
-        (meterValue) =>
-          meterValue.sampledValue[0].context &&
-          contexts.indexOf(meterValue.sampledValue[0].context) !== -1,
-      )
-      .forEach((meterValue) => {
-        const sampledValues = meterValue.sampledValue as SampledValueType[];
-        const overallValue = sampledValues.find(
-          (sampledValue) =>
-            sampledValue.phase === undefined &&
-            sampledValue.measurand ===
-              MeasurandEnumType.Energy_Active_Import_Register,
-        );
-        if (
-          overallValue &&
-          overallValue.unitOfMeasure?.unit?.toUpperCase() === 'KWH'
-        ) {
-          valuesMap.set(Date.parse(meterValue.timestamp), overallValue.value);
-        } else if (
-          overallValue &&
-          overallValue.unitOfMeasure?.unit?.toUpperCase() === 'WH'
-        ) {
-          valuesMap.set(
-            Date.parse(meterValue.timestamp),
-            overallValue.value / 1000,
-          );
-        }
-      });
-
-    // sort the map based on timestamps
-    valuesMap = new Map(
-      [...valuesMap.entries()].sort((v1, v2) => v1[0] - v2[0]),
-    );
-    const sortedValues = Array.from(valuesMap.values());
-
-    let totalKwh = 0;
-    for (let i = 1; i < sortedValues.length; i++) {
-      totalKwh += sortedValues[i] - sortedValues[i - 1];
-    }
-
-    return totalKwh;
   }
 
   /**
