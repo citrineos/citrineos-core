@@ -27,7 +27,7 @@ jobs:
           sudo chown 1000:1000 ${{ github.workspace }}/Server/data/directus/uploads
 
       - name: Build and Run Docker Compose
-        run: docker compose -f ${{ github.workspace }}/Server/docker-compose.with.ocpi.yml up -d
+        run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml up -d
 
       - name: Install Newman
         run: |
