@@ -15,7 +15,8 @@
     "start-unix": "APP_NAME=all APP_ENV=local nodemon src/index.ts",
     "start-windows": "set APP_NAME=all&& set APP_ENV=local&& RefreshEnv.cmd && npx nodemon src/index.ts",
     "start-docker": "nodemon src/index.ts",
-    "start-docker-cloud": "node --inspect=0.0.0.0:9229 dist/index.js"
+    "start-docker-cloud": "node --inspect=0.0.0.0:9229 dist/index.js",
+    "start-everest": "cd ./everest && EVEREST_IMAGE_TAG=0.0.16 EVEREST_TARGET_URL=ws://something.ngrok.io/cp001 docker-compose up"
   },
   "keywords": [
     "ocpp",
