@@ -23,7 +23,8 @@
     "lint": "npx eslint --ext .ts ./",
     "lint-fix": "npm run prettier && npx eslint --ext .ts --fix ./",
     "prettier": "prettier --write .",
-    "fresh-and-install-all": "npm run fresh && npm run install-all"
+    "fresh-and-install-all": "npm run fresh && npm run install-all",
+    "sync-db": "ts-node ./db.sync.ts"
   },
   "workspaces": [
     "00_Base",
