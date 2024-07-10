@@ -27,7 +27,7 @@
   ],
   "root": true,
   "rules": {
-    "@typescript-eslint/consistent-type-definitions": "error",
+    "@typescript-eslint/consistent-type-definitions": "warn",
     "@typescript-eslint/dot-notation": "off",
     "@typescript-eslint/explicit-member-accessibility": [
       "off",
