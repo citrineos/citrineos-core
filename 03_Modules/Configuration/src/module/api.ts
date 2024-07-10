@@ -424,6 +424,7 @@ export class ConfigurationModuleApi
               }
             },
             stationId,
+            new Date().toISOString()
         ).then(async (variableAttributes) => {
           for (let variableAttribute of variableAttributes) {
             variableAttribute = await variableAttribute.reload({
@@ -438,6 +439,7 @@ export class ConfigurationModuleApi
                   variable: variableAttribute.variable,
                 },
                 stationId,
+                new Date().toISOString()
             );
           }
           return variableAttributes;

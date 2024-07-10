@@ -307,6 +307,7 @@ export abstract class AbstractModule implements IModule {
     message: IMessage<OcppRequest>,
     payload: OcppResponse,
   ): Promise<IMessageConfirmation> {
+    message.origin = MessageOrigin.ChargingStationManagementSystem;
     return this._sender.sendResponse(message, payload);
   }
 
@@ -354,6 +355,7 @@ export abstract class AbstractModule implements IModule {
     message: IMessage<OcppRequest>,
     payload: OcppError,
   ): Promise<IMessageConfirmation> {
+    message.origin = MessageOrigin.ChargingStationManagementSystem;
     return this._sender.sendResponse(message, payload);
   }
 

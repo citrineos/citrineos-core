@@ -22,17 +22,16 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
     });
   }
 
-  async createOrUpdateTariff(tariff: Tariff): Promise<Tariff> {
+  async upsertTariff(tariff: Tariff): Promise<Tariff> {
     return await this.s.transaction(async (transaction) => {
-      const savedTariff = await this.s.models[Tariff.MODEL_NAME].findOne({
-        where: {
-          stationId: tariff.stationId,
-          unit: tariff.unit,
-        },
-        transaction,
+      const savedTariff = await this.readOnlyOneByQuery({
+        where: {id: tariff.id},
+        transaction
       });
       if (savedTariff) {
-        return (await this.updateByKey({ ...tariff }, savedTariff.dataValues.id)) as Tariff;
+        const updatedTariff = await savedTariff.set(tariff.data).save({transaction});
+        this.emit('updated', [updatedTariff]);
+        return updatedTariff;
       }
       const createdTariff = await tariff.save({ transaction });
       this.emit('created', [createdTariff]);
@@ -43,22 +42,18 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
   async readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {
     return super.readAllByQuery({
       where: {
-        ...(query.stationId ? { stationId: query.stationId } : {}),
-        ...(query.unit ? { unit: query.unit } : {}),
-        ...(query.id ? { id: query.id } : {}),
+        ...(query.id && { id: query.id }),
       },
     });
   }
 
   async deleteAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {
-    if (!query.id && !query.stationId && !query.unit) {
+    if (!query.id) {
       throw new Error('Must specify at least one query parameter');
     }
     return super.deleteAllByQuery({
       where: {
-        ...(query.stationId ? { stationId: query.stationId } : {}),
-        ...(query.unit ? { unit: query.unit } : {}),
-        ...(query.id ? { id: query.id } : {}),
+        ...(query.id && { id: query.id }),
       },
     });
   }

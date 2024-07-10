@@ -443,7 +443,7 @@ export class EVDriverModule extends AbstractModule {
                   format: MessageFormatEnumType.ASCII,
                 } as MessageContentType;
               }
-              response.idTokenInfo.personalMessage.content = `${tariff.price}/${tariff.unit}`;
+              response.idTokenInfo.personalMessage.content = `${tariff.pricePerKwh}/kWh`;
             }
           }
         }

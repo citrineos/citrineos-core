@@ -3,19 +3,30 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type ChargingStateEnumType, CrudRepository, type EVSEType, type IdTokenType, SystemConfig, TransactionEventEnumType, type TransactionEventRequest } from '@citrineos/base';
+import {
+  type ChargingStateEnumType,
+  CrudRepository,
+  type EVSEType,
+  IdTokenEnumType,
+  type IdTokenType,
+  MeterValueUtils,
+  SystemConfig,
+  TransactionEventEnumType,
+  type TransactionEventRequest
+} from '@citrineos/base';
 import { type ITransactionEventRepository } from '../../../interfaces';
 import { MeterValue, Transaction, TransactionEvent } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';
 import { IdToken } from '../model/Authorization';
 import { Evse } from '../model/DeviceModel';
-import { Op } from 'sequelize';
+import { Op, WhereOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 
 export class SequelizeTransactionEventRepository extends SequelizeRepository<TransactionEvent> implements ITransactionEventRepository {
   transaction: CrudRepository<Transaction>;
   evse: CrudRepository<Evse>;
+  idToken: CrudRepository<IdToken>;
   meterValue: CrudRepository<MeterValue>;
 
   constructor(
@@ -25,11 +36,13 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     sequelizeInstance?: Sequelize,
     transaction?: CrudRepository<Transaction>,
     evse?: CrudRepository<Evse>,
+    idToken?: CrudRepository<IdToken>,
     meterValue?: CrudRepository<MeterValue>,
   ) {
     super(config, namespace, logger, sequelizeInstance);
     this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, Transaction.MODEL_NAME, logger, sequelizeInstance);
     this.evse = evse ? evse : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
+    this.idToken = idToken ? idToken : new SequelizeRepository<IdToken>(config, IdToken.MODEL_NAME, logger, sequelizeInstance);
     this.meterValue = meterValue ? meterValue : new SequelizeRepository<MeterValue>(config, MeterValue.MODEL_NAME, logger, sequelizeInstance);
   }
 
@@ -63,34 +76,56 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         },
         transaction: sequelizeTransaction,
       });
-      
+
       const updatedTransaction = Transaction.build({
         stationId,
         isActive: value.eventType !== TransactionEventEnumType.Ended,
         evseDatabaseId: evse ? evse.get('databaseId') : null,
         ...value.transactionInfo,
       });
+
       if (existingTransaction) {
-        await existingTransaction.update({ ...updatedTransaction }, { transaction: sequelizeTransaction });
+        await existingTransaction.update({...updatedTransaction}, {transaction: sequelizeTransaction});
         transaction = (await existingTransaction.reload({
           transaction: sequelizeTransaction,
           include: [TransactionEvent, MeterValue],
         })) as Transaction;
       } else {
-        transaction = await updatedTransaction.save({ transaction: sequelizeTransaction });
+        transaction = await updatedTransaction.save({transaction: sequelizeTransaction});
         created = true;
       }
 
       const transactionDatabaseId = transaction.id;
 
-      const event = await TransactionEvent.create(
+      let event = TransactionEvent.build(
         {
           stationId,
           transactionDatabaseId,
           ...value,
-        },
-        { transaction: sequelizeTransaction },
+        }
       );
+
+      if (value.idToken && value.idToken.type !== IdTokenEnumType.NoAuthorization) {
+        // TODO: ensure that Authorization is passed into this method if idToken exists
+        // At this point, token MUST already be authorized and thus exist in the database
+        // It can be either the primary idToken of an Authorization or a group idToken
+        const idToken = await this.idToken.readOnlyOneByQuery({
+          where: {
+            idToken: value.idToken.idToken,
+            type: value.idToken.type,
+          },
+          transaction: sequelizeTransaction,
+        });
+        if (!idToken) {
+          // TODO: Log Warning...
+          // TODO: Save raw transaction event in TransactionEvent model
+        } else {
+          event.idTokenId = idToken.id;
+        }
+      }
+
+      event = await event.save({transaction: sequelizeTransaction});
+
       if (value.meterValue && value.meterValue.length > 0) {
         await Promise.all(
           value.meterValue.map(async (meterValue) => {
@@ -100,15 +135,18 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
                 transactionDatabaseId: transactionDatabaseId,
                 ...meterValue,
               },
-              { transaction: sequelizeTransaction },
+              {transaction: sequelizeTransaction},
             );
             this.meterValue.emit('created', [savedMeterValue]);
           }),
         );
       }
-      await event.reload({ include: [MeterValue], transaction: sequelizeTransaction });
+      await event.reload({include: [MeterValue], transaction: sequelizeTransaction});
       this.emit('created', [event]);
-      await transaction.reload({ include: [TransactionEvent, MeterValue], transaction: sequelizeTransaction });
+
+      await transaction.reload({include: [TransactionEvent, MeterValue], transaction: sequelizeTransaction});
+      await this.calculateAndUpdateTotalKwh(transaction);
+
 
       if (created) {
         this.transaction.emit('created', [transaction]);
@@ -122,8 +160,8 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   async readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]> {
     return await super
       .readAllByQuery({
-        where: { stationId },
-        include: [{ model: Transaction, where: { transactionId } }, MeterValue, Evse, IdToken],
+        where: {stationId},
+        include: [{model: Transaction, where: {transactionId}}, MeterValue, Evse, IdToken],
       })
       .then((transactionEvents) => {
         transactionEvents?.forEach((transactionEvent) => (transactionEvent.transaction = undefined));
@@ -133,8 +171,8 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
 
   async readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined> {
     return await this.transaction.readOnlyOneByQuery({
-      where: { stationId, transactionId },
-      include: [MeterValue],
+      where: {stationId, transactionId},
+      include: [MeterValue, Evse],
     });
   }
 
@@ -151,15 +189,15 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   async readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: EVSEType, chargingStates?: ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
     const includeObj = evse
       ? [
-          {
-            model: Evse,
-            where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null },
-          },
-        ]
+        {
+          model: Evse,
+          where: {id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null},
+        },
+      ]
       : [];
     return await this.transaction
       .readAllByQuery({
-        where: { stationId, ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}) },
+        where: {stationId, ...(chargingStates ? {chargingState: {[Op.in]: chargingStates}} : {})},
         include: includeObj,
       })
       .then((row) => row as Transaction[]);
@@ -168,7 +206,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]> {
     return this.transaction
       .readAllByQuery({
-        where: { isActive: true },
+        where: {isActive: true},
         include: [
           {
             model: TransactionEvent,
@@ -190,8 +228,96 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]> {
     return this.meterValue
       .readAllByQuery({
-        where: { transactionDatabaseId: transactionDataBaseId },
+        where: {transactionDatabaseId: transactionDataBaseId},
       })
       .then((row) => row as MeterValue[]);
+  }
+
+  findByTransactionId(transactionId: string): Promise<Transaction | undefined> {
+    return this.transaction.readOnlyOneByQuery({
+      where: {transactionId},
+      include: [{model: TransactionEvent, include: [IdToken]}, MeterValue, Evse]
+    });
+  }
+
+  async getTransactions(dateFrom?: Date, dateTo?: Date, offset?: number, limit?: number): Promise<Transaction[]> {
+    const queryOptions: any = {
+      where: {},
+      include: [{model: TransactionEvent, include: [IdToken]}, MeterValue, Evse],
+    };
+
+    if (dateFrom) {
+      queryOptions.where.updatedAt = queryOptions.where.updatedAt || {};
+      queryOptions.where.updatedAt[Op.gte] = dateFrom;
+    }
+
+    if (dateTo) {
+      queryOptions.where.updatedAt = queryOptions.where.updatedAt || {};
+      queryOptions.where.updatedAt[Op.lt] = dateTo;
+    }
+
+    if (offset) {
+      queryOptions.offset = offset;
+    }
+
+    if (limit) {
+      queryOptions.limit = limit;
+    }
+
+    return this.transaction.readAllByQuery(queryOptions);
+  }
+
+  async getTransactionsCount(dateFrom?: Date, dateTo?: Date): Promise<number> {
+    const queryOptions: WhereOptions<any> = {
+      where: {}
+    };
+
+    if (dateFrom) {
+      queryOptions.where.updatedAt = queryOptions.where.updatedAt || {};
+      queryOptions.where.updatedAt[Op.gte] = dateFrom;
+    }
+
+    if (dateTo) {
+      queryOptions.where.updatedAt = queryOptions.where.updatedAt || {};
+      queryOptions.where.updatedAt[Op.lt] = dateTo;
+    }
+
+    return Transaction.count(queryOptions);
+  }
+
+  async readAllTransactionsByQuery(query: object): Promise<Transaction[]> {
+    return await this.transaction.readAllByQuery(query);
+  }
+
+  async getEvseIdsWithActiveTransactionByStationId(
+    stationId: string,
+  ): Promise<number[]> {
+    const activeTransactions =
+      await this.transaction.readAllByQuery({
+        where: {
+          stationId: stationId,
+          isActive: true,
+        },
+        include: [Evse],
+      });
+
+    const evseIds: number[] = [];
+    activeTransactions.forEach((transaction) => {
+      const evseId = transaction.evse?.id;
+      if (evseId) {
+        evseIds.push(evseId);
+      }
+    });
+    return evseIds;
+  }
+
+  private async calculateAndUpdateTotalKwh(transaction: Transaction): Promise<number> {
+    const totalKwh = MeterValueUtils.getTotalKwh(transaction.meterValues ?? []);
+
+    await transaction.update(
+      {totalKwh}
+    );
+
+    return totalKwh;
   }
 }

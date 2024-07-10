@@ -83,6 +83,7 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
 }
 
 export interface ILocationRepository extends CrudRepository<Location> {
+  readLocationById: (id: number) => Promise<Location | undefined>;
   readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
   addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotificationRequest): Promise<void>;
 }
@@ -126,7 +127,7 @@ export interface ITariffRepository extends CrudRepository<Tariff> {
   findByStationId(stationId: string): Promise<Tariff | undefined>;
   readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]>;
   deleteAllByQuerystring(query: TariffQueryString): Promise<Tariff[]>;
-  createOrUpdateTariff(tariff: Tariff): Promise<Tariff>;
+  upsertTariff(tariff: Tariff): Promise<Tariff>;
 }
 
 export interface ICertificateRepository extends CrudRepository<Certificate> {
