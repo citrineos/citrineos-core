@@ -11,8 +11,8 @@ services:
     build:
       dockerfile: Dockerfile
       args:
-        EVEREST_TARGET_URL: "ws://s44.ngrok.io/cp001"
-        EVEREST_IMAGE_TAG: ${EVEREST_IMAGE_TAG}
+        - EVEREST_TARGET_URL=${EVEREST_TARGET_URL}
+        - EVEREST_IMAGE_TAG=${EVEREST_IMAGE_TAG}
     platform: linux/x86_64
     deploy:
       resources:
