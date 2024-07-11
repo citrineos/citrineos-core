@@ -100,6 +100,7 @@ import {
   InstallCertificateResponseSchema,
   LogStatusNotificationRequestSchema,
   MeterValuesRequestSchema,
+  NotifyChargingLimitRequestSchema,
   NotifyCustomerInformationRequestSchema,
   NotifyDisplayMessagesRequestSchema,
   NotifyEVChargingNeedsRequestSchema,
@@ -156,6 +157,7 @@ export const CALL_SCHEMA_MAP: Map<CallAction, object> = new Map<
   [CallAction.Heartbeat, HeartbeatRequestSchema],
   [CallAction.LogStatusNotification, LogStatusNotificationRequestSchema],
   [CallAction.MeterValues, MeterValuesRequestSchema],
+  [CallAction.NotifyChargingLimit, NotifyChargingLimitRequestSchema],
   [
     CallAction.NotifyCustomerInformation,
     NotifyCustomerInformationRequestSchema,
