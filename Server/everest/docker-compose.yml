@@ -14,6 +14,8 @@ services:
         - EVEREST_TARGET_URL=${EVEREST_TARGET_URL}
         - EVEREST_IMAGE_TAG=${EVEREST_IMAGE_TAG}
     platform: linux/x86_64
+    ports:
+      - 8888:8888
     deploy:
       resources:
         limits:

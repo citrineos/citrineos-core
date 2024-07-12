@@ -20,5 +20,9 @@ RUN sqlite3 /ext/source/build/dist/share/everest/modules/OCPP201/device_model_st
 
 RUN rm /ext/source/build/dist/etc/everest/certs/ca/v2g/*.*
 
-RUN chmod +x /ext/source/build/run-scripts/run-sil-ocpp201-pnc.sh
-CMD ["/ext/source/build/run-scripts/run-sil-ocpp201-pnc.sh"]
+RUN npm i -g http-server
+EXPOSE 8888
+
+COPY ./start.sh /tmp/start.sh
+RUN chmod +x /tmp/start.sh
+CMD ["sh", "-c", "/tmp/start.sh"]
