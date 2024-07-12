@@ -328,7 +328,6 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       .then((transactions) => {
         if (transactions.length > 1) {
           transactions.sort((t1, t2) => t2.createdAt.getTime() - t1.createdAt.getTime());
-          return transactions[0];
         }
         return transactions[0];
       });
