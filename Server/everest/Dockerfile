@@ -18,5 +18,7 @@ RUN sqlite3 /ext/source/build/dist/share/everest/modules/OCPP201/device_model_st
         WHERE name = 'NetworkConnectionProfiles' \
         );"
 
+RUN rm /ext/source/build/dist/etc/everest/certs/ca/v2g/*.*
+
 RUN chmod +x /ext/source/build/run-scripts/run-sil-ocpp201-pnc.sh
 CMD ["/ext/source/build/run-scripts/run-sil-ocpp201-pnc.sh"]
