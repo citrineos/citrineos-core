@@ -136,6 +136,7 @@ export abstract class AbstractModule implements IModule {
       }
     } catch (error) {
       this._logger.error('Failed handling message: ', error, message);
+      message.origin = MessageOrigin.ChargingStationManagementSystem;
       if (error instanceof OcppError) {
         this._sender.sendResponse(message, error);
       } else {
