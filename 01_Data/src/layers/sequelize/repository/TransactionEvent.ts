@@ -311,6 +311,28 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     return evseIds;
   }
 
+  async getActiveTransactionByStationIdAndEvseId(
+    stationId: string,
+    evseId: number
+  ): Promise<Transaction | undefined> {
+    // TODO: replace with readOneByQuery after we add the logic
+    //  to guarantee that only one active transaction per evse exists
+    return await this.transaction
+      .readAllByQuery({
+        where: {
+          stationId,
+          isActive: true
+        },
+        include: [{ model: TransactionEvent, include: [IdToken] }, MeterValue, { model: Evse, where: { id: evseId } }],
+      })
+      .then((transactions) => {
+        if (transactions.length > 1) {
+          transactions.sort((t1, t2) => t2.createdAt.getTime() - t1.createdAt.getTime());
+        }
+        return transactions[0];
+      });
+  }
+
   private async calculateAndUpdateTotalKwh(transaction: Transaction): Promise<number> {
     const totalKwh = MeterValueUtils.getTotalKwh(transaction.meterValues ?? []);
 
