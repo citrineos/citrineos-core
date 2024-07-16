@@ -3,7 +3,15 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type CustomDataType, EVSEType, Namespace, TransactionEventEnumType, type TransactionEventRequest, TransactionType, TriggerReasonEnumType } from '@citrineos/base';
+import {
+  type CustomDataType,
+  EVSEType,
+  Namespace,
+  TransactionEventEnumType,
+  type TransactionEventRequest,
+  TransactionType,
+  TriggerReasonEnumType
+} from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import { IdToken } from '../Authorization';
 import { Evse } from '../DeviceModel';
@@ -26,7 +34,7 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   @Column({
     type: DataType.DATE,
     get() {
-      return this.getDataValue('timestamp').toISOString();
+      return this.getDataValue('timestamp')?.toISOString();
     },
   })
   declare timestamp: string;
@@ -37,7 +45,7 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   @Column(DataType.INTEGER)
   declare seqNo: number;
 
-  @Column({ type: DataType.BOOLEAN, defaultValue: false })
+  @Column({type: DataType.BOOLEAN, defaultValue: false})
   declare offline?: boolean;
 
   @Column(DataType.INTEGER)

@@ -17,6 +17,21 @@ export class Location extends Model {
   @Column(DataType.STRING)
   declare name: string;
 
+  @Column(DataType.STRING)
+  declare address: string;
+
+  @Column(DataType.STRING)
+  declare city: string;
+
+  @Column(DataType.STRING)
+  declare postalCode: string;
+
+  @Column(DataType.STRING)
+  declare state: string;
+
+  @Column(DataType.STRING)
+  declare country: string;
+
   /**
    * [longitude, latitude]
    */
