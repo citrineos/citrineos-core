@@ -18,6 +18,7 @@ import {
   HandlerProperties,
   ICache,
   IdTokenInfoType,
+  IdTokenType,
   IMessage,
   IMessageHandler,
   IMessageSender,
@@ -47,7 +48,7 @@ import {
   Variable,
   VariableAttribute,
 } from '@citrineos/data';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import { IAuthorizer, RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 
@@ -71,6 +72,8 @@ export class TransactionsModule extends AbstractModule {
   protected _componentRepository: CrudRepository<Component>;
   protected _locationRepository: ILocationRepository;
   protected _tariffRepository: ITariffRepository;
+  
+  private _authorizers: IAuthorizer[];
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
   private readonly _costUpdatedInterval: number | undefined;
@@ -123,6 +126,9 @@ export class TransactionsModule extends AbstractModule {
    * represents a repository for accessing and manipulating tariff data.
    * If no `tariffRepository` is provided, a default {@link sequelize:tariffRepository} instance is
    * created and used.
+   * 
+   * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
+   * a list of authorizers that can be used to authorize requests.
    */
   constructor(
     config: SystemConfig,
@@ -136,6 +142,7 @@ export class TransactionsModule extends AbstractModule {
     componentRepository?: CrudRepository<Component>,
     locationRepository?: ILocationRepository,
     tariffRepository?: ITariffRepository,
+    authorizers?: IAuthorizer[],
   ) {
     super(
       config,
@@ -174,6 +181,8 @@ export class TransactionsModule extends AbstractModule {
       tariffRepository ||
       new sequelize.SequelizeTariffRepository(config, logger);
 
+    this._authorizers = authorizers || [];
+
     this._sendCostUpdatedOnMeterValue =
       config.modules.transactions.sendCostUpdatedOnMeterValue;
     this._costUpdatedInterval = config.modules.transactions.costUpdatedInterval;
@@ -207,6 +216,7 @@ export class TransactionsModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('Transaction event received:', message, props);
+    const context = message.context;
     const stationId: string = message.context.stationId;
 
     await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
@@ -217,9 +227,9 @@ export class TransactionsModule extends AbstractModule {
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
     if (transactionEvent.idToken) {
-      this._authorizeRepository
+      await this._authorizeRepository
         .readAllByQuerystring({...transactionEvent.idToken})
-        .then((authorizations) => {
+        .then(async (authorizations) => {
           const response: TransactionEventResponse = {
             idTokenInfo: {
               status: AuthorizationStatusEnumType.Unknown,
@@ -279,6 +289,15 @@ export class TransactionsModule extends AbstractModule {
                   // TODO: allow for a 'real time auth' type call to fetch token status.
                   response.idTokenInfo = idTokenInfo;
                 }
+                
+                for (const authorizer of this._authorizers) {
+                  const result: Partial<IdTokenType> = await authorizer.authorize(authorization, context);
+                  Object.assign(response.idTokenInfo, result);
+                  if (response.idTokenInfo.status !== AuthorizationStatusEnumType.Accepted) {
+                    break;
+                  }
+                }
+
               } else {
                 // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
                 // N.B. Other non-Accepted statuses should not be allowed to be stored.
