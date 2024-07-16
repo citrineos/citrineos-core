@@ -144,7 +144,10 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       await event.reload({include: [MeterValue], transaction: sequelizeTransaction});
       this.emit('created', [event]);
 
-      await transaction.reload({include: [TransactionEvent, MeterValue], transaction: sequelizeTransaction});
+      await transaction.reload({
+        include: [{model: TransactionEvent, include: [IdToken]}, MeterValue, Evse],
+        transaction: sequelizeTransaction
+      });
       await this.calculateAndUpdateTotalKwh(transaction);
 
 
