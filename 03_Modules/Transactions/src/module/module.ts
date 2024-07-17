@@ -291,11 +291,11 @@ export class TransactionsModule extends AbstractModule {
                 }
                 
                 for (const authorizer of this._authorizers) {
-                  const result: Partial<IdTokenType> = await authorizer.authorize(authorization, context);
-                  Object.assign(response.idTokenInfo, result);
                   if (response.idTokenInfo.status !== AuthorizationStatusEnumType.Accepted) {
                     break;
                   }
+                  const result: Partial<IdTokenType> = await authorizer.authorize(authorization, context);
+                  Object.assign(response.idTokenInfo, result);
                 }
 
               } else {
