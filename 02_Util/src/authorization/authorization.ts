@@ -17,5 +17,5 @@ export interface IAuthorizer {
      * 
      * @returns {Promise<Partial<IdTokenInfoType>>} Updates to the IdTokenInfo
     **/
-    authorize(authorization: Authorization, context: IMessageContext, ): Promise<Partial<IdTokenInfoType>>;
+    authorize(authorization: Authorization, context: IMessageContext): Promise<Partial<IdTokenInfoType>>;
 }
