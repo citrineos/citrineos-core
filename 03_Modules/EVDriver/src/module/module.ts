@@ -58,7 +58,6 @@ import {
   RabbitMqReceiver,
   RabbitMqSender,
   Timer,
-  UnauthorizedError,
 } from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';

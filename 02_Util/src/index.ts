@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { IAuthorizer, UnauthorizedError } from './authorization';
+export { IAuthorizer } from './authorization';
 export { MemoryCache } from './cache/memory';
 export { RedisCache } from './cache/redis';
 export { S3Storage } from './fileAccess/s3Storage';
