@@ -79,18 +79,21 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
 
       const updatedTransaction = Transaction.build({
         stationId,
-        isActive: value.eventType !== TransactionEventEnumType.Ended,
         evseDatabaseId: evse ? evse.get('databaseId') : null,
         ...value.transactionInfo,
       });
 
       if (existingTransaction) {
+        if (existingTransaction.get('isActive') !== false && value.eventType === TransactionEventEnumType.Ended) {
+          updatedTransaction.set('isActive', false);
+        }
         await existingTransaction.update({...updatedTransaction}, {transaction: sequelizeTransaction});
         transaction = (await existingTransaction.reload({
           transaction: sequelizeTransaction,
           include: [TransactionEvent, MeterValue],
         })) as Transaction;
       } else {
+        updatedTransaction.set('isActive', value.eventType !== TransactionEventEnumType.Ended);
         transaction = await updatedTransaction.save({transaction: sequelizeTransaction});
         created = true;
       }
@@ -144,7 +147,10 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       await event.reload({include: [MeterValue], transaction: sequelizeTransaction});
       this.emit('created', [event]);
 
-      await transaction.reload({include: [TransactionEvent, MeterValue], transaction: sequelizeTransaction});
+      await transaction.reload({
+        include: [{model: TransactionEvent, include: [IdToken]}, MeterValue, Evse],
+        transaction: sequelizeTransaction
+      });
       await this.calculateAndUpdateTotalKwh(transaction);
 
 
@@ -309,6 +315,28 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       }
     });
     return evseIds;
+  }
+
+  async getActiveTransactionByStationIdAndEvseId(
+    stationId: string,
+    evseId: number
+  ): Promise<Transaction | undefined> {
+    // TODO: replace with readOneByQuery after we add the logic
+    //  to guarantee that only one active transaction per evse exists
+    return await this.transaction
+      .readAllByQuery({
+        where: {
+          stationId,
+          isActive: true
+        },
+        include: [{ model: TransactionEvent, include: [IdToken] }, MeterValue, { model: Evse, where: { id: evseId } }],
+      })
+      .then((transactions) => {
+        if (transactions.length > 1) {
+          transactions.sort((t1, t2) => t2.createdAt.getTime() - t1.createdAt.getTime());
+        }
+        return transactions[0];
+      });
   }
 
   private async calculateAndUpdateTotalKwh(transaction: Transaction): Promise<number> {
