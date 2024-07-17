@@ -79,18 +79,21 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
 
       const updatedTransaction = Transaction.build({
         stationId,
-        isActive: value.eventType !== TransactionEventEnumType.Ended,
         evseDatabaseId: evse ? evse.get('databaseId') : null,
         ...value.transactionInfo,
       });
 
       if (existingTransaction) {
+        if (existingTransaction.get('isActive') !== false && value.eventType === TransactionEventEnumType.Ended) {
+          updatedTransaction.set('isActive', false);
+        }
         await existingTransaction.update({...updatedTransaction}, {transaction: sequelizeTransaction});
         transaction = (await existingTransaction.reload({
           transaction: sequelizeTransaction,
           include: [TransactionEvent, MeterValue],
         })) as Transaction;
       } else {
+        updatedTransaction.set('isActive', value.eventType !== TransactionEventEnumType.Ended);
         transaction = await updatedTransaction.save({transaction: sequelizeTransaction});
         created = true;
       }
@@ -144,7 +147,10 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       await event.reload({include: [MeterValue], transaction: sequelizeTransaction});
       this.emit('created', [event]);
 
-      await transaction.reload({include: [TransactionEvent, MeterValue], transaction: sequelizeTransaction});
+      await transaction.reload({
+        include: [{model: TransactionEvent, include: [IdToken]}, MeterValue, Evse],
+        transaction: sequelizeTransaction
+      });
       await this.calculateAndUpdateTotalKwh(transaction);
 
 
