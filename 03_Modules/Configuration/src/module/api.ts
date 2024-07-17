@@ -340,6 +340,9 @@ export class ConfigurationModuleApi
   ): Promise<IMessageConfirmation> {
     const stationId = request.body.stationId;
     this._logger.debug(`Updating password for ${stationId} station`);
+    if (request.body.setOnCharger && !request.body.password) {
+      return {success: false, payload: 'Password is required when setOnCharger is true'};
+    }
     if (request.body.password && !isValidPassword(request.body.password)) {
       return {success: false, payload: 'Invalid password'};
     }
@@ -402,6 +405,7 @@ export class ConfigurationModuleApi
   }
 
   private async updatePasswordForStation(password: string, stationId: string): Promise<VariableAttribute[]> {
+    const timestamp = new Date().toISOString();
     return (
         await this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(
             {
@@ -424,7 +428,7 @@ export class ConfigurationModuleApi
               }
             },
             stationId,
-            new Date().toISOString()
+            timestamp
         ).then(async (variableAttributes) => {
           for (let variableAttribute of variableAttributes) {
             variableAttribute = await variableAttribute.reload({
@@ -439,7 +443,7 @@ export class ConfigurationModuleApi
                   variable: variableAttribute.variable,
                 },
                 stationId,
-                new Date().toISOString()
+                timestamp
             );
           }
           return variableAttributes;
