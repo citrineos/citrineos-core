@@ -14,7 +14,8 @@
   "scripts": {
     "install-all": "npm i --workspaces --verbose",
     "fresh": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json dist **/dist **/**/dist node_modules **/node_modules **/**/node_modules tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
-    "build": "tsc --build --verbose",
+    "copy-assets": "cp -rv Server/src/assets Server/dist/assets",
+    "build": "tsc --build --verbose && npm run copy-assets",
     "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
     "start-unix": "cd ./Server && npm run start-unix",
     "start-windows": "cd ./Server && npm run start-windows",
