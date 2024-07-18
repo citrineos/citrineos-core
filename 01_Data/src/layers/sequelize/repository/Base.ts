@@ -7,7 +7,7 @@ import { CrudRepository, type SystemConfig } from '@citrineos/base';
 import { type Model, type Sequelize } from 'sequelize-typescript';
 import { DefaultSequelizeInstance } from '../util';
 import { type ILogObj, type Logger } from 'tslog';
-import { Attributes, FindOptions, ModelStatic, UpdateOptions } from 'sequelize';
+import { AggregateOptions, Attributes, FindOptions, FindAndCountOptions, ModelStatic, QueryTypes, UpdateOptions } from 'sequelize';
 
 export class SequelizeRepository<T extends Model<any, any>> extends CrudRepository<T> {
   protected s: Sequelize;
@@ -19,12 +19,28 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     this.namespace = namespace;
   }
 
-  async readByKey(key: string): Promise<T | undefined> {
+  async readByKey(key: string | number): Promise<T | undefined> {
     return await this.s.models[this.namespace].findByPk(key).then((row) => row as T);
   }
 
   async readAllByQuery(query: object): Promise<T[]> {
     return await this.s.models[this.namespace].findAll(query as FindOptions<any>).then((row) => row as T[]);
+  }
+
+  async readAllBySqlString(sqlString: string): Promise<object[]> {
+    return await this.s.query(`${sqlString}`, { type: QueryTypes.SELECT });
+  }
+
+  async readNextId(idColumn: string, query?: object): Promise<number> {
+    const options = query ? (query as AggregateOptions<any>) : undefined;
+    const maxValue = await this.s.models[this.namespace].max(idColumn, options);
+    if (!maxValue) {
+      return 1;
+    }
+    if (typeof maxValue !== 'number' || isNaN(maxValue)) {
+      throw new Error(`Max value ${maxValue} on ${idColumn} is invalid.`);
+    }
+    return maxValue + 1;
   }
 
   async existsByKey(key: string): Promise<boolean> {
@@ -51,7 +67,11 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
 
   protected async _updateByKey(value: Partial<T>, key: string): Promise<T | undefined> {
     const primaryKey = this.s.models[this.namespace].primaryKeyAttribute;
-    return await this._updateAllByQuery(value, { where: { [primaryKey]: key } }).then((rows) => (rows.length === 1 ? rows[0] : undefined));
+    return await this._updateAllByQuery(value, { where: { [primaryKey]: key } }).then((rows) => (rows && rows.length === 1 ? rows[0] : undefined));
+  }
+
+  async findAndCount(options: Omit<FindAndCountOptions<Attributes<T>>, 'group'>): Promise<{ rows: T[]; count: number }> {
+    return (this.s.models[this.namespace] as ModelStatic<T>).findAndCountAll(options);
   }
 
   protected async _updateAllByQuery(value: Partial<T>, query: object): Promise<T[]> {

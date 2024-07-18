@@ -21,9 +21,15 @@ export class ChargingSchedule extends Model implements ChargingScheduleType {
 
   @Column({
     type: DataType.INTEGER,
-    unique: 'chargingProfileDatabaseId_id',
+    unique: 'stationId_id',
   })
   declare id: number;
+
+  @Column({
+    type: DataType.STRING,
+    unique: 'stationId_id',
+  })
+  declare stationId: string;
 
   @Column(DataType.STRING)
   declare chargingRateUnit: ChargingRateUnitEnumType;
@@ -47,11 +53,8 @@ export class ChargingSchedule extends Model implements ChargingScheduleType {
   declare chargingProfile: ChargingProfileType;
 
   @ForeignKey(() => ChargingProfile)
-  @Column({
-    type: DataType.INTEGER,
-    unique: 'chargingProfileDatabaseId_id',
-  })
-  declare chargingProfileDatabaseId: number;
+  @Column(DataType.INTEGER)
+  declare chargingProfileDatabaseId?: number;
 
   @HasOne(() => SalesTariff)
   declare salesTariff?: SalesTariffType;

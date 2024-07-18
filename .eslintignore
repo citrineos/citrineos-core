@@ -2,3 +2,4 @@
 ./Swarm/
 **/dist/**
 **/lib/**
+**/*.test.ts

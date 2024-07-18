@@ -14,7 +14,8 @@ import { ILogObj, Logger } from 'tslog';
  */
 export class TenantModuleApi
   extends AbstractModuleApi<TenantModule>
-  implements ITenantModuleApi {
+  implements ITenantModuleApi
+{
   /**
    *
    * Constructs a new instance of the class.

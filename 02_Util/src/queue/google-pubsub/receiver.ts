@@ -208,7 +208,7 @@ export class PubSubReceiver extends AbstractMessageHandler {
     const filterFragments: string[] = [];
     if (filter) {
       for (const key in filter) {
-        if (Object.hasOwn(filter, key)) {
+        if (filter[key]) {
           filterFragments.push(`attributes.${key}="${filter[key]}"`);
         }
       }

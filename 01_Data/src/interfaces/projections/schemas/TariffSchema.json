@@ -1,15 +1,36 @@
 {
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "stationId": {
-      "type": "string"
+    "id": {
+      "type": "number"
     },
-    "unit": {
-      "type": "string"
+    "currency": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 3
     },
-    "price": {
+    "pricePerKwh": {
+      "type": "number"
+    },
+    "pricePerMin": {
+      "type": "number"
+    },
+    "pricePerSession": {
+      "type": "number"
+    },
+    "paymentFee": {
+      "type": "number"
+    },
+    "authorizationAmount": {
+      "type": "number"
+    },
+    "taxRate": {
       "type": "number"
     }
   },
-  "required": ["stationId", "unit", "price"]
+  "required": [
+    "currency",
+    "pricePerKwh"
+  ]
 }

@@ -18,7 +18,7 @@ export enum MessageState {
 }
 
 export enum MessageOrigin {
-  CentralSystem = 'csms',
+  ChargingStationManagementSystem = 'csms',
   ChargingStation = 'cs',
 }
 
@@ -33,6 +33,15 @@ export enum EventGroup {
   SmartCharging = 'smartcharging',
   Tenant = 'tenant',
   Transactions = 'transactions',
+  Cdrs = 'cdrs',
+  ChargingProfiles = 'chargingprofiles',
+  Commands = 'commands',
+  Locations = 'locations',
+  Sessions = 'sessions',
+  Tariffs = 'tariffs',
+  Tokens = 'tokens',
+  Versions = 'versions',
+  Credentials = 'credentials',
 }
 
 export const eventGroupFromString = (source: string): EventGroup => {

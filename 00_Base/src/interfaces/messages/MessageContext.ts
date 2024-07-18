@@ -12,4 +12,5 @@ export interface IMessageContext {
   correlationId: string;
   tenantId: string;
   stationId: string;
+  timestamp: string; // Iso Timestamp
 }
