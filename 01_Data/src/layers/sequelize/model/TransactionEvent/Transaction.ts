@@ -35,9 +35,7 @@ export class Transaction extends Model implements TransactionType {
   })
   declare transactionId: string;
 
-  @Column({
-    defaultValue: true,
-  })
+  @Column(DataType.BOOLEAN)
   declare isActive: boolean;
 
   @HasMany(() => TransactionEvent)
