@@ -57,7 +57,7 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     if (location.id) {
       const result = await this.readOrCreateByQuery({
         where: {
-          id: location.id
+          id: location.id,
         },
         defaults: {
           name: location.name,
@@ -83,7 +83,7 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
         values.country = location.country ?? undefined;
         values.coordinates = location.coordinates ?? undefined;
 
-        await this.updateByKey({ ...values}, savedLocation.id);
+        await this.updateByKey({ ...values }, savedLocation.id);
       }
     } else {
       savedLocation = await this.create(Location.build({ ...location }));
@@ -103,17 +103,17 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     if (chargingStation.id) {
       const [savedChargingStation, chargingStationCreated] = await this.chargingStation.readOrCreateByQuery({
         where: {
-          id: chargingStation.id
+          id: chargingStation.id,
         },
         defaults: {
           id: chargingStation.id,
-          locationId: chargingStation.locationId
+          locationId: chargingStation.locationId,
         },
       });
       if (!chargingStationCreated) {
         await this.chargingStation.updateByKey(
           {
-            locationId: chargingStation.locationId
+            locationId: chargingStation.locationId,
           },
           savedChargingStation.id,
         );
