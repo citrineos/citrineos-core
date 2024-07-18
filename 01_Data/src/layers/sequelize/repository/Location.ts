@@ -90,7 +90,7 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     }
 
     if (location.chargingPool && location.chargingPool.length > 0) {
-      for (let chargingStation of location.chargingPool) {
+      for (const chargingStation of location.chargingPool) {
         chargingStation.locationId = savedLocation.id;
         await this.createOrUpdateChargingStation(chargingStation);
       }
