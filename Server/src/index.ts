@@ -71,6 +71,7 @@ import { ChargingProfilesModule } from '@citrineos/ocpi-charging-profiles';
 import { TariffsModule } from '@citrineos/ocpi-tariffs';
 import { CdrsModule } from '@citrineos/ocpi-cdrs';
 import { TokensModule } from '@citrineos/ocpi-tokens';
+import * as net from 'net';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -302,13 +303,28 @@ export class CitrineOSServer {
   }
 
   private initLogger() {
-    return new Logger<ILogObj>({
+    const logger = new Logger<ILogObj>({
       name: 'CitrineOS Logger',
       minLevel: systemConfig.logLevel,
       hideLogPositionForProduction: systemConfig.env === 'production',
       // Disable colors for cloud deployment as some cloud logging environments such as cloudwatch can not interpret colors
       stylePrettyLogs: process.env.DEPLOYMENT_TARGET !== 'cloud',
     });
+    const logstashHost = 'logstash'; // WARNING: This will only work within docker
+    const logstashPort = 5044;
+
+    const client = new net.Socket();
+    client.connect(logstashPort, logstashHost, () => {
+      logger.info('Connected to Logstash');
+    });
+
+    logger.attachTransport((logObject) => {
+      if (client.writable && logObject) {
+        client.write(JSON.stringify(logObject) + '\n');
+      }
+    });
+
+    return logger;
   }
 
   private initDb() {
