@@ -568,9 +568,20 @@ export class MessageRouterImpl
       },
       body: JSON.stringify(requestBody),
     })
-      .then((res) => res.status === 200)
+      .then((res) => {
+        if (!res.ok) {
+          return res.text().then((errorText) => {
+            throw new Error(
+              `${res.status} ${res.statusText} - ${JSON.stringify(errorText)}`,
+            );
+          });
+        }
+        return true;
+      })
       .catch((error) => {
-        this._logger.error(error);
+        this._logger.error(
+          `Route to subscription ${url} on charging station ${requestBody.stationId} failed. Event: ${requestBody.event}, ${error}`,
+        );
         return false;
       });
   }
@@ -669,7 +680,11 @@ export class MessageRouterImpl
    * @param {Date} timestamp Time at which the message was received from the charger.
    * @return {void}
    */
-  _onCallResult(identifier: string, message: CallResult, timestamp: Date): void {
+  _onCallResult(
+    identifier: string,
+    message: CallResult,
+    timestamp: Date,
+  ): void {
     const messageId = message[1];
     const payload = message[2];
 
@@ -853,7 +868,7 @@ export class MessageRouterImpl
       payload,
       EventGroup.General, // TODO: Change to appropriate event group
       MessageOrigin.ChargingStation,
-      timestamp
+      timestamp,
     );
 
     return this._sender.send(_message);
@@ -863,7 +878,7 @@ export class MessageRouterImpl
     connectionIdentifier: string,
     message: CallResult,
     action: CallAction,
-    timestamp: Date
+    timestamp: Date,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
     const payload = message[2] as OcppResponse;
@@ -871,12 +886,12 @@ export class MessageRouterImpl
     const _message: IMessage<OcppResponse> = RequestBuilder.buildCallResult(
       connectionIdentifier,
       messageId,
-      '', // TODO: Add tenantId to method 
+      '', // TODO: Add tenantId to method
       action,
       payload,
       EventGroup.General,
       MessageOrigin.ChargingStation,
-      timestamp
+      timestamp,
     );
 
     return this._sender.send(_message);
@@ -899,7 +914,7 @@ export class MessageRouterImpl
     const _message: IMessage<OcppError> = RequestBuilder.buildCallError(
       connectionIdentifier,
       messageId,
-      '', // TODO: Add tenantId to method 
+      '', // TODO: Add tenantId to method
       action,
       payload,
       EventGroup.General,
