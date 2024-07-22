@@ -40,7 +40,8 @@ import { MessageInfo } from './model/MessageInfo';
 import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
 import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
-import { StatusNotification } from './model/Location/StatusNotification';
+import { StatusNotification } from './model/Location';
+import { dropAllViews } from './sql';
 
 export class DefaultSequelizeInstance {
   /**
@@ -110,16 +111,34 @@ export class DefaultSequelizeInstance {
       },
     });
 
-    if (config.data.sequelize.alter) {
-      sequelize.sync({ alter: true }).then(() => {
-        sequelizeLogger.info('Database altered');
-      });
-    } else if (config.data.sequelize.sync && sync) {
-      sequelize.sync({ force: true }).then(() => {
-        sequelizeLogger.info('Database synchronized');
-      });
-    }
+    handleSequelizeSync(sequelize, config, sequelizeLogger).then();
 
     return sequelize;
   }
+}
+
+const dropViews = async (sequelize: Sequelize): Promise<void> => {
+  await sequelize.query(dropAllViews);
+}
+
+export const handleSequelizeSync = async (
+  sequelize: Sequelize,
+  config: SystemConfig,
+  logger: Logger<ILogObj>
+): Promise<void> => {
+
+  let syncOpts = undefined;
+  if (config.data.sequelize.alter) {
+    syncOpts = { alter: true };
+  } else if (config.data.sequelize.sync) {
+    syncOpts = { force: true };
+  }
+  if (syncOpts) {
+    // drop views to prevent conflicts
+    await dropViews(sequelize);
+    await sequelize.sync(syncOpts).then(() => {
+      logger.info('Database altered');
+    });
+  }
+
 }
