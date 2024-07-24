@@ -6,6 +6,7 @@
 import {
   AbstractModuleApi,
   AsDataEndpoint,
+  BadRequestError,
   CallAction,
   HttpMethod,
   Namespace,
@@ -73,7 +74,7 @@ export class AdminApi
       !request.body.onMessage &&
       !request.body.sentMessage
     ) {
-      throw new Error(
+      throw new BadRequestError(
         'Must specify at least one of onConnect, onClose, onMessage, sentMessage to true.',
       );
     }
