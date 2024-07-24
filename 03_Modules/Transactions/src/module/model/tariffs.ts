@@ -1,14 +1,12 @@
 export class UpsertTariffRequest {
+  id!: number;
+  currency!: string;
 
-    id!: number;
-    currency!: string;
+  pricePerKwh!: number;
+  pricePerMin?: number;
+  pricePerSession?: number;
+  taxRate?: number;
 
-    pricePerKwh!: number;
-    pricePerMin?: number;
-    pricePerSession?: number;
-    taxRate?: number;
-
-    authorizationAmount?: number;
-    paymentFee?: number;
-
+  authorizationAmount?: number;
+  paymentFee?: number;
 }
