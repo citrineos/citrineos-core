@@ -23,12 +23,16 @@ export interface IMessageRouter extends IModule {
   /**
    * Receive a message from the Network Connection.
    * Timestamp here should be when the message was received from the charger.
-   * If CitrineOS is running behind cloud infrastructure, it is optimal for the timestamp to be generated when the infrastructure receives the message rather than when CitrineOS is first notified. 
+   * If CitrineOS is running behind cloud infrastructure, it is optimal for the timestamp to be generated when the infrastructure receives the message rather than when CitrineOS is first notified.
    * Otherwise lag or outages could result in a desync, causing CitrineOS to process messages as if they had been generated long after the charging station actually sent them.
-   * 
+   *
    * @param identifier Unique identifier for the charging station, i.e. the stationId
    * @param message The unvalidated, raw OCPP text, i.e. [2, "123", "Heartbeat", {}]
    * @param timestamp Time at which the message was received from the charger.
    */
-  onMessage(identifier: string, message: string, timestamp: Date): Promise<boolean>;
+  onMessage(
+    identifier: string,
+    message: string,
+    timestamp: Date,
+  ): Promise<boolean>;
 }

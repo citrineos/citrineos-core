@@ -218,7 +218,7 @@ export class TransactionsModule extends AbstractModule {
     const transactionId = transactionEvent.transactionInfo.transactionId;
     if (transactionEvent.idToken) {
       this._authorizeRepository
-        .readAllByQuerystring({...transactionEvent.idToken})
+        .readAllByQuerystring({ ...transactionEvent.idToken })
         .then((authorizations) => {
           const response: TransactionEventResponse = {
             idTokenInfo: {
@@ -238,27 +238,27 @@ export class TransactionsModule extends AbstractModule {
               const idTokenInfo: IdTokenInfoType = {
                 status: authorization.idTokenInfo.status,
                 cacheExpiryDateTime:
-                authorization.idTokenInfo.cacheExpiryDateTime,
+                  authorization.idTokenInfo.cacheExpiryDateTime,
                 chargingPriority: authorization.idTokenInfo.chargingPriority,
                 language1: authorization.idTokenInfo.language1,
                 evseId: authorization.idTokenInfo.evseId,
                 groupIdToken: authorization.idTokenInfo.groupIdToken
                   ? {
-                    additionalInfo:
-                      authorization.idTokenInfo.groupIdToken.additionalInfo &&
-                      authorization.idTokenInfo.groupIdToken.additionalInfo
-                        .length > 0
-                        ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                          (additionalInfo) => ({
-                            additionalIdToken:
-                            additionalInfo.additionalIdToken,
-                            type: additionalInfo.type,
-                          }),
-                        ) as [AdditionalInfoType, ...AdditionalInfoType[]])
-                        : undefined,
-                    idToken: authorization.idTokenInfo.groupIdToken.idToken,
-                    type: authorization.idTokenInfo.groupIdToken.type,
-                  }
+                      additionalInfo:
+                        authorization.idTokenInfo.groupIdToken.additionalInfo &&
+                        authorization.idTokenInfo.groupIdToken.additionalInfo
+                          .length > 0
+                          ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
+                              (additionalInfo) => ({
+                                additionalIdToken:
+                                  additionalInfo.additionalIdToken,
+                                type: additionalInfo.type,
+                              }),
+                            ) as [AdditionalInfoType, ...AdditionalInfoType[]])
+                          : undefined,
+                      idToken: authorization.idTokenInfo.groupIdToken.idToken,
+                      type: authorization.idTokenInfo.groupIdToken.type,
+                    }
                   : undefined,
                 language2: authorization.idTokenInfo.language2,
                 personalMessage: authorization.idTokenInfo.personalMessage,
@@ -299,7 +299,7 @@ export class TransactionsModule extends AbstractModule {
             transactionEvent.eventType === TransactionEventEnumType.Started &&
             transactionEventResponse &&
             transactionEventResponse.idTokenInfo?.status ===
-            AuthorizationStatusEnumType.Accepted &&
+              AuthorizationStatusEnumType.Accepted &&
             transactionEvent.idToken
           ) {
             if (this._costUpdatedInterval) {
@@ -365,7 +365,7 @@ export class TransactionsModule extends AbstractModule {
           response.totalCost = await this._calculateTotalCost(
             stationId,
             transaction.id,
-            transaction.totalKwh
+            transaction.totalKwh,
           );
         }
 
@@ -397,7 +397,7 @@ export class TransactionsModule extends AbstractModule {
         response.totalCost = await this._calculateTotalCost(
           stationId,
           transaction.id,
-          transaction.totalKwh
+          transaction.totalKwh,
         );
       }
 
@@ -549,7 +549,7 @@ export class TransactionsModule extends AbstractModule {
   private async _calculateTotalCost(
     stationId: string,
     transactionDbId: number,
-    totalKwh?: number
+    totalKwh?: number,
   ): Promise<number> {
     // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
     //  implementation is finalized
@@ -567,8 +567,8 @@ export class TransactionsModule extends AbstractModule {
         );
 
         await Transaction.update(
-          {totalKwh: totalKwh},
-          {where: {id: transactionDbId}, returning: false},
+          { totalKwh: totalKwh },
+          { where: { id: transactionDbId }, returning: false },
         );
       }
 
