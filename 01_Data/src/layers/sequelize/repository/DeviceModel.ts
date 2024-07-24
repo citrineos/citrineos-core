@@ -13,6 +13,7 @@ import {
   type ReportDataType,
   type SetVariableDataType,
   type SetVariableResultType,
+  SetVariableStatusEnumType,
   SystemConfig,
   type VariableType,
 } from '@citrineos/base';
@@ -314,6 +315,14 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
           variableAttributeId: savedVariableAttribute.get('id'),
         }),
       );
+      if (result.attributeStatus !== SetVariableStatusEnumType.Accepted) {
+        const mostRecentAcceptedStatus = (await this.variableStatus.readAllByQuery({
+          where: { variableAttributeId: savedVariableAttribute.get('id'), status: SetVariableStatusEnumType.Accepted },
+          limit: 1,
+          order: [['createdAt', 'DESC']],
+        }))[0];
+        savedVariableAttribute.set('value', mostRecentAcceptedStatus?.value);
+      }
       savedVariableAttribute.set('generatedAt', isoTimestamp);
       await savedVariableAttribute.save();
       // Reload in order to include the statuses

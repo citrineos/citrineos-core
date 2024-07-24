@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "1.3.0",
+  "version": "1.3.2",
   "private": false,
   "devDependencies": {
     "@eslint/js": "^9.0.0",
@@ -24,7 +24,9 @@
     "lint-fix": "npm run prettier && npx eslint --ext .ts --fix ./",
     "prettier": "prettier --write .",
     "fresh-and-install-all": "npm run fresh && npm run install-all",
-    "sync-db": "ts-node ./db.sync.ts"
+    "sync-db": "ts-node ./db.sync.ts",
+    "start-everest": "npm run start-everest --prefix ./Server",
+    "start-everest-windows": "npm run start-everest-windows --prefix ./Server"
   },
   "workspaces": [
     "00_Base",
