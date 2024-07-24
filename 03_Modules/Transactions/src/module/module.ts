@@ -321,10 +321,6 @@ export class TransactionsModule extends AbstractModule {
 
     if (authorizations.length !== 1) {
       return transactionEventResponse;
-    } else if (authorizations.length > 1) {
-      this._logger.warn(
-        'Multiple authorizations found for the same idToken. Using the first one.',
-      );
     }
 
     const authorization = authorizations[0];
