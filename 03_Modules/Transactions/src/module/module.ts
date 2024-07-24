@@ -403,22 +403,20 @@ export class TransactionsModule extends AbstractModule {
       // old transactions should be marked inactive and an alert should be raised (this can only happen in the field with charger bugs or missed messages)
 
       // Check for ConcurrentTx
-      return await this._transactionEventRepository
-        .readAllActiveTransactionsByIdToken(transactionEvent.idToken)
-        .then((activeTransactions) => {
-          // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
-          if (activeTransactions.length > 1) {
-            const groupIdToken =
-              transactionEventResponse.idTokenInfo?.groupIdToken;
-            transactionEventResponse.idTokenInfo = {
-              status: AuthorizationStatusEnumType.ConcurrentTx,
-              groupIdToken: groupIdToken,
-              // TODO determine how/if to set personalMessage
-            };
-          }
-          return transactionEventResponse;
-        });
+      const activeTransactions = await this._transactionEventRepository.readAllActiveTransactionsByIdToken(transactionEvent.idToken);
+
+      // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
+      if (activeTransactions.length > 1) {
+        const groupIdToken =
+          transactionEventResponse.idTokenInfo?.groupIdToken;
+        transactionEventResponse.idTokenInfo = {
+          status: AuthorizationStatusEnumType.ConcurrentTx,
+          groupIdToken: groupIdToken,
+          // TODO determine how/if to set personalMessage
+        };
+      }
     }
+
     return transactionEventResponse;
   }
 
