@@ -42,7 +42,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     const savedAuthorizationModel: Authorization | undefined = await this.readOnlyOneByQuerystring(query);
     const authorizationModel = savedAuthorizationModel ?? Authorization.build({}, this._createInclude(value));
 
-    authorizationModel.idTokenId = (await this._updateIdToken(value.idToken)).id;
+    authorizationModel.idTokenId = (await this.updateIdToken(value.idToken)).id;
 
     if (value.idTokenInfo) {
       const valueIdTokenInfo = IdTokenInfo.build({
@@ -67,7 +67,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
           }
         });
         if (value.idTokenInfo.groupIdToken) {
-          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken);
+          const savedGroupIdToken = await this.updateIdToken(value.idTokenInfo.groupIdToken);
           if (!savedIdTokenInfo.groupIdTokenId) {
             savedIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
           }
@@ -78,7 +78,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
         savedIdTokenInfo = await this.idTokenInfo.create(savedIdTokenInfo);
       } else {
         if (value.idTokenInfo.groupIdToken) {
-          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken);
+          const savedGroupIdToken = await this.updateIdToken(value.idTokenInfo.groupIdToken);
           valueIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
         }
         authorizationModel.idTokenInfoId = (await this.idTokenInfo.create(valueIdTokenInfo)).id;
@@ -109,6 +109,37 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
 
   async deleteAllByQuerystring(query: AuthorizationQuerystring): Promise<Authorization[]> {
     return await super.deleteAllByQuery(this._constructQuery(query), Authorization.MODEL_NAME);
+  }
+
+  async updateIdToken(value: IdTokenType): Promise<IdToken> {
+    const savedIdTokenModel = (
+      await this.idToken.readOrCreateByQuery({
+        where: { idToken: value.idToken, type: value.type },
+      })
+    )[0];
+
+    const additionalInfoIds: number[] = [];
+
+    // Create any additionalInfos that don't exist,
+    // and any relations between them and the IdToken that don't exist
+    if (value.additionalInfo) {
+      for (const valueAdditionalInfo of value.additionalInfo) {
+        const savedAdditionalInfo = (
+          await this.additionalInfo.readOrCreateByQuery({
+            where: {
+              additionalIdToken: valueAdditionalInfo.additionalIdToken,
+              type: valueAdditionalInfo.type,
+            },
+          })
+        )[0];
+        await this.idTokenAdditionalInfo.readOrCreateByQuery({ where: { idTokenId: savedIdTokenModel.id, additionalInfoId: savedAdditionalInfo.id } });
+        additionalInfoIds.push(savedAdditionalInfo.id);
+      }
+    }
+    // Remove all associations between idToken and additionalInfo that no longer exist
+    await this.idTokenAdditionalInfo.deleteAllByQuery({ where: { idTokenId: savedIdTokenModel.id, additionalInfoId: { [Op.notIn]: additionalInfoIds } } });
+
+    return savedIdTokenModel.reload({ include: [AdditionalInfo] });
   }
 
   /**
@@ -148,36 +179,5 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     }
     include.push({ model: IdToken, include: idTokenInclude });
     return { include };
-  }
-
-  private async _updateIdToken(value: IdTokenType): Promise<IdToken> {
-    const savedIdTokenModel = (
-      await this.idToken.readOrCreateByQuery({
-        where: { idToken: value.idToken, type: value.type },
-      })
-    )[0];
-
-    const additionalInfoIds: number[] = [];
-
-    // Create any additionalInfos that don't exist,
-    // and any relations between them and the IdToken that don't exist
-    if (value.additionalInfo) {
-      for (const valueAdditionalInfo of value.additionalInfo) {
-        const savedAdditionalInfo = (
-          await this.additionalInfo.readOrCreateByQuery({
-            where: {
-              additionalIdToken: valueAdditionalInfo.additionalIdToken,
-              type: valueAdditionalInfo.type,
-            },
-          })
-        )[0];
-        await this.idTokenAdditionalInfo.readOrCreateByQuery({ where: { idTokenId: savedIdTokenModel.id, additionalInfoId: savedAdditionalInfo.id } });
-        additionalInfoIds.push(savedAdditionalInfo.id);
-      }
-    }
-    // Remove all associations between idToken and additionalInfo that no longer exist
-    await this.idTokenAdditionalInfo.deleteAllByQuery({ where: { idTokenId: savedIdTokenModel.id, additionalInfoId: { [Op.notIn]: additionalInfoIds } } });
-
-    return savedIdTokenModel.reload({ include: [AdditionalInfo] });
   }
 }

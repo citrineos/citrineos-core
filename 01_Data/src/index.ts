@@ -10,6 +10,7 @@ export * from 'sequelize-typescript';
 export {
   Authorization,
   Boot,
+  CallMessage,
   ChargingStation,
   Component,
   DefaultSequelizeInstance,

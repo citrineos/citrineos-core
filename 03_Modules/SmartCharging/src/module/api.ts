@@ -31,8 +31,8 @@ import {
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { VariableAttribute } from '@citrineos/data';
-import { validateChargingProfileType } from '@citrineos/util/dist/util/validator';
-import { stringToSet } from '@citrineos/util/dist/util/parser';
+import { validateChargingProfileType } from '@citrineos/util';
+import { stringToSet } from '@citrineos/util';
 
 /**
  * Server API for the SmartCharging module.

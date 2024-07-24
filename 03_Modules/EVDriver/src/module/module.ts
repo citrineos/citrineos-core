@@ -14,6 +14,7 @@ import {
   AuthorizeResponse,
   CallAction,
   CancelReservationResponse,
+  CancelReservationStatusEnumType,
   ChargingLimitSourceEnumType,
   ChargingProfileCriterionType,
   ChargingProfilePurposeEnumType,
@@ -35,15 +36,20 @@ import {
   RequestStopTransactionResponse,
   ReservationStatusUpdateRequest,
   ReservationStatusUpdateResponse,
+  ReservationUpdateStatusEnumType,
   ReserveNowResponse,
+  ReserveNowStatusEnumType,
   SendLocalListResponse,
   SystemConfig,
   UnlockConnectorResponse,
 } from '@citrineos/base';
 import {
+  CallMessage,
   IAuthorizationRepository,
+  ICallMessageRepository,
   IChargingProfileRepository,
   IDeviceModelRepository,
+  IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
   sequelize,
@@ -87,6 +93,8 @@ export class EVDriverModule extends AbstractModule {
   protected _tariffRepository: ITariffRepository;
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
+  protected _reservationRepository: IReservationRepository;
+  protected _callMessageRepository: ICallMessageRepository;
 
   private _certificateAuthorityService: CertificateAuthorityService;
 
@@ -127,6 +135,14 @@ export class EVDriverModule extends AbstractModule {
    * which represents a repository for accessing and manipulating charging profile data.
    * If no `chargingProfileRepository` is provided, a default {@link sequelize:chargingProfileRepository} instance is created and used.
    *
+   * @param {IReservationRepository} [reservationRepository] - An optional parameter of type {@link IReservationRepository}
+   * which represents a repository for accessing and manipulating reservation data.
+   * If no `reservationRepository` is provided, a default {@link sequelize:reservationRepository} instance is created and used.
+   *
+   * @param {ICallMessageRepository} [callMessageRepository]  - An optional parameter of type {@link ICallMessageRepository}
+   * which represents a repository for accessing and manipulating callMessage data.
+   * If no `callMessageRepository` is provided, a default {@link sequelize:callMessageRepository} instance is created and used.
+   *
    * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
    * type {@link CertificateAuthorityService} which handles certificate authority operations.
    */
@@ -141,6 +157,8 @@ export class EVDriverModule extends AbstractModule {
     tariffRepository?: ITariffRepository,
     transactionEventRepository?: ITransactionEventRepository,
     chargingProfileRepository?: IChargingProfileRepository,
+    reservationRepository?: IReservationRepository,
+    callMessageRepository?: ICallMessageRepository,
     certificateAuthorityService?: CertificateAuthorityService,
   ) {
     super(
@@ -176,6 +194,8 @@ export class EVDriverModule extends AbstractModule {
     this._chargingProfileRepository =
       chargingProfileRepository ||
       new sequelize.SequelizeChargingProfileRepository(config, this._logger);
+    this._reservationRepository = reservationRepository || new sequelize.SequelizeReservationRepository(config, this._logger);
+    this._callMessageRepository = callMessageRepository || new sequelize.SequelizeCallMessageRepository(config, this._logger);
 
     this._certificateAuthorityService =
       certificateAuthorityService ||
@@ -198,6 +218,14 @@ export class EVDriverModule extends AbstractModule {
 
   get chargingProfileRepository(): IChargingProfileRepository {
     return this._chargingProfileRepository;
+  }
+
+  get reservationRepository(): IReservationRepository {
+    return this._reservationRepository;
+  }
+
+  get callMessageRepository(): ICallMessageRepository {
+    return this._callMessageRepository;
   }
 
   /**
@@ -465,6 +493,25 @@ export class EVDriverModule extends AbstractModule {
       props,
     );
 
+    try {
+      const status = message.payload.reservationUpdateStatus as ReservationUpdateStatusEnumType;
+      const reservation = await this._reservationRepository.readOnlyOneByQuery({
+        stationId: message.context.stationId,
+        id: message.payload.reservationId,
+      });
+      if (reservation) {
+        if (status === ReservationUpdateStatusEnumType.Expired || status === ReservationUpdateStatusEnumType.Removed) {
+          await this._reservationRepository.updateByKey({
+            isActive: false,
+          }, String(reservation.databaseId));
+        }
+      } else {
+        throw new Error(`Reservation ${message.payload.reservationId} not found`);
+      }
+    } catch (error) {
+      this._logger.error('Error reading reservation:', error);
+    }
+
     // Create response
     const response: ReservationStatusUpdateResponse = {};
 
@@ -548,6 +595,17 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('CancelReservationResponse received:', message, props);
+
+    const reservationId = this._findReservationByCorrelationId(
+      message.context.correlationId,
+    )
+    if (reservationId) {
+      await this._reservationRepository.updateByKey({
+        isActive: message.payload.status === CancelReservationStatusEnumType.Rejected,
+      }, String(reservationId));
+    } else {
+      this._logger.error(`Update reservation failed. ReservationId not found by CorrelationId ${message.context.correlationId}.`);
+    }
   }
 
   @AsHandler(CallAction.ReserveNow)
@@ -556,6 +614,19 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('ReserveNowResponse received:', message, props);
+
+    const reservationId = this._findReservationByCorrelationId(
+      message.context.correlationId,
+    )
+    if (reservationId) {
+      const status = message.payload.status as ReserveNowStatusEnumType;
+      await this._reservationRepository.updateByKey({
+        reserveStatus: status,
+        isActive: status === ReserveNowStatusEnumType.Accepted,
+      }, String(reservationId));
+    } else {
+      this._logger.error(`Update reservation failed. ReservationId not found by CorrelationId ${message.context.correlationId}.`);
+    }
   }
 
   @AsHandler(CallAction.UnlockConnector)
@@ -588,5 +659,24 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetLocalListVersionResponse received:', message, props);
+  }
+
+  private async _findReservationByCorrelationId(
+    correlationId: string
+  ): Promise<number|undefined> {
+    try {
+      const callMessage : CallMessage|undefined = await this._callMessageRepository.readOnlyOneByQuery({
+        where: {
+          correlationId
+        }
+      });
+      if (callMessage && callMessage.reservationId) {
+        return callMessage.reservationId;
+      }
+    } catch (e) {
+      this._logger.error(e);
+    }
+
+    return undefined;
   }
 }
