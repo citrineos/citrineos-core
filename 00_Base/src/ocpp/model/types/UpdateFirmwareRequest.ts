@@ -13,17 +13,17 @@
 import { OcppRequest } from '../../..';
 
 export interface UpdateFirmwareRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * This specifies how many times Charging Station must try to download the firmware before giving up. If this field is not present, it is left to Charging Station to decide how many times it wants to retry.
    *
    */
-  retries?: number;
+  retries?: number | null;
   /**
    * The interval in seconds after which a retry may be attempted. If this field is not present, it is left to Charging Station to decide how long to wait between attempts.
    *
    */
-  retryInterval?: number;
+  retryInterval?: number | null;
   /**
    * The Id of this request
    *
@@ -45,7 +45,7 @@ export interface CustomDataType {
  *
  */
 export interface FirmwareType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Firmware. Location. URI
    * urn:x-enexis:ecdm:uid:1:569460
@@ -66,18 +66,18 @@ export interface FirmwareType {
    * Date and time at which the firmware shall be installed.
    *
    */
-  installDateTime?: string;
+  installDateTime?: string | null;
   /**
    * Certificate with which the firmware was signed.
    * PEM encoded X.509 certificate.
    *
    */
-  signingCertificate?: string;
+  signingCertificate?: string | null;
   /**
    * Firmware. Signature. Signature
    * urn:x-enexis:ecdm:uid:1:569464
    * Base64 encoded firmware signature.
    *
    */
-  signature?: string;
+  signature?: string | null;
 }

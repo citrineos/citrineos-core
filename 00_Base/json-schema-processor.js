@@ -178,6 +178,12 @@ async function processJsonSchema(data, writeToFile = true) {
           `import { ${schemaType} } from '../../..';\n` +
           ts.substring(index);
 
+        // Add null type to all optional properties
+        // This regex means a string starts with '?:' and ends with ';'
+        // and contains no '[' or ']' in between
+        const regex = /(\?:[^;\[\]]*);/g;
+        ts = ts.replaceAll(regex, '$1 | null;');
+
         if (writeToFile) {
           fs.writeFileSync(
             `./src/ocpp/model/types/${id}.ts`,

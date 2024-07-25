@@ -13,7 +13,7 @@
 import { OcppRequest } from '../../..';
 
 export interface NotifyCustomerInformationRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * (Part of) the requested data. No format specified in which the data is returned. Should be human readable.
    *
@@ -23,7 +23,7 @@ export interface NotifyCustomerInformationRequest extends OcppRequest {
    * “to be continued” indicator. Indicates whether another part of the monitoringData follows in an upcoming notifyMonitoringReportRequest message. Default value when omitted is false.
    *
    */
-  tbc?: boolean;
+  tbc?: boolean | null;
   /**
    * Sequence number of this message. First message starts at 0.
    *

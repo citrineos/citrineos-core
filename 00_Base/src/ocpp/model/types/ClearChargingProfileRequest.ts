@@ -14,13 +14,13 @@ import { ChargingProfilePurposeEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface ClearChargingProfileRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * The Id of the charging profile to clear.
    *
    */
-  chargingProfileId?: number;
-  chargingProfileCriteria?: ClearChargingProfileType;
+  chargingProfileId?: number | null;
+  chargingProfileCriteria?: ClearChargingProfileType | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -36,7 +36,7 @@ export interface CustomDataType {
  *
  */
 export interface ClearChargingProfileType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Identified_ Object. MRID. Numeric_ Identifier
    * urn:x-enexis:ecdm:uid:1:569198
@@ -44,13 +44,13 @@ export interface ClearChargingProfileType {
    *
    *
    */
-  evseId?: number;
-  chargingProfilePurpose?: ChargingProfilePurposeEnumType;
+  evseId?: number | null;
+  chargingProfilePurpose?: ChargingProfilePurposeEnumType | null;
   /**
    * Charging_ Profile. Stack_ Level. Counter
    * urn:x-oca:ocpp:uid:1:569230
    * Specifies the stackLevel for which charging profiles will be cleared, if they meet the other criteria in the request.
    *
    */
-  stackLevel?: number;
+  stackLevel?: number | null;
 }

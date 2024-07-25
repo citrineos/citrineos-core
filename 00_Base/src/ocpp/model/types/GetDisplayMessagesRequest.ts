@@ -14,7 +14,7 @@ import { MessagePriorityEnumType, MessageStateEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface GetDisplayMessagesRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * If provided the Charging Station shall return Display Messages of the given ids. This field SHALL NOT contain more ids than set in &lt;&lt;configkey-number-of-display-messages,NumberOfDisplayMessages.maxLimit&gt;&gt;
    *
@@ -28,8 +28,8 @@ export interface GetDisplayMessagesRequest extends OcppRequest {
    *
    */
   requestId: number;
-  priority?: MessagePriorityEnumType;
-  state?: MessageStateEnumType;
+  priority?: MessagePriorityEnumType | null;
+  state?: MessageStateEnumType | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

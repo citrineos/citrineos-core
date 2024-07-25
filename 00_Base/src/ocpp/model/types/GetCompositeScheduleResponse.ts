@@ -14,10 +14,10 @@ import { ChargingRateUnitEnumType, GenericStatusEnumType } from '../enums';
 import { OcppResponse } from '../../..';
 
 export interface GetCompositeScheduleResponse extends OcppResponse {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   status: GenericStatusEnumType;
-  statusInfo?: StatusInfoType;
-  schedule?: CompositeScheduleType;
+  statusInfo?: StatusInfoType | null;
+  schedule?: CompositeScheduleType | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -31,7 +31,7 @@ export interface CustomDataType {
  *
  */
 export interface StatusInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * A predefined code for the reason why the status is returned in this response. The string is case-insensitive.
    *
@@ -41,7 +41,7 @@ export interface StatusInfoType {
    * Additional text to provide detailed information.
    *
    */
-  additionalInfo?: string;
+  additionalInfo?: string | null;
 }
 /**
  * Composite_ Schedule
@@ -49,7 +49,7 @@ export interface StatusInfoType {
  *
  */
 export interface CompositeScheduleType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -86,7 +86,7 @@ export interface CompositeScheduleType {
  *
  */
 export interface ChargingSchedulePeriodType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Charging_ Schedule_ Period. Start_ Period. Elapsed_ Time
    * urn:x-oca:ocpp:uid:1:569240
@@ -107,11 +107,11 @@ export interface ChargingSchedulePeriodType {
    * The number of phases that can be used for charging. If a number of phases is needed, numberPhases=3 will be assumed unless another number is given.
    *
    */
-  numberPhases?: number;
+  numberPhases?: number | null;
   /**
    * Values: 1..3, Used if numberPhases=1 and if the EVSE is capable of switching the phase connected to the EV, i.e. ACPhaseSwitchingSupported is defined and true. It’s not allowed unless both conditions above are true. If both conditions are true, and phaseToUse is omitted, the Charging Station / EVSE will make the selection on its own.
    *
    *
    */
-  phaseToUse?: number;
+  phaseToUse?: number | null;
 }

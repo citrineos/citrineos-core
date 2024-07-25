@@ -14,8 +14,8 @@ import { MessageTriggerEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface TriggerMessageRequest extends OcppRequest {
-  customData?: CustomDataType;
-  evse?: EVSEType;
+  customData?: CustomDataType | null;
+  evse?: EVSEType | null;
   requestedMessage: MessageTriggerEnumType;
 }
 /**
@@ -32,7 +32,7 @@ export interface CustomDataType {
  *
  */
 export interface EVSEType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Identified_ Object. MRID. Numeric_ Identifier
    * urn:x-enexis:ecdm:uid:1:569198
@@ -44,5 +44,5 @@ export interface EVSEType {
    * An id to designate a specific connector (on an EVSE) by connector index number.
    *
    */
-  connectorId?: number;
+  connectorId?: number | null;
 }
