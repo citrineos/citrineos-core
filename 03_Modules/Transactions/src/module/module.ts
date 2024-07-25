@@ -326,10 +326,11 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('MeterValues received:', message, props);
 
-    // TODO: Add meterValues to transactions
     // TODO: Meter values can be triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
     // TODO: If sendCostUpdatedOnMeterValue is true, meterValues handler triggers cost update
     //  when it is added into a transaction
+
+    await this.transactionEventRepository.createMeterValue(message.payload.meterValue);
 
     const response: MeterValuesResponse = {
       // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users

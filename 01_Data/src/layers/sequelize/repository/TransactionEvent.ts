@@ -9,6 +9,7 @@ import {
   type EVSEType,
   IdTokenEnumType,
   type IdTokenType,
+  MeterValueType,
   MeterValueUtils,
   SystemConfig,
   TransactionEventEnumType,
@@ -335,6 +336,13 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         }
         return transactions[0];
       });
+  }
+
+  async createMeterValue(meterValues: [MeterValueType, ...MeterValueType[]]): Promise<void> {
+    for (let meterValue of meterValues) {
+      const createdMeterValue = await MeterValue.create({ ...meterValue });
+      this.meterValue.emit('created', [createdMeterValue]);
+    }
   }
 
   private async calculateAndUpdateTotalKwh(transaction: Transaction): Promise<number> {
