@@ -334,6 +334,7 @@ export const systemConfigSchema = z
           port: z.number().int().positive().optional(),
           costUpdatedInterval: z.number().int().positive().optional(),
           sendCostUpdatedOnMeterValue: z.boolean().optional(),
+          publicKeyFileName: z.string().optional()
         })
         .refine(
           (obj) =>

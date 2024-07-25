@@ -80,7 +80,7 @@ export class TransactionsModule extends AbstractModule {
   private readonly _costUpdatedInterval: number | undefined;
 
   /**
-   * This is the constructor function that initializes the {@link TransactionModule}.
+   * This is the constructor function that initializes the {@link TransactionsModule}.
    *
    * @param {SystemConfig} config - The `config` contains configuration settings for the module.
    *
@@ -647,9 +647,12 @@ export class TransactionsModule extends AbstractModule {
 
   // TODO fix parameter type as needed
   private async _isPublicKeyVerified(publicKey: string): Promise<boolean> {
-    // TODO get the public key filename
+    if (!this._config.modules.transactions.publicKeyFileName) {
+      return false;
+    }
+
     const retrievedPublicKey = (
-      await this._fileAccess.getFile("123")
+      await this._fileAccess.getFile(this._config.modules.transactions.publicKeyFileName)
     ).toString();
 
     return retrievedPublicKey === publicKey;
