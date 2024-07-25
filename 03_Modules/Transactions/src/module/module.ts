@@ -13,18 +13,21 @@ import {
   CostUpdatedRequest,
   CostUpdatedResponse,
   CrudRepository,
+  ErrorCode,
   EventGroup,
   GetTransactionStatusResponse,
   HandlerProperties,
   ICache,
   IdTokenInfoType,
   IdTokenType,
+  IFileAccess,
   IMessage,
   IMessageHandler,
   IMessageSender,
   MeterValuesRequest,
   MeterValuesResponse,
   MeterValueUtils,
+  OcppError,
   ReportDataType,
   StatusNotificationRequest,
   StatusNotificationResponse,
@@ -78,6 +81,7 @@ export class TransactionsModule extends AbstractModule {
   protected _componentRepository: CrudRepository<Component>;
   protected _locationRepository: ILocationRepository;
   protected _tariffRepository: ITariffRepository;
+  protected _fileAccess: IFileAccess;
 
   private _authorizers: IAuthorizer[];
 
@@ -91,6 +95,8 @@ export class TransactionsModule extends AbstractModule {
    *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
    *
+   * @param {IFileAccess} [fileAccess] - The `fileAccess` allows access to the configured file storage.
+   *
    * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
    *
@@ -98,7 +104,7 @@ export class TransactionsModule extends AbstractModule {
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
    *
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
+   * It is used to propagate system-wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
    * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository} which represents a repository for accessing and manipulating transaction event data.
    * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance
@@ -139,6 +145,7 @@ export class TransactionsModule extends AbstractModule {
   constructor(
     config: SystemConfig,
     cache: ICache,
+    fileAccess: IFileAccess,
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
@@ -167,6 +174,8 @@ export class TransactionsModule extends AbstractModule {
         'Could not initialize module due to failure in handler initialization.',
       );
     }
+
+    this._fileAccess = fileAccess;
 
     this._transactionEventRepository =
       transactionEventRepository ||
@@ -336,7 +345,15 @@ export class TransactionsModule extends AbstractModule {
       const sampledValues = meterValue.sampledValue;
       for (let sampledValue of sampledValues) {
         if (sampledValue.signedMeterValue) {
-          // TODO confirm public key matches what's in the config
+          const isVerified = await this._isPublicKeyVerified(sampledValue.signedMeterValue.publicKey);
+
+          if (!isVerified) {
+            throw new OcppError(
+              message.context.correlationId,
+              ErrorCode.SecurityError,
+              'Meter Value does not have valid publicKey',
+            );
+          }
         }
       }
 
@@ -663,5 +680,15 @@ export class TransactionsModule extends AbstractModule {
         });
       }
     }, costUpdatedInterval * 1000);
+  }
+
+  // TODO fix parameter type as needed
+  private async _isPublicKeyVerified(publicKey: string): Promise<boolean> {
+    // TODO get the public key filename
+    const retrievedPublicKey = (
+      await this._fileAccess.getFile("123")
+    ).toString();
+
+    return retrievedPublicKey === publicKey;
   }
 }

@@ -496,6 +496,7 @@ export class CitrineOSServer {
       const module = new TransactionsModule(
         this._config,
         this._cache,
+        this._fileAccess,
         this._createSender(),
         this._createHandler(),
         this._logger,
