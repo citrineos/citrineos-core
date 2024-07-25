@@ -9,10 +9,11 @@ import {
   type EVSEType,
   IdTokenEnumType,
   type IdTokenType,
+  MeterValueType,
   MeterValueUtils,
   SystemConfig,
   TransactionEventEnumType,
-  type TransactionEventRequest
+  type TransactionEventRequest,
 } from '@citrineos/base';
 import { type ITransactionEventRepository } from '../../../interfaces';
 import { MeterValue, Transaction, TransactionEvent } from '../model/TransactionEvent';
@@ -337,6 +338,13 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         }
         return transactions[0];
       });
+  }
+
+  async createMeterValue(meterValues: [MeterValueType, ...MeterValueType[]]): Promise<void> {
+    for (let meterValue of meterValues) {
+      const createdMeterValue = await MeterValue.create({ ...meterValue });
+      this.meterValue.emit('created', [createdMeterValue]);
+    }
   }
 
   private async calculateAndUpdateTotalKwh(transaction: Transaction): Promise<number> {

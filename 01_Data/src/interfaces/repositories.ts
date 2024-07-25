@@ -33,6 +33,7 @@ import {
   ChargingLimitSourceEnumType,
   CompositeScheduleType,
   StatusNotificationRequest,
+  MeterValueType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
 import { CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
@@ -102,6 +103,7 @@ export interface ISubscriptionRepository extends CrudRepository<Subscription> {
 
 export interface ITransactionEventRepository extends CrudRepository<TransactionEventRequest> {
   createOrUpdateTransactionByTransactionEventAndStationId(value: TransactionEventRequest, stationId: string): Promise<Transaction>;
+  createMeterValue(value: [MeterValueType, ...MeterValueType[]]): Promise<void>;
   readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]>;
   readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
   readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: EVSEType, chargingStates?: ChargingStateEnumType[]): Promise<Transaction[]>;
