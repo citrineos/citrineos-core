@@ -338,11 +338,9 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       });
   }
 
-  async createMeterValue(meterValues: [MeterValueType, ...MeterValueType[]]): Promise<void> {
-    for (let meterValue of meterValues) {
-      const createdMeterValue = await MeterValue.create({ ...meterValue });
-      this.meterValue.emit('created', [createdMeterValue]);
-    }
+  async createMeterValue(meterValue: MeterValueType): Promise<void> {
+    const createdMeterValue = await MeterValue.create({ ...meterValue });
+    this.meterValue.emit('created', [createdMeterValue]);
   }
 
   private async calculateAndUpdateTotalKwh(transaction: Transaction): Promise<number> {

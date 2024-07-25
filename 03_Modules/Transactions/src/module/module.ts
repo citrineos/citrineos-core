@@ -330,7 +330,18 @@ export class TransactionsModule extends AbstractModule {
     // TODO: If sendCostUpdatedOnMeterValue is true, meterValues handler triggers cost update
     //  when it is added into a transaction
 
-    await this.transactionEventRepository.createMeterValue(message.payload.meterValue);
+    const meterValues = message.payload.meterValue;
+
+    for (let meterValue of meterValues) {
+      const sampledValues = meterValue.sampledValue;
+      for (let sampledValue of sampledValues) {
+        if (sampledValue.signedMeterValue) {
+          // TODO confirm public key matches what's in the config
+        }
+      }
+
+      await this.transactionEventRepository.createMeterValue(meterValue);
+    }
 
     const response: MeterValuesResponse = {
       // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
