@@ -13,12 +13,12 @@
 import { OcppRequest } from '../../..';
 
 export interface DataTransferRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * May be used to indicate a specific message or implementation.
    *
    */
-  messageId?: string;
+  messageId?: string | null;
   /**
    * Data without specified length or format. This needs to be decided by both parties (Open to implementation).
    *

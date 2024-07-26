@@ -33,7 +33,7 @@ export class Certificate extends Model {
   declare commonName: string;
 
   @Column(DataType.INTEGER)
-  declare keyLength?: number;
+  declare keyLength?: number | null;
 
   @Column({
     type: DataType.DATE,
@@ -42,13 +42,13 @@ export class Certificate extends Model {
       return validBefore ? validBefore.toISOString() : null;
     },
   })
-  declare validBefore?: string;
+  declare validBefore?: string | null;
 
   @Column(DataType.STRING)
-  declare signatureAlgorithm?: SignatureAlgorithmEnumType;
+  declare signatureAlgorithm?: SignatureAlgorithmEnumType | null;
 
   @Column(DataType.STRING)
-  declare countryName?: CountryNameEnumType;
+  declare countryName?: CountryNameEnumType | null;
 
   @Column(DataType.BOOLEAN)
   declare isCA?: boolean;
@@ -58,14 +58,14 @@ export class Certificate extends Model {
   // equal to zero. Where pathLenConstraint does not appear, no limit is imposed.
   // Reference: https://www.rfc-editor.org/rfc/rfc5280#section-4.2.1.9
   @Column(DataType.INTEGER)
-  declare pathLen?: number;
+  declare pathLen?: number | null;
 
   @Column(DataType.STRING)
-  declare certificateFileId?: string;
+  declare certificateFileId?: string | null;
 
   @Column(DataType.STRING)
-  declare privateKeyFileId?: string;
+  declare privateKeyFileId?: string | null;
 
   @Column(DataType.STRING)
-  declare signedBy?: string; // certificate id
+  declare signedBy?: string | null; // certificate id
 }

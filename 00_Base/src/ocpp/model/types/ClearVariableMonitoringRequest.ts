@@ -13,7 +13,7 @@
 import { OcppRequest } from '../../..';
 
 export interface ClearVariableMonitoringRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * List of the monitors to be cleared, identified by there Id.
    *

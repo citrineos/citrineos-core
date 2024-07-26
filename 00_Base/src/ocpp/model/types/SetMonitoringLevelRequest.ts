@@ -13,7 +13,7 @@
 import { OcppRequest } from '../../..';
 
 export interface SetMonitoringLevelRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * The Charging Station SHALL only report events with a severity number lower than or equal to this severity.
    * The severity range is 0-9, with 0 as the highest and 9 as the lowest severity level.

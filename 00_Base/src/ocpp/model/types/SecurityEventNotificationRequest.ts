@@ -13,7 +13,7 @@
 import { OcppRequest } from '../../..';
 
 export interface SecurityEventNotificationRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Type of the security event. This value should be taken from the Security events list.
    *
@@ -28,7 +28,7 @@ export interface SecurityEventNotificationRequest extends OcppRequest {
    * Additional information about the occurred security event.
    *
    */
-  techInfo?: string;
+  techInfo?: string | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

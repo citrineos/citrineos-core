@@ -3,15 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  type CustomDataType,
-  EVSEType,
-  Namespace,
-  TransactionEventEnumType,
-  type TransactionEventRequest,
-  TransactionType,
-  TriggerReasonEnumType
-} from '@citrineos/base';
+import { type CustomDataType, EVSEType, Namespace, TransactionEventEnumType, type TransactionEventRequest, TransactionType, TriggerReasonEnumType } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import { IdToken } from '../Authorization';
 import { Evse } from '../DeviceModel';
@@ -45,17 +37,17 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   @Column(DataType.INTEGER)
   declare seqNo: number;
 
-  @Column({type: DataType.BOOLEAN, defaultValue: false})
-  declare offline?: boolean;
+  @Column({ type: DataType.BOOLEAN, defaultValue: false })
+  declare offline?: boolean | null;
 
   @Column(DataType.INTEGER)
-  declare numberOfPhasesUsed?: number;
+  declare numberOfPhasesUsed?: number | null;
 
   @Column(DataType.DECIMAL)
-  declare cableMaxCurrent?: number;
+  declare cableMaxCurrent?: number | null;
 
   @Column(DataType.INTEGER)
-  declare reservationId?: number;
+  declare reservationId?: number | null;
 
   @ForeignKey(() => Transaction)
   declare transactionDatabaseId?: string;
@@ -67,16 +59,16 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   declare transactionInfo: TransactionType;
 
   @ForeignKey(() => Evse)
-  declare evseId?: number;
+  declare evseId?: number | null;
 
   @BelongsTo(() => Evse)
   declare evse?: EVSEType;
 
   @ForeignKey(() => IdToken)
-  declare idTokenId?: number;
+  declare idTokenId?: number | null;
 
   @BelongsTo(() => IdToken)
   declare idToken?: IdToken;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

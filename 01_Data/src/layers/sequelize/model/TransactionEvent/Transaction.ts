@@ -45,21 +45,21 @@ export class Transaction extends Model implements TransactionType {
   declare meterValues?: MeterValueType[];
 
   @Column(DataType.STRING)
-  declare chargingState?: ChargingStateEnumType;
+  declare chargingState?: ChargingStateEnumType | null;
 
   @Column(DataType.BIGINT)
-  declare timeSpentCharging?: number;
+  declare timeSpentCharging?: number | null;
 
   @Column(DataType.DECIMAL)
-  declare totalKwh?: number;
+  declare totalKwh?: number | null;
 
   @Column(DataType.STRING)
-  declare stoppedReason?: ReasonEnumType;
+  declare stoppedReason?: ReasonEnumType | null;
 
   @Column(DataType.INTEGER)
-  declare remoteStartId?: number;
+  declare remoteStartId?: number | null;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 
   static buildTransaction(
     id: string, // todo temp

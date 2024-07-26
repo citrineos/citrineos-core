@@ -31,7 +31,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     defaultValue: AttributeEnumType.Actual,
     unique: 'stationId_type_variableId_componentId',
   })
-  declare type?: AttributeEnumType;
+  declare type?: AttributeEnumType | null;
 
   // From VariableCharacteristics, which belongs to Variable associated with this VariableAttribute
   @Column({
@@ -58,26 +58,25 @@ export class VariableAttribute extends Model implements VariableAttributeType {
       this.setDataValue('value', valueString);
     },
   })
-  declare value?: string;
+  declare value?: string | null;
 
   @Column({
     type: DataType.STRING,
     defaultValue: MutabilityEnumType.ReadWrite,
   })
-  declare mutability?: MutabilityEnumType;
+  declare mutability?: MutabilityEnumType | null;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,
   })
-  declare persistent?: boolean;
+  declare persistent?: boolean | null;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,
   })
-  declare constant?: boolean;
-
+  declare constant?: boolean | null;
 
   @Column({
     type: DataType.DATE,
@@ -99,7 +98,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     type: DataType.INTEGER,
     unique: 'stationId_type_variableId_componentId',
   })
-  declare variableId?: number;
+  declare variableId?: number | null;
 
   @BelongsTo(() => Component)
   declare component: ComponentType;
@@ -109,14 +108,14 @@ export class VariableAttribute extends Model implements VariableAttributeType {
     type: DataType.INTEGER,
     unique: 'stationId_type_variableId_componentId',
   })
-  declare componentId?: number;
+  declare componentId?: number | null;
 
   @BelongsTo(() => Evse)
   declare evse?: EVSEType;
 
   @ForeignKey(() => Evse)
   @Column(DataType.INTEGER)
-  declare evseDatabaseId?: number;
+  declare evseDatabaseId?: number | null;
 
   // History of variable status. Can be directly from GetVariablesResponse or SetVariablesResponse, or from NotifyReport handling, or from 'setOnCharger' option for data api
 
@@ -129,7 +128,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
   declare bootConfig?: Boot;
 
   @ForeignKey(() => Boot)
-  declare bootConfigId?: string;
+  declare bootConfigId?: string | null;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

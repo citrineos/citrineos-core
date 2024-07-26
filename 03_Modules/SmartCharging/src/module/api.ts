@@ -321,7 +321,7 @@ export class SmartChargingModuleApi
             transactionDatabaseId: transaction.id,
             chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
             isActive: true,
-          }
+          },
         });
       if (numOfExistedChargingProfile > 0) {
         return {

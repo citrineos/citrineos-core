@@ -13,7 +13,7 @@
 import { OcppRequest } from '../../..';
 
 export interface ClearDisplayMessageRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Id of the message that SHALL be removed from the Charging Station.
    *

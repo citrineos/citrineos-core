@@ -2,19 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {Namespace} from '@citrineos/base';
+import { Namespace } from '@citrineos/base';
 import { Column, DataType, Model, Table } from 'sequelize-typescript';
-import {CreationOptional} from 'sequelize';
+import { CreationOptional } from 'sequelize';
 
 @Table
 export class Tariff extends Model implements TariffData {
   static readonly MODEL_NAME: string = Namespace.Tariff;
-
-  public static newInstance(data: TariffData): Tariff {
-    return Tariff.build({...data});
-  }
-
-  declare id: number;
 
   @Column({
     type: DataType.STRING,
@@ -36,7 +30,7 @@ export class Tariff extends Model implements TariffData {
     },
     get(this: Tariff) {
       return parseFloat(this.getDataValue('pricePerKwh'));
-    }
+    },
   })
   declare pricePerKwh: number;
 
@@ -47,9 +41,9 @@ export class Tariff extends Model implements TariffData {
     },
     get(this: Tariff) {
       return parseFloat(this.getDataValue('pricePerMin'));
-    }
+    },
   })
-  declare pricePerMin?: number;
+  declare pricePerMin?: number | null;
 
   @Column({
     type: DataType.DECIMAL,
@@ -58,9 +52,9 @@ export class Tariff extends Model implements TariffData {
     },
     get(this: Tariff) {
       return parseFloat(this.getDataValue('pricePerSession'));
-    }
+    },
   })
-  declare pricePerSession?: number;
+  declare pricePerSession?: number | null;
 
   @Column({
     type: DataType.DECIMAL,
@@ -69,9 +63,9 @@ export class Tariff extends Model implements TariffData {
     },
     get(this: Tariff) {
       return parseFloat(this.getDataValue('authorizationAmount'));
-    }
+    },
   })
-  declare authorizationAmount?: number;
+  declare authorizationAmount?: number | null;
 
   @Column({
     type: DataType.DECIMAL,
@@ -80,9 +74,9 @@ export class Tariff extends Model implements TariffData {
     },
     get(this: Tariff) {
       return parseFloat(this.getDataValue('paymentFee'));
-    }
+    },
   })
-  declare paymentFee?: number;
+  declare paymentFee?: number | null;
 
   @Column({
     type: DataType.DECIMAL,
@@ -91,10 +85,11 @@ export class Tariff extends Model implements TariffData {
     },
     get(this: Tariff) {
       return parseFloat(this.getDataValue('taxRate'));
-    }
+    },
   })
-  declare taxRate?: number;
+  declare taxRate?: number | null;
 
+  declare id: number;
   declare updatedAt: CreationOptional<Date>;
 
   get data(): TariffData {
@@ -106,21 +101,24 @@ export class Tariff extends Model implements TariffData {
       pricePerSession: this.pricePerSession,
       taxRate: this.taxRate,
       authorizationAmount: this.authorizationAmount,
-      paymentFee: this.paymentFee
-    }
+      paymentFee: this.paymentFee,
+    };
   }
 
+  public static newInstance(data: TariffData): Tariff {
+    return Tariff.build({ ...data });
+  }
 }
 
-export type TariffData = {
+export interface TariffData {
   id: number;
   currency: string;
 
   pricePerKwh: number;
-  pricePerMin?: number;
-  pricePerSession?: number;
-  taxRate?: number;
+  pricePerMin?: number | null;
+  pricePerSession?: number | null;
+  taxRate?: number | null;
 
-  authorizationAmount?: number;
-  paymentFee?: number;
+  authorizationAmount?: number | null;
+  paymentFee?: number | null;
 }
