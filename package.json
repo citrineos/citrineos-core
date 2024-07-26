@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "1.3.0",
+  "version": "1.3.2",
   "private": false,
   "devDependencies": {
     "@eslint/js": "^9.0.0",
@@ -13,14 +13,21 @@
   },
   "scripts": {
     "install-all": "npm i --workspaces --verbose",
-    "fresh": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json dist **/dist **/**/dist node_modules **/node_modules **/**/node_modules tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
-    "build": "npm run compile --workspaces --verbose",
-    "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
+    "copy-assets": "cp -rv Server/src/assets Server/dist/assets",
+    "build": "tsc --build --verbose && npm run copy-assets",
+    "fresh": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json node_modules **/node_modules **/**/node_modules && npm run clean",
+    "clean": "rm -rf dist **/dist **/**/dist tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
+    "start-unix": "cd ./Server && npm run start-unix",
+    "start-windows": "cd ./Server && npm run start-windows",
     "start-docker": "cd ./Server && npm run start-docker",
     "start-docker-cloud": "cd ./Server && npm run start-docker-cloud",
     "lint": "npx eslint --ext .ts ./",
     "lint-fix": "npm run prettier && npx eslint --ext .ts --fix ./",
-    "prettier": "prettier --write ."
+    "prettier": "prettier --write .",
+    "fresh-and-install-all": "npm run fresh && npm run install-all",
+    "sync-db": "ts-node ./db.sync.ts",
+    "start-everest": "npm run start-everest --prefix ./Server",
+    "start-everest-windows": "npm run start-everest-windows --prefix ./Server"
   },
   "workspaces": [
     "00_Base",
@@ -35,6 +42,16 @@
     "03_Modules/SmartCharging",
     "03_Modules/Tenant",
     "03_Modules/Transactions",
-    "Server"
+    "Server",
+    "../citrineos-ocpi/00_Base",
+    "../citrineos-ocpi/03_Modules/Versions",
+    "../citrineos-ocpi/03_Modules/Credentials",
+    "../citrineos-ocpi/03_Modules/Commands",
+    "../citrineos-ocpi/03_Modules/Locations",
+    "../citrineos-ocpi/03_Modules/Sessions",
+    "../citrineos-ocpi/03_Modules/ChargingProfiles",
+    "../citrineos-ocpi/03_Modules/Cdrs",
+    "../citrineos-ocpi/03_Modules/Tariffs",
+    "../citrineos-ocpi/03_Modules/Tokens"
   ]
 }

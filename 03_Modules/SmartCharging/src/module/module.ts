@@ -180,7 +180,7 @@ export class SmartChargingModule extends AbstractModule {
     const request = message.payload;
     const stationId = message.context.stationId;
     const activeTransaction =
-      await this._transactionEventRepository.readActiveTransactionByStationIdAndEvseId(
+      await this._transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
         stationId,
         request.evseId,
       );

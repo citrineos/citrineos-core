@@ -104,6 +104,7 @@ export const systemConfigInputSchema = z.object({
       password: z.string().optional(),
       storage: z.string().default('csms.sqlite').optional(),
       sync: z.boolean().default(false).optional(),
+      alter: z.boolean().default(false).optional(),
     }),
   }),
   util: z.object({
@@ -225,6 +226,10 @@ export const systemConfigInputSchema = z.object({
   logLevel: z.number().min(0).max(6).default(0).optional(),
   maxCallLengthSeconds: z.number().int().positive().default(5).optional(),
   maxCachingSeconds: z.number().int().positive().default(10).optional(),
+  ocpiServer: z.object({
+    host: z.string().default('localhost').optional(),
+    port: z.number().int().positive().default(8085).optional(),
+  }),
 });
 
 export type SystemConfigInput = z.infer<typeof systemConfigInputSchema>;
@@ -351,6 +356,7 @@ export const systemConfigSchema = z
         password: z.string(),
         storage: z.string(),
         sync: z.boolean(),
+        alter: z.boolean().optional(),
       }),
     }),
     util: z.object({
@@ -471,6 +477,10 @@ export const systemConfigSchema = z
     logLevel: z.number().min(0).max(6),
     maxCallLengthSeconds: z.number().int().positive(),
     maxCachingSeconds: z.number().int().positive(),
+    ocpiServer: z.object({
+      host: z.string(),
+      port: z.number().int().positive(),
+    }),
   })
   .refine((obj) => obj.maxCachingSeconds >= obj.maxCallLengthSeconds, {
     message: 'maxCachingSeconds cannot be less than maxCallLengthSeconds',

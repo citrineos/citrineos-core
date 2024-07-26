@@ -8,10 +8,21 @@ import { Tariff } from '../model/Tariff';
 import { Sequelize } from 'sequelize-typescript';
 import { SystemConfig } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
+import { Op } from 'sequelize';
 
 export class SequelizeTariffRepository extends SequelizeRepository<Tariff> implements ITariffRepository {
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, Tariff.MODEL_NAME, logger, sequelizeInstance);
+  }
+
+  async findByStationIds(stationIds: string[]): Promise<Tariff[] | undefined> {
+    return super.readAllByQuery({
+      where: {
+        stationId: {
+          [Op.in]: stationIds,
+        },
+      },
+    });
   }
 
   async findByStationId(stationId: string): Promise<Tariff | undefined> {
@@ -22,17 +33,16 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
     });
   }
 
-  async createOrUpdateTariff(tariff: Tariff): Promise<Tariff> {
+  async upsertTariff(tariff: Tariff): Promise<Tariff> {
     return await this.s.transaction(async (transaction) => {
-      const savedTariff = await this.s.models[Tariff.MODEL_NAME].findOne({
-        where: {
-          stationId: tariff.stationId,
-          unit: tariff.unit,
-        },
+      const savedTariff = await this.readOnlyOneByQuery({
+        where: { id: tariff.id },
         transaction,
       });
       if (savedTariff) {
-        return (await this.updateByKey({ ...tariff }, savedTariff.dataValues.id)) as Tariff;
+        const updatedTariff = await savedTariff.set(tariff.data).save({ transaction });
+        this.emit('updated', [updatedTariff]);
+        return updatedTariff;
       }
       const createdTariff = await tariff.save({ transaction });
       this.emit('created', [createdTariff]);
@@ -43,22 +53,18 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
   async readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {
     return super.readAllByQuery({
       where: {
-        ...(query.stationId ? { stationId: query.stationId } : {}),
-        ...(query.unit ? { unit: query.unit } : {}),
-        ...(query.id ? { id: query.id } : {}),
+        ...(query.id && { id: query.id }),
       },
     });
   }
 
   async deleteAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {
-    if (!query.id && !query.stationId && !query.unit) {
+    if (!query.id) {
       throw new Error('Must specify at least one query parameter');
     }
     return super.deleteAllByQuery({
       where: {
-        ...(query.stationId ? { stationId: query.stationId } : {}),
-        ...(query.unit ? { unit: query.unit } : {}),
-        ...(query.id ? { id: query.id } : {}),
+        ...(query.id && { id: query.id }),
       },
     });
   }

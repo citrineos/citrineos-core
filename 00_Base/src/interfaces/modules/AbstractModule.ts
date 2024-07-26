@@ -136,17 +136,24 @@ export abstract class AbstractModule implements IModule {
       }
     } catch (error) {
       this._logger.error('Failed handling message: ', error, message);
-      if (error instanceof OcppError) {
-        this._sender.sendResponse(message, error);
-      } else {
-        this._sender.sendResponse(
-          message,
-          new OcppError(
-            message.context.correlationId,
-            ErrorCode.InternalError,
-            'Failed handling message: ' + error,
-          ),
-        );
+      if (message.state === MessageState.Request) {
+        // CallErrors are only emitted for Calls
+        this._logger.error('Sending CallError to ChargingStation...');
+        message.origin = MessageOrigin.ChargingStationManagementSystem;
+        if (error instanceof OcppError) {
+          this._sender.sendResponse(message, error);
+        } else if (error instanceof Error) {
+          this._sender.sendResponse(
+            message,
+            new OcppError(
+              message.context.correlationId,
+              ErrorCode.InternalError,
+              'Failed handling message: ' + error.message,
+            ),
+          );
+        } else {
+          this._logger.warn("Unknown error type, couldn't send CallError");
+        }
       }
     }
   }
@@ -221,7 +228,7 @@ export abstract class AbstractModule implements IModule {
     payload: OcppRequest,
     callbackUrl?: string,
     correlationId?: string,
-    origin?: MessageOrigin,
+    origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
     const _correlationId: string =
       correlationId === undefined ? uuidv4() : correlationId;
@@ -280,7 +287,7 @@ export abstract class AbstractModule implements IModule {
     tenantId: string,
     action: CallAction,
     payload: OcppResponse,
-    origin?: MessageOrigin,
+    origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
     return this._sender.sendResponse(
       RequestBuilder.buildCallResult(
@@ -307,6 +314,7 @@ export abstract class AbstractModule implements IModule {
     message: IMessage<OcppRequest>,
     payload: OcppResponse,
   ): Promise<IMessageConfirmation> {
+    message.origin = MessageOrigin.ChargingStationManagementSystem;
     return this._sender.sendResponse(message, payload);
   }
 
@@ -327,7 +335,7 @@ export abstract class AbstractModule implements IModule {
     tenantId: string,
     action: CallAction,
     payload: OcppError,
-    origin?: MessageOrigin,
+    origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
     return this._sender.sendResponse(
       RequestBuilder.buildCallError(
@@ -354,6 +362,7 @@ export abstract class AbstractModule implements IModule {
     message: IMessage<OcppRequest>,
     payload: OcppError,
   ): Promise<IMessageConfirmation> {
+    message.origin = MessageOrigin.ChargingStationManagementSystem;
     return this._sender.sendResponse(message, payload);
   }
 

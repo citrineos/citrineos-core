@@ -32,6 +32,7 @@ import {
   NotifyEVChargingNeedsRequest,
   ChargingLimitSourceEnumType,
   CompositeScheduleType,
+  StatusNotificationRequest,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
 import { CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
@@ -66,22 +67,25 @@ export interface IBootRepository extends CrudRepository<BootConfig> {
 }
 
 export interface IDeviceModelRepository extends CrudRepository<VariableAttributeType> {
-  createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string): Promise<VariableAttribute[]>;
-  createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string): Promise<VariableAttribute[]>;
-  createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string): Promise<VariableAttribute[]>;
-  updateResultByStationId(result: SetVariableResultType, stationId: string): Promise<VariableAttribute | undefined>;
+  createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string, isoTimestamp: string): Promise<VariableAttribute[]>;
+  createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string, isoTimestamp: string): Promise<VariableAttribute[]>;
+  createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string, isoTimestamp: string): Promise<VariableAttribute[]>;
+  updateResultByStationId(result: SetVariableResultType, stationId: string, isoTimestamp: string): Promise<VariableAttribute | undefined>;
   readAllSetVariableByStationId(stationId: string): Promise<SetVariableDataType[]>;
   readAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
   existByQuerystring(query: VariableAttributeQuerystring): Promise<number>;
   deleteAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
   findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]>;
+  findOrCreateEvseAndComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component, Variable]>;
   findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component>;
   findEvseByIdAndConnectorId(id: number, connectorId: number | null): Promise<Evse | undefined>;
   findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance: string | null): Promise<VariableCharacteristics | undefined>;
 }
 
 export interface ILocationRepository extends CrudRepository<Location> {
+  readLocationById: (id: number) => Promise<Location | undefined>;
   readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
+  addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotificationRequest): Promise<void>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {
@@ -103,7 +107,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: EVSEType, chargingStates?: ChargingStateEnumType[]): Promise<Transaction[]>;
   readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]>;
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
-  readActiveTransactionByStationIdAndEvseId(stationId: string, evseId: number): Promise<Transaction | undefined>;
+  getActiveTransactionByStationIdAndEvseId(stationId: string, evseId: number): Promise<Transaction | undefined>;
 }
 
 export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoringType> {
@@ -124,7 +128,7 @@ export interface ITariffRepository extends CrudRepository<Tariff> {
   findByStationId(stationId: string): Promise<Tariff | undefined>;
   readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]>;
   deleteAllByQuerystring(query: TariffQueryString): Promise<Tariff[]>;
-  createOrUpdateTariff(tariff: Tariff): Promise<Tariff>;
+  upsertTariff(tariff: Tariff): Promise<Tariff>;
 }
 
 export interface ICertificateRepository extends CrudRepository<Certificate> {

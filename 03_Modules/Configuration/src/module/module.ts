@@ -207,6 +207,7 @@ export class ConfigurationModule extends AbstractModule {
 
     const stationId = message.context.stationId;
     const tenantId = message.context.tenantId;
+    const timestamp = message.context.timestamp;
     const chargingStation = message.payload.chargingStation;
 
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
@@ -315,6 +316,7 @@ export class ConfigurationModule extends AbstractModule {
         ],
       },
       stationId,
+      timestamp,
     );
     await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
       {
@@ -335,6 +337,7 @@ export class ConfigurationModule extends AbstractModule {
         ],
       },
       stationId,
+      timestamp,
     );
     if (chargingStation.firmwareVersion) {
       await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
@@ -356,6 +359,7 @@ export class ConfigurationModule extends AbstractModule {
           ],
         },
         stationId,
+        timestamp,
       );
     }
     if (chargingStation.serialNumber) {
@@ -378,6 +382,7 @@ export class ConfigurationModule extends AbstractModule {
           ],
         },
         stationId,
+        timestamp,
       );
     }
     if (chargingStation.modem) {
@@ -401,6 +406,7 @@ export class ConfigurationModule extends AbstractModule {
             ],
           },
           stationId,
+          timestamp,
         );
       }
       if (chargingStation.modem.iccid) {
@@ -423,6 +429,7 @@ export class ConfigurationModule extends AbstractModule {
             ],
           },
           stationId,
+          timestamp,
         );
       }
     }

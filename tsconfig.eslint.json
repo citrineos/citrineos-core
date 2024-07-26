@@ -33,8 +33,11 @@
     "03_Modules/Tenant/**/*.json",
     "03_Modules/Transactions/**/*.ts",
     "03_Modules/Transactions/**/*.json",
+    "03_Modules/citrineos-ocpi/**/*.ts",
+    "03_Modules/citrineos-ocpi/**/*.json",
     "Server/**/*.ts",
-    "Server/**/*.json"
+    "Server/**/*.json",
+    "./db.sync.ts"
   ],
   "compilerOptions": {
     "target": "es6",

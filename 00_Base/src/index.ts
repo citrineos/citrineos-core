@@ -59,6 +59,7 @@ export { SystemConfig, WebsocketServerConfig } from './config/types';
 // Utils
 
 export { RequestBuilder } from './util/request';
+export { MeterValueUtils } from './util/MeterValueUtils';
 
 export const LOG_LEVEL_OCPP = 10;
 
@@ -99,6 +100,7 @@ import {
   InstallCertificateResponseSchema,
   LogStatusNotificationRequestSchema,
   MeterValuesRequestSchema,
+  NotifyChargingLimitRequestSchema,
   NotifyCustomerInformationRequestSchema,
   NotifyDisplayMessagesRequestSchema,
   NotifyEVChargingNeedsRequestSchema,
@@ -133,6 +135,7 @@ import {
 import { CallAction } from './ocpp/rpc/message';
 
 export interface OcppRequest {}
+
 export interface OcppResponse {}
 
 export const CALL_SCHEMA_MAP: Map<CallAction, object> = new Map<
@@ -152,6 +155,7 @@ export const CALL_SCHEMA_MAP: Map<CallAction, object> = new Map<
   [CallAction.Heartbeat, HeartbeatRequestSchema],
   [CallAction.LogStatusNotification, LogStatusNotificationRequestSchema],
   [CallAction.MeterValues, MeterValuesRequestSchema],
+  [CallAction.NotifyChargingLimit, NotifyChargingLimitRequestSchema],
   [
     CallAction.NotifyCustomerInformation,
     NotifyCustomerInformationRequestSchema,
@@ -226,3 +230,7 @@ export const CALL_RESULT_SCHEMA_MAP: Map<CallAction, object> = new Map<
 ]);
 
 export { eventGroupFromString } from './interfaces/messages';
+
+export { UnauthorizedException } from './interfaces/api/exceptions/unauthorized.exception';
+export { HttpHeader } from './interfaces/api/http.header';
+export { HttpStatus } from './interfaces/api/http.status';

@@ -9,6 +9,7 @@ export { default as BootConfigSchema } from './schemas/BootConfigSchema.json';
 export { default as ChargingStationTypeSchema } from './schemas/ChargingStationTypeSchema.json';
 export { default as ReportDataTypeSchema } from './schemas/ReportDataTypeSchema.json';
 export { default as SetVariableResultTypeSchema } from './schemas/SetVariableResultTypeSchema.json';
+export { default as UpdateChargingStationPasswordSchema } from './schemas/UpdateChargingStationPasswordRequestSchema.json';
 
 export function QuerySchema(
   properties: [string, string][],

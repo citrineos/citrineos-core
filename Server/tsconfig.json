@@ -43,6 +43,36 @@
     },
     {
       "path": "../03_Modules/Transactions"
+    },
+    {
+      "path": "../../citrineos-ocpi/00_Base"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Versions"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Credentials"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Commands"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Locations"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Sessions"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/ChargingProfiles"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Tariffs"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Tokens"
+    },
+    {
+      "path": "../../citrineos-ocpi/03_Modules/Cdrs"
     }
   ]
 }

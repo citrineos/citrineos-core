@@ -29,6 +29,7 @@ export enum Namespace {
   RootCertificate = 'RootCertificate',
   SalesTariff = 'SalesTariff',
   SecurityEventNotificationRequest = 'SecurityEvent',
+  StatusNotificationRequest = 'StatusNotification',
   Subscription = 'Subscription',
   SystemConfig = 'SystemConfig',
   TlsCertificates = 'TlsCertificates',
@@ -41,4 +42,5 @@ export enum Namespace {
   VariableMonitoringStatus = 'VariableMonitoringStatus',
   VariableStatus = 'VariableStatus',
   VariableType = 'Variable',
+  PasswordType = 'Password',
 }

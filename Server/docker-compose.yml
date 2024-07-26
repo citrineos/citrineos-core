@@ -33,8 +33,8 @@ services:
 
   citrine:
     build:
-      context: ..
-      dockerfile: ./Server/deploy.Dockerfile
+      context: ../../
+      dockerfile: ./citrineos-core/Server/deploy.with.ocpi.Dockerfile
     volumes:
       - ../package-lock.json:/usr/local/apps/citrineos/package-lock-host.json
       - ../package.json:/usr/local/apps/citrineos/package.json
@@ -51,7 +51,6 @@ services:
       - ../03_Modules/OcppRouter:/usr/local/apps/citrineos/03_Modules/OcppRouter
       - ../03_Modules/Reporting:/usr/local/apps/citrineos/03_Modules/Reporting
       - ../03_Modules/SmartCharging:/usr/local/apps/citrineos/03_Modules/SmartCharging
-      - ../03_Modules/Tenant:/usr/local/apps/citrineos/03_Modules/Tenant
       - ../03_Modules/Transactions:/usr/local/apps/citrineos/03_Modules/Transactions
       - /usr/local/apps/citrineos/node_modules
       - /usr/local/apps/citrineos/Server/node_modules
@@ -65,7 +64,6 @@ services:
       - /usr/local/apps/citrineos/03_Modules/OcppRouter/node_modules
       - /usr/local/apps/citrineos/03_Modules/Reporting/node_modules
       - /usr/local/apps/citrineos/03_Modules/SmartCharging/node_modules
-      - /usr/local/apps/citrineos/03_Modules/Tenant/node_modules
       - /usr/local/apps/citrineos/03_Modules/Transactions/node_modules
       - /usr/local/apps/citrineos/dist/
       - /usr/local/apps/citrineos/Server/dist/
@@ -79,7 +77,6 @@ services:
       - /usr/local/apps/citrineos/03_Modules/OcppRouter/dist/
       - /usr/local/apps/citrineos/03_Modules/Reporting/dist/
       - /usr/local/apps/citrineos/03_Modules/SmartCharging/dist/
-      - /usr/local/apps/citrineos/03_Modules/Tenant/dist/
       - /usr/local/apps/citrineos/03_Modules/Transactions/dist/
     environment:
       APP_NAME: 'all'
@@ -96,6 +93,7 @@ services:
       - 8080:8080
       - 8081:8081
       - 8082:8082
+      - 8085:8085
       - 8443:8443
       - 8444:8444
       - 9229:9229
