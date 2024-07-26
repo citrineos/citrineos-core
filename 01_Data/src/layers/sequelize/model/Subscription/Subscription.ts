@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace } from '@citrineos/base';
-import { Column, Index, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
 
 @Table
 export class Subscription extends Model {
@@ -33,7 +33,7 @@ export class Subscription extends Model {
   })
   declare sentMessage: boolean;
 
-  @Column
+  @Column(DataType.STRING)
   declare messageRegexFilter?: string | null;
 
   @Column
