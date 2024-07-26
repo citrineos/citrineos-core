@@ -7,7 +7,7 @@ import { CrudRepository, type SystemConfig } from '@citrineos/base';
 import { type Model, type Sequelize } from 'sequelize-typescript';
 import { DefaultSequelizeInstance } from '../util';
 import { type ILogObj, type Logger } from 'tslog';
-import { AggregateOptions, Attributes, FindOptions, FindAndCountOptions, ModelStatic, QueryTypes, UpdateOptions } from 'sequelize';
+import { AggregateOptions, Attributes, FindAndCountOptions, FindOptions, ModelStatic, QueryTypes, UpdateOptions } from 'sequelize';
 
 export class SequelizeRepository<T extends Model<any, any>> extends CrudRepository<T> {
   protected s: Sequelize;
@@ -51,6 +51,10 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     return await this.s.models[this.namespace].findAll(query).then((row) => row.length);
   }
 
+  async findAndCount(options: Omit<FindAndCountOptions<Attributes<T>>, 'group'>): Promise<{ rows: T[]; count: number }> {
+    return (this.s.models[this.namespace] as ModelStatic<T>).findAndCountAll(options);
+  }
+
   protected async _create(value: T): Promise<T> {
     return await value.save();
   }
@@ -68,10 +72,6 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   protected async _updateByKey(value: Partial<T>, key: string): Promise<T | undefined> {
     const primaryKey = this.s.models[this.namespace].primaryKeyAttribute;
     return await this._updateAllByQuery(value, { where: { [primaryKey]: key } }).then((rows) => (rows && rows.length === 1 ? rows[0] : undefined));
-  }
-
-  async findAndCount(options: Omit<FindAndCountOptions<Attributes<T>>, 'group'>): Promise<{ rows: T[]; count: number }> {
-    return (this.s.models[this.namespace] as ModelStatic<T>).findAndCountAll(options);
   }
 
   protected async _updateAllByQuery(value: Partial<T>, query: object): Promise<T[]> {

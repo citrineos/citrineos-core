@@ -305,121 +305,6 @@ export class TransactionsModule extends AbstractModule {
     }
   }
 
-  private async buildTransactionEventResponse(
-    authorizations: Authorization[],
-    message: IMessage<TransactionEventRequest>,
-    stationId: string,
-    transactionId: string,
-    transactionEvent: TransactionEventRequest,
-  ): Promise<TransactionEventResponse> {
-    const transactionEventResponse: TransactionEventResponse = {
-      idTokenInfo: {
-        status: AuthorizationStatusEnumType.Unknown,
-        // TODO determine how/if to set personalMessage
-      },
-    };
-
-    if (authorizations.length !== 1) {
-      return transactionEventResponse;
-    }
-
-    const authorization = authorizations[0];
-    if (authorization) {
-      if (authorization.idTokenInfo) {
-        // Extract DTO fields from sequelize Model<any, any> objects
-        const idTokenInfo: IdTokenInfoType = {
-          status: authorization.idTokenInfo.status,
-          cacheExpiryDateTime: authorization.idTokenInfo.cacheExpiryDateTime,
-          chargingPriority: authorization.idTokenInfo.chargingPriority,
-          language1: authorization.idTokenInfo.language1,
-          evseId: authorization.idTokenInfo.evseId,
-          groupIdToken: authorization.idTokenInfo.groupIdToken
-            ? {
-                additionalInfo:
-                  authorization.idTokenInfo.groupIdToken.additionalInfo &&
-                  authorization.idTokenInfo.groupIdToken.additionalInfo.length >
-                    0
-                    ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                        (additionalInfo) => ({
-                          additionalIdToken: additionalInfo.additionalIdToken,
-                          type: additionalInfo.type,
-                        }),
-                      ) as [AdditionalInfoType, ...AdditionalInfoType[]])
-                    : undefined,
-                idToken: authorization.idTokenInfo.groupIdToken.idToken,
-                type: authorization.idTokenInfo.groupIdToken.type,
-              }
-            : undefined,
-          language2: authorization.idTokenInfo.language2,
-          personalMessage: authorization.idTokenInfo.personalMessage,
-        };
-
-        if (idTokenInfo.status === AuthorizationStatusEnumType.Accepted) {
-          if (
-            idTokenInfo.cacheExpiryDateTime &&
-            new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
-          ) {
-            transactionEventResponse.idTokenInfo = {
-              status: AuthorizationStatusEnumType.Invalid,
-              groupIdToken: idTokenInfo.groupIdToken,
-              // TODO determine how/if to set personalMessage
-            };
-          } else {
-            // TODO: Determine how to check for NotAllowedTypeEVSE, NotAtThisLocation, NotAtThisTime, NoCredit
-            // TODO: allow for a 'real time auth' type call to fetch token status.
-            transactionEventResponse.idTokenInfo = idTokenInfo;
-          }
-        } else {
-          // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
-          // N.B. Other non-Accepted statuses should not be allowed to be stored.
-          transactionEventResponse.idTokenInfo = idTokenInfo;
-        }
-      } else {
-        // Assumed to always be valid without IdTokenInfo
-        transactionEventResponse.idTokenInfo = {
-          status: AuthorizationStatusEnumType.Accepted,
-          // TODO determine how/if to set personalMessage
-        };
-      }
-    }
-
-    if (
-      transactionEvent.eventType === TransactionEventEnumType.Started &&
-      transactionEventResponse &&
-      transactionEventResponse.idTokenInfo?.status ===
-        AuthorizationStatusEnumType.Accepted &&
-      transactionEvent.idToken
-    ) {
-      if (this._costUpdatedInterval) {
-        this._updateCost(
-          stationId,
-          transactionId,
-          this._costUpdatedInterval,
-          message.context.tenantId,
-        );
-      }
-
-      // TODO there should only be one active transaction per evse of a station.
-      // old transactions should be marked inactive and an alert should be raised (this can only happen in the field with charger bugs or missed messages)
-
-      // Check for ConcurrentTx
-      const activeTransactions = await this._transactionEventRepository.readAllActiveTransactionsByIdToken(transactionEvent.idToken);
-
-      // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
-      if (activeTransactions.length > 1) {
-        const groupIdToken =
-          transactionEventResponse.idTokenInfo?.groupIdToken;
-        transactionEventResponse.idTokenInfo = {
-          status: AuthorizationStatusEnumType.ConcurrentTx,
-          groupIdToken: groupIdToken,
-          // TODO determine how/if to set personalMessage
-        };
-      }
-    }
-
-    return transactionEventResponse;
-  }
-
   @AsHandler(CallAction.MeterValues)
   protected async _handleMeterValues(
     message: IMessage<MeterValuesRequest>,
@@ -542,6 +427,123 @@ export class TransactionsModule extends AbstractModule {
       message,
       props,
     );
+  }
+
+  private async buildTransactionEventResponse(
+    authorizations: Authorization[],
+    message: IMessage<TransactionEventRequest>,
+    stationId: string,
+    transactionId: string,
+    transactionEvent: TransactionEventRequest,
+  ): Promise<TransactionEventResponse> {
+    const transactionEventResponse: TransactionEventResponse = {
+      idTokenInfo: {
+        status: AuthorizationStatusEnumType.Unknown,
+        // TODO determine how/if to set personalMessage
+      },
+    };
+
+    if (authorizations.length !== 1) {
+      return transactionEventResponse;
+    }
+
+    const authorization = authorizations[0];
+    if (authorization) {
+      if (authorization.idTokenInfo) {
+        // Extract DTO fields from sequelize Model<any, any> objects
+        const idTokenInfo: IdTokenInfoType = {
+          status: authorization.idTokenInfo.status,
+          cacheExpiryDateTime: authorization.idTokenInfo.cacheExpiryDateTime,
+          chargingPriority: authorization.idTokenInfo.chargingPriority,
+          language1: authorization.idTokenInfo.language1,
+          evseId: authorization.idTokenInfo.evseId,
+          groupIdToken: authorization.idTokenInfo.groupIdToken
+            ? {
+                additionalInfo:
+                  authorization.idTokenInfo.groupIdToken.additionalInfo &&
+                  authorization.idTokenInfo.groupIdToken.additionalInfo.length >
+                    0
+                    ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
+                        (additionalInfo) => ({
+                          additionalIdToken: additionalInfo.additionalIdToken,
+                          type: additionalInfo.type,
+                        }),
+                      ) as [AdditionalInfoType, ...AdditionalInfoType[]])
+                    : undefined,
+                idToken: authorization.idTokenInfo.groupIdToken.idToken,
+                type: authorization.idTokenInfo.groupIdToken.type,
+              }
+            : undefined,
+          language2: authorization.idTokenInfo.language2,
+          personalMessage: authorization.idTokenInfo.personalMessage,
+        };
+
+        if (idTokenInfo.status === AuthorizationStatusEnumType.Accepted) {
+          if (
+            idTokenInfo.cacheExpiryDateTime &&
+            new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
+          ) {
+            transactionEventResponse.idTokenInfo = {
+              status: AuthorizationStatusEnumType.Invalid,
+              groupIdToken: idTokenInfo.groupIdToken,
+              // TODO determine how/if to set personalMessage
+            };
+          } else {
+            // TODO: Determine how to check for NotAllowedTypeEVSE, NotAtThisLocation, NotAtThisTime, NoCredit
+            // TODO: allow for a 'real time auth' type call to fetch token status.
+            transactionEventResponse.idTokenInfo = idTokenInfo;
+          }
+        } else {
+          // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
+          // N.B. Other non-Accepted statuses should not be allowed to be stored.
+          transactionEventResponse.idTokenInfo = idTokenInfo;
+        }
+      } else {
+        // Assumed to always be valid without IdTokenInfo
+        transactionEventResponse.idTokenInfo = {
+          status: AuthorizationStatusEnumType.Accepted,
+          // TODO determine how/if to set personalMessage
+        };
+      }
+    }
+
+    if (
+      transactionEvent.eventType === TransactionEventEnumType.Started &&
+      transactionEventResponse &&
+      transactionEventResponse.idTokenInfo?.status ===
+        AuthorizationStatusEnumType.Accepted &&
+      transactionEvent.idToken
+    ) {
+      if (this._costUpdatedInterval) {
+        this._updateCost(
+          stationId,
+          transactionId,
+          this._costUpdatedInterval,
+          message.context.tenantId,
+        );
+      }
+
+      // TODO there should only be one active transaction per evse of a station.
+      // old transactions should be marked inactive and an alert should be raised (this can only happen in the field with charger bugs or missed messages)
+
+      // Check for ConcurrentTx
+      const activeTransactions =
+        await this._transactionEventRepository.readAllActiveTransactionsByIdToken(
+          transactionEvent.idToken,
+        );
+
+      // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
+      if (activeTransactions.length > 1) {
+        const groupIdToken = transactionEventResponse.idTokenInfo?.groupIdToken;
+        transactionEventResponse.idTokenInfo = {
+          status: AuthorizationStatusEnumType.ConcurrentTx,
+          groupIdToken: groupIdToken,
+          // TODO determine how/if to set personalMessage
+        };
+      }
+    }
+
+    return transactionEventResponse;
   }
 
   /**

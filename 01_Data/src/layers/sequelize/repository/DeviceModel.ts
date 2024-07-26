@@ -316,11 +316,13 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
         }),
       );
       if (result.attributeStatus !== SetVariableStatusEnumType.Accepted) {
-        const mostRecentAcceptedStatus = (await this.variableStatus.readAllByQuery({
-          where: { variableAttributeId: savedVariableAttribute.get('id'), status: SetVariableStatusEnumType.Accepted },
-          limit: 1,
-          order: [['createdAt', 'DESC']],
-        }))[0];
+        const mostRecentAcceptedStatus = (
+          await this.variableStatus.readAllByQuery({
+            where: { variableAttributeId: savedVariableAttribute.get('id'), status: SetVariableStatusEnumType.Accepted },
+            limit: 1,
+            order: [['createdAt', 'DESC']],
+          })
+        )[0];
         savedVariableAttribute.set('value', mostRecentAcceptedStatus?.value);
       }
       savedVariableAttribute.set('generatedAt', isoTimestamp);
@@ -426,7 +428,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
 
   private constructQuery(queryParams: VariableAttributeQuerystring): any {
     const evseInclude =
-      queryParams.component_evse_id ?? queryParams.component_evse_connectorId
+      (queryParams.component_evse_id ?? queryParams.component_evse_connectorId)
         ? {
             model: Evse,
             where: {
