@@ -11,13 +11,7 @@ import { ILogObj, Logger } from 'tslog';
 import { CallMessage } from '../model/CallMessage';
 
 export class SequelizeCallMessageRepository extends SequelizeRepository<CallMessage> implements ICallMessageRepository {
-
-  constructor(
-    config: SystemConfig,
-    logger?: Logger<ILogObj>,
-    namespace = CallMessage.MODEL_NAME,
-    sequelizeInstance?: Sequelize,
-  ) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = CallMessage.MODEL_NAME, sequelizeInstance?: Sequelize) {
     super(config, namespace, logger, sequelizeInstance);
   }
 }

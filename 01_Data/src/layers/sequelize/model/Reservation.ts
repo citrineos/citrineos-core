@@ -2,15 +2,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  ConnectorEnumType,
-  CustomDataType, EVSEType,
-  Namespace,
-  ReserveNowRequest, ReserveNowStatusEnumType,
-} from '@citrineos/base';
+import { ConnectorEnumType, CustomDataType, EVSEType, IdTokenType, Namespace, ReserveNowRequest, ReserveNowStatusEnumType } from '@citrineos/base';
 import { AutoIncrement, BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { Evse } from './DeviceModel';
-import { IdToken } from './Authorization';
 
 @Table
 export class Reservation extends Model implements ReserveNowRequest {
@@ -46,37 +40,31 @@ export class Reservation extends Model implements ReserveNowRequest {
   declare expiryDateTime: string;
 
   @Column(DataType.STRING)
-  declare connectorType?: ConnectorEnumType;
+  declare connectorType?: ConnectorEnumType | null;
 
   @Column(DataType.STRING)
-  declare reserveStatus?: ReserveNowStatusEnumType;
+  declare reserveStatus?: ReserveNowStatusEnumType | null;
 
-  @Column({type: DataType.BOOLEAN, defaultValue: true})
+  @Column({ type: DataType.BOOLEAN, defaultValue: false })
   declare isActive: boolean;
 
   @Column(DataType.STRING)
-  declare terminatedByTransaction?: string;
+  declare terminatedByTransaction?: string | null;
+
+  @Column(DataType.JSONB)
+  declare idToken: IdTokenType;
+
+  @Column(DataType.JSONB)
+  declare groupIdToken?: IdTokenType | null;
 
   /**
    * Relations
    */
   @ForeignKey(() => Evse)
-  declare evseId?: number;
+  declare evseId?: number | null;
 
   @BelongsTo(() => Evse)
   declare evse?: EVSEType;
 
-  @ForeignKey(() => IdToken)
-  declare idTokenId: number;
-
-  @BelongsTo(() => IdToken)
-  declare idToken: IdToken;
-
-  @ForeignKey(() => IdToken)
-  declare groupIdTokenId?: number;
-
-  @BelongsTo(() => IdToken)
-  declare groupIdToken?: IdToken;
-
-  declare customData?: CustomDataType | undefined;
+  declare customData?: CustomDataType | null;
 }

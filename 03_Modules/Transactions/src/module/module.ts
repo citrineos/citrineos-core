@@ -181,7 +181,9 @@ export class TransactionsModule extends AbstractModule {
     this._tariffRepository =
       tariffRepository ||
       new sequelize.SequelizeTariffRepository(config, logger);
-    this._reservationRepository = reservationRepository || new sequelize.SequelizeReservationRepository(config, this._logger);
+    this._reservationRepository =
+      reservationRepository ||
+      new sequelize.SequelizeReservationRepository(config, this._logger);
 
     this._sendCostUpdatedOnMeterValue =
       config.modules.transactions.sendCostUpdatedOnMeterValue;
@@ -227,15 +229,18 @@ export class TransactionsModule extends AbstractModule {
     const transactionId = transactionEvent.transactionInfo.transactionId;
 
     if (message.payload.reservationId) {
-      await this._reservationRepository.updateAllByQuery({
-        terminatedByTransaction: transactionId,
-        isActive: false
-      }, {
-        where: {
-          id: message.payload.reservationId,
-          stationId: stationId,
-        }
-      });
+      await this._reservationRepository.updateAllByQuery(
+        {
+          terminatedByTransaction: transactionId,
+          isActive: false,
+        },
+        {
+          where: {
+            id: message.payload.reservationId,
+            stationId: stationId,
+          },
+        },
+      );
     }
 
     if (transactionEvent.idToken) {

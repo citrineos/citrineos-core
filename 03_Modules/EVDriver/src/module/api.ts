@@ -259,21 +259,24 @@ export class EVDriverModuleApi
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     try {
-      const existingReservation = await this._module.reservationRepository.readOnlyOneByQuery({
-        where: {
-          id: request.reservationId,
-          stationId: identifier,
-        }
-      });
+      const existingReservation =
+        await this._module.reservationRepository.readOnlyOneByQuery({
+          where: {
+            id: request.reservationId,
+            stationId: identifier,
+          },
+        });
       if (!existingReservation) {
         throw new Error(`Reservation ${request.reservationId} not found.`);
       }
 
       const correlationId = uuidv4();
-      await this._module.callMessageRepository.create(CallMessage.build({
-        correlationId,
-        reservationId: existingReservation.databaseId,
-      }))
+      await this._module.callMessageRepository.create(
+        CallMessage.build({
+          correlationId,
+          reservationId: existingReservation.databaseId,
+        }),
+      );
 
       return this._module.sendCall(
         identifier,
@@ -287,7 +290,7 @@ export class EVDriverModuleApi
       return {
         success: false,
         payload: error instanceof Error ? error.message : JSON.stringify(error),
-      }
+      };
     }
   }
 
@@ -298,16 +301,22 @@ export class EVDriverModuleApi
     request: ReserveNowRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    const storedReservation = await this._module.reservationRepository.createOrUpdateReservation(request, identifier);
+    const storedReservation =
+      await this._module.reservationRepository.createOrUpdateReservation(
+        request,
+        identifier,
+      );
     if (!storedReservation) {
       return { success: false, payload: 'Reservation could not be stored.' };
     }
 
     const correlationId = uuidv4();
-    await this._module.callMessageRepository.create(CallMessage.build({
-      correlationId,
-      reservationId: storedReservation.databaseId,
-    }))
+    await this._module.callMessageRepository.create(
+      CallMessage.build({
+        correlationId,
+        reservationId: storedReservation.databaseId,
+      }),
+    );
 
     return this._module.sendCall(
       identifier,

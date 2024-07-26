@@ -7,7 +7,7 @@ import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
 
 @Table
 export class CallMessage extends Model {
-  static readonly MODEL_NAME: string = "CallMessage";
+  static readonly MODEL_NAME: string = 'CallMessage';
 
   @Index
   @Column({

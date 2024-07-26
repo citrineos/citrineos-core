@@ -194,8 +194,12 @@ export class EVDriverModule extends AbstractModule {
     this._chargingProfileRepository =
       chargingProfileRepository ||
       new sequelize.SequelizeChargingProfileRepository(config, this._logger);
-    this._reservationRepository = reservationRepository || new sequelize.SequelizeReservationRepository(config, this._logger);
-    this._callMessageRepository = callMessageRepository || new sequelize.SequelizeCallMessageRepository(config, this._logger);
+    this._reservationRepository =
+      reservationRepository ||
+      new sequelize.SequelizeReservationRepository(config, this._logger);
+    this._callMessageRepository =
+      callMessageRepository ||
+      new sequelize.SequelizeCallMessageRepository(config, this._logger);
 
     this._certificateAuthorityService =
       certificateAuthorityService ||
@@ -494,19 +498,30 @@ export class EVDriverModule extends AbstractModule {
     );
 
     try {
-      const status = message.payload.reservationUpdateStatus as ReservationUpdateStatusEnumType;
+      const status = message.payload
+        .reservationUpdateStatus as ReservationUpdateStatusEnumType;
       const reservation = await this._reservationRepository.readOnlyOneByQuery({
-        stationId: message.context.stationId,
-        id: message.payload.reservationId,
+        where: {
+          stationId: message.context.stationId,
+          id: message.payload.reservationId,
+        },
       });
       if (reservation) {
-        if (status === ReservationUpdateStatusEnumType.Expired || status === ReservationUpdateStatusEnumType.Removed) {
-          await this._reservationRepository.updateByKey({
-            isActive: false,
-          }, String(reservation.databaseId));
+        if (
+          status === ReservationUpdateStatusEnumType.Expired ||
+          status === ReservationUpdateStatusEnumType.Removed
+        ) {
+          await this._reservationRepository.updateByKey(
+            {
+              isActive: false,
+            },
+            reservation.databaseId.toString(),
+          );
         }
       } else {
-        throw new Error(`Reservation ${message.payload.reservationId} not found`);
+        throw new Error(
+          `Reservation ${message.payload.reservationId} not found`,
+        );
       }
     } catch (error) {
       this._logger.error('Error reading reservation:', error);
@@ -596,15 +611,21 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('CancelReservationResponse received:', message, props);
 
-    const reservationId = this._findReservationByCorrelationId(
+    const reservationId = await this._findReservationByCorrelationId(
       message.context.correlationId,
-    )
+    );
     if (reservationId) {
-      await this._reservationRepository.updateByKey({
-        isActive: message.payload.status === CancelReservationStatusEnumType.Rejected,
-      }, String(reservationId));
+      await this._reservationRepository.updateByKey(
+        {
+          isActive:
+            message.payload.status === CancelReservationStatusEnumType.Rejected,
+        },
+        reservationId.toString(),
+      );
     } else {
-      this._logger.error(`Update reservation failed. ReservationId not found by CorrelationId ${message.context.correlationId}.`);
+      this._logger.error(
+        `Update reservation failed. ReservationId not found by CorrelationId ${message.context.correlationId}.`,
+      );
     }
   }
 
@@ -615,17 +636,22 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('ReserveNowResponse received:', message, props);
 
-    const reservationId = this._findReservationByCorrelationId(
+    const reservationId = await this._findReservationByCorrelationId(
       message.context.correlationId,
-    )
+    );
     if (reservationId) {
       const status = message.payload.status as ReserveNowStatusEnumType;
-      await this._reservationRepository.updateByKey({
-        reserveStatus: status,
-        isActive: status === ReserveNowStatusEnumType.Accepted,
-      }, String(reservationId));
+      await this._reservationRepository.updateByKey(
+        {
+          reserveStatus: status,
+          isActive: status === ReserveNowStatusEnumType.Accepted,
+        },
+        reservationId.toString(),
+      );
     } else {
-      this._logger.error(`Update reservation failed. ReservationId not found by CorrelationId ${message.context.correlationId}.`);
+      this._logger.error(
+        `Update reservation failed. ReservationId not found by CorrelationId ${message.context.correlationId}.`,
+      );
     }
   }
 
@@ -662,14 +688,15 @@ export class EVDriverModule extends AbstractModule {
   }
 
   private async _findReservationByCorrelationId(
-    correlationId: string
-  ): Promise<number|undefined> {
+    correlationId: string,
+  ): Promise<number | undefined> {
     try {
-      const callMessage : CallMessage|undefined = await this._callMessageRepository.readOnlyOneByQuery({
-        where: {
-          correlationId
-        }
-      });
+      const callMessage: CallMessage | undefined =
+        await this._callMessageRepository.readOnlyOneByQuery({
+          where: {
+            correlationId,
+          },
+        });
       if (callMessage && callMessage.reservationId) {
         return callMessage.reservationId;
       }
