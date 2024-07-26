@@ -112,7 +112,7 @@ npm run build --prefix ../ && node --inspect=0.0.0.0:9229 ./dist/index.js
 to
 
 ```shell
-npm run build --prefix ../ && node --inspect-brk~~~~=0.0.0.0:9229 ./dist/index.js
+npm run build --prefix ../ && node --inspect-brk=0.0.0.0:9229 ./dist/index.js
 ```
 
 which will wait for the debugger to attach before proceeding with execution.
