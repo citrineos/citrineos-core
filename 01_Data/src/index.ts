@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export {IdTokenAdditionalInfo} from "./layers/sequelize/model/Authorization/IdTokenAdditionalInfo";
+export { IdTokenAdditionalInfo } from './layers/sequelize/model/Authorization/IdTokenAdditionalInfo';
 export * as sequelize from './layers/sequelize';
 export * from './interfaces';
 export * from 'sequelize-typescript';
@@ -42,4 +42,4 @@ export {
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
 } from './layers/sequelize'; // TODO ensure all needed modules are properly exported
-export {RepositoryStore} from './layers/sequelize/repository/RepositoryStore';
+export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore';

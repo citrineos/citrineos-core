@@ -78,7 +78,6 @@ export class VariableAttribute extends Model implements VariableAttributeType {
   })
   declare constant?: boolean | null;
 
-
   @Column({
     type: DataType.DATE,
     get() {
