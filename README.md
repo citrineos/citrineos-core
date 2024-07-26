@@ -106,13 +106,13 @@ with ease.
 You can modify `nodemon.json` exec command from:
 
 ```shell
-node --inspect=0.0.0.0:9229 --nolazy -r ts-node/register
+npm run build --prefix ../ && node --inspect=0.0.0.0:9229 ./dist/index.js
 ```
 
 to
 
 ```shell
-node --inspect-brk=0.0.0.0:9229 --nolazy -r ts-node/register
+npm run build --prefix ../ && node --inspect-brk~~~~=0.0.0.0:9229 ./dist/index.js
 ```
 
 which will wait for the debugger to attach before proceeding with execution.
