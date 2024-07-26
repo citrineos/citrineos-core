@@ -4,9 +4,10 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { type CustomDataType, IdTokenEnumType, type IdTokenType, Namespace } from '@citrineos/base';
-import { BelongsToMany, Column, DataType, Model, Table } from 'sequelize-typescript';
+import { BelongsToMany, Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
 import { AdditionalInfo } from './AdditionalInfo';
 import { IdTokenAdditionalInfo } from './IdTokenAdditionalInfo';
+import { Authorization } from './Authorization';
 
 @Table
 export class IdToken extends Model implements IdTokenType {
@@ -26,6 +27,9 @@ export class IdToken extends Model implements IdTokenType {
     unique: 'idToken_type',
   })
   declare type: IdTokenEnumType;
+
+  @HasOne(() => Authorization)
+  declare authorization: Authorization;
 
   declare customData?: CustomDataType;
 }

@@ -207,7 +207,7 @@ export class ConfigurationModule extends AbstractModule {
 
     const stationId = message.context.stationId;
     const tenantId = message.context.tenantId;
-    const timestamp = message.context.timestamp
+    const timestamp = message.context.timestamp;
     const chargingStation = message.payload.chargingStation;
 
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
