@@ -150,7 +150,7 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
 
     if (savedVariableMonitoring) {
       // The Id is only returned from Charging Station when status is accepted.
-      if (result.status === SetMonitoringStatusEnumType.Accepted) {
+      if (result.status === SetMonitoringStatusEnumType.Accepted && result.id) {
         await this.updateByKey(
           {
             id: result.id,

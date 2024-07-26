@@ -4,6 +4,12 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
+
+/**
+ * execution:
+ * - cd 00_Base
+ * - node json-schema-processor.js src/ocpp/model/schemas
+ */
 const fs = require('fs');
 const jsts = require('json-schema-to-typescript');
 const prettier = require('prettier');

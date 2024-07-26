@@ -38,7 +38,7 @@ export class ChargingProfile extends Model implements ChargingProfileType {
   declare chargingProfilePurpose: ChargingProfilePurposeEnumType;
 
   @Column(DataType.STRING)
-  declare recurrencyKind?: RecurrencyKindEnumType;
+  declare recurrencyKind?: RecurrencyKindEnumType | null;
 
   @Column(DataType.INTEGER)
   declare stackLevel: number;
@@ -50,7 +50,7 @@ export class ChargingProfile extends Model implements ChargingProfileType {
       return validFrom ? validFrom.toISOString() : null;
     },
   })
-  declare validFrom?: string;
+  declare validFrom?: string | null;
 
   @Column({
     type: DataType.DATE,
@@ -59,10 +59,10 @@ export class ChargingProfile extends Model implements ChargingProfileType {
       return validTo ? validTo.toISOString() : null;
     },
   })
-  declare validTo?: string;
+  declare validTo?: string | null;
 
   @Column(DataType.INTEGER)
-  declare evseId?: number;
+  declare evseId?: number | null;
 
   // this value indicates whether the ChargingProfile is set on charger
   @Column({
@@ -75,7 +75,7 @@ export class ChargingProfile extends Model implements ChargingProfileType {
     type: DataType.STRING,
     defaultValue: ChargingLimitSourceEnumType.CSO,
   })
-  declare chargingLimitSource?: ChargingLimitSourceEnumType;
+  declare chargingLimitSource?: ChargingLimitSourceEnumType | null;
 
   /**
    * Relations
@@ -84,10 +84,10 @@ export class ChargingProfile extends Model implements ChargingProfileType {
   declare chargingSchedule: [ChargingScheduleType] | [ChargingScheduleType, ChargingScheduleType] | [ChargingScheduleType, ChargingScheduleType, ChargingScheduleType];
 
   @ForeignKey(() => Transaction)
-  declare transactionDatabaseId?: number;
+  declare transactionDatabaseId?: number | null;
 
   @BelongsTo(() => Transaction)
   declare transaction?: TransactionType;
 
-  declare customData?: CustomDataType | undefined;
+  declare customData?: CustomDataType | null;
 }
