@@ -1,0 +1,22 @@
+{
+  "index_patterns": ["tslog-*"],
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "_source": {
+      "enabled": true
+    },
+    "properties": {
+      "message": {
+        "type": "text"
+      },
+      "@timestamp": {
+        "type": "date"
+      },
+      "host": {
+        "type": "keyword"
+      }
+    }
+  }
+}
