@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
+import { RegistrationStatusEnumType, defineConfig } from '@citrineos/base';
 import path from 'path';
 
 export function createLocalConfig() {
@@ -77,8 +77,7 @@ export function createLocalConfig() {
       directus: {
         host: '0.0.0.0',
         port: 8055,
-        generateFlows: true,
-        token: 'doEaFN37Wn-u5qTC0yLP1CgBGyG7ckPI',
+        generateFlows: false,
       },
       networkConnection: {
         websocketServers: [
