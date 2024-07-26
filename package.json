@@ -33,7 +33,7 @@
     "sync-db": "ts-node ./db.sync.ts",
     "start-everest": "npm run start-everest --prefix ./Server",
     "start-everest-windows": "npm run start-everest-windows --prefix ./Server",
-    "test": "jest --config jest.config.js"
+    "test": "jest --config jest.config.ts"
   },
   "workspaces": [
     "00_Base",
