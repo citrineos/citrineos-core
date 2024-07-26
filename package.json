@@ -13,7 +13,8 @@
   },
   "scripts": {
     "install-all": "npm i --workspaces --verbose",
-    "build": "tsc --build --verbose",
+    "copy-assets": "cp -rv Server/src/assets Server/dist/assets",
+    "build": "tsc --build --verbose && npm run copy-assets",
     "fresh": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json node_modules **/node_modules **/**/node_modules && npm run clean",
     "clean": "rm -rf dist **/dist **/**/dist tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
     "start-unix": "cd ./Server && npm run start-unix",
