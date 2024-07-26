@@ -34,7 +34,7 @@ export class Subscription extends Model {
   declare sentMessage: boolean;
 
   @Column
-  declare messageRegexFilter?: string;
+  declare messageRegexFilter?: string | null;
 
   @Column
   declare url: string;

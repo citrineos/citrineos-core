@@ -35,7 +35,7 @@ export class MessageInfo extends Model implements MessageInfoType {
   declare priority: MessagePriorityEnumType;
 
   @Column(DataType.STRING)
-  declare state?: MessageStateEnumType;
+  declare state?: MessageStateEnumType | null;
 
   @Column({
     type: DataType.DATE,
@@ -44,7 +44,7 @@ export class MessageInfo extends Model implements MessageInfoType {
       return startDateTime ? startDateTime.toISOString() : null;
     },
   })
-  declare startDateTime?: string;
+  declare startDateTime?: string | null;
 
   @Column({
     type: DataType.DATE,
@@ -53,10 +53,10 @@ export class MessageInfo extends Model implements MessageInfoType {
       return endDateTime ? endDateTime.toISOString() : null;
     },
   })
-  declare endDateTime?: string;
+  declare endDateTime?: string | null;
 
   @Column(DataType.STRING)
-  declare transactionId?: string;
+  declare transactionId?: string | null;
 
   @Column(DataType.JSON)
   declare message: MessageContentType;
@@ -69,13 +69,13 @@ export class MessageInfo extends Model implements MessageInfoType {
    */
 
   @BelongsTo(() => Component)
-  declare component: ComponentType;
+  declare display: ComponentType;
 
   @ForeignKey(() => Component)
   @Column({
     type: DataType.INTEGER,
   })
-  declare componentId?: number;
+  declare displayComponentId?: number | null;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

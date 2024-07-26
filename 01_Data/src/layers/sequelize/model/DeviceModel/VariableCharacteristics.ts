@@ -16,19 +16,19 @@ export class VariableCharacteristics extends Model implements VariableCharacteri
    */
 
   @Column(DataType.STRING)
-  declare unit?: string;
+  declare unit?: string | null;
 
   @Column(DataType.STRING)
   declare dataType: DataEnumType;
 
   @Column(DataType.DECIMAL)
-  declare minLimit?: number;
+  declare minLimit?: number | null;
 
   @Column(DataType.DECIMAL)
-  declare maxLimit?: number;
+  declare maxLimit?: number | null;
 
   @Column(DataType.STRING(4000))
-  declare valuesList?: string;
+  declare valuesList?: string | null;
 
   @Column
   declare supportsMonitoring: boolean;
@@ -45,7 +45,7 @@ export class VariableCharacteristics extends Model implements VariableCharacteri
     type: DataType.INTEGER,
     unique: true,
   })
-  declare variableId?: number;
+  declare variableId?: number | null;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

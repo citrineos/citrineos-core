@@ -25,10 +25,10 @@ export class SalesTariff extends Model implements SalesTariffType {
   declare id: number;
 
   @Column(DataType.INTEGER)
-  declare numEPriceLevels?: number;
+  declare numEPriceLevels?: number | null;
 
   @Column(DataType.STRING)
-  declare salesTariffDescription?: string;
+  declare salesTariffDescription?: string | null;
 
   @Column(DataType.JSONB)
   declare salesTariffEntry: [SalesTariffEntryType, ...SalesTariffEntryType[]];
@@ -46,5 +46,5 @@ export class SalesTariff extends Model implements SalesTariffType {
   @BelongsTo(() => ChargingSchedule)
   declare chargingSchedule: ChargingScheduleType;
 
-  declare customData?: CustomDataType | undefined;
+  declare customData?: CustomDataType | null;
 }

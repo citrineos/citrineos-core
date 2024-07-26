@@ -33,7 +33,7 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
     return await this.s.transaction(async (transaction) => {
       const messageInfo = MessageInfo.build({
         stationId: stationId,
-        componentId: componentId,
+        displayComponentId: componentId,
         ...message,
         active: true,
       });

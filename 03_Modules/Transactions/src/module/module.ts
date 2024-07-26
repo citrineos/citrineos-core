@@ -557,7 +557,7 @@ export class TransactionsModule extends AbstractModule {
   private async _calculateTotalCost(
     stationId: string,
     transactionDbId: number,
-    totalKwh?: number,
+    totalKwh?: number | null,
   ): Promise<number> {
     // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
     //  implementation is finalized
