@@ -14,7 +14,7 @@ import { ChargingStation } from '../Location';
 export class Transaction extends Model implements TransactionType {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
   static readonly TRANSACTION_EVENTS_ALIAS = 'transactionEvents';
-  static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter'
+  static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter';
 
   @Column({
     unique: 'stationId_transactionId',
@@ -40,13 +40,11 @@ export class Transaction extends Model implements TransactionType {
   @Column(DataType.BOOLEAN)
   declare isActive: boolean;
 
-  @HasMany(() => TransactionEvent,
-    { as: Transaction.TRANSACTION_EVENTS_ALIAS, foreignKey: 'transactionDatabaseId' })
+  @HasMany(() => TransactionEvent, { as: Transaction.TRANSACTION_EVENTS_ALIAS, foreignKey: 'transactionDatabaseId' })
   declare transactionEvents?: TransactionEventRequest[];
 
   // required only for filtering, should not be used to pull transaction events
-  @HasMany(() => TransactionEvent,
-    { as: Transaction.TRANSACTION_EVENTS_FILTER_ALIAS, foreignKey: 'transactionDatabaseId' })
+  @HasMany(() => TransactionEvent, { as: Transaction.TRANSACTION_EVENTS_FILTER_ALIAS, foreignKey: 'transactionDatabaseId' })
   declare transactionEventsFilter?: TransactionEventRequest[];
 
   @HasMany(() => MeterValue)

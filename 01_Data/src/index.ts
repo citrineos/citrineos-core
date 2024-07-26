@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { IdTokenAdditionalInfo } from "./layers/sequelize/model/Authorization/IdTokenAdditionalInfo";
+export { IdTokenAdditionalInfo } from './layers/sequelize/model/Authorization/IdTokenAdditionalInfo';
 export * as sequelize from './layers/sequelize';
 export * from './interfaces';
 export * from 'sequelize-typescript';

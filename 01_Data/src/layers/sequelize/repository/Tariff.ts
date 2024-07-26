@@ -19,7 +19,7 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
     return super.readAllByQuery({
       where: {
         stationId: {
-          [Op.in]: stationIds
+          [Op.in]: stationIds,
         },
       },
     });
@@ -36,15 +36,15 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
   async upsertTariff(tariff: Tariff): Promise<Tariff> {
     return await this.s.transaction(async (transaction) => {
       const savedTariff = await this.readOnlyOneByQuery({
-        where: {id: tariff.id},
-        transaction
+        where: { id: tariff.id },
+        transaction,
       });
       if (savedTariff) {
-        const updatedTariff = await savedTariff.set(tariff.data).save({transaction});
+        const updatedTariff = await savedTariff.set(tariff.data).save({ transaction });
         this.emit('updated', [updatedTariff]);
         return updatedTariff;
       }
-      const createdTariff = await tariff.save({transaction});
+      const createdTariff = await tariff.save({ transaction });
       this.emit('created', [createdTariff]);
       return createdTariff;
     });
@@ -53,7 +53,7 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
   async readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {
     return super.readAllByQuery({
       where: {
-        ...(query.id && {id: query.id}),
+        ...(query.id && { id: query.id }),
       },
     });
   }
@@ -64,7 +64,7 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
     }
     return super.deleteAllByQuery({
       where: {
-        ...(query.id && {id: query.id}),
+        ...(query.id && { id: query.id }),
       },
     });
   }

@@ -263,18 +263,18 @@ export class CitrineOSServer {
       {
         module: TariffsModule,
         handler: this._createHandler(),
-        sender: this._createSender()
+        sender: this._createSender(),
       },
       {
         module: CdrsModule,
         handler: this._createHandler(),
-        sender: this._createSender()
+        sender: this._createSender(),
       },
       {
         module: TokensModule,
         handler: this._createHandler(),
-        sender: this._createSender()
-      }
+        sender: this._createSender(),
+      },
     ];
   }
 

@@ -59,8 +59,12 @@ import {
   Variable,
   VariableAttribute,
 } from '@citrineos/data';
-import {generatePassword, isValidPassword, validateLanguageTag} from '@citrineos/util';
-import {v4 as uuidv4} from 'uuid';
+import {
+  generatePassword,
+  isValidPassword,
+  validateLanguageTag,
+} from '@citrineos/util';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Server API for the Configuration component.
@@ -327,128 +331,59 @@ export class ConfigurationModuleApi
   }
 
   @AsDataEndpoint(
-      Namespace.PasswordType,
-      HttpMethod.Post,
-      UpdateChargingStationPasswordQuerySchema,
-      UpdateChargingStationPasswordSchema,
+    Namespace.PasswordType,
+    HttpMethod.Post,
+    UpdateChargingStationPasswordQuerySchema,
+    UpdateChargingStationPasswordSchema,
   )
   async updatePassword(
-      request: FastifyRequest<{
-        Body: UpdateChargingStationPasswordRequest;
-        Querystring: UpdateChargingStationPasswordQueryString;
-      }>,
+    request: FastifyRequest<{
+      Body: UpdateChargingStationPasswordRequest;
+      Querystring: UpdateChargingStationPasswordQueryString;
+    }>,
   ): Promise<IMessageConfirmation> {
     const stationId = request.body.stationId;
     this._logger.debug(`Updating password for ${stationId} station`);
     if (request.body.setOnCharger && !request.body.password) {
-      return {success: false, payload: 'Password is required when setOnCharger is true'};
+      return {
+        success: false,
+        payload: 'Password is required when setOnCharger is true',
+      };
     }
     if (request.body.password && !isValidPassword(request.body.password)) {
-      return {success: false, payload: 'Invalid password'};
+      return { success: false, payload: 'Invalid password' };
     }
     const password = request.body.password || generatePassword();
 
     if (!request.body.setOnCharger) {
       try {
-        await this.updatePasswordOnStation(password, stationId, request.query.callbackUrl);
+        await this.updatePasswordOnStation(
+          password,
+          stationId,
+          request.query.callbackUrl,
+        );
       } catch (error) {
-        this._logger.warn(`Failed updating password on ${stationId} station`, error);
-        return {success: false, payload: `Failed updating password on ${stationId} station`};
+        this._logger.warn(
+          `Failed updating password on ${stationId} station`,
+          error,
+        );
+        return {
+          success: false,
+          payload: `Failed updating password on ${stationId} station`,
+        };
       }
     }
-    const variableAttributes = await this.updatePasswordForStation(password, stationId);
-    this._logger.debug(`Successfully updated password for ${stationId} station`);
-    return {success: true, payload: `Updated ${variableAttributes.length} attributes`};
-  }
-
-  private async updatePasswordOnStation(password: string, stationId: string, callbackUrl?: string): Promise<void> {
-    const correlationId = uuidv4();
-    const cacheCallbackPromise: Promise<string | null> =
-        this._module.cache.onChange(
-            correlationId,
-            this._module.config.maxCachingSeconds,
-            stationId,
-        );
-
-    const messageConfirmation = await this._module.sendCall(
-        stationId,
-        'T01', // TODO: adjust when multi-tenancy is implemented
-        CallAction.SetVariables,
-        {
-          setVariableData: [
-            {
-              variable: {name: 'BasicAuthPassword'},
-              attributeValue: password,
-              attributeType: AttributeEnumType.Actual,
-              component: {name: 'SecurityCtrlr'},
-            } as SetVariableDataType
-          ]
-        } as SetVariablesRequest,
-        callbackUrl,
-        correlationId
+    const variableAttributes = await this.updatePasswordForStation(
+      password,
+      stationId,
     );
-    if (!messageConfirmation.success) {
-      throw new Error(`Failed sending request to ${stationId} station for updating password`);
-    }
-
-    const responseJsonString = await cacheCallbackPromise;
-    if (!responseJsonString) {
-      throw new Error(`${stationId} station did not respond in time for updating password`);
-    }
-
-    const setVariablesResponse: SetVariablesResponse = JSON.parse(responseJsonString);
-    const passwordUpdated = setVariablesResponse.setVariableResult
-        .every(result => result.attributeStatus === SetVariableStatusEnumType.Accepted);
-    if (!passwordUpdated) {
-      throw new Error(`Failure updating password on ${stationId} station`);
-    }
-  }
-
-  private async updatePasswordForStation(password: string, stationId: string): Promise<VariableAttribute[]> {
-    const timestamp = new Date().toISOString();
-    return (
-        await this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(
-            {
-              component: {
-                name: 'SecurityCtrlr',
-              },
-              variable: {
-                name: 'BasicAuthPassword',
-              },
-              variableAttribute: [
-                {
-                  type: AttributeEnumType.Actual,
-                  value: password,
-                  mutability: MutabilityEnumType.WriteOnly,
-                },
-              ],
-              variableCharacteristics: {
-                dataType: DataEnumType.passwordString,
-                supportsMonitoring: false
-              }
-            },
-            stationId,
-            timestamp
-        ).then(async (variableAttributes) => {
-          for (let variableAttribute of variableAttributes) {
-            variableAttribute = await variableAttribute.reload({
-              include: [Variable, Component],
-            });
-            this._module.deviceModelRepository.updateResultByStationId(
-                {
-                  attributeType: variableAttribute.type,
-                  attributeStatus: SetVariableStatusEnumType.Accepted,
-                  attributeStatusInfo: { reasonCode: 'SetOnCharger' },
-                  component: variableAttribute.component,
-                  variable: variableAttribute.variable,
-                },
-                stationId,
-                timestamp
-            );
-          }
-          return variableAttributes;
-        })
+    this._logger.debug(
+      `Successfully updated password for ${stationId} station`,
     );
+    return {
+      success: true,
+      payload: `Updated ${variableAttributes.length} attributes`,
+    };
   }
 
   /**
@@ -473,5 +408,108 @@ export class ConfigurationModuleApi
     const endpointPrefix =
       this._module.config.modules.configuration.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
+  }
+
+  private async updatePasswordOnStation(
+    password: string,
+    stationId: string,
+    callbackUrl?: string,
+  ): Promise<void> {
+    const correlationId = uuidv4();
+    const cacheCallbackPromise: Promise<string | null> =
+      this._module.cache.onChange(
+        correlationId,
+        this._module.config.maxCachingSeconds,
+        stationId,
+      );
+
+    const messageConfirmation = await this._module.sendCall(
+      stationId,
+      'T01', // TODO: adjust when multi-tenancy is implemented
+      CallAction.SetVariables,
+      {
+        setVariableData: [
+          {
+            variable: { name: 'BasicAuthPassword' },
+            attributeValue: password,
+            attributeType: AttributeEnumType.Actual,
+            component: { name: 'SecurityCtrlr' },
+          } as SetVariableDataType,
+        ],
+      } as SetVariablesRequest,
+      callbackUrl,
+      correlationId,
+    );
+    if (!messageConfirmation.success) {
+      throw new Error(
+        `Failed sending request to ${stationId} station for updating password`,
+      );
+    }
+
+    const responseJsonString = await cacheCallbackPromise;
+    if (!responseJsonString) {
+      throw new Error(
+        `${stationId} station did not respond in time for updating password`,
+      );
+    }
+
+    const setVariablesResponse: SetVariablesResponse =
+      JSON.parse(responseJsonString);
+    const passwordUpdated = setVariablesResponse.setVariableResult.every(
+      (result) => result.attributeStatus === SetVariableStatusEnumType.Accepted,
+    );
+    if (!passwordUpdated) {
+      throw new Error(`Failure updating password on ${stationId} station`);
+    }
+  }
+
+  private async updatePasswordForStation(
+    password: string,
+    stationId: string,
+  ): Promise<VariableAttribute[]> {
+    const timestamp = new Date().toISOString();
+    return await this._module.deviceModelRepository
+      .createOrUpdateDeviceModelByStationId(
+        {
+          component: {
+            name: 'SecurityCtrlr',
+          },
+          variable: {
+            name: 'BasicAuthPassword',
+          },
+          variableAttribute: [
+            {
+              type: AttributeEnumType.Actual,
+              value: password,
+              mutability: MutabilityEnumType.WriteOnly,
+            },
+          ],
+          variableCharacteristics: {
+            dataType: DataEnumType.passwordString,
+            supportsMonitoring: false,
+          },
+        },
+        stationId,
+        timestamp,
+      )
+      .then(async (variableAttributes) => {
+        for (let variableAttribute of variableAttributes) {
+          variableAttribute = await variableAttribute.reload({
+            include: [Variable, Component],
+          });
+          this._module.deviceModelRepository.updateResultByStationId(
+            {
+              attributeType: variableAttribute.type,
+              attributeStatus: SetVariableStatusEnumType.Accepted,
+              attributeStatusInfo: { reasonCode: 'SetOnCharger' },
+              component: variableAttribute.component,
+              variable: variableAttribute.variable,
+            },
+            stationId,
+            timestamp,
+          );
+        }
+        return variableAttributes;
+      });
   }
 }
