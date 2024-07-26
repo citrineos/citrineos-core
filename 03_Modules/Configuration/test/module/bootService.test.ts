@@ -53,10 +53,14 @@ describe('BootService', () => {
     });
 
     it('should return Accepted status when bootConfig.status is pending and no actions are needed but autoAccept is true', () => {
-      const bootConfig = aValidBootConfig();
+      const bootConfig = aValidBootConfig(
+        (item) => (item.getBaseReportOnPending = false),
+      );
       const configWithAutoAccept = aValidConfiguration(
         (item) => (item.autoAccept = true),
       );
+      console.log(configWithAutoAccept);
+      console.log(bootConfig);
       runDetermineBootStatusTest(
         bootConfig,
         configWithAutoAccept,

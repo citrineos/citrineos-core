@@ -48,6 +48,7 @@ export class BootService {
 
     return bootStatus;
   }
+
   createBootNotificationResponse(
     bootConfig: Boot | undefined,
     bootStatus: RegistrationStatusEnumType,
