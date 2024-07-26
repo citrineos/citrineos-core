@@ -42,7 +42,7 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
             return createdVariableMonitoring;
           } else {
             // If the record exists, update it
-            return (await this.updateByKey({ ...value }, existingVariableMonitoring.dataValues.databaseId)) as VariableMonitoring;
+            return (await this.updateByKey({ ...variableMonitoring }, existingVariableMonitoring.dataValues.databaseId)) as VariableMonitoring;
           }
         });
         await this.createVariableMonitoringStatus(SetMonitoringStatusEnumType.Accepted, CallAction.NotifyMonitoringReport, savedVariableMonitoring.get('databaseId'));

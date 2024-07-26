@@ -67,11 +67,17 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     let dataType: DataEnumType | null = null;
 
     if (value.variableCharacteristics) {
-      dataType = value.variableCharacteristics.dataType;
-      const vc = VariableCharacteristics.build({
-        ...value.variableCharacteristics,
+      const variableCharacteristicsType = value.variableCharacteristics;
+      dataType = variableCharacteristicsType.dataType;
+      const vc = {
+        unit: variableCharacteristicsType.unit ?? null,
+        dataType,
+        minLimit: variableCharacteristicsType.minLimit ?? null,
+        maxLimit: variableCharacteristicsType.maxLimit ?? null,
+        valuesList: variableCharacteristicsType.valuesList ?? null,
+        supportsMonitoring: variableCharacteristicsType.supportsMonitoring,
         variableId: variable.id,
-      });
+      };
       await this.s.transaction(async (transaction) => {
         const savedVariableCharacteristics = await this.s.models[VariableCharacteristics.MODEL_NAME].findOne({
           where: {
@@ -81,12 +87,12 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
         });
 
         if (!savedVariableCharacteristics) {
-          const createdVariableCharacteristics = await vc.save({ transaction });
+          const createdVariableCharacteristics = await VariableCharacteristics.create(vc, { transaction });
           this.variableCharacteristics.emit('created', [createdVariableCharacteristics]);
           return createdVariableCharacteristics;
         } else {
           return await this.variableCharacteristics.updateAllByQuery(
-            { ...vc },
+            vc,
             {
               where: {
                 variableId: variable.id,
@@ -125,7 +131,11 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
             {
               evseDatabaseId: component.evseDatabaseId,
               dataType: dataType ?? savedVariableAttribute.dataType,
-              ...variableAttribute,
+              type: variableAttribute.type ?? savedVariableAttribute.type,
+              value: variableAttribute.value ?? null,
+              mutability: variableAttribute.mutability ?? savedVariableAttribute.mutability,
+              persistent: variableAttribute.persistent ?? false,
+              constant: variableAttribute.constant ?? false,
               generatedAt: isoTimestamp,
             },
             savedVariableAttribute.id,
