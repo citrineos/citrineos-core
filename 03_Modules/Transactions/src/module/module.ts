@@ -434,13 +434,23 @@ export class TransactionsModule extends AbstractModule {
 
     const meterValues = message.payload.meterValue;
 
-    for (let meterValue of meterValues) {
-      const sampledValues = meterValue.sampledValue;
-      for (let sampledValue of sampledValues) {
-        if (sampledValue.signedMeterValue) {
-          const isVerified = await this._isPublicKeyVerified(sampledValue.signedMeterValue.publicKey);
+    const expectPublicKey = await this._deviceModelRepository.readAllByQuerystring({
+      stationId: message.context.stationId,
+      component_instance: 'OCPPCommCtrlr',
+      variable_instance: 'PublicKeyWithSignedMeterValue'
+    })
 
-          if (!isVerified) {
+    for (let meterValue of meterValues) {
+      if (expectPublicKey.length > 0 && expectPublicKey[0].value === 'true') {
+        for (let sampledValue of meterValue.sampledValue) {
+          let publicKey = '';
+          if (sampledValue.signedMeterValue?.publicKey) {
+            publicKey = sampledValue.signedMeterValue.publicKey;
+          } else {
+            // grab public key from a cache or db or something similar, do the comparison
+          }
+
+          if (await this.invalidPublicKey(publicKey)) {
             throw new OcppError(
               message.context.correlationId,
               ErrorCode.SecurityError,
@@ -646,15 +656,16 @@ export class TransactionsModule extends AbstractModule {
   }
 
   // TODO fix parameter type as needed
-  private async _isPublicKeyVerified(publicKey: string): Promise<boolean> {
+  private async invalidPublicKey(publicKey: string): Promise<boolean> {
     if (!this._config.modules.transactions.publicKeyFileName) {
-      return false;
+      return true;
     }
 
     const retrievedPublicKey = (
       await this._fileAccess.getFile(this._config.modules.transactions.publicKeyFileName)
     ).toString();
 
-    return retrievedPublicKey === publicKey;
+    // TODO base 64 decode the input public key
+    return retrievedPublicKey !== publicKey;
   }
 }
