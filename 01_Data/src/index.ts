@@ -27,6 +27,7 @@ export {
   IdToken,
   IdTokenInfo,
   AdditionalInfo,
+  StatusNotification,
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
