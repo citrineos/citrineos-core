@@ -7,5 +7,5 @@ import { QuerySchema } from '@citrineos/base';
 export const UpdateChargingStationPasswordQuerySchema = QuerySchema([['callbackUrl', 'string']]);
 
 export interface UpdateChargingStationPasswordQueryString {
-    callbackUrl?: string;
+  callbackUrl?: string;
 }
