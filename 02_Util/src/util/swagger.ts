@@ -11,7 +11,6 @@ import fs from 'fs';
 import { HttpHeader, HttpStatus, SystemConfig, UnauthorizedError } from '@citrineos/base';
 import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
 import * as FastifyAuth from '@fastify/auth';
-// @ts-ignore
 import * as packageJson from '../../package.json';
 
 /**
