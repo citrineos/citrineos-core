@@ -18,7 +18,7 @@ import {
   ChargingScheduleType,
   ClearChargingProfileResponse,
   ClearChargingProfileStatusEnumType,
-  ClearedChargingLimitResponse,
+  ClearedChargingLimitResponse, EnergyTransferModeEnumType,
   EventGroup,
   GenericStatusEnumType,
   GetChargingProfilesRequest,
@@ -35,7 +35,7 @@ import {
   NotifyEVChargingNeedsResponse,
   NotifyEVChargingNeedsStatusEnumType,
   NotifyEVChargingScheduleRequest,
-  NotifyEVChargingScheduleResponse,
+  NotifyEVChargingScheduleResponse, RecurrencyKindEnumType,
   ReportChargingProfilesRequest,
   ReportChargingProfilesResponse,
   SetChargingProfileRequest,
@@ -189,19 +189,12 @@ export class SmartChargingModule extends AbstractModule {
     );
 
     // OCPP 2.0.1 Part 2 K17.FR.06 and expect an active transaction
-    if (
-      (!request.chargingNeeds.dcChargingParameters &&
-        !request.chargingNeeds.acChargingParameters) ||
-      !activeTransaction
-    ) {
+    const hasAcOrDcChargingParameters = !request.chargingNeeds.dcChargingParameters &&
+        !request.chargingNeeds.acChargingParameters;
+    if (!hasAcOrDcChargingParameters || !activeTransaction) {
       this.sendCallResultWithMessage(message, {
         status: NotifyEVChargingNeedsStatusEnumType.Rejected,
-      } as NotifyEVChargingNeedsResponse).then((messageConfirmation) =>
-        this._logger.debug(
-          'NotifyEVChargingNeeds response sent: ',
-          messageConfirmation,
-        ),
-      );
+      } as NotifyEVChargingNeedsResponse);
       return;
     }
 
@@ -210,58 +203,21 @@ export class SmartChargingModule extends AbstractModule {
         request,
         stationId,
       );
+
     this._logger.info(
       `Charging needs created: ${JSON.stringify(chargingNeeds)}`,
     );
 
     this.sendCallResultWithMessage(message, {
       status: NotifyEVChargingNeedsStatusEnumType.Accepted,
-    } as NotifyEVChargingNeedsResponse).then((messageConfirmation) =>
-      this._logger.debug(
-        'NotifyEVChargingNeeds response sent: ',
-        messageConfirmation,
-      ),
-    );
+    } as NotifyEVChargingNeedsResponse);
 
-    // TODO: (K16.FR.12 and K17) Charging Station sends a NotifyEVChargingNeedsRequest
-    //  CSMS calculates new charging schedule, that tries to accommodate the EV charging needs and
-    //  still fits within the schedule boundaries imposed by other parameters.
-    //  The CSMS SHALL send a SetChargingProfileRequest based on the needs
-    //  Details in K17.FR.07: The CSMS SHALL send a SetChargingProfileRequest with:
-    //  1. chargingProfilePurpose = TxProfile
-    //  2. and at most three chargingSchedule
-    //  3. and optional salesTariff elements,
-    //  4. that each contain no more periods than specified by maxScheduleTuples in NotifyEVChargingNeedsRequest
-    //  and by device model variable SmartChargingCtrlr.PeriodsPerSchedule.
-    const chargingProfile: ChargingProfileType = {
-      id: 1, // TODO tbd
-      stackLevel: 0,
-      chargingProfilePurpose: ChargingProfilePurposeEnumType.TxProfile,
-      chargingProfileKind: ChargingProfileKindEnumType.Relative,
-      chargingSchedule: [
-        {
-          id: 1, // TODO tbd
-          chargingRateUnit: ChargingRateUnitEnumType.W, // TODO tbd
-          chargingSchedulePeriod: [
-            {
-              startPeriod: 0,
-              limit: 1, // TODO tbd
-            } as ChargingSchedulePeriodType,
-          ],
-          minChargingRate: 8.1, // TODO tbd,
-        } as ChargingScheduleType,
-      ],
-      transactionId: activeTransaction.transactionId,
-    };
-    const setChargingProfileRequest: SetChargingProfileRequest = {
-      evseId: request.evseId,
-      chargingProfile: chargingProfile,
-    };
+    const setChargingProfileRequest = this.generateChargingProfileRequest(request, activeTransaction.transactionId)
 
     await this.chargingProfileRepository.createOrUpdateChargingProfile(
-      chargingProfile,
-      stationId,
-      request.evseId,
+        setChargingProfileRequest.chargingProfile,
+        stationId,
+        request.evseId,
     );
 
     // TODO: (K17.FR.08) The CSMS SHOULD send a SetChargingProfileRequest to the Charging Station within 60 seconds.
@@ -503,5 +459,100 @@ export class SmartChargingModule extends AbstractModule {
         `Failed to get composite schedule: ${response.status} ${JSON.stringify(response.statusInfo)}`,
       );
     }
+  }
+
+  /**
+   * Generates a `SetChargingProfileRequest` from the given `NotifyEVChargingNeedsRequest`.
+   *
+   * This method creates a charging profile based on the EV's charging needs and the specified energy transfer mode. The profile includes the necessary parameters to set up a charging schedule for the EV.
+   *
+   * @param request - The `NotifyEVChargingNeedsRequest` containing details about the EV's charging requirements.
+   * @param transactionId - The ID of the transaction associated with the charging profile.
+   * @returns A `SetChargingProfileRequest` with a generated charging profile for the specified EVSE.
+   *
+   * @throws Error if the energy transfer mode is unsupported.
+   */
+  private generateChargingProfileRequest(
+      request: NotifyEVChargingNeedsRequest,
+      transactionId: string
+  ): SetChargingProfileRequest {
+    const { chargingNeeds, evseId } = request;
+
+    const acParams = chargingNeeds.acChargingParameters;
+    const dcParams = chargingNeeds.dcChargingParameters;
+
+    const transferMode = chargingNeeds.requestedEnergyTransfer;
+
+    // Default values
+    const profileId = 1; // Unique ID for the profile, should be generated
+    const stackLevel = 1; // Define appropriate stack level
+    const profilePurpose: ChargingProfilePurposeEnumType = ChargingProfilePurposeEnumType.TxProfile;
+    const profileKind: ChargingProfileKindEnumType = ChargingProfileKindEnumType.Absolute;
+
+    let limit = 0;
+    let numberPhases = 1;
+    let minChargingRate = 0; // Default to no minimum charging rate
+
+    // Determine charging parameters based on energy transfer mode
+    switch (transferMode) {
+      case EnergyTransferModeEnumType.AC_single_phase:
+      case EnergyTransferModeEnumType.AC_two_phase:
+      case EnergyTransferModeEnumType.AC_three_phase:
+        if (acParams) {
+          const { energyAmount, evMinCurrent, evMaxCurrent, evMaxVoltage } = acParams;
+          numberPhases = (transferMode === EnergyTransferModeEnumType.AC_single_phase) ? 1 :
+              (transferMode === EnergyTransferModeEnumType.AC_two_phase) ? 2 :
+                  3; // For AC_three_phase
+          limit = evMaxVoltage * evMaxCurrent * numberPhases; // Maximum power in watts
+          minChargingRate = evMinCurrent; // Example: Minimum charging rate can be set based on EV minimum current
+        }
+        break;
+      case EnergyTransferModeEnumType.DC:
+        if (dcParams) {
+          const { evMaxPower, evMaxCurrent, evMaxVoltage } = dcParams;
+          limit = evMaxPower || (evMaxVoltage * evMaxCurrent); // Maximum power or derived power
+          numberPhases = 1; // DC typically uses single-phase
+        }
+        break;
+      default:
+        throw new Error("Unsupported energy transfer mode");
+    }
+
+    const departureTime = new Date(chargingNeeds.departureTime || Date.now() + 3600 * 1000); // Default to 1 hour from now if no departure time is set
+    const currentTime = new Date();
+    const duration = Math.max((departureTime.getTime() - currentTime.getTime()) / 1000, 3600); // Ensure at least 1 hour duration
+
+    const chargingSchedulePeriod: [ChargingSchedulePeriodType, ...ChargingSchedulePeriodType[]] = [
+      {
+        startPeriod: 0,
+        limit,
+        numberPhases
+      }
+    ];
+
+    const chargingSchedule: ChargingScheduleType = {
+      id: profileId,
+      duration,
+      chargingRateUnit: ChargingRateUnitEnumType.W,
+      chargingSchedulePeriod,
+      minChargingRate,
+      // Optionally add startSchedule if needed
+    };
+
+    const chargingProfile: ChargingProfileType = {
+      id: profileId,
+      stackLevel,
+      chargingProfilePurpose: profilePurpose,
+      chargingProfileKind: profileKind,
+      validFrom: currentTime.toISOString(), // Now
+      validTo: departureTime.toISOString(), // Until departure
+      chargingSchedule: [chargingSchedule], // Add more schedules if needed
+      transactionId: transactionId
+    };
+
+    return {
+      evseId,
+      chargingProfile
+    };
   }
 }
