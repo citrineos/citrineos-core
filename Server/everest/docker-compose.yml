@@ -1,4 +1,4 @@
-version: "3.6"
+version: '3.6'
 
 services:
   mqtt-server:
@@ -19,8 +19,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: "4G"
+          cpus: '2'
+          memory: '4G'
     depends_on:
       - mqtt-server
     environment:
@@ -28,7 +28,7 @@ services:
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=0
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - 'host.docker.internal:host-gateway'
 
   nodered:
     image: ghcr.io/everest/everest-demo/nodered:${EVEREST_IMAGE_TAG}

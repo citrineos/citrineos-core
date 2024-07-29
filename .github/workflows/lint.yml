@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Clone citrineos-ocpi repository
-        run: git clone https://github.com/citrineos/citrineos-ocpi.git ../citrineos-ocpi
+        run: git clone -b rc-0.2.0 https://github.com/citrineos/citrineos-ocpi.git ../citrineos-ocpi
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -32,4 +32,3 @@ jobs:
 
       - name: Lint
         run: npm run lint
-

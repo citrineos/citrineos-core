@@ -1,4 +1,9 @@
-import { MeasurandEnumType, MeterValueType, ReadingContextEnumType, SampledValueType } from '../ocpp/model';
+import {
+  MeasurandEnumType,
+  MeterValueType,
+  ReadingContextEnumType,
+  SampledValueType,
+} from '../ocpp/model';
 
 export class MeterValueUtils {
   private static readonly validContexts = new Set([
@@ -16,18 +21,25 @@ export class MeterValueUtils {
   public static getTotalKwh(meterValues: MeterValueType[]): number {
     const filteredValues = this.filterValidMeterValues(meterValues);
     const timestampToKwhMap = this.getTimestampToKwhMap(filteredValues);
-    const sortedValues = this.getSortedKwhByTimestampAscending(timestampToKwhMap);
+    const sortedValues =
+      this.getSortedKwhByTimestampAscending(timestampToKwhMap);
     return this.calculateTotalKwh(sortedValues);
   }
 
-  private static filterValidMeterValues(meterValues: MeterValueType[]): MeterValueType[] {
-    return meterValues.filter(mv =>
-      // When missing, context is by default Sample_Periodic by spec
-      !mv.sampledValue[0].context || this.validContexts.has(mv.sampledValue[0].context)
+  private static filterValidMeterValues(
+    meterValues: MeterValueType[],
+  ): MeterValueType[] {
+    return meterValues.filter(
+      (mv) =>
+        // When missing, context is by default Sample_Periodic by spec
+        !mv.sampledValue[0].context ||
+        this.validContexts.has(mv.sampledValue[0].context),
     );
   }
 
-  private static getTimestampToKwhMap(meterValues: MeterValueType[]): Map<number, number> {
+  private static getTimestampToKwhMap(
+    meterValues: MeterValueType[],
+  ): Map<number, number> {
     const valuesMap = new Map<number, number>();
     for (const meterValue of meterValues) {
       const overallValue = this.findOverallValue(meterValue.sampledValue);
@@ -42,10 +54,13 @@ export class MeterValueUtils {
     return valuesMap;
   }
 
-  private static findOverallValue(sampledValues: SampledValueType[]): SampledValueType | undefined {
-    return sampledValues.find(sv =>
-      !sv.phase &&
-      sv.measurand === MeasurandEnumType.Energy_Active_Import_Register
+  private static findOverallValue(
+    sampledValues: SampledValueType[],
+  ): SampledValueType | undefined {
+    return sampledValues.find(
+      (sv) =>
+        !sv.phase &&
+        sv.measurand === MeasurandEnumType.Energy_Active_Import_Register,
     );
   }
 
@@ -58,18 +73,22 @@ export class MeterValueUtils {
       case 'WH':
       case undefined:
         powerOfTen -= 3;
-        break
+        break;
       default:
-        throw new Error("Unknown unit for Energy.Active.Import.Register: " + unit);
+        throw new Error(
+          'Unknown unit for Energy.Active.Import.Register: ' + unit,
+        );
     }
 
-    return overallValue.value * (10 ** powerOfTen);
+    return overallValue.value * 10 ** powerOfTen;
   }
 
-  private static getSortedKwhByTimestampAscending(valuesMap: Map<number, number>): number[] {
+  private static getSortedKwhByTimestampAscending(
+    valuesMap: Map<number, number>,
+  ): number[] {
     return Array.from(valuesMap.entries())
       .sort((a, b) => a[0] - b[0])
-      .map(entry => entry[1]);
+      .map((entry) => entry[1]);
   }
 
   private static calculateTotalKwh(sortedValues: number[]): number {
