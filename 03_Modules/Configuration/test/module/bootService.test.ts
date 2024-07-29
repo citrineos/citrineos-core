@@ -32,19 +32,33 @@ describe('BootService', () => {
       );
     });
 
-    it('should return bootConfig.status if bootConfig is defined and not pending', () => {
-      const bootConfig = aValidBootConfig(
-        (item) => (item.status = RegistrationStatusEnumType.Accepted),
-      );
-      runDetermineBootStatusTest(
-        bootConfig,
-        aValidConfiguration(),
-        RegistrationStatusEnumType.Accepted,
-      );
-    });
+    it.each([
+      {
+        bootConfigStatus: RegistrationStatusEnumType.Accepted,
+        expectedStatus: RegistrationStatusEnumType.Accepted,
+      },
+      {
+        bootConfigStatus: RegistrationStatusEnumType.Rejected,
+        expectedStatus: RegistrationStatusEnumType.Rejected,
+      },
+    ])(
+      'should return bootConfig status if not pending',
+      ({ bootConfigStatus, expectedStatus }) => {
+        const bootConfig = aValidBootConfig(
+          (item) => (item.status = bootConfigStatus),
+        );
+        runDetermineBootStatusTest(
+          bootConfig,
+          aValidConfiguration(),
+          expectedStatus,
+        );
+      },
+    );
 
     it('should return Pending status when bootConfig.status is pending and no actions are needed', () => {
-      const bootConfig = aValidBootConfig();
+      const bootConfig = aValidBootConfig(
+        (item) => (item.status = RegistrationStatusEnumType.Pending),
+      );
       runDetermineBootStatusTest(
         bootConfig,
         aValidConfiguration(),
@@ -59,8 +73,6 @@ describe('BootService', () => {
       const configWithAutoAccept = aValidConfiguration(
         (item) => (item.autoAccept = true),
       );
-      console.log(configWithAutoAccept);
-      console.log(bootConfig);
       runDetermineBootStatusTest(
         bootConfig,
         configWithAutoAccept,
