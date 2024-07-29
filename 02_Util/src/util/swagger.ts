@@ -11,6 +11,8 @@ import fs from 'fs';
 import { HttpHeader, HttpStatus, SystemConfig, UnauthorizedError } from '@citrineos/base';
 import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
 import * as FastifyAuth from '@fastify/auth';
+// @ts-ignore
+import * as packageJson from '../../../package.json';
 
 /**
  * This transformation is necessary because the plugin (@fastify/swagger) does not handle the local #ref objects correctly.
@@ -205,7 +207,7 @@ const registerFastifySwagger = (
       info: {
         title: 'CitrineOS Central System API',
         description: 'Central System API for OCPP 2.0.1 messaging.',
-        version: '1.1.1',
+        version: packageJson.version,
       },
       servers: [
         {
