@@ -214,7 +214,7 @@ const registerFastifySwagger = (
       servers: [
         {
           url: `http://${systemConfig.centralSystem.host}:${systemConfig.centralSystem.port}`,
-          description: 'TODO',
+          description: 'Target OCPI server configured in systemConfig.centralSystem',
         },
       ],
       components: {
