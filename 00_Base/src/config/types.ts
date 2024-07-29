@@ -357,6 +357,8 @@ export const systemConfigSchema = z
         storage: z.string(),
         sync: z.boolean(),
         alter: z.boolean().optional(),
+        maxRetries: z.number().int().positive().optional(),
+        retryDelay: z.number().int().positive().optional()
       }),
     }),
     util: z.object({
