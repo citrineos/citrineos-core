@@ -46,6 +46,8 @@ export class DefaultSequelizeInstance {
   /**
    * Fields
    */
+  private static readonly DEFAULT_RETRIES = 5;
+  private static readonly DEFAULT_RETRY_DELAY = 5000;
   private static instance: Sequelize | null = null;
   private static logger: Logger<ILogObj>;
   private static config: SystemConfig;
@@ -53,7 +55,7 @@ export class DefaultSequelizeInstance {
   private constructor() {
   }
 
-  public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>, sync: boolean = false): Sequelize {
+  public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): Sequelize {
     if (!DefaultSequelizeInstance.instance) {
       DefaultSequelizeInstance.config = config;
       DefaultSequelizeInstance.logger = logger
@@ -67,13 +69,13 @@ export class DefaultSequelizeInstance {
 
   public static async initializeSequelize(sync: boolean = false): Promise<void> {
     let retryCount = 0;
-    const maxRetries = this.config.data.sequelize.maxRetries ?? 5;
-    const retryDelay = this.config.data.sequelize.retryDelay ?? 5000;
+    const maxRetries = this.config.data.sequelize.maxRetries ?? this.DEFAULT_RETRIES;
+    const retryDelay = this.config.data.sequelize.retryDelay ?? this.DEFAULT_RETRY_DELAY;
     while (retryCount < maxRetries) {
       try {
         await this.instance!.authenticate();
         this.logger.info("Database connection has been established successfully");
-        this.syncDb(sync);
+        this.syncDb();
 
         break;
       } catch (error) {
@@ -89,11 +91,11 @@ export class DefaultSequelizeInstance {
     }
   }
 
-  private static async syncDb(sync: boolean = false) {
+  private static async syncDb() {
     if (this.config.data.sequelize.alter) {
       await this.instance!.sync({alter: true});
       this.logger.info('Database altered');
-    } else if (this.config.data.sequelize.sync && sync) { // TODO: Is the second sync necessary?
+    } else if (this.config.data.sequelize.sync) {
       await this.instance!.sync({force: true});
       this.logger.info('Database synchronized');
     }

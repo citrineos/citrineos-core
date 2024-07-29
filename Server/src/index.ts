@@ -309,7 +309,6 @@ export class CitrineOSServer {
     this._sequelizeInstance = sequelize.DefaultSequelizeInstance.getInstance(
       this._config,
       this._logger,
-      true,
     );
 
     await sequelize.DefaultSequelizeInstance.initializeSequelize();
