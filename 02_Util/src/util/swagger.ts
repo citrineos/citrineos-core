@@ -184,12 +184,14 @@ const registerFastifyAuth = async (server: FastifyInstance) => {
     function (request: any, reply: any, done: any) {
       try {
         const token = getAuthorizationTokenFromRequest(request);
-        if (token === '123') {
+        console.log('Received authorization token', token);
+        /*if (token === '123') { // todo
           // todo managing real auth but for now using hard coded token
           done(); // pass an error if the authentication fails
         } else {
           throw new UnauthorizedError('Token not authorized');
-        }
+        }*/
+        done();
       } catch (e) {
         reply.code(HttpStatus.UNAUTHORIZED);
         // .send(buildOcpiErrorResponse(HttpStatus.UNAUTHORIZED));
