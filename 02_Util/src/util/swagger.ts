@@ -6,10 +6,10 @@
 
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import {FastifyInstance, FastifyRequest} from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import fs from 'fs';
-import {HttpHeader, HttpStatus, SystemConfig, UnauthorizedError,} from '@citrineos/base';
-import {OpenAPIV2, OpenAPIV3, OpenAPIV3_1} from 'openapi-types';
+import { HttpHeader, HttpStatus, SystemConfig, UnauthorizedError } from '@citrineos/base';
+import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
 import * as FastifyAuth from '@fastify/auth';
 
 /**
@@ -84,6 +84,7 @@ const registerSwaggerUi = (
   systemConfig: SystemConfig,
   server: FastifyInstance,
 ) => {
+
   const swaggerUiOptions: any = {
     routePrefix: systemConfig.util.swagger?.path,
     securityDefinitions: {
@@ -232,4 +233,4 @@ export async function initSwagger(
   registerFastifySwagger(systemConfig, server);
   registerSwaggerUi(systemConfig, server);
   await registerFastifyAuth(server);
-}
+};

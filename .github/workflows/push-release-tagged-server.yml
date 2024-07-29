@@ -16,8 +16,8 @@ jobs:
       matrix:
         image:
           - name: citrineos-server
-            context: ./
-            dockerfile: ./Server/deploy.Dockerfile
+            context: ../
+            dockerfile: ./Server/deploy.with.ocpi.Dockerfile
             config: ''
           - name: citrineos-directus
             context: ./DirectusExtensions
@@ -26,6 +26,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Clone citrineos-ocpi repository
+        run: git clone -b rc-0.2.0 https://github.com/citrineos/citrineos-ocpi.git ../citrineos-ocpi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

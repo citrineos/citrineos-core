@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
+export { IAuthorizer } from './authorization';
 export { MemoryCache } from './cache/memory';
 export { RedisCache } from './cache/redis';
 export { S3Storage } from './fileAccess/s3Storage';
@@ -16,5 +17,6 @@ export { initSwagger } from './util/swagger';
 export { getSizeOfRequest, getBatches } from './util/parser';
 export { DirectusUtil } from './util/directus';
 export { validateLanguageTag } from './util/validator';
-
 export { getAuthorizationTokenFromRequest } from './util/swagger';
+export { generateRequestId } from './util/idGenerator';
+export { isValidPassword, generatePassword } from './security/authentication';

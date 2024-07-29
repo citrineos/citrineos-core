@@ -3,21 +3,44 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
+export { IdTokenAdditionalInfo } from './layers/sequelize/model/Authorization/IdTokenAdditionalInfo';
 export * as sequelize from './layers/sequelize';
 export * from './interfaces';
+export * from 'sequelize-typescript';
 export {
+  Authorization,
   Boot,
+  ChargingStation,
   Component,
-  Evse,
-  SequelizeDeviceModelRepository,
+  DefaultSequelizeInstance,
+  Location,
   MeterValue,
-  Subscription,
   Tariff,
   Transaction,
+  Subscription,
+  Evse,
   Variable,
   VariableAttribute,
   Certificate,
   CountryNameEnumType,
-  SignatureAlgorithmEnumType,
   TransactionEvent,
-} from './layers/sequelize'; // todo export better as these seem to be used in other modules
+  IdToken,
+  IdTokenInfo,
+  AdditionalInfo,
+  StatusNotification,
+  SignatureAlgorithmEnumType,
+  SequelizeAuthorizationRepository,
+  SequelizeBootRepository,
+  SequelizeCertificateRepository,
+  SequelizeChargingProfileRepository,
+  SequelizeDeviceModelRepository,
+  SequelizeLocationRepository,
+  SequelizeMessageInfoRepository,
+  SequelizeRepository,
+  SequelizeSecurityEventRepository,
+  SequelizeSubscriptionRepository,
+  SequelizeTariffRepository,
+  SequelizeTransactionEventRepository,
+  SequelizeVariableMonitoringRepository,
+} from './layers/sequelize'; // TODO ensure all needed modules are properly exported
+export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore';

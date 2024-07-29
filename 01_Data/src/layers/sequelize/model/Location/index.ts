@@ -4,3 +4,4 @@
 
 export { Location } from './Location';
 export { ChargingStation } from './ChargingStation';
+export { StatusNotification } from './StatusNotification';

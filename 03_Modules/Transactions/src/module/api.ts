@@ -4,12 +4,10 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  CreateOrUpdateTariffQuerySchema,
-  CreateOrUpdateTariffQueryString,
   Tariff,
-  TariffSchema,
-  TariffQueryString,
   TariffQuerySchema,
+  TariffQueryString,
+  TariffSchema,
   TransactionEventQuerySchema,
   TransactionEventQuerystring,
 } from '@citrineos/data';
@@ -31,6 +29,8 @@ import {
   TransactionType,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
+import { UpsertTariffRequest } from './model/tariffs';
+import { plainToInstance } from 'class-transformer';
 
 /**
  * Server API for the transaction module.
@@ -109,19 +109,16 @@ export class TransactionsModuleApi
   // TODO: Determine how to implement readAllTransactionsByStationIdAndChargingStates as a GET...
   // TODO: Determine how to implement existsActiveTransactionByIdToken as a GET...
 
-  @AsDataEndpoint(
-    Namespace.Tariff,
-    HttpMethod.Put,
-    CreateOrUpdateTariffQuerySchema,
-    TariffSchema,
-  )
-  putTariff(
+  @AsDataEndpoint(Namespace.Tariff, HttpMethod.Put, undefined, TariffSchema)
+  async upsertTariff(
     request: FastifyRequest<{
-      Body: Tariff;
-      Querystring: CreateOrUpdateTariffQueryString;
+      Body: any;
     }>,
   ): Promise<Tariff> {
-    return this._module.tariffRepository.createOrUpdateTariff(request.body);
+    const tariff = this.buildTariff(
+      plainToInstance(UpsertTariffRequest, request.body),
+    );
+    return await this._module.tariffRepository.upsertTariff(tariff);
   }
 
   @AsDataEndpoint(Namespace.Tariff, HttpMethod.Get, TariffQuerySchema)
@@ -167,5 +164,19 @@ export class TransactionsModuleApi
     const endpointPrefix =
       this._module.config.modules.transactions.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
+  }
+
+  // TODO: move to service layer
+  private buildTariff(request: UpsertTariffRequest): Tariff {
+    return Tariff.newInstance({
+      id: request.id,
+      currency: request.currency,
+      pricePerKwh: request.pricePerKwh,
+      pricePerMin: request.pricePerMin,
+      pricePerSession: request.pricePerSession,
+      taxRate: request.taxRate,
+      authorizationAmount: request.authorizationAmount,
+      paymentFee: request.paymentFee,
+    });
   }
 }

@@ -3,13 +3,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingProfileType, CrudRepository, NotifyEVChargingNeedsRequest, SystemConfig } from '@citrineos/base';
+import { ChargingLimitSourceEnumType, ChargingProfileType, CompositeScheduleType, CrudRepository, NotifyEVChargingNeedsRequest, SystemConfig } from '@citrineos/base';
 import { SequelizeRepository } from './Base';
 import { IChargingProfileRepository } from '../../../interfaces';
 import { Evse } from '../model/DeviceModel';
 import { Sequelize } from 'sequelize-typescript';
 import { Logger, ILogObj } from 'tslog';
-import { ChargingNeeds, ChargingProfile, ChargingSchedule, SalesTariff } from '../model/ChargingProfile';
+import { ChargingNeeds, ChargingProfile, ChargingSchedule, CompositeSchedule, SalesTariff } from '../model/ChargingProfile';
 import { Transaction } from '../model/TransactionEvent';
 
 export class SequelizeChargingProfileRepository extends SequelizeRepository<ChargingProfile> implements IChargingProfileRepository {
@@ -18,6 +18,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
   salesTariff: CrudRepository<SalesTariff>;
   transaction: CrudRepository<Transaction>;
   evse: CrudRepository<Evse>;
+  compositeSchedule: CrudRepository<CompositeSchedule>;
 
   constructor(
     config: SystemConfig,
@@ -28,6 +29,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     salesTariff?: CrudRepository<SalesTariff>,
     transaction?: CrudRepository<Transaction>,
     evse?: CrudRepository<Evse>,
+    compositeSchedule?: CrudRepository<CompositeSchedule>,
   ) {
     super(config, ChargingProfile.MODEL_NAME, logger, sequelizeInstance);
     this.chargingNeeds = chargingNeeds ? chargingNeeds : new SequelizeRepository<ChargingNeeds>(config, ChargingNeeds.MODEL_NAME, logger, sequelizeInstance);
@@ -35,25 +37,43 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     this.evse = evse ? evse : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
     this.salesTariff = salesTariff ? salesTariff : new SequelizeRepository<SalesTariff>(config, SalesTariff.MODEL_NAME, logger, sequelizeInstance);
     this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, Transaction.MODEL_NAME, logger, sequelizeInstance);
+    this.compositeSchedule = compositeSchedule ? compositeSchedule : new SequelizeRepository<CompositeSchedule>(config, CompositeSchedule.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, evseId: number, transactionDBId?: number): Promise<ChargingProfile> {
+  async createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId?: number, chargingLimitSource?: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile> {
+    let transactionDBId;
+    if (chargingProfile.transactionId) {
+      const activeTransaction = await Transaction.findOne({
+        where: {
+          stationId,
+          transactionId: chargingProfile.transactionId,
+        },
+      });
+      transactionDBId = activeTransaction?.id;
+    }
+
     const [savedChargingProfile, profileCreated] = await this.readOrCreateByQuery({
       where: {
-        evseId: evseId,
+        stationId: stationId,
         id: chargingProfile.id,
       },
       defaults: {
         ...chargingProfile,
+        evseId: evseId,
         transactionDatabaseId: transactionDBId,
+        chargingLimitSource: chargingLimitSource ?? ChargingLimitSourceEnumType.CSO,
+        isActive: isActive === undefined ? false : isActive,
       },
     });
     if (!profileCreated) {
       await this.updateByKey(
         {
           ...chargingProfile,
+          stationId: stationId,
           transactionDatabaseId: transactionDBId,
           evseId: evseId,
+          chargingLimitSource: chargingLimitSource ?? ChargingLimitSourceEnumType.CSO,
+          isActive: isActive === undefined ? false : isActive,
         },
         savedChargingProfile.databaseId.toString(),
       );
@@ -76,6 +96,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
       const savedChargingSchedule = await this.chargingSchedule.create(
         ChargingSchedule.build({
           chargingProfileDatabaseId: savedChargingProfile.databaseId,
+          stationId: stationId,
           ...chargingSchedule,
         }),
       );
@@ -132,5 +153,22 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     });
 
     return chargingNeedsArray.length > 0 ? chargingNeedsArray[0] : undefined;
+  }
+
+  async createCompositeSchedule(compositeSchedule: CompositeScheduleType, stationId: string): Promise<CompositeSchedule> {
+    return await this.compositeSchedule.create(
+      CompositeSchedule.build({
+        ...compositeSchedule,
+        stationId,
+      }),
+    );
+  }
+
+  async getNextChargingScheduleId(stationId: string): Promise<number> {
+    return await this.chargingSchedule.readNextId('id', { where: { stationId } });
+  }
+
+  async getNextChargingProfileId(stationId: string): Promise<number> {
+    return await this.readNextId('id', { where: { stationId } });
   }
 }

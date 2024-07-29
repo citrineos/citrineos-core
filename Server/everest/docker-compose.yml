@@ -1,0 +1,41 @@
+version: '3.6'
+
+services:
+  mqtt-server:
+    image: ghcr.io/everest/everest-demo/mqtt-server:${EVEREST_IMAGE_TAG}
+    platform: linux/x86_64
+    logging:
+      driver: none
+
+  manager:
+    build:
+      dockerfile: Dockerfile
+      args:
+        - EVEREST_TARGET_URL=${EVEREST_TARGET_URL}
+        - EVEREST_IMAGE_TAG=${EVEREST_IMAGE_TAG}
+    platform: linux/x86_64
+    ports:
+      - 8888:8888
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: '4G'
+    depends_on:
+      - mqtt-server
+    environment:
+      - MQTT_SERVER_ADDRESS=mqtt-server
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+  nodered:
+    image: ghcr.io/everest/everest-demo/nodered:${EVEREST_IMAGE_TAG}
+    depends_on:
+      - mqtt-server
+    ports:
+      - 1880:1880
+    environment:
+      - MQTT_SERVER_ADDRESS=mqtt-server
+      - FLOWS=/config/config-sil-two-evse-flow.json

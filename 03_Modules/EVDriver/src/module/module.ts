@@ -14,18 +14,24 @@ import {
   AuthorizeResponse,
   CallAction,
   CancelReservationResponse,
+  ChargingLimitSourceEnumType,
+  ChargingProfileCriterionType,
+  ChargingProfilePurposeEnumType,
   ClearCacheResponse,
   EventGroup,
+  GetChargingProfilesRequest,
   GetLocalListVersionResponse,
   HandlerProperties,
   ICache,
   IdTokenEnumType,
   IdTokenInfoType,
+  IdTokenType,
   IMessage,
   IMessageHandler,
   IMessageSender,
   MessageContentType,
   MessageFormatEnumType,
+  RequestStartStopStatusEnumType,
   RequestStartTransactionResponse,
   RequestStopTransactionResponse,
   ReservationStatusUpdateRequest,
@@ -37,14 +43,18 @@ import {
 } from '@citrineos/base';
 import {
   IAuthorizationRepository,
+  IChargingProfileRepository,
   IDeviceModelRepository,
   ITariffRepository,
+  ITransactionEventRepository,
   sequelize,
   Tariff,
   VariableAttribute,
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
+  generateRequestId,
+  IAuthorizer,
   RabbitMqReceiver,
   RabbitMqSender,
   Timer,
@@ -77,8 +87,11 @@ export class EVDriverModule extends AbstractModule {
   protected _authorizeRepository: IAuthorizationRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _tariffRepository: ITariffRepository;
+  protected _transactionEventRepository: ITransactionEventRepository;
+  protected _chargingProfileRepository: IChargingProfileRepository;
 
   private _certificateAuthorityService: CertificateAuthorityService;
+  private _authorizers: IAuthorizer[];
 
   /**
    * This is the constructor function that initializes the {@link EVDriverModule}.
@@ -97,7 +110,7 @@ export class EVDriverModule extends AbstractModule {
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
    * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating Authorization data.
-   * If no `authorizeRepository` is provided, a default {@link sequelize.AuthorizationRepository} instance is created and used.
+   * If no `authorizeRepository` is provided, a default {@link sequelize:AuthorizationRepository} instance is created and used.
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is
@@ -108,8 +121,20 @@ export class EVDriverModule extends AbstractModule {
    * If no `deviceModelRepository` is provided, a default {@link sequelize:tariffRepository} instance is
    * created and used.
    *
+   * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository}
+   * which represents a repository for accessing and manipulating transaction data.
+   * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance is
+   * created and used.
+   *
+   * @param {IChargingProfileRepository} [chargingProfileRepository] - An optional parameter of type {@link IChargingProfileRepository}
+   * which represents a repository for accessing and manipulating charging profile data.
+   * If no `chargingProfileRepository` is provided, a default {@link sequelize:chargingProfileRepository} instance is created and used.
+   *
    * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
    * type {@link CertificateAuthorityService} which handles certificate authority operations.
+   * 
+   * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
+   * a list of authorizers that can be used to authorize requests.
    */
   constructor(
     config: SystemConfig,
@@ -120,7 +145,10 @@ export class EVDriverModule extends AbstractModule {
     authorizeRepository?: IAuthorizationRepository,
     deviceModelRepository?: IDeviceModelRepository,
     tariffRepository?: ITariffRepository,
+    transactionEventRepository?: ITransactionEventRepository,
+    chargingProfileRepository?: IChargingProfileRepository,
     certificateAuthorityService?: CertificateAuthorityService,
+    authorizers?: IAuthorizer[],
   ) {
     super(
       config,
@@ -149,10 +177,18 @@ export class EVDriverModule extends AbstractModule {
     this._tariffRepository =
       tariffRepository ||
       new sequelize.SequelizeTariffRepository(config, logger);
+    this._transactionEventRepository =
+      transactionEventRepository ||
+      new sequelize.SequelizeTransactionEventRepository(config, this._logger);
+    this._chargingProfileRepository =
+      chargingProfileRepository ||
+      new sequelize.SequelizeChargingProfileRepository(config, this._logger);
 
     this._certificateAuthorityService =
       certificateAuthorityService ||
       new CertificateAuthorityService(config, logger);
+
+    this._authorizers = authorizers || [];
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -163,6 +199,14 @@ export class EVDriverModule extends AbstractModule {
 
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
+  }
+
+  get transactionEventRepository(): ITransactionEventRepository {
+    return this._transactionEventRepository;
+  }
+
+  get chargingProfileRepository(): IChargingProfileRepository {
+    return this._chargingProfileRepository;
   }
 
   /**
@@ -176,6 +220,7 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('Authorize received:', message, props);
     const request: AuthorizeRequest = message.payload;
+    const context = message.context;
     const response: AuthorizeResponse = {
       idTokenInfo: {
         status: AuthorizationStatusEnumType.Unknown,
@@ -223,7 +268,7 @@ export class EVDriverModule extends AbstractModule {
       }
     }
 
-    this._authorizeRepository
+    await this._authorizeRepository
       .readOnlyOneByQuerystring({ ...request.idToken })
       .then(async (authorization) => {
         if (authorization) {
@@ -357,6 +402,15 @@ export class EVDriverModule extends AbstractModule {
                   }
                 }
               }
+
+              for (const authorizer of this._authorizers) {
+                if (response.idTokenInfo.status !== AuthorizationStatusEnumType.Accepted) {
+                  break;
+                }
+                const result: Partial<IdTokenType> = await authorizer.authorize(authorization, context);
+                Object.assign(response.idTokenInfo, result);
+              }
+              
             } else {
               // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
               // N.B. Other statuses should not be allowed to be stored.
@@ -408,7 +462,7 @@ export class EVDriverModule extends AbstractModule {
                   format: MessageFormatEnumType.ASCII,
                 } as MessageContentType;
               }
-              response.idTokenInfo.personalMessage.content = `${tariff.price}/${tariff.unit}`;
+              response.idTokenInfo.personalMessage.content = `${tariff.pricePerKwh}/kWh`;
             }
           }
         }
@@ -456,6 +510,43 @@ export class EVDriverModule extends AbstractModule {
       message,
       props,
     );
+    if (message.payload.status === RequestStartStopStatusEnumType.Accepted) {
+      // Start transaction with charging profile succeeds,
+      // we need to update db entity with the latest data from charger
+      const stationId: string = message.context.stationId;
+      // 1. Clear all existing profiles: find existing active profiles and set them to isActive false
+      await this._chargingProfileRepository.updateAllByQuery(
+        {
+          isActive: false,
+        },
+        {
+          where: {
+            stationId: stationId,
+            isActive: true,
+            chargingLimitSource: ChargingLimitSourceEnumType.CSO,
+            chargingProfilePurpose: ChargingProfilePurposeEnumType.TxProfile,
+          },
+          returning: false,
+        },
+      );
+      // 2. Request charging profiles to get the latest data
+      this.sendCall(
+        stationId,
+        message.context.tenantId,
+        CallAction.GetChargingProfiles,
+        {
+          requestId: generateRequestId(),
+          chargingProfile: {
+            chargingProfilePurpose: ChargingProfilePurposeEnumType.TxProfile,
+            chargingLimitSource: [ChargingLimitSourceEnumType.CSO],
+          } as ChargingProfileCriterionType,
+        } as GetChargingProfilesRequest,
+      );
+    } else {
+      this._logger.error(
+        `RequestStartTransaction failed: ${JSON.stringify(message.payload)}`,
+      );
+    }
   }
 
   @AsHandler(CallAction.RequestStopTransaction)
