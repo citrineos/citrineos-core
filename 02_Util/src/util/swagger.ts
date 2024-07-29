@@ -12,7 +12,7 @@ import { HttpHeader, HttpStatus, SystemConfig, UnauthorizedError } from '@citrin
 import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
 import * as FastifyAuth from '@fastify/auth';
 // @ts-ignore
-import * as packageJson from '../../../package.json';
+import * as packageJson from '../../package.json';
 
 /**
  * This transformation is necessary because the plugin (@fastify/swagger) does not handle the local #ref objects correctly.
