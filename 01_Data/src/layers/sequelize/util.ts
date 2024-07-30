@@ -52,15 +52,12 @@ export class DefaultSequelizeInstance {
   private static logger: Logger<ILogObj>;
   private static config: SystemConfig;
 
-  private constructor() {
-  }
+  private constructor() {}
 
   public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): Sequelize {
     if (!DefaultSequelizeInstance.instance) {
       DefaultSequelizeInstance.config = config;
-      DefaultSequelizeInstance.logger = logger
-        ? logger.getSubLogger({name: this.name})
-        : new Logger<ILogObj>({name: this.name});
+      DefaultSequelizeInstance.logger = logger ? logger.getSubLogger({ name: this.name }) : new Logger<ILogObj>({ name: this.name });
 
       DefaultSequelizeInstance.instance = this.createSequelizeInstance();
     }
@@ -74,7 +71,7 @@ export class DefaultSequelizeInstance {
     while (retryCount < maxRetries) {
       try {
         await this.instance!.authenticate();
-        this.logger.info("Database connection has been established successfully");
+        this.logger.info('Database connection has been established successfully');
         this.syncDb();
 
         break;
@@ -83,9 +80,9 @@ export class DefaultSequelizeInstance {
         this.logger.error(`Failed to connect to the database (attempt ${retryCount}/${maxRetries}):`, error);
         if (retryCount < maxRetries) {
           this.logger.info(`Retrying in ${retryDelay / 1000} seconds...`);
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
         } else {
-          this.logger.error("Max retries reached. Unable to establish database connection.");
+          this.logger.error('Max retries reached. Unable to establish database connection.');
         }
       }
     }
@@ -93,10 +90,10 @@ export class DefaultSequelizeInstance {
 
   private static async syncDb() {
     if (this.config.data.sequelize.alter) {
-      await this.instance!.sync({alter: true});
+      await this.instance!.sync({ alter: true });
       this.logger.info('Database altered');
     } else if (this.config.data.sequelize.sync) {
-      await this.instance!.sync({force: true});
+      await this.instance!.sync({ force: true });
       this.logger.info('Database synchronized');
     }
   }
@@ -144,8 +141,7 @@ export class DefaultSequelizeInstance {
         VariableStatus,
         Variable,
       ],
-      logging: (_sql: string, _timing?: number) => {
-      },
+      logging: (_sql: string, _timing?: number) => {},
     });
   }
 }

@@ -34,12 +34,24 @@ import addFormats from 'ajv-formats';
 import fastify, { type FastifyInstance } from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
-import { ConfigurationModule, ConfigurationModuleApi } from '@citrineos/configuration';
-import { TransactionsModule, TransactionsModuleApi } from '@citrineos/transactions';
-import { CertificatesModule, CertificatesModuleApi } from '@citrineos/certificates';
+import {
+  ConfigurationModule,
+  ConfigurationModuleApi,
+} from '@citrineos/configuration';
+import {
+  TransactionsModule,
+  TransactionsModuleApi,
+} from '@citrineos/transactions';
+import {
+  CertificatesModule,
+  CertificatesModuleApi,
+} from '@citrineos/certificates';
 import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
-import { SmartChargingModule, SmartChargingModuleApi } from '@citrineos/smartcharging';
+import {
+  SmartChargingModule,
+  SmartChargingModuleApi,
+} from '@citrineos/smartcharging';
 import { RepositoryStore, sequelize } from '@citrineos/data';
 import {
   type FastifyRouteSchemaDef,
@@ -117,7 +129,8 @@ export class CitrineOSServer {
 
     this.appName = appName;
     this._config = config;
-    this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
+    this._server =
+      server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
     // Add health check
     this.initHealthCheck();
@@ -165,7 +178,10 @@ export class CitrineOSServer {
     this.initRepositoryStore();
 
     // start ocpi needs to happen first to load authorizer
-    await this.startOcpiServer(this._config.ocpiServer.host, this._config.ocpiServer.port);
+    await this.startOcpiServer(
+      this._config.ocpiServer.host,
+      this._config.ocpiServer.port,
+    );
 
     // Initialize module & API
     // Always initialize API after SwaggerUI
@@ -273,7 +289,7 @@ export class CitrineOSServer {
   }
 
   private initHealthCheck() {
-    this._server.get('/health', async () => ({status: 'healthy'}));
+    this._server.get('/health', async () => ({ status: 'healthy' }));
   }
 
   private initAjv(ajv?: Ajv) {
@@ -319,11 +335,11 @@ export class CitrineOSServer {
       cache ||
       (this._config.util.cache.redis
         ? new RedisCache({
-          socket: {
-            host: this._config.util.cache.redis.host,
-            port: this._config.util.cache.redis.port,
-          },
-        })
+            socket: {
+              host: this._config.util.cache.redis.host,
+              port: this._config.util.cache.redis.port,
+            },
+          })
         : new MemoryCache())
     );
   }
@@ -431,7 +447,7 @@ export class CitrineOSServer {
         undefined,
         undefined,
         undefined,
-        [this.ocpiRealTimeAuthorizer]
+        [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);
       this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
@@ -648,17 +664,19 @@ export class CitrineOSServer {
 }
 
 async function main() {
-  const server = new CitrineOSServer(process.env.APP_NAME as EventGroup, systemConfig);
+  const server = new CitrineOSServer(
+    process.env.APP_NAME as EventGroup,
+    systemConfig,
+  );
   await server.initialize();
 
-  server.run()
-    .catch((error: any) => {
-      console.error(error);
-      process.exit(1);
-    });
+  server.run().catch((error: any) => {
+    console.error(error);
+    process.exit(1);
+  });
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error('Failed to initialize server:', error);
   process.exit(1);
 });
