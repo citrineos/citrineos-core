@@ -43,13 +43,17 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
       throw new Error('Authorization idToken does not match query');
     }
 
-    const savedAuthorizationModel: Authorization | null = await Authorization.findOne({
-      where: {
-        idToken: query.idToken,
-        type: query.type
-      },
+    const savedAuthorizationModel = await Authorization.findOne({
+      include: [{
+        model: IdToken,
+        where: {
+          idToken: query.idToken,
+          type: query.type
+        }
+      }],
       transaction
     });
+
     const authorizationModel = savedAuthorizationModel ?? Authorization.build({}, this._createInclude(value));
 
     const updatedIdToken = await this._updateIdToken(value.idToken, transaction);
