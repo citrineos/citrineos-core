@@ -36,14 +36,14 @@
   "author": "S44",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/amqplib": "0.10.1",
-    "@types/bcrypt": "5.0.2",
-    "@types/deasync-promise": "1.0.0",
-    "@types/uuid": "9.0.1",
-    "@types/ws": "8.5.4",
-    "nodemon": "2.0.22",
-    "ts-node": "10.9.1",
-    "typescript": "5.0.4"
+    "@types/amqplib": "^0.10.1",
+    "@types/bcrypt": "^5.0.2",
+    "@types/deasync-promise": "^1.0.0",
+    "@types/uuid": "^9.0.1",
+    "@types/ws": "^8.5.4",
+    "nodemon": "^2.0.22",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
   },
   "dependencies": {
     "@citrineos/base": "file:../00_Base/citrineos-base-1.0.0.tgz",
@@ -58,19 +58,19 @@
     "@citrineos/tenant": "file:../03_Modules/Tenant/citrineos-tenant-1.3.0.tgz",
     "@citrineos/transactions": "file:../03_Modules/Transactions/citrineos-transactions-1.0.0.tgz",
     "@citrineos/util": "file:../02_Util/citrineos-util-1.0.0.tgz",
-    "@fastify/type-provider-json-schema-to-ts": "2.2.2",
-    "ajv": "8.12.0",
-    "fastify": "4.22.2",
-    "sqlite3": "5.1.6",
-    "tslog": "4.8.2",
-    "uuid": "9.0.0",
-    "ws": "8.13.0"
+    "@fastify/type-provider-json-schema-to-ts": "^2.2.2",
+    "ajv": "^8.12.0",
+    "fastify": "^4.22.2",
+    "sqlite3": "^5.1.6",
+    "tslog": "^4.8.2",
+    "uuid": "^9.0.0",
+    "ws": "^8.13.0"
   },
   "engines": {
     "node": ">=18"
   },
   "optionalDependencies": {
-    "bufferutil": "4.0.8",
-    "utf-8-validate": "6.0.3"
+    "bufferutil": "^4.0.8",
+    "utf-8-validate": "^6.0.3"
   }
 }
