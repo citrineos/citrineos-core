@@ -1,6 +1,12 @@
 {
+  "timezone": "America/New_York",
+  "schedule": ["after 10pm and before 4am"],
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ]
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "dependencyDashboard": true,
+  "branchPrefix": "renovate/",
+  "commitMessagePrefix": "📦 chore(deps): "
 }
