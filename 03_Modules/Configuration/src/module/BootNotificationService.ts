@@ -3,7 +3,9 @@ import {
   BootConfig,
   BootNotificationResponse,
   RegistrationStatusEnumType,
+  SystemConfig,
 } from '@citrineos/base';
+type Configuration = SystemConfig['modules']['configuration'];
 
 export class BootNotificationService {
   protected _bootRepository: IBootRepository;
@@ -14,7 +16,7 @@ export class BootNotificationService {
 
   determineBootStatus(
     bootConfig: Boot | undefined,
-    configuration: any,
+    configuration: Configuration,
   ): RegistrationStatusEnumType {
     let bootStatus = bootConfig
       ? bootConfig.status
@@ -52,7 +54,7 @@ export class BootNotificationService {
   createBootNotificationResponse(
     bootConfig: Boot | undefined,
     bootStatus: RegistrationStatusEnumType,
-    configuration: any,
+    configuration: Configuration,
   ): BootNotificationResponse {
     return {
       currentTime: new Date().toISOString(),

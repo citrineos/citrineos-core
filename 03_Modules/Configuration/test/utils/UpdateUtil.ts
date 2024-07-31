@@ -1,6 +1,6 @@
-type UpdateFunction<T> = (item: T) => void;
+export type UpdateFunction<T> = (item: T) => void;
 
-const applyUpdateFunction = <T>(
+export const applyUpdateFunction = <T>(
   item: T,
   updateFunction?: UpdateFunction<T>,
 ): T => {

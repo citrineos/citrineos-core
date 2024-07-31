@@ -4,8 +4,12 @@ import {
   RegistrationStatusEnumType,
   type SetVariableResultType,
   SetVariableStatusEnumType,
+  SystemConfig,
 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
+
+type Configuration = SystemConfig['modules']['configuration'];
 
 export const aValidSetVariableResult = (
   updateFunction?: UpdateFunction<SetVariableResultType>,
@@ -42,7 +46,7 @@ export const aValidBootConfig = (
     heartbeatInterval: faker.number.int({ min: 30, max: 3600 }),
     bootRetryInterval: faker.number.int({ min: 30, max: 3600 }),
     status: RegistrationStatusEnumType.Pending,
-    getBaseReportOnPending: faker.datatype.boolean(),
+    getBaseReportOnPending: false,
     variablesRejectedOnLastBoot: [aValidSetVariableResult()],
     bootWithRejectedVariables: faker.datatype.boolean(),
   } as Boot;
@@ -53,7 +57,11 @@ export const aValidBootConfig = (
 export const aValidConfiguration = (
   updateFunction?: UpdateFunction<any>,
 ): any => {
-  const item = {
+  const item: Configuration = {
+    bootRetryInterval: 0,
+    bootWithRejectedVariables: false,
+    endpointPrefix: '',
+    heartbeatInterval: 0,
     unknownChargerStatus: RegistrationStatusEnumType.Rejected,
     getBaseReportOnPending: false,
     autoAccept: false,

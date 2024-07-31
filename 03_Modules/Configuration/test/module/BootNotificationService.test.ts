@@ -1,7 +1,9 @@
 import { Boot, IBootRepository } from '@citrineos/data';
 import { BootNotificationService } from '../../src/module/BootNotificationService';
-import { RegistrationStatusEnumType } from '@citrineos/base';
+import { RegistrationStatusEnumType, SystemConfig } from '@citrineos/base';
 import { aValidBootConfig, aValidConfiguration } from '../providers/BootConfig';
+
+type Configuration = SystemConfig['modules']['configuration'];
 
 describe('BootService', () => {
   let mockBootRepository: jest.Mocked<IBootRepository>;
@@ -16,7 +18,7 @@ describe('BootService', () => {
 
   const runDetermineBootStatusTest = (
     bootConfig: Boot | undefined,
-    configuration: any,
+    configuration: Configuration,
     expectedStatus: RegistrationStatusEnumType,
   ) => {
     const result = bootService.determineBootStatus(bootConfig, configuration);
@@ -45,7 +47,7 @@ describe('BootService', () => {
       'should return bootConfig status if not pending',
       ({ bootConfigStatus, expectedStatus }) => {
         const bootConfig = aValidBootConfig(
-          (item) => (item.status = bootConfigStatus),
+          (item: Boot) => (item.status = bootConfigStatus),
         );
         runDetermineBootStatusTest(
           bootConfig,
@@ -57,7 +59,7 @@ describe('BootService', () => {
 
     it('should return Pending status when bootConfig.status is pending and no actions are needed', () => {
       const bootConfig = aValidBootConfig(
-        (item) => (item.status = RegistrationStatusEnumType.Pending),
+        (item: Boot) => (item.status = RegistrationStatusEnumType.Pending),
       );
       runDetermineBootStatusTest(
         bootConfig,
@@ -68,10 +70,10 @@ describe('BootService', () => {
 
     it('should return Accepted status when bootConfig.status is pending and no actions are needed but autoAccept is true', () => {
       const bootConfig = aValidBootConfig(
-        (item) => (item.getBaseReportOnPending = false),
+        (item: Boot) => (item.getBaseReportOnPending = false),
       );
       const configWithAutoAccept = aValidConfiguration(
-        (item) => (item.autoAccept = true),
+        (item: Configuration) => (item.autoAccept = true),
       );
       runDetermineBootStatusTest(
         bootConfig,
@@ -82,7 +84,7 @@ describe('BootService', () => {
 
     it('should return Pending status when bootConfig.status is pending and getBaseReportOnPending is true', () => {
       const bootConfig = aValidBootConfig(
-        (item) => (item.getBaseReportOnPending = true),
+        (item: Boot) => (item.getBaseReportOnPending = true),
       );
       runDetermineBootStatusTest(
         bootConfig,
@@ -93,7 +95,7 @@ describe('BootService', () => {
 
     it('should return Pending status when bootConfig.status is pending and pendingBootSetVariables is not empty', () => {
       const bootConfig = aValidBootConfig(
-        (item) => (item.pendingBootSetVariables = [{}] as any),
+        (item: Boot) => (item.pendingBootSetVariables = [{}] as any),
       );
       runDetermineBootStatusTest(
         bootConfig,
@@ -105,7 +107,7 @@ describe('BootService', () => {
     it('should return Accepted status when bootConfig.status is pending, no actions are needed, and autoAccept is true', () => {
       const bootConfig = aValidBootConfig();
       const configWithAutoAccept = aValidConfiguration(
-        (item) => (item.autoAccept = true),
+        (item: Configuration) => (item.autoAccept = true),
       );
       runDetermineBootStatusTest(
         bootConfig,
