@@ -7,8 +7,6 @@ import {
 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 
-type UpdateFunction<T> = (item: T) => void;
-
 export const aValidSetVariableResult = (
   updateFunction?: UpdateFunction<SetVariableResultType>,
 ): SetVariableResultType => {
@@ -32,11 +30,7 @@ export const aValidSetVariableResult = (
     },
   };
 
-  if (updateFunction) {
-    updateFunction(item);
-  }
-
-  return item;
+  return applyUpdateFunction(item, updateFunction);
 };
 
 export const aValidBootConfig = (
@@ -53,11 +47,7 @@ export const aValidBootConfig = (
     bootWithRejectedVariables: faker.datatype.boolean(),
   } as Boot;
 
-  if (updateFunction) {
-    updateFunction(item);
-  }
-
-  return item;
+  return applyUpdateFunction(item, updateFunction);
 };
 
 export const aValidConfiguration = (
@@ -69,9 +59,5 @@ export const aValidConfiguration = (
     autoAccept: false,
   };
 
-  if (updateFunction) {
-    updateFunction(item);
-  }
-
-  return item;
+  return applyUpdateFunction(item, updateFunction);
 };

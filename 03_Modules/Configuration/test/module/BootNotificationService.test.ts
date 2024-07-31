@@ -1,17 +1,17 @@
 import { Boot, IBootRepository } from '@citrineos/data';
-import { BootService } from '../../src/module/bootService';
+import { BootNotificationService } from '../../src/module/BootNotificationService';
 import { RegistrationStatusEnumType } from '@citrineos/base';
-import { aValidBootConfig, aValidConfiguration } from '../providers/bootConfig';
+import { aValidBootConfig, aValidConfiguration } from '../providers/BootConfig';
 
 describe('BootService', () => {
   let mockBootRepository: jest.Mocked<IBootRepository>;
-  let bootService: BootService;
+  let bootService: BootNotificationService;
 
   beforeEach(() => {
     mockBootRepository = {
       readByKey: jest.fn(),
     } as unknown as jest.Mocked<IBootRepository>;
-    bootService = new BootService(mockBootRepository);
+    bootService = new BootNotificationService(mockBootRepository);
   });
 
   const runDetermineBootStatusTest = (

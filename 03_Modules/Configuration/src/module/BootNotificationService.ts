@@ -5,7 +5,7 @@ import {
   RegistrationStatusEnumType,
 } from '@citrineos/base';
 
-export class BootService {
+export class BootNotificationService {
   protected _bootRepository: IBootRepository;
 
   constructor(bootRepository: IBootRepository) {

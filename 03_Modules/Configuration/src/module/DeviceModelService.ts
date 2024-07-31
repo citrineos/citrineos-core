@@ -79,112 +79,50 @@ export class DeviceModelService {
     stationId: string,
     timestamp: string,
   ): Promise<void> {
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+    const attributes = [
       {
-        component: {
-          name: 'ChargingStation',
-        },
-        variable: {
-          name: 'Model',
-        },
-        variableAttribute: [
-          {
-            type: AttributeEnumType.Actual,
-            value: chargingStation.model,
-            mutability: MutabilityEnumType.ReadOnly,
-            persistent: true,
-            constant: true,
-          },
-        ],
+        component: 'ChargingStation',
+        variable: 'Model',
+        value: chargingStation.model,
       },
-      stationId,
-      timestamp,
-    );
-
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
       {
-        component: {
-          name: 'ChargingStation',
-        },
-        variable: {
-          name: 'VendorName',
-        },
-        variableAttribute: [
-          {
-            type: AttributeEnumType.Actual,
-            value: chargingStation.vendorName,
-            mutability: MutabilityEnumType.ReadOnly,
-            persistent: true,
-            constant: true,
-          },
-        ],
+        component: 'ChargingStation',
+        variable: 'VendorName',
+        value: chargingStation.vendorName,
       },
-      stationId,
-      timestamp,
-    );
+      {
+        component: 'Controller',
+        variable: 'FirmwareVersion',
+        value: chargingStation.firmwareVersion,
+      },
+      {
+        component: 'ChargingStation',
+        variable: 'SerialNumber',
+        value: chargingStation.serialNumber,
+      },
+      {
+        component: 'DataLink',
+        variable: 'IMSI',
+        value: chargingStation.modem?.imsi,
+      },
+      {
+        component: 'DataLink',
+        variable: 'ICCID',
+        value: chargingStation.modem?.iccid,
+      },
+    ];
 
-    if (chargingStation.firmwareVersion) {
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-        {
-          component: {
-            name: 'Controller',
-          },
-          variable: {
-            name: 'FirmwareVersion',
-          },
-          variableAttribute: [
-            {
-              type: AttributeEnumType.Actual,
-              value: chargingStation.firmwareVersion,
-              mutability: MutabilityEnumType.ReadOnly,
-              persistent: true,
-              constant: true,
-            },
-          ],
-        },
-        stationId,
-        timestamp,
-      );
-    }
-
-    if (chargingStation.serialNumber) {
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-        {
-          component: {
-            name: 'ChargingStation',
-          },
-          variable: {
-            name: 'SerialNumber',
-          },
-          variableAttribute: [
-            {
-              type: AttributeEnumType.Actual,
-              value: chargingStation.serialNumber,
-              mutability: MutabilityEnumType.ReadOnly,
-              persistent: true,
-              constant: true,
-            },
-          ],
-        },
-        stationId,
-        timestamp,
-      );
-    }
-
-    if (chargingStation.modem) {
-      if (chargingStation.modem.imsi) {
-        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+    const promises = attributes
+      .filter((attr) => attr.value !== undefined)
+      .map((attr) =>
+        this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
           {
-            component: {
-              name: 'DataLink',
-            },
-            variable: {
-              name: 'IMSI',
-            },
+            component: { name: attr.component },
+            variable: { name: attr.variable },
             variableAttribute: [
               {
                 type: AttributeEnumType.Actual,
-                value: chargingStation.modem.imsi,
+                value: attr.value,
                 mutability: MutabilityEnumType.ReadOnly,
                 persistent: true,
                 constant: true,
@@ -193,32 +131,9 @@ export class DeviceModelService {
           },
           stationId,
           timestamp,
-        );
-      }
+        ),
+      );
 
-      if (chargingStation.modem.iccid) {
-        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-          {
-            component: {
-              name: 'DataLink',
-            },
-            variable: {
-              name: 'ICCID',
-            },
-            variableAttribute: [
-              {
-                type: AttributeEnumType.Actual,
-                value: chargingStation.modem.iccid,
-                mutability: MutabilityEnumType.ReadOnly,
-                persistent: true,
-                constant: true,
-              },
-            ],
-          },
-          stationId,
-          timestamp,
-        );
-      }
-    }
+    await Promise.all(promises);
   }
 }

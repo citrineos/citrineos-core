@@ -73,8 +73,8 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
-import { DeviceModelService } from './services';
-import { BootService } from './bootService';
+import { DeviceModelService } from './DeviceModelService';
+import { BootNotificationService } from './BootNotificationService';
 
 /**
  * Component that handles Configuration related messages.
@@ -107,7 +107,7 @@ export class ConfigurationModule extends AbstractModule {
   protected _bootRepository: IBootRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _messageInfoRepository: IMessageInfoRepository;
-  protected bootService: BootService;
+  protected bootService: BootNotificationService;
 
   /**
    * Constructor
@@ -181,7 +181,7 @@ export class ConfigurationModule extends AbstractModule {
       this._deviceModelRepository,
     );
 
-    this.bootService = new BootService(this._bootRepository);
+    this.bootService = new BootNotificationService(this._bootRepository);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
