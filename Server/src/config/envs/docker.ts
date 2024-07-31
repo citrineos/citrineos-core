@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
+import path from 'path';
 
 export function createDockerConfig() {
   return defineConfig({
@@ -69,7 +70,10 @@ export function createDockerConfig() {
       },
       swagger: {
         path: '/docs',
-        logoPath: '/usr/local/apps/citrineos-core/Server/src/assets/logo.png',
+        logoPath: path.resolve(
+          path.dirname(__filename),
+          '../../assets/logo.png',
+        ),
         exposeData: true,
         exposeMessage: true,
       },
@@ -106,12 +110,18 @@ export function createDockerConfig() {
             host: '0.0.0.0',
             port: 8443,
             protocol: 'ocpp2.0.1',
-            tlsKeyFilePath:
-              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/leafKey.pem',
-            tlsCertificateChainFilePath:
-              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/certChain.pem',
-            rootCACertificateFilePath:
-              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/rootCertificate.pem',
+            tlsKeyFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/leafKey.pem',
+            ),
+            tlsCertificateChainFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/certChain.pem',
+            ),
+            rootCACertificateFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/rootCertificate.pem',
+            ),
           },
           {
             id: '3',
@@ -121,14 +131,22 @@ export function createDockerConfig() {
             host: '0.0.0.0',
             port: 8444,
             protocol: 'ocpp2.0.1',
-            tlsKeyFilePath:
-              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/leafKey.pem',
-            tlsCertificateChainFilePath:
-              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/certChain.pem',
-            mtlsCertificateAuthorityKeyFilePath:
-              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/subCAKey.pem',
-            rootCACertificateFilePath:
-              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/rootCertificate.pem',
+            tlsKeyFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/leafKey.pem',
+            ),
+            tlsCertificateChainFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/certChain.pem',
+            ),
+            mtlsCertificateAuthorityKeyFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/subCAKey.pem',
+            ),
+            rootCACertificateFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/rootCertificate.pem',
+            ),
           },
         ],
       },
@@ -146,8 +164,10 @@ export function createDockerConfig() {
           name: 'acme',
           acme: {
             env: 'staging',
-            accountKeyFilePath:
-              '/usr/local/apps/citrineos-core/Server/src/assets/certificates/acme_account_key.pem',
+            accountKeyFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/acme_account_key.pem',
+            ),
             email: 'test@citrineos.com',
           },
         },
@@ -156,9 +176,5 @@ export function createDockerConfig() {
     logLevel: 2, // debug
     maxCallLengthSeconds: 5,
     maxCachingSeconds: 10,
-    ocpiServer: {
-      host: '0.0.0.0',
-      port: 8085,
-    },
   });
 }

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
+import path from 'path';
 
 export function createDockerConfig() {
   return defineConfig({
@@ -86,7 +87,10 @@ export function createDockerConfig() {
       },
       swagger: {
         path: '/docs',
-        logoPath: '/usr/local/apps/citrineos/server/src/assets/logo.png',
+        logoPath: path.resolve(
+          path.dirname(__filename),
+          '../../assets/certificates/logo.png',
+        ),
         exposeData: true,
         exposeMessage: true,
       },
@@ -131,8 +135,10 @@ export function createDockerConfig() {
           name: 'acme',
           acme: {
             env: 'staging',
-            accountKeyFilePath:
-              '/usr/local/apps/citrineos/Server/src/assets/certificates/acme_account_key.pem',
+            accountKeyFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/acme_account_key.pem',
+            ),
             email: 'test@citrineos.com',
           },
         },
@@ -141,9 +147,5 @@ export function createDockerConfig() {
     logLevel: 2, // debug
     maxCallLengthSeconds: 5,
     maxCachingSeconds: 10,
-    ocpiServer: {
-      host: '0.0.0.0',
-      port: 8085,
-    },
   });
 }

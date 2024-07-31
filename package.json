@@ -12,11 +12,16 @@
     "typescript-eslint": "^7.6.0"
   },
   "scripts": {
-    "install-all": "npm i --workspaces --verbose",
+    "install-all": "npm i --verbose",
     "copy-assets": "cp -rv Server/src/assets Server/dist/assets",
     "build": "tsc --build --verbose",
-    "fresh": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json node_modules **/node_modules **/**/node_modules && npm run clean",
-    "clean": "rm -rf dist **/dist **/**/dist tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
+    "postbuild": "npm run copy-assets --prefix ./Server",
+    "clear-cache": "npm cache clean --force",
+    "remove-dependencies": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json node_modules **/node_modules **/**/node_modules",
+    "fresh": "npm run clean && npm run remove-dependencies && npm run clear-cache",
+    "clean-tsbuildinfo": "find . -name tsconfig.tsbuildinfo -not -path '*/node_modules/*' -exec rm -f {} +",
+    "clean-dist": "find . -type d -name dist -not -path '*/node_modules/*' -exec rm -rf {} +",
+    "clean": "npm run clean-dist && npm run clean-tsbuildinfo",
     "start-unix": "cd ./Server && npm run start-unix",
     "start-windows": "cd ./Server && npm run start-windows",
     "start-docker": "cd ./Server && npm run start-docker",
@@ -42,16 +47,6 @@
     "03_Modules/SmartCharging",
     "03_Modules/Tenant",
     "03_Modules/Transactions",
-    "Server",
-    "../citrineos-ocpi/00_Base",
-    "../citrineos-ocpi/03_Modules/Versions",
-    "../citrineos-ocpi/03_Modules/Credentials",
-    "../citrineos-ocpi/03_Modules/Commands",
-    "../citrineos-ocpi/03_Modules/Locations",
-    "../citrineos-ocpi/03_Modules/Sessions",
-    "../citrineos-ocpi/03_Modules/ChargingProfiles",
-    "../citrineos-ocpi/03_Modules/Cdrs",
-    "../citrineos-ocpi/03_Modules/Tariffs",
-    "../citrineos-ocpi/03_Modules/Tokens"
+    "Server"
   ]
 }

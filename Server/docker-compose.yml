@@ -34,7 +34,7 @@ services:
   citrine:
     build:
       context: ../../
-      dockerfile: ./citrineos-core/Server/deploy.with.ocpi.Dockerfile
+      dockerfile: ./citrineos-core/Server/deploy.Dockerfile
     volumes:
       - ../package-lock.json:/usr/local/apps/citrineos/package-lock-host.json
       - ../package.json:/usr/local/apps/citrineos/package.json
