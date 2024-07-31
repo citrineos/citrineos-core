@@ -1,7 +1,7 @@
 import { ChargingStateEnumType } from '@citrineos/base';
 
 import { faker } from '@faker-js/faker';
-import { UpdateFunction } from './update';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 import { Transaction } from '@citrineos/data';
 
 export const aValidTransaction = (
@@ -18,9 +18,5 @@ export const aValidTransaction = (
     remoteStartId: faker.number.int({ min: 1, max: 1000 }),
   } as Transaction;
 
-  if (updateFunction) {
-    updateFunction(item);
-  }
-
-  return item;
+  return applyUpdateFunction(item, updateFunction);
 };

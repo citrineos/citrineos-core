@@ -4,12 +4,12 @@ import {
 } from '@citrineos/data';
 import { AuthorizationStatusEnumType } from '@citrineos/base';
 import { TransactionService } from '../../src/module/TransactionService';
-import { aValidIdToken } from '../providers/idToken';
-import { aValidAuthorization } from '../providers/authorization';
+import { aValidIdToken } from '../providers/IdToken';
+import { aValidAuthorization } from '../providers/Authorization';
 import { Logger } from 'tslog';
 
-import { aValidMessageContext } from '../providers/messageContext';
-import { aValidTransaction } from '../providers/transaction';
+import { aValidMessageContext } from '../providers/MessageContext';
+import { aValidTransaction } from '../providers/Transaction';
 import { IAuthorizer } from '@citrineos/util';
 
 describe('TransactionService', () => {

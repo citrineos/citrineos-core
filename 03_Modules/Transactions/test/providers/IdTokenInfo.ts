@@ -1,5 +1,4 @@
-import { IdTokenInfo } from '@citrineos/data';
-import { UpdateFunction } from './update';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 import {
   AuthorizationStatusEnumType,
   IdTokenEnumType,
@@ -33,9 +32,5 @@ export const aValidIdTokenInfo = (
     evseId: undefined,
   } as IdTokenInfoType;
 
-  if (updateFunction) {
-    updateFunction(item);
-  }
-
-  return item;
+  return applyUpdateFunction(item, updateFunction);
 };

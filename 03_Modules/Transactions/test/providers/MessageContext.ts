@@ -1,6 +1,6 @@
 import { IMessageContext } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
-import { UpdateFunction } from './update';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 
 export const aValidMessageContext = (
   updateFunction?: UpdateFunction<IMessageContext>,
@@ -12,9 +12,5 @@ export const aValidMessageContext = (
     timestamp: faker.date.recent().toISOString(),
   };
 
-  if (updateFunction) {
-    updateFunction(item);
-  }
-
-  return item;
+  return applyUpdateFunction(item, updateFunction);
 };

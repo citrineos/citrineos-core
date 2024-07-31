@@ -1,8 +1,9 @@
 import { Authorization } from '@citrineos/data';
-import { UpdateFunction } from './update';
+
 import { faker } from '@faker-js/faker';
-import { aValidIdToken } from './idToken';
-import { aValidIdTokenInfo } from './idTokenInfo';
+import { aValidIdToken } from './IdToken';
+import { aValidIdTokenInfo } from './IdTokenInfo';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 
 export const aValidAuthorization = (
   updateFunction?: UpdateFunction<Authorization>,
@@ -14,9 +15,5 @@ export const aValidAuthorization = (
     idTokenInfo: aValidIdTokenInfo(),
   } as Authorization;
 
-  if (updateFunction) {
-    updateFunction(item);
-  }
-
-  return item;
+  return applyUpdateFunction(item, updateFunction);
 };

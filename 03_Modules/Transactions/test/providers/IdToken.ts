@@ -1,7 +1,7 @@
-import { UpdateFunction } from './update';
 import { IdToken } from '@citrineos/data';
 import { IdTokenEnumType, IdTokenType } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 
 export const aValidIdToken = (
   updateFunction?: UpdateFunction<IdToken>,
@@ -11,9 +11,5 @@ export const aValidIdToken = (
     type: IdTokenEnumType.Central,
   } as IdToken;
 
-  if (updateFunction) {
-    updateFunction(item);
-  }
-
-  return item;
+  return applyUpdateFunction(item, updateFunction);
 };
