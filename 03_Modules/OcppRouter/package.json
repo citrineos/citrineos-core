@@ -9,10 +9,7 @@
   ],
   "scripts": {
     "prepublish": "npx eslint",
-    "compile": "npm run clean && tsc -p tsconfig.json",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
-    "fresh": "rm -rf node_modules package-lock.json && npm run clean"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "ocpp",
