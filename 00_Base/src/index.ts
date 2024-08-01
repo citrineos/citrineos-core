@@ -134,11 +134,9 @@ import {
 } from './ocpp/model/index';
 import { CallAction } from './ocpp/rpc/message';
 
-export interface OcppRequest {
-}
+export interface OcppRequest {}
 
-export interface OcppResponse {
-}
+export interface OcppResponse {}
 
 export const CALL_SCHEMA_MAP: Map<CallAction, object> = new Map<
   CallAction,

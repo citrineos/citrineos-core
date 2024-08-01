@@ -5,6 +5,7 @@
 import { Namespace } from '@citrineos/base';
 import { Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
+import { Point } from 'geojson';
 
 /**
  * Represents a location.
@@ -36,7 +37,7 @@ export class Location extends Model {
    * [longitude, latitude]
    */
   @Column(DataType.GEOMETRY('POINT'))
-  declare coordinates: [number, number];
+  declare coordinates: Point;
 
   @HasMany(() => ChargingStation)
   declare chargingPool: [ChargingStation, ...ChargingStation[]];
