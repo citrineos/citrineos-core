@@ -9,7 +9,7 @@ import { MeterValue, Transaction, TransactionEvent } from '../model/TransactionE
 import { SequelizeRepository } from './Base';
 import { IdToken } from '../model/Authorization';
 import { Evse } from '../model/DeviceModel';
-import sequelize, { Op, WhereOptions } from 'sequelize';
+import { Op, WhereOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 
@@ -56,7 +56,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       });
     }
 
-    return await this.s.transaction(async (sequelizeTransaction: sequelize.Transaction) => {
+    return await this.s.transaction(async (sequelizeTransaction) => {
       let finalTransaction: Transaction;
       let created = false;
       const existingTransaction = await this.transaction.readOnlyOneByQuery({
@@ -68,7 +68,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       });
 
       if (existingTransaction) {
-        await existingTransaction.update(
+        finalTransaction = await existingTransaction.update(
           {
             isActive: value.eventType !== TransactionEventEnumType.Ended,
             ...value.transactionInfo,
@@ -77,16 +77,6 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
             transaction: sequelizeTransaction,
           },
         );
-        finalTransaction = await existingTransaction.reload({
-          include: [
-            {
-              model: TransactionEvent,
-              as: Transaction.TRANSACTION_EVENTS_ALIAS,
-            },
-            MeterValue,
-          ],
-          transaction: sequelizeTransaction,
-        });
       } else {
         const newTransaction = Transaction.build({
           stationId,
@@ -146,11 +136,17 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       await event.reload({ include: [MeterValue], transaction: sequelizeTransaction });
       this.emit('created', [event]);
 
+      const allMeterValues = await this.meterValue.readAllByQuery({
+        where: {
+          transactionDatabaseId,
+        },
+      });
+
+      await finalTransaction.update({ totalKwh: MeterValueUtils.getTotalKwh(allMeterValues ?? []) }, { transaction: sequelizeTransaction });
       await finalTransaction.reload({
         include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, Evse],
         transaction: sequelizeTransaction,
       });
-      await this.calculateAndUpdateTotalKwh(finalTransaction, sequelizeTransaction);
 
       this.transaction.emit(created ? 'created' : 'updated', [finalTransaction]);
 
@@ -327,13 +323,5 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         }
         return transactions[0];
       });
-  }
-
-  private async calculateAndUpdateTotalKwh(transaction: Transaction, sequelizeTransaction: sequelize.Transaction): Promise<number> {
-    const totalKwh = MeterValueUtils.getTotalKwh(transaction.meterValues ?? []);
-
-    await transaction.update({ totalKwh }, { transaction: sequelizeTransaction });
-
-    return totalKwh;
   }
 }
