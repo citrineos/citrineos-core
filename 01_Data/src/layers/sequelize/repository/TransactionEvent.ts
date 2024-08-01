@@ -142,7 +142,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         },
       });
 
-      await finalTransaction.update({ totalKwh: MeterValueUtils.getTotalKwh(allMeterValues ?? []) }, { transaction: sequelizeTransaction });
+      await finalTransaction.update({ totalKwh: MeterValueUtils.getTotalKwh(allMeterValues) }, { transaction: sequelizeTransaction });
       await finalTransaction.reload({
         include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, Evse],
         transaction: sequelizeTransaction,
