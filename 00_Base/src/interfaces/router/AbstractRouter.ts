@@ -225,7 +225,11 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     }
   }
 
-  abstract onMessage(identifier: string, message: string, timestamp: Date): Promise<boolean>;
+  abstract onMessage(
+    identifier: string,
+    message: string,
+    timestamp: Date,
+  ): Promise<boolean>;
 
   abstract registerConnection(connectionIdentifier: string): Promise<boolean>;
   abstract deregisterConnection(connectionIdentifier: string): Promise<boolean>;

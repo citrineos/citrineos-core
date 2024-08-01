@@ -59,7 +59,7 @@ import {
   type FastifyValidationResult,
 } from 'fastify/types/schema';
 import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter';
-import { OcpiServer, OcpiServerConfig } from '@citrineos/ocpi-base';
+import { Container, OcpiServer, OcpiServerConfig } from '@citrineos/ocpi-base';
 import { CommandsModule } from '@citrineos/ocpi-commands';
 import { VersionsModule } from '@citrineos/ocpi-versions';
 import { CredentialsModule } from '@citrineos/ocpi-credentials';
@@ -70,7 +70,7 @@ import { SessionsModule } from '@citrineos/ocpi-sessions';
 import { ChargingProfilesModule } from '@citrineos/ocpi-charging-profiles';
 import { TariffsModule } from '@citrineos/ocpi-tariffs';
 import { CdrsModule } from '@citrineos/ocpi-cdrs';
-import { TokensModule } from '@citrineos/ocpi-tokens';
+import { RealTimeAuthorizer, TokensModule } from '@citrineos/ocpi-tokens';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -97,6 +97,7 @@ export class CitrineOSServer {
   private _authenticator?: IAuthenticator;
   private _networkConnection?: WebsocketNetworkConnection;
   private _repositoryStore!: RepositoryStore;
+  private ocpiRealTimeAuthorizer!: RealTimeAuthorizer;
 
   /**
    * Constructor for the class.
@@ -172,6 +173,9 @@ export class CitrineOSServer {
     // Register AJV for schema validation
     this.registerAjv();
 
+    // start ocpi needs to happen first to load authorizer
+    this.startOcpiServer(config.ocpiServer.host, config.ocpiServer.port);
+
     // Initialize module & API
     // Always initialize API after SwaggerUI
     this.initSystem(appName);
@@ -179,8 +183,6 @@ export class CitrineOSServer {
     process.on('SIGINT', this.shutdown.bind(this));
     process.on('SIGTERM', this.shutdown.bind(this));
     process.on('SIGQUIT', this.shutdown.bind(this));
-
-    this.startOcpiServer(config.ocpiServer.host, config.ocpiServer.port);
   }
 
   shutdown() {
@@ -263,18 +265,18 @@ export class CitrineOSServer {
       {
         module: TariffsModule,
         handler: this._createHandler(),
-        sender: this._createSender()
+        sender: this._createSender(),
       },
       {
         module: CdrsModule,
         handler: this._createHandler(),
-        sender: this._createSender()
+        sender: this._createSender(),
       },
       {
         module: TokensModule,
         handler: this._createHandler(),
-        sender: this._createSender()
-      }
+        sender: this._createSender(),
+      },
     ];
   }
 
@@ -381,6 +383,8 @@ export class CitrineOSServer {
   }
 
   private initAllModules() {
+    this.ocpiRealTimeAuthorizer = Container.get(RealTimeAuthorizer);
+
     if (this._config.modules.certificates) {
       const module = new CertificatesModule(
         this._config,
@@ -432,6 +436,10 @@ export class CitrineOSServer {
         this._repositoryStore.authorizationRepository,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.tariffRepository,
+        undefined,
+        undefined,
+        undefined,
+        [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);
       this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
@@ -497,6 +505,7 @@ export class CitrineOSServer {
         this._repositoryStore.componentRepository,
         this._repositoryStore.locationRepository,
         this._repositoryStore.tariffRepository,
+        [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);
       this.apis.push(
