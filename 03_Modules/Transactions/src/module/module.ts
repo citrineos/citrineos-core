@@ -348,6 +348,8 @@ export class TransactionsModule extends AbstractModule {
     })
 
     for (let meterValue of meterValues) {
+      await this.transactionEventRepository.createMeterValue(meterValue);
+
       if (expectPublicKey.length > 0 && expectPublicKey[0].value === 'true') {
         for (let sampledValue of meterValue.sampledValue) {
           let publicKey = '';
@@ -366,8 +368,6 @@ export class TransactionsModule extends AbstractModule {
           }
         }
       }
-
-      await this.transactionEventRepository.createMeterValue(meterValue);
     }
 
     const response: MeterValuesResponse = {
