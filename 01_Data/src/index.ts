@@ -30,6 +30,8 @@ export {
   IdTokenInfo,
   AdditionalInfo,
   StatusNotification,
+  PublicKeyInfo,
+  ChargingStationSecurityInfo,
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
