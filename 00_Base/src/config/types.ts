@@ -334,7 +334,13 @@ export const systemConfigSchema = z
           port: z.number().int().positive().optional(),
           costUpdatedInterval: z.number().int().positive().optional(),
           sendCostUpdatedOnMeterValue: z.boolean().optional(),
-          publicKeyFileName: z.string().optional()
+          signedMeterValuesConfiguration: z
+            .object({
+              publicKeyFileName: z.string(),
+              privateKeyFileName: z.string(),
+              encryptionMethod: z.string(), // TODO make enum?
+            })
+            .optional(),
         })
         .refine(
           (obj) =>

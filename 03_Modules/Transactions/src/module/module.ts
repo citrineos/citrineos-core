@@ -29,6 +29,7 @@ import {
   MeterValueUtils,
   OcppError,
   ReportDataType,
+  SignedMeterValuesConfig,
   StatusNotificationRequest,
   StatusNotificationResponse,
   SystemConfig,
@@ -47,6 +48,7 @@ import {
   ITransactionEventRepository,
   sequelize,
   SequelizeRepository,
+  SequelizeChargingStationSecurityInfoRepository,
   Tariff,
   Transaction,
   Variable,
@@ -82,11 +84,15 @@ export class TransactionsModule extends AbstractModule {
   protected _locationRepository: ILocationRepository;
   protected _tariffRepository: ITariffRepository;
   protected _fileAccess: IFileAccess;
+  protected _chargingStationSecurityInfoRepository: SequelizeChargingStationSecurityInfoRepository;
 
-  private _authorizers: IAuthorizer[];
+  private readonly _authorizers: IAuthorizer[];
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
   private readonly _costUpdatedInterval: number | undefined;
+  private readonly _signedMeterValuesConfiguration:
+    | SignedMeterValuesConfig
+    | undefined;
 
   /**
    * This is the constructor function that initializes the {@link TransactionsModule}.
@@ -139,6 +145,11 @@ export class TransactionsModule extends AbstractModule {
    * If no `tariffRepository` is provided, a default {@link sequelize:tariffRepository} instance is
    * created and used.
    *
+   * @param {SequelizeChargingStationSecurityInfoRepository} [chargingStationSecurityInfoRepository] - An optional parameter of type {@link ChargingStationSecurityInfoRepository} whihc represents a repository for accessing
+   * and manipulating security information related to a charging station.
+   * If no `chargingStationSecurityInfoRepository` is provided, a default {@link sequelize:chargingStationSecurityInfoRepository} instance is
+   * created and used.
+   *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
    */
@@ -155,6 +166,7 @@ export class TransactionsModule extends AbstractModule {
     componentRepository?: CrudRepository<Component>,
     locationRepository?: ILocationRepository,
     tariffRepository?: ITariffRepository,
+    chargingStationSecurityInfoRepository?: SequelizeChargingStationSecurityInfoRepository,
     authorizers?: IAuthorizer[],
   ) {
     super(
@@ -195,12 +207,19 @@ export class TransactionsModule extends AbstractModule {
     this._tariffRepository =
       tariffRepository ||
       new sequelize.SequelizeTariffRepository(config, logger);
+    this._chargingStationSecurityInfoRepository =
+      chargingStationSecurityInfoRepository ||
+      new sequelize.SequelizeChargingStationSecurityInfoRepository(
+        config,
+        logger,
+      );
 
     this._authorizers = authorizers || [];
 
     this._sendCostUpdatedOnMeterValue =
       config.modules.transactions.sendCostUpdatedOnMeterValue;
     this._costUpdatedInterval = config.modules.transactions.costUpdatedInterval;
+    this._signedMeterValuesConfiguration = config.modules.transactions.signedMeterValuesConfiguration;
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -340,34 +359,54 @@ export class TransactionsModule extends AbstractModule {
     //  when it is added into a transaction
 
     const meterValues = message.payload.meterValue;
+    const stationId = message.context.stationId;
+    let anyInvalidKeys = false;
 
-    const expectPublicKey = await this._deviceModelRepository.readAllByQuerystring({
-      stationId: message.context.stationId,
-      component_instance: 'OCPPCommCtrlr',
-      variable_instance: 'PublicKeyWithSignedMeterValue'
-    })
+    const expectPublicKey =
+      await this._deviceModelRepository.readAllByQuerystring({
+        stationId,
+        component_instance: 'OCPPCommCtrlr',
+        variable_instance: 'PublicKeyWithSignedMeterValue',
+      });
 
-    for (let meterValue of meterValues) {
+    for (const meterValue of meterValues) {
       await this.transactionEventRepository.createMeterValue(meterValue);
 
       if (expectPublicKey.length > 0 && expectPublicKey[0].value === 'true') {
-        for (let sampledValue of meterValue.sampledValue) {
-          let publicKey = '';
-          if (sampledValue.signedMeterValue?.publicKey) {
-            publicKey = sampledValue.signedMeterValue.publicKey;
-          } else {
-            // grab public key from a cache or db or something similar, do the comparison
-          }
+        for (const sampledValue of meterValue.sampledValue) {
+          const incomingPublicKey =
+            sampledValue.signedMeterValue?.publicKey ?? '';
+          const incomingPublicKeyIsValid =
+            await this.isPublicKeyValid(incomingPublicKey);
 
-          if (await this.invalidPublicKey(publicKey)) {
-            throw new OcppError(
-              message.context.correlationId,
-              ErrorCode.SecurityError,
-              'Meter Value does not have valid publicKey',
-            );
+          if (incomingPublicKey.length > 0) {
+            if (this._signedMeterValuesConfiguration && incomingPublicKeyIsValid) {
+              await this._chargingStationSecurityInfoRepository.readOrCreateChargingStationInfo(
+                stationId,
+                this._signedMeterValuesConfiguration.publicKeyFileName,
+              );
+            } else {
+              anyInvalidKeys = true;
+            }
+          } else {
+            const existingPublicKey =
+              await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileName(
+                stationId,
+              );
+            anyInvalidKeys =
+              anyInvalidKeys ||
+              !(await this.isPublicKeyValid(existingPublicKey));
           }
         }
       }
+    }
+
+    if (anyInvalidKeys) {
+      throw new OcppError(
+        message.context.correlationId,
+        ErrorCode.SecurityError,
+        'One or more MeterValues have an invalid publicKey.',
+      );
     }
 
     const response: MeterValuesResponse = {
@@ -692,17 +731,20 @@ export class TransactionsModule extends AbstractModule {
     }, costUpdatedInterval * 1000);
   }
 
-  // TODO fix parameter type as needed
-  private async invalidPublicKey(publicKey: string): Promise<boolean> {
-    if (!this._config.modules.transactions.publicKeyFileName) {
-      return true;
+  private async isPublicKeyValid(publicKey: string): Promise<boolean> {
+    if (
+      !this._signedMeterValuesConfiguration?.publicKeyFileName ||
+      publicKey.length === 0
+    ) {
+      return false;
     }
 
     const retrievedPublicKey = (
-      await this._fileAccess.getFile(this._config.modules.transactions.publicKeyFileName)
+      await this._fileAccess.getFile(
+        this._signedMeterValuesConfiguration.publicKeyFileName,
+      )
     ).toString();
 
-    // TODO base 64 decode the input public key
-    return retrievedPublicKey !== publicKey;
+    return retrievedPublicKey === Buffer.from(publicKey, 'base64').toString();
   }
 }

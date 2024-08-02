@@ -17,6 +17,7 @@ export enum Namespace {
   ChargingProfile = 'ChargingProfile',
   ChargingSchedule = 'ChargingSchedule',
   ChargingStation = 'ChargingStation',
+  ChargingStationSecurityInfo = 'ChargingStationSecurityInfo',
   ComponentType = 'Component',
   CompositeSchedule = 'CompositeSchedule',
   EVSEType = 'Evse',
