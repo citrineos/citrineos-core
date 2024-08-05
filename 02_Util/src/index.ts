@@ -18,6 +18,6 @@ export { initSwagger } from './util/swagger';
 export { getSizeOfRequest, getBatches, stringToSet } from './util/parser';
 export { DirectusUtil } from './util/directus';
 export { validateLanguageTag, validateChargingProfileType } from './util/validator';
+export { getAuthorizationTokenFromRequest } from './util/swagger';
 export { generateRequestId } from './util/idGenerator';
-
 export { isValidPassword, generatePassword } from './security/authentication';
