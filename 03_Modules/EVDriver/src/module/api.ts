@@ -42,7 +42,7 @@ import {
   AuthorizationRestrictionsSchema,
   ChargingStationKeyQuerySchema,
 } from '@citrineos/data';
-import { validateChargingProfileType } from '@citrineos/util/dist/util/validator';
+import { validateChargingProfileType } from '@citrineos/util';
 
 /**
  * Server API for the provisioning component.

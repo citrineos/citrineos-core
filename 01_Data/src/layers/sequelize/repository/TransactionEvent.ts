@@ -80,7 +80,13 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         await existingTransaction.update({ ...updatedTransaction }, { transaction: sequelizeTransaction });
         transaction = (await existingTransaction.reload({
           transaction: sequelizeTransaction,
-          include: [TransactionEvent, MeterValue],
+          include: [
+            {
+              model: TransactionEvent,
+              as: Transaction.TRANSACTION_EVENTS_ALIAS,
+            },
+            MeterValue,
+          ],
         })) as Transaction;
       } else {
         updatedTransaction.set('isActive', value.eventType !== TransactionEventEnumType.Ended);
