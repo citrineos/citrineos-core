@@ -104,7 +104,7 @@ export class ConfigurationModule extends AbstractModule {
   protected _bootRepository: IBootRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _messageInfoRepository: IMessageInfoRepository;
-  protected bootService: BootNotificationService;
+  protected _bootService: BootNotificationService;
 
   /**
    * Constructor
@@ -178,7 +178,7 @@ export class ConfigurationModule extends AbstractModule {
       this._deviceModelRepository,
     );
 
-    this.bootService = new BootNotificationService(this._bootRepository);
+    this._bootService = new BootNotificationService(this._bootRepository);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -213,14 +213,14 @@ export class ConfigurationModule extends AbstractModule {
 
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
     const bootConfig = await this._bootRepository.readByKey(stationId);
-    const bootStatus = this.bootService.determineBootStatus(
+    const bootStatus = this._bootService.determineBootStatus(
       bootConfig,
       this._config.modules.configuration,
     );
 
     // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
     const bootNotificationResponse: BootNotificationResponse =
-      this.bootService.createBootNotificationResponse(
+      this._bootService.createBootNotificationResponse(
         bootConfig,
         bootStatus,
         this._config.modules.configuration,
@@ -278,7 +278,7 @@ export class ConfigurationModule extends AbstractModule {
 
       // Update charger-specific boot config with details of most recently sent BootNotificationResponse
       const bootConfigDbEntity: Boot | undefined =
-        await this.bootService.updateBootConfig(
+        await this._bootService.updateBootConfig(
           bootNotificationResponse,
           stationId,
         );
