@@ -26,6 +26,7 @@ import {
   IMessageSender,
   MeterValuesRequest,
   MeterValuesResponse,
+  MeterValueType,
   MeterValueUtils,
   OcppError,
   ReportDataType,
@@ -145,8 +146,8 @@ export class TransactionsModule extends AbstractModule {
    * If no `tariffRepository` is provided, a default {@link sequelize:tariffRepository} instance is
    * created and used.
    *
-   * @param {SequelizeChargingStationSecurityInfoRepository} [chargingStationSecurityInfoRepository] - An optional parameter of type {@link ChargingStationSecurityInfoRepository} whihc represents a repository for accessing
-   * and manipulating security information related to a charging station.
+   * @param {SequelizeChargingStationSecurityInfoRepository} [chargingStationSecurityInfoRepository] - An optional parameter of type {@link SequelizeChargingStationSecurityInfoRepository} which represents a
+   * repository for accessing and manipulating security information related to a charging station.
    * If no `chargingStationSecurityInfoRepository` is provided, a default {@link sequelize:chargingStationSecurityInfoRepository} instance is
    * created and used.
    *
@@ -336,6 +337,12 @@ export class TransactionsModule extends AbstractModule {
         );
       }
 
+      if (transactionEvent.meterValue) {
+        await this.validateMeterValues(stationId, transactionEvent.meterValue);
+      }
+
+      // validate public key, do we need to throw here though...?
+
       this.sendCallResultWithMessage(message, response).then(
         (messageConfirmation) => {
           this._logger.debug(
@@ -360,52 +367,16 @@ export class TransactionsModule extends AbstractModule {
 
     const meterValues = message.payload.meterValue;
     const stationId = message.context.stationId;
-    let anyInvalidKeys = false;
 
-    const expectPublicKey =
-      await this._deviceModelRepository.readAllByQuerystring({
-        stationId,
-        component_instance: 'OCPPCommCtrlr',
-        variable_instance: 'PublicKeyWithSignedMeterValue',
-      });
+    await Promise.all(meterValues.map(meterValue => this.transactionEventRepository.createMeterValue(meterValue)));
 
-    for (const meterValue of meterValues) {
-      await this.transactionEventRepository.createMeterValue(meterValue);
+    const anyInvalidMeterValues = await this.validateMeterValues(stationId, meterValues);
 
-      if (expectPublicKey.length > 0 && expectPublicKey[0].value === 'true') {
-        for (const sampledValue of meterValue.sampledValue) {
-          const incomingPublicKey =
-            sampledValue.signedMeterValue?.publicKey ?? '';
-          const incomingPublicKeyIsValid =
-            await this.isPublicKeyValid(incomingPublicKey);
-
-          if (incomingPublicKey.length > 0) {
-            if (this._signedMeterValuesConfiguration && incomingPublicKeyIsValid) {
-              await this._chargingStationSecurityInfoRepository.readOrCreateChargingStationInfo(
-                stationId,
-                this._signedMeterValuesConfiguration.publicKeyFileName,
-              );
-            } else {
-              anyInvalidKeys = true;
-            }
-          } else {
-            const existingPublicKey =
-              await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileName(
-                stationId,
-              );
-            anyInvalidKeys =
-              anyInvalidKeys ||
-              !(await this.isPublicKeyValid(existingPublicKey));
-          }
-        }
-      }
-    }
-
-    if (anyInvalidKeys) {
+    if (anyInvalidMeterValues) {
       throw new OcppError(
         message.context.correlationId,
         ErrorCode.SecurityError,
-        'One or more MeterValues have an invalid publicKey.',
+        'One or more MeterValues have an invalid signature.',
       );
     }
 
@@ -746,5 +717,51 @@ export class TransactionsModule extends AbstractModule {
     ).toString();
 
     return retrievedPublicKey === Buffer.from(publicKey, 'base64').toString();
+  }
+
+  private async validateMeterValues(
+    stationId: string,
+    meterValues: [MeterValueType, ...MeterValueType[]]
+  ): Promise<boolean> {
+    let anyInvalidMeterValues = false;
+
+    const expectPublicKey =
+      await this._deviceModelRepository.readAllByQuerystring({
+        stationId,
+        component_instance: 'OCPPCommCtrlr',
+        variable_instance: 'PublicKeyWithSignedMeterValue',
+      });
+
+    for (const meterValue of meterValues) {
+      if (expectPublicKey.length > 0 && expectPublicKey[0].value === 'true') {
+        for (const sampledValue of meterValue.sampledValue) {
+          const incomingPublicKey =
+            sampledValue.signedMeterValue?.publicKey ?? '';
+          const incomingPublicKeyIsValid =
+            await this.isPublicKeyValid(incomingPublicKey);
+
+          if (incomingPublicKey.length > 0) {
+            if (this._signedMeterValuesConfiguration && incomingPublicKeyIsValid) {
+              await this._chargingStationSecurityInfoRepository.readOrCreateChargingStationInfo(
+                stationId,
+                this._signedMeterValuesConfiguration.publicKeyFileName,
+              );
+            } else {
+              anyInvalidMeterValues = true;
+            }
+          } else {
+            const existingPublicKey =
+              await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileName(
+                stationId,
+              );
+            anyInvalidMeterValues =
+              anyInvalidMeterValues ||
+              !(await this.isPublicKeyValid(existingPublicKey));
+          }
+        }
+      }
+    }
+
+    return anyInvalidMeterValues;
   }
 }
