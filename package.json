@@ -13,6 +13,7 @@
   },
   "scripts": {
     "install-all": "npm i --workspaces --verbose",
+    "copy-assets": "cp -rv Server/src/assets Server/dist/assets",
     "build": "tsc --build --verbose",
     "fresh": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json node_modules **/node_modules **/**/node_modules && npm run clean",
     "clean": "rm -rf dist **/dist **/**/dist tsconfig.tsbuildinfo **/tsconfig.tsbuildinfo **/**/tsconfig.tsbuildinfo",
@@ -24,6 +25,7 @@
     "lint-fix": "npm run prettier && npx eslint --ext .ts --fix ./",
     "prettier": "prettier --write .",
     "fresh-and-install-all": "npm run fresh && npm run install-all",
+    "sync-db": "ts-node ./db.sync.ts",
     "start-everest": "npm run start-everest --prefix ./Server",
     "start-everest-windows": "npm run start-everest-windows --prefix ./Server"
   },
