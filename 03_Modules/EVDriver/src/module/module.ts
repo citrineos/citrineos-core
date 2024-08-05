@@ -197,16 +197,16 @@ export class EVDriverModule extends AbstractModule {
       new sequelize.SequelizeTariffRepository(config, logger);
     this._transactionEventRepository =
       transactionEventRepository ||
-      new sequelize.SequelizeTransactionEventRepository(config, this._logger);
+      new sequelize.SequelizeTransactionEventRepository(config, logger);
     this._chargingProfileRepository =
       chargingProfileRepository ||
-      new sequelize.SequelizeChargingProfileRepository(config, this._logger);
+      new sequelize.SequelizeChargingProfileRepository(config, logger);
     this._reservationRepository =
       reservationRepository ||
-      new sequelize.SequelizeReservationRepository(config, this._logger);
+      new sequelize.SequelizeReservationRepository(config, logger);
     this._callMessageRepository =
       callMessageRepository ||
-      new sequelize.SequelizeCallMessageRepository(config, this._logger);
+      new sequelize.SequelizeCallMessageRepository(config, logger);
 
     this._certificateAuthorityService =
       certificateAuthorityService ||

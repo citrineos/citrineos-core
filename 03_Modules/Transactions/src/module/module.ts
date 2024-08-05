@@ -195,7 +195,7 @@ export class TransactionsModule extends AbstractModule {
       new sequelize.SequelizeTariffRepository(config, logger);
     this._reservationRepository =
       reservationRepository ||
-      new sequelize.SequelizeReservationRepository(config, this._logger);
+      new sequelize.SequelizeReservationRepository(config, logger);
 
     this._authorizers = authorizers || [];
 
