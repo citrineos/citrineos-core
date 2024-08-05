@@ -18,6 +18,7 @@ import {
   HandlerProperties,
   ICache,
   IdTokenInfoType,
+  IdTokenType,
   IMessage,
   IMessageHandler,
   IMessageSender,
@@ -49,7 +50,12 @@ import {
   Variable,
   VariableAttribute,
 } from '@citrineos/data';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
+import {
+  IAuthorizer,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  Timer,
+} from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 
@@ -74,6 +80,8 @@ export class TransactionsModule extends AbstractModule {
   protected _locationRepository: ILocationRepository;
   protected _tariffRepository: ITariffRepository;
   protected _reservationRepository: IReservationRepository;
+
+  private _authorizers: IAuthorizer[];
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
   private readonly _costUpdatedInterval: number | undefined;
@@ -130,6 +138,9 @@ export class TransactionsModule extends AbstractModule {
    * @param {IReservationRepository} [reservationRepository] - An optional parameter of type {@link IReservationRepository}
    * which represents a repository for accessing and manipulating reservation data.
    * If no `reservationRepository` is provided, a default {@link sequelize:reservationRepository} instance is created and used.
+   *
+   * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
+   * a list of authorizers that can be used to authorize requests.
    */
   constructor(
     config: SystemConfig,
@@ -144,6 +155,7 @@ export class TransactionsModule extends AbstractModule {
     locationRepository?: ILocationRepository,
     tariffRepository?: ITariffRepository,
     reservationRepository?: IReservationRepository,
+    authorizers?: IAuthorizer[],
   ) {
     super(
       config,
@@ -184,6 +196,8 @@ export class TransactionsModule extends AbstractModule {
     this._reservationRepository =
       reservationRepository ||
       new sequelize.SequelizeReservationRepository(config, this._logger);
+
+    this._authorizers = authorizers || [];
 
     this._sendCostUpdatedOnMeterValue =
       config.modules.transactions.sendCostUpdatedOnMeterValue;
@@ -518,6 +532,19 @@ export class TransactionsModule extends AbstractModule {
             // TODO: Determine how to check for NotAllowedTypeEVSE, NotAtThisLocation, NotAtThisTime, NoCredit
             // TODO: allow for a 'real time auth' type call to fetch token status.
             transactionEventResponse.idTokenInfo = idTokenInfo;
+          }
+          for (const authorizer of this._authorizers) {
+            if (
+              transactionEventResponse.idTokenInfo.status !==
+              AuthorizationStatusEnumType.Accepted
+            ) {
+              break;
+            }
+            const result: Partial<IdTokenType> = await authorizer.authorize(
+              authorization,
+              message.context,
+            );
+            Object.assign(transactionEventResponse.idTokenInfo, result);
           }
         } else {
           // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
