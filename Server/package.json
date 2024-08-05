@@ -12,6 +12,7 @@
     "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
     "fresh": "rm -rf node_modules package-lock.json && npm run clean",
     "compile": "npm run clean && tsc -p tsconfig.json",
+    "copy-assets": "ts-node ./copy-assets.ts",
     "start-unix": "APP_NAME=all APP_ENV=local nodemon",
     "start-windows": "set APP_NAME=all&& set APP_ENV=local&& RefreshEnv.cmd && npx nodemon",
     "start-docker": "nodemon",
