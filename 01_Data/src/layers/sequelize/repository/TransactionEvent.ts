@@ -80,7 +80,13 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         await existingTransaction.update({ ...updatedTransaction }, { transaction: sequelizeTransaction });
         transaction = (await existingTransaction.reload({
           transaction: sequelizeTransaction,
-          include: [TransactionEvent, MeterValue],
+          include: [
+            {
+              model: TransactionEvent,
+              as: Transaction.TRANSACTION_EVENTS_ALIAS,
+            },
+            MeterValue,
+          ],
         })) as Transaction;
       } else {
         updatedTransaction.set('isActive', value.eventType !== TransactionEventEnumType.Ended);
@@ -136,7 +142,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       this.emit('created', [event]);
 
       await transaction.reload({
-        include: [{ model: TransactionEvent, include: [IdToken] }, MeterValue, Evse],
+        include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, Evse],
         transaction: sequelizeTransaction,
       });
       await this.calculateAndUpdateTotalKwh(transaction);
@@ -203,6 +209,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         include: [
           {
             model: TransactionEvent,
+            as: Transaction.TRANSACTION_EVENTS_ALIAS,
             include: [
               {
                 model: IdToken,
@@ -229,14 +236,14 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   findByTransactionId(transactionId: string): Promise<Transaction | undefined> {
     return this.transaction.readOnlyOneByQuery({
       where: { transactionId },
-      include: [{ model: TransactionEvent, include: [IdToken] }, MeterValue, Evse],
+      include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, Evse],
     });
   }
 
   async getTransactions(dateFrom?: Date, dateTo?: Date, offset?: number, limit?: number): Promise<Transaction[]> {
     const queryOptions: any = {
       where: {},
-      include: [{ model: TransactionEvent, include: [IdToken] }, MeterValue, Evse],
+      include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, Evse],
     };
 
     if (dateFrom) {
@@ -310,7 +317,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
           stationId,
           isActive: true,
         },
-        include: [{ model: TransactionEvent, include: [IdToken] }, MeterValue, { model: Evse, where: { id: evseId } }],
+        include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, { model: Evse, where: { id: evseId } }],
       })
       .then((transactions) => {
         if (transactions.length > 1) {
