@@ -25,6 +25,7 @@ import {
   ICache,
   IdTokenEnumType,
   IdTokenInfoType,
+  IdTokenType,
   IMessage,
   IMessageHandler,
   IMessageSender,
@@ -53,6 +54,7 @@ import {
 import {
   CertificateAuthorityService,
   generateRequestId,
+  IAuthorizer,
   RabbitMqReceiver,
   RabbitMqSender,
   Timer,
@@ -89,6 +91,7 @@ export class EVDriverModule extends AbstractModule {
   protected _chargingProfileRepository: IChargingProfileRepository;
 
   private _certificateAuthorityService: CertificateAuthorityService;
+  private _authorizers: IAuthorizer[];
 
   /**
    * This is the constructor function that initializes the {@link EVDriverModule}.
@@ -129,6 +132,9 @@ export class EVDriverModule extends AbstractModule {
    *
    * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
    * type {@link CertificateAuthorityService} which handles certificate authority operations.
+   *
+   * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
+   * a list of authorizers that can be used to authorize requests.
    */
   constructor(
     config: SystemConfig,
@@ -142,6 +148,7 @@ export class EVDriverModule extends AbstractModule {
     transactionEventRepository?: ITransactionEventRepository,
     chargingProfileRepository?: IChargingProfileRepository,
     certificateAuthorityService?: CertificateAuthorityService,
+    authorizers?: IAuthorizer[],
   ) {
     super(
       config,
@@ -181,6 +188,8 @@ export class EVDriverModule extends AbstractModule {
       certificateAuthorityService ||
       new CertificateAuthorityService(config, logger);
 
+    this._authorizers = authorizers || [];
+
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
@@ -211,6 +220,7 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('Authorize received:', message, props);
     const request: AuthorizeRequest = message.payload;
+    const context = message.context;
     const response: AuthorizeResponse = {
       idTokenInfo: {
         status: AuthorizationStatusEnumType.Unknown,
@@ -258,7 +268,7 @@ export class EVDriverModule extends AbstractModule {
       }
     }
 
-    this._authorizeRepository
+    await this._authorizeRepository
       .readOnlyOneByQuerystring({ ...request.idToken })
       .then(async (authorization) => {
         if (authorization) {
@@ -391,6 +401,20 @@ export class EVDriverModule extends AbstractModule {
                     }
                   }
                 }
+              }
+
+              for (const authorizer of this._authorizers) {
+                if (
+                  response.idTokenInfo.status !==
+                  AuthorizationStatusEnumType.Accepted
+                ) {
+                  break;
+                }
+                const result: Partial<IdTokenType> = await authorizer.authorize(
+                  authorization,
+                  context,
+                );
+                Object.assign(response.idTokenInfo, result);
               }
             } else {
               // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit

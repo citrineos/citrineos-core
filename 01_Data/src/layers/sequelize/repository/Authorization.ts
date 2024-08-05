@@ -3,13 +3,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, SystemConfig, type AuthorizationData, type IdTokenType } from '@citrineos/base';
-import { Op, type BuildOptions, type Includeable } from 'sequelize';
-import { type AuthorizationQuerystring, type IAuthorizationRepository, type AuthorizationRestrictions } from '../../../interfaces';
+import { type AuthorizationData, CrudRepository, type IdTokenType, SystemConfig } from '@citrineos/base';
+import { type BuildOptions, type Includeable, Op, Transaction } from 'sequelize';
+import { type AuthorizationQuerystring, type AuthorizationRestrictions, type IAuthorizationRepository } from '../../../interfaces';
 import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from '../model/Authorization';
 import { SequelizeRepository } from './Base';
 import { Sequelize } from 'sequelize-typescript';
-import { Logger, ILogObj } from 'tslog';
+import { ILogObj, Logger } from 'tslog';
 import { IdTokenAdditionalInfo } from '../model/Authorization/IdTokenAdditionalInfo';
 
 export class SequelizeAuthorizationRepository extends SequelizeRepository<Authorization> implements IAuthorizationRepository {
@@ -34,15 +34,28 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     this.idTokenAdditionalInfo = idTokenAdditionalInfo ? idTokenAdditionalInfo : new SequelizeRepository<IdTokenAdditionalInfo>(config, IdTokenAdditionalInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createOrUpdateByQuerystring(value: AuthorizationData, query: AuthorizationQuerystring): Promise<Authorization | undefined> {
+  async createOrUpdateByQuerystring(value: AuthorizationData, query: AuthorizationQuerystring, transaction?: Transaction): Promise<Authorization | undefined> {
     if (value.idToken.idToken !== query.idToken || value.idToken.type !== query.type) {
       throw new Error('Authorization idToken does not match query');
     }
 
-    const savedAuthorizationModel: Authorization | undefined = await this.readOnlyOneByQuerystring(query);
+    const savedAuthorizationModel = await Authorization.findOne({
+      include: [
+        {
+          model: IdToken,
+          where: {
+            idToken: query.idToken,
+            type: query.type,
+          },
+        },
+      ],
+      transaction,
+    });
+
     const authorizationModel = savedAuthorizationModel ?? Authorization.build({}, this._createInclude(value));
 
-    authorizationModel.idTokenId = (await this._updateIdToken(value.idToken)).id;
+    const updatedIdToken = await this._updateIdToken(value.idToken, transaction);
+    authorizationModel.idTokenId = updatedIdToken.id;
 
     if (value.idTokenInfo) {
       const valueIdTokenInfo = IdTokenInfo.build({
@@ -50,24 +63,29 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
       });
       // Explicitly overwrite id with undefined to avoid mapping null onto the existing id in the for loop
       valueIdTokenInfo.id = valueIdTokenInfo.id ?? undefined;
+
       if (authorizationModel.idTokenInfoId) {
-        let savedIdTokenInfo = await this.idTokenInfo.readOnlyOneByQuery({
+        const savedIdTokenInfo = await IdTokenInfo.findOne({
           where: { id: authorizationModel.idTokenInfoId },
           include: [{ model: IdToken, include: [AdditionalInfo] }],
+          transaction,
         });
+
         if (!savedIdTokenInfo) {
           throw new Error(`IdTokenInfo for foreign key ${authorizationModel.idTokenInfoId} not found`);
         }
+
         Object.keys(valueIdTokenInfo.dataValues).forEach((k) => {
           const updatedValue = valueIdTokenInfo.getDataValue(k);
           if (updatedValue !== undefined) {
             // Null can still be used to remove data
             /* eslint-disable-next-line  @typescript-eslint/no-non-null-assertion */
-            savedIdTokenInfo!.setDataValue(k, valueIdTokenInfo.getDataValue(k));
+            savedIdTokenInfo!.setDataValue(k, updatedValue);
           }
         });
+
         if (value.idTokenInfo.groupIdToken) {
-          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken);
+          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken, transaction);
           if (!savedIdTokenInfo.groupIdTokenId) {
             savedIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
           }
@@ -75,20 +93,22 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
           savedIdTokenInfo.groupIdTokenId = undefined;
           savedIdTokenInfo.groupIdToken = undefined;
         }
-        savedIdTokenInfo = await this.idTokenInfo.create(savedIdTokenInfo);
+        await savedIdTokenInfo.save({ transaction });
       } else {
         if (value.idTokenInfo.groupIdToken) {
-          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken);
+          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken, transaction);
           valueIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
         }
-        authorizationModel.idTokenInfoId = (await this.idTokenInfo.create(valueIdTokenInfo)).id;
+        const createdIdTokenInfo = await valueIdTokenInfo.save({ transaction });
+        authorizationModel.idTokenInfoId = createdIdTokenInfo.id;
       }
     } else if (authorizationModel.idTokenInfoId) {
       // Remove idTokenInfo
       authorizationModel.idTokenInfoId = undefined;
       authorizationModel.idTokenInfo = undefined;
     }
-    return await this.create(authorizationModel);
+
+    return await authorizationModel.save({ transaction });
   }
 
   async updateRestrictionsByQuerystring(value: AuthorizationRestrictions, query: AuthorizationQuerystring): Promise<Authorization[]> {
@@ -150,12 +170,11 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     return { include };
   }
 
-  private async _updateIdToken(value: IdTokenType): Promise<IdToken> {
-    const savedIdTokenModel = (
-      await this.idToken.readOrCreateByQuery({
-        where: { idToken: value.idToken, type: value.type },
-      })
-    )[0];
+  private async _updateIdToken(value: IdTokenType, transaction?: Transaction): Promise<IdToken> {
+    const [savedIdTokenModel] = await IdToken.findOrCreate({
+      where: { idToken: value.idToken, type: value.type },
+      transaction,
+    });
 
     const additionalInfoIds: number[] = [];
 
@@ -163,21 +182,34 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     // and any relations between them and the IdToken that don't exist
     if (value.additionalInfo) {
       for (const valueAdditionalInfo of value.additionalInfo) {
-        const savedAdditionalInfo = (
-          await this.additionalInfo.readOrCreateByQuery({
-            where: {
-              additionalIdToken: valueAdditionalInfo.additionalIdToken,
-              type: valueAdditionalInfo.type,
-            },
-          })
-        )[0];
-        await this.idTokenAdditionalInfo.readOrCreateByQuery({ where: { idTokenId: savedIdTokenModel.id, additionalInfoId: savedAdditionalInfo.id } });
+        const [savedAdditionalInfo] = await AdditionalInfo.findOrCreate({
+          where: {
+            additionalIdToken: valueAdditionalInfo.additionalIdToken,
+            type: valueAdditionalInfo.type,
+          },
+          transaction,
+        });
+
+        await IdTokenAdditionalInfo.findOrCreate({
+          where: {
+            idTokenId: savedIdTokenModel.id,
+            additionalInfoId: savedAdditionalInfo.id,
+          },
+          transaction,
+        });
+
         additionalInfoIds.push(savedAdditionalInfo.id);
       }
     }
     // Remove all associations between idToken and additionalInfo that no longer exist
-    await this.idTokenAdditionalInfo.deleteAllByQuery({ where: { idTokenId: savedIdTokenModel.id, additionalInfoId: { [Op.notIn]: additionalInfoIds } } });
+    await IdTokenAdditionalInfo.destroy({
+      where: {
+        idTokenId: savedIdTokenModel.id,
+        additionalInfoId: { [Op.notIn]: additionalInfoIds },
+      },
+      transaction,
+    });
 
-    return savedIdTokenModel.reload({ include: [AdditionalInfo] });
+    return savedIdTokenModel.reload({ include: [AdditionalInfo], transaction });
   }
 }
