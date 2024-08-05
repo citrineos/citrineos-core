@@ -2,11 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  AuthorizeRequest,
-  IdTokenInfoType,
-  IMessageContext,
-} from '@citrineos/base';
+import { IdTokenInfoType, IMessageContext } from '@citrineos/base';
 import { Authorization } from '@citrineos/data';
 
 export interface IAuthorizer {
