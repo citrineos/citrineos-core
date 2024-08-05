@@ -6,10 +6,10 @@
 
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import {FastifyInstance, FastifyRequest} from 'fastify';
 import fs from 'fs';
-import { HttpHeader, HttpStatus, SystemConfig, UnauthorizedError } from '@citrineos/base';
-import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
+import {HttpHeader, HttpStatus, SystemConfig, UnauthorizedError} from '@citrineos/base';
+import {OpenAPIV2, OpenAPIV3, OpenAPIV3_1} from 'openapi-types';
 import * as FastifyAuth from '@fastify/auth';
 import * as packageJson from '../../package.json';
 
@@ -184,12 +184,6 @@ const registerFastifyAuth = async (server: FastifyInstance) => {
       try {
         const token = getAuthorizationTokenFromRequest(request);
         console.log('Received authorization token', token);
-        /*if (token === '123') { // todo
-          // todo managing real auth but for now using hard coded token
-          done(); // pass an error if the authentication fails
-        } else {
-          throw new UnauthorizedError('Token not authorized');
-        }*/
         done();
       } catch (e) {
         reply.code(HttpStatus.UNAUTHORIZED);
