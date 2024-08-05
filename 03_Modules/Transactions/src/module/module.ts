@@ -26,11 +26,9 @@ import {
   IMessageSender,
   MeterValuesRequest,
   MeterValuesResponse,
-  MeterValueType,
   MeterValueUtils,
   OcppError,
   ReportDataType,
-  SignedMeterValuesConfig,
   StatusNotificationRequest,
   StatusNotificationResponse,
   SystemConfig,
@@ -49,7 +47,6 @@ import {
   ITransactionEventRepository,
   sequelize,
   SequelizeRepository,
-  SequelizeChargingStationSecurityInfoRepository,
   Tariff,
   Transaction,
   Variable,
@@ -59,6 +56,7 @@ import {
   IAuthorizer,
   RabbitMqReceiver,
   RabbitMqSender,
+  SignedMeterValuesUtil,
   Timer,
 } from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
@@ -85,15 +83,13 @@ export class TransactionsModule extends AbstractModule {
   protected _locationRepository: ILocationRepository;
   protected _tariffRepository: ITariffRepository;
   protected _fileAccess: IFileAccess;
-  protected _chargingStationSecurityInfoRepository: SequelizeChargingStationSecurityInfoRepository;
 
   private readonly _authorizers: IAuthorizer[];
 
+  private readonly _signedMeterValuesUtil: SignedMeterValuesUtil;
+
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
   private readonly _costUpdatedInterval: number | undefined;
-  private readonly _signedMeterValuesConfiguration:
-    | SignedMeterValuesConfig
-    | undefined;
 
   /**
    * This is the constructor function that initializes the {@link TransactionsModule}.
@@ -146,11 +142,6 @@ export class TransactionsModule extends AbstractModule {
    * If no `tariffRepository` is provided, a default {@link sequelize:tariffRepository} instance is
    * created and used.
    *
-   * @param {SequelizeChargingStationSecurityInfoRepository} [chargingStationSecurityInfoRepository] - An optional parameter of type {@link SequelizeChargingStationSecurityInfoRepository} which represents a
-   * repository for accessing and manipulating security information related to a charging station.
-   * If no `chargingStationSecurityInfoRepository` is provided, a default {@link sequelize:chargingStationSecurityInfoRepository} instance is
-   * created and used.
-   *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
    */
@@ -167,7 +158,6 @@ export class TransactionsModule extends AbstractModule {
     componentRepository?: CrudRepository<Component>,
     locationRepository?: ILocationRepository,
     tariffRepository?: ITariffRepository,
-    chargingStationSecurityInfoRepository?: SequelizeChargingStationSecurityInfoRepository,
     authorizers?: IAuthorizer[],
   ) {
     super(
@@ -208,19 +198,14 @@ export class TransactionsModule extends AbstractModule {
     this._tariffRepository =
       tariffRepository ||
       new sequelize.SequelizeTariffRepository(config, logger);
-    this._chargingStationSecurityInfoRepository =
-      chargingStationSecurityInfoRepository ||
-      new sequelize.SequelizeChargingStationSecurityInfoRepository(
-        config,
-        logger,
-      );
 
     this._authorizers = authorizers || [];
+
+    this._signedMeterValuesUtil = new SignedMeterValuesUtil(fileAccess, config, this._logger, this._deviceModelRepository);
 
     this._sendCostUpdatedOnMeterValue =
       config.modules.transactions.sendCostUpdatedOnMeterValue;
     this._costUpdatedInterval = config.modules.transactions.costUpdatedInterval;
-    this._signedMeterValuesConfiguration = config.modules.transactions.signedMeterValuesConfiguration;
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -338,7 +323,7 @@ export class TransactionsModule extends AbstractModule {
       }
 
       if (transactionEvent.meterValue) {
-        await this.validateMeterValues(stationId, transactionEvent.meterValue);
+        await this._signedMeterValuesUtil.validateMeterValues(stationId, transactionEvent.meterValue);
       }
 
       // validate public key, do we need to throw here though...?
@@ -370,7 +355,7 @@ export class TransactionsModule extends AbstractModule {
 
     await Promise.all(meterValues.map(meterValue => this.transactionEventRepository.createMeterValue(meterValue)));
 
-    const anyInvalidMeterValues = await this.validateMeterValues(stationId, meterValues);
+    const anyInvalidMeterValues = await this._signedMeterValuesUtil.validateMeterValues(stationId, meterValues);
 
     if (anyInvalidMeterValues) {
       throw new OcppError(
@@ -700,68 +685,5 @@ export class TransactionsModule extends AbstractModule {
         });
       }
     }, costUpdatedInterval * 1000);
-  }
-
-  private async isPublicKeyValid(publicKey: string): Promise<boolean> {
-    if (
-      !this._signedMeterValuesConfiguration?.publicKeyFileName ||
-      publicKey.length === 0
-    ) {
-      return false;
-    }
-
-    const retrievedPublicKey = (
-      await this._fileAccess.getFile(
-        this._signedMeterValuesConfiguration.publicKeyFileName,
-      )
-    ).toString();
-
-    return retrievedPublicKey === Buffer.from(publicKey, 'base64').toString();
-  }
-
-  private async validateMeterValues(
-    stationId: string,
-    meterValues: [MeterValueType, ...MeterValueType[]]
-  ): Promise<boolean> {
-    let anyInvalidMeterValues = false;
-
-    const expectPublicKey =
-      await this._deviceModelRepository.readAllByQuerystring({
-        stationId,
-        component_instance: 'OCPPCommCtrlr',
-        variable_instance: 'PublicKeyWithSignedMeterValue',
-      });
-
-    for (const meterValue of meterValues) {
-      if (expectPublicKey.length > 0 && expectPublicKey[0].value === 'true') {
-        for (const sampledValue of meterValue.sampledValue) {
-          const incomingPublicKey =
-            sampledValue.signedMeterValue?.publicKey ?? '';
-          const incomingPublicKeyIsValid =
-            await this.isPublicKeyValid(incomingPublicKey);
-
-          if (incomingPublicKey.length > 0) {
-            if (this._signedMeterValuesConfiguration && incomingPublicKeyIsValid) {
-              await this._chargingStationSecurityInfoRepository.readOrCreateChargingStationInfo(
-                stationId,
-                this._signedMeterValuesConfiguration.publicKeyFileName,
-              );
-            } else {
-              anyInvalidMeterValues = true;
-            }
-          } else {
-            const existingPublicKey =
-              await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileName(
-                stationId,
-              );
-            anyInvalidMeterValues =
-              anyInvalidMeterValues ||
-              !(await this.isPublicKeyValid(existingPublicKey));
-          }
-        }
-      }
-    }
-
-    return anyInvalidMeterValues;
   }
 }
