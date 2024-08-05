@@ -34,12 +34,24 @@ import addFormats from 'ajv-formats';
 import fastify, { type FastifyInstance } from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
-import { ConfigurationModule, ConfigurationModuleApi } from '@citrineos/configuration';
-import { TransactionsModule, TransactionsModuleApi } from '@citrineos/transactions';
-import { CertificatesModule, CertificatesModuleApi } from '@citrineos/certificates';
+import {
+  ConfigurationModule,
+  ConfigurationModuleApi,
+} from '@citrineos/configuration';
+import {
+  TransactionsModule,
+  TransactionsModuleApi,
+} from '@citrineos/transactions';
+import {
+  CertificatesModule,
+  CertificatesModuleApi,
+} from '@citrineos/certificates';
 import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
-import { SmartChargingModule, SmartChargingModuleApi } from '@citrineos/smartcharging';
+import {
+  SmartChargingModule,
+  SmartChargingModuleApi,
+} from '@citrineos/smartcharging';
 import { RepositoryStore, sequelize } from '@citrineos/data';
 import {
   type FastifyRouteSchemaDef,
@@ -371,6 +383,8 @@ export class CitrineOSServer {
   }
 
   private initAllModules() {
+    this.ocpiRealTimeAuthorizer = Container.get(RealTimeAuthorizer);
+
     if (this._config.modules.certificates) {
       const module = new CertificatesModule(
         this._config,
@@ -413,7 +427,6 @@ export class CitrineOSServer {
     }
 
     if (this._config.modules.evdriver) {
-      this.ocpiRealTimeAuthorizer = Container.get(RealTimeAuthorizer);
       const module = new EVDriverModule(
         this._config,
         this._cache,
@@ -426,7 +439,7 @@ export class CitrineOSServer {
         undefined,
         undefined,
         undefined,
-        [this.ocpiRealTimeAuthorizer]
+        [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);
       this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
@@ -492,6 +505,7 @@ export class CitrineOSServer {
         this._repositoryStore.componentRepository,
         this._repositoryStore.locationRepository,
         this._repositoryStore.tariffRepository,
+        [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);
       this.apis.push(

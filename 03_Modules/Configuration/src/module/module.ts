@@ -6,9 +6,7 @@
 import {
   AbstractModule,
   AsHandler,
-  AttributeEnumType,
   BOOT_STATUS,
-  BootConfig,
   BootNotificationRequest,
   BootNotificationResponse,
   CALL_SCHEMA_MAP,
@@ -36,7 +34,6 @@ import {
   IMessageHandler,
   IMessageSender,
   MessageInfoType,
-  MutabilityEnumType,
   NotifyDisplayMessagesRequest,
   NotifyDisplayMessagesResponse,
   PublishFirmwareResponse,
@@ -73,7 +70,8 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
-import { DeviceModelService } from './services';
+import { DeviceModelService } from './DeviceModelService';
+import { BootNotificationService } from './BootNotificationService';
 
 /**
  * Component that handles Configuration related messages.
@@ -106,6 +104,7 @@ export class ConfigurationModule extends AbstractModule {
   protected _bootRepository: IBootRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _messageInfoRepository: IMessageInfoRepository;
+  protected _bootService: BootNotificationService;
 
   /**
    * Constructor
@@ -179,6 +178,8 @@ export class ConfigurationModule extends AbstractModule {
       this._deviceModelRepository,
     );
 
+    this._bootService = new BootNotificationService(this._bootRepository);
+
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
@@ -212,53 +213,18 @@ export class ConfigurationModule extends AbstractModule {
 
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
     const bootConfig = await this._bootRepository.readByKey(stationId);
-    let bootStatus = bootConfig
-      ? bootConfig.status
-      : this._config.modules.configuration.unknownChargerStatus;
+    const bootStatus = this._bootService.determineBootStatus(
+      bootConfig,
+      this._config.modules.configuration,
+    );
 
-    // Pending status only stays if there are actions to take for configuration
-    if (bootStatus === RegistrationStatusEnumType.Pending) {
-      let needToGetBaseReport =
-        this._config.modules.configuration.getBaseReportOnPending;
-      let needToSetVariables = false;
-      if (bootConfig) {
-        if (
-          bootConfig.getBaseReportOnPending !== undefined &&
-          bootConfig.getBaseReportOnPending !== null
-        ) {
-          needToGetBaseReport = bootConfig.getBaseReportOnPending;
-        }
-        if (
-          bootConfig.pendingBootSetVariables &&
-          bootConfig.pendingBootSetVariables.length > 0
-        ) {
-          needToSetVariables = true;
-        }
-      }
-      if (
-        !needToGetBaseReport &&
-        !needToSetVariables &&
-        this._config.modules.configuration.autoAccept
-      ) {
-        bootStatus = RegistrationStatusEnumType.Accepted;
-      }
-    }
     // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
-    const bootNotificationResponse: BootNotificationResponse = {
-      currentTime: new Date().toISOString(),
-      status: bootStatus,
-      statusInfo: bootConfig?.statusInfo,
-      interval:
-        bootStatus === RegistrationStatusEnumType.Accepted
-          ? // Accepted === heartbeat interval
-            bootConfig?.heartbeatInterval
-            ? bootConfig.heartbeatInterval
-            : this._config.modules.configuration.heartbeatInterval
-          : // Pending or Rejected === boot retry interval
-            bootConfig?.bootRetryInterval
-            ? bootConfig.bootRetryInterval
-            : this._config.modules.configuration.bootRetryInterval,
-    };
+    const bootNotificationResponse: BootNotificationResponse =
+      this._bootService.createBootNotificationResponse(
+        bootConfig,
+        bootStatus,
+        this._config.modules.configuration,
+      );
 
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
     const cachedBootStatus = await this._cache.get(BOOT_STATUS, stationId);
@@ -297,142 +263,12 @@ export class ConfigurationModule extends AbstractModule {
       await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
     // Update device model from boot
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-      {
-        component: {
-          name: 'ChargingStation',
-        },
-        variable: {
-          name: 'Model',
-        },
-        variableAttribute: [
-          {
-            type: AttributeEnumType.Actual,
-            value: chargingStation.model,
-            mutability: MutabilityEnumType.ReadOnly,
-            persistent: true,
-            constant: true,
-          },
-        ],
-      },
+    this._deviceModelService.updateDeviceModel(
+      chargingStation,
       stationId,
       timestamp,
     );
-    await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-      {
-        component: {
-          name: 'ChargingStation',
-        },
-        variable: {
-          name: 'VendorName',
-        },
-        variableAttribute: [
-          {
-            type: AttributeEnumType.Actual,
-            value: chargingStation.vendorName,
-            mutability: MutabilityEnumType.ReadOnly,
-            persistent: true,
-            constant: true,
-          },
-        ],
-      },
-      stationId,
-      timestamp,
-    );
-    if (chargingStation.firmwareVersion) {
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-        {
-          component: {
-            name: 'Controller',
-          },
-          variable: {
-            name: 'FirmwareVersion',
-          },
-          variableAttribute: [
-            {
-              type: AttributeEnumType.Actual,
-              value: chargingStation.firmwareVersion,
-              mutability: MutabilityEnumType.ReadOnly,
-              persistent: true,
-              constant: true,
-            },
-          ],
-        },
-        stationId,
-        timestamp,
-      );
-    }
-    if (chargingStation.serialNumber) {
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-        {
-          component: {
-            name: 'ChargingStation',
-          },
-          variable: {
-            name: 'SerialNumber',
-          },
-          variableAttribute: [
-            {
-              type: AttributeEnumType.Actual,
-              value: chargingStation.serialNumber,
-              mutability: MutabilityEnumType.ReadOnly,
-              persistent: true,
-              constant: true,
-            },
-          ],
-        },
-        stationId,
-        timestamp,
-      );
-    }
-    if (chargingStation.modem) {
-      if (chargingStation.modem.imsi) {
-        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-          {
-            component: {
-              name: 'DataLink',
-            },
-            variable: {
-              name: 'IMSI',
-            },
-            variableAttribute: [
-              {
-                type: AttributeEnumType.Actual,
-                value: chargingStation.modem?.imsi,
-                mutability: MutabilityEnumType.ReadOnly,
-                persistent: true,
-                constant: true,
-              },
-            ],
-          },
-          stationId,
-          timestamp,
-        );
-      }
-      if (chargingStation.modem.iccid) {
-        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-          {
-            component: {
-              name: 'DataLink',
-            },
-            variable: {
-              name: 'ICCID',
-            },
-            variableAttribute: [
-              {
-                type: AttributeEnumType.Actual,
-                value: chargingStation.modem?.iccid,
-                mutability: MutabilityEnumType.ReadOnly,
-                persistent: true,
-                constant: true,
-              },
-            ],
-          },
-          stationId,
-          timestamp,
-        );
-      }
-    }
+
     // Handle post-response actions
     if (bootNotificationResponseMessageConfirmation.success) {
       this._logger.debug(
@@ -441,24 +277,11 @@ export class ConfigurationModule extends AbstractModule {
       );
 
       // Update charger-specific boot config with details of most recently sent BootNotificationResponse
-      let bootConfigDbEntity: Boot | undefined =
-        await this._bootRepository.readByKey(stationId);
-      if (!bootConfigDbEntity) {
-        const unknownChargerBootConfig: BootConfig = {
-          status: bootNotificationResponse.status,
-          statusInfo: bootNotificationResponse.statusInfo,
-        };
-        bootConfigDbEntity = await this._bootRepository.createOrUpdateByKey(
-          unknownChargerBootConfig,
+      const bootConfigDbEntity: Boot | undefined =
+        await this._bootService.updateBootConfig(
+          bootNotificationResponse,
           stationId,
         );
-      }
-      if (!bootConfigDbEntity) {
-        throw new Error('Unable to create/update BootConfig...');
-      } else {
-        bootConfigDbEntity.lastBootTime = bootNotificationResponse.currentTime;
-        await bootConfigDbEntity.save();
-      }
 
       if (
         bootNotificationResponse.status !==
