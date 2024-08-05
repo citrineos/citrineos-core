@@ -6,9 +6,7 @@
 import {
   AbstractModule,
   AsHandler,
-  AttributeEnumType,
   BOOT_STATUS,
-  BootConfig,
   BootNotificationRequest,
   BootNotificationResponse,
   CALL_SCHEMA_MAP,
@@ -36,7 +34,6 @@ import {
   IMessageHandler,
   IMessageSender,
   MessageInfoType,
-  MutabilityEnumType,
   NotifyDisplayMessagesRequest,
   NotifyDisplayMessagesResponse,
   PublishFirmwareResponse,
