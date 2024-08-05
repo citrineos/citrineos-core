@@ -29,8 +29,5 @@
       "type": "number"
     }
   },
-  "required": [
-    "currency",
-    "pricePerKwh"
-  ]
+  "required": ["currency", "pricePerKwh"]
 }

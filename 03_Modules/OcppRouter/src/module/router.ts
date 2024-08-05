@@ -214,7 +214,11 @@ export class MessageRouterImpl
 
   // TODO: identifier may not be unique, may require combination of tenantId and identifier.
   // find way to include tenantId here
-  async onMessage(identifier: string, message: string, timestamp: Date): Promise<boolean> {
+  async onMessage(
+    identifier: string,
+    message: string,
+    timestamp: Date,
+  ): Promise<boolean> {
     this._onMessageCallbacks.get(identifier)?.forEach((callback) => {
       callback(message);
     });
