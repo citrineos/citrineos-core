@@ -4,12 +4,17 @@
   "private": false,
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+    "@types/jest": "^29.5.12",
     "@typescript-eslint/eslint-plugin-tslint": "^7.0.2",
     "concurrently": "^8.2.2",
     "eslint": "8.57.0",
     "eslint-config-prettier": "^9.1.0",
+    "jest": "^29.7.0",
     "prettier": "^3.2.5",
-    "typescript-eslint": "^7.6.0"
+    "ts-jest": "^29.2.3",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^7.6.0",
+    "@faker-js/faker": "^8.4.1"
   },
   "scripts": {
     "install-all": "npm i --workspaces --verbose",
@@ -27,7 +32,8 @@
     "fresh-and-install-all": "npm run fresh && npm run install-all",
     "sync-db": "ts-node ./db.sync.ts",
     "start-everest": "npm run start-everest --prefix ./Server",
-    "start-everest-windows": "npm run start-everest-windows --prefix ./Server"
+    "start-everest-windows": "npm run start-everest-windows --prefix ./Server",
+    "test": "jest --config jest.config.ts"
   },
   "workspaces": [
     "00_Base",
