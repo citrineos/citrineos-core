@@ -76,7 +76,7 @@ Additional Run Configurations should be made for other IDEs (ex VSCode).
 To change necessary configuration for execution outside of `docker-compose`, please adjust the configuration file
 at `50_Server/src/config/envs/local.ts`. Make sure any changes to the local configuration do not make it into your PR.
 
-### Starting the Server
+### Starting the Server (Running in NPM)
 
 To start the CitrineOS server from a unix-like command line, run the following command:
 
@@ -121,6 +121,19 @@ which will wait for the debugger to attach before proceeding with execution.
 
 You can now connect your OCPP 2.0.1 compliant charging stations to the CitrineOS server. Make sure to configure the
 charging stations to point to the server's IP address and port as specified in the config.json file.
+
+### Running `clean` and `fresh`
+
+Our current module structure consists of multiple `npm` submodules that are loaded as dependencies
+running the application. This results in the need to rebuild modules that have any file changes. In
+some cases, in particular when switching between branches, especially when there are changes in the
+package.json, the already built `dist` as well as the already generated `package-lock.json` may
+become invalid.
+
+To alleviate the above, we created the `npm run fresh` and the `npm run clean` commands.
+
+`npm run fresh` - will delete all `node_modules`, `dist`, `tsbuildinfo`, `package-lock.json` and clear cache
+`npm run clean` - sub set of `npm run fresh` will only delete the build files `dist` and `tsbuildinfo`
 
 ## Information on Docker setup
 
