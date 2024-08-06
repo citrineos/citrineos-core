@@ -92,6 +92,13 @@ export const systemConfigInputSchema = z.object({
       port: z.number().int().positive().default(8081).optional(),
       costUpdatedInterval: z.number().int().positive().default(60).optional(),
       sendCostUpdatedOnMeterValue: z.boolean().default(false).optional(),
+      signedMeterValuesConfiguration: z
+        .object({
+          publicKeyFileName: z.string(),
+          privateKeyFileName: z.string(),
+          encryptionMethod: z.string(), // TODO make enum?
+        })
+        .optional(),
     }),
   }),
   data: z.object({
