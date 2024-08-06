@@ -13,7 +13,7 @@ import { ILogObj, Logger } from 'tslog';
 import * as crypto from 'node:crypto';
 
 /**
- * Util to validate signed meter values
+ * Util to process and validate signed meter values
  */
 export class SignedMeterValuesUtil {
   private readonly _fileAccess: IFileAccess;
@@ -61,12 +61,12 @@ export class SignedMeterValuesUtil {
     const expectPublicKey =
       await this._deviceModelRepository.readAllByQuerystring({
         stationId,
-        component_instance: 'OCPPCommCtrlr',
-        variable_instance: 'PublicKeyWithSignedMeterValue',
+        component_name: 'OCPPCommCtrlr',
+        variable_name: 'PublicKeyWithSignedMeterValue',
       });
 
     for (const meterValue of meterValues) {
-      if (expectPublicKey.length > 0 && expectPublicKey[0].value === 'true') {
+      if (expectPublicKey.length > 0 && expectPublicKey[0].value !== 'Never') {
         for (const sampledValue of meterValue.sampledValue) {
           const signedMeterValue = sampledValue.signedMeterValue;
 
@@ -81,14 +81,14 @@ export class SignedMeterValuesUtil {
             if (this._signedMeterValuesConfiguration && incomingPublicKeyIsValid) {
               await this._chargingStationSecurityInfoRepository.readOrCreateChargingStationInfo(
                 stationId,
-                this._signedMeterValuesConfiguration.publicKeyFileName,
+                this._signedMeterValuesConfiguration.publicKeyFileId,
               );
             } else {
               anyInvalidMeterValues = true;
             }
           } else {
             const existingPublicKey =
-              await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileName(
+              await this._chargingStationSecurityInfoRepository.readChargingStationpublicKeyFileId(
                 stationId,
               );
             anyInvalidMeterValues =
@@ -107,38 +107,72 @@ export class SignedMeterValuesUtil {
     const signingMethod = signedMeterValue.signingMethod;
 
     if (
-      !this._signedMeterValuesConfiguration?.publicKeyFileName ||
-      !this._signedMeterValuesConfiguration?.privateKeyFileName ||
+      !this._signedMeterValuesConfiguration?.publicKeyFileId ||
+      !this._signedMeterValuesConfiguration?.privateKeyFileId ||
       this._signedMeterValuesConfiguration?.encryptionMethod !== signingMethod ||
       publicKey.length === 0
     ) {
       return false;
     }
 
-    const retrievedPublicKey = (
+    const retrievedPublicKey = this.formatKey((
       await this._fileAccess.getFile(
-        this._signedMeterValuesConfiguration.publicKeyFileName,
+        this._signedMeterValuesConfiguration.publicKeyFileId,
       )
-    ).toString();
+    ).toString());
 
     if (retrievedPublicKey !== publicKey) {
       return false;
     }
 
-    const retrievedPrivateKey = (
+    const retrievedPrivateKey = this.formatKey((
       await this._fileAccess.getFile(
-        this._signedMeterValuesConfiguration.privateKeyFileName,
+        this._signedMeterValuesConfiguration.privateKeyFileId,
       )
-    )
+    ).toString());
 
     switch (signingMethod) {
-      case 'RSA':
-        const cryptoPrivateKey = await crypto.subtle.importKey('raw', retrievedPrivateKey, { name: 'RSASSA-PKCS1-v1_5', hash: signedMeterValue.encodingMethod}, false, ['decrypt']);
-        const decryptedData = await crypto.subtle.decrypt(signingMethod, cryptoPrivateKey, Buffer.from(signedMeterValue.signedMeterData, 'base64'));
-        return decryptedData.byteLength > 0;
+      case 'RSASSA-PKCS1-v1_5':
+        try {
+          const cryptoPrivateKey = await crypto.subtle.importKey(
+            'pkcs8',
+            this.str2ab(atob(retrievedPrivateKey)),
+            { name: signingMethod, hash: signedMeterValue.encodingMethod},
+            true,
+            ['sign', 'verify']
+          );
+
+          const signatureBuffer = Buffer.from(signedMeterValue.signedMeterData, 'base64');
+          // For now, we only care that the signature could be read, regardless of the value in the signature.
+          await crypto.subtle.verify(signingMethod, cryptoPrivateKey, signatureBuffer, signatureBuffer);
+          return true;
+        } catch (e) {
+          if (e instanceof DOMException) {
+            this._logger.warn(`Error decrypting private key or verifying signature from Signed Meter Value. Error: ${JSON.stringify(e.message)}`);
+          }
+          return false;
+        }
       default:
         this._logger.warn(`${signingMethod} is not supported for Signed Meter Values.`);
         return false;
     }
+  }
+
+  private formatKey(key: string) {
+    return key
+      .replace('-----BEGIN PRIVATE KEY-----', '')
+      .replace('-----END PRIVATE KEY-----', '')
+      .replace('-----BEGIN PUBLIC KEY-----', '')
+      .replace('-----END PUBLIC KEY-----', '')
+      .replace(/(\r\n|\n|\r)/gm, '');
+  }
+
+  private str2ab(str: string){
+    const buf = new ArrayBuffer(str.length);
+    const bufView = new Uint8Array(buf);
+    for (let i = 0, strLen = str.length; i < strLen; i++) {
+      bufView[i] = str.charCodeAt(i);
+    }
+    return buf;
   }
 }

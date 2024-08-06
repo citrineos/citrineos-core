@@ -10,19 +10,19 @@ export class SequelizeChargingStationSecurityInfoRepository extends SequelizeRep
     super(config, ChargingStationSecurityInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async readChargingStationPublicKeyFileName(stationId: string): Promise<string> {
+  async readChargingStationpublicKeyFileId(stationId: string): Promise<string> {
     const existingInfo = await this.readByKey(stationId);
-    return existingInfo ? existingInfo.publicKeyFileName : '';
+    return existingInfo ? existingInfo.publicKeyFileId : '';
   }
 
-  async readOrCreateChargingStationInfo(stationId: string, publicKeyFileName: string): Promise<void> {
+  async readOrCreateChargingStationInfo(stationId: string, publicKeyFileId: string): Promise<void> {
     await this.readOrCreateByQuery({
       where: {
         stationId,
       },
       defaults: {
         stationId,
-        publicKeyFileName,
+        publicKeyFileId,
       },
     });
   }

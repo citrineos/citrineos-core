@@ -94,8 +94,8 @@ export const systemConfigInputSchema = z.object({
       sendCostUpdatedOnMeterValue: z.boolean().default(false).optional(),
       signedMeterValuesConfiguration: z
         .object({
-          publicKeyFileName: z.string(),
-          privateKeyFileName: z.string(),
+          publicKeyFileId: z.string(),
+          privateKeyFileId: z.string(),
           encryptionMethod: z.string(), // TODO make enum?
         })
         .optional(),
@@ -343,8 +343,8 @@ export const systemConfigSchema = z
           sendCostUpdatedOnMeterValue: z.boolean().optional(),
           signedMeterValuesConfiguration: z
             .object({
-              publicKeyFileName: z.string(),
-              privateKeyFileName: z.string(),
+              publicKeyFileId: z.string(),
+              privateKeyFileId: z.string(),
               encryptionMethod: z.string(), // TODO make enum?
             })
             .optional(),

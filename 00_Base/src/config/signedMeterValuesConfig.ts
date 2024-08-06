@@ -1,5 +1,5 @@
 export class SignedMeterValuesConfig {
-  publicKeyFileName!: string;
-  privateKeyFileName!: string;
+  publicKeyFileId!: string;
+  privateKeyFileId!: string;
   encryptionMethod!: string;
 }

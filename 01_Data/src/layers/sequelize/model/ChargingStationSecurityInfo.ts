@@ -20,5 +20,5 @@ export class ChargingStationSecurityInfo extends Model {
   // using a foreign key by migrating current system config
   // into a database entry to store this information.
   @Column(DataType.STRING)
-  publicKeyFileName!: string;
+  publicKeyFileId!: string;
 }
