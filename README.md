@@ -9,6 +9,24 @@ modules.
 All other documentation and the issue tracking can be found in our main repository
 here: https://github.com/citrineos/citrineos.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Starting the Server without Docker](#starting-the-server-without-docker)
+- [Attaching Debugger](#attaching-debugger)
+- [Usage](#usage)
+- [Testing with EVerest](#testing-with-everest)
+- [Running clean and fresh](#running-clean-and-fresh)
+- [Linting and Prettier](#linting-and-prettier)
+- [Information on Docker setup](#information-on-docker-setup)
+- [Generating OCPP Interfaces](#generating-ocpp-interfaces)
+- [Generating OCPP Interfaces](#contributing)
+- [Generating OCPP Interfaces](#licensing)
+- [Generating OCPP Interfaces](#support-and-contact)
+- [Generating OCPP Interfaces](#roadmap)
+
 ## Overview
 
 CitrineOS is developed in TypeScript and runs on `NodeJS` with [ws](https://github.com/websockets/ws)
@@ -27,8 +45,6 @@ The system features:
   - Currently supported caches are `In Memory` and `Redis`
 
 For more information on the project go to [citrineos.github.io](https://citrineos.github.io).
-
-## Getting Started
 
 ### Prerequisites
 
@@ -76,7 +92,7 @@ Additional Run Configurations should be made for other IDEs (ex VSCode).
 To change necessary configuration for execution outside of `docker-compose`, please adjust the configuration file
 at `50_Server/src/config/envs/local.ts`. Make sure any changes to the local configuration do not make it into your PR.
 
-### Starting the Server (Running in NPM)
+## Starting the Server
 
 To start the CitrineOS server from a unix-like command line, run the following command:
 
@@ -101,7 +117,7 @@ Whether you run the application with Docker or locally with npm, you should be a
 With debugger attached you should be able to set breakpoints in the TS code right from your IDE and debug
 with ease.
 
-### Attaching Debugger before execution using `--inspect-brk`
+## Attaching Debugger before execution using `--inspect-brk`
 
 You can modify `nodemon.json` exec command from:
 
@@ -117,16 +133,16 @@ npm run build --prefix ../ && node --inspect-brk=0.0.0.0:9229 ./dist/index.js
 
 which will wait for the debugger to attach before proceeding with execution.
 
-### Usage
+## Usage
 
 You can now connect your OCPP 2.0.1 compliant charging stations to the CitrineOS server. Make sure to configure the
 charging stations to point to the server's IP address and port as specified in the config.json file.
 
-### Testing with EVerest
+## Testing with EVerest
 
 This [README](./Server/everest/README.md)
 
-### Running `clean` and `fresh`
+## Running `clean` and `fresh`
 
 Our current module structure consists of multiple `npm` submodules that are loaded as dependencies
 running the application. This results in the need to rebuild modules that have any file changes. In
