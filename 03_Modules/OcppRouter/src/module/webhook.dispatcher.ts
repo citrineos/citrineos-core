@@ -72,19 +72,30 @@ export class WebhookDispatcher {
   }
 
   async register(identifier: string) {
-    this._loadSubscriptionsForConnection(identifier).then(() => {
-      this._onConnectionCallbacks.get(identifier)?.forEach(async (callback) => {
-        callback();
-      });
-    });
-    this._identifiers.add(identifier);
+    try {
+      await this._loadSubscriptionsForConnection(identifier);
+      await Promise.all(
+          this._onConnectionCallbacks.get(identifier)?.map(callback => callback()) ?? []
+      );
+      this._identifiers.add(identifier);
+    } catch (error) {
+      this._logger.error(`Failed to register ${identifier}`, error);
+    }
   }
 
   async deregister(identifier: string) {
-    this._onCloseCallbacks.get(identifier)?.forEach((callback) => {
-      callback();
-    });
-    this._identifiers.delete(identifier);
+    try {
+      await Promise.all(
+          this._onCloseCallbacks.get(identifier)?.map(callback => callback()) ?? []
+      );
+      this._identifiers.delete(identifier);
+      this._onConnectionCallbacks.delete(identifier);
+      this._onCloseCallbacks.delete(identifier);
+      this._onMessageCallbacks.delete(identifier);
+      this._sentMessageCallbacks.delete(identifier);
+    } catch (error) {
+      this._logger.error(`Failed to deregister ${identifier}`, error);
+    }
   }
 
   async dispatchMessageReceived(
@@ -92,9 +103,13 @@ export class WebhookDispatcher {
     message: string,
     info?: Map<string, string>,
   ) {
-    this._onMessageCallbacks.get(identifier)?.forEach((callback) => {
-      callback(message, info);
-    });
+    try {
+      await Promise.all(
+          this._onMessageCallbacks.get(identifier)?.map(callback => callback(message, info)) ?? []
+      );
+    } catch (error) {
+      this._logger.error(`Failed to dispatch message received for ${identifier}`, error);
+    }
   }
 
   async dispatchMessageSent(
@@ -103,9 +118,13 @@ export class WebhookDispatcher {
     error?: any,
     info?: Map<string, string>,
   ) {
-    this._sentMessageCallbacks.get(identifier)?.forEach((callback) => {
-      callback(message, error, info);
-    });
+    try {
+      await Promise.all(
+          this._sentMessageCallbacks.get(identifier)?.map(callback => callback(message, error, info)) ?? []
+      );
+    } catch (error) {
+      this._logger.error(`Failed to dispatch message sent for ${identifier}`, error);
+    }
   }
 
   private async _refreshSubscriptions() {
@@ -164,7 +183,7 @@ export class WebhookDispatcher {
       }
     }
 
-    this._onConnectionCallbacks.set(connectionIdentifier, onConnectionCallbacks,);
+    this._onConnectionCallbacks.set(connectionIdentifier, onConnectionCallbacks);
     this._onCloseCallbacks.set(connectionIdentifier, onCloseCallbacks);
     this._onMessageCallbacks.set(connectionIdentifier, onMessageCallbacks);
     this._sentMessageCallbacks.set(connectionIdentifier, sentMessageCallbacks);
@@ -286,7 +305,9 @@ export type OnConnectionCallback = (
   info?: Map<string, string>,
 ) => Promise<boolean>;
 
-export type OnCloseCallback = (info?: Map<string, string>) => Promise<boolean>;
+export type OnCloseCallback = (
+  info?: Map<string, string>,
+) => Promise<boolean>;
 
 export type OnMessageCallback = (
   message: string,
