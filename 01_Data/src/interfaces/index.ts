@@ -15,6 +15,7 @@ export { TariffQueryString, TariffQuerySchema } from './queries/Tariff';
 export { ModelKeyQuerystring, ModelKeyQuerystringSchema } from './queries/Model';
 export { UpdateTlsCertificateQueryString, TlsCertificateSchema, UpdateTlsCertificateQuerySchema } from './queries/TlsCertificate';
 export { GenerateCertificateChainSchema, InstallRootCertificateSchema } from './queries/RootCertificate';
+export { CreateSubscriptionSchema } from './queries/Subscription';
 
 // Data projection models
 export { AuthorizationRestrictions } from './projections/AuthorizationRestrictions';

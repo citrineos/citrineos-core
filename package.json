@@ -26,8 +26,7 @@
     "clean-tsbuildinfo": "find . -name tsconfig.tsbuildinfo -not -path '*/node_modules/*' -exec rm -f {} +",
     "clean-dist": "find . -type d -name dist -not -path '*/node_modules/*' -exec rm -rf {} +",
     "clean": "npm run clean-dist && npm run clean-tsbuildinfo",
-    "start-unix": "cd ./Server && npm run start-unix",
-    "start-windows": "cd ./Server && npm run start-windows",
+    "start": "cd ./Server && npm run start",
     "start-docker": "cd ./Server && npm run start-docker",
     "start-docker-cloud": "cd ./Server && npm run start-docker-cloud",
     "lint": "npx eslint --ext .ts ./",
@@ -36,7 +35,6 @@
     "fresh-and-install-all": "npm run fresh && npm run install-all",
     "sync-db": "ts-node ./db.sync.ts",
     "start-everest": "npm run start-everest --prefix ./Server",
-    "start-everest-windows": "npm run start-everest-windows --prefix ./Server",
     "test": "jest --config jest.config.ts"
   },
   "workspaces": [
