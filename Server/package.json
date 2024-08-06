@@ -12,7 +12,7 @@
     "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
     "fresh": "rm -rf node_modules package-lock.json && npm run clean",
     "compile": "npm run clean && tsc -p tsconfig.json",
-    "copy-assets": "ts-node ./copy-assets.ts",
+    "copy-assets": "ts-node ./copy-assets.ts ./src/assets ./dist/assets",
     "start": "cross-env APP_NAME=all APP_ENV=local nodemon",
     "start-docker": "nodemon",
     "start-docker-cloud": "node --inspect=0.0.0.0:9229 dist/index.js",
