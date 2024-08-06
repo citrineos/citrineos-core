@@ -122,6 +122,10 @@ which will wait for the debugger to attach before proceeding with execution.
 You can now connect your OCPP 2.0.1 compliant charging stations to the CitrineOS server. Make sure to configure the
 charging stations to point to the server's IP address and port as specified in the config.json file.
 
+### Testing with EVerest
+
+This [README](./Server/everest/README.md)
+
 ### Running `clean` and `fresh`
 
 Our current module structure consists of multiple `npm` submodules that are loaded as dependencies
@@ -134,6 +138,14 @@ To alleviate the above, we created the `npm run fresh` and the `npm run clean` c
 
 `npm run fresh` - will delete all `node_modules`, `dist`, `tsbuildinfo`, `package-lock.json` and clear cache
 `npm run clean` - sub set of `npm run fresh` will only delete the build files `dist` and `tsbuildinfo`
+
+## Linting and Prettier
+
+Eslint and Prettier have been configured to help support syntactical consistency throughout the codebase.
+
+`npm run prettier` - will run prettier and format the files
+`npm run lint` - will run linter
+`npm run lint-fix` - will run prettier and linter -fix flag which will attempt to resolve any linting issues.
 
 ## Information on Docker setup
 
