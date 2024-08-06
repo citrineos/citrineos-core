@@ -16,10 +16,12 @@ export class WebhookDispatcher {
   private _identifiers: Set<string> = new Set();
 
   // Structure of the maps: key = identifier, value = array of callbacks
-  private _onConnectionCallbacks: Map<string, OnConnectionCallback[]> = new Map();
+  private _onConnectionCallbacks: Map<string, OnConnectionCallback[]> =
+    new Map();
   private _onCloseCallbacks: Map<string, OnCloseCallback[]> = new Map();
   private _onMessageCallbacks: Map<string, OnMessageCallback[]> = new Map();
-  private _sentMessageCallbacks: Map<string, OnSentMessageCallback[]> = new Map();
+  private _sentMessageCallbacks: Map<string, OnSentMessageCallback[]> =
+    new Map();
 
   constructor(
     subscriptionRepository: ISubscriptionRepository,
@@ -35,47 +37,13 @@ export class WebhookDispatcher {
     }, WebhookDispatcher.SUBSCRIPTION_REFRESH_INTERVAL_MS);
   }
 
-  addOnConnectionCallback(
-    identifier: string,
-    onConnectionCallback: OnConnectionCallback,
-  ): void {
-    this._onConnectionCallbacks.has(identifier)
-      ? this._onConnectionCallbacks.get(identifier)!.push(onConnectionCallback)
-      : this._onConnectionCallbacks.set(identifier, [onConnectionCallback]);
-  }
-
-  addOnCloseCallback(
-    identifier: string,
-    onCloseCallback: OnCloseCallback,
-  ): void {
-    this._onCloseCallbacks.has(identifier)
-      ? this._onCloseCallbacks.get(identifier)!.push(onCloseCallback)
-      : this._onCloseCallbacks.set(identifier, [onCloseCallback]);
-  }
-
-  addOnMessageCallback(
-    identifier: string,
-    onMessageCallback: OnMessageCallback,
-  ): void {
-    this._onMessageCallbacks.has(identifier)
-      ? this._onMessageCallbacks.get(identifier)!.push(onMessageCallback)
-      : this._onMessageCallbacks.set(identifier, [onMessageCallback]);
-  }
-
-  addSentMessageCallback(
-    identifier: string,
-    sentMessageCallback: OnSentMessageCallback,
-  ): void {
-    this._sentMessageCallbacks.has(identifier)
-      ? this._sentMessageCallbacks.get(identifier)!.push(sentMessageCallback)
-      : this._sentMessageCallbacks.set(identifier, [sentMessageCallback]);
-  }
-
   async register(identifier: string) {
     try {
       await this._loadSubscriptionsForConnection(identifier);
       await Promise.all(
-          this._onConnectionCallbacks.get(identifier)?.map(callback => callback()) ?? []
+        this._onConnectionCallbacks
+          .get(identifier)
+          ?.map((callback) => callback()) ?? [],
       );
       this._identifiers.add(identifier);
     } catch (error) {
@@ -86,7 +54,8 @@ export class WebhookDispatcher {
   async deregister(identifier: string) {
     try {
       await Promise.all(
-          this._onCloseCallbacks.get(identifier)?.map(callback => callback()) ?? []
+        this._onCloseCallbacks.get(identifier)?.map((callback) => callback()) ??
+          [],
       );
       this._identifiers.delete(identifier);
       this._onConnectionCallbacks.delete(identifier);
@@ -105,10 +74,15 @@ export class WebhookDispatcher {
   ) {
     try {
       await Promise.all(
-          this._onMessageCallbacks.get(identifier)?.map(callback => callback(message, info)) ?? []
+        this._onMessageCallbacks
+          .get(identifier)
+          ?.map((callback) => callback(message, info)) ?? [],
       );
     } catch (error) {
-      this._logger.error(`Failed to dispatch message received for ${identifier}`, error);
+      this._logger.error(
+        `Failed to dispatch message received for ${identifier}`,
+        error,
+      );
     }
   }
 
@@ -120,10 +94,15 @@ export class WebhookDispatcher {
   ) {
     try {
       await Promise.all(
-          this._sentMessageCallbacks.get(identifier)?.map(callback => callback(message, error, info)) ?? []
+        this._sentMessageCallbacks
+          .get(identifier)
+          ?.map((callback) => callback(message, error, info)) ?? [],
       );
-    } catch (error) {
-      this._logger.error(`Failed to dispatch message sent for ${identifier}`, error);
+    } catch (err) {
+      this._logger.error(
+        `Failed to dispatch message sent for ${identifier}`,
+        err,
+      );
     }
   }
 
@@ -183,7 +162,10 @@ export class WebhookDispatcher {
       }
     }
 
-    this._onConnectionCallbacks.set(connectionIdentifier, onConnectionCallbacks);
+    this._onConnectionCallbacks.set(
+      connectionIdentifier,
+      onConnectionCallbacks,
+    );
     this._onCloseCallbacks.set(connectionIdentifier, onCloseCallbacks);
     this._onMessageCallbacks.set(connectionIdentifier, onMessageCallbacks);
     this._sentMessageCallbacks.set(connectionIdentifier, sentMessageCallbacks);
@@ -264,15 +246,15 @@ export class WebhookDispatcher {
    * @return {Promise<boolean>} a Promise that resolves to a boolean indicating success
    */
   private async _subscriptionCallback(
-      requestBody: {
-        stationId: string;
-        event: string;
-        origin?: MessageOrigin;
-        message?: string;
-        error?: any;
-        info?: Map<string, string>;
-      },
-      url: string,
+    requestBody: {
+      stationId: string;
+      event: string;
+      origin?: MessageOrigin;
+      message?: string;
+      error?: any;
+      info?: Map<string, string>;
+    },
+    url: string,
   ): Promise<boolean> {
     try {
       const response = await fetch(url, {
@@ -286,14 +268,14 @@ export class WebhookDispatcher {
       if (!response.ok) {
         const errorText = await response.text();
         this._logger.error(
-            `Route to subscription ${url} on charging station ${requestBody.stationId} failed.
+          `Route to subscription ${url} on charging station ${requestBody.stationId} failed.
             Event: ${requestBody.event}, ${response.status} ${response.statusText} - ${errorText}`,
         );
       }
       return response.ok;
     } catch (error) {
       this._logger.error(
-          `Route to subscription ${url} on charging station ${requestBody.stationId} failed.
+        `Route to subscription ${url} on charging station ${requestBody.stationId} failed.
            Event: ${requestBody.event}, ${error}`,
       );
       return false;
@@ -305,9 +287,7 @@ export type OnConnectionCallback = (
   info?: Map<string, string>,
 ) => Promise<boolean>;
 
-export type OnCloseCallback = (
-  info?: Map<string, string>,
-) => Promise<boolean>;
+export type OnCloseCallback = (info?: Map<string, string>) => Promise<boolean>;
 
 export type OnMessageCallback = (
   message: string,

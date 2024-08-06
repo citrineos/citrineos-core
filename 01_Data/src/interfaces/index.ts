@@ -21,7 +21,6 @@ export { CreateSubscriptionSchema } from './queries/Subscription';
 export { AuthorizationRestrictions } from './projections/AuthorizationRestrictions';
 export { default as AuthorizationRestrictionsSchema } from './projections/schemas/AuthorizationRestrictionsSchema.json';
 export { default as TariffSchema } from './projections/schemas/TariffSchema.json';
-export { default as SubscriptionSchema } from './projections/schemas/SubscriptionSchema.json';
 
 // Date endpoints DTOs
 export { TlsCertificatesRequest } from './dtos/TlsCertificatesRequest';

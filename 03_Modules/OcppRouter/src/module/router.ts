@@ -603,7 +603,11 @@ export class MessageRouterImpl
       this._webhookDispatcher.dispatchMessageSent(identifier, rawMessage);
       return success;
     } catch (error) {
-      this._webhookDispatcher.dispatchMessageSent(identifier, rawMessage, error,);
+      this._webhookDispatcher.dispatchMessageSent(
+        identifier,
+        rawMessage,
+        error,
+      );
       return false;
     }
   }
