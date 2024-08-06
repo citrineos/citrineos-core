@@ -13,12 +13,10 @@
     "fresh": "rm -rf node_modules package-lock.json && npm run clean",
     "compile": "npm run clean && tsc -p tsconfig.json",
     "copy-assets": "ts-node ./copy-assets.ts",
-    "start-unix": "APP_NAME=all APP_ENV=local nodemon",
-    "start-windows": "set APP_NAME=all&& set APP_ENV=local&& RefreshEnv.cmd && npx nodemon",
+    "start": "cross-env APP_NAME=all APP_ENV=local nodemon",
     "start-docker": "nodemon",
     "start-docker-cloud": "node --inspect=0.0.0.0:9229 dist/index.js",
-    "start-everest": "cd ./everest && EVEREST_IMAGE_TAG=0.0.16 EVEREST_TARGET_URL=ws://host.docker.internal:8081/cp001 docker-compose up",
-    "start-everest-windows": "cd ./everest && set EVEREST_IMAGE_TAG=0.0.16&& set EVEREST_TARGET_URL=ws://host.docker.internal:8081/cp001&& docker compose up -d"
+    "start-everest": "cd ./everest && cross-env EVEREST_IMAGE_TAG=0.0.16 EVEREST_TARGET_URL=ws://host.docker.internal:8081/cp001 docker-compose up"
   },
   "keywords": [
     "ocpp",
@@ -61,6 +59,7 @@
     "@directus/extensions": "^1.0.2",
     "@fastify/type-provider-json-schema-to-ts": "^2.2.2",
     "ajv": "^8.12.0",
+    "cross-env": "7.0.3",
     "fastify": "^4.22.2",
     "sqlite3": "^5.1.6",
     "tslog": "^4.8.2",
