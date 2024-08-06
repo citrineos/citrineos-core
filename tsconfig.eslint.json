@@ -37,7 +37,8 @@
     "03_Modules/citrineos-ocpi/**/*.json",
     "Server/**/*.ts",
     "Server/**/*.json",
-    "./db.sync.ts"
+    "./db.sync.ts",
+    "jest.config.ts"
   ],
   "compilerOptions": {
     "target": "es6",

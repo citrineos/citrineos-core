@@ -5,11 +5,7 @@
 
 import { type AuthorizationData, CrudRepository, type IdTokenType, SystemConfig } from '@citrineos/base';
 import { type BuildOptions, type Includeable, Op, Transaction } from 'sequelize';
-import {
-  type AuthorizationQuerystring,
-  type AuthorizationRestrictions,
-  type IAuthorizationRepository
-} from '../../../interfaces';
+import { type AuthorizationQuerystring, type AuthorizationRestrictions, type IAuthorizationRepository } from '../../../interfaces';
 import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from '../model/Authorization';
 import { SequelizeRepository } from './Base';
 import { Sequelize } from 'sequelize-typescript';
@@ -43,13 +39,19 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
       throw new Error('Authorization idToken does not match query');
     }
 
-    const savedAuthorizationModel: Authorization | null = await Authorization.findOne({
-      where: {
-        idToken: query.idToken,
-        type: query.type
-      },
-      transaction
+    const savedAuthorizationModel = await Authorization.findOne({
+      include: [
+        {
+          model: IdToken,
+          where: {
+            idToken: query.idToken,
+            type: query.type,
+          },
+        },
+      ],
+      transaction,
     });
+
     const authorizationModel = savedAuthorizationModel ?? Authorization.build({}, this._createInclude(value));
 
     const updatedIdToken = await this._updateIdToken(value.idToken, transaction);
@@ -64,9 +66,9 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
 
       if (authorizationModel.idTokenInfoId) {
         const savedIdTokenInfo = await IdTokenInfo.findOne({
-          where: {id: authorizationModel.idTokenInfoId},
-          include: [{model: IdToken, include: [AdditionalInfo]}],
-          transaction
+          where: { id: authorizationModel.idTokenInfoId },
+          include: [{ model: IdToken, include: [AdditionalInfo] }],
+          transaction,
         });
 
         if (!savedIdTokenInfo) {
@@ -91,13 +93,13 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
           savedIdTokenInfo.groupIdTokenId = undefined;
           savedIdTokenInfo.groupIdToken = undefined;
         }
-        await savedIdTokenInfo.save({transaction});
+        await savedIdTokenInfo.save({ transaction });
       } else {
         if (value.idTokenInfo.groupIdToken) {
           const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken, transaction);
           valueIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
         }
-        const createdIdTokenInfo = await valueIdTokenInfo.save({transaction});
+        const createdIdTokenInfo = await valueIdTokenInfo.save({ transaction });
         authorizationModel.idTokenInfoId = createdIdTokenInfo.id;
       }
     } else if (authorizationModel.idTokenInfoId) {
@@ -106,7 +108,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
       authorizationModel.idTokenInfo = undefined;
     }
 
-    return await authorizationModel.save({transaction});
+    return await authorizationModel.save({ transaction });
   }
 
   async updateRestrictionsByQuerystring(value: AuthorizationRestrictions, query: AuthorizationQuerystring): Promise<Authorization[]> {
@@ -139,10 +141,10 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
       include: [
         {
           model: IdToken,
-          where: {idToken: queryParams.idToken, type: queryParams.type},
+          where: { idToken: queryParams.idToken, type: queryParams.type },
           required: true, // This ensures the inner join, so only Authorizations with the matching IdToken are returned
         },
-        {model: IdTokenInfo, include: [{model: IdToken, include: [AdditionalInfo]}]},
+        { model: IdTokenInfo, include: [{ model: IdToken, include: [AdditionalInfo] }] },
       ],
     };
   }
@@ -156,22 +158,22 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
         if (value.idTokenInfo?.groupIdToken.additionalInfo) {
           idTokenInfoGroupIdTokenInclude.push(AdditionalInfo);
         }
-        idTokenInfoInclude.push({model: IdToken, include: idTokenInfoGroupIdTokenInclude});
+        idTokenInfoInclude.push({ model: IdToken, include: idTokenInfoGroupIdTokenInclude });
       }
-      include.push({model: IdTokenInfo, include: idTokenInfoInclude});
+      include.push({ model: IdTokenInfo, include: idTokenInfoInclude });
     }
     const idTokenInclude: Includeable[] = [];
     if (value.idToken.additionalInfo) {
       idTokenInclude.push(AdditionalInfo);
     }
-    include.push({model: IdToken, include: idTokenInclude});
-    return {include};
+    include.push({ model: IdToken, include: idTokenInclude });
+    return { include };
   }
 
   private async _updateIdToken(value: IdTokenType, transaction?: Transaction): Promise<IdToken> {
     const [savedIdTokenModel] = await IdToken.findOrCreate({
-      where: {idToken: value.idToken, type: value.type},
-      transaction
+      where: { idToken: value.idToken, type: value.type },
+      transaction,
     });
 
     const additionalInfoIds: number[] = [];
@@ -185,15 +187,15 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
             additionalIdToken: valueAdditionalInfo.additionalIdToken,
             type: valueAdditionalInfo.type,
           },
-          transaction
+          transaction,
         });
 
         await IdTokenAdditionalInfo.findOrCreate({
           where: {
             idTokenId: savedIdTokenModel.id,
-            additionalInfoId: savedAdditionalInfo.id
+            additionalInfoId: savedAdditionalInfo.id,
           },
-          transaction
+          transaction,
         });
 
         additionalInfoIds.push(savedAdditionalInfo.id);
@@ -203,11 +205,11 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     await IdTokenAdditionalInfo.destroy({
       where: {
         idTokenId: savedIdTokenModel.id,
-        additionalInfoId: {[Op.notIn]: additionalInfoIds}
+        additionalInfoId: { [Op.notIn]: additionalInfoIds },
       },
-      transaction
+      transaction,
     });
 
-    return savedIdTokenModel.reload({include: [AdditionalInfo], transaction});
+    return savedIdTokenModel.reload({ include: [AdditionalInfo], transaction });
   }
 }

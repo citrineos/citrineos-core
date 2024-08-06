@@ -132,7 +132,7 @@ export class EVDriverModule extends AbstractModule {
    *
    * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
    * type {@link CertificateAuthorityService} which handles certificate authority operations.
-   * 
+   *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
    */
@@ -404,13 +404,18 @@ export class EVDriverModule extends AbstractModule {
               }
 
               for (const authorizer of this._authorizers) {
-                if (response.idTokenInfo.status !== AuthorizationStatusEnumType.Accepted) {
+                if (
+                  response.idTokenInfo.status !==
+                  AuthorizationStatusEnumType.Accepted
+                ) {
                   break;
                 }
-                const result: Partial<IdTokenType> = await authorizer.authorize(authorization, context);
+                const result: Partial<IdTokenType> = await authorizer.authorize(
+                  authorization,
+                  context,
+                );
                 Object.assign(response.idTokenInfo, result);
               }
-              
             } else {
               // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
               // N.B. Other statuses should not be allowed to be stored.

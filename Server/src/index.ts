@@ -392,6 +392,8 @@ export class CitrineOSServer {
   }
 
   private initAllModules() {
+    this.ocpiRealTimeAuthorizer = Container.get(RealTimeAuthorizer);
+
     if (this._config.modules.certificates) {
       const module = new CertificatesModule(
         this._config,
@@ -434,7 +436,6 @@ export class CitrineOSServer {
     }
 
     if (this._config.modules.evdriver) {
-      this.ocpiRealTimeAuthorizer = Container.get(RealTimeAuthorizer);
       const module = new EVDriverModule(
         this._config,
         this._cache,
@@ -513,6 +514,7 @@ export class CitrineOSServer {
         this._repositoryStore.componentRepository,
         this._repositoryStore.locationRepository,
         this._repositoryStore.tariffRepository,
+        [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);
       this.apis.push(
