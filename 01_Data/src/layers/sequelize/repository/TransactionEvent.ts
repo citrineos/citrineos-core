@@ -96,7 +96,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
               model: TransactionEvent,
               as: Transaction.TRANSACTION_EVENTS_ALIAS,
             },
-            MeterValue
+            MeterValue,
           ],
         })) as Transaction;
       } else {
