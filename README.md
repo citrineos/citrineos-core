@@ -78,18 +78,11 @@ at `50_Server/src/config/envs/local.ts`. Make sure any changes to the local conf
 
 ### Starting the Server
 
-To start the CitrineOS server from a unix-like command line, run the following command:
+To start the CitrineOS server, run the following command:
 
 ```shell
 cd Server
-npm run start-unix
-```
-
-To start the CitrineOS server from a windows command line, run the following command:
-
-```shell
-cd Server
-npm run start-windows
+npm run start
 ```
 
 This will launch the CitrineOS server with the specified configuration. The debugger will be available
