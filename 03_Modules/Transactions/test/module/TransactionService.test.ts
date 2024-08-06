@@ -2,57 +2,56 @@ import {
   IAuthorizationRepository,
   ITransactionEventRepository,
 } from '@citrineos/data';
-import { AuthorizationStatusEnumType } from '@citrineos/base';
+import {
+  AuthorizationStatusEnumType,
+  TransactionEventEnumType,
+} from '@citrineos/base';
 import { TransactionService } from '../../src/module/TransactionService';
-import { aValidIdToken } from '../providers/IdToken';
-import { aValidAuthorization } from '../providers/Authorization';
-import { Logger } from 'tslog';
+import { anIdToken } from '../providers/IdToken';
+import { anAuthorization } from '../providers/Authorization';
 
-import { aValidMessageContext } from '../providers/MessageContext';
-import { aValidTransaction } from '../providers/Transaction';
+import { aMessageContext } from '../providers/MessageContext';
+import {
+  aTransaction,
+  aTransactionEventRequest,
+} from '../providers/Transaction';
 import { IAuthorizer } from '@citrineos/util';
 
 describe('TransactionService', () => {
   let transactionService: TransactionService;
-  let mockAuthorizationRepository: jest.Mocked<IAuthorizationRepository>;
-  let mockTransactionEventRepository: jest.Mocked<ITransactionEventRepository>;
-  let mockLogger: jest.Mocked<Logger<any>>;
-  let mockAuthorizer: jest.Mocked<IAuthorizer>;
+  let authorizationRepository: jest.Mocked<IAuthorizationRepository>;
+  let transactionEventRepository: jest.Mocked<ITransactionEventRepository>;
+  let authorizer: jest.Mocked<IAuthorizer>;
 
   beforeEach(() => {
-    mockAuthorizationRepository = {
+    authorizationRepository = {
       readAllByQuerystring: jest.fn(),
-      // Mock other methods if necessary
-    } as any;
+    } as unknown as jest.Mocked<IAuthorizationRepository>;
 
-    mockTransactionEventRepository = {
+    transactionEventRepository = {
       readAllActiveTransactionsByIdToken: jest.fn(),
-      // Mock methods if necessary
-    } as any;
+    } as unknown as jest.Mocked<ITransactionEventRepository>;
 
-    mockLogger = {
-      debug: jest.fn(),
-    } as unknown as jest.Mocked<Logger<any>>;
-
-    mockAuthorizer = {
+    authorizer = {
       authorize: jest.fn(),
     } as jest.Mocked<IAuthorizer>;
 
     transactionService = new TransactionService(
-      mockTransactionEventRepository,
-      mockAuthorizationRepository,
-      mockLogger,
-      [mockAuthorizer],
+      transactionEventRepository,
+      authorizationRepository,
+      [authorizer],
     );
   });
 
   it('should return Unknown status when authorizations length is not 1', async () => {
-    mockAuthorizationRepository.readAllByQuerystring.mockResolvedValue([]);
+    authorizationRepository.readAllByQuerystring.mockResolvedValue([]);
 
-    const idToken = aValidIdToken();
-    const messageContext = aValidMessageContext();
+    const transactionEventRequest = aTransactionEventRequest((item) => {
+      item.idToken = anIdToken();
+    });
+    const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
-      idToken,
+      transactionEventRequest,
       messageContext,
     );
 
@@ -62,17 +61,19 @@ describe('TransactionService', () => {
   });
 
   it('should return Accepted status when idTokenInfo is not defined', async () => {
-    const authorization = aValidAuthorization((auth) => {
+    const authorization = anAuthorization((auth) => {
       auth.idTokenInfo = undefined;
     });
-    mockAuthorizationRepository.readAllByQuerystring.mockResolvedValue([
+    authorizationRepository.readAllByQuerystring.mockResolvedValue([
       authorization,
     ]);
 
-    const idToken = aValidIdToken();
-    const messageContext = aValidMessageContext();
+    const transactionEventRequest = aTransactionEventRequest((item) => {
+      item.idToken = authorization.idToken;
+    });
+    const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
-      idToken,
+      transactionEventRequest,
       messageContext,
     );
 
@@ -82,19 +83,20 @@ describe('TransactionService', () => {
   });
 
   it('should return status from idTokenInfo when not Accepted', async () => {
-    const authorization = aValidAuthorization((auth) => {
-      if (auth.idTokenInfo) {
-        auth.idTokenInfo.status = AuthorizationStatusEnumType.Blocked;
-      }
+    const authorization = anAuthorization((auth) => {
+      auth.idTokenInfo!.status = AuthorizationStatusEnumType.Blocked;
     });
-    mockAuthorizationRepository.readAllByQuerystring.mockResolvedValue([
+    authorizationRepository.readAllByQuerystring.mockResolvedValue([
       authorization,
     ]);
 
-    const idToken = aValidIdToken();
-    const messageContext = aValidMessageContext();
+    const transactionEventRequest = aTransactionEventRequest((item) => {
+      item.idToken = authorization.idToken;
+      item.eventType = TransactionEventEnumType.Started;
+    });
+    const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
-      idToken,
+      transactionEventRequest,
       messageContext,
     );
 
@@ -105,20 +107,21 @@ describe('TransactionService', () => {
 
   it('should return Invalid status when cacheExpiryDateTime is expired', async () => {
     const expiredDate = new Date(Date.now() - 1000).toISOString();
-    const authorization = aValidAuthorization((auth) => {
-      if (auth.idTokenInfo) {
-        auth.idTokenInfo.status = AuthorizationStatusEnumType.Accepted;
-        auth.idTokenInfo.cacheExpiryDateTime = expiredDate;
-      }
+    const authorization = anAuthorization((auth) => {
+      auth.idTokenInfo!.status = AuthorizationStatusEnumType.Accepted;
+      auth.idTokenInfo!.cacheExpiryDateTime = expiredDate;
     });
-    mockAuthorizationRepository.readAllByQuerystring.mockResolvedValue([
+    authorizationRepository.readAllByQuerystring.mockResolvedValue([
       authorization,
     ]);
 
-    const idToken = aValidIdToken();
-    const messageContext = aValidMessageContext();
+    const transactionEventRequest = aTransactionEventRequest((item) => {
+      item.idToken = anIdToken();
+      item.eventType = TransactionEventEnumType.Started;
+    });
+    const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
-      idToken,
+      transactionEventRequest,
       messageContext,
     );
 
@@ -128,22 +131,23 @@ describe('TransactionService', () => {
   });
 
   it('should return ConcurrentTx status when there are concurrent transactions', async () => {
-    const authorization = aValidAuthorization((auth) => {
-      if (auth.idTokenInfo) {
-        auth.idTokenInfo.status = AuthorizationStatusEnumType.Accepted;
-      }
+    const authorization = anAuthorization((auth) => {
+      auth.idTokenInfo!.status = AuthorizationStatusEnumType.Accepted;
     });
-    mockAuthorizationRepository.readAllByQuerystring.mockResolvedValue([
+    authorizationRepository.readAllByQuerystring.mockResolvedValue([
       authorization,
     ]);
-    mockTransactionEventRepository.readAllActiveTransactionsByIdToken.mockResolvedValue(
-      [aValidTransaction(), aValidTransaction()],
+    transactionEventRepository.readAllActiveTransactionsByIdToken.mockResolvedValue(
+      [aTransaction(), aTransaction()],
     );
 
-    const idToken = aValidIdToken();
-    const messageContext = aValidMessageContext();
+    const transactionEventRequest = aTransactionEventRequest((item) => {
+      item.idToken = anIdToken();
+      item.eventType = TransactionEventEnumType.Started;
+    });
+    const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
-      idToken,
+      transactionEventRequest,
       messageContext,
     );
 
@@ -152,28 +156,29 @@ describe('TransactionService', () => {
     );
   });
 
-  it('should apply authorizers when status is Accepted', async () => {
-    const authorization = aValidAuthorization((auth) => {
-      if (auth.idTokenInfo) {
-        auth.idTokenInfo.status = AuthorizationStatusEnumType.Accepted;
-      }
+  it('should apply authorizers when status is Accepted and transaction is started', async () => {
+    const authorization = anAuthorization((auth) => {
+      auth.idTokenInfo!.status = AuthorizationStatusEnumType.Accepted;
     });
-    mockAuthorizationRepository.readAllByQuerystring.mockResolvedValue([
+    authorizationRepository.readAllByQuerystring.mockResolvedValue([
       authorization,
     ]);
-    mockTransactionEventRepository.readAllActiveTransactionsByIdToken.mockResolvedValue(
+    transactionEventRepository.readAllActiveTransactionsByIdToken.mockResolvedValue(
       [],
     );
-    mockAuthorizer.authorize.mockResolvedValue({});
+    authorizer.authorize.mockResolvedValue({});
 
-    const idToken = aValidIdToken();
-    const messageContext = aValidMessageContext();
+    const transactionEventRequest = aTransactionEventRequest((item) => {
+      item.idToken = anIdToken();
+      item.eventType = TransactionEventEnumType.Started;
+    });
+    const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
-      idToken,
+      transactionEventRequest,
       messageContext,
     );
 
-    expect(mockAuthorizer.authorize).toHaveBeenCalled();
+    expect(authorizer.authorize).toHaveBeenCalled();
     expect(response.idTokenInfo?.status).toBe(
       AuthorizationStatusEnumType.Accepted,
     );

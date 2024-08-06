@@ -5,7 +5,6 @@
 
 import {
   AbstractModule,
-  AdditionalInfoType,
   AsHandler,
   AttributeEnumType,
   AuthorizationStatusEnumType,
@@ -17,8 +16,6 @@ import {
   GetTransactionStatusResponse,
   HandlerProperties,
   ICache,
-  IdTokenInfoType,
-  IdTokenType,
   IMessage,
   IMessageHandler,
   IMessageSender,
@@ -34,7 +31,6 @@ import {
   TransactionEventResponse,
 } from '@citrineos/base';
 import {
-  Authorization,
   Component,
   Evse,
   IAuthorizationRepository,
@@ -198,8 +194,8 @@ export class TransactionsModule extends AbstractModule {
     this._transactionService = new TransactionService(
       this._transactionEventRepository,
       this._authorizeRepository,
-      this._logger,
       this._authorizers,
+      this._logger,
     );
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
@@ -242,7 +238,7 @@ export class TransactionsModule extends AbstractModule {
     const transactionId = transactionEvent.transactionInfo.transactionId;
     if (transactionEvent.idToken) {
       const response = await this._transactionService.authorizeIdToken(
-        transactionEvent.idToken,
+        transactionEvent,
         message.context,
       );
       this.sendCallResultWithMessage(message, response).then(

@@ -2,7 +2,7 @@ import { IMessageContext } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 
-export const aValidMessageContext = (
+export const aMessageContext = (
   updateFunction?: UpdateFunction<IMessageContext>,
 ): IMessageContext => {
   const item: IMessageContext = {

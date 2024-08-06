@@ -9,6 +9,8 @@ import {
   IdTokenInfoType,
   IdTokenType,
   IMessageContext,
+  TransactionEventEnumType,
+  TransactionEventRequest,
   TransactionEventResponse,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
@@ -23,19 +25,22 @@ export class TransactionService {
   constructor(
     transactionEventRepository: ITransactionEventRepository,
     authorizeRepository: IAuthorizationRepository,
-    logger: Logger<ILogObj>,
     authorizers?: IAuthorizer[],
+    logger?: Logger<ILogObj>,
   ) {
     this._transactionEventRepository = transactionEventRepository;
     this._authorizeRepository = authorizeRepository;
-    this._logger = logger;
+    this._logger = logger
+      ? logger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({ name: this.constructor.name });
     this._authorizers = authorizers || [];
   }
 
   async authorizeIdToken(
-    idToken: IdTokenType,
+    transactionEvent: TransactionEventRequest,
     messageContext: IMessageContext,
   ): Promise<TransactionEventResponse> {
+    const idToken = transactionEvent.idToken!;
     const authorizations = await this._authorizeRepository.readAllByQuerystring(
       { ...idToken },
     );
@@ -86,6 +91,12 @@ export class TransactionService {
       language2: authorization.idTokenInfo.language2,
       personalMessage: authorization.idTokenInfo.personalMessage,
     };
+
+    if (transactionEvent.eventType !== TransactionEventEnumType.Started) {
+      // Don't check for concurrent transactions if the transaction is already in progress
+      this._logger.debug('Event type is not Started.');
+      return response;
+    }
 
     if (idTokenInfo.status !== AuthorizationStatusEnumType.Accepted) {
       // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit

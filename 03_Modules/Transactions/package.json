@@ -22,7 +22,10 @@
   "devDependencies": {
     "@types/deasync-promise": "^1.0.0",
     "eslint": "^8.48.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "@faker-js/faker": "^8.4.1",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.12"
   },
   "dependencies": {
     "@citrineos/base": "1.4.0",

@@ -10,9 +10,9 @@ import { faker } from '@faker-js/faker';
 
 const locales = ['en', 'es', 'fr', 'de', 'it', 'nl'];
 
-export const aValidIdTokenInfo = (
+export function anIdTokenInfo(
   updateFunction?: UpdateFunction<IdTokenInfoType>,
-): IdTokenInfoType => {
+): IdTokenInfoType {
   const locale1 = faker.helpers.arrayElement(locales);
   const item: IdTokenInfoType = {
     status: AuthorizationStatusEnumType.Accepted,
@@ -33,4 +33,4 @@ export const aValidIdTokenInfo = (
   } as IdTokenInfoType;
 
   return applyUpdateFunction(item, updateFunction);
-};
+}
