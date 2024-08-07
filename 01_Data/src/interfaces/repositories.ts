@@ -33,9 +33,10 @@ import {
   ChargingLimitSourceEnumType,
   CompositeScheduleType,
   StatusNotificationRequest,
+  ReserveNowRequest,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
-import { CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
+import { CallMessage, CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
 import { type VariableAttribute } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { type Authorization, type Boot, type Certificate, ChargingNeeds, type ChargingStation, type Component, type EventData, Evse, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';
@@ -44,6 +45,7 @@ import { Subscription } from '../layers/sequelize';
 import { Tariff } from '../layers/sequelize';
 import { TariffQueryString } from './queries/Tariff';
 import { ChargingProfile } from '../layers/sequelize';
+import { Reservation } from '../layers/sequelize';
 
 export interface IAuthorizationRepository extends CrudRepository<AuthorizationData> {
   createOrUpdateByQuerystring: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
@@ -140,3 +142,9 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   findChargingNeedsByEvseDBIdAndTransactionDBId(evseDBId: number, transactionDataBaseId: number): Promise<ChargingNeeds | undefined>;
   createCompositeSchedule(compositeSchedule: CompositeScheduleType, stationId: string): Promise<CompositeSchedule>;
 }
+
+export interface IReservationRepository extends CrudRepository<Reservation> {
+  createOrUpdateReservation(reserveNowRequest: ReserveNowRequest, stationId: string): Promise<Reservation | undefined>;
+}
+
+export interface ICallMessageRepository extends CrudRepository<CallMessage> {}

@@ -26,6 +26,7 @@ export enum Namespace {
   Location = 'Location',
   MeterValueType = 'MeterValue',
   MessageInfoType = 'MessageInfo',
+  ReserveNowRequest = 'Reservation',
   RootCertificate = 'RootCertificate',
   SalesTariff = 'SalesTariff',
   SecurityEventNotificationRequest = 'SecurityEvent',

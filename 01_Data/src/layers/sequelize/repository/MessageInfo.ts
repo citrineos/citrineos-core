@@ -50,7 +50,7 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
         transactionId: message.transactionId ?? null,
         message: message.message,
         active: true,
-      }
+      };
       if (savedMessageInfo) {
         return (await this.updateByKey(messageInfo, savedMessageInfo.dataValues.databaseId)) as MessageInfo;
       }
