@@ -328,13 +328,16 @@ export class TransactionsModule extends AbstractModule {
       }
 
       if (transactionEvent.meterValue) {
-        const anyInvalidMeterValues = await this._signedMeterValuesUtil.validateMeterValues(
-          stationId,
-          transactionEvent.meterValue,
-        );
+        const anyInvalidMeterValues =
+          await this._signedMeterValuesUtil.validateMeterValues(
+            stationId,
+            transactionEvent.meterValue,
+          );
 
         if (anyInvalidMeterValues) {
-          this._logger.warn('One or more MeterValues in this TransactionEvent have an invalid signature.');
+          this._logger.warn(
+            'One or more MeterValues in this TransactionEvent have an invalid signature.',
+          );
         }
       }
 
