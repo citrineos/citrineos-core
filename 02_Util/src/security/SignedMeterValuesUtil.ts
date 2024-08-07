@@ -108,7 +108,6 @@ export class SignedMeterValuesUtil {
 
     if (
       !this._signedMeterValuesConfiguration?.publicKeyFileId ||
-      !this._signedMeterValuesConfiguration?.privateKeyFileId ||
       this._signedMeterValuesConfiguration?.encryptionMethod !== signingMethod ||
       publicKey.length === 0
     ) {
@@ -125,26 +124,20 @@ export class SignedMeterValuesUtil {
       return false;
     }
 
-    const retrievedPrivateKey = this.formatKey((
-      await this._fileAccess.getFile(
-        this._signedMeterValuesConfiguration.privateKeyFileId,
-      )
-    ).toString());
-
     switch (signingMethod) {
       case 'RSASSA-PKCS1-v1_5':
         try {
-          const cryptoPrivateKey = await crypto.subtle.importKey(
-            'pkcs8',
-            this.str2ab(atob(retrievedPrivateKey)),
+          const cryptoPublicKey = await crypto.subtle.importKey(
+            'spki',
+            this.str2ab(atob(retrievedPublicKey)),
             { name: signingMethod, hash: signedMeterValue.encodingMethod},
             true,
-            ['sign', 'verify']
+            ['verify']
           );
 
           const signatureBuffer = Buffer.from(signedMeterValue.signedMeterData, 'base64');
           // For now, we only care that the signature could be read, regardless of the value in the signature.
-          await crypto.subtle.verify(signingMethod, cryptoPrivateKey, signatureBuffer, signatureBuffer);
+          await crypto.subtle.verify(signingMethod, cryptoPublicKey, signatureBuffer, signatureBuffer);
           return true;
         } catch (e) {
           if (e instanceof DOMException) {
@@ -160,14 +153,13 @@ export class SignedMeterValuesUtil {
 
   private formatKey(key: string) {
     return key
-      .replace('-----BEGIN PRIVATE KEY-----', '')
-      .replace('-----END PRIVATE KEY-----', '')
       .replace('-----BEGIN PUBLIC KEY-----', '')
       .replace('-----END PUBLIC KEY-----', '')
       .replace(/(\r\n|\n|\r)/gm, '');
   }
 
-  private str2ab(str: string){
+  // https://developer.chrome.com/blog/how-to-convert-arraybuffer-to-and-from-string
+  private str2ab(str: string) {
     const buf = new ArrayBuffer(str.length);
     const bufView = new Uint8Array(buf);
     for (let i = 0, strLen = str.length; i < strLen; i++) {
