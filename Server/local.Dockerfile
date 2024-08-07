@@ -3,7 +3,7 @@ FROM node:18 as build
 WORKDIR /usr/local/apps/citrineos
 
 COPY . .
-RUN npm install --workspaces --verbose && npm run compile --workspaces --verbose
+RUN npm run install-all && npm run build
 RUN npm rebuild bcrypt --build-from-source && npm rebuild deasync --build-from-source
 
 # The final stage, which copies built files and prepares the run environment
