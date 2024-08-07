@@ -15,7 +15,7 @@ export interface BootConfig {
    */
   bootRetryInterval?: number;
   status: RegistrationStatusEnumType;
-  statusInfo?: StatusInfoType;
+  statusInfo?: StatusInfoType | null;
   /**
    * Also declared in SystemConfig. If absent, SystemConfig value is used.
    */

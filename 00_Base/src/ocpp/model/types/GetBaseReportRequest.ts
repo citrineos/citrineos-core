@@ -14,7 +14,7 @@ import { ReportBaseEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface GetBaseReportRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * The Id of the request.
    *
