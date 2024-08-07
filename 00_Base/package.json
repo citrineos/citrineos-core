@@ -10,10 +10,7 @@
   "scripts": {
     "prepublish": "npx eslint ./src",
     "generate-interfaces": "node json-schema-processor.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "npm run clean && tsc -p tsconfig.json",
-    "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
-    "fresh": "rm -rf node_modules package-lock.json && npm run clean"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "ocpp",

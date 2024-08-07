@@ -572,9 +572,20 @@ export class MessageRouterImpl
       },
       body: JSON.stringify(requestBody),
     })
-      .then((res) => res.status === 200)
+      .then((res) => {
+        if (!res.ok) {
+          return res.text().then((errorText) => {
+            throw new Error(
+              `${res.status} ${res.statusText} - ${JSON.stringify(errorText)}`,
+            );
+          });
+        }
+        return true;
+      })
       .catch((error) => {
-        this._logger.error(error);
+        this._logger.error(
+          `Route to subscription ${url} on charging station ${requestBody.stationId} failed. Event: ${requestBody.event}, ${error}`,
+        );
         return false;
       });
   }
