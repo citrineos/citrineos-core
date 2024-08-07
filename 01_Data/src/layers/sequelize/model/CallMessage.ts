@@ -5,6 +5,10 @@
 
 import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
 
+/**
+ * The CallMessage model can be extended with new optional fields,
+ * e.g. chargingProfileId, for other correlationId related lookups.
+ */
 @Table
 export class CallMessage extends Model {
   static readonly MODEL_NAME: string = 'CallMessage';
