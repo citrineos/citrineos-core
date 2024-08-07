@@ -127,7 +127,7 @@ export class SignedMeterValuesUtil {
         publicKeyFileId !==
           this._signedMeterValuesConfiguration?.publicKeyFileId) ||
       (!publicKeyFileId && incomingPublicKeyString.length === 0) ||
-      this._signedMeterValuesConfiguration?.encryptionMethod !== signingMethod
+      this._signedMeterValuesConfiguration?.signingMethod !== signingMethod
     ) {
       return false;
     }
