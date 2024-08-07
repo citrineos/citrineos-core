@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { RegistrationStatusEnumType, defineConfig } from '@citrineos/base';
+import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
 import path from 'path';
 
 export function createLocalConfig() {
@@ -70,7 +70,10 @@ export function createLocalConfig() {
       },
       swagger: {
         path: '/docs',
-        logoPath: path.resolve(__dirname, '../../assets/logo.png'),
+        logoPath: path.resolve(
+          path.dirname(__filename),
+          '../../assets/logo.png',
+        ),
         exposeData: true,
         exposeMessage: true,
       },
@@ -116,7 +119,7 @@ export function createLocalConfig() {
           acme: {
             env: 'staging',
             accountKeyFilePath: path.resolve(
-              __dirname,
+              path.dirname(__filename),
               '../../assets/certificates/acme_account_key.pem',
             ),
             email: 'test@citrineos.com',
