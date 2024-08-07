@@ -29,7 +29,7 @@ export class Evse extends Model implements EVSEType {
     type: DataType.INTEGER,
     unique: 'id_connectorId',
   })
-  declare connectorId?: number;
+  declare connectorId?: number | null;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

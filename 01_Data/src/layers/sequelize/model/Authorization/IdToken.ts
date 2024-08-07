@@ -28,8 +28,8 @@ export class IdToken extends Model implements IdTokenType {
   })
   declare type: IdTokenEnumType;
 
+  declare customData?: CustomDataType | null;
+
   @HasOne(() => Authorization)
   declare authorization: Authorization;
-
-  declare customData?: CustomDataType;
 }

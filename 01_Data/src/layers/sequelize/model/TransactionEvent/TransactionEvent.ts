@@ -38,16 +38,16 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   declare seqNo: number;
 
   @Column({ type: DataType.BOOLEAN, defaultValue: false })
-  declare offline?: boolean;
+  declare offline?: boolean | null;
 
   @Column(DataType.INTEGER)
-  declare numberOfPhasesUsed?: number;
+  declare numberOfPhasesUsed?: number | null;
 
   @Column(DataType.DECIMAL)
-  declare cableMaxCurrent?: number;
+  declare cableMaxCurrent?: number | null;
 
   @Column(DataType.INTEGER)
-  declare reservationId?: number;
+  declare reservationId?: number | null;
 
   @ForeignKey(() => Transaction)
   declare transactionDatabaseId?: string;
@@ -59,16 +59,16 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   declare transactionInfo: TransactionType;
 
   @ForeignKey(() => Evse)
-  declare evseId?: number;
+  declare evseId?: number | null;
 
   @BelongsTo(() => Evse)
   declare evse?: EVSEType;
 
   @ForeignKey(() => IdToken)
-  declare idTokenId?: number;
+  declare idTokenId?: number | null;
 
   @BelongsTo(() => IdToken)
   declare idToken?: IdToken;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

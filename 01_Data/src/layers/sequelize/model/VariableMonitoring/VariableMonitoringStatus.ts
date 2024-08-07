@@ -14,7 +14,7 @@ export class VariableMonitoringStatus extends Model {
   declare status: string;
 
   @Column(DataType.JSON)
-  declare statusInfo?: StatusInfoType;
+  declare statusInfo?: StatusInfoType | null;
 
   /**
    * Relations
@@ -25,7 +25,7 @@ export class VariableMonitoringStatus extends Model {
 
   @ForeignKey(() => VariableMonitoring)
   @Column(DataType.INTEGER)
-  declare variableMonitoringId?: number;
+  declare variableMonitoringId?: number | null;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

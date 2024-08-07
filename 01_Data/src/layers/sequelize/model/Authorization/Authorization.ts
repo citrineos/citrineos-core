@@ -31,10 +31,10 @@ export class Authorization extends Model implements AuthorizationData, Authoriza
 
   @ForeignKey(() => IdTokenInfo)
   @Column(DataType.INTEGER)
-  declare idTokenInfoId?: number;
+  declare idTokenInfoId?: number | null;
 
   @BelongsTo(() => IdTokenInfo)
   declare idTokenInfo?: IdTokenInfoType;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

@@ -14,11 +14,11 @@ export class MeterValue extends Model implements MeterValueType {
 
   @ForeignKey(() => TransactionEvent)
   @Column(DataType.INTEGER)
-  declare transactionEventId?: number;
+  declare transactionEventId?: number | null;
 
   @ForeignKey(() => Transaction)
   @Column(DataType.INTEGER)
-  declare transactionDatabaseId?: number;
+  declare transactionDatabaseId?: number | null;
 
   @Column(DataType.JSON)
   declare sampledValue: [SampledValueType, ...SampledValueType[]];
@@ -31,5 +31,5 @@ export class MeterValue extends Model implements MeterValueType {
   })
   declare timestamp: string;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

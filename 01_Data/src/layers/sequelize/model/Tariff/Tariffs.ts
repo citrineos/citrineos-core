@@ -43,7 +43,7 @@ export class Tariff extends Model implements TariffData {
       return parseFloat(this.getDataValue('pricePerMin'));
     },
   })
-  declare pricePerMin?: number;
+  declare pricePerMin?: number | null;
 
   @Column({
     type: DataType.DECIMAL,
@@ -54,7 +54,7 @@ export class Tariff extends Model implements TariffData {
       return parseFloat(this.getDataValue('pricePerSession'));
     },
   })
-  declare pricePerSession?: number;
+  declare pricePerSession?: number | null;
 
   @Column({
     type: DataType.DECIMAL,
@@ -65,7 +65,7 @@ export class Tariff extends Model implements TariffData {
       return parseFloat(this.getDataValue('authorizationAmount'));
     },
   })
-  declare authorizationAmount?: number;
+  declare authorizationAmount?: number | null;
 
   @Column({
     type: DataType.DECIMAL,
@@ -76,7 +76,7 @@ export class Tariff extends Model implements TariffData {
       return parseFloat(this.getDataValue('paymentFee'));
     },
   })
-  declare paymentFee?: number;
+  declare paymentFee?: number | null;
 
   @Column({
     type: DataType.DECIMAL,
@@ -87,7 +87,7 @@ export class Tariff extends Model implements TariffData {
       return parseFloat(this.getDataValue('taxRate'));
     },
   })
-  declare taxRate?: number;
+  declare taxRate?: number | null;
 
   declare id: number;
   declare updatedAt: CreationOptional<Date>;
@@ -115,10 +115,10 @@ export interface TariffData {
   currency: string;
 
   pricePerKwh: number;
-  pricePerMin?: number;
-  pricePerSession?: number;
-  taxRate?: number;
+  pricePerMin?: number | null;
+  pricePerSession?: number | null;
+  taxRate?: number | null;
 
-  authorizationAmount?: number;
-  paymentFee?: number;
+  authorizationAmount?: number | null;
+  paymentFee?: number | null;
 }

@@ -24,7 +24,7 @@ export class ChargingStation extends Model {
 
   @ForeignKey(() => Location)
   @Column(DataType.INTEGER)
-  declare locationId?: number;
+  declare locationId?: number | null;
 
   @HasMany(() => StatusNotification)
   declare statusNotifications?: StatusNotificationRequest[];

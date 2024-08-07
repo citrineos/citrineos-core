@@ -14,24 +14,49 @@ export class EventData extends Model implements EventDataType {
    */
   @Index
   @Column({
-    unique: 'stationId',
+    type: DataType.STRING,
+    unique: 'stationId_eventId',
   })
   declare stationId: string;
 
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    unique: 'stationId_eventId',
+  })
   declare eventId: number;
 
   @Column(DataType.STRING)
   declare trigger: EventTriggerEnumType;
 
   @Column(DataType.INTEGER)
-  declare cause?: number;
+  declare cause?: number | null;
+
+  @Column({
+    type: DataType.DATE,
+    get() {
+      const timestamp: Date = this.getDataValue('timestamp');
+      return timestamp ? timestamp.toISOString() : null;
+    },
+  })
+  declare timestamp: string;
+
+  @Column(DataType.STRING)
+  declare actualValue: string;
+
+  @Column(DataType.STRING)
+  declare techCode?: string | null;
+
+  @Column(DataType.STRING)
+  declare techInfo?: string | null;
 
   @Column(DataType.BOOLEAN)
-  declare cleared?: boolean;
+  declare cleared?: boolean | null;
+
+  @Column(DataType.STRING)
+  declare transactionId?: string | null;
 
   @Column(DataType.INTEGER)
-  declare variableMonitoringId?: number;
+  declare variableMonitoringId?: number | null;
 
   @Column(DataType.STRING)
   declare eventNotificationType: EventNotificationEnumType;
@@ -57,15 +82,5 @@ export class EventData extends Model implements EventDataType {
   })
   declare componentId?: number;
 
-  declare timestamp: string;
-
-  declare actualValue: string;
-
-  declare techCode?: string;
-
-  declare techInfo?: string;
-
-  declare transactionId?: string;
-
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

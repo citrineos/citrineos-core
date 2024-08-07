@@ -33,5 +33,5 @@ export class StatusNotification extends Model implements StatusNotificationReque
   @Column(DataType.INTEGER)
   declare connectorId: number;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }
