@@ -14,7 +14,7 @@ import { ILogObj, Logger } from 'tslog';
 import * as crypto from 'node:crypto';
 
 /**
- * Util to process and validate signed meter values
+ * Util to process and validate signed meter values.
  */
 export class SignedMeterValuesUtil {
   private readonly _fileAccess: IFileAccess;
@@ -29,11 +29,11 @@ export class SignedMeterValuesUtil {
   /**
    * @param {IFileAccess} [fileAccess] - The `fileAccess` allows access to the configured file storage.
    *
-   * @param {SystemConfig} config - The `config` contains configuration settings for the module.
+   * @param {SystemConfig} config - The `config` contains the current system configuration settings.
    *
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter that represents an instance of {@link Logger<ILogObj>}.
+   * @param {Logger<ILogObj>} [logger] - The `logger` represents an instance of {@link Logger<ILogObj>}.
    *
-   * @param {IDeviceModelRepository} [deviceModelRepository] - `deviceModelRepository` represents a repository for accessing and manipulating variable attribute data.
+   * @param {IDeviceModelRepository} [deviceModelRepository] - The `deviceModelRepository` represents a repository for accessing and manipulating variable attribute data.
    *
    */
   constructor(

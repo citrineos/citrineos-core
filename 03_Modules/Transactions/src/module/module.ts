@@ -328,13 +328,15 @@ export class TransactionsModule extends AbstractModule {
       }
 
       if (transactionEvent.meterValue) {
-        await this._signedMeterValuesUtil.validateMeterValues(
+        const anyInvalidMeterValues = await this._signedMeterValuesUtil.validateMeterValues(
           stationId,
           transactionEvent.meterValue,
         );
-      }
 
-      // validate public key, do we need to throw here though...?
+        if (anyInvalidMeterValues) {
+          this._logger.warn('One or more MeterValues in this TransactionEvent have an invalid signature.');
+        }
+      }
 
       this.sendCallResultWithMessage(message, response).then(
         (messageConfirmation) => {

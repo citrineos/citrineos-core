@@ -2,8 +2,7 @@ import { Column, Model, Table, DataType } from 'sequelize-typescript';
 import { Namespace } from '@citrineos/base';
 
 /**
- * Represents the security information found on a particular charging station
- * TODO workshop name
+ * Represents the security information found on a particular charging station.
  */
 @Table
 export class ChargingStationSecurityInfo extends Model {
@@ -15,7 +14,7 @@ export class ChargingStationSecurityInfo extends Model {
   })
   stationId!: string;
 
-  // TODO store public key information into the database
+  // TODO: store public key information into the database
   // then reference here with foreign key. Transition to
   // using a foreign key by migrating current system config
   // into a database entry to store this information.
