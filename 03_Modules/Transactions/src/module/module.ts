@@ -341,13 +341,13 @@ export class TransactionsModule extends AbstractModule {
       }
 
       if (transactionEvent.meterValue) {
-        const anyInvalidMeterValues =
+        const meterValuesValid =
           await this._signedMeterValuesUtil.validateMeterValues(
             stationId,
             transactionEvent.meterValue,
           );
 
-        if (anyInvalidMeterValues) {
+        if (!meterValuesValid) {
           this._logger.warn(
             'One or more MeterValues in this TransactionEvent have an invalid signature.',
           );
@@ -385,13 +385,13 @@ export class TransactionsModule extends AbstractModule {
       ),
     );
 
-    const anyInvalidMeterValues =
+    const meterValuesValid =
       await this._signedMeterValuesUtil.validateMeterValues(
         stationId,
         meterValues,
       );
 
-    if (anyInvalidMeterValues) {
+    if (!meterValuesValid) {
       throw new OcppError(
         message.context.correlationId,
         ErrorCode.SecurityError,

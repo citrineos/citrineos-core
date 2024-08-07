@@ -59,7 +59,7 @@ export class SignedMeterValuesUtil {
     stationId: string,
     meterValues: [MeterValueType, ...MeterValueType[]],
   ): Promise<boolean> {
-    let anyInvalidMeterValues = false;
+    let validMeterValues = true;
 
     const expectPublicKey =
       await this._deviceModelRepository.readAllByQuerystring({
@@ -93,16 +93,16 @@ export class SignedMeterValuesUtil {
                 this._signedMeterValuesConfiguration.publicKeyFileId,
               );
             } else {
-              anyInvalidMeterValues = true;
+              validMeterValues = false;
             }
           } else {
             const chargingStationPublicKeyFileId =
               await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileId(
                 stationId,
               );
-            anyInvalidMeterValues =
-              anyInvalidMeterValues ||
-              !(await this.isMeterValueSignatureValid(
+            validMeterValues =
+              validMeterValues &&
+              (await this.isMeterValueSignatureValid(
                 signedMeterValue,
                 chargingStationPublicKeyFileId,
               ));
@@ -111,7 +111,7 @@ export class SignedMeterValuesUtil {
       }
     }
 
-    return anyInvalidMeterValues;
+    return validMeterValues;
   }
 
   private async isMeterValueSignatureValid(
