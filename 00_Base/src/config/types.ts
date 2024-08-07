@@ -96,7 +96,7 @@ export const systemConfigInputSchema = z.object({
         .object({
           publicKeyFileId: z.string(),
           privateKeyFileId: z.string(),
-          encryptionMethod: z.string(), // TODO make enum?
+          encryptionMethod: z.string(),
         })
         .optional(),
     }),
@@ -345,7 +345,7 @@ export const systemConfigSchema = z
             .object({
               publicKeyFileId: z.string(),
               privateKeyFileId: z.string(),
-              encryptionMethod: z.string(), // TODO make enum?
+              encryptionMethod: z.string(),
             })
             .optional(),
         })
