@@ -17,9 +17,10 @@
     "@faker-js/faker": "^8.4.1"
   },
   "scripts": {
-    "install-all": "npm i --verbose",
-    "copy-assets": "cp -rv Server/src/assets Server/dist/assets",
+    "install-all": "npm i --workspaces --verbose",
+    "copy-assets": "npm run copy-assets --prefix ./Server",
     "build": "tsc --build --verbose",
+    "postbuild": "npm run copy-assets",
     "clear-cache": "npm cache clean --force",
     "remove-dependencies": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json node_modules **/node_modules **/**/node_modules",
     "fresh": "npm run clean && npm run remove-dependencies && npm run clear-cache",
