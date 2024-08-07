@@ -51,16 +51,6 @@
     "03_Modules/SmartCharging",
     "03_Modules/Tenant",
     "03_Modules/Transactions",
-    "Server",
-    "../citrineos-ocpi/00_Base",
-    "../citrineos-ocpi/03_Modules/Versions",
-    "../citrineos-ocpi/03_Modules/Credentials",
-    "../citrineos-ocpi/03_Modules/Commands",
-    "../citrineos-ocpi/03_Modules/Locations",
-    "../citrineos-ocpi/03_Modules/Sessions",
-    "../citrineos-ocpi/03_Modules/ChargingProfiles",
-    "../citrineos-ocpi/03_Modules/Cdrs",
-    "../citrineos-ocpi/03_Modules/Tariffs",
-    "../citrineos-ocpi/03_Modules/Tokens"
+    "Server"
   ]
 }

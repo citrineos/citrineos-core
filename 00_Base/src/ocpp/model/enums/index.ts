@@ -808,7 +808,7 @@ export const enum UpdateEnumType {
  * within the CSMS.
  *
  */
-export const enum RegistrationStatusEnumType {
+export enum RegistrationStatusEnumType {
   Accepted = 'Accepted',
   Pending = 'Pending',
   Rejected = 'Rejected',
