@@ -11,7 +11,7 @@ export class SequelizeChargingStationSecurityInfoRepository extends SequelizeRep
   }
 
   async readChargingStationPublicKeyFileId(stationId: string): Promise<string> {
-    const existingInfo = await this.readByKey(stationId);
+    const existingInfo = await this.readOnlyOneByQuery({ where: { stationId } });
     return existingInfo ? existingInfo.publicKeyFileId : '';
   }
 

@@ -96,7 +96,7 @@ export class SignedMeterValuesUtil {
               anyInvalidMeterValues = true;
             }
           } else {
-            const existingPublicKey =
+            const chargingStationPublicKeyFileId =
               await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileId(
                 stationId,
               );
@@ -104,7 +104,7 @@ export class SignedMeterValuesUtil {
               anyInvalidMeterValues ||
               !(await this.isMeterValueSignatureValid(
                 signedMeterValue,
-                existingPublicKey,
+                chargingStationPublicKeyFileId,
               ));
           }
         }
@@ -116,24 +116,23 @@ export class SignedMeterValuesUtil {
 
   private async isMeterValueSignatureValid(
     signedMeterValue: SignedMeterValueType,
-    existingPublicKey?: string,
+    publicKeyFileId?: string,
   ): Promise<boolean> {
-    const publicKey = Buffer.from(
-      existingPublicKey ?? signedMeterValue.publicKey,
-      'base64',
-    ).toString();
+    const incomingPublicKeyString = signedMeterValue.publicKey;
     const signingMethod = signedMeterValue.signingMethod;
 
     if (
       !this._signedMeterValuesConfiguration?.publicKeyFileId ||
-      this._signedMeterValuesConfiguration?.encryptionMethod !==
-        signingMethod ||
-      publicKey.length === 0
+      (publicKeyFileId &&
+        publicKeyFileId !==
+          this._signedMeterValuesConfiguration?.publicKeyFileId) ||
+      (!publicKeyFileId && incomingPublicKeyString.length === 0) ||
+      this._signedMeterValuesConfiguration?.encryptionMethod !== signingMethod
     ) {
       return false;
     }
 
-    const retrievedPublicKey = this.formatKey(
+    const configuredPublicKey = this.formatKey(
       (
         await this._fileAccess.getFile(
           this._signedMeterValuesConfiguration.publicKeyFileId,
@@ -141,8 +140,15 @@ export class SignedMeterValuesUtil {
       ).toString(),
     );
 
-    if (retrievedPublicKey !== publicKey) {
-      return false;
+    if (incomingPublicKeyString.length > 0) {
+      const signedMeterValuePublicKey = Buffer.from(
+        signedMeterValue.publicKey,
+        'base64',
+      ).toString();
+
+      if (configuredPublicKey !== signedMeterValuePublicKey) {
+        return false;
+      }
     }
 
     switch (signingMethod) {
@@ -150,7 +156,7 @@ export class SignedMeterValuesUtil {
         try {
           const cryptoPublicKey = await crypto.subtle.importKey(
             'spki',
-            this.str2ab(atob(retrievedPublicKey)),
+            this.str2ab(atob(configuredPublicKey)),
             { name: signingMethod, hash: signedMeterValue.encodingMethod },
             true,
             ['verify'],
@@ -192,7 +198,7 @@ export class SignedMeterValuesUtil {
   }
 
   // https://developer.chrome.com/blog/how-to-convert-arraybuffer-to-and-from-string
-  private str2ab(str: string) {
+  private str2ab(str: string): ArrayBuffer {
     const buf = new ArrayBuffer(str.length);
     const bufView = new Uint8Array(buf);
     for (let i = 0, strLen = str.length; i < strLen; i++) {
