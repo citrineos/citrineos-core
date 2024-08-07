@@ -43,11 +43,6 @@ export function createLocalConfig() {
       transactions: {
         endpointPrefix: '/transactions',
         costUpdatedInterval: 60,
-        signedMeterValuesConfiguration: {
-          publicKeyFileId: 'd38822e5-eeb1-40ab-b679-03e4da5ff2d9',
-          privateKeyFileId: 'a22d2882-9533-4a56-b889-c0a0975238c6',
-          encryptionMethod: 'RSASSA-PKCS1-v1_5'
-        }
       },
     },
     data: {
@@ -86,8 +81,6 @@ export function createLocalConfig() {
         host: '0.0.0.0',
         port: 8055,
         generateFlows: false,
-        username: 'admin@citrineos.com',
-        password: 'CitrineOS!'
       },
       networkConnection: {
         websocketServers: [
