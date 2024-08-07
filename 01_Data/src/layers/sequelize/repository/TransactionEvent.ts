@@ -3,18 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  type ChargingStateEnumType,
-  CrudRepository,
-  type EVSEType,
-  IdTokenEnumType,
-  type IdTokenType,
-  MeterValueType,
-  MeterValueUtils,
-  SystemConfig,
-  TransactionEventEnumType,
-  type TransactionEventRequest,
-} from '@citrineos/base';
+import { type ChargingStateEnumType, CrudRepository, type EVSEType, IdTokenEnumType, type IdTokenType, MeterValueType, MeterValueUtils, SystemConfig, TransactionEventEnumType, type TransactionEventRequest } from '@citrineos/base';
 import { type ITransactionEventRepository } from '../../../interfaces';
 import { MeterValue, Transaction, TransactionEvent } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';

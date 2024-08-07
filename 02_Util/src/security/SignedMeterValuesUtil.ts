@@ -1,12 +1,13 @@
 import {
+  IChargingStationSecurityInfoRepository,
   IDeviceModelRepository,
   sequelize,
-  SequelizeChargingStationSecurityInfoRepository,
 } from '@citrineos/data';
 import {
   IFileAccess,
   MeterValueType,
-  SignedMeterValuesConfig, SignedMeterValueType,
+  SignedMeterValuesConfig,
+  SignedMeterValueType,
   SystemConfig,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
@@ -19,7 +20,7 @@ export class SignedMeterValuesUtil {
   private readonly _fileAccess: IFileAccess;
   private readonly _logger: Logger<ILogObj>;
   private readonly _deviceModelRepository: IDeviceModelRepository;
-  private readonly _chargingStationSecurityInfoRepository: SequelizeChargingStationSecurityInfoRepository;
+  private readonly _chargingStationSecurityInfoRepository: IChargingStationSecurityInfoRepository;
 
   private readonly _signedMeterValuesConfiguration:
     | SignedMeterValuesConfig
@@ -44,17 +45,19 @@ export class SignedMeterValuesUtil {
     this._fileAccess = fileAccess;
     this._logger = logger;
     this._deviceModelRepository = deviceModelRepository;
-    this._chargingStationSecurityInfoRepository = new sequelize.SequelizeChargingStationSecurityInfoRepository(
-      config,
-      logger,
-    );
+    this._chargingStationSecurityInfoRepository =
+      new sequelize.SequelizeChargingStationSecurityInfoRepository(
+        config,
+        logger,
+      );
 
-    this._signedMeterValuesConfiguration = config.modules.transactions.signedMeterValuesConfiguration;
+    this._signedMeterValuesConfiguration =
+      config.modules.transactions.signedMeterValuesConfiguration;
   }
 
   public async validateMeterValues(
     stationId: string,
-    meterValues: [MeterValueType, ...MeterValueType[]]
+    meterValues: [MeterValueType, ...MeterValueType[]],
   ): Promise<boolean> {
     let anyInvalidMeterValues = false;
 
@@ -74,11 +77,17 @@ export class SignedMeterValuesUtil {
             continue;
           }
 
-          if (signedMeterValue.publicKey && signedMeterValue.publicKey.length > 0) {
+          if (
+            signedMeterValue.publicKey &&
+            signedMeterValue.publicKey.length > 0
+          ) {
             const incomingPublicKeyIsValid =
               await this.isMeterValueSignatureValid(signedMeterValue);
 
-            if (this._signedMeterValuesConfiguration && incomingPublicKeyIsValid) {
+            if (
+              this._signedMeterValuesConfiguration &&
+              incomingPublicKeyIsValid
+            ) {
               await this._chargingStationSecurityInfoRepository.readOrCreateChargingStationInfo(
                 stationId,
                 this._signedMeterValuesConfiguration.publicKeyFileId,
@@ -88,12 +97,15 @@ export class SignedMeterValuesUtil {
             }
           } else {
             const existingPublicKey =
-              await this._chargingStationSecurityInfoRepository.readChargingStationpublicKeyFileId(
+              await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileId(
                 stationId,
               );
             anyInvalidMeterValues =
               anyInvalidMeterValues ||
-              !(await this.isMeterValueSignatureValid(signedMeterValue, existingPublicKey));
+              !(await this.isMeterValueSignatureValid(
+                signedMeterValue,
+                existingPublicKey,
+              ));
           }
         }
       }
@@ -102,23 +114,32 @@ export class SignedMeterValuesUtil {
     return anyInvalidMeterValues;
   }
 
-  private async isMeterValueSignatureValid(signedMeterValue: SignedMeterValueType, existingPublicKey?: string): Promise<boolean> {
-    const publicKey = Buffer.from((existingPublicKey ?? signedMeterValue.publicKey), 'base64').toString();
+  private async isMeterValueSignatureValid(
+    signedMeterValue: SignedMeterValueType,
+    existingPublicKey?: string,
+  ): Promise<boolean> {
+    const publicKey = Buffer.from(
+      existingPublicKey ?? signedMeterValue.publicKey,
+      'base64',
+    ).toString();
     const signingMethod = signedMeterValue.signingMethod;
 
     if (
       !this._signedMeterValuesConfiguration?.publicKeyFileId ||
-      this._signedMeterValuesConfiguration?.encryptionMethod !== signingMethod ||
+      this._signedMeterValuesConfiguration?.encryptionMethod !==
+        signingMethod ||
       publicKey.length === 0
     ) {
       return false;
     }
 
-    const retrievedPublicKey = this.formatKey((
-      await this._fileAccess.getFile(
-        this._signedMeterValuesConfiguration.publicKeyFileId,
-      )
-    ).toString());
+    const retrievedPublicKey = this.formatKey(
+      (
+        await this._fileAccess.getFile(
+          this._signedMeterValuesConfiguration.publicKeyFileId,
+        )
+      ).toString(),
+    );
 
     if (retrievedPublicKey !== publicKey) {
       return false;
@@ -130,23 +151,35 @@ export class SignedMeterValuesUtil {
           const cryptoPublicKey = await crypto.subtle.importKey(
             'spki',
             this.str2ab(atob(retrievedPublicKey)),
-            { name: signingMethod, hash: signedMeterValue.encodingMethod},
+            { name: signingMethod, hash: signedMeterValue.encodingMethod },
             true,
-            ['verify']
+            ['verify'],
           );
 
-          const signatureBuffer = Buffer.from(signedMeterValue.signedMeterData, 'base64');
+          const signatureBuffer = Buffer.from(
+            signedMeterValue.signedMeterData,
+            'base64',
+          );
           // For now, we only care that the signature could be read, regardless of the value in the signature.
-          await crypto.subtle.verify(signingMethod, cryptoPublicKey, signatureBuffer, signatureBuffer);
+          await crypto.subtle.verify(
+            signingMethod,
+            cryptoPublicKey,
+            signatureBuffer,
+            signatureBuffer,
+          );
           return true;
         } catch (e) {
           if (e instanceof DOMException) {
-            this._logger.warn(`Error decrypting private key or verifying signature from Signed Meter Value. Error: ${JSON.stringify(e.message)}`);
+            this._logger.warn(
+              `Error decrypting private key or verifying signature from Signed Meter Value. Error: ${JSON.stringify(e.message)}`,
+            );
           }
           return false;
         }
       default:
-        this._logger.warn(`${signingMethod} is not supported for Signed Meter Values.`);
+        this._logger.warn(
+          `${signingMethod} is not supported for Signed Meter Values.`,
+        );
         return false;
     }
   }

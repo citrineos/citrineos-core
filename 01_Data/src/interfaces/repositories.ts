@@ -36,7 +36,7 @@ import {
   MeterValueType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
-import { CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
+import { ChargingStationSecurityInfo, CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
 import { type VariableAttribute } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { type Authorization, type Boot, type Certificate, ChargingNeeds, type ChargingStation, type Component, type EventData, Evse, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';
@@ -141,4 +141,9 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   createChargingNeeds(chargingNeeds: NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds>;
   findChargingNeedsByEvseDBIdAndTransactionDBId(evseDBId: number, transactionDataBaseId: number): Promise<ChargingNeeds | undefined>;
   createCompositeSchedule(compositeSchedule: CompositeScheduleType, stationId: string): Promise<CompositeSchedule>;
+}
+
+export interface IChargingStationSecurityInfoRepository extends CrudRepository<ChargingStationSecurityInfo> {
+  readChargingStationPublicKeyFileId(stationId: string): Promise<string>;
+  readOrCreateChargingStationInfo(stationId: string, publicKeyFileId: string): Promise<void>;
 }

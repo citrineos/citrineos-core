@@ -3,14 +3,14 @@ import { ChargingStationSecurityInfo } from '../model/ChargingStationSecurityInf
 import { ILogObj, Logger } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
 import { SystemConfig } from '@citrineos/base';
+import { IChargingStationSecurityInfoRepository } from '../../../interfaces';
 
-// TODO consolidate into another repository, potentially
-export class SequelizeChargingStationSecurityInfoRepository extends SequelizeRepository<ChargingStationSecurityInfo> {
+export class SequelizeChargingStationSecurityInfoRepository extends SequelizeRepository<ChargingStationSecurityInfo> implements IChargingStationSecurityInfoRepository {
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, ChargingStationSecurityInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async readChargingStationpublicKeyFileId(stationId: string): Promise<string> {
+  async readChargingStationPublicKeyFileId(stationId: string): Promise<string> {
     const existingInfo = await this.readByKey(stationId);
     return existingInfo ? existingInfo.publicKeyFileId : '';
   }

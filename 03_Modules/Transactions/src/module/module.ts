@@ -201,7 +201,12 @@ export class TransactionsModule extends AbstractModule {
 
     this._authorizers = authorizers || [];
 
-    this._signedMeterValuesUtil = new SignedMeterValuesUtil(fileAccess, config, this._logger, this._deviceModelRepository);
+    this._signedMeterValuesUtil = new SignedMeterValuesUtil(
+      fileAccess,
+      config,
+      this._logger,
+      this._deviceModelRepository,
+    );
 
     this._sendCostUpdatedOnMeterValue =
       config.modules.transactions.sendCostUpdatedOnMeterValue;
@@ -323,7 +328,10 @@ export class TransactionsModule extends AbstractModule {
       }
 
       if (transactionEvent.meterValue) {
-        await this._signedMeterValuesUtil.validateMeterValues(stationId, transactionEvent.meterValue);
+        await this._signedMeterValuesUtil.validateMeterValues(
+          stationId,
+          transactionEvent.meterValue,
+        );
       }
 
       // validate public key, do we need to throw here though...?
@@ -353,9 +361,17 @@ export class TransactionsModule extends AbstractModule {
     const meterValues = message.payload.meterValue;
     const stationId = message.context.stationId;
 
-    await Promise.all(meterValues.map(meterValue => this.transactionEventRepository.createMeterValue(meterValue)));
+    await Promise.all(
+      meterValues.map((meterValue) =>
+        this.transactionEventRepository.createMeterValue(meterValue),
+      ),
+    );
 
-    const anyInvalidMeterValues = await this._signedMeterValuesUtil.validateMeterValues(stationId, meterValues);
+    const anyInvalidMeterValues =
+      await this._signedMeterValuesUtil.validateMeterValues(
+        stationId,
+        meterValues,
+      );
 
     if (anyInvalidMeterValues) {
       throw new OcppError(
