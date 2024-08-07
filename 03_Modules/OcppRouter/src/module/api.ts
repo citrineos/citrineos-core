@@ -6,6 +6,7 @@
 import {
   AbstractModuleApi,
   AsDataEndpoint,
+  BadRequestError,
   CallAction,
   HttpMethod,
   Namespace,
@@ -15,8 +16,11 @@ import { ILogObj, Logger } from 'tslog';
 import { IAdminApi } from './interface';
 import { MessageRouterImpl } from './router';
 import {
+  ChargingStationKeyQuerySchema,
   ChargingStationKeyQuerystring,
+  CreateSubscriptionSchema,
   ModelKeyQuerystring,
+  ModelKeyQuerystringSchema,
   Subscription,
 } from '@citrineos/data';
 
@@ -55,16 +59,35 @@ export class AdminApi
    * @param {FastifyRequest<{ Body: Subscription }>} request - The request object, containing the body which is parsed as a {@link Subscription}.
    * @return {Promise<number>} The id of the created subscription.
    */
-  @AsDataEndpoint(Namespace.Subscription, HttpMethod.Post)
+  @AsDataEndpoint(
+    Namespace.Subscription,
+    HttpMethod.Post,
+    undefined,
+    CreateSubscriptionSchema,
+  )
   async postSubscription(
     request: FastifyRequest<{ Body: Subscription }>,
   ): Promise<number> {
+    if (
+      !request.body.onClose &&
+      !request.body.onConnect &&
+      !request.body.onMessage &&
+      !request.body.sentMessage
+    ) {
+      throw new BadRequestError(
+        'Must specify at least one of onConnect, onClose, onMessage, sentMessage to true.',
+      );
+    }
     return this._module.subscriptionRepository
       .create(request.body as Subscription)
       .then((subscription) => subscription?.id);
   }
 
-  @AsDataEndpoint(Namespace.Subscription, HttpMethod.Get)
+  @AsDataEndpoint(
+    Namespace.Subscription,
+    HttpMethod.Get,
+    ChargingStationKeyQuerySchema,
+  )
   async getSubscriptionsByChargingStation(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Subscription[]> {
@@ -73,7 +96,11 @@ export class AdminApi
     );
   }
 
-  @AsDataEndpoint(Namespace.Subscription, HttpMethod.Delete)
+  @AsDataEndpoint(
+    Namespace.Subscription,
+    HttpMethod.Delete,
+    ModelKeyQuerystringSchema,
+  )
   async deleteSubscriptionById(
     request: FastifyRequest<{ Querystring: ModelKeyQuerystring }>,
   ): Promise<boolean> {
