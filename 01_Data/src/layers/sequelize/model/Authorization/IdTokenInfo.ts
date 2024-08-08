@@ -15,26 +15,26 @@ export class IdTokenInfo extends Model implements IdTokenInfoType {
   declare status: AuthorizationStatusEnumType;
 
   @Column(DataType.STRING)
-  declare cacheExpiryDateTime?: string;
+  declare cacheExpiryDateTime?: string | null;
 
   @Column(DataType.INTEGER)
-  declare chargingPriority?: number;
+  declare chargingPriority?: number | null;
 
   @Column(DataType.STRING)
-  declare language1?: string;
+  declare language1?: string | null;
 
   @ForeignKey(() => IdToken)
   @Column(DataType.INTEGER)
-  declare groupIdTokenId?: number;
+  declare groupIdTokenId?: number | null;
 
   @BelongsTo(() => IdToken)
   declare groupIdToken?: IdTokenType;
 
   @Column(DataType.STRING)
-  declare language2?: string;
+  declare language2?: string | null;
 
   @Column(DataType.JSON)
-  declare personalMessage?: MessageContentType;
+  declare personalMessage?: MessageContentType | null;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

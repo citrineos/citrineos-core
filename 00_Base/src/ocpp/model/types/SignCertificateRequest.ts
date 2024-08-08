@@ -14,13 +14,13 @@ import { CertificateSigningUseEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface SignCertificateRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * The Charging Station SHALL send the public key in form of a Certificate Signing Request (CSR) as described in RFC 2986 [22] and then PEM encoded, using the &lt;&lt;signcertificaterequest,SignCertificateRequest&gt;&gt; message.
    *
    */
   csr: string;
-  certificateType?: CertificateSigningUseEnumType;
+  certificateType?: CertificateSigningUseEnumType | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

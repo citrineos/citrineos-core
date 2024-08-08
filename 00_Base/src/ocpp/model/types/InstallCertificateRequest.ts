@@ -14,7 +14,7 @@ import { InstallCertificateUseEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface InstallCertificateRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   certificateType: InstallCertificateUseEnumType;
   /**
    * A PEM encoded X.509 certificate.

@@ -14,13 +14,13 @@ import { HashAlgorithmEnumType, IdTokenEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface AuthorizeRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   idToken: IdTokenType;
   /**
    * The X.509 certificated presented by EV and encoded in PEM format.
    *
    */
-  certificate?: string;
+  certificate?: string | null;
   /**
    * @minItems 1
    * @maxItems 4
@@ -48,7 +48,7 @@ export interface CustomDataType {
  *
  */
 export interface IdTokenType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -65,7 +65,7 @@ export interface IdTokenType {
  *
  */
 export interface AdditionalInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * This field specifies the additional IdToken.
    *
@@ -78,7 +78,7 @@ export interface AdditionalInfoType {
   type: string;
 }
 export interface OCSPRequestDataType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   hashAlgorithm: HashAlgorithmEnumType;
   /**
    * Hashed value of the Issuer DN (Distinguished Name).

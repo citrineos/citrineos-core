@@ -14,7 +14,7 @@ import { BootReasonEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface BootNotificationRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   chargingStation: ChargingStationType;
   reason: BootReasonEnumType;
 }
@@ -32,14 +32,14 @@ export interface CustomDataType {
  *
  */
 export interface ChargingStationType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Device. Serial_ Number. Serial_ Number
    * urn:x-oca:ocpp:uid:1:569324
    * Vendor-specific device identifier.
    *
    */
-  serialNumber?: string;
+  serialNumber?: string | null;
   /**
    * Device. Model. CI20_ Text
    * urn:x-oca:ocpp:uid:1:569325
@@ -47,7 +47,7 @@ export interface ChargingStationType {
    *
    */
   model: string;
-  modem?: ModemType;
+  modem?: ModemType | null;
   /**
    * Identifies the vendor (not necessarily in a unique manner).
    *
@@ -58,7 +58,7 @@ export interface ChargingStationType {
    *
    *
    */
-  firmwareVersion?: string;
+  firmwareVersion?: string | null;
 }
 /**
  * Wireless_ Communication_ Module
@@ -67,19 +67,19 @@ export interface ChargingStationType {
  *
  */
 export interface ModemType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Wireless_ Communication_ Module. ICCID. CI20_ Text
    * urn:x-oca:ocpp:uid:1:569327
    * This contains the ICCID of the modem’s SIM card.
    *
    */
-  iccid?: string;
+  iccid?: string | null;
   /**
    * Wireless_ Communication_ Module. IMSI. CI20_ Text
    * urn:x-oca:ocpp:uid:1:569328
    * This contains the IMSI of the modem’s SIM card.
    *
    */
-  imsi?: string;
+  imsi?: string | null;
 }

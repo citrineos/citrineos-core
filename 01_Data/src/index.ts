@@ -12,6 +12,7 @@ export * from 'sequelize-typescript';
 export {
   Authorization,
   Boot,
+  CallMessage,
   ChargingProfile,
   ChargingSchedule,
   ChargingStation,

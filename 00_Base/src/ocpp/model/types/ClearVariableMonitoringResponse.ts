@@ -14,7 +14,7 @@ import { ClearMonitoringStatusEnumType } from '../enums';
 import { OcppResponse } from '../../..';
 
 export interface ClearVariableMonitoringResponse extends OcppResponse {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -31,7 +31,7 @@ export interface CustomDataType {
   [k: string]: unknown;
 }
 export interface ClearMonitoringResultType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   status: ClearMonitoringStatusEnumType;
   /**
    * Id of the monitor of which a clear was requested.
@@ -39,14 +39,14 @@ export interface ClearMonitoringResultType {
    *
    */
   id: number;
-  statusInfo?: StatusInfoType;
+  statusInfo?: StatusInfoType | null;
 }
 /**
  * Element providing more information about the status.
  *
  */
 export interface StatusInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * A predefined code for the reason why the status is returned in this response. The string is case-insensitive.
    *
@@ -56,5 +56,5 @@ export interface StatusInfoType {
    * Additional text to provide detailed information.
    *
    */
-  additionalInfo?: string;
+  additionalInfo?: string | null;
 }

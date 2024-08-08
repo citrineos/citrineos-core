@@ -18,7 +18,7 @@ import {
 import { OcppRequest } from '../../..';
 
 export interface NotifyDisplayMessagesRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -32,7 +32,7 @@ export interface NotifyDisplayMessagesRequest extends OcppRequest {
    * "to be continued" indicator. Indicates whether another part of the report follows in an upcoming NotifyDisplayMessagesRequest message. Default value when omitted is false.
    *
    */
-  tbc?: boolean;
+  tbc?: boolean | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -48,8 +48,8 @@ export interface CustomDataType {
  *
  */
 export interface MessageInfoType {
-  customData?: CustomDataType;
-  display?: ComponentType;
+  customData?: CustomDataType | null;
+  display?: ComponentType | null;
   /**
    * Identified_ Object. MRID. Numeric_ Identifier
    * urn:x-enexis:ecdm:uid:1:569198
@@ -58,28 +58,28 @@ export interface MessageInfoType {
    */
   id: number;
   priority: MessagePriorityEnumType;
-  state?: MessageStateEnumType;
+  state?: MessageStateEnumType | null;
   /**
    * Message_ Info. Start. Date_ Time
    * urn:x-enexis:ecdm:uid:1:569256
    * From what date-time should this message be shown. If omitted: directly.
    *
    */
-  startDateTime?: string;
+  startDateTime?: string | null;
   /**
    * Message_ Info. End. Date_ Time
    * urn:x-enexis:ecdm:uid:1:569257
    * Until what date-time should this message be shown, after this date/time this message SHALL be removed.
    *
    */
-  endDateTime?: string;
+  endDateTime?: string | null;
   /**
    * During which transaction shall this message be shown.
    * Message SHALL be removed by the Charging Station after transaction has
    * ended.
    *
    */
-  transactionId?: string;
+  transactionId?: string | null;
   message: MessageContentType;
 }
 /**
@@ -87,8 +87,8 @@ export interface MessageInfoType {
  *
  */
 export interface ComponentType {
-  customData?: CustomDataType;
-  evse?: EVSEType;
+  customData?: CustomDataType | null;
+  evse?: EVSEType | null;
   /**
    * Name of the component. Name should be taken from the list of standardized component names whenever possible. Case Insensitive. strongly advised to use Camel Case.
    *
@@ -98,7 +98,7 @@ export interface ComponentType {
    * Name of instance in case the component exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
    *
    */
-  instance?: string;
+  instance?: string | null;
 }
 /**
  * EVSE
@@ -107,7 +107,7 @@ export interface ComponentType {
  *
  */
 export interface EVSEType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Identified_ Object. MRID. Numeric_ Identifier
    * urn:x-enexis:ecdm:uid:1:569198
@@ -119,7 +119,7 @@ export interface EVSEType {
    * An id to designate a specific connector (on an EVSE) by connector index number.
    *
    */
-  connectorId?: number;
+  connectorId?: number | null;
 }
 /**
  * Message_ Content
@@ -129,7 +129,7 @@ export interface EVSEType {
  *
  */
 export interface MessageContentType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   format: MessageFormatEnumType;
   /**
    * Message_ Content. Language. Language_ Code
@@ -137,7 +137,7 @@ export interface MessageContentType {
    * Message language identifier. Contains a language code as defined in &lt;&lt;ref-RFC5646,[RFC5646]&gt;&gt;.
    *
    */
-  language?: string;
+  language?: string | null;
   /**
    * Message_ Content. Content. Message
    * urn:x-enexis:ecdm:uid:1:570852

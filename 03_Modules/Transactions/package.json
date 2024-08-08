@@ -9,10 +9,7 @@
   ],
   "scripts": {
     "prepublish": "npx eslint",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "npm run clean && tsc -p tsconfig.json",
-    "clean": "rm -rf dist/* tsconfig.tsbuildinfo",
-    "fresh": "rm -rf node_modules package-lock.json && npm run clean"
+    "test": "jest --config jest.config.ts"
   },
   "keywords": [
     "ocpp",
@@ -22,7 +19,10 @@
   "devDependencies": {
     "@types/deasync-promise": "^1.0.0",
     "eslint": "^8.48.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "@faker-js/faker": "^8.4.1",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.12"
   },
   "dependencies": {
     "@citrineos/base": "1.4.0",

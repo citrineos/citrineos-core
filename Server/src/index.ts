@@ -58,7 +58,11 @@ import {
   type FastifySchemaCompiler,
   type FastifyValidationResult,
 } from 'fastify/types/schema';
-import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter';
+import {
+  AdminApi,
+  MessageRouterImpl,
+  WebhookDispatcher,
+} from '@citrineos/ocpprouter';
 import { Container, OcpiServer, OcpiServerConfig } from '@citrineos/ocpi-base';
 import { CommandsModule } from '@citrineos/ocpi-commands';
 import { VersionsModule } from '@citrineos/ocpi-versions';
@@ -357,12 +361,17 @@ export class CitrineOSServer {
       this._logger,
     );
 
+    const webhookDispatcher = new WebhookDispatcher(
+      this._repositoryStore.subscriptionRepository,
+    );
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const router = new MessageRouterImpl(
       this._config,
       this._cache,
       this._createSender(),
       this._createHandler(),
+      webhookDispatcher,
       async (_identifier: string, _message: string) => false,
       this._logger,
       this._ajv,
@@ -439,6 +448,8 @@ export class CitrineOSServer {
         undefined,
         undefined,
         undefined,
+        undefined,
+        undefined,
         [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);
@@ -505,6 +516,7 @@ export class CitrineOSServer {
         this._repositoryStore.componentRepository,
         this._repositoryStore.locationRepository,
         this._repositoryStore.tariffRepository,
+        undefined,
         [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);

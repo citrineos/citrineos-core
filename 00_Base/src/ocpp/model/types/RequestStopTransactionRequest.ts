@@ -13,7 +13,7 @@
 import { OcppRequest } from '../../..';
 
 export interface RequestStopTransactionRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * The identifier of the transaction which the Charging Station is requested to stop.
    *

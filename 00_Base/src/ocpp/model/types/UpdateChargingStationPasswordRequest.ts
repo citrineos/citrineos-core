@@ -5,6 +5,6 @@
 
 export interface UpdateChargingStationPasswordRequest {
   stationId: string;
-  password?: string;
+  password?: string | null;
   setOnCharger: boolean;
 }
