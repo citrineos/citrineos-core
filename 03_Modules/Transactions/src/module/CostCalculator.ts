@@ -38,8 +38,6 @@ export class CostCalculator {
     totalKwh?: number | null,
   ): Promise<number> {
     if (totalKwh === undefined || totalKwh === null) {
-      // TODO: maybe we should only fetch totalKwh and not recalculate it here?
-      //  (recalculation should ideally happen on updates?)
       const kwh =
         await this._transactionService.recalculateTotalKwh(transactionDbId);
       return this._calculateTotalCost(stationId, kwh);
