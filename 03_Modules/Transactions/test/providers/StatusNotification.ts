@@ -8,12 +8,12 @@ import { MOCK_CONNECTOR_ID, MOCK_EVSE_ID } from './DeviceModel';
 export function aStatusNotificationRequest(
   updateFunction?: UpdateFunction<StatusNotificationRequest>,
 ): StatusNotificationRequest {
-  const item: StatusNotificationRequest = {
+  const request: StatusNotificationRequest = {
     timestamp: new Date().toISOString(),
     connectorStatus: ConnectorStatusEnumType.Available,
     evseId: MOCK_EVSE_ID,
     connectorId: MOCK_CONNECTOR_ID,
   } as StatusNotificationRequest;
 
-  return applyUpdateFunction(item, updateFunction);
+  return applyUpdateFunction(request, updateFunction);
 }
