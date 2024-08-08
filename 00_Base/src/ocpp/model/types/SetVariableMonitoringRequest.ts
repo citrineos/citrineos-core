@@ -14,7 +14,7 @@ import { MonitorEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface SetVariableMonitoringRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -32,19 +32,19 @@ export interface CustomDataType {
  *
  */
 export interface SetMonitoringDataType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * An id SHALL only be given to replace an existing monitor. The Charging Station handles the generation of id's for new monitors.
    *
    *
    */
-  id?: number;
+  id?: number | null;
   /**
    * Monitor only active when a transaction is ongoing on a component relevant to this transaction. Default = false.
    *
    *
    */
-  transaction?: boolean;
+  transaction?: boolean | null;
   /**
    * Value for threshold or delta monitoring.
    * For Periodic or PeriodicClockAligned this is the interval in seconds.
@@ -89,8 +89,8 @@ export interface SetMonitoringDataType {
  *
  */
 export interface ComponentType {
-  customData?: CustomDataType;
-  evse?: EVSEType;
+  customData?: CustomDataType | null;
+  evse?: EVSEType | null;
   /**
    * Name of the component. Name should be taken from the list of standardized component names whenever possible. Case Insensitive. strongly advised to use Camel Case.
    *
@@ -100,7 +100,7 @@ export interface ComponentType {
    * Name of instance in case the component exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
    *
    */
-  instance?: string;
+  instance?: string | null;
 }
 /**
  * EVSE
@@ -109,7 +109,7 @@ export interface ComponentType {
  *
  */
 export interface EVSEType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Identified_ Object. MRID. Numeric_ Identifier
    * urn:x-enexis:ecdm:uid:1:569198
@@ -121,14 +121,14 @@ export interface EVSEType {
    * An id to designate a specific connector (on an EVSE) by connector index number.
    *
    */
-  connectorId?: number;
+  connectorId?: number | null;
 }
 /**
  * Reference key to a component-variable.
  *
  */
 export interface VariableType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Name of the variable. Name should be taken from the list of standardized variable names whenever possible. Case Insensitive. strongly advised to use Camel Case.
    *
@@ -138,5 +138,5 @@ export interface VariableType {
    * Name of instance in case the variable exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
    *
    */
-  instance?: string;
+  instance?: string | null;
 }

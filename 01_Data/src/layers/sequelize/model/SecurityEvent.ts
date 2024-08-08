@@ -29,7 +29,7 @@ export class SecurityEvent extends Model implements SecurityEventNotificationReq
   declare timestamp: string;
 
   @Column(DataType.STRING)
-  declare techInfo?: string;
+  declare techInfo?: string | null;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

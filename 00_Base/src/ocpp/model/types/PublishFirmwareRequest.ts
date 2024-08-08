@@ -13,7 +13,7 @@
 import { OcppRequest } from '../../..';
 
 export interface PublishFirmwareRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * This contains a string containing a URI pointing to a
    * location from which to retrieve the firmware.
@@ -26,7 +26,7 @@ export interface PublishFirmwareRequest extends OcppRequest {
    * present, it is left to Charging Station to decide how many times it wants to retry.
    *
    */
-  retries?: number;
+  retries?: number | null;
   /**
    * The MD5 checksum over the entire firmware file as a hexadecimal string of length 32.
    *
@@ -46,7 +46,7 @@ export interface PublishFirmwareRequest extends OcppRequest {
    * between attempts.
    *
    */
-  retryInterval?: number;
+  retryInterval?: number | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

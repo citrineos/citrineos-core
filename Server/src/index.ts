@@ -439,6 +439,8 @@ export class CitrineOSServer {
         undefined,
         undefined,
         undefined,
+        undefined,
+        undefined,
         [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);
@@ -506,6 +508,7 @@ export class CitrineOSServer {
         this._repositoryStore.componentRepository,
         this._repositoryStore.locationRepository,
         this._repositoryStore.tariffRepository,
+        undefined,
         [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);

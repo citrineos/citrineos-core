@@ -27,5 +27,5 @@ export class AdditionalInfo extends Model implements AdditionalInfoType {
   })
   declare type: string;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

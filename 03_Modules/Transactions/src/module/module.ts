@@ -41,6 +41,7 @@ import {
   IAuthorizationRepository,
   IDeviceModelRepository,
   ILocationRepository,
+  IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
   sequelize,
@@ -81,6 +82,8 @@ export class TransactionsModule extends AbstractModule {
   protected _componentRepository: CrudRepository<Component>;
   protected _locationRepository: ILocationRepository;
   protected _tariffRepository: ITariffRepository;
+  protected _reservationRepository: IReservationRepository;
+
   protected _transactionService: TransactionService;
   protected _fileAccess: IFileAccess;
 
@@ -142,6 +145,10 @@ export class TransactionsModule extends AbstractModule {
    * If no `tariffRepository` is provided, a default {@link sequelize:tariffRepository} instance is
    * created and used.
    *
+   * @param {IReservationRepository} [reservationRepository] - An optional parameter of type {@link IReservationRepository}
+   * which represents a repository for accessing and manipulating reservation data.
+   * If no `reservationRepository` is provided, a default {@link sequelize:reservationRepository} instance is created and used.
+   *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
    */
@@ -158,6 +165,7 @@ export class TransactionsModule extends AbstractModule {
     componentRepository?: CrudRepository<Component>,
     locationRepository?: ILocationRepository,
     tariffRepository?: ITariffRepository,
+    reservationRepository?: IReservationRepository,
     authorizers?: IAuthorizer[],
   ) {
     super(
@@ -198,6 +206,9 @@ export class TransactionsModule extends AbstractModule {
     this._tariffRepository =
       tariffRepository ||
       new sequelize.SequelizeTariffRepository(config, logger);
+    this._reservationRepository =
+      reservationRepository ||
+      new sequelize.SequelizeReservationRepository(config, logger);
 
     this._authorizers = authorizers || [];
 
@@ -257,6 +268,22 @@ export class TransactionsModule extends AbstractModule {
 
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
+
+    if (message.payload.reservationId) {
+      await this._reservationRepository.updateAllByQuery(
+        {
+          terminatedByTransaction: transactionId,
+          isActive: false,
+        },
+        {
+          where: {
+            id: message.payload.reservationId,
+            stationId: stationId,
+          },
+        },
+      );
+    }
+
     if (transactionEvent.idToken) {
       const response = await this._transactionService.authorizeIdToken(
         transactionEvent,
@@ -524,7 +551,7 @@ export class TransactionsModule extends AbstractModule {
   private async _calculateTotalCost(
     stationId: string,
     transactionDbId: number,
-    totalKwh?: number,
+    totalKwh?: number | null,
   ): Promise<number> {
     // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
     //  implementation is finalized

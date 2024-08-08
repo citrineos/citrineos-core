@@ -14,9 +14,9 @@ import { HashAlgorithmEnumType, IdTokenEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface CustomerInformationRequest extends OcppRequest {
-  customData?: CustomDataType;
-  customerCertificate?: CertificateHashDataType;
-  idToken?: IdTokenType;
+  customData?: CustomDataType | null;
+  customerCertificate?: CertificateHashDataType | null;
+  idToken?: IdTokenType | null;
   /**
    * The Id of the request.
    *
@@ -38,7 +38,7 @@ export interface CustomerInformationRequest extends OcppRequest {
    * One of the possible identifiers (customerIdentifier, customerIdToken or customerCertificate) should be in the request message.
    *
    */
-  customerIdentifier?: string;
+  customerIdentifier?: string | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -48,7 +48,7 @@ export interface CustomDataType {
   [k: string]: unknown;
 }
 export interface CertificateHashDataType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   hashAlgorithm: HashAlgorithmEnumType;
   /**
    * Hashed value of the Issuer DN (Distinguished Name).
@@ -72,7 +72,7 @@ export interface CertificateHashDataType {
  *
  */
 export interface IdTokenType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -89,7 +89,7 @@ export interface IdTokenType {
  *
  */
 export interface AdditionalInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * This field specifies the additional IdToken.
    *

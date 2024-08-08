@@ -14,7 +14,7 @@ import { HashAlgorithmEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface GetCertificateStatusRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   ocspRequestData: OCSPRequestDataType;
 }
 /**
@@ -25,7 +25,7 @@ export interface CustomDataType {
   [k: string]: unknown;
 }
 export interface OCSPRequestDataType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   hashAlgorithm: HashAlgorithmEnumType;
   /**
    * Hashed value of the Issuer DN (Distinguished Name).

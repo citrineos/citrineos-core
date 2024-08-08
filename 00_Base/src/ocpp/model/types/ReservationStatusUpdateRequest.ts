@@ -14,7 +14,7 @@ import { ReservationUpdateStatusEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface ReservationStatusUpdateRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * The ID of the reservation.
    *

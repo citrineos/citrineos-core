@@ -13,7 +13,7 @@
 import { OcppResponse } from '../../..';
 
 export interface HeartbeatResponse extends OcppResponse {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Contains the current time of the CSMS.
    *

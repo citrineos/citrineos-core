@@ -13,7 +13,7 @@
 import { OcppResponse } from '../../..';
 
 export interface GetLocalListVersionResponse extends OcppResponse {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * This contains the current version number of the local authorization list in the Charging Station.
    *

@@ -13,7 +13,7 @@
 import { OcppRequest } from '../../..';
 
 export interface UnlockConnectorRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * This contains the identifier of the EVSE for which a connector needs to be unlocked.
    *

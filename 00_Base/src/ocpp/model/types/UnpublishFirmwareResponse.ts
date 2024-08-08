@@ -14,7 +14,7 @@ import { UnpublishFirmwareStatusEnumType } from '../enums';
 import { OcppResponse } from '../../..';
 
 export interface UnpublishFirmwareResponse extends OcppResponse {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   status: UnpublishFirmwareStatusEnumType;
 }
 /**
