@@ -187,7 +187,7 @@ export class SignedMeterValuesUtil {
     const signedMeterValue = sampledValue.signedMeterValue;
 
     if (!signedMeterValue) {
-      return false;
+      return true;
     }
 
     if (signedMeterValue.publicKey && signedMeterValue.publicKey.length > 0) {
