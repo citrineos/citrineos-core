@@ -32,6 +32,12 @@ export class StatusNotificationService {
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
+  /**
+   * Stores an internal record of the incoming status, then updates the device model for the updated connector.
+   *
+   * @param {string} stationId - The Charging Station sending the status notification request
+   * @param {StatusNotificationRequest} statusNotificationRequest
+   */
   async processStatusNotification(
     stationId: string,
     statusNotificationRequest: StatusNotificationRequest,
