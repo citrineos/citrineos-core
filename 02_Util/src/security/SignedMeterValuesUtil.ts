@@ -13,6 +13,7 @@ import {
 import { ILogObj, Logger } from 'tslog';
 import * as crypto from 'node:crypto';
 import { stringToArrayBuffer } from 'pvutils'
+import { SampledValueType } from '@citrineos/base/dist/ocpp/model/types/MeterValuesRequest';
 
 /**
  * Util to process and validate signed meter values.
@@ -79,52 +80,19 @@ export class SignedMeterValuesUtil {
   ): Promise<boolean> {
     let validMeterValues = true;
 
-    const expectPublicKey =
+    const publicKeyFrequencyVariableAttribute =
       await this._deviceModelRepository.readAllByQuerystring({
         stationId,
         component_name: 'OCPPCommCtrlr',
         variable_name: 'PublicKeyWithSignedMeterValue',
       });
 
-    for (const meterValue of meterValues) {
-      if (expectPublicKey.length > 0 && expectPublicKey[0].value !== 'Never') {
+    const shouldPublicKeyBeUsedForValidation = publicKeyFrequencyVariableAttribute.length > 0 && publicKeyFrequencyVariableAttribute[0].value !== 'Never';
+
+    if (shouldPublicKeyBeUsedForValidation) {
+      for (const meterValue of meterValues) {
         for (const sampledValue of meterValue.sampledValue) {
-          const signedMeterValue = sampledValue.signedMeterValue;
-
-          if (!signedMeterValue) {
-            continue;
-          }
-
-          if (
-            signedMeterValue.publicKey &&
-            signedMeterValue.publicKey.length > 0
-          ) {
-            const incomingPublicKeyIsValid =
-              await this.isMeterValueSignatureValid(signedMeterValue);
-
-            if (
-              this._signedMeterValuesConfiguration &&
-              incomingPublicKeyIsValid
-            ) {
-              await this._chargingStationSecurityInfoRepository.readOrCreateChargingStationInfo(
-                stationId,
-                this._signedMeterValuesConfiguration.publicKeyFileId,
-              );
-            } else {
-              validMeterValues = false;
-            }
-          } else {
-            const chargingStationPublicKeyFileId =
-              await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileId(
-                stationId,
-              );
-            validMeterValues =
-              validMeterValues &&
-              (await this.isMeterValueSignatureValid(
-                signedMeterValue,
-                chargingStationPublicKeyFileId,
-              ));
-          }
+          validMeterValues = validMeterValues && await this.isSignedSampledValueValid(stationId, sampledValue);
         }
       }
     }
@@ -204,6 +172,48 @@ export class SignedMeterValuesUtil {
           `${signingMethod} is not supported for Signed Meter Values.`,
         );
         return false;
+    }
+  }
+
+  private async isSignedSampledValueValid(
+    stationId: string,
+    sampledValue: SampledValueType
+  ): Promise<boolean> {
+    const signedMeterValue = sampledValue.signedMeterValue;
+
+    if (!signedMeterValue) {
+      return false;
+    }
+
+    if (
+      signedMeterValue.publicKey &&
+      signedMeterValue.publicKey.length > 0
+    ) {
+      const incomingPublicKeyIsValid =
+        await this.isMeterValueSignatureValid(signedMeterValue);
+
+      if (
+        this._signedMeterValuesConfiguration &&
+        incomingPublicKeyIsValid
+      ) {
+        await this._chargingStationSecurityInfoRepository.readOrCreateChargingStationInfo(
+          stationId,
+          this._signedMeterValuesConfiguration.publicKeyFileId,
+        );
+
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      const chargingStationPublicKeyFileId =
+        await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileId(
+          stationId,
+        );
+      return await this.isMeterValueSignatureValid(
+          signedMeterValue,
+          chargingStationPublicKeyFileId,
+      );
     }
   }
 
