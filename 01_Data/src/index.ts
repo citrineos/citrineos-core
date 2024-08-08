@@ -12,6 +12,8 @@ export * from 'sequelize-typescript';
 export {
   Authorization,
   Boot,
+  ChargingProfile,
+  ChargingSchedule,
   ChargingStation,
   Component,
   DefaultSequelizeInstance,

@@ -8,17 +8,16 @@ import {
   AsHandler,
   CallAction,
   ChargingLimitSourceEnumType,
+  ChargingNeedsType,
   ChargingProfileCriterionType,
   ChargingProfileKindEnumType,
   ChargingProfilePurposeEnumType,
   ChargingProfileStatusEnumType,
   ChargingProfileType,
-  ChargingRateUnitEnumType,
-  ChargingSchedulePeriodType,
-  ChargingScheduleType,
   ClearChargingProfileResponse,
   ClearChargingProfileStatusEnumType,
-  ClearedChargingLimitResponse, EnergyTransferModeEnumType,
+  ClearedChargingLimitResponse,
+  EnergyTransferModeEnumType,
   EventGroup,
   GenericStatusEnumType,
   GetChargingProfilesRequest,
@@ -35,7 +34,7 @@ import {
   NotifyEVChargingNeedsResponse,
   NotifyEVChargingNeedsStatusEnumType,
   NotifyEVChargingScheduleRequest,
-  NotifyEVChargingScheduleResponse, RecurrencyKindEnumType,
+  NotifyEVChargingScheduleResponse,
   ReportChargingProfilesRequest,
   ReportChargingProfilesResponse,
   SetChargingProfileRequest,
@@ -44,6 +43,8 @@ import {
 } from '@citrineos/base';
 import {
   generateRequestId,
+  ISmartCharging,
+  LocalSmartCharging,
   RabbitMqReceiver,
   RabbitMqSender,
   Timer,
@@ -55,6 +56,7 @@ import {
   IDeviceModelRepository,
   ITransactionEventRepository,
   sequelize,
+  Transaction,
 } from '@citrineos/data';
 
 /**
@@ -83,6 +85,8 @@ export class SmartChargingModule extends AbstractModule {
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
+
+  protected _smartChargingService: ISmartCharging;
 
   /**
    * Constructor
@@ -115,6 +119,9 @@ export class SmartChargingModule extends AbstractModule {
    * @param {IChargingProfileRepository} [chargingProfileRepository] - An optional parameter of type {@link IChargingProfileRepository}
    * which represents a repository for accessing and manipulating charging profile data.
    * If no `chargingProfileRepository` is provided, a default {@link sequelize:chargingProfileRepository} instance is created and used.
+   *
+   * @param {ISmartCharging} [smartChargingService] - An optional parameter of type {@link ISmartCharging} which
+   * provides smart charging functionalities, e.g., calculation and validation.
    */
   constructor(
     config: SystemConfig,
@@ -125,6 +132,7 @@ export class SmartChargingModule extends AbstractModule {
     transactionEventRepository?: ITransactionEventRepository,
     deviceModelRepository?: IDeviceModelRepository,
     chargingProfileRepository?: IChargingProfileRepository,
+    smartChargingService?: ISmartCharging,
   ) {
     super(
       config,
@@ -154,6 +162,10 @@ export class SmartChargingModule extends AbstractModule {
       chargingProfileRepository ||
       new sequelize.SequelizeChargingProfileRepository(config, this._logger);
 
+    this._smartChargingService =
+      smartChargingService ||
+      new LocalSmartCharging(this._chargingProfileRepository);
+
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
@@ -179,6 +191,8 @@ export class SmartChargingModule extends AbstractModule {
     this._logger.debug('NotifyEVChargingNeeds received:', message, props);
     const request = message.payload;
     const stationId = message.context.stationId;
+    const givenNeeds: ChargingNeedsType = request.chargingNeeds;
+
     const activeTransaction =
       await this._transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
         stationId,
@@ -188,10 +202,43 @@ export class SmartChargingModule extends AbstractModule {
       `Found active transaction on station ${stationId} evse ${request.evseId}: ${JSON.stringify(activeTransaction)}`,
     );
 
-    // OCPP 2.0.1 Part 2 K17.FR.06 and expect an active transaction
-    const hasAcOrDcChargingParameters = !request.chargingNeeds.dcChargingParameters &&
-        !request.chargingNeeds.acChargingParameters;
-    if (!hasAcOrDcChargingParameters || !activeTransaction) {
+    // OCPP 2.0.1 Part 2 K17.FR.06
+    const hasAcOrDcChargingParameters =
+      !givenNeeds.dcChargingParameters && !givenNeeds.acChargingParameters;
+    this._logger.info(
+      `Has AC or DC charging parameters: ${hasAcOrDcChargingParameters}`,
+    );
+
+    const matchedChargingType =
+      (givenNeeds.dcChargingParameters &&
+        givenNeeds.requestedEnergyTransfer === EnergyTransferModeEnumType.DC) ||
+      (givenNeeds.acChargingParameters &&
+        givenNeeds.requestedEnergyTransfer !== EnergyTransferModeEnumType.DC);
+    this._logger.info(
+      `Matched chargingParameters and requestedEnergyTransfer type: ${matchedChargingType}`,
+    );
+
+    if (
+      !activeTransaction ||
+      !hasAcOrDcChargingParameters ||
+      !matchedChargingType
+    ) {
+      this.sendCallResultWithMessage(message, {
+        status: NotifyEVChargingNeedsStatusEnumType.Rejected,
+      } as NotifyEVChargingNeedsResponse);
+      return;
+    }
+
+    let chargingProfile: ChargingProfileType;
+    try {
+      chargingProfile =
+        await this._smartChargingService.calculateChargingProfile(
+          request,
+          activeTransaction,
+          stationId,
+        );
+    } catch (error) {
+      this._logger.error(`Failed to calculate charging profile: ${error}`);
       this.sendCallResultWithMessage(message, {
         status: NotifyEVChargingNeedsStatusEnumType.Rejected,
       } as NotifyEVChargingNeedsResponse);
@@ -203,7 +250,6 @@ export class SmartChargingModule extends AbstractModule {
         request,
         stationId,
       );
-
     this._logger.info(
       `Charging needs created: ${JSON.stringify(chargingNeeds)}`,
     );
@@ -212,48 +258,81 @@ export class SmartChargingModule extends AbstractModule {
       status: NotifyEVChargingNeedsStatusEnumType.Accepted,
     } as NotifyEVChargingNeedsResponse);
 
-    const setChargingProfileRequest = this.generateChargingProfileRequest(request, activeTransaction.transactionId)
-
-    await this.chargingProfileRepository.createOrUpdateChargingProfile(
-        setChargingProfileRequest.chargingProfile,
+    const storedChargingProfile =
+      await this.chargingProfileRepository.createOrUpdateChargingProfile(
+        chargingProfile,
         stationId,
         request.evseId,
+      );
+    this._logger.info(
+      `Charging profile created: ${JSON.stringify(storedChargingProfile)}`,
     );
 
-    // TODO: (K17.FR.08) The CSMS SHOULD send a SetChargingProfileRequest to the Charging Station within 60 seconds.
     this.sendCall(
       stationId,
       message.context.tenantId,
       CallAction.SetChargingProfile,
-      setChargingProfileRequest,
+      { evseId: request.evseId, chargingProfile } as SetChargingProfileRequest,
     );
   }
 
   @AsHandler(CallAction.NotifyEVChargingSchedule)
-  protected _handleNotifyEVChargingSchedule(
+  protected async _handleNotifyEVChargingSchedule(
     message: IMessage<NotifyEVChargingScheduleRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('NotifyEVChargingSchedule received:', message, props);
 
-    // TODO: (K17.FR.11) check EV charging profile is within limits of CSMS ChargingSchedule
-    //  1. Reject if it is not within limits and CSMS starts new renegotiation as per use case K16 (K16.FR.08)
-    //  i.e., send an set charging profile request (K17.FR.13)
-    //  2. Accept if it is within limits
-    //  we need to figure out where we can find the limits of ChargingSchedule
-
-    // Create response
-    const response: NotifyEVChargingScheduleResponse = {
+    // There are different definitions for Accepted and Rejected in NotifyEVChargingScheduleResponse
+    // in OCPP 2.0.1 V3 Part 2, see (1) 1.37.2 status field description and (2) K17.FR.11 and K17.FR.12
+    // We use (1) in our code, i.e., always return Accepted in response
+    this.sendCallResultWithMessage(message, {
       status: GenericStatusEnumType.Accepted,
-    };
+    } as NotifyEVChargingScheduleResponse);
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) =>
-        this._logger.debug(
-          'NotifyEVChargingSchedule response sent: ',
-          messageConfirmation,
-        ),
-    );
+    const request = message.payload;
+    const stationId = message.context.stationId;
+
+    const activeTransaction =
+      await this._transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
+        stationId,
+        request.evseId,
+      );
+    if (!activeTransaction) {
+      this._logger.error(
+        `No active transaction on station ${stationId} evse ${request.evseId}`,
+      );
+      return;
+    } else {
+      this._logger.info(
+        `Found active transaction on station ${stationId} evse ${request.evseId}: ${JSON.stringify(activeTransaction)}`,
+      );
+    }
+
+    try {
+      await this._smartChargingService.checkLimitsOfChargingSchedule(
+        request,
+        stationId,
+        activeTransaction,
+      );
+    } catch (error) {
+      this._logger.error(
+        `EV charging schedule is NOT within limits of existing ChargingSchedule: ${error}`,
+      );
+      // Currently, we simply trust the given EV charging schedule and create a new charging profile based on it
+      const setChargingProfileRequest =
+        await this._generateSetChargingProfileRequest(
+          request,
+          activeTransaction,
+          stationId,
+        );
+      this.sendCall(
+        stationId,
+        message.context.tenantId,
+        CallAction.SetChargingProfile,
+        setChargingProfileRequest,
+      );
+    }
   }
 
   @AsHandler(CallAction.NotifyChargingLimit)
@@ -462,97 +541,47 @@ export class SmartChargingModule extends AbstractModule {
   }
 
   /**
-   * Generates a `SetChargingProfileRequest` from the given `NotifyEVChargingNeedsRequest`.
+   * Generates a `SetChargingProfileRequest` from the given `NotifyEVChargingScheduleRequest`.
    *
-   * This method creates a charging profile based on the EV's charging needs and the specified energy transfer mode. The profile includes the necessary parameters to set up a charging schedule for the EV.
+   * This method creates a charging profile based on the EV's charging schedule.
    *
-   * @param request - The `NotifyEVChargingNeedsRequest` containing details about the EV's charging requirements.
-   * @param transactionId - The ID of the transaction associated with the charging profile.
-   * @returns A `SetChargingProfileRequest` with a generated charging profile for the specified EVSE.
+   * @param request - The `NotifyEVChargingScheduleRequest` containing EV's charging schedule.
+   * @param transaction - The transaction associated with the charging profile.
+   * @param stationId - Station ID
    *
-   * @throws Error if the energy transfer mode is unsupported.
+   * @returns A `SetChargingProfileRequest` with a generated charging profile.
    */
-  private generateChargingProfileRequest(
-      request: NotifyEVChargingNeedsRequest,
-      transactionId: string
-  ): SetChargingProfileRequest {
-    const { chargingNeeds, evseId } = request;
+  private async _generateSetChargingProfileRequest(
+    request: NotifyEVChargingScheduleRequest,
+    transaction: Transaction,
+    stationId: string,
+  ): Promise<SetChargingProfileRequest> {
+    const { chargingSchedule, evseId } = request;
 
-    const acParams = chargingNeeds.acChargingParameters;
-    const dcParams = chargingNeeds.dcChargingParameters;
-
-    const transferMode = chargingNeeds.requestedEnergyTransfer;
-
-    // Default values
-    const profileId = 1; // Unique ID for the profile, should be generated
-    const stackLevel = 1; // Define appropriate stack level
-    const profilePurpose: ChargingProfilePurposeEnumType = ChargingProfilePurposeEnumType.TxProfile;
-    const profileKind: ChargingProfileKindEnumType = ChargingProfileKindEnumType.Absolute;
-
-    let limit = 0;
-    let numberPhases = 1;
-    let minChargingRate = 0; // Default to no minimum charging rate
-
-    // Determine charging parameters based on energy transfer mode
-    switch (transferMode) {
-      case EnergyTransferModeEnumType.AC_single_phase:
-      case EnergyTransferModeEnumType.AC_two_phase:
-      case EnergyTransferModeEnumType.AC_three_phase:
-        if (acParams) {
-          const { energyAmount, evMinCurrent, evMaxCurrent, evMaxVoltage } = acParams;
-          numberPhases = (transferMode === EnergyTransferModeEnumType.AC_single_phase) ? 1 :
-              (transferMode === EnergyTransferModeEnumType.AC_two_phase) ? 2 :
-                  3; // For AC_three_phase
-          limit = evMaxVoltage * evMaxCurrent * numberPhases; // Maximum power in watts
-          minChargingRate = evMinCurrent; // Example: Minimum charging rate can be set based on EV minimum current
-        }
-        break;
-      case EnergyTransferModeEnumType.DC:
-        if (dcParams) {
-          const { evMaxPower, evMaxCurrent, evMaxVoltage } = dcParams;
-          limit = evMaxPower || (evMaxVoltage * evMaxCurrent); // Maximum power or derived power
-          numberPhases = 1; // DC typically uses single-phase
-        }
-        break;
-      default:
-        throw new Error("Unsupported energy transfer mode");
-    }
-
-    const departureTime = new Date(chargingNeeds.departureTime || Date.now() + 3600 * 1000); // Default to 1 hour from now if no departure time is set
-    const currentTime = new Date();
-    const duration = Math.max((departureTime.getTime() - currentTime.getTime()) / 1000, 3600); // Ensure at least 1 hour duration
-
-    const chargingSchedulePeriod: [ChargingSchedulePeriodType, ...ChargingSchedulePeriodType[]] = [
-      {
-        startPeriod: 0,
-        limit,
-        numberPhases
-      }
-    ];
-
-    const chargingSchedule: ChargingScheduleType = {
-      id: profileId,
-      duration,
-      chargingRateUnit: ChargingRateUnitEnumType.W,
-      chargingSchedulePeriod,
-      minChargingRate,
-      // Optionally add startSchedule if needed
-    };
+    const purpose = ChargingProfilePurposeEnumType.TxProfile;
+    chargingSchedule.id =
+      await this._chargingProfileRepository.getNextChargingScheduleId(
+        stationId,
+      );
 
     const chargingProfile: ChargingProfileType = {
-      id: profileId,
-      stackLevel,
-      chargingProfilePurpose: profilePurpose,
-      chargingProfileKind: profileKind,
-      validFrom: currentTime.toISOString(), // Now
-      validTo: departureTime.toISOString(), // Until departure
-      chargingSchedule: [chargingSchedule], // Add more schedules if needed
-      transactionId: transactionId
+      id: await this._chargingProfileRepository.getNextChargingProfileId(
+        stationId,
+      ),
+      stackLevel: await this._chargingProfileRepository.getNextStackLevel(
+        stationId,
+        transaction.id,
+        purpose,
+      ),
+      chargingProfilePurpose: purpose,
+      chargingProfileKind: ChargingProfileKindEnumType.Absolute,
+      chargingSchedule: [chargingSchedule],
+      transactionId: transaction.transactionId,
     };
 
     return {
       evseId,
-      chargingProfile
-    };
+      chargingProfile,
+    } as SetChargingProfileRequest;
   }
 }

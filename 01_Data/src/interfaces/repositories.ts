@@ -33,6 +33,7 @@ import {
   ChargingLimitSourceEnumType,
   CompositeScheduleType,
   StatusNotificationRequest,
+  ChargingProfilePurposeEnumType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
 import { CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
@@ -140,4 +141,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   createChargingNeeds(chargingNeeds: NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds>;
   findChargingNeedsByEvseDBIdAndTransactionDBId(evseDBId: number, transactionDataBaseId: number): Promise<ChargingNeeds | undefined>;
   createCompositeSchedule(compositeSchedule: CompositeScheduleType, stationId: string): Promise<CompositeSchedule>;
+  getNextChargingProfileId(stationId: string): Promise<number>;
+  getNextChargingScheduleId(stationId: string): Promise<number>;
+  getNextStackLevel(stationId: string, transactionDatabaseId: number | null, profilePurpose: ChargingProfilePurposeEnumType): Promise<number>;
 }

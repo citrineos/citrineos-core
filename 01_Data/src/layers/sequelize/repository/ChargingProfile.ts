@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingLimitSourceEnumType, ChargingProfileType, CompositeScheduleType, CrudRepository, NotifyEVChargingNeedsRequest, SystemConfig } from '@citrineos/base';
+import { ChargingLimitSourceEnumType, ChargingProfilePurposeEnumType, ChargingProfileType, CompositeScheduleType, CrudRepository, NotifyEVChargingNeedsRequest, SystemConfig } from '@citrineos/base';
 import { SequelizeRepository } from './Base';
 import { IChargingProfileRepository } from '../../../interfaces';
 import { Evse } from '../model/DeviceModel';
@@ -165,10 +165,14 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
   }
 
   async getNextChargingScheduleId(stationId: string): Promise<number> {
-    return await this.chargingSchedule.readNextId('id', { where: { stationId } });
+    return await this.chargingSchedule.readNextValue('id', { where: { stationId } });
   }
 
   async getNextChargingProfileId(stationId: string): Promise<number> {
-    return await this.readNextId('id', { where: { stationId } });
+    return await this.readNextValue('id', { where: { stationId } });
+  }
+
+  async getNextStackLevel(stationId: string, transactionDatabaseId: number | null, profilePurpose: ChargingProfilePurposeEnumType): Promise<number> {
+    return await this.readNextValue('stackLevel', { where: { stationId, transactionDatabaseId: transactionDatabaseId, chargingProfilePurpose: profilePurpose } }, 0);
   }
 }

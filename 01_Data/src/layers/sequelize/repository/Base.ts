@@ -31,14 +31,14 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     return await this.s.query(`${sqlString}`, { type: QueryTypes.SELECT });
   }
 
-  async readNextId(idColumn: string, query?: object): Promise<number> {
+  async readNextValue(columnName: string, query?: object, startValue?: number): Promise<number> {
     const options = query ? (query as AggregateOptions<any>) : undefined;
-    const maxValue = await this.s.models[this.namespace].max(idColumn, options);
+    const maxValue = await this.s.models[this.namespace].max(columnName, options);
     if (!maxValue) {
-      return 1;
+      return startValue ?? 1;
     }
     if (typeof maxValue !== 'number' || isNaN(maxValue)) {
-      throw new Error(`Max value ${maxValue} on ${idColumn} is invalid.`);
+      throw new Error(`Max value ${maxValue} on ${columnName} is invalid.`);
     }
     return maxValue + 1;
   }
