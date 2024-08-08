@@ -55,6 +55,23 @@ export class SignedMeterValuesUtil {
       config.modules.transactions.signedMeterValuesConfiguration;
   }
 
+  /**
+   * Checks the validity of a meter value.
+   *
+   * If a meter value is unsigned, it is valid.
+   *
+   * If a meter value is signed, it is valid if:
+   * - SignedMeterValuesConfig is configured
+   * AND
+   * - The incoming signed meter value's signing method matches the configured signing method
+   * AND
+   * - The incoming signed meter value's public key is empty but there is a public key stored for that charging station
+   * OR
+   * - The incoming signed meter value's public key isn't empty and it matches the configured public key
+   *
+   * @param stationId - The charging station the meter values belong to
+   * @param meterValues - The list of meter values
+   */
   public async validateMeterValues(
     stationId: string,
     meterValues: [MeterValueType, ...MeterValueType[]],
