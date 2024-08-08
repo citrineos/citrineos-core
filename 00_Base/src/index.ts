@@ -56,6 +56,7 @@ export * from './ocpp/persistence';
 export { BootConfig, BOOT_STATUS } from './config/BootConfig';
 export { defineConfig } from './config/defineConfig';
 export { SystemConfig, WebsocketServerConfig } from './config/types';
+export { SignedMeterValuesConfig } from './config/signedMeterValuesConfig';
 
 // Utils
 
