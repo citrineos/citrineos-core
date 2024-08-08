@@ -41,7 +41,7 @@ describe('StatusNotificationService', () => {
     );
   });
 
-  it('should save StatusNotification to Charging Station because Charging Station exists', async () => {
+  it('should save StatusNotification for Charging Station because Charging Station exists', async () => {
     locationRepository.readChargingStationByStationId.mockResolvedValue(
       aChargingStation(),
     );
@@ -56,7 +56,7 @@ describe('StatusNotificationService', () => {
     ).toHaveBeenCalled();
   });
 
-  it('should not save StatusNotification to Charging Station because Charging Station does not', async () => {
+  it('should not save StatusNotification for Charging Station because Charging Station does not exist', async () => {
     locationRepository.readChargingStationByStationId.mockResolvedValue(
       undefined,
     );
