@@ -192,11 +192,10 @@ export class SignedMeterValuesUtil {
           );
           return true;
         } catch (e) {
-          if (e instanceof DOMException) {
-            this._logger.warn(
-              `Error decrypting private key or verifying signature from Signed Meter Value. Error: ${JSON.stringify(e.message)}`,
-            );
-          }
+          const errorMessage = e instanceof DOMException ? e.message : JSON.stringify(e);
+          this._logger.warn(
+            `Error decrypting private key or verifying signature from Signed Meter Value. Error: ${errorMessage}`,
+          );
           return false;
         }
       default:
