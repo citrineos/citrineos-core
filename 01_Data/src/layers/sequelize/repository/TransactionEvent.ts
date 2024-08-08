@@ -326,7 +326,6 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   }
 
   async createMeterValue(meterValue: MeterValueType): Promise<void> {
-    const createdMeterValue = await MeterValue.create({ ...meterValue });
-    this.meterValue.emit('created', [createdMeterValue]);
+    await this.meterValue.create(MeterValue.build({...meterValue}));
   }
 }
