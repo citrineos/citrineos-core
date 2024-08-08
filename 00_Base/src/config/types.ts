@@ -96,7 +96,7 @@ export const systemConfigInputSchema = z.object({
         .object({
           publicKeyFileId: z.string(),
           privateKeyFileId: z.string(),
-          signingMethod: z.string(),
+          signingMethod: z.enum(['RSASSA-PKCS1-v1_5', 'ES256']),
         })
         .optional(),
     }),
@@ -345,7 +345,7 @@ export const systemConfigSchema = z
             .object({
               publicKeyFileId: z.string(),
               privateKeyFileId: z.string(),
-              signingMethod: z.string(),
+              signingMethod: z.enum(['RSASSA-PKCS1-v1_5', 'ES256']),
             })
             .optional(),
         })
