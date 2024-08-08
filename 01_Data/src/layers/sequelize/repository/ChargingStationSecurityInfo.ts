@@ -21,7 +21,6 @@ export class SequelizeChargingStationSecurityInfoRepository extends SequelizeRep
         stationId,
       },
       defaults: {
-        stationId,
         publicKeyFileId,
       },
     });
