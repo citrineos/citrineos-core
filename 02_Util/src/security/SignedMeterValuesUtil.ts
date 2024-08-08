@@ -12,6 +12,7 @@ import {
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import * as crypto from 'node:crypto';
+import { stringToArrayBuffer } from 'pvutils'
 
 /**
  * Util to process and validate signed meter values.
@@ -173,7 +174,7 @@ export class SignedMeterValuesUtil {
         try {
           const cryptoPublicKey = await crypto.subtle.importKey(
             'spki',
-            this.str2ab(atob(configuredPublicKey)),
+            stringToArrayBuffer(atob(configuredPublicKey)),
             { name: signingMethod, hash: signedMeterValue.encodingMethod },
             true,
             ['verify'],
@@ -213,13 +214,4 @@ export class SignedMeterValuesUtil {
       .replace(/(\r\n|\n|\r)/gm, '');
   }
 
-  // https://developer.chrome.com/blog/how-to-convert-arraybuffer-to-and-from-string
-  private str2ab(str: string): ArrayBuffer {
-    const buf = new ArrayBuffer(str.length);
-    const bufView = new Uint8Array(buf);
-    for (let i = 0, strLen = str.length; i < strLen; i++) {
-      bufView[i] = str.charCodeAt(i);
-    }
-    return buf;
-  }
 }
