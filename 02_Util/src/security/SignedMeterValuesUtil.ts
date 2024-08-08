@@ -12,7 +12,7 @@ import {
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import * as crypto from 'node:crypto';
-import { stringToArrayBuffer } from 'pvutils'
+import { stringToArrayBuffer } from 'pvutils';
 import { SampledValueType } from '@citrineos/base/dist/ocpp/model/types/MeterValuesRequest';
 
 /**
@@ -87,12 +87,16 @@ export class SignedMeterValuesUtil {
         variable_name: 'PublicKeyWithSignedMeterValue',
       });
 
-    const shouldPublicKeyBeUsedForValidation = publicKeyFrequencyVariableAttribute.length > 0 && publicKeyFrequencyVariableAttribute[0].value !== 'Never';
+    const shouldPublicKeyBeUsedForValidation =
+      publicKeyFrequencyVariableAttribute.length > 0 &&
+      publicKeyFrequencyVariableAttribute[0].value !== 'Never';
 
     if (shouldPublicKeyBeUsedForValidation) {
       for (const meterValue of meterValues) {
         for (const sampledValue of meterValue.sampledValue) {
-          validMeterValues = validMeterValues && await this.isSignedSampledValueValid(stationId, sampledValue);
+          validMeterValues =
+            validMeterValues &&
+            (await this.isSignedSampledValueValid(stationId, sampledValue));
         }
       }
     }
@@ -161,7 +165,8 @@ export class SignedMeterValuesUtil {
           );
           return true;
         } catch (e) {
-          const errorMessage = e instanceof DOMException ? e.message : JSON.stringify(e);
+          const errorMessage =
+            e instanceof DOMException ? e.message : JSON.stringify(e);
           this._logger.warn(
             `Error decrypting private key or verifying signature from Signed Meter Value. Error: ${errorMessage}`,
           );
@@ -177,7 +182,7 @@ export class SignedMeterValuesUtil {
 
   private async isSignedSampledValueValid(
     stationId: string,
-    sampledValue: SampledValueType
+    sampledValue: SampledValueType,
   ): Promise<boolean> {
     const signedMeterValue = sampledValue.signedMeterValue;
 
@@ -185,17 +190,11 @@ export class SignedMeterValuesUtil {
       return false;
     }
 
-    if (
-      signedMeterValue.publicKey &&
-      signedMeterValue.publicKey.length > 0
-    ) {
+    if (signedMeterValue.publicKey && signedMeterValue.publicKey.length > 0) {
       const incomingPublicKeyIsValid =
         await this.isMeterValueSignatureValid(signedMeterValue);
 
-      if (
-        this._signedMeterValuesConfiguration &&
-        incomingPublicKeyIsValid
-      ) {
+      if (this._signedMeterValuesConfiguration && incomingPublicKeyIsValid) {
         await this._chargingStationSecurityInfoRepository.readOrCreateChargingStationInfo(
           stationId,
           this._signedMeterValuesConfiguration.publicKeyFileId,
@@ -211,8 +210,8 @@ export class SignedMeterValuesUtil {
           stationId,
         );
       return await this.isMeterValueSignatureValid(
-          signedMeterValue,
-          chargingStationPublicKeyFileId,
+        signedMeterValue,
+        chargingStationPublicKeyFileId,
       );
     }
   }
@@ -223,5 +222,4 @@ export class SignedMeterValuesUtil {
       .replace('-----END PUBLIC KEY-----', '')
       .replace(/(\r\n|\n|\r)/gm, '');
   }
-
 }
