@@ -200,7 +200,7 @@ export class LocalSmartCharging implements ISmartCharging {
   private _getChargingRateUnitAndLimit(
     evMaxCurrent: number,
     evMaxVoltage: number,
-    evMaxPower?: number,
+    evMaxPower?: number | null,
   ): [ChargingRateUnitEnumType, number] {
     if (evMaxPower && evMaxPower < evMaxCurrent * evMaxVoltage) {
       return [ChargingRateUnitEnumType.W, evMaxPower];
