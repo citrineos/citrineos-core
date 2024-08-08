@@ -17,8 +17,6 @@ import {
   GetTransactionStatusResponse,
   HandlerProperties,
   ICache,
-  IdTokenInfoType,
-  IdTokenType,
   IFileAccess,
   IMessage,
   IMessageHandler,
