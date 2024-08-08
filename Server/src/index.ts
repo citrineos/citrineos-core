@@ -99,6 +99,8 @@ export class CitrineOSServer {
   private _repositoryStore!: RepositoryStore;
   private ocpiRealTimeAuthorizer!: RealTimeAuthorizer;
 
+  private readonly appName: string;
+
   /**
    * Constructor for the class.
    *
@@ -124,9 +126,9 @@ export class CitrineOSServer {
         'This server implementation requires amqp configuration for rabbitMQ.',
       );
     }
-    this._config = config;
 
-    // Create server instance
+    this.appName = appName;
+    this._config = config;
     this._server =
       server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
@@ -139,12 +141,6 @@ export class CitrineOSServer {
 
     // Initialize parent logger
     this._logger = this.initLogger();
-
-    // Force sync database
-    this.initDb();
-
-    // Init repo store
-    this.initRepositoryStore();
 
     // Set cache implementation
     this._cache = this.initCache(cache);
@@ -172,14 +168,26 @@ export class CitrineOSServer {
 
     // Register AJV for schema validation
     this.registerAjv();
+  }
+
+  async initialize(): Promise<void> {
+    // Initialize database
+    await this.initDb();
+
+    // Initialize repository store
+    this.initRepositoryStore();
 
     // start ocpi needs to happen first to load authorizer
-    this.startOcpiServer(config.ocpiServer.host, config.ocpiServer.port);
+    await this.startOcpiServer(
+      this._config.ocpiServer.host,
+      this._config.ocpiServer.port,
+    );
 
     // Initialize module & API
     // Always initialize API after SwaggerUI
-    this.initSystem(appName);
+    this.initSystem(this.appName);
 
+    // Set up shutdown handlers
     process.on('SIGINT', this.shutdown.bind(this));
     process.on('SIGTERM', this.shutdown.bind(this));
     process.on('SIGQUIT', this.shutdown.bind(this));
@@ -313,12 +321,13 @@ export class CitrineOSServer {
     });
   }
 
-  private initDb() {
+  private async initDb() {
     this._sequelizeInstance = sequelize.DefaultSequelizeInstance.getInstance(
       this._config,
       this._logger,
-      true,
     );
+
+    await sequelize.DefaultSequelizeInstance.initializeSequelize();
   }
 
   private initCache(cache?: ICache): ICache {
@@ -523,7 +532,7 @@ export class CitrineOSServer {
     }
   }
 
-  private startOcpiServer(host: string, port: number) {
+  private async startOcpiServer(host: string, port: number) {
     const ocpiServer = new OcpiServer(
       this._config as OcpiServerConfig,
       this._cache,
@@ -531,6 +540,7 @@ export class CitrineOSServer {
       this.getOcpiModuleConfig(),
       this._repositoryStore,
     );
+    await ocpiServer.initialize();
     ocpiServer.run(host, port);
   }
 
@@ -658,9 +668,20 @@ export class CitrineOSServer {
   }
 }
 
-new CitrineOSServer(process.env.APP_NAME as EventGroup, systemConfig)
-  .run()
-  .catch((error: any) => {
+async function main() {
+  const server = new CitrineOSServer(
+    process.env.APP_NAME as EventGroup,
+    systemConfig,
+  );
+  await server.initialize();
+
+  server.run().catch((error: any) => {
     console.error(error);
     process.exit(1);
   });
+}
+
+main().catch((error) => {
+  console.error('Failed to initialize server:', error);
+  process.exit(1);
+});
