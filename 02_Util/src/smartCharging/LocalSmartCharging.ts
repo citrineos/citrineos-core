@@ -203,20 +203,22 @@ export class LocalSmartCharging implements ISmartCharging {
     evMaxPower?: number | null,
   ): [ChargingRateUnitEnumType, number] {
     if (evMaxPower && evMaxPower < evMaxCurrent * evMaxVoltage) {
-      return [ChargingRateUnitEnumType.W, evMaxPower];
+      // when charging rate unit is W, multiply by 1000
+      // based on OCPP 2.0.1 V3 Part 6 TC_K_57_CS
+      return [ChargingRateUnitEnumType.W, evMaxPower * 1000];
     }
     return [ChargingRateUnitEnumType.A, evMaxCurrent * evMaxVoltage];
   }
 
   private async _findExistingChargingProfileWithHighestStackLevel(
     stationId: string,
-    transactionDataBaseId: string,
+    transactionDatabaseId: string,
   ): Promise<ChargingProfile | undefined> {
     const existingChargingProfiles =
       await this._chargingProfileRepository.readAllByQuery({
         where: {
           stationId,
-          transactionDataBaseId,
+          transactionDatabaseId,
           chargingProfilePurpose: ChargingProfilePurposeEnumType.TxProfile,
         },
         order: [['stackLevel', 'DESC']],

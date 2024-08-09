@@ -204,7 +204,8 @@ export class SmartChargingModule extends AbstractModule {
 
     // OCPP 2.0.1 Part 2 K17.FR.06
     const hasAcOrDcChargingParameters =
-      !givenNeeds.dcChargingParameters && !givenNeeds.acChargingParameters;
+      givenNeeds.dcChargingParameters !== null ||
+      givenNeeds.acChargingParameters !== null;
     this._logger.info(
       `Has AC or DC charging parameters: ${hasAcOrDcChargingParameters}`,
     );
@@ -282,6 +283,8 @@ export class SmartChargingModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('NotifyEVChargingSchedule received:', message, props);
+    const request = message.payload as NotifyEVChargingScheduleRequest;
+    const stationId = message.context.stationId;
 
     // There are different definitions for Accepted and Rejected in NotifyEVChargingScheduleResponse
     // in OCPP 2.0.1 V3 Part 2, see (1) 1.37.2 status field description and (2) K17.FR.11 and K17.FR.12
@@ -289,9 +292,6 @@ export class SmartChargingModule extends AbstractModule {
     this.sendCallResultWithMessage(message, {
       status: GenericStatusEnumType.Accepted,
     } as NotifyEVChargingScheduleResponse);
-
-    const request = message.payload;
-    const stationId = message.context.stationId;
 
     const activeTransaction =
       await this._transactionEventRepository.getActiveTransactionByStationIdAndEvseId(

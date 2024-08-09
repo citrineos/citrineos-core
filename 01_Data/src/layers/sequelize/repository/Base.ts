@@ -34,7 +34,8 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   async readNextValue(columnName: string, query?: object, startValue?: number): Promise<number> {
     const options = query ? (query as AggregateOptions<any>) : undefined;
     const maxValue = await this.s.models[this.namespace].max(columnName, options);
-    if (!maxValue) {
+    if (maxValue === null || maxValue === undefined) {
+      // maxValue can be 0, so we need to specifically check for null or undefined
       return startValue ?? 1;
     }
     if (typeof maxValue !== 'number' || isNaN(maxValue)) {

@@ -114,30 +114,21 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
   }
 
   async createChargingNeeds(chargingNeedsReq: NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds> {
-    const evse = (
-      await this.evse.readOrCreateByQuery({
-        where: {
-          id: chargingNeedsReq.evseId,
-          connectorId: null,
-        },
-      })
-    )[0];
-
     const activeTransaction = await Transaction.findOne({
       where: {
-        isActive: true,
         stationId,
-        evseDatabaseId: evse.databaseId,
+        isActive: true,
       },
+      include: [{ model: Evse, where: { id: chargingNeedsReq.evseId }, required: true }], // required: true ensures the inner join
     });
     if (!activeTransaction) {
-      throw new Error(`No active transaction found on station ${stationId} evse ${evse.databaseId}`);
+      throw new Error(`No active transaction found on station ${stationId} evse ${chargingNeedsReq.evseId}`);
     }
 
     return await this.chargingNeeds.create(
       ChargingNeeds.build({
         ...chargingNeedsReq.chargingNeeds,
-        evseDatabaseId: evse.databaseId,
+        evseDatabaseId: activeTransaction.evseDatabaseId,
         transactionDatabaseId: activeTransaction.id,
         maxScheduleTuples: chargingNeedsReq.maxScheduleTuples,
       }),
@@ -150,6 +141,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
         evseDatabaseId: evseDBId,
         transactionDatabaseId: transactionDataBaseId,
       },
+      order: [['createdAt', 'DESC']],
     });
 
     return chargingNeedsArray.length > 0 ? chargingNeedsArray[0] : undefined;
