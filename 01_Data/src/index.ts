@@ -13,6 +13,8 @@ export {
   Authorization,
   Boot,
   CallMessage,
+  ChargingProfile,
+  ChargingSchedule,
   ChargingStation,
   Component,
   DefaultSequelizeInstance,

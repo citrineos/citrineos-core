@@ -216,14 +216,16 @@ export abstract class CrudRepository<T> extends EventEmitter {
   /**
    * Attempts to read next id.
    *
-   * @param idColumn - The name of the id column. The column must be integer.
+   * @param columnName - The name of the column which needs a next value. The column must be integer.
    * @param query - The query to use.
+   * @param startValue - If no existing value is found, this value will be used. By default, it is 1.
    * @param namespace - Optional namespace for the query.
    * @returns An integer that is the next id to use
    */
-  abstract readNextId(
-    idColumn: string,
+  abstract readNextValue(
+    columnName: string,
     query?: object,
+    startValue?: number,
     namespace?: string,
   ): Promise<number>;
 

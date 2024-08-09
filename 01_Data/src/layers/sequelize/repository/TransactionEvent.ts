@@ -315,7 +315,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
           stationId,
           isActive: true,
         },
-        include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, { model: Evse, where: { id: evseId } }],
+        include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, { model: Evse, where: { id: evseId }, required: true }], // required: true ensures the inner join
       })
       .then((transactions) => {
         if (transactions.length > 1) {
