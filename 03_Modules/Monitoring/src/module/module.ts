@@ -265,7 +265,8 @@ export class MonitoringModule extends AbstractModule {
     );
 
     const status: GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: StatusInfoType | undefined | null = message.payload.statusInfo;
+    const statusInfo: StatusInfoType | undefined | null =
+      message.payload.statusInfo;
 
     if (
       status === GenericDeviceModelStatusEnumType.Rejected ||
@@ -288,7 +289,8 @@ export class MonitoringModule extends AbstractModule {
     this._logger.debug('SetMonitoringLevel response received:', message, props);
 
     const status: GenericStatusEnumType = message.payload.status;
-    const statusInfo: StatusInfoType | undefined | null = message.payload.statusInfo;
+    const statusInfo: StatusInfoType | undefined | null =
+      message.payload.statusInfo;
     if (status === GenericStatusEnumType.Rejected) {
       this._logger.error(
         'Failed to set monitoring level.',
@@ -307,7 +309,8 @@ export class MonitoringModule extends AbstractModule {
     this._logger.debug('SetMonitoringBase response received:', message, props);
 
     const status: GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: StatusInfoType | undefined | null = message.payload.statusInfo;
+    const statusInfo: StatusInfoType | undefined | null =
+      message.payload.statusInfo;
 
     if (
       status === GenericDeviceModelStatusEnumType.Rejected ||

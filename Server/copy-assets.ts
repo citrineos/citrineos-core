@@ -1,5 +1,5 @@
 import * as path from 'path';
-import {promises as fs} from 'fs';
+import { promises as fs } from 'fs';
 
 const source = process.argv[2];
 const target = process.argv[3];
@@ -7,7 +7,9 @@ const target = process.argv[3];
 console.log(`Copying assets from ${source} to ${target}`);
 
 if (!source || !target) {
-  console.error(`Error: need valid source and target. Received source: ${source}, target: ${target}`);
+  console.error(
+    `Error: need valid source and target. Received source: ${source}, target: ${target}`,
+  );
   process.exit(1);
 }
 
@@ -42,10 +44,12 @@ async function copy(s: string, t: string) {
   console.log(`Successfully copied assets from ${srcDir} to ${destDir}`);
 }
 
-copy(source, target).then(() => {
-  console.log(`Completed copying assets from ${source} to ${target}`);
-  process.exit(0);
-}).catch(err => {
-  console.error('Unhandled error:', err);
-  process.exit(1);
-});
+copy(source, target)
+  .then(() => {
+    console.log(`Completed copying assets from ${source} to ${target}`);
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('Unhandled error:', err);
+    process.exit(1);
+  });
