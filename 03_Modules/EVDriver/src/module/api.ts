@@ -40,9 +40,11 @@ import {
   AuthorizationQuerystring,
   AuthorizationRestrictions,
   AuthorizationRestrictionsSchema,
+  CallMessage,
   ChargingStationKeyQuerySchema,
 } from '@citrineos/data';
 import { validateChargingProfileType } from '@citrineos/util';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Server API for the provisioning component.
@@ -256,13 +258,40 @@ export class EVDriverModuleApi
     request: CancelReservationRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.CancelReservation,
-      request,
-      callbackUrl,
-    );
+    try {
+      const existingReservation =
+        await this._module.reservationRepository.readOnlyOneByQuery({
+          where: {
+            id: request.reservationId,
+            stationId: identifier,
+          },
+        });
+      if (!existingReservation) {
+        throw new Error(`Reservation ${request.reservationId} not found.`);
+      }
+
+      const correlationId = uuidv4();
+      await this._module.callMessageRepository.create(
+        CallMessage.build({
+          correlationId,
+          reservationId: existingReservation.databaseId,
+        }),
+      );
+
+      return this._module.sendCall(
+        identifier,
+        tenantId,
+        CallAction.CancelReservation,
+        request,
+        callbackUrl,
+        correlationId,
+      );
+    } catch (error) {
+      return {
+        success: false,
+        payload: error instanceof Error ? error.message : JSON.stringify(error),
+      };
+    }
   }
 
   @AsMessageEndpoint(CallAction.ReserveNow, ReserveNowRequestSchema)
@@ -272,12 +301,30 @@ export class EVDriverModuleApi
     request: ReserveNowRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
+    const storedReservation =
+      await this._module.reservationRepository.createOrUpdateReservation(
+        request,
+        identifier,
+      );
+    if (!storedReservation) {
+      return { success: false, payload: 'Reservation could not be stored.' };
+    }
+
+    const correlationId = uuidv4();
+    await this._module.callMessageRepository.create(
+      CallMessage.build({
+        correlationId,
+        reservationId: storedReservation.databaseId,
+      }),
+    );
+
     return this._module.sendCall(
       identifier,
       tenantId,
       CallAction.ReserveNow,
       request,
       callbackUrl,
+      correlationId,
     );
   }
 

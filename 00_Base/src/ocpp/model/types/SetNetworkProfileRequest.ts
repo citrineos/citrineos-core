@@ -20,7 +20,7 @@ import {
 import { OcppRequest } from '../../..';
 
 export interface SetNetworkProfileRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Slot in which the configuration should be stored.
    *
@@ -42,8 +42,8 @@ export interface CustomDataType {
  *
  */
 export interface NetworkConnectionProfileType {
-  customData?: CustomDataType;
-  apn?: APNType;
+  customData?: CustomDataType | null;
+  apn?: APNType | null;
   ocppVersion: OCPPVersionEnumType;
   ocppTransport: OCPPTransportEnumType;
   /**
@@ -66,7 +66,7 @@ export interface NetworkConnectionProfileType {
    */
   securityProfile: number;
   ocppInterface: OCPPInterfaceEnumType;
-  vpn?: VPNType;
+  vpn?: VPNType | null;
 }
 /**
  * APN
@@ -77,7 +77,7 @@ export interface NetworkConnectionProfileType {
  *
  */
 export interface APNType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * APN. APN. URI
    * urn:x-oca:ocpp:uid:1:568814
@@ -91,28 +91,28 @@ export interface APNType {
    * APN username.
    *
    */
-  apnUserName?: string;
+  apnUserName?: string | null;
   /**
    * APN. APN. Password
    * urn:x-oca:ocpp:uid:1:568819
    * APN Password.
    *
    */
-  apnPassword?: string;
+  apnPassword?: string | null;
   /**
    * APN. SIMPIN. PIN_ Code
    * urn:x-oca:ocpp:uid:1:568821
    * SIM card pin code.
    *
    */
-  simPin?: number;
+  simPin?: number | null;
   /**
    * APN. Preferred_ Network. Mobile_ Network_ ID
    * urn:x-oca:ocpp:uid:1:568822
    * Preferred network, written as MCC and MNC concatenated. See note.
    *
    */
-  preferredNetwork?: string;
+  preferredNetwork?: string | null;
   /**
    * APN. Use_ Only_ Preferred_ Network. Indicator
    * urn:x-oca:ocpp:uid:1:568824
@@ -120,7 +120,7 @@ export interface APNType {
    * not dial in when not available. See Note.
    *
    */
-  useOnlyPreferredNetwork?: boolean;
+  useOnlyPreferredNetwork?: boolean | null;
   apnAuthentication: APNAuthenticationEnumType;
 }
 /**
@@ -130,7 +130,7 @@ export interface APNType {
  *
  */
 export interface VPNType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * VPN. Server. URI
    * urn:x-oca:ocpp:uid:1:569272
@@ -151,7 +151,7 @@ export interface VPNType {
    * VPN group.
    *
    */
-  group?: string;
+  group?: string | null;
   /**
    * VPN. Password. Password
    * urn:x-oca:ocpp:uid:1:569275

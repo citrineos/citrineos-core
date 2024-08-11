@@ -14,7 +14,7 @@ import { AttributeEnumType, GetVariableStatusEnumType } from '../enums';
 import { OcppResponse } from '../../..';
 
 export interface GetVariablesResponse extends OcppResponse {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -32,10 +32,10 @@ export interface CustomDataType {
  *
  */
 export interface GetVariableResultType {
-  customData?: CustomDataType;
-  attributeStatusInfo?: StatusInfoType;
+  customData?: CustomDataType | null;
+  attributeStatusInfo?: StatusInfoType | null;
   attributeStatus: GetVariableStatusEnumType;
-  attributeType?: AttributeEnumType;
+  attributeType?: AttributeEnumType | null;
   /**
    * Value of requested attribute type of component-variable. This field can only be empty when the given status is NOT accepted.
    *
@@ -43,7 +43,7 @@ export interface GetVariableResultType {
    *
    *
    */
-  attributeValue?: string;
+  attributeValue?: string | null;
   component: ComponentType;
   variable: VariableType;
 }
@@ -52,7 +52,7 @@ export interface GetVariableResultType {
  *
  */
 export interface StatusInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * A predefined code for the reason why the status is returned in this response. The string is case-insensitive.
    *
@@ -62,15 +62,15 @@ export interface StatusInfoType {
    * Additional text to provide detailed information.
    *
    */
-  additionalInfo?: string;
+  additionalInfo?: string | null;
 }
 /**
  * A physical or logical component
  *
  */
 export interface ComponentType {
-  customData?: CustomDataType;
-  evse?: EVSEType;
+  customData?: CustomDataType | null;
+  evse?: EVSEType | null;
   /**
    * Name of the component. Name should be taken from the list of standardized component names whenever possible. Case Insensitive. strongly advised to use Camel Case.
    *
@@ -80,7 +80,7 @@ export interface ComponentType {
    * Name of instance in case the component exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
    *
    */
-  instance?: string;
+  instance?: string | null;
 }
 /**
  * EVSE
@@ -89,7 +89,7 @@ export interface ComponentType {
  *
  */
 export interface EVSEType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Identified_ Object. MRID. Numeric_ Identifier
    * urn:x-enexis:ecdm:uid:1:569198
@@ -101,14 +101,14 @@ export interface EVSEType {
    * An id to designate a specific connector (on an EVSE) by connector index number.
    *
    */
-  connectorId?: number;
+  connectorId?: number | null;
 }
 /**
  * Reference key to a component-variable.
  *
  */
 export interface VariableType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Name of the variable. Name should be taken from the list of standardized variable names whenever possible. Case Insensitive. strongly advised to use Camel Case.
    *
@@ -118,5 +118,5 @@ export interface VariableType {
    * Name of instance in case the variable exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
    *
    */
-  instance?: string;
+  instance?: string | null;
 }

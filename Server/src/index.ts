@@ -17,7 +17,7 @@ import {
   type IModuleApi,
   type SystemConfig,
 } from '@citrineos/base';
-import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
+import {MonitoringModule, MonitoringModuleApi} from '@citrineos/monitoring';
 import {
   Authenticator,
   DirectusUtil,
@@ -28,39 +28,27 @@ import {
   RedisCache,
   WebsocketNetworkConnection,
 } from '@citrineos/util';
-import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+import {type JsonSchemaToTsProvider} from '@fastify/type-provider-json-schema-to-ts';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import fastify, { type FastifyInstance } from 'fastify';
-import { type ILogObj, Logger } from 'tslog';
-import { systemConfig } from './config';
-import {
-  ConfigurationModule,
-  ConfigurationModuleApi,
-} from '@citrineos/configuration';
-import {
-  TransactionsModule,
-  TransactionsModuleApi,
-} from '@citrineos/transactions';
-import {
-  CertificatesModule,
-  CertificatesModuleApi,
-} from '@citrineos/certificates';
-import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
-import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
-import {
-  SmartChargingModule,
-  SmartChargingModuleApi,
-} from '@citrineos/smartcharging';
-import { RepositoryStore, sequelize } from '@citrineos/data';
+import fastify, {type FastifyInstance} from 'fastify';
+import {type ILogObj, Logger} from 'tslog';
+import {systemConfig} from './config';
+import {ConfigurationModule, ConfigurationModuleApi,} from '@citrineos/configuration';
+import {TransactionsModule, TransactionsModuleApi,} from '@citrineos/transactions';
+import {CertificatesModule, CertificatesModuleApi,} from '@citrineos/certificates';
+import {EVDriverModule, EVDriverModuleApi} from '@citrineos/evdriver';
+import {ReportingModule, ReportingModuleApi} from '@citrineos/reporting';
+import {SmartChargingModule, SmartChargingModuleApi,} from '@citrineos/smartcharging';
+import {RepositoryStore, sequelize} from '@citrineos/data';
 import {
   type FastifyRouteSchemaDef,
   type FastifySchemaCompiler,
   type FastifyValidationResult,
 } from 'fastify/types/schema';
-import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter';
-import { Sequelize } from 'sequelize-typescript';
-import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
+import {AdminApi, MessageRouterImpl, WebhookDispatcher} from '@citrineos/ocpprouter';
+import {Sequelize} from 'sequelize-typescript';
+import {TenantModule, TenantModuleApi} from '@citrineos/tenant';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -293,12 +281,17 @@ export class CitrineOSServer {
       this._logger,
     );
 
+    const webhookDispatcher = new WebhookDispatcher(
+      this._repositoryStore.subscriptionRepository,
+    );
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const router = new MessageRouterImpl(
       this._config,
       this._cache,
       this._createSender(),
       this._createHandler(),
+      webhookDispatcher,
       async (_identifier: string, _message: string) => false,
       this._logger,
       this._ajv,
@@ -369,7 +362,7 @@ export class CitrineOSServer {
         this._logger,
         this._repositoryStore.authorizationRepository,
         this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.tariffRepository,
+        this._repositoryStore.tariffRepository
       );
       this.modules.push(module);
       this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
@@ -434,7 +427,7 @@ export class CitrineOSServer {
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.componentRepository,
         this._repositoryStore.locationRepository,
-        this._repositoryStore.tariffRepository,
+        this._repositoryStore.tariffRepository
       );
       this.modules.push(module);
       this.apis.push(

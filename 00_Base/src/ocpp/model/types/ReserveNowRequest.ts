@@ -14,7 +14,7 @@ import { ConnectorEnumType, IdTokenEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface ReserveNowRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Id of reservation.
    *
@@ -25,14 +25,14 @@ export interface ReserveNowRequest extends OcppRequest {
    *
    */
   expiryDateTime: string;
-  connectorType?: ConnectorEnumType;
+  connectorType?: ConnectorEnumType | null;
   idToken: IdTokenType;
   /**
    * This contains ID of the evse to be reserved.
    *
    */
-  evseId?: number;
-  groupIdToken?: IdTokenType;
+  evseId?: number | null;
+  groupIdToken?: IdTokenType | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -46,7 +46,7 @@ export interface CustomDataType {
  *
  */
 export interface IdTokenType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -63,7 +63,7 @@ export interface IdTokenType {
  *
  */
 export interface AdditionalInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * This field specifies the additional IdToken.
    *

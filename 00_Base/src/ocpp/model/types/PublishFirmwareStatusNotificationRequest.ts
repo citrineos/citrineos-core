@@ -14,7 +14,7 @@ import { PublishFirmwareStatusEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface PublishFirmwareStatusNotificationRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   status: PublishFirmwareStatusEnumType;
   /**
    * Required if status is Published. Can be multiple URI’s, if the Local Controller supports e.g. HTTP, HTTPS, and FTP.
@@ -30,7 +30,7 @@ export interface PublishFirmwareStatusNotificationRequest extends OcppRequest {
    * triggered this action.
    *
    */
-  requestId?: number;
+  requestId?: number | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

@@ -14,7 +14,7 @@ import { EventNotificationEnumType, EventTriggerEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface NotifyEventRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Timestamp of the moment this message was generated at the Charging Station.
    *
@@ -24,7 +24,7 @@ export interface NotifyEventRequest extends OcppRequest {
    * “to be continued” indicator. Indicates whether another part of the report follows in an upcoming notifyEventRequest message. Default value when omitted is false.
    *
    */
-  tbc?: boolean;
+  tbc?: boolean | null;
   /**
    * Sequence number of this message. First message starts at 0.
    *
@@ -47,7 +47,7 @@ export interface CustomDataType {
  *
  */
 export interface EventDataType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Identifies the event. This field can be referred to as a cause by other events.
    *
@@ -65,7 +65,7 @@ export interface EventDataType {
    *
    *
    */
-  cause?: number;
+  cause?: number | null;
   /**
    * Actual value (_attributeType_ Actual) of the variable.
    *
@@ -78,29 +78,29 @@ export interface EventDataType {
    * Technical (error) code as reported by component.
    *
    */
-  techCode?: string;
+  techCode?: string | null;
   /**
    * Technical detail information as reported by component.
    *
    */
-  techInfo?: string;
+  techInfo?: string | null;
   /**
    * _Cleared_ is set to true to report the clearing of a monitored situation, i.e. a 'return to normal'.
    *
    *
    */
-  cleared?: boolean;
+  cleared?: boolean | null;
   /**
    * If an event notification is linked to a specific transaction, this field can be used to specify its transactionId.
    *
    */
-  transactionId?: string;
+  transactionId?: string | null;
   component: ComponentType;
   /**
    * Identifies the VariableMonitoring which triggered the event.
    *
    */
-  variableMonitoringId?: number;
+  variableMonitoringId?: number | null;
   eventNotificationType: EventNotificationEnumType;
   variable: VariableType;
 }
@@ -109,8 +109,8 @@ export interface EventDataType {
  *
  */
 export interface ComponentType {
-  customData?: CustomDataType;
-  evse?: EVSEType;
+  customData?: CustomDataType | null;
+  evse?: EVSEType | null;
   /**
    * Name of the component. Name should be taken from the list of standardized component names whenever possible. Case Insensitive. strongly advised to use Camel Case.
    *
@@ -120,7 +120,7 @@ export interface ComponentType {
    * Name of instance in case the component exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
    *
    */
-  instance?: string;
+  instance?: string | null;
 }
 /**
  * EVSE
@@ -129,7 +129,7 @@ export interface ComponentType {
  *
  */
 export interface EVSEType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Identified_ Object. MRID. Numeric_ Identifier
    * urn:x-enexis:ecdm:uid:1:569198
@@ -141,14 +141,14 @@ export interface EVSEType {
    * An id to designate a specific connector (on an EVSE) by connector index number.
    *
    */
-  connectorId?: number;
+  connectorId?: number | null;
 }
 /**
  * Reference key to a component-variable.
  *
  */
 export interface VariableType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Name of the variable. Name should be taken from the list of standardized variable names whenever possible. Case Insensitive. strongly advised to use Camel Case.
    *
@@ -158,5 +158,5 @@ export interface VariableType {
    * Name of instance in case the variable exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
    *
    */
-  instance?: string;
+  instance?: string | null;
 }

@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { CrudRepository, SystemConfig, type BootConfig, type RegistrationStatusEnumType, type StatusInfoType } from '@citrineos/base';
-import { type IBootRepository } from '../../../interfaces/repositories';
+import { type IBootRepository } from '../../../interfaces';
 import { Boot } from '../model/Boot';
 import { VariableAttribute } from '../model/DeviceModel';
 import { SequelizeRepository } from '..';
@@ -62,7 +62,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
     const managedSetVariables: VariableAttribute[] = [];
     // Unassigns variables
     await this.variableAttributes.updateAllByQuery(
-      { bootConfigId: undefined },
+      { bootConfigId: null },
       {
         where: {
           stationId,

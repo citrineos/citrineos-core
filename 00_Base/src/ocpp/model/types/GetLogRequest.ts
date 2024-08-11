@@ -14,7 +14,7 @@ import { LogEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface GetLogRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   log: LogParametersType;
   logType: LogEnumType;
   /**
@@ -26,12 +26,12 @@ export interface GetLogRequest extends OcppRequest {
    * This specifies how many times the Charging Station must try to upload the log before giving up. If this field is not present, it is left to Charging Station to decide how many times it wants to retry.
    *
    */
-  retries?: number;
+  retries?: number | null;
   /**
    * The interval in seconds after which a retry may be attempted. If this field is not present, it is left to Charging Station to decide how long to wait between attempts.
    *
    */
-  retryInterval?: number;
+  retryInterval?: number | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -47,7 +47,7 @@ export interface CustomDataType {
  *
  */
 export interface LogParametersType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Log. Remote_ Location. URI
    * urn:x-enexis:ecdm:uid:1:569484
@@ -61,12 +61,12 @@ export interface LogParametersType {
    * This contains the date and time of the oldest logging information to include in the diagnostics.
    *
    */
-  oldestTimestamp?: string;
+  oldestTimestamp?: string | null;
   /**
    * Log. Latest_ Timestamp. Date_ Time
    * urn:x-enexis:ecdm:uid:1:569482
    * This contains the date and time of the latest logging information to include in the diagnostics.
    *
    */
-  latestTimestamp?: string;
+  latestTimestamp?: string | null;
 }

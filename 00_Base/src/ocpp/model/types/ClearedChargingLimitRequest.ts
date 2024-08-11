@@ -14,13 +14,13 @@ import { ChargingLimitSourceEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface ClearedChargingLimitRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   chargingLimitSource: ChargingLimitSourceEnumType;
   /**
    * EVSE Identifier.
    *
    */
-  evseId?: number;
+  evseId?: number | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

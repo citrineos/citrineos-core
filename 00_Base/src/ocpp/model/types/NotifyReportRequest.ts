@@ -14,7 +14,7 @@ import { AttributeEnumType, DataEnumType, MutabilityEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface NotifyReportRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * The id of the GetReportRequest  or GetBaseReportRequest that requested this report
    *
@@ -34,7 +34,7 @@ export interface NotifyReportRequest extends OcppRequest {
    *
    *
    */
-  tbc?: boolean;
+  tbc?: boolean | null;
   /**
    * Sequence number of this message. First message starts at 0.
    *
@@ -53,7 +53,7 @@ export interface CustomDataType {
  *
  */
 export interface ReportDataType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   component: ComponentType;
   variable: VariableType;
   /**
@@ -70,15 +70,15 @@ export interface ReportDataType {
         VariableAttributeType,
         VariableAttributeType,
       ];
-  variableCharacteristics?: VariableCharacteristicsType;
+  variableCharacteristics?: VariableCharacteristicsType | null;
 }
 /**
  * A physical or logical component
  *
  */
 export interface ComponentType {
-  customData?: CustomDataType;
-  evse?: EVSEType;
+  customData?: CustomDataType | null;
+  evse?: EVSEType | null;
   /**
    * Name of the component. Name should be taken from the list of standardized component names whenever possible. Case Insensitive. strongly advised to use Camel Case.
    *
@@ -88,7 +88,7 @@ export interface ComponentType {
    * Name of instance in case the component exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
    *
    */
-  instance?: string;
+  instance?: string | null;
 }
 /**
  * EVSE
@@ -97,7 +97,7 @@ export interface ComponentType {
  *
  */
 export interface EVSEType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Identified_ Object. MRID. Numeric_ Identifier
    * urn:x-enexis:ecdm:uid:1:569198
@@ -109,14 +109,14 @@ export interface EVSEType {
    * An id to designate a specific connector (on an EVSE) by connector index number.
    *
    */
-  connectorId?: number;
+  connectorId?: number | null;
 }
 /**
  * Reference key to a component-variable.
  *
  */
 export interface VariableType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Name of the variable. Name should be taken from the list of standardized variable names whenever possible. Case Insensitive. strongly advised to use Camel Case.
    *
@@ -126,56 +126,56 @@ export interface VariableType {
    * Name of instance in case the variable exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
    *
    */
-  instance?: string;
+  instance?: string | null;
 }
 /**
  * Attribute data of a variable.
  *
  */
 export interface VariableAttributeType {
-  customData?: CustomDataType;
-  type?: AttributeEnumType;
+  customData?: CustomDataType | null;
+  type?: AttributeEnumType | null;
   /**
    * Value of the attribute. May only be omitted when mutability is set to 'WriteOnly'.
    *
    * The Configuration Variable &lt;&lt;configkey-reporting-value-size,ReportingValueSize&gt;&gt; can be used to limit GetVariableResult.attributeValue, VariableAttribute.value and EventData.actualValue. The max size of these values will always remain equal.
    *
    */
-  value?: string;
-  mutability?: MutabilityEnumType;
+  value?: string | null;
+  mutability?: MutabilityEnumType | null;
   /**
    * If true, value will be persistent across system reboots or power down. Default when omitted is false.
    *
    */
-  persistent?: boolean;
+  persistent?: boolean | null;
   /**
    * If true, value that will never be changed by the Charging Station at runtime. Default when omitted is false.
    *
    */
-  constant?: boolean;
+  constant?: boolean | null;
 }
 /**
  * Fixed read-only parameters of a variable.
  *
  */
 export interface VariableCharacteristicsType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Unit of the variable. When the transmitted value has a unit, this field SHALL be included.
    *
    */
-  unit?: string;
+  unit?: string | null;
   dataType: DataEnumType;
   /**
    * Minimum possible value of this variable.
    *
    */
-  minLimit?: number;
+  minLimit?: number | null;
   /**
    * Maximum possible value of this variable. When the datatype of this Variable is String, OptionList, SequenceList or MemberList, this field defines the maximum length of the (CSV) string.
    *
    */
-  maxLimit?: number;
+  maxLimit?: number | null;
   /**
    * Allowed values when variable is Option/Member/SequenceList.
    *
@@ -191,7 +191,7 @@ export interface VariableCharacteristicsType {
    *
    *
    */
-  valuesList?: string;
+  valuesList?: string | null;
   /**
    * Flag indicating if this variable supports monitoring.
    *

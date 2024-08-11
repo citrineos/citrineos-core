@@ -14,7 +14,7 @@ import { FirmwareStatusEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface FirmwareStatusNotificationRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   status: FirmwareStatusEnumType;
   /**
    * The request id that was provided in the
@@ -22,7 +22,7 @@ export interface FirmwareStatusNotificationRequest extends OcppRequest {
    * This field is mandatory, unless the message was triggered by a TriggerMessageRequest AND there is no firmware update ongoing.
    *
    */
-  requestId?: number;
+  requestId?: number | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
