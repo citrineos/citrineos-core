@@ -14,9 +14,9 @@ import { Iso15118EVCertificateStatusEnumType } from '../enums';
 import { OcppResponse } from '../../..';
 
 export interface Get15118EVCertificateResponse extends OcppResponse {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   status: Iso15118EVCertificateStatusEnumType;
-  statusInfo?: StatusInfoType;
+  statusInfo?: StatusInfoType | null;
   /**
    * Raw CertificateInstallationRes response for the EV, Base64 encoded.
    *
@@ -35,7 +35,7 @@ export interface CustomDataType {
  *
  */
 export interface StatusInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * A predefined code for the reason why the status is returned in this response. The string is case-insensitive.
    *
@@ -45,5 +45,5 @@ export interface StatusInfoType {
    * Additional text to provide detailed information.
    *
    */
-  additionalInfo?: string;
+  additionalInfo?: string | null;
 }

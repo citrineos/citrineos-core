@@ -13,7 +13,7 @@
 import { OcppRequest } from '../../..';
 
 export interface UnpublishFirmwareRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * The MD5 checksum over the entire firmware file as a hexadecimal string of length 32.
    *

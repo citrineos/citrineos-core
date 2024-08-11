@@ -14,7 +14,7 @@ import { CertificateSigningUseEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface CertificateSignedRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * The signed PEM encoded X.509 certificate. This can also contain the necessary sub CA certificates. In that case, the order of the bundle should follow the certificate chain, starting from the leaf certificate.
    *
@@ -22,7 +22,7 @@ export interface CertificateSignedRequest extends OcppRequest {
    *
    */
   certificateChain: string;
-  certificateType?: CertificateSigningUseEnumType;
+  certificateType?: CertificateSigningUseEnumType | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

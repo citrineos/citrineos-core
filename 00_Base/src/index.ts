@@ -11,6 +11,7 @@ export {
   HttpMethod,
   IModuleApi,
 } from './interfaces/api';
+export { BadRequestError } from './interfaces/api/exceptions/BadRequestError';
 export { CacheNamespace, ICache } from './interfaces/cache/cache';
 export {
   AbstractMessageRouter,

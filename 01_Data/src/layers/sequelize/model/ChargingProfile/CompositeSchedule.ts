@@ -33,5 +33,5 @@ export class CompositeSchedule extends Model implements CompositeScheduleType {
   @Column(DataType.JSONB)
   declare chargingSchedulePeriod: [ChargingSchedulePeriodType, ...ChargingSchedulePeriodType[]];
 
-  declare customData?: CustomDataType | undefined;
+  declare customData?: CustomDataType | null;
 }

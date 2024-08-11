@@ -236,7 +236,8 @@ export abstract class AbstractModuleApi<T extends IModule>
       ).catch((err) => {
         // TODO: figure out better error codes & messages
         this._logger.error('Error in handling data route', err);
-        reply.status(500).send(err);
+        const statusCode = err.statusCode ? err.statusCode : 500;
+        reply.status(statusCode).send(err);
       });
 
     const _opts: any = {

@@ -14,7 +14,7 @@ import { ComponentCriterionEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface GetReportRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -58,17 +58,17 @@ export interface CustomDataType {
  *
  */
 export interface ComponentVariableType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   component: ComponentType;
-  variable?: VariableType;
+  variable?: VariableType | null;
 }
 /**
  * A physical or logical component
  *
  */
 export interface ComponentType {
-  customData?: CustomDataType;
-  evse?: EVSEType;
+  customData?: CustomDataType | null;
+  evse?: EVSEType | null;
   /**
    * Name of the component. Name should be taken from the list of standardized component names whenever possible. Case Insensitive. strongly advised to use Camel Case.
    *
@@ -78,7 +78,7 @@ export interface ComponentType {
    * Name of instance in case the component exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
    *
    */
-  instance?: string;
+  instance?: string | null;
 }
 /**
  * EVSE
@@ -87,7 +87,7 @@ export interface ComponentType {
  *
  */
 export interface EVSEType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Identified_ Object. MRID. Numeric_ Identifier
    * urn:x-enexis:ecdm:uid:1:569198
@@ -99,14 +99,14 @@ export interface EVSEType {
    * An id to designate a specific connector (on an EVSE) by connector index number.
    *
    */
-  connectorId?: number;
+  connectorId?: number | null;
 }
 /**
  * Reference key to a component-variable.
  *
  */
 export interface VariableType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Name of the variable. Name should be taken from the list of standardized variable names whenever possible. Case Insensitive. strongly advised to use Camel Case.
    *
@@ -116,5 +116,5 @@ export interface VariableType {
    * Name of instance in case the variable exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
    *
    */
-  instance?: string;
+  instance?: string | null;
 }

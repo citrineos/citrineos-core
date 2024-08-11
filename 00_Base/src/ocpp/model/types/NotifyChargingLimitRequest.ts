@@ -18,7 +18,7 @@ import {
 import { OcppRequest } from '../../..';
 
 export interface NotifyChargingLimitRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -27,7 +27,7 @@ export interface NotifyChargingLimitRequest extends OcppRequest {
    * The charging schedule contained in this notification applies to an EVSE. evseId must be &gt; 0.
    *
    */
-  evseId?: number;
+  evseId?: number | null;
   chargingLimit: ChargingLimitType;
 }
 /**
@@ -44,7 +44,7 @@ export interface CustomDataType {
  *
  */
 export interface ChargingScheduleType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Identifies the ChargingSchedule.
    *
@@ -56,14 +56,14 @@ export interface ChargingScheduleType {
    * Starting point of an absolute schedule. If absent the schedule will be relative to start of charging.
    *
    */
-  startSchedule?: string;
+  startSchedule?: string | null;
   /**
    * Charging_ Schedule. Duration. Elapsed_ Time
    * urn:x-oca:ocpp:uid:1:569236
    * Duration of the charging schedule in seconds. If the duration is left empty, the last period will continue indefinitely or until end of the transaction if chargingProfilePurpose = TxProfile.
    *
    */
-  duration?: number;
+  duration?: number | null;
   chargingRateUnit: ChargingRateUnitEnumType;
   /**
    * @minItems 1
@@ -79,8 +79,8 @@ export interface ChargingScheduleType {
    * Minimum charging rate supported by the EV. The unit of measure is defined by the chargingRateUnit. This parameter is intended to be used by a local smart charging algorithm to optimize the power allocation for in the case a charging process is inefficient at lower charging rates. Accepts at most one digit fraction (e.g. 8.1)
    *
    */
-  minChargingRate?: number;
-  salesTariff?: SalesTariffType;
+  minChargingRate?: number | null;
+  salesTariff?: SalesTariffType | null;
 }
 /**
  * Charging_ Schedule_ Period
@@ -89,7 +89,7 @@ export interface ChargingScheduleType {
  *
  */
 export interface ChargingSchedulePeriodType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Charging_ Schedule_ Period. Start_ Period. Elapsed_ Time
    * urn:x-oca:ocpp:uid:1:569240
@@ -110,13 +110,13 @@ export interface ChargingSchedulePeriodType {
    * The number of phases that can be used for charging. If a number of phases is needed, numberPhases=3 will be assumed unless another number is given.
    *
    */
-  numberPhases?: number;
+  numberPhases?: number | null;
   /**
    * Values: 1..3, Used if numberPhases=1 and if the EVSE is capable of switching the phase connected to the EV, i.e. ACPhaseSwitchingSupported is defined and true. It’s not allowed unless both conditions above are true. If both conditions are true, and phaseToUse is omitted, the Charging Station / EVSE will make the selection on its own.
    *
    *
    */
-  phaseToUse?: number;
+  phaseToUse?: number | null;
 }
 /**
  * Sales_ Tariff
@@ -125,7 +125,7 @@ export interface ChargingSchedulePeriodType {
  *
  */
 export interface SalesTariffType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Identified_ Object. MRID. Numeric_ Identifier
    * urn:x-enexis:ecdm:uid:1:569198
@@ -139,14 +139,14 @@ export interface SalesTariffType {
    * A human readable title/short description of the sales tariff e.g. for HMI display purposes.
    *
    */
-  salesTariffDescription?: string;
+  salesTariffDescription?: string | null;
   /**
    * Sales_ Tariff. Num_ E_ Price_ Levels. Counter
    * urn:x-oca:ocpp:uid:1:569284
    * Defines the overall number of distinct price levels used across all provided SalesTariff elements.
    *
    */
-  numEPriceLevels?: number;
+  numEPriceLevels?: number | null;
   /**
    * @minItems 1
    * @maxItems 1024
@@ -159,7 +159,7 @@ export interface SalesTariffType {
  *
  */
 export interface SalesTariffEntryType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   relativeTimeInterval: RelativeTimeIntervalType;
   /**
    * Sales_ Tariff_ Entry. E_ Price_ Level. Unsigned_ Integer
@@ -167,7 +167,7 @@ export interface SalesTariffEntryType {
    * Defines the price level of this SalesTariffEntry (referring to NumEPriceLevels). Small values for the EPriceLevel represent a cheaper TariffEntry. Large values for the EPriceLevel represent a more expensive TariffEntry.
    *
    */
-  ePriceLevel?: number;
+  ePriceLevel?: number | null;
   /**
    * @minItems 1
    * @maxItems 3
@@ -183,7 +183,7 @@ export interface SalesTariffEntryType {
  *
  */
 export interface RelativeTimeIntervalType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Relative_ Timer_ Interval. Start. Elapsed_ Time
    * urn:x-oca:ocpp:uid:1:569279
@@ -197,7 +197,7 @@ export interface RelativeTimeIntervalType {
    * Duration of the interval, in seconds.
    *
    */
-  duration?: number;
+  duration?: number | null;
 }
 /**
  * Consumption_ Cost
@@ -205,7 +205,7 @@ export interface RelativeTimeIntervalType {
  *
  */
 export interface ConsumptionCostType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Consumption_ Cost. Start_ Value. Numeric
    * urn:x-oca:ocpp:uid:1:569246
@@ -225,7 +225,7 @@ export interface ConsumptionCostType {
  *
  */
 export interface CostType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   costKind: CostKindEnumType;
   /**
    * Cost. Amount. Amount
@@ -240,7 +240,7 @@ export interface CostType {
    * Values: -3..3, The amountMultiplier defines the exponent to base 10 (dec). The final value is determined by: amount * 10 ^ amountMultiplier
    *
    */
-  amountMultiplier?: number;
+  amountMultiplier?: number | null;
 }
 /**
  * Charging_ Limit
@@ -248,7 +248,7 @@ export interface CostType {
  *
  */
 export interface ChargingLimitType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   chargingLimitSource: ChargingLimitSourceEnumType;
   /**
    * Charging_ Limit. Is_ Grid_ Critical. Indicator
@@ -256,5 +256,5 @@ export interface ChargingLimitType {
    * Indicates whether the charging limit is critical for the grid.
    *
    */
-  isGridCritical?: boolean;
+  isGridCritical?: boolean | null;
 }

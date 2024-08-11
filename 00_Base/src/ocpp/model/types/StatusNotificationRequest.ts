@@ -14,7 +14,7 @@ import { ConnectorStatusEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface StatusNotificationRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * The time for which the status is reported. If absent time of receipt of the message will be assumed.
    *

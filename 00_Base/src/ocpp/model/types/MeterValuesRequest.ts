@@ -24,7 +24,7 @@ import {
 import { OcppRequest } from '../../..';
 
 export interface MeterValuesRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Request_ Body. EVSEID. Numeric_ Identifier
    * urn:x-enexis:ecdm:uid:1:571101
@@ -51,7 +51,7 @@ export interface CustomDataType {
  *
  */
 export interface MeterValueType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -73,7 +73,7 @@ export interface MeterValueType {
  *
  */
 export interface SampledValueType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Sampled_ Value. Value. Measure
    * urn:x-oca:ocpp:uid:1:569260
@@ -82,19 +82,19 @@ export interface SampledValueType {
    *
    */
   value: number;
-  context?: ReadingContextEnumType;
-  measurand?: MeasurandEnumType;
-  phase?: PhaseEnumType;
-  location?: LocationEnumType;
-  signedMeterValue?: SignedMeterValueType;
-  unitOfMeasure?: UnitOfMeasureType;
+  context?: ReadingContextEnumType | null;
+  measurand?: MeasurandEnumType | null;
+  phase?: PhaseEnumType | null;
+  location?: LocationEnumType | null;
+  signedMeterValue?: SignedMeterValueType | null;
+  unitOfMeasure?: UnitOfMeasureType | null;
 }
 /**
  * Represent a signed version of the meter value.
  *
  */
 export interface SignedMeterValueType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Base64 encoded, contains the signed data which might contain more then just the meter value. It can contain information like timestamps, reference to a customer etc.
    *
@@ -121,17 +121,17 @@ export interface SignedMeterValueType {
  *
  */
 export interface UnitOfMeasureType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Unit of the value. Default = "Wh" if the (default) measurand is an "Energy" type.
    * This field SHALL use a value from the list Standardized Units of Measurements in Part 2 Appendices.
    * If an applicable unit is available in that list, otherwise a "custom" unit might be used.
    *
    */
-  unit?: string;
+  unit?: string | null;
   /**
    * Multiplier, this value represents the exponent to base 10. I.e. multiplier 3 means 10 raised to the 3rd power. Default is 0.
    *
    */
-  multiplier?: number;
+  multiplier?: number | null;
 }

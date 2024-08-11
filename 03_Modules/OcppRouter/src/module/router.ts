@@ -38,6 +38,7 @@ import Ajv from 'ajv';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
 import { ISubscriptionRepository, sequelize } from '@citrineos/data';
+import { WebhookDispatcher } from './webhook.dispatcher';
 
 /**
  * Implementation of the ocpp router
@@ -50,6 +51,7 @@ export class MessageRouterImpl
    * Fields
    */
 
+  private _webhookDispatcher: WebhookDispatcher;
   protected _cache: ICache;
   protected _sender: IMessageSender;
   protected _handler: IMessageHandler;
@@ -57,29 +59,6 @@ export class MessageRouterImpl
     identifier: string,
     message: string,
   ) => Promise<boolean>;
-
-  // Structure of the maps: key = identifier, value = array of callbacks
-  private _onConnectionCallbacks: Map<
-    string,
-    ((info?: Map<string, string>) => Promise<boolean>)[]
-  > = new Map();
-  private _onCloseCallbacks: Map<
-    string,
-    ((info?: Map<string, string>) => Promise<boolean>)[]
-  > = new Map();
-  private _onMessageCallbacks: Map<
-    string,
-    ((message: string, info?: Map<string, string>) => Promise<boolean>)[]
-  > = new Map();
-  private _sentMessageCallbacks: Map<
-    string,
-    ((
-      message: string,
-      error?: any,
-      info?: Map<string, string>,
-    ) => Promise<boolean>)[]
-  > = new Map();
-
   public subscriptionRepository: ISubscriptionRepository;
 
   /**
@@ -89,6 +68,7 @@ export class MessageRouterImpl
    * @param {ICache} cache - the cache object
    * @param {IMessageSender} [sender] - the message sender
    * @param {IMessageHandler} [handler] - the message handler
+   * @param {WebhookDispatcher} [dispatcher] - the webhook dispatcher
    * @param {Function} networkHook - the network hook needed to send messages to chargers
    * @param {ISubscriptionRepository} [subscriptionRepository] - the subscription repository
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
@@ -99,6 +79,7 @@ export class MessageRouterImpl
     cache: ICache,
     sender: IMessageSender,
     handler: IMessageHandler,
+    dispatcher: WebhookDispatcher,
     networkHook: (identifier: string, message: string) => Promise<boolean>,
     logger?: Logger<ILogObj>,
     ajv?: Ajv,
@@ -109,64 +90,16 @@ export class MessageRouterImpl
     this._cache = cache;
     this._sender = sender;
     this._handler = handler;
+    this._webhookDispatcher = dispatcher;
     this._networkHook = networkHook;
     this.subscriptionRepository =
       subscriptionRepository ||
       new sequelize.SequelizeSubscriptionRepository(config, this._logger);
   }
 
-  addOnConnectionCallback(
-    identifier: string,
-    onConnectionCallback: (info?: Map<string, string>) => Promise<boolean>,
-  ): void {
-    this._onConnectionCallbacks.has(identifier)
-      ? this._onConnectionCallbacks.get(identifier)!.push(onConnectionCallback)
-      : this._onConnectionCallbacks.set(identifier, [onConnectionCallback]);
-  }
-
-  addOnCloseCallback(
-    identifier: string,
-    onCloseCallback: (info?: Map<string, string>) => Promise<boolean>,
-  ): void {
-    this._onCloseCallbacks.has(identifier)
-      ? this._onCloseCallbacks.get(identifier)!.push(onCloseCallback)
-      : this._onCloseCallbacks.set(identifier, [onCloseCallback]);
-  }
-
-  addOnMessageCallback(
-    identifier: string,
-    onMessageCallback: (
-      message: string,
-      info?: Map<string, string>,
-    ) => Promise<boolean>,
-  ): void {
-    this._onMessageCallbacks.has(identifier)
-      ? this._onMessageCallbacks.get(identifier)!.push(onMessageCallback)
-      : this._onMessageCallbacks.set(identifier, [onMessageCallback]);
-  }
-
-  addSentMessageCallback(
-    identifier: string,
-    sentMessageCallback: (
-      message: string,
-      error: any,
-      info?: Map<string, string>,
-    ) => Promise<boolean>,
-  ): void {
-    this._sentMessageCallbacks.has(identifier)
-      ? this._sentMessageCallbacks.get(identifier)!.push(sentMessageCallback)
-      : this._sentMessageCallbacks.set(identifier, [sentMessageCallback]);
-  }
-
   async registerConnection(connectionIdentifier: string): Promise<boolean> {
-    const loadConnectionCallbackSubscriptions =
-      this._loadSubscriptionsForConnection(connectionIdentifier).then(() => {
-        this._onConnectionCallbacks
-          .get(connectionIdentifier)
-          ?.forEach(async (callback) => {
-            callback();
-          });
-      });
+    const dispatcherRegistration =
+      this._webhookDispatcher.register(connectionIdentifier);
 
     const requestSubscription = this._handler.subscribe(
       connectionIdentifier,
@@ -189,7 +122,7 @@ export class MessageRouterImpl
     );
 
     return Promise.all([
-      loadConnectionCallbackSubscriptions,
+      dispatcherRegistration,
       requestSubscription,
       responseSubscription,
     ])
@@ -203,9 +136,7 @@ export class MessageRouterImpl
   }
 
   async deregisterConnection(connectionIdentifier: string): Promise<boolean> {
-    this._onCloseCallbacks.get(connectionIdentifier)?.forEach((callback) => {
-      callback();
-    });
+    this._webhookDispatcher.deregister(connectionIdentifier);
 
     // TODO: ensure that all queue implementations in 02_Util only unsubscribe 1 queue per call
     // ...which will require refactoring this method to unsubscribe request and response queues separately
@@ -219,9 +150,7 @@ export class MessageRouterImpl
     message: string,
     timestamp: Date,
   ): Promise<boolean> {
-    this._onMessageCallbacks.get(identifier)?.forEach((callback) => {
-      callback(message);
-    });
+    this._webhookDispatcher.dispatchMessageReceived(identifier, message);
     let rpcMessage: any;
     let messageTypeId: MessageTypeId | undefined = undefined;
     let messageId: string = '-1'; // OCPP 2.0.1 part 4, section 4.2.3, "When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId."
@@ -436,148 +365,6 @@ export class MessageRouterImpl
   /**
    * Private Methods
    */
-
-  /**
-   * Loads all subscriptions for a given connection into memory
-   *
-   * @param {string} connectionIdentifier - the identifier of the connection
-   * @return {Promise<void>} a promise that resolves once all subscriptions are loaded
-   */
-  private async _loadSubscriptionsForConnection(connectionIdentifier: string) {
-    this._onConnectionCallbacks.set(connectionIdentifier, []);
-    this._onCloseCallbacks.set(connectionIdentifier, []);
-    this._onMessageCallbacks.set(connectionIdentifier, []);
-    this._sentMessageCallbacks.set(connectionIdentifier, []);
-    const subscriptions =
-      await this.subscriptionRepository.readAllByStationId(
-        connectionIdentifier,
-      );
-    for (const subscription of subscriptions) {
-      if (subscription.onConnect) {
-        this._onConnectionCallbacks
-          .get(connectionIdentifier)!
-          .push((info?: Map<string, string>) =>
-            this._subscriptionCallback(
-              {
-                stationId: connectionIdentifier,
-                event: 'connected',
-                info: info,
-              },
-              subscription.url,
-            ),
-          );
-        this._logger.debug(
-          `Added onConnect callback to ${subscription.url} for station ${connectionIdentifier}`,
-        );
-      }
-      if (subscription.onClose) {
-        this._onCloseCallbacks
-          .get(connectionIdentifier)!
-          .push((info?: Map<string, string>) =>
-            this._subscriptionCallback(
-              { stationId: connectionIdentifier, event: 'closed', info: info },
-              subscription.url,
-            ),
-          );
-        this._logger.debug(
-          `Added onClose callback to ${subscription.url} for station ${connectionIdentifier}`,
-        );
-      }
-      if (subscription.onMessage) {
-        this._onMessageCallbacks
-          .get(connectionIdentifier)!
-          .push(async (message: string, info?: Map<string, string>) => {
-            if (
-              !subscription.messageRegexFilter ||
-              new RegExp(subscription.messageRegexFilter).test(message)
-            ) {
-              return this._subscriptionCallback(
-                {
-                  stationId: connectionIdentifier,
-                  event: 'message',
-                  origin: MessageOrigin.ChargingStation,
-                  message: message,
-                  info: info,
-                },
-                subscription.url,
-              );
-            } else {
-              // Ignore
-              return true;
-            }
-          });
-        this._logger.debug(
-          `Added onMessage callback to ${subscription.url} for station ${connectionIdentifier}`,
-        );
-      }
-      if (subscription.sentMessage) {
-        this._sentMessageCallbacks
-          .get(connectionIdentifier)!
-          .push(
-            async (
-              message: string,
-              error?: any,
-              info?: Map<string, string>,
-            ) => {
-              if (
-                !subscription.messageRegexFilter ||
-                new RegExp(subscription.messageRegexFilter).test(message)
-              ) {
-                return this._subscriptionCallback(
-                  {
-                    stationId: connectionIdentifier,
-                    event: 'message',
-                    origin: MessageOrigin.ChargingStationManagementSystem,
-                    message: message,
-                    error: error,
-                    info: info,
-                  },
-                  subscription.url,
-                );
-              } else {
-                // Ignore
-                return true;
-              }
-            },
-          );
-        this._logger.debug(
-          `Added sentMessage callback to ${subscription.url} for station ${connectionIdentifier}`,
-        );
-      }
-    }
-  }
-
-  /**
-   * Sends a message to a given URL that has been subscribed to a station connection event
-   *
-   * @param {Object} requestBody - request body containing stationId, event, origin, message, error, and info
-   * @param {string} url - the URL to fetch data from
-   * @return {Promise<boolean>} a Promise that resolves to a boolean indicating success
-   */
-  private _subscriptionCallback(
-    requestBody: {
-      stationId: string;
-      event: string;
-      origin?: MessageOrigin;
-      message?: string;
-      error?: any;
-      info?: Map<string, string>;
-    },
-    url: string,
-  ): Promise<boolean> {
-    return fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    })
-      .then((res) => res.status === 200)
-      .catch((error) => {
-        this._logger.error(error);
-        return false;
-      });
-  }
 
   /**
    * Handles an incoming Call message from a client connection.
@@ -813,14 +600,14 @@ export class MessageRouterImpl
   ): Promise<boolean> {
     try {
       const success = await this._networkHook(identifier, rawMessage);
-      this._sentMessageCallbacks.get(identifier)?.forEach((callback) => {
-        callback(rawMessage);
-      });
+      this._webhookDispatcher.dispatchMessageSent(identifier, rawMessage);
       return success;
     } catch (error) {
-      this._sentMessageCallbacks.get(identifier)?.forEach((callback) => {
-        callback(rawMessage, error);
-      });
+      this._webhookDispatcher.dispatchMessageSent(
+        identifier,
+        rawMessage,
+        error,
+      );
       return false;
     }
   }

@@ -47,7 +47,7 @@ export async function validateChargingProfileType(
   chargingProfileRepository: IChargingProfileRepository,
   transactionEventRepository: ITransactionEventRepository,
   logger: Logger<ILogObj>,
-  evseId?: number,
+  evseId?: number | null,
 ): Promise<void> {
   if (chargingProfileType.stackLevel < 0) {
     throw new Error('Lowest Stack level is 0');
