@@ -21,20 +21,20 @@ export class Money {
       typeof currency === 'string' ? Currency.of(currency) : currency;
   }
 
-  static of(amount: number | string | Big, currency: CurrencySource): Money {
-    return new Money(amount, currency);
-  }
-
-  static USD(amount: number | string | Big) {
-    return new Money(amount, Currency.USD);
-  }
-
   get amount(): Big {
     return this._amount;
   }
 
   get currency(): Currency {
     return this._currency;
+  }
+
+  static of(amount: number | string | Big, currency: CurrencySource): Money {
+    return new Money(amount, currency);
+  }
+
+  static USD(amount: number | string | Big) {
+    return new Money(amount, Currency.USD);
   }
 
   toNumber(): number {

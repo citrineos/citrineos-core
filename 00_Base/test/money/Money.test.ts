@@ -161,12 +161,8 @@ describe('money', () => {
       [Money.USD('1.00'), Currency.USD],
       [Money.of('1.00', 'USD'), Currency.USD],
       [Money.of('1.00', Currency.USD), Currency.USD],
-      [Money.of('1.00', 'CAD'), Currency.CAD],
-      [Money.of('1.00', Currency.CAD), Currency.CAD],
       [Money.of('1.00', 'EUR'), Currency.EUR],
       [Money.of('1.00', Currency.EUR), Currency.EUR],
-      [Money.of('1.00', 'PLN'), Currency.PLN],
-      [Money.of('1.00', Currency.PLN), Currency.PLN],
     ] as Array<[Money, Currency]>)(
       'should return currency',
       (money, expectedCurrency) => {

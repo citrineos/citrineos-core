@@ -1,27 +1,27 @@
-export function assert<T>(
-  predicate: boolean,
-  message?: string,
-): asserts predicate;
-export function assert<T>(
-  predicate: () => boolean,
-  message?: string,
-): asserts predicate;
-export function assert<T>(
+export function assert(
   predicate: boolean | (() => boolean),
   message?: string,
 ): asserts predicate {
   switch (typeof predicate) {
-    case 'boolean':
-      if (!predicate) {throw new Error(message); }
+    case 'boolean': {
+      if (!predicate) {
+        throw new Error(message);
+      }
       break;
-    case 'function':
-      if (!predicate()) {throw new Error(message); }
+    }
+    case 'function': {
+      if (!predicate()) {
+        throw new Error(message);
+      }
       break;
-    default:
+    }
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const exhaustiveCheck: never = predicate;
+    }
   }
 }
 
-export function notNull<T>(object: T): boolean {
+export function notNull(object: any): boolean {
   return object !== undefined && object !== null;
 }
