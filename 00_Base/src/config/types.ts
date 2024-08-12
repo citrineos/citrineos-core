@@ -95,7 +95,7 @@ export const systemConfigInputSchema = z.object({
       signedMeterValuesConfiguration: z
         .object({
           publicKeyFileId: z.string(),
-          signingMethod: z.enum(['RSASSA-PKCS1-v1_5', 'ES256']),
+          signingMethod: z.enum(['RSASSA-PKCS1-v1_5', 'ECDSA']),
         })
         .optional(),
     }),
@@ -343,7 +343,7 @@ export const systemConfigSchema = z
           signedMeterValuesConfiguration: z
             .object({
               publicKeyFileId: z.string(),
-              signingMethod: z.enum(['RSASSA-PKCS1-v1_5', 'ES256']),
+              signingMethod: z.enum(['RSASSA-PKCS1-v1_5', 'ECDSA']),
             })
             .optional(),
         })
