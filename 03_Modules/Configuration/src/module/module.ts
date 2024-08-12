@@ -9,7 +9,6 @@ import {
   BOOT_STATUS,
   BootNotificationRequest,
   BootNotificationResponse,
-  CALL_SCHEMA_MAP,
   CallAction,
   ChangeAvailabilityResponse,
   ClearDisplayMessageResponse,
@@ -124,10 +123,10 @@ export class ConfigurationModule extends AbstractModule {
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
    *
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
+   * It is used to propagate system-wide logger settings and will serve as the parent logger for any subcomponent logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
    * @param {IBootRepository} [bootRepository] - An optional parameter of type {@link IBootRepository} which represents a repository for accessing and manipulating authorization data.
-   * If no `bootRepository` is provided, a default {@link sequelize.BootRepository} instance is created and used.
+   * If no `bootRepository` is provided, a default {@link SequelizeBootRepository} instance is created and used.
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is created and used.
@@ -178,7 +177,7 @@ export class ConfigurationModule extends AbstractModule {
       this._deviceModelRepository,
     );
 
-    this._bootService = new BootNotificationService(this._bootRepository);
+    this._bootService = new BootNotificationService(this._bootRepository, this._cache, this._logger);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -211,53 +210,17 @@ export class ConfigurationModule extends AbstractModule {
     const timestamp = message.context.timestamp;
     const chargingStation = message.payload.chargingStation;
 
-    // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
-    const bootConfig = await this._bootRepository.readByKey(stationId);
-    const bootStatus = this._bootService.determineBootStatus(
-      bootConfig,
-      this._config.modules.configuration,
-    );
-
     // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
     const bootNotificationResponse: BootNotificationResponse =
-      this._bootService.createBootNotificationResponse(
-        bootConfig,
-        bootStatus,
+      await this._bootService.createBootNotificationResponse(
+        stationId,
         this._config.modules.configuration,
       );
 
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
     const cachedBootStatus = await this._cache.get(BOOT_STATUS, stationId);
 
-    // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
-    if (
-      bootNotificationResponse.status === RegistrationStatusEnumType.Accepted
-    ) {
-      if (cachedBootStatus) {
-        // Undo blacklisting of charger-originated actions
-        const promises = Array.from(CALL_SCHEMA_MAP).map(async ([action]) => {
-          if (action !== CallAction.BootNotification) {
-            return this._cache.remove(action, stationId);
-          }
-        });
-        await Promise.all(promises);
-        // Remove cached boot status
-        this._cache.remove(BOOT_STATUS, stationId);
-        this._logger.debug('Cached boot status removed: ', cachedBootStatus);
-      }
-    } else if (!cachedBootStatus) {
-      // Status is not Accepted; i.e. Status is Rejected or Pending.
-      // Cached boot status for charger did not exist; i.e. this is the first BootNotificationResponse to be Rejected or Pending.
-      // Blacklist all charger-originated actions except BootNotification
-      // GetReport messages will need to un-blacklist NotifyReport
-      // TriggerMessage will need to un-blacklist the message it triggers
-      const promises = Array.from(CALL_SCHEMA_MAP).map(async ([action]) => {
-        if (action !== CallAction.BootNotification) {
-          return this._cache.set(action, 'blacklisted', stationId);
-        }
-      });
-      await Promise.all(promises);
-    }
+    await this._bootService.setChargerActionsPermissions(stationId, cachedBootStatus, bootNotificationResponse.status);
 
     const bootNotificationResponseMessageConfirmation: IMessageConfirmation =
       await this.sendCallResultWithMessage(message, bootNotificationResponse);
@@ -332,43 +295,12 @@ export class ConfigurationModule extends AbstractModule {
               requestId: requestId,
               reportBase: ReportBaseEnumType.FullInventory,
             } as GetBaseReportRequest);
-          if (getBaseReportMessageConfirmation.success) {
-            this._logger.debug(
-              'GetBaseReport successfully sent to charger: ',
-              getBaseReportMessageConfirmation,
-            );
 
-            // Wait for GetBaseReport to complete
-            let getBaseReportCacheValue = await this._cache.onChange(
-              requestId.toString(),
-              this.config.maxCachingSeconds,
-              stationId,
-            );
-            while (getBaseReportCacheValue === 'ongoing') {
-              getBaseReportCacheValue = await this._cache.onChange(
-                requestId.toString(),
-                this.config.maxCachingSeconds,
-                stationId,
-              );
-            }
+          await this._bootService.processGetBaseReport(stationId, requestId, this._config.maxCachingSeconds, getBaseReportMessageConfirmation);
 
-            if (getBaseReportCacheValue === 'complete') {
-              this._logger.debug('GetBaseReport process successful.'); // All NotifyReports have been processed
-            } else {
-              // getBaseReportCacheValue === null
-              throw new Error(
-                'GetBaseReport process failed--message timed out without a response.',
-              );
-            }
-
-            // Make sure GetBaseReport doesn't re-trigger on next boot attempt
-            bootConfigDbEntity.getBaseReportOnPending = false;
-            await bootConfigDbEntity.save();
-          } else {
-            throw new Error(
-              'GetBaseReport failed: ' + getBaseReportMessageConfirmation,
-            );
-          }
+          // Make sure GetBaseReport doesn't re-trigger on next boot attempt
+          bootConfigDbEntity.getBaseReportOnPending = false;
+          await bootConfigDbEntity.save();
         }
         // SetVariables
         let rebootSetVariable = false;
@@ -382,16 +314,12 @@ export class ConfigurationModule extends AbstractModule {
               stationId,
             );
 
-          let itemsPerMessageSetVariables =
+          // If ItemsPerMessageSetVariables not set, send all variables at once
+          const itemsPerMessageSetVariables =
             await this._deviceModelService.getItemsPerMessageSetVariablesByStationId(
               stationId,
-            );
+            ) ?? setVariableData.length;
 
-          // If ItemsPerMessageSetVariables not set, send all variables at once
-          itemsPerMessageSetVariables =
-            itemsPerMessageSetVariables === null
-              ? setVariableData.length
-              : itemsPerMessageSetVariables;
           let rejectedSetVariable = false;
           while (setVariableData.length > 0) {
             // Below pattern is preferred way of receiving CallResults in an async manner.
@@ -415,9 +343,11 @@ export class ConfigurationModule extends AbstractModule {
               undefined,
               correlationId,
             );
+
             setVariableData = setVariableData.slice(
               itemsPerMessageSetVariables,
             );
+
             const responseJsonString = await cacheCallbackPromise;
             if (responseJsonString) {
               const setVariablesResponse: SetVariablesResponse =
