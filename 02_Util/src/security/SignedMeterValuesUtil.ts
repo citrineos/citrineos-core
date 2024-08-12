@@ -92,10 +92,12 @@ export class SignedMeterValuesUtil {
       publicKeyFrequencyVariableAttribute[0].value !== 'Never';
 
     if (shouldPublicKeyBeUsedForValidation) {
-      meterValuesLoop:
-      for (const meterValue of meterValues) {
+      meterValuesLoop: for (const meterValue of meterValues) {
         for (const sampledValue of meterValue.sampledValue) {
-          validMeterValues = await this.isSignedSampledValueValid(stationId, sampledValue);
+          validMeterValues = await this.isSignedSampledValueValid(
+            stationId,
+            sampledValue,
+          );
           if (!validMeterValues) {
             break meterValuesLoop;
           }
@@ -145,35 +147,12 @@ export class SignedMeterValuesUtil {
 
     switch (signingMethod) {
       case 'RSASSA-PKCS1-v1_5':
-        try {
-          const cryptoPublicKey = await crypto.subtle.importKey(
-            'spki',
-            stringToArrayBuffer(atob(configuredPublicKey)),
-            { name: signingMethod, hash: signedMeterValue.encodingMethod },
-            true,
-            ['verify'],
-          );
-
-          const signatureBuffer = Buffer.from(
-            signedMeterValue.signedMeterData,
-            'base64',
-          );
-          // For now, we only care that the signature could be read, regardless of the value in the signature.
-          await crypto.subtle.verify(
-            signingMethod,
-            cryptoPublicKey,
-            signatureBuffer,
-            signatureBuffer,
-          );
-          return true;
-        } catch (e) {
-          const errorMessage =
-            e instanceof DOMException ? e.message : JSON.stringify(e);
-          this._logger.warn(
-            `Error decrypting private key or verifying signature from Signed Meter Value. Error: ${errorMessage}`,
-          );
-          return false;
-        }
+        return await this.validateRsaSignature(
+          configuredPublicKey,
+          signingMethod,
+          signedMeterValue.encodingMethod,
+          signedMeterValue.signedMeterData,
+        );
       default:
         this._logger.warn(
           `${signingMethod} is not supported for Signed Meter Values.`,
@@ -215,6 +194,40 @@ export class SignedMeterValuesUtil {
         signedMeterValue,
         chargingStationPublicKeyFileId,
       );
+    }
+  }
+
+  private async validateRsaSignature(
+    configuredPublicKey: string,
+    signingMethod: string,
+    encodingMethod: string,
+    signatureData: string,
+  ): Promise<boolean> {
+    try {
+      const cryptoPublicKey = await crypto.subtle.importKey(
+        'spki',
+        stringToArrayBuffer(atob(configuredPublicKey)),
+        { name: signingMethod, hash: encodingMethod },
+        true,
+        ['verify'],
+      );
+
+      const signatureBuffer = Buffer.from(signatureData, 'base64');
+      // For now, we only care that the signature could be read, regardless of the value in the signature.
+      await crypto.subtle.verify(
+        signingMethod,
+        cryptoPublicKey,
+        signatureBuffer,
+        signatureBuffer,
+      );
+      return true;
+    } catch (e) {
+      const errorMessage =
+        e instanceof DOMException ? e.message : JSON.stringify(e);
+      this._logger.warn(
+        `Error decrypting public key or verifying signature from Signed Meter Value. Error: ${errorMessage}`,
+      );
+      return false;
     }
   }
 
