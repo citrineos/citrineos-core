@@ -4,7 +4,7 @@ import { faker } from '@faker-js/faker';
 export function aTariff(override?: Partial<Tariff>): Tariff {
   return {
     id: faker.string.uuid(),
-    currency: faker.finance.currencyCode(),
+    currency: 'USD',
     pricePerKwh: faker.number.float({ min: 0, max: 5, multipleOf: 0.05 }),
     pricePerMin: faker.number.float({ min: 0, max: 1, multipleOf: 0.02 }),
     pricePerSession: faker.number.float({ min: 0, max: 25, multipleOf: 0.05 }),

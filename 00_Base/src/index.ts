@@ -235,3 +235,7 @@ export { eventGroupFromString } from './interfaces/messages';
 export { UnauthorizedException } from './interfaces/api/exceptions/unauthorized.exception';
 export { HttpHeader } from './interfaces/api/http.header';
 export { HttpStatus } from './interfaces/api/http.status';
+
+export { Money } from './money/Money';
+export { Currency, CurrencyCode } from './money/Currency';
+export { assert, notNull } from './assertion/assertion';
