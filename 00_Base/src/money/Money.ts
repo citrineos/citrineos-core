@@ -5,8 +5,6 @@ import { assert, notNull } from '../assertion/assertion';
 export type CurrencySource = string | CurrencyCode | Currency;
 
 export class Money {
-  private static readonly ROUNDING_MODE = 0; // RoundDown
-
   private readonly _amount: Big;
   private readonly _currency: Currency;
 
@@ -50,7 +48,7 @@ export class Money {
   roundToCurrencyScale(): Money {
     const newAmount = this._amount.round(
       this.currency.scale,
-      Money.ROUNDING_MODE,
+        0, // RoundDown
     );
     return this.withAmount(newAmount);
   }

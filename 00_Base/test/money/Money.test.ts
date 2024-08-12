@@ -118,7 +118,7 @@ describe('money', () => {
       'GBP',
     ])('should fail when unsupported currency', (currency) => {
       expect(() => Money.of('1.00', currency)).toThrow(
-        `${currency} currency is not supported`,
+        `Unsupported currency code: ${currency}`,
       );
     });
   });
