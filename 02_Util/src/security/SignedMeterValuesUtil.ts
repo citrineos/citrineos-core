@@ -94,7 +94,7 @@ export class SignedMeterValuesUtil {
     if (shouldPublicKeyBeUsedForValidation) {
       for (const meterValue of meterValues) {
         for (const sampledValue of meterValue.sampledValue) {
-          validMeterValues = await this.isSignedSampledValueValid(
+          validMeterValues = await this.validateSignedSampledValue(
             stationId,
             sampledValue,
           );
@@ -108,7 +108,43 @@ export class SignedMeterValuesUtil {
     return validMeterValues;
   }
 
-  private async isMeterValueSignatureValid(
+  private async validateSignedSampledValue(
+    stationId: string,
+    sampledValue: SampledValueType,
+  ): Promise<boolean> {
+    const signedMeterValue = sampledValue.signedMeterValue;
+
+    if (!signedMeterValue) {
+      return true;
+    }
+
+    if (signedMeterValue.publicKey && signedMeterValue.publicKey.length > 0) {
+      const incomingPublicKeyIsValid =
+        await this.validateSignedMeterValueSignature(signedMeterValue);
+
+      if (this._signedMeterValuesConfiguration && incomingPublicKeyIsValid) {
+        await this._chargingStationSecurityInfoRepository.readOrCreateChargingStationInfo(
+          stationId,
+          this._signedMeterValuesConfiguration.publicKeyFileId,
+        );
+
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      const chargingStationPublicKeyFileId =
+        await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileId(
+          stationId,
+        );
+      return await this.validateSignedMeterValueSignature(
+        signedMeterValue,
+        chargingStationPublicKeyFileId,
+      );
+    }
+  }
+
+  private async validateSignedMeterValueSignature(
     signedMeterValue: SignedMeterValueType,
     publicKeyFileId?: string,
   ): Promise<boolean> {
@@ -158,42 +194,6 @@ export class SignedMeterValuesUtil {
           `${signingMethod} is not supported for Signed Meter Values.`,
         );
         return false;
-    }
-  }
-
-  private async isSignedSampledValueValid(
-    stationId: string,
-    sampledValue: SampledValueType,
-  ): Promise<boolean> {
-    const signedMeterValue = sampledValue.signedMeterValue;
-
-    if (!signedMeterValue) {
-      return true;
-    }
-
-    if (signedMeterValue.publicKey && signedMeterValue.publicKey.length > 0) {
-      const incomingPublicKeyIsValid =
-        await this.isMeterValueSignatureValid(signedMeterValue);
-
-      if (this._signedMeterValuesConfiguration && incomingPublicKeyIsValid) {
-        await this._chargingStationSecurityInfoRepository.readOrCreateChargingStationInfo(
-          stationId,
-          this._signedMeterValuesConfiguration.publicKeyFileId,
-        );
-
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      const chargingStationPublicKeyFileId =
-        await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileId(
-          stationId,
-        );
-      return await this.isMeterValueSignatureValid(
-        signedMeterValue,
-        chargingStationPublicKeyFileId,
-      );
     }
   }
 
