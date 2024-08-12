@@ -263,7 +263,7 @@ export class ConfigurationModule extends AbstractModule {
       await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
     // Update device model from boot
-    this._deviceModelService.updateDeviceModel(
+    await this._deviceModelService.updateDeviceModel(
       chargingStation,
       stationId,
       timestamp,
@@ -291,7 +291,7 @@ export class ConfigurationModule extends AbstractModule {
             cachedBootStatus !== bootNotificationResponse.status))
       ) {
         // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
-        this._cache.set(
+        await this._cache.set(
           BOOT_STATUS,
           bootNotificationResponse.status,
           stationId,
@@ -315,13 +315,13 @@ export class ConfigurationModule extends AbstractModule {
             : this._config.modules.configuration.getBaseReportOnPending
         ) {
           // Remove Notify Report from blacklist
-          this._cache.remove(CallAction.NotifyReport, stationId);
+          await this._cache.remove(CallAction.NotifyReport, stationId);
 
           // OCTT tool does not meet B07.FR.04; instead always sends requestId === 0
           // Commenting out this line, using requestId === 0 until fixed (10/26/2023)
           // const requestId = Math.floor(Math.random() * ConfigurationModule.GET_BASE_REPORT_REQUEST_ID_MAX);
           const requestId = 0;
-          this._cache.set(
+          await this._cache.set(
             requestId.toString(),
             'ongoing',
             stationId,
@@ -363,7 +363,7 @@ export class ConfigurationModule extends AbstractModule {
 
             // Make sure GetBaseReport doesn't re-trigger on next boot attempt
             bootConfigDbEntity.getBaseReportOnPending = false;
-            bootConfigDbEntity.save();
+            await bootConfigDbEntity.save();
           } else {
             throw new Error(
               'GetBaseReport failed: ' + getBaseReportMessageConfirmation,
@@ -402,7 +402,7 @@ export class ConfigurationModule extends AbstractModule {
                 this.config.maxCachingSeconds,
                 stationId,
               ); // x2 fudge factor for any network lag
-            this.sendCall(
+            await this.sendCall(
               stationId,
               tenantId,
               CallAction.SetVariables,
@@ -458,7 +458,7 @@ export class ConfigurationModule extends AbstractModule {
         }
         if (rebootSetVariable) {
           // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
-          this.sendCall(
+          await this.sendCall(
             message.context.stationId,
             message.context.tenantId,
             CallAction.Reset,
