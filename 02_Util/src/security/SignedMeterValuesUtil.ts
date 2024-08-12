@@ -13,7 +13,6 @@ import {
 import { ILogObj, Logger } from 'tslog';
 import * as crypto from 'node:crypto';
 import { stringToArrayBuffer } from 'pvutils';
-import { SampledValueType } from '@citrineos/base/dist/ocpp/model/types/MeterValuesRequest';
 
 /**
  * Util to process and validate signed meter values.
@@ -80,23 +79,12 @@ export class SignedMeterValuesUtil {
   ): Promise<boolean> {
     let validMeterValues = true;
 
-    const publicKeyFrequencyVariableAttribute =
-      await this._deviceModelRepository.readAllByQuerystring({
-        stationId,
-        component_name: 'OCPPCommCtrlr',
-        variable_name: 'PublicKeyWithSignedMeterValue',
-      });
-
-    const shouldPublicKeyBeUsedForValidation =
-      publicKeyFrequencyVariableAttribute.length > 0 &&
-      publicKeyFrequencyVariableAttribute[0].value !== 'Never';
-
-    if (shouldPublicKeyBeUsedForValidation) {
-      for (const meterValue of meterValues) {
-        for (const sampledValue of meterValue.sampledValue) {
+    for (const meterValue of meterValues) {
+      for (const sampledValue of meterValue.sampledValue) {
+        if (sampledValue.signedMeterValue) {
           validMeterValues = await this.validateSignedSampledValue(
             stationId,
-            sampledValue,
+            sampledValue.signedMeterValue,
           );
           if (!validMeterValues) {
             return validMeterValues;
@@ -110,14 +98,8 @@ export class SignedMeterValuesUtil {
 
   private async validateSignedSampledValue(
     stationId: string,
-    sampledValue: SampledValueType,
+    signedMeterValue: SignedMeterValueType,
   ): Promise<boolean> {
-    const signedMeterValue = sampledValue.signedMeterValue;
-
-    if (!signedMeterValue) {
-      return true;
-    }
-
     if (signedMeterValue.publicKey && signedMeterValue.publicKey.length > 0) {
       const incomingPublicKeyIsValid =
         await this.validateSignedMeterValueSignature(signedMeterValue);

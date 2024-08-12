@@ -25,7 +25,6 @@ import {
   MeterValuesResponse,
   MeterValueUtils,
   OcppError,
-  ReportDataType,
   StatusNotificationRequest,
   StatusNotificationResponse,
   SystemConfig,
