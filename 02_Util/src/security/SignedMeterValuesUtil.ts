@@ -92,11 +92,13 @@ export class SignedMeterValuesUtil {
       publicKeyFrequencyVariableAttribute[0].value !== 'Never';
 
     if (shouldPublicKeyBeUsedForValidation) {
+      meterValuesLoop:
       for (const meterValue of meterValues) {
         for (const sampledValue of meterValue.sampledValue) {
-          validMeterValues =
-            validMeterValues &&
-            (await this.isSignedSampledValueValid(stationId, sampledValue));
+          validMeterValues = await this.isSignedSampledValueValid(stationId, sampledValue);
+          if (!validMeterValues) {
+            break meterValuesLoop;
+          }
         }
       }
     }
