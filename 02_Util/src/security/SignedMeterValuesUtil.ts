@@ -1,6 +1,5 @@
 import {
   IChargingStationSecurityInfoRepository,
-  IDeviceModelRepository,
   sequelize,
 } from '@citrineos/data';
 import {
@@ -20,7 +19,6 @@ import { stringToArrayBuffer } from 'pvutils';
 export class SignedMeterValuesUtil {
   private readonly _fileAccess: IFileAccess;
   private readonly _logger: Logger<ILogObj>;
-  private readonly _deviceModelRepository: IDeviceModelRepository;
   private readonly _chargingStationSecurityInfoRepository: IChargingStationSecurityInfoRepository;
 
   private readonly _signedMeterValuesConfiguration:
@@ -34,18 +32,14 @@ export class SignedMeterValuesUtil {
    *
    * @param {Logger<ILogObj>} [logger] - The `logger` represents an instance of {@link Logger<ILogObj>}.
    *
-   * @param {IDeviceModelRepository} [deviceModelRepository] - The `deviceModelRepository` represents a repository for accessing and manipulating variable attribute data.
-   *
    */
   constructor(
     fileAccess: IFileAccess,
     config: SystemConfig,
     logger: Logger<ILogObj>,
-    deviceModelRepository: IDeviceModelRepository,
   ) {
     this._fileAccess = fileAccess;
     this._logger = logger;
-    this._deviceModelRepository = deviceModelRepository;
     this._chargingStationSecurityInfoRepository =
       new sequelize.SequelizeChargingStationSecurityInfoRepository(
         config,

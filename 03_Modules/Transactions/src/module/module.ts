@@ -214,7 +214,6 @@ export class TransactionsModule extends AbstractModule {
       fileAccess,
       config,
       this._logger,
-      this._deviceModelRepository,
     );
 
     this._sendCostUpdatedOnMeterValue =
