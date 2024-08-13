@@ -3,7 +3,7 @@ import { AbstractModule, CallAction } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { CostCalculator } from './CostCalculator';
 
-export class PeriodicCostNotifier {
+export class CostNotifier {
   private _registry: Map<string, NodeJS.Timeout> = new Map();
 
   private readonly _logger: Logger<ILogObj>;

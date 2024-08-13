@@ -53,7 +53,7 @@ import {
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { TransactionService } from './TransactionService';
-import { PeriodicCostNotifier } from './PeriodicCostNotifier';
+import { CostNotifier } from './CostNotifier';
 import { CostCalculator } from './CostCalculator';
 
 /**
@@ -81,7 +81,7 @@ export class TransactionsModule extends AbstractModule {
   protected _transactionService: TransactionService;
 
   private _authorizers: IAuthorizer[];
-  private _costNotifier: PeriodicCostNotifier;
+  private _costNotifier: CostNotifier;
   private _costCalculator: CostCalculator;
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
@@ -217,7 +217,7 @@ export class TransactionsModule extends AbstractModule {
       this._logger,
     );
 
-    this._costNotifier = new PeriodicCostNotifier(
+    this._costNotifier = new CostNotifier(
       this,
       this._transactionEventRepository,
       this._costCalculator,

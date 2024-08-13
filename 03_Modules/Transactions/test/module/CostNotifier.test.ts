@@ -3,16 +3,16 @@ import { expect, jest } from '@jest/globals';
 import { ITransactionEventRepository, Transaction } from '@citrineos/data';
 import { AbstractModule, CallAction } from '@citrineos/base';
 import { CostCalculator } from '../../src/module/CostCalculator';
-import { PeriodicCostNotifier } from '../../src/module/PeriodicCostNotifier';
+import { CostNotifier } from '../../src/module/CostNotifier';
 import { aTransaction } from '../providers/Transaction';
 
-describe('PeriodicCostNotifier', () => {
+describe('CostNotifier', () => {
   const anyTenantId = faker.string.uuid();
 
   let transactionEventRepository: jest.Mocked<ITransactionEventRepository>;
   let module: jest.Mocked<AbstractModule>;
   let costCalculator: jest.Mocked<CostCalculator>;
-  let periodicCostNotifier: PeriodicCostNotifier;
+  let costNotifier: CostNotifier;
 
   beforeEach(() => {
     jest.useFakeTimers();
@@ -29,7 +29,7 @@ describe('PeriodicCostNotifier', () => {
       calculateTotalCost: jest.fn(),
     } as unknown as jest.Mocked<CostCalculator>;
 
-    periodicCostNotifier = new PeriodicCostNotifier(
+    costNotifier = new CostNotifier(
       module,
       transactionEventRepository,
       costCalculator,
@@ -54,7 +54,7 @@ describe('PeriodicCostNotifier', () => {
       const intervalSeconds = 1;
       const transaction = givenTransaction(aTransaction());
 
-      periodicCostNotifier.notifyWhileActive(
+      costNotifier.notifyWhileActive(
         transaction.stationId,
         transaction.transactionId,
         anyTenantId,
@@ -83,7 +83,7 @@ describe('PeriodicCostNotifier', () => {
       const intervalSeconds = 1;
       const transaction = givenTransaction(aTransaction());
 
-      periodicCostNotifier.notifyWhileActive(
+      costNotifier.notifyWhileActive(
         transaction.stationId,
         transaction.transactionId,
         anyTenantId,
@@ -107,14 +107,14 @@ describe('PeriodicCostNotifier', () => {
       const intervalSeconds = 1;
       const transaction = givenTransaction(aTransaction());
 
-      periodicCostNotifier.notifyWhileActive(
+      costNotifier.notifyWhileActive(
         transaction.stationId,
         transaction.transactionId,
         anyTenantId,
         intervalSeconds,
       );
 
-      periodicCostNotifier.notifyWhileActive(
+      costNotifier.notifyWhileActive(
         transaction.stationId,
         transaction.transactionId,
         anyTenantId,
