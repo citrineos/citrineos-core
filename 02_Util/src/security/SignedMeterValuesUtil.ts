@@ -71,23 +71,21 @@ export class SignedMeterValuesUtil {
     stationId: string,
     meterValues: [MeterValueType, ...MeterValueType[]],
   ): Promise<boolean> {
-    let validMeterValues = true;
-
     for (const meterValue of meterValues) {
       for (const sampledValue of meterValue.sampledValue) {
         if (sampledValue.signedMeterValue) {
-          validMeterValues = await this.validateSignedSampledValue(
+          const validMeterValues = await this.validateSignedSampledValue(
             stationId,
             sampledValue.signedMeterValue,
           );
           if (!validMeterValues) {
-            return validMeterValues;
+            return false;
           }
         }
       }
     }
 
-    return validMeterValues;
+    return true;
   }
 
   private async validateSignedSampledValue(
