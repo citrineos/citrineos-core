@@ -125,14 +125,23 @@ export class SignedMeterValuesUtil {
     const incomingPublicKeyString = signedMeterValue.publicKey;
     const signingMethod = signedMeterValue.signingMethod;
 
-    if (
-      !this._signedMeterValuesConfiguration?.publicKeyFileId ||
-      (publicKeyFileId &&
-        publicKeyFileId !==
-          this._signedMeterValuesConfiguration?.publicKeyFileId) ||
-      (!publicKeyFileId && incomingPublicKeyString.length === 0) ||
-      this._signedMeterValuesConfiguration?.signingMethod !== signingMethod
-    ) {
+    if (!this._signedMeterValuesConfiguration?.publicKeyFileId) {
+      this._logger.warn('Invalid signature because public key is missing from system config.');
+      return false;
+    }
+
+    if (publicKeyFileId && publicKeyFileId !== this._signedMeterValuesConfiguration?.publicKeyFileId) {
+      this._logger.warn('Invalid signature because incoming public key does not match configured public key.')
+      return false;
+    }
+
+    if (!publicKeyFileId && incomingPublicKeyString.length === 0) {
+      this._logger.warn('Invalid signature because no configured public key and incoming signed meter values has no public key.');
+      return false;
+    }
+
+    if (this._signedMeterValuesConfiguration?.signingMethod !== signingMethod) {
+      this._logger.warn('Invalid signature because incoming signing method does not match configured signing method.');
       return false;
     }
 
