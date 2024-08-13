@@ -32,7 +32,7 @@ export class Money {
   }
 
   static USD(amount: number | string | Big) {
-    return new Money(amount, Currency.USD);
+    return new Money(amount, 'USD');
   }
 
   toNumber(): number {
@@ -48,7 +48,7 @@ export class Money {
   roundToCurrencyScale(): Money {
     const newAmount = this._amount.round(
       this.currency.scale,
-        0, // RoundDown
+      0, // RoundDown
     );
     return this.withAmount(newAmount);
   }

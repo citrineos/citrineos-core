@@ -3,7 +3,7 @@ import { assert } from '../assertion/assertion';
 /**
  * ISO-4217 currency codes.
  */
-const CURRENCY_CODES = ['USD', 'EUR'] as const;
+const CURRENCY_CODES = ['USD', 'EUR', 'CAD', 'GBP'] as const;
 
 export type CurrencyCode = (typeof CURRENCY_CODES)[number];
 
@@ -41,14 +41,16 @@ type CurrencyMap = {
 /**
  * Represents a currency with decimal precision.
  *
+ * To add support for a currency:
+ *  1. Add the new currency code to the {@link CURRENCY_CODES} array.
+ *  2. Create a corresponding mapping in the {@link SUPPORTED_CURRENCIES} map.
  */
 export class Currency {
-  public static readonly USD: Currency = new Currency('USD', 2);
-  public static readonly EUR: Currency = new Currency('EUR', 2);
-
   private static readonly SUPPORTED_CURRENCIES: CurrencyMap = {
-    USD: Currency.USD,
-    EUR: Currency.EUR,
+    USD: new Currency('USD', 2),
+    EUR: new Currency('EUR', 2),
+    CAD: new Currency('CAD', 2),
+    GBP: new Currency('GBP', 2),
   };
 
   private readonly _code: CurrencyCode;
@@ -67,7 +69,7 @@ export class Currency {
     return this._scale;
   }
 
-  static of(code: string) {
+  static of(code: string | CurrencyCode) {
     assert(isCurrencyCode(code), `Unsupported currency code: ${code}`);
     const currency = Currency.SUPPORTED_CURRENCIES[code];
     if (currency === undefined) {

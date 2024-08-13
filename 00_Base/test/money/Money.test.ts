@@ -115,7 +115,8 @@ describe('money', () => {
       'USD ',
       ' USD ',
       'AUD',
-      'GBP',
+      'PLN',
+      'CHF',
     ])('should fail when unsupported currency', (currency) => {
       expect(() => Money.of('1.00', currency)).toThrow(
         `Unsupported currency code: ${currency}`,
@@ -158,11 +159,15 @@ describe('money', () => {
 
   describe('currency', () => {
     it.each([
-      [Money.USD('1.00'), Currency.USD],
-      [Money.of('1.00', 'USD'), Currency.USD],
-      [Money.of('1.00', Currency.USD), Currency.USD],
-      [Money.of('1.00', 'EUR'), Currency.EUR],
-      [Money.of('1.00', Currency.EUR), Currency.EUR],
+      [Money.USD('1.00'), Currency.of('USD')],
+      [Money.of('1.00', 'USD'), Currency.of('USD')],
+      [Money.of('1.00', Currency.of('USD')), Currency.of('USD')],
+      [Money.of('1.00', 'EUR'), Currency.of('EUR')],
+      [Money.of('1.00', Currency.of('EUR')), Currency.of('EUR')],
+      [Money.of('1.00', 'CAD'), Currency.of('CAD')],
+      [Money.of('1.00', Currency.of('CAD')), Currency.of('CAD')],
+      [Money.of('1.00', 'GBP'), Currency.of('GBP')],
+      [Money.of('1.00', Currency.of('GBP')), Currency.of('GBP')],
     ] as Array<[Money, Currency]>)(
       'should return currency',
       (money, expectedCurrency) => {

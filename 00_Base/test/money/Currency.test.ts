@@ -3,7 +3,7 @@ import { expect } from '@jest/globals';
 
 describe('currency', () => {
   describe('of', () => {
-    it.each(['', ' ', 'RANDOM', 'USD ', ' USD', 'usd', 'CAD', 'GBP', 'PLN'])(
+    it.each(['', ' ', 'RANDOM', 'USD ', ' USD', 'usd', 'PLN', 'CHF'])(
       'should fail if currency is not supported',
       (currencyCode) => {
         expect(() => Currency.of(currencyCode)).toThrow(
@@ -13,8 +13,10 @@ describe('currency', () => {
     );
 
     it.each([
-      ['USD', Currency.USD],
-      ['EUR', Currency.EUR],
+      ['USD', Currency.of('USD')],
+      ['EUR', Currency.of('EUR')],
+      ['CAD', Currency.of('CAD')],
+      ['GBP', Currency.of('GBP')],
     ] as Array<[string, Currency]>)(
       'should return currency for currency code',
       (currencyCode, expectedCurrency) => {
@@ -24,22 +26,30 @@ describe('currency', () => {
   });
 
   describe('code', () => {
-    it('should return currency code', () => {
-      const usd = Currency.of('USD');
-      expect(usd.code).toEqual('USD');
-
-      const euro = Currency.of('EUR');
-      expect(euro.code).toEqual('EUR');
-    });
+    it.each([
+      [Currency.of('USD'), 'USD'],
+      [Currency.of('EUR'), 'EUR'],
+      [Currency.of('CAD'), 'CAD'],
+      [Currency.of('GBP'), 'GBP'],
+    ] as Array<[Currency, string]>)(
+      'should return currency code',
+      (currency, expectedCode) => {
+        expect(currency.code).toEqual(expectedCode);
+      },
+    );
   });
 
   describe('scale', () => {
-    it('should return currency scale', () => {
-      const usd = Currency.of('USD');
-      expect(usd.scale).toEqual(2);
-
-      const euro = Currency.of('EUR');
-      expect(euro.scale).toEqual(2);
-    });
+    it.each([
+      [Currency.of('USD'), 2],
+      [Currency.of('EUR'), 2],
+      [Currency.of('CAD'), 2],
+      [Currency.of('GBP'), 2],
+    ] as Array<[Currency, number]>)(
+      'should return currency scale',
+      (currency, expectedScale) => {
+        expect(currency.scale).toEqual(expectedScale);
+      },
+    );
   });
 });
