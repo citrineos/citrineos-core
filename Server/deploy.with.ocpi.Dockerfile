@@ -12,11 +12,11 @@ COPY ./citrineos-core .
 
 # INSTALL OCPI
 WORKDIR /usr/local/apps/citrineos-ocpi
-RUN npm i
+RUN npm ci
 
 # INSTALL CORE
 WORKDIR /usr/local/apps/citrineos-core
-RUN npm i
+RUN npm ci
 
 # BUILD OCPI
 WORKDIR /usr/local/apps/citrineos-ocpi
