@@ -5,8 +5,12 @@ import {
   BootNotificationResponse,
   CALL_SCHEMA_MAP,
   CallAction,
-  ICache, IMessageConfirmation,
+  GetBaseReportRequest,
+  ICache,
+  IMessageConfirmation,
+  OcppRequest,
   RegistrationStatusEnumType,
+  ReportBaseEnumType,
   SystemConfig,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
@@ -15,15 +19,21 @@ type Configuration = SystemConfig['modules']['configuration'];
 export class BootNotificationService {
   protected _bootRepository: IBootRepository;
   protected _cache: ICache;
-  protected _logger: Logger<ILogObj>
+  protected _logger: Logger<ILogObj>;
+  protected _config: Configuration;
+  protected _maxCachingSeconds: number;
 
   constructor(
     bootRepository: IBootRepository,
     cache: ICache,
+    config: Configuration,
+    maxCachingSeconds: number,
     logger?: Logger<ILogObj>,
   ) {
     this._bootRepository = bootRepository;
     this._cache = cache;
+    this._config = config;
+    this._maxCachingSeconds = maxCachingSeconds;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -31,14 +41,13 @@ export class BootNotificationService {
 
   determineBootStatus(
     bootConfig: Boot | undefined,
-    configuration: Configuration,
   ): RegistrationStatusEnumType {
     let bootStatus = bootConfig
       ? bootConfig.status
-      : configuration.unknownChargerStatus;
+      : this._config.unknownChargerStatus;
 
     if (bootStatus === RegistrationStatusEnumType.Pending) {
-      let needToGetBaseReport = configuration.getBaseReportOnPending;
+      let needToGetBaseReport = this._config.getBaseReportOnPending;
       let needToSetVariables = false;
       if (bootConfig) {
         if (
@@ -57,7 +66,7 @@ export class BootNotificationService {
       if (
         !needToGetBaseReport &&
         !needToSetVariables &&
-        configuration.autoAccept
+        this._config.autoAccept
       ) {
         bootStatus = RegistrationStatusEnumType.Accepted;
       }
@@ -68,14 +77,10 @@ export class BootNotificationService {
 
   async createBootNotificationResponse(
     stationId: string,
-    configuration: Configuration,
   ): Promise<BootNotificationResponse> {
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
     const bootConfig = await this._bootRepository.readByKey(stationId);
-    const bootStatus = this.determineBootStatus(
-      bootConfig,
-      configuration,
-    );
+    const bootStatus = this.determineBootStatus(bootConfig);
 
     return {
       currentTime: new Date().toISOString(),
@@ -83,8 +88,8 @@ export class BootNotificationService {
       statusInfo: bootConfig?.statusInfo,
       interval:
         bootStatus === RegistrationStatusEnumType.Accepted
-          ? bootConfig?.heartbeatInterval || configuration.heartbeatInterval
-          : bootConfig?.bootRetryInterval || configuration.bootRetryInterval,
+          ? bootConfig?.heartbeatInterval || this._config.heartbeatInterval
+          : bootConfig?.bootRetryInterval || this._config.bootRetryInterval,
     };
   }
 
@@ -113,9 +118,9 @@ export class BootNotificationService {
     return bootConfigDbEntity;
   }
 
-  async setChargerActionsPermissions(
+  async cacheChargerActionsPermissions(
     stationId: string,
-    cachedBootStatus: any,
+    cachedBootStatus: RegistrationStatusEnumType,
     bootNotificationResponseStatus: RegistrationStatusEnumType,
   ): Promise<void> {
     // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
@@ -149,12 +154,64 @@ export class BootNotificationService {
     }
   }
 
-  async processGetBaseReport(
+  async executeGetBaseReport(
     stationId: string,
-    requestId: number,
-    maxCachingSeconds: number,
-    getBaseReportMessageConfirmation: IMessageConfirmation
+    bootConfigDbEntity: Boot,
+    triggerGetBaseReportCallback: (
+      request: OcppRequest,
+    ) => Promise<IMessageConfirmation>,
   ): Promise<void> {
+    // TODO Consider refactoring GetBaseReport and SetVariables sections as methods to be used by their respective message api endpoints as well
+    // GetBaseReport
+    const shouldGetBaseReport =
+      (bootConfigDbEntity && bootConfigDbEntity.getBaseReportOnPending) ||
+      this._config.getBaseReportOnPending;
+
+    if (!shouldGetBaseReport) {
+      return;
+    }
+
+    // Remove Notify Report from blacklist
+    await this._cache.remove(CallAction.NotifyReport, stationId);
+
+    // OCTT tool does not meet B07.FR.04; instead always sends requestId === 0
+    // Commenting out this line, using requestId === 0 until fixed (10/26/2023)
+    // const requestId = Math.floor(Math.random() * ConfigurationModule.GET_BASE_REPORT_REQUEST_ID_MAX);
+    const requestId = 0;
+    await this._cache.set(
+      requestId.toString(),
+      'ongoing',
+      stationId,
+      this._maxCachingSeconds,
+    );
+
+    const request = {
+      requestId: requestId,
+      reportBase: ReportBaseEnumType.FullInventory,
+    } as GetBaseReportRequest;
+
+    await this.triggerGetBaseReport(
+      stationId,
+      request,
+      triggerGetBaseReportCallback,
+    );
+
+    // Make sure GetBaseReport doesn't re-trigger on next boot attempt
+    bootConfigDbEntity.getBaseReportOnPending = false;
+    await bootConfigDbEntity.save();
+  }
+
+  async triggerGetBaseReport(
+    stationId: string,
+    request: GetBaseReportRequest,
+    triggerGetBaseReportCallback: (
+      request: OcppRequest,
+    ) => Promise<IMessageConfirmation>,
+  ): Promise<void> {
+    const requestId = request.requestId.toString();
+    const getBaseReportMessageConfirmation =
+      await triggerGetBaseReportCallback(request);
+
     if (getBaseReportMessageConfirmation.success) {
       this._logger.debug(
         'GetBaseReport successfully sent to charger: ',
@@ -163,14 +220,14 @@ export class BootNotificationService {
 
       // Wait for GetBaseReport to complete
       let getBaseReportCacheValue = await this._cache.onChange(
-        requestId.toString(),
-        maxCachingSeconds,
+        requestId,
+        this._maxCachingSeconds,
         stationId,
       );
       while (getBaseReportCacheValue === 'ongoing') {
         getBaseReportCacheValue = await this._cache.onChange(
-          requestId.toString(),
-          maxCachingSeconds,
+          requestId,
+          this._maxCachingSeconds,
           stationId,
         );
       }

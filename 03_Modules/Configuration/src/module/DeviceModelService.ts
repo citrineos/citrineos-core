@@ -2,8 +2,16 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AttributeEnumType, MutabilityEnumType } from '@citrineos/base';
+import {
+  AttributeEnumType,
+  IMessageConfirmation,
+  MutabilityEnumType,
+  SetVariableDataType,
+  SetVariablesResponse,
+  SetVariableStatusEnumType,
+} from '@citrineos/base';
 import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
+import { v4 as uuidv4 } from 'uuid';
 
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -136,4 +144,105 @@ export class DeviceModelService {
 
     await Promise.all(promises);
   }
+
+  async executeSetVariablesActionsAfterBoot(
+    stationId: string,
+    cacheCallback: (correlationId: string) => Promise<string | null>,
+    sendSetVariableRequest: (
+      correlationId: string,
+      data: SetVariableDataType[],
+      itemsPerMessageSetVariables: number,
+    ) => Promise<IMessageConfirmation>,
+  ): Promise<[boolean, boolean]> {
+    let rejectedSetVariable = false;
+    let rebootSetVariable = false;
+    let setVariableData: SetVariableDataType[] =
+      await this._deviceModelRepository.readAllSetVariableByStationId(
+        stationId,
+      );
+
+    // If ItemsPerMessageSetVariables not set, send all variables at once
+    const itemsPerMessageSetVariables =
+      (await this.getItemsPerMessageSetVariablesByStationId(stationId)) ??
+      setVariableData.length;
+
+    while (setVariableData.length > 0) {
+      const correlationId = uuidv4();
+
+      await sendSetVariableRequest(
+        correlationId,
+        setVariableData,
+        itemsPerMessageSetVariables,
+      );
+
+      setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
+
+      const setVariablesResponseJsonString = await cacheCallback(correlationId);
+
+      if (setVariablesResponseJsonString) {
+        if (rejectedSetVariable && rebootSetVariable) {
+          continue;
+        }
+
+        const setVariablesResponse: SetVariablesResponse = JSON.parse(
+          setVariablesResponseJsonString,
+        );
+        setVariablesResponse.setVariableResult.forEach((result) => {
+          if (result.attributeStatus === SetVariableStatusEnumType.Rejected) {
+            rejectedSetVariable = true;
+          } else if (
+            result.attributeStatus === SetVariableStatusEnumType.RebootRequired
+          ) {
+            rebootSetVariable = true;
+          }
+        });
+      } else {
+        throw new Error('SetVariables response not found');
+      }
+    }
+
+    return [rejectedSetVariable, rebootSetVariable];
+  }
 }
+
+// async executeSetVariables(
+//   setVariableData: SetVariableDataType[],
+//   itemsPerMessageSetVariables: number,
+//   cacheCallbackPromise: (correlationId: string) => Promise<string | null>,
+//   sendSetVariableRequest: (
+//   correlationId: string,
+//   data: SetVariableDataType[],
+// ) => Promise<IMessageConfirmation>,
+// ): Promise<[boolean, boolean]> {
+//   let rejectedSetVariable = false;
+//   let rebootSetVariable = false;
+//   while (setVariableData.length > 0) {
+//   const correlationId = uuidv4();
+//   await sendSetVariableRequest(correlationId, setVariableData);
+//
+//   setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
+//
+//   const responseJsonString = await cacheCallbackPromise(correlationId);
+//   if (responseJsonString) {
+//     if (rejectedSetVariable && rebootSetVariable) {
+//       continue;
+//     }
+//
+//     const setVariablesResponse: SetVariablesResponse =
+//       JSON.parse(responseJsonString);
+//     setVariablesResponse.setVariableResult.forEach((result) => {
+//       if (result.attributeStatus === SetVariableStatusEnumType.Rejected) {
+//         rejectedSetVariable = true;
+//       } else if (
+//         result.attributeStatus === SetVariableStatusEnumType.RebootRequired
+//       ) {
+//         rebootSetVariable = true;
+//       }
+//     });
+//   } else {
+//     throw new Error('SetVariables response not found');
+//   }
+// }
+//
+// return [rejectedSetVariable, rebootSetVariable];
+// }

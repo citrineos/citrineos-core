@@ -1,6 +1,10 @@
 import { Boot, IBootRepository } from '@citrineos/data';
 import { BootNotificationService } from '../../src/module/BootNotificationService';
-import { ICache, RegistrationStatusEnumType, SystemConfig } from '@citrineos/base';
+import {
+  ICache,
+  RegistrationStatusEnumType,
+  SystemConfig,
+} from '@citrineos/base';
 import { aValidBootConfig, aValidConfiguration } from '../providers/BootConfig';
 
 type Configuration = SystemConfig['modules']['configuration'];
@@ -8,6 +12,8 @@ type Configuration = SystemConfig['modules']['configuration'];
 describe('BootService', () => {
   let mockBootRepository: jest.Mocked<IBootRepository>;
   let mockCache: jest.Mocked<ICache>;
+  let mockConfig: jest.Mocked<Configuration>;
+  const mockMaxCachingSeconds = 10;
   let bootService: BootNotificationService;
 
   beforeEach(() => {
@@ -15,25 +21,37 @@ describe('BootService', () => {
       readByKey: jest.fn(),
     } as unknown as jest.Mocked<IBootRepository>;
 
-    mockCache = { } as jest.Mocked<ICache>;
+    mockCache = {} as jest.Mocked<ICache>;
 
-    bootService = new BootNotificationService(mockBootRepository, mockCache);
+    mockConfig = {
+      bootRetryInterval: 0,
+      bootWithRejectedVariables: false,
+      endpointPrefix: '',
+      heartbeatInterval: 0,
+      unknownChargerStatus: RegistrationStatusEnumType.Rejected,
+      getBaseReportOnPending: false,
+      autoAccept: false,
+    }
+
+    bootService = new BootNotificationService(mockBootRepository, mockCache, mockConfig, mockMaxCachingSeconds);
   });
 
-  const runDetermineBootStatusTest = (
-    bootConfig: Boot | undefined,
-    configuration: Configuration,
-    expectedStatus: RegistrationStatusEnumType,
-  ) => {
-    const result = bootService.determineBootStatus(bootConfig, configuration);
-    expect(result).toBe(expectedStatus);
-  };
+  afterEach(() => {
+    jest.restoreAllMocks();
+  })
 
   describe('determineBootStatus', () => {
+    const runDetermineBootStatusTest = (
+      bootConfig: Boot | undefined,
+      expectedStatus: RegistrationStatusEnumType,
+    ) => {
+      const result = bootService.determineBootStatus(bootConfig);
+      expect(result).toBe(expectedStatus);
+    };
+
     it('should return unknownChargerStatus if bootConfig is undefined', () => {
       runDetermineBootStatusTest(
         undefined,
-        aValidConfiguration(),
         RegistrationStatusEnumType.Rejected,
       );
     });
@@ -55,7 +73,6 @@ describe('BootService', () => {
         );
         runDetermineBootStatusTest(
           bootConfig,
-          aValidConfiguration(),
           expectedStatus,
         );
       },
@@ -67,7 +84,6 @@ describe('BootService', () => {
       );
       runDetermineBootStatusTest(
         bootConfig,
-        aValidConfiguration(),
         RegistrationStatusEnumType.Pending,
       );
     });
@@ -76,12 +92,11 @@ describe('BootService', () => {
       const bootConfig = aValidBootConfig(
         (item: Boot) => (item.getBaseReportOnPending = false),
       );
-      const configWithAutoAccept = aValidConfiguration(
-        (item: Configuration) => (item.autoAccept = true),
-      );
+
+      jest.replaceProperty(mockConfig, 'autoAccept', true);
+
       runDetermineBootStatusTest(
         bootConfig,
-        configWithAutoAccept,
         RegistrationStatusEnumType.Accepted,
       );
     });
@@ -92,7 +107,6 @@ describe('BootService', () => {
       );
       runDetermineBootStatusTest(
         bootConfig,
-        aValidConfiguration(),
         RegistrationStatusEnumType.Pending,
       );
     });
@@ -103,19 +117,17 @@ describe('BootService', () => {
       );
       runDetermineBootStatusTest(
         bootConfig,
-        aValidConfiguration(),
         RegistrationStatusEnumType.Pending,
       );
     });
 
     it('should return Accepted status when bootConfig.status is pending, no actions are needed, and autoAccept is true', () => {
       const bootConfig = aValidBootConfig();
-      const configWithAutoAccept = aValidConfiguration(
-        (item: Configuration) => (item.autoAccept = true),
-      );
+
+      jest.replaceProperty(mockConfig, 'autoAccept', true);
+
       runDetermineBootStatusTest(
         bootConfig,
-        configWithAutoAccept,
         RegistrationStatusEnumType.Accepted,
       );
     });
