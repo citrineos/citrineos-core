@@ -120,7 +120,7 @@ export class BootNotificationService {
 
   async cacheChargerActionsPermissions(
     stationId: string,
-    cachedBootStatus: RegistrationStatusEnumType,
+    cachedBootStatus: RegistrationStatusEnumType | null,
     bootNotificationResponseStatus: RegistrationStatusEnumType,
   ): Promise<void> {
     // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)

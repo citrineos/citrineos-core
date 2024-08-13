@@ -222,7 +222,7 @@ export class ConfigurationModule extends AbstractModule {
 
     await this._bootService.cacheChargerActionsPermissions(
       stationId,
-      cachedBootStatus as RegistrationStatusEnumType,
+      cachedBootStatus,
       bootNotificationResponse.status,
     );
 

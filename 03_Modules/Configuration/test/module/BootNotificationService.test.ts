@@ -1,11 +1,8 @@
 import { Boot, IBootRepository } from '@citrineos/data';
 import { BootNotificationService } from '../../src/module/BootNotificationService';
-import {
-  ICache,
-  RegistrationStatusEnumType,
-  SystemConfig,
-} from '@citrineos/base';
-import { aValidBootConfig, aValidConfiguration } from '../providers/BootConfig';
+import { ICache, RegistrationStatusEnumType, SystemConfig } from '@citrineos/base';
+import { aValidBootConfig } from '../providers/BootConfig';
+import { MOCK_STATION_ID } from '../../../../dist/03_Modules/Transactions/test/providers/DeviceModel';
 
 type Configuration = SystemConfig['modules']['configuration'];
 
@@ -21,7 +18,10 @@ describe('BootService', () => {
       readByKey: jest.fn(),
     } as unknown as jest.Mocked<IBootRepository>;
 
-    mockCache = {} as jest.Mocked<ICache>;
+    mockCache = {
+      remove: jest.fn(),
+      set: jest.fn(),
+    } as unknown as jest.Mocked<ICache>;
 
     mockConfig = {
       bootRetryInterval: 0,
@@ -130,6 +130,52 @@ describe('BootService', () => {
         bootConfig,
         RegistrationStatusEnumType.Accepted,
       );
+    });
+  });
+
+  describe('cacheChargerActionsPermissions', () => {
+    it('should whitelist charger actions because boot was accepted and charger actions were previously blacklisted', async () => {
+      await bootService.cacheChargerActionsPermissions(
+        MOCK_STATION_ID,
+        RegistrationStatusEnumType.Pending,
+        RegistrationStatusEnumType.Accepted
+      );
+
+      expect(mockCache.remove).toHaveBeenCalled();
+      expect(mockCache.set).not.toHaveBeenCalled();
+    });
+
+    it('should blacklist charger actions because boot was rejected and charger actions were not previously cached', async () => {
+      await bootService.cacheChargerActionsPermissions(
+        MOCK_STATION_ID,
+        null,
+        RegistrationStatusEnumType.Rejected
+      );
+
+      expect(mockCache.remove).not.toHaveBeenCalled();
+      expect(mockCache.set).toHaveBeenCalled();
+    });
+
+    it('should do nothing because the boot was accepted but no charger actions were cached', async () => {
+      await bootService.cacheChargerActionsPermissions(
+        MOCK_STATION_ID,
+        null,
+        RegistrationStatusEnumType.Accepted
+      );
+
+      expect(mockCache.remove).not.toHaveBeenCalled();
+      expect(mockCache.set).not.toHaveBeenCalled();
+    });
+
+    it('should do nothing because the boot was not accepted and charger actions were already blacklisted', async () => {
+      await bootService.cacheChargerActionsPermissions(
+        MOCK_STATION_ID,
+        RegistrationStatusEnumType.Rejected,
+        RegistrationStatusEnumType.Rejected
+      );
+
+      expect(mockCache.remove).not.toHaveBeenCalled();
+      expect(mockCache.set).not.toHaveBeenCalled();
     });
   });
 });
