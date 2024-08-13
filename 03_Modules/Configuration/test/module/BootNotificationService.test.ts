@@ -1,8 +1,13 @@
 import { Boot, IBootRepository } from '@citrineos/data';
 import { BootNotificationService } from '../../src/module/BootNotificationService';
-import { ICache, RegistrationStatusEnumType, SystemConfig } from '@citrineos/base';
+import {
+  ICache,
+  RegistrationStatusEnumType,
+  SystemConfig,
+} from '@citrineos/base';
 import { aValidBootConfig } from '../providers/BootConfig';
 import { MOCK_STATION_ID } from '../../../../dist/03_Modules/Transactions/test/providers/DeviceModel';
+import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall';
 
 type Configuration = SystemConfig['modules']['configuration'];
 
@@ -19,6 +24,7 @@ describe('BootService', () => {
     } as unknown as jest.Mocked<IBootRepository>;
 
     mockCache = {
+      onChange: jest.fn(),
       remove: jest.fn(),
       set: jest.fn(),
     } as unknown as jest.Mocked<ICache>;
@@ -31,14 +37,19 @@ describe('BootService', () => {
       unknownChargerStatus: RegistrationStatusEnumType.Rejected,
       getBaseReportOnPending: false,
       autoAccept: false,
-    }
+    };
 
-    bootService = new BootNotificationService(mockBootRepository, mockCache, mockConfig, mockMaxCachingSeconds);
+    bootService = new BootNotificationService(
+      mockBootRepository,
+      mockCache,
+      mockConfig,
+      mockMaxCachingSeconds,
+    );
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
-  })
+  });
 
   describe('determineBootStatus', () => {
     const runDetermineBootStatusTest = (
@@ -71,10 +82,7 @@ describe('BootService', () => {
         const bootConfig = aValidBootConfig(
           (item: Boot) => (item.status = bootConfigStatus),
         );
-        runDetermineBootStatusTest(
-          bootConfig,
-          expectedStatus,
-        );
+        runDetermineBootStatusTest(bootConfig, expectedStatus);
       },
     );
 
@@ -138,7 +146,7 @@ describe('BootService', () => {
       await bootService.cacheChargerActionsPermissions(
         MOCK_STATION_ID,
         RegistrationStatusEnumType.Pending,
-        RegistrationStatusEnumType.Accepted
+        RegistrationStatusEnumType.Accepted,
       );
 
       expect(mockCache.remove).toHaveBeenCalled();
@@ -149,7 +157,7 @@ describe('BootService', () => {
       await bootService.cacheChargerActionsPermissions(
         MOCK_STATION_ID,
         null,
-        RegistrationStatusEnumType.Rejected
+        RegistrationStatusEnumType.Rejected,
       );
 
       expect(mockCache.remove).not.toHaveBeenCalled();
@@ -160,7 +168,7 @@ describe('BootService', () => {
       await bootService.cacheChargerActionsPermissions(
         MOCK_STATION_ID,
         null,
-        RegistrationStatusEnumType.Accepted
+        RegistrationStatusEnumType.Accepted,
       );
 
       expect(mockCache.remove).not.toHaveBeenCalled();
@@ -171,11 +179,57 @@ describe('BootService', () => {
       await bootService.cacheChargerActionsPermissions(
         MOCK_STATION_ID,
         RegistrationStatusEnumType.Rejected,
-        RegistrationStatusEnumType.Rejected
+        RegistrationStatusEnumType.Rejected,
       );
 
       expect(mockCache.remove).not.toHaveBeenCalled();
       expect(mockCache.set).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('triggerGetBaseReport', () => {
+    it('should throw because getBaseReport was not successful', async () => {
+      const unsuccessfulConfirmation = aMessageConfirmation((mc) => {
+        mc.success = false;
+      });
+
+      await expect(
+        async () =>
+          await bootService.triggerGetBaseReport(
+            MOCK_STATION_ID,
+            MOCK_REQUEST_ID.toString(),
+            unsuccessfulConfirmation,
+          ),
+      ).rejects.toThrow();
+    });
+
+    it('should throw because getBaseReport process never completes', async () => {
+      mockCache.onChange
+        .mockResolvedValueOnce('ongoing')
+        .mockResolvedValueOnce(null);
+
+      await expect(
+        async () =>
+          await bootService.triggerGetBaseReport(
+            MOCK_STATION_ID,
+            MOCK_REQUEST_ID.toString(),
+            aMessageConfirmation(),
+          ),
+      ).rejects.toThrow();
+    });
+
+    it('should not throw because getBaseReport process completes', () => {
+      mockCache.onChange
+        .mockResolvedValueOnce('ongoing')
+        .mockResolvedValueOnce('complete');
+
+      expect(
+        bootService.triggerGetBaseReport(
+          MOCK_STATION_ID,
+          MOCK_REQUEST_ID.toString(),
+          aMessageConfirmation(),
+        ),
+      ).resolves.not.toThrow();
     });
   });
 });

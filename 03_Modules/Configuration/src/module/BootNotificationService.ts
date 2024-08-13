@@ -8,7 +8,6 @@ import {
   GetBaseReportRequest,
   ICache,
   IMessageConfirmation,
-  OcppRequest,
   RegistrationStatusEnumType,
   ReportBaseEnumType,
   SystemConfig,
@@ -154,23 +153,9 @@ export class BootNotificationService {
     }
   }
 
-  async executeGetBaseReport(
+  async createGetBaseReportRequest(
     stationId: string,
-    bootConfigDbEntity: Boot,
-    triggerGetBaseReportCallback: (
-      request: OcppRequest,
-    ) => Promise<IMessageConfirmation>,
-  ): Promise<void> {
-    // TODO Consider refactoring GetBaseReport and SetVariables sections as methods to be used by their respective message api endpoints as well
-    // GetBaseReport
-    const shouldGetBaseReport =
-      (bootConfigDbEntity && bootConfigDbEntity.getBaseReportOnPending) ||
-      this._config.getBaseReportOnPending;
-
-    if (!shouldGetBaseReport) {
-      return;
-    }
-
+  ): Promise<GetBaseReportRequest> {
     // Remove Notify Report from blacklist
     await this._cache.remove(CallAction.NotifyReport, stationId);
 
@@ -185,37 +170,20 @@ export class BootNotificationService {
       this._maxCachingSeconds,
     );
 
-    const request = {
+    return {
       requestId: requestId,
       reportBase: ReportBaseEnumType.FullInventory,
     } as GetBaseReportRequest;
-
-    await this.triggerGetBaseReport(
-      stationId,
-      request,
-      triggerGetBaseReportCallback,
-    );
-
-    // Make sure GetBaseReport doesn't re-trigger on next boot attempt
-    bootConfigDbEntity.getBaseReportOnPending = false;
-    await bootConfigDbEntity.save();
   }
 
   async triggerGetBaseReport(
     stationId: string,
-    request: GetBaseReportRequest,
-    triggerGetBaseReportCallback: (
-      request: OcppRequest,
-    ) => Promise<IMessageConfirmation>,
+    requestId: string,
+    getBaseReportMessageConfirmation: IMessageConfirmation,
   ): Promise<void> {
-    const requestId = request.requestId.toString();
-    const getBaseReportMessageConfirmation =
-      await triggerGetBaseReportCallback(request);
-
     if (getBaseReportMessageConfirmation.success) {
       this._logger.debug(
-        'GetBaseReport successfully sent to charger: ',
-        getBaseReportMessageConfirmation,
+        `GetBaseReport successfully sent to charger: ${getBaseReportMessageConfirmation}`,
       );
 
       // Wait for GetBaseReport to complete
@@ -235,14 +203,13 @@ export class BootNotificationService {
       if (getBaseReportCacheValue === 'complete') {
         this._logger.debug('GetBaseReport process successful.'); // All NotifyReports have been processed
       } else {
-        // getBaseReportCacheValue === null
         throw new Error(
           'GetBaseReport process failed--message timed out without a response.',
         );
       }
     } else {
       throw new Error(
-        'GetBaseReport failed: ' + getBaseReportMessageConfirmation,
+        `GetBaseReport failed: ${JSON.stringify(getBaseReportMessageConfirmation)}`,
       );
     }
   }

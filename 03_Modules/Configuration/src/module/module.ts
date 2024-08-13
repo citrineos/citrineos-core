@@ -34,7 +34,6 @@ import {
   MessageInfoType,
   NotifyDisplayMessagesRequest,
   NotifyDisplayMessagesResponse,
-  OcppRequest,
   PublishFirmwareResponse,
   RegistrationStatusEnumType,
   ResetEnumType,
@@ -256,11 +255,10 @@ export class ConfigurationModule extends AbstractModule {
     }
 
     // Update charger-specific boot config with details of most recently sent BootNotificationResponse
-    const bootConfigDbEntity: Boot | undefined =
-      await this._bootService.updateBootConfig(
-        bootNotificationResponse,
-        stationId,
-      );
+    const bootConfigDbEntity: Boot = await this._bootService.updateBootConfig(
+      bootNotificationResponse,
+      stationId,
+    );
 
     // If boot notification is not pending, do not start configuration.
     // If cached boot status is pending, configuration is already in progress - do not start configuration again.
@@ -272,12 +270,31 @@ export class ConfigurationModule extends AbstractModule {
     }
 
     // GetBaseReport
-    await this._bootService.executeGetBaseReport(
-      stationId,
-      bootConfigDbEntity,
-      (request: OcppRequest) =>
-        this.sendCall(stationId, tenantId, CallAction.GetBaseReport, request),
-    );
+    // TODO Consider refactoring GetBaseReport and SetVariables sections as methods to be used by their respective message api endpoints as well
+    if (
+      bootConfigDbEntity.getBaseReportOnPending ||
+      this._config.modules.configuration.getBaseReportOnPending
+    ) {
+      const getBaseReportRequest =
+        await this._bootService.createGetBaseReportRequest(stationId);
+
+      const getBaseReportConfirmation = await this.sendCall(
+        stationId,
+        tenantId,
+        CallAction.GetBaseReport,
+        getBaseReportRequest,
+      );
+
+      await this._bootService.triggerGetBaseReport(
+        stationId,
+        getBaseReportRequest.requestId.toString(),
+        getBaseReportConfirmation,
+      );
+
+      // Make sure GetBaseReport doesn't re-trigger on next boot attempt
+      bootConfigDbEntity.getBaseReportOnPending = false;
+      await bootConfigDbEntity.save();
+    }
 
     // SetVariables
     let rebootSetVariable = false;
