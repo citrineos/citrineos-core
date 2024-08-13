@@ -22,7 +22,7 @@ export class SequelizeReservationRepository extends SequelizeRepository<Reservat
     this.logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  async createOrUpdateReservation(reserveNowRequest: ReserveNowRequest, stationId: string): Promise<Reservation | undefined> {
+  async createOrUpdateReservation(reserveNowRequest: ReserveNowRequest, stationId: string, isActive?: boolean): Promise<Reservation | undefined> {
     let evseDBId: number | null = null;
     if (reserveNowRequest.evseId) {
       const [evse] = await this.evse.readAllByQuery({
@@ -62,11 +62,16 @@ export class SequelizeReservationRepository extends SequelizeRepository<Reservat
           evseId: evseDBId,
           idToken: reserveNowRequest.idToken,
           groupIdToken: reserveNowRequest.groupIdToken ?? null,
+          isActive: isActive === true ? isActive : false,
         },
         storedReservation.databaseId.toString(),
       );
     } else {
       return storedReservation;
     }
+  }
+
+  async getNextReservationId(stationId: string): Promise<number> {
+    return await this.readNextId('id', { where: { stationId } });
   }
 }
