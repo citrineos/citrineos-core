@@ -18,7 +18,7 @@ import {
 } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
 
-export class LocalSmartCharging implements ISmartCharging {
+export class InternalSmartCharging implements ISmartCharging {
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected readonly _logger: Logger<ILogObj>;
 

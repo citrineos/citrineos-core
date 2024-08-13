@@ -43,8 +43,6 @@ import {
 } from '@citrineos/base';
 import {
   generateRequestId,
-  ISmartCharging,
-  LocalSmartCharging,
   RabbitMqReceiver,
   RabbitMqSender,
   Timer,
@@ -58,6 +56,7 @@ import {
   sequelize,
   Transaction,
 } from '@citrineos/data';
+import { ISmartCharging, InternalSmartCharging } from './smartCharging';
 
 /**
  * Component that handles provisioning related messages.
@@ -164,7 +163,7 @@ export class SmartChargingModule extends AbstractModule {
 
     this._smartChargingService =
       smartChargingService ||
-      new LocalSmartCharging(this._chargingProfileRepository);
+      new InternalSmartCharging(this._chargingProfileRepository);
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -211,9 +210,9 @@ export class SmartChargingModule extends AbstractModule {
     );
 
     const matchedChargingType =
-      (givenNeeds.dcChargingParameters &&
+      ((givenNeeds.dcChargingParameters ?? false) &&
         givenNeeds.requestedEnergyTransfer === EnergyTransferModeEnumType.DC) ||
-      (givenNeeds.acChargingParameters &&
+      ((givenNeeds.acChargingParameters ?? false) &&
         givenNeeds.requestedEnergyTransfer !== EnergyTransferModeEnumType.DC);
     this._logger.info(
       `Matched chargingParameters and requestedEnergyTransfer type: ${matchedChargingType}`,

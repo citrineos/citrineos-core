@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: Apache 2.0
 
 export { IAuthorizer } from './authorization';
-export { ISmartCharging, LocalSmartCharging } from './smartCharging';
 export { MemoryCache } from './cache/memory';
 export { RedisCache } from './cache/redis';
 export { S3Storage } from './fileAccess/s3Storage';
