@@ -6,7 +6,6 @@ import {
   SystemConfig,
 } from '@citrineos/base';
 import { aValidBootConfig } from '../providers/BootConfig';
-import { MOCK_STATION_ID } from '../../../../dist/03_Modules/Transactions/test/providers/DeviceModel';
 import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall';
 
 type Configuration = SystemConfig['modules']['configuration'];
@@ -17,6 +16,7 @@ describe('BootService', () => {
   let mockConfig: jest.Mocked<Configuration>;
   const mockMaxCachingSeconds = 10;
   let bootService: BootNotificationService;
+  const MOCK_STATION_ID = 'Station01';
 
   beforeEach(() => {
     mockBootRepository = {
