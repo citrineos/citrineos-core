@@ -300,7 +300,7 @@ export class ConfigurationModule extends AbstractModule {
     let rebootSetVariable = false;
     if (
       bootConfigDbEntity.pendingBootSetVariables &&
-      bootConfigDbEntity.pendingBootSetVariables.length > 1
+      bootConfigDbEntity.pendingBootSetVariables.length > 0
     ) {
       bootConfigDbEntity.variablesRejectedOnLastBoot = [];
 
