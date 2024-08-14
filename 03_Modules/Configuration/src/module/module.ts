@@ -338,12 +338,12 @@ export class ConfigurationModule extends AbstractModule {
 
       rebootSetVariable = executedRebootSetVariable;
 
-      const bootWithRejectedVariables =
-        bootConfigDbEntity.bootWithRejectedVariables !== null
-          ? !bootConfigDbEntity.bootWithRejectedVariables
-          : !this._config.modules.configuration.bootWithRejectedVariables;
+      const doNotBootWithRejectedVariables = !(
+        bootConfigDbEntity.bootWithRejectedVariables ??
+        this._config.modules.configuration.bootWithRejectedVariables
+      );
 
-      if (rejectedSetVariable && bootWithRejectedVariables) {
+      if (rejectedSetVariable && doNotBootWithRejectedVariables) {
         bootConfigDbEntity.status = RegistrationStatusEnumType.Rejected;
         await bootConfigDbEntity.save();
         // No more to do.
