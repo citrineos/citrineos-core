@@ -2,16 +2,8 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  AttributeEnumType,
-  IMessageConfirmation,
-  MutabilityEnumType,
-  SetVariableDataType,
-  SetVariablesResponse,
-  SetVariableStatusEnumType,
-} from '@citrineos/base';
+import { AttributeEnumType, MutabilityEnumType } from '@citrineos/base';
 import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
-import { v4 as uuidv4 } from 'uuid';
 
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;
