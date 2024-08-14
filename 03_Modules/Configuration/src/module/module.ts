@@ -43,6 +43,8 @@ import {
   SetNetworkProfileResponse,
   SetVariableDataType,
   SetVariablesRequest,
+  SetVariablesResponse,
+  SetVariableStatusEnumType,
   SystemConfig,
   TriggerMessageResponse,
   UnpublishFirmwareResponse,
@@ -62,6 +64,7 @@ import {
   RabbitMqSender,
   Timer,
 } from '@citrineos/util';
+import { v4 as uuidv4 } from 'uuid';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './DeviceModelService';
@@ -299,6 +302,7 @@ export class ConfigurationModule extends AbstractModule {
     }
 
     // SetVariables
+    let rejectedSetVariable = false;
     let rebootSetVariable = false;
     if (
       bootConfigDbEntity.pendingBootSetVariables &&
@@ -306,39 +310,67 @@ export class ConfigurationModule extends AbstractModule {
     ) {
       bootConfigDbEntity.variablesRejectedOnLastBoot = [];
 
-      const cacheOnChangeCallback = (
-        correlationId: string,
-      ): Promise<string | null> =>
-        this._cache.onChange(
-          correlationId,
-          this.config.maxCachingSeconds,
+      let setVariableData: SetVariableDataType[] =
+        await this._deviceModelRepository.readAllSetVariableByStationId(
           stationId,
         );
 
-      const setVariablesSendCallCallback = (
-        correlationId: string,
-        data: SetVariableDataType[],
-        itemsPerMessageSetVariables: number,
-      ) =>
-        this.sendCall(
+      // If ItemsPerMessageSetVariables not set, send all variables at once
+      const itemsPerMessageSetVariables =
+        (await this._deviceModelService.getItemsPerMessageSetVariablesByStationId(
+          stationId,
+        )) ?? setVariableData.length;
+
+      while (setVariableData.length > 0) {
+        const correlationId = uuidv4();
+
+        const cacheCallbackPromise: Promise<string | null> =
+          this._cache.onChange(
+            correlationId,
+            this.config.maxCachingSeconds,
+            stationId,
+          ); // x2 fudge factor for any network lag
+
+        await this.sendCall(
           stationId,
           tenantId,
           CallAction.SetVariables,
           {
-            setVariableData: data.slice(0, itemsPerMessageSetVariables),
+            setVariableData: setVariableData.slice(
+              0,
+              itemsPerMessageSetVariables,
+            ),
           } as SetVariablesRequest,
           undefined,
           correlationId,
         );
 
-      const [rejectedSetVariable, executedRebootSetVariable] =
-        await this._deviceModelService.executeSetVariablesAfterBoot(
-          stationId,
-          cacheOnChangeCallback,
-          setVariablesSendCallCallback,
-        );
+        setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
 
-      rebootSetVariable = executedRebootSetVariable;
+        const setVariablesResponseJsonString = await cacheCallbackPromise;
+
+        if (setVariablesResponseJsonString) {
+          if (rejectedSetVariable && rebootSetVariable) {
+            continue;
+          }
+
+          const setVariablesResponse: SetVariablesResponse = JSON.parse(
+            setVariablesResponseJsonString,
+          );
+          setVariablesResponse.setVariableResult.forEach((result) => {
+            if (result.attributeStatus === SetVariableStatusEnumType.Rejected) {
+              rejectedSetVariable = true;
+            } else if (
+              result.attributeStatus ===
+              SetVariableStatusEnumType.RebootRequired
+            ) {
+              rebootSetVariable = true;
+            }
+          });
+        } else {
+          throw new Error('SetVariables response not found');
+        }
+      }
 
       const doNotBootWithRejectedVariables = !(
         bootConfigDbEntity.bootWithRejectedVariables ??
