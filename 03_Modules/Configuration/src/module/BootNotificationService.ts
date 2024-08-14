@@ -20,7 +20,6 @@ export class BootNotificationService {
   protected _cache: ICache;
   protected _logger: Logger<ILogObj>;
   protected _config: Configuration;
-  protected _maxCachingSeconds: number;
 
   constructor(
     bootRepository: IBootRepository,
@@ -32,7 +31,6 @@ export class BootNotificationService {
     this._bootRepository = bootRepository;
     this._cache = cache;
     this._config = config;
-    this._maxCachingSeconds = maxCachingSeconds;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -81,6 +79,7 @@ export class BootNotificationService {
     const bootConfig = await this._bootRepository.readByKey(stationId);
     const bootStatus = this.determineBootStatus(bootConfig);
 
+    // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
     return {
       currentTime: new Date().toISOString(),
       status: bootStatus,
@@ -117,6 +116,17 @@ export class BootNotificationService {
     return bootConfigDbEntity;
   }
 
+  /**
+   * Determines whether to blacklist or whitelist charger actions based on its boot status.
+   *
+   * If the new boot is accepted and the charger actions were previously blacklisted, then whitelist the charger actions.
+   *
+   * If the new boot is not accepted and charger actions were previously whitelisted, then blacklist the charger actions.
+   *
+   * @param stationId
+   * @param cachedBootStatus
+   * @param bootNotificationResponseStatus
+   */
   async cacheChargerActionsPermissions(
     stationId: string,
     cachedBootStatus: RegistrationStatusEnumType | null,
@@ -155,10 +165,8 @@ export class BootNotificationService {
 
   async createGetBaseReportRequest(
     stationId: string,
+    maxCachingSeconds: number,
   ): Promise<GetBaseReportRequest> {
-    // Remove Notify Report from blacklist
-    await this._cache.remove(CallAction.NotifyReport, stationId);
-
     // OCTT tool does not meet B07.FR.04; instead always sends requestId === 0
     // Commenting out this line, using requestId === 0 until fixed (10/26/2023)
     // const requestId = Math.floor(Math.random() * ConfigurationModule.GET_BASE_REPORT_REQUEST_ID_MAX);
@@ -167,7 +175,7 @@ export class BootNotificationService {
       requestId.toString(),
       'ongoing',
       stationId,
-      this._maxCachingSeconds,
+      maxCachingSeconds,
     );
 
     return {
@@ -180,6 +188,7 @@ export class BootNotificationService {
     stationId: string,
     requestId: string,
     getBaseReportMessageConfirmation: IMessageConfirmation,
+    maxCachingSeconds: number,
   ): Promise<void> {
     if (getBaseReportMessageConfirmation.success) {
       this._logger.debug(
@@ -189,13 +198,14 @@ export class BootNotificationService {
       // Wait for GetBaseReport to complete
       let getBaseReportCacheValue = await this._cache.onChange(
         requestId,
-        this._maxCachingSeconds,
+        maxCachingSeconds,
         stationId,
       );
+
       while (getBaseReportCacheValue === 'ongoing') {
         getBaseReportCacheValue = await this._cache.onChange(
           requestId,
-          this._maxCachingSeconds,
+          maxCachingSeconds,
           stationId,
         );
       }

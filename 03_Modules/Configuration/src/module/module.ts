@@ -214,7 +214,6 @@ export class ConfigurationModule extends AbstractModule {
     const timestamp = message.context.timestamp;
     const chargingStation = message.payload.chargingStation;
 
-    // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
     const bootNotificationResponse: BootNotificationResponse =
       await this._bootService.createBootNotificationResponse(stationId);
 
@@ -222,6 +221,7 @@ export class ConfigurationModule extends AbstractModule {
     const cachedBootStatus: RegistrationStatusEnumType | null =
       await this._cache.get(BOOT_STATUS, stationId);
 
+    // Blacklist or whitelist charger actions in cache
     await this._bootService.cacheChargerActionsPermissions(
       stationId,
       cachedBootStatus,
@@ -277,11 +277,17 @@ export class ConfigurationModule extends AbstractModule {
     // GetBaseReport
     // TODO Consider refactoring GetBaseReport and SetVariables sections as methods to be used by their respective message api endpoints as well
     if (
-      bootConfigDbEntity.getBaseReportOnPending ||
+      bootConfigDbEntity.getBaseReportOnPending ??
       this._config.modules.configuration.getBaseReportOnPending
     ) {
+      // Remove Notify Report from blacklist
+      await this._cache.remove(CallAction.NotifyReport, stationId);
+
       const getBaseReportRequest =
-        await this._bootService.createGetBaseReportRequest(stationId);
+        await this._bootService.createGetBaseReportRequest(
+          stationId,
+          this._config.maxCachingSeconds,
+        );
 
       const getBaseReportConfirmation = await this.sendCall(
         stationId,
@@ -294,6 +300,7 @@ export class ConfigurationModule extends AbstractModule {
         stationId,
         getBaseReportRequest.requestId.toString(),
         getBaseReportConfirmation,
+        this._config.maxCachingSeconds,
       );
 
       // Make sure GetBaseReport doesn't re-trigger on next boot attempt
@@ -327,7 +334,7 @@ export class ConfigurationModule extends AbstractModule {
         const cacheCallbackPromise: Promise<string | null> =
           this._cache.onChange(
             correlationId,
-            this.config.maxCachingSeconds,
+            this._config.maxCachingSeconds,
             stationId,
           ); // x2 fudge factor for any network lag
 

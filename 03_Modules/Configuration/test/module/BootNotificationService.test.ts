@@ -199,6 +199,7 @@ describe('BootService', () => {
             MOCK_STATION_ID,
             MOCK_REQUEST_ID.toString(),
             unsuccessfulConfirmation,
+            mockMaxCachingSeconds,
           ),
       ).rejects.toThrow();
     });
@@ -214,6 +215,7 @@ describe('BootService', () => {
             MOCK_STATION_ID,
             MOCK_REQUEST_ID.toString(),
             aMessageConfirmation(),
+            mockMaxCachingSeconds,
           ),
       ).rejects.toThrow();
     });
@@ -228,6 +230,7 @@ describe('BootService', () => {
           MOCK_STATION_ID,
           MOCK_REQUEST_ID.toString(),
           aMessageConfirmation(),
+          mockMaxCachingSeconds,
         ),
       ).resolves.not.toThrow();
     });
