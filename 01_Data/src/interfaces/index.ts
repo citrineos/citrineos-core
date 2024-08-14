@@ -26,3 +26,4 @@ export { default as TariffSchema } from './projections/schemas/TariffSchema.json
 export { TlsCertificatesRequest } from './dtos/TlsCertificatesRequest';
 export { GenerateCertificateChainRequest } from './dtos/GenerateCertificateChainRequest';
 export { InstallRootCertificateRequest } from './dtos/InstallRootCertificateRequest';
+export { GetLocalAuthListResponse } from './dtos/GetLocalAuthListResponse';

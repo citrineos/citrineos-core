@@ -212,4 +212,16 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
 
     return savedIdTokenModel.reload({ include: [AdditionalInfo], transaction });
   }
+
+  async getAllByDatabaseIds(databaseIds: number[]): Promise<Authorization[]> {
+    return await Authorization.findAll({ where: { databaseId: databaseIds } });
+  }
+
+  async getAllByIdTokens(idTokens: IdTokenType[]): Promise<Authorization[]> {
+    const include: Includeable[] = [];
+    for (const idToken of idTokens) {
+      include.push({ model: IdToken, where: { idToken: idToken.idToken, type: idToken.type } });
+    }
+    return await Authorization.findAll({ include });
+  }
 }

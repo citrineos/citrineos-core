@@ -59,7 +59,7 @@ import {
   IBootRepository,
   IDeviceModelRepository,
   IMessageInfoRepository,
-  sequelize,
+  sequelize, SequelizeAuthorizationRepository,
 } from '@citrineos/data';
 import {
   generateRequestId,
@@ -72,12 +72,15 @@ import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './DeviceModelService';
 import { BootNotificationService } from './BootNotificationService';
+import {LocalAuthListService} from "./LocalAuthListService";
+import {LocalAuthListIdTokenRepository, LocalAuthListVersionRepository} from "@citrineos/data/dist/layers/sequelize";
 
 /**
  * Component that handles Configuration related messages.
  */
 export class ConfigurationModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
+  public _localAuthListService: LocalAuthListService;
 
   protected _requests: CallAction[] = [
     CallAction.BootNotification,
@@ -105,6 +108,9 @@ export class ConfigurationModule extends AbstractModule {
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _messageInfoRepository: IMessageInfoRepository;
   protected _bootService: BootNotificationService;
+  protected _localAuthListVersionRepository: LocalAuthListVersionRepository;
+  protected _localAuthListIdTokenRepository: LocalAuthListIdTokenRepository;
+  protected _authorizationRepository: SequelizeAuthorizationRepository;
 
   /**
    * Constructor
@@ -145,6 +151,9 @@ export class ConfigurationModule extends AbstractModule {
     bootRepository?: IBootRepository,
     deviceModelRepository?: IDeviceModelRepository,
     messageInfoRepository?: IMessageInfoRepository,
+    localAuthListVersionRepository?: LocalAuthListVersionRepository,
+    localAuthListIdTokenRepository?: LocalAuthListIdTokenRepository,
+    authorizationRepository?: SequelizeAuthorizationRepository
   ) {
     super(
       config,
@@ -173,12 +182,29 @@ export class ConfigurationModule extends AbstractModule {
     this._messageInfoRepository =
       messageInfoRepository ||
       new sequelize.SequelizeMessageInfoRepository(config, this._logger);
+    this._localAuthListVersionRepository =
+        localAuthListVersionRepository ||
+        new sequelize.LocalAuthListVersionRepository(config, this._logger);
+    this._localAuthListIdTokenRepository =
+        localAuthListIdTokenRepository ||
+        new sequelize.LocalAuthListIdTokenRepository(config, this._logger);
+    this._authorizationRepository =
+        authorizationRepository ||
+        new sequelize.SequelizeAuthorizationRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(
       this._deviceModelRepository,
     );
 
     this._bootService = new BootNotificationService(this._bootRepository);
+
+    this._localAuthListService = new LocalAuthListService(
+        this._localAuthListVersionRepository,
+        this._localAuthListIdTokenRepository,
+        this._authorizationRepository,
+        this,
+        this._logger
+    );
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }

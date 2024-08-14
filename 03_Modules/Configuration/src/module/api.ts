@@ -47,13 +47,13 @@ import {
   UpdateChargingStationPasswordRequest,
   UpdateChargingStationPasswordSchema,
   UpdateFirmwareRequest,
-  UpdateFirmwareRequestSchema,
+  UpdateFirmwareRequestSchema, UpdateLocalAuthListRequest, UpdateLocalAuthListSchema,
 } from '@citrineos/base';
 import {
   Boot,
   ChargingStationKeyQuerySchema,
   ChargingStationKeyQuerystring,
-  Component,
+  Component, GetLocalAuthListResponse,
   UpdateChargingStationPasswordQuerySchema,
   UpdateChargingStationPasswordQueryString,
   Variable,
@@ -385,6 +385,42 @@ export class ConfigurationModuleApi
       payload: `Updated ${variableAttributes.length} attributes`,
     };
   }
+
+  @AsDataEndpoint(
+      Namespace.LocalAuthList,
+      HttpMethod.Get,
+      ChargingStationKeyQuerySchema,
+      UpdateLocalAuthListSchema,
+  )
+  async getLocalAuthList(
+      request: FastifyRequest<{
+        Querystring: ChargingStationKeyQuerystring;
+      }>,
+  ): Promise<GetLocalAuthListResponse> {
+    return await this._module._localAuthListService.get(
+        request.query.stationId,
+    );
+  }
+
+  @AsDataEndpoint(
+      Namespace.LocalAuthList,
+      HttpMethod.Put,
+      ChargingStationKeyQuerySchema,
+      UpdateLocalAuthListSchema,
+  )
+  async putLocalAuthList(
+      request: FastifyRequest<{
+        Body: UpdateLocalAuthListRequest;
+        Querystring: ChargingStationKeyQuerystring;
+      }>,
+  ): Promise<void> {
+    await this._module._localAuthListService.update(
+        request.query.stationId,
+        request.body.idTokens,
+        request.body.overwrite,
+    );
+  }
+
 
   /**
    * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.

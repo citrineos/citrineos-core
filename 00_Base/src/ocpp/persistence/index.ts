@@ -10,6 +10,8 @@ export { default as ChargingStationTypeSchema } from './schemas/ChargingStationT
 export { default as ReportDataTypeSchema } from './schemas/ReportDataTypeSchema.json';
 export { default as SetVariableResultTypeSchema } from './schemas/SetVariableResultTypeSchema.json';
 export { default as UpdateChargingStationPasswordSchema } from './schemas/UpdateChargingStationPasswordRequestSchema.json';
+export { default as UpdateLocalAuthListSchema } from './schemas/UpdateLocalAuthListSchema.json';
+export { default as LocalAuthListResponseSchema } from './schemas/LocalAuthListResponseSchema.json';
 
 export function QuerySchema(
   properties: [string, string][],

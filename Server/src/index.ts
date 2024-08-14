@@ -63,7 +63,7 @@ import {
   MessageRouterImpl,
   WebhookDispatcher,
 } from '@citrineos/ocpprouter';
-import { Container, OcpiServer, OcpiServerConfig } from '@citrineos/ocpi-base';
+import { Container, OcpiServer, ServerConfig } from '@citrineos/ocpi-base';
 import { CommandsModule } from '@citrineos/ocpi-commands';
 import { VersionsModule } from '@citrineos/ocpi-versions';
 import { CredentialsModule } from '@citrineos/ocpi-credentials';
@@ -534,7 +534,7 @@ export class CitrineOSServer {
 
   private startOcpiServer(host: string, port: number) {
     const ocpiServer = new OcpiServer(
-      this._config as OcpiServerConfig,
+      this._config as ServerConfig,
       this._cache,
       this._logger,
       this.getOcpiModuleConfig(),

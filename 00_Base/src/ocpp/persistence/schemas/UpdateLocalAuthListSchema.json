@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UpdateLocalAuthListRequest",
+  "type": "object",
+  "properties": {
+    "idTokens": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string",
+            "description": "The identifier for the token (e.g., RFID card ID)."
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of the token (e.g., RFID, Smartcard)."
+          }
+        },
+        "required": ["idToken", "type"]
+      },
+      "description": "A list of tokens to add, update, or remove."
+    },
+    "overwrite": {
+      "type": "boolean",
+      "description": "If true, all tokens are replaced with the new list. If false, the new list is appended to the current list.",
+      "default": false
+    }
+  },
+  "required": ["idTokens"]
+}

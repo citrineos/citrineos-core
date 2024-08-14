@@ -34,6 +34,8 @@ export { SequelizeCertificateRepository } from './repository/Certificate';
 export { SequelizeChargingProfileRepository } from './repository/ChargingProfile';
 export { SequelizeCallMessageRepository } from './repository/CallMessage';
 export { SequelizeReservationRepository } from './repository/Reservation';
+export { LocalAuthListVersionRepository } from './repository/LocalAuthListVersionRepository';
+export { LocalAuthListIdTokenRepository } from './repository/LocalAuthListIdTokenRepository';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util';
