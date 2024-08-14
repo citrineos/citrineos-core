@@ -25,7 +25,6 @@ export class BootNotificationService {
     bootRepository: IBootRepository,
     cache: ICache,
     config: Configuration,
-    maxCachingSeconds: number,
     logger?: Logger<ILogObj>,
   ) {
     this._bootRepository = bootRepository;
@@ -120,7 +119,6 @@ export class BootNotificationService {
    * Determines whether to blacklist or whitelist charger actions based on its boot status.
    *
    * If the new boot is accepted and the charger actions were previously blacklisted, then whitelist the charger actions.
-   *
    * If the new boot is not accepted and charger actions were previously whitelisted, then blacklist the charger actions.
    *
    * @param stationId
@@ -184,7 +182,16 @@ export class BootNotificationService {
     } as GetBaseReportRequest;
   }
 
-  async triggerGetBaseReport(
+  /**
+   * Based on the GetBaseReportMessageConfirmation, checks the cache to ensure GetBaseReport truly succeeded.
+   * If GetBaseReport did not succeed, this method will throw. Otherwise, it will finish without throwing.
+   *
+   * @param stationId
+   * @param requestId
+   * @param getBaseReportMessageConfirmation
+   * @param maxCachingSeconds
+   */
+  async confirmGetBaseReportSuccess(
     stationId: string,
     requestId: string,
     getBaseReportMessageConfirmation: IMessageConfirmation,

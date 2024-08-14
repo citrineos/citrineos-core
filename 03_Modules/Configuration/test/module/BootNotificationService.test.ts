@@ -43,7 +43,6 @@ describe('BootService', () => {
       mockBootRepository,
       mockCache,
       mockConfig,
-      mockMaxCachingSeconds,
     );
   });
 
@@ -187,7 +186,7 @@ describe('BootService', () => {
     });
   });
 
-  describe('triggerGetBaseReport', () => {
+  describe('confirmGetBaseReportSuccess', () => {
     it('should throw because getBaseReport was not successful', async () => {
       const unsuccessfulConfirmation = aMessageConfirmation((mc) => {
         mc.success = false;
@@ -195,7 +194,7 @@ describe('BootService', () => {
 
       await expect(
         async () =>
-          await bootService.triggerGetBaseReport(
+          await bootService.confirmGetBaseReportSuccess(
             MOCK_STATION_ID,
             MOCK_REQUEST_ID.toString(),
             unsuccessfulConfirmation,
@@ -211,7 +210,7 @@ describe('BootService', () => {
 
       await expect(
         async () =>
-          await bootService.triggerGetBaseReport(
+          await bootService.confirmGetBaseReportSuccess(
             MOCK_STATION_ID,
             MOCK_REQUEST_ID.toString(),
             aMessageConfirmation(),
@@ -226,7 +225,7 @@ describe('BootService', () => {
         .mockResolvedValueOnce('complete');
 
       expect(
-        bootService.triggerGetBaseReport(
+        bootService.confirmGetBaseReportSuccess(
           MOCK_STATION_ID,
           MOCK_REQUEST_ID.toString(),
           aMessageConfirmation(),

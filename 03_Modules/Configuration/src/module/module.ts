@@ -179,7 +179,6 @@ export class ConfigurationModule extends AbstractModule {
       this._bootRepository,
       this._cache,
       this._config.modules.configuration,
-      this._config.maxCachingSeconds,
       this._logger,
     );
 
@@ -296,7 +295,7 @@ export class ConfigurationModule extends AbstractModule {
         getBaseReportRequest,
       );
 
-      await this._bootService.triggerGetBaseReport(
+      await this._bootService.confirmGetBaseReportSuccess(
         stationId,
         getBaseReportRequest.requestId.toString(),
         getBaseReportConfirmation,
