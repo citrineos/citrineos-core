@@ -134,6 +134,7 @@ import {
   UpdateFirmwareResponseSchema,
 } from './ocpp/model/index';
 import { CallAction } from './ocpp/rpc/message';
+import Ajv from 'ajv';
 
 export interface OcppRequest {}
 
@@ -235,3 +236,5 @@ export { eventGroupFromString } from './interfaces/messages';
 export { UnauthorizedException } from './interfaces/api/exceptions/unauthorized.exception';
 export { HttpHeader } from './interfaces/api/http.header';
 export { HttpStatus } from './interfaces/api/http.status';
+
+export { Ajv };

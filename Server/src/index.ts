@@ -6,6 +6,7 @@
 import {
   type AbstractModule,
   type AbstractModuleApi,
+  Ajv,
   EventGroup,
   eventGroupFromString,
   type IAuthenticator,
@@ -29,7 +30,6 @@ import {
   WebsocketNetworkConnection,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import fastify, { type FastifyInstance } from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
