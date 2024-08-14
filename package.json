@@ -12,7 +12,7 @@
     "typescript-eslint": "^7.6.0"
   },
   "scripts": {
-    "install-all": "npm i --workspaces --verbose",
+    "install-all": "npm i --verbose",
     "copy-assets": "npm run copy-assets --prefix ./Server",
     "build": "tsc --build --verbose",
     "postbuild": "npm run copy-assets",
