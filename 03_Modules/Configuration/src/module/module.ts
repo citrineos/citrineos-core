@@ -242,11 +242,12 @@ export class ConfigurationModule extends AbstractModule {
       );
     }
 
-    // Cache boot status for charger if (not accepted) and (different status from cached status (cached status may be null)).
     if (
       bootNotificationResponse.status !== RegistrationStatusEnumType.Accepted &&
-      bootNotificationResponse.status !== cachedBootStatus
+      (!cachedBootStatus ||
+        bootNotificationResponse.status !== cachedBootStatus)
     ) {
+      // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
       await this._cache.set(
         BOOT_STATUS,
         bootNotificationResponse.status,
@@ -261,10 +262,11 @@ export class ConfigurationModule extends AbstractModule {
     );
 
     // If boot notification is not pending, do not start configuration.
-    // If cached boot status is pending, configuration is already in progress - do not start configuration again.
+    // If cached boot status is not null and pending, configuration is already in progress - do not start configuration again.
     if (
       bootNotificationResponse.status !== RegistrationStatusEnumType.Pending ||
-      cachedBootStatus === RegistrationStatusEnumType.Pending
+      (cachedBootStatus &&
+        cachedBootStatus === RegistrationStatusEnumType.Pending)
     ) {
       return;
     }
