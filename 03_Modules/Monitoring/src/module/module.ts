@@ -45,6 +45,7 @@ import {
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './services';
+import { MonitoringService } from './MonitoringService';
 
 /**
  * Component that handles monitoring related messages.
@@ -65,6 +66,8 @@ export class MonitoringModule extends AbstractModule {
 
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
+
+  protected _monitoringService: MonitoringService;
 
   /**
    * This is the constructor function that initializes the {@link MonitoringModule}.
@@ -126,6 +129,10 @@ export class MonitoringModule extends AbstractModule {
 
     this._deviceModelService = new DeviceModelService(
       this._deviceModelRepository,
+    );
+    this._monitoringService = new MonitoringService(
+      this._variableMonitoringRepository,
+      this._logger,
     );
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
@@ -223,34 +230,10 @@ export class MonitoringModule extends AbstractModule {
       props,
     );
 
-    for (const clearMonitoringResultType of message.payload
-      .clearMonitoringResult) {
-      const resultStatus: ClearMonitoringStatusEnumType =
-        clearMonitoringResultType.status;
-      const monitorId: number = clearMonitoringResultType.id;
-
-      // Reject the variable monitoring if Charging Station accepts to clear or cannot find it.
-      if (
-        resultStatus === ClearMonitoringStatusEnumType.Accepted ||
-        resultStatus === ClearMonitoringStatusEnumType.NotFound
-      ) {
-        await this._variableMonitoringRepository.rejectVariableMonitoringByIdAndStationId(
-          CallAction.ClearVariableMonitoring,
-          monitorId,
-          message.context.stationId,
-        );
-      } else {
-        const statusInfo: StatusInfoType | undefined | null =
-          clearMonitoringResultType.statusInfo;
-        this._logger.error(
-          'Failed to clear variable monitoring.',
-          monitorId,
-          resultStatus,
-          statusInfo?.reasonCode,
-          statusInfo?.additionalInfo,
-        );
-      }
-    }
+    await this._monitoringService.processClearMonitoringResult(
+      message.context.stationId,
+      message.payload.clearMonitoringResult,
+    );
   }
 
   @AsHandler(CallAction.GetMonitoringReport)
@@ -265,7 +248,8 @@ export class MonitoringModule extends AbstractModule {
     );
 
     const status: GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: StatusInfoType | undefined | null = message.payload.statusInfo;
+    const statusInfo: StatusInfoType | undefined | null =
+      message.payload.statusInfo;
 
     if (
       status === GenericDeviceModelStatusEnumType.Rejected ||
@@ -288,7 +272,8 @@ export class MonitoringModule extends AbstractModule {
     this._logger.debug('SetMonitoringLevel response received:', message, props);
 
     const status: GenericStatusEnumType = message.payload.status;
-    const statusInfo: StatusInfoType | undefined | null = message.payload.statusInfo;
+    const statusInfo: StatusInfoType | undefined | null =
+      message.payload.statusInfo;
     if (status === GenericStatusEnumType.Rejected) {
       this._logger.error(
         'Failed to set monitoring level.',
@@ -307,7 +292,8 @@ export class MonitoringModule extends AbstractModule {
     this._logger.debug('SetMonitoringBase response received:', message, props);
 
     const status: GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: StatusInfoType | undefined | null = message.payload.statusInfo;
+    const statusInfo: StatusInfoType | undefined | null =
+      message.payload.statusInfo;
 
     if (
       status === GenericDeviceModelStatusEnumType.Rejected ||
