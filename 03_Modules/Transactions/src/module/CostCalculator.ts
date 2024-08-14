@@ -69,13 +69,4 @@ export class CostCalculator {
     }
   }
 
-  /**
-   * Round floor the given cost to 2 decimal places, e.g., given 1.2378, return 1.23
-   *
-   * @param {number} cost - cost
-   * @return {number} rounded cost
-   */
-  private _roundCost(cost: number): number {
-    return Math.floor(cost * 100) / 100;
-  }
 }

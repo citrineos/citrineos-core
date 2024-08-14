@@ -10,6 +10,7 @@ export class Money {
 
   private constructor(amount: number | string | Big, currency: CurrencySource) {
     assert(notNull(amount), 'Amount has to be defined');
+    assert(notNull(currency), 'Currency has to be defined');
     try {
       this._amount = new Big(amount);
     } catch (error) {

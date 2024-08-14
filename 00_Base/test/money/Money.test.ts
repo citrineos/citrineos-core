@@ -103,6 +103,13 @@ describe('money', () => {
       },
     );
 
+    it('should fail when undefined currency', () => {
+      let currency: string;
+      expect(() => Money.of('1.00', currency)).toThrow(
+          `Currency has to be defined`,
+      );
+    });
+
     it.each([
       '',
       '   ',
@@ -222,12 +229,14 @@ describe('money', () => {
       [Money.USD('0.012345'), Money.USD('0.01')],
       [Money.USD('0.512921747191123'), Money.USD('0.51')],
       [Money.USD('0.999999999999999'), Money.USD('0.99')],
+      [Money.USD('10.00'), Money.USD('10.00')],
       [Money.USD('11.60'), Money.USD('11.60')],
       [Money.USD('11.6058'), Money.USD('11.60')],
       [Money.USD('12.1742'), Money.USD('12.17')],
       [Money.USD('11.89609'), Money.USD('11.89')],
       [Money.USD('59.80'), Money.USD('59.80')],
       [Money.USD('59.8299'), Money.USD('59.82')],
+      [Money.USD('60.00'), Money.USD('60.00')],
       [Money.USD('62.7601'), Money.USD('62.76')],
       [Money.USD('61.326395'), Money.USD('61.32')],
     ])('should round down to currency scale', (money, roundedMoney) => {
