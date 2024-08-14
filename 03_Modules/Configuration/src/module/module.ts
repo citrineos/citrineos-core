@@ -330,7 +330,7 @@ export class ConfigurationModule extends AbstractModule {
         );
 
       const [rejectedSetVariable, executedRebootSetVariable] =
-        await this._deviceModelService.executeSetVariablesActionsAfterBoot(
+        await this._deviceModelService.executeSetVariablesAfterBoot(
           stationId,
           cacheOnChangeCallback,
           setVariablesSendCallCallback,

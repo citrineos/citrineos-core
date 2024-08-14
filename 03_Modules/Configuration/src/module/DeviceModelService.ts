@@ -145,7 +145,7 @@ export class DeviceModelService {
     await Promise.all(promises);
   }
 
-  async executeSetVariablesActionsAfterBoot(
+  async executeSetVariablesAfterBoot(
     stationId: string,
     cacheCallback: (correlationId: string) => Promise<string | null>,
     sendSetVariableRequest: (
