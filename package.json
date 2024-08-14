@@ -33,6 +33,9 @@
     "start-everest": "npm run start-everest --prefix ./Server",
     "test": "jest --config jest.config.ts"
   },
+  "overrides": {
+    "ajv": "^8.12.0"
+  },
   "workspaces": [
     "00_Base",
     "01_Data",
