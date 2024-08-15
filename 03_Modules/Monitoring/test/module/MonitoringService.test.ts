@@ -1,4 +1,4 @@
-import { IVariableMonitoringRepository } from '@citrineos/data/dist/interfaces/repositories';
+import { IVariableMonitoringRepository } from '@citrineos/data';
 import { MonitoringService } from '../../src/module/MonitoringService';
 import {
   ClearMonitoringResultType,
