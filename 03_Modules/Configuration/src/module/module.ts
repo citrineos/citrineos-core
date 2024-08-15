@@ -231,7 +231,7 @@ export class ConfigurationModule extends AbstractModule {
       await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
     // Update device model from boot
-    await this._deviceModelService.updateDeviceModel(
+    this._deviceModelService.updateDeviceModel(
       chargingStation,
       stationId,
       timestamp,
@@ -250,11 +250,7 @@ export class ConfigurationModule extends AbstractModule {
         bootNotificationResponse.status !== cachedBootStatus)
     ) {
       // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
-      await this._cache.set(
-        BOOT_STATUS,
-        bootNotificationResponse.status,
-        stationId,
-      );
+      this._cache.set(BOOT_STATUS, bootNotificationResponse.status, stationId);
     }
 
     // Update charger-specific boot config with details of most recently sent BootNotificationResponse
@@ -280,13 +276,12 @@ export class ConfigurationModule extends AbstractModule {
       this._config.modules.configuration.getBaseReportOnPending
     ) {
       // Remove Notify Report from blacklist
-      await this._cache.remove(CallAction.NotifyReport, stationId);
+      this._cache.remove(CallAction.NotifyReport, stationId);
 
-      const getBaseReportRequest =
-        await this._bootService.createGetBaseReportRequest(
-          stationId,
-          this._config.maxCachingSeconds,
-        );
+      const getBaseReportRequest = this._bootService.createGetBaseReportRequest(
+        stationId,
+        this._config.maxCachingSeconds,
+      );
 
       const getBaseReportConfirmation = await this.sendCall(
         stationId,
@@ -400,7 +395,7 @@ export class ConfigurationModule extends AbstractModule {
 
     if (rebootSetVariable) {
       // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
-      await this.sendCall(stationId, tenantId, CallAction.Reset, {
+      this.sendCall(stationId, tenantId, CallAction.Reset, {
         type: ResetEnumType.Immediate,
       } as ResetRequest);
     } else {
