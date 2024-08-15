@@ -91,12 +91,15 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
           this.variableCharacteristics.emit('created', [createdVariableCharacteristics]);
           return createdVariableCharacteristics;
         } else {
-          return await this.variableCharacteristics.updateAllByQuery(vc, {
-            where: {
-              variableId: variable.id,
+          return await this.variableCharacteristics.updateAllByQuery(
+            vc,
+            {
+              where: {
+                variableId: variable.id,
+              },
+              transaction,
             },
-            transaction,
-          });
+          );
         }
       });
     }

@@ -17,7 +17,7 @@ export class VariableStatus extends Model {
   declare status: string;
 
   @Column(DataType.JSON)
-  declare statusInfo?: StatusInfoType | null;
+  declare statusInfo?: StatusInfoType  | null;
 
   /**
    * Relations
