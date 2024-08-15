@@ -15,8 +15,8 @@ export class SequelizeReservationRepository extends SequelizeRepository<Reservat
   evse: CrudRepository<Evse>;
   logger: Logger<ILogObj>;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, namespace = Reservation.MODEL_NAME, sequelizeInstance?: Sequelize, evse?: CrudRepository<Evse>) {
-    super(config, namespace, logger, sequelizeInstance);
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, evse?: CrudRepository<Evse>) {
+    super(config, Reservation.MODEL_NAME, logger, sequelizeInstance);
     this.evse = evse ? evse : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
 
     this.logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
@@ -62,7 +62,7 @@ export class SequelizeReservationRepository extends SequelizeRepository<Reservat
           evseId: evseDBId,
           idToken: reserveNowRequest.idToken,
           groupIdToken: reserveNowRequest.groupIdToken ?? null,
-          isActive: isActive === true ? isActive : false,
+          isActive,
         },
         storedReservation.databaseId.toString(),
       );

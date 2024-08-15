@@ -305,6 +305,7 @@ export class EVDriverModuleApi
       await this._module.reservationRepository.createOrUpdateReservation(
         request,
         identifier,
+        false,
       );
     if (!storedReservation) {
       return { success: false, payload: 'Reservation could not be stored.' };
