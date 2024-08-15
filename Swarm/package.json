@@ -59,7 +59,6 @@
     "@citrineos/transactions": "file:../03_Modules/Transactions/citrineos-transactions-1.0.0.tgz",
     "@citrineos/util": "file:../02_Util/citrineos-util-1.0.0.tgz",
     "@fastify/type-provider-json-schema-to-ts": "2.2.2",
-    "ajv": "8.12.0",
     "fastify": "4.22.2",
     "sqlite3": "5.1.6",
     "tslog": "4.9.2",
