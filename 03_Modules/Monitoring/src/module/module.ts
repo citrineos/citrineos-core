@@ -7,7 +7,6 @@ import {
   AbstractModule,
   AsHandler,
   CallAction,
-  ClearMonitoringStatusEnumType,
   ClearVariableMonitoringResponse,
   EventDataType,
   EventGroup,
@@ -34,7 +33,8 @@ import {
 import {
   IDeviceModelRepository,
   IVariableMonitoringRepository,
-  sequelize,
+  SequelizeDeviceModelRepository,
+  SequelizeVariableMonitoringRepository,
 } from '@citrineos/data';
 import {
   generateRequestId,
@@ -52,6 +52,7 @@ import { MonitoringService } from './MonitoringService';
  */
 export class MonitoringModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
+  protected _monitoringService: MonitoringService;
 
   protected _requests: CallAction[] = [CallAction.NotifyEvent];
   protected _responses: CallAction[] = [
@@ -67,8 +68,6 @@ export class MonitoringModule extends AbstractModule {
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
 
-  protected _monitoringService: MonitoringService;
-
   /**
    * This is the constructor function that initializes the {@link MonitoringModule}.
    *
@@ -83,14 +82,14 @@ export class MonitoringModule extends AbstractModule {
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
    *
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
+   * It is used to propagate system-wide logger settings and will serve as the parent logger for any subcomponent logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
+   * If no `deviceModelRepository` is provided, a default {@link SequelizeDeviceModelRepository} instance is created and used.
    *
    * @param {IVariableMonitoringRepository} [variableMonitoringRepository] - An optional parameter of type {@link IVariableMonitoringRepository}
    * which represents a repository for accessing and manipulating variable monitoring data.
-   * If no `variableMonitoringRepository` is provided, a default {@link sequelize:variableMonitoringRepository} }
+   * If no `variableMonitoringRepository` is provided, a default {@link SequelizeVariableMonitoringRepository}
    * instance is created and used.
    */
   constructor(
@@ -122,10 +121,10 @@ export class MonitoringModule extends AbstractModule {
 
     this._deviceModelRepository =
       deviceModelRepository ||
-      new sequelize.SequelizeDeviceModelRepository(config, this._logger);
+      new SequelizeDeviceModelRepository(config, this._logger);
     this._variableMonitoringRepository =
       variableMonitoringRepository ||
-      new sequelize.SequelizeVariableMonitoringRepository(config, this._logger);
+      new SequelizeVariableMonitoringRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(
       this._deviceModelRepository,
