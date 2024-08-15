@@ -3,16 +3,17 @@
   "version": "1.4.0",
   "private": false,
   "devDependencies": {
-    "@eslint/js": "^9.0.0",
-    "@typescript-eslint/eslint-plugin-tslint": "^7.0.2",
-    "concurrently": "^8.2.2",
+    "@eslint/js": "9.0.0",
+    "@types/eslint__js": "8.42.3",
+    "concurrently": "8.2.2",
     "eslint": "8.57.0",
-    "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.2.5",
-    "typescript-eslint": "^7.6.0"
+    "eslint-config-prettier": "9.1.0",
+    "prettier": "3.2.5",
+    "typescript": "5.5.4",
+    "typescript-eslint": "7.6.0"
   },
   "scripts": {
-    "install-all": "npm i --workspaces --verbose",
+    "install-all": "npm i --verbose",
     "copy-assets": "npm run copy-assets --prefix ./Server",
     "build": "tsc --build --verbose",
     "postbuild": "npm run copy-assets",
@@ -25,8 +26,8 @@
     "start": "cd ./Server && npm run start",
     "start-docker": "cd ./Server && npm run start-docker",
     "start-docker-cloud": "cd ./Server && npm run start-docker-cloud",
-    "lint": "npx eslint --ext .ts ./",
-    "lint-fix": "npm run prettier && npx eslint --ext .ts --fix ./",
+    "lint": "npx eslint ./",
+    "lint-fix": "npm run prettier && npx eslint --fix ./",
     "prettier": "prettier --write .",
     "fresh-and-install-all": "npm run fresh && npm run install-all",
     "sync-db": "ts-node ./db.sync.ts",
@@ -46,16 +47,6 @@
     "03_Modules/SmartCharging",
     "03_Modules/Tenant",
     "03_Modules/Transactions",
-    "Server",
-    "../citrineos-ocpi/00_Base",
-    "../citrineos-ocpi/03_Modules/Versions",
-    "../citrineos-ocpi/03_Modules/Credentials",
-    "../citrineos-ocpi/03_Modules/Commands",
-    "../citrineos-ocpi/03_Modules/Locations",
-    "../citrineos-ocpi/03_Modules/Sessions",
-    "../citrineos-ocpi/03_Modules/ChargingProfiles",
-    "../citrineos-ocpi/03_Modules/Cdrs",
-    "../citrineos-ocpi/03_Modules/Tariffs",
-    "../citrineos-ocpi/03_Modules/Tokens"
+    "Server"
   ]
 }
