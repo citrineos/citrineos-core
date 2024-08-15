@@ -24,7 +24,7 @@ module.exports = tseslint.config(
       '**/DirectusExtensions/**',
       '**/Swarm/**',
       '**/dist/**',
-      '**/lib/**',
+      '**/node_modules/**',
     ],
   },
 );
