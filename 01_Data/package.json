@@ -30,7 +30,7 @@
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
     "sequelize-typescript": "^2.1.5",
-    "tslog": "^4.8.2",
+    "tslog": "^4.9.2",
     "uuid": "^9.0.0"
   },
   "engines": {

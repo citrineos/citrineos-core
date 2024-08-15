@@ -35,16 +35,6 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@citrineos/ocpi-base": "0.2.0",
-    "@citrineos/ocpi-credentials": "0.2.0",
-    "@citrineos/ocpi-versions": "0.2.0",
-    "@citrineos/ocpi-commands": "0.2.0",
-    "@citrineos/ocpi-locations": "0.2.0",
-    "@citrineos/ocpi-sessions": "0.2.0",
-    "@citrineos/ocpi-tariffs": "0.2.0",
-    "@citrineos/ocpi-cdrs": "0.2.0",
-    "@citrineos/ocpi-charging-profiles": "0.2.0",
-    "@citrineos/ocpi-tokens": "0.2.0",
     "@citrineos/base": "1.4.0",
     "@citrineos/certificates": "1.4.0",
     "@citrineos/configuration": "1.4.0",
@@ -62,7 +52,7 @@
     "cross-env": "7.0.3",
     "fastify": "^4.22.2",
     "sqlite3": "^5.1.6",
-    "tslog": "^4.8.2",
+    "tslog": "^4.9.2",
     "uuid": "^9.0.0",
     "ws": "^8.13.0"
   },
