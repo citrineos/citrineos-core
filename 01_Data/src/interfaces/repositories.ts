@@ -149,7 +149,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
 }
 
 export interface IReservationRepository extends CrudRepository<Reservation> {
-  createOrUpdateReservation(reserveNowRequest: ReserveNowRequest, stationId: string): Promise<Reservation | undefined>;
+  createOrUpdateReservation(reserveNowRequest: ReserveNowRequest, stationId: string, isActive?: boolean): Promise<Reservation | undefined>;
 }
 
 export interface ICallMessageRepository extends CrudRepository<CallMessage> {}
