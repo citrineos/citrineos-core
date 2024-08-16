@@ -9,7 +9,6 @@ import {
   AttributeEnumType,
   AuthorizationStatusEnumType,
   CallAction,
-  CostUpdatedRequest,
   CostUpdatedResponse,
   CrudRepository,
   ErrorCode,
@@ -57,6 +56,8 @@ import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { TransactionService } from './TransactionService';
 import { StatusNotificationService } from './StatusNotificationService';
+import { CostNotifier } from './CostNotifier';
+import { CostCalculator } from './CostCalculator';
 
 /**
  * Component that handles transaction related messages.
@@ -88,6 +89,8 @@ export class TransactionsModule extends AbstractModule {
   private readonly _authorizers: IAuthorizer[];
 
   private readonly _signedMeterValuesUtil: SignedMeterValuesUtil;
+  private _costNotifier: CostNotifier;
+  private _costCalculator: CostCalculator;
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
   private readonly _costUpdatedInterval: number | undefined;
@@ -234,6 +237,19 @@ export class TransactionsModule extends AbstractModule {
       this._logger,
     );
 
+    this._costCalculator = new CostCalculator(
+      this._tariffRepository,
+      this._transactionService,
+      this._logger,
+    );
+
+    this._costNotifier = new CostNotifier(
+      this,
+      this._transactionEventRepository,
+      this._costCalculator,
+      this._logger,
+    );
+
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
@@ -307,11 +323,11 @@ export class TransactionsModule extends AbstractModule {
         response.idTokenInfo?.status === AuthorizationStatusEnumType.Accepted &&
         this._costUpdatedInterval
       ) {
-        this._updateCost(
+        this._costNotifier.notifyWhileActive(
           stationId,
           transactionId,
-          this._costUpdatedInterval,
           message.context.tenantId,
+          this._costUpdatedInterval,
         );
       }
     } else {
@@ -332,7 +348,7 @@ export class TransactionsModule extends AbstractModule {
           transaction.isActive &&
           this._sendCostUpdatedOnMeterValue
         ) {
-          response.totalCost = await this._calculateTotalCost(
+          response.totalCost = await this._costCalculator.calculateTotalCost(
             stationId,
             transaction.id,
             transaction.totalKwh,
@@ -364,7 +380,7 @@ export class TransactionsModule extends AbstractModule {
         message.payload.eventType === TransactionEventEnumType.Ended &&
         transaction
       ) {
-        response.totalCost = await this._calculateTotalCost(
+        response.totalCost = await this._costCalculator.calculateTotalCost(
           stationId,
           transaction.id,
           transaction.totalKwh,
@@ -487,86 +503,5 @@ export class TransactionsModule extends AbstractModule {
       message,
       props,
     );
-  }
-
-  /**
-   * Round floor the given cost to 2 decimal places, e.g., given 1.2378, return 1.23
-   *
-   * @param {number} cost - cost
-   * @return {number} rounded cost
-   */
-  private _roundCost(cost: number): number {
-    return Math.floor(cost * 100) / 100;
-  }
-
-  private async _calculateTotalCost(
-    stationId: string,
-    transactionDbId: number,
-    totalKwh?: number | null,
-  ): Promise<number> {
-    // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
-    //  implementation is finalized
-    let totalCost = 0;
-
-    const tariff: Tariff | undefined =
-      await this._tariffRepository.findByStationId(stationId);
-    if (tariff) {
-      this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);
-      if (!totalKwh) {
-        totalKwh = MeterValueUtils.getTotalKwh(
-          await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-            transactionDbId,
-          ),
-        );
-
-        await Transaction.update(
-          { totalKwh: totalKwh },
-          { where: { id: transactionDbId }, returning: false },
-        );
-      }
-
-      this._logger.debug(`TotalKwh: ${totalKwh}`);
-      totalCost = this._roundCost(totalKwh * tariff.pricePerKwh);
-    } else {
-      this._logger.error(`Tariff not found for station ${stationId}`);
-    }
-
-    return totalCost;
-  }
-
-  /**
-   * Internal method to execute a costUpdated request for an ongoing transaction repeatedly based on the costUpdatedInterval
-   *
-   * @param {string} stationId - The identifier of the client connection.
-   * @param {string} transactionId - The identifier of the transaction.
-   * @param {number} costUpdatedInterval - The costUpdated interval in milliseconds.
-   * @param {string} tenantId - The identifier of the tenant.
-   * @return {void} This function does not return anything.
-   */
-  private _updateCost(
-    stationId: string,
-    transactionId: string,
-    costUpdatedInterval: number,
-    tenantId: string,
-  ): void {
-    // TODO add canceling interval when transaction is over
-    setInterval(async () => {
-      const transaction: Transaction | undefined =
-        await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
-          stationId,
-          transactionId,
-        );
-      if (transaction && transaction.isActive) {
-        const cost = await this._calculateTotalCost(stationId, transaction.id);
-        this.sendCall(stationId, tenantId, CallAction.CostUpdated, {
-          totalCost: cost,
-          transactionId: transaction.transactionId,
-        } as CostUpdatedRequest).then(() => {
-          this._logger.info(
-            `Sent costUpdated for ${transaction.transactionId} with totalCost ${cost}`,
-          );
-        });
-      }
-    }, costUpdatedInterval * 1000);
   }
 }
