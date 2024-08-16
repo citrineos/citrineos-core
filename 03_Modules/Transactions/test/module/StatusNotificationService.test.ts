@@ -12,7 +12,7 @@ import {
   anEvse,
   aVariable,
   MOCK_STATION_ID,
-} from '../providers/DeviceModel';
+} from '../providers/DeviceModelProvider';
 
 describe('StatusNotificationService', () => {
   let statusNotificationService: StatusNotificationService;

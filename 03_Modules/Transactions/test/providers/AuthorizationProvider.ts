@@ -1,8 +1,8 @@
 import { Authorization } from '@citrineos/data';
 
 import { faker } from '@faker-js/faker';
-import { anIdToken } from './IdToken';
-import { anIdTokenInfo } from './IdTokenInfo';
+import { anIdToken } from './IdTokenProvider';
+import { anIdTokenInfo } from './IdTokenInfoProvider';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 
 export function anAuthorization(
