@@ -29,6 +29,7 @@ import {
   type VariableMonitoringType,
   type VariableType,
   ChargingProfileType,
+  ChargingProfilePurposeEnumType,
   NotifyEVChargingNeedsRequest,
   ChargingLimitSourceEnumType,
   CompositeScheduleType,
@@ -109,6 +110,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: EVSEType, chargingStates?: ChargingStateEnumType[]): Promise<Transaction[]>;
   readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]>;
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
+  getActiveTransactionByStationIdAndEvseId(stationId: string, evseId: number): Promise<Transaction | undefined>;
 }
 
 export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoringType> {
@@ -141,10 +143,13 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   createChargingNeeds(chargingNeeds: NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds>;
   findChargingNeedsByEvseDBIdAndTransactionDBId(evseDBId: number, transactionDataBaseId: number): Promise<ChargingNeeds | undefined>;
   createCompositeSchedule(compositeSchedule: CompositeScheduleType, stationId: string): Promise<CompositeSchedule>;
+  getNextChargingProfileId(stationId: string): Promise<number>;
+  getNextChargingScheduleId(stationId: string): Promise<number>;
+  getNextStackLevel(stationId: string, transactionDatabaseId: number | null, profilePurpose: ChargingProfilePurposeEnumType): Promise<number>;
 }
 
 export interface IReservationRepository extends CrudRepository<Reservation> {
-  createOrUpdateReservation(reserveNowRequest: ReserveNowRequest, stationId: string): Promise<Reservation | undefined>;
+  createOrUpdateReservation(reserveNowRequest: ReserveNowRequest, stationId: string, isActive?: boolean): Promise<Reservation | undefined>;
 }
 
 export interface ICallMessageRepository extends CrudRepository<CallMessage> {}

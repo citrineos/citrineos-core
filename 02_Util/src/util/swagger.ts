@@ -80,7 +80,7 @@ export function initSwagger(
   systemConfig: SystemConfig,
   server: FastifyInstance,
 ) {
-  server.register(fastifySwagger, {
+  server.register(fastifySwagger as any, {
     openapi: {
       info: {
         title: 'CitrineOS Central System API',

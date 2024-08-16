@@ -20,7 +20,7 @@ import {
   IMessageSender,
   MeterValuesRequest,
   MeterValuesResponse,
-  ReportDataType,
+  MeterValueUtils,
   StatusNotificationRequest,
   StatusNotificationResponse,
   SystemConfig,
@@ -30,7 +30,6 @@ import {
 } from '@citrineos/base';
 import {
   Component,
-  Evse,
   IAuthorizationRepository,
   IDeviceModelRepository,
   ILocationRepository,
@@ -41,7 +40,6 @@ import {
   SequelizeRepository,
   Tariff,
   Transaction,
-  Variable,
   VariableAttribute,
 } from '@citrineos/data';
 import {
@@ -53,6 +51,7 @@ import {
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { TransactionService } from './TransactionService';
+import { StatusNotificationService } from './StatusNotificationService';
 import { CostNotifier } from './CostNotifier';
 import { CostCalculator } from './CostCalculator';
 
@@ -79,6 +78,7 @@ export class TransactionsModule extends AbstractModule {
   protected _reservationRepository: IReservationRepository;
 
   protected _transactionService: TransactionService;
+  protected _statusNotificationService: StatusNotificationService;
 
   private _authorizers: IAuthorizer[];
   private _costNotifier: CostNotifier;
@@ -208,6 +208,13 @@ export class TransactionsModule extends AbstractModule {
       this._transactionEventRepository,
       this._authorizeRepository,
       this._authorizers,
+      this._logger,
+    );
+
+    this._statusNotificationService = new StatusNotificationService(
+      this._componentRepository,
+      this._deviceModelRepository,
+      this._locationRepository,
       this._logger,
     );
 
@@ -402,63 +409,10 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('StatusNotification received:', message, props);
 
-    const stationId = message.context.stationId;
-    const statusNotificationRequest = message.payload;
-
-    const chargingStation =
-      await this._locationRepository.readChargingStationByStationId(stationId);
-    if (chargingStation) {
-      await this._locationRepository.addStatusNotificationToChargingStation(
-        stationId,
-        statusNotificationRequest,
-      );
-    } else {
-      this._logger.warn(
-        `Charging station ${stationId} not found. Status notification cannot be associated with a charging station.`,
-      );
-    }
-
-    const component = await this._componentRepository.readOnlyOneByQuery({
-      where: {
-        name: 'Connector',
-      },
-      include: [
-        {
-          model: Evse,
-          where: {
-            id: statusNotificationRequest.evseId,
-            connectorId: statusNotificationRequest.connectorId,
-          },
-        },
-        {
-          model: Variable,
-          where: {
-            name: 'AvailabilityState',
-          },
-        },
-      ],
-    });
-    const variable = component?.variables?.[0];
-    if (!component || !variable) {
-      this._logger.warn(
-        'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
-      );
-    } else {
-      const reportDataType: ReportDataType = {
-        component: component,
-        variable: variable,
-        variableAttribute: [
-          {
-            value: statusNotificationRequest.connectorStatus,
-          },
-        ],
-      };
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-        reportDataType,
-        stationId,
-        statusNotificationRequest.timestamp,
-      );
-    }
+    await this._statusNotificationService.processStatusNotification(
+      message.context.stationId,
+      message.payload,
+    );
 
     // Create response
     const response: StatusNotificationResponse = {};
