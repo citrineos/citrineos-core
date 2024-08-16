@@ -420,7 +420,7 @@ describe('WebhookDispatcher', () => {
   }
 
   async function givenRegisteredStations(...stationIds: string[]) {
-    for (let stationId of stationIds) {
+    for (const stationId of stationIds) {
       await webhookDispatcher.register(stationId);
     }
     fetch.mockClear();

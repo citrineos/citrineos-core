@@ -6,10 +6,15 @@
 
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import {FastifyInstance, FastifyRequest} from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import fs from 'fs';
-import {HttpHeader, HttpStatus, SystemConfig, UnauthorizedError} from '@citrineos/base';
-import {OpenAPIV2, OpenAPIV3, OpenAPIV3_1} from 'openapi-types';
+import {
+  HttpHeader,
+  HttpStatus,
+  SystemConfig,
+  UnauthorizedError,
+} from '@citrineos/base';
+import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
 import * as FastifyAuth from '@fastify/auth';
 import * as packageJson from '../../package.json';
 
@@ -21,9 +26,9 @@ import * as packageJson from '../../package.json';
  * @return {object} The transformed OpenAPI object.
  */
 function OcppTransformObject({
-                               swaggerObject,
-                               openapiObject,
-                             }: {
+  swaggerObject,
+  openapiObject,
+}: {
   swaggerObject: Partial<OpenAPIV2.Document>;
   openapiObject: Partial<OpenAPIV3.Document | OpenAPIV3_1.Document>;
 }) {
@@ -32,12 +37,12 @@ function OcppTransformObject({
     for (const pathKey in openapiObject.paths) {
       const path: OpenAPIV3.PathsObject = openapiObject.paths[
         pathKey
-        ] as OpenAPIV3.PathsObject;
+      ] as OpenAPIV3.PathsObject;
       if (path) {
         for (const methodKey in path) {
           const method: OpenAPIV3.OperationObject = path[
             methodKey
-            ] as OpenAPIV3.OperationObject;
+          ] as OpenAPIV3.OperationObject;
           if (method) {
             // Set tags based on path key if tags were not passed in
             if (!method.tags) {
@@ -85,7 +90,6 @@ const registerSwaggerUi = (
   systemConfig: SystemConfig,
   server: FastifyInstance,
 ) => {
-
   const swaggerUiOptions: any = {
     routePrefix: systemConfig.util.swagger?.path,
     securityDefinitions: {
@@ -196,7 +200,7 @@ const registerFastifySwagger = (
   systemConfig: SystemConfig,
   server: FastifyInstance,
 ) => {
-  server.register(fastifySwagger, {
+  server.register(fastifySwagger as any, {
     openapi: {
       info: {
         title: 'CitrineOS Central System API',
@@ -206,7 +210,8 @@ const registerFastifySwagger = (
       servers: [
         {
           url: `http://${systemConfig.centralSystem.host}:${systemConfig.centralSystem.port}`,
-          description: 'Target OCPI server configured in systemConfig.centralSystem',
+          description:
+            'Target OCPI server configured in systemConfig.centralSystem',
         },
       ],
       components: {
@@ -229,4 +234,4 @@ export async function initSwagger(
   registerFastifySwagger(systemConfig, server);
   registerSwaggerUi(systemConfig, server);
   await registerFastifyAuth(server);
-};
+}
