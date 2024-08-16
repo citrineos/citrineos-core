@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: Apache 2.0
 
 // Base Library Interfaces
-
 export {
   AbstractModuleApi,
   AsDataEndpoint,
@@ -56,6 +55,7 @@ export * from './ocpp/persistence';
 export { BootConfig, BOOT_STATUS } from './config/BootConfig';
 export { defineConfig } from './config/defineConfig';
 export { SystemConfig, WebsocketServerConfig } from './config/types';
+export { SignedMeterValuesConfig } from './config/signedMeterValuesConfig';
 
 // Utils
 
@@ -134,6 +134,7 @@ import {
   UpdateFirmwareResponseSchema,
 } from './ocpp/model/index';
 import { CallAction } from './ocpp/rpc/message';
+import Ajv from 'ajv';
 
 export interface OcppRequest {}
 
@@ -231,7 +232,9 @@ export const CALL_RESULT_SCHEMA_MAP: Map<CallAction, object> = new Map<
 ]);
 
 export { eventGroupFromString } from './interfaces/messages';
-
 export { UnauthorizedException } from './interfaces/api/exceptions/unauthorized.exception';
 export { HttpHeader } from './interfaces/api/http.header';
 export { HttpStatus } from './interfaces/api/http.status';
+export { UnauthorizedError } from './interfaces/api/exception/UnauthorizedError';
+export { AuthorizationSecurity } from './interfaces/api/AuthorizationSecurity';
+export { Ajv };

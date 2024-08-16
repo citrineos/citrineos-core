@@ -3,7 +3,7 @@ import {
   StatusNotificationRequest,
 } from '@citrineos/base';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
-import { MOCK_CONNECTOR_ID, MOCK_EVSE_ID } from './DeviceModel';
+import { MOCK_CONNECTOR_ID, MOCK_EVSE_ID } from './DeviceModelProvider';
 
 export function aStatusNotificationRequest(
   updateFunction?: UpdateFunction<StatusNotificationRequest>,

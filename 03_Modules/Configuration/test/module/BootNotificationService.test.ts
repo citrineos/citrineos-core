@@ -5,7 +5,7 @@ import {
   RegistrationStatusEnumType,
   SystemConfig,
 } from '@citrineos/base';
-import { aValidBootConfig } from '../providers/BootConfig';
+import { aValidBootConfig } from '../providers/BootConfigProvider';
 import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall';
 
 type Configuration = SystemConfig['modules']['configuration'];
