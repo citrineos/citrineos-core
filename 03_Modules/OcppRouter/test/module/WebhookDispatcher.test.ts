@@ -3,7 +3,7 @@ import { jest } from '@jest/globals';
 import { ISubscriptionRepository, Subscription } from '@citrineos/data';
 import { WebhookDispatcher } from '../../src';
 import { MessageOrigin } from '@citrineos/base';
-import { aSubscription } from '../providers/subscription.provider.test';
+import { aSubscription } from '../providers/SubscriptionProvider';
 
 describe('WebhookDispatcher', () => {
   const fetch = jest.fn(() =>
