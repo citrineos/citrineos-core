@@ -1,6 +1,7 @@
 import { ITariffRepository, Tariff } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
 import { TransactionService } from './TransactionService';
+import { Money } from '@citrineos/base';
 
 export class CostCalculator {
   private readonly _logger: Logger<ILogObj>;
@@ -54,27 +55,18 @@ export class CostCalculator {
     this._logger.debug(
       `Calculating total cost for ${stationId} station and ${totalKwh} kWh`,
     );
-    let totalCost = 0;
-
     const tariff: Tariff | undefined =
       await this._tariffRepository.findByStationId(stationId);
     if (tariff) {
       this._logger.debug(`Tariff ${tariff.id} found for ${stationId} station`);
-      totalCost = this._roundCost(totalKwh * tariff.pricePerKwh);
+      return Money.of(tariff.pricePerKwh, tariff.currency)
+        .multiply(totalKwh)
+        .roundToCurrencyScale()
+        .toNumber();
     } else {
       this._logger.error(`Tariff not found for ${stationId} station`);
+      return 0;
     }
-
-    return totalCost;
   }
 
-  /**
-   * Round floor the given cost to 2 decimal places, e.g., given 1.2378, return 1.23
-   *
-   * @param {number} cost - cost
-   * @return {number} rounded cost
-   */
-  private _roundCost(cost: number): number {
-    return Math.floor(cost * 100) / 100;
-  }
 }

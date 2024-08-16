@@ -28,7 +28,7 @@ describe('CostCalculator', () => {
   });
 
   describe('calculateTotalCost', () => {
-    it.skip.each([
+    it.each([
       { tariff: aTariff({ pricePerKwh: 0.09 }), kwh: 20, expectedCost: 1.8 },
       { tariff: aTariff({ pricePerKwh: 0.14 }), kwh: 20, expectedCost: 2.8 },
       { tariff: aTariff({ pricePerKwh: 0.23 }), kwh: 20, expectedCost: 4.6 },
@@ -49,7 +49,7 @@ describe('CostCalculator', () => {
       },
     );
 
-    it.skip.each([
+    it.each([
       { tariff: aTariff({ pricePerKwh: 0.09 }), kwh: 20, expectedCost: 1.8 },
       { tariff: aTariff({ pricePerKwh: 0.14 }), kwh: 20, expectedCost: 2.8 },
       { tariff: aTariff({ pricePerKwh: 0.23 }), kwh: 20, expectedCost: 4.6 },

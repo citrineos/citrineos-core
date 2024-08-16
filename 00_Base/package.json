@@ -31,8 +31,9 @@
     "@faker-js/faker": "8.4.1"
   },
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "6.5.0",
+    "@types/big.js": "6.2.1",
     "ajv": "8.17.1",
+    "big.js": "6.2.1",
     "class-transformer": "0.5.1",
     "fastify": "4.22.2",
     "@fastify/auth": "4.6.1",
