@@ -13,7 +13,7 @@
 import { OcppRequest } from '../../..';
 
 export interface CancelReservationRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Id of the reservation to cancel.
    *

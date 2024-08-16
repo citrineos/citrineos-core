@@ -14,7 +14,7 @@ import { GetCertificateIdUseEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface GetInstalledCertificateIdsRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Indicates the type of certificates requested. When omitted, all certificate types are requested.
    *

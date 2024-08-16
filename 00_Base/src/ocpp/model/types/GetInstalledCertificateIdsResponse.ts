@@ -18,9 +18,9 @@ import {
 import { OcppResponse } from '../../..';
 
 export interface GetInstalledCertificateIdsResponse extends OcppResponse {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   status: GetInstalledCertificateStatusEnumType;
-  statusInfo?: StatusInfoType;
+  statusInfo?: StatusInfoType | null;
   /**
    * @minItems 1
    */
@@ -41,7 +41,7 @@ export interface CustomDataType {
  *
  */
 export interface StatusInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * A predefined code for the reason why the status is returned in this response. The string is case-insensitive.
    *
@@ -51,10 +51,10 @@ export interface StatusInfoType {
    * Additional text to provide detailed information.
    *
    */
-  additionalInfo?: string;
+  additionalInfo?: string | null;
 }
 export interface CertificateHashDataChainType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   certificateHashData: CertificateHashDataType;
   certificateType: GetCertificateIdUseEnumType;
   /**
@@ -77,7 +77,7 @@ export interface CertificateHashDataChainType {
       ];
 }
 export interface CertificateHashDataType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   hashAlgorithm: HashAlgorithmEnumType;
   /**
    * Hashed value of the Issuer DN (Distinguished Name).

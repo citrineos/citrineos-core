@@ -4,6 +4,11 @@
 // SPDX-License-Identifier: Apache 2.0
 /* eslint-disable */
 
+/**
+ * execution:
+ * - cd 00_Base
+ * - node json-schema-processor.js src/ocpp/model/schemas
+ */
 const fs = require('fs');
 const jsts = require('json-schema-to-typescript');
 const prettier = require('prettier');
@@ -177,6 +182,12 @@ async function processJsonSchema(data, writeToFile = true) {
             : '\n') +
           `import { ${schemaType} } from '../../..';\n` +
           ts.substring(index);
+
+        // Add null type to all optional properties
+        // This regex means a string starts with '?:' and ends with ';'
+        // and contains no '[' or ']' in between
+        const regex = /(\?:[^;\[\]]*);/g;
+        ts = ts.replaceAll(regex, '$1 | null;');
 
         if (writeToFile) {
           fs.writeFileSync(

@@ -12,6 +12,7 @@ export {
   HttpMethod,
   IModuleApi,
 } from './interfaces/api';
+export { BadRequestError } from './interfaces/api/exceptions/BadRequestError';
 export { CacheNamespace, ICache } from './interfaces/cache/cache';
 export {
   AbstractMessageRouter,
@@ -133,6 +134,7 @@ import {
   UpdateFirmwareResponseSchema,
 } from './ocpp/model/index';
 import { CallAction } from './ocpp/rpc/message';
+import Ajv from 'ajv';
 
 export interface OcppRequest {}
 
@@ -234,3 +236,5 @@ export { eventGroupFromString } from './interfaces/messages';
 export { UnauthorizedException } from './interfaces/api/exceptions/unauthorized.exception';
 export { HttpHeader } from './interfaces/api/http.header';
 export { HttpStatus } from './interfaces/api/http.status';
+
+export { Ajv };

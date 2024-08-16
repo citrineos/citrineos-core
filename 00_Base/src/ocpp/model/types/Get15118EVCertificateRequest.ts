@@ -14,7 +14,7 @@ import { CertificateActionEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface Get15118EVCertificateRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Schema version currently used for the 15118 session between EV and Charging Station. Needed for parsing of the EXI stream by the CSMS.
    *

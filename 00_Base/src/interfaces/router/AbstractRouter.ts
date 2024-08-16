@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import Ajv, { ErrorObject } from 'ajv';
+import { Ajv, ErrorObject } from 'ajv';
 
 import {
   Call,

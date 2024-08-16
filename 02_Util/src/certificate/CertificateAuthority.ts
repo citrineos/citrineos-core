@@ -66,7 +66,7 @@ export class CertificateAuthorityService {
   async getCertificateChain(
     csrString: string,
     stationId: string,
-    certificateType?: CertificateSigningUseEnumType,
+    certificateType?: CertificateSigningUseEnumType | null,
   ): Promise<string> {
     this._logger.info(
       `Getting certificate chain for certificateType: ${certificateType} and stationId: ${stationId}`,

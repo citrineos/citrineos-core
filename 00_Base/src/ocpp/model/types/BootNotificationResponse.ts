@@ -14,7 +14,7 @@ import { RegistrationStatusEnumType } from '../enums';
 import { OcppResponse } from '../../..';
 
 export interface BootNotificationResponse extends OcppResponse {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * This contains the CSMS’s current time.
    *
@@ -26,7 +26,7 @@ export interface BootNotificationResponse extends OcppResponse {
    */
   interval: number;
   status: RegistrationStatusEnumType;
-  statusInfo?: StatusInfoType;
+  statusInfo?: StatusInfoType | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -40,7 +40,7 @@ export interface CustomDataType {
  *
  */
 export interface StatusInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * A predefined code for the reason why the status is returned in this response. The string is case-insensitive.
    *
@@ -50,5 +50,5 @@ export interface StatusInfoType {
    * Additional text to provide detailed information.
    *
    */
-  additionalInfo?: string;
+  additionalInfo?: string | null;
 }

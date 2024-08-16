@@ -24,7 +24,7 @@ import {
 import { OcppRequest } from '../../..';
 
 export interface TransactionEventRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   eventType: TransactionEventEnumType;
   /**
    * @minItems 1
@@ -45,25 +45,25 @@ export interface TransactionEventRequest extends OcppRequest {
    * Indication that this transaction event happened when the Charging Station was offline. Default = false, meaning: the event occurred when the Charging Station was online.
    *
    */
-  offline?: boolean;
+  offline?: boolean | null;
   /**
    * If the Charging Station is able to report the number of phases used, then it SHALL provide it. When omitted the CSMS may be able to determine the number of phases used via device management.
    *
    */
-  numberOfPhasesUsed?: number;
+  numberOfPhasesUsed?: number | null;
   /**
    * The maximum current of the connected cable in Ampere (A).
    *
    */
-  cableMaxCurrent?: number;
+  cableMaxCurrent?: number | null;
   /**
    * This contains the Id of the reservation that terminates as a result of this transaction.
    *
    */
-  reservationId?: number;
+  reservationId?: number | null;
   transactionInfo: TransactionType;
-  evse?: EVSEType;
-  idToken?: IdTokenType;
+  evse?: EVSEType | null;
+  idToken?: IdTokenType | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -79,7 +79,7 @@ export interface CustomDataType {
  *
  */
 export interface MeterValueType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -101,7 +101,7 @@ export interface MeterValueType {
  *
  */
 export interface SampledValueType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Sampled_ Value. Value. Measure
    * urn:x-oca:ocpp:uid:1:569260
@@ -110,19 +110,19 @@ export interface SampledValueType {
    *
    */
   value: number;
-  context?: ReadingContextEnumType;
-  measurand?: MeasurandEnumType;
-  phase?: PhaseEnumType;
-  location?: LocationEnumType;
-  signedMeterValue?: SignedMeterValueType;
-  unitOfMeasure?: UnitOfMeasureType;
+  context?: ReadingContextEnumType | null;
+  measurand?: MeasurandEnumType | null;
+  phase?: PhaseEnumType | null;
+  location?: LocationEnumType | null;
+  signedMeterValue?: SignedMeterValueType | null;
+  unitOfMeasure?: UnitOfMeasureType | null;
 }
 /**
  * Represent a signed version of the meter value.
  *
  */
 export interface SignedMeterValueType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Base64 encoded, contains the signed data which might contain more then just the meter value. It can contain information like timestamps, reference to a customer etc.
    *
@@ -149,19 +149,19 @@ export interface SignedMeterValueType {
  *
  */
 export interface UnitOfMeasureType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Unit of the value. Default = "Wh" if the (default) measurand is an "Energy" type.
    * This field SHALL use a value from the list Standardized Units of Measurements in Part 2 Appendices.
    * If an applicable unit is available in that list, otherwise a "custom" unit might be used.
    *
    */
-  unit?: string;
+  unit?: string | null;
   /**
    * Multiplier, this value represents the exponent to base 10. I.e. multiplier 3 means 10 raised to the 3rd power. Default is 0.
    *
    */
-  multiplier?: number;
+  multiplier?: number | null;
 }
 /**
  * Transaction
@@ -169,26 +169,26 @@ export interface UnitOfMeasureType {
  *
  */
 export interface TransactionType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * This contains the Id of the transaction.
    *
    */
   transactionId: string;
-  chargingState?: ChargingStateEnumType;
+  chargingState?: ChargingStateEnumType | null;
   /**
    * Transaction. Time_ Spent_ Charging. Elapsed_ Time
    * urn:x-oca:ocpp:uid:1:569415
    * Contains the total time that energy flowed from EVSE to EV during the transaction (in seconds). Note that timeSpentCharging is smaller or equal to the duration of the transaction.
    *
    */
-  timeSpentCharging?: number;
-  stoppedReason?: ReasonEnumType;
+  timeSpentCharging?: number | null;
+  stoppedReason?: ReasonEnumType | null;
   /**
    * The ID given to remote start request (&lt;&lt;requeststarttransactionrequest, RequestStartTransactionRequest&gt;&gt;. This enables to CSMS to match the started transaction to the given start request.
    *
    */
-  remoteStartId?: number;
+  remoteStartId?: number | null;
 }
 /**
  * EVSE
@@ -197,7 +197,7 @@ export interface TransactionType {
  *
  */
 export interface EVSEType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Identified_ Object. MRID. Numeric_ Identifier
    * urn:x-enexis:ecdm:uid:1:569198
@@ -209,14 +209,14 @@ export interface EVSEType {
    * An id to designate a specific connector (on an EVSE) by connector index number.
    *
    */
-  connectorId?: number;
+  connectorId?: number | null;
 }
 /**
  * Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.
  *
  */
 export interface IdTokenType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -233,7 +233,7 @@ export interface IdTokenType {
  *
  */
 export interface AdditionalInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * This field specifies the additional IdToken.
    *
