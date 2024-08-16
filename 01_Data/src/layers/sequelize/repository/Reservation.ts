@@ -72,6 +72,6 @@ export class SequelizeReservationRepository extends SequelizeRepository<Reservat
   }
 
   async getNextReservationId(stationId: string): Promise<number> {
-    return await this.readNextId('id', { where: { stationId } });
+    return await this.readNextValue('id', { where: { stationId } });
   }
 }

@@ -11,16 +11,19 @@ import {
   CallAction,
   CostUpdatedResponse,
   CrudRepository,
+  ErrorCode,
   EventGroup,
   GetTransactionStatusResponse,
   HandlerProperties,
   ICache,
+  IFileAccess,
   IMessage,
   IMessageHandler,
   IMessageSender,
   MeterValuesRequest,
   MeterValuesResponse,
   MeterValueUtils,
+  OcppError,
   StatusNotificationRequest,
   StatusNotificationResponse,
   SystemConfig,
@@ -46,6 +49,7 @@ import {
   IAuthorizer,
   RabbitMqReceiver,
   RabbitMqSender,
+  SignedMeterValuesUtil,
   Timer,
 } from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
@@ -80,7 +84,11 @@ export class TransactionsModule extends AbstractModule {
   protected _transactionService: TransactionService;
   protected _statusNotificationService: StatusNotificationService;
 
-  private _authorizers: IAuthorizer[];
+  protected _fileAccess: IFileAccess;
+
+  private readonly _authorizers: IAuthorizer[];
+
+  private readonly _signedMeterValuesUtil: SignedMeterValuesUtil;
   private _costNotifier: CostNotifier;
   private _costCalculator: CostCalculator;
 
@@ -88,11 +96,13 @@ export class TransactionsModule extends AbstractModule {
   private readonly _costUpdatedInterval: number | undefined;
 
   /**
-   * This is the constructor function that initializes the {@link TransactionModule}.
+   * This is the constructor function that initializes the {@link TransactionsModule}.
    *
    * @param {SystemConfig} config - The `config` contains configuration settings for the module.
    *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
+   *
+   * @param {IFileAccess} [fileAccess] - The `fileAccess` allows access to the configured file storage.
    *
    * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
@@ -101,7 +111,7 @@ export class TransactionsModule extends AbstractModule {
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
    *
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
+   * It is used to propagate system-wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
    * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository} which represents a repository for accessing and manipulating transaction event data.
    * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance
@@ -146,6 +156,7 @@ export class TransactionsModule extends AbstractModule {
   constructor(
     config: SystemConfig,
     cache: ICache,
+    fileAccess: IFileAccess,
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
@@ -176,6 +187,8 @@ export class TransactionsModule extends AbstractModule {
       );
     }
 
+    this._fileAccess = fileAccess;
+
     this._transactionEventRepository =
       transactionEventRepository ||
       new sequelize.SequelizeTransactionEventRepository(config, logger);
@@ -199,6 +212,12 @@ export class TransactionsModule extends AbstractModule {
       new sequelize.SequelizeReservationRepository(config, logger);
 
     this._authorizers = authorizers || [];
+
+    this._signedMeterValuesUtil = new SignedMeterValuesUtil(
+      fileAccess,
+      config,
+      this._logger,
+    );
 
     this._sendCostUpdatedOnMeterValue =
       config.modules.transactions.sendCostUpdatedOnMeterValue;
@@ -368,6 +387,20 @@ export class TransactionsModule extends AbstractModule {
         );
       }
 
+      if (transactionEvent.meterValue) {
+        const meterValuesValid =
+          await this._signedMeterValuesUtil.validateMeterValues(
+            stationId,
+            transactionEvent.meterValue,
+          );
+
+        if (!meterValuesValid) {
+          this._logger.warn(
+            'One or more MeterValues in this TransactionEvent have an invalid signature.',
+          );
+        }
+      }
+
       this.sendCallResultWithMessage(message, response).then(
         (messageConfirmation) => {
           this._logger.debug(
@@ -386,10 +419,32 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('MeterValues received:', message, props);
 
-    // TODO: Add meterValues to transactions
     // TODO: Meter values can be triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
     // TODO: If sendCostUpdatedOnMeterValue is true, meterValues handler triggers cost update
     //  when it is added into a transaction
+
+    const meterValues = message.payload.meterValue;
+    const stationId = message.context.stationId;
+
+    await Promise.all(
+      meterValues.map((meterValue) =>
+        this.transactionEventRepository.createMeterValue(meterValue),
+      ),
+    );
+
+    const meterValuesValid =
+      await this._signedMeterValuesUtil.validateMeterValues(
+        stationId,
+        meterValues,
+      );
+
+    if (!meterValuesValid) {
+      throw new OcppError(
+        message.context.correlationId,
+        ErrorCode.SecurityError,
+        'One or more MeterValues have an invalid signature.',
+      );
+    }
 
     const response: MeterValuesResponse = {
       // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users

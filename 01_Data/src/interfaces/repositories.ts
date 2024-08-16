@@ -35,9 +35,10 @@ import {
   CompositeScheduleType,
   StatusNotificationRequest,
   ReserveNowRequest,
+  MeterValueType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
-import { CallMessage, CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
+import { CallMessage, ChargingStationSecurityInfo, CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
 import { type VariableAttribute } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { type Authorization, type Boot, type Certificate, ChargingNeeds, type ChargingStation, type Component, type EventData, Evse, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';
@@ -105,6 +106,7 @@ export interface ISubscriptionRepository extends CrudRepository<Subscription> {
 
 export interface ITransactionEventRepository extends CrudRepository<TransactionEventRequest> {
   createOrUpdateTransactionByTransactionEventAndStationId(value: TransactionEventRequest, stationId: string): Promise<Transaction>;
+  createMeterValue(value: MeterValueType): Promise<void>;
   readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]>;
   readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
   readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: EVSEType, chargingStates?: ChargingStateEnumType[]): Promise<Transaction[]>;
@@ -153,3 +155,8 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
 }
 
 export interface ICallMessageRepository extends CrudRepository<CallMessage> {}
+
+export interface IChargingStationSecurityInfoRepository extends CrudRepository<ChargingStationSecurityInfo> {
+  readChargingStationPublicKeyFileId(stationId: string): Promise<string>;
+  readOrCreateChargingStationInfo(stationId: string, publicKeyFileId: string): Promise<void>;
+}
