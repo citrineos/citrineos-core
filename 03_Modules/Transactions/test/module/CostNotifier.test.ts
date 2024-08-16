@@ -4,7 +4,7 @@ import { ITransactionEventRepository, Transaction } from '@citrineos/data';
 import { AbstractModule, CallAction } from '@citrineos/base';
 import { CostCalculator } from '../../src/module/CostCalculator';
 import { CostNotifier } from '../../src/module/CostNotifier';
-import { aTransaction } from '../providers/Transaction';
+import { aTransaction } from '../providers/TransactionProvider';
 
 describe('CostNotifier', () => {
   const anyTenantId = faker.string.uuid();
