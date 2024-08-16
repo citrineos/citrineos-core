@@ -1,7 +1,10 @@
 import { Boot, IBootRepository } from '@citrineos/data';
 import { BootNotificationService } from '../../src/module/BootNotificationService';
 import { RegistrationStatusEnumType, SystemConfig } from '@citrineos/base';
-import { aValidBootConfig, aValidConfiguration } from '../providers/BootConfig';
+import {
+  aValidBootConfig,
+  aValidConfiguration,
+} from '../providers/BootConfigProvider';
 
 type Configuration = SystemConfig['modules']['configuration'];
 

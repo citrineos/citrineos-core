@@ -18,4 +18,11 @@ export interface IDataEndpointDefinition {
   httpMethod: HttpMethod;
   querySchema?: object;
   bodySchema?: object;
+  paramSchema?: object;
+  headerSchema?: object;
+  responseSchema?: object;
+  description?: string;
+  tags?: string[];
+  summary?: string;
+  security?: object[];
 }

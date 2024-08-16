@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: Apache 2.0
 
 // Base Library Interfaces
-
 export {
   AbstractModuleApi,
   AsDataEndpoint,
@@ -233,9 +232,9 @@ export const CALL_RESULT_SCHEMA_MAP: Map<CallAction, object> = new Map<
 ]);
 
 export { eventGroupFromString } from './interfaces/messages';
-
 export { UnauthorizedException } from './interfaces/api/exceptions/unauthorized.exception';
 export { HttpHeader } from './interfaces/api/http.header';
 export { HttpStatus } from './interfaces/api/http.status';
-
+export { UnauthorizedError } from './interfaces/api/exception/UnauthorizedError';
+export { AuthorizationSecurity } from './interfaces/api/AuthorizationSecurity';
 export { Ajv };
