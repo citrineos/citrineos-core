@@ -6,6 +6,7 @@
 import {
   type AbstractModule,
   type AbstractModuleApi,
+  Ajv,
   EventGroup,
   eventGroupFromString,
   type IAuthenticator,
@@ -29,7 +30,6 @@ import {
   WebsocketNetworkConnection,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import fastify, { type FastifyInstance } from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
@@ -58,19 +58,13 @@ import {
   type FastifySchemaCompiler,
   type FastifyValidationResult,
 } from 'fastify/types/schema';
-import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter';
-import { Container, OcpiServer, OcpiServerConfig } from '@citrineos/ocpi-base';
-import { CommandsModule } from '@citrineos/ocpi-commands';
-import { VersionsModule } from '@citrineos/ocpi-versions';
-import { CredentialsModule } from '@citrineos/ocpi-credentials';
+import {
+  AdminApi,
+  MessageRouterImpl,
+  WebhookDispatcher,
+} from '@citrineos/ocpprouter';
 import { Sequelize } from 'sequelize-typescript';
 import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
-import { LocationsModule } from '@citrineos/ocpi-locations';
-import { SessionsModule } from '@citrineos/ocpi-sessions';
-import { ChargingProfilesModule } from '@citrineos/ocpi-charging-profiles';
-import { TariffsModule } from '@citrineos/ocpi-tariffs';
-import { CdrsModule } from '@citrineos/ocpi-cdrs';
-import { RealTimeAuthorizer, TokensModule } from '@citrineos/ocpi-tokens';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -97,7 +91,6 @@ export class CitrineOSServer {
   private _authenticator?: IAuthenticator;
   private _networkConnection?: WebsocketNetworkConnection;
   private _repositoryStore!: RepositoryStore;
-  private ocpiRealTimeAuthorizer!: RealTimeAuthorizer;
 
   /**
    * Constructor for the class.
@@ -173,9 +166,6 @@ export class CitrineOSServer {
     // Register AJV for schema validation
     this.registerAjv();
 
-    // start ocpi needs to happen first to load authorizer
-    this.startOcpiServer(config.ocpiServer.host, config.ocpiServer.port);
-
     // Initialize module & API
     // Always initialize API after SwaggerUI
     this.initSystem(appName);
@@ -228,56 +218,6 @@ export class CitrineOSServer {
 
   protected _createHandler(): IMessageHandler {
     return new RabbitMqReceiver(this._config, this._logger);
-  }
-
-  protected getOcpiModuleConfig() {
-    return [
-      {
-        module: VersionsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: CredentialsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: CommandsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: LocationsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: SessionsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: ChargingProfilesModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: TariffsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: CdrsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: TokensModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-    ];
   }
 
   private initHealthCheck() {
@@ -357,12 +297,17 @@ export class CitrineOSServer {
       this._logger,
     );
 
+    const webhookDispatcher = new WebhookDispatcher(
+      this._repositoryStore.subscriptionRepository,
+    );
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const router = new MessageRouterImpl(
       this._config,
       this._cache,
       this._createSender(),
       this._createHandler(),
+      webhookDispatcher,
       async (_identifier: string, _message: string) => false,
       this._logger,
       this._ajv,
@@ -383,8 +328,6 @@ export class CitrineOSServer {
   }
 
   private initAllModules() {
-    this.ocpiRealTimeAuthorizer = Container.get(RealTimeAuthorizer);
-
     if (this._config.modules.certificates) {
       const module = new CertificatesModule(
         this._config,
@@ -436,10 +379,6 @@ export class CitrineOSServer {
         this._repositoryStore.authorizationRepository,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.tariffRepository,
-        undefined,
-        undefined,
-        undefined,
-        [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);
       this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
@@ -496,6 +435,7 @@ export class CitrineOSServer {
       const module = new TransactionsModule(
         this._config,
         this._cache,
+        this._fileAccess,
         this._createSender(),
         this._createHandler(),
         this._logger,
@@ -505,7 +445,6 @@ export class CitrineOSServer {
         this._repositoryStore.componentRepository,
         this._repositoryStore.locationRepository,
         this._repositoryStore.tariffRepository,
-        [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);
       this.apis.push(
@@ -518,17 +457,6 @@ export class CitrineOSServer {
       this.host = this._config.centralSystem.host as string;
       this.port = this._config.centralSystem.port as number;
     }
-  }
-
-  private startOcpiServer(host: string, port: number) {
-    const ocpiServer = new OcpiServer(
-      this._config as OcpiServerConfig,
-      this._cache,
-      this._logger,
-      this.getOcpiModuleConfig(),
-      this._repositoryStore,
-    );
-    ocpiServer.run(host, port);
   }
 
   private initModule(moduleConfig: ModuleConfig) {

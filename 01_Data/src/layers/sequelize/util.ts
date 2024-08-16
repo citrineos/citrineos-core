@@ -12,11 +12,13 @@ import {
   AdditionalInfo,
   Authorization,
   Boot,
+  CallMessage,
   Certificate,
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
   ChargingStation,
+  ChargingStationSecurityInfo,
   Component,
   CompositeSchedule,
   EventData,
@@ -25,6 +27,7 @@ import {
   IdTokenInfo,
   Location,
   MeterValue,
+  Reservation,
   SalesTariff,
   SecurityEvent,
   Transaction,
@@ -40,7 +43,7 @@ import { MessageInfo } from './model/MessageInfo';
 import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
 import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
-import { StatusNotification } from './model/Location/StatusNotification';
+import { StatusNotification } from './model/Location';
 
 export class DefaultSequelizeInstance {
   /**
@@ -74,11 +77,13 @@ export class DefaultSequelizeInstance {
         AdditionalInfo,
         Authorization,
         Boot,
+        CallMessage,
         Certificate,
         ChargingNeeds,
         ChargingProfile,
         ChargingSchedule,
         ChargingStation,
+        ChargingStationSecurityInfo,
         Component,
         ComponentVariable,
         CompositeSchedule,
@@ -90,6 +95,7 @@ export class DefaultSequelizeInstance {
         Location,
         MeterValue,
         MessageInfo,
+        Reservation,
         SalesTariff,
         SecurityEvent,
         StatusNotification,

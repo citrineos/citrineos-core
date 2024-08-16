@@ -8,6 +8,7 @@
 /* eslint-disable @typescript-eslint/quotes */
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 import {
+  Ajv,
   EventGroup,
   IAuthenticator,
   ICache,
@@ -29,7 +30,6 @@ import {
   WebsocketNetworkConnection,
 } from '@citrineos/util';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import fastify, { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
@@ -47,7 +47,7 @@ import {
   CertificatesModuleApi,
 } from '@citrineos/certificates';
 import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
-import { MessageRouterImpl, AdminApi } from '@citrineos/ocpprouter';
+import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import {
   SmartChargingModule,

@@ -54,7 +54,7 @@ export class VariableMonitoring extends Model implements VariableMonitoringType 
   @Column({
     type: DataType.INTEGER,
   })
-  declare variableId?: number;
+  declare variableId?: number | null;
 
   @BelongsTo(() => Component)
   declare component: ComponentType;
@@ -63,7 +63,7 @@ export class VariableMonitoring extends Model implements VariableMonitoringType 
   @Column({
     type: DataType.INTEGER,
   })
-  declare componentId?: number;
+  declare componentId?: number | null;
 
-  declare customData?: CustomDataType;
+  declare customData?: CustomDataType | null;
 }

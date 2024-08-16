@@ -35,7 +35,7 @@
         "source": "src/hook-on-create-charging-station/index.ts"
       }
     ],
-    "host": "^10.10.0"
+    "host": "10.10.0"
   },
   "scripts": {
     "build": "npx directus-extension build",
@@ -44,11 +44,11 @@
     "add": "npx directus-extension add"
   },
   "devDependencies": {
-    "@types/node": "^20.11.30",
-    "typescript": "^5.4.3"
+    "@types/node": "20.11.30",
+    "typescript": "5.4.3"
   },
   "dependencies": {
-    "@directus/extensions-sdk": "^11.0.1",
-    "@directus/types": "^11.0.7"
+    "@directus/extensions-sdk": "11.0.1",
+    "@directus/types": "11.0.7"
   }
 }

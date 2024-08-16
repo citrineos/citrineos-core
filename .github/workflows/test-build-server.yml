@@ -13,9 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clone citrineos-ocpi repository
-        run: git clone https://github.com/citrineos/citrineos-ocpi.git ../citrineos-ocpi
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -55,4 +52,4 @@ jobs:
           docker container ls -aq | xargs -I {} docker logs {}
 
       - name: Clean up
-        run: docker-compose -f ${{ github.workspace }}/Server/docker-compose.yml down
+        run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml down

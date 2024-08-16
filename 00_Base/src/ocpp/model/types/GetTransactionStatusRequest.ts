@@ -13,12 +13,12 @@
 import { OcppRequest } from '../../..';
 
 export interface GetTransactionStatusRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * The Id of the transaction for which the status is requested.
    *
    */
-  transactionId?: string;
+  transactionId?: string | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

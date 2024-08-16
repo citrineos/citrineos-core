@@ -14,9 +14,9 @@ import { DataTransferStatusEnumType } from '../enums';
 import { OcppResponse } from '../../..';
 
 export interface DataTransferResponse extends OcppResponse {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   status: DataTransferStatusEnumType;
-  statusInfo?: StatusInfoType;
+  statusInfo?: StatusInfoType | null;
   /**
    * Data without specified length or format, in response to request.
    *
@@ -37,7 +37,7 @@ export interface CustomDataType {
  *
  */
 export interface StatusInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * A predefined code for the reason why the status is returned in this response. The string is case-insensitive.
    *
@@ -47,5 +47,5 @@ export interface StatusInfoType {
    * Additional text to provide detailed information.
    *
    */
-  additionalInfo?: string;
+  additionalInfo?: string | null;
 }

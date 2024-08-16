@@ -5,27 +5,25 @@
 
 import {
   AbstractModule,
-  AdditionalInfoType,
   AsHandler,
   AttributeEnumType,
   AuthorizationStatusEnumType,
   CallAction,
-  CostUpdatedRequest,
   CostUpdatedResponse,
   CrudRepository,
+  ErrorCode,
   EventGroup,
   GetTransactionStatusResponse,
   HandlerProperties,
   ICache,
-  IdTokenInfoType,
-  IdTokenType,
+  IFileAccess,
   IMessage,
   IMessageHandler,
   IMessageSender,
   MeterValuesRequest,
   MeterValuesResponse,
   MeterValueUtils,
-  ReportDataType,
+  OcppError,
   StatusNotificationRequest,
   StatusNotificationResponse,
   SystemConfig,
@@ -34,29 +32,32 @@ import {
   TransactionEventResponse,
 } from '@citrineos/base';
 import {
-  Authorization,
   Component,
-  Evse,
   IAuthorizationRepository,
   IDeviceModelRepository,
   ILocationRepository,
+  IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
   sequelize,
   SequelizeRepository,
   Tariff,
   Transaction,
-  Variable,
   VariableAttribute,
 } from '@citrineos/data';
 import {
   IAuthorizer,
   RabbitMqReceiver,
   RabbitMqSender,
+  SignedMeterValuesUtil,
   Timer,
 } from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
+import { TransactionService } from './TransactionService';
+import { StatusNotificationService } from './StatusNotificationService';
+import { CostNotifier } from './CostNotifier';
+import { CostCalculator } from './CostCalculator';
 
 /**
  * Component that handles transaction related messages.
@@ -78,18 +79,30 @@ export class TransactionsModule extends AbstractModule {
   protected _componentRepository: CrudRepository<Component>;
   protected _locationRepository: ILocationRepository;
   protected _tariffRepository: ITariffRepository;
+  protected _reservationRepository: IReservationRepository;
 
-  private _authorizers: IAuthorizer[];
+  protected _transactionService: TransactionService;
+  protected _statusNotificationService: StatusNotificationService;
+
+  protected _fileAccess: IFileAccess;
+
+  private readonly _authorizers: IAuthorizer[];
+
+  private readonly _signedMeterValuesUtil: SignedMeterValuesUtil;
+  private _costNotifier: CostNotifier;
+  private _costCalculator: CostCalculator;
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
   private readonly _costUpdatedInterval: number | undefined;
 
   /**
-   * This is the constructor function that initializes the {@link TransactionModule}.
+   * This is the constructor function that initializes the {@link TransactionsModule}.
    *
    * @param {SystemConfig} config - The `config` contains configuration settings for the module.
    *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
+   *
+   * @param {IFileAccess} [fileAccess] - The `fileAccess` allows access to the configured file storage.
    *
    * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
@@ -98,7 +111,7 @@ export class TransactionsModule extends AbstractModule {
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
    *
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
+   * It is used to propagate system-wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
    * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository} which represents a repository for accessing and manipulating transaction event data.
    * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance
@@ -133,12 +146,17 @@ export class TransactionsModule extends AbstractModule {
    * If no `tariffRepository` is provided, a default {@link sequelize:tariffRepository} instance is
    * created and used.
    *
+   * @param {IReservationRepository} [reservationRepository] - An optional parameter of type {@link IReservationRepository}
+   * which represents a repository for accessing and manipulating reservation data.
+   * If no `reservationRepository` is provided, a default {@link sequelize:reservationRepository} instance is created and used.
+   *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
    */
   constructor(
     config: SystemConfig,
     cache: ICache,
+    fileAccess: IFileAccess,
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
@@ -148,6 +166,7 @@ export class TransactionsModule extends AbstractModule {
     componentRepository?: CrudRepository<Component>,
     locationRepository?: ILocationRepository,
     tariffRepository?: ITariffRepository,
+    reservationRepository?: IReservationRepository,
     authorizers?: IAuthorizer[],
   ) {
     super(
@@ -168,6 +187,8 @@ export class TransactionsModule extends AbstractModule {
       );
     }
 
+    this._fileAccess = fileAccess;
+
     this._transactionEventRepository =
       transactionEventRepository ||
       new sequelize.SequelizeTransactionEventRepository(config, logger);
@@ -186,12 +207,48 @@ export class TransactionsModule extends AbstractModule {
     this._tariffRepository =
       tariffRepository ||
       new sequelize.SequelizeTariffRepository(config, logger);
+    this._reservationRepository =
+      reservationRepository ||
+      new sequelize.SequelizeReservationRepository(config, logger);
 
     this._authorizers = authorizers || [];
+
+    this._signedMeterValuesUtil = new SignedMeterValuesUtil(
+      fileAccess,
+      config,
+      this._logger,
+    );
 
     this._sendCostUpdatedOnMeterValue =
       config.modules.transactions.sendCostUpdatedOnMeterValue;
     this._costUpdatedInterval = config.modules.transactions.costUpdatedInterval;
+
+    this._transactionService = new TransactionService(
+      this._transactionEventRepository,
+      this._authorizeRepository,
+      this._authorizers,
+      this._logger,
+    );
+
+    this._statusNotificationService = new StatusNotificationService(
+      this._componentRepository,
+      this._deviceModelRepository,
+      this._locationRepository,
+      this._logger,
+    );
+
+    this._costCalculator = new CostCalculator(
+      this._tariffRepository,
+      this._transactionService,
+      this._logger,
+    );
+
+    this._costNotifier = new CostNotifier(
+      this,
+      this._transactionEventRepository,
+      this._costCalculator,
+      this._logger,
+    );
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -231,17 +288,26 @@ export class TransactionsModule extends AbstractModule {
 
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
+
+    if (message.payload.reservationId) {
+      await this._reservationRepository.updateAllByQuery(
+        {
+          terminatedByTransaction: transactionId,
+          isActive: false,
+        },
+        {
+          where: {
+            id: message.payload.reservationId,
+            stationId: stationId,
+          },
+        },
+      );
+    }
+
     if (transactionEvent.idToken) {
-      const authorizations =
-        await this._authorizeRepository.readAllByQuerystring({
-          ...transactionEvent.idToken,
-        });
-      const response = await this.buildTransactionEventResponse(
-        authorizations,
-        message,
-        stationId,
-        transactionId,
+      const response = await this._transactionService.authorizeIdToken(
         transactionEvent,
+        message.context,
       );
       this.sendCallResultWithMessage(message, response).then(
         (messageConfirmation) => {
@@ -251,6 +317,19 @@ export class TransactionsModule extends AbstractModule {
           );
         },
       );
+      // If the transaction is accepted and interval is set, start the cost update
+      if (
+        transactionEvent.eventType === TransactionEventEnumType.Started &&
+        response.idTokenInfo?.status === AuthorizationStatusEnumType.Accepted &&
+        this._costUpdatedInterval
+      ) {
+        this._costNotifier.notifyWhileActive(
+          stationId,
+          transactionId,
+          message.context.tenantId,
+          this._costUpdatedInterval,
+        );
+      }
     } else {
       const response: TransactionEventResponse = {
         // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
@@ -269,7 +348,7 @@ export class TransactionsModule extends AbstractModule {
           transaction.isActive &&
           this._sendCostUpdatedOnMeterValue
         ) {
-          response.totalCost = await this._calculateTotalCost(
+          response.totalCost = await this._costCalculator.calculateTotalCost(
             stationId,
             transaction.id,
             transaction.totalKwh,
@@ -301,11 +380,25 @@ export class TransactionsModule extends AbstractModule {
         message.payload.eventType === TransactionEventEnumType.Ended &&
         transaction
       ) {
-        response.totalCost = await this._calculateTotalCost(
+        response.totalCost = await this._costCalculator.calculateTotalCost(
           stationId,
           transaction.id,
           transaction.totalKwh,
         );
+      }
+
+      if (transactionEvent.meterValue) {
+        const meterValuesValid =
+          await this._signedMeterValuesUtil.validateMeterValues(
+            stationId,
+            transactionEvent.meterValue,
+          );
+
+        if (!meterValuesValid) {
+          this._logger.warn(
+            'One or more MeterValues in this TransactionEvent have an invalid signature.',
+          );
+        }
       }
 
       this.sendCallResultWithMessage(message, response).then(
@@ -326,10 +419,32 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('MeterValues received:', message, props);
 
-    // TODO: Add meterValues to transactions
     // TODO: Meter values can be triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
     // TODO: If sendCostUpdatedOnMeterValue is true, meterValues handler triggers cost update
     //  when it is added into a transaction
+
+    const meterValues = message.payload.meterValue;
+    const stationId = message.context.stationId;
+
+    await Promise.all(
+      meterValues.map((meterValue) =>
+        this.transactionEventRepository.createMeterValue(meterValue),
+      ),
+    );
+
+    const meterValuesValid =
+      await this._signedMeterValuesUtil.validateMeterValues(
+        stationId,
+        meterValues,
+      );
+
+    if (!meterValuesValid) {
+      throw new OcppError(
+        message.context.correlationId,
+        ErrorCode.SecurityError,
+        'One or more MeterValues have an invalid signature.',
+      );
+    }
 
     const response: MeterValuesResponse = {
       // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
@@ -349,63 +464,10 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('StatusNotification received:', message, props);
 
-    const stationId = message.context.stationId;
-    const statusNotificationRequest = message.payload;
-
-    const chargingStation =
-      await this._locationRepository.readChargingStationByStationId(stationId);
-    if (chargingStation) {
-      await this._locationRepository.addStatusNotificationToChargingStation(
-        stationId,
-        statusNotificationRequest,
-      );
-    } else {
-      this._logger.warn(
-        `Charging station ${stationId} not found. Status notification cannot be associated with a charging station.`,
-      );
-    }
-
-    const component = await this._componentRepository.readOnlyOneByQuery({
-      where: {
-        name: 'Connector',
-      },
-      include: [
-        {
-          model: Evse,
-          where: {
-            id: statusNotificationRequest.evseId,
-            connectorId: statusNotificationRequest.connectorId,
-          },
-        },
-        {
-          model: Variable,
-          where: {
-            name: 'AvailabilityState',
-          },
-        },
-      ],
-    });
-    const variable = component?.variables?.[0];
-    if (!component || !variable) {
-      this._logger.warn(
-        'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
-      );
-    } else {
-      const reportDataType: ReportDataType = {
-        component: component,
-        variable: variable,
-        variableAttribute: [
-          {
-            value: statusNotificationRequest.connectorStatus,
-          },
-        ],
-      };
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-        reportDataType,
-        stationId,
-        statusNotificationRequest.timestamp,
-      );
-    }
+    await this._statusNotificationService.processStatusNotification(
+      message.context.stationId,
+      message.payload,
+    );
 
     // Create response
     const response: StatusNotificationResponse = {};
@@ -441,215 +503,5 @@ export class TransactionsModule extends AbstractModule {
       message,
       props,
     );
-  }
-
-  private async buildTransactionEventResponse(
-    authorizations: Authorization[],
-    message: IMessage<TransactionEventRequest>,
-    stationId: string,
-    transactionId: string,
-    transactionEvent: TransactionEventRequest,
-  ): Promise<TransactionEventResponse> {
-    const transactionEventResponse: TransactionEventResponse = {
-      idTokenInfo: {
-        status: AuthorizationStatusEnumType.Unknown,
-        // TODO determine how/if to set personalMessage
-      },
-    };
-
-    if (authorizations.length !== 1) {
-      return transactionEventResponse;
-    }
-
-    const authorization = authorizations[0];
-    if (authorization) {
-      if (authorization.idTokenInfo) {
-        // Extract DTO fields from sequelize Model<any, any> objects
-        const idTokenInfo: IdTokenInfoType = {
-          status: authorization.idTokenInfo.status,
-          cacheExpiryDateTime: authorization.idTokenInfo.cacheExpiryDateTime,
-          chargingPriority: authorization.idTokenInfo.chargingPriority,
-          language1: authorization.idTokenInfo.language1,
-          evseId: authorization.idTokenInfo.evseId,
-          groupIdToken: authorization.idTokenInfo.groupIdToken
-            ? {
-                additionalInfo:
-                  authorization.idTokenInfo.groupIdToken.additionalInfo &&
-                  authorization.idTokenInfo.groupIdToken.additionalInfo.length >
-                    0
-                    ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                        (additionalInfo) => ({
-                          additionalIdToken: additionalInfo.additionalIdToken,
-                          type: additionalInfo.type,
-                        }),
-                      ) as [AdditionalInfoType, ...AdditionalInfoType[]])
-                    : undefined,
-                idToken: authorization.idTokenInfo.groupIdToken.idToken,
-                type: authorization.idTokenInfo.groupIdToken.type,
-              }
-            : undefined,
-          language2: authorization.idTokenInfo.language2,
-          personalMessage: authorization.idTokenInfo.personalMessage,
-        };
-
-        if (idTokenInfo.status === AuthorizationStatusEnumType.Accepted) {
-          if (
-            idTokenInfo.cacheExpiryDateTime &&
-            new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
-          ) {
-            transactionEventResponse.idTokenInfo = {
-              status: AuthorizationStatusEnumType.Invalid,
-              groupIdToken: idTokenInfo.groupIdToken,
-              // TODO determine how/if to set personalMessage
-            };
-          } else {
-            // TODO: Determine how to check for NotAllowedTypeEVSE, NotAtThisLocation, NotAtThisTime, NoCredit
-            // TODO: allow for a 'real time auth' type call to fetch token status.
-            transactionEventResponse.idTokenInfo = idTokenInfo;
-          }
-          for (const authorizer of this._authorizers) {
-            if (
-              transactionEventResponse.idTokenInfo.status !==
-              AuthorizationStatusEnumType.Accepted
-            ) {
-              break;
-            }
-            const result: Partial<IdTokenType> = await authorizer.authorize(
-              authorization,
-              message.context,
-            );
-            Object.assign(transactionEventResponse.idTokenInfo, result);
-          }
-        } else {
-          // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
-          // N.B. Other non-Accepted statuses should not be allowed to be stored.
-          transactionEventResponse.idTokenInfo = idTokenInfo;
-        }
-      } else {
-        // Assumed to always be valid without IdTokenInfo
-        transactionEventResponse.idTokenInfo = {
-          status: AuthorizationStatusEnumType.Accepted,
-          // TODO determine how/if to set personalMessage
-        };
-      }
-    }
-
-    if (
-      transactionEvent.eventType === TransactionEventEnumType.Started &&
-      transactionEventResponse &&
-      transactionEventResponse.idTokenInfo?.status ===
-        AuthorizationStatusEnumType.Accepted &&
-      transactionEvent.idToken
-    ) {
-      if (this._costUpdatedInterval) {
-        this._updateCost(
-          stationId,
-          transactionId,
-          this._costUpdatedInterval,
-          message.context.tenantId,
-        );
-      }
-
-      // TODO there should only be one active transaction per evse of a station.
-      // old transactions should be marked inactive and an alert should be raised (this can only happen in the field with charger bugs or missed messages)
-
-      // Check for ConcurrentTx
-      const activeTransactions =
-        await this._transactionEventRepository.readAllActiveTransactionsByIdToken(
-          transactionEvent.idToken,
-        );
-
-      // Transaction in this TransactionEventRequest has already been saved, so there should only be 1 active transaction for idToken
-      if (activeTransactions.length > 1) {
-        const groupIdToken = transactionEventResponse.idTokenInfo?.groupIdToken;
-        transactionEventResponse.idTokenInfo = {
-          status: AuthorizationStatusEnumType.ConcurrentTx,
-          groupIdToken: groupIdToken,
-          // TODO determine how/if to set personalMessage
-        };
-      }
-    }
-
-    return transactionEventResponse;
-  }
-
-  /**
-   * Round floor the given cost to 2 decimal places, e.g., given 1.2378, return 1.23
-   *
-   * @param {number} cost - cost
-   * @return {number} rounded cost
-   */
-  private _roundCost(cost: number): number {
-    return Math.floor(cost * 100) / 100;
-  }
-
-  private async _calculateTotalCost(
-    stationId: string,
-    transactionDbId: number,
-    totalKwh?: number,
-  ): Promise<number> {
-    // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
-    //  implementation is finalized
-    let totalCost = 0;
-
-    const tariff: Tariff | undefined =
-      await this._tariffRepository.findByStationId(stationId);
-    if (tariff) {
-      this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);
-      if (!totalKwh) {
-        totalKwh = MeterValueUtils.getTotalKwh(
-          await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-            transactionDbId,
-          ),
-        );
-
-        await Transaction.update(
-          { totalKwh: totalKwh },
-          { where: { id: transactionDbId }, returning: false },
-        );
-      }
-
-      this._logger.debug(`TotalKwh: ${totalKwh}`);
-      totalCost = this._roundCost(totalKwh * tariff.pricePerKwh);
-    } else {
-      this._logger.error(`Tariff not found for station ${stationId}`);
-    }
-
-    return totalCost;
-  }
-
-  /**
-   * Internal method to execute a costUpdated request for an ongoing transaction repeatedly based on the costUpdatedInterval
-   *
-   * @param {string} stationId - The identifier of the client connection.
-   * @param {string} transactionId - The identifier of the transaction.
-   * @param {number} costUpdatedInterval - The costUpdated interval in milliseconds.
-   * @param {string} tenantId - The identifier of the tenant.
-   * @return {void} This function does not return anything.
-   */
-  private _updateCost(
-    stationId: string,
-    transactionId: string,
-    costUpdatedInterval: number,
-    tenantId: string,
-  ): void {
-    setInterval(async () => {
-      const transaction: Transaction | undefined =
-        await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
-          stationId,
-          transactionId,
-        );
-      if (transaction && transaction.isActive) {
-        const cost = await this._calculateTotalCost(stationId, transaction.id);
-        this.sendCall(stationId, tenantId, CallAction.CostUpdated, {
-          totalCost: cost,
-          transactionId: transaction.transactionId,
-        } as CostUpdatedRequest).then(() => {
-          this._logger.info(
-            `Sent costUpdated for ${transaction.transactionId} with totalCost ${cost}`,
-          );
-        });
-      }
-    }, costUpdatedInterval * 1000);
   }
 }

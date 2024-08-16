@@ -14,14 +14,14 @@ import { ChargingRateUnitEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface GetCompositeScheduleRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Length of the requested schedule in seconds.
    *
    *
    */
   duration: number;
-  chargingRateUnit?: ChargingRateUnitEnumType;
+  chargingRateUnit?: ChargingRateUnitEnumType | null;
   /**
    * The ID of the EVSE for which the schedule is requested. When evseid=0, the Charging Station will calculate the expected consumption for the grid connection.
    *

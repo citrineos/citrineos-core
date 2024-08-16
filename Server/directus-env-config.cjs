@@ -1,8 +1,8 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
-
-module.exports = function (env) {
+/* eslint-disable */
+module.exports = function (_env) {
   const config = {
     // API Paths
     CITRINEOS_SUBSCRIPTION_API_PATH: '/data/ocpprouter/subscription',

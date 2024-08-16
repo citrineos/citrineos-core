@@ -38,13 +38,24 @@ export class ChargingSchedule extends Model implements ChargingScheduleType {
   declare chargingSchedulePeriod: [ChargingSchedulePeriodType, ...ChargingSchedulePeriodType[]];
 
   @Column(DataType.INTEGER)
-  declare duration?: number;
+  declare duration?: number | null;
 
   @Column(DataType.DECIMAL)
-  declare minChargingRate?: number;
+  declare minChargingRate?: number | null;
 
   @Column(DataType.STRING)
-  declare startSchedule?: string;
+  declare startSchedule?: string | null;
+
+  // Periods contained in the charging profile are relative to this point in time.
+  // From NotifyEVChargingScheduleRequest
+  @Column({
+    type: DataType.DATE,
+    get() {
+      const timeBase: Date = this.getDataValue('timeBase');
+      return timeBase ? timeBase.toISOString() : null;
+    },
+  })
+  declare timeBase?: string;
 
   /**
    * Relations
@@ -59,5 +70,5 @@ export class ChargingSchedule extends Model implements ChargingScheduleType {
   @HasOne(() => SalesTariff)
   declare salesTariff?: SalesTariffType;
 
-  declare customData?: CustomDataType | undefined;
+  declare customData?: CustomDataType | null;
 }

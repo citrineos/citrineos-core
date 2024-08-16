@@ -31,13 +31,6 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
 
   async createOrUpdateByMessageInfoTypeAndStationId(message: MessageInfoType, stationId: string, componentId?: number): Promise<MessageInfo> {
     return await this.s.transaction(async (transaction) => {
-      const messageInfo = MessageInfo.build({
-        stationId: stationId,
-        componentId: componentId,
-        ...message,
-        active: true,
-      });
-
       const savedMessageInfo = await this.s.models[MessageInfo.MODEL_NAME].findOne({
         where: {
           stationId: stationId,
@@ -45,10 +38,23 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
         },
         transaction: transaction,
       });
+
+      const messageInfo = {
+        stationId: stationId,
+        displayComponentId: componentId ?? null,
+        id: message.id,
+        priority: message.priority,
+        state: message.state ?? null,
+        startDateTime: message.startDateTime ?? null,
+        endDateTime: message.endDateTime ?? null,
+        transactionId: message.transactionId ?? null,
+        message: message.message,
+        active: true,
+      };
       if (savedMessageInfo) {
-        return (await this.updateByKey({ ...messageInfo }, savedMessageInfo.dataValues.databaseId)) as MessageInfo;
+        return (await this.updateByKey(messageInfo, savedMessageInfo.dataValues.databaseId)) as MessageInfo;
       }
-      const createdMessageInfo = await messageInfo.save({ transaction });
+      const createdMessageInfo = await MessageInfo.create(messageInfo, { transaction });
       this.emit('created', [createdMessageInfo]);
       return createdMessageInfo;
     });

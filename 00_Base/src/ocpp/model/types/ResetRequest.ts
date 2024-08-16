@@ -14,13 +14,13 @@ import { ResetEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface ResetRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   type: ResetEnumType;
   /**
    * This contains the ID of a specific EVSE that needs to be reset, instead of the entire Charging Station.
    *
    */
-  evseId?: number;
+  evseId?: number | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

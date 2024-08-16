@@ -14,7 +14,7 @@ import { MonitoringBaseEnumType } from '../enums';
 import { OcppRequest } from '../../..';
 
 export interface SetMonitoringBaseRequest extends OcppRequest {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   monitoringBase: MonitoringBaseEnumType;
 }
 /**

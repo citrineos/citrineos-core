@@ -13,12 +13,12 @@
 import { OcppResponse } from '../../..';
 
 export interface GetTransactionStatusResponse extends OcppResponse {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * Whether the transaction is still ongoing.
    *
    */
-  ongoingIndicator?: boolean;
+  ongoingIndicator?: boolean | null;
   /**
    * Whether there are still message to be delivered.
    *

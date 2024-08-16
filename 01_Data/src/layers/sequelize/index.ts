@@ -15,6 +15,9 @@ export { Tariff } from './model/Tariff';
 export { Subscription } from './model/Subscription';
 export { Certificate, SignatureAlgorithmEnumType, CountryNameEnumType } from './model/Certificate';
 export { ChargingProfile, ChargingNeeds, ChargingSchedule, CompositeSchedule, SalesTariff } from './model/ChargingProfile';
+export { CallMessage } from './model/CallMessage';
+export { Reservation } from './model/Reservation';
+export { ChargingStationSecurityInfo } from './model/ChargingStationSecurityInfo';
 
 // Sequelize Repositories
 export { SequelizeRepository } from './repository/Base';
@@ -30,6 +33,9 @@ export { SequelizeTariffRepository } from './repository/Tariff';
 export { SequelizeSubscriptionRepository } from './repository/Subscription';
 export { SequelizeCertificateRepository } from './repository/Certificate';
 export { SequelizeChargingProfileRepository } from './repository/ChargingProfile';
+export { SequelizeCallMessageRepository } from './repository/CallMessage';
+export { SequelizeReservationRepository } from './repository/Reservation';
+export { SequelizeChargingStationSecurityInfoRepository } from './repository/ChargingStationSecurityInfo';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util';

@@ -18,20 +18,20 @@ import {
 import { OcppResponse } from '../../..';
 
 export interface TransactionEventResponse extends OcppResponse {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * SHALL only be sent when charging has ended. Final total cost of this transaction, including taxes. In the currency configured with the Configuration Variable: &lt;&lt;configkey-currency,`Currency`&gt;&gt;. When omitted, the transaction was NOT free. To indicate a free transaction, the CSMS SHALL send 0.00.
    *
    *
    */
-  totalCost?: number;
+  totalCost?: number | null;
   /**
    * Priority from a business point of view. Default priority is 0, The range is from -9 to 9. Higher values indicate a higher priority. The chargingPriority in &lt;&lt;transactioneventresponse,TransactionEventResponse&gt;&gt; is temporarily, so it may not be set in the &lt;&lt;cmn_idtokeninfotype,IdTokenInfoType&gt;&gt; afterwards. Also the chargingPriority in &lt;&lt;transactioneventresponse,TransactionEventResponse&gt;&gt; overrules the one in &lt;&lt;cmn_idtokeninfotype,IdTokenInfoType&gt;&gt;.
    *
    */
-  chargingPriority?: number;
-  idTokenInfo?: IdTokenInfoType;
-  updatedPersonalMessage?: MessageContentType;
+  chargingPriority?: number | null;
+  idTokenInfo?: IdTokenInfoType | null;
+  updatedPersonalMessage?: MessageContentType | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -48,7 +48,7 @@ export interface CustomDataType {
  *
  */
 export interface IdTokenInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   status: AuthorizationStatusEnumType;
   /**
    * ID_ Token. Expiry. Date_ Time
@@ -56,12 +56,12 @@ export interface IdTokenInfoType {
    * Date and Time after which the token must be considered invalid.
    *
    */
-  cacheExpiryDateTime?: string;
+  cacheExpiryDateTime?: string | null;
   /**
    * Priority from a business point of view. Default priority is 0, The range is from -9 to 9. Higher values indicate a higher priority. The chargingPriority in &lt;&lt;transactioneventresponse,TransactionEventResponse&gt;&gt; overrules this one.
    *
    */
-  chargingPriority?: number;
+  chargingPriority?: number | null;
   /**
    * ID_ Token. Language1. Language_ Code
    * urn:x-oca:ocpp:uid:1:569374
@@ -69,7 +69,7 @@ export interface IdTokenInfoType {
    *
    *
    */
-  language1?: string;
+  language1?: string | null;
   /**
    * Only used when the IdToken is only valid for one or more specific EVSEs, not for the entire Charging Station.
    *
@@ -78,22 +78,22 @@ export interface IdTokenInfoType {
    * @minItems 1
    */
   evseId?: [number, ...number[]];
-  groupIdToken?: IdTokenType;
+  groupIdToken?: IdTokenType | null;
   /**
    * ID_ Token. Language2. Language_ Code
    * urn:x-oca:ocpp:uid:1:569375
    * Second preferred user interface language of identifier user. Don’t use when language1 is omitted, has to be different from language1. Contains a language code as defined in &lt;&lt;ref-RFC5646,[RFC5646]&gt;&gt;.
    *
    */
-  language2?: string;
-  personalMessage?: MessageContentType;
+  language2?: string | null;
+  personalMessage?: MessageContentType | null;
 }
 /**
  * Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.
  *
  */
 export interface IdTokenType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * @minItems 1
    */
@@ -110,7 +110,7 @@ export interface IdTokenType {
  *
  */
 export interface AdditionalInfoType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   /**
    * This field specifies the additional IdToken.
    *
@@ -130,7 +130,7 @@ export interface AdditionalInfoType {
  *
  */
 export interface MessageContentType {
-  customData?: CustomDataType;
+  customData?: CustomDataType | null;
   format: MessageFormatEnumType;
   /**
    * Message_ Content. Language. Language_ Code
@@ -138,7 +138,7 @@ export interface MessageContentType {
    * Message language identifier. Contains a language code as defined in &lt;&lt;ref-RFC5646,[RFC5646]&gt;&gt;.
    *
    */
-  language?: string;
+  language?: string | null;
   /**
    * Message_ Content. Content. Message
    * urn:x-enexis:ecdm:uid:1:570852

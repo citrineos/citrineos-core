@@ -15,10 +15,10 @@ export class ChargingNeeds extends Model implements ChargingNeedsType {
    * Fields
    */
   @Column(DataType.JSONB)
-  declare acChargingParameters: ACChargingParametersType;
+  declare acChargingParameters?: ACChargingParametersType | null;
 
   @Column(DataType.JSONB)
-  declare dcChargingParameters: DCChargingParametersType;
+  declare dcChargingParameters?: DCChargingParametersType | null;
 
   @Column({
     type: DataType.DATE,
@@ -27,36 +27,30 @@ export class ChargingNeeds extends Model implements ChargingNeedsType {
       return departureTime ? departureTime.toISOString() : null;
     },
   })
-  declare departureTime: string;
+  declare departureTime?: string | null;
 
   @Column(DataType.STRING)
   declare requestedEnergyTransfer: EnergyTransferModeEnumType;
 
   @Column(DataType.INTEGER)
-  declare maxScheduleTuples?: number;
+  declare maxScheduleTuples?: number | null;
 
   /**
    * Relations
    */
   @ForeignKey(() => Evse)
-  @Column({
-    type: DataType.INTEGER,
-    unique: 'transactionDatabaseId_evseDatabaseId',
-  })
+  @Column(DataType.INTEGER)
   declare evseDatabaseId: number;
 
   @BelongsTo(() => Evse)
   declare evse: EVSEType;
 
   @ForeignKey(() => Transaction)
-  @Column({
-    type: DataType.INTEGER,
-    unique: 'transactionDatabaseId_evseDatabaseId',
-  })
+  @Column(DataType.INTEGER)
   declare transactionDatabaseId: number;
 
   @BelongsTo(() => Transaction)
   declare transaction: TransactionType;
 
-  declare customData?: CustomDataType | undefined;
+  declare customData?: CustomDataType | null;
 }
