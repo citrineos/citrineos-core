@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type ChargingStateEnumType, CrudRepository, type EVSEType, IdTokenEnumType, type IdTokenType, MeterValueUtils, SystemConfig, TransactionEventEnumType, type TransactionEventRequest } from '@citrineos/base';
+import { type ChargingStateEnumType, CrudRepository, type EVSEType, IdTokenEnumType, type IdTokenType, MeterValueType, MeterValueUtils, SystemConfig, TransactionEventEnumType, type TransactionEventRequest } from '@citrineos/base';
 import { type ITransactionEventRepository } from '../../../interfaces';
 import { MeterValue, Transaction, TransactionEvent } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';
@@ -315,7 +315,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
           stationId,
           isActive: true,
         },
-        include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, { model: Evse, where: { id: evseId } }],
+        include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, { model: Evse, where: { id: evseId }, required: true }], // required: true ensures the inner join
       })
       .then((transactions) => {
         if (transactions.length > 1) {
@@ -323,5 +323,9 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         }
         return transactions[0];
       });
+  }
+
+  async createMeterValue(meterValue: MeterValueType): Promise<void> {
+    await this.meterValue.create(MeterValue.build({ ...meterValue }));
   }
 }

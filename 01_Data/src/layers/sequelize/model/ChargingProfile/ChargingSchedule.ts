@@ -46,6 +46,17 @@ export class ChargingSchedule extends Model implements ChargingScheduleType {
   @Column(DataType.STRING)
   declare startSchedule?: string | null;
 
+  // Periods contained in the charging profile are relative to this point in time.
+  // From NotifyEVChargingScheduleRequest
+  @Column({
+    type: DataType.DATE,
+    get() {
+      const timeBase: Date = this.getDataValue('timeBase');
+      return timeBase ? timeBase.toISOString() : null;
+    },
+  })
+  declare timeBase?: string;
+
   /**
    * Relations
    */

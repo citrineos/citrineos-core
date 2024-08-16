@@ -17,14 +17,14 @@
   ],
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/deasync-promise": "^1.0.0",
-    "eslint": "^8.48.0",
-    "typescript": "^5.0.4"
+    "@types/deasync-promise": "1.0.0",
+    "eslint": "8.48.0",
+    "typescript": "5.0.4"
   },
   "dependencies": {
     "@citrineos/base": "1.4.0",
     "@citrineos/data": "1.4.0",
     "@citrineos/util": "1.4.0",
-    "fastify": "^4.22.2"
+    "fastify": "4.22.2"
   }
 }

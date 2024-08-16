@@ -2,12 +2,9 @@ import { ITransactionEventRepository } from '@citrineos/data';
 import { AbstractModule, CallAction } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { CostCalculator } from './CostCalculator';
+import { Scheduler } from './Scheduler';
 
-export class PeriodicCostNotifier {
-  private _registry: Map<string, NodeJS.Timeout> = new Map();
-
-  private readonly _logger: Logger<ILogObj>;
-
+export class CostNotifier extends Scheduler {
   private readonly _transactionEventRepository: ITransactionEventRepository;
   private readonly _module: AbstractModule;
   private readonly _costCalculator: CostCalculator;
@@ -18,12 +15,10 @@ export class PeriodicCostNotifier {
     costCalculator: CostCalculator,
     logger?: Logger<ILogObj>,
   ) {
+    super(logger);
     this._transactionEventRepository = transactionEventRepository;
     this._module = module;
     this._costCalculator = costCalculator;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
   /**
@@ -42,19 +37,13 @@ export class PeriodicCostNotifier {
     tenantId: string,
     intervalSeconds: number,
   ): void {
-    if (this._isAlreadyRegistered(stationId, transactionId)) {
-      return;
-    }
     this._logger.debug(
-      `Registering periodic cost notifications for ${stationId} station, ${transactionId} transaction, ${tenantId} tenant`,
+      `Scheduling periodic cost notifications for ${stationId} station, ${transactionId} transaction, ${tenantId} tenant`,
     );
-    this._register(
-      stationId,
-      transactionId,
-      setInterval(
-        () => this._tryNotify(stationId, transactionId, tenantId),
-        intervalSeconds * 1000,
-      ),
+    this.schedule(
+      this._key(stationId, transactionId),
+      () => this._tryNotify(stationId, transactionId, tenantId),
+      intervalSeconds,
     );
   }
 
@@ -72,9 +61,9 @@ export class PeriodicCostNotifier {
 
       if (!transaction?.isActive) {
         this._logger.debug(
-          `Unregistering periodic cost notifications for ${stationId} station, ${transactionId} transaction, ${tenantId} tenant`,
+          `Unscheduling periodic cost notifications for ${stationId} station, ${transactionId} transaction, ${tenantId} tenant`,
         );
-        this._unregister(stationId, transactionId);
+        this.unschedule(this._key(stationId, transactionId));
         return;
       }
 
@@ -100,26 +89,6 @@ export class PeriodicCostNotifier {
         error,
       );
     }
-  }
-
-  private _register(
-    stationId: string,
-    transactionId: string,
-    timeout: NodeJS.Timeout,
-  ) {
-    const key = this._key(stationId, transactionId);
-    this._registry.set(key, timeout);
-  }
-
-  private _unregister(stationId: string, transactionId: string) {
-    const key = this._key(stationId, transactionId);
-    clearInterval(this._registry.get(key));
-    this._registry.delete(key);
-  }
-
-  private _isAlreadyRegistered(stationId: string, transactionId: string) {
-    const key = this._key(stationId, transactionId);
-    return this._registry.has(key);
   }
 
   private _key(stationId: string, transactionId: string) {
