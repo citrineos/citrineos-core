@@ -4,7 +4,7 @@
 
 // Sequelize Persistence Models
 export { Boot } from './model/Boot';
-export { VariableAttribute, VariableCharacteristics, Component, Evse, Variable } from './model/DeviceModel';
+export { VariableAttribute, VariableCharacteristics, Component, Evse, Variable, VariableStatus } from './model/DeviceModel';
 export { Authorization, IdToken, IdTokenInfo, AdditionalInfo } from './model/Authorization';
 export { Transaction, TransactionEvent, MeterValue } from './model/TransactionEvent';
 export { SecurityEvent } from './model/SecurityEvent';
