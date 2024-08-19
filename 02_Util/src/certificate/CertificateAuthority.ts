@@ -112,14 +112,14 @@ export class CertificateAuthorityService {
       case InstallCertificateUseEnumType.V2GRootCertificate: {
         const caCerts = await this._v2gClient.getCACertificates();
         const rootCACert =
-          extractCertificateArrayFromEncodedString(caCerts)?.pop();
+          extractCertificateArrayFromEncodedString(caCerts).pop();
         if (rootCACert) {
           return createPemBlock(
             'CERTIFICATE',
             Buffer.from(rootCACert.toSchema().toBER(false)).toString('base64'),
           );
         } else {
-          throw new Error('V2GRootCertificate not found');
+          throw new Error(`V2GRootCertificate not found from ${caCerts}`);
         }
       }
       case InstallCertificateUseEnumType.CSMSRootCertificate:
@@ -276,7 +276,7 @@ export class CertificateAuthorityService {
   ): string {
     let certificateChain = '';
     // Add Cert
-    const leafRaw = extractCertificateArrayFromEncodedString(signedCert)?.[0];
+    const leafRaw = extractCertificateArrayFromEncodedString(signedCert)[0];
     if (leafRaw) {
       certificateChain += createPemBlock(
         'CERTIFICATE',
@@ -291,8 +291,8 @@ export class CertificateAuthorityService {
     // Add Chain without Root CA Certificate
     const chainWithoutRoot = extractCertificateArrayFromEncodedString(
       caCerts,
-    )?.slice(0, -1);
-    chainWithoutRoot?.forEach((certItem) => {
+    ).slice(0, -1);
+    chainWithoutRoot.forEach((certItem) => {
       const cert = certItem as Certificate;
       certificateChain += createPemBlock(
         'CERTIFICATE',
