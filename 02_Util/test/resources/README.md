@@ -27,6 +27,8 @@ curl --location 'http://localhost:8080/data/certificates/certificateChain' \
     "organizationName": "s44",
     "commonName": "localhost",
     "signatureAlgorithm": "SHA256withECDSA",
-    "selfSigned": true
+    "filePath": "5b24493b-c4b7-4dd9-a99b-e535eb766422",
+    "selfSigned": true,
+    "validBefore": "2034-08-19T00:00:00.000Z"
 }'
 ```
