@@ -15,9 +15,9 @@ import { readFile } from '../utils/FileUtil';
 describe('CertificateUtil', () => {
   describe('createSignedCertificateFromCSR', () => {
     it('successes', async () => {
-      const givenCSR = readFile('ChargingStationCSR.pem');
-      const givenIssuerCert = readFile('SubCACertificate.pem');
-      const givenIssuerKey = readFile('SubCAKey.pem');
+      const givenCSR = readFile('ChargingStationCSRSample.pem');
+      const givenIssuerCert = readFile('SubCACertificateSample.pem');
+      const givenIssuerKey = readFile('SubCAKeySample.pem');
 
       const actualResult = createSignedCertificateFromCSR(
         givenCSR,
@@ -41,8 +41,8 @@ describe('CertificateUtil', () => {
 
   describe('parseCertificateChainPem', () => {
     it('successes', async () => {
-      const subCACertPem = readFile('SubCACertificate.pem');
-      const leafCertPem = readFile('LeafCertificate.pem');
+      const subCACertPem = readFile('SubCACertificateSample.pem');
+      const leafCertPem = readFile('LeafCertificateSample.pem');
       const givenCertChainPem = `${leafCertPem}${subCACertPem}`;
 
       const actualResult = parseCertificateChainPem(givenCertChainPem);
@@ -68,7 +68,7 @@ describe('CertificateUtil', () => {
 
   describe('extractEncodedContentFromCSR', () => {
     it('successes', async () => {
-      const givenCSR = readFile('ChargingStationCSR.pem');
+      const givenCSR = readFile('ChargingStationCSRSample.pem');
 
       const actualResult = extractEncodedContentFromCSR(givenCSR);
 
@@ -81,8 +81,8 @@ describe('CertificateUtil', () => {
   describe('sendOCSPRequest', () => {
     global.fetch = jest.fn();
 
-    const issuerCertPem = readFile('SubCACertificate.pem');
-    const subjectCertPem = readFile('LeafCertificate.pem');
+    const issuerCertPem = readFile('SubCACertificateSample.pem');
+    const subjectCertPem = readFile('LeafCertificateSample.pem');
     const givenRequest = new OCSPRequest({
       reqList: [
         {
@@ -138,7 +138,7 @@ describe('CertificateUtil', () => {
 
   describe('extractCertificateArrayFromEncodedString', () => {
     it('successes', async () => {
-      const givenEncodedString = readFile('V2GCACertChain.pem');
+      const givenEncodedString = readFile('V2GCACertChainSample.pem');
 
       const actualResult =
         extractCertificateArrayFromEncodedString(givenEncodedString);
