@@ -52,7 +52,7 @@ import {
   SmartChargingModule,
   SmartChargingModuleApi,
 } from '@citrineos/smartcharging';
-import { RepositoryStore, sequelize } from '@citrineos/data';
+import { RepositoryStore, sequelize, Sequelize } from '@citrineos/data';
 import {
   type FastifyRouteSchemaDef,
   type FastifySchemaCompiler,
@@ -63,7 +63,6 @@ import {
   MessageRouterImpl,
   WebhookDispatcher,
 } from '@citrineos/ocpprouter';
-import { Sequelize } from 'sequelize-typescript';
 import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
 
 interface ModuleConfig {
@@ -161,18 +160,18 @@ export class CitrineOSServer {
 
     // Register AJV for schema validation
     this.registerAjv();
-  }
-
-  async initialize(): Promise<void> {
-    // Initialize database
-    await this.initDb();
 
     // Initialize repository store
     this.initRepositoryStore();
 
     // Initialize module & API
     // Always initialize API after SwaggerUI
-    this.initSystem(this.appName);
+    this.initSystem();
+  }
+
+  async initialize(): Promise<void> {
+    // Initialize database
+    await this.initDb();
 
     // Set up shutdown handlers
     process.on('SIGINT', this.shutdown.bind(this));
@@ -199,6 +198,7 @@ export class CitrineOSServer {
 
   async run(): Promise<void> {
     try {
+      await this.initialize();
       await this._server
         .listen({
           host: this.host,
@@ -259,11 +259,6 @@ export class CitrineOSServer {
   }
 
   private async initDb() {
-    this._sequelizeInstance = sequelize.DefaultSequelizeInstance.getInstance(
-      this._config,
-      this._logger,
-    );
-
     await sequelize.DefaultSequelizeInstance.initializeSequelize();
   }
 
@@ -503,8 +498,8 @@ export class CitrineOSServer {
     }
   }
 
-  private getModuleConfig(appName: EventGroup): ModuleConfig {
-    switch (appName) {
+  private getModuleConfig(): ModuleConfig {
+    switch (this.eventGroup) {
       case EventGroup.Certificates:
         return {
           ModuleClass: CertificatesModule,
@@ -554,19 +549,19 @@ export class CitrineOSServer {
           configModule: this._config.modules.transactions,
         };
       default:
-        throw new Error('Unhandled module type: ' + appName);
+        throw new Error('Unhandled module type: ' + this.appName);
     }
   }
 
-  private initSystem(appName: string) {
-    this.eventGroup = eventGroupFromString(appName);
+  private initSystem() {
+    this.eventGroup = eventGroupFromString(this.appName);
     if (this.eventGroup === EventGroup.All) {
       this.initNetworkConnection();
       this.initAllModules();
     } else if (this.eventGroup === EventGroup.General) {
       this.initNetworkConnection();
     } else {
-      const moduleConfig: ModuleConfig = this.getModuleConfig(this.eventGroup);
+      const moduleConfig: ModuleConfig = this.getModuleConfig();
       this.initModule(moduleConfig);
     }
   }
@@ -581,6 +576,10 @@ export class CitrineOSServer {
   }
 
   private initRepositoryStore() {
+    this._sequelizeInstance = sequelize.DefaultSequelizeInstance.getInstance(
+      this._config,
+      this._logger,
+    );
     this._repositoryStore = new RepositoryStore(
       this._config,
       this._logger,
@@ -594,8 +593,6 @@ async function main() {
     process.env.APP_NAME as EventGroup,
     systemConfig,
   );
-  await server.initialize();
-
   server.run().catch((error: any) => {
     console.error(error);
     process.exit(1);
