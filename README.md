@@ -215,11 +215,4 @@ the GitHub repository.
 
 ## Roadmap
 
-A more detailed roadmap is coming soon.
-
-- Support for Kafka Streams
-- OCA Certification (OCPP 2.0.1 Core Profile)
-- Adding plugin management
-- Implementing ISO15118 Plug and Charge (PnC)
-- Adding OCPP inspector for debugging
-- Adding OCPI 3.0 reference implementation
+[Roadmap](https://citrineos.github.io/docs/roadmap.html)
