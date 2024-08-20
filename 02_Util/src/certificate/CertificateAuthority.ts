@@ -17,10 +17,9 @@ import { Hubject } from './client/hubject';
 import { Acme } from './client/acme';
 import { ILogObj, Logger } from 'tslog';
 import { Certificate } from 'pkijs';
-import jsrsasign from 'jsrsasign';
-import X509 = jsrsasign.X509;
-import getOCSPResponseInfo = jsrsasign.KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo;
+import jsrsasign, { KJUR, X509 } from 'jsrsasign';
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
+import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 import moment from 'moment';
 import {
   createPemBlock,
@@ -43,16 +42,20 @@ export class CertificateAuthorityService {
   private readonly _chargingStationClient: IChargingStationCertificateAuthorityClient;
   private readonly _logger: Logger<ILogObj>;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
+  constructor(
+    config: SystemConfig,
+    logger?: Logger<ILogObj>,
+    chargingStationClient?: IChargingStationCertificateAuthorityClient,
+    v2gClient?: IV2GCertificateAuthorityClient,
+  ) {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
 
-    this._chargingStationClient = this._instantiateChargingStationClient(
-      config,
-      this._logger,
-    );
-    this._v2gClient = this._instantiateV2GClient(config);
+    this._chargingStationClient =
+      chargingStationClient ||
+      this._instantiateChargingStationClient(config, this._logger);
+    this._v2gClient = v2gClient || this._instantiateV2GClient(config);
   }
 
   /**
@@ -211,7 +214,7 @@ export class CertificateAuthorityService {
           });
 
           this._logger.debug(`OCSP response URL: ${ocspUrls[0]}`);
-          const ocspResponse = getOCSPResponseInfo(
+          const ocspResponse = KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo(
             await sendOCSPRequest(ocspRequest, ocspUrls[0]),
           );
           const certStatus = ocspResponse.certStatus;
@@ -220,6 +223,11 @@ export class CertificateAuthorityService {
           } else if (certStatus !== 'good') {
             return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
           }
+        } else {
+          this._logger.error(
+            `Certificate ${certificatePems[i]} has no OCSP URL.`,
+          );
+          return AuthorizeCertificateStatusEnumType.CertChainError;
         }
       }
     } catch (error) {
@@ -234,7 +242,7 @@ export class CertificateAuthorityService {
     ocspRequestData: OCSPRequestDataType[],
   ): Promise<AuthorizeCertificateStatusEnumType> {
     for (const reqData of ocspRequestData) {
-      const ocspRequest = new jsrsasign.KJUR.asn1.ocsp.Request({
+      const ocspRequest = new Request({
         alg: reqData.hashAlgorithm,
         keyhash: reqData.issuerKeyHash,
         namehash: reqData.issuerNameHash,
@@ -243,7 +251,7 @@ export class CertificateAuthorityService {
       this._logger.debug(`OCSP request: ${JSON.stringify(ocspRequest)}`);
 
       try {
-        const ocspResponse = getOCSPResponseInfo(
+        const ocspResponse = KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo(
           await sendOCSPRequest(ocspRequest, reqData.responderURL),
         );
         // Cert statuses: good, revoked, unknown
