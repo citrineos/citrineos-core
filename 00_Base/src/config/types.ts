@@ -92,6 +92,12 @@ export const systemConfigInputSchema = z.object({
       port: z.number().int().positive().default(8081).optional(),
       costUpdatedInterval: z.number().int().positive().default(60).optional(),
       sendCostUpdatedOnMeterValue: z.boolean().default(false).optional(),
+      signedMeterValuesConfiguration: z
+        .object({
+          publicKeyFileId: z.string(),
+          signingMethod: z.enum(['RSASSA-PKCS1-v1_5', 'ECDSA']),
+        })
+        .optional(),
     }),
   }),
   data: z.object({
@@ -334,6 +340,12 @@ export const systemConfigSchema = z
           port: z.number().int().positive().optional(),
           costUpdatedInterval: z.number().int().positive().optional(),
           sendCostUpdatedOnMeterValue: z.boolean().optional(),
+          signedMeterValuesConfiguration: z
+            .object({
+              publicKeyFileId: z.string(),
+              signingMethod: z.enum(['RSASSA-PKCS1-v1_5', 'ECDSA']),
+            })
+            .optional(),
         })
         .refine(
           (obj) =>
@@ -357,6 +369,8 @@ export const systemConfigSchema = z
         storage: z.string(),
         sync: z.boolean(),
         alter: z.boolean().optional(),
+        maxRetries: z.number().int().positive().optional(),
+        retryDelay: z.number().int().positive().optional(),
       }),
     }),
     util: z.object({

@@ -6,6 +6,7 @@
 import {
   type AbstractModule,
   type AbstractModuleApi,
+  Ajv,
   EventGroup,
   eventGroupFromString,
   type IAuthenticator,
@@ -29,7 +30,6 @@ import {
   WebsocketNetworkConnection,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import fastify, { type FastifyInstance } from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
@@ -52,7 +52,7 @@ import {
   SmartChargingModule,
   SmartChargingModuleApi,
 } from '@citrineos/smartcharging';
-import { RepositoryStore, sequelize } from '@citrineos/data';
+import { RepositoryStore, sequelize, Sequelize } from '@citrineos/data';
 import {
   type FastifyRouteSchemaDef,
   type FastifySchemaCompiler,
@@ -63,18 +63,7 @@ import {
   MessageRouterImpl,
   WebhookDispatcher,
 } from '@citrineos/ocpprouter';
-import { Container, OcpiServer, ServerConfig } from '@citrineos/ocpi-base';
-import { CommandsModule } from '@citrineos/ocpi-commands';
-import { VersionsModule } from '@citrineos/ocpi-versions';
-import { CredentialsModule } from '@citrineos/ocpi-credentials';
-import { Sequelize } from 'sequelize-typescript';
 import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
-import { LocationsModule } from '@citrineos/ocpi-locations';
-import { SessionsModule } from '@citrineos/ocpi-sessions';
-import { ChargingProfilesModule } from '@citrineos/ocpi-charging-profiles';
-import { TariffsModule } from '@citrineos/ocpi-tariffs';
-import { CdrsModule } from '@citrineos/ocpi-cdrs';
-import { RealTimeAuthorizer, TokensModule } from '@citrineos/ocpi-tokens';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -101,7 +90,8 @@ export class CitrineOSServer {
   private _authenticator?: IAuthenticator;
   private _networkConnection?: WebsocketNetworkConnection;
   private _repositoryStore!: RepositoryStore;
-  private ocpiRealTimeAuthorizer!: RealTimeAuthorizer;
+
+  private readonly appName: string;
 
   /**
    * Constructor for the class.
@@ -128,9 +118,9 @@ export class CitrineOSServer {
         'This server implementation requires amqp configuration for rabbitMQ.',
       );
     }
-    this._config = config;
 
-    // Create server instance
+    this.appName = appName;
+    this._config = config;
     this._server =
       server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
@@ -143,12 +133,6 @@ export class CitrineOSServer {
 
     // Initialize parent logger
     this._logger = this.initLogger();
-
-    // Force sync database
-    this.initDb();
-
-    // Init repo store
-    this.initRepositoryStore();
 
     // Set cache implementation
     this._cache = this.initCache(cache);
@@ -177,13 +161,19 @@ export class CitrineOSServer {
     // Register AJV for schema validation
     this.registerAjv();
 
-    // start ocpi needs to happen first to load authorizer
-    this.startOcpiServer(config.ocpiServer.host, config.ocpiServer.port);
+    // Initialize repository store
+    this.initRepositoryStore();
 
     // Initialize module & API
     // Always initialize API after SwaggerUI
-    this.initSystem(appName);
+    this.initSystem();
+  }
 
+  async initialize(): Promise<void> {
+    // Initialize database
+    await this.initDb();
+
+    // Set up shutdown handlers
     process.on('SIGINT', this.shutdown.bind(this));
     process.on('SIGTERM', this.shutdown.bind(this));
     process.on('SIGQUIT', this.shutdown.bind(this));
@@ -208,6 +198,7 @@ export class CitrineOSServer {
 
   async run(): Promise<void> {
     try {
+      await this.initialize();
       await this._server
         .listen({
           host: this.host,
@@ -232,56 +223,6 @@ export class CitrineOSServer {
 
   protected _createHandler(): IMessageHandler {
     return new RabbitMqReceiver(this._config, this._logger);
-  }
-
-  protected getOcpiModuleConfig() {
-    return [
-      {
-        module: VersionsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: CredentialsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: CommandsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: LocationsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: SessionsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: ChargingProfilesModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: TariffsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: CdrsModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-      {
-        module: TokensModule,
-        handler: this._createHandler(),
-        sender: this._createSender(),
-      },
-    ];
   }
 
   private initHealthCheck() {
@@ -317,12 +258,8 @@ export class CitrineOSServer {
     });
   }
 
-  private initDb() {
-    this._sequelizeInstance = sequelize.DefaultSequelizeInstance.getInstance(
-      this._config,
-      this._logger,
-      true,
-    );
+  private async initDb() {
+    await sequelize.DefaultSequelizeInstance.initializeSequelize();
   }
 
   private initCache(cache?: ICache): ICache {
@@ -392,8 +329,6 @@ export class CitrineOSServer {
   }
 
   private initAllModules() {
-    this.ocpiRealTimeAuthorizer = Container.get(RealTimeAuthorizer);
-
     if (this._config.modules.certificates) {
       const module = new CertificatesModule(
         this._config,
@@ -445,12 +380,6 @@ export class CitrineOSServer {
         this._repositoryStore.authorizationRepository,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.tariffRepository,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);
       this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
@@ -507,6 +436,7 @@ export class CitrineOSServer {
       const module = new TransactionsModule(
         this._config,
         this._cache,
+        this._fileAccess,
         this._createSender(),
         this._createHandler(),
         this._logger,
@@ -516,8 +446,6 @@ export class CitrineOSServer {
         this._repositoryStore.componentRepository,
         this._repositoryStore.locationRepository,
         this._repositoryStore.tariffRepository,
-        undefined,
-        [this.ocpiRealTimeAuthorizer],
       );
       this.modules.push(module);
       this.apis.push(
@@ -530,17 +458,6 @@ export class CitrineOSServer {
       this.host = this._config.centralSystem.host as string;
       this.port = this._config.centralSystem.port as number;
     }
-  }
-
-  private startOcpiServer(host: string, port: number) {
-    const ocpiServer = new OcpiServer(
-      this._config as ServerConfig,
-      this._cache,
-      this._logger,
-      this.getOcpiModuleConfig(),
-      this._repositoryStore,
-    );
-    ocpiServer.run(host, port);
   }
 
   private initModule(moduleConfig: ModuleConfig) {
@@ -581,8 +498,8 @@ export class CitrineOSServer {
     }
   }
 
-  private getModuleConfig(appName: EventGroup): ModuleConfig {
-    switch (appName) {
+  private getModuleConfig(): ModuleConfig {
+    switch (this.eventGroup) {
       case EventGroup.Certificates:
         return {
           ModuleClass: CertificatesModule,
@@ -632,19 +549,19 @@ export class CitrineOSServer {
           configModule: this._config.modules.transactions,
         };
       default:
-        throw new Error('Unhandled module type: ' + appName);
+        throw new Error('Unhandled module type: ' + this.appName);
     }
   }
 
-  private initSystem(appName: string) {
-    this.eventGroup = eventGroupFromString(appName);
+  private initSystem() {
+    this.eventGroup = eventGroupFromString(this.appName);
     if (this.eventGroup === EventGroup.All) {
       this.initNetworkConnection();
       this.initAllModules();
     } else if (this.eventGroup === EventGroup.General) {
       this.initNetworkConnection();
     } else {
-      const moduleConfig: ModuleConfig = this.getModuleConfig(this.eventGroup);
+      const moduleConfig: ModuleConfig = this.getModuleConfig();
       this.initModule(moduleConfig);
     }
   }
@@ -659,6 +576,10 @@ export class CitrineOSServer {
   }
 
   private initRepositoryStore() {
+    this._sequelizeInstance = sequelize.DefaultSequelizeInstance.getInstance(
+      this._config,
+      this._logger,
+    );
     this._repositoryStore = new RepositoryStore(
       this._config,
       this._logger,
@@ -667,9 +588,18 @@ export class CitrineOSServer {
   }
 }
 
-new CitrineOSServer(process.env.APP_NAME as EventGroup, systemConfig)
-  .run()
-  .catch((error: any) => {
+async function main() {
+  const server = new CitrineOSServer(
+    process.env.APP_NAME as EventGroup,
+    systemConfig,
+  );
+  server.run().catch((error: any) => {
     console.error(error);
     process.exit(1);
   });
+}
+
+main().catch((error) => {
+  console.error('Failed to initialize server:', error);
+  process.exit(1);
+});

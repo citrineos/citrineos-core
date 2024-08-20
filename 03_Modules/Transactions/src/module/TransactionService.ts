@@ -2,6 +2,7 @@ import {
   Authorization,
   IAuthorizationRepository,
   ITransactionEventRepository,
+  Transaction,
 } from '@citrineos/data';
 import {
   AdditionalInfoType,
@@ -9,6 +10,7 @@ import {
   IdTokenInfoType,
   IdTokenType,
   IMessageContext,
+  MeterValueUtils,
   TransactionEventEnumType,
   TransactionEventRequest,
   TransactionEventResponse,
@@ -34,6 +36,24 @@ export class TransactionService {
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
     this._authorizers = authorizers || [];
+  }
+
+  async recalculateTotalKwh(transactionDbId: number) {
+    const totalKwh = MeterValueUtils.getTotalKwh(
+      await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
+        transactionDbId,
+      ),
+    );
+
+    await Transaction.update(
+      { totalKwh: totalKwh },
+      { where: { id: transactionDbId }, returning: false },
+    );
+
+    this._logger.debug(
+      `Recalculated ${totalKwh} kWh for ${transactionDbId} transaction`,
+    );
+    return totalKwh;
   }
 
   async authorizeIdToken(

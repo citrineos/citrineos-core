@@ -7,14 +7,14 @@ import {
   TransactionEventEnumType,
 } from '@citrineos/base';
 import { TransactionService } from '../../src/module/TransactionService';
-import { anIdToken } from '../providers/IdToken';
-import { anAuthorization } from '../providers/Authorization';
+import { anIdToken } from '../providers/IdTokenProvider';
+import { anAuthorization } from '../providers/AuthorizationProvider';
 
-import { aMessageContext } from '../providers/MessageContext';
+import { aMessageContext } from '../providers/MessageContextProvider';
 import {
   aTransaction,
   aTransactionEventRequest,
-} from '../providers/Transaction';
+} from '../providers/TransactionProvider';
 import { IAuthorizer } from '@citrineos/util';
 
 describe('TransactionService', () => {

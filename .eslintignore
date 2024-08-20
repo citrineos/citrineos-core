@@ -1,5 +1,0 @@
-./DirectusExtensions/
-./Swarm/
-**/dist/**
-**/lib/**
-**/*.test.ts

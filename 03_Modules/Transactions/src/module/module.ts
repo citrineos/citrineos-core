@@ -9,20 +9,21 @@ import {
   AttributeEnumType,
   AuthorizationStatusEnumType,
   CallAction,
-  CostUpdatedRequest,
   CostUpdatedResponse,
   CrudRepository,
+  ErrorCode,
   EventGroup,
   GetTransactionStatusResponse,
   HandlerProperties,
   ICache,
+  IFileAccess,
   IMessage,
   IMessageHandler,
   IMessageSender,
   MeterValuesRequest,
   MeterValuesResponse,
   MeterValueUtils,
-  ReportDataType,
+  OcppError,
   StatusNotificationRequest,
   StatusNotificationResponse,
   SystemConfig,
@@ -32,7 +33,6 @@ import {
 } from '@citrineos/base';
 import {
   Component,
-  Evse,
   IAuthorizationRepository,
   IDeviceModelRepository,
   ILocationRepository,
@@ -43,18 +43,21 @@ import {
   SequelizeRepository,
   Tariff,
   Transaction,
-  Variable,
   VariableAttribute,
 } from '@citrineos/data';
 import {
   IAuthorizer,
   RabbitMqReceiver,
   RabbitMqSender,
+  SignedMeterValuesUtil,
   Timer,
 } from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { TransactionService } from './TransactionService';
+import { StatusNotificationService } from './StatusNotificationService';
+import { CostNotifier } from './CostNotifier';
+import { CostCalculator } from './CostCalculator';
 
 /**
  * Component that handles transaction related messages.
@@ -79,18 +82,27 @@ export class TransactionsModule extends AbstractModule {
   protected _reservationRepository: IReservationRepository;
 
   protected _transactionService: TransactionService;
+  protected _statusNotificationService: StatusNotificationService;
 
-  private _authorizers: IAuthorizer[];
+  protected _fileAccess: IFileAccess;
+
+  private readonly _authorizers: IAuthorizer[];
+
+  private readonly _signedMeterValuesUtil: SignedMeterValuesUtil;
+  private _costNotifier: CostNotifier;
+  private _costCalculator: CostCalculator;
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
   private readonly _costUpdatedInterval: number | undefined;
 
   /**
-   * This is the constructor function that initializes the {@link TransactionModule}.
+   * This is the constructor function that initializes the {@link TransactionsModule}.
    *
    * @param {SystemConfig} config - The `config` contains configuration settings for the module.
    *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
+   *
+   * @param {IFileAccess} [fileAccess] - The `fileAccess` allows access to the configured file storage.
    *
    * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
@@ -99,7 +111,7 @@ export class TransactionsModule extends AbstractModule {
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
    *
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
+   * It is used to propagate system-wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
    * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository} which represents a repository for accessing and manipulating transaction event data.
    * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance
@@ -144,6 +156,7 @@ export class TransactionsModule extends AbstractModule {
   constructor(
     config: SystemConfig,
     cache: ICache,
+    fileAccess: IFileAccess,
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
@@ -174,6 +187,8 @@ export class TransactionsModule extends AbstractModule {
       );
     }
 
+    this._fileAccess = fileAccess;
+
     this._transactionEventRepository =
       transactionEventRepository ||
       new sequelize.SequelizeTransactionEventRepository(config, logger);
@@ -198,6 +213,12 @@ export class TransactionsModule extends AbstractModule {
 
     this._authorizers = authorizers || [];
 
+    this._signedMeterValuesUtil = new SignedMeterValuesUtil(
+      fileAccess,
+      config,
+      this._logger,
+    );
+
     this._sendCostUpdatedOnMeterValue =
       config.modules.transactions.sendCostUpdatedOnMeterValue;
     this._costUpdatedInterval = config.modules.transactions.costUpdatedInterval;
@@ -206,6 +227,26 @@ export class TransactionsModule extends AbstractModule {
       this._transactionEventRepository,
       this._authorizeRepository,
       this._authorizers,
+      this._logger,
+    );
+
+    this._statusNotificationService = new StatusNotificationService(
+      this._componentRepository,
+      this._deviceModelRepository,
+      this._locationRepository,
+      this._logger,
+    );
+
+    this._costCalculator = new CostCalculator(
+      this._tariffRepository,
+      this._transactionService,
+      this._logger,
+    );
+
+    this._costNotifier = new CostNotifier(
+      this,
+      this._transactionEventRepository,
+      this._costCalculator,
       this._logger,
     );
 
@@ -282,11 +323,11 @@ export class TransactionsModule extends AbstractModule {
         response.idTokenInfo?.status === AuthorizationStatusEnumType.Accepted &&
         this._costUpdatedInterval
       ) {
-        this._updateCost(
+        this._costNotifier.notifyWhileActive(
           stationId,
           transactionId,
-          this._costUpdatedInterval,
           message.context.tenantId,
+          this._costUpdatedInterval,
         );
       }
     } else {
@@ -307,7 +348,7 @@ export class TransactionsModule extends AbstractModule {
           transaction.isActive &&
           this._sendCostUpdatedOnMeterValue
         ) {
-          response.totalCost = await this._calculateTotalCost(
+          response.totalCost = await this._costCalculator.calculateTotalCost(
             stationId,
             transaction.id,
             transaction.totalKwh,
@@ -339,11 +380,25 @@ export class TransactionsModule extends AbstractModule {
         message.payload.eventType === TransactionEventEnumType.Ended &&
         transaction
       ) {
-        response.totalCost = await this._calculateTotalCost(
+        response.totalCost = await this._costCalculator.calculateTotalCost(
           stationId,
           transaction.id,
           transaction.totalKwh,
         );
+      }
+
+      if (transactionEvent.meterValue) {
+        const meterValuesValid =
+          await this._signedMeterValuesUtil.validateMeterValues(
+            stationId,
+            transactionEvent.meterValue,
+          );
+
+        if (!meterValuesValid) {
+          this._logger.warn(
+            'One or more MeterValues in this TransactionEvent have an invalid signature.',
+          );
+        }
       }
 
       this.sendCallResultWithMessage(message, response).then(
@@ -364,10 +419,32 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('MeterValues received:', message, props);
 
-    // TODO: Add meterValues to transactions
     // TODO: Meter values can be triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
     // TODO: If sendCostUpdatedOnMeterValue is true, meterValues handler triggers cost update
     //  when it is added into a transaction
+
+    const meterValues = message.payload.meterValue;
+    const stationId = message.context.stationId;
+
+    await Promise.all(
+      meterValues.map((meterValue) =>
+        this.transactionEventRepository.createMeterValue(meterValue),
+      ),
+    );
+
+    const meterValuesValid =
+      await this._signedMeterValuesUtil.validateMeterValues(
+        stationId,
+        meterValues,
+      );
+
+    if (!meterValuesValid) {
+      throw new OcppError(
+        message.context.correlationId,
+        ErrorCode.SecurityError,
+        'One or more MeterValues have an invalid signature.',
+      );
+    }
 
     const response: MeterValuesResponse = {
       // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
@@ -387,63 +464,10 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('StatusNotification received:', message, props);
 
-    const stationId = message.context.stationId;
-    const statusNotificationRequest = message.payload;
-
-    const chargingStation =
-      await this._locationRepository.readChargingStationByStationId(stationId);
-    if (chargingStation) {
-      await this._locationRepository.addStatusNotificationToChargingStation(
-        stationId,
-        statusNotificationRequest,
-      );
-    } else {
-      this._logger.warn(
-        `Charging station ${stationId} not found. Status notification cannot be associated with a charging station.`,
-      );
-    }
-
-    const component = await this._componentRepository.readOnlyOneByQuery({
-      where: {
-        name: 'Connector',
-      },
-      include: [
-        {
-          model: Evse,
-          where: {
-            id: statusNotificationRequest.evseId,
-            connectorId: statusNotificationRequest.connectorId,
-          },
-        },
-        {
-          model: Variable,
-          where: {
-            name: 'AvailabilityState',
-          },
-        },
-      ],
-    });
-    const variable = component?.variables?.[0];
-    if (!component || !variable) {
-      this._logger.warn(
-        'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
-      );
-    } else {
-      const reportDataType: ReportDataType = {
-        component: component,
-        variable: variable,
-        variableAttribute: [
-          {
-            value: statusNotificationRequest.connectorStatus,
-          },
-        ],
-      };
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-        reportDataType,
-        stationId,
-        statusNotificationRequest.timestamp,
-      );
-    }
+    await this._statusNotificationService.processStatusNotification(
+      message.context.stationId,
+      message.payload,
+    );
 
     // Create response
     const response: StatusNotificationResponse = {};
@@ -479,86 +503,5 @@ export class TransactionsModule extends AbstractModule {
       message,
       props,
     );
-  }
-
-  /**
-   * Round floor the given cost to 2 decimal places, e.g., given 1.2378, return 1.23
-   *
-   * @param {number} cost - cost
-   * @return {number} rounded cost
-   */
-  private _roundCost(cost: number): number {
-    return Math.floor(cost * 100) / 100;
-  }
-
-  private async _calculateTotalCost(
-    stationId: string,
-    transactionDbId: number,
-    totalKwh?: number | null,
-  ): Promise<number> {
-    // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
-    //  implementation is finalized
-    let totalCost = 0;
-
-    const tariff: Tariff | undefined =
-      await this._tariffRepository.findByStationId(stationId);
-    if (tariff) {
-      this._logger.debug(`Tariff ${tariff.id} found for station ${stationId}`);
-      if (!totalKwh) {
-        totalKwh = MeterValueUtils.getTotalKwh(
-          await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-            transactionDbId,
-          ),
-        );
-
-        await Transaction.update(
-          { totalKwh: totalKwh },
-          { where: { id: transactionDbId }, returning: false },
-        );
-      }
-
-      this._logger.debug(`TotalKwh: ${totalKwh}`);
-      totalCost = this._roundCost(totalKwh * tariff.pricePerKwh);
-    } else {
-      this._logger.error(`Tariff not found for station ${stationId}`);
-    }
-
-    return totalCost;
-  }
-
-  /**
-   * Internal method to execute a costUpdated request for an ongoing transaction repeatedly based on the costUpdatedInterval
-   *
-   * @param {string} stationId - The identifier of the client connection.
-   * @param {string} transactionId - The identifier of the transaction.
-   * @param {number} costUpdatedInterval - The costUpdated interval in milliseconds.
-   * @param {string} tenantId - The identifier of the tenant.
-   * @return {void} This function does not return anything.
-   */
-  private _updateCost(
-    stationId: string,
-    transactionId: string,
-    costUpdatedInterval: number,
-    tenantId: string,
-  ): void {
-    // TODO add canceling interval when transaction is over
-    setInterval(async () => {
-      const transaction: Transaction | undefined =
-        await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
-          stationId,
-          transactionId,
-        );
-      if (transaction && transaction.isActive) {
-        const cost = await this._calculateTotalCost(stationId, transaction.id);
-        this.sendCall(stationId, tenantId, CallAction.CostUpdated, {
-          totalCost: cost,
-          transactionId: transaction.transactionId,
-        } as CostUpdatedRequest).then(() => {
-          this._logger.info(
-            `Sent costUpdated for ${transaction.transactionId} with totalCost ${cost}`,
-          );
-        });
-      }
-    }, costUpdatedInterval * 1000);
   }
 }
