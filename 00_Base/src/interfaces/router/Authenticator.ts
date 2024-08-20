@@ -6,7 +6,7 @@ export interface IAuthenticator {
   authenticate(
     allowUnknownChargingStations: boolean,
     identifier: string,
-    username?: string,
-    password?: string,
+    username: string,
+    password: string,
   ): Promise<boolean>;
 }

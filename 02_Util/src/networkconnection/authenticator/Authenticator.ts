@@ -7,6 +7,7 @@ import {
   CacheNamespace,
   IAuthenticator,
   ICache,
+  notNull,
   SetVariableStatusEnumType,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
@@ -36,32 +37,30 @@ export class Authenticator implements IAuthenticator {
   async authenticate(
     allowUnknownChargingStations: boolean,
     identifier: string,
-    username?: string,
-    password?: string,
+    username: string,
+    password: string,
   ): Promise<boolean> {
-    if (
-      !allowUnknownChargingStations &&
-      (await this._locationRepository.readChargingStationByStationId(
-        identifier,
-      )) === null
-    ) {
+    if (!allowUnknownChargingStations && !(await this._isKnown(identifier))) {
       this._logger.warn('Unknown identifier', identifier);
       return false;
-    } else if (await this._cache.get(identifier, CacheNamespace.Connections)) {
+    }
+
+    if (await this._isAlreadyConnected(identifier)) {
       this._logger.warn(
         'New connection attempted for already connected identifier',
         identifier,
       );
       return false;
-    } else if (username && password) {
-      if (
-        username !== identifier ||
-        (await this._checkPassword(username, password)) === false
-      ) {
-        this._logger.warn('Unauthorized', identifier);
-        return false;
-      }
     }
+
+    if (
+      username !== identifier ||
+      !(await this._isPasswordValid(username, password))
+    ) {
+      this._logger.warn('Unauthorized', identifier);
+      return false;
+    }
+
     this._logger.debug(
       'Successfully got past the authentication step for identifier',
       identifier,
@@ -69,7 +68,19 @@ export class Authenticator implements IAuthenticator {
     return true;
   }
 
-  private async _checkPassword(username: string, password: string) {
+  private async _isKnown(identifier: string) {
+    return notNull(
+      await this._locationRepository.readChargingStationByStationId(identifier),
+    );
+  }
+
+  private async _isAlreadyConnected(identifier: string) {
+    return notNull(
+      await this._cache.get(identifier, CacheNamespace.Connections),
+    );
+  }
+
+  private async _isPasswordValid(username: string, password: string) {
     return await this._deviceModelRepository
       .readAllByQuerystring({
         stationId: username,

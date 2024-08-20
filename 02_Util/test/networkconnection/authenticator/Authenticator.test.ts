@@ -63,10 +63,17 @@ describe('Authenticator', () => {
     deviceModelRepository.readAllByQuerystring.mockReset();
   });
 
-  it('should return false when station is not found and unknown stations are not allowed', async () => {
+  it('should return false for unknown station when unknown stations are not allowed', async () => {
     const stationId = faker.string.uuid().toString();
+    givenStationIsNotConnected();
+    givenPassword(stationId, password.hash);
 
-    const result = await authenticator.authenticate(false, stationId);
+    const result = await authenticator.authenticate(
+      false,
+      stationId,
+      stationId,
+      password.plaintext,
+    );
 
     expect(result).toEqual(false);
     expect(
@@ -77,8 +84,14 @@ describe('Authenticator', () => {
   it('should return false when known station is already connected', async () => {
     const station = givenChargingStation(aChargingStation());
     givenStationIsConnected();
+    givenPassword(station.id, password.hash);
 
-    const result = await authenticator.authenticate(false, station.id);
+    const result = await authenticator.authenticate(
+      false,
+      station.id,
+      station.id,
+      password.plaintext,
+    );
 
     expect(result).toEqual(false);
     expect(cache.get).toHaveBeenCalledWith(
@@ -90,8 +103,14 @@ describe('Authenticator', () => {
   it('should return false when unknown station is already connected', async () => {
     const stationId = faker.string.uuid().toString();
     givenStationIsConnected();
+    givenPassword(stationId, password.hash);
 
-    const result = await authenticator.authenticate(true, stationId);
+    const result = await authenticator.authenticate(
+      true,
+      stationId,
+      stationId,
+      password.plaintext,
+    );
 
     expect(result).toEqual(false);
     expect(cache.get).toHaveBeenCalledWith(
@@ -100,7 +119,6 @@ describe('Authenticator', () => {
     );
   });
 
-  // TODO: credentials for unknown station?
   it.each([
     [
       '9a06661c-2332-4897-b0d4-2187671dbe7b',
@@ -126,6 +144,7 @@ describe('Authenticator', () => {
     'should return false when unknown station identifier does not match username',
     async (stationId, username) => {
       givenStationIsNotConnected();
+      givenPassword(stationId, password.hash);
 
       const result = await authenticator.authenticate(
         true,
@@ -165,6 +184,7 @@ describe('Authenticator', () => {
     async (stationId, username) => {
       const station = givenChargingStation(aChargingStation({ id: stationId }));
       givenStationIsNotConnected();
+      givenPassword(stationId, password.hash);
 
       const result = await authenticator.authenticate(
         false,
@@ -178,7 +198,6 @@ describe('Authenticator', () => {
     },
   );
 
-  // TODO: credentials for unknown station?
   it('should return false when password is not found for unknown station', async () => {
     const stationId = faker.string.uuid().toString();
     givenStationIsNotConnected();
@@ -428,24 +447,6 @@ describe('Authenticator', () => {
     },
   );
 
-  it('should return true for unknown station when allowed and no credentials are provided', async () => {
-    const stationId = faker.string.uuid().toString();
-    givenStationIsNotConnected();
-
-    const result = await authenticator.authenticate(true, stationId);
-
-    expect(result).toEqual(true);
-  });
-
-  it('should return true for known station when no credentials are provided', async () => {
-    const station = givenChargingStation(aChargingStation());
-    givenStationIsNotConnected();
-
-    const result = await authenticator.authenticate(false, station.id);
-
-    expect(result).toEqual(true);
-  });
-
   function givenChargingStation(station: ChargingStation): ChargingStation {
     locationRepository.readChargingStationByStationId.mockResolvedValue(
       station,
@@ -468,6 +469,21 @@ describe('Authenticator', () => {
   ): VariableAttribute {
     deviceModelRepository.readAllByQuerystring.mockResolvedValue([attribute]);
     return attribute;
+  }
+
+  function givenPassword(stationId: string, passwordHash: string): void {
+    givenVariableAttribute(
+      aBasicAuthPasswordVariable({
+        stationId: stationId,
+        statuses: [
+          {
+            value: passwordHash,
+            status: SetVariableStatusEnumType.Accepted,
+            createdAt: new Date('2024-08-19T15:30:00Z'),
+          },
+        ],
+      } as Partial<VariableAttribute>),
+    );
   }
 
   function givenNoVariableAttributes() {
