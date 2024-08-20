@@ -53,7 +53,6 @@ describe('ACME', () => {
         },
       },
     } as any;
-    logger = new Logger<ILogObj>({ name: expect.getState().currentTestName });
     mockClient = {} as unknown as jest.Mocked<Client>;
     acme = new Acme(systemConfig, logger, mockClient);
   });

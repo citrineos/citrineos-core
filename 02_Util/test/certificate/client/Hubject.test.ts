@@ -37,7 +37,6 @@ describe('Hubject', () => {
         },
       },
     } as any;
-    logger = new Logger<ILogObj>({ name: expect.getState().currentTestName });
     hubject = new Hubject(systemConfig, logger);
   });
 
