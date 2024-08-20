@@ -264,7 +264,7 @@ describe('Authenticator', () => {
       expectedAuthenticationResult: false,
     },
     ...[
-      SetVariableStatusEnumType.Accepted,
+      SetVariableStatusEnumType.Rejected,
       SetVariableStatusEnumType.UnknownComponent,
       SetVariableStatusEnumType.UnknownVariable,
       SetVariableStatusEnumType.NotSupportedAttributeType,
@@ -273,12 +273,12 @@ describe('Authenticator', () => {
       statuses: faker.helpers.shuffle([
         {
           value: password.hash,
-          status: SetVariableStatusEnumType.Rejected,
+          status: status,
           createdAt: new Date('2024-08-19T16:03:53Z'),
         },
         {
           value: anotherPassword.hash,
-          status: status,
+          status: SetVariableStatusEnumType.Accepted,
           createdAt: new Date('2024-08-19T15:30:00Z'),
         },
         {
@@ -291,7 +291,7 @@ describe('Authenticator', () => {
       expectedAuthenticationResult: true,
     })),
     ...[
-      SetVariableStatusEnumType.Accepted,
+      SetVariableStatusEnumType.Rejected,
       SetVariableStatusEnumType.UnknownComponent,
       SetVariableStatusEnumType.UnknownVariable,
       SetVariableStatusEnumType.NotSupportedAttributeType,
@@ -300,12 +300,12 @@ describe('Authenticator', () => {
       statuses: faker.helpers.shuffle([
         {
           value: password.hash,
-          status: SetVariableStatusEnumType.Rejected,
+          status: status,
           createdAt: new Date('2024-08-19T16:03:53Z'),
         },
         {
           value: anotherPassword.hash,
-          status: status,
+          status: SetVariableStatusEnumType.Accepted,
           createdAt: new Date('2024-08-19T15:30:00Z'),
         },
         {
@@ -357,7 +357,7 @@ describe('Authenticator', () => {
       expectedAuthenticationResult: false,
     },
     ...[
-      SetVariableStatusEnumType.Accepted,
+      SetVariableStatusEnumType.Rejected,
       SetVariableStatusEnumType.UnknownComponent,
       SetVariableStatusEnumType.UnknownVariable,
       SetVariableStatusEnumType.NotSupportedAttributeType,
@@ -366,22 +366,22 @@ describe('Authenticator', () => {
       statuses: faker.helpers.shuffle([
         {
           value: password.hash,
-          status: SetVariableStatusEnumType.Rejected,
+          status: status,
           createdAt: new Date('2024-08-19T16:03:53Z'),
         },
         {
           value: password.hash,
-          status: SetVariableStatusEnumType.Rejected,
+          status: status,
           createdAt: new Date('2024-08-19T15:30:00Z'),
         },
         {
           value: anotherPassword.hash,
-          status: status,
+          status: SetVariableStatusEnumType.Accepted,
           createdAt: new Date('2024-08-19T14:30:00Z'),
         },
         {
           value: password.hash,
-          status: SetVariableStatusEnumType.Rejected,
+          status: status,
           createdAt: new Date('2024-08-19T14:12:41Z'),
         },
       ]),
@@ -389,7 +389,7 @@ describe('Authenticator', () => {
       expectedAuthenticationResult: true,
     })),
     ...[
-      SetVariableStatusEnumType.Accepted,
+      SetVariableStatusEnumType.Rejected,
       SetVariableStatusEnumType.UnknownComponent,
       SetVariableStatusEnumType.UnknownVariable,
       SetVariableStatusEnumType.NotSupportedAttributeType,
@@ -398,22 +398,22 @@ describe('Authenticator', () => {
       statuses: faker.helpers.shuffle([
         {
           value: password.hash,
-          status: SetVariableStatusEnumType.Rejected,
+          status: status,
           createdAt: new Date('2024-08-19T16:03:53Z'),
         },
         {
           value: password.hash,
-          status: SetVariableStatusEnumType.Rejected,
+          status: status,
           createdAt: new Date('2024-08-19T15:30:00Z'),
         },
         {
           value: anotherPassword.hash,
-          status: status,
+          status: SetVariableStatusEnumType.Accepted,
           createdAt: new Date('2024-08-19T14:30:00Z'),
         },
         {
           value: password.hash,
-          status: SetVariableStatusEnumType.Rejected,
+          status: status,
           createdAt: new Date('2024-08-19T14:12:41Z'),
         },
       ]),

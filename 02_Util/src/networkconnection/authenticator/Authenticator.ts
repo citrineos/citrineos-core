@@ -93,7 +93,7 @@ export class Authenticator implements IAuthenticator {
           // Grabbing value most recently *successfully* set on charger
           const hashedPassword = r[0].statuses
             ?.filter(
-              (status) => status.status !== SetVariableStatusEnumType.Rejected,
+              (status) => status.status === SetVariableStatusEnumType.Accepted,
             )
             .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
             .shift();
