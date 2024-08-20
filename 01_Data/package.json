@@ -29,7 +29,7 @@
     "bcrypt": "5.1.1",
     "pg": "8.11.3",
     "pg-hstore": "2.3.4",
-    "sequelize-typescript": "2.1.5",
+    "sequelize-typescript": "2.1.6",
     "tslog": "4.9.2",
     "uuid": "9.0.0"
   },
