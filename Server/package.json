@@ -46,7 +46,7 @@
     "@citrineos/tenant": "1.4.3",
     "@citrineos/transactions": "1.4.3",
     "@citrineos/util": "1.4.3",
-    "@directus/extensions": "1.0.2",
+    "@directus/extensions": "1.0.10",
     "@fastify/type-provider-json-schema-to-ts": "2.2.2",
     "cross-env": "7.0.3",
     "fastify": "4.22.2",
