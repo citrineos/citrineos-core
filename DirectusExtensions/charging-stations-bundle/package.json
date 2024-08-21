@@ -48,7 +48,7 @@
     "typescript": "5.4.3"
   },
   "dependencies": {
-    "@directus/extensions-sdk": "11.0.1",
+    "@directus/extensions-sdk": "11.0.10",
     "@directus/types": "11.0.7"
   }
 }
