@@ -16,6 +16,7 @@ export { CacheNamespace, ICache } from './interfaces/cache/cache';
 export {
   AbstractMessageRouter,
   IAuthenticator,
+  AuthenticationOptions,
   IMessageRouter,
 } from './interfaces/router';
 export {

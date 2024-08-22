@@ -89,6 +89,7 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
 export interface ILocationRepository extends CrudRepository<Location> {
   readLocationById: (id: number) => Promise<Location | undefined>;
   readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
+  doesChargingStationExistByStationId: (stationId: string) => Promise<boolean>;
   addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotificationRequest): Promise<void>;
 }
 

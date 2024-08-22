@@ -242,55 +242,36 @@ export class WebsocketNetworkConnection {
     // Failed mTLS and TLS requests are rejected by the server before getting this far
     this._logger.debug('On upgrade request', req.method, req.url, req.headers);
 
-    const identifier = this._getClientIdFromUrl(req.url as string);
-    if (
-      3 > websocketServerConfig.securityProfile &&
-      websocketServerConfig.securityProfile > 0
-    ) {
-      // Validate username/password from authorization header
-      const { username, password } = this.extractCredentials(req);
-      if (username && password) {
-        if (
-          !(await this._authenticator.authenticate(
-            websocketServerConfig.allowUnknownChargingStations,
-            identifier,
-            username,
-            password,
-          ))
-        ) {
-          this._logger.warn('Unauthorized', identifier);
-          this._rejectUpgradeUnauthorized(socket);
-          return;
-        }
-      } else {
-        this._logger.warn(
-          'Auth header missing or incorrectly formatted: ',
-          JSON.stringify(req.headers.authorization),
-        );
-        this._rejectUpgradeUnauthorized(socket);
-        return;
-      }
-    }
+    try {
+      const { identifier } = await this._authenticator.authenticate(req, {
+        securityProfile: websocketServerConfig.securityProfile,
+        allowUnknownChargingStations:
+          websocketServerConfig.allowUnknownChargingStations,
+      });
 
-    // Register client
-    const registered = await this._cache.set(
-      identifier,
-      websocketServerConfig.id,
-      CacheNamespace.Connections,
-    );
-    if (!registered) {
-      this._logger.fatal('Failed to register websocket client', identifier);
-      return false;
-    } else {
-      this._logger.debug(
-        'Successfully registered websocket client',
+      // Register client
+      const registered = await this._cache.set(
         identifier,
+        websocketServerConfig.id,
+        CacheNamespace.Connections,
       );
-    }
+      if (!registered) {
+        this._logger.fatal('Failed to register websocket client', identifier);
+        return false;
+      } else {
+        this._logger.debug(
+          'Successfully registered websocket client',
+          identifier,
+        );
+      }
 
-    wss.handleUpgrade(req, socket, head, (ws) => {
-      wss.emit('connection', ws, req);
-    });
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit('connection', ws, req);
+      });
+    } catch (error) {
+      this._logger.warn(error);
+      this._rejectUpgradeUnauthorized(socket);
+    }
   }
 
   /**

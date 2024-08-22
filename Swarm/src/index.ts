@@ -55,6 +55,9 @@ import {
 } from '@citrineos/smartcharging';
 import { sequelize } from '@citrineos/data';
 import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
+import { UnknownStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/UnknownStationFilter';
+import { ConnectedStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/ConnectedStationFilter';
+import { BasicAuthenticationFilter } from '@citrineos/util/dist/networkconnection/authenticator/BasicAuthenticationFilter';
 
 class CitrineOSServer {
   /**
@@ -160,9 +163,15 @@ class CitrineOSServer {
     );
 
     this._authenticator = new Authenticator(
-      this._cache,
-      new sequelize.LocationRepository(config, this._logger),
-      new sequelize.DeviceModelRepository(config, this._logger),
+      new UnknownStationFilter(
+        new sequelize.LocationRepository(this._config, this._logger),
+        this._logger,
+      ),
+      new ConnectedStationFilter(this._cache, this._logger),
+      new BasicAuthenticationFilter(
+        new sequelize.DeviceModelRepository(this._config, this._logger),
+        this._logger,
+      ),
       this._logger,
     );
 

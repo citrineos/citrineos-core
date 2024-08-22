@@ -6,3 +6,4 @@
 export { IMessageRouter } from './Router';
 export { AbstractMessageRouter } from './AbstractRouter';
 export { IAuthenticator } from './Authenticator';
+export { AuthenticationOptions } from './AuthenticationOptions';

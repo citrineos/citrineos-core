@@ -31,6 +31,10 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     return await this.chargingStation.readByKey(stationId);
   }
 
+  async doesChargingStationExistByStationId(stationId: string): Promise<boolean> {
+    return await this.chargingStation.existsByKey(stationId);
+  }
+
   async addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotificationRequest): Promise<void> {
     await this.statusNotification.create(
       StatusNotification.build({
