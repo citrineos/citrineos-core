@@ -9,8 +9,6 @@ import {
   basicAuth,
 } from '../../providers/IncomingMessageProvider';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider';
-import { IncomingMessage } from 'http';
-import { AuthenticationOptions } from '@citrineos/base';
 
 type PasswordPair = {
   plaintext: string;

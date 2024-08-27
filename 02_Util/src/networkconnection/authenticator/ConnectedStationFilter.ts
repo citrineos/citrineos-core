@@ -19,13 +19,13 @@ export class ConnectedStationFilter extends AuthenticatorFilter {
     this._cache = cache;
   }
 
-  protected shouldFilter(options: AuthenticationOptions) {
+  protected shouldFilter(_options: AuthenticationOptions) {
     return true;
   }
 
   protected async filter(
     identifier: string,
-    request: IncomingMessage,
+    _request: IncomingMessage,
   ): Promise<void> {
     const isAlreadyConnected = notNull(
       await this._cache.get(identifier, CacheNamespace.Connections),

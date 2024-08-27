@@ -25,7 +25,7 @@ export class UnknownStationFilter extends AuthenticatorFilter {
 
   protected async filter(
     identifier: string,
-    request: IncomingMessage,
+    _request: IncomingMessage,
   ): Promise<void> {
     const isStationKnown =
       await this._locationRepository.doesChargingStationExistByStationId(
