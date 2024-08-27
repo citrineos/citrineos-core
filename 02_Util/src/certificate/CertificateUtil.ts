@@ -47,12 +47,20 @@ export function parseCertificateChainPem(pem: string): string[] {
  */
 export function extractCertificateArrayFromEncodedString(
   pem: string,
-): pkijs.CertificateSetItem[] | undefined {
-  const cmsSignedBuffer = Buffer.from(pem, 'base64');
-  const asn1 = asn1js.fromBER(cmsSignedBuffer);
-  const cmsContent = new pkijs.ContentInfo({ schema: asn1.result });
-  const cmsSigned = new pkijs.SignedData({ schema: cmsContent.content });
-  return cmsSigned.certificates;
+): pkijs.CertificateSetItem[] {
+  try {
+    const cmsSignedBuffer = Buffer.from(pem, 'base64');
+    const asn1 = asn1js.fromBER(cmsSignedBuffer);
+    const cmsContent = new pkijs.ContentInfo({ schema: asn1.result });
+    const cmsSigned = new pkijs.SignedData({ schema: cmsContent.content });
+    if (cmsSigned.certificates && cmsSigned.certificates.length > 0) {
+      return cmsSigned.certificates;
+    } else {
+      return [];
+    }
+  } catch (e) {
+    throw new Error(`Failed to extract certificate ${pem} due to ${e}`);
+  }
 }
 
 /**
