@@ -6,6 +6,10 @@ This CSR is taken from SignCertificateRequest sent by EVerest
 
 This encoded pem string is in the successful response from https://hubject.stoplight.io/docs/open-plugncharge/e246aa213bc22-obtaining-ca-certificates-iso-15118-2-and-iso-15118-20
 
+### [V2GLeafCertificateSample.pem](V2GLeafCertificateSample.pem)
+
+This encoded pem sample is from https://hubject.stoplight.io/docs/open-plugncharge/486f0b8b3ded4-simple-enroll-iso-15118-2-and-iso-15118-20
+
 ### [RootCertificateSample.pem](RootCertificateSample.pem)
 
 ### [RootKeySample.pem](RootKeySample.pem)
