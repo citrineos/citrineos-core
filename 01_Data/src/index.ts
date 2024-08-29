@@ -33,6 +33,8 @@ export {
   IdToken,
   IdTokenInfo,
   AdditionalInfo,
+  LocalListVersion,
+  SendLocalList,
   StatusNotification,
   ChargingStationSecurityInfo,
   SignatureAlgorithmEnumType,

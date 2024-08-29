@@ -41,6 +41,7 @@ import {
   ReserveNowResponse,
   ReserveNowStatusEnumType,
   SendLocalListResponse,
+  SendLocalListStatusEnumType,
   SystemConfig,
   UnlockConnectorResponse,
 } from '@citrineos/base';
@@ -50,6 +51,7 @@ import {
   ICallMessageRepository,
   IChargingProfileRepository,
   IDeviceModelRepository,
+  ILocalAuthListRepository,
   IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
@@ -91,6 +93,7 @@ export class EVDriverModule extends AbstractModule {
   ];
 
   protected _authorizeRepository: IAuthorizationRepository;
+  protected _localAuthListRepository: ILocalAuthListRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _tariffRepository: ITariffRepository;
   protected _transactionEventRepository: ITransactionEventRepository;
@@ -119,6 +122,9 @@ export class EVDriverModule extends AbstractModule {
    *
    * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating Authorization data.
    * If no `authorizeRepository` is provided, a default {@link sequelize:AuthorizationRepository} instance is created and used.
+   *
+   * @param {ILocalAuthListRepository} [localAuthListRepository] - An optional parameter of type {@link ILocalAuthListRepository} which represents a repository for accessing and manipulating Local Authorization List data.
+   * If no `localAuthListRepository` is provided, a default {@link sequelize:localAuthListRepository} instance is created and used.
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is
@@ -159,6 +165,7 @@ export class EVDriverModule extends AbstractModule {
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
     authorizeRepository?: IAuthorizationRepository,
+    localAuthListRepository?: ILocalAuthListRepository,
     deviceModelRepository?: IDeviceModelRepository,
     tariffRepository?: ITariffRepository,
     transactionEventRepository?: ITransactionEventRepository,
@@ -189,6 +196,9 @@ export class EVDriverModule extends AbstractModule {
     this._authorizeRepository =
       authorizeRepository ||
       new sequelize.SequelizeAuthorizationRepository(config, logger);
+    this._localAuthListRepository =
+      localAuthListRepository ||
+      new sequelize.SequelizeLocalAuthListRepository(config, logger);
     this._deviceModelRepository =
       deviceModelRepository ||
       new sequelize.SequelizeDeviceModelRepository(config, logger);
@@ -701,6 +711,29 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('SendLocalListResponse received:', message, props);
+
+    const stationId = message.context.stationId;
+
+    const sendLocalListRequest = await this._localAuthListRepository.getSendLocalListRequestByStationIdAndCorrelationId(stationId, message.context.correlationId);
+
+    if (!sendLocalListRequest) {
+      this._logger.error(`Unable to process SendLocalListResponse. SendLocalListRequest not found for StationId ${stationId} by CorrelationId ${message.context.correlationId}.`);
+      return;
+    }
+
+    const sendLocalListResponse = message.payload;
+
+    switch (sendLocalListResponse.status) {
+      case SendLocalListStatusEnumType.Accepted:
+        this._localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(stationId, sendLocalListRequest);
+        break;
+      case SendLocalListStatusEnumType.Failed:
+      case SendLocalListStatusEnumType.VersionMismatch:
+        break;
+      default:
+        this._logger.error(`Unknown SendLocalListStatusEnumType: ${sendLocalListResponse.status}.`);
+        break;
+    }
   }
 
   @AsHandler(CallAction.GetLocalListVersion)

@@ -5,7 +5,7 @@
 // Sequelize Persistence Models
 export { Boot } from './model/Boot';
 export { VariableAttribute, VariableCharacteristics, Component, Evse, Variable } from './model/DeviceModel';
-export { Authorization, IdToken, IdTokenInfo, AdditionalInfo } from './model/Authorization';
+export { Authorization, IdToken, IdTokenInfo, AdditionalInfo, LocalListVersion, SendLocalList } from './model/Authorization';
 export { Transaction, TransactionEvent, MeterValue } from './model/TransactionEvent';
 export { SecurityEvent } from './model/SecurityEvent';
 export { VariableMonitoring, EventData, VariableMonitoringStatus } from './model/VariableMonitoring';
@@ -24,6 +24,7 @@ export { SequelizeRepository } from './repository/Base';
 export { SequelizeAuthorizationRepository } from './repository/Authorization';
 export { SequelizeBootRepository } from './repository/Boot';
 export { SequelizeDeviceModelRepository } from './repository/DeviceModel';
+export { SequelizeLocalAuthListRepository } from './repository/LocalAuthList';
 export { SequelizeLocationRepository } from './repository/Location';
 export { SequelizeTransactionEventRepository } from './repository/TransactionEvent';
 export { SequelizeSecurityEventRepository } from './repository/SecurityEvent';

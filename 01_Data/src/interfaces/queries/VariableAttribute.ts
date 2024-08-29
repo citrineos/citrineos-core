@@ -11,11 +11,11 @@ export interface VariableAttributeQuerystring {
   value?: string;
   status?: SetVariableStatusEnumType;
   component_evse_id?: number;
-  component_evse_connectorId?: number;
+  component_evse_connectorId?: number | null;
   component_name?: string;
-  component_instance?: string;
+  component_instance?: string | null;
   variable_name?: string;
-  variable_instance?: string;
+  variable_instance?: string | null;
 }
 
 export const VariableAttributeQuerySchema = QuerySchema(

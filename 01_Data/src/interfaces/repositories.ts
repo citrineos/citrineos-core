@@ -36,6 +36,8 @@ import {
   StatusNotificationRequest,
   ReserveNowRequest,
   MeterValueType,
+  SendLocalListRequest,
+  UpdateEnumType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
 import { CallMessage, ChargingStationSecurityInfo, CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
@@ -48,6 +50,8 @@ import { Tariff } from '../layers/sequelize';
 import { TariffQueryString } from './queries/Tariff';
 import { ChargingProfile } from '../layers/sequelize';
 import { Reservation } from '../layers/sequelize';
+import { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion';
+import { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList';
 
 export interface IAuthorizationRepository extends CrudRepository<AuthorizationData> {
   createOrUpdateByQuerystring: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
@@ -84,6 +88,12 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
   findOrCreateEvseAndComponent(componentType: ComponentType, stationId: string): Promise<Component>;
   findEvseByIdAndConnectorId(id: number, connectorId: number | null): Promise<Evse | undefined>;
   findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance: string | null): Promise<VariableCharacteristics | undefined>;
+}
+
+export interface ILocalAuthListRepository extends CrudRepository<LocalListVersion> {
+  createSendLocalList(stationId: string, versionNumber: number, updateType: UpdateEnumType, localAuthorizationList?: [Authorization, ...Authorization[]]): Promise<SendLocalList>;
+  getSendLocalListRequestByStationIdAndCorrelationId(stationId: string, correlationId: string): Promise<SendLocalList | undefined>;
+  createOrUpdateLocalListVersionFromStationIdAndSendLocalList(stationId: string, sendLocalList: SendLocalList): Promise<LocalListVersion>;
 }
 
 export interface ILocationRepository extends CrudRepository<Location> {
