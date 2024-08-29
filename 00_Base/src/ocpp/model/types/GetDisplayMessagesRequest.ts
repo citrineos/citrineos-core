@@ -22,7 +22,7 @@ export interface GetDisplayMessagesRequest extends OcppRequest {
    *
    * @minItems 1
    */
-  id?: [number, ...number[]];
+  id?: [number, ...number[]] | null;
   /**
    * The Id of this request.
    *

@@ -18,7 +18,9 @@ export interface GetReportRequest extends OcppRequest {
   /**
    * @minItems 1
    */
-  componentVariable?: [ComponentVariableType, ...ComponentVariableType[]];
+  componentVariable?:
+    | [ComponentVariableType, ...ComponentVariableType[]]
+    | null;
   /**
    * The Id of the request.
    *
@@ -44,7 +46,8 @@ export interface GetReportRequest extends OcppRequest {
         ComponentCriterionEnumType,
         ComponentCriterionEnumType,
         ComponentCriterionEnumType,
-      ];
+      ]
+    | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

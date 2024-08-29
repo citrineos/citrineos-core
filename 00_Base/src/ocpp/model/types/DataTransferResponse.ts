@@ -22,7 +22,7 @@ export interface DataTransferResponse extends OcppResponse {
    *
    */
   data?: {
-    [k: string]: unknown;
+    [k: string]: unknown | null;
   };
 }
 /**

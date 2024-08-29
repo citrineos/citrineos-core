@@ -77,7 +77,7 @@ export interface IdTokenInfoType {
    *
    * @minItems 1
    */
-  evseId?: [number, ...number[]];
+  evseId?: [number, ...number[]] | null;
   groupIdToken?: IdTokenType | null;
   /**
    * ID_ Token. Language2. Language_ Code
@@ -97,7 +97,7 @@ export interface IdTokenType {
   /**
    * @minItems 1
    */
-  additionalInfo?: [AdditionalInfoType, ...AdditionalInfoType[]];
+  additionalInfo?: [AdditionalInfoType, ...AdditionalInfoType[]] | null;
   /**
    * IdToken is case insensitive. Might hold the hidden id of an RFID tag, but can for example also contain a UUID.
    *
