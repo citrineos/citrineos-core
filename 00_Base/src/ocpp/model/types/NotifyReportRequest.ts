@@ -28,7 +28,7 @@ export interface NotifyReportRequest extends OcppRequest {
   /**
    * @minItems 1
    */
-  reportData?: [ReportDataType, ...ReportDataType[]];
+  reportData?: [ReportDataType, ...ReportDataType[]] | null;
   /**
    * “to be continued” indicator. Indicates whether another part of the report follows in an upcoming notifyReportRequest message. Default value when omitted is false.
    *

@@ -22,7 +22,7 @@ export interface NotifyChargingLimitRequest extends OcppRequest {
   /**
    * @minItems 1
    */
-  chargingSchedule?: [ChargingScheduleType, ...ChargingScheduleType[]];
+  chargingSchedule?: [ChargingScheduleType, ...ChargingScheduleType[]] | null;
   /**
    * The charging schedule contained in this notification applies to an EVSE. evseId must be &gt; 0.
    *
@@ -175,7 +175,8 @@ export interface SalesTariffEntryType {
   consumptionCost?:
     | [ConsumptionCostType]
     | [ConsumptionCostType, ConsumptionCostType]
-    | [ConsumptionCostType, ConsumptionCostType, ConsumptionCostType];
+    | [ConsumptionCostType, ConsumptionCostType, ConsumptionCostType]
+    | null;
 }
 /**
  * Relative_ Timer_ Interval

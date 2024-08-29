@@ -18,7 +18,7 @@ export interface NotifyMonitoringReportRequest extends OcppRequest {
   /**
    * @minItems 1
    */
-  monitor?: [MonitoringDataType, ...MonitoringDataType[]];
+  monitor?: [MonitoringDataType, ...MonitoringDataType[]] | null;
   /**
    * The id of the GetMonitoringRequest that requested this report.
    *
