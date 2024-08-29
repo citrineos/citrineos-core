@@ -21,6 +21,7 @@ import {
   ClearCacheResponse,
   EventGroup,
   GetChargingProfilesRequest,
+  GetLocalListVersionRequest,
   GetLocalListVersionResponse,
   HandlerProperties,
   ICache,
@@ -69,6 +70,7 @@ import {
 } from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
+import { LocalAuthListService } from './LocalAuthListService';
 
 /**
  * Component that handles provisioning related messages.
@@ -77,6 +79,7 @@ export class EVDriverModule extends AbstractModule {
   /**
    * Fields
    */
+
   protected _requests: CallAction[] = [
     CallAction.Authorize,
     CallAction.ReservationStatusUpdate,
@@ -102,6 +105,7 @@ export class EVDriverModule extends AbstractModule {
   protected _callMessageRepository: ICallMessageRepository;
 
   private _certificateAuthorityService: CertificateAuthorityService;
+  private _localAuthListService: LocalAuthListService;
   private _authorizers: IAuthorizer[];
 
   /**
@@ -222,6 +226,11 @@ export class EVDriverModule extends AbstractModule {
       certificateAuthorityService ||
       new CertificateAuthorityService(config, logger);
 
+    this._localAuthListService = new LocalAuthListService(
+      this._localAuthListRepository,
+      this._deviceModelRepository,
+    );
+
     this._authorizers = authorizers || [];
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
@@ -249,6 +258,10 @@ export class EVDriverModule extends AbstractModule {
 
   get callMessageRepository(): ICallMessageRepository {
     return this._callMessageRepository;
+  }
+
+  get localAuthListService(): LocalAuthListService {
+    return this._localAuthListService;
   }
 
   /**
@@ -728,7 +741,21 @@ export class EVDriverModule extends AbstractModule {
         this._localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(stationId, sendLocalListRequest);
         break;
       case SendLocalListStatusEnumType.Failed:
+        // TODO: Surface alert for upstream handling
+        this._logger.error(`SendLocalListRequest failed for StationId ${stationId}: ${message.context.correlationId}, ${JSON.stringify(sendLocalListRequest)}.`);
+        break;
       case SendLocalListStatusEnumType.VersionMismatch:
+        this._logger.error(`SendLocalListRequest version mismatch for StationId ${stationId}: ${message.context.correlationId}, ${JSON.stringify(sendLocalListRequest)}.`);
+        this._logger.error(`Sending GetLocalListVersionRequest for StationId ${stationId} due to SendLocalListRequest version mismatch.`);
+        const messageConfirmation = await this.sendCall(
+          stationId,
+          message.context.tenantId,
+          CallAction.GetLocalListVersion,
+          {} as GetLocalListVersionRequest,
+        );
+        if (!messageConfirmation.success) {
+          this._logger.error(`Unable to send GetLocalListVersionRequest for StationId ${stationId} due to SendLocalListRequest version mismatch.`, messageConfirmation);
+        }
         break;
       default:
         this._logger.error(`Unknown SendLocalListStatusEnumType: ${sendLocalListResponse.status}.`);
