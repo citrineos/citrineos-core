@@ -185,8 +185,7 @@ async function processJsonSchema(data, writeToFile = true) {
 
         // Add null type to all optional properties
         // This regex means a string starts with '?:' and ends with ';'
-        // and contains no '[' or ']' in between
-        const regex = /(\?:[^;\[\]]*);/g;
+        const regex = /(\?:[^;]*);/g;
         ts = ts.replaceAll(regex, '$1 | null;');
 
         if (writeToFile) {
