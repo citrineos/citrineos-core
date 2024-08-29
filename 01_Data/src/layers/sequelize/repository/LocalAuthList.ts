@@ -58,6 +58,28 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
         return sendLocalList;
     }
 
+    async validateOrReplaceLocalListVersionForStation(versionNumber: number, stationId: string): Promise<void> {
+        await this.s.transaction(async (transaction) => {
+            const localListVersion = await LocalListVersion.findOne({ where: { stationId }, transaction });
+            if (localListVersion && localListVersion.versionNumber === versionNumber) {
+                return;
+            }
+            if (localListVersion && localListVersion.versionNumber !== versionNumber) {
+                // Remove associations
+                await LocalListVersionAuthorization.destroy({ where: { localListVersionId: localListVersion.id }, transaction });
+                // Destroy old version
+                await LocalListVersion.destroy({ where: { stationId }, transaction });
+            }
+
+            await LocalListVersion.create({ stationId, versionNumber }, { transaction });
+        });
+    }
+
+    async getNextVersionNumberForStation(stationId: string): Promise<number> {
+        const localListVersion = await this.readOnlyOneByQuery({ where: { stationId } });
+        return localListVersion ? localListVersion.versionNumber + 1 : 1;
+    }
+
     async getSendLocalListRequestByStationIdAndCorrelationId(stationId: string, correlationId: string): Promise<SendLocalList | undefined> {
         return this.sendLocalList.readOnlyOneByQuery({ where: { stationId, correlationId } });
     }

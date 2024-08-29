@@ -742,6 +742,8 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetLocalListVersionResponse received:', message, props);
+
+    await this._localAuthListRepository.validateOrReplaceLocalListVersionForStation(message.payload.versionNumber, message.context.stationId);
   }
 
   private async _findReservationByCorrelationId(
