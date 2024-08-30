@@ -237,7 +237,7 @@ export { HttpHeader } from './interfaces/api/http.header';
 export { HttpStatus } from './interfaces/api/http.status';
 export { Money } from './money/Money';
 export { Currency, CurrencyCode } from './money/Currency';
-export { assert, notNull, deepEqual } from './assertion/assertion';
+export { assert, notNull, deepDirectionalEqual } from './assertion/assertion';
 export { UnauthorizedError } from './interfaces/api/exception/UnauthorizedError';
 export { AuthorizationSecurity } from './interfaces/api/AuthorizationSecurity';
 export { Ajv };
