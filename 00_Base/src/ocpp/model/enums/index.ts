@@ -676,7 +676,7 @@ export const enum ReservationUpdateStatusEnumType {
  * This contains the current status of the Connector.
  *
  */
-export const enum ConnectorStatusEnumType {
+export enum ConnectorStatusEnumType {
   Available = 'Available',
   Occupied = 'Occupied',
   Reserved = 'Reserved',
