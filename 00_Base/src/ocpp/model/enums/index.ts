@@ -393,7 +393,7 @@ export const enum MessageStateEnumType {
  * Reason the Charging Station sends this message to the CSMS
  *
  */
-export const enum TriggerReasonEnumType {
+export enum TriggerReasonEnumType {
   Authorized = 'Authorized',
   CablePluggedIn = 'CablePluggedIn',
   ChargingRateChanged = 'ChargingRateChanged',
@@ -507,7 +507,7 @@ export const enum ClearMessageStatusEnumType {
  * Type of detail value: start, end or sample. Default = "Sample.Periodic"
  *
  */
-export const enum ReadingContextEnumType {
+export enum ReadingContextEnumType {
   Interruption_Begin = 'Interruption.Begin',
   Interruption_End = 'Interruption.End',
   Other = 'Other',
@@ -525,7 +525,7 @@ export const enum ReadingContextEnumType {
  *
  *
  */
-export const enum LocationEnumType {
+export enum LocationEnumType {
   Body = 'Body',
   Cable = 'Cable',
   EV = 'EV',
@@ -539,7 +539,7 @@ export const enum LocationEnumType {
  * Type of measurement. Default = "Energy.Active.Import.Register"
  *
  */
-export const enum MeasurandEnumType {
+export enum MeasurandEnumType {
   Current_Export = 'Current.Export',
   Current_Import = 'Current.Import',
   Current_Offered = 'Current.Offered',
@@ -573,7 +573,7 @@ export const enum MeasurandEnumType {
  * Indicates how the measured value is to be interpreted. For instance between L1 and neutral (L1-N) Please note that not all values of phase are applicable to all Measurands. When phase is absent, the measured value is interpreted as an overall value.
  *
  */
-export const enum PhaseEnumType {
+export enum PhaseEnumType {
   L1 = 'L1',
   L2 = 'L2',
   L3 = 'L3',
@@ -788,7 +788,7 @@ export const enum ResetEnumType {
  * The first TransactionEvent of a transaction SHALL contain: "Started" The last TransactionEvent of a transaction SHALL contain: "Ended" All others SHALL contain: "Updated"
  *
  */
-export const enum TransactionEventEnumType {
+export enum TransactionEventEnumType {
   Ended = 'Ended',
   Started = 'Started',
   Updated = 'Updated',
@@ -909,7 +909,7 @@ export const enum ReserveNowStatusEnumType {
 }
 
 /**
- * This indicates whether the Charging Station has successfully received and applied the update of the Local Authorization List.
+ * This indicates whether the Charging Station has successfully received and applied the update of the Local Boot List.
  *
  */
 export const enum SendLocalListStatusEnumType {
@@ -987,7 +987,7 @@ export const enum GetCertificateStatusEnumType {
  * has changed.
  *
  */
-export const enum ChargingStateEnumType {
+export enum ChargingStateEnumType {
   Charging = 'Charging',
   EVConnected = 'EVConnected',
   SuspendedEV = 'SuspendedEV',
@@ -1001,7 +1001,7 @@ export const enum ChargingStateEnumType {
  * This contains the reason why the transaction was stopped. MAY only be omitted when Reason is "Local".
  *
  */
-export const enum ReasonEnumType {
+export enum ReasonEnumType {
   DeAuthorized = 'DeAuthorized',
   EmergencyStop = 'EmergencyStop',
   EnergyLimitReached = 'EnergyLimitReached',
