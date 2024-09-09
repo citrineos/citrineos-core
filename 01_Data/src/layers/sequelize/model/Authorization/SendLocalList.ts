@@ -29,7 +29,7 @@ export class SendLocalList extends Model implements SendLocalListRequest {
     declare updateType: UpdateEnumType;
 
     @BelongsToMany(() => LocalListAuthorization, () => SendLocalListAuthorization)
-    declare localAuthorizationList?: [LocalListAuthorization, ...LocalListAuthorization[]] | undefined;
+    declare localAuthorizationList?: [LocalListAuthorization, ...LocalListAuthorization[]] | null;
 
     customData?: CustomDataType | null | undefined;
 
@@ -37,7 +37,7 @@ export class SendLocalList extends Model implements SendLocalListRequest {
         return {
             versionNumber: this.versionNumber,
             updateType: this.updateType,
-            localAuthorizationList: this.localAuthorizationList?.map(localListAuth => {
+            localAuthorizationList: !(this.localAuthorizationList && this.localAuthorizationList[0]) ? null : this.localAuthorizationList.map(localListAuth => {
                 return {
                     idToken: {
                         idToken: localListAuth.idToken.idToken,
@@ -68,7 +68,7 @@ export class SendLocalList extends Model implements SendLocalListRequest {
                         personalMessage: localListAuth.idTokenInfo?.personalMessage,
                     },
                 }
-            }) as [AuthorizationData, ...AuthorizationData[]] | undefined,
+            }) as [AuthorizationData, ...AuthorizationData[]] | null,
         };
     }
 }

@@ -54,7 +54,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
 
     const authorizationModel = savedAuthorizationModel ?? Authorization.build({}, this._createInclude(value));
 
-    const updatedIdToken = await this._updateIdToken(value.idToken, transaction);
+    const updatedIdToken = await this.updateIdToken(value.idToken, transaction);
     authorizationModel.idTokenId = updatedIdToken.id;
 
     if (value.idTokenInfo) {
@@ -85,7 +85,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
         });
 
         if (value.idTokenInfo.groupIdToken) {
-          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken, transaction);
+          const savedGroupIdToken = await this.updateIdToken(value.idTokenInfo.groupIdToken, transaction);
           if (!savedIdTokenInfo.groupIdTokenId) {
             savedIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
           }
@@ -96,7 +96,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
         await savedIdTokenInfo.save({ transaction });
       } else {
         if (value.idTokenInfo.groupIdToken) {
-          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken, transaction);
+          const savedGroupIdToken = await this.updateIdToken(value.idTokenInfo.groupIdToken, transaction);
           valueIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
         }
         const createdIdTokenInfo = await valueIdTokenInfo.save({ transaction });
@@ -131,46 +131,9 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     return await super.deleteAllByQuery(this._constructQuery(query), Authorization.MODEL_NAME);
   }
 
-  /**
-   * Private Methods
-   */
 
-  private _constructQuery(queryParams: AuthorizationQuerystring): object {
-    return {
-      where: {},
-      include: [
-        {
-          model: IdToken,
-          where: { idToken: queryParams.idToken, type: queryParams.type },
-          required: true, // This ensures the inner join, so only Authorizations with the matching IdToken are returned
-        },
-        { model: IdTokenInfo, include: [{ model: IdToken, include: [AdditionalInfo] }] },
-      ],
-    };
-  }
 
-  private _createInclude(value: AuthorizationData): BuildOptions {
-    const include: Includeable[] = [];
-    if (value.idTokenInfo) {
-      const idTokenInfoInclude: Includeable[] = [];
-      if (value.idTokenInfo.groupIdToken) {
-        const idTokenInfoGroupIdTokenInclude: Includeable[] = [];
-        if (value.idTokenInfo?.groupIdToken.additionalInfo) {
-          idTokenInfoGroupIdTokenInclude.push(AdditionalInfo);
-        }
-        idTokenInfoInclude.push({ model: IdToken, include: idTokenInfoGroupIdTokenInclude });
-      }
-      include.push({ model: IdTokenInfo, include: idTokenInfoInclude });
-    }
-    const idTokenInclude: Includeable[] = [];
-    if (value.idToken.additionalInfo) {
-      idTokenInclude.push(AdditionalInfo);
-    }
-    include.push({ model: IdToken, include: idTokenInclude });
-    return { include };
-  }
-
-  private async _updateIdToken(value: IdTokenType, transaction?: Transaction): Promise<IdToken> {
+  async updateIdToken(value: IdTokenType, transaction?: Transaction): Promise<IdToken> {
     const [savedIdTokenModel] = await IdToken.findOrCreate({
       where: { idToken: value.idToken, type: value.type },
       transaction,
@@ -211,5 +174,44 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     });
 
     return savedIdTokenModel.reload({ include: [AdditionalInfo], transaction });
+  }
+
+  /**
+   * Private Methods
+   */
+
+  private _constructQuery(queryParams: AuthorizationQuerystring): object {
+    return {
+      where: {},
+      include: [
+        {
+          model: IdToken,
+          where: { idToken: queryParams.idToken, type: queryParams.type },
+          required: true, // This ensures the inner join, so only Authorizations with the matching IdToken are returned
+        },
+        { model: IdTokenInfo, include: [{ model: IdToken, include: [AdditionalInfo] }] },
+      ],
+    };
+  }
+
+  private _createInclude(value: AuthorizationData): BuildOptions {
+    const include: Includeable[] = [];
+    if (value.idTokenInfo) {
+      const idTokenInfoInclude: Includeable[] = [];
+      if (value.idTokenInfo.groupIdToken) {
+        const idTokenInfoGroupIdTokenInclude: Includeable[] = [];
+        if (value.idTokenInfo?.groupIdToken.additionalInfo) {
+          idTokenInfoGroupIdTokenInclude.push(AdditionalInfo);
+        }
+        idTokenInfoInclude.push({ model: IdToken, include: idTokenInfoGroupIdTokenInclude });
+      }
+      include.push({ model: IdTokenInfo, include: idTokenInfoInclude });
+    }
+    const idTokenInclude: Includeable[] = [];
+    if (value.idToken.additionalInfo) {
+      idTokenInclude.push(AdditionalInfo);
+    }
+    include.push({ model: IdToken, include: idTokenInclude });
+    return { include };
   }
 }

@@ -28,7 +28,7 @@ export class IdTokenInfo extends Model implements IdTokenInfoType {
   declare groupIdTokenId?: number | null;
 
   @BelongsTo(() => IdToken)
-  declare groupIdToken?: IdTokenType;
+  declare groupIdToken?: IdToken;
 
   @Column(DataType.STRING)
   declare language2?: string | null;
