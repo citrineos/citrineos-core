@@ -2,20 +2,17 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AttributeEnumType, AuthorizationData, deepDirectionalEqual, SendLocalListRequest, UpdateEnumType } from "@citrineos/base";
-import { Authorization, IDeviceModelRepository, ILocalAuthListRepository, VariableCharacteristics, VariableAttribute, IAuthorizationRepository, IdToken } from "@citrineos/data";
+import { AttributeEnumType, SendLocalListRequest, UpdateEnumType } from "@citrineos/base";
+import { Authorization, IDeviceModelRepository, ILocalAuthListRepository, VariableCharacteristics, VariableAttribute, IAuthorizationRepository, } from "@citrineos/data";
 
 
 export class LocalAuthListService {
-  protected _authorizationRepository: IAuthorizationRepository;
   protected _localAuthListRepository: ILocalAuthListRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
 
-  constructor(authorizationRepository: IAuthorizationRepository,
-    localAuthListRepository: ILocalAuthListRepository,
+  constructor(localAuthListRepository: ILocalAuthListRepository,
     deviceModelRepository: IDeviceModelRepository
   ) {
-    this._authorizationRepository = authorizationRepository;
     this._localAuthListRepository = localAuthListRepository;
     this._deviceModelRepository = deviceModelRepository;
   }

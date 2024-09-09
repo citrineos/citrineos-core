@@ -240,6 +240,10 @@ export class EVDriverModule extends AbstractModule {
     return this._authorizeRepository;
   }
 
+  get localAuthListRepository(): ILocalAuthListRepository {
+    return this._localAuthListRepository;
+  }
+
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
   }

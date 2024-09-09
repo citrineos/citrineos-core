@@ -362,14 +362,17 @@ export class EVDriverModuleApi
   }
 
   @AsMessageEndpoint(CallAction.SendLocalList, SendLocalListRequestSchema)
-  sendLocalList(
+  async sendLocalList(
     identifier: string,
     tenantId: string,
     request: SendLocalListRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
 
-
+    const sendLocalListDBO = await this._module.localAuthListRepository.createSendLocalListFromStationIdAndRequest(
+      identifier,
+      request
+    );
 
     return this._module.sendCall(
       identifier,
@@ -377,6 +380,7 @@ export class EVDriverModuleApi
       CallAction.SendLocalList,
       request,
       callbackUrl,
+      sendLocalListDBO.correlationId,
     );
   }
 

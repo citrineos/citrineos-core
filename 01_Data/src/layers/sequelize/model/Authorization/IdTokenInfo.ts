@@ -23,6 +23,9 @@ export class IdTokenInfo extends Model implements IdTokenInfoType {
   @Column(DataType.STRING)
   declare language1?: string | null;
 
+  // Here for compliance with interface; this is a computed property based on the context of a specific authorization request.
+  evseId?: [number, ...number[]] | null;
+
   @ForeignKey(() => IdToken)
   @Column(DataType.INTEGER)
   declare groupIdTokenId?: number | null;

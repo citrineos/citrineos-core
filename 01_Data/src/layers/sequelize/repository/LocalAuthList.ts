@@ -141,11 +141,14 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
             if (localListVersion && localListVersion.versionNumber !== versionNumber) {
                 // Remove associations
                 await LocalListVersionAuthorization.destroy({ where: { localListVersionId: localListVersion.id }, transaction });
-                // Destroy old version
-                await LocalListVersion.destroy({ where: { stationId }, transaction });
             }
-
-            await LocalListVersion.create({ stationId, versionNumber }, { transaction });
+            if (!localListVersion) {
+                const newLocalListVersion = await LocalListVersion.create({ stationId, versionNumber }, { transaction });
+                this.emit('created', [newLocalListVersion]);
+            } else {
+                await localListVersion.update({ versionNumber }, { transaction });
+                this.emit('updated', [localListVersion]);
+            }
         });
     }
 
