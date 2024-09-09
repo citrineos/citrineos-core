@@ -48,27 +48,27 @@ export class LocalAuthListService {
     return sendLocalList.correlationId;
   }
 
-  async createSendLocalListRequestsFromAuthorizationsAndStationId(authorizations: Authorization[], stationId: string): Promise<AsyncGenerator<SendLocalListRequest>> {
+  async createSendLocalListRequestsFromAuthorizationIdsAndStationId(authorizationIds: number[], stationId: string): Promise<AsyncGenerator<SendLocalListRequest>> {
     const maxLocalAuthListEntries = await this.getMaxLocalAuthListEntries();
     if (!maxLocalAuthListEntries) {
       throw new Error('Could not get max local auth list entries, required by D01.FR.12');
-    } else if (authorizations.length > maxLocalAuthListEntries) {
-      throw new Error(`Local auth list length (${authorizations.length}) exceeds max local auth list entries (${maxLocalAuthListEntries})`);
+    } else if (authorizationIds.length > maxLocalAuthListEntries) {
+      throw new Error(`Local auth list length (${authorizationIds.length}) exceeds max local auth list entries (${maxLocalAuthListEntries})`);
     }
 
     const itemsPerMessageSendLocalList =
       await this.getItemsPerMessageSendLocalListByStationId(stationId)
-      || authorizations.length;
+      || authorizationIds.length;
 
-    return this.generateSendLocalListRequestsFromMaxLengthAndAuthorizationsAndStationId(itemsPerMessageSendLocalList, authorizations, stationId);
+    return this.generateSendLocalListRequestsFromMaxLengthAndAuthorizationsAndStationId(itemsPerMessageSendLocalList, authorizationIds, stationId);
   }
 
-  async *generateSendLocalListRequestsFromMaxLengthAndAuthorizationsAndStationId(itemsPerMessageSendLocalList: number, authorizations: Authorization[], stationId: string): AsyncGenerator<SendLocalListRequest> {
+  async *generateSendLocalListRequestsFromMaxLengthAndAuthorizationsAndStationId(itemsPerMessageSendLocalList: number, authorizationIds: number[], stationId: string): AsyncGenerator<SendLocalListRequest> {
     let i = 0;
     let updateType = UpdateEnumType.Full;
-    while (i < authorizations.length) {
-      const sendLocalListAuthList = authorizations.slice(i, i + itemsPerMessageSendLocalList) as [Authorization, ...Authorization[]];
-      const sendLocalList = await this._localAuthListRepository.createSendLocalList(stationId, updateType, undefined, sendLocalListAuthList);
+    while (i < authorizationIds.length) {
+      const sendLocalListAuthList = authorizationIds.slice(i, i + itemsPerMessageSendLocalList);
+      const sendLocalList = await this._localAuthListRepository.createSendLocalListFromAuthorizationIds(stationId, updateType, undefined, sendLocalListAuthList);
       i += itemsPerMessageSendLocalList;
       updateType = UpdateEnumType.Differential;
       yield sendLocalList.toSendLocalListRequest();

@@ -102,7 +102,12 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
    *  Version number is automatically incremented when absent.
    *
    */
-  createSendLocalList(stationId: string, updateType: UpdateEnumType, versionNumber?: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList>;
+  createSendLocalListFromAuthorizationData(stationId: string, updateType: UpdateEnumType, versionNumber?: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList>;
+  /**
+   *  Version number is automatically incremented when absent.
+   *
+   */
+  createSendLocalListFromAuthorizationIds(stationId: string, updateType: UpdateEnumType, versionNumber?: number, authorizationIds?: number[]): Promise<SendLocalList>;
   /**
    * Returns the number of authorizations that will be in the updated local auth list for a given stationId and sendLocalListRequest correlationId.
    *

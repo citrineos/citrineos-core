@@ -38,10 +38,10 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
     }
 
     async createSendLocalListFromStationIdAndRequest(stationId: string, sendLocalListRequest: SendLocalListRequest): Promise<SendLocalList> {
-        return this.createSendLocalList(stationId, sendLocalListRequest.updateType, sendLocalListRequest.versionNumber, sendLocalListRequest.localAuthorizationList ?? undefined);
+        return this.createSendLocalListFromAuthorizationData(stationId, sendLocalListRequest.updateType, sendLocalListRequest.versionNumber, sendLocalListRequest.localAuthorizationList ?? undefined);
     }
 
-    async createSendLocalList(stationId: string, updateType: UpdateEnumType, versionNumber?: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList> {
+    async createSendLocalListFromAuthorizationData(stationId: string, updateType: UpdateEnumType, versionNumber?: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList> {
         if (versionNumber) {
             if (versionNumber <= 0) {
                 throw new Error(`Version number ${versionNumber} must be greater than 0, see D01.FR.18`)
@@ -56,7 +56,7 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
         if (localAuthorizationList && localAuthorizationList.length > 1) { // Check for duplicate authorizations
             const idTokens = localAuthorizationList.map(auth => auth.idToken.idToken + auth.idToken.type);
             if (new Set(idTokens).size !== idTokens.length) {
-                throw new Error(`Duplicated idToken in SendLocalListRequest ${JSON.stringify(idTokens)}`);
+                throw new Error(`Duplicated idToken in SendLocalList ${JSON.stringify(idTokens)}`);
             }
         }
         const sendLocalList = await SendLocalList.create({
@@ -100,6 +100,62 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
             const localListAuthorization = await this.localListAuthorization.create(LocalListAuthorization.build({
                 ...authorizationFields,
                 idTokenInfoId: localListAuthIdTokenInfo.id,
+                authorizationId: id,
+            }));
+            await SendLocalListAuthorization.create({
+                sendLocalListId: sendLocalList.id,
+                authorizationId: localListAuthorization.id
+            });
+        });
+
+        await sendLocalList.reload({ include: [LocalListAuthorization] });
+
+        this.sendLocalList.emit('created', [sendLocalList]);
+
+        return sendLocalList;
+    }
+
+    async createSendLocalListFromAuthorizationIds(stationId: string, updateType: UpdateEnumType, versionNumber?: number, authorizationIds?: number[]): Promise<SendLocalList> {
+        if (versionNumber) {
+            if (versionNumber <= 0) {
+                throw new Error(`Version number ${versionNumber} must be greater than 0, see D01.FR.18`)
+            }
+            const localListVersion = await LocalListVersion.findOne({ where: { stationId }, include: [LocalListAuthorization] });
+            if (localListVersion && localListVersion.versionNumber >= versionNumber) {
+                throw new Error(`Current LocalListVersion for ${stationId} is ${localListVersion.versionNumber}, cannot send LocalListVersion ${versionNumber} (version number must be higher)`);
+            }
+        } else {
+            versionNumber = await this.getNextVersionNumberForStation(stationId);
+        }
+        if (authorizationIds && authorizationIds.length > 1) { // Check for duplicate authorizations
+            if (new Set(authorizationIds).size !== authorizationIds.length) {
+                throw new Error(`Duplicated authorizationIds in list ${JSON.stringify(authorizationIds)}`);
+            }
+        }
+        const sendLocalList = await SendLocalList.create({
+            stationId,
+            correlationId: uuidv4(),
+            versionNumber,
+            updateType,
+        });
+        authorizationIds?.map(async (authorizationId) => {
+            const auth = await Authorization.findOne({
+                where: { id: authorizationId },
+                include: [
+                    IdToken,
+                    {
+                        model: IdTokenInfo,
+                        include: [IdToken],
+                    },
+                ],
+            });
+            if (!auth) {
+                throw new Error(`Authorization not found for ${authorizationId}, invalid authorization list`);
+            }
+
+            const { id, ...authorizationFields } = auth;
+            const localListAuthorization = await this.localListAuthorization.create(LocalListAuthorization.build({
+                ...authorizationFields,
                 authorizationId: id,
             }));
             await SendLocalListAuthorization.create({
