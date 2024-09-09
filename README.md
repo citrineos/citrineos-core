@@ -7,7 +7,7 @@ This is the main part of CitrineOS containing the actual charging station manage
 modules.
 
 All other documentation and the issue tracking can be found in our main repository
-here: https://github.com/citrineos/citrineos.
+here: <https://github.com/citrineos/citrineos>.
 
 ## Table of Contents
 
@@ -22,10 +22,10 @@ here: https://github.com/citrineos/citrineos.
 - [Linting and Prettier](#linting-and-prettier)
 - [Information on Docker setup](#information-on-docker-setup)
 - [Generating OCPP Interfaces](#generating-ocpp-interfaces)
-- [Generating OCPP Interfaces](#contributing)
-- [Generating OCPP Interfaces](#licensing)
-- [Generating OCPP Interfaces](#support-and-contact)
-- [Generating OCPP Interfaces](#roadmap)
+- [Contributing](#contributing)
+- [Licensing](#licensing)
+- [Support and contact](#support-and-contact)
+- [Roadmap](#roadmap)
 
 ## Overview
 
