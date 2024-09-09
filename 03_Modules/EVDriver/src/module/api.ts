@@ -42,6 +42,8 @@ import {
   AuthorizationRestrictionsSchema,
   CallMessage,
   ChargingStationKeyQuerySchema,
+  ChargingStationKeyQuerystring,
+  LocalListVersion,
 } from '@citrineos/data';
 import { validateChargingProfileType } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
@@ -122,7 +124,7 @@ export class EVDriverModuleApi
   @AsDataEndpoint(
     Namespace.AuthorizationData,
     HttpMethod.Delete,
-    ChargingStationKeyQuerySchema,
+    AuthorizationQuerySchema,
   )
   deleteAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
@@ -135,6 +137,19 @@ export class EVDriverModuleApi
           ' rows successfully deleted from ' +
           Namespace.AuthorizationData,
       );
+  }
+
+  @AsDataEndpoint(
+    Namespace.LocalListVersion,
+    HttpMethod.Get,
+    ChargingStationKeyQuerySchema,
+  )
+  async getLocalAuthorizationList(
+    request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
+  ): Promise<LocalListVersion | undefined> {
+    return await this._module.localAuthListRepository.readOnlyOneByQuery({
+      stationId: request.query.stationId,
+    });
   }
 
   /**
