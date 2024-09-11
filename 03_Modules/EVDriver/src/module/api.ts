@@ -152,35 +152,6 @@ export class EVDriverModuleApi
     });
   }
 
-  @AsDataEndpoint(
-    Namespace.LocalListVersion,
-    HttpMethod.Post,
-    ChargingStationKeyQuerySchema,
-  )
-  async updateLocalAuthorizationList(
-    request: FastifyRequest<{
-      Body: number[];
-      Querystring: ChargingStationKeyQuerystring;
-    }>,
-  ): Promise<void> {
-    const stationId = request.query.stationId;
-    const sendLocalListRequestGenerator = await this._module.localAuthListService.createSendLocalListRequestsFromAuthorizationIdsAndStationId(request.body, stationId);
-
-    for await (const sendLocalList of sendLocalListRequestGenerator) {
-      try {
-        const batchResult = await this._module.sendCall(
-          stationId,
-          "NA", // TODO: Update ChargingStationKeyQuerystring to include tenantId
-          CallAction.SendLocalList,
-          sendLocalList,
-        );
-
-      } catch (error) {
-
-      }
-    }
-  }
-
   /**
    * Message Endpoint Methods
    */
@@ -413,8 +384,8 @@ export class EVDriverModuleApi
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
 
-    const sendLocalListDBO = await this._module.localAuthListRepository.createSendLocalListFromStationIdAndRequest(
-      identifier,
+    const correlationId = await this._module.localAuthListService.persistAndGenerateCorrelationIdForStationIdAndSendLocalListRequest(
+      identifier, 
       request
     );
 
@@ -424,7 +395,7 @@ export class EVDriverModuleApi
       CallAction.SendLocalList,
       request,
       callbackUrl,
-      sendLocalListDBO.correlationId,
+      correlationId,
     );
   }
 

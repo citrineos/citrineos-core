@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AttributeEnumType, SendLocalListRequest, UpdateEnumType } from "@citrineos/base";
-import { Authorization, IDeviceModelRepository, ILocalAuthListRepository, VariableCharacteristics, VariableAttribute, IAuthorizationRepository, } from "@citrineos/data";
+import { AttributeEnumType, AuthorizationData, SendLocalListRequest, UpdateEnumType } from "@citrineos/base";
+import { IDeviceModelRepository, ILocalAuthListRepository, VariableCharacteristics, VariableAttribute, } from "@citrineos/data";
+import { LocalListAuthorization } from "@citrineos/data/src/layers/sequelize/model/Authorization/LocalListAuthorization";
 
 
 export class LocalAuthListService {
@@ -24,8 +25,8 @@ export class LocalAuthListService {
    * @param {SendLocalListRequest} sendLocalListRequest - The SendLocalListRequest to validate and persist.
    * @return {string} The correlation ID of the persisted SendLocalList.
    */
-  async validateAndPersistSendLocalListRequestFromMessageAPI(stationId: string, sendLocalListRequest: SendLocalListRequest): Promise<string> {
-    const sendLocalList = await this._localAuthListRepository.createSendLocalListFromStationIdAndRequest(stationId, sendLocalListRequest);
+  async persistAndGenerateCorrelationIdForStationIdAndSendLocalListRequest(stationId: string, sendLocalListRequest: SendLocalListRequest): Promise<string> {
+    const sendLocalList = await this.createSendLocalListFromStationIdAndRequest(stationId, sendLocalListRequest.updateType, sendLocalListRequest.versionNumber, sendLocalListRequest.localAuthorizationList ?? undefined);
     const authorizations = sendLocalListRequest.localAuthorizationList;
 
     const newLocalAuthListLength = await this._localAuthListRepository.countUpdatedAuthListFromStationIdAndCorrelationId(stationId, sendLocalList.correlationId);
@@ -48,34 +49,35 @@ export class LocalAuthListService {
     return sendLocalList.correlationId;
   }
 
-  async createSendLocalListRequestsFromAuthorizationIdsAndStationId(authorizationIds: number[], stationId: string): Promise<AsyncGenerator<SendLocalListRequest>> {
-    const maxLocalAuthListEntries = await this.getMaxLocalAuthListEntries();
-    if (!maxLocalAuthListEntries) {
-      throw new Error('Could not get max local auth list entries, required by D01.FR.12');
-    } else if (authorizationIds.length > maxLocalAuthListEntries) {
-      throw new Error(`Local auth list length (${authorizationIds.length}) exceeds max local auth list entries (${maxLocalAuthListEntries})`);
+  private async createSendLocalListFromStationIdAndRequest(stationId: string, updateType: UpdateEnumType, versionNumber?: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList> {
+    if (versionNumber) {
+      if (versionNumber <= 0) {
+        throw new Error(`Version number ${versionNumber} must be greater than 0, see D01.FR.18`)
+      }
+      const localListVersion = await this._localAuthListRepository.readOnlyOneByQuery({
+        where: {
+          stationId: stationId,
+        },
+        include: [LocalListAuthorization],
+      });
+      if (localListVersion && localListVersion.versionNumber >= versionNumber) {
+        throw new Error(`Current LocalListVersion for ${stationId} is ${localListVersion.versionNumber}, cannot send LocalListVersion ${versionNumber} (version number must be higher)`);
+      }
+    } else {
+      versionNumber = await this._localAuthListRepository.getNextVersionNumberForStation(stationId);
     }
 
-    const itemsPerMessageSendLocalList =
-      await this.getItemsPerMessageSendLocalListByStationId(stationId)
-      || authorizationIds.length;
-
-    return this.generateSendLocalListRequestsFromMaxLengthAndAuthorizationsAndStationId(itemsPerMessageSendLocalList, authorizationIds, stationId);
-  }
-
-  async *generateSendLocalListRequestsFromMaxLengthAndAuthorizationsAndStationId(itemsPerMessageSendLocalList: number, authorizationIds: number[], stationId: string): AsyncGenerator<SendLocalListRequest> {
-    let i = 0;
-    let updateType = UpdateEnumType.Full;
-    while (i < authorizationIds.length) {
-      const sendLocalListAuthList = authorizationIds.slice(i, i + itemsPerMessageSendLocalList);
-      const sendLocalList = await this._localAuthListRepository.createSendLocalListFromAuthorizationIds(stationId, updateType, undefined, sendLocalListAuthList);
-      i += itemsPerMessageSendLocalList;
-      updateType = UpdateEnumType.Differential;
-      yield sendLocalList.toSendLocalListRequest();
+    if (localAuthorizationList && localAuthorizationList.length > 1) { // Check for duplicate authorizations
+      const idTokens = localAuthorizationList.map(auth => auth.idToken.idToken + auth.idToken.type);
+      if (new Set(idTokens).size !== idTokens.length) {
+        throw new Error(`Duplicated idToken in SendLocalList ${JSON.stringify(idTokens)}`);
+      }
     }
+
+    return await this._localAuthListRepository.createSendLocalListFromRequestData(stationId, updateType, versionNumber, localAuthorizationList);
   }
 
-  async getItemsPerMessageSendLocalListByStationId(
+  private async getItemsPerMessageSendLocalListByStationId(
     stationId: string,
   ): Promise<number | null> {
     const itemsPerMessageSendLocalList: VariableAttribute[] =
@@ -94,7 +96,7 @@ export class LocalAuthListService {
     }
   }
 
-  async getMaxLocalAuthListEntries(): Promise<number | null> {
+  private async getMaxLocalAuthListEntries(): Promise<number | null> {
     const localAuthListEntriesCharacteristics: VariableCharacteristics | undefined =
       await this._deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
         'Entries',

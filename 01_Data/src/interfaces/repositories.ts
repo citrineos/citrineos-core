@@ -91,23 +91,16 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
 }
 
 export interface ILocalAuthListRepository extends CrudRepository<LocalListVersion> {
+
   /**
-   * Persists the sendLocalListRequest and returns the database object.
-   * @param stationId - The ID of the station.
-   * @param sendLocalListRequest - The sendLocalListRequest
+   * Creates a SendLocalList.
+   * @param {string} stationId - The ID of the station.
+   * @param {UpdateEnumType} updateType - The type of update.
+   * @param {number} versionNumber - The version number.
+   * @param {AuthorizationData[]} localAuthorizationList - The list of authorizations.
    * @return {SendLocalList} The database object. Contains the correlationId to be used for the sendLocalListRequest.
    */
-  createSendLocalListFromStationIdAndRequest(stationId: string, sendLocalListRequest: SendLocalListRequest): Promise<SendLocalList>;
-  /**
-   *  Version number is automatically incremented when absent.
-   *
-   */
-  createSendLocalListFromAuthorizationData(stationId: string, updateType: UpdateEnumType, versionNumber?: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList>;
-  /**
-   *  Version number is automatically incremented when absent.
-   *
-   */
-  createSendLocalListFromAuthorizationIds(stationId: string, updateType: UpdateEnumType, versionNumber?: number, authorizationIds?: number[]): Promise<SendLocalList>;
+  createSendLocalListFromRequestData(stationId: string, updateType: UpdateEnumType, versionNumber: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList>;
   /**
    * Returns the number of authorizations that will be in the updated local auth list for a given stationId and sendLocalListRequest correlationId.
    *
