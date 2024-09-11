@@ -60,7 +60,10 @@ fs.readdir(path, (error, files) => {
               `',\n  passwordString = 'passwordString` +
               enumDefinition.substring(lastLineIndex);
           }
-          globalEnumDefinitions[enumName] = enumDefinition;
+          globalEnumDefinitions[enumName] = enumDefinition.replaceAll(
+            'export const enum',
+            'export enum',
+          );
         });
       }
     });

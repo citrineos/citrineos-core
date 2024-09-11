@@ -64,10 +64,6 @@ export { ClearDisplayMessageRequest } from './types/ClearDisplayMessageRequest';
 export { default as ClearDisplayMessageRequestSchema } from './schemas/ClearDisplayMessageRequest.json';
 export { ClearDisplayMessageResponse } from './types/ClearDisplayMessageResponse';
 export { default as ClearDisplayMessageResponseSchema } from './schemas/ClearDisplayMessageResponse.json';
-export { ClearedChargingLimitRequest } from './types/ClearedChargingLimitRequest';
-export { default as ClearedChargingLimitRequestSchema } from './schemas/ClearedChargingLimitRequest.json';
-export { ClearedChargingLimitResponse } from './types/ClearedChargingLimitResponse';
-export { default as ClearedChargingLimitResponseSchema } from './schemas/ClearedChargingLimitResponse.json';
 export { ClearVariableMonitoringRequest } from './types/ClearVariableMonitoringRequest';
 export { default as ClearVariableMonitoringRequestSchema } from './schemas/ClearVariableMonitoringRequest.json';
 export {
@@ -75,6 +71,10 @@ export {
   ClearMonitoringResultType,
 } from './types/ClearVariableMonitoringResponse';
 export { default as ClearVariableMonitoringResponseSchema } from './schemas/ClearVariableMonitoringResponse.json';
+export { ClearedChargingLimitRequest } from './types/ClearedChargingLimitRequest';
+export { default as ClearedChargingLimitRequestSchema } from './schemas/ClearedChargingLimitRequest.json';
+export { ClearedChargingLimitResponse } from './types/ClearedChargingLimitResponse';
+export { default as ClearedChargingLimitResponseSchema } from './schemas/ClearedChargingLimitResponse.json';
 export { CostUpdatedRequest } from './types/CostUpdatedRequest';
 export { default as CostUpdatedRequestSchema } from './schemas/CostUpdatedRequest.json';
 export { CostUpdatedResponse } from './types/CostUpdatedResponse';
@@ -364,4 +364,3 @@ export {
   FirmwareType,
 } from './types/UpdateFirmwareRequest';
 export { default as UpdateFirmwareRequestSchema } from './schemas/UpdateFirmwareRequest.json';
-export { UpdateChargingStationPasswordRequest } from './types/UpdateChargingStationPasswordRequest';
