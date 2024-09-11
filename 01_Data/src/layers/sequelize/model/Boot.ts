@@ -21,7 +21,8 @@ export class Boot extends Model implements BootConfig {
   @Column({
     type: DataType.DATE,
     get() {
-      return this.getDataValue('lastBootTime').toISOString();
+      const lastBootTimeValue = this.getDataValue('lastBootTime');
+      return lastBootTimeValue ? lastBootTimeValue.toISOString() : null;
     },
   })
   declare lastBootTime?: string;

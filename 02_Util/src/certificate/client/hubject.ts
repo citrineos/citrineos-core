@@ -160,10 +160,11 @@ export class Hubject implements IV2GCertificateAuthorityClient {
     }
 
     const certificates: string[] = [];
-    const rootCollection: RootCertificateCollection = JSON.parse(
+    const rootCertificatesResponse: RootCertificatesResponse = JSON.parse(
       await response.text(),
     );
-    for (const root of rootCollection.rootCertificates) {
+    for (const root of rootCertificatesResponse.RootCertificateCollection
+      .rootCertificates) {
       certificates.push(createPemBlock('CERTIFICATE', root.caCertificate));
     }
 
@@ -210,6 +211,10 @@ interface MessageDef {
   metaData: string;
   certificateInstallationRes: string;
   emaid: string;
+}
+
+interface RootCertificatesResponse {
+  RootCertificateCollection: RootCertificateCollection;
 }
 
 interface RootCertificateCollection {

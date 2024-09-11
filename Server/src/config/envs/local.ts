@@ -81,6 +81,7 @@ export function createLocalConfig() {
         host: '0.0.0.0',
         port: 8055,
         generateFlows: false,
+        token: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0',
       },
       networkConnection: {
         websocketServers: [

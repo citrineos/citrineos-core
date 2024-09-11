@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "private": false,
   "devDependencies": {
     "@eslint/js": "9.0.0",
@@ -32,7 +32,8 @@
     "fresh-and-install-all": "npm run fresh && npm run install-all",
     "sync-db": "ts-node ./db.sync.ts",
     "start-everest": "npm run start-everest --prefix ./Server",
-    "test": "jest --config jest.config.ts"
+    "test": "jest --config jest.config.ts",
+    "coverage": "jest --config jest.config.ts --coverage"
   },
   "workspaces": [
     "00_Base",
