@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.build.json",
+  "include": ["src/**/*.ts", "src/**/*.json"],
+  "exclude": ["**/dist/**", "**/node_modules/**"],
+  "compilerOptions": {
+    "outDir": "./dist/esm",
+    "composite": true,
+    "rootDir": "./src",
+    "module": "ESNext",
+    "target": "ES2015",
+    "moduleResolution": "node"
+  }
+}
