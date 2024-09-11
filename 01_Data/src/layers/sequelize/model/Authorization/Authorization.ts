@@ -3,15 +3,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type AuthorizationData, type CustomDataType, IdTokenInfoType, IdTokenType, Namespace } from '@citrineos/base';
-import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
-import { IdToken } from './IdToken';
-import { IdTokenInfo } from './IdTokenInfo';
+import { type AuthorizationData, type CustomDataType, Namespace } from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { type AuthorizationRestrictions } from '../../../../interfaces';
-import { SendLocalList } from './SendLocalList';
-import { SendLocalListAuthorization } from './SendLocalListAuthorization';
-import { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
-import { LocalListVersion } from './LocalListVersion';
+import { IdToken, IdTokenInfo } from '.';
 
 @Table
 export class Authorization extends Model implements AuthorizationData, AuthorizationRestrictions {

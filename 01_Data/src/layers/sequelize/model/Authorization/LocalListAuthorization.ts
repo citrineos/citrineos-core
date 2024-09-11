@@ -5,14 +5,10 @@
 
 import { type AuthorizationData, type CustomDataType, IdTokenInfoType, IdTokenType, Namespace } from '@citrineos/base';
 import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
-import { IdToken } from './IdToken';
-import { IdTokenInfo } from './IdTokenInfo';
 import { type AuthorizationRestrictions } from '../../../../interfaces';
-import { SendLocalList } from './SendLocalList';
+import { Authorization, IdToken, IdTokenInfo, LocalListVersion, SendLocalList } from '.';
 import { SendLocalListAuthorization } from './SendLocalListAuthorization';
 import { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
-import { LocalListVersion } from './LocalListVersion';
-import { Authorization } from '.';
 
 /**
  * 

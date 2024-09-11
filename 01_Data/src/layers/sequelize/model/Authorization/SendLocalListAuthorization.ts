@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
-import { SendLocalList } from './SendLocalList';
-import { Authorization } from '.';
+import { SendLocalList } from '.';
 import { LocalListAuthorization } from './LocalListAuthorization';
 
 @Table

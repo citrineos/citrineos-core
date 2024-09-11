@@ -9,3 +9,4 @@ export { IdTokenInfo } from './IdTokenInfo';
 export { AdditionalInfo } from './AdditionalInfo';
 export { LocalListVersion } from './LocalListVersion';
 export { SendLocalList } from './SendLocalList';
+export { LocalListAuthorization } from './LocalListAuthorization';

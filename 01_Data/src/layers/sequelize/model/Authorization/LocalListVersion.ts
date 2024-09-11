@@ -3,15 +3,11 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AuthorizationData, Namespace, SendLocalListRequest, UpdateEnumType } from "@citrineos/base";
+import { Namespace, } from "@citrineos/base";
 import { CustomDataType } from "@citrineos/base/src/ocpp/model/types/SendLocalListRequest";
-import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
-import { Authorization } from ".";
-import { SendLocalListAuthorization } from "./SendLocalListAuthorization";
+import { BelongsToMany, Column, DataType, Model, Table } from 'sequelize-typescript';
+import { LocalListAuthorization } from ".";
 import { LocalListVersionAuthorization } from "./LocalListVersionAuthorization";
-import { LocalListAuthorization } from "./LocalListAuthorization";
-
-
 
 @Table
 export class LocalListVersion extends Model {

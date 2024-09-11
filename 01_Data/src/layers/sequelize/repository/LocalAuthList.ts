@@ -7,12 +7,9 @@ import { AuthorizationData, CrudRepository, deepDirectionalEqual, SystemConfig, 
 import { Sequelize } from 'sequelize-typescript';
 import { Logger, ILogObj } from "tslog";
 import { IAuthorizationRepository, ILocalAuthListRepository } from "../../../interfaces";
-import { Authorization, IdToken, IdTokenInfo } from "../model/Authorization";
-import { LocalListVersion } from "../model/Authorization/LocalListVersion";
-import { SendLocalList } from "../model/Authorization/SendLocalList";
+import { Authorization, IdToken, IdTokenInfo, LocalListAuthorization, LocalListVersion, SendLocalList } from "../model/Authorization";
 import { SequelizeRepository } from "./Base";
 import { LocalListVersionAuthorization } from "../model/Authorization/LocalListVersionAuthorization";
-import { LocalListAuthorization } from "../model/Authorization/LocalListAuthorization";
 import { SendLocalListAuthorization } from "../model/Authorization/SendLocalListAuthorization";
 import { SequelizeAuthorizationRepository } from "./Authorization";
 

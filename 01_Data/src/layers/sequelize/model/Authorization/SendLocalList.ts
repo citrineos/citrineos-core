@@ -5,12 +5,9 @@
 
 import { AuthorizationData, Namespace, SendLocalListRequest, UpdateEnumType } from "@citrineos/base";
 import { CustomDataType } from "@citrineos/base/src/ocpp/model/types/SendLocalListRequest";
-import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
-import { Authorization } from ".";
+import { BelongsToMany, Column, DataType, Model, Table } from 'sequelize-typescript';
 import { SendLocalListAuthorization } from "./SendLocalListAuthorization";
 import { LocalListAuthorization } from "./LocalListAuthorization";
-
-
 
 @Table
 export class SendLocalList extends Model implements SendLocalListRequest {
