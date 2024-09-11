@@ -106,7 +106,7 @@ describe('money', () => {
     it('should fail when undefined currency', () => {
       let currency: string;
       expect(() => Money.of('1.00', currency)).toThrow(
-          `Currency has to be defined`,
+        `Currency has to be defined`,
       );
     });
 

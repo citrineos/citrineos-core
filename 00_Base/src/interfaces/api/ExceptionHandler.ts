@@ -1,4 +1,4 @@
-import {FastifyError, FastifyReply, FastifyRequest} from 'fastify';
+import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 
 export interface ExceptionHandler {
   handle(

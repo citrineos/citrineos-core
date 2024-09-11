@@ -91,15 +91,12 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
           this.variableCharacteristics.emit('created', [createdVariableCharacteristics]);
           return createdVariableCharacteristics;
         } else {
-          return await this.variableCharacteristics.updateAllByQuery(
-            vc,
-            {
-              where: {
-                variableId: variable.id,
-              },
-              transaction,
+          return await this.variableCharacteristics.updateAllByQuery(vc, {
+            where: {
+              variableId: variable.id,
             },
-          );
+            transaction,
+          });
         }
       });
     }
@@ -438,7 +435,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
 
   private constructQuery(queryParams: VariableAttributeQuerystring): any {
     const evseInclude =
-      (queryParams.component_evse_id ?? queryParams.component_evse_connectorId)
+      queryParams.component_evse_id ?? queryParams.component_evse_connectorId
         ? {
             model: Evse,
             where: {

@@ -68,5 +68,4 @@ export class CostCalculator {
       return 0;
     }
   }
-
 }

@@ -67,7 +67,7 @@ export class DefaultSequelizeInstance {
     return DefaultSequelizeInstance.instance;
   }
 
-  public static async initializeSequelize(sync: boolean = false): Promise<void> {
+  public static async initializeSequelize(_sync: boolean = false): Promise<void> {
     let retryCount = 0;
     const maxRetries = this.config.data.sequelize.maxRetries ?? this.DEFAULT_RETRIES;
     const retryDelay = this.config.data.sequelize.retryDelay ?? this.DEFAULT_RETRY_DELAY;
