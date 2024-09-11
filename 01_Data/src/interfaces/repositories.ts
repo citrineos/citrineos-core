@@ -100,22 +100,13 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
    * @param {AuthorizationData[]} localAuthorizationList - The list of authorizations.
    * @return {SendLocalList} The database object. Contains the correlationId to be used for the sendLocalListRequest.
    */
-  createSendLocalListFromRequestData(stationId: string, updateType: UpdateEnumType, versionNumber: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList>;
-  /**
-   * Returns the number of authorizations that will be in the updated local auth list for a given stationId and sendLocalListRequest correlationId.
-   *
-   * @param {string} stationId - The ID of the station.
-   * @param {string} correlationId - The correlation Id of a sendLocalListRequest.
-   * @return {number} The number of authorizations that will be in the updated local auth list if the sendLocalListRequest is accepted.
-   */
-  countUpdatedAuthListFromStationIdAndCorrelationId(stationId: string, correlationId: string): Promise<number>;
+  createSendLocalListFromRequestData(stationId: string, correlationId: string, updateType: UpdateEnumType, versionNumber: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList>;
   /**
    * Used to process GetLocalListVersionResponse, if version is unknown it will create or update LocalListVersion with the new version and an empty localAuthorizationList.
    * @param versionNumber 
    * @param stationId 
    */
   validateOrReplaceLocalListVersionForStation(versionNumber: number, stationId: string): Promise<void>;
-  getNextVersionNumberForStation(stationId: string): Promise<number>;
   getSendLocalListRequestByStationIdAndCorrelationId(stationId: string, correlationId: string): Promise<SendLocalList | undefined>;
   createOrUpdateLocalListVersionFromStationIdAndSendLocalList(stationId: string, sendLocalList: SendLocalList): Promise<LocalListVersion>;
 }

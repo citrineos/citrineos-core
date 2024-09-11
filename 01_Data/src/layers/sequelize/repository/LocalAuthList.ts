@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AuthorizationData, CrudRepository, deepDirectionalEqual, SendLocalListRequest, SystemConfig, UpdateEnumType } from "@citrineos/base";
+import { AuthorizationData, CrudRepository, deepDirectionalEqual, SystemConfig, UpdateEnumType } from "@citrineos/base";
 import { Sequelize } from 'sequelize-typescript';
 import { Logger, ILogObj } from "tslog";
 import { IAuthorizationRepository, ILocalAuthListRepository } from "../../../interfaces";
@@ -13,8 +13,6 @@ import { SendLocalList } from "../model/Authorization/SendLocalList";
 import { SequelizeRepository } from "./Base";
 import { LocalListVersionAuthorization } from "../model/Authorization/LocalListVersionAuthorization";
 import { LocalListAuthorization } from "../model/Authorization/LocalListAuthorization";
-
-import { v4 as uuidv4 } from 'uuid';
 import { SendLocalListAuthorization } from "../model/Authorization/SendLocalListAuthorization";
 import { SequelizeAuthorizationRepository } from "./Authorization";
 
@@ -37,10 +35,10 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
         this.sendLocalList = sendLocalList ? sendLocalList : new SequelizeRepository<SendLocalList>(config, SendLocalList.MODEL_NAME, logger, sequelizeInstance);
     }
 
-    async createSendLocalListFromRequestData(stationId: string, updateType: UpdateEnumType, versionNumber: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList> {
+    async createSendLocalListFromRequestData(stationId: string, correlationId: string, updateType: UpdateEnumType, versionNumber: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList> {
         const sendLocalList = await SendLocalList.create({
             stationId,
-            correlationId: uuidv4(),
+            correlationId,
             versionNumber,
             updateType,
         });
@@ -94,23 +92,6 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
         return sendLocalList;
     }
 
-    async countUpdatedAuthListFromStationIdAndCorrelationId(stationId: string, correlationId: string): Promise<number> {
-        const sendLocalList = await this.sendLocalList.readOnlyOneByQuery({ where: { stationId, correlationId } });
-        switch (sendLocalList?.updateType) {
-            case UpdateEnumType.Full:
-                return sendLocalList?.localAuthorizationList?.length ?? 0;
-            case UpdateEnumType.Differential:
-                const localListVersion = await LocalListVersion.findOne({ where: { stationId }, include: [LocalListAuthorization] });
-                const uniqueAuths = new Set(
-                    [...(sendLocalList.localAuthorizationList ?? []), ...(localListVersion?.localAuthorizationList ?? [])]
-                        .map(auth => auth.authorizationId)
-                );
-                return uniqueAuths.size;
-            default:
-                throw new Error(`Unknown update type ${sendLocalList?.updateType}`);
-        }
-    }
-
     async validateOrReplaceLocalListVersionForStation(versionNumber: number, stationId: string): Promise<void> {
         await this.s.transaction(async (transaction) => {
             const localListVersion = await LocalListVersion.findOne({ where: { stationId }, transaction });
@@ -131,11 +112,6 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
         });
     }
 
-    async getNextVersionNumberForStation(stationId: string): Promise<number> {
-        const localListVersion = await this.readOnlyOneByQuery({ where: { stationId } });
-        return localListVersion ? localListVersion.versionNumber + 1 : 1;
-    }
-
     async getSendLocalListRequestByStationIdAndCorrelationId(stationId: string, correlationId: string): Promise<SendLocalList | undefined> {
         return this.sendLocalList.readOnlyOneByQuery({ where: { stationId, correlationId } });
     }
@@ -149,7 +125,7 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
         }
     }
 
-    async replaceLocalListVersionFromStationIdAndSendLocalList(stationId: string, sendLocalList: SendLocalList): Promise<LocalListVersion> {
+    private async replaceLocalListVersionFromStationIdAndSendLocalList(stationId: string, sendLocalList: SendLocalList): Promise<LocalListVersion> {
         const localListVersion = await this.s.transaction(async (transaction) => {
             const oldLocalListVersion = await LocalListVersion.findOne({ where: { stationId }, include: [LocalListAuthorization], transaction });
             if (oldLocalListVersion) {
@@ -183,7 +159,7 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
         return localListVersion;
     }
 
-    async updateLocalListVersionFromStationIdAndSendLocalListRequest(stationId: string, sendLocalList: SendLocalList): Promise<LocalListVersion> {
+    private async updateLocalListVersionFromStationIdAndSendLocalListRequest(stationId: string, sendLocalList: SendLocalList): Promise<LocalListVersion> {
         const localListVersion = await this.s.transaction(async (transaction) => {
             if (!sendLocalList.localAuthorizationList) {
                 // See D01.FR.05
