@@ -39,7 +39,7 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
             versionNumber,
             updateType,
         });
-        localAuthorizationList?.map(async (authData) => {
+        for (const authData of (localAuthorizationList ?? [])) {
             const auth = await Authorization.findOne({
                 include: [
                     {
@@ -80,7 +80,7 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
                 sendLocalListId: sendLocalList.id,
                 authorizationId: localListAuthorization.id
             });
-        });
+        }
 
         await sendLocalList.reload({ include: [LocalListAuthorization] });
 

@@ -742,7 +742,7 @@ export class EVDriverModule extends AbstractModule {
 
     switch (sendLocalListResponse.status) {
       case SendLocalListStatusEnumType.Accepted:
-        this._localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(stationId, sendLocalListRequest);
+        await this._localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(stationId, sendLocalListRequest);
         break;
       case SendLocalListStatusEnumType.Failed:
         // TODO: Surface alert for upstream handling
