@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AuthorizationStatusEnumType, type CustomDataType, type IdTokenInfoType, IdTokenType, MessageContentType, Namespace } from '@citrineos/base';
+import { AuthorizationStatusEnumType, type CustomDataType, type IdTokenInfoType, MessageContentType, Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { IdToken } from './IdToken';
 

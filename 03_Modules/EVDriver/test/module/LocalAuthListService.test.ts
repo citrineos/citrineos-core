@@ -18,7 +18,7 @@ describe('LocalAuthListService', () => {
         stationId: stationId,
         versionNumber: initialVersionNumber
     } as unknown as LocalListVersion);
-    let baseMockVariableCharacteristics = jest.mocked<VariableCharacteristics>({
+    const baseMockVariableCharacteristics = jest.mocked<VariableCharacteristics>({
         dataType: DataEnumType.integer,
     } as unknown as VariableCharacteristics);
 
@@ -243,7 +243,7 @@ describe('LocalAuthListService', () => {
 
         await expect(localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(stationId, correlationId, sendLocalListRequest))
             .rejects
-            .toThrow('Number of authorizations (2) in SendLocalListRequest ({\"versionNumber\":3,\"updateType\":\"Full\",\"localAuthorizationList\":[{\"idToken\":{\"idToken\":\"ID_TOKEN1\",\"type\":\"Central\"},\"idTokenInfo\":{\"status\":\"Accepted\"}},{\"idToken\":{\"idToken\":\"ID_TOKEN2\",\"type\":\"Central\"},\"idTokenInfo\":{\"status\":\"Blocked\"}}]}) exceeds itemsPerMessageSendLocalList (1) (see D01.FR.11; break list up into multiple SendLocalListRequests of at most 1 authorizations by sending one with updateType Full and additional with updateType Differential until all authorizations have been sent)');
+            .toThrow('Number of authorizations (2) in SendLocalListRequest ({"versionNumber":3,"updateType":"Full","localAuthorizationList":[{"idToken":{"idToken":"ID_TOKEN1","type":"Central"},"idTokenInfo":{"status":"Accepted"}},{"idToken":{"idToken":"ID_TOKEN2","type":"Central"},"idTokenInfo":{"status":"Blocked"}}]}) exceeds itemsPerMessageSendLocalList (1) (see D01.FR.11; break list up into multiple SendLocalListRequests of at most 1 authorizations by sending one with updateType Full and additional with updateType Differential until all authorizations have been sent)');
     });
 
     it('should not throw an error when localAuthorizationList is less than itemsPerMessageSendLocalList', async () => {

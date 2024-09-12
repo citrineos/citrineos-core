@@ -748,7 +748,7 @@ export class EVDriverModule extends AbstractModule {
         // TODO: Surface alert for upstream handling
         this._logger.error(`SendLocalListRequest failed for StationId ${stationId}: ${message.context.correlationId}, ${JSON.stringify(sendLocalListRequest)}.`);
         break;
-      case SendLocalListStatusEnumType.VersionMismatch:
+      case SendLocalListStatusEnumType.VersionMismatch: {
         this._logger.error(`SendLocalListRequest version mismatch for StationId ${stationId}: ${message.context.correlationId}, ${JSON.stringify(sendLocalListRequest)}.`);
         this._logger.error(`Sending GetLocalListVersionRequest for StationId ${stationId} due to SendLocalListRequest version mismatch.`);
         const messageConfirmation = await this.sendCall(
@@ -761,7 +761,7 @@ export class EVDriverModule extends AbstractModule {
           this._logger.error(`Unable to send GetLocalListVersionRequest for StationId ${stationId} due to SendLocalListRequest version mismatch.`, messageConfirmation);
         }
         break;
-      default:
+      } default:
         this._logger.error(`Unknown SendLocalListStatusEnumType: ${sendLocalListResponse.status}.`);
         break;
     }

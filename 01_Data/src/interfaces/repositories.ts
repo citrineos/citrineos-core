@@ -36,7 +36,6 @@ import {
   StatusNotificationRequest,
   ReserveNowRequest,
   MeterValueType,
-  SendLocalListRequest,
   UpdateEnumType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';

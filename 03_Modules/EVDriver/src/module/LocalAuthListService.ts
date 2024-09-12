@@ -80,13 +80,13 @@ export class LocalAuthListService {
     switch (sendLocalList?.updateType) {
       case UpdateEnumType.Full:
         return sendLocalList?.localAuthorizationList?.length ?? 0;
-      case UpdateEnumType.Differential:
+      case UpdateEnumType.Differential: {
         const uniqueAuths = new Set(
           [...(sendLocalList.localAuthorizationList ?? []), ...(localListVersion?.localAuthorizationList ?? [])]
             .map(auth => auth.authorizationId)
         );
         return uniqueAuths.size;
-      default:
+      } default:
         throw new Error(`Unknown update type ${sendLocalList?.updateType}`);
     }
   }
