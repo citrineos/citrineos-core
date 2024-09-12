@@ -108,6 +108,12 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
    */
   validateOrReplaceLocalListVersionForStation(versionNumber: number, stationId: string): Promise<void>;
   getSendLocalListRequestByStationIdAndCorrelationId(stationId: string, correlationId: string): Promise<SendLocalList | undefined>;
+  /**
+   * Used to process SendLocalListResponse.
+   * @param stationId
+   * @param {SendLocalList} sendLocalList - The SendLocalList object created from the associated SendLocalListRequest.
+   * @returns {LocalListVersion} LocalListVersion - The updated LocalListVersion.
+   */
   createOrUpdateLocalListVersionFromStationIdAndSendLocalList(stationId: string, sendLocalList: SendLocalList): Promise<LocalListVersion>;
 }
 

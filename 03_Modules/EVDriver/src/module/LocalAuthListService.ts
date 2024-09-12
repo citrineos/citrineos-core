@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AttributeEnumType, AuthorizationData, SendLocalListRequest, UpdateEnumType } from "@citrineos/base";
+import { AttributeEnumType, SendLocalListRequest, UpdateEnumType } from "@citrineos/base";
 import { IDeviceModelRepository, ILocalAuthListRepository, VariableCharacteristics, VariableAttribute, LocalListVersion, SendLocalList, } from "@citrineos/data";
 import { LocalListAuthorization } from "@citrineos/data/src/layers/sequelize/model/Authorization/LocalListAuthorization";
 
@@ -23,17 +23,18 @@ export class LocalAuthListService {
    * Validates a SendLocalListRequest and persists it, then returns the correlation Id.
    *
    * @param {string} stationId - The ID of the station to which the SendLocalListRequest belongs.
+   * @param {string} correlationId - The correlation Id that will be used for the SendLocalListRequest.
    * @param {SendLocalListRequest} sendLocalListRequest - The SendLocalListRequest to validate and persist.
-   * @return {string} The correlation ID of the persisted SendLocalList.
+   * @return {SendLocalList} The persisted SendLocalList.
    */
-  async persistAndGenerateCorrelationIdForStationIdAndSendLocalListRequest(stationId: string, sendLocalListRequest: SendLocalListRequest): Promise<string> {
+  async persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(stationId: string, correlationId: string, sendLocalListRequest: SendLocalListRequest): Promise<SendLocalList> {
     const localListVersion = await this._localAuthListRepository.readOnlyOneByQuery({
       where: {
         stationId: stationId,
       },
       include: [LocalListAuthorization],
     });
-    const sendLocalList = await this.createSendLocalListFromStationIdAndRequestAndCurrentVersion(stationId, sendLocalListRequest, localListVersion);
+    const sendLocalList = await this.createSendLocalListFromStationIdAndRequestAndCurrentVersion(stationId, correlationId, sendLocalListRequest, localListVersion);
 
     const newLocalAuthListLength = await this.countUpdatedAuthListFromRequestAndCurrentVersion(sendLocalList, localListVersion);
     // TODO If Device Model is updated to allow different variable characteristics for the same variable per station, then we need to update this
@@ -52,10 +53,10 @@ export class LocalAuthListService {
       throw new Error(`Number of authorizations (${sendLocalListRequest.localAuthorizationList.length}) in SendLocalListRequest (${JSON.stringify(sendLocalListRequest)}) exceeds itemsPerMessageSendLocalList (${itemsPerMessageSendLocalList}) (see D01.FR.11; break list up into multiple SendLocalListRequests of at most ${itemsPerMessageSendLocalList} authorizations by sending one with updateType Full and additional with updateType Differential until all authorizations have been sent)`);
     }
 
-    return sendLocalList.correlationId;
+    return sendLocalList;
   }
 
-  private async createSendLocalListFromStationIdAndRequestAndCurrentVersion(stationId: string, sendLocalListRequest: SendLocalListRequest, localListVersion?: LocalListVersion): Promise<SendLocalList> {
+  private async createSendLocalListFromStationIdAndRequestAndCurrentVersion(stationId: string, correlationId: string, sendLocalListRequest: SendLocalListRequest, localListVersion?: LocalListVersion): Promise<SendLocalList> {
     if (sendLocalListRequest.versionNumber <= 0) {
       throw new Error(`Version number ${sendLocalListRequest.versionNumber} must be greater than 0, see D01.FR.18`)
     }
@@ -72,7 +73,7 @@ export class LocalAuthListService {
       }
     }
 
-    return await this._localAuthListRepository.createSendLocalListFromRequestData(stationId, uuidv4(), sendLocalListRequest.updateType, sendLocalListRequest.versionNumber, sendLocalListRequest.localAuthorizationList ?? undefined);
+    return await this._localAuthListRepository.createSendLocalListFromRequestData(stationId, correlationId, sendLocalListRequest.updateType, sendLocalListRequest.versionNumber, sendLocalListRequest.localAuthorizationList ?? undefined);
   }
 
   private async countUpdatedAuthListFromRequestAndCurrentVersion(sendLocalList: SendLocalList, localListVersion?: LocalListVersion): Promise<number> {

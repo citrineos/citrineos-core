@@ -384,8 +384,10 @@ export class EVDriverModuleApi
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
 
-    const correlationId = await this._module.localAuthListService.persistAndGenerateCorrelationIdForStationIdAndSendLocalListRequest(
-      identifier, 
+    const correlationId = uuidv4();
+    await this._module.localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+      identifier,
+      correlationId,
       request
     );
 
