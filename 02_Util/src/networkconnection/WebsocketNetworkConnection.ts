@@ -11,13 +11,13 @@ import {
   SystemConfig,
   WebsocketServerConfig,
 } from '@citrineos/base';
-import { Duplex } from 'stream';
+import {Duplex} from 'stream';
 import * as http from 'http';
 import * as https from 'https';
 import fs from 'fs';
-import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from 'ws';
-import { ILogObj, Logger } from 'tslog';
-import { SecureContextOptions } from 'tls';
+import {ErrorEvent, MessageEvent, WebSocket, WebSocketServer} from 'ws';
+import {ILogObj, Logger} from 'tslog';
+import {SecureContextOptions} from 'tls';
 
 export class WebsocketNetworkConnection {
   protected _cache: ICache;
@@ -272,42 +272,6 @@ export class WebsocketNetworkConnection {
       this._logger.warn(error);
       this._rejectUpgradeUnauthorized(socket);
     }
-  }
-
-  /**
-   * Extracts credentials from the Authorization header.
-   *
-   * The Authorization header is formatted as follows:
-   * AUTHORIZATION: Basic <Base64 encoded(<Configured ChargingStationId>:<Configured BasicAuthPassword>)>
-   *
-   * @param {http.IncomingMessage} req - The request object.
-   * @returns Extracted credentials.
-   */
-  private extractCredentials(req: http.IncomingMessage): {
-    username?: string;
-    password?: string;
-  } {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Basic ')) {
-      return {};
-    }
-
-    const base64Credentials = authHeader.split(' ')[1];
-    const decodedCredentials = Buffer.from(
-      base64Credentials,
-      'base64',
-    ).toString();
-
-    const [username, password] = this.splitOnce(decodedCredentials, ':');
-
-    return { username, password };
-  }
-
-  private splitOnce(value: string, separator: string): [string, string?] {
-    const idx = value.indexOf(separator);
-    return idx == -1
-      ? [value]
-      : [value.substring(0, idx), value.substring(idx + separator.length)];
   }
 
   /**
