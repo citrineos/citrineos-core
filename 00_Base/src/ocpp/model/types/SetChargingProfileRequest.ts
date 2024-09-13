@@ -226,7 +226,8 @@ export interface SalesTariffEntryType {
   consumptionCost?:
     | [ConsumptionCostType]
     | [ConsumptionCostType, ConsumptionCostType]
-    | [ConsumptionCostType, ConsumptionCostType, ConsumptionCostType];
+    | [ConsumptionCostType, ConsumptionCostType, ConsumptionCostType]
+    | null;
 }
 /**
  * Relative_ Timer_ Interval

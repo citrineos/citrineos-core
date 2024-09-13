@@ -26,7 +26,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
   private _client: Client | undefined;
   private _logger: Logger<ILogObj>;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, client?: Client) {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -63,14 +63,16 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     );
     const acmeEnv: string | undefined =
       config.util.certificateAuthority.chargingStationCA?.acme?.env;
-    if (!acmeEnv && acmeEnv === 'production') {
+    if (acmeEnv === 'production') {
       this._directoryUrl = acme.directory.letsencrypt.production;
     }
 
-    this._client = new acme.Client({
-      directoryUrl: this._directoryUrl,
-      accountKey: accountKey.toString(),
-    });
+    this._client =
+      client ||
+      new acme.Client({
+        directoryUrl: this._directoryUrl,
+        accountKey: accountKey.toString(),
+      });
   }
 
   /**
@@ -84,7 +86,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
 
     if (!response.ok && response.status !== 304) {
       throw new Error(
-        `Failed to fetch certificate: ${response.statusText}: ${await response.text()}`,
+        `Failed to fetch certificate: ${response.status}: ${await response.text()}`,
       );
     }
 

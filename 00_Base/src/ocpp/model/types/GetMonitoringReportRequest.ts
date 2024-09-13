@@ -18,7 +18,9 @@ export interface GetMonitoringReportRequest extends OcppRequest {
   /**
    * @minItems 1
    */
-  componentVariable?: [ComponentVariableType, ...ComponentVariableType[]];
+  componentVariable?:
+    | [ComponentVariableType, ...ComponentVariableType[]]
+    | null;
   /**
    * The Id of the request.
    *
@@ -38,7 +40,8 @@ export interface GetMonitoringReportRequest extends OcppRequest {
         MonitoringCriterionEnumType,
         MonitoringCriterionEnumType,
         MonitoringCriterionEnumType,
-      ];
+      ]
+    | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

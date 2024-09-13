@@ -22,14 +22,24 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
   async createOrUpdateByKey(value: BootConfig, key: string): Promise<Boot | undefined> {
     let savedBootConfig: Boot | undefined;
     let created;
-    await this.s.transaction(async (transaction) => {
-      savedBootConfig = await this.s.models[this.namespace].findByPk(key, { transaction }).then((row) => row as Boot);
-      created = !savedBootConfig;
-      if (!savedBootConfig) {
-        savedBootConfig = await Boot.build({ id: key, ...value }).save({ transaction });
+    await this.s.transaction(async (sequelizeTransaction) => {
+      const [boot, bootCreated] = await this.readOrCreateByQuery({
+        where: {
+          id: key,
+        },
+        defaults: {
+          ...value,
+        },
+        transaction: sequelizeTransaction,
+      });
+
+      if (!bootCreated) {
+        savedBootConfig = await boot.update({ ...value }, { transaction: sequelizeTransaction });
       } else {
-        savedBootConfig = (await this.updateAllByQuery(Boot.build({ ...value }), { where: { id: key }, transaction }))[0];
+        savedBootConfig = boot;
       }
+
+      created = bootCreated;
     });
 
     if (savedBootConfig) {
@@ -37,12 +47,9 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
         savedBootConfig.pendingBootSetVariables = await this.manageSetVariables(value.pendingBootSetVariableIds, key, savedBootConfig.id);
       }
 
-      if (created) {
-        this.emit('created', [savedBootConfig]);
-      } else {
-        this.emit('updated', [savedBootConfig]);
-      }
+      this.emit(created ? 'created' : 'updated', [savedBootConfig]);
     }
+
     return savedBootConfig;
   }
 

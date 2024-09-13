@@ -22,7 +22,6 @@ import {
   IMessageSender,
   MeterValuesRequest,
   MeterValuesResponse,
-  MeterValueUtils,
   OcppError,
   StatusNotificationRequest,
   StatusNotificationResponse,
@@ -41,7 +40,6 @@ import {
   ITransactionEventRepository,
   sequelize,
   SequelizeRepository,
-  Tariff,
   Transaction,
   VariableAttribute,
 } from '@citrineos/data';

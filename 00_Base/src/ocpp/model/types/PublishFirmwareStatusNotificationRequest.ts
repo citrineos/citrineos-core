@@ -22,7 +22,7 @@ export interface PublishFirmwareStatusNotificationRequest extends OcppRequest {
    *
    * @minItems 1
    */
-  location?: [string, ...string[]];
+  location?: [string, ...string[]] | null;
   /**
    * The request id that was
    * provided in the

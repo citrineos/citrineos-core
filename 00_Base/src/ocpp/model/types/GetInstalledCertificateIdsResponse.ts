@@ -24,10 +24,9 @@ export interface GetInstalledCertificateIdsResponse extends OcppResponse {
   /**
    * @minItems 1
    */
-  certificateHashDataChain?: [
-    CertificateHashDataChainType,
-    ...CertificateHashDataChainType[],
-  ];
+  certificateHashDataChain?:
+    | [CertificateHashDataChainType, ...CertificateHashDataChainType[]]
+    | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -74,7 +73,8 @@ export interface CertificateHashDataChainType {
         CertificateHashDataType,
         CertificateHashDataType,
         CertificateHashDataType,
-      ];
+      ]
+    | null;
 }
 export interface CertificateHashDataType {
   customData?: CustomDataType | null;

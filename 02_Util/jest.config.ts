@@ -5,7 +5,8 @@ const jestConfig: JestConfigWithTsJest = {
   transform: {
     '^.+.tsx?$': ['ts-jest', {}],
   },
-  displayName: 'Util Module',
+  displayName: '02_Util',
+  coveragePathIgnorePatterns: ['/node_modules/', '/test/'],
 };
 
 export default jestConfig;

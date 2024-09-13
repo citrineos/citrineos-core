@@ -22,7 +22,7 @@ export interface NotifyDisplayMessagesRequest extends OcppRequest {
   /**
    * @minItems 1
    */
-  messageInfo?: [MessageInfoType, ...MessageInfoType[]];
+  messageInfo?: [MessageInfoType, ...MessageInfoType[]] | null;
   /**
    * The id of the &lt;&lt;getdisplaymessagesrequest,GetDisplayMessagesRequest&gt;&gt; that requested this message.
    *

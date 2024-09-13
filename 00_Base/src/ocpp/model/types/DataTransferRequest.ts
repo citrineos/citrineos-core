@@ -24,7 +24,7 @@ export interface DataTransferRequest extends OcppRequest {
    *
    */
   data?: {
-    [k: string]: unknown;
+    [k: string]: unknown | null;
   };
   /**
    * This identifies the Vendor specific implementation
