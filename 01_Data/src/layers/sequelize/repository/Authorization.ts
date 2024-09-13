@@ -54,7 +54,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
 
     const authorizationModel = savedAuthorizationModel ?? Authorization.build({}, this._createInclude(value));
 
-    const updatedIdToken = await this.updateIdToken(value.idToken, transaction);
+    const updatedIdToken = await this._updateIdToken(value.idToken, transaction);
     authorizationModel.idTokenId = updatedIdToken.id;
 
     if (value.idTokenInfo) {
@@ -85,7 +85,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
         });
 
         if (value.idTokenInfo.groupIdToken) {
-          const savedGroupIdToken = await this.updateIdToken(value.idTokenInfo.groupIdToken, transaction);
+          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken, transaction);
           if (!savedIdTokenInfo.groupIdTokenId) {
             savedIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
           }
@@ -96,7 +96,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
         await savedIdTokenInfo.save({ transaction });
       } else {
         if (value.idTokenInfo.groupIdToken) {
-          const savedGroupIdToken = await this.updateIdToken(value.idTokenInfo.groupIdToken, transaction);
+          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken, transaction);
           valueIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
         }
         const createdIdTokenInfo = await valueIdTokenInfo.save({ transaction });
@@ -131,9 +131,11 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     return await super.deleteAllByQuery(this._constructQuery(query), Authorization.MODEL_NAME);
   }
 
+  /**
+   * Private Methods
+   */
 
-
-  async updateIdToken(value: IdTokenType, transaction?: Transaction): Promise<IdToken> {
+  private async _updateIdToken(value: IdTokenType, transaction?: Transaction): Promise<IdToken> {
     const [savedIdTokenModel] = await IdToken.findOrCreate({
       where: { idToken: value.idToken, type: value.type },
       transaction,
@@ -175,10 +177,6 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
 
     return savedIdTokenModel.reload({ include: [AdditionalInfo], transaction });
   }
-
-  /**
-   * Private Methods
-   */
 
   private _constructQuery(queryParams: AuthorizationQuerystring): object {
     return {
