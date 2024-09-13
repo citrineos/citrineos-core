@@ -23,7 +23,7 @@ import {
   IMessageQuerystringSchema,
 } from './MessageQuerystring';
 import { IModuleApi } from './ModuleApi';
-import {AuthorizationSecurity} from "./AuthorizationSecurity";
+import { AuthorizationSecurity } from './AuthorizationSecurity';
 
 /**
  * Abstract module api class implementation.

@@ -364,7 +364,8 @@ export class ReportingModule extends AbstractModule {
     this._logger.debug('GetReport response received:', message, props);
 
     const status: GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: StatusInfoType | undefined | null = message.payload.statusInfo;
+    const statusInfo: StatusInfoType | undefined | null =
+      message.payload.statusInfo;
     if (
       status === GenericDeviceModelStatusEnumType.Rejected ||
       status === GenericDeviceModelStatusEnumType.NotSupported
@@ -390,7 +391,8 @@ export class ReportingModule extends AbstractModule {
     );
 
     const status: GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: StatusInfoType | undefined | null = message.payload.statusInfo;
+    const statusInfo: StatusInfoType | undefined | null =
+      message.payload.statusInfo;
     if (
       status === GenericDeviceModelStatusEnumType.Rejected ||
       status === GenericDeviceModelStatusEnumType.NotSupported
