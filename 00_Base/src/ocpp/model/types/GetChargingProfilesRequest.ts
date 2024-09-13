@@ -60,7 +60,7 @@ export interface ChargingProfileCriterionType {
    *
    * @minItems 1
    */
-  chargingProfileId?: [number, ...number[]];
+  chargingProfileId?: [number, ...number[]] | null;
   /**
    * For which charging limit sources, charging profiles SHALL be reported. If omitted, the Charging Station SHALL not filter on chargingLimitSource.
    *
@@ -81,5 +81,6 @@ export interface ChargingProfileCriterionType {
         ChargingLimitSourceEnumType,
         ChargingLimitSourceEnumType,
         ChargingLimitSourceEnumType,
-      ];
+      ]
+    | null;
 }

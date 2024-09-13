@@ -21,10 +21,9 @@ export interface GetInstalledCertificateIdsRequest extends OcppRequest {
    *
    * @minItems 1
    */
-  certificateType?: [
-    GetCertificateIdUseEnumType,
-    ...GetCertificateIdUseEnumType[],
-  ];
+  certificateType?:
+    | [GetCertificateIdUseEnumType, ...GetCertificateIdUseEnumType[]]
+    | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.

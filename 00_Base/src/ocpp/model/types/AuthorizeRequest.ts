@@ -34,7 +34,8 @@ export interface AuthorizeRequest extends OcppRequest {
         OCSPRequestDataType,
         OCSPRequestDataType,
         OCSPRequestDataType,
-      ];
+      ]
+    | null;
 }
 /**
  * This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.
@@ -52,7 +53,7 @@ export interface IdTokenType {
   /**
    * @minItems 1
    */
-  additionalInfo?: [AdditionalInfoType, ...AdditionalInfoType[]];
+  additionalInfo?: [AdditionalInfoType, ...AdditionalInfoType[]] | null;
   /**
    * IdToken is case insensitive. Might hold the hidden id of an RFID tag, but can for example also contain a UUID.
    *
