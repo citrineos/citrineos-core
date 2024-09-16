@@ -6,8 +6,6 @@ import { AttributeEnumType, SendLocalListRequest, UpdateEnumType } from "@citrin
 import { IDeviceModelRepository, ILocalAuthListRepository, VariableCharacteristics, VariableAttribute, LocalListVersion, SendLocalList, } from "@citrineos/data";
 import { LocalListAuthorization } from "@citrineos/data/src/layers/sequelize/model/Authorization/LocalListAuthorization";
 
-import { v4 as uuidv4 } from 'uuid';
-
 export class LocalAuthListService {
   protected _localAuthListRepository: ILocalAuthListRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
