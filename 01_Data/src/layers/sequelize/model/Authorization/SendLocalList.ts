@@ -19,7 +19,7 @@ export class SendLocalList extends Model implements SendLocalListRequest {
     @Column
     declare correlationId: string;
 
-    @Column(DataType.DECIMAL)
+    @Column(DataType.INTEGER)
     declare versionNumber: number;
 
     @Column(DataType.STRING)

@@ -144,7 +144,7 @@ export class EVDriverModuleApi
     HttpMethod.Get,
     ChargingStationKeyQuerySchema,
   )
-  async getLocalAuthorizationList(
+  async getLocalAuthorizationListVersion(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<LocalListVersion | undefined> {
     return await this._module.localAuthListRepository.readOnlyOneByQuery({

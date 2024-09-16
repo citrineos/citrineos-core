@@ -18,7 +18,7 @@ export class LocalListVersion extends Model {
     })
     declare stationId: string;
     
-    @Column(DataType.DECIMAL)
+  @Column(DataType.INTEGER)
     declare versionNumber: number;
    
     @BelongsToMany(() => LocalListAuthorization, () => LocalListVersionAuthorization)
