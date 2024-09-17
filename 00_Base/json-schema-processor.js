@@ -60,10 +60,7 @@ fs.readdir(path, (error, files) => {
               `',\n  passwordString = 'passwordString` +
               enumDefinition.substring(lastLineIndex);
           }
-          globalEnumDefinitions[enumName] = enumDefinition.replaceAll(
-            'export const enum',
-            'export enum',
-          );
+          globalEnumDefinitions[enumName] = enumDefinition;
         });
       }
     });
@@ -142,6 +139,7 @@ async function processJsonSchema(data, writeToFile = true) {
       .compile(jsonSchema, id, {
         style: { singleQuote: true, trailingComma: 'all' },
         format: true,
+        enableConstEnums: false,
       })
       .then((ts) => {
         // Add licence comment
@@ -255,18 +253,15 @@ function processNode(node) {
 
 function extractEnums(ts) {
   const pattern =
-    /^\/\*\*\s*\n([^\*]|(\*(?!\/)))*\*\/\nexport const enum (\w)* {(\s|\w|-|\.|=|'|,)*}\n*/gm;
-  const undocumentedPattern =
-    /^export const enum (\w)* {(\s|\w|-|\.|=|'|,)*}\n*/gm;
+    /^\/\*\*\s*\n([^\*]|(\*(?!\/)))*\*\/\nexport enum (\w)* {(\s|\w|-|\.|=|'|,)*}\n*/gm;
+  const undocumentedPattern = /^export enum (\w)* {(\s|\w|-|\.|=|'|,)*}\n*/gm;
   const matches = ts.match(pattern);
   let undocumentedMatches = ts.match(undocumentedPattern);
 
   if (matches && undocumentedMatches) {
-    const namePattern = /export const enum (\w)*/g;
+    const namePattern = /export enum (\w)*/g;
     matches.forEach((match) => {
-      const enumName = match
-        .match(namePattern)[0]
-        .replace('export const enum ', '');
+      const enumName = match.match(namePattern)[0].replace('export enum ', '');
       undocumentedMatches = undocumentedMatches.filter(
         (undocumentedMatch) => !undocumentedMatch.includes(enumName),
       );
@@ -281,10 +276,10 @@ function extractEnums(ts) {
 
 function splitEnum(enumDefinition) {
   const commentPattern = /^\/\*\*\s*\n([^\*]|(\*(?!\/)))*\*\/\n/gm;
-  const namePattern = /export const enum (\w)*/g;
+  const namePattern = /export enum (\w)*/g;
   const enumName = enumDefinition
     .match(namePattern)[0]
-    .replace('export const enum ', '');
+    .replace('export enum ', '');
   let enumDocumentation = enumDefinition.match(commentPattern);
   enumDocumentation = enumDocumentation ? enumDocumentation[0] : '';
   return { enumName, enumDocumentation, enumDefinition };
