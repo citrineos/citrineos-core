@@ -90,7 +90,7 @@ We recommend running and developing the project with the `docker-compose` set-up
 Additional Run Configurations should be made for other IDEs (ex VSCode).
 
 To change necessary configuration for execution outside of `docker-compose`, please adjust the configuration file
-at `50_Server/src/config/envs/local.ts`. Make sure any changes to the local configuration do not make it into your PR.
+at `Server/src/config/envs/local.ts`. Make sure any changes to the local configuration do not make it into your PR.
 
 ## Starting the Server
 
