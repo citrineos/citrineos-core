@@ -2,11 +2,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
+import { IncomingMessage } from 'http';
+import { AuthenticationOptions } from './AuthenticationOptions';
+
 export interface IAuthenticator {
   authenticate(
-    allowUnknownChargingStations: boolean,
-    identifier: string,
-    username?: string,
-    password?: string,
-  ): Promise<boolean>;
+    request: IncomingMessage,
+    options: AuthenticationOptions,
+  ): Promise<{ identifier: string }>;
 }

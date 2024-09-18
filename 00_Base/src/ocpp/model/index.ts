@@ -364,4 +364,3 @@ export {
   FirmwareType,
 } from './types/UpdateFirmwareRequest';
 export { default as UpdateFirmwareRequestSchema } from './schemas/UpdateFirmwareRequest.json';
-export { UpdateChargingStationPasswordRequest } from './types/UpdateChargingStationPasswordRequest';

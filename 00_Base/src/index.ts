@@ -16,6 +16,7 @@ export { CacheNamespace, ICache } from './interfaces/cache/cache';
 export {
   AbstractMessageRouter,
   IAuthenticator,
+  AuthenticationOptions,
   IMessageRouter,
 } from './interfaces/router';
 export {
@@ -67,6 +68,8 @@ export const LOG_LEVEL_OCPP = 10;
 // OCPP 2.0.1 Interfaces
 
 export * from './ocpp/model';
+
+export { UpdateChargingStationPasswordRequest } from './ocpp/model/UpdateChargingStationPasswordRequest';
 
 import {
   AuthorizeRequestSchema,

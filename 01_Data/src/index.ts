@@ -28,6 +28,7 @@ export {
   Variable,
   VariableAttribute,
   VariableCharacteristics,
+  VariableStatus,
   Certificate,
   CountryNameEnumType,
   TransactionEvent,

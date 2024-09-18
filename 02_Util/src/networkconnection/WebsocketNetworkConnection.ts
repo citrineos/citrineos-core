@@ -11,13 +11,13 @@ import {
   SystemConfig,
   WebsocketServerConfig,
 } from '@citrineos/base';
-import { Duplex } from 'stream';
+import {Duplex} from 'stream';
 import * as http from 'http';
 import * as https from 'https';
 import fs from 'fs';
-import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from 'ws';
-import { ILogObj, Logger } from 'tslog';
-import { SecureContextOptions } from 'tls';
+import {ErrorEvent, MessageEvent, WebSocket, WebSocketServer} from 'ws';
+import {ILogObj, Logger} from 'tslog';
+import {SecureContextOptions} from 'tls';
 
 export class WebsocketNetworkConnection {
   protected _cache: ICache;
@@ -242,91 +242,36 @@ export class WebsocketNetworkConnection {
     // Failed mTLS and TLS requests are rejected by the server before getting this far
     this._logger.debug('On upgrade request', req.method, req.url, req.headers);
 
-    const identifier = this._getClientIdFromUrl(req.url as string);
-    if (
-      3 > websocketServerConfig.securityProfile &&
-      websocketServerConfig.securityProfile > 0
-    ) {
-      // Validate username/password from authorization header
-      const { username, password } = this.extractCredentials(req);
-      if (username && password) {
-        if (
-          !(await this._authenticator.authenticate(
-            websocketServerConfig.allowUnknownChargingStations,
-            identifier,
-            username,
-            password,
-          ))
-        ) {
-          this._logger.warn('Unauthorized', identifier);
-          this._rejectUpgradeUnauthorized(socket);
-          return;
-        }
-      } else {
-        this._logger.warn(
-          'Auth header missing or incorrectly formatted: ',
-          JSON.stringify(req.headers.authorization),
-        );
-        this._rejectUpgradeUnauthorized(socket);
-        return;
-      }
-    }
+    try {
+      const { identifier } = await this._authenticator.authenticate(req, {
+        securityProfile: websocketServerConfig.securityProfile,
+        allowUnknownChargingStations:
+          websocketServerConfig.allowUnknownChargingStations,
+      });
 
-    // Register client
-    const registered = await this._cache.set(
-      identifier,
-      websocketServerConfig.id,
-      CacheNamespace.Connections,
-    );
-    if (!registered) {
-      this._logger.fatal('Failed to register websocket client', identifier);
-      return false;
-    } else {
-      this._logger.debug(
-        'Successfully registered websocket client',
+      // Register client
+      const registered = await this._cache.set(
         identifier,
+        websocketServerConfig.id,
+        CacheNamespace.Connections,
       );
+      if (!registered) {
+        this._logger.fatal('Failed to register websocket client', identifier);
+        return false;
+      } else {
+        this._logger.debug(
+          'Successfully registered websocket client',
+          identifier,
+        );
+      }
+
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit('connection', ws, req);
+      });
+    } catch (error) {
+      this._logger.warn(error);
+      this._rejectUpgradeUnauthorized(socket);
     }
-
-    wss.handleUpgrade(req, socket, head, (ws) => {
-      wss.emit('connection', ws, req);
-    });
-  }
-
-  /**
-   * Extracts credentials from the Authorization header.
-   *
-   * The Authorization header is formatted as follows:
-   * AUTHORIZATION: Basic <Base64 encoded(<Configured ChargingStationId>:<Configured BasicAuthPassword>)>
-   *
-   * @param {http.IncomingMessage} req - The request object.
-   * @returns Extracted credentials.
-   */
-  private extractCredentials(req: http.IncomingMessage): {
-    username?: string;
-    password?: string;
-  } {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Basic ')) {
-      return {};
-    }
-
-    const base64Credentials = authHeader.split(' ')[1];
-    const decodedCredentials = Buffer.from(
-      base64Credentials,
-      'base64',
-    ).toString();
-
-    const [username, password] = this.splitOnce(decodedCredentials, ':');
-
-    return { username, password };
-  }
-
-  private splitOnce(value: string, separator: string): [string, string?] {
-    const idx = value.indexOf(separator);
-    return idx == -1
-      ? [value]
-      : [value.substring(0, idx), value.substring(idx + separator.length)];
   }
 
   /**
