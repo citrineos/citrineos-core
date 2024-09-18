@@ -156,19 +156,14 @@ export class MessageRouterImpl
     try {
       try {
         rpcMessage = JSON.parse(message);
-        messageTypeId = rpcMessage[0];
-        messageId = rpcMessage[1];
       } catch (error) {
-        throw new OcppError(
-          messageId,
-          ErrorCode.FormatViolation,
-          'Invalid message format',
-          { error: error },
-        );
+        this._logger.error(`Error parsing ${message} from websocket, unable to reply: ${JSON.stringify(error)}`);
       }
+      messageTypeId = rpcMessage[0];
+      messageId = rpcMessage[1];
       switch (messageTypeId) {
         case MessageTypeId.Call:
-          this._onCall(identifier, rpcMessage as Call, timestamp);
+          await this._onCall(identifier, rpcMessage as Call, timestamp);
           break;
         case MessageTypeId.CallResult:
           this._onCallResult(identifier, rpcMessage as CallResult, timestamp);
@@ -373,82 +368,94 @@ export class MessageRouterImpl
    * @param {Date} timestamp Time at which the message was received from the charger.
    * @return {void}
    */
-  _onCall(identifier: string, message: Call, timestamp: Date): void {
+  async _onCall(identifier: string, message: Call, timestamp: Date): Promise<void> {
     const messageId = message[1];
     const action = message[2] as CallAction;
-    const payload = message[3];
 
-    this._onCallIsAllowed(action, identifier)
-      .then((isAllowed: boolean) => {
-        if (!isAllowed) {
-          throw new OcppError(
-            messageId,
-            ErrorCode.SecurityError,
-            `Action ${action} not allowed`,
-          );
-        } else {
-          // Run schema validation for incoming Call message
-          return this._validateCall(identifier, message);
-        }
-      })
-      .then(({ isValid, errors }) => {
-        if (!isValid || errors) {
-          throw new OcppError(
-            messageId,
-            ErrorCode.FormatViolation,
-            'Invalid message format',
-            { errors: errors },
-          );
-        }
-        // Ensure only one call is processed at a time
-        return this._cache.setIfNotExist(
-          identifier,
-          `${action}:${messageId}`,
-          CacheNamespace.Transactions,
-          this._config.maxCallLengthSeconds,
+    try {
+      const isAllowed = await this._onCallIsAllowed(action, identifier);
+      if (!isAllowed) {
+        throw new OcppError(
+          messageId,
+          ErrorCode.SecurityError,
+          `Action ${action} not allowed`,
         );
-      })
-      .then((successfullySet) => {
-        if (!successfullySet) {
-          throw new OcppError(
-            messageId,
-            ErrorCode.RpcFrameworkError,
-            'Call already in progress',
-            {},
-          );
-        }
-        // Route call
-        return this._routeCall(identifier, message, timestamp);
-      })
-      .then((confirmation) => {
-        if (!confirmation.success) {
-          throw new OcppError(
+      }
+      // Run schema validation for incoming Call message
+      const { isValid, errors } = this._validateCall(identifier, message);
+
+      if (!isValid || errors) {
+        throw new OcppError(
+          messageId,
+          ErrorCode.FormatViolation,
+          'Invalid message format',
+          { errors: errors },
+        );
+      }
+
+      // Ensure only one call is processed at a time
+      const successfullySet = await this._cache.setIfNotExist(
+        identifier,
+        `${action}:${messageId}`,
+        CacheNamespace.Transactions,
+        this._config.maxCallLengthSeconds,
+      );
+
+      if (!successfullySet) {
+        throw new OcppError(
+          messageId,
+          ErrorCode.RpcFrameworkError,
+          'Call already in progress',
+          {},
+        );
+      }
+    } catch (error) {
+      // Send manual reply since cache was unable to be set
+      const callError =
+        error instanceof OcppError
+          ? error.asCallError()
+          : [
+            MessageTypeId.CallError,
             messageId,
             ErrorCode.InternalError,
-            'Call failed',
-            { details: confirmation.payload },
-          );
-        }
-      })
-      .catch((error) => {
-        const callError =
-          error instanceof OcppError
-            ? error
-            : new OcppError(messageId, ErrorCode.InternalError, 'Call failed', {
-                details: error,
-              });
-        // TODO: identifier may not be unique, may require combination of tenantId and identifier.
-        // find way to include tenantId here
-        this.sendCallError(
+            'Unable to process message',
+            { error: error },
+          ];
+      const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
+      this._sendMessage(identifier, rawMessage);
+    }
+
+    try {
+      // Route call
+      const confirmation = await this._routeCall(identifier, message, timestamp);
+
+      if (!confirmation.success) {
+        throw new OcppError(
           messageId,
-          identifier,
-          'undefined',
-          action,
-          callError,
-        ).finally(() => {
-          this._cache.remove(identifier, CacheNamespace.Transactions);
-        });
+          ErrorCode.InternalError,
+          'Call failed',
+          { details: confirmation.payload },
+        );
+      }
+    } catch (error) {
+      const callError =
+        error instanceof OcppError
+          ? error
+          : new OcppError(messageId, ErrorCode.InternalError, 'Call failed', {
+            details: error,
+          });
+      // TODO: identifier may not be unique, may require combination of tenantId and identifier.
+      // find way to include tenantId here
+      this.sendCallError(
+        messageId,
+        identifier,
+        'undefined',
+        action,
+        callError,
+      ).finally(() => {
+        this._cache.remove(identifier, CacheNamespace.Transactions);
       });
+    }
   }
 
   /**
