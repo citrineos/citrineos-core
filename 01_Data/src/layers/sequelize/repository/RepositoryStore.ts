@@ -4,6 +4,7 @@ import {
   ICallMessageRepository,
   ICertificateRepository,
   IDeviceModelRepository,
+  ILocalAuthListRepository,
   ILocationRepository,
   IMessageInfoRepository,
   IReservationRepository,
@@ -32,6 +33,7 @@ import { Component } from '../model/DeviceModel';
 import { SequelizeRepository } from './Base';
 import { SequelizeReservationRepository } from './Reservation';
 import { SequelizeCallMessageRepository } from './CallMessage';
+import { SequelizeLocalAuthListRepository } from './LocalAuthList';
 
 export class RepositoryStore {
   sequelizeInstance: Sequelize;
@@ -40,6 +42,7 @@ export class RepositoryStore {
   callMessageRepository: ICallMessageRepository;
   certificateRepository: ICertificateRepository;
   deviceModelRepository: IDeviceModelRepository;
+  localAuthListRepository: ILocalAuthListRepository;
   locationRepository: ILocationRepository;
   messageInfoRepository: IMessageInfoRepository;
   reservationRepository: IReservationRepository;
@@ -57,6 +60,7 @@ export class RepositoryStore {
     this.callMessageRepository = new SequelizeCallMessageRepository(config, logger, sequelizeInstance);
     this.certificateRepository = new SequelizeCertificateRepository(config, logger, sequelizeInstance);
     this.deviceModelRepository = new SequelizeDeviceModelRepository(config, logger, sequelizeInstance);
+    this.localAuthListRepository = new SequelizeLocalAuthListRepository(config, logger, sequelizeInstance);
     this.locationRepository = new SequelizeLocationRepository(config, logger, sequelizeInstance);
     this.messageInfoRepository = new SequelizeMessageInfoRepository(config, logger, sequelizeInstance);
     this.reservationRepository = new SequelizeReservationRepository(config, logger, sequelizeInstance);

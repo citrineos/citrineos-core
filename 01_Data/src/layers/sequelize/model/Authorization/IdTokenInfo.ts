@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AuthorizationStatusEnumType, type CustomDataType, type IdTokenInfoType, IdTokenType, MessageContentType, Namespace } from '@citrineos/base';
+import { AuthorizationStatusEnumType, type CustomDataType, type IdTokenInfoType, MessageContentType, Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { IdToken } from './IdToken';
 
@@ -23,12 +23,15 @@ export class IdTokenInfo extends Model implements IdTokenInfoType {
   @Column(DataType.STRING)
   declare language1?: string | null;
 
+  // Here for compliance with interface; this is a computed property based on the context of a specific authorization request.
+  evseId?: [number, ...number[]] | null;
+
   @ForeignKey(() => IdToken)
   @Column(DataType.INTEGER)
   declare groupIdTokenId?: number | null;
 
   @BelongsTo(() => IdToken)
-  declare groupIdToken?: IdTokenType;
+  declare groupIdToken?: IdToken;
 
   @Column(DataType.STRING)
   declare language2?: string | null;

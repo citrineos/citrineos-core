@@ -7,3 +7,6 @@ export { Authorization } from './Authorization';
 export { IdToken } from './IdToken';
 export { IdTokenInfo } from './IdTokenInfo';
 export { AdditionalInfo } from './AdditionalInfo';
+export { LocalListVersion } from './LocalListVersion';
+export { SendLocalList } from './SendLocalList';
+export { LocalListAuthorization } from './LocalListAuthorization';

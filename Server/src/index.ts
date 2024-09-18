@@ -390,6 +390,7 @@ export class CitrineOSServer {
         this._createHandler(),
         this._logger,
         this._repositoryStore.authorizationRepository,
+        this._repositoryStore.localAuthListRepository,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.tariffRepository,
       );

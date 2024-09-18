@@ -32,6 +32,7 @@ export function notNull(object: any): boolean {
  * @param obj2 
  * @returns 
  */
+
 export function deepDirectionalEqual(obj1: any, obj2: any, seenObjects = new WeakSet()): boolean {
   if (obj1 === obj2) return true;
 
