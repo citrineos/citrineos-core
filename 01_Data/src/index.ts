@@ -27,6 +27,7 @@ export {
   Evse,
   Variable,
   VariableAttribute,
+  VariableStatus,
   Certificate,
   CountryNameEnumType,
   TransactionEvent,
