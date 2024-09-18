@@ -207,13 +207,6 @@ const registerFastifySwagger = (
         description: 'Central System API for OCPP 2.0.1 messaging.',
         version: packageJson.version,
       },
-      servers: [
-        {
-          url: `http://${systemConfig.centralSystem.host}:${systemConfig.centralSystem.port}`,
-          description:
-            'Target OCPI server configured in systemConfig.centralSystem',
-        },
-      ],
       components: {
         securitySchemes: {
           authorization: {

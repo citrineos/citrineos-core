@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { AttributeEnumType, SendLocalListRequest, UpdateEnumType } from "@citrineos/base";
-import { IDeviceModelRepository, ILocalAuthListRepository, VariableCharacteristics, VariableAttribute, LocalListVersion, SendLocalList, } from "@citrineos/data";
-import { LocalListAuthorization } from "@citrineos/data/src/layers/sequelize/model/Authorization/LocalListAuthorization";
+import { IDeviceModelRepository, ILocalAuthListRepository, VariableCharacteristics, VariableAttribute, LocalListVersion, SendLocalList, LocalListAuthorization, } from "@citrineos/data";
 
 export class LocalAuthListService {
   protected _localAuthListRepository: ILocalAuthListRepository;

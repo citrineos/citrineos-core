@@ -35,6 +35,7 @@ export {
   IdToken,
   IdTokenInfo,
   AdditionalInfo,
+  LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
   StatusNotification,
