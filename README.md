@@ -7,7 +7,7 @@ This is the main part of CitrineOS containing the actual charging station manage
 modules.
 
 All other documentation and the issue tracking can be found in our main repository
-here: https://github.com/citrineos/citrineos.
+here: <https://github.com/citrineos/citrineos>.
 
 ## Table of Contents
 
@@ -22,10 +22,10 @@ here: https://github.com/citrineos/citrineos.
 - [Linting and Prettier](#linting-and-prettier)
 - [Information on Docker setup](#information-on-docker-setup)
 - [Generating OCPP Interfaces](#generating-ocpp-interfaces)
-- [Generating OCPP Interfaces](#contributing)
-- [Generating OCPP Interfaces](#licensing)
-- [Generating OCPP Interfaces](#support-and-contact)
-- [Generating OCPP Interfaces](#roadmap)
+- [Contributing](#contributing)
+- [Licensing](#licensing)
+- [Support and contact](#support-and-contact)
+- [Roadmap](#roadmap)
 
 ## Overview
 
@@ -90,7 +90,7 @@ We recommend running and developing the project with the `docker-compose` set-up
 Additional Run Configurations should be made for other IDEs (ex VSCode).
 
 To change necessary configuration for execution outside of `docker-compose`, please adjust the configuration file
-at `50_Server/src/config/envs/local.ts`. Make sure any changes to the local configuration do not make it into your PR.
+at `Server/src/config/envs/local.ts`. Make sure any changes to the local configuration do not make it into your PR.
 
 ## Starting the Server
 
@@ -215,11 +215,4 @@ the GitHub repository.
 
 ## Roadmap
 
-A more detailed roadmap is coming soon.
-
-- Support for Kafka Streams
-- OCA Certification (OCPP 2.0.1 Core Profile)
-- Adding plugin management
-- Implementing ISO15118 Plug and Charge (PnC)
-- Adding OCPP inspector for debugging
-- Adding OCPI 3.0 reference implementation
+[Roadmap](https://citrineos.github.io/docs/roadmap.html)

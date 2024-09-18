@@ -23,7 +23,7 @@ export interface SendLocalListRequest extends OcppRequest {
   /**
    * @minItems 1
    */
-  localAuthorizationList?: [AuthorizationData, ...AuthorizationData[]];
+  localAuthorizationList?: [AuthorizationData, ...AuthorizationData[]] | null;
   /**
    * In case of a full update this is the version number of the full list. In case of a differential update it is the version number of the list after the update has been applied.
    *
@@ -56,7 +56,7 @@ export interface IdTokenType {
   /**
    * @minItems 1
    */
-  additionalInfo?: [AdditionalInfoType, ...AdditionalInfoType[]];
+  additionalInfo?: [AdditionalInfoType, ...AdditionalInfoType[]] | null;
   /**
    * IdToken is case insensitive. Might hold the hidden id of an RFID tag, but can for example also contain a UUID.
    *
@@ -118,7 +118,7 @@ export interface IdTokenInfoType {
    *
    * @minItems 1
    */
-  evseId?: [number, ...number[]];
+  evseId?: [number, ...number[]] | null;
   groupIdToken?: IdTokenType | null;
   /**
    * ID_ Token. Language2. Language_ Code

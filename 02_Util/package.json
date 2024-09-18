@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/util",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "The OCPP util module which supplies helpful utilities like cache and queue connectors, etc.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "prepublish": "npx eslint ./src",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --config jest.config.ts"
   },
   "keywords": [
     "ocpp",
@@ -32,8 +32,8 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@citrineos/base": "1.4.2",
-    "@citrineos/data": "1.4.2",
+    "@citrineos/base": "1.4.3",
+    "@citrineos/data": "1.4.3",
     "@directus/sdk": "15.0.3",
     "@fastify/swagger": "^8.0.0",
     "@fastify/swagger-ui": "1.9.3",

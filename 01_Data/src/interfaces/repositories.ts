@@ -36,6 +36,7 @@ import {
   StatusNotificationRequest,
   ReserveNowRequest,
   MeterValueType,
+  UpdateEnumType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
 import { CallMessage, ChargingStationSecurityInfo, CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
@@ -48,6 +49,8 @@ import { Tariff } from '../layers/sequelize';
 import { TariffQueryString } from './queries/Tariff';
 import { ChargingProfile } from '../layers/sequelize';
 import { Reservation } from '../layers/sequelize';
+import { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion';
+import { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList';
 
 export interface IAuthorizationRepository extends CrudRepository<AuthorizationData> {
   createOrUpdateByQuerystring: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
@@ -86,9 +89,37 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
   findVariableCharacteristicsByVariableNameAndVariableInstance(variableName: string, variableInstance: string | null): Promise<VariableCharacteristics | undefined>;
 }
 
+export interface ILocalAuthListRepository extends CrudRepository<LocalListVersion> {
+
+  /**
+   * Creates a SendLocalList.
+   * @param {string} stationId - The ID of the station.
+   * @param {UpdateEnumType} updateType - The type of update.
+   * @param {number} versionNumber - The version number.
+   * @param {AuthorizationData[]} localAuthorizationList - The list of authorizations.
+   * @return {SendLocalList} The database object. Contains the correlationId to be used for the sendLocalListRequest.
+   */
+  createSendLocalListFromRequestData(stationId: string, correlationId: string, updateType: UpdateEnumType, versionNumber: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList>;
+  /**
+   * Used to process GetLocalListVersionResponse, if version is unknown it will create or update LocalListVersion with the new version and an empty localAuthorizationList.
+   * @param versionNumber 
+   * @param stationId 
+   */
+  validateOrReplaceLocalListVersionForStation(versionNumber: number, stationId: string): Promise<void>;
+  getSendLocalListRequestByStationIdAndCorrelationId(stationId: string, correlationId: string): Promise<SendLocalList | undefined>;
+  /**
+   * Used to process SendLocalListResponse.
+   * @param stationId
+   * @param {SendLocalList} sendLocalList - The SendLocalList object created from the associated SendLocalListRequest.
+   * @returns {LocalListVersion} LocalListVersion - The updated LocalListVersion.
+   */
+  createOrUpdateLocalListVersionFromStationIdAndSendLocalList(stationId: string, sendLocalList: SendLocalList): Promise<LocalListVersion>;
+}
+
 export interface ILocationRepository extends CrudRepository<Location> {
   readLocationById: (id: number) => Promise<Location | undefined>;
   readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
+  doesChargingStationExistByStationId: (stationId: string) => Promise<boolean>;
   addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotificationRequest): Promise<void>;
 }
 

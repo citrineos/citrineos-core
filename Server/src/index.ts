@@ -64,6 +64,9 @@ import {
   WebhookDispatcher,
 } from '@citrineos/ocpprouter';
 import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
+import { UnknownStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/UnknownStationFilter';
+import { ConnectedStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/ConnectedStationFilter';
+import { BasicAuthenticationFilter } from '@citrineos/util/dist/networkconnection/authenticator/BasicAuthenticationFilter';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -292,9 +295,18 @@ export class CitrineOSServer {
 
   private initNetworkConnection() {
     this._authenticator = new Authenticator(
-      this._cache,
-      new sequelize.SequelizeLocationRepository(this._config, this._logger),
-      new sequelize.SequelizeDeviceModelRepository(this._config, this._logger),
+      new UnknownStationFilter(
+        new sequelize.SequelizeLocationRepository(this._config, this._logger),
+        this._logger,
+      ),
+      new ConnectedStationFilter(this._cache, this._logger),
+      new BasicAuthenticationFilter(
+        new sequelize.SequelizeDeviceModelRepository(
+          this._config,
+          this._logger,
+        ),
+        this._logger,
+      ),
       this._logger,
     );
 
@@ -378,6 +390,7 @@ export class CitrineOSServer {
         this._createHandler(),
         this._logger,
         this._repositoryStore.authorizationRepository,
+        this._repositoryStore.localAuthListRepository,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.tariffRepository,
       );

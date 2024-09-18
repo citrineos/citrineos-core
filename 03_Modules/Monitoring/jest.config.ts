@@ -6,6 +6,7 @@ const jestConfig: JestConfigWithTsJest = {
     '^.+.tsx?$': ['ts-jest', {}],
   },
   displayName: 'Monitoring Module',
+  coveragePathIgnorePatterns: ['/node_modules/', '/test/'],
 };
 
 export default jestConfig;

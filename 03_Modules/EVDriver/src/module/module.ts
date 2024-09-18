@@ -21,6 +21,7 @@ import {
   ClearCacheResponse,
   EventGroup,
   GetChargingProfilesRequest,
+  GetLocalListVersionRequest,
   GetLocalListVersionResponse,
   HandlerProperties,
   ICache,
@@ -41,6 +42,7 @@ import {
   ReserveNowResponse,
   ReserveNowStatusEnumType,
   SendLocalListResponse,
+  SendLocalListStatusEnumType,
   SystemConfig,
   UnlockConnectorResponse,
 } from '@citrineos/base';
@@ -50,6 +52,7 @@ import {
   ICallMessageRepository,
   IChargingProfileRepository,
   IDeviceModelRepository,
+  ILocalAuthListRepository,
   IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
@@ -67,6 +70,7 @@ import {
 } from '@citrineos/util';
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
+import { LocalAuthListService } from './LocalAuthListService';
 
 /**
  * Component that handles provisioning related messages.
@@ -75,6 +79,7 @@ export class EVDriverModule extends AbstractModule {
   /**
    * Fields
    */
+
   protected _requests: CallAction[] = [
     CallAction.Authorize,
     CallAction.ReservationStatusUpdate,
@@ -91,6 +96,7 @@ export class EVDriverModule extends AbstractModule {
   ];
 
   protected _authorizeRepository: IAuthorizationRepository;
+  protected _localAuthListRepository: ILocalAuthListRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _tariffRepository: ITariffRepository;
   protected _transactionEventRepository: ITransactionEventRepository;
@@ -99,6 +105,7 @@ export class EVDriverModule extends AbstractModule {
   protected _callMessageRepository: ICallMessageRepository;
 
   private _certificateAuthorityService: CertificateAuthorityService;
+  private _localAuthListService: LocalAuthListService;
   private _authorizers: IAuthorizer[];
 
   /**
@@ -119,6 +126,9 @@ export class EVDriverModule extends AbstractModule {
    *
    * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating Authorization data.
    * If no `authorizeRepository` is provided, a default {@link sequelize:AuthorizationRepository} instance is created and used.
+   *
+   * @param {ILocalAuthListRepository} [localAuthListRepository] - An optional parameter of type {@link ILocalAuthListRepository} which represents a repository for accessing and manipulating Local Authorization List data.
+   * If no `localAuthListRepository` is provided, a default {@link sequelize:localAuthListRepository} instance is created and used.
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is
@@ -159,6 +169,7 @@ export class EVDriverModule extends AbstractModule {
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
     authorizeRepository?: IAuthorizationRepository,
+    localAuthListRepository?: ILocalAuthListRepository,
     deviceModelRepository?: IDeviceModelRepository,
     tariffRepository?: ITariffRepository,
     transactionEventRepository?: ITransactionEventRepository,
@@ -189,6 +200,9 @@ export class EVDriverModule extends AbstractModule {
     this._authorizeRepository =
       authorizeRepository ||
       new sequelize.SequelizeAuthorizationRepository(config, logger);
+    this._localAuthListRepository =
+      localAuthListRepository ||
+      new sequelize.SequelizeLocalAuthListRepository(config, logger);
     this._deviceModelRepository =
       deviceModelRepository ||
       new sequelize.SequelizeDeviceModelRepository(config, logger);
@@ -212,6 +226,11 @@ export class EVDriverModule extends AbstractModule {
       certificateAuthorityService ||
       new CertificateAuthorityService(config, logger);
 
+    this._localAuthListService = new LocalAuthListService(
+      this._localAuthListRepository,
+      this._deviceModelRepository,
+    );
+
     this._authorizers = authorizers || [];
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
@@ -219,6 +238,10 @@ export class EVDriverModule extends AbstractModule {
 
   get authorizeRepository(): IAuthorizationRepository {
     return this._authorizeRepository;
+  }
+
+  get localAuthListRepository(): ILocalAuthListRepository {
+    return this._localAuthListRepository;
   }
 
   get deviceModelRepository(): IDeviceModelRepository {
@@ -239,6 +262,10 @@ export class EVDriverModule extends AbstractModule {
 
   get callMessageRepository(): ICallMessageRepository {
     return this._callMessageRepository;
+  }
+
+  get localAuthListService(): LocalAuthListService {
+    return this._localAuthListService;
   }
 
   /**
@@ -701,6 +728,43 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('SendLocalListResponse received:', message, props);
+
+    const stationId = message.context.stationId;
+
+    const sendLocalListRequest = await this._localAuthListRepository.getSendLocalListRequestByStationIdAndCorrelationId(stationId, message.context.correlationId);
+
+    if (!sendLocalListRequest) {
+      this._logger.error(`Unable to process SendLocalListResponse. SendLocalListRequest not found for StationId ${stationId} by CorrelationId ${message.context.correlationId}.`);
+      return;
+    }
+
+    const sendLocalListResponse = message.payload;
+
+    switch (sendLocalListResponse.status) {
+      case SendLocalListStatusEnumType.Accepted:
+        await this._localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(stationId, sendLocalListRequest);
+        break;
+      case SendLocalListStatusEnumType.Failed:
+        // TODO: Surface alert for upstream handling
+        this._logger.error(`SendLocalListRequest failed for StationId ${stationId}: ${message.context.correlationId}, ${JSON.stringify(sendLocalListRequest)}.`);
+        break;
+      case SendLocalListStatusEnumType.VersionMismatch: {
+        this._logger.error(`SendLocalListRequest version mismatch for StationId ${stationId}: ${message.context.correlationId}, ${JSON.stringify(sendLocalListRequest)}.`);
+        this._logger.error(`Sending GetLocalListVersionRequest for StationId ${stationId} due to SendLocalListRequest version mismatch.`);
+        const messageConfirmation = await this.sendCall(
+          stationId,
+          message.context.tenantId,
+          CallAction.GetLocalListVersion,
+          {} as GetLocalListVersionRequest,
+        );
+        if (!messageConfirmation.success) {
+          this._logger.error(`Unable to send GetLocalListVersionRequest for StationId ${stationId} due to SendLocalListRequest version mismatch.`, messageConfirmation);
+        }
+        break;
+      } default:
+        this._logger.error(`Unknown SendLocalListStatusEnumType: ${sendLocalListResponse.status}.`);
+        break;
+    }
   }
 
   @AsHandler(CallAction.GetLocalListVersion)
@@ -709,6 +773,8 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetLocalListVersionResponse received:', message, props);
+
+    await this._localAuthListRepository.validateOrReplaceLocalListVersionForStation(message.payload.versionNumber, message.context.stationId);
   }
 
   private async _findReservationByCorrelationId(

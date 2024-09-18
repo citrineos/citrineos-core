@@ -9,7 +9,7 @@
  * Authentication method.
  *
  */
-export const enum APNAuthenticationEnumType {
+export enum APNAuthenticationEnumType {
   CHAP = 'CHAP',
   NONE = 'NONE',
   PAP = 'PAP',
@@ -20,7 +20,7 @@ export const enum APNAuthenticationEnumType {
  * Accepted if the Charging Station has executed the request, otherwise rejected.
  *
  */
-export const enum ClearCacheStatusEnumType {
+export enum ClearCacheStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
 }
@@ -29,7 +29,7 @@ export const enum ClearCacheStatusEnumType {
  * Applicable Network Interface.
  *
  */
-export const enum OCPPInterfaceEnumType {
+export enum OCPPInterfaceEnumType {
   Wired0 = 'Wired0',
   Wired1 = 'Wired1',
   Wired2 = 'Wired2',
@@ -46,7 +46,7 @@ export const enum OCPPInterfaceEnumType {
  * - if one of the certificates was revoked, return 'CertificateRevoked'.
  *
  */
-export const enum AuthorizeCertificateStatusEnumType {
+export enum AuthorizeCertificateStatusEnumType {
   Accepted = 'Accepted',
   SignatureError = 'SignatureError',
   CertificateExpired = 'CertificateExpired',
@@ -60,7 +60,7 @@ export const enum AuthorizeCertificateStatusEnumType {
  * Charging Station indicates if installation was successful.
  *
  */
-export const enum InstallCertificateStatusEnumType {
+export enum InstallCertificateStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   Failed = 'Failed',
@@ -70,7 +70,7 @@ export const enum InstallCertificateStatusEnumType {
  * Charging Station indicates if it can process the request.
  *
  */
-export const enum DeleteCertificateStatusEnumType {
+export enum DeleteCertificateStatusEnumType {
   Accepted = 'Accepted',
   Failed = 'Failed',
   NotFound = 'NotFound',
@@ -80,7 +80,7 @@ export const enum DeleteCertificateStatusEnumType {
  * Charging Station indicates if it can process the request.
  *
  */
-export const enum GetInstalledCertificateStatusEnumType {
+export enum GetInstalledCertificateStatusEnumType {
   Accepted = 'Accepted',
   NotFound = 'NotFound',
 }
@@ -91,7 +91,7 @@ export const enum GetInstalledCertificateStatusEnumType {
  * Mode of energy transfer requested by the EV.
  *
  */
-export const enum EnergyTransferModeEnumType {
+export enum EnergyTransferModeEnumType {
   DC = 'DC',
   AC_single_phase = 'AC_single_phase',
   AC_two_phase = 'AC_two_phase',
@@ -104,7 +104,7 @@ export const enum EnergyTransferModeEnumType {
  * Indicates the kind of schedule.
  *
  */
-export const enum ChargingProfileKindEnumType {
+export enum ChargingProfileKindEnumType {
   Absolute = 'Absolute',
   Recurring = 'Recurring',
   Relative = 'Relative',
@@ -116,7 +116,7 @@ export const enum ChargingProfileKindEnumType {
  * Defines the purpose of the schedule transferred by this profile
  *
  */
-export const enum ChargingProfilePurposeEnumType {
+export enum ChargingProfilePurposeEnumType {
   ChargingStationExternalConstraints = 'ChargingStationExternalConstraints',
   ChargingStationMaxProfile = 'ChargingStationMaxProfile',
   TxDefaultProfile = 'TxDefaultProfile',
@@ -129,7 +129,7 @@ export const enum ChargingProfilePurposeEnumType {
  * Indicates the start point of a recurrence.
  *
  */
-export const enum RecurrencyKindEnumType {
+export enum RecurrencyKindEnumType {
   Daily = 'Daily',
   Weekly = 'Weekly',
 }
@@ -140,7 +140,7 @@ export const enum RecurrencyKindEnumType {
  * The unit of measure Limit is expressed in.
  *
  */
-export const enum ChargingRateUnitEnumType {
+export enum ChargingRateUnitEnumType {
   W = 'W',
   A = 'A',
 }
@@ -151,7 +151,7 @@ export const enum ChargingRateUnitEnumType {
  * Defines the transport protocol (e.g. SOAP or JSON). Note: SOAP is not supported in OCPP 2.0, but is supported by other versions of OCPP.
  *
  */
-export const enum OCPPTransportEnumType {
+export enum OCPPTransportEnumType {
   JSON = 'JSON',
   SOAP = 'SOAP',
 }
@@ -162,7 +162,7 @@ export const enum OCPPTransportEnumType {
  * Defines the OCPP version used for this communication function.
  *
  */
-export const enum OCPPVersionEnumType {
+export enum OCPPVersionEnumType {
   OCPP12 = 'OCPP12',
   OCPP15 = 'OCPP15',
   OCPP16 = 'OCPP16',
@@ -175,7 +175,7 @@ export const enum OCPPVersionEnumType {
  * The kind of cost referred to in the message element amount
  *
  */
-export const enum CostKindEnumType {
+export enum CostKindEnumType {
   CarbonDioxideEmission = 'CarbonDioxideEmission',
   RelativePricePercentage = 'RelativePricePercentage',
   RenewableGenerationPercentage = 'RenewableGenerationPercentage',
@@ -185,7 +185,7 @@ export const enum CostKindEnumType {
  * Data type of this variable.
  *
  */
-export const enum DataEnumType {
+export enum DataEnumType {
   string = 'string',
   decimal = 'decimal',
   integer = 'integer',
@@ -201,7 +201,7 @@ export const enum DataEnumType {
  * Defines the mutability of this attribute. Default is ReadWrite when omitted.
  *
  */
-export const enum MutabilityEnumType {
+export enum MutabilityEnumType {
   ReadOnly = 'ReadOnly',
   WriteOnly = 'WriteOnly',
   ReadWrite = 'ReadWrite',
@@ -211,7 +211,7 @@ export const enum MutabilityEnumType {
  * Defines whether certificate needs to be installed or updated.
  *
  */
-export const enum CertificateActionEnumType {
+export enum CertificateActionEnumType {
   Install = 'Install',
   Update = 'Update',
 }
@@ -220,7 +220,7 @@ export const enum CertificateActionEnumType {
  * Enumeration of possible idToken types.
  *
  */
-export const enum IdTokenEnumType {
+export enum IdTokenEnumType {
   Central = 'Central',
   eMAID = 'eMAID',
   ISO14443 = 'ISO14443',
@@ -237,7 +237,7 @@ export const enum IdTokenEnumType {
  * Current status of the ID Token.
  *
  */
-export const enum AuthorizationStatusEnumType {
+export enum AuthorizationStatusEnumType {
   Accepted = 'Accepted',
   Blocked = 'Blocked',
   ConcurrentTx = 'ConcurrentTx',
@@ -254,7 +254,7 @@ export const enum AuthorizationStatusEnumType {
  * Indicates if the Charging Station has Display Messages that match the request criteria in the &lt;&lt;getdisplaymessagesrequest,GetDisplayMessagesRequest&gt;&gt;
  *
  */
-export const enum GetDisplayMessagesStatusEnumType {
+export enum GetDisplayMessagesStatusEnumType {
   Accepted = 'Accepted',
   Unknown = 'Unknown',
 }
@@ -263,7 +263,7 @@ export const enum GetDisplayMessagesStatusEnumType {
  * Indicates if the Charging Station was able to execute the request.
  *
  */
-export const enum ClearChargingProfileStatusEnumType {
+export enum ClearChargingProfileStatusEnumType {
   Accepted = 'Accepted',
   Unknown = 'Unknown',
 }
@@ -272,7 +272,7 @@ export const enum ClearChargingProfileStatusEnumType {
  * Indicates the certificate type that is sent.
  *
  */
-export const enum InstallCertificateUseEnumType {
+export enum InstallCertificateUseEnumType {
   V2GRootCertificate = 'V2GRootCertificate',
   MORootCertificate = 'MORootCertificate',
   CSMSRootCertificate = 'CSMSRootCertificate',
@@ -284,7 +284,7 @@ export const enum InstallCertificateUseEnumType {
  *
  *
  */
-export const enum CertificateSigningUseEnumType {
+export enum CertificateSigningUseEnumType {
   ChargingStationCertificate = 'ChargingStationCertificate',
   V2GCertificate = 'V2GCertificate',
 }
@@ -293,7 +293,7 @@ export const enum CertificateSigningUseEnumType {
  * Indicates the type of the requested certificate(s).
  *
  */
-export const enum GetCertificateIdUseEnumType {
+export enum GetCertificateIdUseEnumType {
   V2GRootCertificate = 'V2GRootCertificate',
   MORootCertificate = 'MORootCertificate',
   CSMSRootCertificate = 'CSMSRootCertificate',
@@ -305,7 +305,7 @@ export const enum GetCertificateIdUseEnumType {
  * Indicates whether the Charging Station was able to accept the request.
  *
  */
-export const enum GenericDeviceModelStatusEnumType {
+export enum GenericDeviceModelStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   NotSupported = 'NotSupported',
@@ -316,7 +316,7 @@ export const enum GenericDeviceModelStatusEnumType {
  * Indicates whether the Charging Station will send the requested notification or not.
  *
  */
-export const enum TriggerMessageStatusEnumType {
+export enum TriggerMessageStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   NotImplemented = 'NotImplemented',
@@ -326,7 +326,7 @@ export const enum TriggerMessageStatusEnumType {
  * Indicates whether the Local Controller succeeded in unpublishing the firmware.
  *
  */
-export const enum UnpublishFirmwareStatusEnumType {
+export enum UnpublishFirmwareStatusEnumType {
   DownloadOngoing = 'DownloadOngoing',
   NoFirmware = 'NoFirmware',
   Unpublished = 'Unpublished',
@@ -336,7 +336,7 @@ export const enum UnpublishFirmwareStatusEnumType {
  * Indicates whether the message was processed properly.
  *
  */
-export const enum Iso15118EVCertificateStatusEnumType {
+export enum Iso15118EVCertificateStatusEnumType {
   Accepted = 'Accepted',
   Failed = 'Failed',
 }
@@ -345,7 +345,7 @@ export const enum Iso15118EVCertificateStatusEnumType {
  * Indicates whether the request was accepted.
  *
  */
-export const enum CustomerInformationStatusEnumType {
+export enum CustomerInformationStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   Invalid = 'Invalid',
@@ -357,7 +357,7 @@ export const enum CustomerInformationStatusEnumType {
  * Format of the message.
  *
  */
-export const enum MessageFormatEnumType {
+export enum MessageFormatEnumType {
   ASCII = 'ASCII',
   HTML = 'HTML',
   URI = 'URI',
@@ -370,7 +370,7 @@ export const enum MessageFormatEnumType {
  * With what priority should this message be shown
  *
  */
-export const enum MessagePriorityEnumType {
+export enum MessagePriorityEnumType {
   AlwaysFront = 'AlwaysFront',
   InFront = 'InFront',
   NormalCycle = 'NormalCycle',
@@ -382,7 +382,7 @@ export const enum MessagePriorityEnumType {
  * During what state should this message be shown. When omitted this message should be shown in any state of the Charging Station.
  *
  */
-export const enum MessageStateEnumType {
+export enum MessageStateEnumType {
   Charging = 'Charging',
   Faulted = 'Faulted',
   Idle = 'Idle',
@@ -393,7 +393,7 @@ export const enum MessageStateEnumType {
  * Reason the Charging Station sends this message to the CSMS
  *
  */
-export const enum TriggerReasonEnumType {
+export enum TriggerReasonEnumType {
   Authorized = 'Authorized',
   CablePluggedIn = 'CablePluggedIn',
   ChargingRateChanged = 'ChargingRateChanged',
@@ -421,7 +421,7 @@ export const enum TriggerReasonEnumType {
  * Result of operation.
  *
  */
-export const enum SetNetworkProfileStatusEnumType {
+export enum SetNetworkProfileStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   Failed = 'Failed',
@@ -432,7 +432,7 @@ export const enum SetNetworkProfileStatusEnumType {
  *
  *
  */
-export const enum ClearMonitoringStatusEnumType {
+export enum ClearMonitoringStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   NotFound = 'NotFound',
@@ -443,7 +443,7 @@ export const enum ClearMonitoringStatusEnumType {
  *
  *
  */
-export const enum GetVariableStatusEnumType {
+export enum GetVariableStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   UnknownComponent = 'UnknownComponent',
@@ -455,7 +455,7 @@ export const enum GetVariableStatusEnumType {
  * Result status of setting the variable.
  *
  */
-export const enum SetVariableStatusEnumType {
+export enum SetVariableStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   UnknownComponent = 'UnknownComponent',
@@ -468,7 +468,7 @@ export const enum SetVariableStatusEnumType {
  * Returns whether certificate signing has been accepted, otherwise rejected.
  *
  */
-export const enum CertificateSignedStatusEnumType {
+export enum CertificateSignedStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
 }
@@ -477,7 +477,7 @@ export const enum CertificateSignedStatusEnumType {
  * Returns whether the CSMS has been able to process the message successfully. It does not imply that the evChargingNeeds can be met with the current charging profile.
  *
  */
-export const enum NotifyEVChargingNeedsStatusEnumType {
+export enum NotifyEVChargingNeedsStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   Processing = 'Processing',
@@ -487,7 +487,7 @@ export const enum NotifyEVChargingNeedsStatusEnumType {
  * Returns whether the Charging Station has been able to process the message successfully. This does not guarantee the schedule will be followed to the letter. There might be other constraints the Charging Station may need to take into account.
  *
  */
-export const enum ChargingProfileStatusEnumType {
+export enum ChargingProfileStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
 }
@@ -496,7 +496,7 @@ export const enum ChargingProfileStatusEnumType {
  * Returns whether the Charging Station has been able to remove the message.
  *
  */
-export const enum ClearMessageStatusEnumType {
+export enum ClearMessageStatusEnumType {
   Accepted = 'Accepted',
   Unknown = 'Unknown',
 }
@@ -507,7 +507,7 @@ export const enum ClearMessageStatusEnumType {
  * Type of detail value: start, end or sample. Default = "Sample.Periodic"
  *
  */
-export const enum ReadingContextEnumType {
+export enum ReadingContextEnumType {
   Interruption_Begin = 'Interruption.Begin',
   Interruption_End = 'Interruption.End',
   Other = 'Other',
@@ -525,7 +525,7 @@ export const enum ReadingContextEnumType {
  *
  *
  */
-export const enum LocationEnumType {
+export enum LocationEnumType {
   Body = 'Body',
   Cable = 'Cable',
   EV = 'EV',
@@ -539,7 +539,7 @@ export const enum LocationEnumType {
  * Type of measurement. Default = "Energy.Active.Import.Register"
  *
  */
-export const enum MeasurandEnumType {
+export enum MeasurandEnumType {
   Current_Export = 'Current.Export',
   Current_Import = 'Current.Import',
   Current_Offered = 'Current.Offered',
@@ -573,7 +573,7 @@ export const enum MeasurandEnumType {
  * Indicates how the measured value is to be interpreted. For instance between L1 and neutral (L1-N) Please note that not all values of phase are applicable to all Measurands. When phase is absent, the measured value is interpreted as an overall value.
  *
  */
-export const enum PhaseEnumType {
+export enum PhaseEnumType {
   L1 = 'L1',
   L2 = 'L2',
   L3 = 'L3',
@@ -590,7 +590,7 @@ export const enum PhaseEnumType {
  * Source that has installed this charging profile.
  *
  */
-export const enum ChargingLimitSourceEnumType {
+export enum ChargingLimitSourceEnumType {
   EMS = 'EMS',
   Other = 'Other',
   SO = 'SO',
@@ -602,7 +602,7 @@ export const enum ChargingLimitSourceEnumType {
  *
  *
  */
-export const enum EventNotificationEnumType {
+export enum EventNotificationEnumType {
   HardWiredNotification = 'HardWiredNotification',
   HardWiredMonitor = 'HardWiredMonitor',
   PreconfiguredMonitor = 'PreconfiguredMonitor',
@@ -613,7 +613,7 @@ export const enum EventNotificationEnumType {
  * Specifies whether the CSMS can process the request.
  *
  */
-export const enum GenericStatusEnumType {
+export enum GenericStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
 }
@@ -622,7 +622,7 @@ export const enum GenericStatusEnumType {
  * Specify which monitoring base will be set
  *
  */
-export const enum MonitoringBaseEnumType {
+export enum MonitoringBaseEnumType {
   All = 'All',
   FactoryDefault = 'FactoryDefault',
   HardWiredOnly = 'HardWiredOnly',
@@ -632,7 +632,7 @@ export const enum MonitoringBaseEnumType {
  * Status indicating whether Charging Station accepts the request to stop a transaction.
  *
  */
-export const enum RequestStartStopStatusEnumType {
+export enum RequestStartStopStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
 }
@@ -641,7 +641,7 @@ export const enum RequestStartStopStatusEnumType {
  * Status is OK if a value could be returned. Otherwise this will indicate the reason why a value could not be returned.
  *
  */
-export const enum SetMonitoringStatusEnumType {
+export enum SetMonitoringStatusEnumType {
   Accepted = 'Accepted',
   UnknownComponent = 'UnknownComponent',
   UnknownVariable = 'UnknownVariable',
@@ -655,7 +655,7 @@ export const enum SetMonitoringStatusEnumType {
  *
  *
  */
-export const enum MonitorEnumType {
+export enum MonitorEnumType {
   UpperThreshold = 'UpperThreshold',
   LowerThreshold = 'LowerThreshold',
   Delta = 'Delta',
@@ -667,7 +667,7 @@ export const enum MonitorEnumType {
  * The updated reservation status.
  *
  */
-export const enum ReservationUpdateStatusEnumType {
+export enum ReservationUpdateStatusEnumType {
   Expired = 'Expired',
   Removed = 'Removed',
 }
@@ -676,7 +676,7 @@ export const enum ReservationUpdateStatusEnumType {
  * This contains the current status of the Connector.
  *
  */
-export const enum ConnectorStatusEnumType {
+export enum ConnectorStatusEnumType {
   Available = 'Available',
   Occupied = 'Occupied',
   Reserved = 'Reserved',
@@ -688,7 +688,7 @@ export const enum ConnectorStatusEnumType {
  * This contains the progress status of the firmware installation.
  *
  */
-export const enum FirmwareStatusEnumType {
+export enum FirmwareStatusEnumType {
   Downloaded = 'Downloaded',
   DownloadFailed = 'DownloadFailed',
   Downloading = 'Downloading',
@@ -710,7 +710,7 @@ export const enum FirmwareStatusEnumType {
  * installation.
  *
  */
-export const enum PublishFirmwareStatusEnumType {
+export enum PublishFirmwareStatusEnumType {
   Idle = 'Idle',
   DownloadScheduled = 'DownloadScheduled',
   Downloading = 'Downloading',
@@ -727,7 +727,7 @@ export const enum PublishFirmwareStatusEnumType {
  * This contains the reason for sending this message to the CSMS.
  *
  */
-export const enum BootReasonEnumType {
+export enum BootReasonEnumType {
   ApplicationReset = 'ApplicationReset',
   FirmwareUpdate = 'FirmwareUpdate',
   LocalReset = 'LocalReset',
@@ -743,7 +743,7 @@ export const enum BootReasonEnumType {
  * This contains the status of the log upload.
  *
  */
-export const enum UploadLogStatusEnumType {
+export enum UploadLogStatusEnumType {
   BadMessage = 'BadMessage',
   Idle = 'Idle',
   NotSupportedOperation = 'NotSupportedOperation',
@@ -759,7 +759,7 @@ export const enum UploadLogStatusEnumType {
  *
  *
  */
-export const enum OperationalStatusEnumType {
+export enum OperationalStatusEnumType {
   Inoperative = 'Inoperative',
   Operative = 'Operative',
 }
@@ -769,7 +769,7 @@ export const enum OperationalStatusEnumType {
  * should send.
  *
  */
-export const enum LogEnumType {
+export enum LogEnumType {
   DiagnosticsLog = 'DiagnosticsLog',
   SecurityLog = 'SecurityLog',
 }
@@ -778,7 +778,7 @@ export const enum LogEnumType {
  * This contains the type of reset that the Charging Station or EVSE should perform.
  *
  */
-export const enum ResetEnumType {
+export enum ResetEnumType {
   Immediate = 'Immediate',
   OnIdle = 'OnIdle',
 }
@@ -788,7 +788,7 @@ export const enum ResetEnumType {
  * The first TransactionEvent of a transaction SHALL contain: "Started" The last TransactionEvent of a transaction SHALL contain: "Ended" All others SHALL contain: "Updated"
  *
  */
-export const enum TransactionEventEnumType {
+export enum TransactionEventEnumType {
   Ended = 'Ended',
   Started = 'Started',
   Updated = 'Updated',
@@ -798,7 +798,7 @@ export const enum TransactionEventEnumType {
  * This contains the type of update (full or differential) of this request.
  *
  */
-export const enum UpdateEnumType {
+export enum UpdateEnumType {
   Differential = 'Differential',
   Full = 'Full',
 }
@@ -819,7 +819,7 @@ export enum RegistrationStatusEnumType {
  *
  *
  */
-export const enum UpdateFirmwareStatusEnumType {
+export enum UpdateFirmwareStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   AcceptedCanceled = 'AcceptedCanceled',
@@ -831,7 +831,7 @@ export const enum UpdateFirmwareStatusEnumType {
  * This field indicates whether the Charging Station was able to accept the request.
  *
  */
-export const enum LogStatusEnumType {
+export enum LogStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   AcceptedCanceled = 'AcceptedCanceled',
@@ -841,7 +841,7 @@ export const enum LogStatusEnumType {
  * This field specifies the connector type.
  *
  */
-export const enum ConnectorEnumType {
+export enum ConnectorEnumType {
   cCCS1 = 'cCCS1',
   cCCS2 = 'cCCS2',
   cG105 = 'cG105',
@@ -870,7 +870,7 @@ export const enum ConnectorEnumType {
  * This field specifies the report base.
  *
  */
-export const enum ReportBaseEnumType {
+export enum ReportBaseEnumType {
   ConfigurationInventory = 'ConfigurationInventory',
   FullInventory = 'FullInventory',
   SummaryInventory = 'SummaryInventory',
@@ -880,7 +880,7 @@ export const enum ReportBaseEnumType {
  * This indicates the success or failure of the canceling of a reservation by CSMS.
  *
  */
-export const enum CancelReservationStatusEnumType {
+export enum CancelReservationStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
 }
@@ -889,7 +889,7 @@ export const enum CancelReservationStatusEnumType {
  * This indicates the success or failure of the data transfer.
  *
  */
-export const enum DataTransferStatusEnumType {
+export enum DataTransferStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   UnknownMessageId = 'UnknownMessageId',
@@ -900,7 +900,7 @@ export const enum DataTransferStatusEnumType {
  * This indicates the success or failure of the reservation.
  *
  */
-export const enum ReserveNowStatusEnumType {
+export enum ReserveNowStatusEnumType {
   Accepted = 'Accepted',
   Faulted = 'Faulted',
   Occupied = 'Occupied',
@@ -912,7 +912,7 @@ export const enum ReserveNowStatusEnumType {
  * This indicates whether the Charging Station has successfully received and applied the update of the Local Authorization List.
  *
  */
-export const enum SendLocalListStatusEnumType {
+export enum SendLocalListStatusEnumType {
   Accepted = 'Accepted',
   Failed = 'Failed',
   VersionMismatch = 'VersionMismatch',
@@ -922,7 +922,7 @@ export const enum SendLocalListStatusEnumType {
  * This indicates whether the Charging Station has unlocked the connector.
  *
  */
-export const enum UnlockStatusEnumType {
+export enum UnlockStatusEnumType {
   Unlocked = 'Unlocked',
   UnlockFailed = 'UnlockFailed',
   OngoingAuthorizedTransaction = 'OngoingAuthorizedTransaction',
@@ -933,7 +933,7 @@ export const enum UnlockStatusEnumType {
  * This indicates whether the Charging Station is able to display the message.
  *
  */
-export const enum DisplayMessageStatusEnumType {
+export enum DisplayMessageStatusEnumType {
   Accepted = 'Accepted',
   NotSupportedMessageFormat = 'NotSupportedMessageFormat',
   Rejected = 'Rejected',
@@ -946,7 +946,7 @@ export const enum DisplayMessageStatusEnumType {
  * This indicates whether the Charging Station is able to perform the availability change.
  *
  */
-export const enum ChangeAvailabilityStatusEnumType {
+export enum ChangeAvailabilityStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   Scheduled = 'Scheduled',
@@ -956,7 +956,7 @@ export const enum ChangeAvailabilityStatusEnumType {
  * This indicates whether the Charging Station is able to perform the reset.
  *
  */
-export const enum ResetStatusEnumType {
+export enum ResetStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   Scheduled = 'Scheduled',
@@ -966,7 +966,7 @@ export const enum ResetStatusEnumType {
  * This indicates whether the Charging Station is able to process this request and will send &lt;&lt;reportchargingprofilesrequest, ReportChargingProfilesRequest&gt;&gt; messages.
  *
  */
-export const enum GetChargingProfileStatusEnumType {
+export enum GetChargingProfileStatusEnumType {
   Accepted = 'Accepted',
   NoProfiles = 'NoProfiles',
 }
@@ -975,7 +975,7 @@ export const enum GetChargingProfileStatusEnumType {
  * This indicates whether the charging station was able to retrieve the OCSP certificate status.
  *
  */
-export const enum GetCertificateStatusEnumType {
+export enum GetCertificateStatusEnumType {
   Accepted = 'Accepted',
   Failed = 'Failed',
 }
@@ -987,7 +987,7 @@ export const enum GetCertificateStatusEnumType {
  * has changed.
  *
  */
-export const enum ChargingStateEnumType {
+export enum ChargingStateEnumType {
   Charging = 'Charging',
   EVConnected = 'EVConnected',
   SuspendedEV = 'SuspendedEV',
@@ -1001,7 +1001,7 @@ export const enum ChargingStateEnumType {
  * This contains the reason why the transaction was stopped. MAY only be omitted when Reason is "Local".
  *
  */
-export const enum ReasonEnumType {
+export enum ReasonEnumType {
   DeAuthorized = 'DeAuthorized',
   EmergencyStop = 'EmergencyStop',
   EnergyLimitReached = 'EnergyLimitReached',
@@ -1027,7 +1027,7 @@ export const enum ReasonEnumType {
  * Type of attribute: Actual, Target, MinSet, MaxSet. Default is Actual when omitted.
  *
  */
-export const enum AttributeEnumType {
+export enum AttributeEnumType {
   Actual = 'Actual',
   Target = 'Target',
   MinSet = 'MinSet',
@@ -1038,7 +1038,7 @@ export const enum AttributeEnumType {
  * Type of message to be triggered.
  *
  */
-export const enum MessageTriggerEnumType {
+export enum MessageTriggerEnumType {
   BootNotification = 'BootNotification',
   LogStatusNotification = 'LogStatusNotification',
   FirmwareStatusNotification = 'FirmwareStatusNotification',
@@ -1057,7 +1057,7 @@ export const enum MessageTriggerEnumType {
  *
  *
  */
-export const enum EventTriggerEnumType {
+export enum EventTriggerEnumType {
   Alerting = 'Alerting',
   Delta = 'Delta',
   Periodic = 'Periodic',
@@ -1067,7 +1067,7 @@ export const enum EventTriggerEnumType {
  * Used algorithms for the hashes provided.
  *
  */
-export const enum HashAlgorithmEnumType {
+export enum HashAlgorithmEnumType {
   SHA256 = 'SHA256',
   SHA384 = 'SHA384',
   SHA512 = 'SHA512',
@@ -1079,21 +1079,21 @@ export const enum HashAlgorithmEnumType {
  * Type of VPN
  *
  */
-export const enum VPNEnumType {
+export enum VPNEnumType {
   IKEv2 = 'IKEv2',
   IPSec = 'IPSec',
   L2TP = 'L2TP',
   PPTP = 'PPTP',
 }
 
-export const enum ComponentCriterionEnumType {
+export enum ComponentCriterionEnumType {
   Active = 'Active',
   Available = 'Available',
   Enabled = 'Enabled',
   Problem = 'Problem',
 }
 
-export const enum MonitoringCriterionEnumType {
+export enum MonitoringCriterionEnumType {
   ThresholdMonitoring = 'ThresholdMonitoring',
   DeltaMonitoring = 'DeltaMonitoring',
   PeriodicMonitoring = 'PeriodicMonitoring',

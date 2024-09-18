@@ -14,7 +14,7 @@ export class IdToken extends Model implements IdTokenType {
   static readonly MODEL_NAME: string = Namespace.IdTokenType;
 
   @BelongsToMany(() => AdditionalInfo, () => IdTokenAdditionalInfo)
-  declare additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]];
+  declare additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]] | null;
 
   @Column({
     type: DataType.STRING,
