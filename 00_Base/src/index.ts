@@ -68,6 +68,8 @@ export const LOG_LEVEL_OCPP = 10;
 
 export * from './ocpp/model';
 
+export { UpdateChargingStationPasswordRequest } from './ocpp/model/UpdateChargingStationPasswordRequest';
+
 import {
   AuthorizeRequestSchema,
   BootNotificationRequestSchema,
