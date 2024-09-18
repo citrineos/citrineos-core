@@ -35,7 +35,7 @@ export class LocalAuthListService {
     const sendLocalList = await this.createSendLocalListFromStationIdAndRequestAndCurrentVersion(stationId, correlationId, sendLocalListRequest, localListVersion);
 
     const newLocalAuthListLength = await this.countUpdatedAuthListFromRequestAndCurrentVersion(sendLocalList, localListVersion);
-    // TODO If Device Model is updated to allow different variable characteristics for the same variable per station, then we need to update this
+    // DeviceModelRefactor: If different variable characteristics are allowed for the same variable, per station, then we need to update this
     const maxLocalAuthListEntries = await this.getMaxLocalAuthListEntries();
     if (!maxLocalAuthListEntries) {
       throw new Error('Could not get max local auth list entries, required by D01.FR.12');
