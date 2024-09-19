@@ -731,10 +731,16 @@ export class EVDriverModule extends AbstractModule {
 
     const stationId = message.context.stationId;
 
-    const sendLocalListRequest = await this._localAuthListRepository.getSendLocalListRequestByStationIdAndCorrelationId(stationId, message.context.correlationId);
+    const sendLocalListRequest =
+      await this._localAuthListRepository.getSendLocalListRequestByStationIdAndCorrelationId(
+        stationId,
+        message.context.correlationId,
+      );
 
     if (!sendLocalListRequest) {
-      this._logger.error(`Unable to process SendLocalListResponse. SendLocalListRequest not found for StationId ${stationId} by CorrelationId ${message.context.correlationId}.`);
+      this._logger.error(
+        `Unable to process SendLocalListResponse. SendLocalListRequest not found for StationId ${stationId} by CorrelationId ${message.context.correlationId}.`,
+      );
       return;
     }
 
@@ -742,15 +748,24 @@ export class EVDriverModule extends AbstractModule {
 
     switch (sendLocalListResponse.status) {
       case SendLocalListStatusEnumType.Accepted:
-        await this._localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(stationId, sendLocalListRequest);
+        await this._localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
+          stationId,
+          sendLocalListRequest,
+        );
         break;
       case SendLocalListStatusEnumType.Failed:
         // TODO: Surface alert for upstream handling
-        this._logger.error(`SendLocalListRequest failed for StationId ${stationId}: ${message.context.correlationId}, ${JSON.stringify(sendLocalListRequest)}.`);
+        this._logger.error(
+          `SendLocalListRequest failed for StationId ${stationId}: ${message.context.correlationId}, ${JSON.stringify(sendLocalListRequest)}.`,
+        );
         break;
       case SendLocalListStatusEnumType.VersionMismatch: {
-        this._logger.error(`SendLocalListRequest version mismatch for StationId ${stationId}: ${message.context.correlationId}, ${JSON.stringify(sendLocalListRequest)}.`);
-        this._logger.error(`Sending GetLocalListVersionRequest for StationId ${stationId} due to SendLocalListRequest version mismatch.`);
+        this._logger.error(
+          `SendLocalListRequest version mismatch for StationId ${stationId}: ${message.context.correlationId}, ${JSON.stringify(sendLocalListRequest)}.`,
+        );
+        this._logger.error(
+          `Sending GetLocalListVersionRequest for StationId ${stationId} due to SendLocalListRequest version mismatch.`,
+        );
         const messageConfirmation = await this.sendCall(
           stationId,
           message.context.tenantId,
@@ -758,11 +773,17 @@ export class EVDriverModule extends AbstractModule {
           {} as GetLocalListVersionRequest,
         );
         if (!messageConfirmation.success) {
-          this._logger.error(`Unable to send GetLocalListVersionRequest for StationId ${stationId} due to SendLocalListRequest version mismatch.`, messageConfirmation);
+          this._logger.error(
+            `Unable to send GetLocalListVersionRequest for StationId ${stationId} due to SendLocalListRequest version mismatch.`,
+            messageConfirmation,
+          );
         }
         break;
-      } default:
-        this._logger.error(`Unknown SendLocalListStatusEnumType: ${sendLocalListResponse.status}.`);
+      }
+      default:
+        this._logger.error(
+          `Unknown SendLocalListStatusEnumType: ${sendLocalListResponse.status}.`,
+        );
         break;
     }
   }
@@ -774,7 +795,10 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('GetLocalListVersionResponse received:', message, props);
 
-    await this._localAuthListRepository.validateOrReplaceLocalListVersionForStation(message.payload.versionNumber, message.context.stationId);
+    await this._localAuthListRepository.validateOrReplaceLocalListVersionForStation(
+      message.payload.versionNumber,
+      message.context.stationId,
+    );
   }
 
   private async _findReservationByCorrelationId(

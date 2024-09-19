@@ -11,13 +11,13 @@ import {
   SystemConfig,
   WebsocketServerConfig,
 } from '@citrineos/base';
-import {Duplex} from 'stream';
+import { Duplex } from 'stream';
 import * as http from 'http';
 import * as https from 'https';
 import fs from 'fs';
-import {ErrorEvent, MessageEvent, WebSocket, WebSocketServer} from 'ws';
-import {ILogObj, Logger} from 'tslog';
-import {SecureContextOptions} from 'tls';
+import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from 'ws';
+import { ILogObj, Logger } from 'tslog';
+import { SecureContextOptions } from 'tls';
 
 export class WebsocketNetworkConnection {
   protected _cache: ICache;
