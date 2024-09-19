@@ -17,7 +17,7 @@
   ],
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/deasync-promise": "1.0.0",
+    "@types/deasync-promise": "1.0.2",
     "@types/uuid": "9.0.7",
     "@typescript-eslint/eslint-plugin": "6.5.0",
     "@typescript-eslint/parser": "6.4.1",

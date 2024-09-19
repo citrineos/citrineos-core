@@ -20,7 +20,7 @@
   "devDependencies": {
     "@types/amqplib": "0.10.2",
     "@types/bcrypt": "5.0.2",
-    "@types/deasync-promise": "1.0.0",
+    "@types/deasync-promise": "1.0.2",
     "@types/json-schema-faker": "0.5.4",
     "@types/uuid": "9.0.1",
     "@types/jsrsasign": "10.5.14",
