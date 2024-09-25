@@ -2,6 +2,7 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { AuthorizationData, CrudRepository, deepDirectionalEqual, SystemConfig, UpdateEnumType } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';

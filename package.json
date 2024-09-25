@@ -10,7 +10,7 @@
     "eslint-config-prettier": "9.1.0",
     "prettier": "3.2.5",
     "typescript": "5.5.4",
-    "typescript-eslint": "7.6.0"
+    "typescript-eslint": "8.7.0"
   },
   "scripts": {
     "install-all": "npm i --verbose",
