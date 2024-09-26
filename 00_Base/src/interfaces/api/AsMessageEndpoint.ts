@@ -17,7 +17,6 @@ export const AsMessageEndpoint = function (
   action: CallAction,
   bodySchema: object,
 ) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (
     target: any,
     propertyKey: string,
