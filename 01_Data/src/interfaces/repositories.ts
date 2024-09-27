@@ -39,7 +39,7 @@ import {
   UpdateEnumType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
-import { CallMessage, ChargingStationSecurityInfo, CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
+import { CallMessage, ChargingStationSecurityInfo, ChargingStationSequence, ChargingStationSequenceType, CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
 import { type VariableAttribute } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { type Authorization, type Boot, type Certificate, ChargingNeeds, type ChargingStation, type Component, type EventData, Evse, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';
@@ -190,4 +190,8 @@ export interface ICallMessageRepository extends CrudRepository<CallMessage> {}
 export interface IChargingStationSecurityInfoRepository extends CrudRepository<ChargingStationSecurityInfo> {
   readChargingStationPublicKeyFileId(stationId: string): Promise<string>;
   readOrCreateChargingStationInfo(stationId: string, publicKeyFileId: string): Promise<void>;
+}
+
+export interface IChargingStationSequenceRepository extends CrudRepository<ChargingStationSequence> {
+  getNextSequenceValue(stationId: string, type: ChargingStationSequenceType): Promise<number>;
 }
