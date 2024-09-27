@@ -59,7 +59,7 @@ import {
   sequelize,
 } from '@citrineos/data';
 import {
-  generateRequestId,
+  IdGenerator,
   RabbitMqReceiver,
   RabbitMqSender,
   Timer,
@@ -69,6 +69,7 @@ import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './DeviceModelService';
 import { BootNotificationService } from './BootNotificationService';
+import { SequelizeChargingStationSequenceRepository } from '@citrineos/data';
 
 /**
  * Component that handles Configuration related messages.
@@ -102,6 +103,7 @@ export class ConfigurationModule extends AbstractModule {
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _messageInfoRepository: IMessageInfoRepository;
   protected _bootService: BootNotificationService;
+  private _idGenerator: IdGenerator;
 
   /**
    * Constructor
@@ -129,8 +131,12 @@ export class ConfigurationModule extends AbstractModule {
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is created and used.
    *
-   *@param {IMessageInfoRepository} [messageInfoRepository] - An optional parameter of type {@link messageInfoRepository} which
-   *  represents a repository for accessing and manipulating variable data.
+   * @param {IMessageInfoRepository} [messageInfoRepository] - An optional parameter of type {@link messageInfoRepository} which
+   * represents a repository for accessing and manipulating variable data.
+   *
+   * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which
+   * represents a generator for ids.
+   *
    *If no `deviceModelRepository` is provided, a default {@link sequelize:messageInfoRepository} instance is created and used.
    */
   constructor(
@@ -142,6 +148,7 @@ export class ConfigurationModule extends AbstractModule {
     bootRepository?: IBootRepository,
     deviceModelRepository?: IDeviceModelRepository,
     messageInfoRepository?: IMessageInfoRepository,
+    idGenerator?: IdGenerator,
   ) {
     super(
       config,
@@ -181,6 +188,12 @@ export class ConfigurationModule extends AbstractModule {
       this._config.modules.configuration,
       this._logger,
     );
+
+    this._idGenerator =
+      idGenerator ||
+      new IdGenerator(
+        new SequelizeChargingStationSequenceRepository(config, this._logger),
+      );
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -549,7 +562,9 @@ export class ConfigurationModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetDisplayMessages,
         {
-          requestId: generateRequestId(),
+          requestId: await this._idGenerator.generateRequestId(
+            message.context.stationId,
+          ),
         } as GetDisplayMessagesRequest,
       );
     }
@@ -618,7 +633,9 @@ export class ConfigurationModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetDisplayMessages,
         {
-          requestId: generateRequestId(),
+          requestId: await this._idGenerator.generateRequestId(
+            message.context.stationId,
+          ),
         } as GetDisplayMessagesRequest,
       );
     }
