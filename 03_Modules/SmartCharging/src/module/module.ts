@@ -42,7 +42,7 @@ import {
   SystemConfig,
 } from '@citrineos/base';
 import {
-  generateRequestId,
+  IdGenerator,
   RabbitMqReceiver,
   RabbitMqSender,
   Timer,
@@ -56,7 +56,8 @@ import {
   sequelize,
   Transaction,
 } from '@citrineos/data';
-import { ISmartCharging, InternalSmartCharging } from './smartCharging';
+import { InternalSmartCharging, ISmartCharging } from './smartCharging';
+import { SequelizeChargingStationSequenceRepository } from '@citrineos/data';
 
 /**
  * Component that handles provisioning related messages.
@@ -86,6 +87,8 @@ export class SmartChargingModule extends AbstractModule {
   protected _chargingProfileRepository: IChargingProfileRepository;
 
   protected _smartChargingService: ISmartCharging;
+
+  private _idGenerator: IdGenerator;
 
   /**
    * Constructor
@@ -121,6 +124,9 @@ export class SmartChargingModule extends AbstractModule {
    *
    * @param {ISmartCharging} [smartChargingService] - An optional parameter of type {@link ISmartCharging} which
    * provides smart charging functionalities, e.g., calculation and validation.
+   *
+   * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which
+   * represents a generator for ids.
    */
   constructor(
     config: SystemConfig,
@@ -132,6 +138,7 @@ export class SmartChargingModule extends AbstractModule {
     deviceModelRepository?: IDeviceModelRepository,
     chargingProfileRepository?: IChargingProfileRepository,
     smartChargingService?: ISmartCharging,
+    idGenerator?: IdGenerator,
   ) {
     super(
       config,
@@ -165,15 +172,23 @@ export class SmartChargingModule extends AbstractModule {
       smartChargingService ||
       new InternalSmartCharging(this._chargingProfileRepository);
 
+    this._idGenerator =
+      idGenerator ||
+      new IdGenerator(
+        new SequelizeChargingStationSequenceRepository(config, this._logger),
+      );
+
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
   get transactionEventRepository(): ITransactionEventRepository {
     return this._transactionEventRepository;
   }
+
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
   }
+
   get chargingProfileRepository(): IChargingProfileRepository {
     return this._chargingProfileRepository;
   }
@@ -422,7 +437,9 @@ export class SmartChargingModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetChargingProfiles,
         {
-          requestId: generateRequestId(),
+          requestId: await this._idGenerator.generateRequestId(
+            message.context.stationId,
+          ),
           chargingProfile: {
             chargingLimitSource: [
               ChargingLimitSourceEnumType.CSO,
@@ -485,7 +502,9 @@ export class SmartChargingModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetChargingProfiles,
         {
-          requestId: generateRequestId(),
+          requestId: await this._idGenerator.generateRequestId(
+            message.context.stationId,
+          ),
           chargingProfile: {
             chargingLimitSource: [ChargingLimitSourceEnumType.CSO],
           } as ChargingProfileCriterionType,

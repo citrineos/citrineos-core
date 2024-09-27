@@ -2,11 +2,18 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-/**
- * Generates request id
- * TODO: get clear the scope and have a better way to generate unique id
- * @return {number}
- */
-export function generateRequestId(): number {
-  return Math.floor(Math.random() * 1000);
+import {IChargingStationSequenceRepository} from "@citrineos/data";
+
+export class IdGenerator {
+
+  private _stationSequenceRepository: IChargingStationSequenceRepository;
+
+  constructor(stationSequenceRepository: IChargingStationSequenceRepository) {
+    this._stationSequenceRepository = stationSequenceRepository;
+  }
+
+  async generateRequestId(stationId: string): Promise<number> {
+    return this._stationSequenceRepository.getNextSequenceValue(stationId, 'requestId');
+  }
+
 }

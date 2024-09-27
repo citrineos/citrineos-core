@@ -22,6 +22,7 @@ import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
 import {
   Authenticator,
   DirectusUtil,
+  IdGenerator,
   initSwagger,
   MemoryCache,
   RabbitMqReceiver,
@@ -93,6 +94,7 @@ export class CitrineOSServer {
   private _authenticator?: IAuthenticator;
   private _networkConnection?: WebsocketNetworkConnection;
   private _repositoryStore!: RepositoryStore;
+  private _idGenerator!: IdGenerator;
 
   private readonly appName: string;
 
@@ -166,6 +168,7 @@ export class CitrineOSServer {
 
     // Initialize repository store
     this.initRepositoryStore();
+    this.initIdGenerator();
 
     // Initialize module & API
     // Always initialize API after SwaggerUI
@@ -375,6 +378,7 @@ export class CitrineOSServer {
         this._repositoryStore.bootRepository,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.messageInfoRepository,
+        this._idGenerator,
       );
       this.modules.push(module);
       this.apis.push(
@@ -407,6 +411,7 @@ export class CitrineOSServer {
         this._logger,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.variableMonitoringRepository,
+        this._idGenerator,
       );
       this.modules.push(module);
       this.apis.push(
@@ -599,6 +604,11 @@ export class CitrineOSServer {
       this._sequelizeInstance,
     );
   }
+
+  private initIdGenerator() {
+    this._idGenerator = new IdGenerator(this._repositoryStore.chargingStationSequenceRepository);
+  }
+
 }
 
 async function main() {
