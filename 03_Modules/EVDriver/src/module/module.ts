@@ -277,6 +277,10 @@ export class EVDriverModule extends AbstractModule {
     return this._localAuthListService;
   }
 
+  get idGenerator(): IdGenerator {
+    return this._idGenerator;
+  }
+
   /**
    * Handle requests
    */
