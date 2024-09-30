@@ -67,6 +67,7 @@ import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
 import { UnknownStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/UnknownStationFilter';
 import { ConnectedStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/ConnectedStationFilter';
 import { BasicAuthenticationFilter } from '@citrineos/util/dist/networkconnection/authenticator/BasicAuthenticationFilter';
+import cors from '@fastify/cors';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -126,6 +127,12 @@ export class CitrineOSServer {
     this._config = config;
     this._server =
       server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
+
+    // enable cors
+    this._server.register(cors, {
+      origin: true, // This can be customized to specify allowed origins
+      methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed HTTP methods
+    });
 
     // Add health check
     this.initHealthCheck();
