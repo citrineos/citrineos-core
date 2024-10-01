@@ -563,7 +563,7 @@ export class ConfigurationModule extends AbstractModule {
         CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId,
+            message.context.stationId, 'getDisplayMessages',
           ),
         } as GetDisplayMessagesRequest,
       );
@@ -634,7 +634,7 @@ export class ConfigurationModule extends AbstractModule {
         CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId,
+            message.context.stationId, 'getDisplayMessages',
           ),
         } as GetDisplayMessagesRequest,
       );
