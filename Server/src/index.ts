@@ -21,12 +21,15 @@ import {
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
 import {
   Authenticator,
+  BasicAuthenticationFilter,
+  ConnectedStationFilter,
   DirectusUtil,
   initSwagger,
   MemoryCache,
   RabbitMqReceiver,
   RabbitMqSender,
   RedisCache,
+  UnknownStationFilter,
   WebsocketNetworkConnection,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
@@ -64,9 +67,6 @@ import {
   WebhookDispatcher,
 } from '@citrineos/ocpprouter';
 import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
-import { UnknownStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/UnknownStationFilter';
-import { ConnectedStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/ConnectedStationFilter';
-import { BasicAuthenticationFilter } from '@citrineos/util/dist/networkconnection/authenticator/BasicAuthenticationFilter';
 import cors from '@fastify/cors';
 
 interface ModuleConfig {
@@ -129,7 +129,7 @@ export class CitrineOSServer {
       server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
     // enable cors
-    this._server.register(cors, {
+    (this._server as any).register(cors, {
       origin: true, // This can be customized to specify allowed origins
       methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed HTTP methods
     });
