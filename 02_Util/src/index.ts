@@ -3,6 +3,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
+export { UnknownStationFilter } from './networkconnection/authenticator/UnknownStationFilter';
+export { ConnectedStationFilter } from './networkconnection/authenticator/ConnectedStationFilter';
+export { BasicAuthenticationFilter } from './networkconnection/authenticator/BasicAuthenticationFilter';
+
 export { IAuthorizer } from './authorization';
 export { MemoryCache } from './cache/memory';
 export { RedisCache } from './cache/redis';
