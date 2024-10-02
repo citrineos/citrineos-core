@@ -67,6 +67,7 @@ import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
 import { UnknownStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/UnknownStationFilter';
 import { ConnectedStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/ConnectedStationFilter';
 import { BasicAuthenticationFilter } from '@citrineos/util/dist/networkconnection/authenticator/BasicAuthenticationFilter';
+import axios from 'axios';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -252,13 +253,23 @@ export class CitrineOSServer {
   }
 
   private initLogger() {
-    return new Logger<ILogObj>({
+    const logger = new Logger<ILogObj>({
       name: 'CitrineOS Logger',
       minLevel: systemConfig.logLevel,
       hideLogPositionForProduction: systemConfig.env === 'production',
-      // Disable colors for cloud deployment as some cloud logging environments such as cloudwatch can not interpret colors
       stylePrettyLogs: process.env.DEPLOYMENT_TARGET !== 'cloud',
     });
+    //TODO make this dynamic
+    // Attach a transport to send logs to Data Prepper via HTTP
+    logger.attachTransport((logObj) => {
+      axios
+        .post('http://localhost:2021/logs', [logObj])
+        .catch((err) =>
+          console.error('Failed to send log to Data Prepper:', err),
+        );
+    });
+
+    return logger;
   }
 
   private async initDb() {

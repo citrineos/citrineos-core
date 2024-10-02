@@ -48,6 +48,7 @@
     "@citrineos/util": "1.4.3",
     "@directus/extensions": "1.0.10",
     "@fastify/type-provider-json-schema-to-ts": "2.2.2",
+    "axios": "^1.7.7",
     "cross-env": "7.0.3",
     "fastify": "4.22.2",
     "sqlite3": "5.1.6",

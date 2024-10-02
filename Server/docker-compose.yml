@@ -132,3 +132,39 @@ services:
       interval: 15s
       timeout: 15s
       retries: 3
+  dataprepper:
+    image: opensearchproject/data-prepper:latest
+    container_name: data-prepper
+    ports:
+      - '2021:2021' # HTTP port for Data Prepper to receive logs
+      - '4900:4900' # Port for monitoring (optional)
+    volumes:
+      - ./pipelines.yaml:/usr/share/data-prepper/pipelines/pipelines.yaml
+    #      - ./data-prepper-config.yaml:/usr/share/data-prepper/config/data-prepper-config.yaml
+    depends_on:
+      - opensearch
+
+  opensearch:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true # Disable security for development
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=YourStrongPasswordHere7!
+
+    ports:
+      - '9200:9200' # OpenSearch API
+      - '9600:9600' # OpenSearch performance analyzer
+
+  dashboards:
+    image: opensearchproject/opensearch-dashboards:latest
+    container_name: opensearch-dashboards
+    ports:
+      - '5601:5601' # OpenSearch Dashboards
+    depends_on:
+      - opensearch
+    environment:
+      - OPENSEARCH_HOSTS=http://opensearch:9200
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=YourStrongPasswordHere7!
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true

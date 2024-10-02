@@ -1,0 +1,3 @@
+node_id: 'data-prepper-node-1'
+prepper_threads: 4
+log_level: INFO

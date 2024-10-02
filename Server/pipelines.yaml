@@ -1,0 +1,18 @@
+simple-sample-pipeline:
+  source:
+    http:
+      path: '/logs'
+      port: 2021
+
+  processor:
+    - grok:
+        match:
+          # This will match logs with a "log" key against the COMMONAPACHELOG pattern (ex: { "log": "actual apache log..." } )
+          # You should change this to match what your logs look like. See the grok documenation to get started.
+          log:
+            - '%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:level}\s+%{GREEDYDATA:file_path}:%{NUMBER:line}\s+%{GREEDYDATA:logger_name}\s+%{GREEDYDATA:message}'
+
+  sink:
+    - opensearch:
+        hosts: ['http://opensearch:9200']
+        index: 'charging-station-logs'
