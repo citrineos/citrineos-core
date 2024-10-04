@@ -72,7 +72,7 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
         groupIdTokenId: auth.idTokenInfo?.groupIdTokenId,
       });
 
-      const { id, idTokenInfoId, idTokenInfo, ...authorizationFields } = auth;
+      const { id, idTokenInfoId: _idTokenInfoId, idTokenInfo: _idTokenInfo, ...authorizationFields } = auth;
       const localListAuthorization = await this.localListAuthorization.create(
         LocalListAuthorization.build({
           ...authorizationFields,
