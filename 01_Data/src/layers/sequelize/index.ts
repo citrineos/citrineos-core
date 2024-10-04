@@ -10,6 +10,7 @@ export { Transaction, TransactionEvent, MeterValue } from './model/TransactionEv
 export { SecurityEvent } from './model/SecurityEvent';
 export { VariableMonitoring, EventData, VariableMonitoringStatus } from './model/VariableMonitoring';
 export { ChargingStation, Location, StatusNotification } from './model/Location';
+export { ChargingStationSequence, ChargingStationSequenceType } from './model/ChargingStationSequence';
 export { MessageInfo } from './model/MessageInfo';
 export { Tariff } from './model/Tariff';
 export { Subscription } from './model/Subscription';
@@ -37,6 +38,7 @@ export { SequelizeChargingProfileRepository } from './repository/ChargingProfile
 export { SequelizeCallMessageRepository } from './repository/CallMessage';
 export { SequelizeReservationRepository } from './repository/Reservation';
 export { SequelizeChargingStationSecurityInfoRepository } from './repository/ChargingStationSecurityInfo';
+export { SequelizeChargingStationSequenceRepository } from './repository/ChargingStationSequence';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util';
