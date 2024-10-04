@@ -7,11 +7,15 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   AsMessageEndpoint,
+  AuthorizeCertificateStatusEnumType,
   CallAction,
   CertificateSignedRequest,
   CertificateSignedRequestSchema,
   DeleteCertificateRequest,
   DeleteCertificateRequestSchema,
+  ErrorCode,
+  GetCertificateStatusEnumType,
+  GetCertificateStatusResponse,
   GetInstalledCertificateIdsRequest,
   GetInstalledCertificateIdsRequestSchema,
   HttpMethod,
@@ -20,6 +24,7 @@ import {
   InstallCertificateRequest,
   InstallCertificateRequestSchema,
   Namespace,
+  QuerySchema,
   WebsocketServerConfig,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
@@ -29,6 +34,7 @@ import { CertificatesModule } from './module';
 import {
   generateCertificate,
   generateCSR,
+  sendOCSPRequest,
   WebsocketNetworkConnection,
 } from '@citrineos/util';
 import {
@@ -46,13 +52,15 @@ import {
 } from '@citrineos/data';
 import fs from 'fs';
 import moment from 'moment';
-import jsrsasign from 'jsrsasign';
+import jsrsasign, { KJUR, X509, KEYUTIL } from 'jsrsasign';
+import * as crypto from 'node:crypto';
 
 const enum PemType {
   Root = 'Root',
   SubCA = 'SubCA',
   Leaf = 'Leaf',
 }
+
 /**
  * Server API for the Certificates module.
  */
@@ -436,6 +444,65 @@ export class CertificatesModuleApi
       }
       this._logger.debug('InstallCertificate confirmation sent:', confirmation);
     });
+  }
+
+  @AsDataEndpoint(
+    Namespace.CertificateStatus,
+    HttpMethod.Get,
+    QuerySchema([['certificateId', 'string']], ['certificateId']),
+  )
+  async getCertificateStatus(
+    request: FastifyRequest<{
+      Querystring: { certificateId: string };
+    }>,
+  ): Promise<GetCertificateStatusResponse> {
+    const certificateId = request.query.certificateId;
+    const certificateEntity =
+      await this._module.certificateRepository.readByKey(certificateId);
+    if (!certificateEntity?.certificateFileId) {
+      throw new Error(`Certificate with ID ${certificateId} not found.`);
+    }
+
+    const certificatePem = (
+      await this._fileAccess.getFile(certificateEntity.certificateFileId)
+    ).toString();
+
+    const certificate = new X509();
+    certificate.readCertPEM(certificatePem);
+
+    const ocspUrls = certificate.getExtAIAInfo()?.ocsp;
+    if (ocspUrls === undefined || ocspUrls.length < 1) {
+      this._logger.error(`Certificate ${certificateId} has no OCSP URL.`);
+      throw new Error(`Certificate with ID ${certificateId} has no OCSP URL.`);
+    }
+
+    for (const ocspUrl of ocspUrls) {
+      try {
+        const algorithm = 'sha512';
+        const ocspRequest = new jsrsasign.KJUR.asn1.ocsp.Request({
+          alg: algorithm,
+          keyhash: crypto.hash(
+            algorithm,
+            KEYUTIL.getPEM(certificate.getPublicKey()),
+          ),
+          namehash: crypto.hash(algorithm, certificate.getIssuerString()),
+          serial: certificate.getSerialNumberHex(),
+        });
+        const ocspResponse = await sendOCSPRequest(ocspRequest, ocspUrl);
+
+        return {
+          status: GetCertificateStatusEnumType.Accepted,
+          ocspResult: ocspResponse,
+        };
+      } catch (error) {
+        this._logger.error(`OCSP (${ocspUrl}) request failed: ${error}`);
+      }
+    }
+
+    return {
+      status: GetCertificateStatusEnumType.Failed,
+      statusInfo: { reasonCode: ErrorCode.GenericError },
+    };
   }
 
   /**

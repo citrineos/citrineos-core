@@ -12,6 +12,7 @@ export enum Namespace {
   AuthorizationRestrictions = 'AuthorizationRestrictions',
   BootConfig = 'Boot',
   Certificate = 'Certificate',
+  CertificateStatus = 'CertificateStatus',
   CertificateChain = 'CertificateChain',
   ChargingNeeds = 'ChargingNeeds',
   ChargingProfile = 'ChargingProfile',
