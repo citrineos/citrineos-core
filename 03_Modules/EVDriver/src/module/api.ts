@@ -25,7 +25,6 @@ import {
   IMessageConfirmation,
   Namespace,
   RequestStartTransactionRequest,
-  RequestStartTransactionRequestSchema,
   RequestStopTransactionRequest,
   RequestStopTransactionRequestSchema,
   ReserveNowRequest,
@@ -47,6 +46,7 @@ import {
 } from '@citrineos/data';
 import { validateChargingProfileType } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
+import {StartTransactionRequestSchema} from "./schema";
 
 /**
  * Server API for the provisioning component.
@@ -158,12 +158,12 @@ export class EVDriverModuleApi
 
   @AsMessageEndpoint(
     CallAction.RequestStartTransaction,
-    RequestStartTransactionRequestSchema,
+    StartTransactionRequestSchema,
   )
   async requestStartTransaction(
     identifier: string,
     tenantId: string,
-    request: RequestStartTransactionRequest,
+    request: Omit<RequestStartTransactionRequest, 'remoteStartId'>,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     let payloadMessage;
@@ -230,11 +230,12 @@ export class EVDriverModuleApi
       }
     }
 
+    const remoteStartId = await this._module.idGenerator.generateRemoteStartId(identifier);
     const confirmation: IMessageConfirmation = await this._module.sendCall(
       identifier,
       tenantId,
       CallAction.RequestStartTransaction,
-      request,
+      { ...request, remoteStartId },
       callbackUrl,
     );
     if (payloadMessage) {

@@ -644,7 +644,6 @@ export class CitrineOSServer {
   private initSmartChargingService() {
     this._smartChargingService = new InternalSmartCharging(this._repositoryStore.chargingProfileRepository);
   }
-
 }
 
 async function main() {
