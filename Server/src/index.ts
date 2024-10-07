@@ -321,7 +321,7 @@ export class CitrineOSServer {
       this._repositoryStore.subscriptionRepository,
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const router = new MessageRouterImpl(
       this._config,
       this._cache,

@@ -2,6 +2,7 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
 
 import { CallAction } from '../../ocpp/rpc/message';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -12,7 +13,6 @@ import { AsHandler } from '.';
  */
 export interface IHandlerDefinition {
   action: CallAction;
-  // eslint-disable-next-line @typescript-eslint/ban-types
   method: Function;
   methodName: string;
 }
