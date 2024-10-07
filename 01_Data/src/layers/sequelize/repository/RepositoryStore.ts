@@ -3,6 +3,7 @@ import {
   IBootRepository,
   ICallMessageRepository,
   ICertificateRepository,
+  IChargingProfileRepository,
   IChargingStationSequenceRepository,
   IDeviceModelRepository,
   ILocalAuthListRepository,
@@ -36,6 +37,7 @@ import { SequelizeReservationRepository } from './Reservation';
 import { SequelizeCallMessageRepository } from './CallMessage';
 import { SequelizeLocalAuthListRepository } from './LocalAuthList';
 import {SequelizeChargingStationSequenceRepository} from "./ChargingStationSequence";
+import {SequelizeChargingProfileRepository} from "./ChargingProfile";
 
 export class RepositoryStore {
   sequelizeInstance: Sequelize;
@@ -55,6 +57,7 @@ export class RepositoryStore {
   variableMonitoringRepository: IVariableMonitoringRepository;
   componentRepository: CrudRepository<Component>;
   chargingStationSequenceRepository: IChargingStationSequenceRepository;
+  chargingProfileRepository: IChargingProfileRepository;
 
   constructor(config: SystemConfig, logger: Logger<ILogObj>, sequelizeInstance: Sequelize) {
     this.sequelizeInstance = sequelizeInstance;
@@ -74,5 +77,6 @@ export class RepositoryStore {
     this.variableMonitoringRepository = new SequelizeVariableMonitoringRepository(config, logger, sequelizeInstance);
     this.componentRepository = new SequelizeRepository<Component>(config, Component.MODEL_NAME, logger);
     this.chargingStationSequenceRepository = new SequelizeChargingStationSequenceRepository(config, logger, sequelizeInstance);
+    this.chargingProfileRepository = new SequelizeChargingProfileRepository(config, logger, sequelizeInstance);
   }
 }

@@ -21,6 +21,9 @@ import {
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
 import {
   Authenticator,
+  CertificateAuthorityService,
+  BasicAuthenticationFilter,
+  ConnectedStationFilter,
   DirectusUtil,
   IdGenerator,
   initSwagger,
@@ -28,6 +31,7 @@ import {
   RabbitMqReceiver,
   RabbitMqSender,
   RedisCache,
+  UnknownStationFilter,
   WebsocketNetworkConnection,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
@@ -65,9 +69,11 @@ import {
   WebhookDispatcher,
 } from '@citrineos/ocpprouter';
 import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
-import { UnknownStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/UnknownStationFilter';
-import { ConnectedStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/ConnectedStationFilter';
-import { BasicAuthenticationFilter } from '@citrineos/util/dist/networkconnection/authenticator/BasicAuthenticationFilter';
+import {
+  InternalSmartCharging,
+  ISmartCharging,
+} from '@citrineos/smartcharging';
+import cors from '@fastify/cors';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -95,6 +101,8 @@ export class CitrineOSServer {
   private _networkConnection?: WebsocketNetworkConnection;
   private _repositoryStore!: RepositoryStore;
   private _idGenerator!: IdGenerator;
+  private _certificateAuthorityService!: CertificateAuthorityService;
+  private _smartChargingService!: ISmartCharging;
 
   private readonly appName: string;
 
@@ -128,6 +136,12 @@ export class CitrineOSServer {
     this._config = config;
     this._server =
       server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
+
+    // enable cors
+    (this._server as any).register(cors, {
+      origin: true, // This can be customized to specify allowed origins
+      methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed HTTP methods
+    });
 
     // Add health check
     this.initHealthCheck();
@@ -169,6 +183,8 @@ export class CitrineOSServer {
     // Initialize repository store
     this.initRepositoryStore();
     this.initIdGenerator();
+    this.initCertificateAuthorityService();
+    this.initSmartChargingService();
 
     // Initialize module & API
     // Always initialize API after SwaggerUI
@@ -397,6 +413,13 @@ export class CitrineOSServer {
         this._repositoryStore.localAuthListRepository,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.tariffRepository,
+        this._repositoryStore.transactionEventRepository,
+        this._repositoryStore.chargingProfileRepository,
+        this._repositoryStore.reservationRepository,
+        this._repositoryStore.callMessageRepository,
+        this._certificateAuthorityService,
+        [],
+        this._idGenerator,
       );
       this.modules.push(module);
       this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
@@ -443,6 +466,11 @@ export class CitrineOSServer {
         this._createSender(),
         this._createHandler(),
         this._logger,
+        this._repositoryStore.transactionEventRepository,
+        this._repositoryStore.deviceModelRepository,
+        this._repositoryStore.chargingProfileRepository,
+        this._smartChargingService,
+        this._idGenerator,
       );
       this.modules.push(module);
       this.apis.push(
@@ -609,6 +637,13 @@ export class CitrineOSServer {
     this._idGenerator = new IdGenerator(this._repositoryStore.chargingStationSequenceRepository);
   }
 
+  private initCertificateAuthorityService() {
+    this._certificateAuthorityService = new CertificateAuthorityService(this._config, this._logger);
+  }
+
+  private initSmartChargingService() {
+    this._smartChargingService = new InternalSmartCharging(this._repositoryStore.chargingProfileRepository);
+  }
 }
 
 async function main() {

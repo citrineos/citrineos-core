@@ -19,5 +19,4 @@ export class IdGenerator {
   async generateRemoteStartId(stationId: string): Promise<number> {
     return this._stationSequenceRepository.getNextSequenceValue(stationId, 'remoteStartId');
   }
-
 }
