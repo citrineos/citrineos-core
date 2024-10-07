@@ -62,7 +62,7 @@ import {
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
-  generateRequestId,
+  IdGenerator,
   IAuthorizer,
   RabbitMqReceiver,
   RabbitMqSender,
@@ -71,6 +71,7 @@ import {
 import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { LocalAuthListService } from './LocalAuthListService';
+import { SequelizeChargingStationSequenceRepository } from '@citrineos/data';
 
 /**
  * Component that handles provisioning related messages.
@@ -107,6 +108,7 @@ export class EVDriverModule extends AbstractModule {
   private _certificateAuthorityService: CertificateAuthorityService;
   private _localAuthListService: LocalAuthListService;
   private _authorizers: IAuthorizer[];
+  private _idGenerator: IdGenerator;
 
   /**
    * This is the constructor function that initializes the {@link EVDriverModule}.
@@ -178,6 +180,7 @@ export class EVDriverModule extends AbstractModule {
     callMessageRepository?: ICallMessageRepository,
     certificateAuthorityService?: CertificateAuthorityService,
     authorizers?: IAuthorizer[],
+    idGenerator?: IdGenerator,
   ) {
     super(
       config,
@@ -232,6 +235,12 @@ export class EVDriverModule extends AbstractModule {
     );
 
     this._authorizers = authorizers || [];
+
+    this._idGenerator =
+      idGenerator ||
+      new IdGenerator(
+        new SequelizeChargingStationSequenceRepository(config, this._logger),
+      );
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -629,7 +638,9 @@ export class EVDriverModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetChargingProfiles,
         {
-          requestId: generateRequestId(),
+          requestId: await this._idGenerator.generateRequestId(
+            message.context.stationId, 'getChargingProfiles',
+          ),
           chargingProfile: {
             chargingProfilePurpose: ChargingProfilePurposeEnumType.TxProfile,
             chargingLimitSource: [ChargingLimitSourceEnumType.CSO],

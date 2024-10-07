@@ -16,6 +16,8 @@ export {
   ChargingProfile,
   ChargingSchedule,
   ChargingStation,
+  ChargingStationSequence,
+  ChargingStationSequenceType,
   Component,
   DefaultSequelizeInstance,
   Location,
@@ -57,5 +59,6 @@ export {
   SequelizeTariffRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
+  SequelizeChargingStationSequenceRepository,
 } from './layers/sequelize'; // TODO ensure all needed modules are properly exported
 export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore';

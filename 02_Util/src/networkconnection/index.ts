@@ -4,3 +4,6 @@
 
 export { Authenticator } from './authenticator/Authenticator';
 export { WebsocketNetworkConnection } from './WebsocketNetworkConnection';
+export { BasicAuthenticationFilter } from './authenticator/BasicAuthenticationFilter';
+export { ConnectedStationFilter } from './authenticator/ConnectedStationFilter';
+export { UnknownStationFilter } from './authenticator/UnknownStationFilter';

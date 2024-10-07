@@ -37,7 +37,7 @@ import {
   SequelizeVariableMonitoringRepository,
 } from '@citrineos/data';
 import {
-  generateRequestId,
+  IdGenerator,
   RabbitMqReceiver,
   RabbitMqSender,
   Timer,
@@ -46,6 +46,7 @@ import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './services';
 import { MonitoringService } from './MonitoringService';
+import {SequelizeChargingStationSequenceRepository} from "@citrineos/data";
 
 /**
  * Component that handles monitoring related messages.
@@ -67,6 +68,7 @@ export class MonitoringModule extends AbstractModule {
 
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
+  private _idGenerator: IdGenerator;
 
   /**
    * This is the constructor function that initializes the {@link MonitoringModule}.
@@ -91,6 +93,9 @@ export class MonitoringModule extends AbstractModule {
    * which represents a repository for accessing and manipulating variable monitoring data.
    * If no `variableMonitoringRepository` is provided, a default {@link SequelizeVariableMonitoringRepository}
    * instance is created and used.
+   *
+   * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which
+   * represents a generator for ids.
    */
   constructor(
     config: SystemConfig,
@@ -100,6 +105,7 @@ export class MonitoringModule extends AbstractModule {
     logger?: Logger<ILogObj>,
     deviceModelRepository?: IDeviceModelRepository,
     variableMonitoringRepository?: IVariableMonitoringRepository,
+    idGenerator?: IdGenerator,
   ) {
     super(
       config,
@@ -133,6 +139,12 @@ export class MonitoringModule extends AbstractModule {
       this._variableMonitoringRepository,
       this._logger,
     );
+
+    this._idGenerator =
+        idGenerator ||
+        new IdGenerator(
+            new SequelizeChargingStationSequenceRepository(config, this._logger),
+        );
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -318,13 +330,12 @@ export class MonitoringModule extends AbstractModule {
         stationId,
       );
 
-      // TODO: requestId is generated randomly. Think about changing it if it doesn't work on real chargers.
       await this.sendCall(
         stationId,
         message.context.tenantId,
         CallAction.GetMonitoringReport,
         {
-          requestId: generateRequestId(),
+          requestId: await this._idGenerator.generateRequestId(message.context.stationId, 'getMonitoringReport'),
         } as GetMonitoringReportRequest,
       );
     }

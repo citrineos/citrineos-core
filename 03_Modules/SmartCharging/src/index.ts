@@ -6,3 +6,4 @@
 export { SmartChargingModuleApi } from './module/api';
 export { ISmartChargingModuleApi } from './module/interface';
 export { SmartChargingModule } from './module/module';
+export { ISmartCharging, InternalSmartCharging } from './module/smartCharging';
