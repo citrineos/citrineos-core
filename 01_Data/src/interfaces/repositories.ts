@@ -90,7 +90,6 @@ export interface IDeviceModelRepository extends CrudRepository<VariableAttribute
 }
 
 export interface ILocalAuthListRepository extends CrudRepository<LocalListVersion> {
-
   /**
    * Creates a SendLocalList.
    * @param {string} stationId - The ID of the station.
@@ -102,8 +101,8 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
   createSendLocalListFromRequestData(stationId: string, correlationId: string, updateType: UpdateEnumType, versionNumber: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList>;
   /**
    * Used to process GetLocalListVersionResponse, if version is unknown it will create or update LocalListVersion with the new version and an empty localAuthorizationList.
-   * @param versionNumber 
-   * @param stationId 
+   * @param versionNumber
+   * @param stationId
    */
   validateOrReplaceLocalListVersionForStation(versionNumber: number, stationId: string): Promise<void>;
   getSendLocalListRequestByStationIdAndCorrelationId(stationId: string, correlationId: string): Promise<SendLocalList | undefined>;

@@ -11,14 +11,14 @@ import { SendLocalListAuthorization } from './SendLocalListAuthorization';
 import { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
 
 /**
- * 
+ *
  * This class represents static information about an authorization used in a local auth list.
  * When a local auth list is put onto the charging station, the state of those authorizations is no longer tied to the actual authorization.
  * Example: A charger receives a local auth list with Authorization id = 1 in it, but then Authorization id = 1 is deleted.
  * Authorization id = 1 is still on the auth list and must be returned when upstream systems check the state of the auth list for that station, until a SendLocalListRequest removing it is successfully processed.
  * To facilitate that, this collection exists to reflect the state of Authorizations as they exist on charging stations' local auth lists.
  * In turn, the 'authorization' relation on this table links back to the "actual" authorization.
- * 
+ *
  **/
 @Table
 export class LocalListAuthorization extends Model implements AuthorizationData, AuthorizationRestrictions {

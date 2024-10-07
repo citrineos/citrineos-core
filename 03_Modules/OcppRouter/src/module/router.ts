@@ -157,7 +157,9 @@ export class MessageRouterImpl
       try {
         rpcMessage = JSON.parse(message);
       } catch (error) {
-        this._logger.error(`Error parsing ${message} from websocket, unable to reply: ${JSON.stringify(error)}`);
+        this._logger.error(
+          `Error parsing ${message} from websocket, unable to reply: ${JSON.stringify(error)}`,
+        );
       }
       messageTypeId = rpcMessage[0];
       messageId = rpcMessage[1];
@@ -368,7 +370,11 @@ export class MessageRouterImpl
    * @param {Date} timestamp Time at which the message was received from the charger.
    * @return {void}
    */
-  async _onCall(identifier: string, message: Call, timestamp: Date): Promise<void> {
+  async _onCall(
+    identifier: string,
+    message: Call,
+    timestamp: Date,
+  ): Promise<void> {
     const messageId = message[1];
     const action = message[2] as CallAction;
 
@@ -415,35 +421,36 @@ export class MessageRouterImpl
         error instanceof OcppError
           ? error.asCallError()
           : [
-            MessageTypeId.CallError,
-            messageId,
-            ErrorCode.InternalError,
-            'Unable to process message',
-            { error: error },
-          ];
+              MessageTypeId.CallError,
+              messageId,
+              ErrorCode.InternalError,
+              'Unable to process message',
+              { error: error },
+            ];
       const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
       this._sendMessage(identifier, rawMessage);
     }
 
     try {
       // Route call
-      const confirmation = await this._routeCall(identifier, message, timestamp);
+      const confirmation = await this._routeCall(
+        identifier,
+        message,
+        timestamp,
+      );
 
       if (!confirmation.success) {
-        throw new OcppError(
-          messageId,
-          ErrorCode.InternalError,
-          'Call failed',
-          { details: confirmation.payload },
-        );
+        throw new OcppError(messageId, ErrorCode.InternalError, 'Call failed', {
+          details: confirmation.payload,
+        });
       }
     } catch (error) {
       const callError =
         error instanceof OcppError
           ? error
           : new OcppError(messageId, ErrorCode.InternalError, 'Call failed', {
-            details: error,
-          });
+              details: error,
+            });
       // TODO: identifier may not be unique, may require combination of tenantId and identifier.
       // find way to include tenantId here
       this.sendCallError(
