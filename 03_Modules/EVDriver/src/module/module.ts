@@ -639,7 +639,7 @@ export class EVDriverModule extends AbstractModule {
         CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId,
+            message.context.stationId, 'getChargingProfiles',
           ),
           chargingProfile: {
             chargingProfilePurpose: ChargingProfilePurposeEnumType.TxProfile,
