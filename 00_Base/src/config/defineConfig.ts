@@ -67,7 +67,6 @@ const getZodSchemaKeyMap = (schema: z.ZodType): Record<string, any> => {
  * @param envVars The environment variables.
  * @returns The merged configuration.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mergeConfigFromEnvVars<T extends Record<string, any>>(
   defaultConfig: T,
   envVars: NodeJS.ProcessEnv,

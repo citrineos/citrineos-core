@@ -438,7 +438,7 @@ export class SmartChargingModule extends AbstractModule {
         CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId,
+            message.context.stationId, 'getChargingProfiles',
           ),
           chargingProfile: {
             chargingLimitSource: [
@@ -503,7 +503,7 @@ export class SmartChargingModule extends AbstractModule {
         CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId,
+            message.context.stationId, 'getChargingProfiles',
           ),
           chargingProfile: {
             chargingLimitSource: [ChargingLimitSourceEnumType.CSO],

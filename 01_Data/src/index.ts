@@ -16,6 +16,8 @@ export {
   ChargingProfile,
   ChargingSchedule,
   ChargingStation,
+  ChargingStationSequence,
+  ChargingStationSequenceType,
   Component,
   DefaultSequelizeInstance,
   Location,

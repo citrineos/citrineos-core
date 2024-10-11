@@ -113,7 +113,6 @@ export abstract class AbstractModuleApi<T extends IModule>
    * @param {object} bodySchema - The schema for the route.
    * @return {void}
    */
-  // eslint-disable-next-line @typescript-eslint/ban-types
   protected _addMessageRoute(
     action: CallAction,
     method: (...args: any[]) => any,
@@ -168,7 +167,6 @@ export abstract class AbstractModuleApi<T extends IModule>
    * @param {object} schema - The schema for the entity.
    * @return {void}
    */
-  // eslint-disable-next-line @typescript-eslint/ban-types
   protected _addDataRoute(
     namespace: Namespace,
     method: (...args: any[]) => any,

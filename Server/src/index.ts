@@ -21,8 +21,8 @@ import {
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
 import {
   Authenticator,
-  CertificateAuthorityService,
   BasicAuthenticationFilter,
+  CertificateAuthorityService,
   ConnectedStationFilter,
   DirectusUtil,
   IdGenerator,
@@ -54,6 +54,8 @@ import {
 import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import {
+  InternalSmartCharging,
+  ISmartCharging,
   SmartChargingModule,
   SmartChargingModuleApi,
 } from '@citrineos/smartcharging';
@@ -69,10 +71,6 @@ import {
   WebhookDispatcher,
 } from '@citrineos/ocpprouter';
 import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
-import {
-  InternalSmartCharging,
-  ISmartCharging,
-} from '@citrineos/smartcharging';
 import cors from '@fastify/cors';
 
 interface ModuleConfig {
@@ -333,7 +331,6 @@ export class CitrineOSServer {
       this._repositoryStore.subscriptionRepository,
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const router = new MessageRouterImpl(
       this._config,
       this._cache,
@@ -634,15 +631,22 @@ export class CitrineOSServer {
   }
 
   private initIdGenerator() {
-    this._idGenerator = new IdGenerator(this._repositoryStore.chargingStationSequenceRepository);
+    this._idGenerator = new IdGenerator(
+      this._repositoryStore.chargingStationSequenceRepository,
+    );
   }
 
   private initCertificateAuthorityService() {
-    this._certificateAuthorityService = new CertificateAuthorityService(this._config, this._logger);
+    this._certificateAuthorityService = new CertificateAuthorityService(
+      this._config,
+      this._logger,
+    );
   }
 
   private initSmartChargingService() {
-    this._smartChargingService = new InternalSmartCharging(this._repositoryStore.chargingProfileRepository);
+    this._smartChargingService = new InternalSmartCharging(
+      this._repositoryStore.chargingProfileRepository,
+    );
   }
 }
 

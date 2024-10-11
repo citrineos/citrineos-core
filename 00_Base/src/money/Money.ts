@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Currency, CurrencyCode } from './Currency';
 import { Big } from 'big.js';
 import { assert, notNull } from '../assertion/assertion';

@@ -79,7 +79,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
           const updatedValue = valueIdTokenInfo.getDataValue(k);
           if (updatedValue !== undefined) {
             // Null can still be used to remove data
-            /* eslint-disable-next-line  @typescript-eslint/no-non-null-assertion */
+             
             savedIdTokenInfo!.setDataValue(k, updatedValue);
           }
         });

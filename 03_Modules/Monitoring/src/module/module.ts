@@ -335,7 +335,7 @@ export class MonitoringModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetMonitoringReport,
         {
-          requestId: await this._idGenerator.generateRequestId(message.context.stationId),
+          requestId: await this._idGenerator.generateRequestId(message.context.stationId, 'getMonitoringReport'),
         } as GetMonitoringReportRequest,
       );
     }

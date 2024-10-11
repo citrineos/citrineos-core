@@ -31,7 +31,6 @@ export const AsDataEndpoint = function (
   security?: object[],
   description?: string,
 ) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (
     target: any,
     propertyKey: string,
