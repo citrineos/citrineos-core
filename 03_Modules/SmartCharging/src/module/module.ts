@@ -14,6 +14,7 @@ import {
   ChargingProfilePurposeEnumType,
   ChargingProfileStatusEnumType,
   ChargingProfileType,
+  ChargingStationSequenceType,
   ClearChargingProfileResponse,
   ClearChargingProfileStatusEnumType,
   ClearedChargingLimitResponse,
@@ -438,7 +439,7 @@ export class SmartChargingModule extends AbstractModule {
         CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, 'getChargingProfiles',
+            message.context.stationId, ChargingStationSequenceType.getChargingProfiles,
           ),
           chargingProfile: {
             chargingLimitSource: [
@@ -503,7 +504,7 @@ export class SmartChargingModule extends AbstractModule {
         CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, 'getChargingProfiles',
+            message.context.stationId, ChargingStationSequenceType.getChargingProfiles,
           ),
           chargingProfile: {
             chargingLimitSource: [ChargingLimitSourceEnumType.CSO],

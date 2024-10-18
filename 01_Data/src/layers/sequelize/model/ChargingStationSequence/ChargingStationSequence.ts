@@ -1,26 +1,23 @@
-import { BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { ChargingStation } from '../Location';
+import { ChargingStationSequenceType } from '@citrineos/base';
 
-export type ChargingStationSequenceType = 'remoteStartId' | 'getDisplayMessages' | 'getChargingProfiles' | 'getMonitoringReport';
-
-@Table({
-  timestamps: false,
-})
+@Table
 export class ChargingStationSequence extends Model {
   static readonly MODEL_NAME: string = 'ChargingStationSequence';
 
-  @PrimaryKey
   @ForeignKey(() => ChargingStation)
   @Column({
     type: DataType.STRING(36),
     allowNull: false,
+    unique: 'stationId_type',
   })
   declare stationId: string;
 
-  @PrimaryKey
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    unique: 'stationId_type',
   })
   type!: ChargingStationSequenceType;
 

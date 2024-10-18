@@ -7,6 +7,7 @@ import {
   AbstractModule,
   AsHandler,
   CallAction,
+  ChargingStationSequenceType,
   ClearVariableMonitoringResponse,
   EventDataType,
   EventGroup,
@@ -335,7 +336,7 @@ export class MonitoringModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetMonitoringReport,
         {
-          requestId: await this._idGenerator.generateRequestId(message.context.stationId, 'getMonitoringReport'),
+          requestId: await this._idGenerator.generateRequestId(message.context.stationId, ChargingStationSequenceType.getMonitoringReport),
         } as GetMonitoringReportRequest,
       );
     }

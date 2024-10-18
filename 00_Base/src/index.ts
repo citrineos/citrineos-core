@@ -44,6 +44,9 @@ export {
   MessageTypeId,
   OcppError,
 } from './ocpp/rpc/message';
+export {
+  ChargingStationSequenceType,
+} from './ocpp/model/enums/requestIds';
 export { IFileAccess } from './interfaces/fileAccess';
 
 // Persistence Interfaces

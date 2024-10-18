@@ -37,9 +37,10 @@ import {
   ReserveNowRequest,
   MeterValueType,
   UpdateEnumType,
+  ChargingStationSequenceType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
-import { CallMessage, ChargingStationSecurityInfo, ChargingStationSequence, ChargingStationSequenceType, CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
+import { CallMessage, ChargingStationSecurityInfo, ChargingStationSequence, CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
 import { type VariableAttribute } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { type Authorization, type Boot, type Certificate, ChargingNeeds, type ChargingStation, type Component, type EventData, Evse, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';

@@ -1,1 +1,1 @@
-export { ChargingStationSequence, ChargingStationSequenceType } from './ChargingStationSequence';
+export { ChargingStationSequence } from './ChargingStationSequence';
