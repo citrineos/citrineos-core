@@ -14,7 +14,7 @@ export { ChargingStationSequence, ChargingStationSequenceType } from './model/Ch
 export { MessageInfo } from './model/MessageInfo';
 export { Tariff } from './model/Tariff';
 export { Subscription } from './model/Subscription';
-export { Certificate, SignatureAlgorithmEnumType, CountryNameEnumType } from './model/Certificate';
+export { Certificate, SignatureAlgorithmEnumType, CountryNameEnumType, InstalledCertificate } from './model/Certificate';
 export { ChargingProfile, ChargingNeeds, ChargingSchedule, CompositeSchedule, SalesTariff } from './model/ChargingProfile';
 export { CallMessage } from './model/CallMessage';
 export { Reservation } from './model/Reservation';
@@ -34,6 +34,7 @@ export { SequelizeMessageInfoRepository } from './repository/MessageInfo';
 export { SequelizeTariffRepository } from './repository/Tariff';
 export { SequelizeSubscriptionRepository } from './repository/Subscription';
 export { SequelizeCertificateRepository } from './repository/Certificate';
+export { SequelizeInstalledCertificateRepository } from './repository/InstalledCertificate';
 export { SequelizeChargingProfileRepository } from './repository/ChargingProfile';
 export { SequelizeCallMessageRepository } from './repository/CallMessage';
 export { SequelizeReservationRepository } from './repository/Reservation';

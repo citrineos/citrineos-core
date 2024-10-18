@@ -8,6 +8,7 @@ import {
   AsHandler,
   AttributeEnumType,
   CallAction,
+  CertificateHashDataChainType,
   CertificateSignedRequest,
   CertificateSignedResponse,
   CertificateSigningUseEnumType,
@@ -20,6 +21,7 @@ import {
   GetCertificateStatusEnumType,
   GetCertificateStatusRequest,
   GetCertificateStatusResponse,
+  GetInstalledCertificateIdsRequest,
   GetInstalledCertificateIdsResponse,
   HandlerProperties,
   ICache,
@@ -27,7 +29,9 @@ import {
   IMessageHandler,
   IMessageSender,
   InstallCertificateResponse,
+  InstallCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnumType,
+  Namespace,
   SignCertificateRequest,
   SignCertificateResponse,
   SystemConfig,
@@ -35,7 +39,9 @@ import {
 import {
   ICertificateRepository,
   IDeviceModelRepository,
+  IInstalledCertificateRepository,
   ILocationRepository,
+  InstalledCertificate,
   sequelize,
 } from '@citrineos/data';
 import {
@@ -81,6 +87,7 @@ export class CertificatesModule extends AbstractModule {
 
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _certificateRepository: ICertificateRepository;
+  protected _installedCertificateRepository: IInstalledCertificateRepository;
   protected _locationRepository: ILocationRepository;
   protected _certificateAuthorityService: CertificateAuthorityService;
 
@@ -153,6 +160,8 @@ export class CertificatesModule extends AbstractModule {
     this._certificateRepository =
       certificateRepository ||
       new sequelize.SequelizeCertificateRepository(config, logger);
+    this._installedCertificateRepository =
+      new sequelize.SequelizeInstalledCertificateRepository(config, logger);
     this._locationRepository =
       locationRepository ||
       new sequelize.SequelizeLocationRepository(config, logger);
@@ -320,19 +329,79 @@ export class CertificatesModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.GetInstalledCertificateIds)
-  protected _handleGetInstalledCertificateIds(
+  protected async _handleGetInstalledCertificateIds(
     message: IMessage<GetInstalledCertificateIdsResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('GetInstalledCertificateIds received:', message, props);
+    const certificateHashDataList: CertificateHashDataChainType[] =
+      message.payload.certificateHashDataChain!;
+    // persist installed certificate information
+    if (certificateHashDataList && certificateHashDataList.length > 0) {
+      // delete previous hashes for station
+      try {
+        await this._installedCertificateRepository.deleteAllByQuery({
+          where: {
+            stationId: message.context.stationId,
+          },
+        });
+      } catch (error: any) {
+        this._logger.error(
+          'GetInstalledCertificateIds failed to delete previous certificates',
+          error,
+        );
+      }
+      // save new hashes
+      const records = certificateHashDataList.map(
+        (certificateHashDataWrap: CertificateHashDataChainType) => {
+          const certificateHashData =
+            certificateHashDataWrap.certificateHashData;
+          const certificateType = certificateHashDataWrap.certificateType;
+          return new InstalledCertificate(
+            message.context.stationId,
+            certificateHashData.hashAlgorithm,
+            certificateHashData.issuerNameHash,
+            certificateHashData.issuerKeyHash,
+            certificateHashData.serialNumber,
+            certificateType,
+          );
+        },
+      );
+      const response = await this._installedCertificateRepository.bulkCreate(
+        records,
+        Namespace.InstalledCertificate,
+      );
+      if (response.length === records.length) {
+        console.log(
+          'Successfully updated installed certificate information for station',
+          message.context.stationId,
+        );
+      }
+    }
   }
 
   @AsHandler(CallAction.InstallCertificate)
-  protected _handleInstallCertificate(
+  protected async _handleInstallCertificate(
     message: IMessage<InstallCertificateResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('InstallCertificate received:', message, props);
+    // if response is successful, then trigger the get installed certificates ids
+    if (message.payload.status === InstallCertificateStatusEnumType.Accepted) {
+      try {
+        await this.sendCall(
+          message.context.stationId,
+          message.context.tenantId,
+          CallAction.GetInstalledCertificateIds,
+          {} as GetInstalledCertificateIdsRequest,
+        );
+      } catch (e: any) {
+        console.error(
+          `There was an error sending GetInstalledCertificateIds message to the charger after installing certificate ${e.message}`,
+          e,
+        );
+      }
+    }
   }
 
   private async _verifySignCertRequest(

@@ -60,6 +60,10 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     return await value.save();
   }
 
+  protected async _bulkCreate(values: T[], clazz: Model<any, any>): Promise<T[]> {
+    return await (clazz as unknown as ModelStatic<T>).bulkCreate(values as any);
+  }
+
   protected async _createByKey(value: T, key: string): Promise<T> {
     const primaryKey = this.s.models[this.namespace].primaryKeyAttribute;
     value.setDataValue(primaryKey, key);

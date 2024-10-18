@@ -22,6 +22,7 @@ import {
   Namespace,
   WebsocketServerConfig,
 } from '@citrineos/base';
+import jsrsasign, { KEYUTIL } from 'jsrsasign';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { ICertificatesModuleApi } from './interface';
@@ -46,7 +47,6 @@ import {
 } from '@citrineos/data';
 import fs from 'fs';
 import moment from 'moment';
-import jsrsasign from 'jsrsasign';
 
 const enum PemType {
   Root = 'Root',
@@ -605,6 +605,7 @@ export class CertificatesModuleApi
     const certObj = new jsrsasign.X509();
     certObj.readCertPEM(certPem);
     certificateEntity.issuerName = certObj.getIssuerString();
+    certificateEntity.issuerKey = KEYUTIL.getPEM(certObj.getPublicKey());
     return await this._module.certificateRepository.createOrUpdateCertificate(
       certificateEntity,
     );
