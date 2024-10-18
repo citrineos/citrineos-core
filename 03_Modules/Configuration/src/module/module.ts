@@ -11,6 +11,7 @@ import {
   BootNotificationResponse,
   CallAction,
   ChangeAvailabilityResponse,
+  ChargingStationSequenceType,
   ClearDisplayMessageResponse,
   ClearMessageStatusEnumType,
   DataTransferRequest,
@@ -563,7 +564,7 @@ export class ConfigurationModule extends AbstractModule {
         CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, 'getDisplayMessages',
+            message.context.stationId, ChargingStationSequenceType.getDisplayMessages,
           ),
         } as GetDisplayMessagesRequest,
       );
@@ -634,7 +635,7 @@ export class ConfigurationModule extends AbstractModule {
         CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, 'getDisplayMessages',
+            message.context.stationId, ChargingStationSequenceType.getDisplayMessages,
           ),
         } as GetDisplayMessagesRequest,
       );
