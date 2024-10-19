@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 export { Certificate } from './Certificate';
+export { InstalledCertificate } from './InstalledCertificate';
 
 export const enum SignatureAlgorithmEnumType {
   RSA = 'SHA256withRSA',

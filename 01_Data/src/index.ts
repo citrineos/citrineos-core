@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Transaction as SequelizeTransaction } from 'sequelize';
+
 export { SequelizeTransaction };
 export { IdTokenAdditionalInfo } from './layers/sequelize/model/Authorization/IdTokenAdditionalInfo';
 export * as sequelize from './layers/sequelize';
@@ -32,6 +33,7 @@ export {
   VariableCharacteristics,
   VariableStatus,
   Certificate,
+  InstalledCertificate,
   CountryNameEnumType,
   TransactionEvent,
   IdToken,
@@ -47,6 +49,7 @@ export {
   SequelizeBootRepository,
   SequelizeCallMessageRepository,
   SequelizeCertificateRepository,
+  SequelizeInstalledCertificateRepository,
   SequelizeChargingProfileRepository,
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeDeviceModelRepository,
