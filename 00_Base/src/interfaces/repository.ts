@@ -63,8 +63,11 @@ export abstract class CrudRepository<T> extends EventEmitter {
     return result;
   }
 
-  public async bulkCreate(values: T[], namespace?: string): Promise<T[]> {
-    const result = await this._bulkCreate(values, namespace);
+  public async bulkCreate(
+    values: T[],
+    clazz: any, // todo: should Model be in base so it can be used here?
+  ): Promise<T[]> {
+    const result = await this._bulkCreate(values, clazz);
     this.emit('created', result);
     return result;
   }

@@ -13,6 +13,7 @@ import {
   CertificateSignedResponse,
   CertificateSigningUseEnumType,
   DeleteCertificateResponse,
+  DeleteCertificateStatusEnumType,
   ErrorCode,
   EventGroup,
   GenericStatusEnumType,
@@ -23,6 +24,7 @@ import {
   GetCertificateStatusResponse,
   GetInstalledCertificateIdsRequest,
   GetInstalledCertificateIdsResponse,
+  GetInstalledCertificateStatusEnumType,
   HandlerProperties,
   ICache,
   IMessage,
@@ -321,11 +323,27 @@ export class CertificatesModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.DeleteCertificate)
-  protected _handleDeleteCertificate(
+  protected async _handleDeleteCertificate(
     message: IMessage<DeleteCertificateResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('DeleteCertificate received:', message, props);
+    // if response is successful, then trigger the get installed certificates ids
+    if (message.payload.status === DeleteCertificateStatusEnumType.Accepted) {
+      try {
+        await this.sendCall(
+          message.context.stationId,
+          message.context.tenantId,
+          CallAction.GetInstalledCertificateIds,
+          {} as GetInstalledCertificateIdsRequest,
+        );
+      } catch (e: any) {
+        console.error(
+          `There was an error sending GetInstalledCertificateIds message to the charger after installing certificate ${e.message}`,
+          e,
+        );
+      }
+    }
   }
 
   @AsHandler(CallAction.GetInstalledCertificateIds)
@@ -357,24 +375,52 @@ export class CertificatesModule extends AbstractModule {
           const certificateHashData =
             certificateHashDataWrap.certificateHashData;
           const certificateType = certificateHashDataWrap.certificateType;
-          return new InstalledCertificate(
-            message.context.stationId,
-            certificateHashData.hashAlgorithm,
-            certificateHashData.issuerNameHash,
-            certificateHashData.issuerKeyHash,
-            certificateHashData.serialNumber,
-            certificateType,
-          );
+          return {
+            stationId: message.context.stationId,
+            hashAlgorithm: certificateHashData.hashAlgorithm,
+            issuerNameHash: certificateHashData.issuerNameHash,
+            issuerKeyHash: certificateHashData.issuerKeyHash,
+            serialNumber: certificateHashData.serialNumber,
+            certificateType: certificateType,
+          } as InstalledCertificate;
         },
       );
+      this._logger.info('Attempting to save', records);
       const response = await this._installedCertificateRepository.bulkCreate(
         records,
         Namespace.InstalledCertificate,
       );
       if (response.length === records.length) {
-        console.log(
+        this._logger.info(
           'Successfully updated installed certificate information for station',
           message.context.stationId,
+        );
+      }
+    } else if (
+      message.payload.status === GetInstalledCertificateStatusEnumType.NotFound
+    ) {
+      // charger has no certs
+      this._logger.info(
+        'No certs found on charger, will delete for station',
+        message.context.stationId,
+      );
+      try {
+        await this._installedCertificateRepository.deleteAllByQuery(
+          {
+            where: {
+              stationId: message.context.stationId,
+            },
+          },
+          Namespace.InstalledCertificate,
+        );
+        this._logger.info(
+          'Successfully deleted any previously installed certs for station',
+          message.context.stationId,
+        );
+      } catch (error: any) {
+        this._logger.error(
+          `GetInstalledCertificateIds failed to delete previous certificates: ${error.message}`,
+          error,
         );
       }
     }

@@ -60,8 +60,8 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     return await value.save();
   }
 
-  protected async _bulkCreate(values: T[], clazz: Model<any, any>): Promise<T[]> {
-    return await (clazz as unknown as ModelStatic<T>).bulkCreate(values as any);
+  protected async _bulkCreate(values: T[]): Promise<T[]> {
+    return await (this.s.models[this.namespace] as ModelStatic<T>).bulkCreate(values as any);
   }
 
   protected async _createByKey(value: T, key: string): Promise<T> {

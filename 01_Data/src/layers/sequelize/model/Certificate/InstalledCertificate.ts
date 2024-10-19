@@ -42,14 +42,4 @@ export class InstalledCertificate extends Model {
     allowNull: false,
   })
   declare certificateType: GetCertificateIdUseEnumType;
-
-  constructor(stationId: string, hashAlgorithm: string, issuerNameHash: string, issuerKeyHash: string, serialNumber: string, certificateType: GetCertificateIdUseEnumType) {
-    super();
-    this.stationId = stationId;
-    this.hashAlgorithm = hashAlgorithm;
-    this.issuerNameHash = issuerNameHash;
-    this.issuerKeyHash = issuerKeyHash;
-    this.serialNumber = serialNumber;
-    this.certificateType = certificateType;
-  }
 }
