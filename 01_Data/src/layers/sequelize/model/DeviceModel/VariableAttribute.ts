@@ -11,6 +11,7 @@ import { Component } from './Component';
 import { Evse } from './Evse';
 import { Boot } from '../Boot';
 import { VariableStatus } from './VariableStatus';
+import { ChargingStation } from '../Location';
 
 @Table
 export class VariableAttribute extends Model implements VariableAttributeType {
@@ -24,7 +25,11 @@ export class VariableAttribute extends Model implements VariableAttributeType {
   @Column({
     unique: 'stationId_type_variableId_componentId',
   })
+  @ForeignKey(() => ChargingStation)
   declare stationId: string;
+
+  @BelongsTo(() => ChargingStation)
+  declare chargingStation: ChargingStation;
 
   @Column({
     type: DataType.STRING,

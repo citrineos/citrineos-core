@@ -45,6 +45,7 @@ import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
 import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
 import { StatusNotification } from './model/Location';
+import { LatestStatusNotification } from './model/Location/LatestStatusNotification';
 
 export class DefaultSequelizeInstance {
   /**
@@ -138,6 +139,7 @@ export class DefaultSequelizeInstance {
         SalesTariff,
         SecurityEvent,
         StatusNotification,
+        LatestStatusNotification,
         Subscription,
         Transaction,
         TransactionEvent,
