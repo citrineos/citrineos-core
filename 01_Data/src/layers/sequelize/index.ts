@@ -10,7 +10,7 @@ export { Transaction, TransactionEvent, MeterValue } from './model/TransactionEv
 export { SecurityEvent } from './model/SecurityEvent';
 export { VariableMonitoring, EventData, VariableMonitoringStatus } from './model/VariableMonitoring';
 export { ChargingStation, Location, StatusNotification } from './model/Location';
-export { ChargingStationSequence, ChargingStationSequenceType } from './model/ChargingStationSequence';
+export { ChargingStationSequence } from './model/ChargingStationSequence';
 export { MessageInfo } from './model/MessageInfo';
 export { Tariff } from './model/Tariff';
 export { Subscription } from './model/Subscription';
