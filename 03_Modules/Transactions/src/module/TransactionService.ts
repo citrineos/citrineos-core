@@ -112,12 +112,6 @@ export class TransactionService {
       personalMessage: authorization.idTokenInfo.personalMessage,
     };
 
-    if (transactionEvent.eventType !== TransactionEventEnumType.Started) {
-      // Don't check for concurrent transactions if the transaction is already in progress
-      this._logger.debug('Event type is not Started.');
-      return response;
-    }
-
     if (idTokenInfo.status !== AuthorizationStatusEnumType.Accepted) {
       // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
       // N.B. Other non-Accepted statuses should not be allowed to be stored.
@@ -141,9 +135,12 @@ export class TransactionService {
         authorization,
         messageContext,
       );
-      const hasConcurrent = await this._hasConcurrentTransactions(idToken);
-      if (hasConcurrent) {
-        response.idTokenInfo.status = AuthorizationStatusEnumType.ConcurrentTx;
+      if (transactionEvent.eventType === TransactionEventEnumType.Started) {
+        const hasConcurrent = await this._hasConcurrentTransactions(idToken);
+        if (hasConcurrent) {
+          response.idTokenInfo.status =
+            AuthorizationStatusEnumType.ConcurrentTx;
+        }
       }
     }
     this._logger.debug(
