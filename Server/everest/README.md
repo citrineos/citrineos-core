@@ -30,6 +30,12 @@ You will notice that there are two args that are configurable:
 After running `npm run start-everest` (or the Windows alternative), you should see 3 running EVerest containers
 and the `manager` container should have the appropriate EVerest logs.
 
+# Running EVerest with Mac Silicon arm64
+
+If you are using a Mac with an ARM64 (M1/M2) processor, there may be compatibility issues due to architecture differences. To run EVerest on Mac Silicon, follow these steps to modify the docker-compose.yml file:
+
+- Specify the Platform Compatibility: To ensure Docker pulls compatible images, add `platform: linux/amd64` under each service definition. This forces Docker to run the containers in an AMD64 emulation mode, compatible with ARM64 hardware.
+
 ### EVerest UI
 
 Now that the 3 containers are running in Docker, you should be able to navigate to `[localhost|ip]:1880/ui/` to view
