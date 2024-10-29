@@ -30,11 +30,124 @@ You will notice that there are two args that are configurable:
 After running `npm run start-everest` (or the Windows alternative), you should see 3 running EVerest containers
 and the `manager` container should have the appropriate EVerest logs.
 
-# Running EVerest with Mac Silicon arm64
 
-If you are using a Mac with an ARM64 (M1/M2) processor, there may be compatibility issues due to architecture differences. To run EVerest on Mac Silicon, follow these steps to modify the docker-compose.yml file:
+### Running EVerest on Mac ARM64 (M1/M2)
 
-- Specify the Platform Compatibility: To ensure Docker pulls compatible images, add `platform: linux/amd64` under each service definition. This forces Docker to run the containers in an AMD64 emulation mode, compatible with ARM64 hardware.
+If you're on a Mac with an ARM64 processor (like an M1 or M2 chip), you may run into some architecture compatibility issues. Here’s how to set up EVerest so it runs seamlessly on macOS ARM64 devices.
+
+To get started, make a few adjustments to the docker-compose.yml and Dockerfile:
+
+Specify Platform Compatibility
+Since EVerest images are typically built for AMD64, we need to add `platform: linux/amd64` under each service in `docker-compose.yml.` This setting enables Docker to run the containers in AMD64 emulation mode, making them compatible with ARM64 hardware.
+
+Hardcode Environment Variables
+If dynamic build arguments aren’t used, you can directly specify values for `EVEREST_IMAGE_TAG` and `EVEREST_TARGET_URL` under each service’s environment section. This keeps things simple without needing extra configuration steps.
+
+In the manager service of your docker-compose.yml, use context: . to specify the current directory as the build context. This tells Docker to locate the Dockerfile and any other required files within this directory. Set up your manager service as follows:
+
+- manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ...
+
+Network Bridge Setup
+To make sure all EVerest services communicate correctly, define a bridge network. You can do this by adding a networks section to `docker-compose.yml`, like so:
+
+
+
+- networks:
+  everest-net:
+    driver: bridge
+Then link each service to this bridge by adding networks: - everest-net under each service.
+
+Final docker-compose.yml Example
+
+- Here’s an example of the updated docker-compose.yml file for Mac ARM64:
+
+version: '3.8'
+
+services:
+  mqtt-server:
+    image: ghcr.io/everest/everest-demo/mqtt-server:0.0.16
+    platform: linux/amd64
+    networks:
+      - everest-net
+    logging:
+      driver: none
+
+  manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    ports:
+      - 8888:8888
+    networks:
+      - everest-net
+    depends_on:
+      - mqtt-server
+    environment:
+      - MQTT_SERVER_ADDRESS=mqtt-server
+      - EVEREST_TARGET_URL=ws://host.docker.internal:8081/cp001
+      - EVEREST_IMAGE_TAG=0.0.16
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+  nodered:
+    image: ghcr.io/everest/everest-demo/nodered:0.0.16
+    platform: linux/amd64
+    networks:
+      - everest-net
+    depends_on:
+      - mqtt-server
+    ports:
+      - 1880:1880
+    environment:
+      - MQTT_SERVER_ADDRESS=mqtt-server
+      - FLOWS=/config/config-sil-two-evse-flow.json
+
+networks:
+  everest-net:
+    driver: bridge
+
+- Here’s an example of the updated DockerFile file for Mac ARM64:
+
+ARG EVEREST_IMAGE_TAG=0.0.16
+
+
+FROM --platform=linux/amd64 ghcr.io/everest/everest-demo/manager:${EVEREST_IMAGE_TAG}
+
+ARG EVEREST_TARGET_URL=ws://host.docker.internal:8081/cp001
+ENV EVEREST_TARGET_URL $EVEREST_TARGET_URL
+
+WORKDIR /workspace
+
+RUN ["/entrypoint.sh"]
+
+RUN apk update && apk add sqlite
+
+RUN sqlite3 /ext/source/build/dist/share/everest/modules/OCPP201/device_model_storage.db \
+        "UPDATE VARIABLE_ATTRIBUTE \
+        SET value = '[{\"configurationSlot\": 1, \"connectionData\": {\"messageTimeout\": 30, \"ocppCsmsUrl\": \"$EVEREST_TARGET_URL\", \"ocppInterface\": \"Wired0\", \"ocppTransport\": \"JSON\", \"ocppVersion\": \"OCPP20\", \"securityProfile\": 1}},{\"configurationSlot\": 2, \"connectionData\": {\"messageTimeout\": 30, \"ocppCsmsUrl\": \"$EVEREST_TARGET_URL\", \"ocppInterface\": \"Wired0\", \"ocppTransport\": \"JSON\", \"ocppVersion\": \"OCPP20\", \"securityProfile\": 1}}]' \
+        WHERE \
+        variable_Id IN ( \
+        SELECT id FROM VARIABLE \
+        WHERE name = 'NetworkConnectionProfiles' \
+        );"
+
+RUN rm /ext/source/build/dist/etc/everest/certs/ca/v2g/*.*
+
+RUN npm i -g http-server
+EXPOSE 8888
+
+COPY ./start.sh /tmp/start.sh
+RUN chmod +x /tmp/start.sh
+CMD ["sh", "-c", "/tmp/start.sh"]
+
+Finally just run `docker compose up --build`
 
 ### EVerest UI
 
