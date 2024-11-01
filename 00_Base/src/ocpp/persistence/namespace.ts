@@ -36,6 +36,7 @@ export enum Namespace {
   SecurityEventNotificationRequest = 'SecurityEvent',
   SendLocalListRequest = 'SendLocalList',
   StatusNotificationRequest = 'StatusNotification',
+  LatestStatusNotification = 'LatestStatusNotification',
   Subscription = 'Subscription',
   SystemConfig = 'SystemConfig',
   TlsCertificates = 'TlsCertificates',

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type CustomDataType, Namespace, StatusNotificationRequest, ConnectorStatusEnumType } from '@citrineos/base';
+import { ConnectorStatusEnumType, type CustomDataType, Namespace, StatusNotificationRequest } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 
