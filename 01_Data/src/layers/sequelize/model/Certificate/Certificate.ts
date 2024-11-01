@@ -26,11 +26,6 @@ export class Certificate extends Model {
   })
   declare issuerName: string;
 
-  @Column({
-    type: DataType.STRING,
-  })
-  declare issuerKey: string;
-
   @Column(DataType.STRING)
   declare organizationName: string;
 

@@ -13,7 +13,6 @@ import {
   CertificateSignedResponse,
   CertificateSigningUseEnumType,
   DeleteCertificateResponse,
-  DeleteCertificateStatusEnumType,
   ErrorCode,
   EventGroup,
   GenericStatusEnumType,
@@ -22,22 +21,20 @@ import {
   GetCertificateStatusEnumType,
   GetCertificateStatusRequest,
   GetCertificateStatusResponse,
-  GetInstalledCertificateIdsRequest,
   GetInstalledCertificateIdsResponse,
-  GetInstalledCertificateStatusEnumType,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageHandler,
   IMessageSender,
   InstallCertificateResponse,
-  InstallCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnumType,
   Namespace,
   SignCertificateRequest,
   SignCertificateResponse,
   SystemConfig,
 } from '@citrineos/base';
+import { Op } from 'sequelize';
 import {
   ICertificateRepository,
   IDeviceModelRepository,
@@ -328,22 +325,6 @@ export class CertificatesModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('DeleteCertificate received:', message, props);
-    // if response is successful, then trigger the get installed certificates ids
-    if (message.payload.status === DeleteCertificateStatusEnumType.Accepted) {
-      try {
-        await this.sendCall(
-          message.context.stationId,
-          message.context.tenantId,
-          CallAction.GetInstalledCertificateIds,
-          {} as GetInstalledCertificateIdsRequest,
-        );
-      } catch (e: any) {
-        console.error(
-          `There was an error sending GetInstalledCertificateIds message to the charger after installing certificate ${e.message}`,
-          e,
-        );
-      }
-    }
   }
 
   @AsHandler(CallAction.GetInstalledCertificateIds)
@@ -357,18 +338,10 @@ export class CertificatesModule extends AbstractModule {
     // persist installed certificate information
     if (certificateHashDataList && certificateHashDataList.length > 0) {
       // delete previous hashes for station
-      try {
-        await this._installedCertificateRepository.deleteAllByQuery({
-          where: {
-            stationId: message.context.stationId,
-          },
-        });
-      } catch (error: any) {
-        this._logger.error(
-          'GetInstalledCertificateIds failed to delete previous certificates',
-          error,
-        );
-      }
+      await this.deleteExistingMatchingCertificateHashes(
+        message.context.stationId,
+        certificateHashDataList,
+      );
       // save new hashes
       const records = certificateHashDataList.map(
         (certificateHashDataWrap: CertificateHashDataChainType) => {
@@ -396,33 +369,6 @@ export class CertificatesModule extends AbstractModule {
           message.context.stationId,
         );
       }
-    } else if (
-      message.payload.status === GetInstalledCertificateStatusEnumType.NotFound
-    ) {
-      // charger has no certs
-      this._logger.info(
-        'No certs found on charger, will delete for station',
-        message.context.stationId,
-      );
-      try {
-        await this._installedCertificateRepository.deleteAllByQuery(
-          {
-            where: {
-              stationId: message.context.stationId,
-            },
-          },
-          Namespace.InstalledCertificate,
-        );
-        this._logger.info(
-          'Successfully deleted any previously installed certs for station',
-          message.context.stationId,
-        );
-      } catch (error: any) {
-        this._logger.error(
-          `GetInstalledCertificateIds failed to delete previous certificates: ${error.message}`,
-          error,
-        );
-      }
     }
   }
 
@@ -432,22 +378,6 @@ export class CertificatesModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('InstallCertificate received:', message, props);
-    // if response is successful, then trigger the get installed certificates ids
-    if (message.payload.status === InstallCertificateStatusEnumType.Accepted) {
-      try {
-        await this.sendCall(
-          message.context.stationId,
-          message.context.tenantId,
-          CallAction.GetInstalledCertificateIds,
-          {} as GetInstalledCertificateIdsRequest,
-        );
-      } catch (e: any) {
-        console.error(
-          `There was an error sending GetInstalledCertificateIds message to the charger after installing certificate ${e.message}`,
-          e,
-        );
-      }
-    }
   }
 
   private async _verifySignCertRequest(
@@ -510,5 +440,33 @@ export class CertificatesModule extends AbstractModule {
     this._logger.info(
       `Verified SignCertRequest for station ${stationId} successfully.`,
     );
+  }
+
+  private async deleteExistingMatchingCertificateHashes(
+    stationId: string,
+    certificateHashDataList: CertificateHashDataChainType[],
+  ) {
+    try {
+      const certificateTypes = certificateHashDataList.map(
+        (certificateHashData) => {
+          return certificateHashData.certificateType;
+        },
+      );
+      if (certificateTypes && certificateTypes.length > 0) {
+        await this._installedCertificateRepository.deleteAllByQuery({
+          where: {
+            stationId,
+            certificateType: {
+              [Op.in]: certificateTypes,
+            },
+          },
+        });
+      }
+    } catch (error: any) {
+      this._logger.error(
+        'GetInstalledCertificateIds failed to delete previous certificates',
+        error,
+      );
+    }
   }
 }
