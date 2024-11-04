@@ -4,7 +4,7 @@
 
 import { QuerySchema } from '@citrineos/base';
 
-export const TariffQuerySchema = QuerySchema([['id', 'string']]);
+export const TariffQuerySchema = QuerySchema('TariffQuerySchema', [['id', 'string']]);
 
 export interface TariffQueryString {
   id?: string;

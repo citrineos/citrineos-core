@@ -5,6 +5,7 @@
 import { QuerySchema } from '@citrineos/base';
 
 export const GenerateCertificateChainSchema = QuerySchema(
+  'GenerateCertificateChainSchema',
   [
     ['keyLength', 'number'],
     ['organizationName', 'string'],
@@ -20,6 +21,7 @@ export const GenerateCertificateChainSchema = QuerySchema(
 );
 
 export const InstallRootCertificateSchema = QuerySchema(
+  'InstallRootCertificateSchema',
   [
     ['stationId', 'string'],
     ['certificateType', 'string'],

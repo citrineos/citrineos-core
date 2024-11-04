@@ -5,6 +5,7 @@
 import { QuerySchema } from '@citrineos/base';
 
 export const CreateSubscriptionSchema = QuerySchema(
+  'CreateSubscriptionSchema',
   [
     ['stationId', 'string'],
     ['onConnect', 'boolean'],

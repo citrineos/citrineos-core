@@ -147,11 +147,12 @@ export abstract class AbstractModuleApi<T extends IModule>
       schema: {
         body: bodySchema,
         querystring: IMessageQuerystringSchema,
-      } as const,
+      },
     };
 
     if (this._module.config.util.swagger?.exposeMessage) {
       this._server.register(async (fastifyInstance) => {
+        this.registerSchemaForOpts(fastifyInstance, _opts);
         fastifyInstance.post(this._toMessagePath(action), _opts, _handler);
       });
     } else {
@@ -263,12 +264,117 @@ export abstract class AbstractModuleApi<T extends IModule>
 
     if (this._module.config.util.swagger?.exposeData) {
       this._server.register(async (fastifyInstance) => {
+        this.registerSchemaForOpts(fastifyInstance, _opts);
         fastifyInstance.route<{ Body: object; Querystring: object }>(_opts);
       });
     } else {
       this._server.route<{ Body: object; Querystring: object }>(_opts);
     }
   }
+
+  private registerSchemaForOpts = (
+    fastifyInstance: FastifyInstance,
+    _opts: any,
+  ) => {
+    if (_opts.schema['querystring']) {
+      _opts.schema['querystring'] = this.registerSchema(
+        fastifyInstance,
+        _opts.schema['querystring'],
+      );
+    }
+    if (_opts.schema['body']) {
+      _opts.schema['body'] = this.registerSchema(
+        fastifyInstance,
+        _opts.schema['body'],
+      );
+    }
+    if (_opts.schema['params']) {
+      _opts.schema['params'] = this.registerSchema(
+        fastifyInstance,
+        _opts.schema['params'],
+      );
+    }
+    if (_opts.schema['headers']) {
+      _opts.schema['headers'] = this.registerSchema(
+        fastifyInstance,
+        _opts.schema['headers'],
+      );
+    }
+    if (_opts.schema['response']) {
+      _opts.schema['response'] = {
+        200: this.registerSchema(
+          fastifyInstance,
+          _opts.schema['response'][200],
+        ),
+      };
+    }
+  };
+
+  protected registerSchema = (
+    fastifyInstance: FastifyInstance,
+    schema: any,
+  ): object | null => {
+    try {
+      let id = schema['$id'];
+      if (!id) {
+        console.error('Could not register schema because no ID', schema);
+      }
+      const schemaCopy = this.removeUnknownKeys(schema);
+      fastifyInstance.addSchema(schemaCopy);
+      return {
+        $ref: `${id}`,
+      };
+    } catch (e: any) {
+      // ignore already declared
+      if (e.code !== 'FST_ERR_SCH_ALREADY_PRESENT') {
+        console.error('Could not register schema', e, schema);
+      }
+      return null;
+    }
+  };
+
+  // TODO: for performance reasons can these unknown keys be removed directly from schemas?
+  private removeUnknownKeys = (schema: any): any => {
+    // Create a deep copy of the schema
+    const schemaCopy = structuredClone(schema); // Use structuredClone for a true deep copy
+
+    const cleanSchema = (obj: any) => {
+      if (typeof obj !== 'object' || obj === null) return;
+
+      // Remove specific unknown keys
+      for (let unknownKey of ['comment', 'javaType', 'tsEnumNames']) {
+        if (unknownKey in obj) {
+          delete obj[unknownKey];
+        }
+      }
+
+      // Remove `additionalItems` if `items` is not an array
+      if (
+        'items' in obj &&
+        !Array.isArray(obj.items) &&
+        'additionalItems' in obj
+      ) {
+        delete obj.additionalItems;
+      }
+
+      // Remove `additionalProperties` if `type` is not "object"
+      if ('additionalProperties' in obj && obj.type !== 'object') {
+        delete obj.additionalProperties;
+      }
+
+      // Recursively process nested objects
+      for (const key in obj) {
+        if (typeof obj[key] === 'object') {
+          cleanSchema(obj[key]);
+        }
+      }
+    };
+
+    // Clean the copied schema
+    cleanSchema(schemaCopy);
+
+    return schemaCopy;
+  };
 
   /**
    * Convert a {@link CallAction} to a normed lowercase URL path.

@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "AuthorizationRestrictionsSchema",
   "type": "object",
   "properties": {
     "allowedConnectorTypes": {

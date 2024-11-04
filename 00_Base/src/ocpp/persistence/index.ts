@@ -12,10 +12,12 @@ export { default as SetVariableResultTypeSchema } from './schemas/SetVariableRes
 export { default as UpdateChargingStationPasswordSchema } from './schemas/UpdateChargingStationPasswordRequestSchema.json';
 
 export function QuerySchema(
+  name: string,
   properties: [string, string][],
   required?: string[],
 ): object {
   const schema: Record<string, string | object> = {
+    $id: name,
     type: 'object',
     properties: {},
   };

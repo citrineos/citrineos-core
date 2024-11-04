@@ -19,6 +19,7 @@ export interface VariableAttributeQuerystring {
 }
 
 export const VariableAttributeQuerySchema = QuerySchema(
+  'VariableAttributeQuerySchema',
   [
     ['stationId', 'string'],
     ['type', 'string'],
@@ -40,6 +41,7 @@ export interface CreateOrUpdateVariableAttributeQuerystring {
 }
 
 export const CreateOrUpdateVariableAttributeQuerySchema = QuerySchema(
+  'CreateOrUpdateVariableAttributeQuerySchema',
   [
     ['stationId', 'string'],
     ['setOnCharger', 'boolean'],
