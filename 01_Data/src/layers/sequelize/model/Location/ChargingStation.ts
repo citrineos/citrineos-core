@@ -3,9 +3,11 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace, StatusNotificationRequest } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { Location } from './Location';
 import { StatusNotification } from './StatusNotification';
+import { ServerNetworkProfile } from './ServerNetworkProfile';
+import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 
 /**
  * Represents a charging station.
@@ -34,4 +36,7 @@ export class ChargingStation extends Model {
    */
   @BelongsTo(() => Location)
   declare location?: Location;
+
+  @BelongsToMany(() => ServerNetworkProfile, () => ChargingStationNetworkProfile)
+  declare networkProfiles?: ServerNetworkProfile[] | null;
 }

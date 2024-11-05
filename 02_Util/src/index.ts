@@ -5,6 +5,7 @@
 
 export { UnknownStationFilter } from './networkconnection/authenticator/UnknownStationFilter';
 export { ConnectedStationFilter } from './networkconnection/authenticator/ConnectedStationFilter';
+export { NetworkProfileFilter } from './networkconnection/authenticator/NetworkProfileFilter';
 export { BasicAuthenticationFilter } from './networkconnection/authenticator/BasicAuthenticationFilter';
 
 export { IAuthorizer } from './authorization';

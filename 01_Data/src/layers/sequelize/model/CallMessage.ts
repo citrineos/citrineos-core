@@ -22,4 +22,10 @@ export class CallMessage extends Model {
 
   @Column(DataType.INTEGER)
   declare reservationId?: number;
+
+  @Column(DataType.STRING)
+  declare websocketServerConfigId?: string
+
+  @Column(DataType.INTEGER)
+  declare configurationSlot?: number
 }

@@ -40,7 +40,7 @@ import {
   ChargingStationSequenceType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
-import { CallMessage, ChargingStationSecurityInfo, ChargingStationSequence, CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
+import { CallMessage, ChargingStationSecurityInfo, ChargingStationSequence, CompositeSchedule, MeterValue, ServerNetworkProfile, type Transaction, VariableCharacteristics } from '../layers/sequelize';
 import { type VariableAttribute } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { type Authorization, type Boot, type Certificate, ChargingNeeds, type ChargingStation, type Component, type EventData, Evse, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';
@@ -194,4 +194,8 @@ export interface IChargingStationSecurityInfoRepository extends CrudRepository<C
 
 export interface IChargingStationSequenceRepository extends CrudRepository<ChargingStationSequence> {
   getNextSequenceValue(stationId: string, type: ChargingStationSequenceType): Promise<number>;
+}
+
+export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {
+
 }

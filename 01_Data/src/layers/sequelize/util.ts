@@ -18,6 +18,7 @@ import {
   ChargingProfile,
   ChargingSchedule,
   ChargingStation,
+  ChargingStationNetworkProfile,
   ChargingStationSecurityInfo,
   ChargingStationSequence,
   Component,
@@ -31,6 +32,7 @@ import {
   Reservation,
   SalesTariff,
   SecurityEvent,
+  ServerNetworkProfile,
   Transaction,
   TransactionEvent,
   Variable,
@@ -77,7 +79,7 @@ export class DefaultSequelizeInstance {
       try {
         await this.instance!.authenticate();
         this.logger.info('Database connection has been established successfully');
-        this.syncDb();
+        await this.syncDb();
 
         break;
       } catch (error) {
@@ -122,6 +124,7 @@ export class DefaultSequelizeInstance {
         ChargingProfile,
         ChargingSchedule,
         ChargingStation,
+        ChargingStationNetworkProfile,
         ChargingStationSecurityInfo,
         ChargingStationSequence,
         Component,
@@ -138,6 +141,7 @@ export class DefaultSequelizeInstance {
         Reservation,
         SalesTariff,
         SecurityEvent,
+        ServerNetworkProfile,
         StatusNotification,
         LatestStatusNotification,
         Subscription,
