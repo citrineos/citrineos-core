@@ -525,6 +525,8 @@ export class WebsocketNetworkConnection {
     if (config.securityProfile > 2) {
       serverOptions.requestCert = true;
       serverOptions.rejectUnauthorized = true;
+    } else {
+      serverOptions.rejectUnauthorized = false;
     }
 
     return serverOptions;

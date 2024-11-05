@@ -330,7 +330,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
             order: [['createdAt', 'DESC']],
           })
         )[0];
-        savedVariableAttribute.set('value', mostRecentAcceptedStatus?.value);
+        savedVariableAttribute.setDataValue('value', mostRecentAcceptedStatus?.value);
       }
       savedVariableAttribute.set('generatedAt', isoTimestamp);
       await savedVariableAttribute.save();
