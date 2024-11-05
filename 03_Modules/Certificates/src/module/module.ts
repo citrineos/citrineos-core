@@ -8,6 +8,7 @@ import {
   AsHandler,
   AttributeEnumType,
   CallAction,
+  CertificateHashDataChainType,
   CertificateSignedRequest,
   CertificateSignedResponse,
   CertificateSigningUseEnumType,
@@ -28,14 +29,18 @@ import {
   IMessageSender,
   InstallCertificateResponse,
   Iso15118EVCertificateStatusEnumType,
+  Namespace,
   SignCertificateRequest,
   SignCertificateResponse,
   SystemConfig,
 } from '@citrineos/base';
+import { Op } from 'sequelize';
 import {
   ICertificateRepository,
   IDeviceModelRepository,
+  IInstalledCertificateRepository,
   ILocationRepository,
+  InstalledCertificate,
   sequelize,
 } from '@citrineos/data';
 import {
@@ -81,6 +86,7 @@ export class CertificatesModule extends AbstractModule {
 
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _certificateRepository: ICertificateRepository;
+  protected _installedCertificateRepository: IInstalledCertificateRepository;
   protected _locationRepository: ILocationRepository;
   protected _certificateAuthorityService: CertificateAuthorityService;
 
@@ -153,6 +159,8 @@ export class CertificatesModule extends AbstractModule {
     this._certificateRepository =
       certificateRepository ||
       new sequelize.SequelizeCertificateRepository(config, logger);
+    this._installedCertificateRepository =
+      new sequelize.SequelizeInstalledCertificateRepository(config, logger);
     this._locationRepository =
       locationRepository ||
       new sequelize.SequelizeLocationRepository(config, logger);
@@ -312,26 +320,63 @@ export class CertificatesModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.DeleteCertificate)
-  protected _handleDeleteCertificate(
+  protected async _handleDeleteCertificate(
     message: IMessage<DeleteCertificateResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('DeleteCertificate received:', message, props);
   }
 
   @AsHandler(CallAction.GetInstalledCertificateIds)
-  protected _handleGetInstalledCertificateIds(
+  protected async _handleGetInstalledCertificateIds(
     message: IMessage<GetInstalledCertificateIdsResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('GetInstalledCertificateIds received:', message, props);
+    const certificateHashDataList: CertificateHashDataChainType[] =
+      message.payload.certificateHashDataChain!;
+    // persist installed certificate information
+    if (certificateHashDataList && certificateHashDataList.length > 0) {
+      // delete previous hashes for station
+      await this.deleteExistingMatchingCertificateHashes(
+        message.context.stationId,
+        certificateHashDataList,
+      );
+      // save new hashes
+      const records = certificateHashDataList.map(
+        (certificateHashDataWrap: CertificateHashDataChainType) => {
+          const certificateHashData =
+            certificateHashDataWrap.certificateHashData;
+          const certificateType = certificateHashDataWrap.certificateType;
+          return {
+            stationId: message.context.stationId,
+            hashAlgorithm: certificateHashData.hashAlgorithm,
+            issuerNameHash: certificateHashData.issuerNameHash,
+            issuerKeyHash: certificateHashData.issuerKeyHash,
+            serialNumber: certificateHashData.serialNumber,
+            certificateType: certificateType,
+          } as InstalledCertificate;
+        },
+      );
+      this._logger.info('Attempting to save', records);
+      const response = await this._installedCertificateRepository.bulkCreate(
+        records,
+        Namespace.InstalledCertificate,
+      );
+      if (response.length === records.length) {
+        this._logger.info(
+          'Successfully updated installed certificate information for station',
+          message.context.stationId,
+        );
+      }
+    }
   }
 
   @AsHandler(CallAction.InstallCertificate)
-  protected _handleInstallCertificate(
+  protected async _handleInstallCertificate(
     message: IMessage<InstallCertificateResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('InstallCertificate received:', message, props);
   }
 
@@ -395,5 +440,33 @@ export class CertificatesModule extends AbstractModule {
     this._logger.info(
       `Verified SignCertRequest for station ${stationId} successfully.`,
     );
+  }
+
+  private async deleteExistingMatchingCertificateHashes(
+    stationId: string,
+    certificateHashDataList: CertificateHashDataChainType[],
+  ) {
+    try {
+      const certificateTypes = certificateHashDataList.map(
+        (certificateHashData) => {
+          return certificateHashData.certificateType;
+        },
+      );
+      if (certificateTypes && certificateTypes.length > 0) {
+        await this._installedCertificateRepository.deleteAllByQuery({
+          where: {
+            stationId,
+            certificateType: {
+              [Op.in]: certificateTypes,
+            },
+          },
+        });
+      }
+    } catch (error: any) {
+      this._logger.error(
+        'GetInstalledCertificateIds failed to delete previous certificates',
+        error,
+      );
+    }
   }
 }
