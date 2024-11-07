@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation'
 import { ServerNetworkProfile } from './ServerNetworkProfile'
 import { SetNetworkProfile } from './SetNetworkProfile'
@@ -30,11 +30,12 @@ export class ChargingStationNetworkProfile extends Model {
     })
     declare configurationSlot: number;
 
-    /**
-     * From {@link SetNetworkProfile} which was last accepted by this station for this configuration slot
-     */
-    @Column(DataType.STRING)
-    declare setNetworkProfileCorrelationId: string;
+    @ForeignKey(() => SetNetworkProfile)
+    @Column(DataType.INTEGER)
+    declare setNetworkProfileId: number;
+
+    @BelongsTo(() => SetNetworkProfile)
+    declare setNetworkProfile: SetNetworkProfile
 
     /**
      * If present, the websocket server that correlates to this configuration slot.
@@ -45,4 +46,7 @@ export class ChargingStationNetworkProfile extends Model {
     @ForeignKey(() => ServerNetworkProfile)
     @Column(DataType.STRING)
     declare websocketServerConfigId?: string;
+
+    @BelongsTo(() => ServerNetworkProfile)
+    declare websocketServerConfig?: ServerNetworkProfile
 }

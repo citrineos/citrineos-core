@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPPInterfaceEnumType, OCPPTransportEnumType, OCPPVersionEnumType, APNType, VPNType, NetworkConnectionProfileType } from '@citrineos/base';
-import { Column, DataType, ForeignKey, Index, Model, Table } from 'sequelize-typescript';
+import { OCPPInterfaceEnumType, OCPPTransportEnumType, OCPPVersionEnumType, APNType, VPNType, } from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, Index, Model, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { ServerNetworkProfile } from './ServerNetworkProfile';
 
@@ -14,7 +14,7 @@ import { ServerNetworkProfile } from './ServerNetworkProfile';
  */
 @Table
 export class SetNetworkProfile extends Model {
-    static readonly MODEL_NAME: string = 'CallMessage';
+    static readonly MODEL_NAME: string = 'SetNetworkProfile';
 
     @ForeignKey(() => ChargingStation)
     @Column(DataType.STRING)
@@ -29,10 +29,13 @@ export class SetNetworkProfile extends Model {
 
     @ForeignKey(() => ServerNetworkProfile)
     @Column(DataType.STRING)
-    declare websocketServerConfigId?: string
+    declare websocketServerConfigId?: string;
+
+    @BelongsTo(() => ServerNetworkProfile)
+    declare websocketServerConfig?: ServerNetworkProfile;
 
     @Column(DataType.INTEGER)
-    declare configurationSlot: number
+    declare configurationSlot: number;
 
     @Column(DataType.STRING)
     declare ocppVersion: OCPPVersionEnumType;

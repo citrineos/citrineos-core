@@ -423,24 +423,8 @@ export class ConfigurationModuleApi
   )
   async getNetworkProfiles(
     request: FastifyRequest<{ Querystring: NetworkProfileQuerystring }>,
-  ): Promise<object[]> {
-    const chargingStationNetworkProfiles = await ChargingStationNetworkProfile.findAll({ where: { stationId: request.query.stationId } });
-
-    return chargingStationNetworkProfiles.map(async chargingStationNetworkProfile => {
-      const setNetworkProfile = await SetNetworkProfile.findOne({ where: { correlationId: chargingStationNetworkProfile.setNetworkProfileCorrelationId } });
-      if (!setNetworkProfile) {
-        this._logger.error("Unknown SetNetworkProfileRequest: " + chargingStationNetworkProfile.setNetworkProfileCorrelationId)
-        return undefined;
-      } else if (setNetworkProfile.websocketServerConfigId) {
-        const serverNetworkProfile = await ServerNetworkProfile.findByPk(setNetworkProfile.websocketServerConfigId);
-        return {
-          websocketServerConfig: serverNetworkProfile,
-          ...setNetworkProfile
-        };
-      } else {
-        return setNetworkProfile;
-      }
-    }).filter(networkProfile => networkProfile != undefined);
+  ): Promise<ChargingStationNetworkProfile[]> {
+    return ChargingStationNetworkProfile.findAll({ where: { stationId: request.query.stationId }, include: [SetNetworkProfile, ServerNetworkProfile] });
   }
 
   @AsDataEndpoint(

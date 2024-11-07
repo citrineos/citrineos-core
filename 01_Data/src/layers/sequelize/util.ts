@@ -47,7 +47,7 @@ import { MessageInfo } from './model/MessageInfo';
 import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
 import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
-import { StatusNotification } from './model/Location';
+import { SetNetworkProfile, StatusNotification } from './model/Location';
 import { LatestStatusNotification } from './model/Location/LatestStatusNotification';
 
 export class DefaultSequelizeInstance {
@@ -143,6 +143,7 @@ export class DefaultSequelizeInstance {
         Reservation,
         SalesTariff,
         SecurityEvent,
+        SetNetworkProfile,
         ServerNetworkProfile,
         StatusNotification,
         LatestStatusNotification,

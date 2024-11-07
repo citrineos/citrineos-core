@@ -547,7 +547,7 @@ export class ConfigurationModule extends AbstractModule {
         if (chargingStation) {
           const [chargingStationNetworkProfile] = await ChargingStationNetworkProfile.findOrBuild({ where: { stationId: chargingStation.id, configurationSlot: setNetworkProfile.configurationSlot! } });
           chargingStationNetworkProfile.websocketServerConfigId = setNetworkProfile.websocketServerConfigId!;
-          chargingStationNetworkProfile.setNetworkProfileCorrelationId = setNetworkProfile.correlationId;
+          chargingStationNetworkProfile.setNetworkProfileId = setNetworkProfile.id;
           await chargingStationNetworkProfile.save();
         }
       }
