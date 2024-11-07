@@ -22,6 +22,7 @@ import {
   Namespace,
   WebsocketServerConfig,
 } from '@citrineos/base';
+import jsrsasign from 'jsrsasign';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { ICertificatesModuleApi } from './interface';
@@ -46,7 +47,6 @@ import {
 } from '@citrineos/data';
 import fs from 'fs';
 import moment from 'moment';
-import jsrsasign from 'jsrsasign';
 
 const enum PemType {
   Root = 'Root',

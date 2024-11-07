@@ -33,6 +33,7 @@ import {
   RedisCache,
   UnknownStationFilter,
   WebsocketNetworkConnection,
+  NetworkProfileFilter,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import addFormats from 'ajv-formats';
@@ -57,7 +58,7 @@ import {
   SmartChargingModule,
   SmartChargingModuleApi,
 } from '@citrineos/smartcharging';
-import { RepositoryStore, sequelize, Sequelize } from '@citrineos/data';
+import { RepositoryStore, sequelize, Sequelize, ServerNetworkProfile } from '@citrineos/data';
 import {
   type FastifyRouteSchemaDef,
   type FastifySchemaCompiler,
@@ -221,6 +222,7 @@ export class CitrineOSServer {
   async run(): Promise<void> {
     try {
       await this.initialize();
+      this._syncWebsocketConfig();
       await this._server
         .listen({
           host: this.host,
@@ -237,6 +239,29 @@ export class CitrineOSServer {
     } catch (error) {
       await Promise.reject(error);
     }
+  }
+
+  protected async _syncWebsocketConfig() {
+    this._config.util.networkConnection.websocketServers.forEach(async websocketServerConfig => {
+      const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
+        where: {
+          id: websocketServerConfig.id
+        }
+      });
+      serverNetworkProfile.host = websocketServerConfig.host;
+      serverNetworkProfile.port = websocketServerConfig.port;
+      serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
+      serverNetworkProfile.protocol = websocketServerConfig.protocol;
+      serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
+      serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
+      serverNetworkProfile.allowUnknownChargingStations = websocketServerConfig.allowUnknownChargingStations;
+      serverNetworkProfile.tlsKeyFilePath = websocketServerConfig.tlsKeyFilePath;
+      serverNetworkProfile.tlsCertificateChainFilePath = websocketServerConfig.tlsCertificateChainFilePath;
+      serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath = websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
+      serverNetworkProfile.rootCACertificateFilePath = websocketServerConfig.rootCACertificateFilePath;
+
+      serverNetworkProfile.save();
+    })
   }
 
   protected _createSender(): IMessageSender {
@@ -319,6 +344,13 @@ export class CitrineOSServer {
         this._logger,
       ),
       new ConnectedStationFilter(this._cache, this._logger),
+      new NetworkProfileFilter(
+        new sequelize.SequelizeDeviceModelRepository(
+          this._config,
+          this._logger,
+        ),
+        this._logger,
+      ),
       new BasicAuthenticationFilter(
         new sequelize.SequelizeDeviceModelRepository(
           this._config,

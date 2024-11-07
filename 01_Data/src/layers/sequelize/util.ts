@@ -18,6 +18,7 @@ import {
   ChargingProfile,
   ChargingSchedule,
   ChargingStation,
+  ChargingStationNetworkProfile,
   ChargingStationSecurityInfo,
   ChargingStationSequence,
   Component,
@@ -26,11 +27,13 @@ import {
   Evse,
   IdToken,
   IdTokenInfo,
+  InstalledCertificate,
   Location,
   MeterValue,
   Reservation,
   SalesTariff,
   SecurityEvent,
+  ServerNetworkProfile,
   Transaction,
   TransactionEvent,
   Variable,
@@ -44,7 +47,7 @@ import { MessageInfo } from './model/MessageInfo';
 import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
 import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
-import { StatusNotification } from './model/Location';
+import { SetNetworkProfile, StatusNotification } from './model/Location';
 import { LatestStatusNotification } from './model/Location/LatestStatusNotification';
 
 export class DefaultSequelizeInstance {
@@ -77,7 +80,7 @@ export class DefaultSequelizeInstance {
       try {
         await this.instance!.authenticate();
         this.logger.info('Database connection has been established successfully');
-        this.syncDb();
+        await this.syncDb();
 
         break;
       } catch (error) {
@@ -118,10 +121,12 @@ export class DefaultSequelizeInstance {
         Boot,
         CallMessage,
         Certificate,
+        InstalledCertificate,
         ChargingNeeds,
         ChargingProfile,
         ChargingSchedule,
         ChargingStation,
+        ChargingStationNetworkProfile,
         ChargingStationSecurityInfo,
         ChargingStationSequence,
         Component,
@@ -138,6 +143,8 @@ export class DefaultSequelizeInstance {
         Reservation,
         SalesTariff,
         SecurityEvent,
+        SetNetworkProfile,
+        ServerNetworkProfile,
         StatusNotification,
         LatestStatusNotification,
         Subscription,

@@ -15,4 +15,5 @@ export interface IMessageEndpointDefinition {
   method: (...args: any[]) => any;
   methodName: string;
   bodySchema: object;
+  optionalQuerystrings?: Record<string, any>;
 }

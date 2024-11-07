@@ -4,54 +4,75 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  MessageInfoType,
   type AuthorizationData,
   type BootConfig,
   type CallAction,
+  ChargingLimitSourceEnumType,
+  ChargingProfilePurposeEnumType,
+  ChargingProfileType,
   type ChargingStateEnumType,
+  ChargingStationSequenceType,
   type ComponentType,
+  CompositeScheduleType,
+  type CrudRepository,
   type EventDataType,
   type EVSEType,
   type GetVariableResultType,
-  type CrudRepository,
   type IdTokenType,
+  MessageInfoType,
+  MeterValueType,
   type MonitoringDataType,
+  NotifyEVChargingNeedsRequest,
   type RegistrationStatusEnumType,
   type ReportDataType,
+  ReserveNowRequest,
   type SecurityEventNotificationRequest,
   type SetMonitoringDataType,
   type SetMonitoringResultType,
   type SetVariableDataType,
   type SetVariableResultType,
   type StatusInfoType,
+  StatusNotificationRequest,
   type TransactionEventRequest,
+  UpdateEnumType,
   type VariableAttributeType,
   type VariableMonitoringType,
   type VariableType,
-  ChargingProfileType,
-  ChargingProfilePurposeEnumType,
-  NotifyEVChargingNeedsRequest,
-  ChargingLimitSourceEnumType,
-  CompositeScheduleType,
-  StatusNotificationRequest,
-  ReserveNowRequest,
-  MeterValueType,
-  UpdateEnumType,
-  ChargingStationSequenceType,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
-import { CallMessage, ChargingStationSecurityInfo, ChargingStationSequence, CompositeSchedule, MeterValue, type Transaction, VariableCharacteristics } from '../layers/sequelize';
-import { type VariableAttribute } from '../layers/sequelize';
+import {
+  type Authorization,
+  type Boot,
+  CallMessage,
+  type Certificate,
+  ChargingNeeds,
+  ChargingProfile,
+  type ChargingStation,
+  ChargingStationSecurityInfo,
+  ChargingStationSequence,
+  type Component,
+  CompositeSchedule,
+  type EventData,
+  Evse,
+  type Location,
+  MessageInfo,
+  MeterValue,
+  Reservation,
+  type SecurityEvent,
+  ServerNetworkProfile,
+  Subscription,
+  Tariff,
+  type Transaction,
+  type Variable,
+  type VariableAttribute,
+  VariableCharacteristics,
+  type VariableMonitoring,
+} from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
-import { type Authorization, type Boot, type Certificate, ChargingNeeds, type ChargingStation, type Component, type EventData, Evse, type Location, type SecurityEvent, type Variable, type VariableMonitoring } from '../layers/sequelize';
-import { MessageInfo } from '../layers/sequelize';
-import { Subscription } from '../layers/sequelize';
-import { Tariff } from '../layers/sequelize';
 import { TariffQueryString } from './queries/Tariff';
-import { ChargingProfile } from '../layers/sequelize';
-import { Reservation } from '../layers/sequelize';
 import { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion';
 import { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList';
+import { InstalledCertificate } from '../layers/sequelize/model/Certificate/InstalledCertificate';
 
 export interface IAuthorizationRepository extends CrudRepository<AuthorizationData> {
   createOrUpdateByQuerystring: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
@@ -171,6 +192,8 @@ export interface ICertificateRepository extends CrudRepository<Certificate> {
   createOrUpdateCertificate(certificate: Certificate): Promise<Certificate>;
 }
 
+export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> { }
+
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
   createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId?: number | null, chargingLimitSource?: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile>;
   createChargingNeeds(chargingNeeds: NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds>;
@@ -185,7 +208,7 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
   createOrUpdateReservation(reserveNowRequest: ReserveNowRequest, stationId: string, isActive?: boolean): Promise<Reservation | undefined>;
 }
 
-export interface ICallMessageRepository extends CrudRepository<CallMessage> {}
+export interface ICallMessageRepository extends CrudRepository<CallMessage> { }
 
 export interface IChargingStationSecurityInfoRepository extends CrudRepository<ChargingStationSecurityInfo> {
   readChargingStationPublicKeyFileId(stationId: string): Promise<string>;
@@ -194,4 +217,8 @@ export interface IChargingStationSecurityInfoRepository extends CrudRepository<C
 
 export interface IChargingStationSequenceRepository extends CrudRepository<ChargingStationSequence> {
   getNextSequenceValue(stationId: string, type: ChargingStationSequenceType): Promise<number>;
+}
+
+export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {
+
 }
