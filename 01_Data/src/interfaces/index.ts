@@ -13,6 +13,7 @@ export { AuthorizationQuerystring, AuthorizationQuerySchema } from './queries/Au
 export { TransactionEventQuerystring, TransactionEventQuerySchema } from './queries/TransactionEvent';
 export { TariffQueryString, TariffQuerySchema } from './queries/Tariff';
 export { ModelKeyQuerystring, ModelKeyQuerystringSchema } from './queries/Model';
+export { NetworkProfileQuerystring, NetworkProfileQuerySchema, NetworkProfileDeleteQuerystring, NetworkProfileDeleteQuerySchema } from './queries/NetworkProfile';
 export { UpdateTlsCertificateQueryString, TlsCertificateSchema, UpdateTlsCertificateQuerySchema } from './queries/TlsCertificate';
 export { GenerateCertificateChainSchema, InstallRootCertificateSchema } from './queries/RootCertificate';
 export { CreateSubscriptionSchema } from './queries/Subscription';

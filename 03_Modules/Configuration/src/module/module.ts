@@ -42,6 +42,7 @@ import {
   ResetResponse,
   SetDisplayMessageResponse,
   SetNetworkProfileResponse,
+  SetNetworkProfileStatusEnumType,
   SetVariableDataType,
   SetVariablesRequest,
   SetVariablesResponse,
@@ -53,11 +54,15 @@ import {
 } from '@citrineos/base';
 import {
   Boot,
+  ChargingStation,
+  ChargingStationNetworkProfile,
   Component,
   IBootRepository,
   IDeviceModelRepository,
   IMessageInfoRepository,
   sequelize,
+  ServerNetworkProfile,
+  SetNetworkProfile,
 } from '@citrineos/data';
 import {
   IdGenerator,
@@ -254,7 +259,7 @@ export class ConfigurationModule extends AbstractModule {
     if (!bootNotificationResponseMessageConfirmation.success) {
       throw new Error(
         'BootNotification failed: ' +
-          bootNotificationResponseMessageConfirmation,
+        bootNotificationResponseMessageConfirmation,
       );
     }
 
@@ -529,11 +534,27 @@ export class ConfigurationModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.SetNetworkProfile)
-  protected _handleSetNetworkProfile(
+  protected async _handleSetNetworkProfile(
     message: IMessage<SetNetworkProfileResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('SetNetworkProfile response received:', message, props);
+
+    if (message.payload.status == SetNetworkProfileStatusEnumType.Accepted) {
+      const setNetworkProfile = await SetNetworkProfile.findOne({ where: { correlationId: message.context.correlationId } });
+      if (setNetworkProfile) {
+        const serverNetworkProfile = await ServerNetworkProfile.findByPk(setNetworkProfile.websocketServerConfigId!);
+        if (serverNetworkProfile) {
+          const chargingStation = await ChargingStation.findByPk(message.context.stationId);
+          if (chargingStation) {
+            const [chargingStationNetworkProfile] = await ChargingStationNetworkProfile.findOrBuild({ where: { stationId: chargingStation.id, configurationSlot: setNetworkProfile.configurationSlot! } });
+            chargingStationNetworkProfile.websocketServerConfigId = setNetworkProfile.websocketServerConfigId!;
+            chargingStationNetworkProfile.setNetworkProfileId = setNetworkProfile.id;
+            await chargingStationNetworkProfile.save();
+          }
+        }
+      }
+    }
   }
 
   @AsHandler(CallAction.GetDisplayMessages)

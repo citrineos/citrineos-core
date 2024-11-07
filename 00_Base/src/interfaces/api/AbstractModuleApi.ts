@@ -13,13 +13,12 @@ import {
   METADATA_DATA_ENDPOINTS,
   METADATA_MESSAGE_ENDPOINTS,
 } from '.';
-import { OcppRequest, OcppResponse, SystemConfig } from '../..';
+import { OcppRequest, SystemConfig } from '../..';
 import { Namespace } from '../../ocpp/persistence';
 import { CallAction } from '../../ocpp/rpc/message';
 import { IMessageConfirmation } from '../messages';
 import { IModule } from '../modules';
 import {
-  IMessageQuerystring,
   IMessageQuerystringSchema,
 } from './MessageQuerystring';
 import { IModuleApi } from './ModuleApi';
@@ -29,8 +28,7 @@ import { AuthorizationSecurity } from './AuthorizationSecurity';
  * Abstract module api class implementation.
  */
 export abstract class AbstractModuleApi<T extends IModule>
-  implements IModuleApi
-{
+  implements IModuleApi {
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
@@ -62,6 +60,7 @@ export abstract class AbstractModuleApi<T extends IModule>
         expose.action,
         expose.method,
         expose.bodySchema,
+        expose.optionalQuerystrings,
       );
     });
     (
@@ -111,12 +110,14 @@ export abstract class AbstractModuleApi<T extends IModule>
    * @param {CallAction} action - The action to be called.
    * @param {Function} method - The method to be executed.
    * @param {object} bodySchema - The schema for the route.
+   * @param {Record<string, any>} optionalQuerystrings - Optional querystrings for the route.
    * @return {void}
    */
   protected _addMessageRoute(
     action: CallAction,
     method: (...args: any[]) => any,
     bodySchema: object,
+    optionalQuerystrings?: Record<string, any>
   ): void {
     this._logger.debug(
       `Adding message route for ${action}`,
@@ -126,27 +127,38 @@ export abstract class AbstractModuleApi<T extends IModule>
     /**
      * Executes the handler function for the given request.
      *
-     * @param {FastifyRequest<{ Body: OcppRequest | OcppResponse, Querystring: IMessageQuerystring }>} request - The request object containing the body and querystring.
+     * @param {FastifyRequest<{ Body: OcppRequest, Querystring: IMessageQuerystring }>} request - The request object containing the body and querystring.
      * @return {Promise<IMessageConfirmation>} The promise that resolves to the message confirmation.
      */
     const _handler = async (
       request: FastifyRequest<{
-        Body: OcppRequest | OcppResponse;
-        Querystring: IMessageQuerystring;
+        Body: OcppRequest;
+        Querystring: Record<string, any>;
       }>,
-    ): Promise<IMessageConfirmation> =>
-      method.call(
+    ): Promise<IMessageConfirmation> => {
+      const { identifier, tenantId, callbackUrl, ...extraQueries } = request.query;
+      return method.call(
         this,
-        request.query.identifier,
-        request.query.tenantId,
+        identifier,
+        tenantId,
         request.body,
-        request.query.callbackUrl,
+        callbackUrl,
+        Object.keys(extraQueries).length > 0 ? extraQueries : undefined,
       );
+    }
+
+    const mergedQuerySchema = {
+      ...IMessageQuerystringSchema,
+      properties: {
+        ...IMessageQuerystringSchema.properties,
+        ...(optionalQuerystrings || {}),
+      },
+    };
 
     const _opts = {
       schema: {
         body: bodySchema,
-        querystring: IMessageQuerystringSchema,
+        querystring: mergedQuerySchema,
       } as const,
     };
 
