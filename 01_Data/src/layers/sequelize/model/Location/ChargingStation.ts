@@ -6,7 +6,6 @@ import { Namespace, StatusNotificationRequest } from '@citrineos/base';
 import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { Location } from './Location';
 import { StatusNotification } from './StatusNotification';
-import { ServerNetworkProfile } from './ServerNetworkProfile';
 import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 import { SetNetworkProfile } from './SetNetworkProfile';
 

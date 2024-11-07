@@ -327,7 +327,7 @@ export abstract class AbstractModuleApi<T extends IModule>
     schema: any,
   ): object | null => {
     try {
-      let id = schema['$id'];
+      const id = schema['$id'];
       if (!id) {
         this._logger.error('Could not register schema because no ID', schema);
       }
@@ -354,7 +354,7 @@ export abstract class AbstractModuleApi<T extends IModule>
       if (typeof obj !== 'object' || obj === null) return;
 
       // Remove specific unknown keys
-      for (let unknownKey of ['comment', 'javaType', 'tsEnumNames']) {
+      for (const unknownKey of ['comment', 'javaType', 'tsEnumNames']) {
         if (unknownKey in obj) {
           delete obj[unknownKey];
         }
