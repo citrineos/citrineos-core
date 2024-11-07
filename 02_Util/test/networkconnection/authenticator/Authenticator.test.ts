@@ -86,7 +86,7 @@ describe('Authenticator', () => {
   it('should reject when network profile filter rejects', async () => {
     const stationId = faker.string.uuid().toString();
     unknownStationFilter.authenticate.mockResolvedValue(undefined);
-    connectedStationFilter.authenticate.mockRejectedValue(undefined);
+    connectedStationFilter.authenticate.mockResolvedValue(undefined);
     networkProfileFilter.authenticate.mockRejectedValue(
       new Error('Unauthorized'),
     );

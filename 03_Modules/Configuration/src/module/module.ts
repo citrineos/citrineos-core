@@ -42,6 +42,7 @@ import {
   ResetResponse,
   SetDisplayMessageResponse,
   SetNetworkProfileResponse,
+  SetNetworkProfileStatusEnumType,
   SetVariableDataType,
   SetVariablesRequest,
   SetVariablesResponse,
@@ -258,7 +259,7 @@ export class ConfigurationModule extends AbstractModule {
     if (!bootNotificationResponseMessageConfirmation.success) {
       throw new Error(
         'BootNotification failed: ' +
-          bootNotificationResponseMessageConfirmation,
+        bootNotificationResponseMessageConfirmation,
       );
     }
 
@@ -539,16 +540,18 @@ export class ConfigurationModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('SetNetworkProfile response received:', message, props);
 
-    const setNetworkProfile = await SetNetworkProfile.findOne({ where: { correlationId: message.context.correlationId } });
-    if (setNetworkProfile) {
-      const serverNetworkProfile = await ServerNetworkProfile.findByPk(setNetworkProfile.websocketServerConfigId!);
-      if (serverNetworkProfile) {
-        const chargingStation = await ChargingStation.findByPk(message.context.stationId);
-        if (chargingStation) {
-          const [chargingStationNetworkProfile] = await ChargingStationNetworkProfile.findOrBuild({ where: { stationId: chargingStation.id, configurationSlot: setNetworkProfile.configurationSlot! } });
-          chargingStationNetworkProfile.websocketServerConfigId = setNetworkProfile.websocketServerConfigId!;
-          chargingStationNetworkProfile.setNetworkProfileId = setNetworkProfile.id;
-          await chargingStationNetworkProfile.save();
+    if (message.payload.status == SetNetworkProfileStatusEnumType.Accepted) {
+      const setNetworkProfile = await SetNetworkProfile.findOne({ where: { correlationId: message.context.correlationId } });
+      if (setNetworkProfile) {
+        const serverNetworkProfile = await ServerNetworkProfile.findByPk(setNetworkProfile.websocketServerConfigId!);
+        if (serverNetworkProfile) {
+          const chargingStation = await ChargingStation.findByPk(message.context.stationId);
+          if (chargingStation) {
+            const [chargingStationNetworkProfile] = await ChargingStationNetworkProfile.findOrBuild({ where: { stationId: chargingStation.id, configurationSlot: setNetworkProfile.configurationSlot! } });
+            chargingStationNetworkProfile.websocketServerConfigId = setNetworkProfile.websocketServerConfigId!;
+            chargingStationNetworkProfile.setNetworkProfileId = setNetworkProfile.id;
+            await chargingStationNetworkProfile.save();
+          }
         }
       }
     }

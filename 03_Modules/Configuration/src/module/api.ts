@@ -434,7 +434,7 @@ export class ConfigurationModuleApi
   )
   async deleteNetworkProfiles(
     request: FastifyRequest<{ Querystring: NetworkProfileDeleteQuerystring }>,
-  ): Promise<string> {
+  ): Promise<IMessageConfirmation> {
     const destroyedRows = await ChargingStationNetworkProfile.destroy({
       where: {
         stationId: request.query.stationId,
@@ -443,7 +443,7 @@ export class ConfigurationModuleApi
         }
       }
     });
-    return `${destroyedRows} rows successfully destroyed`;
+    return { success: true, payload: `${destroyedRows} rows successfully destroyed` };
   }
 
   /**

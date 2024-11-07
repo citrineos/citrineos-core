@@ -124,8 +124,6 @@ export abstract class AbstractModuleApi<T extends IModule>
       this._toMessagePath(action),
     );
 
-    optionalQuerystrings!
-
     /**
      * Executes the handler function for the given request.
      *
