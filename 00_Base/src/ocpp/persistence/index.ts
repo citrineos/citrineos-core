@@ -18,10 +18,12 @@ export { default as UpdateChargingStationPasswordSchema } from './schemas/Update
  * @returns 
  */
 export function QuerySchema(
+  name: string,
   properties: [string, string][],
   required?: string[],
 ): object {
   const schema: Record<string, string | object> = {
+    $id: name,
     type: 'object',
     properties: {},
   };

@@ -51,7 +51,6 @@ import {
 } from '@citrineos/base';
 import {
   Boot,
-  CallMessage,
   ChargingStationKeyQuerySchema,
   ChargingStationKeyQuerystring,
   ChargingStationNetworkProfile,

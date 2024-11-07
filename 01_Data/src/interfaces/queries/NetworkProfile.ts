@@ -9,7 +9,13 @@ export interface NetworkProfileQuerystring {
     stationId: string;
 }
 
-export const NetworkProfileQuerySchema = QuerySchema([['stationId', 'string']], ['stationId']);
+export const NetworkProfileQuerySchema = QuerySchema(
+    'NetworkProfileQuerySchema',
+    [
+        ['stationId', 'string']
+    ],
+    ['stationId']
+);
 
 export interface NetworkProfileDeleteQuerystring {
     stationId: string;
@@ -17,6 +23,7 @@ export interface NetworkProfileDeleteQuerystring {
 }
 
 export const NetworkProfileDeleteQuerySchema = QuerySchema(
+    'NetworkProfileDeleteQuerySchema',
     [
         ['stationId', 'string'],
         ['configurationSlot', 'number[]']

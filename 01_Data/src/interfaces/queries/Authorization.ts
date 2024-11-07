@@ -11,6 +11,7 @@ export interface AuthorizationQuerystring {
 }
 
 export const AuthorizationQuerySchema = QuerySchema(
+  'AuthorizationQuerySchema',
   [
     ['idToken', 'string'],
     ['type', 'string'],
