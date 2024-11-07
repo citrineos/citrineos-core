@@ -317,7 +317,7 @@ export abstract class AbstractModuleApi<T extends IModule>
     try {
       let id = schema['$id'];
       if (!id) {
-        console.error('Could not register schema because no ID', schema);
+        this._logger.error('Could not register schema because no ID', schema);
       }
       const schemaCopy = this.removeUnknownKeys(schema);
       fastifyInstance.addSchema(schemaCopy);
@@ -327,7 +327,7 @@ export abstract class AbstractModuleApi<T extends IModule>
     } catch (e: any) {
       // ignore already declared
       if (e.code !== 'FST_ERR_SCH_ALREADY_PRESENT') {
-        console.error('Could not register schema', e, schema);
+        this._logger.error('Could not register schema', e, schema);
       }
       return null;
     }
