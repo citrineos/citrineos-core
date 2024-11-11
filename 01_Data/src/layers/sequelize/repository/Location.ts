@@ -41,6 +41,10 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     return await this.chargingStation.readByKey(stationId);
   }
 
+  async setChargingStationIsOnline(stationId: string, isOnline: boolean): Promise<boolean> {
+    return !!(await this.chargingStation.updateByKey({ isOnline: isOnline }, stationId));
+  }
+
   async doesChargingStationExistByStationId(stationId: string): Promise<boolean> {
     return await this.chargingStation.existsByKey(stationId);
   }
