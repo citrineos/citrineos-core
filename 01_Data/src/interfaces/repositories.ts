@@ -59,6 +59,7 @@ import {
   MeterValue,
   Reservation,
   type SecurityEvent,
+  ServerNetworkProfile,
   Subscription,
   Tariff,
   type Transaction,
@@ -192,7 +193,7 @@ export interface ICertificateRepository extends CrudRepository<Certificate> {
   createOrUpdateCertificate(certificate: Certificate): Promise<Certificate>;
 }
 
-export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> {}
+export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> { }
 
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
   createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId?: number | null, chargingLimitSource?: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile>;
@@ -208,7 +209,7 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
   createOrUpdateReservation(reserveNowRequest: ReserveNowRequest, stationId: string, isActive?: boolean): Promise<Reservation | undefined>;
 }
 
-export interface ICallMessageRepository extends CrudRepository<CallMessage> {}
+export interface ICallMessageRepository extends CrudRepository<CallMessage> { }
 
 export interface IChargingStationSecurityInfoRepository extends CrudRepository<ChargingStationSecurityInfo> {
   readChargingStationPublicKeyFileId(stationId: string): Promise<string>;
@@ -217,4 +218,8 @@ export interface IChargingStationSecurityInfoRepository extends CrudRepository<C
 
 export interface IChargingStationSequenceRepository extends CrudRepository<ChargingStationSequence> {
   getNextSequenceValue(stationId: string, type: ChargingStationSequenceType): Promise<number>;
+}
+
+export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {
+
 }

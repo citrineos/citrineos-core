@@ -16,6 +16,7 @@ export interface IMessageQuerystring {
  * This message querystring schema describes the {@link IMessageQuerystring} interface.
  */
 export const IMessageQuerystringSchema = {
+  $id: 'MessageQuerystring',
   type: 'object',
   properties: {
     identifier: { type: 'string' },

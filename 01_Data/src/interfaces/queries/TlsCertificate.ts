@@ -5,6 +5,7 @@
 import { QuerySchema } from '@citrineos/base';
 
 export const TlsCertificateSchema = QuerySchema(
+  'TlsCertificateSchema',
   [
     ['certificateChain', 'array'],
     ['privateKey', 'string'],
@@ -14,7 +15,7 @@ export const TlsCertificateSchema = QuerySchema(
   ['certificateChain', 'privateKey'],
 );
 
-export const UpdateTlsCertificateQuerySchema = QuerySchema([['id', 'string']], ['id']);
+export const UpdateTlsCertificateQuerySchema = QuerySchema('UpdateTlsCertificateQuerySchema', [['id', 'string']], ['id']);
 
 export interface UpdateTlsCertificateQueryString {
   id: string; // websocket server id

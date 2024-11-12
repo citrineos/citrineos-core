@@ -13,13 +13,12 @@ import {
   METADATA_DATA_ENDPOINTS,
   METADATA_MESSAGE_ENDPOINTS,
 } from '.';
-import { OcppRequest, OcppResponse, SystemConfig } from '../..';
+import { OcppRequest, SystemConfig } from '../..';
 import { Namespace } from '../../ocpp/persistence';
 import { CallAction } from '../../ocpp/rpc/message';
 import { IMessageConfirmation } from '../messages';
 import { IModule } from '../modules';
 import {
-  IMessageQuerystring,
   IMessageQuerystringSchema,
 } from './MessageQuerystring';
 import { IModuleApi } from './ModuleApi';
@@ -29,8 +28,7 @@ import { AuthorizationSecurity } from './AuthorizationSecurity';
  * Abstract module api class implementation.
  */
 export abstract class AbstractModuleApi<T extends IModule>
-  implements IModuleApi
-{
+  implements IModuleApi {
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
@@ -62,6 +60,7 @@ export abstract class AbstractModuleApi<T extends IModule>
         expose.action,
         expose.method,
         expose.bodySchema,
+        expose.optionalQuerystrings,
       );
     });
     (
@@ -111,12 +110,14 @@ export abstract class AbstractModuleApi<T extends IModule>
    * @param {CallAction} action - The action to be called.
    * @param {Function} method - The method to be executed.
    * @param {object} bodySchema - The schema for the route.
+   * @param {Record<string, any>} optionalQuerystrings - Optional querystrings for the route.
    * @return {void}
    */
   protected _addMessageRoute(
     action: CallAction,
     method: (...args: any[]) => any,
     bodySchema: object,
+    optionalQuerystrings?: Record<string, any>
   ): void {
     this._logger.debug(
       `Adding message route for ${action}`,
@@ -126,32 +127,44 @@ export abstract class AbstractModuleApi<T extends IModule>
     /**
      * Executes the handler function for the given request.
      *
-     * @param {FastifyRequest<{ Body: OcppRequest | OcppResponse, Querystring: IMessageQuerystring }>} request - The request object containing the body and querystring.
+     * @param {FastifyRequest<{ Body: OcppRequest, Querystring: IMessageQuerystring }>} request - The request object containing the body and querystring.
      * @return {Promise<IMessageConfirmation>} The promise that resolves to the message confirmation.
      */
     const _handler = async (
       request: FastifyRequest<{
-        Body: OcppRequest | OcppResponse;
-        Querystring: IMessageQuerystring;
+        Body: OcppRequest;
+        Querystring: Record<string, any>;
       }>,
-    ): Promise<IMessageConfirmation> =>
-      method.call(
+    ): Promise<IMessageConfirmation> => {
+      const { identifier, tenantId, callbackUrl, ...extraQueries } = request.query;
+      return method.call(
         this,
-        request.query.identifier,
-        request.query.tenantId,
+        identifier,
+        tenantId,
         request.body,
-        request.query.callbackUrl,
+        callbackUrl,
+        Object.keys(extraQueries).length > 0 ? extraQueries : undefined,
       );
+    }
+
+    const mergedQuerySchema = {
+      ...IMessageQuerystringSchema,
+      properties: {
+        ...IMessageQuerystringSchema.properties,
+        ...(optionalQuerystrings || {}),
+      },
+    };
 
     const _opts = {
       schema: {
         body: bodySchema,
-        querystring: IMessageQuerystringSchema,
+        querystring: mergedQuerySchema,
       } as const,
     };
 
     if (this._module.config.util.swagger?.exposeMessage) {
       this._server.register(async (fastifyInstance) => {
+        this.registerSchemaForOpts(fastifyInstance, _opts);
         fastifyInstance.post(this._toMessagePath(action), _opts, _handler);
       });
     } else {
@@ -263,12 +276,117 @@ export abstract class AbstractModuleApi<T extends IModule>
 
     if (this._module.config.util.swagger?.exposeData) {
       this._server.register(async (fastifyInstance) => {
+        this.registerSchemaForOpts(fastifyInstance, _opts);
         fastifyInstance.route<{ Body: object; Querystring: object }>(_opts);
       });
     } else {
       this._server.route<{ Body: object; Querystring: object }>(_opts);
     }
   }
+
+  private registerSchemaForOpts = (
+    fastifyInstance: FastifyInstance,
+    _opts: any,
+  ) => {
+    if (_opts.schema['querystring']) {
+      _opts.schema['querystring'] = this.registerSchema(
+        fastifyInstance,
+        _opts.schema['querystring'],
+      );
+    }
+    if (_opts.schema['body']) {
+      _opts.schema['body'] = this.registerSchema(
+        fastifyInstance,
+        _opts.schema['body'],
+      );
+    }
+    if (_opts.schema['params']) {
+      _opts.schema['params'] = this.registerSchema(
+        fastifyInstance,
+        _opts.schema['params'],
+      );
+    }
+    if (_opts.schema['headers']) {
+      _opts.schema['headers'] = this.registerSchema(
+        fastifyInstance,
+        _opts.schema['headers'],
+      );
+    }
+    if (_opts.schema['response']) {
+      _opts.schema['response'] = {
+        200: this.registerSchema(
+          fastifyInstance,
+          _opts.schema['response'][200],
+        ),
+      };
+    }
+  };
+
+  protected registerSchema = (
+    fastifyInstance: FastifyInstance,
+    schema: any,
+  ): object | null => {
+    try {
+      const id = schema['$id'];
+      if (!id) {
+        this._logger.error('Could not register schema because no ID', schema);
+      }
+      const schemaCopy = this.removeUnknownKeys(schema);
+      fastifyInstance.addSchema(schemaCopy);
+      return {
+        $ref: `${id}`,
+      };
+    } catch (e: any) {
+      // ignore already declared
+      if (e.code !== 'FST_ERR_SCH_ALREADY_PRESENT') {
+        this._logger.error('Could not register schema', e, schema);
+      }
+      return null;
+    }
+  };
+
+  // TODO: for performance reasons can these unknown keys be removed directly from schemas?
+  private removeUnknownKeys = (schema: any): any => {
+    // Create a deep copy of the schema
+    const schemaCopy = structuredClone(schema); // Use structuredClone for a true deep copy
+
+    const cleanSchema = (obj: any) => {
+      if (typeof obj !== 'object' || obj === null) return;
+
+      // Remove specific unknown keys
+      for (const unknownKey of ['comment', 'javaType', 'tsEnumNames']) {
+        if (unknownKey in obj) {
+          delete obj[unknownKey];
+        }
+      }
+
+      // Remove `additionalItems` if `items` is not an array
+      if (
+        'items' in obj &&
+        !Array.isArray(obj.items) &&
+        'additionalItems' in obj
+      ) {
+        delete obj.additionalItems;
+      }
+
+      // Remove `additionalProperties` if `type` is not "object"
+      if ('additionalProperties' in obj && obj.type !== 'object') {
+        delete obj.additionalProperties;
+      }
+
+      // Recursively process nested objects
+      for (const key in obj) {
+        if (typeof obj[key] === 'object') {
+          cleanSchema(obj[key]);
+        }
+      }
+    };
+
+    // Clean the copied schema
+    cleanSchema(schemaCopy);
+
+    return schemaCopy;
+  };
 
   /**
    * Convert a {@link CallAction} to a normed lowercase URL path.

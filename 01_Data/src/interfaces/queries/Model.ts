@@ -9,4 +9,4 @@ export interface ModelKeyQuerystring {
   id: number;
 }
 
-export const ModelKeyQuerystringSchema = QuerySchema([['id', 'number']], ['id']);
+export const ModelKeyQuerystringSchema = QuerySchema('ModelKeyQuerystringSchema', [['id', 'number']], ['id']);
