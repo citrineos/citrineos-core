@@ -72,7 +72,7 @@ export class MessageRouterImpl
    * @param {Function} networkHook - the network hook needed to send messages to chargers   
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
    * represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
+   * If no `locationRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
    *
    * @param {ISubscriptionRepository} [subscriptionRepository] - the subscription repository
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
