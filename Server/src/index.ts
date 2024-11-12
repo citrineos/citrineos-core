@@ -375,6 +375,8 @@ export class CitrineOSServer {
       async (_identifier: string, _message: string) => false,
       this._logger,
       this._ajv,
+      this._repositoryStore.locationRepository,
+      this._repositoryStore.subscriptionRepository,
     );
 
     this._networkConnection = new WebsocketNetworkConnection(

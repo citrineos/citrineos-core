@@ -36,7 +36,7 @@ import {
 } from '@citrineos/base';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
-import { ISubscriptionRepository, sequelize } from '@citrineos/data';
+import { ILocationRepository, ISubscriptionRepository, sequelize } from '@citrineos/data';
 import { WebhookDispatcher } from './webhook.dispatcher';
 
 /**
@@ -58,6 +58,7 @@ export class MessageRouterImpl
     identifier: string,
     message: string,
   ) => Promise<boolean>;
+  protected _locationRepository: ILocationRepository;
   public subscriptionRepository: ISubscriptionRepository;
 
   /**
@@ -68,7 +69,11 @@ export class MessageRouterImpl
    * @param {IMessageSender} [sender] - the message sender
    * @param {IMessageHandler} [handler] - the message handler
    * @param {WebhookDispatcher} [dispatcher] - the webhook dispatcher
-   * @param {Function} networkHook - the network hook needed to send messages to chargers
+   * @param {Function} networkHook - the network hook needed to send messages to chargers   
+   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
+   * represents a repository for accessing and manipulating variable data.
+   * If no `locationRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
+   *
    * @param {ISubscriptionRepository} [subscriptionRepository] - the subscription repository
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
    * @param {Ajv} [ajv] - the Ajv object, for message validation (optional)
@@ -82,6 +87,7 @@ export class MessageRouterImpl
     networkHook: (identifier: string, message: string) => Promise<boolean>,
     logger?: Logger<ILogObj>,
     ajv?: Ajv,
+    locationRepository?: ILocationRepository,
     subscriptionRepository?: ISubscriptionRepository,
   ) {
     super(config, cache, handler, sender, networkHook, logger, ajv);
@@ -90,12 +96,16 @@ export class MessageRouterImpl
     this._sender = sender;
     this._handler = handler;
     this._webhookDispatcher = dispatcher;
-    this._networkHook = networkHook;
+    this._networkHook = networkHook;    
+    this._locationRepository =
+      locationRepository ||
+      new sequelize.SequelizeLocationRepository(config, logger);
     this.subscriptionRepository =
       subscriptionRepository ||
       new sequelize.SequelizeSubscriptionRepository(config, this._logger);
   }
 
+  // TODO: Below method should lock these tables so that a rapid connect-disconnect cannot result in race condition.
   async registerConnection(connectionIdentifier: string): Promise<boolean> {
     const dispatcherRegistration =
       this._webhookDispatcher.register(connectionIdentifier);
@@ -120,10 +130,13 @@ export class MessageRouterImpl
       },
     );
 
+    const updateIsOnline = this._locationRepository.setChargingStationIsOnline(connectionIdentifier, true);
+
     return Promise.all([
       dispatcherRegistration,
       requestSubscription,
       responseSubscription,
+      updateIsOnline,
     ])
       .then((resolvedArray) => resolvedArray[1] && resolvedArray[2])
       .catch((error) => {
@@ -136,6 +149,7 @@ export class MessageRouterImpl
 
   async deregisterConnection(connectionIdentifier: string): Promise<boolean> {
     this._webhookDispatcher.deregister(connectionIdentifier);
+    this._locationRepository.setChargingStationIsOnline(connectionIdentifier, false);
 
     // TODO: ensure that all queue implementations in 02_Util only unsubscribe 1 queue per call
     // ...which will require refactoring this method to unsubscribe request and response queues separately
