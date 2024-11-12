@@ -164,6 +164,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]>;
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
   getActiveTransactionByStationIdAndEvseId(stationId: string, evseId: number): Promise<Transaction | undefined>;
+  updateTransactionTotalCostById(totalCost: number, id: number): Promise<void>;
 }
 
 export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoringType> {
