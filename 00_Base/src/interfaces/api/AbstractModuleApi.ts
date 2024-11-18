@@ -338,6 +338,36 @@ export abstract class AbstractModuleApi<T extends IModule>
     }
     try {
       const schemaCopy = this.removeUnknownKeys(schema);
+      if (
+        schemaCopy.required &&
+        Array.isArray(schemaCopy.required) &&
+        schemaCopy.required.length === 0
+      ) {
+        delete schemaCopy.required;
+      }
+      if (schema.definitions) {
+        Object.keys(schema.definitions).forEach((key) => {
+          const definition = schema.definitions[key];
+          if (!definition['$id']) {
+            definition['$id'] = key;
+          }
+          this.registerSchema(fastifyInstance, definition);
+        });
+      }
+      if (schemaCopy.properties) {
+        Object.keys(schemaCopy.properties).forEach((key) => {
+          const property = schemaCopy.properties[key];
+          if (property.$ref) {
+            property.$ref = property.$ref.replace('#/definitions/', '');
+          }
+          if (property.items && property.items.$ref) {
+            property.items.$ref = property.items.$ref.replace(
+              '#/definitions/',
+              '',
+            );
+          }
+        });
+      }
       fastifyInstance.addSchema(schemaCopy);
       this._server.addSchema(schemaCopy);
       return {
