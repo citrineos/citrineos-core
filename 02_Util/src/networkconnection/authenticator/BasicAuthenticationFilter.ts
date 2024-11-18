@@ -33,7 +33,7 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
   ): Promise<void> {
     const { username, password } = extractBasicCredentials(request);
     if (!username || !password) {
-      throw Error('Auth header missing or incorrectly formatted');
+      throw new UpgradeAuthenticationError('Auth header missing or incorrectly formatted');
     }
 
     if (
