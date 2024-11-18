@@ -18,6 +18,7 @@ import fs from 'fs';
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from 'ws';
 import { ILogObj, Logger } from 'tslog';
 import { SecureContextOptions } from 'tls';
+import { IUpgradeError } from './authenticator/errors/IUpgradeError';
 
 export class WebsocketNetworkConnection {
   protected _cache: ICache;
@@ -268,21 +269,21 @@ export class WebsocketNetworkConnection {
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
       });
-    } catch (error) {
+    } catch (error: any) {
       this._logger.warn(error);
-      this._rejectUpgradeUnauthorized(socket);
+      /**
+       * See {@link IUpgradeError.terminateConnection}
+       **/
+      error?.terminateConnection?.(socket) || this._terminateConnectionInternalError(socket);
     }
   }
 
   /**
-   * Utility function to reject websocket upgrade requests with 401 status code.
+   * Utility function to reject websocket upgrade requests with 500 status code.
    * @param socket - Websocket duplex stream.
    */
-  private _rejectUpgradeUnauthorized(socket: Duplex) {
-    socket.write('HTTP/1.1 401 Unauthorized\r\n');
-    socket.write(
-      'WWW-Authenticate: Basic realm="Access to the WebSocket", charset="UTF-8"\r\n',
-    );
+  private _terminateConnectionInternalError(socket: Duplex) {
+    socket.write('HTTP/1.1 500 Internal Server Error\r\n');
     socket.write('\r\n');
     socket.end();
     socket.destroy();

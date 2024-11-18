@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { extractBasicCredentials } from '../../util/RequestOperations';
 import { AuthenticatorFilter } from './AuthenticatorFilter';
 import { AuthenticationOptions } from '@citrineos/base';
+import { UpgradeAuthenticationError } from './errors/AuthenticationError';
 
 /**
  * Filter used to authenticate incoming HTTP requests based on basic authorization header.
@@ -39,7 +40,7 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
       username !== identifier ||
       !(await this._isPasswordValid(username, password))
     ) {
-      throw Error(`Unauthorized ${identifier}`);
+      throw new UpgradeAuthenticationError(`Unauthorized ${identifier}`);
     }
   }
 
