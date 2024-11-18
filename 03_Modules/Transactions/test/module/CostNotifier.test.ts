@@ -19,6 +19,7 @@ describe('CostNotifier', () => {
 
     transactionEventRepository = {
       readTransactionByStationIdAndTransactionId: jest.fn(),
+      updateTransactionTotalCostById: jest.fn(),
     } as unknown as jest.Mocked<ITransactionEventRepository>;
 
     module = {

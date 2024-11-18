@@ -385,6 +385,14 @@ export class TransactionsModule extends AbstractModule {
         );
       }
 
+      // Store total cost in db
+      if (response.totalCost && transaction) {
+        await this._transactionEventRepository.updateTransactionTotalCostById(
+          response.totalCost,
+          transaction.id,
+        );
+      }
+
       if (transactionEvent.meterValue) {
         const meterValuesValid =
           await this._signedMeterValuesUtil.validateMeterValues(
