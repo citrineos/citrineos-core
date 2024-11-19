@@ -146,8 +146,6 @@ services:
     ports:
       - "4566:4566"
       - "4510-4559:4510-4559"
-      - "53:53"
-      - "53:53/udp"
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
       - SERVICES=s3
