@@ -21,7 +21,7 @@ export class S3Storage implements IFileAccess {
   }
 
   async getFile(id: string): Promise<Buffer> {
-    let bucketName: string = this._config.util.s3Storage?.bucketName as string;
+    const bucketName: string = this._config.util.s3Storage?.bucketName as string;
 
     try {
       const result = await this._s3
@@ -46,7 +46,7 @@ export class S3Storage implements IFileAccess {
     content: Buffer,
     filePath?: string,
   ): Promise<string> {
-    let bucketName: string = this._config.util.s3Storage?.bucketName as string;
+    const bucketName: string = this._config.util.s3Storage?.bucketName as string;
     try {
       const result = await this._s3
         .upload({
