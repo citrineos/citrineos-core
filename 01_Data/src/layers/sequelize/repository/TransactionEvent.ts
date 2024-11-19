@@ -328,4 +328,8 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   async createMeterValue(meterValue: MeterValueType): Promise<void> {
     await this.meterValue.create(MeterValue.build({ ...meterValue }));
   }
+
+  async updateTransactionTotalCostById(totalCost: number, id: number): Promise<void> {
+    await this.transaction.updateByKey({ totalCost: totalCost }, id.toString());
+  }
 }

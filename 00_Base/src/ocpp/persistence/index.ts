@@ -15,7 +15,7 @@ export { default as UpdateChargingStationPasswordSchema } from './schemas/Update
  * Utility function for creating querystring schemas for fastify route definitions
  * @param properties An array of key-type pairs. Types ending in '[]' will be treated as arrays of that type.
  * @param required An array of required keys.
- * @returns 
+ * @returns
  */
 export function QuerySchema(
   name: string,
@@ -48,3 +48,12 @@ export function QuerySchema(
   }
   return schema;
 }
+
+export const MessageConfirmationSchema = QuerySchema(
+  'MessageConfirmationSchema',
+  [
+    ['success', 'boolean'],
+    ['payload', 'string'],
+  ],
+  ['success'],
+);
