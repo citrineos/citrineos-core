@@ -1,0 +1,36 @@
+{
+  "title": "AuthorizeResponse",
+  "type": "object",
+  "properties": {
+    "idTagInfo": {
+      "type": "object",
+      "properties": {
+        "expiryDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "parentIdTag": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "status": {
+          "type": "string",
+          "additionalProperties": false,
+          "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
+          "tsEnumNames": [
+            "Accepted",
+            "Blocked",
+            "Expired",
+            "Invalid",
+            "ConcurrentTx"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": ["status"]
+    }
+  },
+  "additionalProperties": false,
+  "required": ["idTagInfo"],
+  "$id": "AuthorizeResponse"
+}

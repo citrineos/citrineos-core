@@ -1,0 +1,18 @@
+{
+  "title": "ChangeAvailabilityRequest",
+  "type": "object",
+  "properties": {
+    "connectorId": {
+      "type": "integer"
+    },
+    "type": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Inoperative", "Operative"],
+      "tsEnumNames": ["Inoperative", "Operative"]
+    }
+  },
+  "additionalProperties": false,
+  "required": ["connectorId", "type"],
+  "$id": "ChangeAvailabilityRequest"
+}

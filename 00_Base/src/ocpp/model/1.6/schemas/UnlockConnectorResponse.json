@@ -1,0 +1,15 @@
+{
+  "title": "UnlockConnectorResponse",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Unlocked", "UnlockFailed", "NotSupported"],
+      "tsEnumNames": ["Unlocked", "UnlockFailed", "NotSupported"]
+    }
+  },
+  "additionalProperties": false,
+  "required": ["status"],
+  "$id": "UnlockConnectorResponse"
+}

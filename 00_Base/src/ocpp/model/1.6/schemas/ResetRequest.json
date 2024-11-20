@@ -1,0 +1,15 @@
+{
+  "title": "ResetRequest",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Hard", "Soft"],
+      "tsEnumNames": ["Hard", "Soft"]
+    }
+  },
+  "additionalProperties": false,
+  "required": ["type"],
+  "$id": "ResetRequest"
+}

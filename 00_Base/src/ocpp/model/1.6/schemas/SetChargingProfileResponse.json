@@ -1,0 +1,15 @@
+{
+  "title": "SetChargingProfileResponse",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Rejected", "NotSupported"],
+      "tsEnumNames": ["Accepted", "Rejected", "NotSupported"]
+    }
+  },
+  "additionalProperties": false,
+  "required": ["status"],
+  "$id": "SetChargingProfileResponse"
+}

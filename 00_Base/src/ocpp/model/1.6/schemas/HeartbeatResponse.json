@@ -1,0 +1,13 @@
+{
+  "title": "HeartbeatResponse",
+  "type": "object",
+  "properties": {
+    "currentTime": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["currentTime"],
+  "$id": "HeartbeatResponse"
+}

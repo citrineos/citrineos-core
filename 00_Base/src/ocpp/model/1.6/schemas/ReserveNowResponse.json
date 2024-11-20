@@ -1,0 +1,21 @@
+{
+  "title": "ReserveNowResponse",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Faulted", "Occupied", "Rejected", "Unavailable"],
+      "tsEnumNames": [
+        "Accepted",
+        "Faulted",
+        "Occupied",
+        "Rejected",
+        "Unavailable"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": ["status"],
+  "$id": "ReserveNowResponse"
+}

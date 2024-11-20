@@ -1,0 +1,7 @@
+{
+  "title": "HeartbeatRequest",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false,
+  "$id": "HeartbeatRequest"
+}
