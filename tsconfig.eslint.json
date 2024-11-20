@@ -1,7 +1,5 @@
 {
   "exclude": [
-    "**/*.test.ts",
-    "**/*.stub.ts",
     "./node_modules",
     "**/__tests__/*",
     "./dist",
