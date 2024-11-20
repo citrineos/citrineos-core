@@ -1,0 +1,21 @@
+table:
+  name: directus_versions
+  schema: public
+object_relationships:
+  - name: directusUserByUserUpdated
+    using:
+      foreign_key_constraint_on: user_updated
+  - name: directus_collection
+    using:
+      foreign_key_constraint_on: collection
+  - name: directus_user
+    using:
+      foreign_key_constraint_on: user_created
+array_relationships:
+  - name: directus_revisions
+    using:
+      foreign_key_constraint_on:
+        column: version
+        table:
+          name: directus_revisions
+          schema: public

@@ -1,0 +1,7 @@
+table:
+  name: VariableMonitoringStatuses
+  schema: public
+object_relationships:
+  - name: VariableMonitoring
+    using:
+      foreign_key_constraint_on: variableMonitoringId
