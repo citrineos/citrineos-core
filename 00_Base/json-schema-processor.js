@@ -102,7 +102,7 @@ fs.readdir(path, (error, files) => {
         `./src/ocpp/model/${ocppVersion}/index.ts`,
         licenseComment + exportStatements.join('\n') + '\n',
       );
-      exec(`cd .. && npm run lint-fix`, (error, stdout, stderr) => {
+      exec(`npm run format-interfaces`, (error, stdout, stderr) => {
         if (error) {
           console.error(`Error executing npm script: ${error.message}`);
           return;
