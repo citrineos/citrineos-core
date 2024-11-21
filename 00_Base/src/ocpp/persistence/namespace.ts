@@ -13,7 +13,11 @@ export enum Namespace {
   BootConfig = 'Boot',
   Certificate = 'Certificate',
   InstalledCertificate = 'InstalledCertificate',
+  InstallCertificateAttempt = 'InstallCertificateAttempt',
+  DeleteCertificateAttempt = 'DeleteCertificateAttempt',
   CertificateChain = 'CertificateChain',
+  UploadExistingCertificate = 'UploadExistingCertificate',
+  RegenerateExistingCertificate = 'RegenerateExistingCertificate',
   ChargingNeeds = 'ChargingNeeds',
   ChargingProfile = 'ChargingProfile',
   ChargingSchedule = 'ChargingSchedule',
@@ -50,5 +54,5 @@ export enum Namespace {
   VariableMonitoringType = 'VariableMonitoring',
   VariableMonitoringStatus = 'VariableMonitoringStatus',
   VariableStatus = 'VariableStatus',
-  VariableType = 'Variable'
+  VariableType = 'Variable',
 }

@@ -52,6 +52,7 @@ import {
   ChargingStationSequence,
   type Component,
   CompositeSchedule,
+  DeleteCertificateAttempt,
   type EventData,
   Evse,
   type Location,
@@ -73,6 +74,7 @@ import { TariffQueryString } from './queries/Tariff';
 import { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion';
 import { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList';
 import { InstalledCertificate } from '../layers/sequelize/model/Certificate/InstalledCertificate';
+import { InstallCertificateAttempt } from '../layers/sequelize/model/Certificate/InstallCertificateAttempt';
 
 export interface IAuthorizationRepository extends CrudRepository<AuthorizationData> {
   createOrUpdateByQuerystring: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
@@ -194,7 +196,9 @@ export interface ICertificateRepository extends CrudRepository<Certificate> {
   createOrUpdateCertificate(certificate: Certificate): Promise<Certificate>;
 }
 
-export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> { }
+export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> {}
+export interface IInstallCertificateAttemptRepository extends CrudRepository<InstallCertificateAttempt> {}
+export interface IDeleteCertificateAttemptRepository extends CrudRepository<DeleteCertificateAttempt> {}
 
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
   createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId?: number | null, chargingLimitSource?: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile>;
@@ -210,7 +214,7 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
   createOrUpdateReservation(reserveNowRequest: ReserveNowRequest, stationId: string, isActive?: boolean): Promise<Reservation | undefined>;
 }
 
-export interface ICallMessageRepository extends CrudRepository<CallMessage> { }
+export interface ICallMessageRepository extends CrudRepository<CallMessage> {}
 
 export interface IChargingStationSecurityInfoRepository extends CrudRepository<ChargingStationSecurityInfo> {
   readChargingStationPublicKeyFileId(stationId: string): Promise<string>;
@@ -221,6 +225,4 @@ export interface IChargingStationSequenceRepository extends CrudRepository<Charg
   getNextSequenceValue(stationId: string, type: ChargingStationSequenceType): Promise<number>;
 }
 
-export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {
-
-}
+export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {}

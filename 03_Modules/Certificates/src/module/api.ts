@@ -12,11 +12,14 @@ import {
   CertificateSignedRequestSchema,
   DeleteCertificateRequest,
   DeleteCertificateRequestSchema,
+  GetCertificateIdUseEnumType,
   GetInstalledCertificateIdsRequest,
   GetInstalledCertificateIdsRequestSchema,
   HttpMethod,
   IFileAccess,
   IMessageConfirmation,
+  IMessageQuerystring,
+  IMessageQuerystringSchema,
   InstallCertificateRequest,
   InstallCertificateRequestSchema,
   Namespace,
@@ -27,6 +30,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { ICertificatesModuleApi } from './interface';
 import { CertificatesModule } from './module';
+import crypto from 'crypto';
 import {
   generateCertificate,
   generateCSR,
@@ -35,15 +39,22 @@ import {
 import {
   Certificate,
   CountryNameEnumType,
+  DeleteCertificateAttempt,
   GenerateCertificateChainRequest,
   GenerateCertificateChainSchema,
+  InstallCertificateAttempt,
+  InstalledCertificate,
   InstallRootCertificateRequest,
   InstallRootCertificateSchema,
+  RegenerateExistingCertificate,
+  RegenerateInstalledCertificateSchema,
   SignatureAlgorithmEnumType,
   TlsCertificateSchema,
   TlsCertificatesRequest,
   UpdateTlsCertificateQuerySchema,
   UpdateTlsCertificateQueryString,
+  UploadExistingCertificate,
+  UploadExistingCertificateSchema,
 } from '@citrineos/data';
 import fs from 'fs';
 import moment from 'moment';
@@ -115,12 +126,67 @@ export class CertificatesModuleApi
     CallAction.InstallCertificate,
     InstallCertificateRequestSchema,
   )
-  installCertificate(
+  async installCertificate(
     identifier: string,
     tenantId: string,
     request: InstallCertificateRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
+    const certificate = request.certificate;
+    const hash = this.getCertificateHash(certificate);
+    const existingPendingInstallCertificateAttempt =
+      await this._module.installCertificateAttemptRepository.readOnlyOneByQuery(
+        {
+          where: {
+            stationId: identifier,
+            certificateType: request.certificateType,
+            status: null,
+          },
+          include: [
+            {
+              model: Certificate,
+              where: {
+                certificateFileHash: hash,
+              },
+            },
+          ],
+        },
+      );
+    if (!existingPendingInstallCertificateAttempt) {
+      const {
+        serialNumber,
+        issuerName,
+        organizationName,
+        commonName,
+        countryName,
+        validBefore,
+        signatureAlgorithm,
+      } = this.extractCertificateDetails(certificate);
+      let existingCertificate =
+        await this._module.certificateRepository.readOnlyOneByQuery({
+          where: {
+            certificateFileHash: hash,
+          },
+        });
+      if (!existingCertificate) {
+        existingCertificate = await this.createNewCertificate(
+          certificate,
+          serialNumber,
+          issuerName,
+          organizationName,
+          commonName,
+          countryName,
+          validBefore,
+          signatureAlgorithm,
+        );
+      }
+      const installCertificateAttempt = new InstallCertificateAttempt();
+      installCertificateAttempt.stationId = identifier;
+      installCertificateAttempt.certificateType =
+        request.certificateType as unknown as GetCertificateIdUseEnumType;
+      installCertificateAttempt.certificateId = existingCertificate.id;
+      await installCertificateAttempt.save();
+    }
     return this._module.sendCall(
       identifier,
       tenantId,
@@ -153,12 +219,36 @@ export class CertificatesModuleApi
     CallAction.DeleteCertificate,
     DeleteCertificateRequestSchema,
   )
-  deleteCertificate(
+  async deleteCertificate(
     identifier: string,
     tenantId: string,
     request: DeleteCertificateRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
+    const certificateHashData = request.certificateHashData;
+    const existingPendingDeleteCertificateAttempt =
+      await this._module.deleteCertificateAttemptRepository.readOnlyOneByQuery({
+        where: {
+          stationId: identifier,
+          hashAlgorithm: certificateHashData.hashAlgorithm,
+          issuerNameHash: certificateHashData.issuerNameHash,
+          issuerKeyHash: certificateHashData.issuerKeyHash,
+          serialNumber: certificateHashData.serialNumber,
+          status: null,
+        },
+      });
+    if (!existingPendingDeleteCertificateAttempt) {
+      const deleteCertificateAttempt = new DeleteCertificateAttempt();
+      deleteCertificateAttempt.stationId = identifier;
+      deleteCertificateAttempt.hashAlgorithm =
+        certificateHashData.hashAlgorithm;
+      deleteCertificateAttempt.issuerNameHash =
+        certificateHashData.issuerNameHash;
+      deleteCertificateAttempt.issuerKeyHash =
+        certificateHashData.issuerKeyHash;
+      deleteCertificateAttempt.serialNumber = certificateHashData.serialNumber;
+      await deleteCertificateAttempt.save();
+    }
     return this._module.sendCall(
       identifier,
       tenantId,
@@ -401,7 +491,7 @@ export class CertificatesModuleApi
     request: FastifyRequest<{
       Body: InstallRootCertificateRequest;
     }>,
-  ): Promise<void> {
+  ): Promise<IMessageConfirmation> {
     const installReq = request.body as InstallRootCertificateRequest;
     this._logger.info(
       `Installing ${installReq.certificateType} on charger ${installReq.stationId}`,
@@ -436,6 +526,279 @@ export class CertificatesModuleApi
       }
       this._logger.debug('InstallCertificate confirmation sent:', confirmation);
     });
+
+    return {
+      success: true,
+    };
+  }
+
+  @AsDataEndpoint(
+    Namespace.UploadExistingCertificate,
+    HttpMethod.Post,
+    IMessageQuerystringSchema,
+    UploadExistingCertificateSchema,
+  )
+  async uploadExistingCertificate(
+    request: FastifyRequest<{
+      Body: UploadExistingCertificate;
+      Querystring: IMessageQuerystring;
+    }>,
+  ): Promise<InstalledCertificate> {
+    const uploadExistingCertificate = request.body as UploadExistingCertificate;
+    const messageQuerystring = request.query as IMessageQuerystring;
+    this._logger.info(
+      `Uploading existing ${uploadExistingCertificate.certificateType} certificate for charger ${messageQuerystring.identifier}`,
+    );
+    const certificate = uploadExistingCertificate.certificate;
+    const {
+      serialNumber,
+      issuerName,
+      organizationName,
+      commonName,
+      countryName,
+      validBefore,
+      signatureAlgorithm,
+    } = this.extractCertificateDetails(certificate);
+
+    let existingInstalledCertificate =
+      await this._module.installedCertificateRepository.readOnlyOneByQuery({
+        where: {
+          stationId: messageQuerystring.identifier,
+          certificateType: uploadExistingCertificate.certificateType,
+        },
+      });
+
+    if (existingInstalledCertificate) {
+      let existingCertificate: Certificate | undefined | null =
+        await existingInstalledCertificate.$get('certificate');
+      if (existingCertificate && existingCertificate.certificateFileId) {
+        throw new Error(
+          'Cannot upload exiting certificate because it already exists',
+        );
+      } else if (
+        existingCertificate &&
+        !existingCertificate.certificateFileId
+      ) {
+        // set file where previously undefined
+        existingCertificate.certificateFileId =
+          await this._fileAccess.uploadFile(
+            `Existing_Key_${serialNumber}.pem`,
+            Buffer.from(certificate),
+            'filePath', // TODO: should we use the same folder?
+          );
+        await existingCertificate.save();
+      } else {
+        // check if certificate record exists but not tied to installed certificate
+        existingCertificate =
+          await this._module.certificateRepository.readOnlyOneByQuery({
+            where: {
+              certificateFileHash: this.getCertificateHash(certificate),
+            },
+          });
+        if (!existingCertificate) {
+          // create new certificate record
+          existingCertificate = await this.createNewCertificate(
+            certificate,
+            serialNumber,
+            issuerName,
+            organizationName,
+            commonName,
+            countryName,
+            validBefore,
+            signatureAlgorithm,
+          );
+        }
+        existingInstalledCertificate.certificateId = existingCertificate.id;
+        existingInstalledCertificate =
+          await existingInstalledCertificate.save();
+      }
+    } else {
+      // create new certificate record
+      const newCertificate: Certificate = await this.createNewCertificate(
+        certificate,
+        serialNumber,
+        issuerName,
+        organizationName,
+        commonName,
+        countryName,
+        validBefore,
+        signatureAlgorithm,
+      );
+      existingInstalledCertificate = new InstalledCertificate();
+      existingInstalledCertificate.stationId = messageQuerystring.identifier;
+      existingInstalledCertificate.certificateId = newCertificate.id;
+      existingInstalledCertificate.certificateType =
+        uploadExistingCertificate.certificateType;
+      existingInstalledCertificate = await existingInstalledCertificate.save();
+    }
+    return existingInstalledCertificate;
+  }
+
+  @AsDataEndpoint(
+    Namespace.RegenerateExistingCertificate,
+    HttpMethod.Post,
+    IMessageQuerystringSchema,
+    RegenerateInstalledCertificateSchema,
+  )
+  async regenerateExistingCertificate(
+    request: FastifyRequest<{
+      Body: RegenerateExistingCertificate;
+      Querystring: IMessageQuerystring;
+    }>,
+  ): Promise<InstalledCertificate> {
+    const installedCertificateId = request.body.installedCertificateId;
+    const stationId = request.query.identifier;
+    this._logger.info(
+      `Regenerating existing certificate ${installedCertificateId} for charger ${stationId}`,
+    );
+    const existingInstalledCertificate =
+      await this._module.installedCertificateRepository.readOnlyOneByQuery({
+        where: {
+          id: installedCertificateId,
+          stationId: stationId,
+        },
+      });
+    if (!existingInstalledCertificate) {
+      throw new Error('Installed certificate not found');
+    }
+    const existingCertificateRecord =
+      await existingInstalledCertificate.$get('certificate');
+    if (!existingCertificateRecord) {
+      throw new Error('Certificate not found');
+    }
+    const fileId = existingCertificateRecord.certificateFileId;
+    if (!fileId) {
+      throw new Error('Certificate file not found');
+    }
+    const existingCertificateBuffer = await this._fileAccess.getFile(fileId);
+    const existingCertificate = existingCertificateBuffer.toString();
+    const [newCertificatePem, _newPrivateKeyPem] = generateCertificate(
+      existingCertificateRecord,
+      this._logger,
+      undefined,
+      existingCertificate,
+    );
+    const newCertificateHash = this.getCertificateHash(newCertificatePem);
+    let newCertificateRecord = new Certificate();
+    newCertificateRecord.serialNumber = moment().valueOf();
+    newCertificateRecord.issuerName = existingCertificateRecord.issuerName;
+    newCertificateRecord.organizationName =
+      existingCertificateRecord.organizationName;
+    newCertificateRecord.commonName = existingCertificateRecord.commonName;
+    newCertificateRecord.keyLength = existingCertificateRecord.keyLength;
+    newCertificateRecord.validBefore = existingCertificateRecord.validBefore;
+    newCertificateRecord.signatureAlgorithm =
+      existingCertificateRecord.signatureAlgorithm;
+    newCertificateRecord.countryName = existingCertificateRecord.countryName;
+    newCertificateRecord.isCA = existingCertificateRecord.isCA;
+    newCertificateRecord.pathLen = existingCertificateRecord.pathLen;
+    newCertificateRecord.signedBy = existingCertificateRecord.signedBy;
+    newCertificateRecord.certificateFileHash =
+      existingCertificateRecord.certificateFileHash;
+    newCertificateRecord.certificateFileId = await this._fileAccess.uploadFile(
+      `Regenerated_Certificate_${newCertificateRecord.serialNumber}.pem`,
+      Buffer.from(newCertificatePem),
+    );
+    newCertificateRecord.certificateFileHash = newCertificateHash;
+    newCertificateRecord = await newCertificateRecord.save();
+    existingInstalledCertificate.certificateId = newCertificateRecord.id;
+    await existingInstalledCertificate.save();
+    return existingInstalledCertificate;
+  }
+
+  private createNewCertificate = async (
+    certificate: string,
+    serialNumber: number | null,
+    issuerName: string | null,
+    organizationName: string | null,
+    commonName: string | null,
+    countryName: CountryNameEnumType | null,
+    validBefore: Date | null,
+    signatureAlgorithm: SignatureAlgorithmEnumType | null,
+  ) => {
+    const certificateHash = this.getCertificateHash(certificate);
+    const newCertificate = new Certificate();
+    newCertificate.serialNumber = serialNumber!;
+    newCertificate.issuerName = issuerName!;
+    newCertificate.organizationName = organizationName!;
+    newCertificate.commonName = commonName!;
+    newCertificate.countryName = countryName!;
+    newCertificate.validBefore = validBefore?.toISOString()!;
+    newCertificate.signatureAlgorithm = signatureAlgorithm!;
+    newCertificate.certificateFileId = await this._fileAccess.uploadFile(
+      `Existing_Key_${serialNumber}.pem`,
+      Buffer.from(certificate),
+    );
+    newCertificate.certificateFileHash = certificateHash;
+    return await newCertificate.save();
+  };
+
+  private parseX509Date(date: string): Date | null {
+    if (/^\d{14}Z$/.test(date)) {
+      // GeneralizedTime: YYYYMMDDHHMMSSZ
+      const year = parseInt(date.slice(0, 4), 10);
+      const month = parseInt(date.slice(4, 6), 10) - 1;
+      const day = parseInt(date.slice(6, 8), 10);
+      const hour = parseInt(date.slice(8, 10), 10);
+      const minute = parseInt(date.slice(10, 12), 10);
+      const second = parseInt(date.slice(12, 14), 10);
+      return new Date(Date.UTC(year, month, day, hour, minute, second));
+    } else if (/^\d{12}Z$/.test(date)) {
+      // UTCTime: YYMMDDHHMMSSZ
+      let year = parseInt(date.slice(0, 2), 10);
+      year += year < 50 ? 2000 : 1900; // Adjust for 21st/20th century
+      const month = parseInt(date.slice(2, 4), 10) - 1;
+      const day = parseInt(date.slice(4, 6), 10);
+      const hour = parseInt(date.slice(6, 8), 10);
+      const minute = parseInt(date.slice(8, 10), 10);
+      const second = parseInt(date.slice(10, 12), 10);
+      return new Date(Date.UTC(year, month, day, hour, minute, second));
+    } else {
+      console.error(`Invalid X.509 date format: ${date}`);
+      return null;
+    }
+  }
+
+  private extractCertificateDetails(pemString: string): {
+    serialNumber: number | null;
+    issuerName: string | null;
+    organizationName: string | null;
+    commonName: string | null;
+    countryName: CountryNameEnumType | null;
+    validBefore: Date | null;
+    signatureAlgorithm: SignatureAlgorithmEnumType | null;
+  } {
+    try {
+      const cert = new jsrsasign.X509();
+      cert.readCertPEM(pemString);
+
+      // Extract details
+      const serialNumber = parseInt(cert.getSerialNumberHex());
+      const issuerName = cert.getIssuerString();
+      const organizationName =
+        cert.getSubjectString().match(/\/O=([^\/]+)/)?.[1] || null;
+      const commonName =
+        cert.getSubjectString().match(/\/CN=([^\/]+)/)?.[1] || null;
+      const countryName = (cert.getSubjectString().match(/\/C=([^\/]+)/)?.[1] ||
+        null) as CountryNameEnumType | null;
+      const notAfter = cert.getNotAfter();
+      const validBefore = this.parseX509Date(notAfter);
+      const signatureAlgorithm =
+        cert.getSignatureAlgorithmField() as SignatureAlgorithmEnumType;
+
+      return {
+        serialNumber,
+        issuerName,
+        organizationName,
+        commonName,
+        countryName,
+        validBefore,
+        signatureAlgorithm,
+      };
+    } catch (error) {
+      console.error('Error extracting certificate details:', error);
+      throw new Error('Invalid PEM format or unsupported certificate');
+    }
   }
 
   /**
@@ -575,6 +938,30 @@ export class CertificatesModuleApi
   }
 
   /**
+   * Generate a hash (fingerprint) from a certificate PEM string.
+   * @param pemString The certificate PEM string.
+   * @returns A SHA-256 hash of the certificate's DER encoding.
+   */
+  private getCertificateHash(pemString: string): string {
+    try {
+      const cert = new jsrsasign.X509();
+      cert.readCertPEM(pemString);
+
+      // Get the raw DER encoding of the certificate
+      const derHex = cert.hex;
+      const derBuffer = Buffer.from(derHex, 'hex');
+
+      // Compute SHA-256 hash
+      const hash = crypto.createHash('sha256').update(derBuffer).digest('hex');
+
+      return hash;
+    } catch (error) {
+      console.error('Error generating certificate hash:', error);
+      throw new Error('Invalid PEM format or unsupported certificate');
+    }
+  }
+
+  /**
    * Store certificate in file storage and db.
    * @param certificateEntity certificate to be stored in db
    * @param certPem certificate pem to be stored in file storage
@@ -590,6 +977,7 @@ export class CertificatesModuleApi
     filePrefix: PemType,
     filePath?: string,
   ): Promise<Certificate> {
+    const certificateHash = this.getCertificateHash(certPem);
     // Store certificate and private key in file storage
     certificateEntity.privateKeyFileId = await this._fileAccess.uploadFile(
       `${filePrefix}_Key_${certificateEntity.serialNumber}.pem`,
@@ -601,6 +989,7 @@ export class CertificatesModuleApi
       Buffer.from(certPem),
       filePath,
     );
+    certificateEntity.certificateFileHash = certificateHash;
     // Store certificate in db
     const certObj = new jsrsasign.X509();
     certObj.readCertPEM(certPem);

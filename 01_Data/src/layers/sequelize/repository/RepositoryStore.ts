@@ -5,7 +5,10 @@ import {
   ICertificateRepository,
   IChargingProfileRepository,
   IChargingStationSequenceRepository,
+  IDeleteCertificateAttemptRepository,
   IDeviceModelRepository,
+  IInstallCertificateAttemptRepository,
+  IInstalledCertificateRepository,
   ILocalAuthListRepository,
   ILocationRepository,
   IMessageInfoRepository,
@@ -36,8 +39,11 @@ import { SequelizeRepository } from './Base';
 import { SequelizeReservationRepository } from './Reservation';
 import { SequelizeCallMessageRepository } from './CallMessage';
 import { SequelizeLocalAuthListRepository } from './LocalAuthList';
-import {SequelizeChargingStationSequenceRepository} from "./ChargingStationSequence";
-import {SequelizeChargingProfileRepository} from "./ChargingProfile";
+import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
+import { SequelizeChargingProfileRepository } from './ChargingProfile';
+import { SequelizeInstalledCertificateRepository } from './InstalledCertificate';
+import { SequelizeInstallCertificateAttemptRepository } from './InstallCertificateAttempt';
+import { SequelizeDeleteCertificateAttemptRepository } from './DeleteCertificateAttempt';
 
 export class RepositoryStore {
   sequelizeInstance: Sequelize;
@@ -45,6 +51,9 @@ export class RepositoryStore {
   bootRepository: IBootRepository;
   callMessageRepository: ICallMessageRepository;
   certificateRepository: ICertificateRepository;
+  installedCertificateRepository: IInstalledCertificateRepository;
+  installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
+  deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
   deviceModelRepository: IDeviceModelRepository;
   localAuthListRepository: ILocalAuthListRepository;
   locationRepository: ILocationRepository;
@@ -65,6 +74,9 @@ export class RepositoryStore {
     this.bootRepository = new SequelizeBootRepository(config, logger, sequelizeInstance);
     this.callMessageRepository = new SequelizeCallMessageRepository(config, logger, sequelizeInstance);
     this.certificateRepository = new SequelizeCertificateRepository(config, logger, sequelizeInstance);
+    this.installedCertificateRepository = new SequelizeInstalledCertificateRepository(config, logger, sequelizeInstance);
+    this.installCertificateAttemptRepository = new SequelizeInstallCertificateAttemptRepository(config, logger, sequelizeInstance);
+    this.deleteCertificateAttemptRepository = new SequelizeDeleteCertificateAttemptRepository(config, logger, sequelizeInstance);
     this.deviceModelRepository = new SequelizeDeviceModelRepository(config, logger, sequelizeInstance);
     this.localAuthListRepository = new SequelizeLocalAuthListRepository(config, logger, sequelizeInstance);
     this.locationRepository = new SequelizeLocationRepository(config, logger, sequelizeInstance);
