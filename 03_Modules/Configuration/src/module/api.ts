@@ -106,7 +106,7 @@ export class ConfigurationModuleApi
    */
 
   @AsMessageEndpoint(
-    CallAction.SetNetworkProfile,
+    OCPP2_0_1_CallAction.SetNetworkProfile,
     SetNetworkProfileRequestSchema,
     { websocketServerConfigId: { type: 'string' } }
   )
@@ -133,7 +133,7 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.SetNetworkProfile,
+      OCPP2_0_1_CallAction.SetNetworkProfile,
       request,
       callbackUrl,
       correlationId,
@@ -141,7 +141,7 @@ export class ConfigurationModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.ClearDisplayMessage,
+    OCPP2_0_1_CallAction.ClearDisplayMessage,
     ClearDisplayMessageRequestSchema,
   )
   clearDisplayMessage(
@@ -153,14 +153,14 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.ClearDisplayMessage,
+      OCPP2_0_1_CallAction.ClearDisplayMessage,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.GetDisplayMessages,
+    OCPP2_0_1_CallAction.GetDisplayMessages,
     GetDisplayMessagesRequestSchema,
   )
   getDisplayMessages(
@@ -172,13 +172,13 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.GetDisplayMessages,
+      OCPP2_0_1_CallAction.GetDisplayMessages,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(CallAction.PublishFirmware, PublishFirmwareRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.PublishFirmware, PublishFirmwareRequestSchema)
   publishFirmware(
     identifier: string,
     tenantId: string,
@@ -188,14 +188,14 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.PublishFirmware,
+      OCPP2_0_1_CallAction.PublishFirmware,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.SetDisplayMessage,
+    OCPP2_0_1_CallAction.SetDisplayMessage,
     SetDisplayMessageRequestSchema,
   )
   async setDisplayMessage(
@@ -223,14 +223,14 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.SetDisplayMessage,
+      OCPP2_0_1_CallAction.SetDisplayMessage,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.UnpublishFirmware,
+    OCPP2_0_1_CallAction.UnpublishFirmware,
     UnpublishFirmwareRequestSchema,
   )
   unpublishFirmware(
@@ -242,13 +242,13 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.UnpublishFirmware,
+      OCPP2_0_1_CallAction.UnpublishFirmware,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(CallAction.UpdateFirmware, UpdateFirmwareRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.UpdateFirmware, UpdateFirmwareRequestSchema)
   updateFirmware(
     identifier: string,
     tenantId: string,
@@ -258,13 +258,13 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.UpdateFirmware,
+      OCPP2_0_1_CallAction.UpdateFirmware,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(CallAction.Reset, ResetRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.Reset, ResetRequestSchema)
   reset(
     identifier: string,
     tenantId: string,
@@ -274,14 +274,14 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.Reset,
+      OCPP2_0_1_CallAction.Reset,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.ChangeAvailability,
+    OCPP2_0_1_CallAction.ChangeAvailability,
     ChangeAvailabilityRequestSchema,
   )
   changeAvailability(
@@ -293,13 +293,13 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.ChangeAvailability,
+      OCPP2_0_1_CallAction.ChangeAvailability,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(CallAction.TriggerMessage, TriggerMessageRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.TriggerMessage, TriggerMessageRequestSchema)
   triggerMessage(
     identifier: string,
     tenantId: string,
@@ -309,7 +309,7 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.TriggerMessage,
+      OCPP2_0_1_CallAction.TriggerMessage,
       request,
       callbackUrl,
     );
@@ -485,7 +485,7 @@ export class ConfigurationModuleApi
     const messageConfirmation = await this._module.sendCall(
       stationId,
       'T01', // TODO: adjust when multi-tenancy is implemented
-      CallAction.SetVariables,
+      OCPP2_0_1_CallAction.SetVariables,
       {
         setVariableData: [
           {

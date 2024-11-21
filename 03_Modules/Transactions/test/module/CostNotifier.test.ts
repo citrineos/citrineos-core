@@ -134,7 +134,7 @@ describe('CostNotifier', () => {
     expect(module.sendCall).toHaveBeenLastCalledWith(
       transaction.stationId,
       tenantId,
-      CallAction.CostUpdated,
+      OCPP2_0_1_CallAction.CostUpdated,
       {
         totalCost: totalCost,
         transactionId: transaction.transactionId,

@@ -78,7 +78,7 @@ export class MonitoringModuleApi
    */
 
   @AsMessageEndpoint(
-    CallAction.SetVariableMonitoring,
+    OCPP2_0_1_CallAction.SetVariableMonitoring,
     SetVariableMonitoringRequestSchema,
   )
   async setVariableMonitoring(
@@ -92,7 +92,7 @@ export class MonitoringModuleApi
     const bytesPerMessageSetVariableMonitoring =
       await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentMonitoringCtrlr,
-        CallAction.SetVariableMonitoring,
+        OCPP2_0_1_CallAction.SetVariableMonitoring,
         identifier,
       );
     const requestBytes = getSizeOfRequest(request);
@@ -145,7 +145,7 @@ export class MonitoringModuleApi
     let itemsPerMessageSetVariableMonitoring =
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentMonitoringCtrlr,
-        CallAction.SetVariableMonitoring,
+        OCPP2_0_1_CallAction.SetVariableMonitoring,
         identifier,
       );
     // If ItemsPerMessageSetVariableMonitoring not set, send all variables at once
@@ -164,7 +164,7 @@ export class MonitoringModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
-          CallAction.SetVariableMonitoring,
+          OCPP2_0_1_CallAction.SetVariableMonitoring,
           { setMonitoringData: batch } as SetVariableMonitoringRequest,
           callbackUrl,
         );
@@ -187,7 +187,7 @@ export class MonitoringModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.ClearVariableMonitoring,
+    OCPP2_0_1_CallAction.ClearVariableMonitoring,
     ClearVariableMonitoringRequestSchema,
   )
   async clearVariableMonitoring(
@@ -206,7 +206,7 @@ export class MonitoringModuleApi
     const bytesPerMessageClearVariableMonitoring =
       await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentMonitoringCtrlr,
-        CallAction.ClearVariableMonitoring,
+        OCPP2_0_1_CallAction.ClearVariableMonitoring,
         identifier,
       );
     const requestBytes = getSizeOfRequest(request);
@@ -223,7 +223,7 @@ export class MonitoringModuleApi
     let itemsPerMessageClearVariableMonitoring =
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentMonitoringCtrlr,
-        CallAction.ClearVariableMonitoring,
+        OCPP2_0_1_CallAction.ClearVariableMonitoring,
         identifier,
       );
     // If itemsPerMessageClearVariableMonitoring not set, send all variables at once
@@ -242,7 +242,7 @@ export class MonitoringModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
-          CallAction.ClearVariableMonitoring,
+          OCPP2_0_1_CallAction.ClearVariableMonitoring,
           { id: batch } as ClearVariableMonitoringRequest,
           callbackUrl,
         );
@@ -264,7 +264,7 @@ export class MonitoringModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.SetMonitoringLevel,
+    OCPP2_0_1_CallAction.SetMonitoringLevel,
     SetMonitoringLevelRequestSchema,
   )
   setMonitoringLevel(
@@ -276,14 +276,14 @@ export class MonitoringModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.SetMonitoringLevel,
+      OCPP2_0_1_CallAction.SetMonitoringLevel,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.SetMonitoringBase,
+    OCPP2_0_1_CallAction.SetMonitoringBase,
     SetMonitoringBaseRequestSchema,
   )
   setMonitoringBase(
@@ -295,13 +295,13 @@ export class MonitoringModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.SetMonitoringBase,
+      OCPP2_0_1_CallAction.SetMonitoringBase,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(CallAction.SetVariables, SetVariablesRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.SetVariables, SetVariablesRequestSchema)
   async setVariables(
     identifier: string,
     tenantId: string,
@@ -321,7 +321,7 @@ export class MonitoringModuleApi
     let itemsPerMessageSetVariables =
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
-        CallAction.SetVariables,
+        OCPP2_0_1_CallAction.SetVariables,
         identifier,
       );
 
@@ -340,7 +340,7 @@ export class MonitoringModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
-          CallAction.SetVariables,
+          OCPP2_0_1_CallAction.SetVariables,
           { setVariableData: batch } as SetVariablesRequest,
           callbackUrl,
         );
@@ -363,7 +363,7 @@ export class MonitoringModuleApi
     return { success: true, payload: confirmations };
   }
 
-  @AsMessageEndpoint(CallAction.GetVariables, GetVariablesRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetVariables, GetVariablesRequestSchema)
   async getVariables(
     identifier: string,
     tenantId: string,
@@ -375,7 +375,7 @@ export class MonitoringModuleApi
     const bytesPerMessageGetVariables =
       await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
-        CallAction.GetVariables,
+        OCPP2_0_1_CallAction.GetVariables,
         identifier,
       );
     const requestBytes = getSizeOfRequest(request);
@@ -392,7 +392,7 @@ export class MonitoringModuleApi
     let itemsPerMessageGetVariables =
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
-        CallAction.GetVariables,
+        OCPP2_0_1_CallAction.GetVariables,
         identifier,
       );
 
@@ -411,7 +411,7 @@ export class MonitoringModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
-          CallAction.GetVariables,
+          OCPP2_0_1_CallAction.GetVariables,
           { getVariableData: batch } as GetVariablesRequest,
           callbackUrl,
         );

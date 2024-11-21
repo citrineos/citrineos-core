@@ -83,18 +83,18 @@ export class EVDriverModule extends AbstractModule {
    */
 
   protected _requests: CallAction[] = [
-    CallAction.Authorize,
-    CallAction.ReservationStatusUpdate,
+    OCPP2_0_1_CallAction.Authorize,
+    OCPP2_0_1_CallAction.ReservationStatusUpdate,
   ];
   protected _responses: CallAction[] = [
-    CallAction.CancelReservation,
-    CallAction.ClearCache,
-    CallAction.GetLocalListVersion,
-    CallAction.RequestStartTransaction,
-    CallAction.RequestStopTransaction,
-    CallAction.ReserveNow,
-    CallAction.SendLocalList,
-    CallAction.UnlockConnector,
+    OCPP2_0_1_CallAction.CancelReservation,
+    OCPP2_0_1_CallAction.ClearCache,
+    OCPP2_0_1_CallAction.GetLocalListVersion,
+    OCPP2_0_1_CallAction.RequestStartTransaction,
+    OCPP2_0_1_CallAction.RequestStopTransaction,
+    OCPP2_0_1_CallAction.ReserveNow,
+    OCPP2_0_1_CallAction.SendLocalList,
+    OCPP2_0_1_CallAction.UnlockConnector,
   ];
 
   protected _authorizeRepository: IAuthorizationRepository;
@@ -282,7 +282,7 @@ export class EVDriverModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(CallAction.Authorize)
+  @AsHandler(OCPP2_0_1_CallAction.Authorize)
   protected async _handleAuthorize(
     message: IMessage<AuthorizeRequest>,
     props?: HandlerProperties,
@@ -547,7 +547,7 @@ export class EVDriverModule extends AbstractModule {
       });
   }
 
-  @AsHandler(CallAction.ReservationStatusUpdate)
+  @AsHandler(OCPP2_0_1_CallAction.ReservationStatusUpdate)
   protected async _handleReservationStatusUpdate(
     message: IMessage<ReservationStatusUpdateRequest>,
     props?: HandlerProperties,
@@ -604,7 +604,7 @@ export class EVDriverModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(CallAction.RequestStartTransaction)
+  @AsHandler(OCPP2_0_1_CallAction.RequestStartTransaction)
   protected async _handleRequestStartTransaction(
     message: IMessage<RequestStartTransactionResponse>,
     props?: HandlerProperties,
@@ -637,7 +637,7 @@ export class EVDriverModule extends AbstractModule {
       this.sendCall(
         stationId,
         message.context.tenantId,
-        CallAction.GetChargingProfiles,
+        OCPP2_0_1_CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
             message.context.stationId, ChargingStationSequenceType.getChargingProfiles,
@@ -655,7 +655,7 @@ export class EVDriverModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.RequestStopTransaction)
+  @AsHandler(OCPP2_0_1_CallAction.RequestStopTransaction)
   protected async _handleRequestStopTransaction(
     message: IMessage<RequestStopTransactionResponse>,
     props?: HandlerProperties,
@@ -667,7 +667,7 @@ export class EVDriverModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.CancelReservation)
+  @AsHandler(OCPP2_0_1_CallAction.CancelReservation)
   protected async _handleCancelReservation(
     message: IMessage<CancelReservationResponse>,
     props?: HandlerProperties,
@@ -692,7 +692,7 @@ export class EVDriverModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.ReserveNow)
+  @AsHandler(OCPP2_0_1_CallAction.ReserveNow)
   protected async _handleReserveNow(
     message: IMessage<ReserveNowResponse>,
     props?: HandlerProperties,
@@ -718,7 +718,7 @@ export class EVDriverModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.UnlockConnector)
+  @AsHandler(OCPP2_0_1_CallAction.UnlockConnector)
   protected async _handleUnlockConnector(
     message: IMessage<UnlockConnectorResponse>,
     props?: HandlerProperties,
@@ -726,7 +726,7 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('UnlockConnectorResponse received:', message, props);
   }
 
-  @AsHandler(CallAction.ClearCache)
+  @AsHandler(OCPP2_0_1_CallAction.ClearCache)
   protected async _handleClearCache(
     message: IMessage<ClearCacheResponse>,
     props?: HandlerProperties,
@@ -734,7 +734,7 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('ClearCacheResponse received:', message, props);
   }
 
-  @AsHandler(CallAction.SendLocalList)
+  @AsHandler(OCPP2_0_1_CallAction.SendLocalList)
   protected async _handleSendLocalList(
     message: IMessage<SendLocalListResponse>,
     props?: HandlerProperties,
@@ -781,7 +781,7 @@ export class EVDriverModule extends AbstractModule {
         const messageConfirmation = await this.sendCall(
           stationId,
           message.context.tenantId,
-          CallAction.GetLocalListVersion,
+          OCPP2_0_1_CallAction.GetLocalListVersion,
           {} as GetLocalListVersionRequest,
         );
         if (!messageConfirmation.success) {
@@ -800,7 +800,7 @@ export class EVDriverModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.GetLocalListVersion)
+  @AsHandler(OCPP2_0_1_CallAction.GetLocalListVersion)
   protected async _handleGetLocalListVersion(
     message: IMessage<GetLocalListVersionResponse>,
     props?: HandlerProperties,

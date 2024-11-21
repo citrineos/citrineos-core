@@ -157,7 +157,7 @@ export class EVDriverModuleApi
    */
 
   @AsMessageEndpoint(
-    CallAction.RequestStartTransaction,
+    OCPP2_0_1_CallAction.RequestStartTransaction,
     RequestStartTransactionRequestSchema,
   )
   async requestStartTransaction(
@@ -233,7 +233,7 @@ export class EVDriverModuleApi
     const confirmation: IMessageConfirmation = await this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.RequestStartTransaction,
+      OCPP2_0_1_CallAction.RequestStartTransaction,
       request,
       callbackUrl,
     );
@@ -245,7 +245,7 @@ export class EVDriverModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.RequestStopTransaction,
+    OCPP2_0_1_CallAction.RequestStopTransaction,
     RequestStopTransactionRequestSchema,
   )
   async requestStopTransaction(
@@ -257,14 +257,14 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.RequestStopTransaction,
+      OCPP2_0_1_CallAction.RequestStopTransaction,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.CancelReservation,
+    OCPP2_0_1_CallAction.CancelReservation,
     CancelReservationRequestSchema,
   )
   async cancelReservation(
@@ -296,7 +296,7 @@ export class EVDriverModuleApi
       return this._module.sendCall(
         identifier,
         tenantId,
-        CallAction.CancelReservation,
+        OCPP2_0_1_CallAction.CancelReservation,
         request,
         callbackUrl,
         correlationId,
@@ -309,7 +309,7 @@ export class EVDriverModuleApi
     }
   }
 
-  @AsMessageEndpoint(CallAction.ReserveNow, ReserveNowRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.ReserveNow, ReserveNowRequestSchema)
   async reserveNow(
     identifier: string,
     tenantId: string,
@@ -337,14 +337,14 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.ReserveNow,
+      OCPP2_0_1_CallAction.ReserveNow,
       request,
       callbackUrl,
       correlationId,
     );
   }
 
-  @AsMessageEndpoint(CallAction.UnlockConnector, UnlockConnectorRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.UnlockConnector, UnlockConnectorRequestSchema)
   unlockConnector(
     identifier: string,
     tenantId: string,
@@ -354,13 +354,13 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.UnlockConnector,
+      OCPP2_0_1_CallAction.UnlockConnector,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(CallAction.ClearCache, ClearCacheRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.ClearCache, ClearCacheRequestSchema)
   clearCache(
     identifier: string,
     tenantId: string,
@@ -370,13 +370,13 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.ClearCache,
+      OCPP2_0_1_CallAction.ClearCache,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(CallAction.SendLocalList, SendLocalListRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.SendLocalList, SendLocalListRequestSchema)
   async sendLocalList(
     identifier: string,
     tenantId: string,
@@ -393,7 +393,7 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.SendLocalList,
+      OCPP2_0_1_CallAction.SendLocalList,
       request,
       callbackUrl,
       correlationId,
@@ -401,7 +401,7 @@ export class EVDriverModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.GetLocalListVersion,
+    OCPP2_0_1_CallAction.GetLocalListVersion,
     GetLocalListVersionRequestSchema,
   )
   getLocalListVersion(
@@ -413,7 +413,7 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.GetLocalListVersion,
+      OCPP2_0_1_CallAction.GetLocalListVersion,
       request,
       callbackUrl,
     );

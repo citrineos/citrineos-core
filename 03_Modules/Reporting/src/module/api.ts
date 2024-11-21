@@ -56,7 +56,7 @@ export class ReportingModuleApi
    * Message Endpoint Methods
    */
 
-  @AsMessageEndpoint(CallAction.GetBaseReport, GetBaseReportRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetBaseReport, GetBaseReportRequestSchema)
   getBaseReport(
     identifier: string,
     tenantId: string,
@@ -67,13 +67,13 @@ export class ReportingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.GetBaseReport,
+      OCPP2_0_1_CallAction.GetBaseReport,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(CallAction.GetReport, GetReportRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetReport, GetReportRequestSchema)
   async getCustomReport(
     identifier: string,
     tenantId: string,
@@ -85,7 +85,7 @@ export class ReportingModuleApi
     const bytesPerMessageGetReport =
       await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
-        CallAction.GetReport,
+        OCPP2_0_1_CallAction.GetReport,
         identifier,
       );
     const requestBytes = getSizeOfRequest(request);
@@ -101,7 +101,7 @@ export class ReportingModuleApi
       return await this._module.sendCall(
         identifier,
         tenantId,
-        CallAction.GetReport,
+        OCPP2_0_1_CallAction.GetReport,
         request,
         callbackUrl,
       );
@@ -110,7 +110,7 @@ export class ReportingModuleApi
     let itemsPerMessageGetReport =
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
-        CallAction.GetReport,
+        OCPP2_0_1_CallAction.GetReport,
         identifier,
       );
     // If ItemsPerMessageGetReport not set, send all variables at once
@@ -129,7 +129,7 @@ export class ReportingModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
-          CallAction.GetReport,
+          OCPP2_0_1_CallAction.GetReport,
           {
             componentVariable: batch,
             componentCriteria: request.componentCriteria,
@@ -156,7 +156,7 @@ export class ReportingModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.GetMonitoringReport,
+    OCPP2_0_1_CallAction.GetMonitoringReport,
     GetMonitoringReportRequestSchema,
   )
   async getMonitoringReport(
@@ -176,7 +176,7 @@ export class ReportingModuleApi
       return await this._module.sendCall(
         identifier,
         tenantId,
-        CallAction.GetMonitoringReport,
+        OCPP2_0_1_CallAction.GetMonitoringReport,
         request,
         callbackUrl,
       );
@@ -185,7 +185,7 @@ export class ReportingModuleApi
     let itemsPerMessageGetReport =
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
-        CallAction.GetReport,
+        OCPP2_0_1_CallAction.GetReport,
         identifier,
       );
     // If ItemsPerMessageGetReport not set, send all variables at once
@@ -204,7 +204,7 @@ export class ReportingModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
-          CallAction.GetMonitoringReport,
+          OCPP2_0_1_CallAction.GetMonitoringReport,
           {
             componentVariable: batch,
             monitoringCriteria: monitoringCriteria,
@@ -230,7 +230,7 @@ export class ReportingModuleApi
     return { success: true, payload: confirmations };
   }
 
-  @AsMessageEndpoint(CallAction.GetLog, GetLogRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetLog, GetLogRequestSchema)
   getLog(
     identifier: string,
     tenantId: string,
@@ -240,14 +240,14 @@ export class ReportingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.GetLog,
+      OCPP2_0_1_CallAction.GetLog,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.CustomerInformation,
+    OCPP2_0_1_CallAction.CustomerInformation,
     CustomerInformationRequestSchema,
   )
   customerInformation(
@@ -259,7 +259,7 @@ export class ReportingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.CustomerInformation,
+      OCPP2_0_1_CallAction.CustomerInformation,
       request,
       callbackUrl,
     );

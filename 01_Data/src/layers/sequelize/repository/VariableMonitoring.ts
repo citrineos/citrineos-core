@@ -45,7 +45,7 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
             return (await this.updateByKey({ ...variableMonitoring }, existingVariableMonitoring.dataValues.databaseId)) as VariableMonitoring;
           }
         });
-        await this.createVariableMonitoringStatus(SetMonitoringStatusEnumType.Accepted, CallAction.NotifyMonitoringReport, savedVariableMonitoring.get('databaseId'));
+        await this.createVariableMonitoringStatus(SetMonitoringStatusEnumType.Accepted, OCPP2_0_1_CallAction.NotifyMonitoringReport, savedVariableMonitoring.get('databaseId'));
 
         return savedVariableMonitoring;
       }),

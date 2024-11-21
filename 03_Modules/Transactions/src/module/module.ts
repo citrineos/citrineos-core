@@ -62,13 +62,13 @@ import { CostCalculator } from './CostCalculator';
  */
 export class TransactionsModule extends AbstractModule {
   protected _requests: CallAction[] = [
-    CallAction.MeterValues,
-    CallAction.StatusNotification,
-    CallAction.TransactionEvent,
+    OCPP2_0_1_CallAction.MeterValues,
+    OCPP2_0_1_CallAction.StatusNotification,
+    OCPP2_0_1_CallAction.TransactionEvent,
   ];
   protected _responses: CallAction[] = [
-    CallAction.CostUpdated,
-    CallAction.GetTransactionStatus,
+    OCPP2_0_1_CallAction.CostUpdated,
+    OCPP2_0_1_CallAction.GetTransactionStatus,
   ];
 
   protected _transactionEventRepository: ITransactionEventRepository;
@@ -271,7 +271,7 @@ export class TransactionsModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(CallAction.TransactionEvent)
+  @AsHandler(OCPP2_0_1_CallAction.TransactionEvent)
   protected async _handleTransactionEvent(
     message: IMessage<TransactionEventRequest>,
     props?: HandlerProperties,
@@ -410,7 +410,7 @@ export class TransactionsModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.MeterValues)
+  @AsHandler(OCPP2_0_1_CallAction.MeterValues)
   protected async _handleMeterValues(
     message: IMessage<MeterValuesRequest>,
     props?: HandlerProperties,
@@ -455,7 +455,7 @@ export class TransactionsModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.StatusNotification)
+  @AsHandler(OCPP2_0_1_CallAction.StatusNotification)
   protected async _handleStatusNotification(
     message: IMessage<StatusNotificationRequest>,
     props?: HandlerProperties,
@@ -483,7 +483,7 @@ export class TransactionsModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(CallAction.CostUpdated)
+  @AsHandler(OCPP2_0_1_CallAction.CostUpdated)
   protected _handleCostUpdated(
     message: IMessage<CostUpdatedResponse>,
     props?: HandlerProperties,
@@ -491,7 +491,7 @@ export class TransactionsModule extends AbstractModule {
     this._logger.debug('CostUpdated response received:', message, props);
   }
 
-  @AsHandler(CallAction.GetTransactionStatus)
+  @AsHandler(OCPP2_0_1_CallAction.GetTransactionStatus)
   protected _handleGetTransactionStatus(
     message: IMessage<GetTransactionStatusResponse>,
     props?: HandlerProperties,

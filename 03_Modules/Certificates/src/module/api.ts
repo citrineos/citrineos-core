@@ -93,7 +93,7 @@ export class CertificatesModuleApi
    */
 
   @AsMessageEndpoint(
-    CallAction.CertificateSigned,
+    OCPP2_0_1_CallAction.CertificateSigned,
     CertificateSignedRequestSchema,
   )
   certificateSigned(
@@ -105,14 +105,14 @@ export class CertificatesModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.CertificateSigned,
+      OCPP2_0_1_CallAction.CertificateSigned,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.InstallCertificate,
+    OCPP2_0_1_CallAction.InstallCertificate,
     InstallCertificateRequestSchema,
   )
   installCertificate(
@@ -124,14 +124,14 @@ export class CertificatesModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.InstallCertificate,
+      OCPP2_0_1_CallAction.InstallCertificate,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.GetInstalledCertificateIds,
+    OCPP2_0_1_CallAction.GetInstalledCertificateIds,
     GetInstalledCertificateIdsRequestSchema,
   )
   getInstalledCertificateIds(
@@ -143,14 +143,14 @@ export class CertificatesModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.GetInstalledCertificateIds,
+      OCPP2_0_1_CallAction.GetInstalledCertificateIds,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.DeleteCertificate,
+    OCPP2_0_1_CallAction.DeleteCertificate,
     DeleteCertificateRequestSchema,
   )
   deleteCertificate(
@@ -162,7 +162,7 @@ export class CertificatesModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.DeleteCertificate,
+      OCPP2_0_1_CallAction.DeleteCertificate,
       request,
       callbackUrl,
     );

@@ -648,7 +648,7 @@ export class MessageRouterImpl
       status === RegistrationStatusEnumType.Rejected &&
       // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
       !(
-        (message[2] as CallAction) === CallAction.TriggerMessage &&
+        (message[2] as CallAction) === OCPP2_0_1_CallAction.TriggerMessage &&
         (message[3] as TriggerMessageRequest).requestedMessage ==
           MessageTriggerEnumType.BootNotification
       )

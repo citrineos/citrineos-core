@@ -72,16 +72,16 @@ export class CertificatesModule extends AbstractModule {
    */
 
   protected _requests: CallAction[] = [
-    CallAction.Get15118EVCertificate,
-    CallAction.GetCertificateStatus,
-    CallAction.SignCertificate,
+    OCPP2_0_1_CallAction.Get15118EVCertificate,
+    OCPP2_0_1_CallAction.GetCertificateStatus,
+    OCPP2_0_1_CallAction.SignCertificate,
   ];
 
   protected _responses: CallAction[] = [
-    CallAction.CertificateSigned,
-    CallAction.DeleteCertificate,
-    CallAction.GetInstalledCertificateIds,
-    CallAction.InstallCertificate,
+    OCPP2_0_1_CallAction.CertificateSigned,
+    OCPP2_0_1_CallAction.DeleteCertificate,
+    OCPP2_0_1_CallAction.GetInstalledCertificateIds,
+    OCPP2_0_1_CallAction.InstallCertificate,
   ];
 
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -184,7 +184,7 @@ export class CertificatesModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(CallAction.Get15118EVCertificate)
+  @AsHandler(OCPP2_0_1_CallAction.Get15118EVCertificate)
   protected async _handleGet15118EVCertificate(
     message: IMessage<Get15118EVCertificateRequest>,
     props?: HandlerProperties,
@@ -214,7 +214,7 @@ export class CertificatesModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.GetCertificateStatus)
+  @AsHandler(OCPP2_0_1_CallAction.GetCertificateStatus)
   protected async _handleGetCertificateStatus(
     message: IMessage<GetCertificateStatusRequest>,
     props?: HandlerProperties,
@@ -245,7 +245,7 @@ export class CertificatesModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.SignCertificate)
+  @AsHandler(OCPP2_0_1_CallAction.SignCertificate)
   protected async _handleSignCertificate(
     message: IMessage<SignCertificateRequest>,
     props?: HandlerProperties,
@@ -297,7 +297,7 @@ export class CertificatesModule extends AbstractModule {
     this.sendCall(
       stationId,
       message.context.tenantId,
-      CallAction.CertificateSigned,
+      OCPP2_0_1_CallAction.CertificateSigned,
       {
         certificateChain: certificateChainPem,
         certificateType: certificateType,
@@ -309,7 +309,7 @@ export class CertificatesModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(CallAction.CertificateSigned)
+  @AsHandler(OCPP2_0_1_CallAction.CertificateSigned)
   protected _handleCertificateSigned(
     message: IMessage<CertificateSignedResponse>,
     props?: HandlerProperties,
@@ -319,7 +319,7 @@ export class CertificatesModule extends AbstractModule {
     // TODO: If accepted, revoke old certificate
   }
 
-  @AsHandler(CallAction.DeleteCertificate)
+  @AsHandler(OCPP2_0_1_CallAction.DeleteCertificate)
   protected async _handleDeleteCertificate(
     message: IMessage<DeleteCertificateResponse>,
     props?: HandlerProperties,
@@ -327,7 +327,7 @@ export class CertificatesModule extends AbstractModule {
     this._logger.debug('DeleteCertificate received:', message, props);
   }
 
-  @AsHandler(CallAction.GetInstalledCertificateIds)
+  @AsHandler(OCPP2_0_1_CallAction.GetInstalledCertificateIds)
   protected async _handleGetInstalledCertificateIds(
     message: IMessage<GetInstalledCertificateIdsResponse>,
     props?: HandlerProperties,
@@ -372,7 +372,7 @@ export class CertificatesModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.InstallCertificate)
+  @AsHandler(OCPP2_0_1_CallAction.InstallCertificate)
   protected async _handleInstallCertificate(
     message: IMessage<InstallCertificateResponse>,
     props?: HandlerProperties,

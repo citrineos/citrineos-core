@@ -69,18 +69,18 @@ export class SmartChargingModule extends AbstractModule {
    */
 
   protected _requests: CallAction[] = [
-    CallAction.NotifyChargingLimit,
-    CallAction.NotifyEVChargingNeeds,
-    CallAction.NotifyEVChargingSchedule,
-    CallAction.ReportChargingProfiles,
+    OCPP2_0_1_CallAction.NotifyChargingLimit,
+    OCPP2_0_1_CallAction.NotifyEVChargingNeeds,
+    OCPP2_0_1_CallAction.NotifyEVChargingSchedule,
+    OCPP2_0_1_CallAction.ReportChargingProfiles,
   ];
 
   protected _responses: CallAction[] = [
-    CallAction.ClearChargingProfile,
-    CallAction.ClearedChargingLimit,
-    CallAction.GetChargingProfiles,
-    CallAction.GetCompositeSchedule,
-    CallAction.SetChargingProfile,
+    OCPP2_0_1_CallAction.ClearChargingProfile,
+    OCPP2_0_1_CallAction.ClearedChargingLimit,
+    OCPP2_0_1_CallAction.GetChargingProfiles,
+    OCPP2_0_1_CallAction.GetCompositeSchedule,
+    OCPP2_0_1_CallAction.SetChargingProfile,
   ];
 
   protected _transactionEventRepository: ITransactionEventRepository;
@@ -198,7 +198,7 @@ export class SmartChargingModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(CallAction.NotifyEVChargingNeeds)
+  @AsHandler(OCPP2_0_1_CallAction.NotifyEVChargingNeeds)
   protected async _handleNotifyEVChargingNeeds(
     message: IMessage<NotifyEVChargingNeedsRequest>,
     props?: HandlerProperties,
@@ -287,12 +287,12 @@ export class SmartChargingModule extends AbstractModule {
     this.sendCall(
       stationId,
       message.context.tenantId,
-      CallAction.SetChargingProfile,
+      OCPP2_0_1_CallAction.SetChargingProfile,
       { evseId: request.evseId, chargingProfile } as SetChargingProfileRequest,
     );
   }
 
-  @AsHandler(CallAction.NotifyEVChargingSchedule)
+  @AsHandler(OCPP2_0_1_CallAction.NotifyEVChargingSchedule)
   protected async _handleNotifyEVChargingSchedule(
     message: IMessage<NotifyEVChargingScheduleRequest>,
     props?: HandlerProperties,
@@ -344,13 +344,13 @@ export class SmartChargingModule extends AbstractModule {
       this.sendCall(
         stationId,
         message.context.tenantId,
-        CallAction.SetChargingProfile,
+        OCPP2_0_1_CallAction.SetChargingProfile,
         setChargingProfileRequest,
       );
     }
   }
 
-  @AsHandler(CallAction.NotifyChargingLimit)
+  @AsHandler(OCPP2_0_1_CallAction.NotifyChargingLimit)
   protected _handleNotifyChargingLimit(
     message: IMessage<NotifyChargingLimitRequest>,
     props?: HandlerProperties,
@@ -369,7 +369,7 @@ export class SmartChargingModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.ReportChargingProfiles)
+  @AsHandler(OCPP2_0_1_CallAction.ReportChargingProfiles)
   protected async _handleReportChargingProfiles(
     message: IMessage<ReportChargingProfilesRequest>,
     props?: HandlerProperties,
@@ -404,7 +404,7 @@ export class SmartChargingModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(CallAction.ClearChargingProfile)
+  @AsHandler(OCPP2_0_1_CallAction.ClearChargingProfile)
   protected async _handleClearChargingProfile(
     message: IMessage<ClearChargingProfileResponse>,
     props?: HandlerProperties,
@@ -436,7 +436,7 @@ export class SmartChargingModule extends AbstractModule {
       this.sendCall(
         stationId,
         message.context.tenantId,
-        CallAction.GetChargingProfiles,
+        OCPP2_0_1_CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
             message.context.stationId, ChargingStationSequenceType.getChargingProfiles,
@@ -458,7 +458,7 @@ export class SmartChargingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.GetChargingProfiles)
+  @AsHandler(OCPP2_0_1_CallAction.GetChargingProfiles)
   protected _handleGetChargingProfiles(
     message: IMessage<GetChargingProfilesResponse>,
     props?: HandlerProperties,
@@ -470,7 +470,7 @@ export class SmartChargingModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.SetChargingProfile)
+  @AsHandler(OCPP2_0_1_CallAction.SetChargingProfile)
   protected async _handleSetChargingProfile(
     message: IMessage<SetChargingProfileResponse>,
     props?: HandlerProperties,
@@ -501,7 +501,7 @@ export class SmartChargingModule extends AbstractModule {
       this.sendCall(
         stationId,
         message.context.tenantId,
-        CallAction.GetChargingProfiles,
+        OCPP2_0_1_CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
             message.context.stationId, ChargingStationSequenceType.getChargingProfiles,
@@ -514,7 +514,7 @@ export class SmartChargingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.ClearedChargingLimit)
+  @AsHandler(OCPP2_0_1_CallAction.ClearedChargingLimit)
   protected _handleClearedChargingLimit(
     message: IMessage<ClearedChargingLimitResponse>,
     props?: HandlerProperties,
@@ -526,7 +526,7 @@ export class SmartChargingModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.GetCompositeSchedule)
+  @AsHandler(OCPP2_0_1_CallAction.GetCompositeSchedule)
   protected async _handleGetCompositeSchedule(
     message: IMessage<GetCompositeScheduleResponse>,
     props?: HandlerProperties,

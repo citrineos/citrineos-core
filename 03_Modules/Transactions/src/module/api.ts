@@ -57,7 +57,7 @@ export class TransactionsModuleApi
   /**
    * Message Endpoint Methods
    */
-  @AsMessageEndpoint(CallAction.CostUpdated, CostUpdatedRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.CostUpdated, CostUpdatedRequestSchema)
   async costUpdated(
     identifier: string,
     tenantId: string,
@@ -67,14 +67,14 @@ export class TransactionsModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.CostUpdated,
+      OCPP2_0_1_CallAction.CostUpdated,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.GetTransactionStatus,
+    OCPP2_0_1_CallAction.GetTransactionStatus,
     GetTransactionStatusRequestSchema,
   )
   getTransactionStatus(
@@ -86,7 +86,7 @@ export class TransactionsModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.GetTransactionStatus,
+      OCPP2_0_1_CallAction.GetTransactionStatus,
       request,
       callbackUrl,
     );

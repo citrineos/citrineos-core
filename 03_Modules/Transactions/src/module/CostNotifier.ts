@@ -74,7 +74,7 @@ export class CostNotifier extends Scheduler {
       await this._module.sendCall(
         transaction.stationId,
         tenantId,
-        CallAction.CostUpdated,
+        OCPP2_0_1_CallAction.CostUpdated,
         {
           totalCost: cost,
           transactionId: transaction.transactionId,

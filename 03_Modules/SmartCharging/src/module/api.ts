@@ -59,7 +59,7 @@ export class SmartChargingModuleApi
    * Message endpoints
    */
   @AsMessageEndpoint(
-    CallAction.ClearChargingProfile,
+    OCPP2_0_1_CallAction.ClearChargingProfile,
     ClearChargingProfileRequestSchema,
   )
   async clearChargingProfile(
@@ -116,14 +116,14 @@ export class SmartChargingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.ClearChargingProfile,
+      OCPP2_0_1_CallAction.ClearChargingProfile,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.GetChargingProfiles,
+    OCPP2_0_1_CallAction.GetChargingProfiles,
     GetChargingProfilesRequestSchema,
   )
   async getChargingProfiles(
@@ -189,14 +189,14 @@ export class SmartChargingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.GetChargingProfiles,
+      OCPP2_0_1_CallAction.GetChargingProfiles,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.SetChargingProfile,
+    OCPP2_0_1_CallAction.SetChargingProfile,
     SetChargingProfileRequestSchema,
   )
   async setChargingProfile(
@@ -501,14 +501,14 @@ export class SmartChargingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.SetChargingProfile,
+      OCPP2_0_1_CallAction.SetChargingProfile,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.ClearedChargingLimit,
+    OCPP2_0_1_CallAction.ClearedChargingLimit,
     ClearedChargingLimitRequestSchema,
   )
   clearedChargingLimit(
@@ -520,14 +520,14 @@ export class SmartChargingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.ClearedChargingLimit,
+      OCPP2_0_1_CallAction.ClearedChargingLimit,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.GetCompositeSchedule,
+    OCPP2_0_1_CallAction.GetCompositeSchedule,
     GetCompositeScheduleRequestSchema,
   )
   async getCompositeSchedule(
@@ -569,7 +569,7 @@ export class SmartChargingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.GetCompositeSchedule,
+      OCPP2_0_1_CallAction.GetCompositeSchedule,
       request,
       callbackUrl,
     );

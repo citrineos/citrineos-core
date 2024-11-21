@@ -67,19 +67,19 @@ export class ReportingModule extends AbstractModule {
    */
 
   protected _requests: CallAction[] = [
-    CallAction.LogStatusNotification,
-    CallAction.NotifyCustomerInformation,
-    CallAction.NotifyReport,
-    CallAction.SecurityEventNotification,
-    CallAction.NotifyMonitoringReport,
+    OCPP2_0_1_CallAction.LogStatusNotification,
+    OCPP2_0_1_CallAction.NotifyCustomerInformation,
+    OCPP2_0_1_CallAction.NotifyReport,
+    OCPP2_0_1_CallAction.SecurityEventNotification,
+    OCPP2_0_1_CallAction.NotifyMonitoringReport,
   ];
 
   protected _responses: CallAction[] = [
-    CallAction.CustomerInformation,
-    CallAction.GetLog,
-    CallAction.GetReport,
-    CallAction.GetBaseReport,
-    CallAction.GetMonitoringReport,
+    OCPP2_0_1_CallAction.CustomerInformation,
+    OCPP2_0_1_CallAction.GetLog,
+    OCPP2_0_1_CallAction.GetReport,
+    OCPP2_0_1_CallAction.GetBaseReport,
+    OCPP2_0_1_CallAction.GetMonitoringReport,
   ];
 
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -165,7 +165,7 @@ export class ReportingModule extends AbstractModule {
    * Handle Requests
    */
 
-  @AsHandler(CallAction.LogStatusNotification)
+  @AsHandler(OCPP2_0_1_CallAction.LogStatusNotification)
   protected _handleLogStatusNotification(
     message: IMessage<LogStatusNotificationRequest>,
     props?: HandlerProperties,
@@ -187,7 +187,7 @@ export class ReportingModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.NotifyCustomerInformation)
+  @AsHandler(OCPP2_0_1_CallAction.NotifyCustomerInformation)
   protected _handleNotifyCustomerInformation(
     message: IMessage<NotifyCustomerInformationRequest>,
     props?: HandlerProperties,
@@ -211,7 +211,7 @@ export class ReportingModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.NotifyMonitoringReport)
+  @AsHandler(OCPP2_0_1_CallAction.NotifyMonitoringReport)
   protected async _handleNotifyMonitoringReport(
     message: IMessage<NotifyMonitoringReportRequest>,
     props?: HandlerProperties,
@@ -252,7 +252,7 @@ export class ReportingModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.NotifyReport)
+  @AsHandler(OCPP2_0_1_CallAction.NotifyReport)
   protected async _handleNotifyReport(
     message: IMessage<NotifyReportRequest>,
     props?: HandlerProperties,
@@ -324,7 +324,7 @@ export class ReportingModule extends AbstractModule {
     });
   }
 
-  @AsHandler(CallAction.SecurityEventNotification)
+  @AsHandler(OCPP2_0_1_CallAction.SecurityEventNotification)
   protected _handleSecurityEventNotification(
     message: IMessage<SecurityEventNotificationRequest>,
     props?: HandlerProperties,
@@ -348,7 +348,7 @@ export class ReportingModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(CallAction.GetBaseReport)
+  @AsHandler(OCPP2_0_1_CallAction.GetBaseReport)
   protected _handleGetBaseReport(
     message: IMessage<GetBaseReportResponse>,
     props?: HandlerProperties,
@@ -356,7 +356,7 @@ export class ReportingModule extends AbstractModule {
     this._logger.debug('GetBaseReport response received:', message, props);
   }
 
-  @AsHandler(CallAction.GetReport)
+  @AsHandler(OCPP2_0_1_CallAction.GetReport)
   protected _handleGetReport(
     message: IMessage<GetReportResponse>,
     props?: HandlerProperties,
@@ -379,7 +379,7 @@ export class ReportingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.GetMonitoringReport)
+  @AsHandler(OCPP2_0_1_CallAction.GetMonitoringReport)
   protected async _handleGetMonitoringReport(
     message: IMessage<GetMonitoringReportResponse>,
     props?: HandlerProperties,
@@ -406,7 +406,7 @@ export class ReportingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.GetLog)
+  @AsHandler(OCPP2_0_1_CallAction.GetLog)
   protected _handleGetLog(
     message: IMessage<GetLogResponse>,
     props?: HandlerProperties,
@@ -414,7 +414,7 @@ export class ReportingModule extends AbstractModule {
     this._logger.debug('GetLog response received:', message, props);
   }
 
-  @AsHandler(CallAction.CustomerInformation)
+  @AsHandler(OCPP2_0_1_CallAction.CustomerInformation)
   protected _handleCustomerInformation(
     message: IMessage<CustomerInformationResponse>,
     props?: HandlerProperties,

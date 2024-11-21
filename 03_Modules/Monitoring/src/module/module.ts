@@ -56,15 +56,15 @@ export class MonitoringModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
   protected _monitoringService: MonitoringService;
 
-  protected _requests: CallAction[] = [CallAction.NotifyEvent];
+  protected _requests: CallAction[] = [OCPP2_0_1_CallAction.NotifyEvent];
   protected _responses: CallAction[] = [
-    CallAction.ClearVariableMonitoring,
-    CallAction.GetVariables,
-    CallAction.SetMonitoringBase,
-    CallAction.SetMonitoringLevel,
-    CallAction.GetMonitoringReport,
-    CallAction.SetVariableMonitoring,
-    CallAction.SetVariables,
+    OCPP2_0_1_CallAction.ClearVariableMonitoring,
+    OCPP2_0_1_CallAction.GetVariables,
+    OCPP2_0_1_CallAction.SetMonitoringBase,
+    OCPP2_0_1_CallAction.SetMonitoringLevel,
+    OCPP2_0_1_CallAction.GetMonitoringReport,
+    OCPP2_0_1_CallAction.SetVariableMonitoring,
+    OCPP2_0_1_CallAction.SetVariables,
   ];
 
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -161,7 +161,7 @@ export class MonitoringModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(CallAction.NotifyEvent)
+  @AsHandler(OCPP2_0_1_CallAction.NotifyEvent)
   protected async _handleNotifyEvent(
     message: IMessage<NotifyEventRequest>,
     props?: HandlerProperties,
@@ -212,7 +212,7 @@ export class MonitoringModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(CallAction.SetVariableMonitoring)
+  @AsHandler(OCPP2_0_1_CallAction.SetVariableMonitoring)
   protected async _handleSetVariableMonitoring(
     message: IMessage<SetVariableMonitoringResponse>,
     props?: HandlerProperties,
@@ -231,7 +231,7 @@ export class MonitoringModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.ClearVariableMonitoring)
+  @AsHandler(OCPP2_0_1_CallAction.ClearVariableMonitoring)
   protected async _handleClearVariableMonitoring(
     message: IMessage<ClearVariableMonitoringResponse>,
     props?: HandlerProperties,
@@ -248,7 +248,7 @@ export class MonitoringModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.GetMonitoringReport)
+  @AsHandler(OCPP2_0_1_CallAction.GetMonitoringReport)
   protected _handleGetMonitoringReport(
     message: IMessage<GetMonitoringReportResponse>,
     props?: HandlerProperties,
@@ -276,7 +276,7 @@ export class MonitoringModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.SetMonitoringLevel)
+  @AsHandler(OCPP2_0_1_CallAction.SetMonitoringLevel)
   protected _handleSetMonitoringLevel(
     message: IMessage<SetMonitoringLevelResponse>,
     props?: HandlerProperties,
@@ -296,7 +296,7 @@ export class MonitoringModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.SetMonitoringBase)
+  @AsHandler(OCPP2_0_1_CallAction.SetMonitoringBase)
   protected async _handleSetMonitoringBase(
     message: IMessage<SetMonitoringBaseResponse>,
     props?: HandlerProperties,
@@ -323,7 +323,7 @@ export class MonitoringModule extends AbstractModule {
       // Then request a GetMonitoringReport for all monitorings
       const stationId: string = message.context.stationId;
       await this._variableMonitoringRepository.rejectAllVariableMonitoringsByStationId(
-        CallAction.SetVariableMonitoring,
+        OCPP2_0_1_CallAction.SetVariableMonitoring,
         stationId,
       );
       this._logger.debug(
@@ -334,7 +334,7 @@ export class MonitoringModule extends AbstractModule {
       await this.sendCall(
         stationId,
         message.context.tenantId,
-        CallAction.GetMonitoringReport,
+        OCPP2_0_1_CallAction.GetMonitoringReport,
         {
           requestId: await this._idGenerator.generateRequestId(message.context.stationId, ChargingStationSequenceType.getMonitoringReport),
         } as GetMonitoringReportRequest,
@@ -342,7 +342,7 @@ export class MonitoringModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.GetVariables)
+  @AsHandler(OCPP2_0_1_CallAction.GetVariables)
   protected async _handleGetVariables(
     message: IMessage<GetVariablesResponse>,
     props?: HandlerProperties,
@@ -355,7 +355,7 @@ export class MonitoringModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.SetVariables)
+  @AsHandler(OCPP2_0_1_CallAction.SetVariables)
   protected async _handleSetVariables(
     message: IMessage<SetVariablesResponse>,
     props?: HandlerProperties,

@@ -39,7 +39,7 @@ export class MonitoringService {
         resultStatus === ClearMonitoringStatusEnumType.NotFound
       ) {
         await this._variableMonitoringRepository.rejectVariableMonitoringByIdAndStationId(
-          CallAction.ClearVariableMonitoring,
+          OCPP2_0_1_CallAction.ClearVariableMonitoring,
           monitorId,
           stationId,
         );

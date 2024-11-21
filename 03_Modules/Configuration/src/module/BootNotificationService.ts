@@ -3,7 +3,7 @@ import {
   BOOT_STATUS,
   BootConfig,
   BootNotificationResponse,
-  CALL_SCHEMA_MAP,
+  OCPP2_0_1_CALL_SCHEMA_MAP,
   CallAction,
   GetBaseReportRequest,
   ICache,
@@ -11,6 +11,7 @@ import {
   RegistrationStatusEnumType,
   ReportBaseEnumType,
   SystemConfig,
+  OCPP2_0_1_CallAction,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 type Configuration = SystemConfig['modules']['configuration'];
@@ -136,8 +137,8 @@ export class BootNotificationService {
     ) {
       if (cachedBootStatus) {
         // Undo blacklisting of charger-originated actions
-        const promises = Array.from(CALL_SCHEMA_MAP).map(async ([action]) => {
-          if (action !== CallAction.BootNotification) {
+        const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(async ([action]) => {
+          if (action !== OCPP2_0_1_CallAction.BootNotification) {
             return this._cache.remove(action, stationId);
           }
         });
@@ -152,8 +153,8 @@ export class BootNotificationService {
       // Blacklist all charger-originated actions except BootNotification
       // GetReport messages will need to un-blacklist NotifyReport
       // TriggerMessage will need to un-blacklist the message it triggers
-      const promises = Array.from(CALL_SCHEMA_MAP).map(async ([action]) => {
-        if (action !== CallAction.BootNotification) {
+      const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(async ([action]) => {
+        if (action !== OCPP2_0_1_CallAction.BootNotification) {
           return this._cache.set(action, 'blacklisted', stationId);
         }
       });

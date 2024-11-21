@@ -84,25 +84,25 @@ export class ConfigurationModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
 
   protected _requests: CallAction[] = [
-    CallAction.BootNotification,
-    CallAction.DataTransfer,
-    CallAction.FirmwareStatusNotification,
-    CallAction.Heartbeat,
-    CallAction.NotifyDisplayMessages,
-    CallAction.PublishFirmwareStatusNotification,
+    OCPP2_0_1_CallAction.BootNotification,
+    OCPP2_0_1_CallAction.DataTransfer,
+    OCPP2_0_1_CallAction.FirmwareStatusNotification,
+    OCPP2_0_1_CallAction.Heartbeat,
+    OCPP2_0_1_CallAction.NotifyDisplayMessages,
+    OCPP2_0_1_CallAction.PublishFirmwareStatusNotification,
   ];
 
   protected _responses: CallAction[] = [
-    CallAction.ChangeAvailability,
-    CallAction.ClearDisplayMessage,
-    CallAction.GetDisplayMessages,
-    CallAction.PublishFirmware,
-    CallAction.Reset,
-    CallAction.SetDisplayMessage,
-    CallAction.SetNetworkProfile,
-    CallAction.TriggerMessage,
-    CallAction.UnpublishFirmware,
-    CallAction.UpdateFirmware,
+    OCPP2_0_1_CallAction.ChangeAvailability,
+    OCPP2_0_1_CallAction.ClearDisplayMessage,
+    OCPP2_0_1_CallAction.GetDisplayMessages,
+    OCPP2_0_1_CallAction.PublishFirmware,
+    OCPP2_0_1_CallAction.Reset,
+    OCPP2_0_1_CallAction.SetDisplayMessage,
+    OCPP2_0_1_CallAction.SetNetworkProfile,
+    OCPP2_0_1_CallAction.TriggerMessage,
+    OCPP2_0_1_CallAction.UnpublishFirmware,
+    OCPP2_0_1_CallAction.UpdateFirmware,
   ];
 
   protected _bootRepository: IBootRepository;
@@ -220,7 +220,7 @@ export class ConfigurationModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(CallAction.BootNotification)
+  @AsHandler(OCPP2_0_1_CallAction.BootNotification)
   protected async _handleBootNotification(
     message: IMessage<BootNotificationRequest>,
     props?: HandlerProperties,
@@ -295,7 +295,7 @@ export class ConfigurationModule extends AbstractModule {
       this._config.modules.configuration.getBaseReportOnPending
     ) {
       // Remove Notify Report from blacklist
-      this._cache.remove(CallAction.NotifyReport, stationId);
+      this._cache.remove(OCPP2_0_1_CallAction.NotifyReport, stationId);
 
       const getBaseReportRequest = this._bootService.createGetBaseReportRequest(
         stationId,
@@ -305,7 +305,7 @@ export class ConfigurationModule extends AbstractModule {
       const getBaseReportConfirmation = await this.sendCall(
         stationId,
         tenantId,
-        CallAction.GetBaseReport,
+        OCPP2_0_1_CallAction.GetBaseReport,
         getBaseReportRequest,
       );
 
@@ -354,7 +354,7 @@ export class ConfigurationModule extends AbstractModule {
         await this.sendCall(
           stationId,
           tenantId,
-          CallAction.SetVariables,
+          OCPP2_0_1_CallAction.SetVariables,
           {
             setVariableData: setVariableData.slice(
               0,
@@ -414,19 +414,19 @@ export class ConfigurationModule extends AbstractModule {
 
     if (rebootSetVariable) {
       // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
-      this.sendCall(stationId, tenantId, CallAction.Reset, {
+      this.sendCall(stationId, tenantId, OCPP2_0_1_CallAction.Reset, {
         type: ResetEnumType.Immediate,
       } as ResetRequest);
     } else {
       // We could trigger the new boot immediately rather than wait for the retry, as nothing more now needs to be done.
       // However, B02.FR.02 - Spec allows for TriggerMessageRequest - OCTT fails over trigger
       // Commenting out until OCTT behavior changes.
-      // this.sendCall(stationId, tenantId, CallAction.TriggerMessage,
+      // this.sendCall(stationId, tenantId, OCPP2_0_1_CallAction.TriggerMessage,
       //   { requestedMessage: MessageTriggerEnumType.BootNotification } as TriggerMessageRequest);
     }
   }
 
-  @AsHandler(CallAction.Heartbeat)
+  @AsHandler(OCPP2_0_1_CallAction.Heartbeat)
   protected _handleHeartbeat(
     message: IMessage<HeartbeatRequest>,
     props?: HandlerProperties,
@@ -444,7 +444,7 @@ export class ConfigurationModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.NotifyDisplayMessages)
+  @AsHandler(OCPP2_0_1_CallAction.NotifyDisplayMessages)
   protected async _handleNotifyDisplayMessages(
     message: IMessage<NotifyDisplayMessagesRequest>,
     props?: HandlerProperties,
@@ -481,7 +481,7 @@ export class ConfigurationModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.FirmwareStatusNotification)
+  @AsHandler(OCPP2_0_1_CallAction.FirmwareStatusNotification)
   protected _handleFirmwareStatusNotification(
     message: IMessage<FirmwareStatusNotificationRequest>,
     props?: HandlerProperties,
@@ -502,7 +502,7 @@ export class ConfigurationModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.DataTransfer)
+  @AsHandler(OCPP2_0_1_CallAction.DataTransfer)
   protected _handleDataTransfer(
     message: IMessage<DataTransferRequest>,
     props?: HandlerProperties,
@@ -525,7 +525,7 @@ export class ConfigurationModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(CallAction.ChangeAvailability)
+  @AsHandler(OCPP2_0_1_CallAction.ChangeAvailability)
   protected _handleChangeAvailability(
     message: IMessage<ChangeAvailabilityResponse>,
     props?: HandlerProperties,
@@ -533,7 +533,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('ChangeAvailability response received:', message, props);
   }
 
-  @AsHandler(CallAction.SetNetworkProfile)
+  @AsHandler(OCPP2_0_1_CallAction.SetNetworkProfile)
   protected async _handleSetNetworkProfile(
     message: IMessage<SetNetworkProfileResponse>,
     props?: HandlerProperties,
@@ -557,7 +557,7 @@ export class ConfigurationModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.GetDisplayMessages)
+  @AsHandler(OCPP2_0_1_CallAction.GetDisplayMessages)
   protected _handleGetDisplayMessages(
     message: IMessage<GetDisplayMessagesResponse>,
     props?: HandlerProperties,
@@ -565,7 +565,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('GetDisplayMessages response received:', message, props);
   }
 
-  @AsHandler(CallAction.SetDisplayMessage)
+  @AsHandler(OCPP2_0_1_CallAction.SetDisplayMessage)
   protected async _handleSetDisplayMessage(
     message: IMessage<SetDisplayMessageResponse>,
     props?: HandlerProperties,
@@ -582,7 +582,7 @@ export class ConfigurationModule extends AbstractModule {
       await this.sendCall(
         message.context.stationId,
         message.context.tenantId,
-        CallAction.GetDisplayMessages,
+        OCPP2_0_1_CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
             message.context.stationId, ChargingStationSequenceType.getDisplayMessages,
@@ -592,7 +592,7 @@ export class ConfigurationModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.PublishFirmware)
+  @AsHandler(OCPP2_0_1_CallAction.PublishFirmware)
   protected _handlePublishFirmware(
     message: IMessage<PublishFirmwareResponse>,
     props?: HandlerProperties,
@@ -600,7 +600,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('PublishFirmware response received:', message, props);
   }
 
-  @AsHandler(CallAction.UnpublishFirmware)
+  @AsHandler(OCPP2_0_1_CallAction.UnpublishFirmware)
   protected _handleUnpublishFirmware(
     message: IMessage<UnpublishFirmwareResponse>,
     props?: HandlerProperties,
@@ -608,7 +608,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('UnpublishFirmware response received:', message, props);
   }
 
-  @AsHandler(CallAction.UpdateFirmware)
+  @AsHandler(OCPP2_0_1_CallAction.UpdateFirmware)
   protected _handleUpdateFirmware(
     message: IMessage<UpdateFirmwareResponse>,
     props?: HandlerProperties,
@@ -616,7 +616,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('UpdateFirmware response received:', message, props);
   }
 
-  @AsHandler(CallAction.Reset)
+  @AsHandler(OCPP2_0_1_CallAction.Reset)
   protected _handleReset(
     message: IMessage<ResetResponse>,
     props?: HandlerProperties,
@@ -624,7 +624,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('Reset response received:', message, props);
   }
 
-  @AsHandler(CallAction.TriggerMessage)
+  @AsHandler(OCPP2_0_1_CallAction.TriggerMessage)
   protected _handleTriggerMessage(
     message: IMessage<TriggerMessageResponse>,
     props?: HandlerProperties,
@@ -632,7 +632,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('TriggerMessage response received:', message, props);
   }
 
-  @AsHandler(CallAction.ClearDisplayMessage)
+  @AsHandler(OCPP2_0_1_CallAction.ClearDisplayMessage)
   protected async _handleClearDisplayMessage(
     message: IMessage<ClearDisplayMessageResponse>,
     props?: HandlerProperties,
@@ -653,7 +653,7 @@ export class ConfigurationModule extends AbstractModule {
       await this.sendCall(
         message.context.stationId,
         message.context.tenantId,
-        CallAction.GetDisplayMessages,
+        OCPP2_0_1_CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
             message.context.stationId, ChargingStationSequenceType.getDisplayMessages,
