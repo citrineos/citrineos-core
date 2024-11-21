@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingStateEnumType, type CustomDataType, EVSEType, type MeterValueType, Namespace, ReasonEnumType, type TransactionEventRequest, type TransactionType } from '@citrineos/base';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
@@ -11,7 +11,7 @@ import { Evse } from '../DeviceModel';
 import { ChargingStation } from '../Location';
 
 @Table
-export class Transaction extends Model implements TransactionType {
+export class Transaction extends Model implements OCPP2_0_1.TransactionType {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
   static readonly TRANSACTION_EVENTS_ALIAS = 'transactionEvents';
   static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter';
@@ -26,7 +26,7 @@ export class Transaction extends Model implements TransactionType {
   station!: ChargingStation;
 
   @BelongsTo(() => Evse)
-  declare evse?: EVSEType;
+  declare evse?: OCPP2_0_1.EVSEType;
 
   @ForeignKey(() => Evse)
   @Column(DataType.INTEGER)
@@ -41,17 +41,17 @@ export class Transaction extends Model implements TransactionType {
   declare isActive: boolean;
 
   @HasMany(() => TransactionEvent, { as: Transaction.TRANSACTION_EVENTS_ALIAS, foreignKey: 'transactionDatabaseId' })
-  declare transactionEvents?: TransactionEventRequest[];
+  declare transactionEvents?: OCPP2_0_1.TransactionEventRequest[];
 
   // required only for filtering, should not be used to pull transaction events
   @HasMany(() => TransactionEvent, { as: Transaction.TRANSACTION_EVENTS_FILTER_ALIAS, foreignKey: 'transactionDatabaseId' })
-  declare transactionEventsFilter?: TransactionEventRequest[];
+  declare transactionEventsFilter?: OCPP2_0_1.TransactionEventRequest[];
 
   @HasMany(() => MeterValue)
-  declare meterValues?: MeterValueType[];
+  declare meterValues?: OCPP2_0_1.MeterValueType[];
 
   @Column(DataType.STRING)
-  declare chargingState?: ChargingStateEnumType | null;
+  declare chargingState?: OCPP2_0_1.ChargingStateEnumType | null;
 
   @Column(DataType.BIGINT)
   declare timeSpentCharging?: number | null;
@@ -60,26 +60,26 @@ export class Transaction extends Model implements TransactionType {
   declare totalKwh?: number | null;
 
   @Column(DataType.STRING)
-  declare stoppedReason?: ReasonEnumType | null;
+  declare stoppedReason?: OCPP2_0_1.ReasonEnumType | null;
 
   @Column(DataType.INTEGER)
   declare remoteStartId?: number | null;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 
   static buildTransaction(
     id: string, // todo temp
     stationId: string,
     transactionId: string,
     isActive: boolean,
-    transactionEvents: TransactionEventRequest[],
-    meterValues: MeterValueType[],
-    chargingState?: ChargingStateEnumType,
+    transactionEvents: OCPP2_0_1.TransactionEventRequest[],
+    meterValues: OCPP2_0_1.MeterValueType[],
+    chargingState?: OCPP2_0_1.ChargingStateEnumType,
     timeSpentCharging?: number,
     totalKwh?: number,
-    stoppedReason?: ReasonEnumType,
+    stoppedReason?: OCPP2_0_1.ReasonEnumType,
     remoteStartId?: number,
-    customData?: CustomDataType,
+    customData?: OCPP2_0_1.CustomDataType,
   ) {
     const transaction = new Transaction();
     transaction.id = id;

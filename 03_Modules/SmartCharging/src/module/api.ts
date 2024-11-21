@@ -9,25 +9,11 @@ import { SmartChargingModule } from './module';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
-  AttributeEnumType,
   CallAction,
-  ChargingLimitSourceEnumType,
-  ChargingProfileKindEnumType,
-  ChargingProfilePurposeEnumType,
-  ChargingProfileType,
-  ClearChargingProfileRequest,
-  ClearChargingProfileRequestSchema,
-  ClearedChargingLimitRequestSchema,
-  CustomerInformationRequest,
-  DataEnumType,
-  GetChargingProfilesRequest,
-  GetChargingProfilesRequestSchema,
-  GetCompositeScheduleRequest,
-  GetCompositeScheduleRequestSchema,
   IMessageConfirmation,
   Namespace,
-  SetChargingProfileRequest,
-  SetChargingProfileRequestSchema,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { VariableAttribute } from '@citrineos/data';
@@ -60,12 +46,12 @@ export class SmartChargingModuleApi
    */
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.ClearChargingProfile,
-    ClearChargingProfileRequestSchema,
+    OCPP2_0_1.ClearChargingProfileRequestSchema,
   )
   async clearChargingProfile(
     identifier: string,
     tenantId: string,
-    request: ClearChargingProfileRequest,
+    request: OCPP2_0_1.ClearChargingProfileRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     const chargingProfileCriteria = request.chargingProfileCriteria;
@@ -104,7 +90,7 @@ export class SmartChargingModuleApi
     // OCPP 2.0.1 Part 2 K10.FR.06
     if (
       chargingProfileCriteria?.chargingProfilePurpose ===
-      ChargingProfilePurposeEnumType.ChargingStationExternalConstraints
+      OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationExternalConstraints
     ) {
       return {
         success: false,
@@ -124,12 +110,12 @@ export class SmartChargingModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.GetChargingProfiles,
-    GetChargingProfilesRequestSchema,
+    OCPP2_0_1.GetChargingProfilesRequestSchema,
   )
   async getChargingProfiles(
     identifier: string,
     tenantId: string,
-    request: GetChargingProfilesRequest,
+    request: OCPP2_0_1.GetChargingProfilesRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     const chargingProfile = request.chargingProfile;
@@ -197,18 +183,18 @@ export class SmartChargingModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.SetChargingProfile,
-    SetChargingProfileRequestSchema,
+    OCPP2_0_1.SetChargingProfileRequestSchema,
   )
   async setChargingProfile(
     identifier: string,
     tenantId: string,
-    request: SetChargingProfileRequest,
+    request: OCPP2_0_1.SetChargingProfileRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     this._logger.info(
       `Received SetChargingProfile: ${JSON.stringify(request)}`,
     );
-    const chargingProfile: ChargingProfileType = request.chargingProfile;
+    const chargingProfile: OCPP2_0_1.ChargingProfileType = request.chargingProfile;
     // Validate ChargingProfileType's constraints
     try {
       await validateChargingProfileType(
@@ -253,7 +239,7 @@ export class SmartChargingModuleApi
     let receivedChargingNeeds;
     if (
       chargingProfile.chargingProfilePurpose ===
-      ChargingProfilePurposeEnumType.TxProfile
+      OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile
     ) {
       // OCPP 2.0.1 Part 2 K01.FR.03
       if (!chargingProfile.transactionId) {
@@ -330,7 +316,7 @@ export class SmartChargingModuleApi
       }
     } else if (
       chargingProfile.chargingProfilePurpose ===
-      ChargingProfilePurposeEnumType.ChargingStationExternalConstraints
+      OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationExternalConstraints
     ) {
       // OCPP 2.0.1 Part 2 K01.FR.22
       return {
@@ -342,12 +328,12 @@ export class SmartChargingModuleApi
     } else {
       if (
         chargingProfile.chargingProfilePurpose ===
-        ChargingProfilePurposeEnumType.ChargingStationMaxProfile
+        OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationMaxProfile
       ) {
         // OCPP 2.0.1 Part 2 K01.FR.38
         if (
           chargingProfile.chargingProfileKind ===
-          ChargingProfileKindEnumType.Relative
+          OCPP2_0_1.ChargingProfileKindEnumType.Relative
         ) {
           return {
             success: false,
@@ -405,7 +391,7 @@ export class SmartChargingModuleApi
         component_evse_id: request.evseId,
         component_name: 'SmartChargingCtrlr',
         variable_name: 'ACPhaseSwitchingSupported',
-        type: AttributeEnumType.Actual,
+        type: OCPP2_0_1.AttributeEnumType.Actual,
       });
     this._logger.info(
       `Found ACPhaseSwitchingSupported: ${JSON.stringify(acPhaseSwitchingSupported)}`,
@@ -422,7 +408,7 @@ export class SmartChargingModuleApi
 
       if (
         chargingProfile.chargingProfileKind ===
-          ChargingProfileKindEnumType.Absolute ||
+        OCPP2_0_1.ChargingProfileKindEnumType.Absolute ||
         chargingProfile.chargingProfileKind ===
           ChargingProfileKindEnumType.Recurring
       ) {
@@ -435,7 +421,7 @@ export class SmartChargingModuleApi
         }
       } else if (
         chargingProfile.chargingProfileKind ===
-        ChargingProfileKindEnumType.Relative
+        OCPP2_0_1.ChargingProfileKindEnumType.Relative
       ) {
         // OCPP 2.0.1 Part 2 K01.FR.41
         if (chargingSchedule.startSchedule) {
@@ -495,7 +481,7 @@ export class SmartChargingModuleApi
       chargingProfile,
       identifier,
       request.evseId,
-      ChargingLimitSourceEnumType.CSO,
+      OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
     );
 
     return this._module.sendCall(
@@ -509,12 +495,12 @@ export class SmartChargingModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.ClearedChargingLimit,
-    ClearedChargingLimitRequestSchema,
+    OCPP2_0_1.ClearedChargingLimitRequestSchema,
   )
   clearedChargingLimit(
     identifier: string,
     tenantId: string,
-    request: CustomerInformationRequest,
+    request: OCPP2_0_1.CustomerInformationRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
@@ -528,12 +514,12 @@ export class SmartChargingModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.GetCompositeSchedule,
-    GetCompositeScheduleRequestSchema,
+    OCPP2_0_1.GetCompositeScheduleRequestSchema,
   )
   async getCompositeSchedule(
     identifier: string,
     tenantId: string,
-    request: GetCompositeScheduleRequest,
+    request: OCPP2_0_1.GetCompositeScheduleRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     // OCPP 2.0.1 Part 2 K08.FR.05
@@ -616,7 +602,7 @@ export class SmartChargingModuleApi
     );
     if (
       chargingScheduleChargingRateUnit &&
-      chargingScheduleChargingRateUnit.dataType === DataEnumType.MemberList &&
+      chargingScheduleChargingRateUnit.dataType === OCPP2_0_1.DataEnumType.MemberList &&
       chargingScheduleChargingRateUnit.valuesList
     ) {
       return stringToSet(chargingScheduleChargingRateUnit.valuesList);

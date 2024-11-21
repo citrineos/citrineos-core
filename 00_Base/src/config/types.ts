@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { z } from 'zod';
-import { RegistrationStatusEnumType } from '../ocpp/model';
+import { OCPP2_0_1 } from '../ocpp/model';
 import { EventGroup } from '..';
 
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
@@ -44,11 +44,11 @@ export const systemConfigInputSchema = z.object({
       bootRetryInterval: z.number().int().positive().default(10).optional(),
       unknownChargerStatus: z
         .enum([
-          RegistrationStatusEnumType.Accepted,
-          RegistrationStatusEnumType.Pending,
-          RegistrationStatusEnumType.Rejected,
+          OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+          OCPP2_0_1.RegistrationStatusEnumType.Pending,
+          OCPP2_0_1.RegistrationStatusEnumType.Rejected,
         ])
-        .default(RegistrationStatusEnumType.Accepted)
+        .default(OCPP2_0_1.RegistrationStatusEnumType.Accepted)
         .optional(), // Unknown chargers have no entry in BootConfig table
       getBaseReportOnPending: z.boolean().default(true).optional(),
       bootWithRejectedVariables: z.boolean().default(true).optional(),
@@ -297,9 +297,9 @@ export const systemConfigSchema = z
         heartbeatInterval: z.number().int().positive(),
         bootRetryInterval: z.number().int().positive(),
         unknownChargerStatus: z.enum([
-          RegistrationStatusEnumType.Accepted,
-          RegistrationStatusEnumType.Pending,
-          RegistrationStatusEnumType.Rejected,
+          OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+          OCPP2_0_1.RegistrationStatusEnumType.Pending,
+          OCPP2_0_1.RegistrationStatusEnumType.Rejected,
         ]), // Unknown chargers have no entry in BootConfig table
         getBaseReportOnPending: z.boolean(),
         bootWithRejectedVariables: z.boolean(),

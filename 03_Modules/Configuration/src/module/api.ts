@@ -11,43 +11,16 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   AsMessageEndpoint,
-  AttributeEnumType,
   BootConfig,
   BootConfigSchema,
-  BootNotificationResponse,
   CallAction,
-  ChangeAvailabilityRequest,
-  ChangeAvailabilityRequestSchema,
-  ClearDisplayMessageRequest,
-  ClearDisplayMessageRequestSchema,
-  DataEnumType,
-  GetDisplayMessagesRequest,
-  GetDisplayMessagesRequestSchema,
   HttpMethod,
   IMessageConfirmation,
-  MessageInfoType,
-  MutabilityEnumType,
   Namespace,
-  PublishFirmwareRequest,
-  PublishFirmwareRequestSchema,
-  ResetRequest,
-  ResetRequestSchema,
-  SetDisplayMessageRequest,
-  SetDisplayMessageRequestSchema,
-  SetNetworkProfileRequest,
-  SetNetworkProfileRequestSchema,
-  SetVariableDataType,
-  SetVariablesRequest,
-  SetVariablesResponse,
-  SetVariableStatusEnumType,
-  TriggerMessageRequest,
-  TriggerMessageRequestSchema,
-  UnpublishFirmwareRequest,
-  UnpublishFirmwareRequestSchema,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
   UpdateChargingStationPasswordRequest,
   UpdateChargingStationPasswordSchema,
-  UpdateFirmwareRequest,
-  UpdateFirmwareRequestSchema,
 } from '@citrineos/base';
 import {
   Boot,
@@ -107,13 +80,13 @@ export class ConfigurationModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.SetNetworkProfile,
-    SetNetworkProfileRequestSchema,
+    OCPP2_0_1.SetNetworkProfileRequestSchema,
     { websocketServerConfigId: { type: 'string' } }
   )
   async setNetworkProfile(
     identifier: string,
     tenantId: string,
-    request: SetNetworkProfileRequest,
+    request: OCPP2_0_1.SetNetworkProfileRequest,
     callbackUrl?: string,
     extraQueries?: Record<string, any>
   ): Promise<IMessageConfirmation> {
@@ -142,12 +115,12 @@ export class ConfigurationModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.ClearDisplayMessage,
-    ClearDisplayMessageRequestSchema,
+    OCPP2_0_1.ClearDisplayMessageRequestSchema,
   )
   clearDisplayMessage(
     identifier: string,
     tenantId: string,
-    request: ClearDisplayMessageRequest,
+    request: OCPP2_0_1.ClearDisplayMessageRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
@@ -161,12 +134,12 @@ export class ConfigurationModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.GetDisplayMessages,
-    GetDisplayMessagesRequestSchema,
+    OCPP2_0_1.GetDisplayMessagesRequestSchema,
   )
   getDisplayMessages(
     identifier: string,
     tenantId: string,
-    request: GetDisplayMessagesRequest,
+    request: OCPP2_0_1.GetDisplayMessagesRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
@@ -178,11 +151,11 @@ export class ConfigurationModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.PublishFirmware, PublishFirmwareRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.PublishFirmware, OCPP2_0_1.PublishFirmwareRequestSchema)
   publishFirmware(
     identifier: string,
     tenantId: string,
-    request: PublishFirmwareRequest,
+    request: OCPP2_0_1.PublishFirmwareRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
@@ -196,15 +169,15 @@ export class ConfigurationModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.SetDisplayMessage,
-    SetDisplayMessageRequestSchema,
+    OCPP2_0_1.SetDisplayMessageRequestSchema,
   )
   async setDisplayMessage(
     identifier: string,
     tenantId: string,
-    request: SetDisplayMessageRequest,
+    request: OCPP2_0_1.SetDisplayMessageRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    const messageInfo = request.message as MessageInfoType;
+    const messageInfo = request.message as OCPP2_0_1.MessageInfoType;
 
     const languageTag = messageInfo.message.language;
     if (languageTag && !validateLanguageTag(languageTag)) {
@@ -231,12 +204,12 @@ export class ConfigurationModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.UnpublishFirmware,
-    UnpublishFirmwareRequestSchema,
+    OCPP2_0_1.UnpublishFirmwareRequestSchema,
   )
   unpublishFirmware(
     identifier: string,
     tenantId: string,
-    request: UnpublishFirmwareRequest,
+    request: OCPP2_0_1.UnpublishFirmwareRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
@@ -248,11 +221,11 @@ export class ConfigurationModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.UpdateFirmware, UpdateFirmwareRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.UpdateFirmware, OCPP2_0_1.UpdateFirmwareRequestSchema)
   updateFirmware(
     identifier: string,
     tenantId: string,
-    request: UpdateFirmwareRequest,
+    request: OCPP2_0_1.UpdateFirmwareRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
@@ -264,11 +237,11 @@ export class ConfigurationModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.Reset, ResetRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.Reset, OCPP2_0_1.ResetRequestSchema)
   reset(
     identifier: string,
     tenantId: string,
-    request: ResetRequest,
+    request: OCPP2_0_1.ResetRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
@@ -282,12 +255,12 @@ export class ConfigurationModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.ChangeAvailability,
-    ChangeAvailabilityRequestSchema,
+    OCPP2_0_1.ChangeAvailabilityRequestSchema,
   )
   changeAvailability(
     identifier: string,
     tenantId: string,
-    request: ChangeAvailabilityRequest,
+    request: OCPP2_0_1.ChangeAvailabilityRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
@@ -299,11 +272,11 @@ export class ConfigurationModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.TriggerMessage, TriggerMessageRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.TriggerMessage, OCPP2_0_1.TriggerMessageRequestSchema)
   triggerMessage(
     identifier: string,
     tenantId: string,
-    request: TriggerMessageRequest,
+    request: OCPP2_0_1.TriggerMessageRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
@@ -327,7 +300,7 @@ export class ConfigurationModuleApi
   )
   putBootConfig(
     request: FastifyRequest<{
-      Body: BootNotificationResponse;
+      Body: OCPP2_0_1.BootNotificationResponse;
       Querystring: ChargingStationKeyQuerystring;
     }>,
   ): Promise<BootConfig | undefined> {
@@ -491,11 +464,11 @@ export class ConfigurationModuleApi
           {
             variable: { name: 'BasicAuthPassword' },
             attributeValue: password,
-            attributeType: AttributeEnumType.Actual,
+            attributeType: OCPP2_0_1.AttributeEnumType.Actual,
             component: { name: 'SecurityCtrlr' },
-          } as SetVariableDataType,
+          } as OCPP2_0_1.SetVariableDataType,
         ],
-      } as SetVariablesRequest,
+      } as OCPP2_0_1.SetVariablesRequest,
       callbackUrl,
       correlationId,
     );
@@ -512,10 +485,10 @@ export class ConfigurationModuleApi
       );
     }
 
-    const setVariablesResponse: SetVariablesResponse =
+    const setVariablesResponse: OCPP2_0_1.SetVariablesResponse =
       JSON.parse(responseJsonString);
     const passwordUpdated = setVariablesResponse.setVariableResult.every(
-      (result) => result.attributeStatus === SetVariableStatusEnumType.Accepted,
+      (result) => result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Accepted,
     );
     if (!passwordUpdated) {
       throw new Error(`Failure updating password on ${stationId} station`);
@@ -538,13 +511,13 @@ export class ConfigurationModuleApi
           },
           variableAttribute: [
             {
-              type: AttributeEnumType.Actual,
+              type: OCPP2_0_1.AttributeEnumType.Actual,
               value: password,
-              mutability: MutabilityEnumType.WriteOnly,
+              mutability: OCPP2_0_1.MutabilityEnumType.WriteOnly,
             },
           ],
           variableCharacteristics: {
-            dataType: DataEnumType.passwordString,
+            dataType: OCPP2_0_1.DataEnumType.passwordString,
             supportsMonitoring: false,
           },
         },
@@ -559,7 +532,7 @@ export class ConfigurationModuleApi
           this._module.deviceModelRepository.updateResultByStationId(
             {
               attributeType: variableAttribute.type,
-              attributeStatus: SetVariableStatusEnumType.Accepted,
+              attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
               attributeStatusInfo: { reasonCode: 'SetOnCharger' },
               component: variableAttribute.component,
               variable: variableAttribute.variable,

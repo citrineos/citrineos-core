@@ -6,32 +6,17 @@
 import {
   AbstractModule,
   AsHandler,
-  AttributeEnumType,
   CallAction,
-  CertificateHashDataChainType,
-  CertificateSignedRequest,
-  CertificateSignedResponse,
-  CertificateSigningUseEnumType,
-  DeleteCertificateResponse,
   ErrorCode,
   EventGroup,
-  GenericStatusEnumType,
-  Get15118EVCertificateRequest,
-  Get15118EVCertificateResponse,
-  GetCertificateStatusEnumType,
-  GetCertificateStatusRequest,
-  GetCertificateStatusResponse,
-  GetInstalledCertificateIdsResponse,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageHandler,
   IMessageSender,
-  InstallCertificateResponse,
-  Iso15118EVCertificateStatusEnumType,
   Namespace,
-  SignCertificateRequest,
-  SignCertificateResponse,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
   SystemConfig,
 } from '@citrineos/base';
 import { Op } from 'sequelize';
@@ -186,11 +171,11 @@ export class CertificatesModule extends AbstractModule {
 
   @AsHandler(OCPP2_0_1_CallAction.Get15118EVCertificate)
   protected async _handleGet15118EVCertificate(
-    message: IMessage<Get15118EVCertificateRequest>,
+    message: IMessage<OCPP2_0_1.Get15118EVCertificateRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('Get15118EVCertificate received:', message, props);
-    const request: Get15118EVCertificateRequest = message.payload;
+    const request: OCPP2_0_1.Get15118EVCertificateRequest = message.payload;
 
     try {
       const exiResponse =
@@ -199,24 +184,24 @@ export class CertificatesModule extends AbstractModule {
           request.exiRequest,
         );
       this.sendCallResultWithMessage(message, {
-        status: Iso15118EVCertificateStatusEnumType.Accepted,
+        status: OCPP2_0_1.Iso15118EVCertificateStatusEnumType.Accepted,
         exiResponse: exiResponse,
-      } as Get15118EVCertificateResponse);
+      } as OCPP2_0_1.Get15118EVCertificateResponse);
     } catch (error) {
       this.sendCallResultWithMessage(message, {
-        status: Iso15118EVCertificateStatusEnumType.Failed,
+        status: OCPP2_0_1.Iso15118EVCertificateStatusEnumType.Failed,
         statusInfo: {
           reasonCode: ErrorCode.GenericError,
           additionalInfo: error instanceof Error ? error.message : undefined,
         },
         exiResponse: '',
-      } as Get15118EVCertificateResponse);
+      } as OCPP2_0_1.Get15118EVCertificateResponse);
     }
   }
 
   @AsHandler(OCPP2_0_1_CallAction.GetCertificateStatus)
   protected async _handleGetCertificateStatus(
-    message: IMessage<GetCertificateStatusRequest>,
+    message: IMessage<OCPP2_0_1.GetCertificateStatusRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetCertificateStatusRequest received:', message, props);
@@ -233,27 +218,27 @@ export class CertificatesModule extends AbstractModule {
         reqData.responderURL,
       );
       this.sendCallResultWithMessage(message, {
-        status: GetCertificateStatusEnumType.Accepted,
+        status: OCPP2_0_1.GetCertificateStatusEnumType.Accepted,
         ocspResponse: ocspResponse,
-      } as GetCertificateStatusResponse);
+      } as OCPP2_0_1.GetCertificateStatusResponse);
     } catch (error) {
       this._logger.error(`GetCertificateStatus failed: ${error}`);
       this.sendCallResultWithMessage(message, {
-        status: GetCertificateStatusEnumType.Failed,
+        status: OCPP2_0_1.GetCertificateStatusEnumType.Failed,
         statusInfo: { reasonCode: ErrorCode.GenericError },
-      } as GetCertificateStatusResponse);
+      } as OCPP2_0_1.GetCertificateStatusResponse);
     }
   }
 
   @AsHandler(OCPP2_0_1_CallAction.SignCertificate)
   protected async _handleSignCertificate(
-    message: IMessage<SignCertificateRequest>,
+    message: IMessage<OCPP2_0_1.SignCertificateRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('Sign certificate request received:', message, props);
     const stationId: string = message.context.stationId;
     const csrString: string = message.payload.csr.replace(/\n/g, '');
-    const certificateType: CertificateSigningUseEnumType | undefined | null =
+    const certificateType: OCPP2_0_1.CertificateSigningUseEnumType | undefined | null =
       message.payload.certificateType;
 
     // TODO OCTT Currently fails the CSMS on test case TC_A_14_CSMS if an invalid csr is rejected
@@ -261,8 +246,8 @@ export class CertificatesModule extends AbstractModule {
     //  So it is necessary to accept before checking the csr. when this is fixed, this line can be removed
     //  And the other sendCallResultWithMessage for SignCertificateResponse can be uncommented
     this.sendCallResultWithMessage(message, {
-      status: GenericStatusEnumType.Accepted,
-    } as SignCertificateResponse);
+      status: OCPP2_0_1.GenericStatusEnumType.Accepted,
+    } as OCPP2_0_1.SignCertificateResponse);
 
     let certificateChainPem: string;
     try {
@@ -301,7 +286,7 @@ export class CertificatesModule extends AbstractModule {
       {
         certificateChain: certificateChainPem,
         certificateType: certificateType,
-      } as CertificateSignedRequest,
+      } as OCPP2_0_1.CertificateSignedRequest,
     );
   }
 
@@ -311,7 +296,7 @@ export class CertificatesModule extends AbstractModule {
 
   @AsHandler(OCPP2_0_1_CallAction.CertificateSigned)
   protected _handleCertificateSigned(
-    message: IMessage<CertificateSignedResponse>,
+    message: IMessage<OCPP2_0_1.CertificateSignedResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('CertificateSigned received:', message, props);
@@ -321,7 +306,7 @@ export class CertificatesModule extends AbstractModule {
 
   @AsHandler(OCPP2_0_1_CallAction.DeleteCertificate)
   protected async _handleDeleteCertificate(
-    message: IMessage<DeleteCertificateResponse>,
+    message: IMessage<OCPP2_0_1.DeleteCertificateResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('DeleteCertificate received:', message, props);
@@ -329,11 +314,11 @@ export class CertificatesModule extends AbstractModule {
 
   @AsHandler(OCPP2_0_1_CallAction.GetInstalledCertificateIds)
   protected async _handleGetInstalledCertificateIds(
-    message: IMessage<GetInstalledCertificateIdsResponse>,
+    message: IMessage<OCPP2_0_1.GetInstalledCertificateIdsResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetInstalledCertificateIds received:', message, props);
-    const certificateHashDataList: CertificateHashDataChainType[] =
+    const certificateHashDataList: OCPP2_0_1.CertificateHashDataChainType[] =
       message.payload.certificateHashDataChain!;
     // persist installed certificate information
     if (certificateHashDataList && certificateHashDataList.length > 0) {
@@ -344,7 +329,7 @@ export class CertificatesModule extends AbstractModule {
       );
       // save new hashes
       const records = certificateHashDataList.map(
-        (certificateHashDataWrap: CertificateHashDataChainType) => {
+        (certificateHashDataWrap: OCPP2_0_1.CertificateHashDataChainType) => {
           const certificateHashData =
             certificateHashDataWrap.certificateHashData;
           const certificateType = certificateHashDataWrap.certificateType;
@@ -374,7 +359,7 @@ export class CertificatesModule extends AbstractModule {
 
   @AsHandler(OCPP2_0_1_CallAction.InstallCertificate)
   protected async _handleInstallCertificate(
-    message: IMessage<InstallCertificateResponse>,
+    message: IMessage<OCPP2_0_1.InstallCertificateResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('InstallCertificate received:', message, props);
@@ -383,14 +368,14 @@ export class CertificatesModule extends AbstractModule {
   private async _verifySignCertRequest(
     csrString: string,
     stationId: string,
-    certificateType?: CertificateSigningUseEnumType | null,
+    certificateType?: OCPP2_0_1.CertificateSigningUseEnumType | null,
   ): Promise<void> {
     // Verify certificate type
     if (
       !certificateType ||
-      (certificateType !== CertificateSigningUseEnumType.V2GCertificate &&
+      (certificateType !== OCPP2_0_1.CertificateSigningUseEnumType.V2GCertificate &&
         certificateType !==
-          CertificateSigningUseEnumType.ChargingStationCertificate)
+        OCPP2_0_1.CertificateSigningUseEnumType.ChargingStationCertificate)
     ) {
       throw new Error(`Unsupported certificate type: ${certificateType}`);
     }
@@ -407,7 +392,7 @@ export class CertificatesModule extends AbstractModule {
 
     if (
       certificateType ===
-      CertificateSigningUseEnumType.ChargingStationCertificate
+      OCPP2_0_1.CertificateSigningUseEnumType.ChargingStationCertificate
     ) {
       // Verify organization name match the one stored in the device model
       const organizationName =
@@ -415,7 +400,7 @@ export class CertificatesModule extends AbstractModule {
           stationId: stationId,
           component_name: 'SecurityCtrlr',
           variable_name: 'OrganizationName',
-          type: AttributeEnumType.Actual,
+          type: OCPP2_0_1.AttributeEnumType.Actual,
         });
       if (!organizationName || organizationName.length < 1) {
         throw new Error('Expected organizationName not found in DB');
@@ -444,7 +429,7 @@ export class CertificatesModule extends AbstractModule {
 
   private async deleteExistingMatchingCertificateHashes(
     stationId: string,
-    certificateHashDataList: CertificateHashDataChainType[],
+    certificateHashDataList: OCPP2_0_1.CertificateHashDataChainType[],
   ) {
     try {
       const certificateTypes = certificateHashDataList.map(

@@ -1,5 +1,5 @@
 import { ITransactionEventRepository } from '@citrineos/data';
-import { AbstractModule, CallAction } from '@citrineos/base';
+import { AbstractModule, OCPP2_0_1_CallAction } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { CostCalculator } from './CostCalculator';
 import { Scheduler } from './Scheduler';

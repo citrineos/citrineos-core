@@ -8,20 +8,10 @@ import {
   AbstractModuleApi,
   AsMessageEndpoint,
   CallAction,
-  ComponentVariableType,
-  CustomerInformationRequest,
-  CustomerInformationRequestSchema,
-  GetBaseReportRequest,
-  GetBaseReportRequestSchema,
-  GetLogRequest,
-  GetLogRequestSchema,
-  GetMonitoringReportRequest,
-  GetMonitoringReportRequestSchema,
-  GetReportRequest,
-  GetReportRequestSchema,
   IMessageConfirmation,
-  MonitoringCriterionEnumType,
   Namespace,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { IReportingModuleApi } from './interface';
@@ -56,11 +46,11 @@ export class ReportingModuleApi
    * Message Endpoint Methods
    */
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetBaseReport, GetBaseReportRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetBaseReport, OCPP2_0_1.GetBaseReportRequestSchema)
   getBaseReport(
     identifier: string,
     tenantId: string,
-    request: GetBaseReportRequest,
+    request: OCPP2_0_1.GetBaseReportRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     // TODO: Consider using requestId to send NotifyReportRequests to callbackUrl
@@ -73,11 +63,11 @@ export class ReportingModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetReport, GetReportRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetReport, OCPP2_0_1.GetReportRequestSchema)
   async getCustomReport(
     identifier: string,
     tenantId: string,
-    request: GetReportRequest,
+    request: OCPP2_0_1.GetReportRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     // if request size is bigger than BytesPerMessageGetReport,
@@ -96,7 +86,7 @@ export class ReportingModuleApi
     }
 
     const componentVariables =
-      request.componentVariable as ComponentVariableType[];
+      request.componentVariable as OCPP2_0_1.ComponentVariableType[];
     if (componentVariables.length === 0) {
       return await this._module.sendCall(
         identifier,
@@ -134,7 +124,7 @@ export class ReportingModuleApi
             componentVariable: batch,
             componentCriteria: request.componentCriteria,
             requestId: request.requestId,
-          } as GetReportRequest,
+          } as OCPP2_0_1.GetReportRequest,
           callbackUrl,
         );
         confirmations.push({
@@ -157,18 +147,18 @@ export class ReportingModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.GetMonitoringReport,
-    GetMonitoringReportRequestSchema,
+    OCPP2_0_1.GetMonitoringReportRequestSchema,
   )
   async getMonitoringReport(
     identifier: string,
     tenantId: string,
-    request: GetMonitoringReportRequest,
+    request: OCPP2_0_1.GetMonitoringReportRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     const componentVariable =
-      request.componentVariable as ComponentVariableType[];
+      request.componentVariable as OCPP2_0_1.ComponentVariableType[];
     const monitoringCriteria =
-      request.monitoringCriteria as MonitoringCriterionEnumType[];
+      request.monitoringCriteria as OCPP2_0_1.MonitoringCriterionEnumType[];
 
     // monitoringCriteria is empty AND componentVariables is empty.
     // The set of all existing monitors is reported in one or more notifyMonitoringReportRequest messages.
@@ -209,7 +199,7 @@ export class ReportingModuleApi
             componentVariable: batch,
             monitoringCriteria: monitoringCriteria,
             requestId: request.requestId,
-          } as GetMonitoringReportRequest,
+          } as OCPP2_0_1.GetMonitoringReportRequest,
           callbackUrl,
         );
         confirmations.push({
@@ -230,11 +220,11 @@ export class ReportingModuleApi
     return { success: true, payload: confirmations };
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetLog, GetLogRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetLog, OCPP2_0_1.GetLogRequestSchema)
   getLog(
     identifier: string,
     tenantId: string,
-    request: GetLogRequest,
+    request: OCPP2_0_1.GetLogRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
@@ -248,12 +238,12 @@ export class ReportingModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.CustomerInformation,
-    CustomerInformationRequestSchema,
+    OCPP2_0_1.CustomerInformationRequestSchema,
   )
   customerInformation(
     identifier: string,
     tenantId: string,
-    request: CustomerInformationRequest,
+    request: OCPP2_0_1.CustomerInformationRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(

@@ -20,30 +20,12 @@ import {
   AsDataEndpoint,
   AsMessageEndpoint,
   CallAction,
-  ClearVariableMonitoringRequest,
-  ClearVariableMonitoringRequestSchema,
-  DataEnumType,
-  GetVariableDataType,
-  GetVariablesRequest,
-  GetVariablesRequestSchema,
   HttpMethod,
   IMessageConfirmation,
-  MonitorEnumType,
-  MutabilityEnumType,
   Namespace,
-  ReportDataType,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
   ReportDataTypeSchema,
-  SetMonitoringBaseRequest,
-  SetMonitoringBaseRequestSchema,
-  SetMonitoringDataType,
-  SetMonitoringLevelRequest,
-  SetMonitoringLevelRequestSchema,
-  SetVariableDataType,
-  SetVariableMonitoringRequest,
-  SetVariableMonitoringRequestSchema,
-  SetVariablesRequest,
-  SetVariablesRequestSchema,
-  SetVariableStatusEnumType,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { getBatches, getSizeOfRequest } from '@citrineos/util';
@@ -79,12 +61,12 @@ export class MonitoringModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.SetVariableMonitoring,
-    SetVariableMonitoringRequestSchema,
+    OCPP2_0_1.SetVariableMonitoringRequestSchema,
   )
   async setVariableMonitoring(
     identifier: string,
     tenantId: string,
-    request: SetVariableMonitoringRequest,
+    request: OCPP2_0_1.SetVariableMonitoringRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     // if request size is bigger than BytesPerMessageSetVariableMonitoring,
@@ -106,9 +88,9 @@ export class MonitoringModuleApi
     }
 
     const setMonitoringData =
-      request.setMonitoringData as SetMonitoringDataType[];
+      request.setMonitoringData as OCPP2_0_1.SetMonitoringDataType[];
     for (let i = 0; i < setMonitoringData.length; i++) {
-      const setMonitoringDataType: SetMonitoringDataType = setMonitoringData[i];
+      const setMonitoringDataType: OCPP2_0_1.SetMonitoringDataType = setMonitoringData[i];
       this._logger.debug('Current SetMonitoringData', setMonitoringDataType);
       const [component, variable] =
         await this._module.deviceModelRepository.findComponentAndVariable(
@@ -119,11 +101,11 @@ export class MonitoringModuleApi
       // When the CSMS sends a SetVariableMonitoringRequest with type Delta for a Variable that is NOT of a numeric
       // type, It is RECOMMENDED to use a monitorValue of 1.
       if (
-        setMonitoringDataType.type === MonitorEnumType.Delta &&
+        setMonitoringDataType.type === OCPP2_0_1.MonitorEnumType.Delta &&
         variable &&
         variable.variableCharacteristics &&
-        variable.variableCharacteristics.dataType !== DataEnumType.decimal &&
-        variable.variableCharacteristics.dataType !== DataEnumType.integer
+        variable.variableCharacteristics.dataType !== OCPP2_0_1.DataEnumType.decimal &&
+        variable.variableCharacteristics.dataType !== OCPP2_0_1.DataEnumType.integer
       ) {
         setMonitoringDataType.value = 1;
         this._logger.debug(
@@ -165,7 +147,7 @@ export class MonitoringModuleApi
           identifier,
           tenantId,
           OCPP2_0_1_CallAction.SetVariableMonitoring,
-          { setMonitoringData: batch } as SetVariableMonitoringRequest,
+          { setMonitoringData: batch } as OCPP2_0_1.SetVariableMonitoringRequest,
           callbackUrl,
         );
         confirmations.push({
@@ -188,12 +170,12 @@ export class MonitoringModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.ClearVariableMonitoring,
-    ClearVariableMonitoringRequestSchema,
+    OCPP2_0_1.ClearVariableMonitoringRequestSchema,
   )
   async clearVariableMonitoring(
     identifier: string,
     tenantId: string,
-    request: ClearVariableMonitoringRequest,
+    request: OCPP2_0_1.ClearVariableMonitoringRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     this._logger.debug(
@@ -243,7 +225,7 @@ export class MonitoringModuleApi
           identifier,
           tenantId,
           OCPP2_0_1_CallAction.ClearVariableMonitoring,
-          { id: batch } as ClearVariableMonitoringRequest,
+          { id: batch } as OCPP2_0_1.ClearVariableMonitoringRequest,
           callbackUrl,
         );
         confirmations.push({
@@ -265,12 +247,12 @@ export class MonitoringModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.SetMonitoringLevel,
-    SetMonitoringLevelRequestSchema,
+    OCPP2_0_1.SetMonitoringLevelRequestSchema,
   )
   setMonitoringLevel(
     identifier: string,
     tenantId: string,
-    request: SetMonitoringLevelRequest,
+    request: OCPP2_0_1.SetMonitoringLevelRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
@@ -284,12 +266,12 @@ export class MonitoringModuleApi
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.SetMonitoringBase,
-    SetMonitoringBaseRequestSchema,
+    OCPP2_0_1.SetMonitoringBaseRequestSchema,
   )
   setMonitoringBase(
     identifier: string,
     tenantId: string,
-    request: SetMonitoringBaseRequest,
+    request: OCPP2_0_1.SetMonitoringBaseRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
@@ -301,14 +283,14 @@ export class MonitoringModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.SetVariables, SetVariablesRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.SetVariables, OCPP2_0_1.SetVariablesRequestSchema)
   async setVariables(
     identifier: string,
     tenantId: string,
-    request: SetVariablesRequest,
+    request: OCPP2_0_1.SetVariablesRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    let setVariableData = request.setVariableData as SetVariableDataType[];
+    let setVariableData = request.setVariableData as OCPP2_0_1.SetVariableDataType[];
 
     // Awaiting save action so that SetVariablesResponse does not trigger a race condition since an error is thrown
     // from SetVariablesResponse handler if variable does not exist when it attempts to save the Response's status
@@ -341,7 +323,7 @@ export class MonitoringModuleApi
           identifier,
           tenantId,
           OCPP2_0_1_CallAction.SetVariables,
-          { setVariableData: batch } as SetVariablesRequest,
+          { setVariableData: batch } as OCPP2_0_1.SetVariablesRequest,
           callbackUrl,
         );
         confirmations.push({
@@ -363,11 +345,11 @@ export class MonitoringModuleApi
     return { success: true, payload: confirmations };
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetVariables, GetVariablesRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetVariables, OCPP2_0_1.GetVariablesRequestSchema)
   async getVariables(
     identifier: string,
     tenantId: string,
-    request: GetVariablesRequest,
+    request: OCPP2_0_1.GetVariablesRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     // if request size is bigger than BytesPerMessageGetVariables,
@@ -388,7 +370,7 @@ export class MonitoringModuleApi
       return { success: false, payload: errorMsg };
     }
 
-    let getVariableData = request.getVariableData as GetVariableDataType[];
+    let getVariableData = request.getVariableData as OCPP2_0_1.GetVariableDataType[];
     let itemsPerMessageGetVariables =
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
@@ -412,7 +394,7 @@ export class MonitoringModuleApi
           identifier,
           tenantId,
           OCPP2_0_1_CallAction.GetVariables,
-          { getVariableData: batch } as GetVariablesRequest,
+          { getVariableData: batch } as OCPP2_0_1.GetVariablesRequest,
           callbackUrl,
         );
         confirmations.push({
@@ -446,7 +428,7 @@ export class MonitoringModuleApi
   )
   async putDeviceModelVariables(
     request: FastifyRequest<{
-      Body: ReportDataType;
+      Body: OCPP2_0_1.ReportDataType;
       Querystring: CreateOrUpdateVariableAttributeQuerystring;
     }>,
   ): Promise<sequelize.VariableAttribute[]> {
@@ -457,7 +439,7 @@ export class MonitoringModuleApi
     // if it is not present, we set it to ReadWrite
     for (const variableAttr of request.body.variableAttribute) {
       if (!variableAttr.mutability) {
-        variableAttr.mutability = MutabilityEnumType.ReadWrite;
+        variableAttr.mutability = OCPP2_0_1.MutabilityEnumType.ReadWrite;
       }
     }
     const timestamp = new Date().toISOString();
@@ -477,7 +459,7 @@ export class MonitoringModuleApi
             this._module.deviceModelRepository.updateResultByStationId(
               {
                 attributeType: variableAttribute.type,
-                attributeStatus: SetVariableStatusEnumType.Accepted,
+                attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
                 attributeStatusInfo: { reasonCode: 'SetOnCharger' },
                 component: variableAttribute.component,
                 variable: variableAttribute.variable,

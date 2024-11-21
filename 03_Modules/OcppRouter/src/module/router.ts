@@ -23,16 +23,15 @@ import {
   IMessageSender,
   MessageOrigin,
   MessageState,
-  MessageTriggerEnumType,
   MessageTypeId,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
   OcppError,
   OcppRequest,
   OcppResponse,
-  RegistrationStatusEnumType,
   RequestBuilder,
   RetryMessageError,
   SystemConfig,
-  TriggerMessageRequest,
 } from '@citrineos/base';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
@@ -645,12 +644,12 @@ export class MessageRouterImpl
   ): Promise<boolean> {
     const status = await this._cache.get<string>(BOOT_STATUS, identifier);
     if (
-      status === RegistrationStatusEnumType.Rejected &&
+      status === OCPP2_0_1.RegistrationStatusEnumType.Rejected &&
       // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
       !(
         (message[2] as CallAction) === OCPP2_0_1_CallAction.TriggerMessage &&
-        (message[3] as TriggerMessageRequest).requestedMessage ==
-          MessageTriggerEnumType.BootNotification
+        (message[3] as OCPP2_0_1.TriggerMessageRequest).requestedMessage ==
+        OCPP2_0_1.MessageTriggerEnumType.BootNotification
       )
     ) {
       return false;
