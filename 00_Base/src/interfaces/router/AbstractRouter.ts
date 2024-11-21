@@ -7,8 +7,6 @@ import { Ajv, ErrorObject } from 'ajv';
 
 import {
   Call,
-  CALL_RESULT_SCHEMA_MAP,
-  CALL_SCHEMA_MAP,
   CallAction,
   CallResult,
   ICache,
@@ -18,6 +16,10 @@ import {
   IMessageSender,
   MessageOrigin,
   MessageState,
+  OCPP1_6_CALL_RESULT_SCHEMA_MAP,
+  OCPP1_6_CALL_SCHEMA_MAP,
+  OCPP2_0_1_CALL_RESULT_SCHEMA_MAP,
+  OCPP2_0_1_CALL_SCHEMA_MAP,
   OcppError,
   OcppRequest,
   OcppResponse,
@@ -165,16 +167,30 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
    *
    * @param {string} identifier - The identifier of the EVSE.
    * @param {Call} message - The Call object to validate.
+   * @param {string} subprotocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @return {boolean} - Returns true if the Call object is valid, false otherwise.
    */
   protected _validateCall(
     identifier: string,
     message: Call,
+    subprotocol: string, 
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
-    const action = message[2] as CallAction;
+    const action = message[2];
     const payload = message[3];
 
-    const schema = CALL_SCHEMA_MAP.get(action);
+    let schema;
+    switch (subprotocol) {
+      case 'ocpp1.6':
+        schema = OCPP1_6_CALL_SCHEMA_MAP.get(action);
+        break;
+      case 'ocpp2.0.1':
+        schema = OCPP2_0_1_CALL_SCHEMA_MAP.get(action);
+        break;
+      default:
+        this._logger.error('Unknown subprotocol', subprotocol);
+        return { isValid: false };
+    }
+
     if (schema) {
       const validate = this._ajv.compile(schema);
       const result = validate(payload);
@@ -202,10 +218,23 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     identifier: string,
     action: CallAction,
     message: CallResult,
+    subprotocol: string,
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
     const payload = message[2];
 
-    const schema = CALL_RESULT_SCHEMA_MAP.get(action);
+    let schema;
+    switch (subprotocol) {
+      case 'ocpp1.6':
+        schema = OCPP1_6_CALL_RESULT_SCHEMA_MAP.get(action);
+        break;
+      case 'ocpp2.0.1':
+        schema = OCPP2_0_1_CALL_RESULT_SCHEMA_MAP.get(action);
+        break;
+      default:
+        this._logger.error('Unknown subprotocol', subprotocol);
+        return { isValid: false };
+    }
+
     if (schema) {
       const validate = this._ajv.compile(schema);
       const result = validate(payload);
