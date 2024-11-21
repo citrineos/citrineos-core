@@ -183,7 +183,7 @@ async function processJsonSchema(data, writeToFile = true) {
           (enumDefinitions.length > 0
             ? `\nimport { ${enumDefinitions.join(', ')} } from '../enums';\n`
             : '\n') +
-          `import { ${schemaType} } from '../../..';\n` +
+          `import { ${schemaType} } from '../../../..';\n` +
           ts.substring(index);
 
         // Add null type to all optional properties
