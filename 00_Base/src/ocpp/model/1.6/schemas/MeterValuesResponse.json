@@ -1,7 +1,7 @@
 {
+  "id": "MeterValuesResponse",
   "title": "MeterValuesResponse",
   "type": "object",
   "properties": {},
-  "additionalProperties": false,
-  "$id": "MeterValuesResponse"
+  "additionalProperties": false
 }

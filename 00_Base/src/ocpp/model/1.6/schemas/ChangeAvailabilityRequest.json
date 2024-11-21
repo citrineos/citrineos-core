@@ -1,11 +1,12 @@
 {
+  "id": "ChangeAvailabilityRequest",
   "title": "ChangeAvailabilityRequest",
   "type": "object",
   "properties": {
     "connectorId": {
       "type": "integer"
     },
-    "type": {
+    "ChangeAvailabilityRequestType": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["Inoperative", "Operative"],
@@ -13,6 +14,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["connectorId", "type"],
-  "$id": "ChangeAvailabilityRequest"
+  "required": ["connectorId", "ChangeAvailabilityRequestType"]
 }

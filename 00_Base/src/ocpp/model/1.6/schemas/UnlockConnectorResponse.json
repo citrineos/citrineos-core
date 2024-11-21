@@ -1,8 +1,9 @@
 {
+  "id": "UnlockConnectorResponse",
   "title": "UnlockConnectorResponse",
   "type": "object",
   "properties": {
-    "status": {
+    "UnlockConnectorResponseStatus": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["Unlocked", "UnlockFailed", "NotSupported"],
@@ -10,6 +11,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["status"],
-  "$id": "UnlockConnectorResponse"
+  "required": ["UnlockConnectorResponseStatus"]
 }

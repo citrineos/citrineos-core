@@ -1,22 +1,22 @@
 {
+  "id": "BootNotificationResponse",
   "title": "BootNotificationResponse",
   "type": "object",
   "properties": {
-    "status": {
-      "type": "string",
-      "additionalProperties": false,
-      "enum": ["Accepted", "Pending", "Rejected"],
-      "tsEnumNames": ["Accepted", "Pending", "Rejected"]
-    },
     "currentTime": {
       "type": "string",
       "format": "date-time"
     },
     "interval": {
       "type": "integer"
+    },
+    "BootNotificationResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Pending", "Rejected"],
+      "tsEnumNames": ["Accepted", "Pending", "Rejected"]
     }
   },
   "additionalProperties": false,
-  "required": ["status", "currentTime", "interval"],
-  "$id": "BootNotificationResponse"
+  "required": ["BootNotificationResponseStatus", "currentTime", "interval"]
 }

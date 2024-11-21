@@ -1,4 +1,5 @@
 {
+  "id": "RemoteStartTransactionRequest",
   "title": "RemoteStartTransactionRequest",
   "type": "object",
   "properties": {
@@ -21,28 +22,6 @@
         "stackLevel": {
           "type": "integer"
         },
-        "chargingProfilePurpose": {
-          "type": "string",
-          "additionalProperties": false,
-          "enum": ["ChargePointMaxProfile", "TxDefaultProfile", "TxProfile"],
-          "tsEnumNames": [
-            "ChargePointMaxProfile",
-            "TxDefaultProfile",
-            "TxProfile"
-          ]
-        },
-        "chargingProfileKind": {
-          "type": "string",
-          "additionalProperties": false,
-          "enum": ["Absolute", "Recurring", "Relative"],
-          "tsEnumNames": ["Absolute", "Recurring", "Relative"]
-        },
-        "recurrencyKind": {
-          "type": "string",
-          "additionalProperties": false,
-          "enum": ["Daily", "Weekly"],
-          "tsEnumNames": ["Daily", "Weekly"]
-        },
         "validFrom": {
           "type": "string",
           "format": "date-time"
@@ -60,12 +39,6 @@
             "startSchedule": {
               "type": "string",
               "format": "date-time"
-            },
-            "chargingRateUnit": {
-              "type": "string",
-              "additionalProperties": false,
-              "enum": ["A", "W"],
-              "tsEnumNames": ["A", "W"]
             },
             "chargingSchedulePeriod": {
               "type": "array",
@@ -90,23 +63,53 @@
             "minChargingRate": {
               "type": "number",
               "multipleOf": 0.1
+            },
+            "RemoteStartTransactionRequestChargingRateUnit": {
+              "type": "string",
+              "additionalProperties": false,
+              "enum": ["A", "W"],
+              "tsEnumNames": ["A", "W"]
             }
           },
           "additionalProperties": false,
-          "required": ["chargingRateUnit", "chargingSchedulePeriod"]
+          "required": [
+            "RemoteStartTransactionRequestChargingRateUnit",
+            "chargingSchedulePeriod"
+          ]
+        },
+        "RemoteStartTransactionRequestChargingProfilePurpose": {
+          "type": "string",
+          "additionalProperties": false,
+          "enum": ["ChargePointMaxProfile", "TxDefaultProfile", "TxProfile"],
+          "tsEnumNames": [
+            "ChargePointMaxProfile",
+            "TxDefaultProfile",
+            "TxProfile"
+          ]
+        },
+        "RemoteStartTransactionRequestChargingProfileKind": {
+          "type": "string",
+          "additionalProperties": false,
+          "enum": ["Absolute", "Recurring", "Relative"],
+          "tsEnumNames": ["Absolute", "Recurring", "Relative"]
+        },
+        "RemoteStartTransactionRequestRecurrencyKind": {
+          "type": "string",
+          "additionalProperties": false,
+          "enum": ["Daily", "Weekly"],
+          "tsEnumNames": ["Daily", "Weekly"]
         }
       },
       "additionalProperties": false,
       "required": [
         "chargingProfileId",
         "stackLevel",
-        "chargingProfilePurpose",
-        "chargingProfileKind",
+        "RemoteStartTransactionRequestChargingProfilePurpose",
+        "RemoteStartTransactionRequestChargingProfileKind",
         "chargingSchedule"
       ]
     }
   },
   "additionalProperties": false,
-  "required": ["idTag"],
-  "$id": "RemoteStartTransactionRequest"
+  "required": ["idTag"]
 }

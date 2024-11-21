@@ -1,8 +1,9 @@
 {
+  "id": "FirmwareStatusNotificationRequest",
   "title": "FirmwareStatusNotificationRequest",
   "type": "object",
   "properties": {
-    "status": {
+    "FirmwareStatusNotificationRequestStatus": {
       "type": "string",
       "additionalProperties": false,
       "enum": [
@@ -26,6 +27,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["status"],
-  "$id": "FirmwareStatusNotificationRequest"
+  "required": ["FirmwareStatusNotificationRequestStatus"]
 }

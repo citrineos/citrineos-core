@@ -1,8 +1,9 @@
 {
+  "id": "SetChargingProfileResponse",
   "title": "SetChargingProfileResponse",
   "type": "object",
   "properties": {
-    "status": {
+    "SetChargingProfileResponseStatus": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "NotSupported"],
@@ -10,6 +11,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["status"],
-  "$id": "SetChargingProfileResponse"
+  "required": ["SetChargingProfileResponseStatus"]
 }

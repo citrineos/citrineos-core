@@ -1,8 +1,9 @@
 {
+  "id": "SendLocalListResponse",
   "title": "SendLocalListResponse",
   "type": "object",
   "properties": {
-    "status": {
+    "SendLocalListResponseStatus": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["Accepted", "Failed", "NotSupported", "VersionMismatch"],
@@ -10,6 +11,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["status"],
-  "$id": "SendLocalListResponse"
+  "required": ["SendLocalListResponseStatus"]
 }

@@ -1,8 +1,9 @@
 {
+  "id": "TriggerMessageResponse",
   "title": "TriggerMessageResponse",
   "type": "object",
   "properties": {
-    "status": {
+    "TriggerMessageResponseStatus": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "NotImplemented"],
@@ -10,6 +11,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["status"],
-  "$id": "TriggerMessageResponse"
+  "required": ["TriggerMessageResponseStatus"]
 }

@@ -1,7 +1,7 @@
 {
+  "id": "DiagnosticsStatusNotificationResponse",
   "title": "DiagnosticsStatusNotificationResponse",
   "type": "object",
   "properties": {},
-  "additionalProperties": false,
-  "$id": "DiagnosticsStatusNotificationResponse"
+  "additionalProperties": false
 }

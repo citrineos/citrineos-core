@@ -1,13 +1,8 @@
 {
+  "id": "GetCompositeScheduleResponse",
   "title": "GetCompositeScheduleResponse",
   "type": "object",
   "properties": {
-    "status": {
-      "type": "string",
-      "additionalProperties": false,
-      "enum": ["Accepted", "Rejected"],
-      "tsEnumNames": ["Accepted", "Rejected"]
-    },
     "connectorId": {
       "type": "integer"
     },
@@ -24,12 +19,6 @@
         "startSchedule": {
           "type": "string",
           "format": "date-time"
-        },
-        "chargingRateUnit": {
-          "type": "string",
-          "additionalProperties": false,
-          "enum": ["A", "W"],
-          "tsEnumNames": ["A", "W"]
         },
         "chargingSchedulePeriod": {
           "type": "array",
@@ -54,13 +43,27 @@
         "minChargingRate": {
           "type": "number",
           "multipleOf": 0.1
+        },
+        "GetCompositeScheduleResponseChargingRateUnit": {
+          "type": "string",
+          "additionalProperties": false,
+          "enum": ["A", "W"],
+          "tsEnumNames": ["A", "W"]
         }
       },
       "additionalProperties": false,
-      "required": ["chargingRateUnit", "chargingSchedulePeriod"]
+      "required": [
+        "GetCompositeScheduleResponseChargingRateUnit",
+        "chargingSchedulePeriod"
+      ]
+    },
+    "GetCompositeScheduleResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Rejected"],
+      "tsEnumNames": ["Accepted", "Rejected"]
     }
   },
   "additionalProperties": false,
-  "required": ["status"],
-  "$id": "GetCompositeScheduleResponse"
+  "required": ["GetCompositeScheduleResponseStatus"]
 }

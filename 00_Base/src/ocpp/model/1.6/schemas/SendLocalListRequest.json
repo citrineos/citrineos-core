@@ -1,4 +1,5 @@
 {
+  "id": "SendLocalListRequest",
   "title": "SendLocalListRequest",
   "type": "object",
   "properties": {
@@ -25,7 +26,7 @@
                 "type": "string",
                 "maxLength": 20
               },
-              "status": {
+              "SendLocalListRequestStatus": {
                 "type": "string",
                 "additionalProperties": false,
                 "enum": [
@@ -45,14 +46,14 @@
               }
             },
             "additionalProperties": false,
-            "required": ["status"]
+            "required": ["SendLocalListRequestStatus"]
           }
         },
         "additionalProperties": false,
         "required": ["idTag"]
       }
     },
-    "updateType": {
+    "SendLocalListRequestUpdateType": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["Differential", "Full"],
@@ -60,6 +61,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["listVersion", "updateType"],
-  "$id": "SendLocalListRequest"
+  "required": ["listVersion", "SendLocalListRequestUpdateType"]
 }

@@ -7,25 +7,25 @@
 /**
  * execution:
  * - cd 00_Base
- * - node json-schema-processor.js VERSION path/to/json/schemas
+ * - node json-schema-processor-2.0.1.js ../../OCPP-2.0.1/schemas
  */
 const fs = require('fs');
 const jsts = require('json-schema-to-typescript');
 const prettier = require('prettier');
 const { exec } = require('child_process');
 
-if (process.argv.length === 3) {
-  console.error('Expected input version and path arguments!');
+if (process.argv.length === 2) {
+  console.error('Expected input path argument!');
   process.exit(1);
 }
 
-const ocppVersion = process.argv[2];
-const path = process.argv[3];
+const path = process.argv[2];
 const globalEnums = new Set();
 const globalDefinitions = {};
 const globalEnumDefinitions = {};
 
-const licenseComment = `// Copyright Contributors to the CitrineOS Project
+const licenseComment = `// Copyright 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
 
@@ -93,36 +93,37 @@ fs.readdir(path, (error, files) => {
 
     if (writeToFile) {
       fs.writeFileSync(
-        `./src/ocpp/model/${ocppVersion}/enums/index.ts`,
+        `./src/ocpp/model/2.0.1/enums/index.ts`,
         licenseComment +
           Object.values(globalEnumDefinitions).sort().join('\n\n') +
           '\n',
       );
       fs.writeFileSync(
-        `./src/ocpp/model/${ocppVersion}/index.ts`,
+        `./src/ocpp/model/2.0.1/index.ts`,
         licenseComment + exportStatements.join('\n') + '\n',
       );
-      exec(`npm run format-interfaces`, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`Error executing npm script: ${error.message}`);
-          return;
-        }
-        if (stderr) {
-          console.error(`stderr: ${stderr}`);
-          return;
-        }
-        console.log(`stdout: ${stdout}`);
-      });
+      exec(
+        `prettier --write ./src/ocpp/model/2.0.1/**/* && npx eslint --fix ./src/ocpp/model/2.0.1`,
+        (error, stdout, stderr) => {
+          if (error) {
+            console.error(`Error executing npm script: ${error.message}`);
+            return;
+          }
+          if (stderr) {
+            console.error(`stderr: ${stderr}`);
+            return;
+          }
+          console.log(`stdout: ${stdout}`);
+        },
+      );
     }
   });
 });
 
 async function processJsonSchema(data, writeToFile = true) {
   let jsonSchema = JSON.parse(data);
-  let id = jsonSchema['$id'] ?? jsonSchema['id'];
-  id = id.split(':').pop();
-  jsonSchema['$id'] = id; // Preference for $id field as defined in JSON Schema draft-06 and onward
-  delete jsonSchema['id'];
+  let id = jsonSchema['$id'].split(':').pop();
+  jsonSchema['$id'] = id;
   delete jsonSchema['$schema'];
 
   // Preprocess nodes to enable enum extraction
@@ -193,7 +194,7 @@ async function processJsonSchema(data, writeToFile = true) {
 
         if (writeToFile) {
           fs.writeFileSync(
-            `./src/ocpp/model/${ocppVersion}/types/${id}.ts`,
+            `./src/ocpp/model/2.0.1/types/${id}.ts`,
             ts.replace(/\n+$/, '\n'),
           );
 
@@ -202,7 +203,7 @@ async function processJsonSchema(data, writeToFile = true) {
             .format(JSON.stringify(jsonSchema, null, 2), { parser: 'json' })
             .then((formattedJson) => {
               fs.writeFileSync(
-                `./src/ocpp/model/${ocppVersion}/schemas/${id}.json`,
+                `./src/ocpp/model/2.0.1/schemas/${id}.json`,
                 formattedJson,
               );
             });

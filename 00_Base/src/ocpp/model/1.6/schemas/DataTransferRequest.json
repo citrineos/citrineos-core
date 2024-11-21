@@ -1,4 +1,5 @@
 {
+  "id": "DataTransferRequest",
   "title": "DataTransferRequest",
   "type": "object",
   "properties": {
@@ -15,6 +16,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["vendorId"],
-  "$id": "DataTransferRequest"
+  "required": ["vendorId"]
 }

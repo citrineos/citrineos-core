@@ -1,8 +1,9 @@
 {
+  "id": "CancelReservationResponse",
   "title": "CancelReservationResponse",
   "type": "object",
   "properties": {
-    "status": {
+    "CancelReservationResponseStatus": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["Accepted", "Rejected"],
@@ -10,6 +11,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["status"],
-  "$id": "CancelReservationResponse"
+  "required": ["CancelReservationResponseStatus"]
 }

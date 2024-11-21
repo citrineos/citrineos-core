@@ -1,8 +1,9 @@
 {
+  "id": "ClearChargingProfileResponse",
   "title": "ClearChargingProfileResponse",
   "type": "object",
   "properties": {
-    "status": {
+    "ClearChargingProfileResponseStatus": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["Accepted", "Unknown"],
@@ -10,6 +11,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["status"],
-  "$id": "ClearChargingProfileResponse"
+  "required": ["ClearChargingProfileResponseStatus"]
 }

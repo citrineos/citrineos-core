@@ -1,4 +1,5 @@
 {
+  "id": "StopTransactionRequest",
   "title": "StopTransactionRequest",
   "type": "object",
   "properties": {
@@ -15,36 +16,6 @@
     },
     "transactionId": {
       "type": "integer"
-    },
-    "reason": {
-      "type": "string",
-      "additionalProperties": false,
-      "enum": [
-        "EmergencyStop",
-        "EVDisconnected",
-        "HardReset",
-        "Local",
-        "Other",
-        "PowerLoss",
-        "Reboot",
-        "Remote",
-        "SoftReset",
-        "UnlockCommand",
-        "DeAuthorized"
-      ],
-      "tsEnumNames": [
-        "EmergencyStop",
-        "EVDisconnected",
-        "HardReset",
-        "Local",
-        "Other",
-        "PowerLoss",
-        "Reboot",
-        "Remote",
-        "SoftReset",
-        "UnlockCommand",
-        "DeAuthorized"
-      ]
     },
     "transactionData": {
       "type": "array",
@@ -63,7 +34,7 @@
                 "value": {
                   "type": "string"
                 },
-                "context": {
+                "StopTransactionRequestContext": {
                   "type": "string",
                   "additionalProperties": false,
                   "enum": [
@@ -87,13 +58,13 @@
                     "Other"
                   ]
                 },
-                "format": {
+                "StopTransactionRequestFormat": {
                   "type": "string",
                   "additionalProperties": false,
                   "enum": ["Raw", "SignedData"],
                   "tsEnumNames": ["Raw", "SignedData"]
                 },
-                "measurand": {
+                "StopTransactionRequestMeasurand": {
                   "type": "string",
                   "additionalProperties": false,
                   "enum": [
@@ -145,7 +116,7 @@
                     "RPM"
                   ]
                 },
-                "phase": {
+                "StopTransactionRequestPhase": {
                   "type": "string",
                   "additionalProperties": false,
                   "enum": [
@@ -173,13 +144,13 @@
                     "L3_L1"
                   ]
                 },
-                "location": {
+                "StopTransactionRequestLocation": {
                   "type": "string",
                   "additionalProperties": false,
                   "enum": ["Cable", "EV", "Inlet", "Outlet", "Body"],
                   "tsEnumNames": ["Cable", "EV", "Inlet", "Outlet", "Body"]
                 },
-                "unit": {
+                "StopTransactionRequestUnit": {
                   "type": "string",
                   "additionalProperties": false,
                   "enum": [
@@ -228,9 +199,38 @@
         "additionalProperties": false,
         "required": ["timestamp", "sampledValue"]
       }
+    },
+    "StopTransactionRequestReason": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "EmergencyStop",
+        "EVDisconnected",
+        "HardReset",
+        "Local",
+        "Other",
+        "PowerLoss",
+        "Reboot",
+        "Remote",
+        "SoftReset",
+        "UnlockCommand",
+        "DeAuthorized"
+      ],
+      "tsEnumNames": [
+        "EmergencyStop",
+        "EVDisconnected",
+        "HardReset",
+        "Local",
+        "Other",
+        "PowerLoss",
+        "Reboot",
+        "Remote",
+        "SoftReset",
+        "UnlockCommand",
+        "DeAuthorized"
+      ]
     }
   },
   "additionalProperties": false,
-  "required": ["transactionId", "timestamp", "meterStop"],
-  "$id": "StopTransactionRequest"
+  "required": ["transactionId", "timestamp", "meterStop"]
 }

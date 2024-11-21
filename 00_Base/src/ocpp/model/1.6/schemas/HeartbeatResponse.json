@@ -1,4 +1,5 @@
 {
+  "id": "HeartbeatResponse",
   "title": "HeartbeatResponse",
   "type": "object",
   "properties": {
@@ -8,6 +9,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["currentTime"],
-  "$id": "HeartbeatResponse"
+  "required": ["currentTime"]
 }

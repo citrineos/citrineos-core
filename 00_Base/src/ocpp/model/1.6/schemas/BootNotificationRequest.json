@@ -1,4 +1,5 @@
 {
+  "id": "BootNotificationRequest",
   "title": "BootNotificationRequest",
   "type": "object",
   "properties": {
@@ -40,6 +41,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["chargePointVendor", "chargePointModel"],
-  "$id": "BootNotificationRequest"
+  "required": ["chargePointVendor", "chargePointModel"]
 }

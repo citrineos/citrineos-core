@@ -1,4 +1,5 @@
 {
+  "id": "StopTransactionResponse",
   "title": "StopTransactionResponse",
   "type": "object",
   "properties": {
@@ -13,7 +14,7 @@
           "type": "string",
           "maxLength": 20
         },
-        "status": {
+        "StopTransactionResponseStatus": {
           "type": "string",
           "additionalProperties": false,
           "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
@@ -27,9 +28,8 @@
         }
       },
       "additionalProperties": false,
-      "required": ["status"]
+      "required": ["StopTransactionResponseStatus"]
     }
   },
-  "additionalProperties": false,
-  "$id": "StopTransactionResponse"
+  "additionalProperties": false
 }

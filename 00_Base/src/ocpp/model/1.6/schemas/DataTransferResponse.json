@@ -1,8 +1,12 @@
 {
+  "id": "DataTransferResponse",
   "title": "DataTransferResponse",
   "type": "object",
   "properties": {
-    "status": {
+    "data": {
+      "type": "string"
+    },
+    "DataTransferResponseStatus": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "UnknownMessageId", "UnknownVendorId"],
@@ -12,12 +16,8 @@
         "UnknownMessageId",
         "UnknownVendorId"
       ]
-    },
-    "data": {
-      "type": "string"
     }
   },
   "additionalProperties": false,
-  "required": ["status"],
-  "$id": "DataTransferResponse"
+  "required": ["DataTransferResponseStatus"]
 }

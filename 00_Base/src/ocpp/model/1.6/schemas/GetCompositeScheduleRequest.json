@@ -1,4 +1,5 @@
 {
+  "id": "GetCompositeScheduleRequest",
   "title": "GetCompositeScheduleRequest",
   "type": "object",
   "properties": {
@@ -8,7 +9,7 @@
     "duration": {
       "type": "integer"
     },
-    "chargingRateUnit": {
+    "GetCompositeScheduleRequestChargingRateUnit": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["A", "W"],
@@ -16,6 +17,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["connectorId", "duration"],
-  "$id": "GetCompositeScheduleRequest"
+  "required": ["connectorId", "duration"]
 }

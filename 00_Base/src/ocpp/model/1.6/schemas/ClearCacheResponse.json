@@ -1,8 +1,9 @@
 {
+  "id": "ClearCacheResponse",
   "title": "ClearCacheResponse",
   "type": "object",
   "properties": {
-    "status": {
+    "ClearCacheResponseStatus": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["Accepted", "Rejected"],
@@ -10,6 +11,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["status"],
-  "$id": "ClearCacheResponse"
+  "required": ["ClearCacheResponseStatus"]
 }

@@ -1,8 +1,12 @@
 {
+  "id": "TriggerMessageRequest",
   "title": "TriggerMessageRequest",
   "type": "object",
   "properties": {
-    "requestedMessage": {
+    "connectorId": {
+      "type": "integer"
+    },
+    "TriggerMessageRequestRequestedMessage": {
       "type": "string",
       "additionalProperties": false,
       "enum": [
@@ -21,12 +25,8 @@
         "MeterValues",
         "StatusNotification"
       ]
-    },
-    "connectorId": {
-      "type": "integer"
     }
   },
   "additionalProperties": false,
-  "required": ["requestedMessage"],
-  "$id": "TriggerMessageRequest"
+  "required": ["TriggerMessageRequestRequestedMessage"]
 }

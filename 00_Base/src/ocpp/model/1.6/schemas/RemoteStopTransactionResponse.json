@@ -1,8 +1,9 @@
 {
+  "id": "RemoteStopTransactionResponse",
   "title": "RemoteStopTransactionResponse",
   "type": "object",
   "properties": {
-    "status": {
+    "RemoteStopTransactionResponseStatus": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["Accepted", "Rejected"],
@@ -10,6 +11,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["status"],
-  "$id": "RemoteStopTransactionResponse"
+  "required": ["RemoteStopTransactionResponseStatus"]
 }

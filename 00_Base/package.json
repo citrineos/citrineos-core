@@ -10,8 +10,8 @@
   ],
   "scripts": {
     "prepublish": "npx eslint ./src",
-    "generate-interfaces": "node json-schema-processor.js",
-    "format-interfaces": "prettier --write ./src/ocpp/model/**/* && npx eslint --fix ./src/ocpp/model",
+    "generate-interfaces-1-6": "node json-schema-processor-1.6.js",
+    "generate-interfaces-2-0-1": "node json-schema-processor-2.0.1.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:esm": "tsc --project tsconfig.esm.json"
   },

@@ -1,4 +1,5 @@
 {
+  "id": "GetDiagnosticsResponse",
   "title": "GetDiagnosticsResponse",
   "type": "object",
   "properties": {
@@ -7,6 +8,5 @@
       "maxLength": 255
     }
   },
-  "additionalProperties": false,
-  "$id": "GetDiagnosticsResponse"
+  "additionalProperties": false
 }

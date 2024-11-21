@@ -1,4 +1,5 @@
 {
+  "id": "StartTransactionResponse",
   "title": "StartTransactionResponse",
   "type": "object",
   "properties": {
@@ -13,7 +14,7 @@
           "type": "string",
           "maxLength": 20
         },
-        "status": {
+        "StartTransactionResponseStatus": {
           "type": "string",
           "additionalProperties": false,
           "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
@@ -27,13 +28,12 @@
         }
       },
       "additionalProperties": false,
-      "required": ["status"]
+      "required": ["StartTransactionResponseStatus"]
     },
     "transactionId": {
       "type": "integer"
     }
   },
   "additionalProperties": false,
-  "required": ["idTagInfo", "transactionId"],
-  "$id": "StartTransactionResponse"
+  "required": ["idTagInfo", "transactionId"]
 }

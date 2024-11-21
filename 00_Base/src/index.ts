@@ -152,7 +152,9 @@ export const OCPP1_6_CALL_RESULT_SCHEMA_MAP: Map<CallAction, object> = new Map<
 >([
   [OCPP1_6_CallAction.CancelReservation, OCPP1_6.CancelReservationResponseSchema],
   [OCPP1_6_CallAction.ChangeAvailability, OCPP1_6.ChangeAvailabilityResponseSchema],
+  [OCPP1_6_CallAction.ChangeConfiguration, OCPP1_6.ChangeConfigurationResponseSchema],
   [OCPP1_6_CallAction.ClearCache, OCPP1_6.ClearCacheResponseSchema],
+  [OCPP1_6_CallAction.ClearChargingProfile, OCPP1_6.ClearChargingProfileResponseSchema],
   [OCPP1_6_CallAction.DataTransfer, OCPP1_6.DataTransferResponseSchema],
   [OCPP1_6_CallAction.GetCompositeSchedule, OCPP1_6.GetCompositeScheduleResponseSchema],
   [OCPP1_6_CallAction.GetConfiguration, OCPP1_6.GetConfigurationResponseSchema],

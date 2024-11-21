@@ -1,8 +1,9 @@
 {
+  "id": "ReserveNowResponse",
   "title": "ReserveNowResponse",
   "type": "object",
   "properties": {
-    "status": {
+    "ReserveNowResponseStatus": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["Accepted", "Faulted", "Occupied", "Rejected", "Unavailable"],
@@ -16,6 +17,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["status"],
-  "$id": "ReserveNowResponse"
+  "required": ["ReserveNowResponseStatus"]
 }

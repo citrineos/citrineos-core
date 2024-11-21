@@ -1,4 +1,5 @@
 {
+  "id": "MeterValuesRequest",
   "title": "MeterValuesRequest",
   "type": "object",
   "properties": {
@@ -25,7 +26,7 @@
                 "value": {
                   "type": "string"
                 },
-                "context": {
+                "MeterValuesRequestContext": {
                   "type": "string",
                   "additionalProperties": false,
                   "enum": [
@@ -49,13 +50,13 @@
                     "Other"
                   ]
                 },
-                "format": {
+                "MeterValuesRequestFormat": {
                   "type": "string",
                   "additionalProperties": false,
                   "enum": ["Raw", "SignedData"],
                   "tsEnumNames": ["Raw", "SignedData"]
                 },
-                "measurand": {
+                "MeterValuesRequestMeasurand": {
                   "type": "string",
                   "additionalProperties": false,
                   "enum": [
@@ -107,7 +108,7 @@
                     "RPM"
                   ]
                 },
-                "phase": {
+                "MeterValuesRequestPhase": {
                   "type": "string",
                   "additionalProperties": false,
                   "enum": [
@@ -135,13 +136,13 @@
                     "L3_L1"
                   ]
                 },
-                "location": {
+                "MeterValuesRequestLocation": {
                   "type": "string",
                   "additionalProperties": false,
                   "enum": ["Cable", "EV", "Inlet", "Outlet", "Body"],
                   "tsEnumNames": ["Cable", "EV", "Inlet", "Outlet", "Body"]
                 },
-                "unit": {
+                "MeterValuesRequestUnit": {
                   "type": "string",
                   "additionalProperties": false,
                   "enum": [
@@ -195,6 +196,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["connectorId", "meterValue"],
-  "$id": "MeterValuesRequest"
+  "required": ["connectorId", "meterValue"]
 }

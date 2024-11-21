@@ -1,4 +1,5 @@
 {
+  "id": "ClearChargingProfileRequest",
   "title": "ClearChargingProfileRequest",
   "type": "object",
   "properties": {
@@ -8,16 +9,15 @@
     "connectorId": {
       "type": "integer"
     },
-    "chargingProfilePurpose": {
+    "stackLevel": {
+      "type": "integer"
+    },
+    "ClearChargingProfileRequestChargingProfilePurpose": {
       "type": "string",
       "additionalProperties": false,
       "enum": ["ChargePointMaxProfile", "TxDefaultProfile", "TxProfile"],
       "tsEnumNames": ["ChargePointMaxProfile", "TxDefaultProfile", "TxProfile"]
-    },
-    "stackLevel": {
-      "type": "integer"
     }
   },
-  "additionalProperties": false,
-  "$id": "ClearChargingProfileRequest"
+  "additionalProperties": false
 }
