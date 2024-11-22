@@ -211,6 +211,15 @@ services:
       ## https://quarkus.io/guides/opentelemetry#configuration-reference
       QUARKUS_OPENTELEMETRY_ENABLED: 'false'
       ## QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    depends_on:
+      ocpp-db:
+        condition: service_healthy
+      amqp-broker:
+        condition: service_healthy
+      directus:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8081/api/v1/athena/health']
       interval: 5s
