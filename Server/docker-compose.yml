@@ -198,7 +198,7 @@ services:
       test: ['CMD', 'curl', '-f', 'http://localhost:8080/healthz']
       interval: 5s
       timeout: 10s
-      retries: 5
+      retries: 10
       start_period: 5s
     
   data-connector-agent:
