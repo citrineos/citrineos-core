@@ -105,7 +105,7 @@ export class MessageRouterImpl
   }
 
   // TODO: Below method should lock these tables so that a rapid connect-disconnect cannot result in race condition.
-  async registerConnection(connectionIdentifier: string): Promise<boolean> {
+  async registerConnection(connectionIdentifier: string, protocol: string): Promise<boolean> {
     const dispatcherRegistration =
       this._webhookDispatcher.register(connectionIdentifier);
 
@@ -116,6 +116,7 @@ export class MessageRouterImpl
         stationId: connectionIdentifier,
         state: MessageState.Request.toString(),
         origin: MessageOrigin.ChargingStationManagementSystem.toString(),
+        protocol,
       },
     );
 
@@ -126,6 +127,7 @@ export class MessageRouterImpl
         stationId: connectionIdentifier,
         state: MessageState.Response.toString(),
         origin: MessageOrigin.ChargingStationManagementSystem.toString(),
+        protocol,
       },
     );
 
@@ -161,6 +163,7 @@ export class MessageRouterImpl
     identifier: string,
     message: string,
     timestamp: Date,
+    protocol: string,
   ): Promise<boolean> {
     this._webhookDispatcher.dispatchMessageReceived(identifier, message);
     let rpcMessage: any;
@@ -178,18 +181,29 @@ export class MessageRouterImpl
       messageId = rpcMessage[1];
       switch (messageTypeId) {
         case MessageTypeId.Call:
-          await this._onCall(identifier, rpcMessage as Call, timestamp);
+          await this._onCall(identifier, rpcMessage as Call, timestamp, protocol);
           break;
         case MessageTypeId.CallResult:
-          this._onCallResult(identifier, rpcMessage as CallResult, timestamp);
+          this._onCallResult(identifier, rpcMessage as CallResult, timestamp, protocol);
           break;
         case MessageTypeId.CallError:
-          this._onCallError(identifier, rpcMessage as CallError, timestamp);
+          this._onCallError(identifier, rpcMessage as CallError, timestamp, protocol);
           break;
         default:
+          let errorCode;
+          switch (protocol) {
+            case 'ocpp1.6':
+              errorCode = ErrorCode.FormationViolation;
+              break;
+            case 'ocpp2.0.1':
+              errorCode = ErrorCode.FormatViolation;
+              break;
+            default:
+              throw new Error('Unknown protocol: ' + protocol);
+          }
           throw new OcppError(
             messageId,
-            ErrorCode.FormatViolation,
+            errorCode,
             'Unknown message type id: ' + messageTypeId,
             {},
           );
@@ -381,12 +395,14 @@ export class MessageRouterImpl
    * @param {string} identifier - The client identifier.
    * @param {Call} message - The Call message received.
    * @param {Date} timestamp Time at which the message was received from the charger.
+   * @param {string} protocol The OCPP protocol version of the message
    * @return {void}
    */
   async _onCall(
     identifier: string,
     message: Call,
     timestamp: Date,
+    protocol: string,
   ): Promise<void> {
     const messageId = message[1];
     const action = message[2] as CallAction;
@@ -401,7 +417,7 @@ export class MessageRouterImpl
         );
       }
       // Run schema validation for incoming Call message
-      const { isValid, errors } = this._validateCall(identifier, message);
+      const { isValid, errors } = this._validateCall(identifier, message, protocol);
 
       if (!isValid || errors) {
         throw new OcppError(
@@ -450,6 +466,7 @@ export class MessageRouterImpl
         identifier,
         message,
         timestamp,
+        protocol,
       );
 
       if (!confirmation.success) {
@@ -484,12 +501,14 @@ export class MessageRouterImpl
    * @param {string} identifier - The client identifier that made the call.
    * @param {CallResult} message - The OCPP CallResult message.
    * @param {Date} timestamp Time at which the message was received from the charger.
+   * @param {string} protocol The OCPP protocol version of the message
    * @return {void}
    */
   _onCallResult(
     identifier: string,
     message: CallResult,
     timestamp: Date,
+    protocol: string,
   ): void {
     const messageId = message[1];
     const payload = message[2];
@@ -508,7 +527,7 @@ export class MessageRouterImpl
             { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
           );
         }
-        const [actionString, cachedMessageId] =
+        const [action, cachedMessageId] =
           cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
         if (messageId !== cachedMessageId) {
           throw new OcppError(
@@ -518,11 +537,9 @@ export class MessageRouterImpl
             { expectedMessageId: cachedMessageId },
           );
         }
-        const action: CallAction =
-          CallAction[actionString as keyof typeof CallAction]; // Parse CallAction
         return {
           action,
-          ...this._validateCallResult(identifier, action, message),
+          ...this._validateCallResult(identifier, action as CallAction, message, protocol),
         }; // Run schema validation for incoming CallResult message
       })
       .then(({ action, isValid, errors }) => {
@@ -535,7 +552,7 @@ export class MessageRouterImpl
           );
         }
         // Route call result
-        return this._routeCallResult(identifier, message, action, timestamp);
+        return this._routeCallResult(identifier, message, action as CallAction, timestamp, protocol);
       })
       .then((confirmation) => {
         if (!confirmation.success) {
@@ -560,9 +577,10 @@ export class MessageRouterImpl
    * @param {string} identifier - The client identifier.
    * @param {CallError} message - The error message.
    * @param {Date} timestamp Time at which the message was received from the charger.
+   * @param {string} protocol The OCPP protocol version of the message
    * @return {void} This function doesn't return anything.
    */
-  _onCallError(identifier: string, message: CallError, timestamp: Date): void {
+  _onCallError(identifier: string, message: CallError, timestamp: Date, protocol: string): void {
     const messageId = message[1];
 
     this._logger.debug('Process CallError', identifier, message);
@@ -579,7 +597,7 @@ export class MessageRouterImpl
             { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
           );
         }
-        const [actionString, cachedMessageId] =
+        const [action, cachedMessageId] =
           cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
         if (messageId !== cachedMessageId) {
           throw new OcppError(
@@ -589,9 +607,7 @@ export class MessageRouterImpl
             { expectedMessageId: cachedMessageId },
           );
         }
-        const action: CallAction =
-          CallAction[actionString as keyof typeof CallAction]; // Parse CallAction
-        return this._routeCallError(identifier, message, action, timestamp);
+        return this._routeCallError(identifier, message, action as CallAction, timestamp, protocol);
       })
       .then((confirmation) => {
         if (!confirmation.success) {
@@ -661,6 +677,7 @@ export class MessageRouterImpl
     connectionIdentifier: string,
     message: Call,
     timestamp: Date,
+    protocol: string,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
     const action = message[2] as CallAction;
@@ -675,6 +692,7 @@ export class MessageRouterImpl
       EventGroup.General, // TODO: Change to appropriate event group
       MessageOrigin.ChargingStation,
       timestamp,
+      protocol,
     );
 
     return this._sender.send(_message);
@@ -685,6 +703,7 @@ export class MessageRouterImpl
     message: CallResult,
     action: CallAction,
     timestamp: Date,
+    protocol: string,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
     const payload = message[2] as OcppResponse;
@@ -698,6 +717,7 @@ export class MessageRouterImpl
       EventGroup.General,
       MessageOrigin.ChargingStation,
       timestamp,
+      protocol,
     );
 
     return this._sender.send(_message);
@@ -708,6 +728,7 @@ export class MessageRouterImpl
     message: CallError,
     action: CallAction,
     timestamp: Date,
+    protocol: string
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
     const payload = new OcppError(
@@ -726,6 +747,7 @@ export class MessageRouterImpl
       EventGroup.General,
       MessageOrigin.ChargingStation,
       timestamp,
+      protocol,
     );
 
     // Fulfill callback for api, if needed

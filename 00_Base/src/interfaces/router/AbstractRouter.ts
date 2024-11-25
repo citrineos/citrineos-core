@@ -167,19 +167,19 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
    *
    * @param {string} identifier - The identifier of the EVSE.
    * @param {Call} message - The Call object to validate.
-   * @param {string} subprotocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
+   * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @return {boolean} - Returns true if the Call object is valid, false otherwise.
    */
   protected _validateCall(
     identifier: string,
     message: Call,
-    subprotocol: string, 
+    protocol: string, 
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
     const action = message[2];
     const payload = message[3];
 
     let schema;
-    switch (subprotocol) {
+    switch (protocol) {
       case 'ocpp1.6':
         schema = OCPP1_6_CALL_SCHEMA_MAP.get(action);
         break;
@@ -187,7 +187,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
         schema = OCPP2_0_1_CALL_SCHEMA_MAP.get(action);
         break;
       default:
-        this._logger.error('Unknown subprotocol', subprotocol);
+        this._logger.error('Unknown subprotocol', protocol);
         return { isValid: false };
     }
 
@@ -218,12 +218,12 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     identifier: string,
     action: CallAction,
     message: CallResult,
-    subprotocol: string,
+    protocol: string,
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
     const payload = message[2];
 
     let schema;
-    switch (subprotocol) {
+    switch (protocol) {
       case 'ocpp1.6':
         schema = OCPP1_6_CALL_RESULT_SCHEMA_MAP.get(action);
         break;
@@ -231,7 +231,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
         schema = OCPP2_0_1_CALL_RESULT_SCHEMA_MAP.get(action);
         break;
       default:
-        this._logger.error('Unknown subprotocol', subprotocol);
+        this._logger.error('Unknown subprotocol', protocol);
         return { isValid: false };
     }
 
@@ -258,9 +258,10 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     identifier: string,
     message: string,
     timestamp: Date,
+    protocol: string,
   ): Promise<boolean>;
 
-  abstract registerConnection(connectionIdentifier: string): Promise<boolean>;
+  abstract registerConnection(connectionIdentifier: string, protocol: string): Promise<boolean>;
   abstract deregisterConnection(connectionIdentifier: string): Promise<boolean>;
 
   abstract sendCall(

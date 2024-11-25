@@ -24,6 +24,7 @@ export class RequestBuilder {
     eventGroup: EventGroup,
     origin: MessageOrigin,
     timestamp: Date = new Date(),
+    protocol?: string,
   ): IMessage<OcppRequest> {
     return {
       origin: origin,
@@ -36,6 +37,7 @@ export class RequestBuilder {
         timestamp: timestamp.toISOString(),
       },
       state: MessageState.Request,
+      protocol,
       payload,
     };
   }
@@ -49,6 +51,7 @@ export class RequestBuilder {
     eventGroup: EventGroup,
     origin: MessageOrigin,
     timestamp: Date = new Date(),
+    protocol?: string,
   ): IMessage<OcppResponse> {
     return {
       origin: origin,
@@ -61,6 +64,7 @@ export class RequestBuilder {
         timestamp: timestamp.toISOString(),
       },
       state: MessageState.Response,
+      protocol,
       payload,
     };
   }
@@ -74,6 +78,7 @@ export class RequestBuilder {
     eventGroup: EventGroup,
     origin: MessageOrigin,
     timestamp: Date = new Date(),
+    protocol?: string,
   ): IMessage<OcppError> {
     return {
       origin: origin,
@@ -86,6 +91,7 @@ export class RequestBuilder {
         timestamp: timestamp.toISOString(),
       },
       state: MessageState.Response,
+      protocol,
       payload,
     };
   }

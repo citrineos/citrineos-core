@@ -15,6 +15,7 @@ import {
   IMessageSender,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPVersion,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -148,7 +149,7 @@ export class ReportingModule extends AbstractModule {
    * Handle Requests
    */
 
-  @AsHandler(OCPP2_0_1_CallAction.LogStatusNotification)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.LogStatusNotification)
   protected _handleLogStatusNotification(
     message: IMessage<OCPP2_0_1.LogStatusNotificationRequest>,
     props?: HandlerProperties,
@@ -170,7 +171,7 @@ export class ReportingModule extends AbstractModule {
     );
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.NotifyCustomerInformation)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyCustomerInformation)
   protected _handleNotifyCustomerInformation(
     message: IMessage<OCPP2_0_1.NotifyCustomerInformationRequest>,
     props?: HandlerProperties,
@@ -194,7 +195,7 @@ export class ReportingModule extends AbstractModule {
     );
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.NotifyMonitoringReport)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyMonitoringReport)
   protected async _handleNotifyMonitoringReport(
     message: IMessage<OCPP2_0_1.NotifyMonitoringReportRequest>,
     props?: HandlerProperties,
@@ -235,7 +236,7 @@ export class ReportingModule extends AbstractModule {
     );
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.NotifyReport)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyReport)
   protected async _handleNotifyReport(
     message: IMessage<OCPP2_0_1.NotifyReportRequest>,
     props?: HandlerProperties,
@@ -307,7 +308,7 @@ export class ReportingModule extends AbstractModule {
     });
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.SecurityEventNotification)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SecurityEventNotification)
   protected _handleSecurityEventNotification(
     message: IMessage<OCPP2_0_1.SecurityEventNotificationRequest>,
     props?: HandlerProperties,
@@ -331,7 +332,7 @@ export class ReportingModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(OCPP2_0_1_CallAction.GetBaseReport)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetBaseReport)
   protected _handleGetBaseReport(
     message: IMessage<OCPP2_0_1.GetBaseReportResponse>,
     props?: HandlerProperties,
@@ -339,7 +340,7 @@ export class ReportingModule extends AbstractModule {
     this._logger.debug('GetBaseReport response received:', message, props);
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.GetReport)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetReport)
   protected _handleGetReport(
     message: IMessage<OCPP2_0_1.GetReportResponse>,
     props?: HandlerProperties,
@@ -362,7 +363,7 @@ export class ReportingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.GetMonitoringReport)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetMonitoringReport)
   protected async _handleGetMonitoringReport(
     message: IMessage<OCPP2_0_1.GetMonitoringReportResponse>,
     props?: HandlerProperties,
@@ -389,7 +390,7 @@ export class ReportingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.GetLog)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetLog)
   protected _handleGetLog(
     message: IMessage<OCPP2_0_1.GetLogResponse>,
     props?: HandlerProperties,
@@ -397,7 +398,7 @@ export class ReportingModule extends AbstractModule {
     this._logger.debug('GetLog response received:', message, props);
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.CustomerInformation)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.CustomerInformation)
   protected _handleCustomerInformation(
     message: IMessage<OCPP2_0_1.CustomerInformationResponse>,
     props?: HandlerProperties,

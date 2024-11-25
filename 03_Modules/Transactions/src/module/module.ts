@@ -19,6 +19,7 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
+  OCPPVersion,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -262,7 +263,7 @@ export class TransactionsModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(OCPP2_0_1_CallAction.TransactionEvent)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.TransactionEvent)
   protected async _handleTransactionEvent(
     message: IMessage<OCPP2_0_1.TransactionEventRequest>,
     props?: HandlerProperties,
@@ -401,7 +402,7 @@ export class TransactionsModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.MeterValues)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.MeterValues)
   protected async _handleMeterValues(
     message: IMessage<OCPP2_0_1.MeterValuesRequest>,
     props?: HandlerProperties,
@@ -446,7 +447,7 @@ export class TransactionsModule extends AbstractModule {
     );
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.StatusNotification)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.StatusNotification)
   protected async _handleStatusNotification(
     message: IMessage<OCPP2_0_1.StatusNotificationRequest>,
     props?: HandlerProperties,
@@ -474,7 +475,7 @@ export class TransactionsModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(OCPP2_0_1_CallAction.CostUpdated)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.CostUpdated)
   protected _handleCostUpdated(
     message: IMessage<OCPP2_0_1.CostUpdatedResponse>,
     props?: HandlerProperties,
@@ -482,7 +483,7 @@ export class TransactionsModule extends AbstractModule {
     this._logger.debug('CostUpdated response received:', message, props);
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.GetTransactionStatus)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetTransactionStatus)
   protected _handleGetTransactionStatus(
     message: IMessage<OCPP2_0_1.GetTransactionStatusResponse>,
     props?: HandlerProperties,

@@ -12,7 +12,7 @@ export {
   IModuleApi,
 } from './interfaces/api';
 export { BadRequestError } from './interfaces/api/exceptions/BadRequestError';
-export { CacheNamespace, ICache } from './interfaces/cache/cache';
+export { CacheNamespace, ICache, IWebsocketConnection } from './interfaces/cache/cache';
 export {
   AbstractMessageRouter,
   IAuthenticator,
@@ -45,6 +45,7 @@ export {
   ErrorCode,
   MessageTypeId,
   OcppError,
+  OCPPVersion
 } from './ocpp/rpc/message';
 export {
   ChargingStationSequenceType,

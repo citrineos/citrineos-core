@@ -10,7 +10,13 @@ export enum CacheNamespace {
   ChargingStation = 'cs',
   Transactions = 'tx',
   Connections = 'conn',
+  Protocol = 'prtcl',
   Other = 'other',
+}
+
+export interface IWebsocketConnection {
+  id: string;
+  protocol: string;
 }
 
 /**

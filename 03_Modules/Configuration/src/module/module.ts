@@ -19,6 +19,7 @@ import {
   IMessageSender,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPVersion,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -189,7 +190,7 @@ export class ConfigurationModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(OCPP2_0_1_CallAction.BootNotification)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.BootNotification)
   protected async _handleBootNotification(
     message: IMessage<OCPP2_0_1.BootNotificationRequest>,
     props?: HandlerProperties,
@@ -395,7 +396,7 @@ export class ConfigurationModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.Heartbeat)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Heartbeat)
   protected _handleHeartbeat(
     message: IMessage<OCPP2_0_1.HeartbeatRequest>,
     props?: HandlerProperties,
@@ -413,7 +414,7 @@ export class ConfigurationModule extends AbstractModule {
     );
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.NotifyDisplayMessages)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyDisplayMessages)
   protected async _handleNotifyDisplayMessages(
     message: IMessage<OCPP2_0_1.NotifyDisplayMessagesRequest>,
     props?: HandlerProperties,
@@ -450,7 +451,7 @@ export class ConfigurationModule extends AbstractModule {
     );
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.FirmwareStatusNotification)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.FirmwareStatusNotification)
   protected _handleFirmwareStatusNotification(
     message: IMessage<OCPP2_0_1.FirmwareStatusNotificationRequest>,
     props?: HandlerProperties,
@@ -471,7 +472,7 @@ export class ConfigurationModule extends AbstractModule {
     );
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.DataTransfer)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.DataTransfer)
   protected _handleDataTransfer(
     message: IMessage<OCPP2_0_1.DataTransferRequest>,
     props?: HandlerProperties,
@@ -494,7 +495,7 @@ export class ConfigurationModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(OCPP2_0_1_CallAction.ChangeAvailability)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ChangeAvailability)
   protected _handleChangeAvailability(
     message: IMessage<OCPP2_0_1.ChangeAvailabilityResponse>,
     props?: HandlerProperties,
@@ -502,7 +503,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('ChangeAvailability response received:', message, props);
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.SetNetworkProfile)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SetNetworkProfile)
   protected async _handleSetNetworkProfile(
     message: IMessage<OCPP2_0_1.SetNetworkProfileResponse>,
     props?: HandlerProperties,
@@ -526,7 +527,7 @@ export class ConfigurationModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.GetDisplayMessages)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetDisplayMessages)
   protected _handleGetDisplayMessages(
     message: IMessage<OCPP2_0_1.GetDisplayMessagesResponse>,
     props?: HandlerProperties,
@@ -534,7 +535,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('GetDisplayMessages response received:', message, props);
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.SetDisplayMessage)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SetDisplayMessage)
   protected async _handleSetDisplayMessage(
     message: IMessage<OCPP2_0_1.SetDisplayMessageResponse>,
     props?: HandlerProperties,
@@ -561,7 +562,7 @@ export class ConfigurationModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.PublishFirmware)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.PublishFirmware)
   protected _handlePublishFirmware(
     message: IMessage<OCPP2_0_1.PublishFirmwareResponse>,
     props?: HandlerProperties,
@@ -569,7 +570,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('PublishFirmware response received:', message, props);
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.UnpublishFirmware)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.UnpublishFirmware)
   protected _handleUnpublishFirmware(
     message: IMessage<OCPP2_0_1.UnpublishFirmwareResponse>,
     props?: HandlerProperties,
@@ -577,7 +578,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('UnpublishFirmware response received:', message, props);
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.UpdateFirmware)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.UpdateFirmware)
   protected _handleUpdateFirmware(
     message: IMessage<OCPP2_0_1.UpdateFirmwareResponse>,
     props?: HandlerProperties,
@@ -585,7 +586,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('UpdateFirmware response received:', message, props);
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.Reset)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Reset)
   protected _handleReset(
     message: IMessage<OCPP2_0_1.ResetResponse>,
     props?: HandlerProperties,
@@ -593,7 +594,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('Reset response received:', message, props);
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.TriggerMessage)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.TriggerMessage)
   protected _handleTriggerMessage(
     message: IMessage<OCPP2_0_1.TriggerMessageResponse>,
     props?: HandlerProperties,
@@ -601,7 +602,7 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('TriggerMessage response received:', message, props);
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.ClearDisplayMessage)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ClearDisplayMessage)
   protected async _handleClearDisplayMessage(
     message: IMessage<OCPP2_0_1.ClearDisplayMessageResponse>,
     props?: HandlerProperties,

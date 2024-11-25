@@ -9,9 +9,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from '.';
 import { OcppRequest, OcppResponse } from '../..';
 import { SystemConfig } from '../../config/types';
-import { CallAction, ErrorCode, OcppError } from '../../ocpp/rpc/message';
+import { CallAction, ErrorCode, OCPP2_0_1_CallAction, OcppError } from '../../ocpp/rpc/message';
 import { RequestBuilder } from '../../util/request';
-import { CacheNamespace, ICache } from '../cache/cache';
+import { CacheNamespace, ICache, IWebsocketConnection } from '../cache/cache';
 import {
   EventGroup,
   HandlerProperties,
@@ -118,7 +118,7 @@ export abstract class AbstractModule implements IModule {
           this.constructor,
         ) as Array<IHandlerDefinition>
       )
-        .filter((h) => h.action === message.action)
+        .filter((h) => h.protocol === message.protocol && h.action === message.action)
         .pop();
       if (handlerDefinition) {
         await handlerDefinition.method.call(this, message, props);
@@ -207,6 +207,7 @@ export abstract class AbstractModule implements IModule {
    * Default implementation
    */
 
+
   /**
    * Sends a call with the specified identifier, tenantId, action, payload, and origin.
    *
@@ -222,8 +223,42 @@ export abstract class AbstractModule implements IModule {
   public sendCall(
     identifier: string,
     tenantId: string,
+    action: OCPP2_0_1_CallAction,
+    payload: OcppRequest,
+    callbackUrl?: string,
+    correlationId?: string,
+    origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
+  ): Promise<IMessageConfirmation> {
+    return this._sendCall(
+      identifier,
+      tenantId,
+      action,
+      payload,
+      'ocpp2.0.1',
+      callbackUrl,
+      correlationId,
+      origin,
+    );
+  }
+
+  /**
+   * Sends a call with the specified identifier, tenantId, action, payload, and origin.
+   *
+   * @param {string} identifier - The identifier of the call.
+   * @param {string} tenantId - The tenant ID.
+   * @param {CallAction} action - The action to be performed.
+   * @param {OcppRequest} payload - The payload of the call.
+   * @param {string} [callbackUrl] - The callback URL for the call.
+   * @param {string} [correlationId] - The correlation ID of the call.
+   * @param {MessageOrigin} [origin] - The origin of the call.
+   * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
+   */
+  protected _sendCall(
+    identifier: string,
+    tenantId: string,
     action: CallAction,
     payload: OcppRequest,
+    protocol: string,
     callbackUrl?: string,
     correlationId?: string,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
@@ -241,9 +276,20 @@ export abstract class AbstractModule implements IModule {
     }
     // TODO: Future - Compound key with tenantId
     return this._cache
-      .get(identifier, CacheNamespace.Connections)
+      .get<string>(identifier, CacheNamespace.Connections)
       .then((connection) => {
         if (connection) {
+          const websocketConnection: IWebsocketConnection = JSON.parse(connection);
+          if (websocketConnection.protocol !== protocol) {
+            this._logger.error(
+              `Failed sending call. Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: `,
+              identifier,
+            );
+            return Promise.resolve({
+              success: false,
+              payload: `Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: ` + identifier,
+            });
+          }
           return this._sender.sendRequest(
             RequestBuilder.buildCall(
               identifier,

@@ -48,6 +48,14 @@ export enum MessageTypeId {
 }
 
 /**
+ * Supported OCPP versions
+ */
+export enum OCPPVersion {
+  OCPP1_6 = 'ocpp1.6',
+  OCPP2_0_1 = 'ocpp2.0.1',
+}
+
+/**
  * The different OCPP action types.
  *
  */

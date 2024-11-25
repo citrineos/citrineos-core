@@ -16,6 +16,7 @@ import {
   IMessageSender,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPVersion,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -253,7 +254,7 @@ export class EVDriverModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(OCPP2_0_1_CallAction.Authorize)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Authorize)
   protected async _handleAuthorize(
     message: IMessage<OCPP2_0_1.AuthorizeRequest>,
     props?: HandlerProperties,
@@ -518,7 +519,7 @@ export class EVDriverModule extends AbstractModule {
       });
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.ReservationStatusUpdate)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ReservationStatusUpdate)
   protected async _handleReservationStatusUpdate(
     message: IMessage<OCPP2_0_1.ReservationStatusUpdateRequest>,
     props?: HandlerProperties,
@@ -575,7 +576,7 @@ export class EVDriverModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(OCPP2_0_1_CallAction.RequestStartTransaction)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.RequestStartTransaction)
   protected async _handleRequestStartTransaction(
     message: IMessage<OCPP2_0_1.RequestStartTransactionResponse>,
     props?: HandlerProperties,
@@ -626,7 +627,7 @@ export class EVDriverModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.RequestStopTransaction)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.RequestStopTransaction)
   protected async _handleRequestStopTransaction(
     message: IMessage<OCPP2_0_1.RequestStopTransactionResponse>,
     props?: HandlerProperties,
@@ -638,7 +639,7 @@ export class EVDriverModule extends AbstractModule {
     );
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.CancelReservation)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.CancelReservation)
   protected async _handleCancelReservation(
     message: IMessage<OCPP2_0_1.CancelReservationResponse>,
     props?: HandlerProperties,
@@ -663,7 +664,7 @@ export class EVDriverModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.ReserveNow)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ReserveNow)
   protected async _handleReserveNow(
     message: IMessage<OCPP2_0_1.ReserveNowResponse>,
     props?: HandlerProperties,
@@ -689,7 +690,7 @@ export class EVDriverModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.UnlockConnector)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.UnlockConnector)
   protected async _handleUnlockConnector(
     message: IMessage<OCPP2_0_1.UnlockConnectorResponse>,
     props?: HandlerProperties,
@@ -697,7 +698,7 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('UnlockConnectorResponse received:', message, props);
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.ClearCache)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ClearCache)
   protected async _handleClearCache(
     message: IMessage<OCPP2_0_1.ClearCacheResponse>,
     props?: HandlerProperties,
@@ -705,7 +706,7 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('ClearCacheResponse received:', message, props);
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.SendLocalList)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SendLocalList)
   protected async _handleSendLocalList(
     message: IMessage<OCPP2_0_1.SendLocalListResponse>,
     props?: HandlerProperties,
@@ -771,7 +772,7 @@ export class EVDriverModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP2_0_1_CallAction.GetLocalListVersion)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetLocalListVersion)
   protected async _handleGetLocalListVersion(
     message: IMessage<OCPP2_0_1.GetLocalListVersionResponse>,
     props?: HandlerProperties,

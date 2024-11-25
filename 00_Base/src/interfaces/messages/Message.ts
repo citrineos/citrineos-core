@@ -37,6 +37,10 @@ export interface IMessage<T extends OcppRequest | OcppResponse> {
   // The payload of the message (the data sent with the message)
   get payload(): T;
   set payload(value: T);
+
+  // The protocol of the message (ocpp1.6, ocpp2.0.1, etc), optional because outgoing messages don't have a protocol
+  get protocol(): string | undefined;
+  set protocol(value: string | undefined);
 }
 
 /**
@@ -54,6 +58,7 @@ export class Message<T extends OcppRequest | OcppResponse>
   protected _state: MessageState;
   protected _context: IMessageContext;
   protected _payload: T;
+  protected _protocol: string | undefined;
 
   /**
    * Constructs a new instance of Message.
@@ -72,6 +77,7 @@ export class Message<T extends OcppRequest | OcppResponse>
     state: MessageState,
     context: IMessageContext,
     payload: T,
+    protocol?: string,
   ) {
     this._origin = origin;
     this._eventGroup = eventGroup;
@@ -79,6 +85,7 @@ export class Message<T extends OcppRequest | OcppResponse>
     this._state = state;
     this._context = context;
     this._payload = payload;
+    this._protocol = protocol;
   }
 
   /**
@@ -102,6 +109,9 @@ export class Message<T extends OcppRequest | OcppResponse>
   get payload(): T {
     return this._payload;
   }
+  get protocol(): string | undefined {
+    return this._protocol;
+  }
   set origin(value: MessageOrigin) {
     this._origin = value;
   }
@@ -119,5 +129,8 @@ export class Message<T extends OcppRequest | OcppResponse>
   }
   set payload(value: T) {
     this._payload = value;
+  }
+  set protocol(value: string | undefined) {
+    this._protocol = value;
   }
 }
