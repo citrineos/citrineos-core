@@ -157,7 +157,7 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "localstack-data:/var/lib/localstack"
-      - ./scripts/init-localstack.sh:/etc/localstack/init/ready.d/init-localstack.sh
+      - "./scripts/init-localstack.sh:/etc/localstack/init/ready.d/init-localstack.sh"
     depends_on:
       amqp-broker:
         condition: service_healthy
