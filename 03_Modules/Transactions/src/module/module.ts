@@ -426,17 +426,40 @@ export class TransactionsModule extends AbstractModule {
     this._logger.debug('MeterValues received:', message, props);
 
     // TODO: Meter values can be triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
-    // TODO: If sendCostUpdatedOnMeterValue is true, meterValues handler triggers cost update
-    //  when it is added into a transaction
 
     const meterValues = message.payload.meterValue;
     const stationId = message.context.stationId;
+    const evseId = message.payload.evseId;
 
-    await Promise.all(
-      meterValues.map((meterValue) =>
-        this.transactionEventRepository.createMeterValue(meterValue),
-      ),
-    );
+    // When evseId is 0, the MeterValuesRequest message SHALL be associated with the entire Charging Station.
+    if (this._sendCostUpdatedOnMeterValue && evseId !== 0) {
+      const activeTransaction: Transaction | undefined =
+        await this.transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
+          stationId,
+          evseId,
+        );
+      if (!activeTransaction) {
+        this._logger.error(
+          'Active Transaction not found on charging station {} evse {}',
+          stationId,
+          evseId,
+        );
+      }
+
+      await this._transactionService.createMeterValues(
+        meterValues,
+        activeTransaction?.id,
+      );
+
+      if (activeTransaction) {
+        await this._costNotifier.calculateCostAndNotify(
+          activeTransaction,
+          message.context.tenantId,
+        );
+      }
+    } else {
+      await this._transactionService.createMeterValues(meterValues);
+    }
 
     const meterValuesValid =
       await this._signedMeterValuesUtil.validateMeterValues(

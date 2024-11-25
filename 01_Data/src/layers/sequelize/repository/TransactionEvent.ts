@@ -140,6 +140,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         where: {
           transactionDatabaseId,
         },
+        transaction: sequelizeTransaction,
       });
 
       await finalTransaction.update({ totalKwh: MeterValueUtils.getTotalKwh(allMeterValues) }, { transaction: sequelizeTransaction });
@@ -200,7 +201,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       .then((row) => row as Transaction[]);
   }
 
-  readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]> {
+  async readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]> {
     return this.transaction
       .readAllByQuery({
         where: { isActive: true },
@@ -223,7 +224,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       .then((row) => row as Transaction[]);
   }
 
-  readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]> {
+  async readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]> {
     return this.meterValue
       .readAllByQuery({
         where: { transactionDatabaseId: transactionDataBaseId },
@@ -319,14 +320,23 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       })
       .then((transactions) => {
         if (transactions.length > 1) {
-          transactions.sort((t1, t2) => t2.createdAt.getTime() - t1.createdAt.getTime());
+          transactions.sort((t1, t2) => t2.updatedAt.getTime() - t1.updatedAt.getTime());
         }
         return transactions[0];
       });
   }
 
-  async createMeterValue(meterValue: MeterValueType): Promise<void> {
-    await this.meterValue.create(MeterValue.build({ ...meterValue }));
+  async createMeterValue(meterValue: MeterValueType, transactionDatabaseId?: number | null): Promise<void> {
+    await this.s.transaction(async (sequelizeTransaction) => {
+      const savedMeterValue = await MeterValue.create(
+        {
+          transactionDatabaseId: transactionDatabaseId,
+          ...meterValue,
+        },
+        { transaction: sequelizeTransaction },
+      );
+      this.meterValue.emit('created', [savedMeterValue]);
+    });
   }
 
   async updateTransactionTotalCostById(totalCost: number, id: number): Promise<void> {
