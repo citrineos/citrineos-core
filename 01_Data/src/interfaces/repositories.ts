@@ -137,6 +137,7 @@ export interface ITransactionEventRepository extends CrudRepository<OCPP2_0_1.Tr
   readAllActiveTransactionsByIdToken(idToken: OCPP2_0_1.IdTokenType): Promise<Transaction[]>;
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
   getActiveTransactionByStationIdAndEvseId(stationId: string, evseId: number): Promise<Transaction | undefined>;
+  updateTransactionTotalCostById(totalCost: number, id: number): Promise<void>;
 }
 
 export interface IVariableMonitoringRepository extends CrudRepository<OCPP2_0_1.VariableMonitoringType> {

@@ -7,7 +7,7 @@ import { QuerySchema } from '@citrineos/base';
 export const TlsCertificateSchema = QuerySchema(
   'TlsCertificateSchema',
   [
-    ['certificateChain', 'array'],
+    ['certificateChain', 'string[]'],
     ['privateKey', 'string'],
     ['rootCA', 'string'],
     ['subCAKey', 'string'],

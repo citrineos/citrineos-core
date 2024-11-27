@@ -13,14 +13,12 @@ import {
   METADATA_DATA_ENDPOINTS,
   METADATA_MESSAGE_ENDPOINTS,
 } from '.';
-import { OcppRequest, SystemConfig } from '../..';
+import { MessageConfirmationSchema, OcppRequest, SystemConfig } from '../..';
 import { Namespace } from '../../ocpp/persistence';
 import { CallAction } from '../../ocpp/rpc/message';
 import { IMessageConfirmation } from '../messages';
 import { IModule } from '../modules';
-import {
-  IMessageQuerystringSchema,
-} from './MessageQuerystring';
+import { IMessageQuerystringSchema } from './MessageQuerystring';
 import { IModuleApi } from './ModuleApi';
 import { AuthorizationSecurity } from './AuthorizationSecurity';
 
@@ -28,7 +26,8 @@ import { AuthorizationSecurity } from './AuthorizationSecurity';
  * Abstract module api class implementation.
  */
 export abstract class AbstractModuleApi<T extends IModule>
-  implements IModuleApi {
+  implements IModuleApi
+{
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
@@ -117,7 +116,7 @@ export abstract class AbstractModuleApi<T extends IModule>
     action: CallAction,
     method: (...args: any[]) => any,
     bodySchema: object,
-    optionalQuerystrings?: Record<string, any>
+    optionalQuerystrings?: Record<string, any>,
   ): void {
     this._logger.debug(
       `Adding message route for ${action}`,
@@ -136,7 +135,8 @@ export abstract class AbstractModuleApi<T extends IModule>
         Querystring: Record<string, any>;
       }>,
     ): Promise<IMessageConfirmation> => {
-      const { identifier, tenantId, callbackUrl, ...extraQueries } = request.query;
+      const { identifier, tenantId, callbackUrl, ...extraQueries } =
+        request.query;
       return method.call(
         this,
         identifier,
@@ -145,7 +145,7 @@ export abstract class AbstractModuleApi<T extends IModule>
         callbackUrl,
         Object.keys(extraQueries).length > 0 ? extraQueries : undefined,
       );
-    }
+    };
 
     const mergedQuerySchema = {
       ...IMessageQuerystringSchema,
@@ -155,20 +155,26 @@ export abstract class AbstractModuleApi<T extends IModule>
       },
     };
 
-    const _opts = {
+    const _opts: any = {
+      method: HttpMethod.Post,
+      url: this._toMessagePath(action),
+      handler: _handler,
       schema: {
         body: bodySchema,
         querystring: mergedQuerySchema,
+        response: {
+          200: MessageConfirmationSchema,
+        },
       } as const,
     };
 
     if (this._module.config.util.swagger?.exposeMessage) {
       this._server.register(async (fastifyInstance) => {
         this.registerSchemaForOpts(fastifyInstance, _opts);
-        fastifyInstance.post(this._toMessagePath(action), _opts, _handler);
+        fastifyInstance.route(_opts);
       });
     } else {
-      this._server.post(this._toMessagePath(action), _opts, _handler);
+      this._server.route(_opts);
     }
   }
 
@@ -326,19 +332,54 @@ export abstract class AbstractModuleApi<T extends IModule>
     fastifyInstance: FastifyInstance,
     schema: any,
   ): object | null => {
+    const id = schema['$id'];
+    if (!id) {
+      this._logger.error('Could not register schema because no ID', schema);
+    }
     try {
-      const id = schema['$id'];
-      if (!id) {
-        this._logger.error('Could not register schema because no ID', schema);
-      }
       const schemaCopy = this.removeUnknownKeys(schema);
+      if (
+        schemaCopy.required &&
+        Array.isArray(schemaCopy.required) &&
+        schemaCopy.required.length === 0
+      ) {
+        delete schemaCopy.required;
+      }
+      if (schema.definitions) {
+        Object.keys(schema.definitions).forEach((key) => {
+          const definition = schema.definitions[key];
+          if (!definition['$id']) {
+            definition['$id'] = key;
+          }
+          this.registerSchema(fastifyInstance, definition);
+        });
+      }
+      if (schemaCopy.properties) {
+        Object.keys(schemaCopy.properties).forEach((key) => {
+          const property = schemaCopy.properties[key];
+          if (property.$ref) {
+            property.$ref = property.$ref.replace('#/definitions/', '');
+          }
+          if (property.items && property.items.$ref) {
+            property.items.$ref = property.items.$ref.replace(
+              '#/definitions/',
+              '',
+            );
+          }
+        });
+      }
       fastifyInstance.addSchema(schemaCopy);
+      this._server.addSchema(schemaCopy);
       return {
         $ref: `${id}`,
       };
     } catch (e: any) {
       // ignore already declared
-      if (e.code !== 'FST_ERR_SCH_ALREADY_PRESENT') {
+      if (e.code === 'FST_ERR_SCH_ALREADY_PRESENT') {
+        return {
+          $ref: `${id}`,
+        };
+      } else {
         this._logger.error('Could not register schema', e, schema);
       }
       return null;

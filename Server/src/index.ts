@@ -21,23 +21,23 @@ import {
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
 import {
   Authenticator,
-  CertificateAuthorityService,
   BasicAuthenticationFilter,
+  CertificateAuthorityService,
   ConnectedStationFilter,
   DirectusUtil,
   IdGenerator,
   initSwagger,
   MemoryCache,
+  NetworkProfileFilter,
   RabbitMqReceiver,
   RabbitMqSender,
   RedisCache,
   UnknownStationFilter,
   WebsocketNetworkConnection,
-  NetworkProfileFilter,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import addFormats from 'ajv-formats';
-import fastify, { type FastifyInstance } from 'fastify';
+import fastify, { type FastifyInstance, RouteOptions } from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
 import {
@@ -161,15 +161,16 @@ export class CitrineOSServer {
     this.initSwagger();
 
     // Add Directus Message API flow creation if enabled
-    let directusUtil;
+    let directusUtil: DirectusUtil | undefined = undefined;
     if (this._config.util.directus?.generateFlows) {
       directusUtil = new DirectusUtil(this._config, this._logger);
-      this._server.addHook(
-        'onRoute',
-        directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(
-          directusUtil,
-        ),
-      );
+      this._server.addHook('onRoute', (routeOptions: RouteOptions) => {
+        directusUtil!.addDirectusMessageApiFlowsFastifyRouteHook(
+          routeOptions,
+          this._server.getSchemas(),
+        );
+      });
+
       this._server.addHook('onReady', async () => {
         this._logger?.info('Directus actions initialization finished');
       });
