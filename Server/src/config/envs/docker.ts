@@ -95,12 +95,12 @@ export function createDockerConfig() {
           },
           {
             id: '1',
-            securityProfile: 0,
-            allowUnknownChargingStations: true,
+            securityProfile: 1,
+            allowUnknownChargingStations: false,
             pingInterval: 60,
             host: '0.0.0.0',
             port: 8082,
-            protocol: 'ocpp1.6',
+            protocol: 'ocpp2.0.1',
           },
           {
             id: '2',
