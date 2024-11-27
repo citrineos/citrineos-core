@@ -65,6 +65,9 @@ export class Transaction extends Model implements OCPP2_0_1.TransactionType {
   @Column(DataType.INTEGER)
   declare remoteStartId?: number | null;
 
+  @Column(DataType.DECIMAL)
+  declare totalCost?: number;
+  
   declare customData?: OCPP2_0_1.CustomDataType | null;
 
   static buildTransaction(
@@ -79,6 +82,7 @@ export class Transaction extends Model implements OCPP2_0_1.TransactionType {
     totalKwh?: number,
     stoppedReason?: OCPP2_0_1.ReasonEnumType,
     remoteStartId?: number,
+    totalCost?: number,
     customData?: OCPP2_0_1.CustomDataType,
   ) {
     const transaction = new Transaction();
@@ -93,6 +97,7 @@ export class Transaction extends Model implements OCPP2_0_1.TransactionType {
     transaction.totalKwh = totalKwh;
     transaction.stoppedReason = stoppedReason;
     transaction.remoteStartId = remoteStartId;
+    transaction.totalCost = totalCost;
     transaction.customData = customData;
     return transaction;
   }

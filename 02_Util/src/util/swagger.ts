@@ -16,6 +16,48 @@ import {
 } from '@citrineos/base';
 import * as FastifyAuth from '@fastify/auth';
 import * as packageJson from '../../package.json';
+import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
+
+/**
+ * This transformation is used to set default tags
+ *
+ * @param {object} swaggerObject - The original Swagger object to be transformed.
+ * @param {object} openapiObject - The original OpenAPI object to be transformed.
+ * @return {object} The transformed OpenAPI object.
+ */
+function OcppTransformObject({
+  swaggerObject,
+  openapiObject,
+}: {
+  swaggerObject: Partial<OpenAPIV2.Document>;
+  openapiObject: Partial<OpenAPIV3.Document | OpenAPIV3_1.Document>;
+}) {
+  console.log('OcppTransformObject: Transforming OpenAPI object...');
+  if (openapiObject.paths && openapiObject.components) {
+    for (const pathKey in openapiObject.paths) {
+      const path: OpenAPIV3.PathsObject = openapiObject.paths[
+        pathKey
+      ] as OpenAPIV3.PathsObject;
+      if (path) {
+        for (const methodKey in path) {
+          const method: OpenAPIV3.OperationObject = path[
+            methodKey
+          ] as OpenAPIV3.OperationObject;
+          if (method) {
+            // Set tags based on path key if tags were not passed in
+            if (!method.tags) {
+              method.tags = pathKey
+                .split('/')
+                .slice(2, -1)
+                .map((tag) => tag.charAt(0).toUpperCase() + tag.slice(1));
+            }
+          }
+        }
+      }
+    }
+  }
+  return openapiObject;
+}
 
 const registerSwaggerUi = (
   systemConfig: SystemConfig,
@@ -148,6 +190,7 @@ const registerFastifySwagger = (
         },
       },
     },
+    transformObject: OcppTransformObject,
     refResolver: {
       buildLocalReference,
     },

@@ -11,13 +11,13 @@ import {
   createOperation,
   DirectusFlow,
   DirectusOperation,
+  readAssetArrayBuffer,
   readFlows,
   rest,
   RestClient,
   staticToken,
   updateFlow,
   updateOperation,
-  readAssetArrayBuffer,
   uploadFiles,
 } from '@directus/sdk';
 import { RouteOptions } from 'fastify';
@@ -74,6 +74,7 @@ export class DirectusUtil implements IFileAccess {
 
   public addDirectusMessageApiFlowsFastifyRouteHook(
     routeOptions: RouteOptions,
+    schemas: Record<string, unknown>,
   ) {
     const messagePath = routeOptions.url; // 'Url' here means the route specified when the endpoint was added to the fastify server, such as '/ocpp/configuration/reset'
     if (messagePath.split('/')[1] === 'ocpp') {
@@ -85,8 +86,14 @@ export class DirectusUtil implements IFileAccess {
         lowercaseAction.charAt(0).toUpperCase() + lowercaseAction.slice(1);
       // _addMessageRoute in AbstractModuleApi adds the bodySchema specified in the @MessageEndpoint decorator to the fastify route schema
       // These body schemas are the ones generated directly from the specification using the json-schema-processor in 00_Base
-      const bodySchema = routeOptions.schema?.body as object;
-      this.addDirectusFlowForAction(action, messagePath, bodySchema);
+      const bodySchema: any = routeOptions.schema?.body;
+      if (bodySchema && bodySchema.$ref && schemas[bodySchema.$ref]) {
+        this.addDirectusFlowForAction(
+          action,
+          messagePath,
+          schemas[bodySchema.$ref] as object,
+        );
+      }
     }
   }
 
