@@ -1,5 +1,4 @@
 {
-  "id": "UpdateFirmwareRequest",
   "title": "UpdateFirmwareRequest",
   "type": "object",
   "properties": {
@@ -19,5 +18,7 @@
     }
   },
   "additionalProperties": false,
-  "required": ["location", "retrieveDate"]
+  "required": ["location", "retrieveDate"],
+  "$id": "UpdateFirmwareRequest",
+  "definitions": {}
 }

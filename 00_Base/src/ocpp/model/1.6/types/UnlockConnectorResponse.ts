@@ -13,5 +13,5 @@ import { UnlockConnectorResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface UnlockConnectorResponse extends OcppResponse {
-  UnlockConnectorResponseStatus: UnlockConnectorResponseStatus;
+  status: UnlockConnectorResponseStatus;
 }

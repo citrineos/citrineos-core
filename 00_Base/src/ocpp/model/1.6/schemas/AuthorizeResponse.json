@@ -1,5 +1,4 @@
 {
-  "id": "AuthorizeResponse",
   "title": "AuthorizeResponse",
   "type": "object",
   "properties": {
@@ -14,23 +13,29 @@
           "type": "string",
           "maxLength": 20
         },
-        "AuthorizeResponseStatus": {
-          "type": "string",
-          "additionalProperties": false,
-          "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
-          "tsEnumNames": [
-            "Accepted",
-            "Blocked",
-            "Expired",
-            "Invalid",
-            "ConcurrentTx"
-          ]
+        "status": {
+          "$ref": "#/definitions/AuthorizeResponseStatus"
         }
       },
       "additionalProperties": false,
-      "required": ["AuthorizeResponseStatus"]
+      "required": ["status"]
     }
   },
   "additionalProperties": false,
-  "required": ["idTagInfo"]
+  "required": ["idTagInfo"],
+  "$id": "AuthorizeResponse",
+  "definitions": {
+    "AuthorizeResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
+      "tsEnumNames": [
+        "Accepted",
+        "Blocked",
+        "Expired",
+        "Invalid",
+        "ConcurrentTx"
+      ]
+    }
+  }
 }

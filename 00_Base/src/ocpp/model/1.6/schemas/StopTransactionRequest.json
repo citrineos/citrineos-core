@@ -1,5 +1,4 @@
 {
-  "id": "StopTransactionRequest",
   "title": "StopTransactionRequest",
   "type": "object",
   "properties": {
@@ -16,6 +15,9 @@
     },
     "transactionId": {
       "type": "integer"
+    },
+    "reason": {
+      "$ref": "#/definitions/StopTransactionRequestReason"
     },
     "transactionData": {
       "type": "array",
@@ -34,161 +36,23 @@
                 "value": {
                   "type": "string"
                 },
-                "StopTransactionRequestContext": {
-                  "type": "string",
-                  "additionalProperties": false,
-                  "enum": [
-                    "Interruption.Begin",
-                    "Interruption.End",
-                    "Sample.Clock",
-                    "Sample.Periodic",
-                    "Transaction.Begin",
-                    "Transaction.End",
-                    "Trigger",
-                    "Other"
-                  ],
-                  "tsEnumNames": [
-                    "Interruption_Begin",
-                    "Interruption_End",
-                    "Sample_Clock",
-                    "Sample_Periodic",
-                    "Transaction_Begin",
-                    "Transaction_End",
-                    "Trigger",
-                    "Other"
-                  ]
+                "context": {
+                  "$ref": "#/definitions/StopTransactionRequestContext"
                 },
-                "StopTransactionRequestFormat": {
-                  "type": "string",
-                  "additionalProperties": false,
-                  "enum": ["Raw", "SignedData"],
-                  "tsEnumNames": ["Raw", "SignedData"]
+                "format": {
+                  "$ref": "#/definitions/StopTransactionRequestFormat"
                 },
-                "StopTransactionRequestMeasurand": {
-                  "type": "string",
-                  "additionalProperties": false,
-                  "enum": [
-                    "Energy.Active.Export.Register",
-                    "Energy.Active.Import.Register",
-                    "Energy.Reactive.Export.Register",
-                    "Energy.Reactive.Import.Register",
-                    "Energy.Active.Export.Interval",
-                    "Energy.Active.Import.Interval",
-                    "Energy.Reactive.Export.Interval",
-                    "Energy.Reactive.Import.Interval",
-                    "Power.Active.Export",
-                    "Power.Active.Import",
-                    "Power.Offered",
-                    "Power.Reactive.Export",
-                    "Power.Reactive.Import",
-                    "Power.Factor",
-                    "Current.Import",
-                    "Current.Export",
-                    "Current.Offered",
-                    "Voltage",
-                    "Frequency",
-                    "Temperature",
-                    "SoC",
-                    "RPM"
-                  ],
-                  "tsEnumNames": [
-                    "Energy_Active_Export_Register",
-                    "Energy_Active_Import_Register",
-                    "Energy_Reactive_Export_Register",
-                    "Energy_Reactive_Import_Register",
-                    "Energy_Active_Export_Interval",
-                    "Energy_Active_Import_Interval",
-                    "Energy_Reactive_Export_Interval",
-                    "Energy_Reactive_Import_Interval",
-                    "Power_Active_Export",
-                    "Power_Active_Import",
-                    "Power_Offered",
-                    "Power_Reactive_Export",
-                    "Power_Reactive_Import",
-                    "Power_Factor",
-                    "Current_Import",
-                    "Current_Export",
-                    "Current_Offered",
-                    "Voltage",
-                    "Frequency",
-                    "Temperature",
-                    "SoC",
-                    "RPM"
-                  ]
+                "measurand": {
+                  "$ref": "#/definitions/StopTransactionRequestMeasurand"
                 },
-                "StopTransactionRequestPhase": {
-                  "type": "string",
-                  "additionalProperties": false,
-                  "enum": [
-                    "L1",
-                    "L2",
-                    "L3",
-                    "N",
-                    "L1-N",
-                    "L2-N",
-                    "L3-N",
-                    "L1-L2",
-                    "L2-L3",
-                    "L3-L1"
-                  ],
-                  "tsEnumNames": [
-                    "L1",
-                    "L2",
-                    "L3",
-                    "N",
-                    "L1_N",
-                    "L2_N",
-                    "L3_N",
-                    "L1_L2",
-                    "L2_L3",
-                    "L3_L1"
-                  ]
+                "phase": {
+                  "$ref": "#/definitions/StopTransactionRequestPhase"
                 },
-                "StopTransactionRequestLocation": {
-                  "type": "string",
-                  "additionalProperties": false,
-                  "enum": ["Cable", "EV", "Inlet", "Outlet", "Body"],
-                  "tsEnumNames": ["Cable", "EV", "Inlet", "Outlet", "Body"]
+                "location": {
+                  "$ref": "#/definitions/StopTransactionRequestLocation"
                 },
-                "StopTransactionRequestUnit": {
-                  "type": "string",
-                  "additionalProperties": false,
-                  "enum": [
-                    "Wh",
-                    "kWh",
-                    "varh",
-                    "kvarh",
-                    "W",
-                    "kW",
-                    "VA",
-                    "kVA",
-                    "var",
-                    "kvar",
-                    "A",
-                    "V",
-                    "K",
-                    "Celcius",
-                    "Fahrenheit",
-                    "Percent"
-                  ],
-                  "tsEnumNames": [
-                    "Wh",
-                    "kWh",
-                    "varh",
-                    "kvarh",
-                    "W",
-                    "kW",
-                    "VA",
-                    "kVA",
-                    "var",
-                    "kvar",
-                    "A",
-                    "V",
-                    "K",
-                    "Celcius",
-                    "Fahrenheit",
-                    "Percent"
-                  ]
+                "unit": {
+                  "$ref": "#/definitions/StopTransactionRequestUnit"
                 }
               },
               "additionalProperties": false,
@@ -199,7 +63,12 @@
         "additionalProperties": false,
         "required": ["timestamp", "sampledValue"]
       }
-    },
+    }
+  },
+  "additionalProperties": false,
+  "required": ["transactionId", "timestamp", "meterStop"],
+  "$id": "StopTransactionRequest",
+  "definitions": {
     "StopTransactionRequestReason": {
       "type": "string",
       "additionalProperties": false,
@@ -229,8 +98,162 @@
         "UnlockCommand",
         "DeAuthorized"
       ]
+    },
+    "StopTransactionRequestContext": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "Interruption.Begin",
+        "Interruption.End",
+        "Sample.Clock",
+        "Sample.Periodic",
+        "Transaction.Begin",
+        "Transaction.End",
+        "Trigger",
+        "Other"
+      ],
+      "tsEnumNames": [
+        "Interruption_Begin",
+        "Interruption_End",
+        "Sample_Clock",
+        "Sample_Periodic",
+        "Transaction_Begin",
+        "Transaction_End",
+        "Trigger",
+        "Other"
+      ]
+    },
+    "StopTransactionRequestFormat": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Raw", "SignedData"],
+      "tsEnumNames": ["Raw", "SignedData"]
+    },
+    "StopTransactionRequestMeasurand": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "Energy.Active.Export.Register",
+        "Energy.Active.Import.Register",
+        "Energy.Reactive.Export.Register",
+        "Energy.Reactive.Import.Register",
+        "Energy.Active.Export.Interval",
+        "Energy.Active.Import.Interval",
+        "Energy.Reactive.Export.Interval",
+        "Energy.Reactive.Import.Interval",
+        "Power.Active.Export",
+        "Power.Active.Import",
+        "Power.Offered",
+        "Power.Reactive.Export",
+        "Power.Reactive.Import",
+        "Power.Factor",
+        "Current.Import",
+        "Current.Export",
+        "Current.Offered",
+        "Voltage",
+        "Frequency",
+        "Temperature",
+        "SoC",
+        "RPM"
+      ],
+      "tsEnumNames": [
+        "Energy_Active_Export_Register",
+        "Energy_Active_Import_Register",
+        "Energy_Reactive_Export_Register",
+        "Energy_Reactive_Import_Register",
+        "Energy_Active_Export_Interval",
+        "Energy_Active_Import_Interval",
+        "Energy_Reactive_Export_Interval",
+        "Energy_Reactive_Import_Interval",
+        "Power_Active_Export",
+        "Power_Active_Import",
+        "Power_Offered",
+        "Power_Reactive_Export",
+        "Power_Reactive_Import",
+        "Power_Factor",
+        "Current_Import",
+        "Current_Export",
+        "Current_Offered",
+        "Voltage",
+        "Frequency",
+        "Temperature",
+        "SoC",
+        "RPM"
+      ]
+    },
+    "StopTransactionRequestPhase": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "L1",
+        "L2",
+        "L3",
+        "N",
+        "L1-N",
+        "L2-N",
+        "L3-N",
+        "L1-L2",
+        "L2-L3",
+        "L3-L1"
+      ],
+      "tsEnumNames": [
+        "L1",
+        "L2",
+        "L3",
+        "N",
+        "L1_N",
+        "L2_N",
+        "L3_N",
+        "L1_L2",
+        "L2_L3",
+        "L3_L1"
+      ]
+    },
+    "StopTransactionRequestLocation": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Cable", "EV", "Inlet", "Outlet", "Body"],
+      "tsEnumNames": ["Cable", "EV", "Inlet", "Outlet", "Body"]
+    },
+    "StopTransactionRequestUnit": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "Wh",
+        "kWh",
+        "varh",
+        "kvarh",
+        "W",
+        "kW",
+        "VA",
+        "kVA",
+        "var",
+        "kvar",
+        "A",
+        "V",
+        "K",
+        "Celcius",
+        "Fahrenheit",
+        "Percent"
+      ],
+      "tsEnumNames": [
+        "Wh",
+        "kWh",
+        "varh",
+        "kvarh",
+        "W",
+        "kW",
+        "VA",
+        "kVA",
+        "var",
+        "kvar",
+        "A",
+        "V",
+        "K",
+        "Celcius",
+        "Fahrenheit",
+        "Percent"
+      ]
     }
-  },
-  "additionalProperties": false,
-  "required": ["transactionId", "timestamp", "meterStop"]
+  }
 }

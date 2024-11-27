@@ -23,21 +23,21 @@ export interface SetChargingProfileRequest extends OcppRequest {
     chargingProfileId: number;
     transactionId?: number | null;
     stackLevel: number;
+    chargingProfilePurpose: SetChargingProfileRequestChargingProfilePurpose;
+    chargingProfileKind: SetChargingProfileRequestChargingProfileKind;
+    recurrencyKind?: SetChargingProfileRequestRecurrencyKind | null;
     validFrom?: string | null;
     validTo?: string | null;
     chargingSchedule: {
       duration?: number | null;
       startSchedule?: string | null;
+      chargingRateUnit: SetChargingProfileRequestChargingRateUnit;
       chargingSchedulePeriod: {
         startPeriod: number;
         limit: number;
         numberPhases?: number | null;
       }[];
       minChargingRate?: number | null;
-      SetChargingProfileRequestChargingRateUnit: SetChargingProfileRequestChargingRateUnit;
     };
-    SetChargingProfileRequestChargingProfilePurpose: SetChargingProfileRequestChargingProfilePurpose;
-    SetChargingProfileRequestChargingProfileKind: SetChargingProfileRequestChargingProfileKind;
-    SetChargingProfileRequestRecurrencyKind?: SetChargingProfileRequestRecurrencyKind | null;
   };
 }

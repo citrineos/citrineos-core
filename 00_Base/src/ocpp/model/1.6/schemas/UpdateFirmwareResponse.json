@@ -1,7 +1,8 @@
 {
-  "id": "UpdateFirmwareResponse",
   "title": "UpdateFirmwareResponse",
   "type": "object",
   "properties": {},
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$id": "UpdateFirmwareResponse",
+  "definitions": {}
 }

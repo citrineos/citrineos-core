@@ -16,18 +16,18 @@ import {
 import { OcppResponse } from '../../../..';
 
 export interface GetCompositeScheduleResponse extends OcppResponse {
+  status: GetCompositeScheduleResponseStatus;
   connectorId?: number | null;
   scheduleStart?: string | null;
   chargingSchedule?: {
     duration?: number | null;
     startSchedule?: string | null;
+    chargingRateUnit: GetCompositeScheduleResponseChargingRateUnit;
     chargingSchedulePeriod: {
       startPeriod: number;
       limit: number;
       numberPhases?: number | null;
     }[];
     minChargingRate?: number | null;
-    GetCompositeScheduleResponseChargingRateUnit: GetCompositeScheduleResponseChargingRateUnit;
   };
-  GetCompositeScheduleResponseStatus: GetCompositeScheduleResponseStatus;
 }

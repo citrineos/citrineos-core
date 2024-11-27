@@ -1,5 +1,4 @@
 {
-  "id": "CancelReservationRequest",
   "title": "CancelReservationRequest",
   "type": "object",
   "properties": {
@@ -8,5 +7,7 @@
     }
   },
   "additionalProperties": false,
-  "required": ["reservationId"]
+  "required": ["reservationId"],
+  "$id": "CancelReservationRequest",
+  "definitions": {}
 }

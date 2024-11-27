@@ -13,6 +13,6 @@ import { TriggerMessageRequestRequestedMessage } from '../enums';
 import { OcppRequest } from '../../../..';
 
 export interface TriggerMessageRequest extends OcppRequest {
+  requestedMessage: TriggerMessageRequestRequestedMessage;
   connectorId?: number | null;
-  TriggerMessageRequestRequestedMessage: TriggerMessageRequestRequestedMessage;
 }

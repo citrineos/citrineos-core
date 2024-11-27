@@ -14,5 +14,5 @@ import { OcppRequest } from '../../../..';
 
 export interface ChangeAvailabilityRequest extends OcppRequest {
   connectorId: number;
-  ChangeAvailabilityRequestType: ChangeAvailabilityRequestType;
+  type: ChangeAvailabilityRequestType;
 }

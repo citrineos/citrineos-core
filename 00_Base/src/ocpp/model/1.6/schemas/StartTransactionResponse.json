@@ -1,5 +1,4 @@
 {
-  "id": "StartTransactionResponse",
   "title": "StartTransactionResponse",
   "type": "object",
   "properties": {
@@ -14,26 +13,32 @@
           "type": "string",
           "maxLength": 20
         },
-        "StartTransactionResponseStatus": {
-          "type": "string",
-          "additionalProperties": false,
-          "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
-          "tsEnumNames": [
-            "Accepted",
-            "Blocked",
-            "Expired",
-            "Invalid",
-            "ConcurrentTx"
-          ]
+        "status": {
+          "$ref": "#/definitions/StartTransactionResponseStatus"
         }
       },
       "additionalProperties": false,
-      "required": ["StartTransactionResponseStatus"]
+      "required": ["status"]
     },
     "transactionId": {
       "type": "integer"
     }
   },
   "additionalProperties": false,
-  "required": ["idTagInfo", "transactionId"]
+  "required": ["idTagInfo", "transactionId"],
+  "$id": "StartTransactionResponse",
+  "definitions": {
+    "StartTransactionResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
+      "tsEnumNames": [
+        "Accepted",
+        "Blocked",
+        "Expired",
+        "Invalid",
+        "ConcurrentTx"
+      ]
+    }
+  }
 }

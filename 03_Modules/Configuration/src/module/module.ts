@@ -190,7 +190,7 @@ export class ConfigurationModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.BootNotification)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.BootNotification)
   protected async _handleBootNotification(
     message: IMessage<OCPP2_0_1.BootNotificationRequest>,
     props?: HandlerProperties,

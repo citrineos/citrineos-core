@@ -1,5 +1,4 @@
 {
-  "id": "SendLocalListRequest",
   "title": "SendLocalListRequest",
   "type": "object",
   "properties": {
@@ -26,32 +25,37 @@
                 "type": "string",
                 "maxLength": 20
               },
-              "SendLocalListRequestStatus": {
-                "type": "string",
-                "additionalProperties": false,
-                "enum": [
-                  "Accepted",
-                  "Blocked",
-                  "Expired",
-                  "Invalid",
-                  "ConcurrentTx"
-                ],
-                "tsEnumNames": [
-                  "Accepted",
-                  "Blocked",
-                  "Expired",
-                  "Invalid",
-                  "ConcurrentTx"
-                ]
+              "status": {
+                "$ref": "#/definitions/SendLocalListRequestStatus"
               }
             },
             "additionalProperties": false,
-            "required": ["SendLocalListRequestStatus"]
+            "required": ["status"]
           }
         },
         "additionalProperties": false,
         "required": ["idTag"]
       }
+    },
+    "updateType": {
+      "$ref": "#/definitions/SendLocalListRequestUpdateType"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["listVersion", "updateType"],
+  "$id": "SendLocalListRequest",
+  "definitions": {
+    "SendLocalListRequestStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
+      "tsEnumNames": [
+        "Accepted",
+        "Blocked",
+        "Expired",
+        "Invalid",
+        "ConcurrentTx"
+      ]
     },
     "SendLocalListRequestUpdateType": {
       "type": "string",
@@ -59,7 +63,5 @@
       "enum": ["Differential", "Full"],
       "tsEnumNames": ["Differential", "Full"]
     }
-  },
-  "additionalProperties": false,
-  "required": ["listVersion", "SendLocalListRequestUpdateType"]
+  }
 }

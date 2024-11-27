@@ -1,14 +1,19 @@
 {
-  "id": "StatusNotificationRequest",
   "title": "StatusNotificationRequest",
   "type": "object",
   "properties": {
     "connectorId": {
       "type": "integer"
     },
+    "errorCode": {
+      "$ref": "#/definitions/StatusNotificationRequestErrorCode"
+    },
     "info": {
       "type": "string",
       "maxLength": 50
+    },
+    "status": {
+      "$ref": "#/definitions/StatusNotificationRequestStatus"
     },
     "timestamp": {
       "type": "string",
@@ -21,7 +26,12 @@
     "vendorErrorCode": {
       "type": "string",
       "maxLength": 50
-    },
+    }
+  },
+  "additionalProperties": false,
+  "required": ["connectorId", "errorCode", "status"],
+  "$id": "StatusNotificationRequest",
+  "definitions": {
     "StatusNotificationRequestErrorCode": {
       "type": "string",
       "additionalProperties": false,
@@ -88,11 +98,5 @@
         "Faulted"
       ]
     }
-  },
-  "additionalProperties": false,
-  "required": [
-    "connectorId",
-    "StatusNotificationRequestErrorCode",
-    "StatusNotificationRequestStatus"
-  ]
+  }
 }

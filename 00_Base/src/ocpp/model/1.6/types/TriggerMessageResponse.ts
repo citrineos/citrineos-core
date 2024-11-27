@@ -13,5 +13,5 @@ import { TriggerMessageResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface TriggerMessageResponse extends OcppResponse {
-  TriggerMessageResponseStatus: TriggerMessageResponseStatus;
+  status: TriggerMessageResponseStatus;
 }

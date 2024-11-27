@@ -13,5 +13,5 @@ import { ClearCacheResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface ClearCacheResponse extends OcppResponse {
-  ClearCacheResponseStatus: ClearCacheResponseStatus;
+  status: ClearCacheResponseStatus;
 }

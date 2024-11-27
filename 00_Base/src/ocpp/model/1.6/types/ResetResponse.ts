@@ -13,5 +13,5 @@ import { ResetResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface ResetResponse extends OcppResponse {
-  ResetResponseStatus: ResetResponseStatus;
+  status: ResetResponseStatus;
 }

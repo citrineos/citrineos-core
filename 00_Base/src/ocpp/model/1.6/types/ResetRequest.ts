@@ -13,5 +13,5 @@ import { ResetRequestType } from '../enums';
 import { OcppRequest } from '../../../..';
 
 export interface ResetRequest extends OcppRequest {
-  ResetRequestType: ResetRequestType;
+  type: ResetRequestType;
 }

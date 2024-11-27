@@ -1,5 +1,4 @@
 {
-  "id": "GetConfigurationRequest",
   "title": "GetConfigurationRequest",
   "type": "object",
   "properties": {
@@ -11,5 +10,7 @@
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$id": "GetConfigurationRequest",
+  "definitions": {}
 }

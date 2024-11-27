@@ -410,7 +410,7 @@ export class SmartChargingModuleApi
         chargingProfile.chargingProfileKind ===
         OCPP2_0_1.ChargingProfileKindEnumType.Absolute ||
         chargingProfile.chargingProfileKind ===
-          ChargingProfileKindEnumType.Recurring
+        OCPP2_0_1.ChargingProfileKindEnumType.Recurring
       ) {
         // OCPP 2.0.1 Part 2 K01.FR.40
         if (!chargingSchedule.startSchedule) {

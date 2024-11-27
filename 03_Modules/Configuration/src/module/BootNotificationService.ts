@@ -175,7 +175,7 @@ export class BootNotificationService {
 
     return {
       requestId: requestId,
-      reportBase: ReportBaseEnumType.FullInventory,
+      reportBase: OCPP2_0_1.ReportBaseEnumType.FullInventory,
     } as OCPP2_0_1.GetBaseReportRequest;
   }
 

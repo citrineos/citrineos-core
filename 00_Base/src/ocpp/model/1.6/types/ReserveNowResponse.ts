@@ -13,5 +13,5 @@ import { ReserveNowResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface ReserveNowResponse extends OcppResponse {
-  ReserveNowResponseStatus: ReserveNowResponseStatus;
+  status: ReserveNowResponseStatus;
 }

@@ -13,6 +13,6 @@ import { DataTransferResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface DataTransferResponse extends OcppResponse {
+  status: DataTransferResponseStatus;
   data?: string | null;
-  DataTransferResponseStatus: DataTransferResponseStatus;
 }

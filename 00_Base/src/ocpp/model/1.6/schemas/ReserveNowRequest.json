@@ -1,5 +1,4 @@
 {
-  "id": "ReserveNowRequest",
   "title": "ReserveNowRequest",
   "type": "object",
   "properties": {
@@ -23,5 +22,7 @@
     }
   },
   "additionalProperties": false,
-  "required": ["connectorId", "expiryDate", "idTag", "reservationId"]
+  "required": ["connectorId", "expiryDate", "idTag", "reservationId"],
+  "$id": "ReserveNowRequest",
+  "definitions": {}
 }

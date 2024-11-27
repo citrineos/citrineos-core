@@ -13,5 +13,5 @@ import { FirmwareStatusNotificationRequestStatus } from '../enums';
 import { OcppRequest } from '../../../..';
 
 export interface FirmwareStatusNotificationRequest extends OcppRequest {
-  FirmwareStatusNotificationRequestStatus: FirmwareStatusNotificationRequestStatus;
+  status: FirmwareStatusNotificationRequestStatus;
 }

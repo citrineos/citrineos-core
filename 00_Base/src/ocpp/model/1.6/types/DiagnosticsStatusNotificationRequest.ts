@@ -13,5 +13,5 @@ import { DiagnosticsStatusNotificationRequestStatus } from '../enums';
 import { OcppRequest } from '../../../..';
 
 export interface DiagnosticsStatusNotificationRequest extends OcppRequest {
-  DiagnosticsStatusNotificationRequestStatus: DiagnosticsStatusNotificationRequestStatus;
+  status: DiagnosticsStatusNotificationRequestStatus;
 }

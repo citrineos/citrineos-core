@@ -13,5 +13,5 @@ import { CancelReservationResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface CancelReservationResponse extends OcppResponse {
-  CancelReservationResponseStatus: CancelReservationResponseStatus;
+  status: CancelReservationResponseStatus;
 }

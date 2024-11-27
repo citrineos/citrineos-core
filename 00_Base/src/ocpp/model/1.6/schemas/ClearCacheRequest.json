@@ -1,7 +1,8 @@
 {
-  "id": "ClearCacheRequest",
   "title": "ClearCacheRequest",
   "type": "object",
   "properties": {},
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$id": "ClearCacheRequest",
+  "definitions": {}
 }

@@ -71,6 +71,7 @@ fs.readdir(path, (error, files) => {
 
     // Export all definitions and schemas
     for (let key of globalDefinitions) {
+      exportStatements.push(`export { ${key} } from './types/${key}';`);
       exportStatements.push(
         `export { default as ${key}Schema } from './schemas/${key}.json';`,
       );
@@ -108,18 +109,19 @@ fs.readdir(path, (error, files) => {
 async function processJsonSchema(data, writeToFile = true) {
   let jsonSchema = JSON.parse(data);
   let id = jsonSchema['id'].split(':').pop();
-  jsonSchema['id'] = id;
+  jsonSchema['$id'] = id;
+  delete jsonSchema['id'];
   delete jsonSchema['$schema'];
   const title = jsonSchema['title'];
 
   // Correct & collect all enum names
-  const { uniqueEnumNames, oldEnumNames } = processEnumNames(
+  jsonSchema['definitions'] = {};
+  const uniqueEnumNames = processEnumNames(
+    jsonSchema['definitions'],
     jsonSchema['properties'],
-    [],
     [],
     title,
   );
-  updateRequired(jsonSchema, oldEnumNames, title);
 
   // Preprocess nodes to enable enum extraction
   processNode(jsonSchema);
@@ -207,45 +209,25 @@ async function processJsonSchema(data, writeToFile = true) {
   });
 }
 
-function processEnumNames(node, uniqueEnumNames, oldEnumNames, title) {
+function processEnumNames(definitionsRoot, node, uniqueEnumNames, title) {
   for (let key in node) {
     if (typeof node[key] === 'object') {
       if (node[key]['enum']) {
         uniqueKey = title + key.charAt(0).toUpperCase() + key.slice(1);
-        node[uniqueKey] = node[key];
-        oldEnumNames.push(key);
-        delete node[key];
+        definitionsRoot[uniqueKey] = node[key];
+        node[key] = { $ref: `#/definitions/${uniqueKey}` };
         uniqueEnumNames.push(uniqueKey);
       } else {
-        let processed = processEnumNames(
+        uniqueEnumNames = processEnumNames(
+          definitionsRoot,
           node[key],
           uniqueEnumNames,
-          oldEnumNames,
           title,
         );
-        uniqueEnumNames = processed.uniqueEnumNames;
-        oldEnumNames = processed.oldEnumNames;
       }
     }
   }
-  return { uniqueEnumNames, oldEnumNames };
-}
-
-function updateRequired(node, oldEnumNames, title) {
-  for (let key in node) {
-    if (key === 'required') {
-      for (let i = 0; i < node[key].length; i++) {
-        if (oldEnumNames.includes(node[key][i])) {
-          node[key][i] =
-            title +
-            node[key][i].charAt(0).toUpperCase() +
-            node[key][i].slice(1);
-        }
-      }
-    } else if (typeof node[key] === 'object') {
-      updateRequired(node[key], oldEnumNames, title);
-    }
-  }
+  return uniqueEnumNames;
 }
 
 function processNode(node) {

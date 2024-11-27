@@ -13,5 +13,5 @@ import { RemoteStopTransactionResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface RemoteStopTransactionResponse extends OcppResponse {
-  RemoteStopTransactionResponseStatus: RemoteStopTransactionResponseStatus;
+  status: RemoteStopTransactionResponseStatus;
 }

@@ -25,17 +25,17 @@ export interface StopTransactionRequest extends OcppRequest {
   meterStop: number;
   timestamp: string;
   transactionId: number;
+  reason?: StopTransactionRequestReason | null;
   transactionData?: {
     timestamp: string | null;
     sampledValue: {
       value: string;
-      StopTransactionRequestContext?: StopTransactionRequestContext | null;
-      StopTransactionRequestFormat?: StopTransactionRequestFormat | null;
-      StopTransactionRequestMeasurand?: StopTransactionRequestMeasurand | null;
-      StopTransactionRequestPhase?: StopTransactionRequestPhase | null;
-      StopTransactionRequestLocation?: StopTransactionRequestLocation | null;
-      StopTransactionRequestUnit?: StopTransactionRequestUnit | null;
+      context?: StopTransactionRequestContext | null;
+      format?: StopTransactionRequestFormat | null;
+      measurand?: StopTransactionRequestMeasurand | null;
+      phase?: StopTransactionRequestPhase | null;
+      location?: StopTransactionRequestLocation | null;
+      unit?: StopTransactionRequestUnit | null;
     }[];
   }[];
-  StopTransactionRequestReason?: StopTransactionRequestReason | null;
 }

@@ -1,5 +1,4 @@
 {
-  "id": "GetDiagnosticsRequest",
   "title": "GetDiagnosticsRequest",
   "type": "object",
   "properties": {
@@ -23,5 +22,7 @@
     }
   },
   "additionalProperties": false,
-  "required": ["location"]
+  "required": ["location"],
+  "$id": "GetDiagnosticsRequest",
+  "definitions": {}
 }

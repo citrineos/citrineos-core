@@ -1,5 +1,4 @@
 {
-  "id": "GetLocalListVersionResponse",
   "title": "GetLocalListVersionResponse",
   "type": "object",
   "properties": {
@@ -8,5 +7,7 @@
     }
   },
   "additionalProperties": false,
-  "required": ["listVersion"]
+  "required": ["listVersion"],
+  "$id": "GetLocalListVersionResponse",
+  "definitions": {}
 }

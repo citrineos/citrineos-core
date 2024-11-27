@@ -297,7 +297,7 @@ export class WebsocketNetworkConnection {
       return wsServerProtocol;
     }
     this._logger.error(
-      `Protocol mismatch. Supported protocols: [${[...protocols].join(', ')}], but requested protocol: '${wsServerProtocol}' not supported.`,
+      `Protocol mismatch. Charger supports: [${[...protocols].join(', ')}], but server expects: '${wsServerProtocol}'.`,
     );
     // Reject the client trying to connect
     return false;
@@ -318,53 +318,58 @@ export class WebsocketNetworkConnection {
     pingInterval: number,
     req: http.IncomingMessage,
   ): Promise<void> {
-    // Pause the WebSocket event emitter until broker is established
-    ws.pause();
+    if (!ws.protocol) {
+      this._logger.debug('Websocket connection without protocol');
+      return;
+    } else {
+      // Pause the WebSocket event emitter until broker is established
+      ws.pause();
 
-    const identifier = this._getClientIdFromUrl(req.url as string);
-    this._identifierConnections.set(identifier, ws);
+      const identifier = this._getClientIdFromUrl(req.url as string);
+      this._identifierConnections.set(identifier, ws);
 
-    try {
-      // Get IP address of client
-      const ip =
-        req.headers['x-forwarded-for']?.toString().split(',')[0].trim() ||
-        req.socket.remoteAddress ||
-        'N/A';
-      const port = req.socket.remotePort as number;
-      this._logger.info('Client websocket connected', identifier, ip, port);
+      try {
+        // Get IP address of client
+        const ip =
+          req.headers['x-forwarded-for']?.toString().split(',')[0].trim() ||
+          req.socket.remoteAddress ||
+          'N/A';
+        const port = req.socket.remotePort as number;
+        this._logger.info('Client websocket connected', identifier, ip, port, ws.protocol);
 
-      // Register client
-      const websocketConnection: IWebsocketConnection = {
-        id: websocketServerId,
-        protocol: ws.protocol,
+        // Register client
+        const websocketConnection: IWebsocketConnection = {
+          id: websocketServerId,
+          protocol: ws.protocol,
+        }
+        let registered = await this._cache.set(
+          identifier,
+          JSON.stringify(websocketConnection),
+          CacheNamespace.Connections,
+        );
+        registered = registered && await this._router.registerConnection(identifier);
+        if (!registered) {
+          this._logger.fatal('Failed to register websocket client', identifier);
+          throw new Error('Failed to register websocket client');
+        }
+
+        this._logger.info(
+          'Successfully connected new charging station.',
+          identifier,
+        );
+
+        // Register all websocket events
+        this._registerWebsocketEvents(identifier, ws, pingInterval);
+
+        // Resume the WebSocket event emitter after events have been subscribed to
+        ws.resume();
+      } catch (error) {
+        this._logger.fatal(
+          'Failed to subscribe to message broker for ',
+          identifier,
+        );
+        ws.close(1011, 'Failed to subscribe to message broker for ' + identifier);
       }
-      let registered = await this._cache.set(
-        identifier,
-        JSON.stringify(websocketConnection),
-        CacheNamespace.Connections,
-      );
-      registered = registered && await this._router.registerConnection(identifier, ws.protocol);
-      if (!registered) {
-        this._logger.fatal('Failed to register websocket client', identifier);
-        throw new Error('Failed to register websocket client');
-      }
-
-      this._logger.info(
-        'Successfully connected new charging station.',
-        identifier,
-      );
-
-      // Register all websocket events
-      this._registerWebsocketEvents(identifier, ws, pingInterval);
-
-      // Resume the WebSocket event emitter after events have been subscribed to
-      ws.resume();
-    } catch (error) {
-      this._logger.fatal(
-        'Failed to subscribe to message broker for ',
-        identifier,
-      );
-      ws.close(1011, 'Failed to subscribe to message broker for ' + identifier);
     }
   }
 

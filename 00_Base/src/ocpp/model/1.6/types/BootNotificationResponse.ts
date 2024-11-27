@@ -13,7 +13,7 @@ import { BootNotificationResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface BootNotificationResponse extends OcppResponse {
+  status: BootNotificationResponseStatus;
   currentTime: string;
   interval: number;
-  BootNotificationResponseStatus: BootNotificationResponseStatus;
 }

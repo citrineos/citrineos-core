@@ -13,5 +13,5 @@ import { SendLocalListResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface SendLocalListResponse extends OcppResponse {
-  SendLocalListResponseStatus: SendLocalListResponseStatus;
+  status: SendLocalListResponseStatus;
 }

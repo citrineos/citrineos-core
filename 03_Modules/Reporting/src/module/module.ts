@@ -149,7 +149,7 @@ export class ReportingModule extends AbstractModule {
    * Handle Requests
    */
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.LogStatusNotification)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.LogStatusNotification)
   protected _handleLogStatusNotification(
     message: IMessage<OCPP2_0_1.LogStatusNotificationRequest>,
     props?: HandlerProperties,

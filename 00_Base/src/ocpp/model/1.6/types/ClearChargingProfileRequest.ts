@@ -15,6 +15,6 @@ import { OcppRequest } from '../../../..';
 export interface ClearChargingProfileRequest extends OcppRequest {
   id?: number | null;
   connectorId?: number | null;
+  chargingProfilePurpose?: ClearChargingProfileRequestChargingProfilePurpose | null;
   stackLevel?: number | null;
-  ClearChargingProfileRequestChargingProfilePurpose?: ClearChargingProfileRequestChargingProfilePurpose | null;
 }

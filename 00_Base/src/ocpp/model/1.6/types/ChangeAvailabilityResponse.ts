@@ -13,5 +13,5 @@ import { ChangeAvailabilityResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface ChangeAvailabilityResponse extends OcppResponse {
-  ChangeAvailabilityResponseStatus: ChangeAvailabilityResponseStatus;
+  status: ChangeAvailabilityResponseStatus;
 }

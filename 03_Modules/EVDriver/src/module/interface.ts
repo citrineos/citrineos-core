@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {,
+import {
   IMessageConfirmation,
   OCPP2_0_1
 } from '@citrineos/base';

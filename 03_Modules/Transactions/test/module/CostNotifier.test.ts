@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { expect, jest } from '@jest/globals';
 import { ITransactionEventRepository, Transaction } from '@citrineos/data';
-import { AbstractModule, CallAction } from '@citrineos/base';
+import { AbstractModule, OCPP2_0_1_CallAction, } from '@citrineos/base';
 import { CostCalculator } from '../../src/module/CostCalculator';
 import { CostNotifier } from '../../src/module/CostNotifier';
 import { aTransaction } from '../providers/TransactionProvider';

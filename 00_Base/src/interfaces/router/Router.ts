@@ -15,10 +15,9 @@ export interface IMessageRouter extends IModule {
    * Register a connection to the message handler with the given connection identifier.
    *
    * @param {string} connectionIdentifier - the identifier of the connection
-   * @param {string} protocol - the OCPP protocol of the connection
    * @return {Promise<boolean>} true if both request and response subscriptions are successful, false otherwise
    */
-  registerConnection(connectionIdentifier: string, protocol: string): Promise<boolean>;
+  registerConnection(connectionIdentifier: string): Promise<boolean>;
   deregisterConnection(connectionIdentifier: string): Promise<boolean>;
 
   /**

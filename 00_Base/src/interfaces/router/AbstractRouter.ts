@@ -261,7 +261,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     protocol: string,
   ): Promise<boolean>;
 
-  abstract registerConnection(connectionIdentifier: string, protocol: string): Promise<boolean>;
+  abstract registerConnection(connectionIdentifier: string): Promise<boolean>;
   abstract deregisterConnection(connectionIdentifier: string): Promise<boolean>;
 
   abstract sendCall(

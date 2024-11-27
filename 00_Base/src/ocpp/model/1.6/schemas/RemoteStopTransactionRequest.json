@@ -1,5 +1,4 @@
 {
-  "id": "RemoteStopTransactionRequest",
   "title": "RemoteStopTransactionRequest",
   "type": "object",
   "properties": {
@@ -8,5 +7,7 @@
     }
   },
   "additionalProperties": false,
-  "required": ["transactionId"]
+  "required": ["transactionId"],
+  "$id": "RemoteStopTransactionRequest",
+  "definitions": {}
 }

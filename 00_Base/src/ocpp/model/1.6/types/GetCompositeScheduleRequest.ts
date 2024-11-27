@@ -15,5 +15,5 @@ import { OcppRequest } from '../../../..';
 export interface GetCompositeScheduleRequest extends OcppRequest {
   connectorId: number;
   duration: number;
-  GetCompositeScheduleRequestChargingRateUnit?: GetCompositeScheduleRequestChargingRateUnit | null;
+  chargingRateUnit?: GetCompositeScheduleRequestChargingRateUnit | null;
 }

@@ -1,5 +1,4 @@
 {
-  "id": "StartTransactionRequest",
   "title": "StartTransactionRequest",
   "type": "object",
   "properties": {
@@ -22,5 +21,7 @@
     }
   },
   "additionalProperties": false,
-  "required": ["connectorId", "idTag", "meterStart", "timestamp"]
+  "required": ["connectorId", "idTag", "meterStart", "timestamp"],
+  "$id": "StartTransactionRequest",
+  "definitions": {}
 }

@@ -1,5 +1,4 @@
 {
-  "id": "ChangeConfigurationRequest",
   "title": "ChangeConfigurationRequest",
   "type": "object",
   "properties": {
@@ -13,5 +12,7 @@
     }
   },
   "additionalProperties": false,
-  "required": ["key", "value"]
+  "required": ["key", "value"],
+  "$id": "ChangeConfigurationRequest",
+  "definitions": {}
 }

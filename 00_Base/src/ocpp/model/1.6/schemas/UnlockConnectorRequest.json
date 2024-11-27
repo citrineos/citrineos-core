@@ -1,5 +1,4 @@
 {
-  "id": "UnlockConnectorRequest",
   "title": "UnlockConnectorRequest",
   "type": "object",
   "properties": {
@@ -8,5 +7,7 @@
     }
   },
   "additionalProperties": false,
-  "required": ["connectorId"]
+  "required": ["connectorId"],
+  "$id": "UnlockConnectorRequest",
+  "definitions": {}
 }

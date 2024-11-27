@@ -22,8 +22,8 @@ export interface SendLocalListRequest extends OcppRequest {
     idTagInfo?: {
       expiryDate?: string | null;
       parentIdTag?: string | null;
-      SendLocalListRequestStatus: SendLocalListRequestStatus;
+      status: SendLocalListRequestStatus;
     };
   }[];
-  SendLocalListRequestUpdateType: SendLocalListRequestUpdateType;
+  updateType: SendLocalListRequestUpdateType;
 }

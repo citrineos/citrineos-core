@@ -129,13 +129,6 @@ export const systemConfigInputSchema = z.object({
       }),
     messageBroker: z
       .object({
-        pubsub: z
-          .object({
-            topicPrefix: z.string().default('ocpp').optional(),
-            topicName: z.string().optional(),
-            servicePath: z.string().optional(),
-          })
-          .optional(),
         kafka: z
           .object({
             topicPrefix: z.string().optional(),
@@ -155,7 +148,7 @@ export const systemConfigInputSchema = z.object({
           })
           .optional(),
       })
-      .refine((obj) => obj.pubsub || obj.kafka || obj.amqp, {
+      .refine((obj) => obj.kafka || obj.amqp, {
         message: 'A message broker implementation must be set',
       }),
     swagger: z
@@ -389,13 +382,6 @@ export const systemConfigSchema = z
         }),
       messageBroker: z
         .object({
-          pubsub: z
-            .object({
-              topicPrefix: z.string(),
-              topicName: z.string().optional(),
-              servicePath: z.string().optional(),
-            })
-            .optional(),
           kafka: z
             .object({
               topicPrefix: z.string().optional(),
@@ -415,7 +401,7 @@ export const systemConfigSchema = z
             })
             .optional(),
         })
-        .refine((obj) => obj.pubsub || obj.kafka || obj.amqp, {
+        .refine((obj) => obj.kafka || obj.amqp, {
           message: 'A message broker implementation must be set',
         }),
       swagger: z

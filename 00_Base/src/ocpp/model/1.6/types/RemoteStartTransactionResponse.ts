@@ -13,5 +13,5 @@ import { RemoteStartTransactionResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface RemoteStartTransactionResponse extends OcppResponse {
-  RemoteStartTransactionResponseStatus: RemoteStartTransactionResponseStatus;
+  status: RemoteStartTransactionResponseStatus;
 }

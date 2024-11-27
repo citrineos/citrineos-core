@@ -17,10 +17,10 @@ import { OcppRequest } from '../../../..';
 
 export interface StatusNotificationRequest extends OcppRequest {
   connectorId: number;
+  errorCode: StatusNotificationRequestErrorCode;
   info?: string | null;
+  status: StatusNotificationRequestStatus;
   timestamp?: string | null;
   vendorId?: string | null;
   vendorErrorCode?: string | null;
-  StatusNotificationRequestErrorCode: StatusNotificationRequestErrorCode;
-  StatusNotificationRequestStatus: StatusNotificationRequestStatus;
 }

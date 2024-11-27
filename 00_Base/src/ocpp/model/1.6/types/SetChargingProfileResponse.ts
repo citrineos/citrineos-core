@@ -13,5 +13,5 @@ import { SetChargingProfileResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface SetChargingProfileResponse extends OcppResponse {
-  SetChargingProfileResponseStatus: SetChargingProfileResponseStatus;
+  status: SetChargingProfileResponseStatus;
 }

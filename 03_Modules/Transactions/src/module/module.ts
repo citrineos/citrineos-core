@@ -263,7 +263,7 @@ export class TransactionsModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.TransactionEvent)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.TransactionEvent)
   protected async _handleTransactionEvent(
     message: IMessage<OCPP2_0_1.TransactionEventRequest>,
     props?: HandlerProperties,

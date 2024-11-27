@@ -13,5 +13,5 @@ import { ChangeConfigurationResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface ChangeConfigurationResponse extends OcppResponse {
-  ChangeConfigurationResponseStatus: ChangeConfigurationResponseStatus;
+  status: ChangeConfigurationResponseStatus;
 }

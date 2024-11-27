@@ -175,7 +175,7 @@ export class SmartChargingModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyEVChargingNeeds)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyEVChargingNeeds)
   protected async _handleNotifyEVChargingNeeds(
     message: IMessage<OCPP2_0_1.NotifyEVChargingNeedsRequest>,
     props?: HandlerProperties,

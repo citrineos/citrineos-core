@@ -1,11 +1,18 @@
 {
-  "id": "TriggerMessageRequest",
   "title": "TriggerMessageRequest",
   "type": "object",
   "properties": {
+    "requestedMessage": {
+      "$ref": "#/definitions/TriggerMessageRequestRequestedMessage"
+    },
     "connectorId": {
       "type": "integer"
-    },
+    }
+  },
+  "additionalProperties": false,
+  "required": ["requestedMessage"],
+  "$id": "TriggerMessageRequest",
+  "definitions": {
     "TriggerMessageRequestRequestedMessage": {
       "type": "string",
       "additionalProperties": false,
@@ -26,7 +33,5 @@
         "StatusNotification"
       ]
     }
-  },
-  "additionalProperties": false,
-  "required": ["TriggerMessageRequestRequestedMessage"]
+  }
 }

@@ -26,12 +26,12 @@ export interface MeterValuesRequest extends OcppRequest {
     timestamp: string;
     sampledValue: {
       value: string;
-      MeterValuesRequestContext?: MeterValuesRequestContext | null;
-      MeterValuesRequestFormat?: MeterValuesRequestFormat | null;
-      MeterValuesRequestMeasurand?: MeterValuesRequestMeasurand | null;
-      MeterValuesRequestPhase?: MeterValuesRequestPhase | null;
-      MeterValuesRequestLocation?: MeterValuesRequestLocation | null;
-      MeterValuesRequestUnit?: MeterValuesRequestUnit | null;
+      context?: MeterValuesRequestContext | null;
+      format?: MeterValuesRequestFormat | null;
+      measurand?: MeterValuesRequestMeasurand | null;
+      phase?: MeterValuesRequestPhase | null;
+      location?: MeterValuesRequestLocation | null;
+      unit?: MeterValuesRequestUnit | null;
     }[];
   }[];
 }

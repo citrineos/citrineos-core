@@ -1,8 +1,15 @@
 {
-  "id": "ReserveNowResponse",
   "title": "ReserveNowResponse",
   "type": "object",
   "properties": {
+    "status": {
+      "$ref": "#/definitions/ReserveNowResponseStatus"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["status"],
+  "$id": "ReserveNowResponse",
+  "definitions": {
     "ReserveNowResponseStatus": {
       "type": "string",
       "additionalProperties": false,
@@ -15,7 +22,5 @@
         "Unavailable"
       ]
     }
-  },
-  "additionalProperties": false,
-  "required": ["ReserveNowResponseStatus"]
+  }
 }

@@ -1,5 +1,4 @@
 {
-  "id": "GetConfigurationResponse",
   "title": "GetConfigurationResponse",
   "type": "object",
   "properties": {
@@ -32,5 +31,7 @@
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$id": "GetConfigurationResponse",
+  "definitions": {}
 }

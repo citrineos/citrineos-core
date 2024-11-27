@@ -105,7 +105,7 @@ export class MessageRouterImpl
   }
 
   // TODO: Below method should lock these tables so that a rapid connect-disconnect cannot result in race condition.
-  async registerConnection(connectionIdentifier: string, protocol: string): Promise<boolean> {
+  async registerConnection(connectionIdentifier: string): Promise<boolean> {
     const dispatcherRegistration =
       this._webhookDispatcher.register(connectionIdentifier);
 
@@ -116,7 +116,6 @@ export class MessageRouterImpl
         stationId: connectionIdentifier,
         state: MessageState.Request.toString(),
         origin: MessageOrigin.ChargingStationManagementSystem.toString(),
-        protocol,
       },
     );
 
@@ -127,7 +126,6 @@ export class MessageRouterImpl
         stationId: connectionIdentifier,
         state: MessageState.Response.toString(),
         origin: MessageOrigin.ChargingStationManagementSystem.toString(),
-        protocol,
       },
     );
 
@@ -445,6 +443,8 @@ export class MessageRouterImpl
         );
       }
     } catch (error) {
+      this._logger.error('Failed to process Call message', identifier, message, error);
+
       // Send manual reply since cache was unable to be set
       const callError =
         error instanceof OcppError
@@ -454,7 +454,7 @@ export class MessageRouterImpl
               messageId,
               ErrorCode.InternalError,
               'Unable to process message',
-              { error: error },
+            { error: (error as Error).message },
             ];
       const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
       this._sendMessage(identifier, rawMessage);

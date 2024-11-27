@@ -16,7 +16,7 @@ export interface StartTransactionResponse extends OcppResponse {
   idTagInfo: {
     expiryDate?: string | null;
     parentIdTag?: string | null;
-    StartTransactionResponseStatus: StartTransactionResponseStatus;
+    status: StartTransactionResponseStatus;
   };
   transactionId: number;
 }

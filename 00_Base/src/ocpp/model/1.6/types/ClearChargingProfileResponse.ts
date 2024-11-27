@@ -13,5 +13,5 @@ import { ClearChargingProfileResponseStatus } from '../enums';
 import { OcppResponse } from '../../../..';
 
 export interface ClearChargingProfileResponse extends OcppResponse {
-  ClearChargingProfileResponseStatus: ClearChargingProfileResponseStatus;
+  status: ClearChargingProfileResponseStatus;
 }

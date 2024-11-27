@@ -149,7 +149,7 @@ export class MonitoringModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyEvent)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyEvent)
   protected async _handleNotifyEvent(
     message: IMessage<OCPP2_0_1.NotifyEventRequest>,
     props?: HandlerProperties,

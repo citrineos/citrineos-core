@@ -1,5 +1,4 @@
 {
-  "id": "AuthorizeRequest",
   "title": "AuthorizeRequest",
   "type": "object",
   "properties": {
@@ -9,5 +8,7 @@
     }
   },
   "additionalProperties": false,
-  "required": ["idTag"]
+  "required": ["idTag"],
+  "$id": "AuthorizeRequest",
+  "definitions": {}
 }

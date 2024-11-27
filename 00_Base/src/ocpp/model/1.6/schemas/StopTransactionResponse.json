@@ -1,5 +1,4 @@
 {
-  "id": "StopTransactionResponse",
   "title": "StopTransactionResponse",
   "type": "object",
   "properties": {
@@ -14,22 +13,28 @@
           "type": "string",
           "maxLength": 20
         },
-        "StopTransactionResponseStatus": {
-          "type": "string",
-          "additionalProperties": false,
-          "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
-          "tsEnumNames": [
-            "Accepted",
-            "Blocked",
-            "Expired",
-            "Invalid",
-            "ConcurrentTx"
-          ]
+        "status": {
+          "$ref": "#/definitions/StopTransactionResponseStatus"
         }
       },
       "additionalProperties": false,
-      "required": ["StopTransactionResponseStatus"]
+      "required": ["status"]
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$id": "StopTransactionResponse",
+  "definitions": {
+    "StopTransactionResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
+      "tsEnumNames": [
+        "Accepted",
+        "Blocked",
+        "Expired",
+        "Invalid",
+        "ConcurrentTx"
+      ]
+    }
+  }
 }

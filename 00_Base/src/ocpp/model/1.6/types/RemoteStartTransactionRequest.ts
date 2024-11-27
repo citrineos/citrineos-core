@@ -24,21 +24,21 @@ export interface RemoteStartTransactionRequest extends OcppRequest {
     chargingProfileId: number | null;
     transactionId?: number | null;
     stackLevel: number;
+    chargingProfilePurpose: RemoteStartTransactionRequestChargingProfilePurpose;
+    chargingProfileKind: RemoteStartTransactionRequestChargingProfileKind;
+    recurrencyKind?: RemoteStartTransactionRequestRecurrencyKind | null;
     validFrom?: string | null;
     validTo?: string | null;
     chargingSchedule: {
       duration?: number | null;
       startSchedule?: string | null;
+      chargingRateUnit: RemoteStartTransactionRequestChargingRateUnit;
       chargingSchedulePeriod: {
         startPeriod: number;
         limit: number;
         numberPhases?: number | null;
       }[];
       minChargingRate?: number | null;
-      RemoteStartTransactionRequestChargingRateUnit: RemoteStartTransactionRequestChargingRateUnit;
     };
-    RemoteStartTransactionRequestChargingProfilePurpose: RemoteStartTransactionRequestChargingProfilePurpose;
-    RemoteStartTransactionRequestChargingProfileKind: RemoteStartTransactionRequestChargingProfileKind;
-    RemoteStartTransactionRequestRecurrencyKind?: RemoteStartTransactionRequestRecurrencyKind | null;
   };
 }

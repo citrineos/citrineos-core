@@ -170,7 +170,7 @@ export class CertificatesModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Get15118EVCertificate)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Get15118EVCertificate)
   protected async _handleGet15118EVCertificate(
     message: IMessage<OCPP2_0_1.Get15118EVCertificateRequest>,
     props?: HandlerProperties,
@@ -200,7 +200,7 @@ export class CertificatesModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetCertificateStatus)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetCertificateStatus)
   protected async _handleGetCertificateStatus(
     message: IMessage<OCPP2_0_1.GetCertificateStatusRequest>,
     props?: HandlerProperties,
