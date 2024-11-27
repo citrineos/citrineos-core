@@ -108,6 +108,10 @@ export class DirectusUtil implements IFileAccess {
     }
   }
 
+  getFileURL(): string {
+    throw new Error('Method not implemented.');
+  }
+
   public async uploadFile(
     fileName: string,
     content: Buffer,
