@@ -1,0 +1,3 @@
+table:
+  name: directus_migrations
+  schema: public

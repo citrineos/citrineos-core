@@ -1,0 +1,7 @@
+table:
+  name: Images
+  schema: public
+object_relationships:
+  - name: BusinessDetail
+    using:
+      foreign_key_constraint_on: businessDetailsId

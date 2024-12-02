@@ -1,0 +1,11 @@
+table:
+  name: directus_activity
+  schema: public
+array_relationships:
+  - name: directus_revisions
+    using:
+      foreign_key_constraint_on:
+        column: activity
+        table:
+          name: directus_revisions
+          schema: public

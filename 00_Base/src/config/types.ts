@@ -179,6 +179,17 @@ export const systemConfigInputSchema = z.object({
         message: 'Directus host must be set if generateFlows is true',
       })
       .optional(),
+    s3Storage: z
+      .object({
+        endpointHost: z.string().default('localstack'),
+        endpointPort: z.number().int().positive().default(4566),
+        accessKeyId: z.string().default('null'),
+        secretAccessKey: z.string().default('null'),
+        region: z.string(),
+        bucketName: z.string().default('citrineos-s3-bucket'),
+        s3ForcePathStyle: z.boolean().default(true),
+      })
+      .optional(),
     networkConnection: z.object({
       websocketServers: z.array(websocketServerInputSchema.optional()),
     }),
@@ -434,6 +445,17 @@ export const systemConfigSchema = z
           username: z.string().optional(),
           password: z.string().optional(),
           generateFlows: z.boolean(),
+        })
+        .optional(),
+      s3Storage: z
+        .object({
+          endpointHost: z.string().default('localstack'),
+          endpointPort: z.number().int().positive().default(4566),
+          accessKeyId: z.string().default('null'),
+          secretAccessKey: z.string().default('null'),
+          region: z.string(),
+          bucketName: z.string().default('citrineos-s3-bucket'),
+          s3ForcePathStyle: z.boolean().default(true),
         })
         .optional(),
       networkConnection: z.object({

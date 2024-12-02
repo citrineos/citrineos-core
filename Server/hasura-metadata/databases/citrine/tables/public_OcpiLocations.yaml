@@ -1,0 +1,15 @@
+table:
+  name: OcpiLocations
+  schema: public
+object_relationships:
+  - name: Location
+    using:
+      foreign_key_constraint_on: coreLocationId
+array_relationships:
+  - name: OcpiReservations
+    using:
+      foreign_key_constraint_on:
+        column: locationId
+        table:
+          name: OcpiReservations
+          schema: public
