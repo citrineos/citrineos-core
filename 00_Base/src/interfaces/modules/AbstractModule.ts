@@ -287,7 +287,7 @@ export abstract class AbstractModule implements IModule {
             );
             return Promise.resolve({
               success: false,
-              payload: `Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: ` + identifier,
+              payload: `Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: '${identifier}'`,
             });
           }
           return this._sender.sendRequest(
