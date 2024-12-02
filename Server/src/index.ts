@@ -58,7 +58,12 @@ import {
   SmartChargingModule,
   SmartChargingModuleApi,
 } from '@citrineos/smartcharging';
-import { RepositoryStore, sequelize, Sequelize, ServerNetworkProfile } from '@citrineos/data';
+import {
+  RepositoryStore,
+  sequelize,
+  Sequelize,
+  ServerNetworkProfile,
+} from '@citrineos/data';
 import {
   type FastifyRouteSchemaDef,
   type FastifySchemaCompiler,
@@ -243,26 +248,34 @@ export class CitrineOSServer {
   }
 
   protected async _syncWebsocketConfig() {
-    this._config.util.networkConnection.websocketServers.forEach(async websocketServerConfig => {
-      const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
-        where: {
-          id: websocketServerConfig.id
-        }
-      });
-      serverNetworkProfile.host = websocketServerConfig.host;
-      serverNetworkProfile.port = websocketServerConfig.port;
-      serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
-      serverNetworkProfile.protocol = websocketServerConfig.protocol;
-      serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
-      serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
-      serverNetworkProfile.allowUnknownChargingStations = websocketServerConfig.allowUnknownChargingStations;
-      serverNetworkProfile.tlsKeyFilePath = websocketServerConfig.tlsKeyFilePath;
-      serverNetworkProfile.tlsCertificateChainFilePath = websocketServerConfig.tlsCertificateChainFilePath;
-      serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath = websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
-      serverNetworkProfile.rootCACertificateFilePath = websocketServerConfig.rootCACertificateFilePath;
+    this._config.util.networkConnection.websocketServers.forEach(
+      async (websocketServerConfig) => {
+        const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
+          where: {
+            id: websocketServerConfig.id,
+          },
+        });
+        serverNetworkProfile.host = websocketServerConfig.host;
+        serverNetworkProfile.port = websocketServerConfig.port;
+        serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
+        serverNetworkProfile.protocol = websocketServerConfig.protocol;
+        serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
+        serverNetworkProfile.securityProfile =
+          websocketServerConfig.securityProfile;
+        serverNetworkProfile.allowUnknownChargingStations =
+          websocketServerConfig.allowUnknownChargingStations;
+        serverNetworkProfile.tlsKeyFilePath =
+          websocketServerConfig.tlsKeyFilePath;
+        serverNetworkProfile.tlsCertificateChainFilePath =
+          websocketServerConfig.tlsCertificateChainFilePath;
+        serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath =
+          websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
+        serverNetworkProfile.rootCACertificateFilePath =
+          websocketServerConfig.rootCACertificateFilePath;
 
-      serverNetworkProfile.save();
-    })
+        serverNetworkProfile.save();
+      },
+    );
   }
 
   protected _createSender(): IMessageSender {
@@ -366,7 +379,6 @@ export class CitrineOSServer {
       this._repositoryStore.subscriptionRepository,
     );
 
-     
     const router = new MessageRouterImpl(
       this._config,
       this._cache,
@@ -669,17 +681,23 @@ export class CitrineOSServer {
   }
 
   private initIdGenerator() {
-    this._idGenerator = new IdGenerator(this._repositoryStore.chargingStationSequenceRepository);
+    this._idGenerator = new IdGenerator(
+      this._repositoryStore.chargingStationSequenceRepository,
+    );
   }
 
   private initCertificateAuthorityService() {
-    this._certificateAuthorityService = new CertificateAuthorityService(this._config, this._logger);
+    this._certificateAuthorityService = new CertificateAuthorityService(
+      this._config,
+      this._logger,
+    );
   }
 
   private initSmartChargingService() {
-    this._smartChargingService = new InternalSmartCharging(this._repositoryStore.chargingProfileRepository);
+    this._smartChargingService = new InternalSmartCharging(
+      this._repositoryStore.chargingProfileRepository,
+    );
   }
-
 }
 
 async function main() {

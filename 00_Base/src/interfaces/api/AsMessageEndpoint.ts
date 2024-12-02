@@ -16,7 +16,7 @@ import { CallAction } from '../../ocpp/rpc/message';
 export const AsMessageEndpoint = function (
   action: CallAction,
   bodySchema: object,
-  optionalQuerystrings?: Record<string, any>
+  optionalQuerystrings?: Record<string, any>,
 ) {
   return (
     target: any,
@@ -39,7 +39,7 @@ export const AsMessageEndpoint = function (
       method: descriptor.value,
       methodName: propertyKey,
       bodySchema: bodySchema,
-      optionalQuerystrings: optionalQuerystrings
+      optionalQuerystrings: optionalQuerystrings,
     });
     Reflect.defineMetadata(
       METADATA_MESSAGE_ENDPOINTS,

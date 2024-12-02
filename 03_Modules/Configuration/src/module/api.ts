@@ -75,7 +75,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 enum SetNetworkProfileExtraQuerystrings {
-  websocketServerConfigId = 'websocketServerConfigId'
+  websocketServerConfigId = 'websocketServerConfigId',
 }
 
 /**websocketServerConfigId
@@ -100,7 +100,6 @@ export class ConfigurationModuleApi
     super(ConfigurationComponent, server, logger);
   }
 
-
   /**
    * Message Endpoint Methods
    */
@@ -108,18 +107,21 @@ export class ConfigurationModuleApi
   @AsMessageEndpoint(
     CallAction.SetNetworkProfile,
     SetNetworkProfileRequestSchema,
-    { websocketServerConfigId: { type: 'string' } }
+    { websocketServerConfigId: { type: 'string' } },
   )
   async setNetworkProfile(
     identifier: string,
     tenantId: string,
     request: SetNetworkProfileRequest,
     callbackUrl?: string,
-    extraQueries?: Record<string, any>
+    extraQueries?: Record<string, any>,
   ): Promise<IMessageConfirmation> {
     const correlationId = uuidv4();
     if (extraQueries) {
-      const websocketServerConfigId = extraQueries[SetNetworkProfileExtraQuerystrings.websocketServerConfigId];
+      const websocketServerConfigId =
+        extraQueries[
+          SetNetworkProfileExtraQuerystrings.websocketServerConfigId
+        ];
       await SetNetworkProfile.build({
         stationId: identifier,
         correlationId,
@@ -127,7 +129,7 @@ export class ConfigurationModuleApi
         websocketServerConfigId,
         apn: JSON.stringify(request.connectionData.apn),
         vpn: JSON.stringify(request.connectionData.vpn),
-        ...request.connectionData
+        ...request.connectionData,
       }).save();
     }
     return this._module.sendCall(
@@ -423,7 +425,10 @@ export class ConfigurationModuleApi
   async getNetworkProfiles(
     request: FastifyRequest<{ Querystring: NetworkProfileQuerystring }>,
   ): Promise<ChargingStationNetworkProfile[]> {
-    return ChargingStationNetworkProfile.findAll({ where: { stationId: request.query.stationId }, include: [SetNetworkProfile, ServerNetworkProfile] });
+    return ChargingStationNetworkProfile.findAll({
+      where: { stationId: request.query.stationId },
+      include: [SetNetworkProfile, ServerNetworkProfile],
+    });
   }
 
   @AsDataEndpoint(
@@ -438,11 +443,14 @@ export class ConfigurationModuleApi
       where: {
         stationId: request.query.stationId,
         configurationSlot: {
-          [Op.in]: request.query.configurationSlot
-        }
-      }
+          [Op.in]: request.query.configurationSlot,
+        },
+      },
     });
-    return { success: true, payload: `${destroyedRows} rows successfully destroyed` };
+    return {
+      success: true,
+      payload: `${destroyedRows} rows successfully destroyed`,
+    };
   }
 
   /**

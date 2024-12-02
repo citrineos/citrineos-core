@@ -36,8 +36,8 @@ import { SequelizeRepository } from './Base';
 import { SequelizeReservationRepository } from './Reservation';
 import { SequelizeCallMessageRepository } from './CallMessage';
 import { SequelizeLocalAuthListRepository } from './LocalAuthList';
-import {SequelizeChargingStationSequenceRepository} from "./ChargingStationSequence";
-import {SequelizeChargingProfileRepository} from "./ChargingProfile";
+import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
+import { SequelizeChargingProfileRepository } from './ChargingProfile';
 
 export class RepositoryStore {
   sequelizeInstance: Sequelize;
