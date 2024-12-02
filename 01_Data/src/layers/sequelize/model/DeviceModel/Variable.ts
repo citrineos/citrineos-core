@@ -10,7 +10,17 @@ import { VariableAttribute } from './VariableAttribute';
 import { VariableCharacteristics } from './VariableCharacteristics';
 import { ComponentVariable } from './ComponentVariable';
 
-@Table
+@Table({
+  indexes: [
+    {
+      unique: true,
+      fields: ['name'],
+      where: {
+        instance: null,
+      },
+    },
+  ],
+})
 export class Variable extends Model implements VariableType {
   static readonly MODEL_NAME: string = Namespace.VariableType;
 
