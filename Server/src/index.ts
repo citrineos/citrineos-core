@@ -297,12 +297,14 @@ export class CitrineOSServer {
   }
 
   private initLogger() {
+    const isCloud = process.env.DEPLOYMENT_TARGET === 'cloud';
     return new Logger<ILogObj>({
       name: 'CitrineOS Logger',
       minLevel: systemConfig.logLevel,
       hideLogPositionForProduction: systemConfig.env === 'production',
       // Disable colors for cloud deployment as some cloud logging environments such as cloudwatch can not interpret colors
-      stylePrettyLogs: process.env.DEPLOYMENT_TARGET !== 'cloud',
+      stylePrettyLogs: !isCloud,
+      type: isCloud ? 'json' : 'pretty',
     });
   }
 
