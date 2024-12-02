@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Transaction as SequelizeTransaction } from 'sequelize';
+
 export { SequelizeTransaction };
 export { IdTokenAdditionalInfo } from './layers/sequelize/model/Authorization/IdTokenAdditionalInfo';
 export * as sequelize from './layers/sequelize';
@@ -16,6 +17,7 @@ export {
   ChargingProfile,
   ChargingSchedule,
   ChargingStation,
+  ChargingStationSequence,
   Component,
   DefaultSequelizeInstance,
   Location,
@@ -30,6 +32,7 @@ export {
   VariableCharacteristics,
   VariableStatus,
   Certificate,
+  InstalledCertificate,
   CountryNameEnumType,
   TransactionEvent,
   IdToken,
@@ -38,13 +41,17 @@ export {
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
+  ServerNetworkProfile,
+  SetNetworkProfile,
   StatusNotification,
   ChargingStationSecurityInfo,
+  ChargingStationNetworkProfile,
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
   SequelizeCallMessageRepository,
   SequelizeCertificateRepository,
+  SequelizeInstalledCertificateRepository,
   SequelizeChargingProfileRepository,
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeDeviceModelRepository,
@@ -57,5 +64,6 @@ export {
   SequelizeTariffRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
+  SequelizeChargingStationSequenceRepository,
 } from './layers/sequelize'; // TODO ensure all needed modules are properly exported
 export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore';

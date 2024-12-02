@@ -1,16 +1,16 @@
 {
   "name": "@citrineos/workspace",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "private": false,
   "devDependencies": {
     "@eslint/js": "9.0.0",
     "@types/eslint__js": "8.42.3",
     "concurrently": "8.2.2",
-    "eslint": "8.57.0",
+    "eslint": "9.11.1",
     "eslint-config-prettier": "9.1.0",
     "prettier": "3.2.5",
     "typescript": "5.5.4",
-    "typescript-eslint": "7.6.0"
+    "typescript-eslint": "8.7.0"
   },
   "scripts": {
     "install-all": "npm i --verbose",
@@ -50,5 +50,8 @@
     "03_Modules/Tenant",
     "03_Modules/Transactions",
     "Server"
-  ]
+  ],
+  "dependencies": {
+    "@fastify/cors": "^9.0.1"
+  }
 }

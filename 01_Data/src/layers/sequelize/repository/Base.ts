@@ -6,17 +6,19 @@
 import { CrudRepository, type SystemConfig } from '@citrineos/base';
 import { type Model, type Sequelize } from 'sequelize-typescript';
 import { DefaultSequelizeInstance } from '../util';
-import { type ILogObj, type Logger } from 'tslog';
+import { type ILogObj, Logger } from 'tslog';
 import { AggregateOptions, Attributes, FindAndCountOptions, FindOptions, ModelStatic, QueryTypes, UpdateOptions } from 'sequelize';
 
 export class SequelizeRepository<T extends Model<any, any>> extends CrudRepository<T> {
   protected s: Sequelize;
   protected namespace: string;
+  protected logger: Logger<ILogObj>;
 
   constructor(config: SystemConfig, namespace: string, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super();
     this.s = sequelizeInstance ?? DefaultSequelizeInstance.getInstance(config, logger);
     this.namespace = namespace;
+    this.logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
   async readByKey(key: string | number): Promise<T | undefined> {
@@ -58,6 +60,10 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
 
   protected async _create(value: T): Promise<T> {
     return await value.save();
+  }
+
+  protected async _bulkCreate(values: T[]): Promise<T[]> {
+    return await (this.s.models[this.namespace] as ModelStatic<T>).bulkCreate(values as any);
   }
 
   protected async _createByKey(value: T, key: string): Promise<T> {

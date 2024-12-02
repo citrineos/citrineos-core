@@ -4,20 +4,30 @@
 
 import { CrudRepository, StatusNotificationRequest, SystemConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { Logger, ILogObj } from 'tslog';
+import { ILogObj, Logger } from 'tslog';
 import { ChargingStation, Location, SequelizeRepository } from '..';
 import { type ILocationRepository } from '../../..';
 import { StatusNotification } from '../model/Location';
 import { Op } from 'sequelize';
+import { LatestStatusNotification } from '../model/Location/LatestStatusNotification';
 
 export class SequelizeLocationRepository extends SequelizeRepository<Location> implements ILocationRepository {
   chargingStation: CrudRepository<ChargingStation>;
   statusNotification: CrudRepository<StatusNotification>;
+  latestStatusNotification: CrudRepository<LatestStatusNotification>;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, chargingStation?: CrudRepository<ChargingStation>, statusNotification?: CrudRepository<StatusNotification>) {
+  constructor(
+    config: SystemConfig,
+    logger?: Logger<ILogObj>,
+    sequelizeInstance?: Sequelize,
+    chargingStation?: CrudRepository<ChargingStation>,
+    statusNotification?: CrudRepository<StatusNotification>,
+    latestStatusNotification?: CrudRepository<LatestStatusNotification>,
+  ) {
     super(config, Location.MODEL_NAME, logger, sequelizeInstance);
     this.chargingStation = chargingStation ? chargingStation : new SequelizeRepository<ChargingStation>(config, ChargingStation.MODEL_NAME, logger, sequelizeInstance);
     this.statusNotification = statusNotification ? statusNotification : new SequelizeRepository<StatusNotification>(config, StatusNotification.MODEL_NAME, logger, sequelizeInstance);
+    this.latestStatusNotification = latestStatusNotification ? latestStatusNotification : new SequelizeRepository<LatestStatusNotification>(config, LatestStatusNotification.MODEL_NAME, logger, sequelizeInstance);
   }
 
   async readLocationById(id: number): Promise<Location | undefined> {
@@ -31,15 +41,49 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     return await this.chargingStation.readByKey(stationId);
   }
 
+  async setChargingStationIsOnline(stationId: string, isOnline: boolean): Promise<boolean> {
+    return !!(await this.chargingStation.updateByKey({ isOnline: isOnline }, stationId));
+  }
+
   async doesChargingStationExistByStationId(stationId: string): Promise<boolean> {
     return await this.chargingStation.existsByKey(stationId);
   }
 
   async addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotificationRequest): Promise<void> {
-    await this.statusNotification.create(
-      StatusNotification.build({
+    const notification = StatusNotification.build({
+      stationId,
+      ...statusNotification,
+    });
+    const savedStatusNotification = await this.statusNotification.create(notification);
+    try {
+      await this.updateLatestStatusNotification(stationId, savedStatusNotification);
+    } catch (e: any) {
+      this.logger.error(`Failed to update latest status notification with error: ${e.message}`, e);
+    }
+  }
+
+  async updateLatestStatusNotification(stationId: string, statusNotification: StatusNotification): Promise<void> {
+    const evseId = statusNotification.evseId;
+    const connectorId = statusNotification.connectorId;
+    const statusNotificationId = statusNotification.id;
+    await this.latestStatusNotification.deleteAllByQuery({
+      where: {
         stationId,
-        ...statusNotification,
+      },
+      include: [
+        {
+          model: StatusNotification,
+          where: {
+            evseId,
+            connectorId,
+          },
+        },
+      ],
+    });
+    await this.latestStatusNotification.create(
+      LatestStatusNotification.build({
+        stationId,
+        statusNotificationId,
       }),
     );
   }

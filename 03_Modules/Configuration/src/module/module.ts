@@ -11,6 +11,7 @@ import {
   BootNotificationResponse,
   CallAction,
   ChangeAvailabilityResponse,
+  ChargingStationSequenceType,
   ClearDisplayMessageResponse,
   ClearMessageStatusEnumType,
   DataTransferRequest,
@@ -41,6 +42,7 @@ import {
   ResetResponse,
   SetDisplayMessageResponse,
   SetNetworkProfileResponse,
+  SetNetworkProfileStatusEnumType,
   SetVariableDataType,
   SetVariablesRequest,
   SetVariablesResponse,
@@ -52,14 +54,18 @@ import {
 } from '@citrineos/base';
 import {
   Boot,
+  ChargingStation,
+  ChargingStationNetworkProfile,
   Component,
   IBootRepository,
   IDeviceModelRepository,
   IMessageInfoRepository,
   sequelize,
+  ServerNetworkProfile,
+  SetNetworkProfile,
 } from '@citrineos/data';
 import {
-  generateRequestId,
+  IdGenerator,
   RabbitMqReceiver,
   RabbitMqSender,
   Timer,
@@ -69,6 +75,7 @@ import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './DeviceModelService';
 import { BootNotificationService } from './BootNotificationService';
+import { SequelizeChargingStationSequenceRepository } from '@citrineos/data';
 
 /**
  * Component that handles Configuration related messages.
@@ -102,6 +109,7 @@ export class ConfigurationModule extends AbstractModule {
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _messageInfoRepository: IMessageInfoRepository;
   protected _bootService: BootNotificationService;
+  private _idGenerator: IdGenerator;
 
   /**
    * Constructor
@@ -129,8 +137,12 @@ export class ConfigurationModule extends AbstractModule {
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is created and used.
    *
-   *@param {IMessageInfoRepository} [messageInfoRepository] - An optional parameter of type {@link messageInfoRepository} which
-   *  represents a repository for accessing and manipulating variable data.
+   * @param {IMessageInfoRepository} [messageInfoRepository] - An optional parameter of type {@link messageInfoRepository} which
+   * represents a repository for accessing and manipulating variable data.
+   *
+   * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which
+   * represents a generator for ids.
+   *
    *If no `deviceModelRepository` is provided, a default {@link sequelize:messageInfoRepository} instance is created and used.
    */
   constructor(
@@ -142,6 +154,7 @@ export class ConfigurationModule extends AbstractModule {
     bootRepository?: IBootRepository,
     deviceModelRepository?: IDeviceModelRepository,
     messageInfoRepository?: IMessageInfoRepository,
+    idGenerator?: IdGenerator,
   ) {
     super(
       config,
@@ -181,6 +194,12 @@ export class ConfigurationModule extends AbstractModule {
       this._config.modules.configuration,
       this._logger,
     );
+
+    this._idGenerator =
+      idGenerator ||
+      new IdGenerator(
+        new SequelizeChargingStationSequenceRepository(config, this._logger),
+      );
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -240,7 +259,7 @@ export class ConfigurationModule extends AbstractModule {
     if (!bootNotificationResponseMessageConfirmation.success) {
       throw new Error(
         'BootNotification failed: ' +
-          bootNotificationResponseMessageConfirmation,
+        bootNotificationResponseMessageConfirmation,
       );
     }
 
@@ -515,11 +534,27 @@ export class ConfigurationModule extends AbstractModule {
   }
 
   @AsHandler(CallAction.SetNetworkProfile)
-  protected _handleSetNetworkProfile(
+  protected async _handleSetNetworkProfile(
     message: IMessage<SetNetworkProfileResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('SetNetworkProfile response received:', message, props);
+
+    if (message.payload.status == SetNetworkProfileStatusEnumType.Accepted) {
+      const setNetworkProfile = await SetNetworkProfile.findOne({ where: { correlationId: message.context.correlationId } });
+      if (setNetworkProfile) {
+        const serverNetworkProfile = await ServerNetworkProfile.findByPk(setNetworkProfile.websocketServerConfigId!);
+        if (serverNetworkProfile) {
+          const chargingStation = await ChargingStation.findByPk(message.context.stationId);
+          if (chargingStation) {
+            const [chargingStationNetworkProfile] = await ChargingStationNetworkProfile.findOrBuild({ where: { stationId: chargingStation.id, configurationSlot: setNetworkProfile.configurationSlot! } });
+            chargingStationNetworkProfile.websocketServerConfigId = setNetworkProfile.websocketServerConfigId!;
+            chargingStationNetworkProfile.setNetworkProfileId = setNetworkProfile.id;
+            await chargingStationNetworkProfile.save();
+          }
+        }
+      }
+    }
   }
 
   @AsHandler(CallAction.GetDisplayMessages)
@@ -549,7 +584,9 @@ export class ConfigurationModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetDisplayMessages,
         {
-          requestId: generateRequestId(),
+          requestId: await this._idGenerator.generateRequestId(
+            message.context.stationId, ChargingStationSequenceType.getDisplayMessages,
+          ),
         } as GetDisplayMessagesRequest,
       );
     }
@@ -618,7 +655,9 @@ export class ConfigurationModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetDisplayMessages,
         {
-          requestId: generateRequestId(),
+          requestId: await this._idGenerator.generateRequestId(
+            message.context.stationId, ChargingStationSequenceType.getDisplayMessages,
+          ),
         } as GetDisplayMessagesRequest,
       );
     }

@@ -9,4 +9,4 @@ export interface ChargingStationKeyQuerystring {
   stationId: string;
 }
 
-export const ChargingStationKeyQuerySchema = QuerySchema([['stationId', 'string']], ['stationId']);
+export const ChargingStationKeyQuerySchema = QuerySchema('ChargingStationKeyQuerySchema', [['stationId', 'string']], ['stationId']);

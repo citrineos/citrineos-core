@@ -44,6 +44,9 @@ export {
   MessageTypeId,
   OcppError,
 } from './ocpp/rpc/message';
+export {
+  ChargingStationSequenceType,
+} from './ocpp/model/enums/requestIds';
 export { IFileAccess } from './interfaces/fileAccess';
 
 // Persistence Interfaces
@@ -244,3 +247,4 @@ export { assert, notNull, deepDirectionalEqual } from './assertion/assertion';
 export { UnauthorizedError } from './interfaces/api/exception/UnauthorizedError';
 export { AuthorizationSecurity } from './interfaces/api/AuthorizationSecurity';
 export { Ajv };
+export declare type Constructable<T> = new (...args: any[]) => T;

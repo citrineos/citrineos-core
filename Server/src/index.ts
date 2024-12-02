@@ -21,17 +21,23 @@ import {
 import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
 import {
   Authenticator,
+  BasicAuthenticationFilter,
+  CertificateAuthorityService,
+  ConnectedStationFilter,
   DirectusUtil,
+  IdGenerator,
   initSwagger,
   MemoryCache,
+  NetworkProfileFilter,
   RabbitMqReceiver,
   RabbitMqSender,
   RedisCache,
+  UnknownStationFilter,
   WebsocketNetworkConnection,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import addFormats from 'ajv-formats';
-import fastify, { type FastifyInstance } from 'fastify';
+import fastify, { type FastifyInstance, RouteOptions } from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
 import {
@@ -52,7 +58,7 @@ import {
   SmartChargingModule,
   SmartChargingModuleApi,
 } from '@citrineos/smartcharging';
-import { RepositoryStore, sequelize, Sequelize } from '@citrineos/data';
+import { RepositoryStore, sequelize, Sequelize, ServerNetworkProfile } from '@citrineos/data';
 import {
   type FastifyRouteSchemaDef,
   type FastifySchemaCompiler,
@@ -64,9 +70,11 @@ import {
   WebhookDispatcher,
 } from '@citrineos/ocpprouter';
 import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
-import { UnknownStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/UnknownStationFilter';
-import { ConnectedStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/ConnectedStationFilter';
-import { BasicAuthenticationFilter } from '@citrineos/util/dist/networkconnection/authenticator/BasicAuthenticationFilter';
+import {
+  InternalSmartCharging,
+  ISmartCharging,
+} from '@citrineos/smartcharging';
+import cors from '@fastify/cors';
 
 interface ModuleConfig {
   ModuleClass: new (...args: any[]) => AbstractModule;
@@ -93,6 +101,9 @@ export class CitrineOSServer {
   private _authenticator?: IAuthenticator;
   private _networkConnection?: WebsocketNetworkConnection;
   private _repositoryStore!: RepositoryStore;
+  private _idGenerator!: IdGenerator;
+  private _certificateAuthorityService!: CertificateAuthorityService;
+  private _smartChargingService!: ISmartCharging;
 
   private readonly appName: string;
 
@@ -127,6 +138,12 @@ export class CitrineOSServer {
     this._server =
       server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
+    // enable cors
+    (this._server as any).register(cors, {
+      origin: true, // This can be customized to specify allowed origins
+      methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed HTTP methods
+    });
+
     // Add health check
     this.initHealthCheck();
 
@@ -144,15 +161,16 @@ export class CitrineOSServer {
     this.initSwagger();
 
     // Add Directus Message API flow creation if enabled
-    let directusUtil;
+    let directusUtil: DirectusUtil | undefined = undefined;
     if (this._config.util.directus?.generateFlows) {
       directusUtil = new DirectusUtil(this._config, this._logger);
-      this._server.addHook(
-        'onRoute',
-        directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(
-          directusUtil,
-        ),
-      );
+      this._server.addHook('onRoute', (routeOptions: RouteOptions) => {
+        directusUtil!.addDirectusMessageApiFlowsFastifyRouteHook(
+          routeOptions,
+          this._server.getSchemas(),
+        );
+      });
+
       this._server.addHook('onReady', async () => {
         this._logger?.info('Directus actions initialization finished');
       });
@@ -166,6 +184,9 @@ export class CitrineOSServer {
 
     // Initialize repository store
     this.initRepositoryStore();
+    this.initIdGenerator();
+    this.initCertificateAuthorityService();
+    this.initSmartChargingService();
 
     // Initialize module & API
     // Always initialize API after SwaggerUI
@@ -202,6 +223,7 @@ export class CitrineOSServer {
   async run(): Promise<void> {
     try {
       await this.initialize();
+      this._syncWebsocketConfig();
       await this._server
         .listen({
           host: this.host,
@@ -218,6 +240,29 @@ export class CitrineOSServer {
     } catch (error) {
       await Promise.reject(error);
     }
+  }
+
+  protected async _syncWebsocketConfig() {
+    this._config.util.networkConnection.websocketServers.forEach(async websocketServerConfig => {
+      const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
+        where: {
+          id: websocketServerConfig.id
+        }
+      });
+      serverNetworkProfile.host = websocketServerConfig.host;
+      serverNetworkProfile.port = websocketServerConfig.port;
+      serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
+      serverNetworkProfile.protocol = websocketServerConfig.protocol;
+      serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
+      serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
+      serverNetworkProfile.allowUnknownChargingStations = websocketServerConfig.allowUnknownChargingStations;
+      serverNetworkProfile.tlsKeyFilePath = websocketServerConfig.tlsKeyFilePath;
+      serverNetworkProfile.tlsCertificateChainFilePath = websocketServerConfig.tlsCertificateChainFilePath;
+      serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath = websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
+      serverNetworkProfile.rootCACertificateFilePath = websocketServerConfig.rootCACertificateFilePath;
+
+      serverNetworkProfile.save();
+    })
   }
 
   protected _createSender(): IMessageSender {
@@ -300,6 +345,13 @@ export class CitrineOSServer {
         this._logger,
       ),
       new ConnectedStationFilter(this._cache, this._logger),
+      new NetworkProfileFilter(
+        new sequelize.SequelizeDeviceModelRepository(
+          this._config,
+          this._logger,
+        ),
+        this._logger,
+      ),
       new BasicAuthenticationFilter(
         new sequelize.SequelizeDeviceModelRepository(
           this._config,
@@ -314,7 +366,7 @@ export class CitrineOSServer {
       this._repositoryStore.subscriptionRepository,
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const router = new MessageRouterImpl(
       this._config,
       this._cache,
@@ -324,6 +376,8 @@ export class CitrineOSServer {
       async (_identifier: string, _message: string) => false,
       this._logger,
       this._ajv,
+      this._repositoryStore.locationRepository,
+      this._repositoryStore.subscriptionRepository,
     );
 
     this._networkConnection = new WebsocketNetworkConnection(
@@ -375,6 +429,7 @@ export class CitrineOSServer {
         this._repositoryStore.bootRepository,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.messageInfoRepository,
+        this._idGenerator,
       );
       this.modules.push(module);
       this.apis.push(
@@ -393,6 +448,13 @@ export class CitrineOSServer {
         this._repositoryStore.localAuthListRepository,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.tariffRepository,
+        this._repositoryStore.transactionEventRepository,
+        this._repositoryStore.chargingProfileRepository,
+        this._repositoryStore.reservationRepository,
+        this._repositoryStore.callMessageRepository,
+        this._certificateAuthorityService,
+        [],
+        this._idGenerator,
       );
       this.modules.push(module);
       this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
@@ -407,6 +469,7 @@ export class CitrineOSServer {
         this._logger,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.variableMonitoringRepository,
+        this._idGenerator,
       );
       this.modules.push(module);
       this.apis.push(
@@ -438,6 +501,11 @@ export class CitrineOSServer {
         this._createSender(),
         this._createHandler(),
         this._logger,
+        this._repositoryStore.transactionEventRepository,
+        this._repositoryStore.deviceModelRepository,
+        this._repositoryStore.chargingProfileRepository,
+        this._smartChargingService,
+        this._idGenerator,
       );
       this.modules.push(module);
       this.apis.push(
@@ -599,6 +667,19 @@ export class CitrineOSServer {
       this._sequelizeInstance,
     );
   }
+
+  private initIdGenerator() {
+    this._idGenerator = new IdGenerator(this._repositoryStore.chargingStationSequenceRepository);
+  }
+
+  private initCertificateAuthorityService() {
+    this._certificateAuthorityService = new CertificateAuthorityService(this._config, this._logger);
+  }
+
+  private initSmartChargingService() {
+    this._smartChargingService = new InternalSmartCharging(this._repositoryStore.chargingProfileRepository);
+  }
+
 }
 
 async function main() {

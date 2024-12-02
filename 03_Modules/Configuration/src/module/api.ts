@@ -53,12 +53,20 @@ import {
   Boot,
   ChargingStationKeyQuerySchema,
   ChargingStationKeyQuerystring,
+  ChargingStationNetworkProfile,
   Component,
+  NetworkProfileDeleteQuerySchema,
+  NetworkProfileDeleteQuerystring,
+  NetworkProfileQuerySchema,
+  NetworkProfileQuerystring,
+  ServerNetworkProfile,
+  SetNetworkProfile,
   UpdateChargingStationPasswordQuerySchema,
   UpdateChargingStationPasswordQueryString,
   Variable,
   VariableAttribute,
 } from '@citrineos/data';
+import { Op } from 'sequelize';
 import {
   generatePassword,
   isValidPassword,
@@ -66,7 +74,11 @@ import {
 } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
 
-/**
+enum SetNetworkProfileExtraQuerystrings {
+  websocketServerConfigId = 'websocketServerConfigId'
+}
+
+/**websocketServerConfigId
  * Server API for the Configuration component.
  */
 export class ConfigurationModuleApi
@@ -88,6 +100,7 @@ export class ConfigurationModuleApi
     super(ConfigurationComponent, server, logger);
   }
 
+
   /**
    * Message Endpoint Methods
    */
@@ -95,19 +108,35 @@ export class ConfigurationModuleApi
   @AsMessageEndpoint(
     CallAction.SetNetworkProfile,
     SetNetworkProfileRequestSchema,
+    { websocketServerConfigId: { type: 'string' } }
   )
-  setNetworkProfile(
+  async setNetworkProfile(
     identifier: string,
     tenantId: string,
     request: SetNetworkProfileRequest,
     callbackUrl?: string,
+    extraQueries?: Record<string, any>
   ): Promise<IMessageConfirmation> {
+    const correlationId = uuidv4();
+    if (extraQueries) {
+      const websocketServerConfigId = extraQueries[SetNetworkProfileExtraQuerystrings.websocketServerConfigId];
+      await SetNetworkProfile.build({
+        stationId: identifier,
+        correlationId,
+        configurationSlot: request.configurationSlot,
+        websocketServerConfigId,
+        apn: JSON.stringify(request.connectionData.apn),
+        vpn: JSON.stringify(request.connectionData.vpn),
+        ...request.connectionData
+      }).save();
+    }
     return this._module.sendCall(
       identifier,
       tenantId,
       CallAction.SetNetworkProfile,
       request,
       callbackUrl,
+      correlationId,
     );
   }
 
@@ -384,6 +413,36 @@ export class ConfigurationModuleApi
       success: true,
       payload: `Updated ${variableAttributes.length} attributes`,
     };
+  }
+
+  @AsDataEndpoint(
+    Namespace.ServerNetworkProfile,
+    HttpMethod.Get,
+    NetworkProfileQuerySchema,
+  )
+  async getNetworkProfiles(
+    request: FastifyRequest<{ Querystring: NetworkProfileQuerystring }>,
+  ): Promise<ChargingStationNetworkProfile[]> {
+    return ChargingStationNetworkProfile.findAll({ where: { stationId: request.query.stationId }, include: [SetNetworkProfile, ServerNetworkProfile] });
+  }
+
+  @AsDataEndpoint(
+    Namespace.ServerNetworkProfile,
+    HttpMethod.Delete,
+    NetworkProfileDeleteQuerySchema,
+  )
+  async deleteNetworkProfiles(
+    request: FastifyRequest<{ Querystring: NetworkProfileDeleteQuerystring }>,
+  ): Promise<IMessageConfirmation> {
+    const destroyedRows = await ChargingStationNetworkProfile.destroy({
+      where: {
+        stationId: request.query.stationId,
+        configurationSlot: {
+          [Op.in]: request.query.configurationSlot
+        }
+      }
+    });
+    return { success: true, payload: `${destroyedRows} rows successfully destroyed` };
   }
 
   /**

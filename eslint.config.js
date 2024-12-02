@@ -17,6 +17,7 @@ module.exports = tseslint.config(
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+      '@typescript-eslint/no-empty-object-type': 'off',
     },
   },
   {
@@ -25,6 +26,7 @@ module.exports = tseslint.config(
       '**/Swarm/**',
       '**/dist/**',
       '**/node_modules/**',
+      '**/lib/**',
     ],
   },
 );

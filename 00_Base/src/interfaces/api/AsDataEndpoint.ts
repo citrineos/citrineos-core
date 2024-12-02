@@ -31,7 +31,6 @@ export const AsDataEndpoint = function (
   security?: object[],
   description?: string,
 ) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (
     target: any,
     propertyKey: string,
@@ -44,6 +43,10 @@ export const AsDataEndpoint = function (
       METADATA_DATA_ENDPOINTS,
       target.constructor,
     ) as Array<IDataEndpointDefinition>;
+    let tagList: string[] | undefined = undefined;
+    if (tags) {
+      tagList = Array.isArray(tags) ? tags : [tags];
+    }
     dataEndpoints.push({
       method: descriptor.value,
       methodName: propertyKey,
@@ -54,7 +57,7 @@ export const AsDataEndpoint = function (
       paramSchema: paramSchema,
       headerSchema: headerSchema,
       responseSchema: responseSchema,
-      tags: (Array.isArray(tags) ? tags : [tags]) as string[],
+      tags: tagList,
       description: description,
       security: security,
     });

@@ -3,6 +3,11 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
+export { UnknownStationFilter } from './networkconnection/authenticator/UnknownStationFilter';
+export { ConnectedStationFilter } from './networkconnection/authenticator/ConnectedStationFilter';
+export { NetworkProfileFilter } from './networkconnection/authenticator/NetworkProfileFilter';
+export { BasicAuthenticationFilter } from './networkconnection/authenticator/BasicAuthenticationFilter';
+
 export { IAuthorizer } from './authorization';
 export { MemoryCache } from './cache/memory';
 export { RedisCache } from './cache/redis';
@@ -20,7 +25,7 @@ export {
   validateLanguageTag,
   validateChargingProfileType,
 } from './util/validator';
-export { generateRequestId } from './util/idGenerator';
+export { IdGenerator } from './util/idGenerator';
 export { isValidPassword, generatePassword } from './security/authentication';
 
 export { SignedMeterValuesUtil } from './security/SignedMeterValuesUtil';

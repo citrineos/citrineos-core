@@ -16,8 +16,8 @@ import { CallAction } from '../../ocpp/rpc/message';
 export const AsMessageEndpoint = function (
   action: CallAction,
   bodySchema: object,
+  optionalQuerystrings?: Record<string, any>
 ) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (
     target: any,
     propertyKey: string,
@@ -39,6 +39,7 @@ export const AsMessageEndpoint = function (
       method: descriptor.value,
       methodName: propertyKey,
       bodySchema: bodySchema,
+      optionalQuerystrings: optionalQuerystrings
     });
     Reflect.defineMetadata(
       METADATA_MESSAGE_ENDPOINTS,

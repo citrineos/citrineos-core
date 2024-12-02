@@ -63,6 +63,15 @@ export abstract class CrudRepository<T> extends EventEmitter {
     return result;
   }
 
+  public async bulkCreate(
+    values: T[],
+    clazz: any, // todo: should Model be in base so it can be used here?
+  ): Promise<T[]> {
+    const result = await this._bulkCreate(values, clazz);
+    this.emit('created', result);
+    return result;
+  }
+
   /**
    * Creates a new entry in the database with the specified value and key.
    * If a namespace is provided, the entry will be created within that namespace.
@@ -250,6 +259,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
   abstract existByQuery(query: object, namespace?: string): Promise<number>;
 
   protected abstract _create(value: T, namespace?: string): Promise<T>;
+  protected abstract _bulkCreate(value: T[], namespace?: string): Promise<T[]>;
 
   protected abstract _createByKey(
     value: T,

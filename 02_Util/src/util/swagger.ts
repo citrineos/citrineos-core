@@ -14,12 +14,12 @@ import {
   SystemConfig,
   UnauthorizedError,
 } from '@citrineos/base';
-import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
 import * as FastifyAuth from '@fastify/auth';
 import * as packageJson from '../../package.json';
+import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
 
 /**
- * This transformation is necessary because the plugin (@fastify/swagger) does not handle the local #ref objects correctly.
+ * This transformation is used to set default tags
  *
  * @param {object} swaggerObject - The original Swagger object to be transformed.
  * @param {object} openapiObject - The original OpenAPI object to be transformed.
@@ -50,33 +50,6 @@ function OcppTransformObject({
                 .split('/')
                 .slice(2, -1)
                 .map((tag) => tag.charAt(0).toUpperCase() + tag.slice(1));
-            }
-
-            const requestBody: OpenAPIV3.RequestBodyObject =
-              method.requestBody as OpenAPIV3.RequestBodyObject;
-            if (requestBody) {
-              for (const mediaTypeObjectKey in requestBody.content) {
-                const mediaTypeObject: OpenAPIV3.MediaTypeObject = requestBody
-                  .content[mediaTypeObjectKey] as OpenAPIV3.MediaTypeObject;
-                if (mediaTypeObject) {
-                  const schema: any =
-                    mediaTypeObject.schema as OpenAPIV3.SchemaObject;
-                  if (schema) {
-                    const refSchemas = schema['definitions'];
-                    delete schema['definitions'];
-                    delete schema['comment'];
-                    for (const key in refSchemas) {
-                      delete refSchemas[key]['javaType'];
-                      delete refSchemas[key]['tsEnumNames'];
-                      delete refSchemas[key]['additionalProperties'];
-                    }
-                    openapiObject.components.schemas = {
-                      ...openapiObject.components.schemas,
-                      ...refSchemas,
-                    };
-                  }
-                }
-              }
             }
           }
         }
@@ -123,20 +96,6 @@ const registerSwaggerUi = (
   }
 
   server.register(fastifySwaggerUi, swaggerUiOptions);
-};
-
-export const convertHeadersToMap = (
-  headers: string[],
-): Record<string, string> => {
-  const headersMap: Record<string, string> = {};
-
-  for (let i = 0; i < headers.length; i += 2) {
-    const key = headers[i];
-    const value = headers[i + 1];
-    headersMap[key] = value;
-  }
-
-  return headersMap;
 };
 
 export const getHeaderValue = (
@@ -196,6 +155,21 @@ const registerFastifyAuth = async (server: FastifyInstance) => {
   );
 };
 
+const buildLocalReference = (
+  json: any,
+  _parent: unknown,
+  _property: unknown,
+  i: number,
+) => {
+  // If title is missing but $id is available, set title to $id
+  if (!json.title && json.$id) {
+    json.title = json.$id;
+  }
+
+  // Return title if available, otherwise fallback to $id, or def-<index> as a last resort
+  return json.title || json.$id || `def-${i}`;
+};
+
 const registerFastifySwagger = (
   systemConfig: SystemConfig,
   server: FastifyInstance,
@@ -217,6 +191,9 @@ const registerFastifySwagger = (
       },
     },
     transformObject: OcppTransformObject,
+    refResolver: {
+      buildLocalReference,
+    },
   });
 };
 

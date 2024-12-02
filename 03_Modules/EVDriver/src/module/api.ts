@@ -383,12 +383,11 @@ export class EVDriverModuleApi
     request: SendLocalListRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-
     const correlationId = uuidv4();
     await this._module.localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
       identifier,
       correlationId,
-      request
+      request,
     );
 
     return this._module.sendCall(
