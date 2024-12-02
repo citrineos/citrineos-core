@@ -302,6 +302,49 @@ export class CitrineOSServer {
       name: 'CitrineOS Logger',
       minLevel: systemConfig.logLevel,
       hideLogPositionForProduction: systemConfig.env === 'production',
+      overwrite:
+        systemConfig &&
+        systemConfig.logLevel !== undefined &&
+        systemConfig.logLevel <= 2
+          ? undefined
+          : {
+              transportJSON: (logObj: any) => {
+                function jsonStringifyRecursive(obj: unknown) {
+                  const cache = new Set();
+                  return JSON.stringify(obj, (key, value) => {
+                    if (typeof value === 'object' && value !== null) {
+                      if (cache.has(value)) {
+                        // Circular reference found, discard key
+                        return '[Circular]';
+                      }
+                      // Store value in our collection
+                      cache.add(value);
+                    }
+                    if (typeof value === 'bigint') {
+                      return `${value}`;
+                    }
+                    if (typeof value === 'undefined') {
+                      return '[undefined]';
+                    }
+                    return value;
+                  });
+                }
+                if (logObj._meta) {
+                  const { path, name, date, logLevelId, logLevelName } =
+                    logObj._meta;
+                  const { _meta, ...rest } = logObj;
+                  logObj = {
+                    ...rest,
+                    path: path?.fullFilePath,
+                    name,
+                    date,
+                    logLevelId,
+                    logLevelName,
+                  };
+                }
+                console.log(jsonStringifyRecursive(logObj));
+              },
+            },
       // Disable colors for cloud deployment as some cloud logging environments such as cloudwatch can not interpret colors
       stylePrettyLogs: !isCloud,
       type: isCloud ? 'json' : 'pretty',
