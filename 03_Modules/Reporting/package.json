@@ -24,7 +24,6 @@
   "dependencies": {
     "@citrineos/base": "1.6.0",
     "@citrineos/data": "1.6.0",
-    "@citrineos/util": "1.6.0",
-    "fastify": "4.22.2"
+    "@citrineos/util": "1.6.0"
   }
 }
