@@ -30,7 +30,7 @@
     "lint": "npx eslint ./",
     "lint-fix": "npm run prettier && npx eslint --fix ./",
     "prettier": "prettier --write .",
-    "fresh-and-install-all": "npm run fresh && npm run install-all",
+    "fi": "npm run fresh && npm run install-all",
     "sync-db": "ts-node ./db.sync.ts",
     "start-everest": "npm run start-everest --prefix ./Server",
     "test": "jest --config jest.config.ts",
@@ -52,6 +52,6 @@
     "Server"
   ],
   "engines": {
-    "node": ">=18.18.0"
+    "node": ">=22.11.0"
   }
 }
