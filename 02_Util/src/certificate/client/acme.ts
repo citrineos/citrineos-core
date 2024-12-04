@@ -5,9 +5,9 @@
 import { IChargingStationCertificateAuthorityClient } from './interface';
 import { SystemConfig } from '@citrineos/base';
 import * as acme from 'acme-client';
+import { Client } from 'acme-client';
 import { ILogObj, Logger } from 'tslog';
 import fs from 'fs';
-import { Client } from 'acme-client';
 import {
   createSignedCertificateFromCSR,
   parseCertificateChainPem,
@@ -150,8 +150,13 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
    * @return {Promise<string>} - The signed certificate followed by sub CA in PEM format.
    */
   async getCertificateChain(csrString: string): Promise<string> {
-    const [serverId, [certChain, subCAPrivateKey]] =
-      this._securityCertChainKeyMap.entries().next().value;
+    const nextEntry = this._securityCertChainKeyMap.entries().next().value;
+    if (!nextEntry) {
+      throw new Error(
+        'Failed to get certificate chain, securityCertChainKeyMap is empty',
+      );
+    }
+    const [serverId, [certChain, subCAPrivateKey]] = nextEntry;
     this._logger.debug(
       `Found certificate chain in server ${serverId}: ${certChain}`,
     );
