@@ -10,6 +10,7 @@ export interface IUpgradeError {
     /**
      * Terminates the WebSocket connection by sending an error response and closing the socket.
      * @param {Duplex} socket - The WebSocket duplex stream.
+     * @returns {boolean} True if the connection was terminated successfully, false otherwise.
      */
-    terminateConnection(socket: Duplex): void;
+    terminateConnection(socket: Duplex): boolean;
 }
