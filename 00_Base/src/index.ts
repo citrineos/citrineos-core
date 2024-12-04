@@ -12,7 +12,8 @@ export {
   IModuleApi,
 } from './interfaces/api';
 export { BadRequestError } from './interfaces/api/exceptions/BadRequestError';
-export { CacheNamespace, ICache, IWebsocketConnection } from './interfaces/cache/cache';
+export { ICache } from './interfaces/cache/cache';
+export { CacheNamespace, IWebsocketConnection } from './interfaces/cache/types';
 export {
   AbstractMessageRouter,
   IAuthenticator,

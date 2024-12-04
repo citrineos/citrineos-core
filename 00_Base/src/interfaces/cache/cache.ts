@@ -5,20 +5,6 @@
 
 import { ClassConstructor } from 'class-transformer';
 
-export enum CacheNamespace {
-  CentralSystem = 'csms',
-  ChargingStation = 'cs',
-  Transactions = 'tx',
-  Connections = 'conn',
-  Protocol = 'prtcl',
-  Other = 'other',
-}
-
-export interface IWebsocketConnection {
-  id: string;
-  protocol: string;
-}
-
 /**
  * Interface for cache
  * Implementers SHALL ensure minimal logic outside of promise resolution or async function to prevent lag
