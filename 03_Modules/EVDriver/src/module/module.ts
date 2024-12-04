@@ -640,7 +640,8 @@ export class EVDriverModule extends AbstractModule {
         CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, ChargingStationSequenceType.getChargingProfiles,
+            message.context.stationId,
+            ChargingStationSequenceType.getChargingProfiles,
           ),
           chargingProfile: {
             chargingProfilePurpose: ChargingProfilePurposeEnumType.TxProfile,

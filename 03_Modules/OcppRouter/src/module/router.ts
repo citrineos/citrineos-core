@@ -36,7 +36,11 @@ import {
 } from '@citrineos/base';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
-import { ILocationRepository, ISubscriptionRepository, sequelize } from '@citrineos/data';
+import {
+  ILocationRepository,
+  ISubscriptionRepository,
+  sequelize,
+} from '@citrineos/data';
 import { WebhookDispatcher } from './webhook.dispatcher';
 
 /**
@@ -69,7 +73,7 @@ export class MessageRouterImpl
    * @param {IMessageSender} [sender] - the message sender
    * @param {IMessageHandler} [handler] - the message handler
    * @param {WebhookDispatcher} [dispatcher] - the webhook dispatcher
-   * @param {Function} networkHook - the network hook needed to send messages to chargers   
+   * @param {Function} networkHook - the network hook needed to send messages to chargers
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
    * represents a repository for accessing and manipulating variable data.
    * If no `locationRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
@@ -96,7 +100,7 @@ export class MessageRouterImpl
     this._sender = sender;
     this._handler = handler;
     this._webhookDispatcher = dispatcher;
-    this._networkHook = networkHook;    
+    this._networkHook = networkHook;
     this._locationRepository =
       locationRepository ||
       new sequelize.SequelizeLocationRepository(config, logger);
@@ -130,7 +134,10 @@ export class MessageRouterImpl
       },
     );
 
-    const updateIsOnline = this._locationRepository.setChargingStationIsOnline(connectionIdentifier, true);
+    const updateIsOnline = this._locationRepository.setChargingStationIsOnline(
+      connectionIdentifier,
+      true,
+    );
 
     return Promise.all([
       dispatcherRegistration,
@@ -149,7 +156,10 @@ export class MessageRouterImpl
 
   async deregisterConnection(connectionIdentifier: string): Promise<boolean> {
     this._webhookDispatcher.deregister(connectionIdentifier);
-    this._locationRepository.setChargingStationIsOnline(connectionIdentifier, false);
+    this._locationRepository.setChargingStationIsOnline(
+      connectionIdentifier,
+      false,
+    );
 
     // TODO: ensure that all queue implementations in 02_Util only unsubscribe 1 queue per call
     // ...which will require refactoring this method to unsubscribe request and response queues separately

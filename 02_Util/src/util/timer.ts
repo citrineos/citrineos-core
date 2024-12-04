@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
- 
 
 // Copyright (c) 2023 S44, LLC
 // Copyright Contributors to the CitrineOS Project

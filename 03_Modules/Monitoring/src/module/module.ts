@@ -47,7 +47,7 @@ import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './services';
 import { MonitoringService } from './MonitoringService';
-import {SequelizeChargingStationSequenceRepository} from "@citrineos/data";
+import { SequelizeChargingStationSequenceRepository } from '@citrineos/data';
 
 /**
  * Component that handles monitoring related messages.
@@ -142,10 +142,10 @@ export class MonitoringModule extends AbstractModule {
     );
 
     this._idGenerator =
-        idGenerator ||
-        new IdGenerator(
-            new SequelizeChargingStationSequenceRepository(config, this._logger),
-        );
+      idGenerator ||
+      new IdGenerator(
+        new SequelizeChargingStationSequenceRepository(config, this._logger),
+      );
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -336,7 +336,10 @@ export class MonitoringModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetMonitoringReport,
         {
-          requestId: await this._idGenerator.generateRequestId(message.context.stationId, ChargingStationSequenceType.getMonitoringReport),
+          requestId: await this._idGenerator.generateRequestId(
+            message.context.stationId,
+            ChargingStationSequenceType.getMonitoringReport,
+          ),
         } as GetMonitoringReportRequest,
       );
     }

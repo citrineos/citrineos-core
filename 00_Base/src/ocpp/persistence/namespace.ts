@@ -50,5 +50,5 @@ export enum Namespace {
   VariableMonitoringType = 'VariableMonitoring',
   VariableMonitoringStatus = 'VariableMonitoringStatus',
   VariableStatus = 'VariableStatus',
-  VariableType = 'Variable'
+  VariableType = 'Variable',
 }
