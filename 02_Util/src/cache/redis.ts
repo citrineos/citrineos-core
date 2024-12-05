@@ -5,7 +5,6 @@
 
 import { ICache } from '@citrineos/base';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
-import { default as deasyncPromise } from 'deasync-promise';
 import {
   createClient,
   RedisClientOptions,
