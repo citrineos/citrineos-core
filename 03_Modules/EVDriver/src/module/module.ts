@@ -58,21 +58,19 @@ import {
   ITariffRepository,
   ITransactionEventRepository,
   sequelize,
+  SequelizeChargingStationSequenceRepository,
   Tariff,
   VariableAttribute,
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
-  IdGenerator,
   IAuthorizer,
+  IdGenerator,
   RabbitMqReceiver,
   RabbitMqSender,
-  Timer,
 } from '@citrineos/util';
-import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { LocalAuthListService } from './LocalAuthListService';
-import { SequelizeChargingStationSequenceRepository } from '@citrineos/data';
 
 /**
  * Component that handles provisioning related messages.
@@ -82,11 +80,11 @@ export class EVDriverModule extends AbstractModule {
    * Fields
    */
 
-  protected _requests: CallAction[] = [
+  _requests: CallAction[] = [
     CallAction.Authorize,
     CallAction.ReservationStatusUpdate,
   ];
-  protected _responses: CallAction[] = [
+  _responses: CallAction[] = [
     CallAction.CancelReservation,
     CallAction.ClearCache,
     CallAction.GetLocalListVersion,
@@ -192,15 +190,6 @@ export class EVDriverModule extends AbstractModule {
       logger,
     );
 
-    const timer = new Timer();
-    this._logger.info('Initializing...');
-
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
     this._authorizeRepository =
       authorizeRepository ||
       new sequelize.SequelizeAuthorizationRepository(config, logger);
@@ -242,8 +231,6 @@ export class EVDriverModule extends AbstractModule {
       new IdGenerator(
         new SequelizeChargingStationSequenceRepository(config, this._logger),
       );
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
   get authorizeRepository(): IAuthorizationRepository {

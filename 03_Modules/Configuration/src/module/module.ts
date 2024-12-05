@@ -61,21 +61,15 @@ import {
   IDeviceModelRepository,
   IMessageInfoRepository,
   sequelize,
+  SequelizeChargingStationSequenceRepository,
   ServerNetworkProfile,
   SetNetworkProfile,
 } from '@citrineos/data';
-import {
-  IdGenerator,
-  RabbitMqReceiver,
-  RabbitMqSender,
-  Timer,
-} from '@citrineos/util';
+import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
-import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './DeviceModelService';
 import { BootNotificationService } from './BootNotificationService';
-import { SequelizeChargingStationSequenceRepository } from '@citrineos/data';
 
 /**
  * Component that handles Configuration related messages.
@@ -83,7 +77,7 @@ import { SequelizeChargingStationSequenceRepository } from '@citrineos/data';
 export class ConfigurationModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
 
-  protected _requests: CallAction[] = [
+  _requests: CallAction[] = [
     CallAction.BootNotification,
     CallAction.DataTransfer,
     CallAction.FirmwareStatusNotification,
@@ -165,15 +159,6 @@ export class ConfigurationModule extends AbstractModule {
       logger,
     );
 
-    const timer = new Timer();
-    this._logger.info('Initializing...');
-
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
     this._bootRepository =
       bootRepository ||
       new sequelize.SequelizeBootRepository(config, this._logger);
@@ -200,8 +185,6 @@ export class ConfigurationModule extends AbstractModule {
       new IdGenerator(
         new SequelizeChargingStationSequenceRepository(config, this._logger),
       );
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
   get bootRepository(): IBootRepository {
