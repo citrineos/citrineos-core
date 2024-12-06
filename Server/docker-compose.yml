@@ -15,6 +15,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 3
+
   ocpp-db:
     image: citrineos/postgis:v1.1.0
     ports:
@@ -82,12 +83,18 @@ services:
       APP_NAME: 'all'
       APP_ENV: 'docker'
       CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
+      AWS_ENDPOINT: 'http://localstack:4566'
+      AWS_REGION: 'us-east-1'
+      AWS_ACCESS_KEY_ID: 'test'
+      AWS_SECRET_ACCESS_KEY: 'test'
     depends_on:
       ocpp-db:
         condition: service_healthy
       amqp-broker:
         condition: service_healthy
       directus:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
     ports:
       - 8080:8080
@@ -132,3 +139,33 @@ services:
       interval: 15s
       timeout: 15s
       retries: 3
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      - "4566:4566"
+      - "4510-4559:4510-4559"
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - SERVICES=s3
+      - DEBUG=1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "localstack-data:/var/lib/localstack"
+      - ./scripts/init-localstack.sh:/etc/localstack/init/ready.d/init-localstack.sh
+    depends_on:
+      amqp-broker:
+        condition: service_healthy
+      ocpp-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localstack:4566 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  localstack-data:
+    driver: local
