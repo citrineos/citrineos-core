@@ -282,7 +282,7 @@ export class ReportingModule extends AbstractModule {
         await variableAttribute.reload({
           include: [Component, Variable],
         });
-        this._deviceModelRepository.updateResultByStationId(
+        await this._deviceModelRepository.updateResultByStationId(
           {
             attributeType: variableAttribute.type,
             attributeStatus: SetVariableStatusEnumType.Accepted,
