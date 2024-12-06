@@ -97,18 +97,21 @@ export class CertificatesModuleApi
     CertificateSignedRequestSchema,
   )
   certificateSigned(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: CertificateSignedRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.CertificateSigned,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.CertificateSigned,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -116,18 +119,21 @@ export class CertificatesModuleApi
     InstallCertificateRequestSchema,
   )
   installCertificate(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: InstallCertificateRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.InstallCertificate,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.InstallCertificate,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -135,18 +141,21 @@ export class CertificatesModuleApi
     GetInstalledCertificateIdsRequestSchema,
   )
   getInstalledCertificateIds(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: GetInstalledCertificateIdsRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.GetInstalledCertificateIds,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.GetInstalledCertificateIds,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -154,18 +163,21 @@ export class CertificatesModuleApi
     DeleteCertificateRequestSchema,
   )
   deleteCertificate(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: DeleteCertificateRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.DeleteCertificate,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.DeleteCertificate,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   /**
@@ -391,11 +403,6 @@ export class CertificatesModuleApi
     return responseBody;
   }
 
-  @AsDataEndpoint(Namespace.FileURL, HttpMethod.Get, undefined)
-  async getFileURL(): Promise<string> {
-    return this._fileAccess.getFileURL();
-  }
-
   @AsDataEndpoint(
     Namespace.RootCertificate,
     HttpMethod.Put,
@@ -424,23 +431,33 @@ export class CertificatesModuleApi
         );
     }
 
-    // Send InstallCertificateRequest to the charger
-    await this.installCertificate(
-      installReq.stationId,
+    const confirmations = await this.installCertificate(
+      [installReq.stationId],
       installReq.tenantId,
       {
         certificateType: installReq.certificateType,
         certificate: rootCAPem,
       } as InstallCertificateRequest,
       installReq.callbackUrl,
-    ).then((confirmation) => {
-      if (!confirmation.success) {
-        throw new Error(
-          `Send InstallCertificateRequest failed: ${confirmation.payload}`,
-        );
-      }
-      this._logger.debug('InstallCertificate confirmation sent:', confirmation);
-    });
+    );
+
+    const failedConfirmations = confirmations.filter(
+      (confirmation) => !confirmation.success,
+    );
+
+    if (failedConfirmations.length > 0) {
+      failedConfirmations.forEach((failure, index) =>
+        this._logger.error(
+          `InstallCertificateRequest failed for stationId: ${installReq.stationId}, index: ${index}, payload: ${failure.payload}`,
+        ),
+      );
+
+      throw new Error(
+        `One or more InstallCertificateRequest operations failed.`,
+      );
+    }
+
+    this._logger.debug('InstallCertificate confirmations:', confirmations);
   }
 
   /**

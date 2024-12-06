@@ -58,19 +58,22 @@ export class ReportingModuleApi
 
   @AsMessageEndpoint(CallAction.GetBaseReport, GetBaseReportRequestSchema)
   getBaseReport(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: GetBaseReportRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
+  ): Promise<IMessageConfirmation[]> {
     // TODO: Consider using requestId to send NotifyReportRequests to callbackUrl
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.GetBaseReport,
-      request,
-      callbackUrl,
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.GetBaseReport,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(CallAction.GetReport, GetReportRequestSchema)
@@ -232,18 +235,21 @@ export class ReportingModuleApi
 
   @AsMessageEndpoint(CallAction.GetLog, GetLogRequestSchema)
   getLog(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: GetLogRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.GetLog,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.GetLog,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -251,18 +257,21 @@ export class ReportingModuleApi
     CustomerInformationRequestSchema,
   )
   customerInformation(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: CustomerInformationRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.CustomerInformation,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.CustomerInformation,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   /**
