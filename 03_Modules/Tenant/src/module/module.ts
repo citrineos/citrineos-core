@@ -12,8 +12,7 @@ import {
   IMessageSender,
   SystemConfig,
 } from '@citrineos/base';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
-import deasyncPromise from 'deasync-promise';
+import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
 
 export class TenantModule extends AbstractModule {
@@ -21,9 +20,8 @@ export class TenantModule extends AbstractModule {
    * Fields
    */
 
-  protected _requests: CallAction[] = [];
-
-  protected _responses: CallAction[] = [];
+  _requests: CallAction[] = [];
+  _responses: CallAction[] = [];
 
   /**
    * Constructor
@@ -61,16 +59,5 @@ export class TenantModule extends AbstractModule {
       EventGroup.Tenant,
       logger,
     );
-
-    const timer = new Timer();
-    this._logger.info('Initializing...');
-
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 }

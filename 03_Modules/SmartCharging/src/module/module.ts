@@ -42,23 +42,17 @@ import {
   SetChargingProfileResponse,
   SystemConfig,
 } from '@citrineos/base';
-import {
-  IdGenerator,
-  RabbitMqReceiver,
-  RabbitMqSender,
-  Timer,
-} from '@citrineos/util';
-import deasyncPromise from 'deasync-promise';
+import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
 import {
   IChargingProfileRepository,
   IDeviceModelRepository,
   ITransactionEventRepository,
   sequelize,
+  SequelizeChargingStationSequenceRepository,
   Transaction,
 } from '@citrineos/data';
 import { InternalSmartCharging, ISmartCharging } from './smartCharging';
-import { SequelizeChargingStationSequenceRepository } from '@citrineos/data';
 
 /**
  * Component that handles provisioning related messages.
@@ -68,14 +62,14 @@ export class SmartChargingModule extends AbstractModule {
    * Fields
    */
 
-  protected _requests: CallAction[] = [
+  _requests: CallAction[] = [
     CallAction.NotifyChargingLimit,
     CallAction.NotifyEVChargingNeeds,
     CallAction.NotifyEVChargingSchedule,
     CallAction.ReportChargingProfiles,
   ];
 
-  protected _responses: CallAction[] = [
+  _responses: CallAction[] = [
     CallAction.ClearChargingProfile,
     CallAction.ClearedChargingLimit,
     CallAction.GetChargingProfiles,
@@ -150,15 +144,6 @@ export class SmartChargingModule extends AbstractModule {
       logger,
     );
 
-    const timer = new Timer();
-    this._logger.info('Initializing...');
-
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
     this._transactionEventRepository =
       transactionEventRepository ||
       new sequelize.SequelizeTransactionEventRepository(config, this._logger);
@@ -178,8 +163,6 @@ export class SmartChargingModule extends AbstractModule {
       new IdGenerator(
         new SequelizeChargingStationSequenceRepository(config, this._logger),
       );
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
   get transactionEventRepository(): ITransactionEventRepository {

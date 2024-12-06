@@ -5,7 +5,6 @@
 
 import { ICache } from '@citrineos/base';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
-import { default as deasyncPromise } from 'deasync-promise';
 import {
   createClient,
   RedisClientOptions,
@@ -96,26 +95,6 @@ export class RedisCache implements ICache {
     });
   }
 
-  getSync<T>(
-    key: string,
-    namespace?: string,
-    classConstructor?: () => ClassConstructor<T>,
-  ): T | null {
-    namespace = namespace || 'default';
-    key = `${namespace}:${key}`;
-    return deasyncPromise(
-      this._client.get(key).then((result) => {
-        if (result) {
-          if (classConstructor) {
-            return plainToInstance(classConstructor(), JSON.parse(result));
-          }
-          return result as T;
-        }
-        return null;
-      }),
-    );
-  }
-
   set(
     key: string,
     value: string,
@@ -153,23 +132,5 @@ export class RedisCache implements ICache {
         }
         return false;
       });
-  }
-
-  setSync(
-    key: string,
-    value: string,
-    namespace?: string,
-    expireSeconds?: number,
-  ): boolean {
-    namespace = namespace || 'default';
-    key = `${namespace}:${key}`;
-    return deasyncPromise(
-      this._client.set(key, value, { EX: expireSeconds }).then((result) => {
-        if (result) {
-          return result === 'OK';
-        }
-        return false;
-      }),
-    );
   }
 }
