@@ -69,7 +69,7 @@ export class SmartChargingModule extends AbstractModule {
     CallAction.ReportChargingProfiles,
   ];
 
-  protected _responses: CallAction[] = [
+  _responses: CallAction[] = [
     CallAction.ClearChargingProfile,
     CallAction.ClearedChargingLimit,
     CallAction.GetChargingProfiles,

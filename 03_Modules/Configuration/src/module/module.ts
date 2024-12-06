@@ -86,7 +86,7 @@ export class ConfigurationModule extends AbstractModule {
     CallAction.PublishFirmwareStatusNotification,
   ];
 
-  protected _responses: CallAction[] = [
+  _responses: CallAction[] = [
     CallAction.ChangeAvailability,
     CallAction.ClearDisplayMessage,
     CallAction.GetDisplayMessages,
