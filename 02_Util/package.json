@@ -19,7 +19,6 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/amqplib": "0.10.2",
-    "@types/bcrypt": "5.0.2",
     "@types/deasync-promise": "1.0.0",
     "@types/json-schema-faker": "0.5.4",
     "@types/jsrsasign": "10.5.14",
