@@ -64,6 +64,9 @@ export class Certificate extends Model {
   declare certificateFileId?: string | null;
 
   @Column(DataType.STRING)
+  declare certificateFileHash?: string | null;
+
+  @Column(DataType.STRING)
   declare privateKeyFileId?: string | null;
 
   @Column(DataType.STRING)

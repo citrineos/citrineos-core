@@ -8,6 +8,7 @@ import { Location } from './Location';
 import { StatusNotification } from './StatusNotification';
 import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 import { SetNetworkProfile } from './SetNetworkProfile';
+import { InstalledCertificate } from '../Certificate';
 
 /**
  * Represents a charging station.
@@ -30,6 +31,9 @@ export class ChargingStation extends Model {
 
   @HasMany(() => StatusNotification)
   declare statusNotifications?: StatusNotificationRequest[];
+
+  @HasMany(() => InstalledCertificate)
+  declare installedCertificates?: InstalledCertificate[];
 
   /**
    * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.

@@ -15,7 +15,7 @@ export { TariffQueryString, TariffQuerySchema } from './queries/Tariff';
 export { ModelKeyQuerystring, ModelKeyQuerystringSchema } from './queries/Model';
 export { NetworkProfileQuerystring, NetworkProfileQuerySchema, NetworkProfileDeleteQuerystring, NetworkProfileDeleteQuerySchema } from './queries/NetworkProfile';
 export { UpdateTlsCertificateQueryString, TlsCertificateSchema, UpdateTlsCertificateQuerySchema } from './queries/TlsCertificate';
-export { GenerateCertificateChainSchema, InstallRootCertificateSchema } from './queries/RootCertificate';
+export { GenerateCertificateChainSchema, InstallRootCertificateSchema, UploadExistingCertificateSchema, RegenerateInstalledCertificateSchema } from './queries/RootCertificate';
 export { CreateSubscriptionSchema } from './queries/Subscription';
 
 // Data projection models
@@ -27,3 +27,5 @@ export { default as TariffSchema } from './projections/schemas/TariffSchema.json
 export { TlsCertificatesRequest } from './dtos/TlsCertificatesRequest';
 export { GenerateCertificateChainRequest } from './dtos/GenerateCertificateChainRequest';
 export { InstallRootCertificateRequest } from './dtos/InstallRootCertificateRequest';
+export { UploadExistingCertificate } from './dtos/UploadExistingCertificate';
+export { RegenerateExistingCertificate } from './dtos/RegenerateExistingCertificate';

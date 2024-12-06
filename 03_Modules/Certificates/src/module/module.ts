@@ -13,6 +13,7 @@ import {
   CertificateSignedResponse,
   CertificateSigningUseEnumType,
   DeleteCertificateResponse,
+  DeleteCertificateStatusEnumType,
   ErrorCode,
   EventGroup,
   GenericStatusEnumType,
@@ -24,20 +25,22 @@ import {
   GetInstalledCertificateIdsResponse,
   HandlerProperties,
   ICache,
+  IFileAccess,
   IMessage,
   IMessageHandler,
   IMessageSender,
   InstallCertificateResponse,
+  InstallCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnumType,
-  Namespace,
   SignCertificateRequest,
   SignCertificateResponse,
   SystemConfig,
 } from '@citrineos/base';
-import { Op } from 'sequelize';
 import {
   ICertificateRepository,
+  IDeleteCertificateAttemptRepository,
   IDeviceModelRepository,
+  IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
   ILocationRepository,
   InstalledCertificate,
@@ -87,8 +90,11 @@ export class CertificatesModule extends AbstractModule {
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _certificateRepository: ICertificateRepository;
   protected _installedCertificateRepository: IInstalledCertificateRepository;
+  protected _installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
+  protected _deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
   protected _locationRepository: ILocationRepository;
   protected _certificateAuthorityService: CertificateAuthorityService;
+  protected _fileAccess: IFileAccess;
 
   /**
    * Constructor
@@ -117,6 +123,18 @@ export class CertificatesModule extends AbstractModule {
    * represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.CertificateRepository} instance is created and used.
    *
+   * @param {IInstalledCertificateRepository} [installedCertificateRepository] - An optional parameter of type {@link IInstalledCertificateRepository} which
+   * represents a repository for accessing and manipulating installed certificate data.
+   * If no `installedCertificateRepository` is provided, a default {@link sequelize.InstalledCertificateRepository} instance is created and used.
+   *
+   * @param {IInstallCertificateAttemptRepository} [installCertificateAttemptRepository] - An optional parameter of type {@link IInstallCertificateAttemptRepository} which
+   * represents a repository for accessing and manipulating installed certificate attempt data.
+   * If no `installCertificateAttemptRepository` is provided, a default {@link sequelize.InstallCertificateAttemptRepository} instance is created and used.
+   *
+   * @param {IDeleteCertificateAttemptRepository} [deleteCertificateAttemptRepository] - An optional parameter of type {@link IDeleteCertificateAttemptRepository} which
+   * represents a repository for accessing and manipulating deleted certificate attempt data.
+   * If no `deleteCertificateAttemptRepository` is provided, a default {@link sequelize.DeleteCertificateAttemptRepository} instance is created and used.
+   *
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
    * represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
@@ -129,9 +147,13 @@ export class CertificatesModule extends AbstractModule {
     cache: ICache,
     sender: IMessageSender,
     handler: IMessageHandler,
+    fileAccess: IFileAccess,
     logger?: Logger<ILogObj>,
     deviceModelRepository?: IDeviceModelRepository,
     certificateRepository?: ICertificateRepository,
+    installedCertificateRepository?: IInstalledCertificateRepository,
+    installCertificateAttemptRepository?: IInstallCertificateAttemptRepository,
+    deleteCertificateAttemptRepository?: IDeleteCertificateAttemptRepository,
     locationRepository?: ILocationRepository,
     certificateAuthorityService?: CertificateAuthorityService,
   ) {
@@ -160,14 +182,24 @@ export class CertificatesModule extends AbstractModule {
       certificateRepository ||
       new sequelize.SequelizeCertificateRepository(config, logger);
     this._installedCertificateRepository =
+      installedCertificateRepository ||
       new sequelize.SequelizeInstalledCertificateRepository(config, logger);
+    this._installCertificateAttemptRepository =
+      installCertificateAttemptRepository ||
+      new sequelize.SequelizeInstallCertificateAttemptRepository(
+        config,
+        logger,
+      );
+    this._deleteCertificateAttemptRepository =
+      deleteCertificateAttemptRepository ||
+      new sequelize.SequelizeDeleteCertificateAttemptRepository(config, logger);
     this._locationRepository =
       locationRepository ||
       new sequelize.SequelizeLocationRepository(config, logger);
-
     this._certificateAuthorityService =
       certificateAuthorityService ||
       new CertificateAuthorityService(config, this._logger);
+    this._fileAccess = fileAccess;
 
     this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
@@ -178,6 +210,18 @@ export class CertificatesModule extends AbstractModule {
 
   get certificateRepository(): ICertificateRepository {
     return this._certificateRepository;
+  }
+
+  get installedCertificateRepository(): IInstalledCertificateRepository {
+    return this._installedCertificateRepository;
+  }
+
+  get installCertificateAttemptRepository(): IInstallCertificateAttemptRepository {
+    return this._installCertificateAttemptRepository;
+  }
+
+  get deleteCertificateAttemptRepository(): IDeleteCertificateAttemptRepository {
+    return this._deleteCertificateAttemptRepository;
   }
 
   /**
@@ -325,6 +369,44 @@ export class CertificatesModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('DeleteCertificate received:', message, props);
+    const stationId = message.context.stationId;
+    const existingPendingDeleteCertificateAttempt =
+      await this.deleteCertificateAttemptRepository.readOnlyOneByQuery({
+        where: {
+          stationId,
+          status: null,
+        },
+      });
+    // should always be true
+    if (existingPendingDeleteCertificateAttempt) {
+      existingPendingDeleteCertificateAttempt.status = message.payload.status;
+      await existingPendingDeleteCertificateAttempt.save();
+      if (
+        existingPendingDeleteCertificateAttempt.status ===
+        DeleteCertificateStatusEnumType.Accepted
+      ) {
+        const existingInstalledCertificates =
+          await this.installedCertificateRepository.readAllByQuery({
+            where: {
+              stationId,
+              hashAlgorithm:
+                existingPendingDeleteCertificateAttempt.hashAlgorithm,
+              issuerNameHash:
+                existingPendingDeleteCertificateAttempt.issuerNameHash,
+              issuerKeyHash:
+                existingPendingDeleteCertificateAttempt.issuerKeyHash,
+              serialNumber:
+                existingPendingDeleteCertificateAttempt.serialNumber,
+            },
+          });
+        // should always be true
+        if (existingInstalledCertificates) {
+          for (let existingInstalledCertificate of existingInstalledCertificates) {
+            await existingInstalledCertificate.destroy();
+          }
+        }
+      }
+    }
   }
 
   @AsHandler(CallAction.GetInstalledCertificateIds)
@@ -335,39 +417,50 @@ export class CertificatesModule extends AbstractModule {
     this._logger.debug('GetInstalledCertificateIds received:', message, props);
     const certificateHashDataList: CertificateHashDataChainType[] =
       message.payload.certificateHashDataChain!;
-    // persist installed certificate information
     if (certificateHashDataList && certificateHashDataList.length > 0) {
-      // delete previous hashes for station
-      await this.deleteExistingMatchingCertificateHashes(
-        message.context.stationId,
-        certificateHashDataList,
-      );
-      // save new hashes
-      const records = certificateHashDataList.map(
-        (certificateHashDataWrap: CertificateHashDataChainType) => {
-          const certificateHashData =
-            certificateHashDataWrap.certificateHashData;
-          const certificateType = certificateHashDataWrap.certificateType;
-          return {
-            stationId: message.context.stationId,
-            hashAlgorithm: certificateHashData.hashAlgorithm,
-            issuerNameHash: certificateHashData.issuerNameHash,
-            issuerKeyHash: certificateHashData.issuerKeyHash,
-            serialNumber: certificateHashData.serialNumber,
-            certificateType: certificateType,
-          } as InstalledCertificate;
-        },
-      );
-      this._logger.info('Attempting to save', records);
-      const response = await this._installedCertificateRepository.bulkCreate(
-        records,
-        Namespace.InstalledCertificate,
-      );
-      if (response.length === records.length) {
-        this._logger.info(
-          'Successfully updated installed certificate information for station',
-          message.context.stationId,
-        );
+      for (let certificateHashDataWrap of certificateHashDataList) {
+        const certificateHashData = certificateHashDataWrap.certificateHashData;
+        const certificateType = certificateHashDataWrap.certificateType;
+        let existingInstalledCertificate =
+          await this._installedCertificateRepository.readOnlyOneByQuery({
+            where: {
+              stationId: message.context.stationId,
+              certificateType: certificateType,
+              serialNumber: certificateHashData.serialNumber,
+            },
+          });
+        if (existingInstalledCertificate) {
+          existingInstalledCertificate.hashAlgorithm =
+            certificateHashData.hashAlgorithm;
+          existingInstalledCertificate.issuerNameHash =
+            certificateHashData.issuerNameHash;
+          existingInstalledCertificate.issuerKeyHash =
+            certificateHashData.issuerKeyHash;
+          existingInstalledCertificate.serialNumber =
+            certificateHashData.serialNumber;
+          await existingInstalledCertificate.save();
+          this._logger.debug(
+            'Updated installed certificate record',
+            existingInstalledCertificate,
+          );
+        } else {
+          existingInstalledCertificate = new InstalledCertificate();
+          existingInstalledCertificate.hashAlgorithm =
+            certificateHashData.hashAlgorithm;
+          existingInstalledCertificate.issuerNameHash =
+            certificateHashData.issuerNameHash;
+          existingInstalledCertificate.issuerKeyHash =
+            certificateHashData.issuerKeyHash;
+          existingInstalledCertificate.serialNumber =
+            certificateHashData.serialNumber;
+          existingInstalledCertificate.stationId = message.context.stationId;
+          existingInstalledCertificate.certificateType = certificateType;
+          await existingInstalledCertificate.save();
+          this._logger.debug(
+            'Created new installed certificate record',
+            existingInstalledCertificate,
+          );
+        }
       }
     }
   }
@@ -378,6 +471,57 @@ export class CertificatesModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('InstallCertificate received:', message, props);
+    const stationId = message.context.stationId;
+    const existingPendingInstallCertificateAttempt =
+      await this.installCertificateAttemptRepository.readOnlyOneByQuery({
+        where: {
+          stationId,
+          status: null,
+        },
+      });
+    // should always be true
+    if (existingPendingInstallCertificateAttempt) {
+      existingPendingInstallCertificateAttempt.status = message.payload.status;
+      await existingPendingInstallCertificateAttempt.save();
+      if (
+        existingPendingInstallCertificateAttempt.status ===
+        InstallCertificateStatusEnumType.Accepted
+      ) {
+        const existingInstalledCertificate =
+          await this.installedCertificateRepository.readOnlyOneByQuery({
+            where: {
+              stationId,
+              certificateType:
+                existingPendingInstallCertificateAttempt.certificateType,
+            },
+          });
+        if (existingInstalledCertificate) {
+          existingInstalledCertificate.certificateId =
+            existingPendingInstallCertificateAttempt.certificateId;
+          await existingInstalledCertificate.save();
+        } else {
+          const certificate =
+            await existingPendingInstallCertificateAttempt.$get('certificate');
+          if (certificate && certificate.certificateFileId) {
+            const certificateBuffer = await this._fileAccess.getFile(
+              certificate.certificateFileId,
+            );
+            const certificateString = certificateBuffer.toString();
+            const cert = new jsrsasign.X509();
+            cert.readCertPEM(certificateString);
+            const serialNumber = parseInt(cert.getSerialNumberHex());
+            const installedCertificate = new InstalledCertificate();
+            installedCertificate.stationId = stationId;
+            installedCertificate.serialNumber = serialNumber.toString();
+            installedCertificate.certificateId =
+              existingPendingInstallCertificateAttempt.certificateId;
+            installedCertificate.certificateType =
+              existingPendingInstallCertificateAttempt.certificateType;
+            await installedCertificate.save();
+          }
+        }
+      }
+    }
   }
 
   private async _verifySignCertRequest(
@@ -440,33 +584,5 @@ export class CertificatesModule extends AbstractModule {
     this._logger.info(
       `Verified SignCertRequest for station ${stationId} successfully.`,
     );
-  }
-
-  private async deleteExistingMatchingCertificateHashes(
-    stationId: string,
-    certificateHashDataList: CertificateHashDataChainType[],
-  ) {
-    try {
-      const certificateTypes = certificateHashDataList.map(
-        (certificateHashData) => {
-          return certificateHashData.certificateType;
-        },
-      );
-      if (certificateTypes && certificateTypes.length > 0) {
-        await this._installedCertificateRepository.deleteAllByQuery({
-          where: {
-            stationId,
-            certificateType: {
-              [Op.in]: certificateTypes,
-            },
-          },
-        });
-      }
-    } catch (error: any) {
-      this._logger.error(
-        'GetInstalledCertificateIds failed to delete previous certificates',
-        error,
-      );
-    }
   }
 }
