@@ -1,0 +1,10 @@
+table:
+  name: directus_sessions
+  schema: public
+object_relationships:
+  - name: directus_share
+    using:
+      foreign_key_constraint_on: share
+  - name: directus_user
+    using:
+      foreign_key_constraint_on: user

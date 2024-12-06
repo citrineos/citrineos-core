@@ -75,7 +75,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 enum SetNetworkProfileExtraQuerystrings {
-  websocketServerConfigId = 'websocketServerConfigId'
+  websocketServerConfigId = 'websocketServerConfigId',
 }
 
 /**websocketServerConfigId
@@ -100,7 +100,6 @@ export class ConfigurationModuleApi
     super(ConfigurationComponent, server, logger);
   }
 
-
   /**
    * Message Endpoint Methods
    */
@@ -108,18 +107,21 @@ export class ConfigurationModuleApi
   @AsMessageEndpoint(
     CallAction.SetNetworkProfile,
     SetNetworkProfileRequestSchema,
-    { websocketServerConfigId: { type: 'string' } }
+    { websocketServerConfigId: { type: 'string' } },
   )
   async setNetworkProfile(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: SetNetworkProfileRequest,
     callbackUrl?: string,
-    extraQueries?: Record<string, any>
-  ): Promise<IMessageConfirmation> {
+    extraQueries?: Record<string, any>,
+  ): Promise<IMessageConfirmation[]> {
     const correlationId = uuidv4();
     if (extraQueries) {
-      const websocketServerConfigId = extraQueries[SetNetworkProfileExtraQuerystrings.websocketServerConfigId];
+      const websocketServerConfigId =
+        extraQueries[
+          SetNetworkProfileExtraQuerystrings.websocketServerConfigId
+        ];
       await SetNetworkProfile.build({
         stationId: identifier,
         correlationId,
@@ -127,17 +129,21 @@ export class ConfigurationModuleApi
         websocketServerConfigId,
         apn: JSON.stringify(request.connectionData.apn),
         vpn: JSON.stringify(request.connectionData.vpn),
-        ...request.connectionData
+        ...request.connectionData,
       }).save();
     }
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.SetNetworkProfile,
-      request,
-      callbackUrl,
-      correlationId,
+
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.SetNetworkProfile,
+        request,
+        callbackUrl,
+        correlationId,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -145,18 +151,21 @@ export class ConfigurationModuleApi
     ClearDisplayMessageRequestSchema,
   )
   clearDisplayMessage(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: ClearDisplayMessageRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.ClearDisplayMessage,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.ClearDisplayMessage,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -164,34 +173,40 @@ export class ConfigurationModuleApi
     GetDisplayMessagesRequestSchema,
   )
   getDisplayMessages(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: GetDisplayMessagesRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.GetDisplayMessages,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.GetDisplayMessages,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(CallAction.PublishFirmware, PublishFirmwareRequestSchema)
   publishFirmware(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: PublishFirmwareRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.PublishFirmware,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.PublishFirmware,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -199,11 +214,11 @@ export class ConfigurationModuleApi
     SetDisplayMessageRequestSchema,
   )
   async setDisplayMessage(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: SetDisplayMessageRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
+  ): Promise<IMessageConfirmation[]> {
     const messageInfo = request.message as MessageInfoType;
 
     const languageTag = messageInfo.message.language;
@@ -211,7 +226,7 @@ export class ConfigurationModuleApi
       const errorMsg =
         'Language shall be specified as RFC-5646 tags, example: US English is: en-US.';
       this._logger.error(errorMsg);
-      return { success: false, payload: errorMsg };
+      return [{ success: false, payload: errorMsg }];
     }
 
     // According to OCPP 2.0.1, the CSMS MAY include a startTime and endTime when setting a message.
@@ -220,13 +235,16 @@ export class ConfigurationModuleApi
       messageInfo.startDateTime = new Date().toISOString();
     }
 
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.SetDisplayMessage,
-      request,
-      callbackUrl,
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.SetDisplayMessage,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -234,50 +252,59 @@ export class ConfigurationModuleApi
     UnpublishFirmwareRequestSchema,
   )
   unpublishFirmware(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: UnpublishFirmwareRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.UnpublishFirmware,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.UnpublishFirmware,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(CallAction.UpdateFirmware, UpdateFirmwareRequestSchema)
   updateFirmware(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: UpdateFirmwareRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.UpdateFirmware,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.UpdateFirmware,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(CallAction.Reset, ResetRequestSchema)
   reset(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: ResetRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.Reset,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.Reset,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -285,34 +312,40 @@ export class ConfigurationModuleApi
     ChangeAvailabilityRequestSchema,
   )
   changeAvailability(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: ChangeAvailabilityRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.ChangeAvailability,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.ChangeAvailability,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(CallAction.TriggerMessage, TriggerMessageRequestSchema)
   triggerMessage(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: TriggerMessageRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.TriggerMessage,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.TriggerMessage,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   /**
@@ -423,7 +456,10 @@ export class ConfigurationModuleApi
   async getNetworkProfiles(
     request: FastifyRequest<{ Querystring: NetworkProfileQuerystring }>,
   ): Promise<ChargingStationNetworkProfile[]> {
-    return ChargingStationNetworkProfile.findAll({ where: { stationId: request.query.stationId }, include: [SetNetworkProfile, ServerNetworkProfile] });
+    return ChargingStationNetworkProfile.findAll({
+      where: { stationId: request.query.stationId },
+      include: [SetNetworkProfile, ServerNetworkProfile],
+    });
   }
 
   @AsDataEndpoint(
@@ -438,11 +474,14 @@ export class ConfigurationModuleApi
       where: {
         stationId: request.query.stationId,
         configurationSlot: {
-          [Op.in]: request.query.configurationSlot
-        }
-      }
+          [Op.in]: request.query.configurationSlot,
+        },
+      },
     });
-    return { success: true, payload: `${destroyedRows} rows successfully destroyed` };
+    return {
+      success: true,
+      payload: `${destroyedRows} rows successfully destroyed`,
+    };
   }
 
   /**

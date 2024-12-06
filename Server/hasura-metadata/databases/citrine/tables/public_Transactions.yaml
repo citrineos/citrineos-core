@@ -1,0 +1,39 @@
+table:
+  name: Transactions
+  schema: public
+object_relationships:
+  - name: ChargingStation
+    using:
+      foreign_key_constraint_on: stationId
+  - name: Evse
+    using:
+      foreign_key_constraint_on: evseDatabaseId
+array_relationships:
+  - name: ChargingNeeds
+    using:
+      foreign_key_constraint_on:
+        column: transactionDatabaseId
+        table:
+          name: ChargingNeeds
+          schema: public
+  - name: ChargingProfiles
+    using:
+      foreign_key_constraint_on:
+        column: transactionDatabaseId
+        table:
+          name: ChargingProfiles
+          schema: public
+  - name: MeterValues
+    using:
+      foreign_key_constraint_on:
+        column: transactionDatabaseId
+        table:
+          name: MeterValues
+          schema: public
+  - name: TransactionEvents
+    using:
+      foreign_key_constraint_on:
+        column: transactionDatabaseId
+        table:
+          name: TransactionEvents
+          schema: public
