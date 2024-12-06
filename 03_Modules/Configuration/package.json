@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/configuration",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "The configuration module for OCPP v2.0.1. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,9 +29,9 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@citrineos/base": "1.5.0",
-    "@citrineos/data": "1.5.0",
-    "@citrineos/util": "1.5.0",
+    "@citrineos/base": "1.6.0",
+    "@citrineos/data": "1.6.0",
+    "@citrineos/util": "1.6.0",
     "uuid": "9.0.1"
   }
 }
