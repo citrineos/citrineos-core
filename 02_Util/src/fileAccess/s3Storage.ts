@@ -51,13 +51,13 @@ export class S3Storage implements IFileAccess {
       const result = await this._s3
         .upload({
           Bucket: bucketName || 'citrineos-s3-bucket',
-          Key: `${filePath}${fileName}`,
+          Key: `${filePath || ''}${fileName}`,
           Body: content,
           ContentType: 'application/octet-stream',
         })
         .promise();
 
-      return result.Location;
+      return result.Key;
     } catch (e) {
       throw new Error(`Failed to upload file ${fileName}: ${e}`);
     }
