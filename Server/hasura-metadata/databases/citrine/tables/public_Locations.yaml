@@ -1,0 +1,19 @@
+table:
+  name: Locations
+  schema: public
+object_relationships:
+  - name: OcpiLocation
+    using:
+      foreign_key_constraint_on:
+        column: coreLocationId
+        table:
+          name: OcpiLocations
+          schema: public
+array_relationships:
+  - name: ChargingStations
+    using:
+      foreign_key_constraint_on:
+        column: locationId
+        table:
+          name: ChargingStations
+          schema: public

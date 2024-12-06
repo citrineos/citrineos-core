@@ -1,0 +1,33 @@
+table:
+  name: IdTokens
+  schema: public
+object_relationships:
+  - name: Authorization
+    using:
+      foreign_key_constraint_on:
+        column: idTokenId
+        table:
+          name: Authorizations
+          schema: public
+array_relationships:
+  - name: IdTokenAdditionalInfos
+    using:
+      foreign_key_constraint_on:
+        column: idTokenId
+        table:
+          name: IdTokenAdditionalInfos
+          schema: public
+  - name: IdTokenInfos
+    using:
+      foreign_key_constraint_on:
+        column: groupIdTokenId
+        table:
+          name: IdTokenInfos
+          schema: public
+  - name: TransactionEvents
+    using:
+      foreign_key_constraint_on:
+        column: idTokenId
+        table:
+          name: TransactionEvents
+          schema: public
