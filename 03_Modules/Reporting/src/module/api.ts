@@ -12,6 +12,7 @@ import {
   Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPVersion,
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { IReportingModuleApi } from './interface';
@@ -57,6 +58,7 @@ export class ReportingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.GetBaseReport,
       request,
       callbackUrl,
@@ -91,6 +93,7 @@ export class ReportingModuleApi
       return await this._module.sendCall(
         identifier,
         tenantId,
+        OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.GetReport,
         request,
         callbackUrl,
@@ -119,6 +122,7 @@ export class ReportingModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
+          OCPPVersion.OCPP2_0_1,
           OCPP2_0_1_CallAction.GetReport,
           {
             componentVariable: batch,
@@ -166,6 +170,7 @@ export class ReportingModuleApi
       return await this._module.sendCall(
         identifier,
         tenantId,
+        OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.GetMonitoringReport,
         request,
         callbackUrl,
@@ -194,6 +199,7 @@ export class ReportingModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
+          OCPPVersion.OCPP2_0_1,
           OCPP2_0_1_CallAction.GetMonitoringReport,
           {
             componentVariable: batch,
@@ -230,6 +236,7 @@ export class ReportingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.GetLog,
       request,
       callbackUrl,
@@ -249,6 +256,7 @@ export class ReportingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.CustomerInformation,
       request,
       callbackUrl,

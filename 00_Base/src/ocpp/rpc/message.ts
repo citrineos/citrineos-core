@@ -55,6 +55,8 @@ export enum OCPPVersion {
   OCPP2_0_1 = 'ocpp2.0.1',
 }
 
+export type OCPPVersionType = 'ocpp1.6' | 'ocpp2.0.1';
+
 /**
  * The different OCPP action types.
  *

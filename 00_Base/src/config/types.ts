@@ -14,7 +14,7 @@ export const websocketServerInputSchema = z.object({
   host: z.string().default('localhost').optional(),
   port: z.number().int().positive().default(8080).optional(),
   pingInterval: z.number().int().positive().default(60).optional(),
-  protocol: z.string().default('ocpp2.0.1').optional(),
+  protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']).default('ocpp2.0.1').optional(),
   securityProfile: z.number().int().min(0).max(3).default(0).optional(),
   allowUnknownChargingStations: z.boolean().default(false).optional(),
   tlsKeyFilePath: z.string().optional(), // Leaf certificate's private key pem which decrypts the message from client
@@ -240,7 +240,7 @@ export const websocketServerSchema = z
     host: z.string(),
     port: z.number().int().positive(),
     pingInterval: z.number().int().positive(),
-    protocol: z.string(),
+    protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']),
     securityProfile: z.number().int().min(0).max(3),
     allowUnknownChargingStations: z.boolean(),
     tlsKeyFilePath: z.string().optional(),

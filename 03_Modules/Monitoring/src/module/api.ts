@@ -25,6 +25,7 @@ import {
   Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPVersion,
   ReportDataTypeSchema,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
@@ -146,6 +147,7 @@ export class MonitoringModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
+          OCPPVersion.OCPP2_0_1,
           OCPP2_0_1_CallAction.SetVariableMonitoring,
           { setMonitoringData: batch } as OCPP2_0_1.SetVariableMonitoringRequest,
           callbackUrl,
@@ -224,6 +226,7 @@ export class MonitoringModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
+          OCPPVersion.OCPP2_0_1,
           OCPP2_0_1_CallAction.ClearVariableMonitoring,
           { id: batch } as OCPP2_0_1.ClearVariableMonitoringRequest,
           callbackUrl,
@@ -258,6 +261,7 @@ export class MonitoringModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.SetMonitoringLevel,
       request,
       callbackUrl,
@@ -277,6 +281,7 @@ export class MonitoringModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.SetMonitoringBase,
       request,
       callbackUrl,
@@ -322,6 +327,7 @@ export class MonitoringModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
+          OCPPVersion.OCPP2_0_1,
           OCPP2_0_1_CallAction.SetVariables,
           { setVariableData: batch } as OCPP2_0_1.SetVariablesRequest,
           callbackUrl,
@@ -393,6 +399,7 @@ export class MonitoringModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
+          OCPPVersion.OCPP2_0_1,
           OCPP2_0_1_CallAction.GetVariables,
           { getVariableData: batch } as OCPP2_0_1.GetVariablesRequest,
           callbackUrl,

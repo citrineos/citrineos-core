@@ -13,7 +13,8 @@ import {
   IMessageConfirmation,
   Namespace,
   OCPP2_0_1,
-  OCPP2_0_1_CallAction
+  OCPP2_0_1_CallAction,
+  OCPPVersion
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { VariableAttribute } from '@citrineos/data';
@@ -102,6 +103,7 @@ export class SmartChargingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.ClearChargingProfile,
       request,
       callbackUrl,
@@ -175,6 +177,7 @@ export class SmartChargingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.GetChargingProfiles,
       request,
       callbackUrl,
@@ -487,6 +490,7 @@ export class SmartChargingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.SetChargingProfile,
       request,
       callbackUrl,
@@ -506,6 +510,7 @@ export class SmartChargingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.ClearedChargingLimit,
       request,
       callbackUrl,
@@ -555,6 +560,7 @@ export class SmartChargingModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.GetCompositeSchedule,
       request,
       callbackUrl,

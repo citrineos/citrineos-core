@@ -275,6 +275,7 @@ export class ConfigurationModule extends AbstractModule {
       const getBaseReportConfirmation = await this.sendCall(
         stationId,
         tenantId,
+        OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.GetBaseReport,
         getBaseReportRequest,
       );
@@ -324,6 +325,7 @@ export class ConfigurationModule extends AbstractModule {
         await this.sendCall(
           stationId,
           tenantId,
+          OCPPVersion.OCPP2_0_1,
           OCPP2_0_1_CallAction.SetVariables,
           {
             setVariableData: setVariableData.slice(
@@ -384,14 +386,14 @@ export class ConfigurationModule extends AbstractModule {
 
     if (rebootSetVariable) {
       // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
-      this.sendCall(stationId, tenantId, OCPP2_0_1_CallAction.Reset, {
+      this.sendCall(stationId, tenantId, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Reset, {
         type: OCPP2_0_1.ResetEnumType.Immediate,
       } as OCPP2_0_1.ResetRequest);
     } else {
       // We could trigger the new boot immediately rather than wait for the retry, as nothing more now needs to be done.
       // However, B02.FR.02 - Spec allows for TriggerMessageRequest - OCTT fails over trigger
       // Commenting out until OCTT behavior changes.
-      // this.sendCall(stationId, tenantId, OCPP2_0_1_CallAction.TriggerMessage,
+      // this.sendCall(stationId, tenantId, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.TriggerMessage,
       //   { requestedMessage: MessageTriggerEnumType.BootNotification } as TriggerMessageRequest);
     }
   }
@@ -552,6 +554,7 @@ export class ConfigurationModule extends AbstractModule {
       await this.sendCall(
         message.context.stationId,
         message.context.tenantId,
+        OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
@@ -623,6 +626,7 @@ export class ConfigurationModule extends AbstractModule {
       await this.sendCall(
         message.context.stationId,
         message.context.tenantId,
+        OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(

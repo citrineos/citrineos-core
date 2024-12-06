@@ -19,6 +19,7 @@ import {
   Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPVersion,
   UpdateChargingStationPasswordRequest,
   UpdateChargingStationPasswordSchema,
 } from '@citrineos/base';
@@ -106,6 +107,7 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.SetNetworkProfile,
       request,
       callbackUrl,
@@ -126,6 +128,7 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.ClearDisplayMessage,
       request,
       callbackUrl,
@@ -145,6 +148,7 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.GetDisplayMessages,
       request,
       callbackUrl,
@@ -161,6 +165,7 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.PublishFirmware,
       request,
       callbackUrl,
@@ -196,6 +201,7 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.SetDisplayMessage,
       request,
       callbackUrl,
@@ -215,6 +221,7 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.UnpublishFirmware,
       request,
       callbackUrl,
@@ -231,6 +238,7 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.UpdateFirmware,
       request,
       callbackUrl,
@@ -247,6 +255,7 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.Reset,
       request,
       callbackUrl,
@@ -266,6 +275,7 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.ChangeAvailability,
       request,
       callbackUrl,
@@ -282,6 +292,7 @@ export class ConfigurationModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.TriggerMessage,
       request,
       callbackUrl,
@@ -458,6 +469,7 @@ export class ConfigurationModuleApi
     const messageConfirmation = await this._module.sendCall(
       stationId,
       'T01', // TODO: adjust when multi-tenancy is implemented
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.SetVariables,
       {
         setVariableData: [

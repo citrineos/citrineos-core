@@ -29,6 +29,7 @@ import {
   OcppError,
   OcppRequest,
   OcppResponse,
+  OCPPVersionType,
   RequestBuilder,
   RetryMessageError,
   SystemConfig,
@@ -161,7 +162,7 @@ export class MessageRouterImpl
     identifier: string,
     message: string,
     timestamp: Date,
-    protocol: string,
+    protocol: OCPPVersionType,
   ): Promise<boolean> {
     this._webhookDispatcher.dispatchMessageReceived(identifier, message);
     let rpcMessage: any;
@@ -241,6 +242,7 @@ export class MessageRouterImpl
   async sendCall(
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
     correlationId = uuidv4(),
@@ -400,7 +402,7 @@ export class MessageRouterImpl
     identifier: string,
     message: Call,
     timestamp: Date,
-    protocol: string,
+    protocol: OCPPVersionType,
   ): Promise<void> {
     const messageId = message[1];
     const action = message[2] as CallAction;
@@ -501,14 +503,14 @@ export class MessageRouterImpl
    * @param {string} identifier - The client identifier that made the call.
    * @param {CallResult} message - The OCPP CallResult message.
    * @param {Date} timestamp Time at which the message was received from the charger.
-   * @param {string} protocol The OCPP protocol version of the message
+   * @param {OCPPVersionType} protocol The OCPP protocol version of the message
    * @return {void}
    */
   _onCallResult(
     identifier: string,
     message: CallResult,
     timestamp: Date,
-    protocol: string,
+    protocol: OCPPVersionType,
   ): void {
     const messageId = message[1];
     const payload = message[2];
@@ -577,10 +579,10 @@ export class MessageRouterImpl
    * @param {string} identifier - The client identifier.
    * @param {CallError} message - The error message.
    * @param {Date} timestamp Time at which the message was received from the charger.
-   * @param {string} protocol The OCPP protocol version of the message
+   * @param {OCPPVersionType} protocol The OCPP protocol version of the message
    * @return {void} This function doesn't return anything.
    */
-  _onCallError(identifier: string, message: CallError, timestamp: Date, protocol: string): void {
+  _onCallError(identifier: string, message: CallError, timestamp: Date, protocol: OCPPVersionType): void {
     const messageId = message[1];
 
     this._logger.debug('Process CallError', identifier, message);
@@ -677,7 +679,7 @@ export class MessageRouterImpl
     connectionIdentifier: string,
     message: Call,
     timestamp: Date,
-    protocol: string,
+    protocol: OCPPVersionType,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
     const action = message[2] as CallAction;
@@ -703,7 +705,7 @@ export class MessageRouterImpl
     message: CallResult,
     action: CallAction,
     timestamp: Date,
-    protocol: string,
+    protocol: OCPPVersionType,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
     const payload = message[2] as OcppResponse;
@@ -728,7 +730,7 @@ export class MessageRouterImpl
     message: CallError,
     action: CallAction,
     timestamp: Date,
-    protocol: string
+    protocol: OCPPVersionType
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
     const payload = new OcppError(

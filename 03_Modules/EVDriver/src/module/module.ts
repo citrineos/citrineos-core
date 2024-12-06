@@ -609,6 +609,7 @@ export class EVDriverModule extends AbstractModule {
       this.sendCall(
         stationId,
         message.context.tenantId,
+        OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
@@ -753,6 +754,7 @@ export class EVDriverModule extends AbstractModule {
         const messageConfirmation = await this.sendCall(
           stationId,
           message.context.tenantId,
+          OCPPVersion.OCPP2_0_1,
           OCPP2_0_1_CallAction.GetLocalListVersion,
           {} as OCPP2_0_1.GetLocalListVersionRequest,
         );

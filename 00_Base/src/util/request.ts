@@ -12,6 +12,7 @@ import {
   OcppError,
   OcppRequest,
   OcppResponse,
+  OCPPVersionType,
 } from '..';
 
 export class RequestBuilder {
@@ -24,7 +25,7 @@ export class RequestBuilder {
     eventGroup: EventGroup,
     origin: MessageOrigin,
     timestamp: Date = new Date(),
-    protocol?: string,
+    protocol?: OCPPVersionType,
   ): IMessage<OcppRequest> {
     return {
       origin: origin,
@@ -51,7 +52,7 @@ export class RequestBuilder {
     eventGroup: EventGroup,
     origin: MessageOrigin,
     timestamp: Date = new Date(),
-    protocol?: string,
+    protocol?: OCPPVersionType,
   ): IMessage<OcppResponse> {
     return {
       origin: origin,
@@ -78,7 +79,7 @@ export class RequestBuilder {
     eventGroup: EventGroup,
     origin: MessageOrigin,
     timestamp: Date = new Date(),
-    protocol?: string,
+    protocol?: OCPPVersionType,
   ): IMessage<OcppError> {
     return {
       origin: origin,

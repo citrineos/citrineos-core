@@ -23,6 +23,7 @@ import {
   OcppError,
   OcppRequest,
   OcppResponse,
+  OCPPVersionType,
   SystemConfig,
 } from '../..';
 import { ILogObj, Logger } from 'tslog';
@@ -150,6 +151,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       await this.sendCall(
         message.context.stationId,
         message.context.tenantId,
+        message.protocol!,
         message.action,
         message.payload,
         message.context.correlationId,
@@ -267,6 +269,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   abstract sendCall(
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
     correlationId?: string,

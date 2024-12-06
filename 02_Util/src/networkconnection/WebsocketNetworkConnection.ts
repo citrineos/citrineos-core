@@ -9,6 +9,7 @@ import {
   ICache,
   IMessageRouter,
   IWebsocketConnection,
+  OCPPVersionType,
   SystemConfig,
   WebsocketServerConfig,
 } from '@citrineos/base';
@@ -73,7 +74,7 @@ export class WebsocketNetworkConnection {
             this._handleProtocols(
               protocols,
               req,
-              websocketServerConfig.protocol,
+              websocketServerConfig.protocol as OCPPVersionType,
             ),
           clientTracking: false,
         });
@@ -290,7 +291,7 @@ export class WebsocketNetworkConnection {
   private _handleProtocols(
     protocols: Set<string>,
     req: http.IncomingMessage,
-    wsServerProtocol: string,
+    wsServerProtocol: OCPPVersionType,
   ) {
     // Only supports configured protocol version
     if (protocols.has(wsServerProtocol)) {
@@ -397,7 +398,7 @@ export class WebsocketNetworkConnection {
       ws.close(1011, event.message);
     };
     ws.onmessage = (event: MessageEvent) => {
-      this._onMessage(identifier, event.data.toString(), ws.protocol);
+      this._onMessage(identifier, event.data.toString(), ws.protocol as OCPPVersionType);
     };
 
     ws.once('close', () => {
@@ -448,10 +449,10 @@ export class WebsocketNetworkConnection {
    *
    * @param {string} identifier - The client identifier.
    * @param {string} message - The incoming message from the client.
-   * @param {string} protocol - The OCPP protocol version of the client.
+   * @param {OCPPVersionType} protocol - The OCPP protocol version of the client, 'ocpp1.6' or 'ocpp2.0.1'.
    * @return {void} This function does not return anything.
    */
-  private _onMessage(identifier: string, message: string, protocol: string): void {
+  private _onMessage(identifier: string, message: string, protocol: OCPPVersionType): void {
     this._router.onMessage(identifier, message, new Date(), protocol);
   }
 

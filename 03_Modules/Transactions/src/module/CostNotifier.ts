@@ -1,5 +1,5 @@
 import { ITransactionEventRepository } from '@citrineos/data';
-import { AbstractModule, OCPP2_0_1_CallAction } from '@citrineos/base';
+import { AbstractModule, OCPP2_0_1_CallAction, OCPPVersion } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { CostCalculator } from './CostCalculator';
 import { Scheduler } from './Scheduler';
@@ -80,6 +80,7 @@ export class CostNotifier extends Scheduler {
       await this._module.sendCall(
         transaction.stationId,
         tenantId,
+        OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.CostUpdated,
         {
           totalCost: cost,

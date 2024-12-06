@@ -14,6 +14,7 @@ import {
   Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPVersion,
   WebsocketServerConfig,
 } from '@citrineos/base';
 import jsrsasign from 'jsrsasign';
@@ -99,6 +100,7 @@ export class CertificatesModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.CertificateSigned,
       request,
       callbackUrl,
@@ -118,6 +120,7 @@ export class CertificatesModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.InstallCertificate,
       request,
       callbackUrl,
@@ -137,6 +140,7 @@ export class CertificatesModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.GetInstalledCertificateIds,
       request,
       callbackUrl,
@@ -156,6 +160,7 @@ export class CertificatesModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.DeleteCertificate,
       request,
       callbackUrl,

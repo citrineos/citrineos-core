@@ -46,7 +46,8 @@ export {
   ErrorCode,
   MessageTypeId,
   OcppError,
-  OCPPVersion
+  OCPPVersion,
+  OCPPVersionType,
 } from './ocpp/rpc/message';
 export {
   ChargingStationSequenceType,

@@ -9,9 +9,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from '.';
 import { OcppRequest, OcppResponse } from '../..';
 import { SystemConfig } from '../../config/types';
-import { CallAction, ErrorCode, OCPP2_0_1_CallAction, OcppError } from '../../ocpp/rpc/message';
+import { CallAction, ErrorCode, OCPP2_0_1_CallAction, OcppError, OCPPVersionType } from '../../ocpp/rpc/message';
 import { RequestBuilder } from '../../util/request';
-import { CacheNamespace, ICache, IWebsocketConnection } from '../cache/cache';
+import { ICache } from '../cache/cache';
+import { CacheNamespace, IWebsocketConnection } from '../cache/types';
 import {
   EventGroup,
   HandlerProperties,
@@ -207,12 +208,12 @@ export abstract class AbstractModule implements IModule {
    * Default implementation
    */
 
-
   /**
-   * Sends a call with the specified identifier, tenantId, action, payload, and origin.
+   * Sends a call with the specified identifier, tenantId, protocol, action, payload, and origin.
    *
    * @param {string} identifier - The identifier of the call.
    * @param {string} tenantId - The tenant ID.
+   * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @param {CallAction} action - The action to be performed.
    * @param {OcppRequest} payload - The payload of the call.
    * @param {string} [callbackUrl] - The callback URL for the call.
@@ -223,42 +224,9 @@ export abstract class AbstractModule implements IModule {
   public sendCall(
     identifier: string,
     tenantId: string,
-    action: OCPP2_0_1_CallAction,
-    payload: OcppRequest,
-    callbackUrl?: string,
-    correlationId?: string,
-    origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
-  ): Promise<IMessageConfirmation> {
-    return this._sendCall(
-      identifier,
-      tenantId,
-      action,
-      payload,
-      'ocpp2.0.1',
-      callbackUrl,
-      correlationId,
-      origin,
-    );
-  }
-
-  /**
-   * Sends a call with the specified identifier, tenantId, action, payload, and origin.
-   *
-   * @param {string} identifier - The identifier of the call.
-   * @param {string} tenantId - The tenant ID.
-   * @param {CallAction} action - The action to be performed.
-   * @param {OcppRequest} payload - The payload of the call.
-   * @param {string} [callbackUrl] - The callback URL for the call.
-   * @param {string} [correlationId] - The correlation ID of the call.
-   * @param {MessageOrigin} [origin] - The origin of the call.
-   * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
-   */
-  protected _sendCall(
-    identifier: string,
-    tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
-    protocol: string,
     callbackUrl?: string,
     correlationId?: string,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,

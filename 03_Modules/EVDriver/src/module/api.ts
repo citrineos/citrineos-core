@@ -17,7 +17,8 @@ import {
   IMessageConfirmation,
   Namespace,
   OCPP2_0_1,
-  OCPP2_0_1_CallAction
+  OCPP2_0_1_CallAction,
+  OCPPVersion
 } from '@citrineos/base';
 import {
   AuthorizationQuerySchema,
@@ -217,6 +218,7 @@ export class EVDriverModuleApi
     const confirmation: IMessageConfirmation = await this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.RequestStartTransaction,
       request,
       callbackUrl,
@@ -241,6 +243,7 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.RequestStopTransaction,
       request,
       callbackUrl,
@@ -280,6 +283,7 @@ export class EVDriverModuleApi
       return this._module.sendCall(
         identifier,
         tenantId,
+        OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.CancelReservation,
         request,
         callbackUrl,
@@ -321,6 +325,7 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.ReserveNow,
       request,
       callbackUrl,
@@ -338,6 +343,7 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.UnlockConnector,
       request,
       callbackUrl,
@@ -354,6 +360,7 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.ClearCache,
       request,
       callbackUrl,
@@ -377,6 +384,7 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.SendLocalList,
       request,
       callbackUrl,
@@ -397,6 +405,7 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.GetLocalListVersion,
       request,
       callbackUrl,

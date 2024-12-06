@@ -264,6 +264,7 @@ export class SmartChargingModule extends AbstractModule {
     this.sendCall(
       stationId,
       message.context.tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.SetChargingProfile,
       { evseId: request.evseId, chargingProfile } as OCPP2_0_1.SetChargingProfileRequest,
     );
@@ -321,6 +322,7 @@ export class SmartChargingModule extends AbstractModule {
       this.sendCall(
         stationId,
         message.context.tenantId,
+        OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.SetChargingProfile,
         setChargingProfileRequest,
       );
@@ -413,6 +415,7 @@ export class SmartChargingModule extends AbstractModule {
       this.sendCall(
         stationId,
         message.context.tenantId,
+        OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
@@ -478,6 +481,7 @@ export class SmartChargingModule extends AbstractModule {
       this.sendCall(
         stationId,
         message.context.tenantId,
+        OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(

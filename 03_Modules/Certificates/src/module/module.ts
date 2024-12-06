@@ -283,6 +283,7 @@ export class CertificatesModule extends AbstractModule {
     this.sendCall(
       stationId,
       message.context.tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.CertificateSigned,
       {
         certificateChain: certificateChainPem,

@@ -24,6 +24,7 @@ import {
   Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPVersion,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { UpsertTariffRequest } from './model/tariffs';
@@ -64,6 +65,7 @@ export class TransactionsModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.CostUpdated,
       request,
       callbackUrl,
@@ -83,6 +85,7 @@ export class TransactionsModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
+      OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.GetTransactionStatus,
       request,
       callbackUrl,
