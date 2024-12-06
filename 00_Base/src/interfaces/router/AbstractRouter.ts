@@ -23,6 +23,7 @@ import {
   OcppError,
   OcppRequest,
   OcppResponse,
+  OCPPVersion,
   OCPPVersionType,
   SystemConfig,
 } from '../..';
@@ -226,10 +227,10 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
 
     let schema;
     switch (protocol) {
-      case 'ocpp1.6':
+      case OCPPVersion.OCPP1_6:
         schema = OCPP1_6_CALL_RESULT_SCHEMA_MAP.get(action);
         break;
-      case 'ocpp2.0.1':
+      case OCPPVersion.OCPP2_0_1:
         schema = OCPP2_0_1_CALL_RESULT_SCHEMA_MAP.get(action);
         break;
       default:
