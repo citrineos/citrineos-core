@@ -3,9 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  AttributeEnumType,
-  ChargingProfilePurposeEnumType,
-  ChargingProfileType,
+  OCPP2_0_1
 } from '@citrineos/base';
 import { getNumberOfFractionDigit } from './parser';
 import {
@@ -41,7 +39,7 @@ export function validateLanguageTag(languageTag: string): boolean {
  * @param evseId evse id
  */
 export async function validateChargingProfileType(
-  chargingProfileType: ChargingProfileType,
+  chargingProfileType: OCPP2_0_1.ChargingProfileType,
   stationId: string,
   deviceModelRepository: IDeviceModelRepository,
   chargingProfileRepository: IChargingProfileRepository,
@@ -55,7 +53,7 @@ export async function validateChargingProfileType(
 
   if (
     chargingProfileType.chargingProfilePurpose ===
-      ChargingProfilePurposeEnumType.ChargingStationMaxProfile &&
+    OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationMaxProfile &&
     evseId !== 0
   ) {
     throw new Error(
@@ -65,7 +63,7 @@ export async function validateChargingProfileType(
 
   if (
     chargingProfileType.chargingProfilePurpose !==
-      ChargingProfilePurposeEnumType.TxProfile &&
+    OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile &&
     chargingProfileType.transactionId
   ) {
     throw new Error(
@@ -108,7 +106,7 @@ export async function validateChargingProfileType(
       stationId: stationId,
       component_name: 'SmartChargingCtrlr',
       variable_name: 'PeriodsPerSchedule',
-      type: AttributeEnumType.Actual,
+      type: OCPP2_0_1.AttributeEnumType.Actual,
     });
   logger.info(
     `Found PeriodsPerSchedule: ${JSON.stringify(periodsPerSchedules)}`,

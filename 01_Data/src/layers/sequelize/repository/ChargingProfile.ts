@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingLimitSourceEnumType, ChargingProfilePurposeEnumType, ChargingProfileType, CompositeScheduleType, CrudRepository, NotifyEVChargingNeedsRequest, SystemConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { SequelizeRepository } from './Base';
 import { IChargingProfileRepository } from '../../../interfaces';
 import { Evse } from '../model/DeviceModel';
@@ -40,7 +40,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     this.compositeSchedule = compositeSchedule ? compositeSchedule : new SequelizeRepository<CompositeSchedule>(config, CompositeSchedule.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId?: number | null, chargingLimitSource?: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile> {
+  async createOrUpdateChargingProfile(chargingProfile: OCPP2_0_1.ChargingProfileType, stationId: string, evseId?: number | null, chargingLimitSource?: OCPP2_0_1.ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile> {
     let transactionDBId;
     if (chargingProfile.transactionId) {
       const activeTransaction = await Transaction.findOne({
@@ -61,7 +61,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
         ...chargingProfile,
         evseId: evseId,
         transactionDatabaseId: transactionDBId,
-        chargingLimitSource: chargingLimitSource ?? ChargingLimitSourceEnumType.CSO,
+        chargingLimitSource: chargingLimitSource ?? OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
         isActive: isActive === undefined ? false : isActive,
       },
     });
@@ -72,7 +72,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
           stationId: stationId,
           transactionDatabaseId: transactionDBId,
           evseId: evseId,
-          chargingLimitSource: chargingLimitSource ?? ChargingLimitSourceEnumType.CSO,
+          chargingLimitSource: chargingLimitSource ?? OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
           isActive: isActive === undefined ? false : isActive,
         },
         savedChargingProfile.databaseId.toString(),
@@ -113,7 +113,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     return savedChargingProfile;
   }
 
-  async createChargingNeeds(chargingNeedsReq: NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds> {
+  async createChargingNeeds(chargingNeedsReq: OCPP2_0_1.NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds> {
     const activeTransaction = await Transaction.findOne({
       where: {
         stationId,
@@ -147,7 +147,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     return chargingNeedsArray.length > 0 ? chargingNeedsArray[0] : undefined;
   }
 
-  async createCompositeSchedule(compositeSchedule: CompositeScheduleType, stationId: string): Promise<CompositeSchedule> {
+  async createCompositeSchedule(compositeSchedule: OCPP2_0_1.CompositeScheduleType, stationId: string): Promise<CompositeSchedule> {
     return await this.compositeSchedule.create(
       CompositeSchedule.build({
         ...compositeSchedule,
@@ -164,7 +164,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     return await this.readNextValue('id', { where: { stationId } });
   }
 
-  async getNextStackLevel(stationId: string, transactionDatabaseId: number | null, profilePurpose: ChargingProfilePurposeEnumType): Promise<number> {
+  async getNextStackLevel(stationId: string, transactionDatabaseId: number | null, profilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType): Promise<number> {
     return await this.readNextValue('stackLevel', { where: { stationId, transactionDatabaseId: transactionDatabaseId, chargingProfilePurpose: profilePurpose } }, 0);
   }
 }

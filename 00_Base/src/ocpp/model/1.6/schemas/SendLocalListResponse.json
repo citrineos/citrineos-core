@@ -1,0 +1,20 @@
+{
+  "title": "SendLocalListResponse",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "#/definitions/SendLocalListResponseStatus"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["status"],
+  "$id": "SendLocalListResponse",
+  "definitions": {
+    "SendLocalListResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Failed", "NotSupported", "VersionMismatch"],
+      "tsEnumNames": ["Accepted", "Failed", "NotSupported", "VersionMismatch"]
+    }
+  }
+}

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AttributeEnumType, MutabilityEnumType } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
 
 export class DeviceModelService {
@@ -31,7 +31,7 @@ export class DeviceModelService {
         component_name: 'DeviceDataCtrlr',
         variable_name: 'ItemsPerMessage',
         variable_instance: 'SetVariables',
-        type: AttributeEnumType.Actual,
+        type: OCPP2_0_1.AttributeEnumType.Actual,
       });
     if (itemsPerMessageSetVariablesAttributes.length === 0) {
       return null;
@@ -62,7 +62,7 @@ export class DeviceModelService {
         component_name: 'DeviceDataCtrlr',
         variable_name: 'ItemsPerMessage',
         variable_instance: 'GetVariables',
-        type: AttributeEnumType.Actual,
+        type: OCPP2_0_1.AttributeEnumType.Actual,
       });
     if (itemsPerMessageGetVariablesAttributes.length === 0) {
       return null;
@@ -121,9 +121,9 @@ export class DeviceModelService {
             variable: { name: attr.variable },
             variableAttribute: [
               {
-                type: AttributeEnumType.Actual,
+                type: OCPP2_0_1.AttributeEnumType.Actual,
                 value: attr.value,
-                mutability: MutabilityEnumType.ReadOnly,
+                mutability: OCPP2_0_1.MutabilityEnumType.ReadOnly,
                 persistent: true,
                 constant: true,
               },

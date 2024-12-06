@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPPInterfaceEnumType, OCPPTransportEnumType, OCPPVersionEnumType, APNType, VPNType, } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Index, Model, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { ServerNetworkProfile } from './ServerNetworkProfile';
@@ -38,10 +38,10 @@ export class SetNetworkProfile extends Model {
     declare configurationSlot: number;
 
     @Column(DataType.STRING)
-    declare ocppVersion: OCPPVersionEnumType;
+    declare ocppVersion: OCPP2_0_1.OCPPVersionEnumType;
 
     @Column(DataType.STRING)
-    declare ocppTransport: OCPPTransportEnumType;
+    declare ocppTransport: OCPP2_0_1.OCPPTransportEnumType;
 
     /**
      * Communication_ Function. OCPP_ Central_ System_ URL. URI
@@ -69,17 +69,17 @@ export class SetNetworkProfile extends Model {
     declare securityProfile: number;
 
     @Column(DataType.STRING)
-    declare ocppInterface: OCPPInterfaceEnumType;
+    declare ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType;
 
     /**
-     * Stringified JSON of {@link APNType} for display purposes only
+     * Stringified JSON of {@link OCPP2_0_1.APNType} for display purposes only
      * 
      */
     @Column(DataType.STRING)
     declare apn?: string;
 
     /**
-     * Stringified JSON of {@link VPNType} for display purposes only
+     * Stringified JSON of {@link OCPP2_0_1.VPNType} for display purposes only
      * 
      */
     @Column(DataType.STRING)

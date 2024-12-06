@@ -48,10 +48,54 @@ export enum MessageTypeId {
 }
 
 /**
+ * Supported OCPP versions
+ */
+export enum OCPPVersion {
+  OCPP1_6 = 'ocpp1.6',
+  OCPP2_0_1 = 'ocpp2.0.1',
+}
+
+export type OCPPVersionType = 'ocpp1.6' | 'ocpp2.0.1';
+
+/**
  * The different OCPP action types.
  *
  */
-export enum CallAction {
+
+export type CallAction = OCPP1_6_CallAction | OCPP2_0_1_CallAction;
+
+export enum OCPP1_6_CallAction {
+  Authorize = 'Authorize',
+  BootNotification = 'BootNotification',
+  CancelReservation = 'CancelReservation',
+  ChangeAvailability = 'ChangeAvailability',
+  ChangeConfiguration = 'ChangeConfiguration',
+  ClearCache = 'ClearCache',
+  ClearChargingProfile = 'ClearChargingProfile',
+  DataTransfer = 'DataTransfer',
+  DiagnosticsStatusNotification = 'DiagnosticsStatusNotification',
+  FirmwareStatusNotification = 'FirmwareStatusNotification',
+  GetCompositeSchedule = 'GetCompositeSchedule',
+  GetConfiguration = 'GetConfiguration',
+  GetDiagnostics = 'GetDiagnostics',
+  GetLocalListVersion = 'GetLocalListVersion',
+  Heartbeat = 'Heartbeat',
+  MeterValues = 'MeterValues',
+  RemoteStartTransaction = 'RemoteStartTransaction',
+  RemoteStopTransaction = 'RemoteStopTransaction',
+  ReserveNow = 'ReserveNow',
+  Reset = 'Reset',
+  SendLocalList = 'SendLocalList',
+  SetChargingProfile = 'SetChargingProfile',
+  StartTransaction = 'StartTransaction',
+  StatusNotification = 'StatusNotification',
+  StopTransaction = 'StopTransaction',
+  TriggerMessage = 'TriggerMessage',
+  UnlockConnector = 'UnlockConnector',
+  UpdateFirmware = 'UpdateFirmware',
+}
+
+export enum OCPP2_0_1_CallAction {
   Authorize = 'Authorize',
   BootNotification = 'BootNotification',
   CancelReservation = 'CancelReservation',
@@ -123,18 +167,58 @@ export enum CallAction {
  *
  */
 export enum ErrorCode {
-  FormatViolation = 'FormatViolation', // Payload for Action is syntactically incorrect
-  NotImplemented = 'NotImplemented', // Requested Action is not known by receiver
-  ProtocolError = 'ProtocolError', // Payload for Action is not conform the PDU structure
-  GenericError = 'GenericError', // Any other error not covered by the more specific error codes in this table
-  InternalError = 'InternalError', // An internal error occurred and the receiver was not able to process the requested Action successfully
-  MessageTypeNotSupported = 'MessageTypeNotSupported', // A message with an Message Type Number received that is not supported by this implementation.
-  NotSupported = 'NotSupported', // Requested Action is recognized but not supported by the receiver
-  OccurrenceConstraintViolation = 'OccurrenceConstraintViolation', // Payload for Action is syntactically correct but at least one of the fields violates occurrence constraints
-  PropertyConstraintViolation = 'PropertyConstraintViolation', // Payload is syntactically correct but at least one field contains an invalid value
-  RpcFrameworkError = 'RpcFrameworkError', // Content of the call is not a valid RPC Request, for example: MessageId could not be read.
-  SecurityError = 'SecurityError', // During the processing of Action a security issue occurred preventing receiver from completing the Action successfully
-  TypeConstraintViolation = 'TypeConstraintViolation', // Payload for Action is syntactically correct but at least one of the fields violates data type constraints (e.g. 'somestring': 12)
+  /**
+   * Payload for Action is syntactically incorrect (OCPP 2.0.1 only, see FormationViolation for OCPP 1.6)
+   */
+  FormatViolation = 'FormatViolation',
+  /**
+   * Payload for Action is syntactically incorrect (OCPP 1.6 only, see FormatViolation for OCPP 2.0.1)
+   */
+  FormationViolation = 'FormationViolation',
+  /**
+   * Requested Action is not known by receiver
+   */
+  NotImplemented = 'NotImplemented',
+  /**
+   * Payload for Action is not conform the PDU structure
+   */
+  ProtocolError = 'ProtocolError',
+  /**
+   * Any other error not covered by the more specific error codes in this table
+   */
+  GenericError = 'GenericError',
+  /**
+   * An internal error occurred and the receiver was not able to process the requested Action successfully
+   */
+  InternalError = 'InternalError',
+  /**
+   * A message with a Message Type Number received that is not supported by this implementation.
+   */
+  MessageTypeNotSupported = 'MessageTypeNotSupported',
+  /**
+   * Requested Action is recognized but not supported by the receiver
+   */
+  NotSupported = 'NotSupported',
+  /**
+   * Payload for Action is syntactically correct but at least one of the fields violates occurrence constraints
+   */
+  OccurrenceConstraintViolation = 'OccurrenceConstraintViolation',
+  /**
+   * Payload is syntactically correct but at least one field contains an invalid value
+   */
+  PropertyConstraintViolation = 'PropertyConstraintViolation',
+  /**
+   * Content of the call is not a valid RPC Request, for example: MessageId could not be read.
+   */
+  RpcFrameworkError = 'RpcFrameworkError',
+  /**
+   * During the processing of Action a security issue occurred preventing receiver from completing the Action successfully
+   */
+  SecurityError = 'SecurityError',
+  /**
+   * Payload for Action is syntactically correct but at least one of the fields violates data type constraints (e.g. 'somestring': 12)
+   */
+  TypeConstraintViolation = 'TypeConstraintViolation',
 }
 
 /**

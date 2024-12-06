@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CallAction } from '../../ocpp/rpc/message';
+import { CallAction, OCPPVersion } from '../../ocpp/rpc/message';
 import { IHandlerDefinition } from './HandlerDefinition';
 
 /**
@@ -18,7 +18,7 @@ export const AS_HANDLER_METADATA = 'AS_HANDLER_METADATA';
  * @param {CallAction} action - the call action parameter
  * @return {PropertyDescriptor} - the property descriptor
  */
-export const AsHandler = function (action: CallAction) {
+export const AsHandler = function (protocol: OCPPVersion, action: CallAction) {
   return (
     target: any,
     propertyKey: string,
@@ -33,6 +33,7 @@ export const AsHandler = function (action: CallAction) {
     ) as Array<IHandlerDefinition>;
     handlers.push({
       action: action,
+      protocol: protocol,
       methodName: propertyKey,
       method: descriptor.value,
     });

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type AuthorizationData, CrudRepository, type IdTokenType, SystemConfig } from '@citrineos/base';
+import { CrudRepository, SystemConfig, OCPP2_0_1 } from '@citrineos/base';
 import { type BuildOptions, type Includeable, Op, Transaction } from 'sequelize';
 import { type AuthorizationQuerystring, type AuthorizationRestrictions, type IAuthorizationRepository } from '../../../interfaces';
 import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from '../model/Authorization';
@@ -34,7 +34,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     this.idTokenAdditionalInfo = idTokenAdditionalInfo ? idTokenAdditionalInfo : new SequelizeRepository<IdTokenAdditionalInfo>(config, IdTokenAdditionalInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createOrUpdateByQuerystring(value: AuthorizationData, query: AuthorizationQuerystring, transaction?: Transaction): Promise<Authorization | undefined> {
+  async createOrUpdateByQuerystring(value: OCPP2_0_1.AuthorizationData, query: AuthorizationQuerystring, transaction?: Transaction): Promise<Authorization | undefined> {
     if (value.idToken.idToken !== query.idToken || value.idToken.type !== query.type) {
       throw new Error('Authorization idToken does not match query');
     }
@@ -135,7 +135,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
    * Private Methods
    */
 
-  private async _updateIdToken(value: IdTokenType, transaction?: Transaction): Promise<IdToken> {
+  private async _updateIdToken(value: OCPP2_0_1.IdTokenType, transaction?: Transaction): Promise<IdToken> {
     const [savedIdTokenModel] = await IdToken.findOrCreate({
       where: { idToken: value.idToken, type: value.type },
       transaction,
@@ -192,7 +192,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     };
   }
 
-  private _createInclude(value: AuthorizationData): BuildOptions {
+  private _createInclude(value: OCPP2_0_1.AuthorizationData): BuildOptions {
     const include: Includeable[] = [];
     if (value.idTokenInfo) {
       const idTokenInfoInclude: Includeable[] = [];

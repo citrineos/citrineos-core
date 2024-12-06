@@ -1,0 +1,20 @@
+{
+  "title": "TriggerMessageResponse",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "#/definitions/TriggerMessageResponseStatus"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["status"],
+  "$id": "TriggerMessageResponse",
+  "definitions": {
+    "TriggerMessageResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Rejected", "NotImplemented"],
+      "tsEnumNames": ["Accepted", "Rejected", "NotImplemented"]
+    }
+  }
+}

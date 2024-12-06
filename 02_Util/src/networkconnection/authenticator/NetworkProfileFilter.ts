@@ -1,10 +1,10 @@
 
-import { AttributeEnumType } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { ChargingStationNetworkProfile, IDeviceModelRepository, ServerNetworkProfile } from '@citrineos/data';
 import { IncomingMessage } from 'http';
 import { AuthenticatorFilter } from './AuthenticatorFilter';
-import { AuthenticationOptions } from '@citrineos/base';
+import { AuthenticationOptions, OCPP2_0_1 } from '@citrineos/base';
+import { UpgradeAuthenticationError } from './errors/AuthenticationError';
 
 
 /**
@@ -32,7 +32,7 @@ export class NetworkProfileFilter extends AuthenticatorFilter {
     ): Promise<void> {
         const isConfigurationSlotAllowed = await this._isConfigurationSlotAllowed(identifier, options.securityProfile);
         if (!isConfigurationSlotAllowed) {
-            throw Error(`SecurityProfile not allowed ${options.securityProfile}`);
+            throw new UpgradeAuthenticationError(`SecurityProfile not allowed ${options.securityProfile}`);
         }
     }
 
@@ -42,7 +42,7 @@ export class NetworkProfileFilter extends AuthenticatorFilter {
                 stationId: identifier,
                 component_name: 'OCPPCommCtrlr',
                 variable_name: 'NetworkConfigurationPriority',
-                type: AttributeEnumType.Actual,
+                type: OCPP2_0_1.AttributeEnumType.Actual,
             })
         if (r && r[0]) {
             const configurationSlotsString = r[0].value;

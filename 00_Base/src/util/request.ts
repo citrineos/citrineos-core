@@ -12,6 +12,7 @@ import {
   OcppError,
   OcppRequest,
   OcppResponse,
+  OCPPVersionType,
 } from '..';
 
 export class RequestBuilder {
@@ -24,6 +25,7 @@ export class RequestBuilder {
     eventGroup: EventGroup,
     origin: MessageOrigin,
     timestamp: Date = new Date(),
+    protocol?: OCPPVersionType,
   ): IMessage<OcppRequest> {
     return {
       origin: origin,
@@ -36,6 +38,7 @@ export class RequestBuilder {
         timestamp: timestamp.toISOString(),
       },
       state: MessageState.Request,
+      protocol,
       payload,
     };
   }
@@ -49,6 +52,7 @@ export class RequestBuilder {
     eventGroup: EventGroup,
     origin: MessageOrigin,
     timestamp: Date = new Date(),
+    protocol?: OCPPVersionType,
   ): IMessage<OcppResponse> {
     return {
       origin: origin,
@@ -61,6 +65,7 @@ export class RequestBuilder {
         timestamp: timestamp.toISOString(),
       },
       state: MessageState.Response,
+      protocol,
       payload,
     };
   }
@@ -74,6 +79,7 @@ export class RequestBuilder {
     eventGroup: EventGroup,
     origin: MessageOrigin,
     timestamp: Date = new Date(),
+    protocol?: OCPPVersionType,
   ): IMessage<OcppError> {
     return {
       origin: origin,
@@ -86,6 +92,7 @@ export class RequestBuilder {
         timestamp: timestamp.toISOString(),
       },
       state: MessageState.Response,
+      protocol,
       payload,
     };
   }

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type CustomDataType, Namespace, StatusInfoType } from '@citrineos/base';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { VariableMonitoring } from './VariableMonitoring';
 
@@ -14,7 +14,7 @@ export class VariableMonitoringStatus extends Model {
   declare status: string;
 
   @Column(DataType.JSON)
-  declare statusInfo?: StatusInfoType | null;
+  declare statusInfo?: OCPP2_0_1.StatusInfoType | null;
 
   /**
    * Relations
@@ -27,5 +27,5 @@ export class VariableMonitoringStatus extends Model {
   @Column(DataType.INTEGER)
   declare variableMonitoringId?: number | null;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

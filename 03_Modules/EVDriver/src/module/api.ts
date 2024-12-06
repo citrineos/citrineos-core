@@ -11,29 +11,14 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   AsMessageEndpoint,
-  AuthorizationData,
   AuthorizationDataSchema,
   CallAction,
-  CancelReservationRequest,
-  CancelReservationRequestSchema,
-  ChargingProfilePurposeEnumType,
-  ClearCacheRequest,
-  ClearCacheRequestSchema,
-  GetLocalListVersionRequest,
-  GetLocalListVersionRequestSchema,
   HttpMethod,
   IMessageConfirmation,
   Namespace,
-  RequestStartTransactionRequest,
-  RequestStartTransactionRequestSchema,
-  RequestStopTransactionRequest,
-  RequestStopTransactionRequestSchema,
-  ReserveNowRequest,
-  ReserveNowRequestSchema,
-  SendLocalListRequest,
-  SendLocalListRequestSchema,
-  UnlockConnectorRequest,
-  UnlockConnectorRequestSchema,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
+  OCPPVersion
 } from '@citrineos/base';
 import {
   AuthorizationQuerySchema,
@@ -82,10 +67,10 @@ export class EVDriverModuleApi
   )
   putAuthorization(
     request: FastifyRequest<{
-      Body: AuthorizationData;
+      Body: OCPP2_0_1.AuthorizationData;
       Querystring: AuthorizationQuerystring;
     }>,
-  ): Promise<AuthorizationData | undefined> {
+  ): Promise<OCPP2_0_1.AuthorizationData | undefined> {
     return this._module.authorizeRepository.createOrUpdateByQuerystring(
       request.body,
       request.query,
@@ -103,7 +88,7 @@ export class EVDriverModuleApi
       Body: AuthorizationRestrictions;
       Querystring: AuthorizationQuerystring;
     }>,
-  ): Promise<AuthorizationData[]> {
+  ): Promise<OCPP2_0_1.AuthorizationData[]> {
     return this._module.authorizeRepository.updateRestrictionsByQuerystring(
       request.body,
       request.query,
@@ -117,7 +102,7 @@ export class EVDriverModuleApi
   )
   getAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
-  ): Promise<AuthorizationData[]> {
+  ): Promise<OCPP2_0_1.AuthorizationData[]> {
     return this._module.authorizeRepository.readAllByQuerystring(request.query);
   }
 
@@ -157,13 +142,13 @@ export class EVDriverModuleApi
    */
 
   @AsMessageEndpoint(
-    CallAction.RequestStartTransaction,
-    RequestStartTransactionRequestSchema,
+    OCPP2_0_1_CallAction.RequestStartTransaction,
+    OCPP2_0_1.RequestStartTransactionRequestSchema,
   )
   async requestStartTransaction(
     identifier: string,
     tenantId: string,
-    request: RequestStartTransactionRequest,
+    request: OCPP2_0_1.RequestStartTransactionRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     let payloadMessage;
@@ -172,7 +157,7 @@ export class EVDriverModuleApi
       // Ocpp 2.0.1 Part 2 K05.FR.02
       if (
         chargingProfile.chargingProfilePurpose !==
-        ChargingProfilePurposeEnumType.TxProfile
+        OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile
       ) {
         return {
           success: false,
@@ -233,7 +218,8 @@ export class EVDriverModuleApi
     const confirmation: IMessageConfirmation = await this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.RequestStartTransaction,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.RequestStartTransaction,
       request,
       callbackUrl,
     );
@@ -245,32 +231,33 @@ export class EVDriverModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.RequestStopTransaction,
-    RequestStopTransactionRequestSchema,
+    OCPP2_0_1_CallAction.RequestStopTransaction,
+    OCPP2_0_1.RequestStopTransactionRequestSchema,
   )
   async requestStopTransaction(
     identifier: string,
     tenantId: string,
-    request: RequestStopTransactionRequest,
+    request: OCPP2_0_1.RequestStopTransactionRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.RequestStopTransaction,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.RequestStopTransaction,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.CancelReservation,
-    CancelReservationRequestSchema,
+    OCPP2_0_1_CallAction.CancelReservation,
+    OCPP2_0_1.CancelReservationRequestSchema,
   )
   async cancelReservation(
     identifier: string,
     tenantId: string,
-    request: CancelReservationRequest,
+    request: OCPP2_0_1.CancelReservationRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     try {
@@ -296,7 +283,8 @@ export class EVDriverModuleApi
       return this._module.sendCall(
         identifier,
         tenantId,
-        CallAction.CancelReservation,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.CancelReservation,
         request,
         callbackUrl,
         correlationId,
@@ -309,11 +297,11 @@ export class EVDriverModuleApi
     }
   }
 
-  @AsMessageEndpoint(CallAction.ReserveNow, ReserveNowRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.ReserveNow, OCPP2_0_1.ReserveNowRequestSchema)
   async reserveNow(
     identifier: string,
     tenantId: string,
-    request: ReserveNowRequest,
+    request: OCPP2_0_1.ReserveNowRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     const storedReservation =
@@ -337,50 +325,53 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.ReserveNow,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.ReserveNow,
       request,
       callbackUrl,
       correlationId,
     );
   }
 
-  @AsMessageEndpoint(CallAction.UnlockConnector, UnlockConnectorRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.UnlockConnector, OCPP2_0_1.UnlockConnectorRequestSchema)
   unlockConnector(
     identifier: string,
     tenantId: string,
-    request: UnlockConnectorRequest,
+    request: OCPP2_0_1.UnlockConnectorRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.UnlockConnector,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.UnlockConnector,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(CallAction.ClearCache, ClearCacheRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.ClearCache, OCPP2_0_1.ClearCacheRequestSchema)
   clearCache(
     identifier: string,
     tenantId: string,
-    request: ClearCacheRequest,
+    request: OCPP2_0_1.ClearCacheRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.ClearCache,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.ClearCache,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(CallAction.SendLocalList, SendLocalListRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.SendLocalList, OCPP2_0_1.SendLocalListRequestSchema)
   async sendLocalList(
     identifier: string,
     tenantId: string,
-    request: SendLocalListRequest,
+    request: OCPP2_0_1.SendLocalListRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     const correlationId = uuidv4();
@@ -393,7 +384,8 @@ export class EVDriverModuleApi
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.SendLocalList,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.SendLocalList,
       request,
       callbackUrl,
       correlationId,
@@ -401,19 +393,20 @@ export class EVDriverModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.GetLocalListVersion,
-    GetLocalListVersionRequestSchema,
+    OCPP2_0_1_CallAction.GetLocalListVersion,
+    OCPP2_0_1.GetLocalListVersionRequestSchema,
   )
   getLocalListVersion(
     identifier: string,
     tenantId: string,
-    request: GetLocalListVersionRequest,
+    request: OCPP2_0_1.GetLocalListVersionRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.GetLocalListVersion,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.GetLocalListVersion,
       request,
       callbackUrl,
     );

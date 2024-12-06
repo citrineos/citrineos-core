@@ -1,14 +1,6 @@
 import { ISmartCharging } from './SmartCharging';
 import {
-  ChargingProfileKindEnumType,
-  ChargingProfilePurposeEnumType,
-  ChargingProfileType,
-  ChargingRateUnitEnumType,
-  ChargingSchedulePeriodType,
-  ChargingScheduleType,
-  EnergyTransferModeEnumType,
-  NotifyEVChargingNeedsRequest,
-  NotifyEVChargingScheduleRequest,
+  OCPP2_0_1
 } from '@citrineos/base';
 import {
   IChargingProfileRepository,
@@ -46,10 +38,10 @@ export class InternalSmartCharging implements ISmartCharging {
    * @throws Error if the energy transfer mode is unsupported.
    */
   async calculateChargingProfile(
-    request: NotifyEVChargingNeedsRequest,
+    request: OCPP2_0_1.NotifyEVChargingNeedsRequest,
     transaction: Transaction,
     stationId: string,
-  ): Promise<ChargingProfileType> {
+  ): Promise<OCPP2_0_1.ChargingProfileType> {
     const { chargingNeeds } = request;
 
     const acParams = chargingNeeds.acChargingParameters;
@@ -59,8 +51,8 @@ export class InternalSmartCharging implements ISmartCharging {
     // Default values
     const profileId =
       await this._chargingProfileRepository.getNextChargingProfileId(stationId);
-    const profilePurpose: ChargingProfilePurposeEnumType =
-      ChargingProfilePurposeEnumType.TxProfile;
+    const profilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType =
+      OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile;
     // Find existing charging profile and then add 1 as stack level
     const stackLevel = await this._chargingProfileRepository.getNextStackLevel(
       stationId,
@@ -76,26 +68,26 @@ export class InternalSmartCharging implements ISmartCharging {
     let limit = 0;
     let numberPhases: number | undefined;
     let minChargingRate: number | undefined;
-    let chargingRateUnit: ChargingRateUnitEnumType = ChargingRateUnitEnumType.A;
+    let chargingRateUnit: OCPP2_0_1.ChargingRateUnitEnumType = OCPP2_0_1.ChargingRateUnitEnumType.A;
     // Determine charging parameters based on energy transfer mode
     switch (transferMode) {
-      case EnergyTransferModeEnumType.AC_single_phase:
-      case EnergyTransferModeEnumType.AC_two_phase:
-      case EnergyTransferModeEnumType.AC_three_phase:
+      case OCPP2_0_1.EnergyTransferModeEnumType.AC_single_phase:
+      case OCPP2_0_1.EnergyTransferModeEnumType.AC_two_phase:
+      case OCPP2_0_1.EnergyTransferModeEnumType.AC_three_phase:
         if (acParams) {
           const { evMinCurrent, evMaxCurrent } = acParams;
           numberPhases =
-            transferMode === EnergyTransferModeEnumType.AC_single_phase
+            transferMode === OCPP2_0_1.EnergyTransferModeEnumType.AC_single_phase
               ? 1
-              : transferMode === EnergyTransferModeEnumType.AC_two_phase
+            : transferMode === OCPP2_0_1.EnergyTransferModeEnumType.AC_two_phase
                 ? 2
                 : 3; // For AC_three_phase
-          chargingRateUnit = ChargingRateUnitEnumType.A; // always use amp for AC
+          chargingRateUnit = OCPP2_0_1.ChargingRateUnitEnumType.A; // always use amp for AC
           limit = evMaxCurrent;
           minChargingRate = evMinCurrent;
         }
         break;
-      case EnergyTransferModeEnumType.DC:
+      case OCPP2_0_1.EnergyTransferModeEnumType.DC:
         if (dcParams) {
           const { evMaxPower, evMaxCurrent, evMaxVoltage } = dcParams;
           numberPhases = undefined; // For a DC EVSE this field should be omitted.
@@ -126,8 +118,8 @@ export class InternalSmartCharging implements ISmartCharging {
 
     // Create charging period
     const chargingSchedulePeriod: [
-      ChargingSchedulePeriodType,
-      ...ChargingSchedulePeriodType[],
+      OCPP2_0_1.ChargingSchedulePeriodType,
+      ...OCPP2_0_1.ChargingSchedulePeriodType[],
     ] = [
       {
         startPeriod: 0,
@@ -136,7 +128,7 @@ export class InternalSmartCharging implements ISmartCharging {
       },
     ];
 
-    const chargingSchedule: ChargingScheduleType = {
+    const chargingSchedule: OCPP2_0_1.ChargingScheduleType = {
       id: scheduleId,
       duration,
       chargingRateUnit,
@@ -148,16 +140,16 @@ export class InternalSmartCharging implements ISmartCharging {
       id: profileId,
       stackLevel,
       chargingProfilePurpose: profilePurpose,
-      chargingProfileKind: ChargingProfileKindEnumType.Absolute,
+      chargingProfileKind: OCPP2_0_1.ChargingProfileKindEnumType.Absolute,
       validFrom: currentTime.toISOString(), // Now
       validTo: chargingNeeds.departureTime, // Until departure
       chargingSchedule: [chargingSchedule],
       transactionId: transaction.transactionId,
-    } as ChargingProfileType;
+    } as OCPP2_0_1.ChargingProfileType;
   }
 
   async checkLimitsOfChargingSchedule(
-    request: NotifyEVChargingScheduleRequest,
+    request: OCPP2_0_1.NotifyEVChargingScheduleRequest,
     stationId: string,
     transaction: Transaction,
   ): Promise<void> {
@@ -201,13 +193,13 @@ export class InternalSmartCharging implements ISmartCharging {
     evMaxCurrent: number,
     evMaxVoltage: number,
     evMaxPower?: number | null,
-  ): [ChargingRateUnitEnumType, number] {
+  ): [OCPP2_0_1.ChargingRateUnitEnumType, number] {
     if (evMaxPower && evMaxPower < evMaxCurrent * evMaxVoltage) {
       // when charging rate unit is W, multiply by 1000
       // based on OCPP 2.0.1 V3 Part 6 TC_K_57_CS
-      return [ChargingRateUnitEnumType.W, evMaxPower * 1000];
+      return [OCPP2_0_1.ChargingRateUnitEnumType.W, evMaxPower * 1000];
     }
-    return [ChargingRateUnitEnumType.A, evMaxCurrent * evMaxVoltage];
+    return [OCPP2_0_1.ChargingRateUnitEnumType.A, evMaxCurrent * evMaxVoltage];
   }
 
   private async _findExistingChargingProfileWithHighestStackLevel(
@@ -219,7 +211,7 @@ export class InternalSmartCharging implements ISmartCharging {
         where: {
           stationId,
           transactionDatabaseId,
-          chargingProfilePurpose: ChargingProfilePurposeEnumType.TxProfile,
+          chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
         },
         order: [['stackLevel', 'DESC']],
         limit: 1,
