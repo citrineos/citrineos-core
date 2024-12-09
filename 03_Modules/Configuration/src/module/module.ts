@@ -250,7 +250,7 @@ export class ConfigurationModule extends AbstractModule {
       await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
     // Update device model from boot
-    this._deviceModelService.updateDeviceModel(
+    await this._deviceModelService.updateDeviceModel(
       chargingStation,
       stationId,
       timestamp,
@@ -259,7 +259,7 @@ export class ConfigurationModule extends AbstractModule {
     if (!bootNotificationResponseMessageConfirmation.success) {
       throw new Error(
         'BootNotification failed: ' +
-        bootNotificationResponseMessageConfirmation,
+          bootNotificationResponseMessageConfirmation,
       );
     }
 
@@ -541,15 +541,29 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('SetNetworkProfile response received:', message, props);
 
     if (message.payload.status == SetNetworkProfileStatusEnumType.Accepted) {
-      const setNetworkProfile = await SetNetworkProfile.findOne({ where: { correlationId: message.context.correlationId } });
+      const setNetworkProfile = await SetNetworkProfile.findOne({
+        where: { correlationId: message.context.correlationId },
+      });
       if (setNetworkProfile) {
-        const serverNetworkProfile = await ServerNetworkProfile.findByPk(setNetworkProfile.websocketServerConfigId!);
+        const serverNetworkProfile = await ServerNetworkProfile.findByPk(
+          setNetworkProfile.websocketServerConfigId!,
+        );
         if (serverNetworkProfile) {
-          const chargingStation = await ChargingStation.findByPk(message.context.stationId);
+          const chargingStation = await ChargingStation.findByPk(
+            message.context.stationId,
+          );
           if (chargingStation) {
-            const [chargingStationNetworkProfile] = await ChargingStationNetworkProfile.findOrBuild({ where: { stationId: chargingStation.id, configurationSlot: setNetworkProfile.configurationSlot! } });
-            chargingStationNetworkProfile.websocketServerConfigId = setNetworkProfile.websocketServerConfigId!;
-            chargingStationNetworkProfile.setNetworkProfileId = setNetworkProfile.id;
+            const [chargingStationNetworkProfile] =
+              await ChargingStationNetworkProfile.findOrBuild({
+                where: {
+                  stationId: chargingStation.id,
+                  configurationSlot: setNetworkProfile.configurationSlot!,
+                },
+              });
+            chargingStationNetworkProfile.websocketServerConfigId =
+              setNetworkProfile.websocketServerConfigId!;
+            chargingStationNetworkProfile.setNetworkProfileId =
+              setNetworkProfile.id;
             await chargingStationNetworkProfile.save();
           }
         }
@@ -585,7 +599,8 @@ export class ConfigurationModule extends AbstractModule {
         CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, ChargingStationSequenceType.getDisplayMessages,
+            message.context.stationId,
+            ChargingStationSequenceType.getDisplayMessages,
           ),
         } as GetDisplayMessagesRequest,
       );
@@ -656,7 +671,8 @@ export class ConfigurationModule extends AbstractModule {
         CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, ChargingStationSequenceType.getDisplayMessages,
+            message.context.stationId,
+            ChargingStationSequenceType.getDisplayMessages,
           ),
         } as GetDisplayMessagesRequest,
       );
