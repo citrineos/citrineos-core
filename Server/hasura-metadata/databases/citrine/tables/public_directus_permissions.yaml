@@ -1,0 +1,7 @@
+table:
+  name: directus_permissions
+  schema: public
+object_relationships:
+  - name: directus_role
+    using:
+      foreign_key_constraint_on: role

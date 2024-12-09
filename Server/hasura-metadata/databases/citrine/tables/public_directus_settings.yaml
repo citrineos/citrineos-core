@@ -1,0 +1,19 @@
+table:
+  name: directus_settings
+  schema: public
+object_relationships:
+  - name: directusFileByPublicBackground
+    using:
+      foreign_key_constraint_on: public_background
+  - name: directusFileByPublicFavicon
+    using:
+      foreign_key_constraint_on: public_favicon
+  - name: directusFileByPublicForeground
+    using:
+      foreign_key_constraint_on: public_foreground
+  - name: directus_file
+    using:
+      foreign_key_constraint_on: project_logo
+  - name: directus_folder
+    using:
+      foreign_key_constraint_on: storage_default_folder

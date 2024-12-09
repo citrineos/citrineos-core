@@ -1,0 +1,21 @@
+table:
+  name: directus_shares
+  schema: public
+object_relationships:
+  - name: directus_collection
+    using:
+      foreign_key_constraint_on: collection
+  - name: directus_role
+    using:
+      foreign_key_constraint_on: role
+  - name: directus_user
+    using:
+      foreign_key_constraint_on: user_created
+array_relationships:
+  - name: directus_sessions
+    using:
+      foreign_key_constraint_on:
+        column: share
+        table:
+          name: directus_sessions
+          schema: public
