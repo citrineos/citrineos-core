@@ -26,7 +26,6 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/amqplib": "0.10.1",
-    "@types/bcrypt": "5.0.2",
     "@types/deasync-promise": "1.0.0",
     "@types/uuid": "9.0.1",
     "@types/ws": "8.5.4",
