@@ -10,7 +10,9 @@ import {
   IdTokenInfoType,
   IdTokenType,
   IMessageContext,
+  MeterValueType,
   MeterValueUtils,
+  ReadingContextEnumType,
   TransactionEventEnumType,
   TransactionEventRequest,
   TransactionEventResponse,
@@ -148,6 +150,25 @@ export class TransactionService {
       response.idTokenInfo.status,
     );
     return response;
+  }
+
+  async createMeterValues(
+    meterValues: [MeterValueType, ...MeterValueType[]],
+    transactionDbId?: number | null,
+  ) {
+    meterValues.map(async (meterValue) => {
+      const hasPeriodic: boolean = meterValue.sampledValue?.some(
+        (s) => s.context === ReadingContextEnumType.Sample_Periodic,
+      );
+      if (transactionDbId && hasPeriodic) {
+        await this._transactionEventRepository.createMeterValue(
+          meterValue,
+          transactionDbId,
+        );
+      } else {
+        await this._transactionEventRepository.createMeterValue(meterValue);
+      }
+    });
   }
 
   private async _applyAuthorizers(
