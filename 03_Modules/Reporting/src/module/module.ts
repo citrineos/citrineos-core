@@ -154,10 +154,10 @@ export class ReportingModule extends AbstractModule {
    */
 
   @AsHandler(CallAction.LogStatusNotification)
-  protected _handleLogStatusNotification(
+  protected async _handleLogStatusNotification(
     message: IMessage<LogStatusNotificationRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('LogStatusNotification received:', message, props);
 
     // TODO: LogStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
@@ -165,21 +165,21 @@ export class ReportingModule extends AbstractModule {
     // Create response
     const response: LogStatusNotificationResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) => {
-        this._logger.debug(
-          'LogStatusNotification response sent: ',
-          messageConfirmation,
-        );
-      },
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'LogStatusNotification response sent: ',
+      messageConfirmation,
     );
   }
 
   @AsHandler(CallAction.NotifyCustomerInformation)
-  protected _handleNotifyCustomerInformation(
+  protected async _handleNotifyCustomerInformation(
     message: IMessage<NotifyCustomerInformationRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug(
       'NotifyCustomerInformation request received:',
       message,
@@ -189,13 +189,13 @@ export class ReportingModule extends AbstractModule {
     // Create response
     const response: NotifyCustomerInformationResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) => {
-        this._logger.debug(
-          'NotifyCustomerInformation response sent: ',
-          messageConfirmation,
-        );
-      },
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'NotifyCustomerInformation response sent: ',
+      messageConfirmation,
     );
   }
 
@@ -230,13 +230,13 @@ export class ReportingModule extends AbstractModule {
     // Create response
     const response: NotifyMonitoringReportResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) => {
-        this._logger.debug(
-          'NotifyMonitoringReport response sent: ',
-          messageConfirmation,
-        );
-      },
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'NotifyMonitoringReport response sent: ',
+      messageConfirmation,
     );
   }
 
@@ -307,26 +307,25 @@ export class ReportingModule extends AbstractModule {
     // Create response
     const response: NotifyReportResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(() => {
-      this._logger.debug('NotifyReport response sent:', message, props);
-    });
+    await this.sendCallResultWithMessage(message, response);
+    this._logger.debug('NotifyReport response sent:', message, props);
   }
 
   @AsHandler(CallAction.SecurityEventNotification)
-  protected _handleSecurityEventNotification(
+  protected async _handleSecurityEventNotification(
     message: IMessage<SecurityEventNotificationRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug(
       'SecurityEventNotification request received:',
       message,
       props,
     );
-    this._securityEventRepository.createByStationId(
+    await this._securityEventRepository.createByStationId(
       message.payload,
       message.context.stationId,
     );
-    this.sendCallResultWithMessage(
+    await this.sendCallResultWithMessage(
       message,
       {} as SecurityEventNotificationResponse,
     );

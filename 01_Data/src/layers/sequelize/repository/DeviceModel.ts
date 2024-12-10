@@ -156,7 +156,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     // TODO discuss & verify appropriate way to remove associations between components and variables (not currently possible)
 
     // This can happen asynchronously
-    this.componentVariable.readOrCreateByQuery({
+    await this.componentVariable.readOrCreateByQuery({
       where: { componentId: component.id, variableId: variable.id },
     });
 
@@ -205,7 +205,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
         });
 
         // This can happen asynchronously
-        this.componentVariable.readOrCreateByQuery({
+        await this.componentVariable.readOrCreateByQuery({
           where: { componentId: component.id, variableId: defaultComponentVariable.id },
         });
 
@@ -249,7 +249,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
           isoTimestamp,
         )
       )[0];
-      this.variableStatus.create(
+      await this.variableStatus.create(
         VariableStatus.build(
           {
             value: result.attributeValue,

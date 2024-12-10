@@ -286,7 +286,7 @@ export class EVDriverModule extends AbstractModule {
 
     if (message.payload.idToken.type === IdTokenEnumType.NoAuthorization) {
       response.idTokenInfo.status = AuthorizationStatusEnumType.Accepted;
-      this.sendCallResultWithMessage(message, response);
+      await this.sendCallResultWithMessage(message, response);
       return;
     }
 
@@ -315,11 +315,11 @@ export class EVDriverModule extends AbstractModule {
         response.certificateStatus !==
         AuthorizeCertificateStatusEnumType.Accepted
       ) {
-        this.sendCallResultWithMessage(message, response).then(
-          (messageConfirmation) => {
-            this._logger.debug('Authorize response sent:', messageConfirmation);
-          },
+        const messageConfirmation = await this.sendCallResultWithMessage(
+          message,
+          response,
         );
+        this._logger.debug('Authorize response sent:', messageConfirmation);
         return;
       }
     }
@@ -578,12 +578,13 @@ export class EVDriverModule extends AbstractModule {
     // Create response
     const response: ReservationStatusUpdateResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) =>
-        this._logger.debug(
-          'ReservationStatusUpdate response sent: ',
-          messageConfirmation,
-        ),
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'ReservationStatusUpdate response sent: ',
+      messageConfirmation,
     );
   }
 
@@ -621,13 +622,14 @@ export class EVDriverModule extends AbstractModule {
         },
       );
       // 2. Request charging profiles to get the latest data
-      this.sendCall(
+      await this.sendCall(
         stationId,
         message.context.tenantId,
         CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, ChargingStationSequenceType.getChargingProfiles,
+            message.context.stationId,
+            ChargingStationSequenceType.getChargingProfiles,
           ),
           chargingProfile: {
             chargingProfilePurpose: ChargingProfilePurposeEnumType.TxProfile,

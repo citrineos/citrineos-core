@@ -461,34 +461,32 @@ export class MonitoringModuleApi
       }
     }
     const timestamp = new Date().toISOString();
-    return this._module.deviceModelRepository
-      .createOrUpdateDeviceModelByStationId(
+    const variableAttributes =
+      await this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(
         request.body,
         request.query.stationId,
         timestamp,
-      )
-      .then(async (variableAttributes) => {
-        if (request.query.setOnCharger) {
-          // value set offline, for example: manually via charger ui, or via api other than ocpp
-          for (let variableAttribute of variableAttributes) {
-            variableAttribute = await variableAttribute.reload({
-              include: [Variable, Component],
-            });
-            this._module.deviceModelRepository.updateResultByStationId(
-              {
-                attributeType: variableAttribute.type,
-                attributeStatus: SetVariableStatusEnumType.Accepted,
-                attributeStatusInfo: { reasonCode: 'SetOnCharger' },
-                component: variableAttribute.component,
-                variable: variableAttribute.variable,
-              },
-              request.query.stationId,
-              timestamp,
-            );
-          }
-        }
-        return variableAttributes;
-      });
+      );
+    if (request.query.setOnCharger) {
+      // value set offline, for example: manually via charger ui, or via api other than ocpp
+      for (let variableAttribute of variableAttributes) {
+        variableAttribute = await variableAttribute.reload({
+          include: [Variable, Component],
+        });
+        await this._module.deviceModelRepository.updateResultByStationId(
+          {
+            attributeType: variableAttribute.type,
+            attributeStatus: SetVariableStatusEnumType.Accepted,
+            attributeStatusInfo: { reasonCode: 'SetOnCharger' },
+            component: variableAttribute.component,
+            variable: variableAttribute.variable,
+          },
+          request.query.stationId,
+          timestamp,
+        );
+      }
+    }
+    return variableAttributes;
   }
 
   @AsDataEndpoint(

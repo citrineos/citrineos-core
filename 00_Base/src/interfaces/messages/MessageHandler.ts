@@ -50,7 +50,7 @@ export interface IMessageHandler {
   /**
    * Shuts down the handler. Unregister all handlers and opening up any resources.
    */
-  shutdown(): void;
+  shutdown(): Promise<void>;
 
   get module(): IModule | undefined;
   set module(value: IModule | undefined);

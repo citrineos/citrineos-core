@@ -125,7 +125,8 @@ export class PubSubSender
   /**
    * Interface implementation
    */
-  shutdown(): void {
+  async shutdown(): Promise<void> {
     // Nothing to do
+    return Promise.resolve();
   }
 }

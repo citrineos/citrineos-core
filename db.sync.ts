@@ -6,12 +6,12 @@ import { systemConfig } from './Server/src/config';
 const sequelize = DefaultSequelizeInstance.getInstance(systemConfig);
 
 const syncDatabase = async () => {
-  try {
-    await sequelize.sync({ alter: true }); // Use { force: true } for dropping and recreating tables
-    console.log('Database synchronized successfully');
-  } catch (error) {
-    console.error('Error synchronizing database:', error);
-  }
+  await sequelize.sync({ alter: true }); // Use { force: true } for dropping and recreating tables
+  console.log('Database synchronized successfully');
 };
 
-syncDatabase().then();
+syncDatabase()
+  .then()
+  .catch((error) => {
+    console.error('Error synchronizing database:', error);
+  });

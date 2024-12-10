@@ -185,12 +185,12 @@ export class CertificatesModule extends AbstractModule {
           request.iso15118SchemaVersion,
           request.exiRequest,
         );
-      this.sendCallResultWithMessage(message, {
+      await this.sendCallResultWithMessage(message, {
         status: Iso15118EVCertificateStatusEnumType.Accepted,
         exiResponse: exiResponse,
       } as Get15118EVCertificateResponse);
     } catch (error) {
-      this.sendCallResultWithMessage(message, {
+      await this.sendCallResultWithMessage(message, {
         status: Iso15118EVCertificateStatusEnumType.Failed,
         statusInfo: {
           reasonCode: ErrorCode.GenericError,
@@ -219,13 +219,13 @@ export class CertificatesModule extends AbstractModule {
         ocspRequest,
         reqData.responderURL,
       );
-      this.sendCallResultWithMessage(message, {
+      await this.sendCallResultWithMessage(message, {
         status: GetCertificateStatusEnumType.Accepted,
         ocspResponse: ocspResponse,
       } as GetCertificateStatusResponse);
     } catch (error) {
       this._logger.error(`GetCertificateStatus failed: ${error}`);
-      this.sendCallResultWithMessage(message, {
+      await this.sendCallResultWithMessage(message, {
         status: GetCertificateStatusEnumType.Failed,
         statusInfo: { reasonCode: ErrorCode.GenericError },
       } as GetCertificateStatusResponse);
@@ -247,7 +247,7 @@ export class CertificatesModule extends AbstractModule {
     //  Despite explicitly saying in the protocol "The CSMS may do some checks on the CSR"
     //  So it is necessary to accept before checking the csr. when this is fixed, this line can be removed
     //  And the other sendCallResultWithMessage for SignCertificateResponse can be uncommented
-    this.sendCallResultWithMessage(message, {
+    await this.sendCallResultWithMessage(message, {
       status: GenericStatusEnumType.Accepted,
     } as SignCertificateResponse);
 
@@ -281,7 +281,7 @@ export class CertificatesModule extends AbstractModule {
     //   status: GenericStatusEnumType.Accepted,
     // } as SignCertificateResponse);
 
-    this.sendCall(
+    await this.sendCall(
       stationId,
       message.context.tenantId,
       CallAction.CertificateSigned,

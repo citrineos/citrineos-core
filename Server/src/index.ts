@@ -154,17 +154,29 @@ export class CitrineOSServer {
     this._cache = this.initCache(cache);
 
     // Initialize Swagger if enabled
-    this.initSwagger();
+    this.initSwagger()
+      .then()
+      .catch((error) =>
+        this._logger.error('Could not initialize swagger', error),
+      );
 
     // Add Directus Message API flow creation if enabled
     let directusUtil: DirectusUtil | undefined = undefined;
     if (this._config.util.directus?.generateFlows) {
       directusUtil = new DirectusUtil(this._config, this._logger);
       this._server.addHook('onRoute', (routeOptions: RouteOptions) => {
-        directusUtil!.addDirectusMessageApiFlowsFastifyRouteHook(
-          routeOptions,
-          this._server.getSchemas(),
-        );
+        directusUtil!
+          .addDirectusMessageApiFlowsFastifyRouteHook(
+            routeOptions,
+            this._server.getSchemas(),
+          )
+          .then()
+          .catch((error) => {
+            this._logger.error(
+              'Could not add Directus Message API flow',
+              error,
+            );
+          });
       });
 
       this._server.addHook('onReady', async () => {
@@ -175,7 +187,8 @@ export class CitrineOSServer {
     const s3Storage = new S3Storage(this._config);
 
     // Initialize File Access Implementation
-    this._fileAccess = this.initFileAccess(s3Storage, directusUtil);
+    this._fileAccess =
+      fileAccess || this.initFileAccess(s3Storage, directusUtil);
 
     // Register AJV for schema validation
     this.registerAjv();
@@ -196,21 +209,23 @@ export class CitrineOSServer {
     await this.initDb();
 
     // Set up shutdown handlers
-    process.on('SIGINT', this.shutdown.bind(this));
-    process.on('SIGTERM', this.shutdown.bind(this));
-    process.on('SIGQUIT', this.shutdown.bind(this));
+    for (const event of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
+      process.on(event, async () => {
+        await this.shutdown();
+      });
+    }
   }
 
-  shutdown() {
+  async shutdown() {
     // todo shut down depending on setup
     // Shut down all modules and central system
-    this.modules.forEach((module) => {
-      module.shutdown();
-    });
-    this._networkConnection?.shutdown();
+    for (const module of this.modules) {
+      await module.shutdown();
+    }
+    await this._networkConnection?.shutdown();
 
     // Shutdown server
-    this._server.close().then(); // todo async?
+    await this._server.close();
 
     setTimeout(() => {
       console.log('Exiting...');
@@ -241,34 +256,33 @@ export class CitrineOSServer {
   }
 
   protected async _syncWebsocketConfig() {
-    this._config.util.networkConnection.websocketServers.forEach(
-      async (websocketServerConfig) => {
-        const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
-          where: {
-            id: websocketServerConfig.id,
-          },
-        });
-        serverNetworkProfile.host = websocketServerConfig.host;
-        serverNetworkProfile.port = websocketServerConfig.port;
-        serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
-        serverNetworkProfile.protocol = websocketServerConfig.protocol;
-        serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
-        serverNetworkProfile.securityProfile =
-          websocketServerConfig.securityProfile;
-        serverNetworkProfile.allowUnknownChargingStations =
-          websocketServerConfig.allowUnknownChargingStations;
-        serverNetworkProfile.tlsKeyFilePath =
-          websocketServerConfig.tlsKeyFilePath;
-        serverNetworkProfile.tlsCertificateChainFilePath =
-          websocketServerConfig.tlsCertificateChainFilePath;
-        serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath =
-          websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
-        serverNetworkProfile.rootCACertificateFilePath =
-          websocketServerConfig.rootCACertificateFilePath;
+    for (const websocketServerConfig of this._config.util.networkConnection
+      .websocketServers) {
+      const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
+        where: {
+          id: websocketServerConfig.id,
+        },
+      });
+      serverNetworkProfile.host = websocketServerConfig.host;
+      serverNetworkProfile.port = websocketServerConfig.port;
+      serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
+      serverNetworkProfile.protocol = websocketServerConfig.protocol;
+      serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
+      serverNetworkProfile.securityProfile =
+        websocketServerConfig.securityProfile;
+      serverNetworkProfile.allowUnknownChargingStations =
+        websocketServerConfig.allowUnknownChargingStations;
+      serverNetworkProfile.tlsKeyFilePath =
+        websocketServerConfig.tlsKeyFilePath;
+      serverNetworkProfile.tlsCertificateChainFilePath =
+        websocketServerConfig.tlsCertificateChainFilePath;
+      serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath =
+        websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
+      serverNetworkProfile.rootCACertificateFilePath =
+        websocketServerConfig.rootCACertificateFilePath;
 
-        serverNetworkProfile.save();
-      },
-    );
+      await serverNetworkProfile.save();
+    }
   }
 
   protected _createSender(): IMessageSender {
@@ -375,9 +389,9 @@ export class CitrineOSServer {
     );
   }
 
-  private initSwagger() {
+  private async initSwagger() {
     if (this._config.util.swagger) {
-      initSwagger(this._config, this._server);
+      await initSwagger(this._config, this._server);
     }
   }
 

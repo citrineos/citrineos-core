@@ -527,8 +527,8 @@ export class ConfigurationModuleApi
     stationId: string,
   ): Promise<VariableAttribute[]> {
     const timestamp = new Date().toISOString();
-    return await this._module.deviceModelRepository
-      .createOrUpdateDeviceModelByStationId(
+    const variableAttributes =
+      await this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(
         {
           component: {
             name: 'SecurityCtrlr',
@@ -550,25 +550,23 @@ export class ConfigurationModuleApi
         },
         stationId,
         timestamp,
-      )
-      .then(async (variableAttributes) => {
-        for (let variableAttribute of variableAttributes) {
-          variableAttribute = await variableAttribute.reload({
-            include: [Variable, Component],
-          });
-          this._module.deviceModelRepository.updateResultByStationId(
-            {
-              attributeType: variableAttribute.type,
-              attributeStatus: SetVariableStatusEnumType.Accepted,
-              attributeStatusInfo: { reasonCode: 'SetOnCharger' },
-              component: variableAttribute.component,
-              variable: variableAttribute.variable,
-            },
-            stationId,
-            timestamp,
-          );
-        }
-        return variableAttributes;
+      );
+    for (let variableAttribute of variableAttributes) {
+      variableAttribute = await variableAttribute.reload({
+        include: [Variable, Component],
       });
+      await this._module.deviceModelRepository.updateResultByStationId(
+        {
+          attributeType: variableAttribute.type,
+          attributeStatus: SetVariableStatusEnumType.Accepted,
+          attributeStatusInfo: { reasonCode: 'SetOnCharger' },
+          component: variableAttribute.component,
+          variable: variableAttribute.variable,
+        },
+        stationId,
+        timestamp,
+      );
+    }
+    return variableAttributes;
   }
 }

@@ -13,6 +13,7 @@ import {
   SystemConfig,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
+
 type Configuration = SystemConfig['modules']['configuration'];
 
 export class BootNotificationService {
@@ -161,15 +162,15 @@ export class BootNotificationService {
     }
   }
 
-  createGetBaseReportRequest(
+  async createGetBaseReportRequest(
     stationId: string,
     maxCachingSeconds: number,
-  ): GetBaseReportRequest {
+  ): Promise<GetBaseReportRequest> {
     // OCTT tool does not meet B07.FR.04; instead always sends requestId === 0
     // Commenting out this line, using requestId === 0 until fixed (10/26/2023)
     // const requestId = Math.floor(Math.random() * ConfigurationModule.GET_BASE_REPORT_REQUEST_ID_MAX);
     const requestId = 0;
-    this._cache.set(
+    await this._cache.set(
       requestId.toString(),
       'ongoing',
       stationId,
