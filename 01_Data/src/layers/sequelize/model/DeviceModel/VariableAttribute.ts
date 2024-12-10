@@ -53,7 +53,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
         const valueType = (this as VariableAttribute).dataType;
         switch (valueType) {
           case DataEnumType.passwordString:
-            valueString = CryptoUtils.getSaltedHash(valueString);
+            valueString = CryptoUtils.getPasswordHash(valueString);
             break;
           default:
             // Do nothing

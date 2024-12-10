@@ -18,12 +18,12 @@ type PasswordPair = {
 describe('BasicAuthenticationFilter', () => {
   const password: PasswordPair = {
     plaintext: 'SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3',
-    hash: 'PBKDF2:1000:salt:8a9ee05c38e81af180a43e5a707cfd70bf3624400e7c986ab4b8ef9c7a7647cd17a3c0f1860ebe08f7173dc1414c13f5a25528b08e9facd16fa4d089b35ba808',
+    hash: 'PBKDF2:1000:64:sha512:salt:8a9ee05c38e81af180a43e5a707cfd70bf3624400e7c986ab4b8ef9c7a7647cd17a3c0f1860ebe08f7173dc1414c13f5a25528b08e9facd16fa4d089b35ba808',
   };
 
   const anotherPassword: PasswordPair = {
     plaintext: '_Oec8yF4r1hH6ildo4yvM25:SU2hpL*jobDskYos',
-    hash: 'PBKDF2:1000:salt:7f87adf79f3050b0639c079c30c6696efaa1a84b437907de7f6545aac15322ee29a2d9cd66d459d41de9af56b2834c2a7cd3c3f7fa897db3d8f94a3a1c147ca2',
+    hash: 'PBKDF2:1000:64:sha512:salt:7f87adf79f3050b0639c079c30c6696efaa1a84b437907de7f6545aac15322ee29a2d9cd66d459d41de9af56b2834c2a7cd3c3f7fa897db3d8f94a3a1c147ca2',
   };
 
   let deviceModelRepository: jest.Mocked<IDeviceModelRepository>;

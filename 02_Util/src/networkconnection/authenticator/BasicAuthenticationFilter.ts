@@ -56,7 +56,7 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
         if (r && r[0]) {
           const hashedPassword = r[0].value;
           if (hashedPassword) {
-            return CryptoUtils.isHashMatch(hashedPassword, password);
+            return CryptoUtils.isPasswordMatch(hashedPassword, password);
           }
         }
         this._logger.warn('Has no password', username);
