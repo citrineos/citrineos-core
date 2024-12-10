@@ -15,21 +15,21 @@ import {
  */
 export interface IEVDriverModuleApi {
   requestStartTransaction(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: RequestStartTransactionRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation>;
+  ): Promise<IMessageConfirmation[]>;
   requestStopTransaction(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: RequestStopTransactionRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation>;
+  ): Promise<IMessageConfirmation[]>;
   clearCache(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: ClearCacheRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation>;
+  ): Promise<IMessageConfirmation[]>;
 }

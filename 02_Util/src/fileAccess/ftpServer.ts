@@ -5,6 +5,9 @@
 import { IFileAccess } from '@citrineos/base';
 
 export class FtpServer implements IFileAccess {
+  getFileURL(): string {
+    throw new Error('Method not implemented.');
+  }
   getFile(id: string): Promise<Buffer> {
     // TODO: implement the logic
     throw new Error(`Get file ${id} not yet implemented.`);
