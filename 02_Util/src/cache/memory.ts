@@ -140,24 +140,6 @@ export class MemoryCache implements ICache {
     return null;
   }
 
-  getSync<T>(
-    key: string,
-    namespace?: string,
-    classConstructor?: () => ClassConstructor<T>,
-  ): T | null {
-    namespace = namespace || 'default';
-    const namespaceKey = `${namespace}:${key}`;
-    const value = this._cache.get(namespaceKey);
-    if (value) {
-      if (classConstructor) {
-        return plainToInstance(classConstructor(), JSON.parse(value));
-      }
-      return value as T;
-    } else {
-      return null;
-    }
-  }
-
   async set(
     key: string,
     value: string,
@@ -193,30 +175,6 @@ export class MemoryCache implements ICache {
     if (this._cache.has(namespaceKey)) {
       return false;
     }
-    this._cache.set(namespaceKey, value);
-    if (this._timeoutMap.has(namespaceKey)) {
-      clearTimeout(this._timeoutMap.get(namespaceKey));
-    }
-    if (expireSeconds) {
-      this._timeoutMap.set(
-        namespaceKey,
-        setTimeout(() => {
-          this._cache.delete(namespaceKey);
-        }, expireSeconds * 1000),
-      );
-    }
-    this.resolveOnChange(namespaceKey, value);
-    return true;
-  }
-
-  setSync(
-    key: string,
-    value: string,
-    namespace?: string,
-    expireSeconds?: number,
-  ): boolean {
-    namespace = namespace || 'default';
-    const namespaceKey = `${namespace}:${key}`;
     this._cache.set(namespaceKey, value);
     if (this._timeoutMap.has(namespaceKey)) {
       clearTimeout(this._timeoutMap.get(namespaceKey));

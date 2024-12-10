@@ -1,0 +1,18 @@
+table:
+  name: VariableMonitorings
+  schema: public
+object_relationships:
+  - name: Component
+    using:
+      foreign_key_constraint_on: componentId
+  - name: Variable
+    using:
+      foreign_key_constraint_on: variableId
+array_relationships:
+  - name: VariableMonitoringStatuses
+    using:
+      foreign_key_constraint_on:
+        column: variableMonitoringId
+        table:
+          name: VariableMonitoringStatuses
+          schema: public

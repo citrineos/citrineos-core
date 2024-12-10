@@ -42,8 +42,7 @@ import {
   sequelize,
   Variable,
 } from '@citrineos/data';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
-import deasyncPromise from 'deasync-promise';
+import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './services';
 
@@ -66,7 +65,7 @@ export class ReportingModule extends AbstractModule {
    * Fields
    */
 
-  protected _requests: CallAction[] = [
+  _requests: CallAction[] = [
     CallAction.LogStatusNotification,
     CallAction.NotifyCustomerInformation,
     CallAction.NotifyReport,
@@ -74,7 +73,7 @@ export class ReportingModule extends AbstractModule {
     CallAction.NotifyMonitoringReport,
   ];
 
-  protected _responses: CallAction[] = [
+  _responses: CallAction[] = [
     CallAction.CustomerInformation,
     CallAction.GetLog,
     CallAction.GetReport,
@@ -132,15 +131,6 @@ export class ReportingModule extends AbstractModule {
       logger,
     );
 
-    const timer = new Timer();
-    this._logger.info('Initializing...');
-
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
     this._deviceModelRepository =
       deviceModelRepository ||
       new sequelize.SequelizeDeviceModelRepository(config, this._logger);
@@ -153,8 +143,6 @@ export class ReportingModule extends AbstractModule {
     this._deviceModelService = new DeviceModelService(
       this._deviceModelRepository,
     );
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
   get deviceModelRepository(): IDeviceModelRepository {
@@ -282,7 +270,7 @@ export class ReportingModule extends AbstractModule {
         await variableAttribute.reload({
           include: [Component, Variable],
         });
-        this._deviceModelRepository.updateResultByStationId(
+        await this._deviceModelRepository.updateResultByStationId(
           {
             attributeType: variableAttribute.type,
             attributeStatus: SetVariableStatusEnumType.Accepted,
