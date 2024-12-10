@@ -63,11 +63,12 @@ export class PubSubReceiver extends AbstractMessageHandler {
   /**
    * The init method will create a subscription for each action in the {@link CallAction} array.
    *
+   * @param identifier
    * @param actions All actions to subscribe to
-   * @param stateFilter Optional filter for the subscription via {@link MessageState}, must be used to prevent looping of messages in Google PubSub
+   * @param filter
    * @returns
    */
-  subscribe(
+  async subscribe(
     identifier: string,
     actions?: CallAction[],
     filter?: { [k: string]: string },
@@ -75,34 +76,29 @@ export class PubSubReceiver extends AbstractMessageHandler {
     const topicName = `${this._config.util.messageBroker.pubsub?.topicPrefix}-${this._config.util.messageBroker.pubsub?.topicName}`;
 
     // Check if topic exists, if not create it
-    return this._client
-      .topic(topicName)
-      .exists()
-      .then(([exists]) => {
-        if (exists) {
-          return this._client.topic(topicName);
-        } else {
-          return this._client.createTopic(topicName).then(([newTopic]) => {
-            this._logger.debug(`Topic ${newTopic.name} created.`);
-            return newTopic;
-          });
-        }
-      })
-      .then((topic) =>
-        this._subscribe(identifier, topic, actions, filter).then((name) => {
-          // TODO: fix issue with multiple subscriptions overwriting cache values
-          this._cache.set(
-            `${PubSubReceiver.CACHE_PREFIX}${identifier}`,
-            name,
-            CacheNamespace.Other,
-          );
-          return name !== undefined;
-        }),
-      )
-      .catch((error) => {
-        this._logger.error(error);
-        return false;
-      });
+    try {
+      const originalTopic = this._client.topic(topicName);
+      const [exists] = await originalTopic.exists();
+      let topic: Topic;
+      if (exists) {
+        topic = this._client.topic(topicName);
+      } else {
+        const [newTopic] = await this._client.createTopic(topicName);
+        this._logger.debug(`Topic ${newTopic.name} created.`);
+        topic = newTopic;
+      }
+      const name = await this._subscribe(identifier, topic, actions, filter);
+      // TODO: fix issue with multiple subscriptions overwriting cache values
+      await this._cache.set(
+        `${PubSubReceiver.CACHE_PREFIX}${identifier}`,
+        name,
+        CacheNamespace.Other,
+      );
+      return name !== undefined;
+    } catch (error) {
+      this._logger.error('Error while creating subscription:', error);
+      return false;
+    }
   }
 
   unsubscribe(identifier: string): Promise<boolean> {
@@ -134,14 +130,12 @@ export class PubSubReceiver extends AbstractMessageHandler {
   /**
    * Shutdown the receiver by closing all subscriptions and deleting them.
    */
-  shutdown() {
-    this._subscriptions.forEach((subscription) => {
-      subscription.close().then(() => {
-        subscription.delete().then(() => {
-          this._logger.debug(`Subscription ${subscription.name} deleted.`);
-        });
-      });
-    });
+  async shutdown(): Promise<void> {
+    for (const subscription of this._subscriptions) {
+      await subscription.close();
+      await subscription.delete();
+      this._logger.debug(`Subscription ${subscription.name} deleted.`);
+    }
   }
 
   /**
