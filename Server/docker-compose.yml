@@ -96,10 +96,6 @@ services:
         condition: service_healthy
       localstack:
         condition: service_healthy
-      graphql-engine:
-        condition: service_healthy
-      data-connector-agent:
-        condition: service_healthy
     ports:
       - 8080:8080
       - 8081:8081
@@ -158,11 +154,6 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "localstack-data:/var/lib/localstack"
       - "./scripts/init-localstack.sh:/etc/localstack/init/ready.d/init-localstack.sh"
-    depends_on:
-      amqp-broker:
-        condition: service_healthy
-      ocpp-db:
-        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localstack:4566 || exit 1"]
       interval: 5s
@@ -195,12 +186,12 @@ services:
       data-connector-agent:
         condition: service_healthy
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8080/healthz']
+      test: ['CMD', 'curl', '-f', 'http://graphql-engine:8080/healthz']
       interval: 5s
       timeout: 10s
-      retries: 10
+      retries: 20
       start_period: 5s
-    
+
   data-connector-agent:
     image: hasura/graphql-data-connector:v2.40.3
     restart: always
@@ -214,20 +205,13 @@ services:
     depends_on:
       ocpp-db:
         condition: service_healthy
-      amqp-broker:
-        condition: service_healthy
-      directus:
-        condition: service_healthy
-      localstack:
-        condition: service_healthy
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8081/api/v1/athena/health']
+      test: ['CMD', 'curl', '-f', 'http://data-connector-agent:8081/api/v1/athena/health']
       interval: 5s
       timeout: 10s
-      retries: 5
+      retries: 10
       start_period: 5s
 
 volumes:
   localstack-data:
     driver: local
-  db_data:
