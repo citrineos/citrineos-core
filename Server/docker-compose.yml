@@ -193,7 +193,7 @@ services:
       test: ['CMD', 'curl', '-f', 'http://graphql-engine:8080/healthz']
       interval: 5s
       timeout: 10s
-      retries: 10
+      retries: 20
       start_period: 5s
 
   data-connector-agent:
@@ -213,10 +213,9 @@ services:
       test: ['CMD', 'curl', '-f', 'http://data-connector-agent:8081/api/v1/athena/health']
       interval: 5s
       timeout: 10s
-      retries: 5
+      retries: 10
       start_period: 5s
 
 volumes:
   localstack-data:
     driver: local
-  db_data:
