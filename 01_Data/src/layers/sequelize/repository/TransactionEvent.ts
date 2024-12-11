@@ -208,9 +208,11 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
           {
             model: TransactionEvent,
             as: Transaction.TRANSACTION_EVENTS_ALIAS,
+            required: true,
             include: [
               {
                 model: IdToken,
+                required: true,
                 where: {
                   idToken: idToken.idToken,
                   type: idToken.type,
