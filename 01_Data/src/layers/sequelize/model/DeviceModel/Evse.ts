@@ -6,7 +6,17 @@
 import { type CustomDataType, type EVSEType, Namespace } from '@citrineos/base';
 import { AutoIncrement, Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript';
 
-@Table
+@Table({
+  indexes: [
+    {
+      unique: true,
+      fields: ['id'],
+      where: {
+        connectorId: null,
+      },
+    },
+  ],
+})
 export class Evse extends Model implements EVSEType {
   static readonly MODEL_NAME: string = Namespace.EVSEType;
 
