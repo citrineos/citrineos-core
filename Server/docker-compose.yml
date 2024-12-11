@@ -96,10 +96,6 @@ services:
         condition: service_healthy
       localstack:
         condition: service_healthy
-      graphql-engine:
-        condition: service_healthy
-      data-connector-agent:
-        condition: service_healthy
     ports:
       - 8080:8080
       - 8081:8081
