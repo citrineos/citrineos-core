@@ -178,6 +178,8 @@ Once Docker is running, the following services should be available:
   - `5432`: sql tcp connection
 - **Directus** (service name: directus) on port 8055 with endpoints
   - `:8055/admin`: web interface (login = admin@citrineos.com:CitrineOS!)
+- **Localstack** (service name: localstack) on port 4566 for mocking aws services
+  - `:4566`: unified AWS service endpoint
 
 These three services are defined in `docker-compose.yml` and they
 live inside the docker network `docker_default` with their respective
@@ -186,6 +188,26 @@ ports. By default these ports are directly accessible by using
 
 So, if you want to access the **amqp-broker** default management port via your
 localhost, you need to access `localhost:15672`.
+
+## File Access Configuration
+
+The file access system can be configured by modifying the `fileAccess` property in the configuration file. By default, CitrineOS uses `s3Storage` from LocalStack.
+
+To use Directus as the file access system instead of LocalStack, perform the following steps:
+
+1. Update the configuration file `Server/src/config/envs/[local/docker].ts` to:
+
+   ```javascript
+   fileAccess: {
+       currentFileAccess: 'directus',
+   },
+   ```
+
+2. Start Directus using the specific Docker Compose file:
+
+   ```shell
+   docker-compose -f docker-compose-directus.yml up -d
+   ```
 
 ## Generating OCPP Interfaces
 

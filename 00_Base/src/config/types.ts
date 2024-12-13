@@ -158,6 +158,22 @@ export const systemConfigInputSchema = z.object({
       .refine((obj) => obj.pubsub || obj.kafka || obj.amqp, {
         message: 'A message broker implementation must be set',
       }),
+    fileAccess: z
+      .object({
+        currentFileAccess: z.string().default('localstack'),
+        s3Storage: z
+          .object({
+            endpointHost: z.string().default('localstack'),
+            endpointPort: z.number().int().positive().default(4566),
+            accessKeyId: z.string().default('null'),
+            secretAccessKey: z.string().default('null'),
+            region: z.string(),
+            bucketName: z.string().default('citrineos-s3-bucket'),
+            s3ForcePathStyle: z.boolean().default(true),
+          })
+          .optional(),
+      })
+      .optional(),
     swagger: z
       .object({
         path: z.string().default('/docs').optional(),
@@ -177,17 +193,6 @@ export const systemConfigInputSchema = z.object({
       })
       .refine((obj) => obj.generateFlows && !obj.host, {
         message: 'Directus host must be set if generateFlows is true',
-      })
-      .optional(),
-    s3Storage: z
-      .object({
-        endpointHost: z.string().default('localstack'),
-        endpointPort: z.number().int().positive().default(4566),
-        accessKeyId: z.string().default('null'),
-        secretAccessKey: z.string().default('null'),
-        region: z.string(),
-        bucketName: z.string().default('citrineos-s3-bucket'),
-        s3ForcePathStyle: z.boolean().default(true),
       })
       .optional(),
     networkConnection: z.object({
@@ -429,6 +434,22 @@ export const systemConfigSchema = z
         .refine((obj) => obj.pubsub || obj.kafka || obj.amqp, {
           message: 'A message broker implementation must be set',
         }),
+      fileAccess: z
+        .object({
+          currentFileAccess: z.string().default('localstack'),
+          s3Storage: z
+            .object({
+              endpointHost: z.string().default('localstack'),
+              endpointPort: z.number().int().positive().default(4566),
+              accessKeyId: z.string().default('null'),
+              secretAccessKey: z.string().default('null'),
+              region: z.string(),
+              bucketName: z.string().default('citrineos-s3-bucket'),
+              s3ForcePathStyle: z.boolean().default(true),
+            })
+            .optional(),
+        })
+        .optional(),
       swagger: z
         .object({
           path: z.string(),
@@ -445,17 +466,6 @@ export const systemConfigSchema = z
           username: z.string().optional(),
           password: z.string().optional(),
           generateFlows: z.boolean(),
-        })
-        .optional(),
-      s3Storage: z
-        .object({
-          endpointHost: z.string().default('localstack'),
-          endpointPort: z.number().int().positive().default(4566),
-          accessKeyId: z.string().default('null'),
-          secretAccessKey: z.string().default('null'),
-          region: z.string(),
-          bucketName: z.string().default('citrineos-s3-bucket'),
-          s3ForcePathStyle: z.boolean().default(true),
         })
         .optional(),
       networkConnection: z.object({

@@ -13,11 +13,13 @@ export class S3Storage implements IFileAccess {
     this._config = config;
 
     this._s3 = new AWS.S3({
-      endpoint: `http://${this._config.util.s3Storage?.endpointHost || 'localstack'}:${this._config.util.s3Storage?.endpointPort || '4566'}`,
+      endpoint: `http://${this._config.util.fileAccess?.s3Storage?.endpointHost || 'localstack'}:${this._config.util.fileAccess?.s3Storage?.endpointPort || '4566'}`,
       accessKeyId:
-        (this._config.util.s3Storage?.accessKeyId as string) || 'null',
+        (this._config.util.fileAccess?.s3Storage?.accessKeyId as string) ||
+        'null',
       secretAccessKey:
-        (this._config.util.s3Storage?.secretAccessKey as string) || 'null',
+        (this._config.util.fileAccess?.s3Storage?.secretAccessKey as string) ||
+        'null',
       s3ForcePathStyle: true,
     });
   }
@@ -27,7 +29,7 @@ export class S3Storage implements IFileAccess {
   }
 
   async getFile(id: string): Promise<Buffer> {
-    const bucketName: string = this._config.util.s3Storage
+    const bucketName: string = this._config.util.fileAccess?.s3Storage
       ?.bucketName as string;
 
     try {
@@ -53,7 +55,7 @@ export class S3Storage implements IFileAccess {
     content: Buffer,
     filePath?: string,
   ): Promise<string> {
-    const bucketName: string = this._config.util.s3Storage
+    const bucketName: string = this._config.util.fileAccess?.s3Storage
       ?.bucketName as string;
     try {
       const result = await this._s3

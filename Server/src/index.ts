@@ -34,7 +34,7 @@ import {
   RedisCache,
   UnknownStationFilter,
   WebsocketNetworkConnection,
-  S3Storage
+  S3Storage,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import addFormats from 'ajv-formats';
@@ -182,10 +182,8 @@ export class CitrineOSServer {
       });
     }
 
-    const s3Storage = new S3Storage(this._config);
-
     // Initialize File Access Implementation
-    this._fileAccess = this.initFileAccess(s3Storage, directusUtil);
+    this._fileAccess = this.initFileAccess(directusUtil);
 
     // Register AJV for schema validation
     this.registerAjv();
@@ -663,12 +661,17 @@ export class CitrineOSServer {
   }
 
   private initFileAccess(
-    fileAccess?: IFileAccess,
     directus?: IFileAccess,
   ): IFileAccess {
-    return (
-      fileAccess || directus || new DirectusUtil(this._config, this._logger)
-    );
+    if (this._config.util.fileAccess?.currentFileAccess == 's3Storage') {
+      return new S3Storage(this._config);
+    } else if (this._config.util.fileAccess?.currentFileAccess == 'directus') {
+      return directus || new DirectusUtil(this._config, this._logger);
+    } else {
+      return (
+        new S3Storage(this._config) || directus || new DirectusUtil(this._config, this._logger)
+      );
+    }
   }
 
   private initRepositoryStore() {
