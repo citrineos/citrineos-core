@@ -5,7 +5,6 @@
 
 import {
   type AbstractModule,
-  type AbstractModuleApi,
   Ajv,
   EventGroup,
   eventGroupFromString,
@@ -56,6 +55,8 @@ import {
 import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import {
+  InternalSmartCharging,
+  ISmartCharging,
   SmartChargingModule,
   SmartChargingModuleApi,
 } from '@citrineos/smartcharging';
@@ -75,18 +76,7 @@ import {
   MessageRouterImpl,
   WebhookDispatcher,
 } from '@citrineos/ocpprouter';
-import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
-import {
-  InternalSmartCharging,
-  ISmartCharging,
-} from '@citrineos/smartcharging';
 import cors from '@fastify/cors';
-
-interface ModuleConfig {
-  ModuleClass: new (...args: any[]) => AbstractModule;
-  ModuleApiClass: new (...args: any[]) => AbstractModuleApi<any>;
-  configModule: any; // todo type?
-}
 
 export class CitrineOSServer {
   /**
@@ -193,13 +183,13 @@ export class CitrineOSServer {
     this.initIdGenerator();
     this.initCertificateAuthorityService();
     this.initSmartChargingService();
-
-    // Initialize module & API
-    // Always initialize API after SwaggerUI
-    this.initSystem();
   }
 
   async initialize(): Promise<void> {
+    // Initialize module & API
+    // Always initialize API after SwaggerUI
+    await this.initSystem();
+
     // Initialize database
     await this.initDb();
 
@@ -229,7 +219,7 @@ export class CitrineOSServer {
   async run(): Promise<void> {
     try {
       await this.initialize();
-      this._syncWebsocketConfig();
+      await this._syncWebsocketConfig();
       await this._server
         .listen({
           host: this.host,
@@ -311,12 +301,57 @@ export class CitrineOSServer {
   }
 
   private initLogger() {
+    const isCloud = process.env.DEPLOYMENT_TARGET === 'cloud';
     return new Logger<ILogObj>({
       name: 'CitrineOS Logger',
       minLevel: systemConfig.logLevel,
       hideLogPositionForProduction: systemConfig.env === 'production',
+      overwrite:
+        systemConfig &&
+        systemConfig.logLevel !== undefined &&
+        systemConfig.logLevel <= 2
+          ? undefined
+          : {
+              transportJSON: (logObj: any) => {
+                function jsonStringifyRecursive(obj: unknown) {
+                  const cache = new Set();
+                  return JSON.stringify(obj, (key, value) => {
+                    if (typeof value === 'object' && value !== null) {
+                      if (cache.has(value)) {
+                        // Circular reference found, discard key
+                        return '[Circular]';
+                      }
+                      // Store value in our collection
+                      cache.add(value);
+                    }
+                    if (typeof value === 'bigint') {
+                      return `${value}`;
+                    }
+                    if (typeof value === 'undefined') {
+                      return '[undefined]';
+                    }
+                    return value;
+                  });
+                }
+                if (logObj._meta) {
+                  const { path, name, date, logLevelId, logLevelName } =
+                    logObj._meta;
+                  const { _meta, ...rest } = logObj;
+                  logObj = {
+                    ...rest,
+                    path: path?.fullFilePath,
+                    name,
+                    date,
+                    logLevelId,
+                    logLevelName,
+                  };
+                }
+                console.log(jsonStringifyRecursive(logObj));
+              },
+            },
       // Disable colors for cloud deployment as some cloud logging environments such as cloudwatch can not interpret colors
-      stylePrettyLogs: process.env.DEPLOYMENT_TARGET !== 'cloud',
+      stylePrettyLogs: !isCloud,
+      type: isCloud ? 'json' : 'pretty',
     });
   }
 
@@ -407,144 +442,38 @@ export class CitrineOSServer {
     this.port = this._config.centralSystem.port;
   }
 
-  private initAllModules() {
+  private async initHandlersAndAddModule(module: AbstractModule) {
+    await module.initHandlers();
+    this.modules.push(module);
+  }
+
+  private async initAllModules() {
     if (this._config.modules.certificates) {
-      const module = new CertificatesModule(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.certificateRepository,
-        this._repositoryStore.locationRepository,
-      );
-      this.modules.push(module);
-      this.apis.push(
-        new CertificatesModuleApi(
-          module,
-          this._server,
-          this._fileAccess,
-          this._networkConnection!,
-          this._config.util.networkConnection.websocketServers,
-          this._logger,
-        ),
-      );
+      await this.initCertificatesModule();
     }
 
     if (this._config.modules.configuration) {
-      const module = new ConfigurationModule(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.bootRepository,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.messageInfoRepository,
-        this._idGenerator,
-      );
-      this.modules.push(module);
-      this.apis.push(
-        new ConfigurationModuleApi(module, this._server, this._logger),
-      );
+      await this.initConfigurationModule();
     }
 
     if (this._config.modules.evdriver) {
-      const module = new EVDriverModule(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.authorizationRepository,
-        this._repositoryStore.localAuthListRepository,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.tariffRepository,
-        this._repositoryStore.transactionEventRepository,
-        this._repositoryStore.chargingProfileRepository,
-        this._repositoryStore.reservationRepository,
-        this._repositoryStore.callMessageRepository,
-        this._certificateAuthorityService,
-        [],
-        this._idGenerator,
-      );
-      this.modules.push(module);
-      this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
+      await this.initEVDriverModule();
     }
 
     if (this._config.modules.monitoring) {
-      const module = new MonitoringModule(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.variableMonitoringRepository,
-        this._idGenerator,
-      );
-      this.modules.push(module);
-      this.apis.push(
-        new MonitoringModuleApi(module, this._server, this._logger),
-      );
+      await this.initMonitoringModule();
     }
 
     if (this._config.modules.reporting) {
-      const module = new ReportingModule(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.securityEventRepository,
-        this._repositoryStore.variableMonitoringRepository,
-      );
-      this.modules.push(module);
-      this.apis.push(
-        new ReportingModuleApi(module, this._server, this._logger),
-      );
+      await this.initReportingModule();
     }
 
     if (this._config.modules.smartcharging) {
-      const module = new SmartChargingModule(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.transactionEventRepository,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.chargingProfileRepository,
-        this._smartChargingService,
-        this._idGenerator,
-      );
-      this.modules.push(module);
-      this.apis.push(
-        new SmartChargingModuleApi(module, this._server, this._logger),
-      );
+      await this.initSmartChargingModule();
     }
 
     if (this._config.modules.transactions) {
-      const module = new TransactionsModule(
-        this._config,
-        this._cache,
-        this._fileAccess,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.transactionEventRepository,
-        this._repositoryStore.authorizationRepository,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.componentRepository,
-        this._repositoryStore.locationRepository,
-        this._repositoryStore.tariffRepository,
-      );
-      this.modules.push(module);
-      this.apis.push(
-        new TransactionsModuleApi(module, this._server, this._logger),
-      );
+      await this.initTransactionsModule();
     }
 
     // TODO: take actions to make sure module has correct subscriptions and log proof
@@ -554,109 +483,178 @@ export class CitrineOSServer {
     }
   }
 
-  private initModule(moduleConfig: ModuleConfig) {
-    if (moduleConfig.configModule !== null) {
-      const module = new moduleConfig.ModuleClass(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
+  private async initCertificatesModule() {
+    const module = new CertificatesModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.certificateRepository,
+      this._repositoryStore.locationRepository,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new CertificatesModuleApi(
+        module,
+        this._server,
+        this._fileAccess,
+        this._networkConnection!,
+        this._config.util.networkConnection.websocketServers,
         this._logger,
-      );
-      this.modules.push(module);
-      if (moduleConfig.ModuleApiClass === CertificatesModuleApi) {
-        this.apis.push(
-          new moduleConfig.ModuleApiClass(
-            module,
-            this._server,
-            this._fileAccess,
-            this._networkConnection,
-            this._config.util.networkConnection.websocketServers,
-            this._logger,
-          ),
-        );
-      } else {
-        this.apis.push(
-          new moduleConfig.ModuleApiClass(module, this._server, this._logger),
-        );
-      }
-
-      // TODO: take actions to make sure module has correct subscriptions and log proof
-      this._logger?.info(`${moduleConfig.ModuleClass.name} module started...`);
-      if (this.eventGroup !== EventGroup.All) {
-        this.host = moduleConfig.configModule.host as string;
-        this.port = moduleConfig.configModule.port as number;
-      }
-    } else {
-      throw new Error(`No config for ${this.eventGroup} module`);
-    }
+      ),
+    );
   }
 
-  private getModuleConfig(): ModuleConfig {
-    switch (this.eventGroup) {
+  private async initConfigurationModule() {
+    const module = new ConfigurationModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.bootRepository,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.messageInfoRepository,
+      this._idGenerator,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new ConfigurationModuleApi(module, this._server, this._logger),
+    );
+  }
+
+  private async initEVDriverModule() {
+    const module = new EVDriverModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.authorizationRepository,
+      this._repositoryStore.localAuthListRepository,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.tariffRepository,
+      this._repositoryStore.transactionEventRepository,
+      this._repositoryStore.chargingProfileRepository,
+      this._repositoryStore.reservationRepository,
+      this._repositoryStore.callMessageRepository,
+      this._certificateAuthorityService,
+      [],
+      this._idGenerator,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
+  }
+
+  private async initMonitoringModule() {
+    const module = new MonitoringModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.variableMonitoringRepository,
+      this._idGenerator,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(new MonitoringModuleApi(module, this._server, this._logger));
+  }
+
+  private async initReportingModule() {
+    const module = new ReportingModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.securityEventRepository,
+      this._repositoryStore.variableMonitoringRepository,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(new ReportingModuleApi(module, this._server, this._logger));
+  }
+
+  private async initSmartChargingModule() {
+    const module = new SmartChargingModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.transactionEventRepository,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.chargingProfileRepository,
+      this._smartChargingService,
+      this._idGenerator,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new SmartChargingModuleApi(module, this._server, this._logger),
+    );
+  }
+
+  private async initTransactionsModule() {
+    const module = new TransactionsModule(
+      this._config,
+      this._cache,
+      this._fileAccess,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.transactionEventRepository,
+      this._repositoryStore.authorizationRepository,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.componentRepository,
+      this._repositoryStore.locationRepository,
+      this._repositoryStore.tariffRepository,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new TransactionsModuleApi(module, this._server, this._logger),
+    );
+  }
+
+  private async initModule(eventGroup = this.eventGroup) {
+    switch (eventGroup) {
       case EventGroup.Certificates:
-        return {
-          ModuleClass: CertificatesModule,
-          ModuleApiClass: CertificatesModuleApi,
-          configModule: this._config.modules.certificates,
-        };
+        await this.initCertificatesModule();
+        break;
       case EventGroup.Configuration:
-        return {
-          ModuleClass: ConfigurationModule,
-          ModuleApiClass: ConfigurationModuleApi,
-          configModule: this._config.modules.configuration,
-        };
+        await this.initConfigurationModule();
+        break;
       case EventGroup.EVDriver:
-        return {
-          ModuleClass: EVDriverModule,
-          ModuleApiClass: EVDriverModuleApi,
-          configModule: this._config.modules.evdriver,
-        };
+        await this.initEVDriverModule();
+        break;
       case EventGroup.Monitoring:
-        return {
-          ModuleClass: MonitoringModule,
-          ModuleApiClass: MonitoringModuleApi,
-          configModule: this._config.modules.monitoring,
-        };
+        await this.initMonitoringModule();
+        break;
       case EventGroup.Reporting:
-        return {
-          ModuleClass: ReportingModule,
-          ModuleApiClass: ReportingModuleApi,
-          configModule: this._config.modules.reporting,
-        };
+        await this.initReportingModule();
+        break;
       case EventGroup.SmartCharging:
-        return {
-          ModuleClass: SmartChargingModule,
-          ModuleApiClass: SmartChargingModuleApi,
-          configModule: this._config.modules.smartcharging,
-        };
-      case EventGroup.Tenant:
-        return {
-          ModuleClass: TenantModule,
-          ModuleApiClass: TenantModuleApi,
-          configModule: this._config.modules.tenant,
-        };
+        await this.initSmartChargingModule();
+        break;
       case EventGroup.Transactions:
-        return {
-          ModuleClass: TransactionsModule,
-          ModuleApiClass: TransactionsModuleApi,
-          configModule: this._config.modules.transactions,
-        };
+        await this.initTransactionsModule();
+        break;
       default:
         throw new Error('Unhandled module type: ' + this.appName);
     }
   }
 
-  private initSystem() {
+  private async initSystem() {
     this.eventGroup = eventGroupFromString(this.appName);
     if (this.eventGroup === EventGroup.All) {
       this.initNetworkConnection();
-      this.initAllModules();
+      await this.initAllModules();
     } else if (this.eventGroup === EventGroup.General) {
       this.initNetworkConnection();
     } else {
-      const moduleConfig: ModuleConfig = this.getModuleConfig();
-      this.initModule(moduleConfig);
+      await this.initModule();
     }
   }
 

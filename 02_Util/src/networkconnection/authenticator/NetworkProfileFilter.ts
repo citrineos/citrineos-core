@@ -5,6 +5,7 @@ import { ChargingStationNetworkProfile, IDeviceModelRepository, ServerNetworkPro
 import { IncomingMessage } from 'http';
 import { AuthenticatorFilter } from './AuthenticatorFilter';
 import { AuthenticationOptions } from '@citrineos/base';
+import { UpgradeAuthenticationError } from './errors/AuthenticationError';
 
 
 /**
@@ -32,7 +33,7 @@ export class NetworkProfileFilter extends AuthenticatorFilter {
     ): Promise<void> {
         const isConfigurationSlotAllowed = await this._isConfigurationSlotAllowed(identifier, options.securityProfile);
         if (!isConfigurationSlotAllowed) {
-            throw Error(`SecurityProfile not allowed ${options.securityProfile}`);
+            throw new UpgradeAuthenticationError(`SecurityProfile not allowed ${options.securityProfile}`);
         }
     }
 
