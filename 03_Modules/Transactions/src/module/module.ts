@@ -48,9 +48,7 @@ import {
   RabbitMqReceiver,
   RabbitMqSender,
   SignedMeterValuesUtil,
-  Timer,
 } from '@citrineos/util';
-import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { TransactionService } from './TransactionService';
 import { StatusNotificationService } from './StatusNotificationService';
@@ -61,12 +59,12 @@ import { CostCalculator } from './CostCalculator';
  * Component that handles transaction related messages.
  */
 export class TransactionsModule extends AbstractModule {
-  protected _requests: CallAction[] = [
+  _requests: CallAction[] = [
     CallAction.MeterValues,
     CallAction.StatusNotification,
     CallAction.TransactionEvent,
   ];
-  protected _responses: CallAction[] = [
+  _responses: CallAction[] = [
     CallAction.CostUpdated,
     CallAction.GetTransactionStatus,
   ];
@@ -176,15 +174,6 @@ export class TransactionsModule extends AbstractModule {
       logger,
     );
 
-    const timer = new Timer();
-    this._logger.info('Initializing...');
-
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
     this._fileAccess = fileAccess;
 
     this._transactionEventRepository =
@@ -247,8 +236,6 @@ export class TransactionsModule extends AbstractModule {
       this._costCalculator,
       this._logger,
     );
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
   get transactionEventRepository(): ITransactionEventRepository {
