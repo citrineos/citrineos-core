@@ -9,7 +9,17 @@ import { Evse } from './Evse';
 import { Variable } from './Variable';
 import { ComponentVariable } from './ComponentVariable';
 
-@Table
+@Table({
+  indexes: [
+    {
+      unique: true,
+      fields: ['name'],
+      where: {
+        instance: null,
+      },
+    },
+  ],
+})
 export class Component extends Model implements OCPP2_0_1.ComponentType {
   static readonly MODEL_NAME: string = Namespace.ComponentType;
 

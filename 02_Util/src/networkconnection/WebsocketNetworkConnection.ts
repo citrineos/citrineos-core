@@ -261,11 +261,11 @@ export class WebsocketNetworkConnection {
         wss.emit('connection', ws, req);
       });
     } catch (error: any) {
-      this._logger.warn(error);
       /**
        * See {@link IUpgradeError.terminateConnection}
        **/
       error?.terminateConnection?.(socket) || this._terminateConnectionInternalError(socket);
+      this._logger.warn(error);
     }
   }
 

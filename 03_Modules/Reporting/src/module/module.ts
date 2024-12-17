@@ -26,8 +26,7 @@ import {
   sequelize,
   Variable,
 } from '@citrineos/data';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
-import deasyncPromise from 'deasync-promise';
+import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './services';
 
@@ -50,7 +49,7 @@ export class ReportingModule extends AbstractModule {
    * Fields
    */
 
-  protected _requests: CallAction[] = [
+  _requests: CallAction[] = [
     OCPP2_0_1_CallAction.LogStatusNotification,
     OCPP2_0_1_CallAction.NotifyCustomerInformation,
     OCPP2_0_1_CallAction.NotifyReport,
@@ -58,7 +57,7 @@ export class ReportingModule extends AbstractModule {
     OCPP2_0_1_CallAction.NotifyMonitoringReport,
   ];
 
-  protected _responses: CallAction[] = [
+  _responses: CallAction[] = [
     OCPP2_0_1_CallAction.CustomerInformation,
     OCPP2_0_1_CallAction.GetLog,
     OCPP2_0_1_CallAction.GetReport,
@@ -116,15 +115,6 @@ export class ReportingModule extends AbstractModule {
       logger,
     );
 
-    const timer = new Timer();
-    this._logger.info('Initializing...');
-
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
     this._deviceModelRepository =
       deviceModelRepository ||
       new sequelize.SequelizeDeviceModelRepository(config, this._logger);
@@ -137,8 +127,6 @@ export class ReportingModule extends AbstractModule {
     this._deviceModelService = new DeviceModelService(
       this._deviceModelRepository,
     );
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
   get deviceModelRepository(): IDeviceModelRepository {
@@ -266,7 +254,7 @@ export class ReportingModule extends AbstractModule {
         await variableAttribute.reload({
           include: [Component, Variable],
         });
-        this._deviceModelRepository.updateResultByStationId(
+        await this._deviceModelRepository.updateResultByStationId(
           {
             attributeType: variableAttribute.type,
             attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,

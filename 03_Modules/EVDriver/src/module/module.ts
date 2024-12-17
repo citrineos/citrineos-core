@@ -30,21 +30,19 @@ import {
   ITariffRepository,
   ITransactionEventRepository,
   sequelize,
+  SequelizeChargingStationSequenceRepository,
   Tariff,
   VariableAttribute,
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
-  IdGenerator,
   IAuthorizer,
+  IdGenerator,
   RabbitMqReceiver,
   RabbitMqSender,
-  Timer,
 } from '@citrineos/util';
-import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { LocalAuthListService } from './LocalAuthListService';
-import { SequelizeChargingStationSequenceRepository } from '@citrineos/data';
 
 /**
  * Component that handles provisioning related messages.
@@ -54,11 +52,11 @@ export class EVDriverModule extends AbstractModule {
    * Fields
    */
 
-  protected _requests: CallAction[] = [
+  _requests: CallAction[] = [
     OCPP2_0_1_CallAction.Authorize,
     OCPP2_0_1_CallAction.ReservationStatusUpdate,
   ];
-  protected _responses: CallAction[] = [
+  _responses: CallAction[] = [
     OCPP2_0_1_CallAction.CancelReservation,
     OCPP2_0_1_CallAction.ClearCache,
     OCPP2_0_1_CallAction.GetLocalListVersion,
@@ -164,15 +162,6 @@ export class EVDriverModule extends AbstractModule {
       logger,
     );
 
-    const timer = new Timer();
-    this._logger.info('Initializing...');
-
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
     this._authorizeRepository =
       authorizeRepository ||
       new sequelize.SequelizeAuthorizationRepository(config, logger);
@@ -214,8 +203,6 @@ export class EVDriverModule extends AbstractModule {
       new IdGenerator(
         new SequelizeChargingStationSequenceRepository(config, this._logger),
       );
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
   get authorizeRepository(): IAuthorizationRepository {
@@ -324,21 +311,21 @@ export class EVDriverModule extends AbstractModule {
               evseId: authorization.idTokenInfo.evseId,
               groupIdToken: authorization.idTokenInfo.groupIdToken
                 ? {
-                    additionalInfo:
-                      authorization.idTokenInfo.groupIdToken.additionalInfo &&
+                  additionalInfo:
+                    authorization.idTokenInfo.groupIdToken.additionalInfo &&
                       authorization.idTokenInfo.groupIdToken.additionalInfo
                         .length > 0
-                        ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                            (additionalInfo) => ({
-                              additionalIdToken:
-                                additionalInfo.additionalIdToken,
-                              type: additionalInfo.type,
-                            }),
+                      ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
+                        (additionalInfo) => ({
+                          additionalIdToken:
+                            additionalInfo.additionalIdToken,
+                          type: additionalInfo.type,
+                        }),
                       ) as [OCPP2_0_1.AdditionalInfoType, ...OCPP2_0_1.AdditionalInfoType[]])
-                        : undefined,
-                    idToken: authorization.idTokenInfo.groupIdToken.idToken,
-                    type: authorization.idTokenInfo.groupIdToken.type,
-                  }
+                      : undefined,
+                  idToken: authorization.idTokenInfo.groupIdToken.idToken,
+                  type: authorization.idTokenInfo.groupIdToken.type,
+                }
                 : undefined,
               language2: authorization.idTokenInfo.language2,
               personalMessage: authorization.idTokenInfo.personalMessage,

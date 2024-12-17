@@ -31,21 +31,15 @@ import {
   IDeviceModelRepository,
   IMessageInfoRepository,
   sequelize,
+  SequelizeChargingStationSequenceRepository,
   ServerNetworkProfile,
   SetNetworkProfile,
 } from '@citrineos/data';
-import {
-  IdGenerator,
-  RabbitMqReceiver,
-  RabbitMqSender,
-  Timer,
-} from '@citrineos/util';
+import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
-import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './DeviceModelService';
 import { BootNotificationService } from './BootNotificationService';
-import { SequelizeChargingStationSequenceRepository } from '@citrineos/data';
 
 /**
  * Component that handles Configuration related messages.
@@ -53,7 +47,7 @@ import { SequelizeChargingStationSequenceRepository } from '@citrineos/data';
 export class ConfigurationModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
 
-  protected _requests: CallAction[] = [
+  _requests: CallAction[] = [
     OCPP2_0_1_CallAction.BootNotification,
     OCPP2_0_1_CallAction.DataTransfer,
     OCPP2_0_1_CallAction.FirmwareStatusNotification,
@@ -62,7 +56,7 @@ export class ConfigurationModule extends AbstractModule {
     OCPP2_0_1_CallAction.PublishFirmwareStatusNotification,
   ];
 
-  protected _responses: CallAction[] = [
+  _responses: CallAction[] = [
     OCPP2_0_1_CallAction.ChangeAvailability,
     OCPP2_0_1_CallAction.ClearDisplayMessage,
     OCPP2_0_1_CallAction.GetDisplayMessages,
@@ -135,15 +129,6 @@ export class ConfigurationModule extends AbstractModule {
       logger,
     );
 
-    const timer = new Timer();
-    this._logger.info('Initializing...');
-
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
     this._bootRepository =
       bootRepository ||
       new sequelize.SequelizeBootRepository(config, this._logger);
@@ -170,8 +155,6 @@ export class ConfigurationModule extends AbstractModule {
       new IdGenerator(
         new SequelizeChargingStationSequenceRepository(config, this._logger),
       );
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
   get bootRepository(): IBootRepository {
@@ -220,7 +203,7 @@ export class ConfigurationModule extends AbstractModule {
       await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
     // Update device model from boot
-    this._deviceModelService.updateDeviceModel(
+    await this._deviceModelService.updateDeviceModel(
       chargingStation,
       stationId,
       timestamp,
@@ -513,15 +496,29 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('SetNetworkProfile response received:', message, props);
 
     if (message.payload.status == OCPP2_0_1.SetNetworkProfileStatusEnumType.Accepted) {
-      const setNetworkProfile = await SetNetworkProfile.findOne({ where: { correlationId: message.context.correlationId } });
+      const setNetworkProfile = await SetNetworkProfile.findOne({
+        where: { correlationId: message.context.correlationId },
+      });
       if (setNetworkProfile) {
-        const serverNetworkProfile = await ServerNetworkProfile.findByPk(setNetworkProfile.websocketServerConfigId!);
+        const serverNetworkProfile = await ServerNetworkProfile.findByPk(
+          setNetworkProfile.websocketServerConfigId!,
+        );
         if (serverNetworkProfile) {
-          const chargingStation = await ChargingStation.findByPk(message.context.stationId);
+          const chargingStation = await ChargingStation.findByPk(
+            message.context.stationId,
+          );
           if (chargingStation) {
-            const [chargingStationNetworkProfile] = await ChargingStationNetworkProfile.findOrBuild({ where: { stationId: chargingStation.id, configurationSlot: setNetworkProfile.configurationSlot! } });
-            chargingStationNetworkProfile.websocketServerConfigId = setNetworkProfile.websocketServerConfigId!;
-            chargingStationNetworkProfile.setNetworkProfileId = setNetworkProfile.id;
+            const [chargingStationNetworkProfile] =
+              await ChargingStationNetworkProfile.findOrBuild({
+                where: {
+                  stationId: chargingStation.id,
+                  configurationSlot: setNetworkProfile.configurationSlot!,
+                },
+              });
+            chargingStationNetworkProfile.websocketServerConfigId =
+              setNetworkProfile.websocketServerConfigId!;
+            chargingStationNetworkProfile.setNetworkProfileId =
+              setNetworkProfile.id;
             await chargingStationNetworkProfile.save();
           }
         }
@@ -558,7 +555,8 @@ export class ConfigurationModule extends AbstractModule {
         OCPP2_0_1_CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, ChargingStationSequenceType.getDisplayMessages,
+            message.context.stationId,
+            ChargingStationSequenceType.getDisplayMessages,
           ),
         } as OCPP2_0_1.GetDisplayMessagesRequest,
       );
@@ -630,7 +628,8 @@ export class ConfigurationModule extends AbstractModule {
         OCPP2_0_1_CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, ChargingStationSequenceType.getDisplayMessages,
+            message.context.stationId,
+            ChargingStationSequenceType.getDisplayMessages,
           ),
         } as OCPP2_0_1.GetDisplayMessagesRequest,
       );

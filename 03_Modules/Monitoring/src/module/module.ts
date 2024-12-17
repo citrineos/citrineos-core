@@ -22,20 +22,14 @@ import {
 import {
   IDeviceModelRepository,
   IVariableMonitoringRepository,
+  SequelizeChargingStationSequenceRepository,
   SequelizeDeviceModelRepository,
   SequelizeVariableMonitoringRepository,
 } from '@citrineos/data';
-import {
-  IdGenerator,
-  RabbitMqReceiver,
-  RabbitMqSender,
-  Timer,
-} from '@citrineos/util';
-import deasyncPromise from 'deasync-promise';
+import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './services';
 import { MonitoringService } from './MonitoringService';
-import {SequelizeChargingStationSequenceRepository} from "@citrineos/data";
 
 /**
  * Component that handles monitoring related messages.
@@ -44,8 +38,8 @@ export class MonitoringModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
   protected _monitoringService: MonitoringService;
 
-  protected _requests: CallAction[] = [OCPP2_0_1_CallAction.NotifyEvent];
-  protected _responses: CallAction[] = [
+  _requests: CallAction[] = [OCPP2_0_1_CallAction.NotifyEvent];
+  _responses: CallAction[] = [
     OCPP2_0_1_CallAction.ClearVariableMonitoring,
     OCPP2_0_1_CallAction.GetVariables,
     OCPP2_0_1_CallAction.SetMonitoringBase,
@@ -105,15 +99,6 @@ export class MonitoringModule extends AbstractModule {
       logger,
     );
 
-    const timer = new Timer();
-    this._logger.info('Initializing...');
-
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
     this._deviceModelRepository =
       deviceModelRepository ||
       new SequelizeDeviceModelRepository(config, this._logger);
@@ -130,12 +115,10 @@ export class MonitoringModule extends AbstractModule {
     );
 
     this._idGenerator =
-        idGenerator ||
-        new IdGenerator(
-            new SequelizeChargingStationSequenceRepository(config, this._logger),
-        );
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
+      idGenerator ||
+      new IdGenerator(
+        new SequelizeChargingStationSequenceRepository(config, this._logger),
+      );
   }
 
   get deviceModelRepository(): IDeviceModelRepository {

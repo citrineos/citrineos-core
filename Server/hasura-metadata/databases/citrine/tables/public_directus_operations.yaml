@@ -1,0 +1,30 @@
+table:
+  name: directus_operations
+  schema: public
+object_relationships:
+  - name: directusOperationById
+    using:
+      foreign_key_constraint_on:
+        column: reject
+        table:
+          name: directus_operations
+          schema: public
+  - name: directusOperationById1
+    using:
+      foreign_key_constraint_on:
+        column: resolve
+        table:
+          name: directus_operations
+          schema: public
+  - name: directusOperationByResolve
+    using:
+      foreign_key_constraint_on: resolve
+  - name: directus_flow
+    using:
+      foreign_key_constraint_on: flow
+  - name: directus_operation
+    using:
+      foreign_key_constraint_on: reject
+  - name: directus_user
+    using:
+      foreign_key_constraint_on: user_created

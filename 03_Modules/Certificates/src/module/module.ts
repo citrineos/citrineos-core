@@ -35,9 +35,7 @@ import {
   RabbitMqReceiver,
   RabbitMqSender,
   sendOCSPRequest,
-  Timer,
 } from '@citrineos/util';
-import deasyncPromise from 'deasync-promise';
 import { ILogObj, Logger } from 'tslog';
 import jsrsasign from 'jsrsasign';
 import * as pkijs from 'pkijs';
@@ -57,13 +55,13 @@ export class CertificatesModule extends AbstractModule {
    * Fields
    */
 
-  protected _requests: CallAction[] = [
+  _requests: CallAction[] = [
     OCPP2_0_1_CallAction.Get15118EVCertificate,
     OCPP2_0_1_CallAction.GetCertificateStatus,
     OCPP2_0_1_CallAction.SignCertificate,
   ];
 
-  protected _responses: CallAction[] = [
+  _responses: CallAction[] = [
     OCPP2_0_1_CallAction.CertificateSigned,
     OCPP2_0_1_CallAction.DeleteCertificate,
     OCPP2_0_1_CallAction.GetInstalledCertificateIds,
@@ -130,15 +128,6 @@ export class CertificatesModule extends AbstractModule {
       logger,
     );
 
-    const timer = new Timer();
-    this._logger.info('Initializing...');
-
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
     this._deviceModelRepository =
       deviceModelRepository ||
       new sequelize.SequelizeDeviceModelRepository(config, logger);
@@ -154,8 +143,6 @@ export class CertificatesModule extends AbstractModule {
     this._certificateAuthorityService =
       certificateAuthorityService ||
       new CertificateAuthorityService(config, this._logger);
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
   }
 
   get certificateAuthorityService(): CertificateAuthorityService {
