@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { RegistrationStatusEnumType, StatusInfoType } from '../ocpp/model';
+import { OCPP2_0_1 } from '../ocpp/model';
 
 export interface BootConfig {
   /**
@@ -14,8 +14,8 @@ export interface BootConfig {
    * Also declared in SystemConfig. If absent, SystemConfig value is used.
    */
   bootRetryInterval?: number;
-  status: RegistrationStatusEnumType;
-  statusInfo?: StatusInfoType | null;
+  status: OCPP2_0_1.RegistrationStatusEnumType;
+  statusInfo?: OCPP2_0_1.StatusInfoType | null;
   /**
    * Also declared in SystemConfig. If absent, SystemConfig value is used.
    */

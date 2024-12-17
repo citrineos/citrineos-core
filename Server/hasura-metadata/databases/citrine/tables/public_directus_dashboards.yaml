@@ -1,0 +1,15 @@
+table:
+  name: directus_dashboards
+  schema: public
+object_relationships:
+  - name: directus_user
+    using:
+      foreign_key_constraint_on: user_created
+array_relationships:
+  - name: directus_panels
+    using:
+      foreign_key_constraint_on:
+        column: dashboard
+        table:
+          name: directus_panels
+          schema: public

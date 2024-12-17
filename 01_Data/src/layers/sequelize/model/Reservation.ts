@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ConnectorEnumType, CustomDataType, EVSEType, IdTokenType, Namespace, ReserveNowRequest, ReserveNowStatusEnumType } from '@citrineos/base';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { AutoIncrement, BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { Evse } from './DeviceModel';
 
 @Table
-export class Reservation extends Model implements ReserveNowRequest {
+export class Reservation extends Model implements OCPP2_0_1.ReserveNowRequest {
   static readonly MODEL_NAME: string = Namespace.ReserveNowRequest;
 
   /**
@@ -40,10 +40,10 @@ export class Reservation extends Model implements ReserveNowRequest {
   declare expiryDateTime: string;
 
   @Column(DataType.STRING)
-  declare connectorType?: ConnectorEnumType | null;
+  declare connectorType?: OCPP2_0_1.ConnectorEnumType | null;
 
   @Column(DataType.STRING)
-  declare reserveStatus?: ReserveNowStatusEnumType | null;
+  declare reserveStatus?: OCPP2_0_1.ReserveNowStatusEnumType | null;
 
   @Column({ type: DataType.BOOLEAN, defaultValue: false })
   declare isActive: boolean;
@@ -52,10 +52,10 @@ export class Reservation extends Model implements ReserveNowRequest {
   declare terminatedByTransaction?: string | null;
 
   @Column(DataType.JSONB)
-  declare idToken: IdTokenType;
+  declare idToken: OCPP2_0_1.IdTokenType;
 
   @Column(DataType.JSONB)
-  declare groupIdToken?: IdTokenType | null;
+  declare groupIdToken?: OCPP2_0_1.IdTokenType | null;
 
   /**
    * Relations
@@ -64,7 +64,7 @@ export class Reservation extends Model implements ReserveNowRequest {
   declare evseId?: number | null;
 
   @BelongsTo(() => Evse)
-  declare evse?: EVSEType;
+  declare evse?: OCPP2_0_1.EVSEType;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

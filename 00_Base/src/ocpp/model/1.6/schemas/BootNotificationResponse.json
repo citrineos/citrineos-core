@@ -1,0 +1,27 @@
+{
+  "title": "BootNotificationResponse",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "#/definitions/BootNotificationResponseStatus"
+    },
+    "currentTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "interval": {
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["status", "currentTime", "interval"],
+  "$id": "BootNotificationResponse",
+  "definitions": {
+    "BootNotificationResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Pending", "Rejected"],
+      "tsEnumNames": ["Accepted", "Pending", "Rejected"]
+    }
+  }
+}

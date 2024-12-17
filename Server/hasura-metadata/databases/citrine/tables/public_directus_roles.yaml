@@ -1,0 +1,32 @@
+table:
+  name: directus_roles
+  schema: public
+array_relationships:
+  - name: directus_permissions
+    using:
+      foreign_key_constraint_on:
+        column: role
+        table:
+          name: directus_permissions
+          schema: public
+  - name: directus_presets
+    using:
+      foreign_key_constraint_on:
+        column: role
+        table:
+          name: directus_presets
+          schema: public
+  - name: directus_shares
+    using:
+      foreign_key_constraint_on:
+        column: role
+        table:
+          name: directus_shares
+          schema: public
+  - name: directus_users
+    using:
+      foreign_key_constraint_on:
+        column: role
+        table:
+          name: directus_users
+          schema: public
