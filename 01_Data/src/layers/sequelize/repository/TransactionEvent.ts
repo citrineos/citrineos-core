@@ -186,11 +186,11 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   async readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: OCPP2_0_1.EVSEType, chargingStates?: OCPP2_0_1.ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
     const includeObj = evse
       ? [
-          {
-            model: Evse,
-            where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null },
-          },
-        ]
+        {
+          model: Evse,
+          where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null },
+        },
+      ]
       : [];
     return await this.transaction
       .readAllByQuery({
@@ -200,27 +200,27 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       .then((row) => row as Transaction[]);
   }
 
-  readAllActiveTransactionsByIdToken(idToken: OCPP2_0_1.IdTokenType): Promise<Transaction[]> {
-    return this.transaction
-      .readAllByQuery({
-        where: { isActive: true },
-        include: [
-          {
-            model: TransactionEvent,
-            as: Transaction.TRANSACTION_EVENTS_ALIAS,
-            include: [
-              {
-                model: IdToken,
-                where: {
-                  idToken: idToken.idToken,
-                  type: idToken.type,
-                },
+  async readAllActiveTransactionsByIdToken(idToken: OCPP2_0_1.IdTokenType): Promise<Transaction[]> {
+    return await this.transaction.readAllByQuery({
+      where: { isActive: true },
+      include: [
+        {
+          model: TransactionEvent,
+          as: Transaction.TRANSACTION_EVENTS_ALIAS,
+          required: true,
+          include: [
+            {
+              model: IdToken,
+              required: true,
+              where: {
+                idToken: idToken.idToken,
+                type: idToken.type,
               },
-            ],
-          },
-        ],
-      })
-      .then((row) => row as Transaction[]);
+            },
+          ],
+        },
+      ],
+    });
   }
 
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]> {
