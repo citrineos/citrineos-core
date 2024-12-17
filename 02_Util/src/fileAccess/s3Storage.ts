@@ -10,18 +10,25 @@ export class S3Storage implements IFileAccess {
   protected readonly _config: SystemConfig;
 
   constructor(config: SystemConfig) {
-    this._config  = config;
+    this._config = config;
 
     this._s3 = new AWS.S3({
       endpoint: `http://${this._config.util.s3Storage?.endpointHost || 'localstack'}:${this._config.util.s3Storage?.endpointPort || '4566'}`,
-      accessKeyId: this._config.util.s3Storage?.accessKeyId as string || 'null',
-      secretAccessKey: this._config.util.s3Storage?.secretAccessKey as string || 'null',
+      accessKeyId:
+        (this._config.util.s3Storage?.accessKeyId as string) || 'null',
+      secretAccessKey:
+        (this._config.util.s3Storage?.secretAccessKey as string) || 'null',
       s3ForcePathStyle: true,
     });
   }
 
+  getFileURL(): string {
+    return `http://localhost:4566/citrineos-s3-bucket/`;
+  }
+
   async getFile(id: string): Promise<Buffer> {
-    const bucketName: string = this._config.util.s3Storage?.bucketName as string;
+    const bucketName: string = this._config.util.s3Storage
+      ?.bucketName as string;
 
     try {
       const result = await this._s3
@@ -46,7 +53,8 @@ export class S3Storage implements IFileAccess {
     content: Buffer,
     filePath?: string,
   ): Promise<string> {
-    const bucketName: string = this._config.util.s3Storage?.bucketName as string;
+    const bucketName: string = this._config.util.s3Storage
+      ?.bucketName as string;
     try {
       const result = await this._s3
         .upload({

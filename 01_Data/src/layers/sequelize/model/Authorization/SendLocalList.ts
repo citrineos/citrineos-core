@@ -3,14 +3,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AuthorizationData, Namespace, SendLocalListRequest, UpdateEnumType } from '@citrineos/base';
-import { CustomDataType } from '@citrineos/base/src/ocpp/model/types/SendLocalListRequest';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';;
 import { BelongsToMany, Column, DataType, Model, Table } from 'sequelize-typescript';
 import { SendLocalListAuthorization } from './SendLocalListAuthorization';
 import { LocalListAuthorization } from './LocalListAuthorization';
 
 @Table
-export class SendLocalList extends Model implements SendLocalListRequest {
+export class SendLocalList extends Model implements OCPP2_0_1.SendLocalListRequest {
   static readonly MODEL_NAME: string = Namespace.SendLocalListRequest;
 
   @Column
@@ -23,14 +22,14 @@ export class SendLocalList extends Model implements SendLocalListRequest {
   declare versionNumber: number;
 
   @Column(DataType.STRING)
-  declare updateType: UpdateEnumType;
+  declare updateType: OCPP2_0_1.UpdateEnumType;
 
   @BelongsToMany(() => LocalListAuthorization, () => SendLocalListAuthorization)
   declare localAuthorizationList?: [LocalListAuthorization, ...LocalListAuthorization[]] | null;
 
-  customData?: CustomDataType | null | undefined;
+  customData?: OCPP2_0_1.CustomDataType | null | undefined;
 
-  toSendLocalListRequest(): SendLocalListRequest {
+  toSendLocalListRequest(): OCPP2_0_1.SendLocalListRequest {
     return {
       versionNumber: this.versionNumber,
       updateType: this.updateType,
@@ -67,7 +66,7 @@ export class SendLocalList extends Model implements SendLocalListRequest {
                 personalMessage: localListAuth.idTokenInfo?.personalMessage,
               },
             };
-          }) as [AuthorizationData, ...AuthorizationData[]] | null),
+        }) as [OCPP2_0_1.AuthorizationData, ...OCPP2_0_1.AuthorizationData[]] | null),
     };
   }
 }

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AttributeEnumType, ComponentType, type CustomDataType, DataEnumType, EVSEType, MutabilityEnumType, Namespace, type VariableAttributeType, VariableType } from '@citrineos/base';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Index, Model, Table } from 'sequelize-typescript';
 import * as bcrypt from 'bcrypt';
 import { Variable } from './Variable';
@@ -71,7 +71,7 @@ import { ChargingStation } from '../Location';
     },
   ],
 })
-export class VariableAttribute extends Model implements VariableAttributeType {
+export class VariableAttribute extends Model implements OCPP2_0_1.VariableAttributeType {
   static readonly MODEL_NAME: string = Namespace.VariableAttributeType;
 
   /**
@@ -91,17 +91,17 @@ export class VariableAttribute extends Model implements VariableAttributeType {
 
   @Column({
     type: DataType.STRING,
-    defaultValue: AttributeEnumType.Actual,
+    defaultValue: OCPP2_0_1.AttributeEnumType.Actual,
     unique: 'stationId_type_variableId_componentId',
   })
-  declare type?: AttributeEnumType | null;
+  declare type?: OCPP2_0_1.AttributeEnumType | null;
 
   // From VariableCharacteristics, which belongs to Variable associated with this VariableAttribute
   @Column({
     type: DataType.STRING,
-    defaultValue: DataEnumType.string,
+    defaultValue: OCPP2_0_1.DataEnumType.string,
   })
-  declare dataType: DataEnumType;
+  declare dataType: OCPP2_0_1.DataEnumType;
 
   @Column({
     // TODO: Make this configurable? also used in VariableStatus model
@@ -110,7 +110,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
       if (valueString) {
         const valueType = (this as VariableAttribute).dataType;
         switch (valueType) {
-          case DataEnumType.passwordString:
+          case OCPP2_0_1.DataEnumType.passwordString:
             valueString = bcrypt.hashSync(valueString as string, 10);
             break;
           default:
@@ -125,9 +125,9 @@ export class VariableAttribute extends Model implements VariableAttributeType {
 
   @Column({
     type: DataType.STRING,
-    defaultValue: MutabilityEnumType.ReadWrite,
+    defaultValue: OCPP2_0_1.MutabilityEnumType.ReadWrite,
   })
-  declare mutability?: MutabilityEnumType | null;
+  declare mutability?: OCPP2_0_1.MutabilityEnumType | null;
 
   @Column({
     type: DataType.BOOLEAN,
@@ -154,7 +154,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
    */
 
   @BelongsTo(() => Variable)
-  declare variable: VariableType;
+  declare variable: OCPP2_0_1.VariableType;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -164,7 +164,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
   declare variableId?: number | null;
 
   @BelongsTo(() => Component)
-  declare component: ComponentType;
+  declare component: OCPP2_0_1.ComponentType;
 
   @ForeignKey(() => Component)
   @Column({
@@ -174,7 +174,7 @@ export class VariableAttribute extends Model implements VariableAttributeType {
   declare componentId?: number | null;
 
   @BelongsTo(() => Evse)
-  declare evse?: EVSEType;
+  declare evse?: OCPP2_0_1.EVSEType;
 
   @ForeignKey(() => Evse)
   @Column(DataType.INTEGER)
@@ -193,5 +193,5 @@ export class VariableAttribute extends Model implements VariableAttributeType {
   @ForeignKey(() => Boot)
   declare bootConfigId?: string | null;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

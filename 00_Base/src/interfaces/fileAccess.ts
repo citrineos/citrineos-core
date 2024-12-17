@@ -11,4 +11,5 @@ export interface IFileAccess {
     filePath?: string,
   ): Promise<string>;
   getFile(id: string): Promise<Buffer>;
+  getFileURL(): string;
 }

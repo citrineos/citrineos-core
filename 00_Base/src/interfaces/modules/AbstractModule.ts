@@ -9,9 +9,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from '.';
 import { OcppRequest, OcppResponse } from '../..';
 import { SystemConfig } from '../../config/types';
-import { CallAction, ErrorCode, OcppError } from '../../ocpp/rpc/message';
+import { CallAction, ErrorCode, OCPP2_0_1_CallAction, OcppError, OCPPVersionType } from '../../ocpp/rpc/message';
 import { RequestBuilder } from '../../util/request';
-import { CacheNamespace, ICache } from '../cache/cache';
+import { ICache } from '../cache/cache';
+import { CacheNamespace, IWebsocketConnection } from '../cache/types';
 import {
   EventGroup,
   HandlerProperties,
@@ -107,8 +108,8 @@ export abstract class AbstractModule implements IModule {
     props?: HandlerProperties,
   ): Promise<void> {
     if (message.state === MessageState.Response) {
-      this.handleMessageApiCallback(message as IMessage<OcppResponse>);
-      this._cache.set(
+      await this.handleMessageApiCallback(message as IMessage<OcppResponse>);
+      await this._cache.set(
         message.context.correlationId,
         JSON.stringify(message.payload),
         message.context.stationId,
@@ -122,7 +123,7 @@ export abstract class AbstractModule implements IModule {
           this.constructor,
         ) as Array<IHandlerDefinition>
       )
-        .filter((h) => h.action === message.action)
+        .filter((h) => h.protocol === message.protocol && h.action === message.action)
         .pop();
       if (handlerDefinition) {
         await handlerDefinition.method.call(this, message, props);
@@ -143,9 +144,9 @@ export abstract class AbstractModule implements IModule {
         this._logger.error('Sending CallError to ChargingStation...');
         message.origin = MessageOrigin.ChargingStationManagementSystem;
         if (error instanceof OcppError) {
-          this._sender.sendResponse(message, error);
+          await this._sender.sendResponse(message, error);
         } else if (error instanceof Error) {
-          this._sender.sendResponse(
+          await this._sender.sendResponse(
             message,
             new OcppError(
               message.context.correlationId,
@@ -202,9 +203,9 @@ export abstract class AbstractModule implements IModule {
    * Note: To be overwritten by subclass if other logic is necessary.
    *
    */
-  shutdown(): void {
-    this._handler.shutdown();
-    this._sender.shutdown();
+  async shutdown(): Promise<void> {
+    await this._handler.shutdown();
+    await this._sender.shutdown();
   }
 
   /**
@@ -212,10 +213,11 @@ export abstract class AbstractModule implements IModule {
    */
 
   /**
-   * Sends a call with the specified identifier, tenantId, action, payload, and origin.
+   * Sends a call with the specified identifier, tenantId, protocol, action, payload, and origin.
    *
    * @param {string} identifier - The identifier of the call.
    * @param {string} tenantId - The tenant ID.
+   * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @param {CallAction} action - The action to be performed.
    * @param {OcppRequest} payload - The payload of the call.
    * @param {string} [callbackUrl] - The callback URL for the call.
@@ -223,9 +225,10 @@ export abstract class AbstractModule implements IModule {
    * @param {MessageOrigin} [origin] - The origin of the call.
    * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
    */
-  public sendCall(
+  public async sendCall(
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
     callbackUrl?: string,
@@ -236,18 +239,32 @@ export abstract class AbstractModule implements IModule {
       correlationId === undefined ? uuidv4() : correlationId;
     if (callbackUrl) {
       // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
-      this._cache.set(
-        _correlationId,
-        callbackUrl,
-        AbstractModule.CALLBACK_URL_CACHE_PREFIX + identifier,
-        this._config.maxCachingSeconds,
-      );
+      this._cache
+        .set(
+          _correlationId,
+          callbackUrl,
+          AbstractModule.CALLBACK_URL_CACHE_PREFIX + identifier,
+          this._config.maxCachingSeconds,
+        )
+        .then()
+        .catch((error) => this._logger.error('Failed setting cache: ', error));
     }
     // TODO: Future - Compound key with tenantId
     return this._cache
-      .get(identifier, CacheNamespace.Connections)
+      .get<string>(identifier, CacheNamespace.Connections)
       .then((connection) => {
         if (connection) {
+          const websocketConnection: IWebsocketConnection = JSON.parse(connection);
+          if (websocketConnection.protocol !== protocol) {
+            this._logger.error(
+              `Failed sending call. Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: `,
+              identifier,
+            );
+            return Promise.resolve({
+              success: false,
+              payload: `Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: '${identifier}'`,
+            });
+          }
           return this._sender.sendRequest(
             RequestBuilder.buildCall(
               identifier,

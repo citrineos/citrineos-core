@@ -179,7 +179,7 @@ services:
     restart: always
     environment:
       ## postgres database to store Hasura metadata
-      HASURA_GRAPHQL_DATABASE_URL: postgres://citrine:citrine@host.docker.internal:5432/citrine
+      HASURA_GRAPHQL_DATABASE_URL: postgres://citrine:citrine@ocpp-db:5432/citrine
       ## enable the console served by server
       HASURA_GRAPHQL_ENABLE_CONSOLE: 'true' # set to "false" to disable console
       ## enable debugging mode. It is recommended to disable this in production

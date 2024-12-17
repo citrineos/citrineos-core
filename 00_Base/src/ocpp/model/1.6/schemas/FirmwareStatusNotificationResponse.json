@@ -1,0 +1,8 @@
+{
+  "title": "FirmwareStatusNotificationResponse",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false,
+  "$id": "FirmwareStatusNotificationResponse",
+  "definitions": {}
+}
