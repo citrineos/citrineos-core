@@ -162,11 +162,7 @@ export class BootNotificationService {
   async createGetBaseReportRequest(
     stationId: string,
     maxCachingSeconds: number,
-<<<<<<< HEAD
-  ): OCPP2_0_1.GetBaseReportRequest {
-=======
-  ): Promise<GetBaseReportRequest> {
->>>>>>> rc-1.6.0
+  ): Promise<OCPP2_0_1.GetBaseReportRequest> {
     // OCTT tool does not meet B07.FR.04; instead always sends requestId === 0
     // Commenting out this line, using requestId === 0 until fixed (10/26/2023)
     // const requestId = Math.floor(Math.random() * ConfigurationModule.GET_BASE_REPORT_REQUEST_ID_MAX);

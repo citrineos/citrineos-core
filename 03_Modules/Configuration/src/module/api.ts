@@ -535,37 +535,15 @@ export class ConfigurationModuleApi
         },
         stationId,
         timestamp,
-<<<<<<< HEAD
-      )
-      .then(async (variableAttributes) => {
-        for (let variableAttribute of variableAttributes) {
-          variableAttribute = await variableAttribute.reload({
-            include: [Variable, Component],
-          });
-          this._module.deviceModelRepository.updateResultByStationId(
-            {
-              attributeType: variableAttribute.type,
-              attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
-              attributeStatusInfo: { reasonCode: 'SetOnCharger' },
-              component: variableAttribute.component,
-              variable: variableAttribute.variable,
-            },
-            stationId,
-            timestamp,
-          );
-        }
-        return variableAttributes;
-=======
       );
     for (let variableAttribute of variableAttributes) {
       variableAttribute = await variableAttribute.reload({
         include: [Variable, Component],
->>>>>>> rc-1.6.0
       });
       await this._module.deviceModelRepository.updateResultByStationId(
         {
           attributeType: variableAttribute.type,
-          attributeStatus: SetVariableStatusEnumType.Accepted,
+          attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
           attributeStatusInfo: { reasonCode: 'SetOnCharger' },
           component: variableAttribute.component,
           variable: variableAttribute.variable,

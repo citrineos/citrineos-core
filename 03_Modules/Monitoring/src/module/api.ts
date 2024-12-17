@@ -455,31 +455,6 @@ export class MonitoringModuleApi
         request.body,
         request.query.stationId,
         timestamp,
-<<<<<<< HEAD
-      )
-      .then(async (variableAttributes) => {
-        if (request.query.setOnCharger) {
-          // value set offline, for example: manually via charger ui, or via api other than ocpp
-          for (let variableAttribute of variableAttributes) {
-            variableAttribute = await variableAttribute.reload({
-              include: [Variable, Component],
-            });
-            this._module.deviceModelRepository.updateResultByStationId(
-              {
-                attributeType: variableAttribute.type,
-                attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
-                attributeStatusInfo: { reasonCode: 'SetOnCharger' },
-                component: variableAttribute.component,
-                variable: variableAttribute.variable,
-              },
-              request.query.stationId,
-              timestamp,
-            );
-          }
-        }
-        return variableAttributes;
-      });
-=======
       );
     if (request.query.setOnCharger) {
       // value set offline, for example: manually via charger ui, or via api other than ocpp
@@ -490,7 +465,7 @@ export class MonitoringModuleApi
         await this._module.deviceModelRepository.updateResultByStationId(
           {
             attributeType: variableAttribute.type,
-            attributeStatus: SetVariableStatusEnumType.Accepted,
+            attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
             attributeStatusInfo: { reasonCode: 'SetOnCharger' },
             component: variableAttribute.component,
             variable: variableAttribute.variable,
@@ -501,7 +476,6 @@ export class MonitoringModuleApi
       }
     }
     return variableAttributes;
->>>>>>> rc-1.6.0
   }
 
   @AsDataEndpoint(
