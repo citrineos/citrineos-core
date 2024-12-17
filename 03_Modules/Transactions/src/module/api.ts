@@ -19,14 +19,12 @@ import {
   AsDataEndpoint,
   AsMessageEndpoint,
   CallAction,
-  CostUpdatedRequest,
-  CostUpdatedRequestSchema,
-  GetTransactionStatusRequest,
-  GetTransactionStatusRequestSchema,
   HttpMethod,
   IMessageConfirmation,
   Namespace,
-  TransactionType,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
+  OCPPVersion,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { UpsertTariffRequest } from './model/tariffs';
@@ -57,36 +55,38 @@ export class TransactionsModuleApi
   /**
    * Message Endpoint Methods
    */
-  @AsMessageEndpoint(CallAction.CostUpdated, CostUpdatedRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.CostUpdated, OCPP2_0_1.CostUpdatedRequestSchema)
   async costUpdated(
     identifier: string,
     tenantId: string,
-    request: CostUpdatedRequest,
+    request: OCPP2_0_1.CostUpdatedRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.CostUpdated,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.CostUpdated,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.GetTransactionStatus,
-    GetTransactionStatusRequestSchema,
+    OCPP2_0_1_CallAction.GetTransactionStatus,
+    OCPP2_0_1.GetTransactionStatusRequestSchema,
   )
   getTransactionStatus(
     identifier: string,
     tenantId: string,
-    request: GetTransactionStatusRequest,
+    request: OCPP2_0_1.GetTransactionStatusRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.GetTransactionStatus,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.GetTransactionStatus,
       request,
       callbackUrl,
     );
@@ -99,7 +99,7 @@ export class TransactionsModuleApi
   )
   getTransactionByStationIdAndTransactionId(
     request: FastifyRequest<{ Querystring: TransactionEventQuerystring }>,
-  ): Promise<TransactionType | undefined> {
+  ): Promise<OCPP2_0_1.TransactionType | undefined> {
     return this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(
       request.query.stationId,
       request.query.transactionId,

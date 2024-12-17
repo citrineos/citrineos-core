@@ -5,7 +5,7 @@
 import { SequelizeRepository } from './Base';
 import { MessageInfo } from '../model/MessageInfo';
 import { IMessageInfoRepository } from '../../../interfaces';
-import { MessageInfoType, SystemConfig } from '@citrineos/base';
+import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 
@@ -29,7 +29,7 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
     );
   }
 
-  async createOrUpdateByMessageInfoTypeAndStationId(message: MessageInfoType, stationId: string, componentId?: number): Promise<MessageInfo> {
+  async createOrUpdateByMessageInfoTypeAndStationId(message: OCPP2_0_1.MessageInfoType, stationId: string, componentId?: number): Promise<MessageInfo> {
     return await this.s.transaction(async (transaction) => {
       const savedMessageInfo = await this.s.models[MessageInfo.MODEL_NAME].findOne({
         where: {

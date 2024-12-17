@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, ReserveNowRequest, SystemConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { IReservationRepository } from '../../../interfaces';
 import { SequelizeRepository } from './Base';
 import { Sequelize } from 'sequelize-typescript';
@@ -22,7 +22,7 @@ export class SequelizeReservationRepository extends SequelizeRepository<Reservat
     this.logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  async createOrUpdateReservation(reserveNowRequest: ReserveNowRequest, stationId: string, isActive?: boolean): Promise<Reservation | undefined> {
+  async createOrUpdateReservation(reserveNowRequest: OCPP2_0_1.ReserveNowRequest, stationId: string, isActive?: boolean): Promise<Reservation | undefined> {
     let evseDBId: number | null = null;
     if (reserveNowRequest.evseId) {
       const [evse] = await this.evse.readAllByQuery({

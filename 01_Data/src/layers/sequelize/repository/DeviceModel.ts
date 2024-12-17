@@ -4,18 +4,9 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  AttributeEnumType,
-  type ComponentType,
   CrudRepository,
-  DataEnumType,
-  type GetVariableResultType,
-  MutabilityEnumType,
-  type ReportDataType,
-  type SetVariableDataType,
-  type SetVariableResultType,
-  SetVariableStatusEnumType,
+  OCPP2_0_1,
   SystemConfig,
-  type VariableType,
 } from '@citrineos/base';
 import { SequelizeRepository } from './Base';
 import { type IDeviceModelRepository, type VariableAttributeQuerystring } from '../../../interfaces';
@@ -55,16 +46,16 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     this.variableStatus = variableStatus ? variableStatus : new SequelizeRepository<VariableStatus>(config, VariableStatus.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createOrUpdateDeviceModelByStationId(value: ReportDataType, stationId: string, isoTimestamp: string): Promise<VariableAttribute[]> {
+  async createOrUpdateDeviceModelByStationId(value: OCPP2_0_1.ReportDataType, stationId: string, isoTimestamp: string): Promise<VariableAttribute[]> {
     // Doing this here so that no records are created if the data is invalid
-    const variableAttributeTypes = value.variableAttribute.map((attr) => attr.type ?? AttributeEnumType.Actual);
+    const variableAttributeTypes = value.variableAttribute.map((attr) => attr.type ?? OCPP2_0_1.AttributeEnumType.Actual);
     if (variableAttributeTypes.length !== new Set(variableAttributeTypes).size) {
       throw new Error('All variable attributes in ReportData must have different types.');
     }
 
     const [component, variable] = await this.findOrCreateEvseAndComponentAndVariable(value.component, value.variable, stationId);
 
-    let dataType: DataEnumType | null = null;
+    let dataType: OCPP2_0_1.DataEnumType | null = null;
 
     if (value.variableCharacteristics) {
       const variableCharacteristicsType = value.variableCharacteristics;
@@ -109,7 +100,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
             stationId: stationId,
             variableId: variable.id,
             componentId: component.id,
-            type: variableAttribute.type ?? AttributeEnumType.Actual,
+            type: variableAttribute.type ?? OCPP2_0_1.AttributeEnumType.Actual,
           },
           defaults: {
             // used to define what must be created in case nothing was found. If the defaults do not
@@ -118,7 +109,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
             dataType,
             value: variableAttribute.value,
             generatedAt: isoTimestamp,
-            mutability: variableAttribute.mutability ?? MutabilityEnumType.ReadWrite,
+            mutability: variableAttribute.mutability ?? OCPP2_0_1.MutabilityEnumType.ReadWrite,
             persistent: variableAttribute.persistent ? variableAttribute.persistent : false,
             constant: variableAttribute.constant ? variableAttribute.constant : false,
           },
@@ -143,7 +134,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     );
   }
 
-  async findOrCreateEvseAndComponentAndVariable(componentType: ComponentType, variableType: VariableType, stationId?: string): Promise<[Component, Variable]> {
+  async findOrCreateEvseAndComponentAndVariable(componentType: OCPP2_0_1.ComponentType, variableType: OCPP2_0_1.VariableType, stationId?: string): Promise<[Component, Variable]> {
     const component = await this.findOrCreateEvseAndComponent(componentType, stationId);
 
     const [variable] = await this.variable.readOrCreateByQuery({
@@ -156,14 +147,14 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     // TODO discuss & verify appropriate way to remove associations between components and variables (not currently possible)
 
     // This can happen asynchronously
-    this.componentVariable.readOrCreateByQuery({
+    await this.componentVariable.readOrCreateByQuery({
       where: { componentId: component.id, variableId: variable.id },
     });
 
     return [component, variable];
   }
 
-  async findOrCreateEvseAndComponent(componentType: ComponentType, stationId?: string): Promise<Component> {
+  async findOrCreateEvseAndComponent(componentType: OCPP2_0_1.ComponentType, stationId?: string): Promise<Component> {
     const evse = componentType.evse
       ? (
           await this.evse.readOrCreateByQuery({
@@ -205,7 +196,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
         });
 
         // This can happen asynchronously
-        this.componentVariable.readOrCreateByQuery({
+        await this.componentVariable.readOrCreateByQuery({
           where: { componentId: component.id, variableId: defaultComponentVariable.id },
         });
 
@@ -215,9 +206,9 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
             variableId: defaultComponentVariable.id,
             componentId: component.id,
             evseDatabaseId: evse?.databaseId,
-            dataType: DataEnumType.boolean,
+            dataType: OCPP2_0_1.DataEnumType.boolean,
             value: 'true',
-            mutability: MutabilityEnumType.ReadOnly,
+            mutability: OCPP2_0_1.MutabilityEnumType.ReadOnly,
           }),
         );
       }
@@ -226,7 +217,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return component;
   }
 
-  async createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: GetVariableResultType[], stationId: string, isoTimestamp: string): Promise<VariableAttribute[]> {
+  async createOrUpdateByGetVariablesResultAndStationId(getVariablesResult: OCPP2_0_1.GetVariableResultType[], stationId: string, isoTimestamp: string): Promise<VariableAttribute[]> {
     const savedVariableAttributes: VariableAttribute[] = [];
     for (const result of getVariablesResult) {
       const savedVariableAttribute = (
@@ -249,7 +240,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
           isoTimestamp,
         )
       )[0];
-      this.variableStatus.create(
+      await this.variableStatus.create(
         VariableStatus.build(
           {
             value: result.attributeValue,
@@ -265,7 +256,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return savedVariableAttributes;
   }
 
-  async createOrUpdateBySetVariablesDataAndStationId(setVariablesData: SetVariableDataType[], stationId: string, isoTimestamp: string): Promise<VariableAttribute[]> {
+  async createOrUpdateBySetVariablesDataAndStationId(setVariablesData: OCPP2_0_1.SetVariableDataType[], stationId: string, isoTimestamp: string): Promise<VariableAttribute[]> {
     const savedVariableAttributes: VariableAttribute[] = [];
     for (const data of setVariablesData) {
       const savedVariableAttribute = (
@@ -293,9 +284,9 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return savedVariableAttributes;
   }
 
-  async updateResultByStationId(result: SetVariableResultType, stationId: string, isoTimestamp: string): Promise<VariableAttribute | undefined> {
+  async updateResultByStationId(result: OCPP2_0_1.SetVariableResultType, stationId: string, isoTimestamp: string): Promise<VariableAttribute | undefined> {
     const savedVariableAttribute = await super.readOnlyOneByQuery({
-      where: { stationId, type: result.attributeType ?? AttributeEnumType.Actual },
+      where: { stationId, type: result.attributeType ?? OCPP2_0_1.AttributeEnumType.Actual },
       include: [
         {
           model: Component,
@@ -322,10 +313,10 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
           variableAttributeId: savedVariableAttribute.get('id'),
         }),
       );
-      if (result.attributeStatus !== SetVariableStatusEnumType.Accepted) {
+      if (result.attributeStatus !== OCPP2_0_1.SetVariableStatusEnumType.Accepted) {
         const mostRecentAcceptedStatus = (
           await this.variableStatus.readAllByQuery({
-            where: { variableAttributeId: savedVariableAttribute.get('id'), status: SetVariableStatusEnumType.Accepted },
+            where: { variableAttributeId: savedVariableAttribute.get('id'), status: OCPP2_0_1.SetVariableStatusEnumType.Accepted },
             limit: 1,
             order: [['createdAt', 'DESC']],
           })
@@ -343,7 +334,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     }
   }
 
-  async readAllSetVariableByStationId(stationId: string): Promise<SetVariableDataType[]> {
+  async readAllSetVariableByStationId(stationId: string): Promise<OCPP2_0_1.SetVariableDataType[]> {
     const variableAttributeArray = await super.readAllByQuery({
       where: {
         stationId,
@@ -369,7 +360,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
     return await super.deleteAllByQuery(this.constructQuery(query));
   }
 
-  async findComponentAndVariable(componentType: ComponentType, variableType: VariableType): Promise<[Component | undefined, Variable | undefined]> {
+  async findComponentAndVariable(componentType: OCPP2_0_1.ComponentType, variableType: OCPP2_0_1.VariableType): Promise<[Component | undefined, Variable | undefined]> {
     const component = await this.component.readOnlyOneByQuery({
       where: { name: componentType.name, instance: componentType.instance ? componentType.instance : null },
     });
@@ -416,7 +407,7 @@ export class SequelizeDeviceModelRepository extends SequelizeRepository<Variable
    * Private Methods
    */
 
-  private createSetVariableDataType(input: VariableAttribute): SetVariableDataType {
+  private createSetVariableDataType(input: VariableAttribute): OCPP2_0_1.SetVariableDataType {
     if (!input.value) {
       throw new Error('Value must be present to generate SetVariableDataType from VariableAttribute');
     } else {

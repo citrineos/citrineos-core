@@ -3,12 +3,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type CustomDataType, DataEnumType, Namespace, type VariableCharacteristicsType, VariableType } from '@citrineos/base';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { Variable } from './Variable';
 
 @Table
-export class VariableCharacteristics extends Model implements VariableCharacteristicsType {
+export class VariableCharacteristics extends Model implements OCPP2_0_1.VariableCharacteristicsType {
   static readonly MODEL_NAME: string = Namespace.VariableCharacteristicsType;
 
   /**
@@ -19,7 +19,7 @@ export class VariableCharacteristics extends Model implements VariableCharacteri
   declare unit?: string | null;
 
   @Column(DataType.STRING)
-  declare dataType: DataEnumType;
+  declare dataType: OCPP2_0_1.DataEnumType;
 
   @Column(DataType.DECIMAL)
   declare minLimit?: number | null;
@@ -38,7 +38,7 @@ export class VariableCharacteristics extends Model implements VariableCharacteri
    */
 
   @BelongsTo(() => Variable)
-  declare variable: VariableType;
+  declare variable: OCPP2_0_1.VariableType;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -47,5 +47,5 @@ export class VariableCharacteristics extends Model implements VariableCharacteri
   })
   declare variableId?: number | null;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }
