@@ -1,11 +1,10 @@
-import { AttributeEnumType } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { IDeviceModelRepository } from '@citrineos/data';
 import { IncomingMessage } from 'http';
 import * as bcrypt from 'bcrypt';
 import { extractBasicCredentials } from '../../util/RequestOperations';
 import { AuthenticatorFilter } from './AuthenticatorFilter';
-import { AuthenticationOptions } from '@citrineos/base';
+import { AuthenticationOptions, OCPP2_0_1 } from '@citrineos/base';
 import { UpgradeAuthenticationError } from './errors/AuthenticationError';
 
 /**
@@ -50,7 +49,7 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
         stationId: username,
         component_name: 'SecurityCtrlr',
         variable_name: 'BasicAuthPassword',
-        type: AttributeEnumType.Actual,
+        type: OCPP2_0_1.AttributeEnumType.Actual,
       })
       .then((r) => {
         if (r && r[0]) {

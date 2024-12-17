@@ -7,50 +7,20 @@ import {
   AbstractModule,
   AsHandler,
   BOOT_STATUS,
-  BootNotificationRequest,
-  BootNotificationResponse,
   CallAction,
-  ChangeAvailabilityResponse,
   ChargingStationSequenceType,
-  ClearDisplayMessageResponse,
-  ClearMessageStatusEnumType,
-  DataTransferRequest,
-  DataTransferResponse,
-  DataTransferStatusEnumType,
-  DisplayMessageStatusEnumType,
   ErrorCode,
   EventGroup,
-  FirmwareStatusNotificationRequest,
-  FirmwareStatusNotificationResponse,
-  GetDisplayMessagesRequest,
-  GetDisplayMessagesResponse,
   HandlerProperties,
-  HeartbeatRequest,
-  HeartbeatResponse,
   ICache,
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
-  MessageInfoType,
-  NotifyDisplayMessagesRequest,
-  NotifyDisplayMessagesResponse,
-  PublishFirmwareResponse,
-  RegistrationStatusEnumType,
-  ResetEnumType,
-  ResetRequest,
-  ResetResponse,
-  SetDisplayMessageResponse,
-  SetNetworkProfileResponse,
-  SetNetworkProfileStatusEnumType,
-  SetVariableDataType,
-  SetVariablesRequest,
-  SetVariablesResponse,
-  SetVariableStatusEnumType,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
+  OCPPVersion,
   SystemConfig,
-  TriggerMessageResponse,
-  UnpublishFirmwareResponse,
-  UpdateFirmwareResponse,
 } from '@citrineos/base';
 import {
   Boot,
@@ -78,25 +48,25 @@ export class ConfigurationModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
 
   _requests: CallAction[] = [
-    CallAction.BootNotification,
-    CallAction.DataTransfer,
-    CallAction.FirmwareStatusNotification,
-    CallAction.Heartbeat,
-    CallAction.NotifyDisplayMessages,
-    CallAction.PublishFirmwareStatusNotification,
+    OCPP2_0_1_CallAction.BootNotification,
+    OCPP2_0_1_CallAction.DataTransfer,
+    OCPP2_0_1_CallAction.FirmwareStatusNotification,
+    OCPP2_0_1_CallAction.Heartbeat,
+    OCPP2_0_1_CallAction.NotifyDisplayMessages,
+    OCPP2_0_1_CallAction.PublishFirmwareStatusNotification,
   ];
 
   _responses: CallAction[] = [
-    CallAction.ChangeAvailability,
-    CallAction.ClearDisplayMessage,
-    CallAction.GetDisplayMessages,
-    CallAction.PublishFirmware,
-    CallAction.Reset,
-    CallAction.SetDisplayMessage,
-    CallAction.SetNetworkProfile,
-    CallAction.TriggerMessage,
-    CallAction.UnpublishFirmware,
-    CallAction.UpdateFirmware,
+    OCPP2_0_1_CallAction.ChangeAvailability,
+    OCPP2_0_1_CallAction.ClearDisplayMessage,
+    OCPP2_0_1_CallAction.GetDisplayMessages,
+    OCPP2_0_1_CallAction.PublishFirmware,
+    OCPP2_0_1_CallAction.Reset,
+    OCPP2_0_1_CallAction.SetDisplayMessage,
+    OCPP2_0_1_CallAction.SetNetworkProfile,
+    OCPP2_0_1_CallAction.TriggerMessage,
+    OCPP2_0_1_CallAction.UnpublishFirmware,
+    OCPP2_0_1_CallAction.UpdateFirmware,
   ];
 
   protected _bootRepository: IBootRepository;
@@ -203,9 +173,9 @@ export class ConfigurationModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(CallAction.BootNotification)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.BootNotification)
   protected async _handleBootNotification(
-    message: IMessage<BootNotificationRequest>,
+    message: IMessage<OCPP2_0_1.BootNotificationRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('BootNotification received:', message, props);
@@ -215,11 +185,11 @@ export class ConfigurationModule extends AbstractModule {
     const timestamp = message.context.timestamp;
     const chargingStation = message.payload.chargingStation;
 
-    const bootNotificationResponse: BootNotificationResponse =
+    const bootNotificationResponse: OCPP2_0_1.BootNotificationResponse =
       await this._bootService.createBootNotificationResponse(stationId);
 
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
-    const cachedBootStatus: RegistrationStatusEnumType | null =
+    const cachedBootStatus: OCPP2_0_1.RegistrationStatusEnumType | null =
       await this._cache.get(BOOT_STATUS, stationId);
 
     // Blacklist or whitelist charger actions in cache
@@ -242,12 +212,12 @@ export class ConfigurationModule extends AbstractModule {
     if (!bootNotificationResponseMessageConfirmation.success) {
       throw new Error(
         'BootNotification failed: ' +
-          bootNotificationResponseMessageConfirmation,
+        bootNotificationResponseMessageConfirmation,
       );
     }
 
     if (
-      bootNotificationResponse.status !== RegistrationStatusEnumType.Accepted &&
+      bootNotificationResponse.status !== OCPP2_0_1.RegistrationStatusEnumType.Accepted &&
       (!cachedBootStatus ||
         bootNotificationResponse.status !== cachedBootStatus)
     ) {
@@ -268,9 +238,9 @@ export class ConfigurationModule extends AbstractModule {
     // If boot notification is not pending, do not start configuration.
     // If cached boot status is not null and pending, configuration is already in progress - do not start configuration again.
     if (
-      bootNotificationResponse.status !== RegistrationStatusEnumType.Pending ||
+      bootNotificationResponse.status !== OCPP2_0_1.RegistrationStatusEnumType.Pending ||
       (cachedBootStatus &&
-        cachedBootStatus === RegistrationStatusEnumType.Pending)
+        cachedBootStatus === OCPP2_0_1.RegistrationStatusEnumType.Pending)
     ) {
       return;
     }
@@ -282,7 +252,7 @@ export class ConfigurationModule extends AbstractModule {
       this._config.modules.configuration.getBaseReportOnPending
     ) {
       // Remove Notify Report from blacklist
-      await this._cache.remove(CallAction.NotifyReport, stationId);
+      await this._cache.remove(OCPP2_0_1_CallAction.NotifyReport, stationId);
 
       const getBaseReportRequest =
         await this._bootService.createGetBaseReportRequest(
@@ -293,7 +263,8 @@ export class ConfigurationModule extends AbstractModule {
       const getBaseReportConfirmation = await this.sendCall(
         stationId,
         tenantId,
-        CallAction.GetBaseReport,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetBaseReport,
         getBaseReportRequest,
       );
 
@@ -318,7 +289,7 @@ export class ConfigurationModule extends AbstractModule {
     ) {
       bootConfigDbEntity.variablesRejectedOnLastBoot = [];
 
-      let setVariableData: SetVariableDataType[] =
+      let setVariableData: OCPP2_0_1.SetVariableDataType[] =
         await this._deviceModelRepository.readAllSetVariableByStationId(
           stationId,
         );
@@ -342,13 +313,14 @@ export class ConfigurationModule extends AbstractModule {
         await this.sendCall(
           stationId,
           tenantId,
-          CallAction.SetVariables,
+          OCPPVersion.OCPP2_0_1,
+          OCPP2_0_1_CallAction.SetVariables,
           {
             setVariableData: setVariableData.slice(
               0,
               itemsPerMessageSetVariables,
             ),
-          } as SetVariablesRequest,
+          } as OCPP2_0_1.SetVariablesRequest,
           undefined,
           correlationId,
         );
@@ -362,15 +334,15 @@ export class ConfigurationModule extends AbstractModule {
             continue;
           }
 
-          const setVariablesResponse: SetVariablesResponse = JSON.parse(
+          const setVariablesResponse: OCPP2_0_1.SetVariablesResponse = JSON.parse(
             setVariablesResponseJsonString,
           );
           setVariablesResponse.setVariableResult.forEach((result) => {
-            if (result.attributeStatus === SetVariableStatusEnumType.Rejected) {
+            if (result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Rejected) {
               rejectedSetVariable = true;
             } else if (
               result.attributeStatus ===
-              SetVariableStatusEnumType.RebootRequired
+              OCPP2_0_1.SetVariableStatusEnumType.RebootRequired
             ) {
               rebootSetVariable = true;
             }
@@ -386,7 +358,7 @@ export class ConfigurationModule extends AbstractModule {
       );
 
       if (rejectedSetVariable && doNotBootWithRejectedVariables) {
-        bootConfigDbEntity.status = RegistrationStatusEnumType.Rejected;
+        bootConfigDbEntity.status = OCPP2_0_1.RegistrationStatusEnumType.Rejected;
         await bootConfigDbEntity.save();
         // No more to do.
         return;
@@ -396,33 +368,33 @@ export class ConfigurationModule extends AbstractModule {
     if (this._config.modules.configuration.autoAccept) {
       // Update boot config with status accepted
       // TODO: Determine how/if StatusInfo should be generated
-      bootConfigDbEntity.status = RegistrationStatusEnumType.Accepted;
+      bootConfigDbEntity.status = OCPP2_0_1.RegistrationStatusEnumType.Accepted;
       await bootConfigDbEntity.save();
     }
 
     if (rebootSetVariable) {
       // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
-      await this.sendCall(stationId, tenantId, CallAction.Reset, {
-        type: ResetEnumType.Immediate,
-      } as ResetRequest);
+      await this.sendCall(stationId, tenantId, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Reset, {
+        type: OCPP2_0_1.ResetEnumType.Immediate,
+      } as OCPP2_0_1.ResetRequest);
     } else {
       // We could trigger the new boot immediately rather than wait for the retry, as nothing more now needs to be done.
       // However, B02.FR.02 - Spec allows for TriggerMessageRequest - OCTT fails over trigger
       // Commenting out until OCTT behavior changes.
-      // this.sendCall(stationId, tenantId, CallAction.TriggerMessage,
+      // this.sendCall(stationId, tenantId, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.TriggerMessage,
       //   { requestedMessage: MessageTriggerEnumType.BootNotification } as TriggerMessageRequest);
     }
   }
 
-  @AsHandler(CallAction.Heartbeat)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Heartbeat)
   protected async _handleHeartbeat(
-    message: IMessage<HeartbeatRequest>,
+    message: IMessage<OCPP2_0_1.HeartbeatRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('Heartbeat received:', message, props);
 
     // Create response
-    const response: HeartbeatResponse = {
+    const response: OCPP2_0_1.HeartbeatResponse = {
       currentTime: new Date().toISOString(),
     };
 
@@ -433,14 +405,14 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('Heartbeat response sent: ', messageConfirmation);
   }
 
-  @AsHandler(CallAction.NotifyDisplayMessages)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyDisplayMessages)
   protected async _handleNotifyDisplayMessages(
-    message: IMessage<NotifyDisplayMessagesRequest>,
+    message: IMessage<OCPP2_0_1.NotifyDisplayMessagesRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('NotifyDisplayMessages received: ', message, props);
 
-    const messageInfoTypes = message.payload.messageInfo as MessageInfoType[];
+    const messageInfoTypes = message.payload.messageInfo as OCPP2_0_1.MessageInfoType[];
     for (const messageInfoType of messageInfoTypes) {
       let componentId: number | undefined;
       if (messageInfoType.display) {
@@ -459,7 +431,7 @@ export class ConfigurationModule extends AbstractModule {
     }
 
     // Create response
-    const response: NotifyDisplayMessagesResponse = {};
+    const response: OCPP2_0_1.NotifyDisplayMessagesResponse = {};
 
     const messageConfirmation = await this.sendCallResultWithMessage(
       message,
@@ -471,9 +443,9 @@ export class ConfigurationModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.FirmwareStatusNotification)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.FirmwareStatusNotification)
   protected async _handleFirmwareStatusNotification(
-    message: IMessage<FirmwareStatusNotificationRequest>,
+    message: IMessage<OCPP2_0_1.FirmwareStatusNotificationRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('FirmwareStatusNotification received:', message, props);
@@ -481,7 +453,7 @@ export class ConfigurationModule extends AbstractModule {
     // TODO: FirmwareStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
 
     // Create response
-    const response: FirmwareStatusNotificationResponse = {};
+    const response: OCPP2_0_1.FirmwareStatusNotificationResponse = {};
 
     const messageConfirmation = await this.sendCallResultWithMessage(
       message,
@@ -493,16 +465,16 @@ export class ConfigurationModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.DataTransfer)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.DataTransfer)
   protected async _handleDataTransfer(
-    message: IMessage<DataTransferRequest>,
+    message: IMessage<OCPP2_0_1.DataTransferRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('DataTransfer received:', message, props);
 
     // Create response
-    const response: DataTransferResponse = {
-      status: DataTransferStatusEnumType.Rejected,
+    const response: OCPP2_0_1.DataTransferResponse = {
+      status: OCPP2_0_1.DataTransferStatusEnumType.Rejected,
       statusInfo: { reasonCode: ErrorCode.NotImplemented },
     };
 
@@ -517,22 +489,22 @@ export class ConfigurationModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(CallAction.ChangeAvailability)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ChangeAvailability)
   protected _handleChangeAvailability(
-    message: IMessage<ChangeAvailabilityResponse>,
+    message: IMessage<OCPP2_0_1.ChangeAvailabilityResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('ChangeAvailability response received:', message, props);
   }
 
-  @AsHandler(CallAction.SetNetworkProfile)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SetNetworkProfile)
   protected async _handleSetNetworkProfile(
-    message: IMessage<SetNetworkProfileResponse>,
+    message: IMessage<OCPP2_0_1.SetNetworkProfileResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('SetNetworkProfile response received:', message, props);
 
-    if (message.payload.status == SetNetworkProfileStatusEnumType.Accepted) {
+    if (message.payload.status == OCPP2_0_1.SetNetworkProfileStatusEnumType.Accepted) {
       const setNetworkProfile = await SetNetworkProfile.findOne({
         where: { correlationId: message.context.correlationId },
       });
@@ -563,85 +535,86 @@ export class ConfigurationModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.GetDisplayMessages)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetDisplayMessages)
   protected _handleGetDisplayMessages(
-    message: IMessage<GetDisplayMessagesResponse>,
+    message: IMessage<OCPP2_0_1.GetDisplayMessagesResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('GetDisplayMessages response received:', message, props);
   }
 
-  @AsHandler(CallAction.SetDisplayMessage)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SetDisplayMessage)
   protected async _handleSetDisplayMessage(
-    message: IMessage<SetDisplayMessageResponse>,
+    message: IMessage<OCPP2_0_1.SetDisplayMessageResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('SetDisplayMessage response received:', message, props);
 
-    const status = message.payload.status as DisplayMessageStatusEnumType;
+    const status = message.payload.status as OCPP2_0_1.DisplayMessageStatusEnumType;
     // when charger station accepts the set message info request
     // we trigger a get all display messages request to update stored message info in db
-    if (status === DisplayMessageStatusEnumType.Accepted) {
+    if (status === OCPP2_0_1.DisplayMessageStatusEnumType.Accepted) {
       await this._messageInfoRepository.deactivateAllByStationId(
         message.context.stationId,
       );
       await this.sendCall(
         message.context.stationId,
         message.context.tenantId,
-        CallAction.GetDisplayMessages,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
             message.context.stationId,
             ChargingStationSequenceType.getDisplayMessages,
           ),
-        } as GetDisplayMessagesRequest,
+        } as OCPP2_0_1.GetDisplayMessagesRequest,
       );
     }
   }
 
-  @AsHandler(CallAction.PublishFirmware)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.PublishFirmware)
   protected _handlePublishFirmware(
-    message: IMessage<PublishFirmwareResponse>,
+    message: IMessage<OCPP2_0_1.PublishFirmwareResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('PublishFirmware response received:', message, props);
   }
 
-  @AsHandler(CallAction.UnpublishFirmware)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.UnpublishFirmware)
   protected _handleUnpublishFirmware(
-    message: IMessage<UnpublishFirmwareResponse>,
+    message: IMessage<OCPP2_0_1.UnpublishFirmwareResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('UnpublishFirmware response received:', message, props);
   }
 
-  @AsHandler(CallAction.UpdateFirmware)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.UpdateFirmware)
   protected _handleUpdateFirmware(
-    message: IMessage<UpdateFirmwareResponse>,
+    message: IMessage<OCPP2_0_1.UpdateFirmwareResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('UpdateFirmware response received:', message, props);
   }
 
-  @AsHandler(CallAction.Reset)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Reset)
   protected _handleReset(
-    message: IMessage<ResetResponse>,
+    message: IMessage<OCPP2_0_1.ResetResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('Reset response received:', message, props);
   }
 
-  @AsHandler(CallAction.TriggerMessage)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.TriggerMessage)
   protected _handleTriggerMessage(
-    message: IMessage<TriggerMessageResponse>,
+    message: IMessage<OCPP2_0_1.TriggerMessageResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('TriggerMessage response received:', message, props);
   }
 
-  @AsHandler(CallAction.ClearDisplayMessage)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ClearDisplayMessage)
   protected async _handleClearDisplayMessage(
-    message: IMessage<ClearDisplayMessageResponse>,
+    message: IMessage<OCPP2_0_1.ClearDisplayMessageResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug(
@@ -650,23 +623,24 @@ export class ConfigurationModule extends AbstractModule {
       props,
     );
 
-    const status = message.payload.status as ClearMessageStatusEnumType;
+    const status = message.payload.status as OCPP2_0_1.ClearMessageStatusEnumType;
     // when charger station accepts the clear message info request
     // we trigger a get all display messages request to update stored message info in db
-    if (status === ClearMessageStatusEnumType.Accepted) {
+    if (status === OCPP2_0_1.ClearMessageStatusEnumType.Accepted) {
       await this._messageInfoRepository.deactivateAllByStationId(
         message.context.stationId,
       );
       await this.sendCall(
         message.context.stationId,
         message.context.tenantId,
-        CallAction.GetDisplayMessages,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
             message.context.stationId,
             ChargingStationSequenceType.getDisplayMessages,
           ),
-        } as GetDisplayMessagesRequest,
+        } as OCPP2_0_1.GetDisplayMessagesRequest,
       );
     }
   }

@@ -6,29 +6,21 @@
 import {
   AbstractModule,
   AsHandler,
-  AttributeEnumType,
-  AuthorizationStatusEnumType,
   CallAction,
-  CostUpdatedResponse,
   CrudRepository,
   ErrorCode,
   EventGroup,
-  GetTransactionStatusResponse,
   HandlerProperties,
   ICache,
   IFileAccess,
   IMessage,
   IMessageHandler,
   IMessageSender,
-  MeterValuesRequest,
-  MeterValuesResponse,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
   OcppError,
-  StatusNotificationRequest,
-  StatusNotificationResponse,
+  OCPPVersion,
   SystemConfig,
-  TransactionEventEnumType,
-  TransactionEventRequest,
-  TransactionEventResponse,
 } from '@citrineos/base';
 import {
   Component,
@@ -60,13 +52,13 @@ import { CostCalculator } from './CostCalculator';
  */
 export class TransactionsModule extends AbstractModule {
   _requests: CallAction[] = [
-    CallAction.MeterValues,
-    CallAction.StatusNotification,
-    CallAction.TransactionEvent,
+    OCPP2_0_1_CallAction.MeterValues,
+    OCPP2_0_1_CallAction.StatusNotification,
+    OCPP2_0_1_CallAction.TransactionEvent,
   ];
   _responses: CallAction[] = [
-    CallAction.CostUpdated,
-    CallAction.GetTransactionStatus,
+    OCPP2_0_1_CallAction.CostUpdated,
+    OCPP2_0_1_CallAction.GetTransactionStatus,
   ];
 
   protected _transactionEventRepository: ITransactionEventRepository;
@@ -258,9 +250,9 @@ export class TransactionsModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(CallAction.TransactionEvent)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.TransactionEvent)
   protected async _handleTransactionEvent(
-    message: IMessage<TransactionEventRequest>,
+    message: IMessage<OCPP2_0_1.TransactionEventRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('Transaction event received:', message, props);
@@ -301,8 +293,8 @@ export class TransactionsModule extends AbstractModule {
       this._logger.debug('Transaction response sent: ', messageConfirmation);
       // If the transaction is accepted and interval is set, start the cost update
       if (
-        transactionEvent.eventType === TransactionEventEnumType.Started &&
-        response.idTokenInfo?.status === AuthorizationStatusEnumType.Accepted &&
+        transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started &&
+        response.idTokenInfo?.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted &&
         this._costUpdatedInterval
       ) {
         this._costNotifier.notifyWhileActive(
@@ -313,7 +305,7 @@ export class TransactionsModule extends AbstractModule {
         );
       }
     } else {
-      const response: TransactionEventResponse = {
+      const response: OCPP2_0_1.TransactionEventResponse = {
         // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
       };
 
@@ -323,7 +315,7 @@ export class TransactionsModule extends AbstractModule {
           transactionId,
         );
 
-      if (message.payload.eventType === TransactionEventEnumType.Updated) {
+      if (message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Updated) {
         // I02 - Show EV Driver Running Total Cost During Charging
         if (
           transaction &&
@@ -344,7 +336,7 @@ export class TransactionsModule extends AbstractModule {
             component_name: 'TariffCostCtrlr',
             variable_instance: 'Tariff',
             variable_name: 'Available',
-            type: AttributeEnumType.Actual,
+            type: OCPP2_0_1.AttributeEnumType.Actual,
           });
         const supportTariff: boolean =
           tariffAvailableAttributes.length !== 0 &&
@@ -359,7 +351,7 @@ export class TransactionsModule extends AbstractModule {
       }
 
       if (
-        message.payload.eventType === TransactionEventEnumType.Ended &&
+        message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Ended &&
         transaction
       ) {
         response.totalCost = await this._costCalculator.calculateTotalCost(
@@ -399,9 +391,9 @@ export class TransactionsModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.MeterValues)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.MeterValues)
   protected async _handleMeterValues(
-    message: IMessage<MeterValuesRequest>,
+    message: IMessage<OCPP2_0_1.MeterValuesRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('MeterValues received:', message, props);
@@ -433,7 +425,7 @@ export class TransactionsModule extends AbstractModule {
       );
     }
 
-    const response: MeterValuesResponse = {
+    const response: OCPP2_0_1.MeterValuesResponse = {
       // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
     };
 
@@ -444,9 +436,9 @@ export class TransactionsModule extends AbstractModule {
     this._logger.debug('MeterValues response sent: ', messageConfirmation);
   }
 
-  @AsHandler(CallAction.StatusNotification)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.StatusNotification)
   protected async _handleStatusNotification(
-    message: IMessage<StatusNotificationRequest>,
+    message: IMessage<OCPP2_0_1.StatusNotificationRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('StatusNotification received:', message, props);
@@ -457,7 +449,7 @@ export class TransactionsModule extends AbstractModule {
     );
 
     // Create response
-    const response: StatusNotificationResponse = {};
+    const response: OCPP2_0_1.StatusNotificationResponse = {};
     const messageConfirmation = await this.sendCallResultWithMessage(
       message,
       response,
@@ -472,17 +464,17 @@ export class TransactionsModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(CallAction.CostUpdated)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.CostUpdated)
   protected _handleCostUpdated(
-    message: IMessage<CostUpdatedResponse>,
+    message: IMessage<OCPP2_0_1.CostUpdatedResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('CostUpdated response received:', message, props);
   }
 
-  @AsHandler(CallAction.GetTransactionStatus)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetTransactionStatus)
   protected _handleGetTransactionStatus(
-    message: IMessage<GetTransactionStatusResponse>,
+    message: IMessage<OCPP2_0_1.GetTransactionStatusResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug(

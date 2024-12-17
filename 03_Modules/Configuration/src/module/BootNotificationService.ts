@@ -2,15 +2,12 @@ import { Boot, IBootRepository } from '@citrineos/data';
 import {
   BOOT_STATUS,
   BootConfig,
-  BootNotificationResponse,
-  CALL_SCHEMA_MAP,
-  CallAction,
-  GetBaseReportRequest,
+  OCPP2_0_1_CALL_SCHEMA_MAP,
   ICache,
   IMessageConfirmation,
-  RegistrationStatusEnumType,
-  ReportBaseEnumType,
+  OCPP2_0_1,
   SystemConfig,
+  OCPP2_0_1_CallAction,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 
@@ -38,12 +35,12 @@ export class BootNotificationService {
 
   determineBootStatus(
     bootConfig: Boot | undefined,
-  ): RegistrationStatusEnumType {
+  ): OCPP2_0_1.RegistrationStatusEnumType {
     let bootStatus = bootConfig
       ? bootConfig.status
       : this._config.unknownChargerStatus;
 
-    if (bootStatus === RegistrationStatusEnumType.Pending) {
+    if (bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Pending) {
       let needToGetBaseReport = this._config.getBaseReportOnPending;
       let needToSetVariables = false;
       if (bootConfig) {
@@ -65,7 +62,7 @@ export class BootNotificationService {
         !needToSetVariables &&
         this._config.autoAccept
       ) {
-        bootStatus = RegistrationStatusEnumType.Accepted;
+        bootStatus = OCPP2_0_1.RegistrationStatusEnumType.Accepted;
       }
     }
 
@@ -74,7 +71,7 @@ export class BootNotificationService {
 
   async createBootNotificationResponse(
     stationId: string,
-  ): Promise<BootNotificationResponse> {
+  ): Promise<OCPP2_0_1.BootNotificationResponse> {
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
     const bootConfig = await this._bootRepository.readByKey(stationId);
     const bootStatus = this.determineBootStatus(bootConfig);
@@ -85,14 +82,14 @@ export class BootNotificationService {
       status: bootStatus,
       statusInfo: bootConfig?.statusInfo,
       interval:
-        bootStatus === RegistrationStatusEnumType.Accepted
+        bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
           ? bootConfig?.heartbeatInterval || this._config.heartbeatInterval
           : bootConfig?.bootRetryInterval || this._config.bootRetryInterval,
     };
   }
 
   async updateBootConfig(
-    bootNotificationResponse: BootNotificationResponse,
+    bootNotificationResponse: OCPP2_0_1.BootNotificationResponse,
     stationId: string,
   ): Promise<Boot> {
     let bootConfigDbEntity: Boot | undefined =
@@ -128,17 +125,17 @@ export class BootNotificationService {
    */
   async cacheChargerActionsPermissions(
     stationId: string,
-    cachedBootStatus: RegistrationStatusEnumType | null,
-    bootNotificationResponseStatus: RegistrationStatusEnumType,
+    cachedBootStatus: OCPP2_0_1.RegistrationStatusEnumType | null,
+    bootNotificationResponseStatus: OCPP2_0_1.RegistrationStatusEnumType,
   ): Promise<void> {
     // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
     if (
-      bootNotificationResponseStatus === RegistrationStatusEnumType.Accepted
+      bootNotificationResponseStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
     ) {
       if (cachedBootStatus) {
         // Undo blacklisting of charger-originated actions
-        const promises = Array.from(CALL_SCHEMA_MAP).map(async ([action]) => {
-          if (action !== CallAction.BootNotification) {
+        const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(async ([action]) => {
+          if (action !== OCPP2_0_1_CallAction.BootNotification) {
             return this._cache.remove(action, stationId);
           }
         });
@@ -153,8 +150,8 @@ export class BootNotificationService {
       // Blacklist all charger-originated actions except BootNotification
       // GetReport messages will need to un-blacklist NotifyReport
       // TriggerMessage will need to un-blacklist the message it triggers
-      const promises = Array.from(CALL_SCHEMA_MAP).map(async ([action]) => {
-        if (action !== CallAction.BootNotification) {
+      const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(async ([action]) => {
+        if (action !== OCPP2_0_1_CallAction.BootNotification) {
           return this._cache.set(action, 'blacklisted', stationId);
         }
       });
@@ -165,7 +162,7 @@ export class BootNotificationService {
   async createGetBaseReportRequest(
     stationId: string,
     maxCachingSeconds: number,
-  ): Promise<GetBaseReportRequest> {
+  ): Promise<OCPP2_0_1.GetBaseReportRequest> {
     // OCTT tool does not meet B07.FR.04; instead always sends requestId === 0
     // Commenting out this line, using requestId === 0 until fixed (10/26/2023)
     // const requestId = Math.floor(Math.random() * ConfigurationModule.GET_BASE_REPORT_REQUEST_ID_MAX);
@@ -179,8 +176,8 @@ export class BootNotificationService {
 
     return {
       requestId: requestId,
-      reportBase: ReportBaseEnumType.FullInventory,
-    } as GetBaseReportRequest;
+      reportBase: OCPP2_0_1.ReportBaseEnumType.FullInventory,
+    } as OCPP2_0_1.GetBaseReportRequest;
   }
 
   /**

@@ -141,7 +141,7 @@ export class KafkaReceiver
   /**
    * Underlying Kafka message handler.
    *
-   * @param message The PubSub message to process
+   * @param message The kafka message to process
    */
   private async _onMessage(
     { topic, partition, message }: EachMessagePayload,

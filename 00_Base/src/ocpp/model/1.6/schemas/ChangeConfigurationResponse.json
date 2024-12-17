@@ -1,0 +1,20 @@
+{
+  "title": "ChangeConfigurationResponse",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "#/definitions/ChangeConfigurationResponseStatus"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["status"],
+  "$id": "ChangeConfigurationResponse",
+  "definitions": {
+    "ChangeConfigurationResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Rejected", "RebootRequired", "NotSupported"],
+      "tsEnumNames": ["Accepted", "Rejected", "RebootRequired", "NotSupported"]
+    }
+  }
+}

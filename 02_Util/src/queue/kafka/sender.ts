@@ -105,7 +105,7 @@ export class KafkaSender
   }
 
   /**
-   * Publishes the given message to Google PubSub.
+   * Publishes the given message to kafka.
    *
    * @param message The {@link IMessage} to publish
    * @param payload The payload to within the {@link IMessage}
