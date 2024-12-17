@@ -1,4 +1,4 @@
-FROM node:18 as build
+FROM node:22 as build
 
 WORKDIR /usr/local/apps/citrineos
 
@@ -8,7 +8,7 @@ RUN npm rebuild bcrypt --build-from-source
 
 # The final stage, which copies built files and prepares the run environment
 # Using a slim image to reduce the final image size
-FROM node:18-slim
+FROM node:22-slim
 COPY --from=build /usr/local/apps/citrineos /usr/local/apps/citrineos
 
 WORKDIR /usr/local/apps/citrineos
