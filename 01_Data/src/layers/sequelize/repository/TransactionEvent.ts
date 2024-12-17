@@ -202,26 +202,26 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   }
 
   async readAllActiveTransactionsByIdToken(idToken: OCPP2_0_1.IdTokenType): Promise<Transaction[]> {
-    return this.transaction
-      .readAllByQuery({
-        where: { isActive: true },
-        include: [
-          {
-            model: TransactionEvent,
-            as: Transaction.TRANSACTION_EVENTS_ALIAS,
-            include: [
-              {
-                model: IdToken,
-                where: {
-                  idToken: idToken.idToken,
-                  type: idToken.type,
-                },
+    return await this.transaction.readAllByQuery({
+      where: { isActive: true },
+      include: [
+        {
+          model: TransactionEvent,
+          as: Transaction.TRANSACTION_EVENTS_ALIAS,
+          required: true,
+          include: [
+            {
+              model: IdToken,
+              required: true,
+              where: {
+                idToken: idToken.idToken,
+                type: idToken.type,
               },
-            ],
-          },
-        ],
-      })
-      .then((row) => row as Transaction[]);
+            },
+          ],
+        },
+      ],
+    });
   }
 
   async readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]> {
