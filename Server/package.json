@@ -46,16 +46,12 @@
     "@citrineos/transactions": "1.6.0",
     "@citrineos/util": "1.6.0",
     "@directus/extensions": "1.0.10",
-    "@fastify/type-provider-json-schema-to-ts": "2.2.2",
+    "@fastify/cors": "^9.0.1",
     "cross-env": "7.0.3",
-    "fastify": "4.22.2",
     "sqlite3": "5.1.6",
     "tslog": "4.9.2",
     "uuid": "9.0.0",
     "ws": "8.17.1"
-  },
-  "engines": {
-    "node": ">=18"
   },
   "optionalDependencies": {
     "bufferutil": "4.0.8",
