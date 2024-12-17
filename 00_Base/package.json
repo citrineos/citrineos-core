@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/base",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "The base module for OCPP v2.0.1 including all interfaces. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "dist/index.js",
   "module": "dist/esm/index.js",
@@ -10,7 +10,8 @@
   ],
   "scripts": {
     "prepublish": "npx eslint ./src",
-    "generate-interfaces": "node json-schema-processor.js",
+    "generate-interfaces-1-6": "node json-schema-processor-1.6.js",
+    "generate-interfaces-2-0-1": "node json-schema-processor-2.0.1.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:esm": "tsc --project tsconfig.esm.json"
   },

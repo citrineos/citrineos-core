@@ -8,8 +8,7 @@ import {
 import { ILogObj, Logger } from 'tslog';
 import {
   CrudRepository,
-  ReportDataType,
-  StatusNotificationRequest,
+  OCPP2_0_1
 } from '@citrineos/base';
 
 export class StatusNotificationService {
@@ -40,7 +39,7 @@ export class StatusNotificationService {
    */
   async processStatusNotification(
     stationId: string,
-    statusNotificationRequest: StatusNotificationRequest,
+    statusNotificationRequest: OCPP2_0_1.StatusNotificationRequest,
   ) {
     const chargingStation =
       await this._locationRepository.readChargingStationByStationId(stationId);
@@ -81,7 +80,7 @@ export class StatusNotificationService {
         'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
       );
     } else {
-      const reportDataType: ReportDataType = {
+      const reportDataType: OCPP2_0_1.ReportDataType = {
         component: component,
         variable: variable,
         variableAttribute: [

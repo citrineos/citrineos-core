@@ -8,18 +8,13 @@ import {
   AsDataEndpoint,
   AsMessageEndpoint,
   CallAction,
-  CertificateSignedRequest,
-  CertificateSignedRequestSchema,
-  DeleteCertificateRequest,
-  DeleteCertificateRequestSchema,
-  GetInstalledCertificateIdsRequest,
-  GetInstalledCertificateIdsRequestSchema,
   HttpMethod,
   IFileAccess,
   IMessageConfirmation,
-  InstallCertificateRequest,
-  InstallCertificateRequestSchema,
   Namespace,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
+  OCPPVersion,
   WebsocketServerConfig,
 } from '@citrineos/base';
 import jsrsasign from 'jsrsasign';
@@ -93,76 +88,80 @@ export class CertificatesModuleApi
    */
 
   @AsMessageEndpoint(
-    CallAction.CertificateSigned,
-    CertificateSignedRequestSchema,
+    OCPP2_0_1_CallAction.CertificateSigned,
+    OCPP2_0_1.CertificateSignedRequestSchema,
   )
   certificateSigned(
     identifier: string,
     tenantId: string,
-    request: CertificateSignedRequest,
+    request: OCPP2_0_1.CertificateSignedRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.CertificateSigned,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.CertificateSigned,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.InstallCertificate,
-    InstallCertificateRequestSchema,
+    OCPP2_0_1_CallAction.InstallCertificate,
+    OCPP2_0_1.InstallCertificateRequestSchema,
   )
   installCertificate(
     identifier: string,
     tenantId: string,
-    request: InstallCertificateRequest,
+    request: OCPP2_0_1.InstallCertificateRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.InstallCertificate,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.InstallCertificate,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.GetInstalledCertificateIds,
-    GetInstalledCertificateIdsRequestSchema,
+    OCPP2_0_1_CallAction.GetInstalledCertificateIds,
+    OCPP2_0_1.GetInstalledCertificateIdsRequestSchema,
   )
   getInstalledCertificateIds(
     identifier: string,
     tenantId: string,
-    request: GetInstalledCertificateIdsRequest,
+    request: OCPP2_0_1.GetInstalledCertificateIdsRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.GetInstalledCertificateIds,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.GetInstalledCertificateIds,
       request,
       callbackUrl,
     );
   }
 
   @AsMessageEndpoint(
-    CallAction.DeleteCertificate,
-    DeleteCertificateRequestSchema,
+    OCPP2_0_1_CallAction.DeleteCertificate,
+    OCPP2_0_1.DeleteCertificateRequestSchema,
   )
   deleteCertificate(
     identifier: string,
     tenantId: string,
-    request: DeleteCertificateRequest,
+    request: OCPP2_0_1.DeleteCertificateRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     return this._module.sendCall(
       identifier,
       tenantId,
-      CallAction.DeleteCertificate,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.DeleteCertificate,
       request,
       callbackUrl,
     );
@@ -431,7 +430,7 @@ export class CertificatesModuleApi
       {
         certificateType: installReq.certificateType,
         certificate: rootCAPem,
-      } as InstallCertificateRequest,
+      } as OCPP2_0_1.InstallCertificateRequest,
       installReq.callbackUrl,
     ).then((confirmation) => {
       if (!confirmation.success) {

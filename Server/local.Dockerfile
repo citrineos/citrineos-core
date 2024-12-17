@@ -4,7 +4,7 @@ WORKDIR /usr/local/apps/citrineos
 
 COPY . .
 RUN npm run install-all && npm run build
-RUN npm rebuild bcrypt --build-from-source && npm rebuild deasync --build-from-source
+RUN npm rebuild bcrypt --build-from-source
 
 # The final stage, which copies built files and prepares the run environment
 # Using a slim image to reduce the final image size
