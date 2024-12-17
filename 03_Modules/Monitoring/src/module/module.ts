@@ -184,11 +184,11 @@ export class MonitoringModule extends AbstractModule {
     // Create response
     const response: NotifyEventResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) => {
-        this._logger.debug('NotifyEvent response sent:', messageConfirmation);
-      },
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
     );
+    this._logger.debug('NotifyEvent response sent:', messageConfirmation);
   }
 
   /**
@@ -319,7 +319,10 @@ export class MonitoringModule extends AbstractModule {
         message.context.tenantId,
         CallAction.GetMonitoringReport,
         {
-          requestId: await this._idGenerator.generateRequestId(message.context.stationId, ChargingStationSequenceType.getMonitoringReport),
+          requestId: await this._idGenerator.generateRequestId(
+            message.context.stationId,
+            ChargingStationSequenceType.getMonitoringReport,
+          ),
         } as GetMonitoringReportRequest,
       );
     }
@@ -331,7 +334,7 @@ export class MonitoringModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetVariables response received:', message, props);
-    this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(
+    await this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(
       message.payload.getVariableResult,
       message.context.stationId,
       message.context.timestamp,
@@ -345,12 +348,12 @@ export class MonitoringModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('SetVariables response received:', message, props);
 
-    message.payload.setVariableResult.forEach(async (setVariableResultType) => {
-      this._deviceModelRepository.updateResultByStationId(
+    for (const setVariableResultType of message.payload.setVariableResult) {
+      await this._deviceModelRepository.updateResultByStationId(
         setVariableResultType,
         message.context.stationId,
         message.context.timestamp,
       );
-    });
+    }
   }
 }

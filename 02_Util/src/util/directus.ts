@@ -59,10 +59,18 @@ export class DirectusUtil implements IFileAccess {
       this._logger.info(
         `Logging into Directus as ${this._config.util.directus.username}`,
       );
-      client.login(
-        this._config.util.directus.username,
-        this._config.util.directus.password,
-      );
+      client
+        .login(
+          this._config.util.directus.username,
+          this._config.util.directus.password,
+        )
+        .then()
+        .catch((error) => {
+          this._logger.error(
+            'DirectusUtil could not perform client login',
+            error,
+          );
+        });
     } else {
       // No auth
       client = createDirectus<Schema>(
@@ -72,7 +80,7 @@ export class DirectusUtil implements IFileAccess {
     this._client = client;
   }
 
-  public addDirectusMessageApiFlowsFastifyRouteHook(
+  public async addDirectusMessageApiFlowsFastifyRouteHook(
     routeOptions: RouteOptions,
     schemas: Record<string, unknown>,
   ) {
@@ -88,7 +96,7 @@ export class DirectusUtil implements IFileAccess {
       // These body schemas are the ones generated directly from the specification using the json-schema-processor in 00_Base
       const bodySchema: any = routeOptions.schema?.body;
       if (bodySchema && bodySchema.$ref && schemas[bodySchema.$ref]) {
-        this.addDirectusFlowForAction(
+        await this.addDirectusFlowForAction(
           action,
           messagePath,
           schemas[bodySchema.$ref] as object,
@@ -294,7 +302,7 @@ export class DirectusUtil implements IFileAccess {
         );
 
         const existingFlow = readFlowsResponse[0];
-        this.updateMessageApiFlow(
+        await this.updateMessageApiFlow(
           existingFlow.id,
           flow,
           notificationOperation,
@@ -305,7 +313,7 @@ export class DirectusUtil implements IFileAccess {
       } else {
         errorLogVerb = 'creating';
 
-        this.createMessageApiFlow(
+        await this.createMessageApiFlow(
           flow,
           notificationOperation,
           webhookOperation,
@@ -350,7 +358,7 @@ export class DirectusUtil implements IFileAccess {
     );
 
     // Update flow with operations
-    this._client.request(
+    await this._client.request(
       updateFlow(flowCreationResponse.id, {
         operation: readOperationCreationResponse.id,
       }),
@@ -380,7 +388,7 @@ export class DirectusUtil implements IFileAccess {
     );
 
     // Update notification operation
-    this._client.request(
+    await this._client.request(
       updateOperation(
         webhookOperationUpdateResponse.resolve,
         notificationOperation,
