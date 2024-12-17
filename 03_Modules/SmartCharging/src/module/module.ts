@@ -199,7 +199,7 @@ export class SmartChargingModule extends AbstractModule {
       !hasAcOrDcChargingParameters ||
       !matchedChargingType
     ) {
-      this.sendCallResultWithMessage(message, {
+      await this.sendCallResultWithMessage(message, {
         status: OCPP2_0_1.NotifyEVChargingNeedsStatusEnumType.Rejected,
       } as OCPP2_0_1.NotifyEVChargingNeedsResponse);
       return;
@@ -215,7 +215,7 @@ export class SmartChargingModule extends AbstractModule {
         );
     } catch (error) {
       this._logger.error(`Failed to calculate charging profile: ${error}`);
-      this.sendCallResultWithMessage(message, {
+      await this.sendCallResultWithMessage(message, {
         status: OCPP2_0_1.NotifyEVChargingNeedsStatusEnumType.Rejected,
       } as OCPP2_0_1.NotifyEVChargingNeedsResponse);
       return;
@@ -230,7 +230,7 @@ export class SmartChargingModule extends AbstractModule {
       `Charging needs created: ${JSON.stringify(chargingNeeds)}`,
     );
 
-    this.sendCallResultWithMessage(message, {
+    await this.sendCallResultWithMessage(message, {
       status: OCPP2_0_1.NotifyEVChargingNeedsStatusEnumType.Accepted,
     } as OCPP2_0_1.NotifyEVChargingNeedsResponse);
 
@@ -244,7 +244,7 @@ export class SmartChargingModule extends AbstractModule {
       `Charging profile created: ${JSON.stringify(storedChargingProfile)}`,
     );
 
-    this.sendCall(
+    await this.sendCall(
       stationId,
       message.context.tenantId,
       OCPPVersion.OCPP2_0_1,
@@ -265,7 +265,7 @@ export class SmartChargingModule extends AbstractModule {
     // There are different definitions for Accepted and Rejected in NotifyEVChargingScheduleResponse
     // in OCPP 2.0.1 V3 Part 2, see (1) 1.37.2 status field description and (2) K17.FR.11 and K17.FR.12
     // We use (1) in our code, i.e., always return Accepted in response
-    this.sendCallResultWithMessage(message, {
+    await this.sendCallResultWithMessage(message, {
       status: OCPP2_0_1.GenericStatusEnumType.Accepted,
     } as OCPP2_0_1.NotifyEVChargingScheduleResponse);
 
@@ -302,7 +302,7 @@ export class SmartChargingModule extends AbstractModule {
           activeTransaction,
           stationId,
         );
-      this.sendCall(
+      await this.sendCall(
         stationId,
         message.context.tenantId,
         OCPPVersion.OCPP2_0_1,
@@ -313,21 +313,22 @@ export class SmartChargingModule extends AbstractModule {
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyChargingLimit)
-  protected _handleNotifyChargingLimit(
+  protected async _handleNotifyChargingLimit(
     message: IMessage<OCPP2_0_1.NotifyChargingLimitRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('NotifyChargingLimit received:', message, props);
 
     // Create response
     const response: OCPP2_0_1.NotifyChargingLimitResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) =>
-        this._logger.debug(
-          'NotifyChargingLimit response sent: ',
-          messageConfirmation,
-        ),
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'NotifyChargingLimit response sent: ',
+      messageConfirmation,
     );
   }
 
@@ -353,12 +354,13 @@ export class SmartChargingModule extends AbstractModule {
     // Create response
     const response: OCPP2_0_1.ReportChargingProfilesResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) =>
-        this._logger.debug(
-          'ReportChargingProfiles response sent: ',
-          messageConfirmation,
-        ),
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'ReportChargingProfiles response sent: ',
+      messageConfirmation,
     );
   }
 
@@ -395,14 +397,15 @@ export class SmartChargingModule extends AbstractModule {
         },
       );
       // Request charging profiles to get the latest data
-      this.sendCall(
+      await this.sendCall(
         stationId,
         message.context.tenantId,
         OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, ChargingStationSequenceType.getChargingProfiles,
+            message.context.stationId,
+            ChargingStationSequenceType.getChargingProfiles,
           ),
           chargingProfile: {
             chargingLimitSource: [
@@ -461,14 +464,15 @@ export class SmartChargingModule extends AbstractModule {
         },
       );
       // Request charging profiles to get the latest data
-      this.sendCall(
+      await this.sendCall(
         stationId,
         message.context.tenantId,
         OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, ChargingStationSequenceType.getChargingProfiles,
+            message.context.stationId,
+            ChargingStationSequenceType.getChargingProfiles,
           ),
           chargingProfile: {
             chargingLimitSource: [OCPP2_0_1.ChargingLimitSourceEnumType.CSO],

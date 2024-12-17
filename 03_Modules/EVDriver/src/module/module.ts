@@ -258,7 +258,7 @@ export class EVDriverModule extends AbstractModule {
 
     if (message.payload.idToken.type === OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
       response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
-      this.sendCallResultWithMessage(message, response);
+      await this.sendCallResultWithMessage(message, response);
       return;
     }
 
@@ -287,11 +287,11 @@ export class EVDriverModule extends AbstractModule {
         response.certificateStatus !==
         OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted
       ) {
-        this.sendCallResultWithMessage(message, response).then(
-          (messageConfirmation) => {
-            this._logger.debug('Authorize response sent:', messageConfirmation);
-          },
+        const messageConfirmation = await this.sendCallResultWithMessage(
+          message,
+          response,
         );
+        this._logger.debug('Authorize response sent:', messageConfirmation);
         return;
       }
     }
@@ -550,12 +550,13 @@ export class EVDriverModule extends AbstractModule {
     // Create response
     const response: OCPP2_0_1.ReservationStatusUpdateResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) =>
-        this._logger.debug(
-          'ReservationStatusUpdate response sent: ',
-          messageConfirmation,
-        ),
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'ReservationStatusUpdate response sent: ',
+      messageConfirmation,
     );
   }
 
@@ -593,14 +594,15 @@ export class EVDriverModule extends AbstractModule {
         },
       );
       // 2. Request charging profiles to get the latest data
-      this.sendCall(
+      await this.sendCall(
         stationId,
         message.context.tenantId,
         OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
-            message.context.stationId, ChargingStationSequenceType.getChargingProfiles,
+            message.context.stationId,
+            ChargingStationSequenceType.getChargingProfiles,
           ),
           chargingProfile: {
             chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,

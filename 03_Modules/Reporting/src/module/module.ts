@@ -138,10 +138,10 @@ export class ReportingModule extends AbstractModule {
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.LogStatusNotification)
-  protected _handleLogStatusNotification(
+  protected async _handleLogStatusNotification(
     message: IMessage<OCPP2_0_1.LogStatusNotificationRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('LogStatusNotification received:', message, props);
 
     // TODO: LogStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
@@ -149,21 +149,21 @@ export class ReportingModule extends AbstractModule {
     // Create response
     const response: OCPP2_0_1.LogStatusNotificationResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) => {
-        this._logger.debug(
-          'LogStatusNotification response sent: ',
-          messageConfirmation,
-        );
-      },
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'LogStatusNotification response sent: ',
+      messageConfirmation,
     );
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyCustomerInformation)
-  protected _handleNotifyCustomerInformation(
+  protected async _handleNotifyCustomerInformation(
     message: IMessage<OCPP2_0_1.NotifyCustomerInformationRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug(
       'NotifyCustomerInformation request received:',
       message,
@@ -173,13 +173,13 @@ export class ReportingModule extends AbstractModule {
     // Create response
     const response: OCPP2_0_1.NotifyCustomerInformationResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) => {
-        this._logger.debug(
-          'NotifyCustomerInformation response sent: ',
-          messageConfirmation,
-        );
-      },
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'NotifyCustomerInformation response sent: ',
+      messageConfirmation,
     );
   }
 
@@ -214,13 +214,13 @@ export class ReportingModule extends AbstractModule {
     // Create response
     const response: OCPP2_0_1.NotifyMonitoringReportResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) => {
-        this._logger.debug(
-          'NotifyMonitoringReport response sent: ',
-          messageConfirmation,
-        );
-      },
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'NotifyMonitoringReport response sent: ',
+      messageConfirmation,
     );
   }
 
@@ -291,26 +291,25 @@ export class ReportingModule extends AbstractModule {
     // Create response
     const response: OCPP2_0_1.NotifyReportResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(() => {
-      this._logger.debug('NotifyReport response sent:', message, props);
-    });
+    await this.sendCallResultWithMessage(message, response);
+    this._logger.debug('NotifyReport response sent:', message, props);
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SecurityEventNotification)
-  protected _handleSecurityEventNotification(
+  protected async _handleSecurityEventNotification(
     message: IMessage<OCPP2_0_1.SecurityEventNotificationRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug(
       'SecurityEventNotification request received:',
       message,
       props,
     );
-    this._securityEventRepository.createByStationId(
+    await this._securityEventRepository.createByStationId(
       message.payload,
       message.context.stationId,
     );
-    this.sendCallResultWithMessage(
+    await this.sendCallResultWithMessage(
       message,
       {} as OCPP2_0_1.SecurityEventNotificationResponse,
     );

@@ -78,5 +78,5 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
     filter?: { [k: string]: string },
   ): Promise<boolean>;
   abstract unsubscribe(identifier: string): Promise<boolean>;
-  abstract shutdown(): void;
+  abstract shutdown(): Promise<void>;
 }

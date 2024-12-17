@@ -222,7 +222,11 @@ export class ConfigurationModule extends AbstractModule {
         bootNotificationResponse.status !== cachedBootStatus)
     ) {
       // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
-      this._cache.set(BOOT_STATUS, bootNotificationResponse.status, stationId);
+      await this._cache.set(
+        BOOT_STATUS,
+        bootNotificationResponse.status,
+        stationId,
+      );
     }
 
     // Update charger-specific boot config with details of most recently sent BootNotificationResponse
@@ -248,12 +252,13 @@ export class ConfigurationModule extends AbstractModule {
       this._config.modules.configuration.getBaseReportOnPending
     ) {
       // Remove Notify Report from blacklist
-      this._cache.remove(OCPP2_0_1_CallAction.NotifyReport, stationId);
+      await this._cache.remove(OCPP2_0_1_CallAction.NotifyReport, stationId);
 
-      const getBaseReportRequest = this._bootService.createGetBaseReportRequest(
-        stationId,
-        this._config.maxCachingSeconds,
-      );
+      const getBaseReportRequest =
+        await this._bootService.createGetBaseReportRequest(
+          stationId,
+          this._config.maxCachingSeconds,
+        );
 
       const getBaseReportConfirmation = await this.sendCall(
         stationId,
@@ -369,7 +374,7 @@ export class ConfigurationModule extends AbstractModule {
 
     if (rebootSetVariable) {
       // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
-      this.sendCall(stationId, tenantId, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Reset, {
+      await this.sendCall(stationId, tenantId, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Reset, {
         type: OCPP2_0_1.ResetEnumType.Immediate,
       } as OCPP2_0_1.ResetRequest);
     } else {
@@ -382,10 +387,10 @@ export class ConfigurationModule extends AbstractModule {
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Heartbeat)
-  protected _handleHeartbeat(
+  protected async _handleHeartbeat(
     message: IMessage<OCPP2_0_1.HeartbeatRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('Heartbeat received:', message, props);
 
     // Create response
@@ -393,10 +398,11 @@ export class ConfigurationModule extends AbstractModule {
       currentTime: new Date().toISOString(),
     };
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) =>
-        this._logger.debug('Heartbeat response sent: ', messageConfirmation),
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
     );
+    this._logger.debug('Heartbeat response sent: ', messageConfirmation);
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyDisplayMessages)
@@ -427,20 +433,21 @@ export class ConfigurationModule extends AbstractModule {
     // Create response
     const response: OCPP2_0_1.NotifyDisplayMessagesResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) =>
-        this._logger.debug(
-          'NotifyDisplayMessages response sent: ',
-          messageConfirmation,
-        ),
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'NotifyDisplayMessages response sent: ',
+      messageConfirmation,
     );
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.FirmwareStatusNotification)
-  protected _handleFirmwareStatusNotification(
+  protected async _handleFirmwareStatusNotification(
     message: IMessage<OCPP2_0_1.FirmwareStatusNotificationRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('FirmwareStatusNotification received:', message, props);
 
     // TODO: FirmwareStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
@@ -448,20 +455,21 @@ export class ConfigurationModule extends AbstractModule {
     // Create response
     const response: OCPP2_0_1.FirmwareStatusNotificationResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) =>
-        this._logger.debug(
-          'FirmwareStatusNotification response sent: ',
-          messageConfirmation,
-        ),
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'FirmwareStatusNotification response sent: ',
+      messageConfirmation,
     );
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.DataTransfer)
-  protected _handleDataTransfer(
+  protected async _handleDataTransfer(
     message: IMessage<OCPP2_0_1.DataTransferRequest>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('DataTransfer received:', message, props);
 
     // Create response
@@ -470,10 +478,11 @@ export class ConfigurationModule extends AbstractModule {
       statusInfo: { reasonCode: ErrorCode.NotImplemented },
     };
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) =>
-        this._logger.debug('DataTransfer response sent: ', messageConfirmation),
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
     );
+    this._logger.debug('DataTransfer response sent: ', messageConfirmation);
   }
 
   /**

@@ -380,9 +380,9 @@ export class MessageRouterImpl
     }
   }
 
-  shutdown(): void {
-    this._sender.shutdown();
-    this._handler.shutdown();
+  async shutdown(): Promise<void> {
+    await this._sender.shutdown();
+    await this._handler.shutdown();
   }
 
   /**

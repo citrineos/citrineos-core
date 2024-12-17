@@ -59,5 +59,5 @@ export interface IModule {
     message: IMessage<OcppRequest | OcppResponse>,
     props?: HandlerProperties,
   ): Promise<void>;
-  shutdown(): void;
+  shutdown(): Promise<void>;
 }

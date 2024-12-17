@@ -171,12 +171,12 @@ export class CertificatesModule extends AbstractModule {
           request.iso15118SchemaVersion,
           request.exiRequest,
         );
-      this.sendCallResultWithMessage(message, {
+      await this.sendCallResultWithMessage(message, {
         status: OCPP2_0_1.Iso15118EVCertificateStatusEnumType.Accepted,
         exiResponse: exiResponse,
       } as OCPP2_0_1.Get15118EVCertificateResponse);
     } catch (error) {
-      this.sendCallResultWithMessage(message, {
+      await this.sendCallResultWithMessage(message, {
         status: OCPP2_0_1.Iso15118EVCertificateStatusEnumType.Failed,
         statusInfo: {
           reasonCode: ErrorCode.GenericError,
@@ -205,13 +205,13 @@ export class CertificatesModule extends AbstractModule {
         ocspRequest,
         reqData.responderURL,
       );
-      this.sendCallResultWithMessage(message, {
+      await this.sendCallResultWithMessage(message, {
         status: OCPP2_0_1.GetCertificateStatusEnumType.Accepted,
         ocspResponse: ocspResponse,
       } as OCPP2_0_1.GetCertificateStatusResponse);
     } catch (error) {
       this._logger.error(`GetCertificateStatus failed: ${error}`);
-      this.sendCallResultWithMessage(message, {
+      await this.sendCallResultWithMessage(message, {
         status: OCPP2_0_1.GetCertificateStatusEnumType.Failed,
         statusInfo: { reasonCode: ErrorCode.GenericError },
       } as OCPP2_0_1.GetCertificateStatusResponse);
@@ -233,7 +233,7 @@ export class CertificatesModule extends AbstractModule {
     //  Despite explicitly saying in the protocol "The CSMS may do some checks on the CSR"
     //  So it is necessary to accept before checking the csr. when this is fixed, this line can be removed
     //  And the other sendCallResultWithMessage for SignCertificateResponse can be uncommented
-    this.sendCallResultWithMessage(message, {
+    await this.sendCallResultWithMessage(message, {
       status: OCPP2_0_1.GenericStatusEnumType.Accepted,
     } as OCPP2_0_1.SignCertificateResponse);
 
@@ -267,7 +267,7 @@ export class CertificatesModule extends AbstractModule {
     //   status: GenericStatusEnumType.Accepted,
     // } as SignCertificateResponse);
 
-    this.sendCall(
+    await this.sendCall(
       stationId,
       message.context.tenantId,
       OCPPVersion.OCPP2_0_1,

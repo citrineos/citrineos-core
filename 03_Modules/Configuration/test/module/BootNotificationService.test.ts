@@ -219,12 +219,12 @@ describe('BootService', () => {
       ).rejects.toThrow();
     });
 
-    it('should not throw because getBaseReport process completes', () => {
+    it('should not throw because getBaseReport process completes', async () => {
       mockCache.onChange
         .mockResolvedValueOnce('ongoing')
         .mockResolvedValueOnce('complete');
 
-      expect(
+      await expect(
         bootService.confirmGetBaseReportSuccess(
           MOCK_STATION_ID,
           MOCK_REQUEST_ID.toString(),

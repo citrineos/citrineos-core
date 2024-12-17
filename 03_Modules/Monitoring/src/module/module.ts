@@ -172,11 +172,11 @@ export class MonitoringModule extends AbstractModule {
     // Create response
     const response: OCPP2_0_1.NotifyEventResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) => {
-        this._logger.debug('NotifyEvent response sent:', messageConfirmation);
-      },
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
     );
+    this._logger.debug('NotifyEvent response sent:', messageConfirmation);
   }
 
   /**
@@ -308,7 +308,10 @@ export class MonitoringModule extends AbstractModule {
         OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.GetMonitoringReport,
         {
-          requestId: await this._idGenerator.generateRequestId(message.context.stationId, ChargingStationSequenceType.getMonitoringReport),
+          requestId: await this._idGenerator.generateRequestId(
+            message.context.stationId,
+            ChargingStationSequenceType.getMonitoringReport,
+          ),
         } as OCPP2_0_1.GetMonitoringReportRequest,
       );
     }
@@ -320,7 +323,7 @@ export class MonitoringModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetVariables response received:', message, props);
-    this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(
+    await this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(
       message.payload.getVariableResult,
       message.context.stationId,
       message.context.timestamp,
@@ -334,12 +337,12 @@ export class MonitoringModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('SetVariables response received:', message, props);
 
-    message.payload.setVariableResult.forEach(async (setVariableResultType) => {
-      this._deviceModelRepository.updateResultByStationId(
+    for (const setVariableResultType of message.payload.setVariableResult) {
+      await this._deviceModelRepository.updateResultByStationId(
         setVariableResultType,
         message.context.stationId,
         message.context.timestamp,
       );
-    });
+    }
   }
 }
