@@ -26,7 +26,12 @@ export class RedisCache implements ICache {
     this._client.on('ready', () => console.log('Redis client ready to use'));
     this._client.on('error', (err) => console.error('Redis error', err));
     this._client.on('end', () => console.log('Redis client disconnected'));
-    this._client.connect();
+    this._client
+      .connect()
+      .then()
+      .catch((error) => {
+        console.log('Error connecting to Redis', error);
+      });
   }
 
   exists(key: string, namespace?: string): Promise<boolean> {
@@ -54,25 +59,45 @@ export class RedisCache implements ICache {
       // Create a Redis subscriber to listen for operations affecting the key
       const subscriber = createClient();
       // Channel: Key-space, message: the name of the event, which is the command executed on the key
-      subscriber.subscribe(`__keyspace@0__:${key}`, (channel, message) => {
-        switch (message) {
-          case 'set':
-            resolve(this.get(key, namespace, classConstructor));
-            subscriber.quit();
-            break;
-          case 'del':
-          case 'expire':
-            resolve(null);
-            subscriber.quit();
-            break;
-          default:
-            // Do nothing
-            break;
-        }
-      });
+      subscriber
+        .subscribe(`__keyspace@0__:${key}`, (channel, message) => {
+          switch (message) {
+            case 'set':
+              resolve(this.get(key, namespace, classConstructor));
+              subscriber
+                .quit()
+                .then()
+                .catch((error) => {
+                  console.log('Error quitting subscriber', error);
+                });
+              break;
+            case 'del':
+            case 'expire':
+              resolve(null);
+              subscriber
+                .quit()
+                .then()
+                .catch((error) => {
+                  console.log('Error quitting subscriber', error);
+                });
+              break;
+            default:
+              // Do nothing
+              break;
+          }
+        })
+        .then()
+        .catch((error) => {
+          console.log('Error creating Redis subscriber', error);
+        });
       setTimeout(() => {
         resolve(this.get(key, namespace, classConstructor));
-        subscriber.quit();
+        subscriber
+          .quit()
+          .then()
+          .catch((error) => {
+            console.log('Error closing Redis subscriber', error);
+          });
       }, waitSeconds * 1000);
     });
   }

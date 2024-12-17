@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type ChargingStateEnumType, CrudRepository, type EVSEType, IdTokenEnumType, type IdTokenType, MeterValueType, MeterValueUtils, SystemConfig, TransactionEventEnumType, type TransactionEventRequest } from '@citrineos/base';
+import { CrudRepository, MeterValueUtils, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { type ITransactionEventRepository } from '../../../interfaces';
 import { MeterValue, Transaction, TransactionEvent } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';
@@ -45,7 +45,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
    *
    * @returns Saved TransactionEvent
    */
-  async createOrUpdateTransactionByTransactionEventAndStationId(value: TransactionEventRequest, stationId: string): Promise<Transaction> {
+  async createOrUpdateTransactionByTransactionEventAndStationId(value: OCPP2_0_1.TransactionEventRequest, stationId: string): Promise<Transaction> {
     let evse: Evse | undefined;
     if (value.evse) {
       [evse] = await this.evse.readOrCreateByQuery({
@@ -70,7 +70,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       if (existingTransaction) {
         finalTransaction = await existingTransaction.update(
           {
-            isActive: value.eventType !== TransactionEventEnumType.Ended,
+            isActive: value.eventType !== OCPP2_0_1.TransactionEventEnumType.Ended,
             ...value.transactionInfo,
           },
           {
@@ -80,7 +80,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       } else {
         const newTransaction = Transaction.build({
           stationId,
-          isActive: value.eventType !== TransactionEventEnumType.Ended,
+          isActive: value.eventType !== OCPP2_0_1.TransactionEventEnumType.Ended,
           ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
           ...value.transactionInfo,
         });
@@ -97,7 +97,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         ...value,
       });
 
-      if (value.idToken && value.idToken.type !== IdTokenEnumType.NoAuthorization) {
+      if (value.idToken && value.idToken.type !== OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
         // TODO: ensure that Authorization is passed into this method if idToken exists
         // At this point, token MUST already be authorized and thus exist in the database
         // It can be either the primary idToken of an Authorization or a group idToken
@@ -154,7 +154,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     });
   }
 
-  async readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEventRequest[]> {
+  async readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<OCPP2_0_1.TransactionEventRequest[]> {
     return await super
       .readAllByQuery({
         where: { stationId },
@@ -183,14 +183,14 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
    *
    * @returns List of transactions which meet the requirements.
    */
-  async readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: EVSEType, chargingStates?: ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
+  async readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: OCPP2_0_1.EVSEType, chargingStates?: OCPP2_0_1.ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
     const includeObj = evse
       ? [
-          {
-            model: Evse,
-            where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null },
-          },
-        ]
+        {
+          model: Evse,
+          where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null },
+        },
+      ]
       : [];
     return await this.transaction
       .readAllByQuery({
@@ -200,27 +200,27 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       .then((row) => row as Transaction[]);
   }
 
-  readAllActiveTransactionsByIdToken(idToken: IdTokenType): Promise<Transaction[]> {
-    return this.transaction
-      .readAllByQuery({
-        where: { isActive: true },
-        include: [
-          {
-            model: TransactionEvent,
-            as: Transaction.TRANSACTION_EVENTS_ALIAS,
-            include: [
-              {
-                model: IdToken,
-                where: {
-                  idToken: idToken.idToken,
-                  type: idToken.type,
-                },
+  async readAllActiveTransactionsByIdToken(idToken: OCPP2_0_1.IdTokenType): Promise<Transaction[]> {
+    return await this.transaction.readAllByQuery({
+      where: { isActive: true },
+      include: [
+        {
+          model: TransactionEvent,
+          as: Transaction.TRANSACTION_EVENTS_ALIAS,
+          required: true,
+          include: [
+            {
+              model: IdToken,
+              required: true,
+              where: {
+                idToken: idToken.idToken,
+                type: idToken.type,
               },
-            ],
-          },
-        ],
-      })
-      .then((row) => row as Transaction[]);
+            },
+          ],
+        },
+      ],
+    });
   }
 
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]> {
@@ -325,7 +325,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       });
   }
 
-  async createMeterValue(meterValue: MeterValueType): Promise<void> {
+  async createMeterValue(meterValue: OCPP2_0_1.MeterValueType): Promise<void> {
     await this.meterValue.create(MeterValue.build({ ...meterValue }));
   }
 

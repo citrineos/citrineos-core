@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
-import { AttributeEnumType } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { aBasicAuthPasswordVariable } from '../../providers/VariableAttributeProvider';
 import { BasicAuthenticationFilter } from '../../../src/networkconnection/authenticator/BasicAuthenticationFilter';
@@ -181,7 +181,7 @@ describe('BasicAuthenticationFilter', () => {
         stationId: stationId,
         component_name: 'SecurityCtrlr',
         variable_name: 'BasicAuthPassword',
-        type: AttributeEnumType.Actual,
+        type: OCPP2_0_1.AttributeEnumType.Actual,
       });
     });
 
