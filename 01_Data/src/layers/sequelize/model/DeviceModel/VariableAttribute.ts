@@ -13,7 +13,64 @@ import { Boot } from '../Boot';
 import { VariableStatus } from './VariableStatus';
 import { ChargingStation } from '../Location';
 
-@Table
+@Table({
+  indexes: [
+    {
+      unique: true,
+      fields: ['stationId'],
+      where: {
+        type: null,
+        variableId: null,
+        componentId: null,
+      },
+    },
+    {
+      unique: true,
+      fields: ['stationId', 'type'],
+      where: {
+        variableId: null,
+        componentId: null,
+      },
+    },
+    {
+      unique: true,
+      fields: ['stationId', 'variableId'],
+      where: {
+        type: null,
+        componentId: null,
+      },
+    },
+    {
+      unique: true,
+      fields: ['stationId', 'componentId'],
+      where: {
+        type: null,
+        variableId: null,
+      },
+    },
+    {
+      unique: true,
+      fields: ['stationId', 'type', 'variableId'],
+      where: {
+        componentId: null,
+      },
+    },
+    {
+      unique: true,
+      fields: ['stationId', 'type', 'componentId'],
+      where: {
+        variableId: null,
+      },
+    },
+    {
+      unique: true,
+      fields: ['stationId', 'variableId', 'componentId'],
+      where: {
+        type: null,
+      },
+    },
+  ],
+})
 export class VariableAttribute extends Model implements OCPP2_0_1.VariableAttributeType {
   static readonly MODEL_NAME: string = Namespace.VariableAttributeType;
 
@@ -24,6 +81,7 @@ export class VariableAttribute extends Model implements OCPP2_0_1.VariableAttrib
   @Index
   @Column({
     unique: 'stationId_type_variableId_componentId',
+    allowNull: false,
   })
   @ForeignKey(() => ChargingStation)
   declare stationId: string;

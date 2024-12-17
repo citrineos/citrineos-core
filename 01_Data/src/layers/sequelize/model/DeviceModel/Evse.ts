@@ -6,7 +6,17 @@
 import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { AutoIncrement, Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript';
 
-@Table
+@Table({
+  indexes: [
+    {
+      unique: true,
+      fields: ['id'],
+      where: {
+        connectorId: null,
+      },
+    },
+  ],
+})
 export class Evse extends Model implements OCPP2_0_1.EVSEType {
   static readonly MODEL_NAME: string = Namespace.EVSEType;
 
