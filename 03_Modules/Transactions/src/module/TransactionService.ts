@@ -148,7 +148,7 @@ export class TransactionService {
     meterValues: [OCPP2_0_1.MeterValueType, ...OCPP2_0_1.MeterValueType[]],
     transactionDbId?: number | null,
   ) {
-    meterValues.map(async (meterValue) => {
+    return Promise.all(meterValues.map(async (meterValue) => {
       const hasPeriodic: boolean = meterValue.sampledValue?.some(
         (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
       );
@@ -160,7 +160,7 @@ export class TransactionService {
       } else {
         await this._transactionEventRepository.createMeterValue(meterValue);
       }
-    });
+    }));
   }
 
   private async _applyAuthorizers(
