@@ -12,9 +12,7 @@ import {
 } from '@citrineos/data';
 import { LocalAuthListService } from '../../src/module/LocalAuthListService';
 import {
-  AuthorizationData,
-  DataEnumType,
-  UpdateEnumType,
+  OCPP2_0_1
 } from '@citrineos/base';
 
 describe('LocalAuthListService', () => {
@@ -30,7 +28,7 @@ describe('LocalAuthListService', () => {
     versionNumber: initialVersionNumber,
   } as unknown as LocalListVersion);
   const baseMockVariableCharacteristics = jest.mocked<VariableCharacteristics>({
-    dataType: DataEnumType.integer,
+    dataType: OCPP2_0_1.DataEnumType.integer,
   } as unknown as VariableCharacteristics);
 
   beforeEach(() => {
@@ -52,7 +50,7 @@ describe('LocalAuthListService', () => {
 
   it('should persist SendLocalListRequest and return the SendLocalList, validating input arguments', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
     const expectedCorrelationId = correlationId;
 
     const sendLocalListRequest = {
@@ -62,7 +60,7 @@ describe('LocalAuthListService', () => {
           idToken: { idToken: 'ID_TOKEN', type: 'Central' },
           idTokenInfo: { status: 'Accepted' },
         },
-      ] as [AuthorizationData],
+      ] as [OCPP2_0_1.AuthorizationData],
       updateType: expectedUpdateType,
     };
 
@@ -113,7 +111,7 @@ describe('LocalAuthListService', () => {
   it('should throw an error when SendLocalListRequest.versionNumber is less than or equal to 0', async () => {
     const sendLocalListRequest_0 = {
       versionNumber: 0,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
     await expect(
@@ -126,7 +124,7 @@ describe('LocalAuthListService', () => {
 
     const sendLocalListRequest_negative = {
       versionNumber: -1,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
     await expect(
@@ -143,7 +141,7 @@ describe('LocalAuthListService', () => {
   it('should throw an error when versionNumber is less than the current LocalListVersion', async () => {
     const sendLocalListRequest = {
       versionNumber: 1,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
     mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(
@@ -163,7 +161,7 @@ describe('LocalAuthListService', () => {
 
   it('should throw an error when there are duplicate idTokens in the localAuthorizationList', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
     const sendLocalListRequest = {
       versionNumber: newVersionNumber,
@@ -177,7 +175,7 @@ describe('LocalAuthListService', () => {
           idToken: { idToken: 'ID_TOKEN', type: 'Central' },
           idTokenInfo: { status: 'Blocked' },
         },
-      ] as [AuthorizationData, AuthorizationData],
+      ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
     };
 
     const mockSendLocalList = jest.mocked<SendLocalList>({
@@ -205,11 +203,11 @@ describe('LocalAuthListService', () => {
 
   it('should throw an error when updated list length exceeds maxLocalAuthListEntries', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
     const sendLocalListRequest = {
       versionNumber: 3,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
       localAuthorizationList: [
         {
           idToken: { idToken: 'ID_TOKEN1', type: 'Central' },
@@ -219,7 +217,7 @@ describe('LocalAuthListService', () => {
           idToken: { idToken: 'ID_TOKEN2', type: 'Central' },
           idTokenInfo: { status: 'Blocked' },
         },
-      ] as [AuthorizationData, AuthorizationData],
+      ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
     };
 
     const mockSendLocalList = jest.mocked<SendLocalList>({
@@ -266,11 +264,11 @@ describe('LocalAuthListService', () => {
 
   it('should throw an error when getMaxLocalAuthListEntries returns null', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
     const sendLocalListRequest = {
       versionNumber: 2,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
     const mockSendLocalList = jest.mocked<SendLocalList>({
@@ -300,11 +298,11 @@ describe('LocalAuthListService', () => {
 
   it('should throw an error when getMaxLocalAuthListEntries returns variable characteristics without maxLimit', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
     const sendLocalListRequest = {
       versionNumber: 2,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
     const mockSendLocalList = jest.mocked<SendLocalList>({
@@ -334,11 +332,11 @@ describe('LocalAuthListService', () => {
 
   it('should throw an error when localAuthorizationList exceeds itemsPerMessageSendLocalList', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
     const sendLocalListRequest = {
       versionNumber: 3,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
       localAuthorizationList: [
         {
           idToken: { idToken: 'ID_TOKEN1', type: 'Central' },
@@ -348,7 +346,7 @@ describe('LocalAuthListService', () => {
           idToken: { idToken: 'ID_TOKEN2', type: 'Central' },
           idTokenInfo: { status: 'Blocked' },
         },
-      ] as [AuthorizationData, AuthorizationData],
+      ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
     };
 
     const mockSendLocalList = jest.mocked<SendLocalList>({
@@ -375,7 +373,7 @@ describe('LocalAuthListService', () => {
     );
     const mockVariableAttribute = jest.mocked<VariableAttribute>({
       stationId: stationId,
-      dataType: DataEnumType.integer,
+      dataType: OCPP2_0_1.DataEnumType.integer,
       value: '1', // Max 1 item per message
     } as unknown as VariableAttribute);
 
@@ -402,7 +400,7 @@ describe('LocalAuthListService', () => {
 
   it('should not throw an error when localAuthorizationList is less than itemsPerMessageSendLocalList', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
     const sendLocalListRequest = {
       versionNumber: newVersionNumber,
@@ -416,7 +414,7 @@ describe('LocalAuthListService', () => {
           idToken: { idToken: 'ID_TOKEN2', type: 'Central' },
           idTokenInfo: { status: 'Blocked' },
         },
-      ] as [AuthorizationData, AuthorizationData],
+      ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
     };
 
     const mockSendLocalList = jest.mocked<SendLocalList>({
@@ -443,7 +441,7 @@ describe('LocalAuthListService', () => {
     );
     const mockVariableAttribute = jest.mocked<VariableAttribute>({
       stationId: stationId,
-      dataType: DataEnumType.integer,
+      dataType: OCPP2_0_1.DataEnumType.integer,
       value: '3', // Max 1 item per message
     } as unknown as VariableAttribute);
 

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
-import { AttributeEnumType } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -29,7 +29,7 @@ export class DeviceModelService {
         component_name: componentName,
         variable_name: 'ItemsPerMessage',
         variable_instance: variableInstance,
-        type: AttributeEnumType.Actual,
+        type: OCPP2_0_1.AttributeEnumType.Actual,
       });
     if (itemsPerMessageAttributes.length === 0) {
       return null;
@@ -62,7 +62,7 @@ export class DeviceModelService {
         component_name: componentName,
         variable_name: 'BytesPerMessage',
         variable_instance: variableInstance,
-        type: AttributeEnumType.Actual,
+        type: OCPP2_0_1.AttributeEnumType.Actual,
       });
     if (bytesPerMessageAttributes.length === 0) {
       return null;

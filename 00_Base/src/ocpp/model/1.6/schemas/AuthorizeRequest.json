@@ -1,0 +1,14 @@
+{
+  "title": "AuthorizeRequest",
+  "type": "object",
+  "properties": {
+    "idTag": {
+      "type": "string",
+      "maxLength": 20
+    }
+  },
+  "additionalProperties": false,
+  "required": ["idTag"],
+  "$id": "AuthorizeRequest",
+  "definitions": {}
+}

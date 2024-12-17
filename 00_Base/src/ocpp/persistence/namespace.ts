@@ -23,6 +23,7 @@ export enum Namespace {
   CompositeSchedule = 'CompositeSchedule',
   EVSEType = 'Evse',
   EventDataType = 'EventData',
+  FileURL = 'FileURL',
   IdTokenInfoType = 'IdTokenInfo',
   IdTokenType = 'IdToken',
   LatestStatusNotification = 'LatestStatusNotification',
@@ -50,5 +51,5 @@ export enum Namespace {
   VariableMonitoringType = 'VariableMonitoring',
   VariableMonitoringStatus = 'VariableMonitoringStatus',
   VariableStatus = 'VariableStatus',
-  VariableType = 'Variable'
+  VariableType = 'Variable',
 }

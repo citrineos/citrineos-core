@@ -1,0 +1,10 @@
+table:
+  name: IdTokenAdditionalInfos
+  schema: public
+object_relationships:
+  - name: AdditionalInfo
+    using:
+      foreign_key_constraint_on: additionalInfoId
+  - name: IdToken
+    using:
+      foreign_key_constraint_on: idTokenId
