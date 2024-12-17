@@ -155,93 +155,108 @@ export class EVDriverModuleApi
   /**
    * Message Endpoint Methods
    */
-
   @AsMessageEndpoint(
     CallAction.RequestStartTransaction,
     RequestStartTransactionRequestSchema,
   )
   async requestStartTransaction(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: RequestStartTransactionRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    let payloadMessage;
-    if (request.chargingProfile) {
-      const chargingProfile = request.chargingProfile;
-      // Ocpp 2.0.1 Part 2 K05.FR.02
-      if (
-        chargingProfile.chargingProfilePurpose !==
-        ChargingProfilePurposeEnumType.TxProfile
-      ) {
-        return {
-          success: false,
-          payload:
-            'The Purpose of the ChargingProfile SHALL always be TxProfile.',
-        };
+  ): Promise<IMessageConfirmation[]> {
+    const results: IMessageConfirmation[] = [];
+
+    for (const i of identifier) {
+      let payloadMessage;
+
+      if (request.chargingProfile) {
+        const chargingProfile = { ...request.chargingProfile };
+
+        if (
+          chargingProfile.chargingProfilePurpose !==
+          ChargingProfilePurposeEnumType.TxProfile
+        ) {
+          results.push({
+            success: false,
+            payload:
+              'The Purpose of the ChargingProfile SHALL always be TxProfile.',
+          });
+          continue;
+        }
+
+        if (chargingProfile.transactionId) {
+          chargingProfile.transactionId = undefined;
+          this._logger.warn(
+            `A transactionId cannot be provided in the ChargingProfile for station: ${i}`,
+          );
+        }
+
+        try {
+          await validateChargingProfileType(
+            chargingProfile,
+            i,
+            this._module.deviceModelRepository,
+            this._module.chargingProfileRepository,
+            this._module.transactionEventRepository,
+            this._logger,
+            request.evseId,
+          );
+
+          const smartChargingEnabled =
+            await this._module.deviceModelRepository.readAllByQuerystring({
+              component_name: 'SmartChargingCtrlr',
+              variable_name: 'Enabled',
+              stationId: i,
+            });
+
+          if (
+            smartChargingEnabled.length > 0 &&
+            smartChargingEnabled[0].value === 'false'
+          ) {
+            payloadMessage = `SmartCharging is not enabled on charger ${i}. The charging profile will be ignored.`;
+            this._logger.warn(payloadMessage);
+          } else {
+            await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
+              chargingProfile,
+              i,
+              request.evseId,
+            );
+          }
+        } catch (error) {
+          results.push({
+            success: false,
+            payload:
+              error instanceof Error ? error.message : JSON.stringify(error),
+          });
+          continue;
+        }
       }
 
-      // Ocpp 2.0.1 Part 2 K05 Description 8 Remarks
-      if (chargingProfile.transactionId) {
-        chargingProfile.transactionId = undefined;
-        this._logger.warn(
-          `A transactionId cannot be provided in the ChargingProfile`,
-        );
-      }
-
-      // Validate ChargingProfileType's constraints
       try {
-        await validateChargingProfileType(
-          chargingProfile,
-          identifier,
-          this._module.deviceModelRepository,
-          this._module.chargingProfileRepository,
-          this._module.transactionEventRepository,
-          this._logger,
-          request.evseId,
+        const confirmation = await this._module.sendCall(
+          i,
+          tenantId,
+          CallAction.RequestStartTransaction,
+          request,
+          callbackUrl,
+        );
+
+        results.push(
+          payloadMessage
+            ? { success: true, payload: payloadMessage }
+            : confirmation,
         );
       } catch (error) {
-        return {
+        results.push({
           success: false,
           payload:
             error instanceof Error ? error.message : JSON.stringify(error),
-        };
-      }
-
-      // OCPP 2.0.1 Part 2 K05.FR.04
-      const smartChargingEnabled =
-        await this._module.deviceModelRepository.readAllByQuerystring({
-          component_name: 'SmartChargingCtrlr',
-          variable_name: 'Enabled',
-          stationId: identifier,
         });
-      if (
-        smartChargingEnabled.length > 0 &&
-        smartChargingEnabled[0].value === 'false'
-      ) {
-        payloadMessage = `SmartCharging is not enabled on charger ${identifier}. The charging profile will be ignored.`;
-        this._logger.warn(payloadMessage);
-      } else {
-        await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
-          chargingProfile,
-          identifier,
-          request.evseId,
-        );
       }
     }
 
-    const confirmation: IMessageConfirmation = await this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.RequestStartTransaction,
-      request,
-      callbackUrl,
-    );
-    if (payloadMessage) {
-      return { success: true, payload: payloadMessage };
-    } else {
-      return confirmation;
-    }
+    return results;
   }
 
   @AsMessageEndpoint(
@@ -249,18 +264,21 @@ export class EVDriverModuleApi
     RequestStopTransactionRequestSchema,
   )
   async requestStopTransaction(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: RequestStopTransactionRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.RequestStopTransaction,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.RequestStopTransaction,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -268,136 +286,208 @@ export class EVDriverModuleApi
     CancelReservationRequestSchema,
   )
   async cancelReservation(
-    identifier: string,
+    identifiers: string[],
     tenantId: string,
     request: CancelReservationRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
+  ): Promise<IMessageConfirmation[]> {
     try {
-      const existingReservation =
-        await this._module.reservationRepository.readOnlyOneByQuery({
-          where: {
-            id: request.reservationId,
-            stationId: identifier,
-          },
-        });
-      if (!existingReservation) {
-        throw new Error(`Reservation ${request.reservationId} not found.`);
+      const reservations = await Promise.all(
+        identifiers.map((identifier) =>
+          this._module.reservationRepository.readOnlyOneByQuery({
+            where: {
+              id: request.reservationId,
+              stationId: identifier,
+            },
+          }),
+        ),
+      );
+
+      const missingReservations = identifiers.filter(
+        (identifier, index) => !reservations[index],
+      );
+
+      if (missingReservations.length > 0) {
+        throw new Error(
+          `Reservation ${request.reservationId} not found for station IDs: ${missingReservations.join(
+            ', ',
+          )}.`,
+        );
       }
 
-      const correlationId = uuidv4();
-      await this._module.callMessageRepository.create(
-        CallMessage.build({
-          correlationId,
-          reservationId: existingReservation.databaseId,
-        }),
+      const correlationIds = reservations.map((reservation, index) => {
+        const correlationId = uuidv4();
+        if (reservation) {
+          this._module.callMessageRepository.create(
+            CallMessage.build({
+              correlationId,
+              reservationId: reservation.databaseId,
+            }),
+          );
+        }
+        return correlationId;
+      });
+
+      const results = await Promise.all(
+        identifiers.map((identifier, index) =>
+          this._module.sendCall(
+            identifier,
+            tenantId,
+            CallAction.CancelReservation,
+            request,
+            callbackUrl,
+            correlationIds[index],
+          ),
+        ),
       );
 
-      return this._module.sendCall(
-        identifier,
-        tenantId,
-        CallAction.CancelReservation,
-        request,
-        callbackUrl,
-        correlationId,
-      );
+      return results;
     } catch (error) {
-      return {
+      this._logger.error(
+        `CancelReservation request failed: ${
+          error instanceof Error ? error.message : JSON.stringify(error)
+        }`,
+      );
+
+      return identifiers.map(() => ({
         success: false,
         payload: error instanceof Error ? error.message : JSON.stringify(error),
-      };
+      }));
     }
   }
 
   @AsMessageEndpoint(CallAction.ReserveNow, ReserveNowRequestSchema)
   async reserveNow(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: ReserveNowRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    const storedReservation =
-      await this._module.reservationRepository.createOrUpdateReservation(
-        request,
-        identifier,
-        false,
-      );
-    if (!storedReservation) {
-      return { success: false, payload: 'Reservation could not be stored.' };
+  ): Promise<IMessageConfirmation[]> {
+    const results: IMessageConfirmation[] = [];
+    for (const i of identifier) {
+      try {
+        const storedReservation =
+          await this._module.reservationRepository.createOrUpdateReservation(
+            request,
+            i,
+            false,
+          );
+  
+        if (!storedReservation) {
+          results.push({
+            success: false,
+            payload: `Reservation could not be stored for station: ${i}.`,
+          });
+          continue;
+        }
+  
+        const correlationId = uuidv4();
+        await this._module.callMessageRepository.create(
+          CallMessage.build({
+            correlationId,
+            reservationId: storedReservation.databaseId,
+          }),
+        );
+  
+        const confirmation = await this._module.sendCall(
+          i,
+          tenantId,
+          CallAction.ReserveNow,
+          request,
+          callbackUrl,
+          correlationId,
+        );
+  
+        results.push(confirmation);
+      } catch (error) {
+        results.push({
+          success: false,
+          payload:
+            error instanceof Error ? error.message : JSON.stringify(error),
+        });
+      }
     }
-
-    const correlationId = uuidv4();
-    await this._module.callMessageRepository.create(
-      CallMessage.build({
-        correlationId,
-        reservationId: storedReservation.databaseId,
-      }),
-    );
-
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.ReserveNow,
-      request,
-      callbackUrl,
-      correlationId,
-    );
+  
+    return results;
   }
 
   @AsMessageEndpoint(CallAction.UnlockConnector, UnlockConnectorRequestSchema)
   unlockConnector(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: UnlockConnectorRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.UnlockConnector,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.UnlockConnector,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(CallAction.ClearCache, ClearCacheRequestSchema)
   clearCache(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: ClearCacheRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.ClearCache,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.ClearCache,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(CallAction.SendLocalList, SendLocalListRequestSchema)
   async sendLocalList(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: SendLocalListRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    const correlationId = uuidv4();
-    await this._module.localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
-      identifier,
-      correlationId,
-      request,
-    );
-
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.SendLocalList,
-      request,
-      callbackUrl,
-      correlationId,
-    );
+  ): Promise<IMessageConfirmation[]> {
+    const results: IMessageConfirmation[] = [];
+  
+    for (const i of identifier) {
+      try {
+        const correlationId = uuidv4();
+  
+        await this._module.localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+          i,
+          correlationId,
+          request,
+        );
+  
+        const confirmation = await this._module.sendCall(
+          i,
+          tenantId,
+          CallAction.SendLocalList,
+          request,
+          callbackUrl,
+          correlationId,
+        );
+  
+        results.push(confirmation);
+      } catch (error) {
+        results.push({
+          success: false,
+          payload:
+            error instanceof Error ? error.message : JSON.stringify(error),
+        });
+      }
+    }
+  
+    return results;
   }
 
   @AsMessageEndpoint(
@@ -405,18 +495,21 @@ export class EVDriverModuleApi
     GetLocalListVersionRequestSchema,
   )
   getLocalListVersion(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: GetLocalListVersionRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.GetLocalListVersion,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.GetLocalListVersion,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   /**

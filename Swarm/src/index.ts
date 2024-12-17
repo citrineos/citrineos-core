@@ -144,7 +144,7 @@ class CitrineOSServer {
     }
 
     // Add Directus Message API flow creation if enabled
-    if (this._config.util.directus?.generateFlows) {
+    if (this._config.util.fileAccess?.directus?.generateFlows) {
       const directusUtil = new DirectusUtil(this._config, this._logger);
       this._server.addHook(
         'onRoute',
@@ -321,7 +321,7 @@ class ModuleService {
     }
 
     // Add Directus Message API flow creation if enabled
-    if (this._config.util.directus?.generateFlows) {
+    if (this._config.util.fileAccess?.directus?.generateFlows) {
       const directusUtil = new DirectusUtil(this._config, this._logger);
       this._server.addHook(
         'onRoute',

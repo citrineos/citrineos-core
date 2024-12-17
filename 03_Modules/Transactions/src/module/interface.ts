@@ -13,9 +13,9 @@ import {
  */
 export interface ITransactionsModuleApi {
   getTransactionStatus(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: GetTransactionStatusRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation>;
+  ): Promise<IMessageConfirmation[]>;
 }

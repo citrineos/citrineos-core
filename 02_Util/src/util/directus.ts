@@ -108,6 +108,10 @@ export class DirectusUtil implements IFileAccess {
     }
   }
 
+  getFileURL(): string {
+    return 'http://localhost:8050/files';
+  }
+
   public async uploadFile(
     fileName: string,
     content: Buffer,

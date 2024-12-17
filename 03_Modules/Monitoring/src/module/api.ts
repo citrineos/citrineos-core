@@ -82,108 +82,84 @@ export class MonitoringModuleApi
     SetVariableMonitoringRequestSchema,
   )
   async setVariableMonitoring(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: SetVariableMonitoringRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    // if request size is bigger than BytesPerMessageSetVariableMonitoring,
-    // return error
-    const bytesPerMessageSetVariableMonitoring =
-      await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
-        this._componentMonitoringCtrlr,
-        CallAction.SetVariableMonitoring,
-        identifier,
-      );
-    const requestBytes = getSizeOfRequest(request);
-    if (
-      bytesPerMessageSetVariableMonitoring &&
-      requestBytes > bytesPerMessageSetVariableMonitoring
-    ) {
-      const errorMsg = `The request is too big. The max size is ${bytesPerMessageSetVariableMonitoring} bytes.`;
-      this._logger.error(errorMsg);
-      return { success: false, payload: errorMsg };
-    }
+  ): Promise<IMessageConfirmation[]> {
+    const confirmations: IMessageConfirmation[] = [];
 
-    const setMonitoringData =
-      request.setMonitoringData as SetMonitoringDataType[];
-    for (let i = 0; i < setMonitoringData.length; i++) {
-      const setMonitoringDataType: SetMonitoringDataType = setMonitoringData[i];
-      this._logger.debug('Current SetMonitoringData', setMonitoringDataType);
-      const [component, variable] =
-        await this._module.deviceModelRepository.findComponentAndVariable(
-          setMonitoringDataType.component,
-          setMonitoringDataType.variable,
-        );
-      this._logger.debug('Found component and variable:', component, variable);
-      // When the CSMS sends a SetVariableMonitoringRequest with type Delta for a Variable that is NOT of a numeric
-      // type, It is RECOMMENDED to use a monitorValue of 1.
-      if (
-        setMonitoringDataType.type === MonitorEnumType.Delta &&
-        variable &&
-        variable.variableCharacteristics &&
-        variable.variableCharacteristics.dataType !== DataEnumType.decimal &&
-        variable.variableCharacteristics.dataType !== DataEnumType.integer
-      ) {
-        setMonitoringDataType.value = 1;
-        this._logger.debug(
-          'Updated SetMonitoringData value to 1',
-          setMonitoringData[i],
-        );
-      }
-      // component and variable are required for a variableMonitoring
-      if (component && variable) {
-        await this._module.variableMonitoringRepository.createOrUpdateBySetMonitoringDataTypeAndStationId(
-          setMonitoringDataType,
-          component.id,
-          variable.id,
-          identifier,
-        );
-      }
-    }
-
-    let itemsPerMessageSetVariableMonitoring =
-      await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
-        this._componentMonitoringCtrlr,
-        CallAction.SetVariableMonitoring,
-        identifier,
-      );
-    // If ItemsPerMessageSetVariableMonitoring not set, send all variables at once
-    itemsPerMessageSetVariableMonitoring =
-      itemsPerMessageSetVariableMonitoring === null
-        ? setMonitoringData.length
-        : itemsPerMessageSetVariableMonitoring;
-
-    const confirmations = [];
-    // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
-    for (const [index, batch] of getBatches(
-      setMonitoringData,
-      itemsPerMessageSetVariableMonitoring,
-    ).entries()) {
+    for (const id of identifier) {
       try {
-        const batchResult = await this._module.sendCall(
-          identifier,
+        const maxBytes =
+          await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+            this._componentMonitoringCtrlr,
+            CallAction.SetVariableMonitoring,
+            id,
+          );
+        const requestBytes = getSizeOfRequest(request);
+
+        if (maxBytes && requestBytes > maxBytes) {
+          throw new Error(
+            `The request size exceeds the limit of ${maxBytes} bytes for identifier ${id}.`,
+          );
+        }
+
+        const setMonitoringData =
+          request.setMonitoringData as SetMonitoringDataType[];
+        for (const data of setMonitoringData) {
+          const [component, variable] =
+            await this._module.deviceModelRepository.findComponentAndVariable(
+              data.component,
+              data.variable,
+            );
+
+          // When the CSMS sends a SetVariableMonitoringRequest with type Delta for a Variable that is NOT of a numeric
+          // type, It is RECOMMENDED to use a monitorValue of 1.
+          if (
+            data.type === MonitorEnumType.Delta &&
+            variable?.variableCharacteristics?.dataType !==
+              DataEnumType.decimal &&
+            variable?.variableCharacteristics?.dataType !== DataEnumType.integer
+          ) {
+            data.value = 1;
+            this._logger.debug('Updated SetMonitoringData value to 1', data);
+          }
+          // component and variable are required for a variableMonitoring
+          if (component && variable) {
+            await this._module.variableMonitoringRepository.createOrUpdateBySetMonitoringDataTypeAndStationId(
+              data,
+              component.id,
+              variable.id,
+              id,
+            );
+          }
+        }
+
+        const itemsPerMessage =
+          (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+            this._componentMonitoringCtrlr,
+            CallAction.SetVariableMonitoring,
+            id,
+          )) ?? setMonitoringData.length;
+
+        // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
+        const result = await this.processBatches(
+          id,
           tenantId,
           CallAction.SetVariableMonitoring,
-          { setMonitoringData: batch } as SetVariableMonitoringRequest,
+          setMonitoringData as SetMonitoringDataType[],
+          itemsPerMessage,
           callbackUrl,
         );
-        confirmations.push({
-          success: batchResult.success,
-          batch: `[${index}:${index + batch.length}]`,
-          message: `${batchResult.payload}`,
-        });
+        confirmations.push(...result);
       } catch (error) {
-        confirmations.push({
-          success: false,
-          batch: `[${index}:${index + batch.length}]`,
-          message: `${error}`,
-        });
+        confirmations.push({ success: false, payload: error as string });
       }
     }
 
     // Caller should use callbackUrl to ensure request reached station, otherwise receipt is not guaranteed
-    return { success: true, payload: confirmations };
+    return confirmations;
   }
 
   @AsMessageEndpoint(
@@ -191,76 +167,55 @@ export class MonitoringModuleApi
     ClearVariableMonitoringRequestSchema,
   )
   async clearVariableMonitoring(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: ClearVariableMonitoringRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    this._logger.debug(
-      'ClearVariableMonitoring request received',
-      identifier,
-      request,
-    );
-    // if request size is bigger than bytesPerMessageClearVariableMonitoring,
-    // return error
-    const bytesPerMessageClearVariableMonitoring =
-      await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
-        this._componentMonitoringCtrlr,
-        CallAction.ClearVariableMonitoring,
-        identifier,
-      );
-    const requestBytes = getSizeOfRequest(request);
-    if (
-      bytesPerMessageClearVariableMonitoring &&
-      requestBytes > bytesPerMessageClearVariableMonitoring
-    ) {
-      const errorMsg = `The request is too big. The max size is ${bytesPerMessageClearVariableMonitoring} bytes.`;
-      this._logger.error(errorMsg);
-      return { success: false, payload: errorMsg };
-    }
+  ): Promise<IMessageConfirmation[]> {
+    const confirmations: IMessageConfirmation[] = [];
 
-    const ids = request.id as number[];
-    let itemsPerMessageClearVariableMonitoring =
-      await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
-        this._componentMonitoringCtrlr,
-        CallAction.ClearVariableMonitoring,
-        identifier,
-      );
-    // If itemsPerMessageClearVariableMonitoring not set, send all variables at once
-    itemsPerMessageClearVariableMonitoring =
-      itemsPerMessageClearVariableMonitoring === null
-        ? ids.length
-        : itemsPerMessageClearVariableMonitoring;
-
-    const confirmations = [];
-    // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
-    for (const [index, batch] of getBatches(
-      ids,
-      itemsPerMessageClearVariableMonitoring,
-    ).entries()) {
+    for (const id of identifier) {
       try {
-        const batchResult = await this._module.sendCall(
-          identifier,
+        // if request size is bigger than bytesPerMessageClearVariableMonitoring,
+        // return error
+        const maxBytes =
+          await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+            this._componentMonitoringCtrlr,
+            CallAction.ClearVariableMonitoring,
+            id,
+          );
+        const requestBytes = getSizeOfRequest(request);
+
+        if (maxBytes && requestBytes > maxBytes) {
+          throw new Error(
+            `The request size exceeds the limit of ${maxBytes} bytes for identifier ${id}.`,
+          );
+        }
+
+        const ids = request.id as number[];
+        const itemsPerMessage =
+          (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+            this._componentMonitoringCtrlr,
+            CallAction.ClearVariableMonitoring,
+            id,
+          )) ?? ids.length;
+
+        // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
+        const result = await this.processBatches(
+          id,
           tenantId,
           CallAction.ClearVariableMonitoring,
-          { id: batch } as ClearVariableMonitoringRequest,
+          ids as number[],
+          itemsPerMessage,
           callbackUrl,
         );
-        confirmations.push({
-          success: batchResult.success,
-          batch: `[${index}:${index + batch.length}]`,
-          message: `${batchResult.payload}`,
-        });
+        confirmations.push(...result);
       } catch (error) {
-        confirmations.push({
-          success: false,
-          batch: `[${index}:${index + batch.length}]`,
-          message: `${error}`,
-        });
+        confirmations.push({ success: false, payload: error as string });
       }
     }
 
-    return { success: true, payload: confirmations };
+    return confirmations;
   }
 
   @AsMessageEndpoint(
@@ -268,18 +223,21 @@ export class MonitoringModuleApi
     SetMonitoringLevelRequestSchema,
   )
   setMonitoringLevel(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: SetMonitoringLevelRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.SetMonitoringLevel,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.SetMonitoringLevel,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -287,151 +245,122 @@ export class MonitoringModuleApi
     SetMonitoringBaseRequestSchema,
   )
   setMonitoringBase(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: SetMonitoringBaseRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.SetMonitoringBase,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.SetMonitoringBase,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(CallAction.SetVariables, SetVariablesRequestSchema)
   async setVariables(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: SetVariablesRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    let setVariableData = request.setVariableData as SetVariableDataType[];
+  ): Promise<IMessageConfirmation[]> {
+    const confirmations: IMessageConfirmation[] = [];
 
-    // Awaiting save action so that SetVariablesResponse does not trigger a race condition since an error is thrown
-    // from SetVariablesResponse handler if variable does not exist when it attempts to save the Response's status
-    await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(
-      setVariableData,
-      identifier,
-      new Date().toISOString(), // Will be set again when SetVariablesResponse is received
-    );
-
-    let itemsPerMessageSetVariables =
-      await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
-        this._componentDeviceDataCtrlr,
-        CallAction.SetVariables,
-        identifier,
-      );
-
-    // If ItemsPerMessageSetVariables not set, send all variables at once
-    itemsPerMessageSetVariables =
-      itemsPerMessageSetVariables === null
-        ? setVariableData.length
-        : itemsPerMessageSetVariables;
-
-    const confirmations = [];
-    let lastVariableIndex = 0;
-    // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
-    while (setVariableData.length > 0) {
-      const batch = setVariableData.slice(0, itemsPerMessageSetVariables);
+    for (const id of identifier) {
       try {
-        const batchResult = await this._module.sendCall(
-          identifier,
+        const setVariableData =
+          request.setVariableData as SetVariableDataType[];
+
+        // Awaiting save action so that SetVariablesResponse does not trigger a race condition since an error is thrown
+        // from SetVariablesResponse handler if variable does not exist when it attempts to save the Response's status
+        await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(
+          setVariableData,
+          id,
+          new Date().toISOString(), // Will be set again when SetVariablesResponse is received
+        );
+
+        const itemsPerMessage =
+          (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+            this._componentDeviceDataCtrlr,
+            CallAction.SetVariables,
+            id,
+          )) ?? setVariableData.length;
+
+        // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
+        const result = await this.processBatches(
+          id,
           tenantId,
           CallAction.SetVariables,
-          { setVariableData: batch } as SetVariablesRequest,
+          setVariableData as SetVariableDataType[],
+          itemsPerMessage,
           callbackUrl,
         );
-        confirmations.push({
-          success: batchResult.success,
-          batch: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
-          message: `${batchResult.payload}`,
-        });
+        confirmations.push(...result);
       } catch (error) {
-        confirmations.push({
-          success: false,
-          variableName: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
-          message: `${error}`,
-        });
+        confirmations.push({ success: false, payload: error as string });
       }
-      lastVariableIndex += batch.length;
-      setVariableData = setVariableData.slice(itemsPerMessageSetVariables);
     }
-    // Caller should use callbackUrl to ensure request reached station, otherwise receipt is not guaranteed
-    return { success: true, payload: confirmations };
+
+    return confirmations;
   }
 
   @AsMessageEndpoint(CallAction.GetVariables, GetVariablesRequestSchema)
   async getVariables(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: GetVariablesRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    // if request size is bigger than BytesPerMessageGetVariables,
-    // return error
-    const bytesPerMessageGetVariables =
-      await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
-        this._componentDeviceDataCtrlr,
-        CallAction.GetVariables,
-        identifier,
-      );
-    const requestBytes = getSizeOfRequest(request);
-    if (
-      bytesPerMessageGetVariables &&
-      requestBytes > bytesPerMessageGetVariables
-    ) {
-      const errorMsg = `The request is too big. The max size is ${bytesPerMessageGetVariables} bytes.`;
-      this._logger.error(errorMsg);
-      return { success: false, payload: errorMsg };
-    }
+  ): Promise<IMessageConfirmation[]> {
+    const confirmations: IMessageConfirmation[] = [];
 
-    let getVariableData = request.getVariableData as GetVariableDataType[];
-    let itemsPerMessageGetVariables =
-      await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
-        this._componentDeviceDataCtrlr,
-        CallAction.GetVariables,
-        identifier,
-      );
-
-    // If ItemsPerMessageGetVariables not set, send all variables at once
-    itemsPerMessageGetVariables =
-      itemsPerMessageGetVariables === null
-        ? getVariableData.length
-        : itemsPerMessageGetVariables;
-
-    const confirmations = [];
-    let lastVariableIndex = 0;
-    // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
-    while (getVariableData.length > 0) {
-      const batch = getVariableData.slice(0, itemsPerMessageGetVariables);
+    for (const id of identifier) {
       try {
-        const batchResult = await this._module.sendCall(
-          identifier,
+        // if request size is bigger than BytesPerMessageGetVariables,
+        // return error
+        const maxBytes =
+          await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+            this._componentDeviceDataCtrlr,
+            CallAction.GetVariables,
+            id,
+          );
+        const requestBytes = getSizeOfRequest(request);
+
+        if (maxBytes && requestBytes > maxBytes) {
+          throw new Error(
+            `The request size exceeds the limit of ${maxBytes} bytes for identifier ${id}.`,
+          );
+        }
+
+        const getVariableData =
+          request.getVariableData as GetVariableDataType[];
+        const itemsPerMessage =
+          (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+            this._componentDeviceDataCtrlr,
+            CallAction.GetVariables,
+            id,
+          )) ?? getVariableData.length;
+
+        // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
+        const result = await this.processBatches(
+          id,
           tenantId,
           CallAction.GetVariables,
-          { getVariableData: batch } as GetVariablesRequest,
+          getVariableData as GetVariableDataType[],
+          itemsPerMessage,
           callbackUrl,
         );
-        confirmations.push({
-          success: batchResult.success,
-          batch: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
-          message: `${batchResult.payload}`,
-        });
+        confirmations.push(...result);
       } catch (error) {
-        confirmations.push({
-          success: false,
-          variableName: `[${lastVariableIndex}:${lastVariableIndex + batch.length}]`,
-          message: `${error}`,
-        });
+        confirmations.push({ success: false, payload: error as string });
       }
-      lastVariableIndex += batch.length;
-      getVariableData = getVariableData.slice(itemsPerMessageGetVariables);
     }
-    // Caller should use callbackUrl to ensure request reached station, otherwise receipt is not guaranteed
-    return { success: true, payload: confirmations };
+
+    return confirmations;
   }
 
   /**
@@ -520,6 +449,60 @@ export class MonitoringModuleApi
           ' rows successfully deleted from ' +
           Namespace.VariableAttributeType,
       );
+  }
+
+  /**
+   * Processes all data in batches and sends them to the specified endpoint action.
+   *
+   * This method takes a large dataset, splits it into smaller batches based on the specified `itemsPerMessage` limit,
+   * and processes each batch sequentially. Each batch is sent to the designated endpoint using the given action.
+   * Any errors encountered during the process are captured and included in the confirmation payload.
+   *
+   * @param {string} identifier - The identifier of the charging station (or system) where the request will be sent.
+   * @param {string} tenantId - The tenant identifier associated with the request.
+   * @param {CallAction} action - The action to perform on the endpoint (e.g., `SetVariables`, `GetVariables`).
+   * @param {any[]} data - The array of data to be processed and sent in batches.
+   * @param {number} itemsPerMessage - The maximum number of items to include in a single batch message.
+   * @param {string} [callbackUrl] - An optional URL where the station should send a callback confirmation for the request.
+   *
+   * @returns {Promise<IMessageConfirmation[]>} - A promise resolving to an array of message confirmations for each batch.
+   *
+   * @throws {Error} - Throws an error if the underlying `sendCall` method fails unexpectedly.
+   */
+  private async processBatches(
+    identifier: string,
+    tenantId: string,
+    action: CallAction,
+    data: any[],
+    itemsPerMessage: number,
+    callbackUrl?: string,
+  ): Promise<IMessageConfirmation[]> {
+    const confirmations: IMessageConfirmation[] = [];
+    let batchIndex = 0;
+
+    for (const batch of getBatches(data, itemsPerMessage)) {
+      try {
+        const batchResult = await this._module.sendCall(
+          identifier,
+          tenantId,
+          action,
+          { [action.toLowerCase()]: batch },
+          callbackUrl,
+        );
+        confirmations.push({
+          success: batchResult.success,
+          payload: `Batch [${batchIndex}]: ${batchResult.payload}`,
+        });
+      } catch (error) {
+        confirmations.push({
+          success: false,
+          payload: `Batch [${batchIndex}]: ${error as string}`,
+        });
+      }
+      batchIndex++;
+    }
+
+    return confirmations;
   }
 
   /**
