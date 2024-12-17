@@ -168,9 +168,9 @@ export class WebsocketNetworkConnection {
     });
   }
 
-  shutdown(): void {
+  async shutdown(): Promise<void> {
     this._httpServersMap.forEach((server) => server.close());
-    this._router.shutdown();
+    await this._router.shutdown();
   }
 
   /**

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPPInterfaceEnumType, OCPPTransportEnumType, OCPPVersionEnumType, APNType, VPNType, } from '@citrineos/base';
+import { OCPPInterfaceEnumType, OCPPTransportEnumType, OCPPVersionEnumType } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Index, Model, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { ServerNetworkProfile } from './ServerNetworkProfile';

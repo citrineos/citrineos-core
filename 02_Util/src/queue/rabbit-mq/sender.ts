@@ -45,9 +45,13 @@ export class RabbitMqSender
   constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
     super(config, logger);
 
-    this._connect().then((channel) => {
-      this._channel = channel;
-    });
+    this._connect()
+      .then((channel) => {
+        this._channel = channel;
+      })
+      .catch((error) => {
+        this._logger.error('Failed to connect to RabbitMQ', error);
+      });
   }
 
   /**

@@ -294,14 +294,11 @@ export class TransactionsModule extends AbstractModule {
         transactionEvent,
         message.context,
       );
-      this.sendCallResultWithMessage(message, response).then(
-        (messageConfirmation) => {
-          this._logger.debug(
-            'Transaction response sent: ',
-            messageConfirmation,
-          );
-        },
+      const messageConfirmation = await this.sendCallResultWithMessage(
+        message,
+        response,
       );
+      this._logger.debug('Transaction response sent: ', messageConfirmation);
       // If the transaction is accepted and interval is set, start the cost update
       if (
         transactionEvent.eventType === TransactionEventEnumType.Started &&
@@ -394,14 +391,11 @@ export class TransactionsModule extends AbstractModule {
         }
       }
 
-      this.sendCallResultWithMessage(message, response).then(
-        (messageConfirmation) => {
-          this._logger.debug(
-            'Transaction response sent: ',
-            messageConfirmation,
-          );
-        },
+      const messageConfirmation = await this.sendCallResultWithMessage(
+        message,
+        response,
       );
+      this._logger.debug('Transaction response sent: ', messageConfirmation);
     }
   }
 
@@ -443,11 +437,11 @@ export class TransactionsModule extends AbstractModule {
       // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
     };
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) => {
-        this._logger.debug('MeterValues response sent: ', messageConfirmation);
-      },
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
     );
+    this._logger.debug('MeterValues response sent: ', messageConfirmation);
   }
 
   @AsHandler(CallAction.StatusNotification)
@@ -464,13 +458,13 @@ export class TransactionsModule extends AbstractModule {
 
     // Create response
     const response: StatusNotificationResponse = {};
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) => {
-        this._logger.debug(
-          'StatusNotification response sent: ',
-          messageConfirmation,
-        );
-      },
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'StatusNotification response sent: ',
+      messageConfirmation,
     );
   }
 

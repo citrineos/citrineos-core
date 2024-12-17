@@ -259,5 +259,5 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     origin?: MessageOrigin,
   ): Promise<IMessageConfirmation>;
 
-  abstract shutdown(): void;
+  abstract shutdown(): Promise<void>;
 }

@@ -107,8 +107,8 @@ export abstract class AbstractModule implements IModule {
     props?: HandlerProperties,
   ): Promise<void> {
     if (message.state === MessageState.Response) {
-      this.handleMessageApiCallback(message as IMessage<OcppResponse>);
-      this._cache.set(
+      await this.handleMessageApiCallback(message as IMessage<OcppResponse>);
+      await this._cache.set(
         message.context.correlationId,
         JSON.stringify(message.payload),
         message.context.stationId,
@@ -143,9 +143,9 @@ export abstract class AbstractModule implements IModule {
         this._logger.error('Sending CallError to ChargingStation...');
         message.origin = MessageOrigin.ChargingStationManagementSystem;
         if (error instanceof OcppError) {
-          this._sender.sendResponse(message, error);
+          await this._sender.sendResponse(message, error);
         } else if (error instanceof Error) {
-          this._sender.sendResponse(
+          await this._sender.sendResponse(
             message,
             new OcppError(
               message.context.correlationId,
@@ -202,9 +202,9 @@ export abstract class AbstractModule implements IModule {
    * Note: To be overwritten by subclass if other logic is necessary.
    *
    */
-  shutdown(): void {
-    this._handler.shutdown();
-    this._sender.shutdown();
+  async shutdown(): Promise<void> {
+    await this._handler.shutdown();
+    await this._sender.shutdown();
   }
 
   /**
@@ -223,7 +223,7 @@ export abstract class AbstractModule implements IModule {
    * @param {MessageOrigin} [origin] - The origin of the call.
    * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
    */
-  public sendCall(
+  public async sendCall(
     identifier: string,
     tenantId: string,
     action: CallAction,
@@ -236,12 +236,15 @@ export abstract class AbstractModule implements IModule {
       correlationId === undefined ? uuidv4() : correlationId;
     if (callbackUrl) {
       // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
-      this._cache.set(
-        _correlationId,
-        callbackUrl,
-        AbstractModule.CALLBACK_URL_CACHE_PREFIX + identifier,
-        this._config.maxCachingSeconds,
-      );
+      this._cache
+        .set(
+          _correlationId,
+          callbackUrl,
+          AbstractModule.CALLBACK_URL_CACHE_PREFIX + identifier,
+          this._config.maxCachingSeconds,
+        )
+        .then()
+        .catch((error) => this._logger.error('Failed setting cache: ', error));
     }
     // TODO: Future - Compound key with tenantId
     return this._cache
