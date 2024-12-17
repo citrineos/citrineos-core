@@ -390,6 +390,11 @@ export class CertificatesModuleApi
     return responseBody;
   }
 
+  @AsDataEndpoint(Namespace.FileURL, HttpMethod.Get, undefined)
+  async getFileURL(): Promise<string> {
+    return this._fileAccess.getFileURL();
+  }
+
   @AsDataEndpoint(
     Namespace.RootCertificate,
     HttpMethod.Put,
