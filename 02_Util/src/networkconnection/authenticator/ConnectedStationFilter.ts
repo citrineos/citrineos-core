@@ -7,6 +7,7 @@ import {
 import { ILogObj, Logger } from 'tslog';
 import { IncomingMessage } from 'http';
 import { AuthenticatorFilter } from './AuthenticatorFilter';
+import { UpgradeAuthenticationError } from './errors/AuthenticationError';
 
 /**
  * Filter used to prevent multiple simultaneous connections for the same charging station.
@@ -31,7 +32,7 @@ export class ConnectedStationFilter extends AuthenticatorFilter {
       await this._cache.get(identifier, CacheNamespace.Connections),
     );
     if (isAlreadyConnected) {
-      throw Error(
+      throw new UpgradeAuthenticationError(
         `New connection attempted for already connected identifier ${identifier}`,
       );
     }

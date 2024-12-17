@@ -3,10 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  AuthorizeCertificateStatusEnumType,
-  CertificateSigningUseEnumType,
-  InstallCertificateUseEnumType,
-  OCSPRequestDataType,
+  OCPP2_0_1,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -69,21 +66,21 @@ export class CertificateAuthorityService {
   async getCertificateChain(
     csrString: string,
     stationId: string,
-    certificateType?: CertificateSigningUseEnumType | null,
+    certificateType?: OCPP2_0_1.CertificateSigningUseEnumType | null,
   ): Promise<string> {
     this._logger.info(
       `Getting certificate chain for certificateType: ${certificateType} and stationId: ${stationId}`,
     );
 
     switch (certificateType) {
-      case CertificateSigningUseEnumType.V2GCertificate: {
+      case OCPP2_0_1.CertificateSigningUseEnumType.V2GCertificate: {
         const signedCert = await this._v2gClient.getSignedCertificate(
           extractEncodedContentFromCSR(csrString),
         );
         const caCerts = await this._v2gClient.getCACertificates();
         return this._createCertificateChainWithoutRootCA(signedCert, caCerts);
       }
-      case CertificateSigningUseEnumType.ChargingStationCertificate: {
+      case OCPP2_0_1.CertificateSigningUseEnumType.ChargingStationCertificate: {
         return await this._chargingStationClient.getCertificateChain(csrString);
       }
       default: {
@@ -109,10 +106,10 @@ export class CertificateAuthorityService {
   }
 
   async getRootCACertificateFromExternalCA(
-    certificateType: InstallCertificateUseEnumType,
+    certificateType: OCPP2_0_1.InstallCertificateUseEnumType,
   ): Promise<string> {
     switch (certificateType) {
-      case InstallCertificateUseEnumType.V2GRootCertificate: {
+      case OCPP2_0_1.InstallCertificateUseEnumType.V2GRootCertificate: {
         const caCerts = await this._v2gClient.getCACertificates();
         const rootCACert =
           extractCertificateArrayFromEncodedString(caCerts).pop();
@@ -125,7 +122,7 @@ export class CertificateAuthorityService {
           throw new Error(`V2GRootCertificate not found from ${caCerts}`);
         }
       }
-      case InstallCertificateUseEnumType.CSMSRootCertificate:
+      case OCPP2_0_1.InstallCertificateUseEnumType.CSMSRootCertificate:
         return await this._chargingStationClient.getRootCACertificate();
       default:
         throw new Error(
@@ -154,14 +151,14 @@ export class CertificateAuthorityService {
    */
   public async validateCertificateChainPem(
     certificateChainPem: string,
-  ): Promise<AuthorizeCertificateStatusEnumType> {
+  ): Promise<OCPP2_0_1.AuthorizeCertificateStatusEnumType> {
     const certificatePems: string[] =
       parseCertificateChainPem(certificateChainPem);
     this._logger.debug(
       `Found ${certificatePems.length} certificates in chain.`,
     );
     if (certificatePems.length < 1) {
-      return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+      return OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
     }
 
     try {
@@ -186,7 +183,7 @@ export class CertificateAuthorityService {
         this._logger.error(
           `Cannot find root certificate for certificate ${lastCertInChain}`,
         );
-        return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+        return OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
       } else {
         certificatePems.push(rootCertPem);
       }
@@ -199,7 +196,7 @@ export class CertificateAuthorityService {
 
         const notAfter = moment(subjectCert.getNotAfter(), dateTimeFormat);
         if (notAfter.isBefore(moment())) {
-          return AuthorizeCertificateStatusEnumType.CertificateExpired;
+          return OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertificateExpired;
         }
 
         const ocspUrls = subjectCert.getExtAIAInfo()?.ocsp;
@@ -219,28 +216,28 @@ export class CertificateAuthorityService {
           );
           const certStatus = ocspResponse.certStatus;
           if (certStatus === 'revoked') {
-            return AuthorizeCertificateStatusEnumType.CertificateRevoked;
+            return OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertificateRevoked;
           } else if (certStatus !== 'good') {
-            return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+            return OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
           }
         } else {
           this._logger.error(
             `Certificate ${certificatePems[i]} has no OCSP URL.`,
           );
-          return AuthorizeCertificateStatusEnumType.CertChainError;
+          return OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError;
         }
       }
     } catch (error) {
       this._logger.error(`Failed to validate certificate chain: ${error}`);
-      return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+      return OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
     }
 
-    return AuthorizeCertificateStatusEnumType.Accepted;
+    return OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted;
   }
 
   public async validateCertificateHashData(
-    ocspRequestData: OCSPRequestDataType[],
-  ): Promise<AuthorizeCertificateStatusEnumType> {
+    ocspRequestData: OCPP2_0_1.OCSPRequestDataType[],
+  ): Promise<OCPP2_0_1.AuthorizeCertificateStatusEnumType> {
     for (const reqData of ocspRequestData) {
       const ocspRequest = new Request({
         alg: reqData.hashAlgorithm,
@@ -258,17 +255,17 @@ export class CertificateAuthorityService {
         // source: https://kjur.github.io/jsrsasign/api/symbols/KJUR.asn1.ocsp.OCSPUtil.html#.getOCSPResponseInfo
         const certStatus = ocspResponse.certStatus;
         if (certStatus === 'revoked') {
-          return AuthorizeCertificateStatusEnumType.CertificateRevoked;
+          return OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertificateRevoked;
         } else if (certStatus !== 'good') {
-          return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+          return OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
         }
       } catch (error) {
         this._logger.error(`Failed to fetch OCSP response: ${error}`);
-        return AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+        return OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
       }
     }
 
-    return AuthorizeCertificateStatusEnumType.Accepted;
+    return OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted;
   }
 
   /**

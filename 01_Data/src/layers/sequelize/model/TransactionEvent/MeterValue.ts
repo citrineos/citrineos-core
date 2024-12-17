@@ -3,13 +3,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type CustomDataType, type MeterValueType, Namespace, type SampledValueType } from '@citrineos/base';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { TransactionEvent } from './TransactionEvent';
 import { Transaction } from './Transaction';
 
 @Table
-export class MeterValue extends Model implements MeterValueType {
+export class MeterValue extends Model implements OCPP2_0_1.MeterValueType {
   static readonly MODEL_NAME: string = Namespace.MeterValueType;
 
   @ForeignKey(() => TransactionEvent)
@@ -21,7 +21,7 @@ export class MeterValue extends Model implements MeterValueType {
   declare transactionDatabaseId?: number | null;
 
   @Column(DataType.JSON)
-  declare sampledValue: [SampledValueType, ...SampledValueType[]];
+  declare sampledValue: [OCPP2_0_1.SampledValueType, ...OCPP2_0_1.SampledValueType[]];
 
   @Column({
     type: DataType.DATE,
@@ -31,5 +31,5 @@ export class MeterValue extends Model implements MeterValueType {
   })
   declare timestamp: string;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

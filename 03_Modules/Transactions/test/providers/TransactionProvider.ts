@@ -1,9 +1,5 @@
 import {
-  ChargingStateEnumType,
-  TransactionEventEnumType,
-  TransactionEventRequest,
-  TransactionType,
-  TriggerReasonEnumType,
+  OCPP2_0_1
 } from '@citrineos/base';
 
 import { faker } from '@faker-js/faker';
@@ -18,7 +14,7 @@ export function aTransaction(
     stationId: faker.string.uuid(),
     transactionId: faker.string.uuid(),
     isActive: true,
-    chargingState: ChargingStateEnumType.Charging,
+    chargingState: OCPP2_0_1.ChargingStateEnumType.Charging,
     timeSpentCharging: faker.number.int({ min: 0, max: 10000 }),
     totalKwh: faker.number.float({ min: 0, max: 100 }),
     remoteStartId: faker.number.int({ min: 1, max: 1000 }),
@@ -28,21 +24,21 @@ export function aTransaction(
 }
 
 export function aTransactionType(
-  updateFunction?: UpdateFunction<TransactionType>,
-): TransactionType {
-  const item: TransactionType = {
+  updateFunction?: UpdateFunction<OCPP2_0_1.TransactionType>,
+): OCPP2_0_1.TransactionType {
+  const item: OCPP2_0_1.TransactionType = {
     transactionId: faker.string.uuid(),
   };
   return applyUpdateFunction(item, updateFunction);
 }
 
 export function aTransactionEventRequest(
-  updateFunction?: UpdateFunction<TransactionEventRequest>,
-): TransactionEventRequest {
-  const item: TransactionEventRequest = {
-    eventType: TransactionEventEnumType.Updated,
+  updateFunction?: UpdateFunction<OCPP2_0_1.TransactionEventRequest>,
+): OCPP2_0_1.TransactionEventRequest {
+  const item: OCPP2_0_1.TransactionEventRequest = {
+    eventType: OCPP2_0_1.TransactionEventEnumType.Updated,
     timestamp: faker.date.recent().toISOString(),
-    triggerReason: TriggerReasonEnumType.MeterValuePeriodic,
+    triggerReason: OCPP2_0_1.TriggerReasonEnumType.MeterValuePeriodic,
     seqNo: faker.number.int({ min: 1, max: 1000 }),
     transactionInfo: aTransactionType(),
   };

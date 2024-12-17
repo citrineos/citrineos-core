@@ -1,0 +1,3 @@
+table:
+  name: geography_columns
+  schema: public
