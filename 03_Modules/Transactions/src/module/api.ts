@@ -59,18 +59,21 @@ export class TransactionsModuleApi
    */
   @AsMessageEndpoint(CallAction.CostUpdated, CostUpdatedRequestSchema)
   async costUpdated(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: CostUpdatedRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.CostUpdated,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.CostUpdated,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -78,18 +81,21 @@ export class TransactionsModuleApi
     GetTransactionStatusRequestSchema,
   )
   getTransactionStatus(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: GetTransactionStatusRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      CallAction.GetTransactionStatus,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        CallAction.GetTransactionStatus,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsDataEndpoint(
