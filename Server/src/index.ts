@@ -658,17 +658,15 @@ export class CitrineOSServer {
     }
   }
 
-  private initFileAccess(
-    directus?: IFileAccess,
-  ): IFileAccess {
-    if (this._config.util.fileAccess?.currentFileAccess == 's3Storage') {
+  private initFileAccess(directus?: IFileAccess): IFileAccess {
+    const fileAccessType = this._config.util.fileAccess?.currentFileAccess;
+
+    if (fileAccessType === 's3Storage') {
       return new S3Storage(this._config);
-    } else if (this._config.util.fileAccess?.currentFileAccess == 'directus') {
+    } else if (fileAccessType === 'directus') {
       return directus || new DirectusUtil(this._config, this._logger);
     } else {
-      return (
-        new S3Storage(this._config) || directus || new DirectusUtil(this._config, this._logger)
-      );
+      return directus || new DirectusUtil(this._config, this._logger);
     }
   }
 
