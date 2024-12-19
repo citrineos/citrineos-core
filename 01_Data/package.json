@@ -27,11 +27,6 @@
     "@types/sequelize": "4.28.20",
     "pg": "8.11.3",
     "pg-hstore": "2.3.4",
-    "sequelize-typescript": "2.1.6",
-    "tslog": "4.9.2",
-    "uuid": "9.0.0"
-  },
-  "engines": {
-    "node": ">=18"
+    "sequelize-typescript": "2.1.6"
   }
 }

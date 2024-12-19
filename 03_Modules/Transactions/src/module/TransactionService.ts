@@ -88,19 +88,19 @@ export class TransactionService {
       evseId: authorization.idTokenInfo.evseId,
       groupIdToken: authorization.idTokenInfo.groupIdToken
         ? {
-            additionalInfo:
-              authorization.idTokenInfo.groupIdToken.additionalInfo &&
+          additionalInfo:
+            authorization.idTokenInfo.groupIdToken.additionalInfo &&
               authorization.idTokenInfo.groupIdToken.additionalInfo.length > 0
-                ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                    (additionalInfo) => ({
-                      additionalIdToken: additionalInfo.additionalIdToken,
-                      type: additionalInfo.type,
-                    }),
+              ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
+                (additionalInfo) => ({
+                  additionalIdToken: additionalInfo.additionalIdToken,
+                  type: additionalInfo.type,
+                }),
               ) as [OCPP2_0_1.AdditionalInfoType, ...OCPP2_0_1.AdditionalInfoType[]])
-                : undefined,
-            idToken: authorization.idTokenInfo.groupIdToken.idToken,
-            type: authorization.idTokenInfo.groupIdToken.type,
-          }
+              : undefined,
+          idToken: authorization.idTokenInfo.groupIdToken.idToken,
+          type: authorization.idTokenInfo.groupIdToken.type,
+        }
         : undefined,
       language2: authorization.idTokenInfo.language2,
       personalMessage: authorization.idTokenInfo.personalMessage,
@@ -142,6 +142,25 @@ export class TransactionService {
       response.idTokenInfo.status,
     );
     return response;
+  }
+
+  async createMeterValues(
+    meterValues: [OCPP2_0_1.MeterValueType, ...OCPP2_0_1.MeterValueType[]],
+    transactionDbId?: number | null,
+  ) {
+    return Promise.all(meterValues.map(async (meterValue) => {
+      const hasPeriodic: boolean = meterValue.sampledValue?.some(
+        (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
+      );
+      if (transactionDbId && hasPeriodic) {
+        await this._transactionEventRepository.createMeterValue(
+          meterValue,
+          transactionDbId,
+        );
+      } else {
+        await this._transactionEventRepository.createMeterValue(meterValue);
+      }
+    }));
   }
 
   private async _applyAuthorizers(

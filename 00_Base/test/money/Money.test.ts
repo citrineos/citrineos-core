@@ -90,8 +90,10 @@ describe('money', () => {
     );
 
     it('should fail when undefined amount', () => {
-      let amount: number;
-      expect(() => Money.of(amount, 'USD')).toThrow(`Amount has to be defined`);
+      const amount: number | undefined = undefined;
+      expect(() => Money.of(amount!, 'USD')).toThrow(
+        `Amount has to be defined`,
+      );
     });
 
     it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
@@ -104,8 +106,8 @@ describe('money', () => {
     );
 
     it('should fail when undefined currency', () => {
-      let currency: string;
-      expect(() => Money.of('1.00', currency)).toThrow(
+      const currency: string | undefined = undefined;
+      expect(() => Money.of('1.00', currency!)).toThrow(
         `Currency has to be defined`,
       );
     });
