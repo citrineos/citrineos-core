@@ -5,13 +5,13 @@
 
 import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Index, Model, Table } from 'sequelize-typescript';
-import * as bcrypt from 'bcrypt';
 import { Variable } from './Variable';
 import { Component } from './Component';
 import { Evse } from './Evse';
 import { Boot } from '../Boot';
 import { VariableStatus } from './VariableStatus';
 import { ChargingStation } from '../Location';
+import { CryptoUtils } from '../../../../util/CryptoUtils';
 
 @Table({
   indexes: [
@@ -106,12 +106,12 @@ export class VariableAttribute extends Model implements OCPP2_0_1.VariableAttrib
   @Column({
     // TODO: Make this configurable? also used in VariableStatus model
     type: DataType.STRING(4000),
-    set(valueString) {
+    set(valueString: string) {
       if (valueString) {
         const valueType = (this as VariableAttribute).dataType;
         switch (valueType) {
           case OCPP2_0_1.DataEnumType.passwordString:
-            valueString = bcrypt.hashSync(valueString as string, 10);
+            valueString = CryptoUtils.getPasswordHash(valueString);
             break;
           default:
             // Do nothing

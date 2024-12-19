@@ -1,7 +1,6 @@
 import { ILogObj, Logger } from 'tslog';
-import { IDeviceModelRepository } from '@citrineos/data';
+import { CryptoUtils, IDeviceModelRepository } from '@citrineos/data';
 import { IncomingMessage } from 'http';
-import * as bcrypt from 'bcrypt';
 import { extractBasicCredentials } from '../../util/RequestOperations';
 import { AuthenticatorFilter } from './AuthenticatorFilter';
 import { AuthenticationOptions, OCPP2_0_1 } from '@citrineos/base';
@@ -32,7 +31,9 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
   ): Promise<void> {
     const { username, password } = extractBasicCredentials(request);
     if (!username || !password) {
-      throw new UpgradeAuthenticationError('Auth header missing or incorrectly formatted');
+      throw new UpgradeAuthenticationError(
+        'Auth header missing or incorrectly formatted',
+      );
     }
 
     if (
@@ -55,7 +56,7 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
         if (r && r[0]) {
           const hashedPassword = r[0].value;
           if (hashedPassword) {
-            return bcrypt.compare(password, hashedPassword);
+            return CryptoUtils.isPasswordMatch(hashedPassword, password);
           }
         }
         this._logger.warn('Has no password', username);
