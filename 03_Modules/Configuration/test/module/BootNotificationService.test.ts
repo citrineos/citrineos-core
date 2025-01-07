@@ -1,10 +1,6 @@
 import { Boot, IBootRepository } from '@citrineos/data';
 import { BootNotificationService } from '../../src/module/BootNotificationService';
-import {
-  ICache,
-  OCPP2_0_1,
-  SystemConfig,
-} from '@citrineos/base';
+import { ICache, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { aValidBootConfig } from '../providers/BootConfigProvider';
 import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall';
 
@@ -55,7 +51,7 @@ describe('BootService', () => {
       bootConfig: Boot | undefined,
       expectedStatus: OCPP2_0_1.RegistrationStatusEnumType,
     ) => {
-      const result = bootService.determineBootStatus(bootConfig);
+      const result = bootService.determineBootStatus();
       expect(result).toBe(expectedStatus);
     };
 
@@ -87,7 +83,8 @@ describe('BootService', () => {
 
     it('should return Pending status when bootConfig.status is pending and no actions are needed', () => {
       const bootConfig = aValidBootConfig(
-        (item: Boot) => (item.status = OCPP2_0_1.RegistrationStatusEnumType.Pending),
+        (item: Boot) =>
+          (item.status = OCPP2_0_1.RegistrationStatusEnumType.Pending),
       );
       runDetermineBootStatusTest(
         bootConfig,

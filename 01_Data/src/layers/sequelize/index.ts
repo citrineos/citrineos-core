@@ -43,3 +43,6 @@ export { SequelizeChargingStationSequenceRepository } from './repository/Chargin
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util';
+
+// Sequelize Mappers
+export { BootMapper } from './mapper/BootMapper';

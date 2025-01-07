@@ -53,7 +53,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
     return savedBootConfig;
   }
 
-  async updateStatusByKey(status: OCPP2_0_1.RegistrationStatusEnumType, statusInfo: OCPP2_0_1.StatusInfoType | undefined, key: string): Promise<Boot | undefined> {
+  async updateStatusByKey(status: string, statusInfo: object | undefined, key: string): Promise<Boot | undefined> {
     return await this.updateByKey({ status, statusInfo }, key);
   }
 
