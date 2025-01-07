@@ -1,13 +1,14 @@
-import { Boot, IBootRepository } from '@citrineos/data';
+import { Boot, IBootRepository, BootMapper } from '@citrineos/data';
 import {
   BOOT_STATUS,
   BootConfig,
-  OCPP2_0_1_CALL_SCHEMA_MAP,
   ICache,
   IMessageConfirmation,
   OCPP2_0_1,
-  SystemConfig,
+  OCPP2_0_1_CALL_SCHEMA_MAP,
   OCPP2_0_1_CallAction,
+  OCPPVersion,
+  SystemConfig,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 
@@ -33,35 +34,12 @@ export class BootNotificationService {
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  determineBootStatus(
-    bootConfig: Boot | undefined,
-  ): OCPP2_0_1.RegistrationStatusEnumType {
-    let bootStatus = bootConfig
-      ? bootConfig.status
-      : this._config.unknownChargerStatus;
+  determineBootStatus(): OCPP2_0_1.RegistrationStatusEnumType {
+    let bootStatus = this._config.unknownChargerStatus;
 
     if (bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Pending) {
       let needToGetBaseReport = this._config.getBaseReportOnPending;
-      let needToSetVariables = false;
-      if (bootConfig) {
-        if (
-          bootConfig.getBaseReportOnPending !== undefined &&
-          bootConfig.getBaseReportOnPending !== null
-        ) {
-          needToGetBaseReport = bootConfig.getBaseReportOnPending;
-        }
-        if (
-          bootConfig.pendingBootSetVariables &&
-          bootConfig.pendingBootSetVariables.length > 0
-        ) {
-          needToSetVariables = true;
-        }
-      }
-      if (
-        !needToGetBaseReport &&
-        !needToSetVariables &&
-        this._config.autoAccept
-      ) {
+      if (!needToGetBaseReport && this._config.autoAccept) {
         bootStatus = OCPP2_0_1.RegistrationStatusEnumType.Accepted;
       }
     }
@@ -74,18 +52,24 @@ export class BootNotificationService {
   ): Promise<OCPP2_0_1.BootNotificationResponse> {
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
     const bootConfig = await this._bootRepository.readByKey(stationId);
-    const bootStatus = this.determineBootStatus(bootConfig);
-
-    // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
-    return {
-      currentTime: new Date().toISOString(),
-      status: bootStatus,
-      statusInfo: bootConfig?.statusInfo,
-      interval:
-        bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
-          ? bootConfig?.heartbeatInterval || this._config.heartbeatInterval
-          : bootConfig?.bootRetryInterval || this._config.bootRetryInterval,
-    };
+    this._logger.debug(`Found boot config: ${JSON.stringify(bootConfig)}`);
+    if (bootConfig) {
+      const bootMapper = new BootMapper(OCPPVersion.OCPP2_0_1, this._config);
+      return bootMapper.fromModelToResponse(
+        bootConfig,
+      ) as OCPP2_0_1.BootNotificationResponse;
+    } else {
+      const bootStatus = this.determineBootStatus();
+      // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
+      return {
+        currentTime: new Date().toISOString(),
+        status: bootStatus,
+        interval:
+          bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
+            ? this._config.heartbeatInterval
+            : this._config.bootRetryInterval,
+      };
+    }
   }
 
   async updateBootConfig(
@@ -130,15 +114,18 @@ export class BootNotificationService {
   ): Promise<void> {
     // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
     if (
-      bootNotificationResponseStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
+      bootNotificationResponseStatus ===
+      OCPP2_0_1.RegistrationStatusEnumType.Accepted
     ) {
       if (cachedBootStatus) {
         // Undo blacklisting of charger-originated actions
-        const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(async ([action]) => {
-          if (action !== OCPP2_0_1_CallAction.BootNotification) {
-            return this._cache.remove(action, stationId);
-          }
-        });
+        const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(
+          async ([action]) => {
+            if (action !== OCPP2_0_1_CallAction.BootNotification) {
+              return this._cache.remove(action, stationId);
+            }
+          },
+        );
         await Promise.all(promises);
         // Remove cached boot status
         await this._cache.remove(BOOT_STATUS, stationId);
@@ -150,11 +137,13 @@ export class BootNotificationService {
       // Blacklist all charger-originated actions except BootNotification
       // GetReport messages will need to un-blacklist NotifyReport
       // TriggerMessage will need to un-blacklist the message it triggers
-      const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(async ([action]) => {
-        if (action !== OCPP2_0_1_CallAction.BootNotification) {
-          return this._cache.set(action, 'blacklisted', stationId);
-        }
-      });
+      const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(
+        async ([action]) => {
+          if (action !== OCPP2_0_1_CallAction.BootNotification) {
+            return this._cache.set(action, 'blacklisted', stationId);
+          }
+        },
+      );
       await Promise.all(promises);
     }
   }

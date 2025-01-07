@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type BootConfig, Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { type BootConfig, Namespace } from '@citrineos/base';
 import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { VariableAttribute } from './DeviceModel';
 
@@ -34,10 +34,10 @@ export class Boot extends Model implements BootConfig {
   declare bootRetryInterval?: number;
 
   @Column(DataType.STRING)
-  declare status: OCPP2_0_1.RegistrationStatusEnumType;
+  declare status: string;
 
   @Column(DataType.JSON)
-  declare statusInfo?: OCPP2_0_1.StatusInfoType;
+  declare statusInfo?: object;
 
   @Column(DataType.BOOLEAN)
   declare getBaseReportOnPending?: boolean;
@@ -49,10 +49,10 @@ export class Boot extends Model implements BootConfig {
   declare pendingBootSetVariables?: VariableAttribute[];
 
   @Column(DataType.JSON)
-  declare variablesRejectedOnLastBoot: OCPP2_0_1.SetVariableResultType[];
+  declare variablesRejectedOnLastBoot: object[];
 
   @Column(DataType.BOOLEAN)
   declare bootWithRejectedVariables?: boolean;
 
-  declare customData?: OCPP2_0_1.CustomDataType;
+  declare customData?: object;
 }
