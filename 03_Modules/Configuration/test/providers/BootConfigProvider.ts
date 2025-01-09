@@ -1,7 +1,5 @@
-import { Boot } from '@citrineos/data';
-import {
-  OCPP2_0_1
-} from '@citrineos/base';
+import { OCPP2_0_1_Mapper } from '@citrineos/data';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 
@@ -32,10 +30,9 @@ export const aValidSetVariableResult = (
 };
 
 export const aValidBootConfig = (
-  updateFunction?: UpdateFunction<Boot>,
-): Boot => {
-  const item: Boot = {
-    id: faker.string.uuid(),
+  updateFunction?: UpdateFunction<OCPP2_0_1_Mapper.BootMapper>,
+): OCPP2_0_1_Mapper.BootMapper => {
+  const item: OCPP2_0_1_Mapper.BootMapper = {
     lastBootTime: faker.date.recent().toISOString(),
     heartbeatInterval: faker.number.int({ min: 30, max: 3600 }),
     bootRetryInterval: faker.number.int({ min: 30, max: 3600 }),
@@ -43,7 +40,7 @@ export const aValidBootConfig = (
     getBaseReportOnPending: false,
     variablesRejectedOnLastBoot: [aValidSetVariableResult()],
     bootWithRejectedVariables: faker.datatype.boolean(),
-  } as Boot;
+  } as OCPP2_0_1_Mapper.BootMapper;
 
   return applyUpdateFunction(item, updateFunction);
 };

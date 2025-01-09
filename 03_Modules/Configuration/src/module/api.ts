@@ -11,7 +11,6 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   AsMessageEndpoint,
-  BootConfig,
   BootConfigSchema,
   CallAction,
   HttpMethod,
