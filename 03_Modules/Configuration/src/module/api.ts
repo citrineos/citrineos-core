@@ -11,7 +11,6 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   AsMessageEndpoint,
-  BootConfig,
   BootConfigSchema,
   CallAction,
   HttpMethod,
@@ -49,7 +48,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 enum SetNetworkProfileExtraQuerystrings {
-  websocketServerConfigId = 'websocketServerConfigId'
+  websocketServerConfigId = 'websocketServerConfigId',
 }
 
 /**websocketServerConfigId
@@ -74,7 +73,6 @@ export class ConfigurationModuleApi
     super(ConfigurationComponent, server, logger);
   }
 
-
   /**
    * Message Endpoint Methods
    */
@@ -82,18 +80,21 @@ export class ConfigurationModuleApi
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.SetNetworkProfile,
     OCPP2_0_1.SetNetworkProfileRequestSchema,
-    { websocketServerConfigId: { type: 'string' } }
+    { websocketServerConfigId: { type: 'string' } },
   )
   async setNetworkProfile(
     identifier: string,
     tenantId: string,
     request: OCPP2_0_1.SetNetworkProfileRequest,
     callbackUrl?: string,
-    extraQueries?: Record<string, any>
+    extraQueries?: Record<string, any>,
   ): Promise<IMessageConfirmation> {
     const correlationId = uuidv4();
     if (extraQueries) {
-      const websocketServerConfigId = extraQueries[SetNetworkProfileExtraQuerystrings.websocketServerConfigId];
+      const websocketServerConfigId =
+        extraQueries[
+          SetNetworkProfileExtraQuerystrings.websocketServerConfigId
+        ];
       await SetNetworkProfile.build({
         stationId: identifier,
         correlationId,
@@ -101,7 +102,7 @@ export class ConfigurationModuleApi
         websocketServerConfigId,
         apn: JSON.stringify(request.connectionData.apn),
         vpn: JSON.stringify(request.connectionData.vpn),
-        ...request.connectionData
+        ...request.connectionData,
       }).save();
     }
     return this._module.sendCall(
@@ -155,7 +156,10 @@ export class ConfigurationModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.PublishFirmware, OCPP2_0_1.PublishFirmwareRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.PublishFirmware,
+    OCPP2_0_1.PublishFirmwareRequestSchema,
+  )
   publishFirmware(
     identifier: string,
     tenantId: string,
@@ -228,7 +232,10 @@ export class ConfigurationModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.UpdateFirmware, OCPP2_0_1.UpdateFirmwareRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.UpdateFirmware,
+    OCPP2_0_1.UpdateFirmwareRequestSchema,
+  )
   updateFirmware(
     identifier: string,
     tenantId: string,
@@ -282,7 +289,10 @@ export class ConfigurationModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.TriggerMessage, OCPP2_0_1.TriggerMessageRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.TriggerMessage,
+    OCPP2_0_1.TriggerMessageRequestSchema,
+  )
   triggerMessage(
     identifier: string,
     tenantId: string,
@@ -309,13 +319,13 @@ export class ConfigurationModuleApi
     ChargingStationKeyQuerySchema,
     BootConfigSchema,
   )
-  putBootConfig(
+  async putBootConfig(
     request: FastifyRequest<{
       Body: OCPP2_0_1.BootNotificationResponse;
       Querystring: ChargingStationKeyQuerystring;
     }>,
-  ): Promise<BootConfig | undefined> {
-    return this._module.bootRepository.createOrUpdateByKey(
+  ): Promise<Boot | undefined> {
+    return await this._module.bootRepository.createOrUpdateByKey(
       request.body,
       request.query.stationId,
     );
@@ -326,10 +336,10 @@ export class ConfigurationModuleApi
     HttpMethod.Get,
     ChargingStationKeyQuerySchema,
   )
-  getBootConfig(
+  async getBootConfig(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Boot | undefined> {
-    return this._module.bootRepository.readByKey(request.query.stationId);
+    return await this._module.bootRepository.readByKey(request.query.stationId);
   }
 
   @AsDataEndpoint(
@@ -337,10 +347,12 @@ export class ConfigurationModuleApi
     HttpMethod.Delete,
     ChargingStationKeyQuerySchema,
   )
-  deleteBootConfig(
+  async deleteBootConfig(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Boot | undefined> {
-    return this._module.bootRepository.deleteByKey(request.query.stationId);
+    return await this._module.bootRepository.deleteByKey(
+      request.query.stationId,
+    );
   }
 
   @AsDataEndpoint(
@@ -407,7 +419,10 @@ export class ConfigurationModuleApi
   async getNetworkProfiles(
     request: FastifyRequest<{ Querystring: NetworkProfileQuerystring }>,
   ): Promise<ChargingStationNetworkProfile[]> {
-    return ChargingStationNetworkProfile.findAll({ where: { stationId: request.query.stationId }, include: [SetNetworkProfile, ServerNetworkProfile] });
+    return ChargingStationNetworkProfile.findAll({
+      where: { stationId: request.query.stationId },
+      include: [SetNetworkProfile, ServerNetworkProfile],
+    });
   }
 
   @AsDataEndpoint(
@@ -422,11 +437,14 @@ export class ConfigurationModuleApi
       where: {
         stationId: request.query.stationId,
         configurationSlot: {
-          [Op.in]: request.query.configurationSlot
-        }
-      }
+          [Op.in]: request.query.configurationSlot,
+        },
+      },
     });
-    return { success: true, payload: `${destroyedRows} rows successfully destroyed` };
+    return {
+      success: true,
+      payload: `${destroyedRows} rows successfully destroyed`,
+    };
   }
 
   /**
@@ -500,7 +518,8 @@ export class ConfigurationModuleApi
     const setVariablesResponse: OCPP2_0_1.SetVariablesResponse =
       JSON.parse(responseJsonString);
     const passwordUpdated = setVariablesResponse.setVariableResult.every(
-      (result) => result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Accepted,
+      (result) =>
+        result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Accepted,
     );
     if (!passwordUpdated) {
       throw new Error(`Failure updating password on ${stationId} station`);
