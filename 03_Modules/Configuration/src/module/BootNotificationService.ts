@@ -1,4 +1,4 @@
-import { Boot, IBootRepository, BootMapper } from '@citrineos/data';
+import { Boot, IBootRepository, OCPP2_0_1_Mapper } from '@citrineos/data';
 import {
   BOOT_STATUS,
   BootConfig,
@@ -7,7 +7,6 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CALL_SCHEMA_MAP,
   OCPP2_0_1_CallAction,
-  OCPPVersion,
   SystemConfig,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
@@ -34,16 +33,38 @@ export class BootNotificationService {
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  determineBootStatus(): OCPP2_0_1.RegistrationStatusEnumType {
-    let bootStatus = this._config.unknownChargerStatus;
+  determineBootStatus(
+    bootConfig: OCPP2_0_1_Mapper.BootMapper | undefined,
+  ): OCPP2_0_1.RegistrationStatusEnumType {
+    let bootStatus = bootConfig
+      ? bootConfig.status
+      : this._config.unknownChargerStatus;
 
     if (bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Pending) {
       let needToGetBaseReport = this._config.getBaseReportOnPending;
-      if (!needToGetBaseReport && this._config.autoAccept) {
+      let needToSetVariables = false;
+      if (bootConfig) {
+        if (
+          bootConfig.getBaseReportOnPending !== undefined &&
+          bootConfig.getBaseReportOnPending !== null
+        ) {
+          needToGetBaseReport = bootConfig.getBaseReportOnPending;
+        }
+        if (
+          bootConfig.pendingBootSetVariables &&
+          bootConfig.pendingBootSetVariables.length > 0
+        ) {
+          needToSetVariables = true;
+        }
+      }
+      if (
+        !needToGetBaseReport &&
+        !needToSetVariables &&
+        this._config.autoAccept
+      ) {
         bootStatus = OCPP2_0_1.RegistrationStatusEnumType.Accepted;
       }
     }
-
     return bootStatus;
   }
 
@@ -51,25 +72,19 @@ export class BootNotificationService {
     stationId: string,
   ): Promise<OCPP2_0_1.BootNotificationResponse> {
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
-    const bootConfig = await this._bootRepository.readByKey(stationId);
-    this._logger.debug(`Found boot config: ${JSON.stringify(bootConfig)}`);
-    if (bootConfig) {
-      const bootMapper = new BootMapper(OCPPVersion.OCPP2_0_1, this._config);
-      return bootMapper.fromModelToResponse(
-        bootConfig,
-      ) as OCPP2_0_1.BootNotificationResponse;
-    } else {
-      const bootStatus = this.determineBootStatus();
-      // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
-      return {
-        currentTime: new Date().toISOString(),
-        status: bootStatus,
-        interval:
-          bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
-            ? this._config.heartbeatInterval
-            : this._config.bootRetryInterval,
-      };
-    }
+    const bootMapper = await this._bootRepository.readByStationId(stationId);
+    const bootStatus = this.determineBootStatus(bootMapper);
+
+    // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
+    return {
+      currentTime: new Date().toISOString(),
+      status: bootStatus,
+      statusInfo: bootMapper?.statusInfo,
+      interval:
+        bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
+          ? bootMapper?.heartbeatInterval || this._config.heartbeatInterval
+          : bootMapper?.bootRetryInterval || this._config.bootRetryInterval,
+    };
   }
 
   async updateBootConfig(
