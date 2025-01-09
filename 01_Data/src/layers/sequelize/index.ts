@@ -45,4 +45,4 @@ export { SequelizeChargingStationSequenceRepository } from './repository/Chargin
 export { DefaultSequelizeInstance } from './util';
 
 // Sequelize Mappers
-export { BootMapper } from './mapper/BootMapper';
+export * as OCPP2_0_1_Mapper from './mapper/2.0.1';
