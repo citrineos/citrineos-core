@@ -72,18 +72,19 @@ export class BootNotificationService {
     stationId: string,
   ): Promise<OCPP2_0_1.BootNotificationResponse> {
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
-    const bootMapper = await this._bootRepository.readByStationId(stationId);
-    const bootStatus = this.determineBootStatus(bootMapper);
+    const boot = await this._bootRepository.readByKey(stationId);
+    const mapper = boot ? new OCPP2_0_1_Mapper.BootMapper(boot) : undefined;
+    const bootStatus = this.determineBootStatus(mapper);
 
     // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
     return {
       currentTime: new Date().toISOString(),
       status: bootStatus,
-      statusInfo: bootMapper?.statusInfo,
+      statusInfo: mapper?.statusInfo,
       interval:
         bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
-          ? bootMapper?.heartbeatInterval || this._config.heartbeatInterval
-          : bootMapper?.bootRetryInterval || this._config.bootRetryInterval,
+          ? mapper?.heartbeatInterval || this._config.heartbeatInterval
+          : mapper?.bootRetryInterval || this._config.bootRetryInterval,
     };
   }
 

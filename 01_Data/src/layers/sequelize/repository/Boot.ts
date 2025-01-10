@@ -10,7 +10,6 @@ import { VariableAttribute } from '../model/DeviceModel';
 import { SequelizeRepository } from '..';
 import { Logger, ILogObj } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
-import { BootMapper } from '../mapper/2.0.1';
 
 export class SequelizeBootRepository extends SequelizeRepository<Boot> implements IBootRepository {
   variableAttributes: CrudRepository<VariableAttribute>;
@@ -60,11 +59,6 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
 
   async updateLastBootTimeByKey(lastBootTime: string, key: string): Promise<Boot | undefined> {
     return await this.updateByKey({ lastBootTime }, key);
-  }
-
-  async readByStationId(stationId: string): Promise<BootMapper | undefined> {
-    const boot = await this.readByKey(stationId);
-    return boot ? new BootMapper(boot) : undefined;
   }
 
   /**
