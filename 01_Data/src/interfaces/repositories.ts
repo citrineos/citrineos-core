@@ -38,7 +38,6 @@ import {
 } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
-import { BootMapper } from '../layers/sequelize/mapper/2.0.1';
 
 export interface IAuthorizationRepository extends CrudRepository<OCPP2_0_1.AuthorizationData> {
   createOrUpdateByQuerystring: (value: OCPP2_0_1.AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
@@ -59,7 +58,6 @@ export interface IBootRepository extends CrudRepository<BootConfig> {
   readByKey: (key: string) => Promise<Boot | undefined>;
   existsByKey: (key: string) => Promise<boolean>;
   deleteByKey: (key: string) => Promise<Boot | undefined>;
-  readByStationId: (key: string) => Promise<BootMapper | undefined>;
 }
 
 export interface IDeviceModelRepository extends CrudRepository<OCPP2_0_1.VariableAttributeType> {

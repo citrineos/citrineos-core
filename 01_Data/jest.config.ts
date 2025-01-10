@@ -5,12 +5,7 @@ const jestConfig: JestConfigWithTsJest = {
   transform: {
     '^.+.tsx?$': ['ts-jest', {}],
   },
-  projects: [
-    '<rootDir>/03_Modules/*',
-    '<rootDir>/02_Util/jest.config.ts',
-    '<rootDir>/00_Base/jest.config.ts',
-    '<rootDir>/01_Data/jest.config.ts',
-  ],
+  displayName: 'Data Module',
 };
 
 export default jestConfig;

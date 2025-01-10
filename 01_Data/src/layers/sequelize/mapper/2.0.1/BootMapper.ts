@@ -28,7 +28,7 @@ export class BootMapper extends AbstractMapper {
   toModel(): Boot {
     try {
       return {
-        lastBootTime: this.lastBootTime ? new Date(this.lastBootTime) : undefined,
+        lastBootTime: this.lastBootTime,
         heartbeatInterval: this.heartbeatInterval,
         bootRetryInterval: this.bootRetryInterval,
         status: this.status,
