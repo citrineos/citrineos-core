@@ -49,6 +49,7 @@ import { Tariff } from './model/Tariff';
 import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
 import { SetNetworkProfile, StatusNotification } from './model/Location';
 import { LatestStatusNotification } from './model/Location/LatestStatusNotification';
+import { UserPreferences } from './model/UserPreferences';
 
 export class DefaultSequelizeInstance {
   /**
@@ -151,6 +152,7 @@ export class DefaultSequelizeInstance {
         Transaction,
         TransactionEvent,
         Tariff,
+        UserPreferences,
         VariableAttribute,
         VariableCharacteristics,
         VariableMonitoring,
