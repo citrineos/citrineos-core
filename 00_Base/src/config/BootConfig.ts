@@ -25,9 +25,9 @@ export interface BootConfig {
   /**
    * Also declared in SystemConfig. If absent, SystemConfig value is used.
    */
-  changeConfigurationsOnPending?: boolean;
-  getConfigurationsOnPending?: boolean;
   bootWithRejectedVariables?: boolean | null;
+  changeConfigurationsOnPending?: boolean | null;
+  getConfigurationsOnPending?: boolean | null;
 }
 
 /**
