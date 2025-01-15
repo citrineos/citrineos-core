@@ -11,10 +11,12 @@ import {
   AsMessageEndpoint,
   CallAction,
   IMessageConfirmation,
-  Namespace,
+  OCPP2_0_1_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
-  OCPPVersion
+  OCPPVersion,
+  OCPP1_6_Namespace,
+  Namespace,
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { VariableAttribute } from '@citrineos/data';
@@ -91,7 +93,8 @@ export class SmartChargingModuleApi
     // OCPP 2.0.1 Part 2 K10.FR.06
     if (
       chargingProfileCriteria?.chargingProfilePurpose ===
-      OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationExternalConstraints
+      OCPP2_0_1.ChargingProfilePurposeEnumType
+        .ChargingStationExternalConstraints
     ) {
       return {
         success: false,
@@ -197,7 +200,8 @@ export class SmartChargingModuleApi
     this._logger.info(
       `Received SetChargingProfile: ${JSON.stringify(request)}`,
     );
-    const chargingProfile: OCPP2_0_1.ChargingProfileType = request.chargingProfile;
+    const chargingProfile: OCPP2_0_1.ChargingProfileType =
+      request.chargingProfile;
     // Validate ChargingProfileType's constraints
     try {
       await validateChargingProfileType(
@@ -319,7 +323,8 @@ export class SmartChargingModuleApi
       }
     } else if (
       chargingProfile.chargingProfilePurpose ===
-      OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationExternalConstraints
+      OCPP2_0_1.ChargingProfilePurposeEnumType
+        .ChargingStationExternalConstraints
     ) {
       // OCPP 2.0.1 Part 2 K01.FR.22
       return {
@@ -411,9 +416,9 @@ export class SmartChargingModuleApi
 
       if (
         chargingProfile.chargingProfileKind ===
-        OCPP2_0_1.ChargingProfileKindEnumType.Absolute ||
+          OCPP2_0_1.ChargingProfileKindEnumType.Absolute ||
         chargingProfile.chargingProfileKind ===
-        OCPP2_0_1.ChargingProfileKindEnumType.Recurring
+          OCPP2_0_1.ChargingProfileKindEnumType.Recurring
       ) {
         // OCPP 2.0.1 Part 2 K01.FR.40
         if (!chargingSchedule.startSchedule) {
@@ -584,12 +589,15 @@ export class SmartChargingModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input ({@link OCPP2_0_1_Namespace},
+   * {@link OCPP1_6_Namespace} or {@link Namespace}) and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {CallAction} input - The input {@link OCPP2_0_1_Namespace}, {@link OCPP1_6_Namespace} or {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(input: Namespace): string {
+  protected _toDataPath(
+    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
+  ): string {
     const endpointPrefix =
       this._module.config.modules.smartcharging?.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
@@ -608,7 +616,8 @@ export class SmartChargingModuleApi
     );
     if (
       chargingScheduleChargingRateUnit &&
-      chargingScheduleChargingRateUnit.dataType === OCPP2_0_1.DataEnumType.MemberList &&
+      chargingScheduleChargingRateUnit.dataType ===
+        OCPP2_0_1.DataEnumType.MemberList &&
       chargingScheduleChargingRateUnit.valuesList
     ) {
       return stringToSet(chargingScheduleChargingRateUnit.valuesList);

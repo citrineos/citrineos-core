@@ -33,7 +33,7 @@ import {
   RedisCache,
   UnknownStationFilter,
   WebsocketNetworkConnection,
-  S3Storage
+  S3Storage,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import addFormats from 'ajv-formats';
@@ -111,6 +111,7 @@ export class CitrineOSServer {
    * @param {FastifyInstance} server - optional Fastify server instance
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
    * @param {ICache} cache - cache
+   * @param {IFileAccess} fileAccess - file storage
    */
   // todo rename event group to type
   constructor(
@@ -334,7 +335,7 @@ export class CitrineOSServer {
                   return JSON.stringify(obj, (key, value) => {
                     if (typeof value === 'object' && value !== null) {
                       if (cache.has(value)) {
-                        // Circular reference found, discard key
+                        // Circular reference is found, discard key
                         return '[Circular]';
                       }
                       // Store value in our collection
@@ -533,6 +534,9 @@ export class CitrineOSServer {
       this._repositoryStore.bootRepository,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.messageInfoRepository,
+      this._repositoryStore.locationRepository,
+      this._repositoryStore.changeConfigurationRepository,
+      this._repositoryStore.callMessageRepository,
       this._idGenerator,
     );
     await this.initHandlersAndAddModule(module);

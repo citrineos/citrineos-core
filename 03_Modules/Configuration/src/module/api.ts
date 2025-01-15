@@ -15,12 +15,14 @@ import {
   CallAction,
   HttpMethod,
   IMessageConfirmation,
-  Namespace,
+  OCPP2_0_1_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
   UpdateChargingStationPasswordRequest,
   UpdateChargingStationPasswordSchema,
+  Namespace,
+  OCPP1_6_Namespace,
 } from '@citrineos/base';
 import {
   Boot,
@@ -356,7 +358,7 @@ export class ConfigurationModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.PasswordType,
+    OCPP2_0_1_Namespace.PasswordType,
     HttpMethod.Post,
     UpdateChargingStationPasswordQuerySchema,
     UpdateChargingStationPasswordSchema,
@@ -412,7 +414,7 @@ export class ConfigurationModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.ServerNetworkProfile,
+    OCPP2_0_1_Namespace.ServerNetworkProfile,
     HttpMethod.Get,
     NetworkProfileQuerySchema,
   )
@@ -426,7 +428,7 @@ export class ConfigurationModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.ServerNetworkProfile,
+    OCPP2_0_1_Namespace.ServerNetworkProfile,
     HttpMethod.Delete,
     NetworkProfileDeleteQuerySchema,
   )
@@ -460,12 +462,15 @@ export class ConfigurationModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input ({@link OCPP2_0_1_Namespace},
+   * {@link OCPP1_6_Namespace} or {@link Namespace}) and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {CallAction} input - The input {@link OCPP2_0_1_Namespace}, {@link OCPP1_6_Namespace} or {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(input: Namespace): string {
+  protected _toDataPath(
+    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
+  ): string {
     const endpointPrefix =
       this._module.config.modules.configuration.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
