@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, SystemConfig, type BootConfig } from '@citrineos/base';
+import { CrudRepository, SystemConfig, type BootConfig, OCPP1_6 } from '@citrineos/base';
 import { type IBootRepository } from '../../../interfaces';
 import { Boot } from '../model/Boot';
 import { VariableAttribute } from '../model/DeviceModel';
@@ -65,6 +65,40 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
   async readByStationId(stationId: string): Promise<BootMapper | undefined> {
     const boot = await this.readByKey(stationId);
     return boot ? new BootMapper(boot) : undefined;
+  }
+
+  async createOrUpdateFromOcpp16Response(key: string, response: OCPP1_6.BootNotificationResponse): Promise<Boot | undefined> {
+    let boot: Boot | undefined;
+    const heartbeatInterval = response.status === OCPP1_6.BootNotificationResponseStatus.Accepted ? response.interval : undefined;
+    const bootRetryInterval = response.status !== OCPP1_6.BootNotificationResponseStatus.Accepted ? response.interval : undefined;
+    await this.s.transaction(async (sequelizeTransaction) => {
+      const [savedBoot, bootCreated] = await this.readOrCreateByQuery({
+        where: {
+          id: key,
+        },
+        defaults: {
+          status: response.status,
+          heartbeatInterval,
+          bootRetryInterval,
+        },
+      });
+      if (!bootCreated) {
+        // if the charging station has been booted, update the last boot time
+        boot = await savedBoot.update(
+          {
+            lastBootTime: response.currentTime,
+            heartbeatInterval,
+            bootRetryInterval,
+            status: response.status,
+          },
+          { transaction: sequelizeTransaction },
+        );
+        this.emit('updated', [boot]);
+      } else {
+        boot = savedBoot;
+      }
+    });
+    return boot;
   }
 
   /**
