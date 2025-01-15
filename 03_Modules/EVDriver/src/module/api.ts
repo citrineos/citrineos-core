@@ -15,7 +15,7 @@ import {
   CallAction,
   HttpMethod,
   IMessageConfirmation,
-  Namespace,
+  OCPP2_0_1_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
@@ -57,7 +57,7 @@ export class EVDriverModuleApi
    */
 
   @AsDataEndpoint(
-    Namespace.AuthorizationData,
+    OCPP2_0_1_Namespace.AuthorizationData,
     HttpMethod.Put,
     AuthorizationQuerySchema,
     AuthorizationDataSchema,
@@ -75,7 +75,7 @@ export class EVDriverModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.AuthorizationRestrictions,
+    OCPP2_0_1_Namespace.AuthorizationRestrictions,
     HttpMethod.Put,
     AuthorizationQuerySchema,
     AuthorizationRestrictionsSchema,
@@ -93,7 +93,7 @@ export class EVDriverModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.AuthorizationData,
+    OCPP2_0_1_Namespace.AuthorizationData,
     HttpMethod.Get,
     AuthorizationQuerySchema,
   )
@@ -104,7 +104,7 @@ export class EVDriverModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.AuthorizationData,
+    OCPP2_0_1_Namespace.AuthorizationData,
     HttpMethod.Delete,
     AuthorizationQuerySchema,
   )
@@ -117,12 +117,12 @@ export class EVDriverModuleApi
         (deletedCount) =>
           deletedCount.toString() +
           ' rows successfully deleted from ' +
-          Namespace.AuthorizationData,
+          OCPP2_0_1_Namespace.AuthorizationData,
       );
   }
 
   @AsDataEndpoint(
-    Namespace.LocalListVersion,
+    OCPP2_0_1_Namespace.LocalListVersion,
     HttpMethod.Get,
     ChargingStationKeyQuerySchema,
   )
@@ -549,7 +549,9 @@ export class EVDriverModuleApi
    * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(input: Namespace): string {
+  protected _toDataPath(
+    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
+  ): string {
     const endpointPrefix = this._module.config.modules.evdriver.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
   }

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Index, Model, Table } from 'sequelize-typescript';
 import { Variable } from './Variable';
 import { Component } from './Component';
@@ -72,7 +72,7 @@ import { CryptoUtils } from '../../../../util/CryptoUtils';
   ],
 })
 export class VariableAttribute extends Model implements OCPP2_0_1.VariableAttributeType {
-  static readonly MODEL_NAME: string = Namespace.VariableAttributeType;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableAttributeType;
 
   /**
    * Fields

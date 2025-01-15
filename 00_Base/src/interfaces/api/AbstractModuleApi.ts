@@ -13,8 +13,14 @@ import {
   METADATA_DATA_ENDPOINTS,
   METADATA_MESSAGE_ENDPOINTS,
 } from '.';
-import { MessageConfirmationSchema, OcppRequest, SystemConfig } from '../..';
-import { Namespace } from '../../ocpp/persistence';
+import {
+  MessageConfirmationSchema,
+  Namespace,
+  OCPP1_6_Namespace,
+  OcppRequest,
+  SystemConfig,
+} from '../..';
+import { OCPP2_0_1_Namespace } from '../../ocpp/persistence';
 import { CallAction } from '../../ocpp/rpc/message';
 import { IMessageConfirmation } from '../messages';
 import { IModule } from '../modules';
@@ -87,13 +93,13 @@ export abstract class AbstractModuleApi<T extends IModule>
     // Add API routes for getting and setting SystemConfig
     this._addDataRoute.call(
       this,
-      Namespace.SystemConfig,
+      OCPP2_0_1_Namespace.SystemConfig,
       () => new Promise((resolve) => resolve(module.config)),
       HttpMethod.Get,
     );
     this._addDataRoute.call(
       this,
-      Namespace.SystemConfig,
+      OCPP2_0_1_Namespace.SystemConfig,
       (request: FastifyRequest<{ Body: SystemConfig }>) =>
         new Promise<void>((resolve) => {
           module.config = request.body;
@@ -188,13 +194,21 @@ export abstract class AbstractModuleApi<T extends IModule>
   /**
    * Add a message route to the server.
    *
-   * @param {Namespace} namespace - The entity type.
+   * @param {OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace} namespace - The entity type.
    * @param {Function} method - The method to be executed.
-   * @param {object} schema - The schema for the entity.
+   * @param {HttpMethod} httpMethod - The HTTP method to be used.
+   * @param {object} querySchema - The schema for the querystring.
+   * @param {object} paramSchema - The schema for the parameters.
+   * @param {object} headerSchema - The schema for the headers.
+   * @param {object} bodySchema - The schema for the body.
+   * @param {object} responseSchema - The schema for the response.
+   * @param {string[]} tags - The tags for the route.
+   * @param {string} description - The description for the route.
+   * @param {object[]} security - The security for the route.
    * @return {void}
    */
   protected _addDataRoute(
-    namespace: Namespace,
+    namespace: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
     method: (...args: any[]) => any,
     httpMethod: HttpMethod,
     querySchema?: object,
@@ -440,6 +454,7 @@ export abstract class AbstractModuleApi<T extends IModule>
    * Convert a {@link CallAction} to a normed lowercase URL path.
    *
    * @param {CallAction} input - The {@link CallAction} to convert to a URL path.
+   * @param {string} prefix - The module name.
    * @returns {string} - String representation of URL path.
    */
   protected _toMessagePath(input: CallAction, prefix?: string): string {
@@ -448,12 +463,16 @@ export abstract class AbstractModuleApi<T extends IModule>
   }
 
   /**
-   * Convert a {@link Namespace} to a normed lowercase URL path.
+   * Convert a namespace to a normed lowercase URL path.
    *
-   * @param {Namespace} input - The {@link Namespace} to convert to a URL path.
+   * @param {OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace} input - The {@link OCPP2_0_1_Namespace} or {@link OCPP1_6_Namespace} or {@link Namespace} to convert to a URL path.
+   * @param {string} prefix - The module name.
    * @returns {string} - String representation of URL path.
    */
-  protected _toDataPath(input: Namespace, prefix?: string): string {
+  protected _toDataPath(
+    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
+    prefix?: string,
+  ): string {
     const endpointPrefix = prefix || '';
     return `/data${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
   }

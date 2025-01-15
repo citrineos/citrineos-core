@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  RegistrationStatusEnumType,
   defineConfig,
+  OCPP1_6,
+  OCPP2_0_1,
   type SystemConfig,
 } from '@citrineos/base';
 
@@ -24,10 +25,15 @@ export function createLocalConfig(): SystemConfig {
       configuration: {
         heartbeatInterval: 60,
         bootRetryInterval: 15,
-        unknownChargerStatus: RegistrationStatusEnumType.Accepted,
-        getBaseReportOnPending: true,
-        bootWithRejectedVariables: true,
-        autoAccept: true,
+        ocpp2_0_1: {
+          unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+          getBaseReportOnPending: true,
+          bootWithRejectedVariables: true,
+          autoAccept: true,
+        },
+        ocpp1_6: {
+          unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Accepted,
+        },
         endpointPrefix: '/configuration',
         host: 'localhost',
         port: 8080,
@@ -144,5 +150,9 @@ export function createLocalConfig(): SystemConfig {
     logLevel: 2, // debug
     maxCallLengthSeconds: 5,
     maxCachingSeconds: 10,
+    ocpiServer: {
+      host: '0.0.0.0',
+      port: 8085,
+    },
   });
 }

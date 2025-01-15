@@ -11,11 +11,13 @@ import {
   HttpMethod,
   IFileAccess,
   IMessageConfirmation,
-  Namespace,
+  OCPP2_0_1_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
   WebsocketServerConfig,
+  OCPP1_6_Namespace,
+  Namespace,
 } from '@citrineos/base';
 import jsrsasign from 'jsrsasign';
 import { FastifyInstance, FastifyRequest } from 'fastify';
@@ -185,7 +187,7 @@ export class CertificatesModuleApi
    */
 
   @AsDataEndpoint(
-    Namespace.TlsCertificates,
+    OCPP2_0_1_Namespace.TlsCertificates,
     HttpMethod.Put,
     UpdateTlsCertificateQuerySchema,
     TlsCertificateSchema,
@@ -249,7 +251,7 @@ export class CertificatesModuleApi
    * @return Promise<Certificate[]> - An array of generated certificates
    */
   @AsDataEndpoint(
-    Namespace.CertificateChain,
+    OCPP2_0_1_Namespace.CertificateChain,
     HttpMethod.Post,
     undefined,
     GenerateCertificateChainSchema,
@@ -403,8 +405,13 @@ export class CertificatesModuleApi
     return responseBody;
   }
 
+  @AsDataEndpoint(OCPP2_0_1_Namespace.FileURL, HttpMethod.Get, undefined)
+  async getFileURL(): Promise<string> {
+    return this._fileAccess.getFileURL();
+  }
+
   @AsDataEndpoint(
-    Namespace.RootCertificate,
+    OCPP2_0_1_Namespace.RootCertificate,
     HttpMethod.Put,
     undefined,
     InstallRootCertificateSchema,
@@ -480,7 +487,9 @@ export class CertificatesModuleApi
    * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(input: Namespace): string {
+  protected _toDataPath(
+    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
+  ): string {
     const endpointPrefix =
       this._module.config.modules.certificates?.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
