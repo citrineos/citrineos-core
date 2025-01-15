@@ -25,22 +25,22 @@ export class Boot extends Model implements BootConfig {
       return lastBootTimeValue ? lastBootTimeValue.toISOString() : null;
     },
   })
-  declare lastBootTime?: string;
+  declare lastBootTime?: string | null;
 
   @Column(DataType.INTEGER)
-  declare heartbeatInterval?: number;
+  declare heartbeatInterval?: number | null;
 
   @Column(DataType.INTEGER)
-  declare bootRetryInterval?: number;
+  declare bootRetryInterval?: number | null;
 
   @Column(DataType.STRING)
   declare status: string;
 
   @Column(DataType.JSON)
-  declare statusInfo?: object;
+  declare statusInfo?: object | null;
 
   @Column(DataType.BOOLEAN)
-  declare getBaseReportOnPending?: boolean;
+  declare getBaseReportOnPending?: boolean | null;
 
   /**
    * Variable attributes to be sent in SetVariablesRequest on pending boot
@@ -49,10 +49,10 @@ export class Boot extends Model implements BootConfig {
   declare pendingBootSetVariables?: VariableAttribute[];
 
   @Column(DataType.JSON)
-  declare variablesRejectedOnLastBoot: object[];
+  declare variablesRejectedOnLastBoot?: object[] | null;
 
   @Column(DataType.BOOLEAN)
-  declare bootWithRejectedVariables?: boolean;
+  declare bootWithRejectedVariables?: boolean | null;
 
   @Column(DataType.BOOLEAN)
   declare changeConfigurationsOnPending?: boolean;
