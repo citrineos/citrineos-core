@@ -3,31 +3,36 @@ import { AbstractMapper } from '../AbstractMapper';
 import { Boot } from '../../model/Boot';
 
 export class BootMapper extends AbstractMapper {
-  lastBootTime?: string;
-  heartbeatInterval?: number;
-  bootRetryInterval?: number;
+  id: string;
+  lastBootTime?: string | null;
+  heartbeatInterval?: number | null;
+  bootRetryInterval?: number | null;
   status: OCPP2_0_1.RegistrationStatusEnumType;
-  statusInfo?: OCPP2_0_1.StatusInfoType;
-  getBaseReportOnPending?: boolean;
-  pendingBootSetVariables?: OCPP2_0_1.VariableAttributeType[];
+  statusInfo?: OCPP2_0_1.StatusInfoType | null;
+  getBaseReportOnPending?: boolean | null;
+  pendingBootSetVariables?: OCPP2_0_1.VariableAttributeType[] | null;
   variablesRejectedOnLastBoot: OCPP2_0_1.SetVariableResultType[];
-  bootWithRejectedVariables?: boolean;
-  customData?: OCPP2_0_1.CustomDataType;
+  bootWithRejectedVariables?: boolean | null;
+  customData?: OCPP2_0_1.CustomDataType | null;
 
   constructor(boot: Boot) {
     super();
-    try {
-      this.status = boot.status as OCPP2_0_1.RegistrationStatusEnumType;
-      this.variablesRejectedOnLastBoot = boot.variablesRejectedOnLastBoot as OCPP2_0_1.SetVariableResultType[];
-      this.fromModel(boot);
-    } catch (error) {
-      throw new Error(`Generate BootMapper from Boot failed: ${error}`);
+    if (!Object.values(OCPP2_0_1.RegistrationStatusEnumType).includes(boot.status as OCPP2_0_1.RegistrationStatusEnumType)) {
+      throw new Error(`Invalid boot status: ${boot.status}`);
     }
+    if (!boot.variablesRejectedOnLastBoot) {
+      throw new Error('Missing variablesRejectedOnLastBoot');
+    }
+    this.id = boot.id;
+    this.status = boot.status as OCPP2_0_1.RegistrationStatusEnumType;
+    this.variablesRejectedOnLastBoot = boot.variablesRejectedOnLastBoot as OCPP2_0_1.SetVariableResultType[];
+    this.fromModel(boot);
   }
 
   toModel(): Boot {
     try {
       return {
+        id: this.id,
         lastBootTime: this.lastBootTime,
         heartbeatInterval: this.heartbeatInterval,
         bootRetryInterval: this.bootRetryInterval,

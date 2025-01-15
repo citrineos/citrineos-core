@@ -7,27 +7,27 @@ export interface BootConfig {
   /**
    *  Also declared in SystemConfig. If absent, SystemConfig value is used.
    */
-  heartbeatInterval?: number;
+  heartbeatInterval?: number | null;
   /**
    * Also declared in SystemConfig. If absent, SystemConfig value is used.
    */
-  bootRetryInterval?: number;
+  bootRetryInterval?: number | null;
   status: string;
   statusInfo?: object | null;
   /**
    * Also declared in SystemConfig. If absent, SystemConfig value is used.
    */
-  getBaseReportOnPending?: boolean;
+  getBaseReportOnPending?: boolean | null;
   /**
    * Ids of variable attributes to be sent in SetVariablesRequest on pending boot
    */
-  pendingBootSetVariableIds?: number[];
+  pendingBootSetVariableIds?: number[] | null;
   /**
    * Also declared in SystemConfig. If absent, SystemConfig value is used.
    */
-  bootWithRejectedVariables?: boolean;
   changeConfigurationsOnPending?: boolean;
   getConfigurationsOnPending?: boolean;
+  bootWithRejectedVariables?: boolean | null;
 }
 
 /**
