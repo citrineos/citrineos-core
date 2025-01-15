@@ -19,6 +19,7 @@ export { ChargingProfile, ChargingNeeds, ChargingSchedule, CompositeSchedule, Sa
 export { CallMessage } from './model/CallMessage';
 export { Reservation } from './model/Reservation';
 export { ChargingStationSecurityInfo } from './model/ChargingStationSecurityInfo';
+export { ChangeConfiguration } from './model/ChangeConfiguration';
 
 // Sequelize Repositories
 export { SequelizeRepository } from './repository/Base';
@@ -40,9 +41,11 @@ export { SequelizeCallMessageRepository } from './repository/CallMessage';
 export { SequelizeReservationRepository } from './repository/Reservation';
 export { SequelizeChargingStationSecurityInfoRepository } from './repository/ChargingStationSecurityInfo';
 export { SequelizeChargingStationSequenceRepository } from './repository/ChargingStationSequence';
+export { SequelizeChangeConfigurationRepository } from './repository/ChangeConfiguration';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util';
 
 // Sequelize Mappers
 export * as OCPP2_0_1_Mapper from './mapper/2.0.1';
+export * as OCPP1_6_Mapper from './mapper/1.6';

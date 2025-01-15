@@ -1,6 +1,6 @@
 import { IBootRepository, OCPP2_0_1_Mapper } from '@citrineos/data';
 import { BootNotificationService } from '../../src/module/BootNotificationService';
-import { ICache, OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import { ICache, OCPP1_6, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { aValidBootConfig } from '../providers/BootConfigProvider';
 import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall';
 
@@ -27,12 +27,17 @@ describe('BootService', () => {
 
     mockConfig = {
       bootRetryInterval: 0,
-      bootWithRejectedVariables: false,
-      endpointPrefix: '',
       heartbeatInterval: 0,
-      unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
-      getBaseReportOnPending: false,
-      autoAccept: false,
+      ocpp2_0_1: {
+        unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+        getBaseReportOnPending: false,
+        bootWithRejectedVariables: false,
+        autoAccept: false,
+      },
+      ocpp1_6: {
+        unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Rejected,
+      },
+      endpointPrefix: '',
     };
 
     bootService = new BootNotificationService(
@@ -99,7 +104,10 @@ describe('BootService', () => {
           (item.getBaseReportOnPending = false),
       );
 
-      jest.replaceProperty(mockConfig, 'autoAccept', true);
+      if (!mockConfig.ocpp2_0_1) {
+        throw new Error('mockConfig.ocpp2_0_1 is not defined');
+      }
+      jest.replaceProperty(mockConfig.ocpp2_0_1, 'autoAccept', true);
 
       runDetermineBootStatusTest(
         bootConfig,
@@ -132,7 +140,11 @@ describe('BootService', () => {
     it('should return Accepted status when bootConfig.status is pending, no actions are needed, and autoAccept is true', () => {
       const bootConfig = aValidBootConfig();
 
-      jest.replaceProperty(mockConfig, 'autoAccept', true);
+      if (!mockConfig.ocpp2_0_1) {
+        throw new Error('mockConfig.ocpp2_0_1 is not defined');
+      }
+
+      jest.replaceProperty(mockConfig.ocpp2_0_1, 'autoAccept', true);
 
       runDetermineBootStatusTest(
         bootConfig,
