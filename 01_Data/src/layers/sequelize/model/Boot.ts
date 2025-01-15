@@ -55,10 +55,10 @@ export class Boot extends Model implements BootConfig {
   declare bootWithRejectedVariables?: boolean | null;
 
   @Column(DataType.BOOLEAN)
-  declare changeConfigurationsOnPending?: boolean;
+  declare changeConfigurationsOnPending?: boolean | null;
 
   @Column(DataType.BOOLEAN)
-  declare getConfigurationsOnPending?: boolean;
+  declare getConfigurationsOnPending?: boolean | null;
 
   declare customData?: object;
 }
