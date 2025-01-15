@@ -80,10 +80,11 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
           status: response.status,
           heartbeatInterval,
           bootRetryInterval,
+          lastBootTime: response.currentTime,
         },
+        transaction: sequelizeTransaction,
       });
       if (!bootCreated) {
-        // if the charging station has been booted, update the last boot time
         boot = await savedBoot.update(
           {
             lastBootTime: response.currentTime,
