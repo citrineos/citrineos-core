@@ -1,3 +1,7 @@
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
 import { OCPP2_0_1 } from '@citrineos/base';
 import { AbstractMapper } from '../AbstractMapper';
 import { Boot } from '../../model/Boot';
