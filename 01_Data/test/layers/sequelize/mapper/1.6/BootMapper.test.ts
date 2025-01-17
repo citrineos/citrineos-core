@@ -1,6 +1,6 @@
 import { expect } from '@jest/globals';
 import { Boot } from '../../../../../src';
-import { BootMapper } from '../../../../../src/layers/sequelize/mapper/2.0.1';
+import { BootMapper } from '../../../../../src/layers/sequelize/mapper/1.6';
 import { aBoot } from '../../../../providers/Boot';
 
 describe('BootMapper', () => {
@@ -15,12 +15,8 @@ describe('BootMapper', () => {
       expect(actualMapper.heartbeatInterval).toBe(givenBoot.heartbeatInterval);
       expect(actualMapper.bootRetryInterval).toBe(givenBoot.bootRetryInterval);
       expect(actualMapper.status).toBe(givenBoot.status);
-      expect(actualMapper.statusInfo).toEqual(givenBoot.statusInfo);
-      expect(actualMapper.getBaseReportOnPending).toBe(givenBoot.getBaseReportOnPending);
-      expect(actualMapper.pendingBootSetVariables).toEqual(givenBoot.pendingBootSetVariables);
-      expect(actualMapper.variablesRejectedOnLastBoot).toEqual(givenBoot.variablesRejectedOnLastBoot);
-      expect(actualMapper.bootWithRejectedVariables).toEqual(givenBoot.bootWithRejectedVariables);
-      expect(actualMapper.customData).toEqual(givenBoot.customData);
+      expect(actualMapper.changeConfigurationsOnPending).toBe(givenBoot.changeConfigurationsOnPending);
+      expect(actualMapper.getConfigurationsOnPending).toBe(givenBoot.getConfigurationsOnPending);
 
       const actualModel = actualMapper.toModel();
       expect(actualModel).toBeTruthy();
@@ -29,21 +25,8 @@ describe('BootMapper', () => {
       expect(actualModel.heartbeatInterval).toBe(givenBoot.heartbeatInterval);
       expect(actualModel.bootRetryInterval).toBe(givenBoot.bootRetryInterval);
       expect(actualModel.status).toBe(givenBoot.status);
-      expect(actualModel.statusInfo).toEqual(givenBoot.statusInfo);
-      expect(actualModel.getBaseReportOnPending).toBe(givenBoot.getBaseReportOnPending);
-      expect(actualModel.pendingBootSetVariables).toEqual(givenBoot.pendingBootSetVariables);
-      expect(actualModel.variablesRejectedOnLastBoot).toEqual(givenBoot.variablesRejectedOnLastBoot);
-      expect(actualModel.bootWithRejectedVariables).toEqual(givenBoot.bootWithRejectedVariables);
-      expect(actualModel.customData).toEqual(givenBoot.customData);
-    });
-
-    it('should throw error when missing required fields', () => {
-      const bootMissingRequiredFields: Boot = aBoot();
-      bootMissingRequiredFields.variablesRejectedOnLastBoot = null;
-
-      expect(() => new BootMapper(bootMissingRequiredFields)).toThrowError(
-        `Validation failed: [{"value":null,"property":"variablesRejectedOnLastBoot","children":[],"constraints":{"isNotEmpty":"variablesRejectedOnLastBoot should not be empty"}}]`,
-      );
+      expect(actualModel.changeConfigurationsOnPending).toBe(givenBoot.changeConfigurationsOnPending);
+      expect(actualModel.getConfigurationsOnPending).toBe(givenBoot.getConfigurationsOnPending);
     });
 
     it('should throw error when invalid boot status', () => {

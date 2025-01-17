@@ -5,7 +5,7 @@
 import { OCPP2_0_1 } from '@citrineos/base';
 import { AbstractMapper } from '../AbstractMapper';
 import { StatusNotification } from '../../model/Location';
-import { IsEnum, IsInt, IsNotEmpty, validateSync } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty } from 'class-validator';
 
 export class StatusNotificationMapper extends AbstractMapper {
   @IsNotEmpty()
@@ -28,11 +28,7 @@ export class StatusNotificationMapper extends AbstractMapper {
     this.connectorId = statusNotification.connectorId;
     this.stationId = statusNotification.stationId;
     this.customData = statusNotification.customData as OCPP2_0_1.CustomDataType;
-
-    const errors = validateSync(this, { validationError: { target: false } });
-    if (errors.length > 0) {
-      throw new Error('Validation failed: ' + JSON.stringify(errors));
-    }
+    this.validate();
   }
 
   toModel(): StatusNotification {

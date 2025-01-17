@@ -5,7 +5,7 @@
 import { OCPP1_6 } from '@citrineos/base';
 import { AbstractMapper } from '../AbstractMapper';
 import { StatusNotification } from '../../model/Location';
-import { IsEnum, IsInt, IsNotEmpty, validateSync } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty } from 'class-validator';
 
 export class StatusNotificationMapper extends AbstractMapper {
   timestamp?: string | null;
@@ -31,11 +31,7 @@ export class StatusNotificationMapper extends AbstractMapper {
     this.info = statusNotification.info;
     this.vendorId = statusNotification.vendorId;
     this.vendorErrorCode = statusNotification.vendorErrorCode;
-
-    const errors = validateSync(this, { validationError: { target: false } });
-    if (errors.length > 0) {
-      throw new Error('Validation failed: ' + JSON.stringify(errors));
-    }
+    this.validate();
   }
 
   toModel(): StatusNotification {
