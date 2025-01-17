@@ -10,7 +10,7 @@ describe('StatusNotification', () => {
       const actualMapper = new StatusNotificationMapper(givenStatusNotification);
       expect(actualMapper).toBeTruthy();
       expect(actualMapper.timestamp).toBe(givenStatusNotification.timestamp);
-      expect(actualMapper.status).toEqual(givenStatusNotification.chargePointStatus);
+      expect(actualMapper.status).toEqual(givenStatusNotification.connectorStatus);
       expect(actualMapper.connectorId).toBe(givenStatusNotification.connectorId);
       expect(actualMapper.stationId).toBe(givenStatusNotification.stationId);
       expect(actualMapper.errorCode).toEqual(givenStatusNotification.errorCode);
@@ -21,7 +21,7 @@ describe('StatusNotification', () => {
       const actualModel = actualMapper.toModel();
       expect(actualModel).toBeTruthy();
       expect(actualModel.timestamp).toBe(givenStatusNotification.timestamp);
-      expect(actualModel.chargePointStatus).toBe(givenStatusNotification.chargePointStatus);
+      expect(actualModel.connectorStatus).toBe(givenStatusNotification.connectorStatus);
       expect(actualModel.connectorId).toBe(givenStatusNotification.connectorId);
       expect(actualModel.stationId).toBe(givenStatusNotification.stationId);
       expect(actualModel.errorCode).toBe(givenStatusNotification.errorCode);
@@ -38,7 +38,7 @@ describe('StatusNotification', () => {
     });
 
     it('should throw error with invalid values', () => {
-      const statusNotificationInvalidChargePointStatus = aStatusNotification((s) => (s.chargePointStatus = 'InvalidCP'));
+      const statusNotificationInvalidChargePointStatus = aStatusNotification((s) => (s.connectorStatus = 'InvalidCP'));
       expect(() => new StatusNotificationMapper(statusNotificationInvalidChargePointStatus)).toThrowError(
         `Validation failed: [{"value":"InvalidCP","property":"status","children":[],"constraints":{"isEnum":"status must be one of the following values: Available, Preparing, Charging, SuspendedEVSE, SuspendedEV, Finishing, Reserved, Unavailable, Faulted"}}]`,
       );

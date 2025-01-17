@@ -24,7 +24,7 @@ export class StatusNotificationMapper extends AbstractMapper {
   constructor(statusNotification: StatusNotification) {
     super();
     this.timestamp = statusNotification.timestamp;
-    this.status = statusNotification.chargePointStatus as OCPP1_6.StatusNotificationRequestStatus;
+    this.status = statusNotification.connectorStatus as OCPP1_6.StatusNotificationRequestStatus;
     this.connectorId = statusNotification.connectorId;
     this.stationId = statusNotification.stationId;
     this.errorCode = statusNotification.errorCode as OCPP1_6.StatusNotificationRequestErrorCode;
@@ -37,7 +37,7 @@ export class StatusNotificationMapper extends AbstractMapper {
   toModel(): StatusNotification {
     return {
       timestamp: this.timestamp,
-      chargePointStatus: this.status,
+      connectorStatus: this.status,
       connectorId: this.connectorId,
       stationId: this.stationId,
       errorCode: this.errorCode,

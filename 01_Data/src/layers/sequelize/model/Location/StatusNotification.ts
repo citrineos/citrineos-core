@@ -26,16 +26,13 @@ export class StatusNotification extends Model {
   declare timestamp?: string | null;
 
   @Column(DataType.STRING)
-  declare connectorStatus?: string;
+  declare connectorStatus: string;
 
   @Column(DataType.INTEGER)
   declare evseId?: number | null;
 
   @Column(DataType.INTEGER)
   declare connectorId: number;
-
-  @Column(DataType.STRING)
-  declare chargePointStatus?: string | null;
 
   @Column(DataType.STRING)
   declare errorCode?: string | null;

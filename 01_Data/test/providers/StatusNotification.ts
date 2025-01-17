@@ -9,7 +9,6 @@ export function aStatusNotification(updateFunction?: UpdateFunction<StatusNotifi
     connectorStatus: 'Available',
     evseId: 1,
     connectorId: 1,
-    chargePointStatus: 'Available',
     errorCode: 'NoError',
     info: faker.lorem.sentence(),
     vendorId: faker.string.alpha(10),
