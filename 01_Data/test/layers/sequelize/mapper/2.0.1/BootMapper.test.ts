@@ -8,7 +8,7 @@ describe('BootMapper', () => {
     it('should be equal after mapping', () => {
       const givenBoot = aBoot();
 
-      const actualMapper = new BootMapper(givenBoot);
+      const actualMapper = BootMapper.fromModel(givenBoot);
       expect(actualMapper).toBeTruthy();
       expect(actualMapper.id).toBe(givenBoot.id);
       expect(actualMapper.lastBootTime).toBe(givenBoot.lastBootTime);
@@ -21,27 +21,13 @@ describe('BootMapper', () => {
       expect(actualMapper.variablesRejectedOnLastBoot).toEqual(givenBoot.variablesRejectedOnLastBoot);
       expect(actualMapper.bootWithRejectedVariables).toEqual(givenBoot.bootWithRejectedVariables);
       expect(actualMapper.customData).toEqual(givenBoot.customData);
-
-      const actualModel = actualMapper.toModel();
-      expect(actualModel).toBeTruthy();
-      expect(actualModel.id).toBe(givenBoot.id);
-      expect(actualModel.lastBootTime).toBe(givenBoot.lastBootTime);
-      expect(actualModel.heartbeatInterval).toBe(givenBoot.heartbeatInterval);
-      expect(actualModel.bootRetryInterval).toBe(givenBoot.bootRetryInterval);
-      expect(actualModel.status).toBe(givenBoot.status);
-      expect(actualModel.statusInfo).toEqual(givenBoot.statusInfo);
-      expect(actualModel.getBaseReportOnPending).toBe(givenBoot.getBaseReportOnPending);
-      expect(actualModel.pendingBootSetVariables).toEqual(givenBoot.pendingBootSetVariables);
-      expect(actualModel.variablesRejectedOnLastBoot).toEqual(givenBoot.variablesRejectedOnLastBoot);
-      expect(actualModel.bootWithRejectedVariables).toEqual(givenBoot.bootWithRejectedVariables);
-      expect(actualModel.customData).toEqual(givenBoot.customData);
     });
 
     it('should throw error when missing required fields', () => {
       const bootMissingRequiredFields: Boot = aBoot();
       bootMissingRequiredFields.variablesRejectedOnLastBoot = null;
 
-      expect(() => new BootMapper(bootMissingRequiredFields)).toThrowError(
+      expect(() => BootMapper.fromModel(bootMissingRequiredFields)).toThrowError(
         `Validation failed: [{"value":null,"property":"variablesRejectedOnLastBoot","children":[],"constraints":{"isNotEmpty":"variablesRejectedOnLastBoot should not be empty"}}]`,
       );
     });
@@ -51,7 +37,7 @@ describe('BootMapper', () => {
       console.log(`bootWithInvalidStatus: ${JSON.stringify(bootWithInvalidStatus)}`, `status: ${bootWithInvalidStatus}`);
       bootWithInvalidStatus.status = 'InvalidStatus';
 
-      expect(() => new BootMapper(bootWithInvalidStatus)).toThrowError(
+      expect(() => BootMapper.fromModel(bootWithInvalidStatus)).toThrowError(
         `Validation failed: [{"value":"InvalidStatus","property":"status","children":[],"constraints":{"isEnum":"status must be one of the following values: Accepted, Pending, Rejected"}}]`,
       );
     });

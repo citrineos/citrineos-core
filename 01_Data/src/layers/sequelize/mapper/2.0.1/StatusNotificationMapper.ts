@@ -7,7 +7,7 @@ import { AbstractMapper } from '../AbstractMapper';
 import { StatusNotification } from '../../model/Location';
 import { IsEnum, IsInt, IsNotEmpty } from 'class-validator';
 
-export class StatusNotificationMapper extends AbstractMapper {
+export class StatusNotificationMapper extends AbstractMapper<StatusNotification> {
   @IsNotEmpty()
   timestamp: string;
   @IsEnum(OCPP2_0_1.ConnectorStatusEnumType)
