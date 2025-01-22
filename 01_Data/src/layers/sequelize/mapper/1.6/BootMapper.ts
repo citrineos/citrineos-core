@@ -6,39 +6,52 @@
 import { OCPP1_6 } from '@citrineos/base';
 import { AbstractMapper } from '../AbstractMapper';
 import { Boot } from '../../model/Boot';
+import { IsEnum } from 'class-validator';
 
-export class BootMapper extends AbstractMapper {
+export class BootMapper extends AbstractMapper<Boot> {
   id: string;
   lastBootTime?: string | null;
   heartbeatInterval?: number | null;
   bootRetryInterval?: number | null;
+  @IsEnum(OCPP1_6.BootNotificationResponseStatus)
   status: OCPP1_6.BootNotificationResponseStatus;
   changeConfigurationsOnPending?: boolean | null;
   getConfigurationsOnPending?: boolean | null;
 
-  constructor(boot: Boot) {
+  constructor(
+    id: string,
+    status: OCPP1_6.BootNotificationResponseStatus,
+    lastBootTime?: string | null,
+    heartbeatInterval?: number | null,
+    bootRetryInterval?: number | null,
+    changeConfigurationsOnPending?: boolean | null,
+    getConfigurationsOnPending?: boolean | null,
+  ) {
     super();
-    if (!Object.values(OCPP1_6.BootNotificationResponseStatus).includes(boot.status as OCPP1_6.BootNotificationResponseStatus)) {
-      throw new Error(`Invalid boot status: ${boot.status}`);
-    }
-    this.id = boot.id;
-    this.status = boot.status as OCPP1_6.BootNotificationResponseStatus;
-    this.lastBootTime = boot.lastBootTime;
-    this.heartbeatInterval = boot.heartbeatInterval;
-    this.bootRetryInterval = boot.bootRetryInterval;
-    this.changeConfigurationsOnPending = boot.changeConfigurationsOnPending;
-    this.getConfigurationsOnPending = boot.getConfigurationsOnPending;
+    this.id = id;
+    this.status = status;
+    this.lastBootTime = lastBootTime;
+    this.heartbeatInterval = heartbeatInterval;
+    this.bootRetryInterval = bootRetryInterval;
+    this.changeConfigurationsOnPending = changeConfigurationsOnPending;
+    this.getConfigurationsOnPending = getConfigurationsOnPending;
+
+    this.validate();
   }
 
   toModel(): Boot {
-    return {
+    return Boot.build({
       id: this.id,
+      status: this.status,
       lastBootTime: this.lastBootTime,
       heartbeatInterval: this.heartbeatInterval,
       bootRetryInterval: this.bootRetryInterval,
-      status: this.status,
       changeConfigurationsOnPending: this.changeConfigurationsOnPending,
       getConfigurationsOnPending: this.getConfigurationsOnPending,
-    } as Boot;
+    });
+  }
+
+  static fromModel(boot: Boot): BootMapper {
+    return new BootMapper(boot.id, boot.status as OCPP1_6.BootNotificationResponseStatus, boot.lastBootTime, boot.heartbeatInterval, boot.bootRetryInterval, boot.changeConfigurationsOnPending, boot.getConfigurationsOnPending);
   }
 }
