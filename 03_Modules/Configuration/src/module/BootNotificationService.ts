@@ -87,7 +87,9 @@ export class BootNotificationService {
   ): Promise<OCPP2_0_1.BootNotificationResponse> {
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
     const boot = await this._bootRepository.readByKey(stationId);
-    const mapper = boot ? OCPP2_0_1_Mapper.BootMapper.fromModel(boot) : undefined;
+    const mapper = boot
+      ? OCPP2_0_1_Mapper.BootMapper.fromModel(boot)
+      : undefined;
     const bootStatus = this.determineBootStatus(mapper);
 
     // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
@@ -292,7 +294,7 @@ export class BootNotificationService {
     stationId: string,
   ): Promise<OCPP1_6.BootNotificationResponse> {
     const boot = await this._bootRepository.readByKey(stationId);
-    const mapper = boot ? new OCPP1_6_Mapper.BootMapper(boot) : undefined;
+    const mapper = boot ? OCPP1_6_Mapper.BootMapper.fromModel(boot) : undefined;
     const status = this.determineOcpp16BootStatus(mapper);
 
     return {
