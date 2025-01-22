@@ -27,6 +27,7 @@
     "@types/sequelize": "4.28.20",
     "pg": "8.11.3",
     "pg-hstore": "2.3.4",
-    "sequelize-typescript": "2.1.6"
+    "sequelize-typescript": "2.1.6",
+    "class-validator": "0.14.1"
   }
 }
