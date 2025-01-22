@@ -21,29 +21,64 @@ export class StatusNotificationMapper extends AbstractMapper<StatusNotification>
   vendorId?: string | null;
   vendorErrorCode?: string | null;
 
-  constructor(statusNotification: StatusNotification) {
+  constructor(
+    stationId: string,
+    status: OCPP1_6.StatusNotificationRequestStatus,
+    connectorId: number,
+    errorCode: OCPP1_6.StatusNotificationRequestErrorCode,
+    timestamp?: string | null,
+    info?: string | null,
+    vendorId?: string | null,
+    vendorErrorCode?: string | null,
+  ) {
     super();
-    this.timestamp = statusNotification.timestamp;
-    this.status = statusNotification.connectorStatus as OCPP1_6.StatusNotificationRequestStatus;
-    this.connectorId = statusNotification.connectorId;
-    this.stationId = statusNotification.stationId;
-    this.errorCode = statusNotification.errorCode as OCPP1_6.StatusNotificationRequestErrorCode;
-    this.info = statusNotification.info;
-    this.vendorId = statusNotification.vendorId;
-    this.vendorErrorCode = statusNotification.vendorErrorCode;
+    this.timestamp = timestamp;
+    this.status = status;
+    this.connectorId = connectorId;
+    this.stationId = stationId;
+    this.errorCode = errorCode;
+    this.info = info;
+    this.vendorId = vendorId;
+    this.vendorErrorCode = vendorErrorCode;
     this.validate();
   }
 
   toModel(): StatusNotification {
-    return {
+    return StatusNotification.build({
       timestamp: this.timestamp,
-      connectorStatus: this.status,
+      status: this.status,
       connectorId: this.connectorId,
       stationId: this.stationId,
       errorCode: this.errorCode,
       info: this.info,
       vendorId: this.vendorId,
       vendorErrorCode: this.vendorErrorCode,
-    } as StatusNotification;
+    });
+  }
+
+  static fromModel(statusNotification: StatusNotification): StatusNotificationMapper {
+    return new StatusNotificationMapper(
+      statusNotification.stationId,
+      statusNotification.connectorStatus as OCPP1_6.StatusNotificationRequestStatus,
+      statusNotification.connectorId,
+      statusNotification.errorCode as OCPP1_6.StatusNotificationRequestErrorCode,
+      statusNotification.timestamp,
+      statusNotification.info,
+      statusNotification.vendorId,
+      statusNotification.vendorErrorCode,
+    );
+  }
+
+  static fromRequest(stationId: string, statusNotification: OCPP1_6.StatusNotificationRequest): StatusNotificationMapper {
+    return new StatusNotificationMapper(
+      stationId,
+      statusNotification.status,
+      statusNotification.connectorId,
+      statusNotification.errorCode,
+      statusNotification.timestamp,
+      statusNotification.info,
+      statusNotification.vendorId,
+      statusNotification.vendorErrorCode,
+    );
   }
 }

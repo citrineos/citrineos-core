@@ -20,25 +20,47 @@ export class StatusNotificationMapper extends AbstractMapper<StatusNotification>
   customData?: OCPP2_0_1.CustomDataType | null;
   stationId: string;
 
-  constructor(statusNotification: StatusNotification) {
+  constructor(stationId: string, timestamp: string, connectorStatus: OCPP2_0_1.ConnectorStatusEnumType, evseId: number, connectorId: number, customData?: OCPP2_0_1.CustomDataType | null) {
     super();
-    this.timestamp = statusNotification.timestamp as string;
-    this.connectorStatus = statusNotification.connectorStatus as OCPP2_0_1.ConnectorStatusEnumType;
-    this.evseId = statusNotification.evseId as number;
-    this.connectorId = statusNotification.connectorId;
-    this.stationId = statusNotification.stationId;
-    this.customData = statusNotification.customData as OCPP2_0_1.CustomDataType;
+    this.timestamp = timestamp;
+    this.connectorStatus = connectorStatus;
+    this.evseId = evseId;
+    this.connectorId = connectorId;
+    this.stationId = stationId;
+    this.customData = customData;
     this.validate();
   }
 
   toModel(): StatusNotification {
-    return {
-      stationId: this.stationId,
+    return StatusNotification.build({
       timestamp: this.timestamp,
       connectorStatus: this.connectorStatus,
       evseId: this.evseId,
       connectorId: this.connectorId,
       customData: this.customData,
-    } as StatusNotification;
+      stationId: this.stationId,
+    });
+  }
+
+  static fromModel(statusNotification: StatusNotification): StatusNotificationMapper {
+    return new StatusNotificationMapper(
+      statusNotification.stationId,
+      statusNotification.timestamp as string,
+      statusNotification.connectorStatus as OCPP2_0_1.ConnectorStatusEnumType,
+      statusNotification.evseId as number,
+      statusNotification.connectorId,
+      statusNotification.customData as OCPP2_0_1.CustomDataType,
+    );
+  }
+
+  static fromRequest(stationId: string, statusNotification: OCPP2_0_1.StatusNotificationRequest): StatusNotificationMapper {
+    return new StatusNotificationMapper(
+      stationId,
+      statusNotification.timestamp as string,
+      statusNotification.connectorStatus as OCPP2_0_1.ConnectorStatusEnumType,
+      statusNotification.evseId as number,
+      statusNotification.connectorId,
+      statusNotification.customData,
+    );
   }
 }
