@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace } from "@citrineos/base";
-import { Model } from "sequelize";
-import { Column, DataType, PrimaryKey, Table } from "sequelize-typescript";
+import { Column, DataType, Model, PrimaryKey, Table } from "sequelize-typescript";
 
 
 @Table
