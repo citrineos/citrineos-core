@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import * as Buffer from 'buffer';
+import { Buffer } from 'node:buffer';
 
 export interface IFileAccess {
   uploadFile(

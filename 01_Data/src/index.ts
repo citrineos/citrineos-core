@@ -40,6 +40,7 @@ export {
   AdditionalInfo,
   LocalListAuthorization,
   LocalListVersion,
+  OCPPLog,
   SendLocalList,
   ServerNetworkProfile,
   SetNetworkProfile,
