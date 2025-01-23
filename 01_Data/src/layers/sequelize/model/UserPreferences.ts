@@ -3,19 +3,18 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from "@citrineos/base";
-import { Model } from "sequelize";
-import { Column, DataType, PrimaryKey, Table } from "sequelize-typescript";
-
+import { Namespace } from '@citrineos/base';
+import { Model } from 'sequelize';
+import { Column, DataType, PrimaryKey, Table } from 'sequelize-typescript';
 
 @Table
-export class UserPreferences extends Model {
-    static readonly MODEL_NAME: string = Namespace.UserPreferences;
+export class UserPreferences extends Model<any, any> {
+  static readonly MODEL_NAME: string = Namespace.UserPreferences;
 
-    @PrimaryKey
-    @Column(DataType.STRING)
-    declare key: string;
+  @PrimaryKey
+  @Column(DataType.STRING)
+  declare key: string;
 
-    @Column(DataType.JSON)
-    declare value: string;
+  @Column(DataType.JSON)
+  declare value: string;
 }

@@ -70,7 +70,7 @@ export class DefaultSequelizeInstance {
 
       DefaultSequelizeInstance.instance = this.createSequelizeInstance();
     }
-    return DefaultSequelizeInstance.instance;
+    return DefaultSequelizeInstance.instance!;
   }
 
   public static async initializeSequelize(_sync: boolean = false): Promise<void> {
@@ -108,7 +108,7 @@ export class DefaultSequelizeInstance {
   }
 
   private static createSequelizeInstance() {
-    return new Sequelize({
+    return new (Sequelize as any)({
       host: this.config.data.sequelize.host,
       port: this.config.data.sequelize.port,
       database: this.config.data.sequelize.database,
