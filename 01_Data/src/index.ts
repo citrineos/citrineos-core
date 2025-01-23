@@ -20,6 +20,7 @@ export {
   ChargingStation,
   ChargingStationSequence,
   Component,
+  Connector,
   DefaultSequelizeInstance,
   Location,
   MeterValue,

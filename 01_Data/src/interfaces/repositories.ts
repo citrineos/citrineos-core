@@ -36,6 +36,8 @@ import {
   SendLocalList,
   InstalledCertificate,
   ChangeConfiguration,
+  StatusNotification,
+  Connector,
 } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
@@ -110,8 +112,9 @@ export interface ILocationRepository extends CrudRepository<Location> {
   readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
   setChargingStationIsOnline: (stationId: string, isOnline: boolean) => Promise<boolean>;
   doesChargingStationExistByStationId: (stationId: string) => Promise<boolean>;
-  addStatusNotificationToChargingStation(stationId: string, statusNotification: OCPP2_0_1.StatusNotificationRequest): Promise<void>;
+  addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotification): Promise<StatusNotification>;
   createOrUpdateChargingStation: (chargingStation: ChargingStation) => Promise<ChargingStation>;
+  createOrUpdateConnector(connector: Connector, statusNotification?: StatusNotification): Promise<Connector | undefined>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {

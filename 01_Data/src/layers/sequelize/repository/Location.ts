@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import { CrudRepository, SystemConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
-import { ChargingStation, Location, SequelizeRepository } from '..';
+import { ChargingStation, Connector, Location, SequelizeRepository } from '..';
 import { type ILocationRepository } from '../../..';
 import { StatusNotification } from '../model/Location';
 import { Op } from 'sequelize';
@@ -15,6 +15,7 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
   chargingStation: CrudRepository<ChargingStation>;
   statusNotification: CrudRepository<StatusNotification>;
   latestStatusNotification: CrudRepository<LatestStatusNotification>;
+  connector: CrudRepository<Connector>;
 
   constructor(
     config: SystemConfig,
@@ -23,11 +24,13 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     chargingStation?: CrudRepository<ChargingStation>,
     statusNotification?: CrudRepository<StatusNotification>,
     latestStatusNotification?: CrudRepository<LatestStatusNotification>,
+    connector?: CrudRepository<Connector>,
   ) {
     super(config, Location.MODEL_NAME, logger, sequelizeInstance);
     this.chargingStation = chargingStation ? chargingStation : new SequelizeRepository<ChargingStation>(config, ChargingStation.MODEL_NAME, logger, sequelizeInstance);
     this.statusNotification = statusNotification ? statusNotification : new SequelizeRepository<StatusNotification>(config, StatusNotification.MODEL_NAME, logger, sequelizeInstance);
     this.latestStatusNotification = latestStatusNotification ? latestStatusNotification : new SequelizeRepository<LatestStatusNotification>(config, LatestStatusNotification.MODEL_NAME, logger, sequelizeInstance);
+    this.connector = connector ? connector : new SequelizeRepository<Connector>(config, Connector.MODEL_NAME, logger, sequelizeInstance);
   }
 
   async readLocationById(id: number): Promise<Location | undefined> {
@@ -49,17 +52,14 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     return await this.chargingStation.existsByKey(stationId);
   }
 
-  async addStatusNotificationToChargingStation(stationId: string, statusNotification: OCPP2_0_1.StatusNotificationRequest): Promise<void> {
-    const notification = StatusNotification.build({
-      stationId,
-      ...statusNotification,
-    });
-    const savedStatusNotification = await this.statusNotification.create(notification);
+  async addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotification): Promise<StatusNotification> {
+    const savedStatusNotification = await this.statusNotification.create(statusNotification);
     try {
       await this.updateLatestStatusNotification(stationId, savedStatusNotification);
     } catch (e: any) {
       this.logger.error(`Failed to update latest status notification with error: ${e.message}`, e);
     }
+    return savedStatusNotification;
   }
 
   async updateLatestStatusNotification(stationId: string, statusNotification: StatusNotification): Promise<void> {
@@ -188,5 +188,40 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     } else {
       return await this.chargingStation.create(ChargingStation.build({ ...chargingStation }));
     }
+  }
+
+  async createOrUpdateConnector(connector: Connector, statusNotification?: StatusNotification): Promise<Connector | undefined> {
+    let result;
+    await this.s.transaction(async (sequelizeTransaction) => {
+      const [savedConnector, _connectorCreated] = await this.connector.readOrCreateByQuery({
+        where: {
+          stationId: connector.stationId,
+          connectorId: connector.connectorId,
+        },
+        transaction: sequelizeTransaction,
+      });
+      if (statusNotification) {
+        await this.statusNotification.updateAllByQuery(
+          { connectorDbId: null },
+          {
+            where: {
+              connectorDbId: savedConnector.id,
+            },
+            transaction: sequelizeTransaction,
+          },
+        );
+        await this.statusNotification.updateAllByQuery(
+          { connectorDbId: savedConnector.id },
+          {
+            where: {
+              id: statusNotification.id,
+            },
+            transaction: sequelizeTransaction,
+          },
+        );
+      }
+      result = savedConnector;
+    });
+    return result;
   }
 }
