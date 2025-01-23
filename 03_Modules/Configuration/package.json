@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/configuration",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "The configuration module for OCPP v2.0.1. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,22 +16,9 @@
     "ocpp_v201"
   ],
   "license": "Apache-2.0",
-  "devDependencies": {
-    "@types/deasync-promise": "1.0.0",
-    "@types/uuid": "9.0.7",
-    "@typescript-eslint/eslint-plugin": "6.5.0",
-    "@typescript-eslint/parser": "6.4.1",
-    "eslint": "8.48.0",
-    "eslint-config-standard-with-typescript": "38.0.0",
-    "eslint-plugin-import": "2.28.1",
-    "eslint-plugin-n": "16.0.2",
-    "eslint-plugin-promise": "6.1.1",
-    "typescript": "5.0.4"
-  },
   "dependencies": {
-    "@citrineos/base": "1.5.0",
-    "@citrineos/data": "1.5.0",
-    "@citrineos/util": "1.5.0",
-    "uuid": "9.0.1"
+    "@citrineos/base": "1.6.0",
+    "@citrineos/data": "1.6.0",
+    "@citrineos/util": "1.6.0"
   }
 }

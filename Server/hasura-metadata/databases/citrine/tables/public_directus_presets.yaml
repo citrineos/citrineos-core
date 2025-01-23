@@ -1,0 +1,10 @@
+table:
+  name: directus_presets
+  schema: public
+object_relationships:
+  - name: directus_role
+    using:
+      foreign_key_constraint_on: role
+  - name: directus_user
+    using:
+      foreign_key_constraint_on: user

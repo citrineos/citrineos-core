@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/transactions",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "The transactions module for OCPP v2.0.1. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,18 +16,9 @@
     "ocpp_v201"
   ],
   "license": "Apache-2.0",
-  "devDependencies": {
-    "@types/deasync-promise": "1.0.0",
-    "eslint": "8.48.0",
-    "typescript": "5.0.4",
-    "@faker-js/faker": "8.4.1",
-    "jest": "29.7.0",
-    "@types/jest": "29.5.12"
-  },
   "dependencies": {
-    "@citrineos/base": "1.5.0",
-    "@citrineos/data": "1.5.0",
-    "@citrineos/util": "1.5.0",
-    "fastify": "4.22.2"
+    "@citrineos/base": "1.6.0",
+    "@citrineos/data": "1.6.0",
+    "@citrineos/util": "1.6.0"
   }
 }

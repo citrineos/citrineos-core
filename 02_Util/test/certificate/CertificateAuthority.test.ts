@@ -3,11 +3,7 @@ import {
   IV2GCertificateAuthorityClient,
 } from '../../src/certificate/client/interface';
 import {
-  AuthorizeCertificateStatusEnumType,
-  CertificateSigningUseEnumType,
-  HashAlgorithmEnumType,
-  InstallCertificateUseEnumType,
-  OCSPRequestDataType,
+  OCPP2_0_1,
   SystemConfig,
 } from '@citrineos/base';
 import { CertificateAuthorityService } from '../../src';
@@ -99,7 +95,7 @@ describe('CertificateAuthorityService', () => {
         await certificateAuthorityService.getCertificateChain(
           givenCSR,
           givenStationId,
-          CertificateSigningUseEnumType.V2GCertificate,
+          OCPP2_0_1.CertificateSigningUseEnumType.V2GCertificate,
         );
 
       expect(mockCertUtil.extractEncodedContentFromCSR).toHaveBeenCalledWith(
@@ -127,7 +123,7 @@ describe('CertificateAuthorityService', () => {
         await certificateAuthorityService.getCertificateChain(
           givenCSR,
           givenStationId,
-          CertificateSigningUseEnumType.ChargingStationCertificate,
+          OCPP2_0_1.CertificateSigningUseEnumType.ChargingStationCertificate,
         );
 
       expect(
@@ -151,7 +147,7 @@ describe('CertificateAuthorityService', () => {
 
       const actualResult =
         await certificateAuthorityService.getRootCACertificateFromExternalCA(
-          InstallCertificateUseEnumType.V2GRootCertificate,
+          OCPP2_0_1.InstallCertificateUseEnumType.V2GRootCertificate,
         );
 
       expect(mockV2GClient.getCACertificates).toHaveBeenCalled();
@@ -170,7 +166,7 @@ describe('CertificateAuthorityService', () => {
 
       const actualResult =
         await certificateAuthorityService.getRootCACertificateFromExternalCA(
-          InstallCertificateUseEnumType.CSMSRootCertificate,
+          OCPP2_0_1.InstallCertificateUseEnumType.CSMSRootCertificate,
         );
 
       expect(mockChargingStationClient.getRootCACertificate).toHaveBeenCalled();
@@ -205,7 +201,7 @@ describe('CertificateAuthorityService', () => {
           givenCertChainPem,
         );
 
-      expect(result).toBe(AuthorizeCertificateStatusEnumType.Accepted);
+      expect(result).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted);
       expect(mockCertUtil.parseCertificateChainPem).toHaveBeenCalledWith(
         givenCertChainPem,
       );
@@ -233,7 +229,7 @@ describe('CertificateAuthorityService', () => {
         );
 
       expect(actualResult).toBe(
-        AuthorizeCertificateStatusEnumType.CertChainError,
+        OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError,
       );
     });
 
@@ -243,7 +239,7 @@ describe('CertificateAuthorityService', () => {
           faker.lorem.sentence(),
         );
       expect(result).toBe(
-        AuthorizeCertificateStatusEnumType.NoCertificateAvailable,
+        OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable,
       );
     });
 
@@ -254,7 +250,7 @@ describe('CertificateAuthorityService', () => {
           readFile('SubCACertificateSample.pem'), //aInvalidCertificateChainWithoutRoot(),
         );
       expect(result).toBe(
-        AuthorizeCertificateStatusEnumType.NoCertificateAvailable,
+        OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable,
       );
     });
   });
@@ -268,12 +264,12 @@ describe('CertificateAuthorityService', () => {
 
       const givenResponderURL = faker.internet.url();
       const givenOCSPRequest = {
-        hashAlgorithm: HashAlgorithmEnumType.SHA256,
+        hashAlgorithm: OCPP2_0_1.HashAlgorithmEnumType.SHA256,
         issuerNameHash: faker.lorem.word(),
         issuerKeyHash: faker.lorem.word(),
         serialNumber: faker.lorem.word(),
         responderURL: givenResponderURL,
-      } as OCSPRequestDataType;
+      } as OCPP2_0_1.OCSPRequestDataType;
       const actualResult =
         await certificateAuthorityService.validateCertificateHashData([
           givenOCSPRequest,
@@ -286,7 +282,7 @@ describe('CertificateAuthorityService', () => {
       expect(KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo).toHaveBeenCalledWith(
         mockOCSPResponse,
       );
-      expect(actualResult).toBe(AuthorizeCertificateStatusEnumType.Accepted);
+      expect(actualResult).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted);
     });
   });
 });
