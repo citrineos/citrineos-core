@@ -114,29 +114,22 @@ export class StatusNotificationService {
           statusNotificationRequest,
         );
 
-      this._logger.debug(
-        `[TESTING] status notification mapper: ${JSON.stringify(statusNotificationMapper)}`,
-      );
-      this._logger.debug(
-        `[TESTING] status notification to model: ${JSON.stringify(statusNotificationMapper.toModel())}`,
-      );
-      const storedStatusNotification =
-        await this._locationRepository.addStatusNotificationToChargingStation(
+      await this._locationRepository.addStatusNotificationToChargingStation(
           stationId,
           statusNotificationMapper.toModel(),
         );
-      this._logger.debug(
-        `[TESTING] status notification entity: ${JSON.stringify(storedStatusNotification)}`,
-      );
 
       const connector = {
         connectorId: statusNotificationRequest.connectorId,
         stationId,
+        status: statusNotificationRequest.status,
+        timestamp: statusNotificationRequest.timestamp ? statusNotificationRequest.timestamp : (new Date()).toISOString(),
+        errorCode: statusNotificationRequest.errorCode,
+        info: statusNotificationRequest.info,
+        vendorId: statusNotificationRequest.vendorId,
+        vendorErrorCode: statusNotificationRequest.vendorErrorCode,
       } as Connector;
-      await this._locationRepository.createOrUpdateConnector(
-        connector,
-        storedStatusNotification,
-      );
+      await this._locationRepository.createOrUpdateConnector(connector);
     } else {
       this._logger.warn(
         `Charging station ${stationId} not found. Status notification cannot be associated with a charging station.`,

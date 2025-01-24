@@ -5,7 +5,6 @@
 import { Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
-import { Connector } from './Connector';
 
 @Table
 export class StatusNotification extends Model {
@@ -46,13 +45,6 @@ export class StatusNotification extends Model {
 
   @Column(DataType.STRING)
   declare vendorErrorCode?: string | null;
-
-  @ForeignKey(() => Connector)
-  @Column(DataType.INTEGER)
-  declare connectorDbId?: number | null;
-
-  @BelongsTo(() => Connector)
-  declare connector?: Connector;
 
   declare customData?: object | null;
 }

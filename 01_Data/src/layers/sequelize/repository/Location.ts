@@ -52,14 +52,13 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     return await this.chargingStation.existsByKey(stationId);
   }
 
-  async addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotification): Promise<StatusNotification> {
+  async addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotification): Promise<void> {
     const savedStatusNotification = await this.statusNotification.create(statusNotification);
     try {
       await this.updateLatestStatusNotification(stationId, savedStatusNotification);
     } catch (e: any) {
       this.logger.error(`Failed to update latest status notification with error: ${e.message}`, e);
     }
-    return savedStatusNotification;
   }
 
   async updateLatestStatusNotification(stationId: string, statusNotification: StatusNotification): Promise<void> {
@@ -190,37 +189,30 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     }
   }
 
-  async createOrUpdateConnector(connector: Connector, statusNotification?: StatusNotification): Promise<Connector | undefined> {
+  async createOrUpdateConnector(connector: Connector): Promise<Connector | undefined> {
     let result;
     await this.s.transaction(async (sequelizeTransaction) => {
-      const [savedConnector, _connectorCreated] = await this.connector.readOrCreateByQuery({
+      const [savedConnector, connectorCreated] = await this.connector.readOrCreateByQuery({
         where: {
           stationId: connector.stationId,
           connectorId: connector.connectorId,
         },
+        defaults: {
+          ...connector,
+        },
         transaction: sequelizeTransaction,
       });
-      if (statusNotification) {
-        await this.statusNotification.updateAllByQuery(
-          { connectorDbId: null },
-          {
-            where: {
-              connectorDbId: savedConnector.id,
-            },
-            transaction: sequelizeTransaction,
+      if (!connectorCreated) {
+        const updatedConnectors = await this.connector.updateAllByQuery(connector, {
+          where: {
+            id: savedConnector.id,
           },
-        );
-        await this.statusNotification.updateAllByQuery(
-          { connectorDbId: savedConnector.id },
-          {
-            where: {
-              id: statusNotification.id,
-            },
-            transaction: sequelizeTransaction,
-          },
-        );
+          transaction: sequelizeTransaction,
+        });
+        result = updatedConnectors.length > 0 ? updatedConnectors[0] : undefined;
+      } else {
+        result = savedConnector;
       }
-      result = savedConnector;
     });
     return result;
   }

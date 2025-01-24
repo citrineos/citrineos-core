@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP1_6_Namespace } from '@citrineos/base';
-import { Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
-import { StatusNotification } from './StatusNotification';
+import { OCPP1_6_Namespace, OCPP1_6 } from '@citrineos/base';
+import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
 @Table
 export class Connector extends Model {
@@ -24,6 +23,26 @@ export class Connector extends Model {
   })
   declare connectorId: number;
 
-  @HasOne(() => StatusNotification)
-  declare statusNotification?: StatusNotification;
+  @Column(DataType.ENUM(...Object.values(OCPP1_6.StatusNotificationRequestStatus)))
+  declare status: OCPP1_6.StatusNotificationRequestStatus;
+
+  @Column(DataType.ENUM(...Object.values(OCPP1_6.StatusNotificationRequestErrorCode)))
+  declare errorCode: OCPP1_6.StatusNotificationRequestErrorCode;
+
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('timestamp').toISOString();
+    },
+  })
+  declare timestamp: string;
+
+  @Column(DataType.STRING)
+  declare info?: string | null;
+
+  @Column(DataType.STRING)
+  declare vendorId?: string | null;
+
+  @Column(DataType.STRING)
+  declare vendorErrorCode?: string | null;
 }

@@ -112,9 +112,9 @@ export interface ILocationRepository extends CrudRepository<Location> {
   readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
   setChargingStationIsOnline: (stationId: string, isOnline: boolean) => Promise<boolean>;
   doesChargingStationExistByStationId: (stationId: string) => Promise<boolean>;
-  addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotification): Promise<StatusNotification>;
+  addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotification): Promise<void>;
   createOrUpdateChargingStation: (chargingStation: ChargingStation) => Promise<ChargingStation>;
-  createOrUpdateConnector(connector: Connector, statusNotification?: StatusNotification): Promise<Connector | undefined>;
+  createOrUpdateConnector(connector: Connector): Promise<Connector | undefined>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {
