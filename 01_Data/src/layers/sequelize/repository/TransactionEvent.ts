@@ -12,6 +12,7 @@ import { Evse } from '../model/DeviceModel';
 import { Op, WhereOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
+import { MeterValueMapper } from '../mapper/2.0.1';
 
 export class SequelizeTransactionEventRepository extends SequelizeRepository<TransactionEvent> implements ITransactionEventRepository {
   transaction: CrudRepository<Transaction>;
@@ -143,7 +144,10 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         transaction: sequelizeTransaction,
       });
 
-      await finalTransaction.update({ totalKwh: MeterValueUtils.getTotalKwh(allMeterValues) }, { transaction: sequelizeTransaction });
+      const meterValueMappers = allMeterValues.map((meterValue) =>
+        MeterValueMapper.fromModel(meterValue),
+      );
+      await finalTransaction.update({ totalKwh: MeterValueUtils.getTotalKwh(meterValueMappers) }, { transaction: sequelizeTransaction });
       await finalTransaction.reload({
         include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, Evse],
         transaction: sequelizeTransaction,
@@ -155,7 +159,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     });
   }
 
-  async readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<OCPP2_0_1.TransactionEventRequest[]> {
+  async readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEvent[]> {
     return await super
       .readAllByQuery({
         where: { stationId },
