@@ -68,7 +68,7 @@ describe('TransactionService', () => {
     ]);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
-      item.idToken = authorization.idToken;
+      item.idToken = authorization.idToken as OCPP2_0_1.IdTokenType;
     });
     const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
@@ -90,7 +90,7 @@ describe('TransactionService', () => {
     ]);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
-      item.idToken = authorization.idToken;
+      item.idToken = authorization.idToken as OCPP2_0_1.IdTokenType;
       item.eventType = OCPP2_0_1.TransactionEventEnumType.Started;
     });
     const messageContext = aMessageContext();

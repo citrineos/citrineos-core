@@ -23,6 +23,7 @@ import {
   Namespace,
 } from '@citrineos/base';
 import {
+  Authorization,
   AuthorizationQuerySchema,
   AuthorizationQuerystring,
   AuthorizationRestrictions,
@@ -72,7 +73,9 @@ export class EVDriverModuleApi
       Body: OCPP2_0_1.AuthorizationData;
       Querystring: AuthorizationQuerystring;
     }>,
-  ): Promise<OCPP2_0_1.AuthorizationData | undefined> {
+  ): Promise<Authorization | undefined> {
+    // TODO: the change above is just to avoid compile error
+    //  pull the real change when issue 71: generalize authorization task is done
     return this._module.authorizeRepository.createOrUpdateByQuerystring(
       request.body,
       request.query,
@@ -90,7 +93,9 @@ export class EVDriverModuleApi
       Body: AuthorizationRestrictions;
       Querystring: AuthorizationQuerystring;
     }>,
-  ): Promise<OCPP2_0_1.AuthorizationData[]> {
+  ): Promise<Authorization[]> {
+    // TODO: the change above is just to avoid compile error
+    //  pull the real change when issue 71: generalize authorization task is done
     return this._module.authorizeRepository.updateRestrictionsByQuerystring(
       request.body,
       request.query,
@@ -104,7 +109,9 @@ export class EVDriverModuleApi
   )
   getAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
-  ): Promise<OCPP2_0_1.AuthorizationData[]> {
+  ): Promise<Authorization[]> {
+    // TODO: the change above is just to avoid compile error
+    //  pull the real change when issue 71: generalize authorization task is done
     return this._module.authorizeRepository.readAllByQuerystring(request.query);
   }
 

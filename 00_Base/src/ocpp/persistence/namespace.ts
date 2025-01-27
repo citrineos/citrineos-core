@@ -10,6 +10,7 @@
 export enum Namespace {
   BootConfig = 'Boot',
   ChargingStation = 'ChargingStation',
+  IdToken = 'IdToken',
   MeterValue = 'MeterValue',
   StatusNotificationRequest = 'StatusNotification',
 }
@@ -31,7 +32,6 @@ export enum OCPP2_0_1_Namespace {
   EventDataType = 'EventData',
   FileURL = 'FileURL',
   IdTokenInfoType = 'IdTokenInfo',
-  IdTokenType = 'IdToken',
   LatestStatusNotification = 'LatestStatusNotification',
   LocalListAuthorization = 'LocalListAuthorization',
   LocalListVersion = 'LocalListVersion',

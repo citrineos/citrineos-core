@@ -33,6 +33,7 @@ import {
   SequelizeChargingStationSequenceRepository,
   Tariff,
   VariableAttribute,
+  OCPP2_0_1_Mapper,
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
@@ -134,6 +135,8 @@ export class EVDriverModule extends AbstractModule {
    *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
+   *
+   * @param {IdGenerator} [idGenerator] - ID generator
    */
   constructor(
     config: SystemConfig,
@@ -302,6 +305,15 @@ export class EVDriverModule extends AbstractModule {
         if (authorization) {
           if (authorization.idTokenInfo) {
             // Extract DTO fields from sequelize Model<any, any> objects
+            let groupIdToken: OCPP2_0_1.IdTokenType | undefined;
+            if (authorization.idTokenInfo.groupIdToken) {
+              const idTokenMapper = OCPP2_0_1_Mapper.IdTokenMapper.fromModel(authorization.idTokenInfo.groupIdToken);
+              groupIdToken = {
+                additionalInfo: idTokenMapper.additionalInfo,
+                idToken: idTokenMapper.idToken,
+                type: idTokenMapper.type
+              }
+            }
             const idTokenInfo: OCPP2_0_1.IdTokenInfoType = {
               status: authorization.idTokenInfo.status,
               cacheExpiryDateTime:
@@ -309,24 +321,7 @@ export class EVDriverModule extends AbstractModule {
               chargingPriority: authorization.idTokenInfo.chargingPriority,
               language1: authorization.idTokenInfo.language1,
               evseId: authorization.idTokenInfo.evseId,
-              groupIdToken: authorization.idTokenInfo.groupIdToken
-                ? {
-                  additionalInfo:
-                    authorization.idTokenInfo.groupIdToken.additionalInfo &&
-                      authorization.idTokenInfo.groupIdToken.additionalInfo
-                        .length > 0
-                      ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                        (additionalInfo) => ({
-                          additionalIdToken:
-                            additionalInfo.additionalIdToken,
-                          type: additionalInfo.type,
-                        }),
-                      ) as [OCPP2_0_1.AdditionalInfoType, ...OCPP2_0_1.AdditionalInfoType[]])
-                      : undefined,
-                  idToken: authorization.idTokenInfo.groupIdToken.idToken,
-                  type: authorization.idTokenInfo.groupIdToken.type,
-                }
-                : undefined,
+              groupIdToken,
               language2: authorization.idTokenInfo.language2,
               personalMessage: authorization.idTokenInfo.personalMessage,
             };
