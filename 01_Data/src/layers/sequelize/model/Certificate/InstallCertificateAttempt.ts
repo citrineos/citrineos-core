@@ -1,4 +1,4 @@
-import { type CustomDataType, GetCertificateIdUseEnumType, InstallCertificateStatusEnumType, Namespace } from '@citrineos/base';
+import { GetCertificateIdUseEnumType, InstallCertificateStatusEnumType, Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { ChargingStation } from '../Location';
 import { Certificate } from './Certificate';
@@ -35,6 +35,4 @@ export class InstallCertificateAttempt extends Model {
     allowNull: true,
   })
   declare status?: InstallCertificateStatusEnumType | null;
-
-  declare customData?: CustomDataType | null;
 }

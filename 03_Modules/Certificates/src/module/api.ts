@@ -32,6 +32,7 @@ import { ICertificatesModuleApi } from './interface';
 import { CertificatesModule } from './module';
 import crypto from 'crypto';
 import {
+  extractCertificateDetails,
   generateCertificate,
   generateCSR,
   WebsocketNetworkConnection,
@@ -161,7 +162,7 @@ export class CertificatesModuleApi
         countryName,
         validBefore,
         signatureAlgorithm,
-      } = this.extractCertificateDetails(certificate);
+      } = extractCertificateDetails(certificate);
       let existingCertificate =
         await this._module.certificateRepository.readOnlyOneByQuery({
           where: {
@@ -532,6 +533,11 @@ export class CertificatesModuleApi
     };
   }
 
+  /**
+   * Endpoint to upload an existing certificate that is already installed on a given station to the CSMS
+   * @param request - UploadExistingCertificateSchema
+   * @return Promise<InstalledCertificate> - the installed certificate record
+   */
   @AsDataEndpoint(
     Namespace.UploadExistingCertificate,
     HttpMethod.Post,
@@ -558,7 +564,7 @@ export class CertificatesModuleApi
       countryName,
       validBefore,
       signatureAlgorithm,
-    } = this.extractCertificateDetails(certificate);
+    } = extractCertificateDetails(certificate);
 
     let existingInstalledCertificate =
       await this._module.installedCertificateRepository.readOnlyOneByQuery({
@@ -634,6 +640,13 @@ export class CertificatesModuleApi
     return existingInstalledCertificate;
   }
 
+  /**
+   * Endpoint to regenerate an existing certificate that is already installed on a given station.
+   * Updates the InstalledCertificate record with the new certificate.
+   *
+   * @param request RegenerateInstalledCertificateSchema
+   * @return Promise<InstalledCertificate> - the updated installed certificate record
+   */
   @AsDataEndpoint(
     Namespace.RegenerateExistingCertificate,
     HttpMethod.Post,
@@ -647,6 +660,7 @@ export class CertificatesModuleApi
     }>,
   ): Promise<InstalledCertificate> {
     const installedCertificateId = request.body.installedCertificateId;
+    const validBeforeParam = request.body.validBefore;
     const stationId = request.query.identifier;
     this._logger.info(
       `Regenerating existing certificate ${installedCertificateId} for charger ${stationId}`,
@@ -670,36 +684,50 @@ export class CertificatesModuleApi
     if (!fileId) {
       throw new Error('Certificate file not found');
     }
+    const privateKeyFileId = existingCertificateRecord.privateKeyFileId;
+    if (!privateKeyFileId) {
+      throw new Error('Certificate privateKeyFileId not found');
+    }
     const existingCertificateBuffer = await this._fileAccess.getFile(fileId);
-    const existingCertificate = existingCertificateBuffer.toString();
-    const [newCertificatePem, _newPrivateKeyPem] = generateCertificate(
-      existingCertificateRecord,
-      this._logger,
-      undefined,
-      existingCertificate,
-    );
-    const newCertificateHash = this.getCertificateHash(newCertificatePem);
+    const existingPrivateKeyBuffer =
+      await this._fileAccess.getFile(privateKeyFileId);
+    const existingCertificateString = existingCertificateBuffer.toString();
+    const existingPrivateKey = existingPrivateKeyBuffer.toString();
+    const existingCertificate = new jsrsasign.X509();
+    existingCertificate.readCertPEM(existingCertificateString);
+    const existingSubjectString = existingCertificate.getSubjectString();
     let newCertificateRecord = new Certificate();
     newCertificateRecord.serialNumber = moment().valueOf();
-    newCertificateRecord.issuerName = existingCertificateRecord.issuerName;
+    newCertificateRecord.issuerName = existingSubjectString;
     newCertificateRecord.organizationName =
       existingCertificateRecord.organizationName;
     newCertificateRecord.commonName = existingCertificateRecord.commonName;
     newCertificateRecord.keyLength = existingCertificateRecord.keyLength;
-    newCertificateRecord.validBefore = existingCertificateRecord.validBefore;
+    newCertificateRecord.validBefore = validBeforeParam;
     newCertificateRecord.signatureAlgorithm =
       existingCertificateRecord.signatureAlgorithm;
     newCertificateRecord.countryName = existingCertificateRecord.countryName;
     newCertificateRecord.isCA = existingCertificateRecord.isCA;
     newCertificateRecord.pathLen = existingCertificateRecord.pathLen;
-    newCertificateRecord.signedBy = existingCertificateRecord.signedBy;
+    newCertificateRecord.signedBy = existingCertificateRecord.id;
     newCertificateRecord.certificateFileHash =
       existingCertificateRecord.certificateFileHash;
+    const [newCertificatePem, newPrivateKeyPem] = generateCertificate(
+      newCertificateRecord,
+      this._logger,
+      existingPrivateKey,
+      existingCertificateString,
+    );
+    newCertificateRecord.certificateFileHash =
+      this.getCertificateHash(newCertificatePem);
     newCertificateRecord.certificateFileId = await this._fileAccess.uploadFile(
-      `Regenerated_Certificate_${newCertificateRecord.serialNumber}.pem`,
+      `Regenerated_Cert_${newCertificateRecord.serialNumber}.pem`,
       Buffer.from(newCertificatePem),
     );
-    newCertificateRecord.certificateFileHash = newCertificateHash;
+    newCertificateRecord.privateKeyFileId = await this._fileAccess.uploadFile(
+      `Regenerated_Key_${newCertificateRecord.serialNumber}.pem`,
+      Buffer.from(newPrivateKeyPem),
+    );
     newCertificateRecord = await newCertificateRecord.save();
     existingInstalledCertificate.certificateId = newCertificateRecord.id;
     await existingInstalledCertificate.save();
@@ -726,80 +754,12 @@ export class CertificatesModuleApi
     newCertificate.validBefore = validBefore?.toISOString()!;
     newCertificate.signatureAlgorithm = signatureAlgorithm!;
     newCertificate.certificateFileId = await this._fileAccess.uploadFile(
-      `Existing_Key_${serialNumber}.pem`,
+      `Existing_Cert_${serialNumber}.pem`,
       Buffer.from(certificate),
     );
     newCertificate.certificateFileHash = certificateHash;
     return await newCertificate.save();
   };
-
-  private parseX509Date(date: string): Date | null {
-    if (/^\d{14}Z$/.test(date)) {
-      // GeneralizedTime: YYYYMMDDHHMMSSZ
-      const year = parseInt(date.slice(0, 4), 10);
-      const month = parseInt(date.slice(4, 6), 10) - 1;
-      const day = parseInt(date.slice(6, 8), 10);
-      const hour = parseInt(date.slice(8, 10), 10);
-      const minute = parseInt(date.slice(10, 12), 10);
-      const second = parseInt(date.slice(12, 14), 10);
-      return new Date(Date.UTC(year, month, day, hour, minute, second));
-    } else if (/^\d{12}Z$/.test(date)) {
-      // UTCTime: YYMMDDHHMMSSZ
-      let year = parseInt(date.slice(0, 2), 10);
-      year += year < 50 ? 2000 : 1900; // Adjust for 21st/20th century
-      const month = parseInt(date.slice(2, 4), 10) - 1;
-      const day = parseInt(date.slice(4, 6), 10);
-      const hour = parseInt(date.slice(6, 8), 10);
-      const minute = parseInt(date.slice(8, 10), 10);
-      const second = parseInt(date.slice(10, 12), 10);
-      return new Date(Date.UTC(year, month, day, hour, minute, second));
-    } else {
-      console.error(`Invalid X.509 date format: ${date}`);
-      return null;
-    }
-  }
-
-  private extractCertificateDetails(pemString: string): {
-    serialNumber: number | null;
-    issuerName: string | null;
-    organizationName: string | null;
-    commonName: string | null;
-    countryName: CountryNameEnumType | null;
-    validBefore: Date | null;
-    signatureAlgorithm: SignatureAlgorithmEnumType | null;
-  } {
-    try {
-      const cert = new jsrsasign.X509();
-      cert.readCertPEM(pemString);
-
-      // Extract details
-      const serialNumber = parseInt(cert.getSerialNumberHex());
-      const issuerName = cert.getIssuerString();
-      const organizationName =
-        cert.getSubjectString().match(/\/O=([^\/]+)/)?.[1] || null;
-      const commonName =
-        cert.getSubjectString().match(/\/CN=([^\/]+)/)?.[1] || null;
-      const countryName = (cert.getSubjectString().match(/\/C=([^\/]+)/)?.[1] ||
-        null) as CountryNameEnumType | null;
-      const notAfter = cert.getNotAfter();
-      const validBefore = this.parseX509Date(notAfter);
-      const signatureAlgorithm =
-        cert.getSignatureAlgorithmField() as SignatureAlgorithmEnumType;
-
-      return {
-        serialNumber,
-        issuerName,
-        organizationName,
-        commonName,
-        countryName,
-        validBefore,
-        signatureAlgorithm,
-      };
-    } catch (error) {
-      console.error('Error extracting certificate details:', error);
-      throw new Error('Invalid PEM format or unsupported certificate');
-    }
-  }
 
   /**
    * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.

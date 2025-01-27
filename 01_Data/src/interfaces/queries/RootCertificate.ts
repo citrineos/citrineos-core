@@ -41,4 +41,11 @@ export const UploadExistingCertificateSchema = QuerySchema(
   ['certificate', 'certificateType'],
 );
 
-export const RegenerateInstalledCertificateSchema = QuerySchema('RegenerateInstalledCertificateSchema', [['installedCertificateId', 'number']], ['installedCertificateId']);
+export const RegenerateInstalledCertificateSchema = QuerySchema(
+  'RegenerateInstalledCertificateSchema',
+  [
+    ['installedCertificateId', 'number'],
+    ['validBefore', 'string'],
+  ],
+  ['installedCertificateId'],
+);

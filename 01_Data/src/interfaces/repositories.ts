@@ -55,6 +55,7 @@ import {
   DeleteCertificateAttempt,
   type EventData,
   Evse,
+  InstallCertificateAttempt,
   type Location,
   MessageInfo,
   MeterValue,
@@ -74,7 +75,6 @@ import { TariffQueryString } from './queries/Tariff';
 import { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion';
 import { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList';
 import { InstalledCertificate } from '../layers/sequelize/model/Certificate/InstalledCertificate';
-import { InstallCertificateAttempt } from '../layers/sequelize/model/Certificate/InstallCertificateAttempt';
 
 export interface IAuthorizationRepository extends CrudRepository<AuthorizationData> {
   createOrUpdateByQuerystring: (value: AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;

@@ -63,7 +63,10 @@ export class Certificate extends Model {
   @Column(DataType.STRING)
   declare certificateFileId?: string | null;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    unique: true,
+  })
   declare certificateFileHash?: string | null;
 
   @Column(DataType.STRING)
