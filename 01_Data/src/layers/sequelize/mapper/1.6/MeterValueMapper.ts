@@ -12,36 +12,34 @@ export class MeterValueMapper extends AbstractMapper<MeterValue> {
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
-  @Type(() => SampleValue)
-  sampledValue: SampleValue[];
+  @Type(() => SampledValue)
+  sampledValue: SampledValue[];
   timestamp: string;
   transactionDatabaseId?: number | null;
 
-  constructor(sampledValue: SampleValue[], timestamp: string, transactionDatabaseId?: number | null) {
+  constructor(sampledValue: SampledValue[], timestamp: string, transactionDatabaseId?: number | null) {
     super();
     this.sampledValue = sampledValue;
     this.timestamp = timestamp;
     this.transactionDatabaseId = transactionDatabaseId;
-    console.debug(`this meter value: ${JSON.stringify(this)}`);
     this.validate();
   }
 
   toModel(): MeterValue {
     return MeterValue.build({
       timestamp: this.timestamp,
-      sampledValue: this.sampledValue as [SampleValue, ...SampleValue[]],
+      sampledValue: this.sampledValue as [SampledValue, ...SampledValue[]],
       transactionDatabaseId: this.transactionDatabaseId,
     });
   }
 
   static fromModel(meterValue: MeterValue): MeterValueMapper {
-    const sampledValues = plainToInstance(SampleValue, meterValue.sampledValue);
-    console.debug(`sampledValues: ${JSON.stringify(sampledValues)}`);
+    const sampledValues = plainToInstance(SampledValue, meterValue.sampledValue);
     return new MeterValueMapper(sampledValues, meterValue.timestamp, meterValue.transactionDatabaseId);
   }
 }
 
-export class SampleValue {
+export class SampledValue {
   value: string;
   @IsEnum(OCPP1_6.MeterValuesRequestContext, { message: 'Invalid context value.' })
   context?: OCPP1_6.MeterValuesRequestContext | null;
