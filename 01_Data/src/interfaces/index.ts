@@ -16,6 +16,7 @@ export { ModelKeyQuerystring, ModelKeyQuerystringSchema } from './queries/Model'
 export { NetworkProfileQuerystring, NetworkProfileQuerySchema, NetworkProfileDeleteQuerystring, NetworkProfileDeleteQuerySchema } from './queries/NetworkProfile';
 export { UpdateTlsCertificateQueryString, TlsCertificateSchema, UpdateTlsCertificateQuerySchema } from './queries/TlsCertificate';
 export { GenerateCertificateChainSchema, InstallRootCertificateSchema, UploadExistingCertificateSchema, RegenerateInstalledCertificateSchema } from './queries/RootCertificate';
+export { KeyValueQuerystring, KeyValueQuerystringSchema } from './queries/KeyValue';
 export { CreateSubscriptionSchema } from './queries/Subscription';
 
 // Data projection models

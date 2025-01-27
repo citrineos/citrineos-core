@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
+import { UserPreferences } from '../..';
+
 // Sequelize Persistence Models
 export { Boot } from './model/Boot';
 export { VariableAttribute, VariableCharacteristics, Component, Evse, Variable, VariableStatus } from './model/DeviceModel';
@@ -9,7 +11,7 @@ export { Authorization, IdToken, IdTokenInfo, AdditionalInfo, LocalListAuthoriza
 export { Transaction, TransactionEvent, MeterValue } from './model/TransactionEvent';
 export { SecurityEvent } from './model/SecurityEvent';
 export { VariableMonitoring, EventData, VariableMonitoringStatus } from './model/VariableMonitoring';
-export { ChargingStation, ChargingStationNetworkProfile, Location, ServerNetworkProfile, SetNetworkProfile, StatusNotification } from './model/Location';
+export { ChargingStation, ChargingStationNetworkProfile, Location, OCPPLog, ServerNetworkProfile, SetNetworkProfile, StatusNotification } from './model/Location';
 export { ChargingStationSequence } from './model/ChargingStationSequence';
 export { MessageInfo } from './model/MessageInfo';
 export { Tariff } from './model/Tariff';
@@ -19,6 +21,7 @@ export { ChargingProfile, ChargingNeeds, ChargingSchedule, CompositeSchedule, Sa
 export { CallMessage } from './model/CallMessage';
 export { Reservation } from './model/Reservation';
 export { ChargingStationSecurityInfo } from './model/ChargingStationSecurityInfo';
+export { UserPreferences } from './model/UserPreferences';
 
 // Sequelize Repositories
 export { SequelizeRepository } from './repository/Base';

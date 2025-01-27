@@ -3,12 +3,23 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace, StatusNotificationRequest } from '@citrineos/base';
-import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import {
+  BelongsTo,
+  BelongsToMany,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
 import { Location } from './Location';
 import { StatusNotification } from './StatusNotification';
 import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 import { SetNetworkProfile } from './SetNetworkProfile';
 import { InstalledCertificate } from '../Certificate';
+import { OCPPLog } from './OCPPLog';
 
 /**
  * Represents a charging station.
@@ -34,6 +45,9 @@ export class ChargingStation extends Model {
 
   @HasMany(() => InstalledCertificate)
   declare installedCertificates?: InstalledCertificate[];
+
+  @HasMany(() => OCPPLog)
+  declare liveLogs?: OCPPLog[];
 
   /**
    * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.

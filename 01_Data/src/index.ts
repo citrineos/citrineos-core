@@ -42,6 +42,7 @@ export {
   AdditionalInfo,
   LocalListAuthorization,
   LocalListVersion,
+  OCPPLog,
   SendLocalList,
   ServerNetworkProfile,
   SetNetworkProfile,
@@ -69,5 +70,6 @@ export {
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
   SequelizeChargingStationSequenceRepository,
+  UserPreferences,
 } from './layers/sequelize'; // TODO ensure all needed modules are properly exported
 export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore';

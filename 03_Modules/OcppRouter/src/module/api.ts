@@ -19,9 +19,12 @@ import {
   ChargingStationKeyQuerySchema,
   ChargingStationKeyQuerystring,
   CreateSubscriptionSchema,
+  KeyValueQuerystring,
+  KeyValueQuerystringSchema,
   ModelKeyQuerystring,
   ModelKeyQuerystringSchema,
   Subscription,
+  UserPreferences,
 } from '@citrineos/data';
 
 /**
@@ -107,6 +110,37 @@ export class AdminApi
     return this._module.subscriptionRepository
       .deleteByKey(request.query.id.toString())
       .then(() => true);
+  }
+
+  @AsDataEndpoint(
+    Namespace.UserPreferences,
+    HttpMethod.Put,
+    KeyValueQuerystringSchema,
+  )
+  async putUserPreference(
+    request: FastifyRequest<{ Querystring: KeyValueQuerystring }>,
+  ): Promise<boolean> {
+    const preferences = await UserPreferences.findByPk(request.query.key)
+    if (!preferences) {
+      return !!(await UserPreferences.create({
+        key: request.query.key,
+        value: request.query.value,
+      }));
+    } else {
+      preferences.set('value', request.query.value);
+      return !!(await preferences.save());
+    }
+  }
+
+  @AsDataEndpoint(
+    Namespace.UserPreferences,
+    HttpMethod.Get,
+    KeyValueQuerystringSchema,
+  )
+  async getUserPreference(
+    request: FastifyRequest<{ Querystring: KeyValueQuerystring }>,
+  ): Promise<string | undefined> {
+    return (await UserPreferences.findByPk(request.query.key))?.value;
   }
 
   /**
