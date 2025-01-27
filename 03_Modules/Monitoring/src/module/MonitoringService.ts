@@ -1,4 +1,4 @@
-import { IVariableMonitoringRepository } from '@citrineos/data/dist/interfaces/repositories';
+import { IVariableMonitoringRepository } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
 import {
   CallAction,
