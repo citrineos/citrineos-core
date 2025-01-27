@@ -137,6 +137,19 @@ export class TransactionService {
         }
       }
     }
+    
+    // Check transaction status and set 'active' to false if status is SuspendedEVSE or SuspendedEV
+    if (transactionEvent.transactionInfo?.chargingState === OCPP2_0_1.ChargingStateEnumType.SuspendedEVSE  ||
+      transactionEvent.transactionInfo?.chargingState === OCPP2_0_1.ChargingStateEnumType.SuspendedEV) {
+      this._logger.debug(
+        `${transactionEvent.transactionInfo?.chargingState} for ${transactionEvent.transactionInfo.transactionId} transaction`,
+      );
+      await Transaction.update(
+        { isActive: false },
+        { where: { transactionId: transactionEvent.transactionInfo.transactionId } }
+      );
+    }
+
     this._logger.debug(
       'idToken Authorization final status:',
       response.idTokenInfo.status,
