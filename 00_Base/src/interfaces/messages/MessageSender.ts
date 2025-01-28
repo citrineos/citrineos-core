@@ -63,5 +63,5 @@ export interface IMessageSender {
   /**
    * Shuts down the sender.
    */
-  shutdown(): void; // Turning off the sender
+  shutdown(): Promise<void>; // Turning off the sender
 }

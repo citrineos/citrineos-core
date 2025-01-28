@@ -19,7 +19,7 @@ describe('ACME', () => {
   let mockClient: jest.Mocked<Client>;
 
   let systemConfig: SystemConfig;
-  let logger: Logger<ILogObj>;
+  const logger: Logger<ILogObj> | undefined = undefined;
   let acme: Acme;
 
   beforeAll(() => {

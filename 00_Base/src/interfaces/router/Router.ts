@@ -29,10 +29,13 @@ export interface IMessageRouter extends IModule {
    * @param identifier Unique identifier for the charging station, i.e. the stationId
    * @param message The unvalidated, raw OCPP text, i.e. [2, "123", "Heartbeat", {}]
    * @param timestamp Time at which the message was received from the charger.
+   * @param protocol The OCPP protocol version of the message
+   * @returns true if the message was successfully processed, false otherwise
    */
   onMessage(
     identifier: string,
     message: string,
     timestamp: Date,
+    protocol: string,
   ): Promise<boolean>;
 }

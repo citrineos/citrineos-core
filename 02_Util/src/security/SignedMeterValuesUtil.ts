@@ -4,9 +4,8 @@ import {
 } from '@citrineos/data';
 import {
   IFileAccess,
-  MeterValueType,
+  OCPP2_0_1,
   SignedMeterValuesConfig,
-  SignedMeterValueType,
   SystemConfig,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
@@ -69,7 +68,7 @@ export class SignedMeterValuesUtil {
    */
   public async validateMeterValues(
     stationId: string,
-    meterValues: [MeterValueType, ...MeterValueType[]],
+    meterValues: [OCPP2_0_1.MeterValueType, ...OCPP2_0_1.MeterValueType[]],
   ): Promise<boolean> {
     for (const meterValue of meterValues) {
       for (const sampledValue of meterValue.sampledValue) {
@@ -90,7 +89,7 @@ export class SignedMeterValuesUtil {
 
   private async validateSignedSampledValue(
     stationId: string,
-    signedMeterValue: SignedMeterValueType,
+    signedMeterValue: OCPP2_0_1.SignedMeterValueType,
   ): Promise<boolean> {
     if (signedMeterValue.publicKey && signedMeterValue.publicKey.length > 0) {
       const incomingPublicKeyIsValid =
@@ -119,7 +118,7 @@ export class SignedMeterValuesUtil {
   }
 
   private async validateSignedMeterValueSignature(
-    signedMeterValue: SignedMeterValueType,
+    signedMeterValue: OCPP2_0_1.SignedMeterValueType,
     publicKeyFileId?: string,
   ): Promise<boolean> {
     const incomingPublicKeyString = signedMeterValue.publicKey;

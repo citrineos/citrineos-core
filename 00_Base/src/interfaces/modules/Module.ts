@@ -10,7 +10,7 @@ import {
   OcppResponse,
   SystemConfig,
 } from '../..';
-import { CallAction } from '../../ocpp/rpc/message';
+import { CallAction, OCPPVersionType } from '../../ocpp/rpc/message';
 import {
   HandlerProperties,
   IMessage,
@@ -32,6 +32,7 @@ export interface IModule {
   sendCall(
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
     correlationId?: string,
@@ -58,5 +59,5 @@ export interface IModule {
     message: IMessage<OcppRequest | OcppResponse>,
     props?: HandlerProperties,
   ): Promise<void>;
-  shutdown(): void;
+  shutdown(): Promise<void>;
 }

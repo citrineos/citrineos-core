@@ -1,5 +1,5 @@
-import { ITransactionEventRepository } from '@citrineos/data';
-import { AbstractModule, CallAction } from '@citrineos/base';
+import { ITransactionEventRepository, Transaction } from '@citrineos/data';
+import { AbstractModule, OCPP2_0_1_CallAction, OCPPVersion } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { CostCalculator } from './CostCalculator';
 import { Scheduler } from './Scheduler';
@@ -47,6 +47,35 @@ export class CostNotifier extends Scheduler {
     );
   }
 
+  async calculateCostAndNotify(
+    transaction: Transaction,
+    tenantId: string,
+  ): Promise<void> {
+    const cost = await this._costCalculator.calculateTotalCost(
+      transaction.stationId,
+      transaction.id,
+    );
+
+    await this._transactionEventRepository.updateTransactionTotalCostById(
+      cost,
+      transaction.id,
+    );
+
+    await this._module.sendCall(
+      transaction.stationId,
+      tenantId,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.CostUpdated,
+      {
+        totalCost: cost,
+        transactionId: transaction.transactionId,
+      },
+    );
+    this._logger.debug(
+      `Sent CostUpdated call for ${transaction.transactionId} transaction with ${cost} cost`,
+    );
+  }
+
   private async _tryNotify(
     stationId: string,
     transactionId: string,
@@ -67,28 +96,7 @@ export class CostNotifier extends Scheduler {
         return;
       }
 
-      const cost = await this._costCalculator.calculateTotalCost(
-        transaction.stationId,
-        transaction.id,
-      );
-
-      await this._transactionEventRepository.updateTransactionTotalCostById(
-        cost,
-        transaction.id,
-      );
-
-      await this._module.sendCall(
-        transaction.stationId,
-        tenantId,
-        CallAction.CostUpdated,
-        {
-          totalCost: cost,
-          transactionId: transaction.transactionId,
-        },
-      );
-      this._logger.debug(
-        `Sent CostUpdated call for ${transaction.transactionId} transaction with ${cost} cost`,
-      );
+      await this.calculateCostAndNotify(transaction, tenantId);
     } catch (error) {
       this._logger.error(
         `Failed to send CostUpdated call for ${transactionId} transaction`,

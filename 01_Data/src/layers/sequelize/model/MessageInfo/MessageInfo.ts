@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, CustomDataType, ComponentType, MessageInfoType, MessagePriorityEnumType, MessageStateEnumType, MessageContentType } from '@citrineos/base';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { Table, Model, AutoIncrement, Column, DataType, PrimaryKey, Index, BelongsTo, ForeignKey } from 'sequelize-typescript';
 import { Component } from '../DeviceModel';
 
 @Table
-export class MessageInfo extends Model implements MessageInfoType {
+export class MessageInfo extends Model implements OCPP2_0_1.MessageInfoType {
   static readonly MODEL_NAME: string = Namespace.MessageInfoType;
 
   /**
@@ -32,10 +32,10 @@ export class MessageInfo extends Model implements MessageInfoType {
   declare id: number;
 
   @Column(DataType.STRING)
-  declare priority: MessagePriorityEnumType;
+  declare priority: OCPP2_0_1.MessagePriorityEnumType;
 
   @Column(DataType.STRING)
-  declare state?: MessageStateEnumType | null;
+  declare state?: OCPP2_0_1.MessageStateEnumType | null;
 
   @Column({
     type: DataType.DATE,
@@ -59,7 +59,7 @@ export class MessageInfo extends Model implements MessageInfoType {
   declare transactionId?: string | null;
 
   @Column(DataType.JSON)
-  declare message: MessageContentType;
+  declare message: OCPP2_0_1.MessageContentType;
 
   @Column(DataType.BOOLEAN)
   declare active: boolean;
@@ -69,7 +69,7 @@ export class MessageInfo extends Model implements MessageInfoType {
    */
 
   @BelongsTo(() => Component)
-  declare display: ComponentType;
+  declare display: OCPP2_0_1.ComponentType;
 
   @ForeignKey(() => Component)
   @Column({
@@ -77,5 +77,5 @@ export class MessageInfo extends Model implements MessageInfoType {
   })
   declare displayComponentId?: number | null;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

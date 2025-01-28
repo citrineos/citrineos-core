@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { IMessageContext, OcppRequest, OcppResponse } from '../..';
-import { CallAction } from '../../ocpp/rpc/message';
+import { CallAction, OCPPVersionType } from '../../ocpp/rpc/message';
 import { EventGroup, MessageOrigin, MessageState } from '.';
 
 /**
@@ -14,29 +14,47 @@ import { EventGroup, MessageOrigin, MessageState } from '.';
  *
  */
 export interface IMessage<T extends OcppRequest | OcppResponse> {
-  // The event group of the source module
+  /**
+   * The event group of the source module
+   */
   get origin(): MessageOrigin;
   set origin(value: MessageOrigin);
 
-  // The event group of the target module
+  /**
+   * The event group of the target module
+   */
   get eventGroup(): EventGroup;
   set eventGroup(value: EventGroup);
 
-  // The event type (within the event group)
+  /**
+   * The event type (within the event group)
+   */
   get action(): CallAction;
   set action(value: CallAction);
 
-  // The message state representative of the roundtrip status
+  /**
+   * The message state representative of the roundtrip status
+   */
   get state(): MessageState;
   set state(value: MessageState);
 
-  // The context of the message (the module that sent the message)
+  /**
+   * The context of the message (the module that sent the message)
+   */
   get context(): IMessageContext;
   set context(value: IMessageContext);
 
-  // The payload of the message (the data sent with the message)
+  /**
+   * The payload of the message (the data sent with the message)
+   */
   get payload(): T;
   set payload(value: T);
+
+  /**
+   * The protocol of the message (ocpp1.6, ocpp2.0.1, etc), optional because outgoing messages don't need a protocol
+   */
+  get protocol(): OCPPVersionType | undefined;
+  set protocol(value: OCPPVersionType | undefined);
 }
 
 /**
@@ -54,6 +72,7 @@ export class Message<T extends OcppRequest | OcppResponse>
   protected _state: MessageState;
   protected _context: IMessageContext;
   protected _payload: T;
+  protected _protocol: OCPPVersionType | undefined;
 
   /**
    * Constructs a new instance of Message.
@@ -64,6 +83,7 @@ export class Message<T extends OcppRequest | OcppResponse>
    * @param {MessageState} state - The state of the message.
    * @param {IMessageContext} context - The context of the message.
    * @param {T} payload - The payload of the message.
+   * @param {OCPPVersionType} [protocol] - The protocol of the message, example "ocpp1.6". Optional because outgoing messages don't need a protocol.
    */
   constructor(
     origin: MessageOrigin,
@@ -72,6 +92,7 @@ export class Message<T extends OcppRequest | OcppResponse>
     state: MessageState,
     context: IMessageContext,
     payload: T,
+    protocol?: OCPPVersionType,
   ) {
     this._origin = origin;
     this._eventGroup = eventGroup;
@@ -79,6 +100,7 @@ export class Message<T extends OcppRequest | OcppResponse>
     this._state = state;
     this._context = context;
     this._payload = payload;
+    this._protocol = protocol;
   }
 
   /**
@@ -102,6 +124,9 @@ export class Message<T extends OcppRequest | OcppResponse>
   get payload(): T {
     return this._payload;
   }
+  get protocol(): OCPPVersionType | undefined {
+    return this._protocol;
+  }
   set origin(value: MessageOrigin) {
     this._origin = value;
   }
@@ -119,5 +144,8 @@ export class Message<T extends OcppRequest | OcppResponse>
   }
   set payload(value: T) {
     this._payload = value;
+  }
+  set protocol(value: OCPPVersionType | undefined) {
+    this._protocol = value;
   }
 }

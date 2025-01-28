@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingLimitSourceEnumType, ChargingProfileKindEnumType, ChargingProfilePurposeEnumType, ChargingProfileType, ChargingScheduleType, CustomDataType, Namespace, RecurrencyKindEnumType, TransactionType } from '@citrineos/base';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { AutoIncrement, BelongsTo, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { Transaction } from '../TransactionEvent';
 import { ChargingSchedule } from './ChargingSchedule';
 
 @Table
-export class ChargingProfile extends Model implements ChargingProfileType {
+export class ChargingProfile extends Model implements OCPP2_0_1.ChargingProfileType {
   static readonly MODEL_NAME: string = Namespace.ChargingProfile;
 
   /**
@@ -32,13 +32,13 @@ export class ChargingProfile extends Model implements ChargingProfileType {
   declare id: number;
 
   @Column(DataType.STRING)
-  declare chargingProfileKind: ChargingProfileKindEnumType;
+  declare chargingProfileKind: OCPP2_0_1.ChargingProfileKindEnumType;
 
   @Column(DataType.STRING)
-  declare chargingProfilePurpose: ChargingProfilePurposeEnumType;
+  declare chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType;
 
   @Column(DataType.STRING)
-  declare recurrencyKind?: RecurrencyKindEnumType | null;
+  declare recurrencyKind?: OCPP2_0_1.RecurrencyKindEnumType | null;
 
   @Column(DataType.INTEGER)
   declare stackLevel: number;
@@ -73,21 +73,21 @@ export class ChargingProfile extends Model implements ChargingProfileType {
 
   @Column({
     type: DataType.STRING,
-    defaultValue: ChargingLimitSourceEnumType.CSO,
+    defaultValue: OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
   })
-  declare chargingLimitSource?: ChargingLimitSourceEnumType | null;
+  declare chargingLimitSource?: OCPP2_0_1.ChargingLimitSourceEnumType | null;
 
   /**
    * Relations
    */
   @HasMany(() => ChargingSchedule)
-  declare chargingSchedule: [ChargingScheduleType] | [ChargingScheduleType, ChargingScheduleType] | [ChargingScheduleType, ChargingScheduleType, ChargingScheduleType];
+  declare chargingSchedule: [OCPP2_0_1.ChargingScheduleType] | [OCPP2_0_1.ChargingScheduleType, OCPP2_0_1.ChargingScheduleType] | [OCPP2_0_1.ChargingScheduleType, OCPP2_0_1.ChargingScheduleType, OCPP2_0_1.ChargingScheduleType];
 
   @ForeignKey(() => Transaction)
   declare transactionDatabaseId?: number | null;
 
   @BelongsTo(() => Transaction)
-  declare transaction?: TransactionType;
+  declare transaction?: OCPP2_0_1.TransactionType;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

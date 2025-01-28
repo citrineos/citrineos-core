@@ -5,7 +5,6 @@
 
 import { ICache } from '@citrineos/base';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
-import { default as deasyncPromise } from 'deasync-promise';
 import {
   createClient,
   RedisClientOptions,
@@ -27,7 +26,12 @@ export class RedisCache implements ICache {
     this._client.on('ready', () => console.log('Redis client ready to use'));
     this._client.on('error', (err) => console.error('Redis error', err));
     this._client.on('end', () => console.log('Redis client disconnected'));
-    this._client.connect();
+    this._client
+      .connect()
+      .then()
+      .catch((error) => {
+        console.log('Error connecting to Redis', error);
+      });
   }
 
   exists(key: string, namespace?: string): Promise<boolean> {
@@ -55,25 +59,45 @@ export class RedisCache implements ICache {
       // Create a Redis subscriber to listen for operations affecting the key
       const subscriber = createClient();
       // Channel: Key-space, message: the name of the event, which is the command executed on the key
-      subscriber.subscribe(`__keyspace@0__:${key}`, (channel, message) => {
-        switch (message) {
-          case 'set':
-            resolve(this.get(key, namespace, classConstructor));
-            subscriber.quit();
-            break;
-          case 'del':
-          case 'expire':
-            resolve(null);
-            subscriber.quit();
-            break;
-          default:
-            // Do nothing
-            break;
-        }
-      });
+      subscriber
+        .subscribe(`__keyspace@0__:${key}`, (channel, message) => {
+          switch (message) {
+            case 'set':
+              resolve(this.get(key, namespace, classConstructor));
+              subscriber
+                .quit()
+                .then()
+                .catch((error) => {
+                  console.log('Error quitting subscriber', error);
+                });
+              break;
+            case 'del':
+            case 'expire':
+              resolve(null);
+              subscriber
+                .quit()
+                .then()
+                .catch((error) => {
+                  console.log('Error quitting subscriber', error);
+                });
+              break;
+            default:
+              // Do nothing
+              break;
+          }
+        })
+        .then()
+        .catch((error) => {
+          console.log('Error creating Redis subscriber', error);
+        });
       setTimeout(() => {
         resolve(this.get(key, namespace, classConstructor));
-        subscriber.quit();
+        subscriber
+          .quit()
+          .then()
+          .catch((error) => {
+            console.log('Error closing Redis subscriber', error);
+          });
       }, waitSeconds * 1000);
     });
   }
@@ -94,26 +118,6 @@ export class RedisCache implements ICache {
       }
       return null;
     });
-  }
-
-  getSync<T>(
-    key: string,
-    namespace?: string,
-    classConstructor?: () => ClassConstructor<T>,
-  ): T | null {
-    namespace = namespace || 'default';
-    key = `${namespace}:${key}`;
-    return deasyncPromise(
-      this._client.get(key).then((result) => {
-        if (result) {
-          if (classConstructor) {
-            return plainToInstance(classConstructor(), JSON.parse(result));
-          }
-          return result as T;
-        }
-        return null;
-      }),
-    );
   }
 
   set(
@@ -153,23 +157,5 @@ export class RedisCache implements ICache {
         }
         return false;
       });
-  }
-
-  setSync(
-    key: string,
-    value: string,
-    namespace?: string,
-    expireSeconds?: number,
-  ): boolean {
-    namespace = namespace || 'default';
-    key = `${namespace}:${key}`;
-    return deasyncPromise(
-      this._client.set(key, value, { EX: expireSeconds }).then((result) => {
-        if (result) {
-          return result === 'OK';
-        }
-        return false;
-      }),
-    );
   }
 }

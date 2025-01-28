@@ -5,8 +5,7 @@
 
 import {
   IMessageConfirmation,
-  ResetRequest,
-  SetNetworkProfileRequest,
+  OCPP2_0_1
 } from '@citrineos/base';
 
 /**
@@ -16,13 +15,13 @@ export interface IConfigurationModuleApi {
   setNetworkProfile(
     identifier: string,
     tenantId: string,
-    request: SetNetworkProfileRequest,
+    request: OCPP2_0_1.SetNetworkProfileRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation>;
   reset(
     identifier: string,
     tenantId: string,
-    request: ResetRequest,
+    request: OCPP2_0_1.ResetRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation>;
 }

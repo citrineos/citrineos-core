@@ -3,6 +3,7 @@ import { ILocationRepository } from '@citrineos/data';
 import { IncomingMessage } from 'http';
 import { AuthenticatorFilter } from './AuthenticatorFilter';
 import { AuthenticationOptions } from '@citrineos/base';
+import { UpgradeUnknownError } from './errors/UnknownError';
 
 /**
  * Filter used to block connections from charging stations that are not recognized in the system.
@@ -32,7 +33,7 @@ export class UnknownStationFilter extends AuthenticatorFilter {
         identifier,
       );
     if (!isStationKnown) {
-      throw Error(`Unknown identifier ${identifier}`);
+      throw new UpgradeUnknownError(`Unknown identifier ${identifier}`);
     }
   }
 }

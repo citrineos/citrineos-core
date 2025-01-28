@@ -1,0 +1,11 @@
+table:
+  name: Versions
+  schema: public
+array_relationships:
+  - name: VersionEndpoints
+    using:
+      foreign_key_constraint_on:
+        column: versionId
+        table:
+          name: VersionEndpoints
+          schema: public

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type CustomDataType, EVSEType, Namespace, TransactionEventEnumType, type TransactionEventRequest, TransactionType, TriggerReasonEnumType } from '@citrineos/base';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import { IdToken } from '../Authorization';
 import { Evse } from '../DeviceModel';
@@ -11,14 +11,14 @@ import { MeterValue } from './MeterValue';
 import { Transaction } from './Transaction';
 
 @Table
-export class TransactionEvent extends Model implements TransactionEventRequest {
+export class TransactionEvent extends Model implements OCPP2_0_1.TransactionEventRequest {
   static readonly MODEL_NAME: string = Namespace.TransactionEventRequest;
 
   @Column
   declare stationId: string;
 
   @Column(DataType.STRING)
-  declare eventType: TransactionEventEnumType;
+  declare eventType: OCPP2_0_1.TransactionEventEnumType;
 
   @HasMany(() => MeterValue)
   declare meterValue?: [MeterValue, ...MeterValue[]];
@@ -32,7 +32,7 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   declare timestamp: string;
 
   @Column
-  declare triggerReason: TriggerReasonEnumType;
+  declare triggerReason: OCPP2_0_1.TriggerReasonEnumType;
 
   @Column(DataType.INTEGER)
   declare seqNo: number;
@@ -53,16 +53,16 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   declare transactionDatabaseId?: string;
 
   @BelongsTo(() => Transaction)
-  declare transaction?: TransactionType;
+  declare transaction?: OCPP2_0_1.TransactionType;
 
   @Column(DataType.JSON)
-  declare transactionInfo: TransactionType;
+  declare transactionInfo: OCPP2_0_1.TransactionType;
 
   @ForeignKey(() => Evse)
   declare evseId?: number | null;
 
   @BelongsTo(() => Evse)
-  declare evse?: EVSEType;
+  declare evse?: OCPP2_0_1.EVSEType;
 
   @ForeignKey(() => IdToken)
   declare idTokenId?: number | null;
@@ -70,5 +70,5 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   @BelongsTo(() => IdToken)
   declare idToken?: IdToken;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

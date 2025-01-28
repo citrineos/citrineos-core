@@ -1,0 +1,29 @@
+table:
+  name: directus_collections
+  schema: public
+object_relationships:
+  - name: directus_collection
+    using:
+      foreign_key_constraint_on: group
+array_relationships:
+  - name: directus_collections
+    using:
+      foreign_key_constraint_on:
+        column: group
+        table:
+          name: directus_collections
+          schema: public
+  - name: directus_shares
+    using:
+      foreign_key_constraint_on:
+        column: collection
+        table:
+          name: directus_shares
+          schema: public
+  - name: directus_versions
+    using:
+      foreign_key_constraint_on:
+        column: collection
+        table:
+          name: directus_versions
+          schema: public

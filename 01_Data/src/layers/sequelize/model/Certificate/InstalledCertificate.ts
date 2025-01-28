@@ -1,9 +1,9 @@
-import { CertificateHashDataType, GetCertificateIdUseEnumType, HashAlgorithmEnumType, Namespace } from '@citrineos/base';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { ChargingStation } from '../Location';
 
 @Table
-export class InstalledCertificate extends Model implements CertificateHashDataType {
+export class InstalledCertificate extends Model implements OCPP2_0_1.CertificateHashDataType {
   static readonly MODEL_NAME: string = Namespace.InstalledCertificate;
 
   @ForeignKey(() => ChargingStation)
@@ -17,7 +17,7 @@ export class InstalledCertificate extends Model implements CertificateHashDataTy
     type: DataType.STRING,
     allowNull: false,
   })
-  declare hashAlgorithm: HashAlgorithmEnumType;
+  declare hashAlgorithm: OCPP2_0_1.HashAlgorithmEnumType;
 
   @Column({
     type: DataType.STRING,
@@ -41,5 +41,5 @@ export class InstalledCertificate extends Model implements CertificateHashDataTy
     type: DataType.ENUM('V2GRootCertificate', 'MORootCertificate', 'CSMSRootCertificate', 'V2GCertificateChain', 'ManufacturerRootCertificate'),
     allowNull: false,
   })
-  declare certificateType: GetCertificateIdUseEnumType;
+  declare certificateType: OCPP2_0_1.GetCertificateIdUseEnumType;
 }

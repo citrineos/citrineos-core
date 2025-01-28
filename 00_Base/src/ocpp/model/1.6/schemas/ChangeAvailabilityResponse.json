@@ -1,0 +1,20 @@
+{
+  "title": "ChangeAvailabilityResponse",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "#/definitions/ChangeAvailabilityResponseStatus"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["status"],
+  "$id": "ChangeAvailabilityResponse",
+  "definitions": {
+    "ChangeAvailabilityResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Rejected", "Scheduled"],
+      "tsEnumNames": ["Accepted", "Rejected", "Scheduled"]
+    }
+  }
+}

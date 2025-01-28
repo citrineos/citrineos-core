@@ -3,9 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  AttributeEnumType,
-  SendLocalListRequest,
-  UpdateEnumType,
+  OCPP2_0_1
 } from '@citrineos/base';
 import {
   IDeviceModelRepository,
@@ -40,7 +38,7 @@ export class LocalAuthListService {
   async persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
     stationId: string,
     correlationId: string,
-    sendLocalListRequest: SendLocalListRequest,
+    sendLocalListRequest: OCPP2_0_1.SendLocalListRequest,
   ): Promise<SendLocalList> {
     const localListVersion =
       await this._localAuthListRepository.readOnlyOneByQuery({
@@ -97,7 +95,7 @@ export class LocalAuthListService {
   private async createSendLocalListFromStationIdAndRequestAndCurrentVersion(
     stationId: string,
     correlationId: string,
-    sendLocalListRequest: SendLocalListRequest,
+    sendLocalListRequest: OCPP2_0_1.SendLocalListRequest,
     localListVersion?: LocalListVersion,
   ): Promise<SendLocalList> {
     if (sendLocalListRequest.versionNumber <= 0) {
@@ -144,9 +142,9 @@ export class LocalAuthListService {
     localListVersion?: LocalListVersion,
   ): Promise<number> {
     switch (sendLocalList?.updateType) {
-      case UpdateEnumType.Full:
+      case OCPP2_0_1.UpdateEnumType.Full:
         return sendLocalList?.localAuthorizationList?.length ?? 0;
-      case UpdateEnumType.Differential: {
+      case OCPP2_0_1.UpdateEnumType.Differential: {
         const uniqueAuths = new Set(
           [
             ...(sendLocalList.localAuthorizationList ?? []),
@@ -170,7 +168,7 @@ export class LocalAuthListService {
         component_instance: null,
         variable_name: 'ItemsPerMessage',
         variable_instance: null,
-        type: AttributeEnumType.Actual,
+        type: OCPP2_0_1.AttributeEnumType.Actual,
       });
     if (itemsPerMessageSendLocalList.length === 0) {
       return null;

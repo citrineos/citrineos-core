@@ -1,0 +1,11 @@
+table:
+  name: Boots
+  schema: public
+array_relationships:
+  - name: VariableAttributes
+    using:
+      foreign_key_constraint_on:
+        column: bootConfigId
+        table:
+          name: VariableAttributes
+          schema: public

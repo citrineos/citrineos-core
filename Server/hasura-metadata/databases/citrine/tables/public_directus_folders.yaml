@@ -1,0 +1,29 @@
+table:
+  name: directus_folders
+  schema: public
+object_relationships:
+  - name: directus_folder
+    using:
+      foreign_key_constraint_on: parent
+array_relationships:
+  - name: directus_files
+    using:
+      foreign_key_constraint_on:
+        column: folder
+        table:
+          name: directus_files
+          schema: public
+  - name: directus_folders
+    using:
+      foreign_key_constraint_on:
+        column: parent
+        table:
+          name: directus_folders
+          schema: public
+  - name: directus_settings
+    using:
+      foreign_key_constraint_on:
+        column: storage_default_folder
+        table:
+          name: directus_settings
+          schema: public

@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ConnectorStatusEnumType, type CustomDataType, Namespace, StatusNotificationRequest } from '@citrineos/base';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 
 @Table
-export class StatusNotification extends Model implements StatusNotificationRequest {
+export class StatusNotification extends Model implements OCPP2_0_1.StatusNotificationRequest {
   static readonly MODEL_NAME: string = Namespace.StatusNotificationRequest;
 
   @ForeignKey(() => ChargingStation)
@@ -25,7 +25,7 @@ export class StatusNotification extends Model implements StatusNotificationReque
   declare timestamp: string;
 
   @Column
-  declare connectorStatus: ConnectorStatusEnumType;
+  declare connectorStatus: OCPP2_0_1.ConnectorStatusEnumType;
 
   @Column(DataType.INTEGER)
   declare evseId: number;
@@ -33,5 +33,5 @@ export class StatusNotification extends Model implements StatusNotificationReque
   @Column(DataType.INTEGER)
   declare connectorId: number;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AuthorizationData, CrudRepository, deepDirectionalEqual, SystemConfig, UpdateEnumType } from '@citrineos/base';
+import { CrudRepository, deepDirectionalEqual, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { IAuthorizationRepository, ILocalAuthListRepository } from '../../../interfaces';
@@ -32,7 +32,7 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
     this.sendLocalList = sendLocalList ? sendLocalList : new SequelizeRepository<SendLocalList>(config, SendLocalList.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createSendLocalListFromRequestData(stationId: string, correlationId: string, updateType: UpdateEnumType, versionNumber: number, localAuthorizationList?: AuthorizationData[]): Promise<SendLocalList> {
+  async createSendLocalListFromRequestData(stationId: string, correlationId: string, updateType: OCPP2_0_1.UpdateEnumType, versionNumber: number, localAuthorizationList?: OCPP2_0_1.AuthorizationData[]): Promise<SendLocalList> {
     const sendLocalList = await SendLocalList.create({
       stationId,
       correlationId,
@@ -119,9 +119,9 @@ export class SequelizeLocalAuthListRepository extends SequelizeRepository<LocalL
 
   async createOrUpdateLocalListVersionFromStationIdAndSendLocalList(stationId: string, sendLocalList: SendLocalList): Promise<LocalListVersion> {
     switch (sendLocalList.updateType) {
-      case UpdateEnumType.Full:
+      case OCPP2_0_1.UpdateEnumType.Full:
         return this.replaceLocalListVersionFromStationIdAndSendLocalList(stationId, sendLocalList);
-      case UpdateEnumType.Differential:
+      case OCPP2_0_1.UpdateEnumType.Differential:
         return this.updateLocalListVersionFromStationIdAndSendLocalListRequest(stationId, sendLocalList);
     }
   }

@@ -14,7 +14,7 @@ function getConfig() {
     case 'docker':
       return createDockerConfig();
     default:
-      throw new Error('Invalid APP_ENV "${process.env.APP_ENV}"');
+      throw new Error(`Invalid APP_ENV "${process.env.APP_ENV}"`);
   }
 }
 

@@ -1,0 +1,3 @@
+table:
+  name: spatial_ref_sys
+  schema: public
