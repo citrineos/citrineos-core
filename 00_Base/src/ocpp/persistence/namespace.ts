@@ -11,6 +11,7 @@ export enum Namespace {
   BootConfig = 'Boot',
   ChargingStation = 'ChargingStation',
   IdToken = 'IdToken',
+  IdTokenInfo = 'IdTokenInfo', // IdTokenInfoType in OCPP2.0.1, IdTagInfo in OCPP1.6
   MeterValue = 'MeterValue',
   StatusNotificationRequest = 'StatusNotification',
 }
@@ -31,7 +32,6 @@ export enum OCPP2_0_1_Namespace {
   EVSEType = 'Evse',
   EventDataType = 'EventData',
   FileURL = 'FileURL',
-  IdTokenInfoType = 'IdTokenInfo',
   LatestStatusNotification = 'LatestStatusNotification',
   LocalListAuthorization = 'LocalListAuthorization',
   LocalListVersion = 'LocalListVersion',
