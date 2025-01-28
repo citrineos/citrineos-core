@@ -17,6 +17,6 @@ export class OCPPLog extends Model {
   @Column(DataType.STRING)
   declare origin: MessageOrigin;
 
-  @Column(DataType.STRING)
+  @Column(DataType.TEXT)
   declare log: string;
 }
