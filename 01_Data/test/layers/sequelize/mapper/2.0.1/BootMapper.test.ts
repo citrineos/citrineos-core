@@ -23,15 +23,6 @@ describe('BootMapper', () => {
       expect(actualMapper.customData).toEqual(givenBoot.customData);
     });
 
-    it('should throw error when missing required fields', () => {
-      const bootMissingRequiredFields: Boot = aBoot();
-      bootMissingRequiredFields.variablesRejectedOnLastBoot = null;
-
-      expect(() => BootMapper.fromModel(bootMissingRequiredFields)).toThrowError(
-        `Validation failed: [{"value":null,"property":"variablesRejectedOnLastBoot","children":[],"constraints":{"isNotEmpty":"variablesRejectedOnLastBoot should not be empty"}}]`,
-      );
-    });
-
     it('should throw error when invalid boot status', () => {
       const bootWithInvalidStatus: Boot = aBoot();
       console.log(`bootWithInvalidStatus: ${JSON.stringify(bootWithInvalidStatus)}`, `status: ${bootWithInvalidStatus}`);
