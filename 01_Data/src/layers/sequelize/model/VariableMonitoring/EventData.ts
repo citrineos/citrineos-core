@@ -1,13 +1,13 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
-import { Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Index, Model, Table } from 'sequelize-typescript';
 import { Component, Variable } from '../DeviceModel';
 
 @Table
 export class EventData extends Model implements OCPP2_0_1.EventDataType {
-  static readonly MODEL_NAME: string = Namespace.EventDataType;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.EventDataType;
 
   /**
    * Fields

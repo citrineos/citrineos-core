@@ -3,13 +3,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { Variable } from './Variable';
 
 @Table
 export class VariableCharacteristics extends Model implements OCPP2_0_1.VariableCharacteristicsType {
-  static readonly MODEL_NAME: string = Namespace.VariableCharacteristicsType;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableCharacteristicsType;
 
   /**
    * Fields

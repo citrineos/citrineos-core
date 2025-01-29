@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { AutoIncrement, BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { Evse } from './DeviceModel';
 
 @Table
 export class Reservation extends Model implements OCPP2_0_1.ReserveNowRequest {
-  static readonly MODEL_NAME: string = Namespace.ReserveNowRequest;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ReserveNowRequest;
 
   /**
    * Fields

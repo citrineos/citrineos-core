@@ -15,10 +15,12 @@ import {
   CallAction,
   HttpMethod,
   IMessageConfirmation,
-  Namespace,
+  OCPP2_0_1_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
-  OCPPVersion
+  OCPPVersion,
+  OCPP1_6_Namespace,
+  Namespace,
 } from '@citrineos/base';
 import {
   AuthorizationQuerySchema,
@@ -60,7 +62,7 @@ export class EVDriverModuleApi
    */
 
   @AsDataEndpoint(
-    Namespace.AuthorizationData,
+    OCPP2_0_1_Namespace.AuthorizationData,
     HttpMethod.Put,
     AuthorizationQuerySchema,
     AuthorizationDataSchema,
@@ -78,7 +80,7 @@ export class EVDriverModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.AuthorizationRestrictions,
+    OCPP2_0_1_Namespace.AuthorizationRestrictions,
     HttpMethod.Put,
     AuthorizationQuerySchema,
     AuthorizationRestrictionsSchema,
@@ -96,7 +98,7 @@ export class EVDriverModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.AuthorizationData,
+    OCPP2_0_1_Namespace.AuthorizationData,
     HttpMethod.Get,
     AuthorizationQuerySchema,
   )
@@ -107,7 +109,7 @@ export class EVDriverModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.AuthorizationData,
+    OCPP2_0_1_Namespace.AuthorizationData,
     HttpMethod.Delete,
     AuthorizationQuerySchema,
   )
@@ -120,12 +122,12 @@ export class EVDriverModuleApi
         (deletedCount) =>
           deletedCount.toString() +
           ' rows successfully deleted from ' +
-          Namespace.AuthorizationData,
+          OCPP2_0_1_Namespace.AuthorizationData,
       );
   }
 
   @AsDataEndpoint(
-    Namespace.LocalListVersion,
+    OCPP2_0_1_Namespace.LocalListVersion,
     HttpMethod.Get,
     ChargingStationKeyQuerySchema,
   )
@@ -297,7 +299,10 @@ export class EVDriverModuleApi
     }
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.ReserveNow, OCPP2_0_1.ReserveNowRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.ReserveNow,
+    OCPP2_0_1.ReserveNowRequestSchema,
+  )
   async reserveNow(
     identifier: string,
     tenantId: string,
@@ -333,7 +338,10 @@ export class EVDriverModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.UnlockConnector, OCPP2_0_1.UnlockConnectorRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.UnlockConnector,
+    OCPP2_0_1.UnlockConnectorRequestSchema,
+  )
   unlockConnector(
     identifier: string,
     tenantId: string,
@@ -350,7 +358,10 @@ export class EVDriverModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.ClearCache, OCPP2_0_1.ClearCacheRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.ClearCache,
+    OCPP2_0_1.ClearCacheRequestSchema,
+  )
   clearCache(
     identifier: string,
     tenantId: string,
@@ -367,7 +378,10 @@ export class EVDriverModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.SendLocalList, OCPP2_0_1.SendLocalListRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.SendLocalList,
+    OCPP2_0_1.SendLocalListRequestSchema,
+  )
   async sendLocalList(
     identifier: string,
     tenantId: string,
@@ -413,9 +427,10 @@ export class EVDriverModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input ({@link OCPP2_0_1_Namespace},
+   * {@link OCPP1_6_Namespace} or {@link Namespace}) and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link CallAction}.
+   * @param {CallAction} input - The input {@link CallAction}, {@link OCPP1_6_Namespace} or {@link Namespace}.
    * @return {string} - The generated URL path.
    */
   protected _toMessagePath(input: CallAction): string {
@@ -424,12 +439,14 @@ export class EVDriverModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link OCPP2_0_1_Namespace} and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {CallAction} input - The input {@link OCPP2_0_1_Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(input: Namespace): string {
+  protected _toDataPath(
+    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
+  ): string {
     const endpointPrefix = this._module.config.modules.evdriver.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
   }

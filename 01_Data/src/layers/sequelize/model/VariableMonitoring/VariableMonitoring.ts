@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { AutoIncrement, BelongsTo, Column, DataType, ForeignKey, Index, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { Component, Variable } from '../DeviceModel';
 
 @Table
 export class VariableMonitoring extends Model implements OCPP2_0_1.VariableMonitoringType {
-  static readonly MODEL_NAME: string = Namespace.VariableMonitoringType;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableMonitoringType;
 
   /**
    * Fields

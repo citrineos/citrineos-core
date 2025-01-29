@@ -5,7 +5,7 @@
 import { OCPP2_0_1 } from '@citrineos/base';
 import { AbstractMapper } from '../AbstractMapper';
 import { Boot } from '../../model/Boot';
-import { IsEnum, IsNotEmpty } from 'class-validator';
+import { IsEnum } from 'class-validator';
 
 export class BootMapper extends AbstractMapper<Boot> {
   id: string;
@@ -17,7 +17,6 @@ export class BootMapper extends AbstractMapper<Boot> {
   statusInfo?: OCPP2_0_1.StatusInfoType | null;
   getBaseReportOnPending?: boolean | null;
   pendingBootSetVariables?: OCPP2_0_1.VariableAttributeType[] | null;
-  @IsNotEmpty()
   variablesRejectedOnLastBoot: OCPP2_0_1.SetVariableResultType[];
   bootWithRejectedVariables?: boolean | null;
   customData?: OCPP2_0_1.CustomDataType | null;

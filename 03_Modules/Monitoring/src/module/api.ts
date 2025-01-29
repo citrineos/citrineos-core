@@ -22,11 +22,13 @@ import {
   CallAction,
   HttpMethod,
   IMessageConfirmation,
-  Namespace,
+  OCPP2_0_1_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
   ReportDataTypeSchema,
+  OCPP1_6_Namespace,
+  Namespace,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { getBatches, getSizeOfRequest } from '@citrineos/util';
@@ -91,7 +93,8 @@ export class MonitoringModuleApi
     const setMonitoringData =
       request.setMonitoringData as OCPP2_0_1.SetMonitoringDataType[];
     for (let i = 0; i < setMonitoringData.length; i++) {
-      const setMonitoringDataType: OCPP2_0_1.SetMonitoringDataType = setMonitoringData[i];
+      const setMonitoringDataType: OCPP2_0_1.SetMonitoringDataType =
+        setMonitoringData[i];
       this._logger.debug('Current SetMonitoringData', setMonitoringDataType);
       const [component, variable] =
         await this._module.deviceModelRepository.findComponentAndVariable(
@@ -105,8 +108,10 @@ export class MonitoringModuleApi
         setMonitoringDataType.type === OCPP2_0_1.MonitorEnumType.Delta &&
         variable &&
         variable.variableCharacteristics &&
-        variable.variableCharacteristics.dataType !== OCPP2_0_1.DataEnumType.decimal &&
-        variable.variableCharacteristics.dataType !== OCPP2_0_1.DataEnumType.integer
+        variable.variableCharacteristics.dataType !==
+          OCPP2_0_1.DataEnumType.decimal &&
+        variable.variableCharacteristics.dataType !==
+          OCPP2_0_1.DataEnumType.integer
       ) {
         setMonitoringDataType.value = 1;
         this._logger.debug(
@@ -149,7 +154,9 @@ export class MonitoringModuleApi
           tenantId,
           OCPPVersion.OCPP2_0_1,
           OCPP2_0_1_CallAction.SetVariableMonitoring,
-          { setMonitoringData: batch } as OCPP2_0_1.SetVariableMonitoringRequest,
+          {
+            setMonitoringData: batch,
+          } as OCPP2_0_1.SetVariableMonitoringRequest,
           callbackUrl,
         );
         confirmations.push({
@@ -288,14 +295,18 @@ export class MonitoringModuleApi
     );
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.SetVariables, OCPP2_0_1.SetVariablesRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.SetVariables,
+    OCPP2_0_1.SetVariablesRequestSchema,
+  )
   async setVariables(
     identifier: string,
     tenantId: string,
     request: OCPP2_0_1.SetVariablesRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    let setVariableData = request.setVariableData as OCPP2_0_1.SetVariableDataType[];
+    let setVariableData =
+      request.setVariableData as OCPP2_0_1.SetVariableDataType[];
 
     // Awaiting save action so that SetVariablesResponse does not trigger a race condition since an error is thrown
     // from SetVariablesResponse handler if variable does not exist when it attempts to save the Response's status
@@ -351,7 +362,10 @@ export class MonitoringModuleApi
     return { success: true, payload: confirmations };
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetVariables, OCPP2_0_1.GetVariablesRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.GetVariables,
+    OCPP2_0_1.GetVariablesRequestSchema,
+  )
   async getVariables(
     identifier: string,
     tenantId: string,
@@ -376,7 +390,8 @@ export class MonitoringModuleApi
       return { success: false, payload: errorMsg };
     }
 
-    let getVariableData = request.getVariableData as OCPP2_0_1.GetVariableDataType[];
+    let getVariableData =
+      request.getVariableData as OCPP2_0_1.GetVariableDataType[];
     let itemsPerMessageGetVariables =
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
@@ -428,7 +443,7 @@ export class MonitoringModuleApi
    */
 
   @AsDataEndpoint(
-    Namespace.VariableAttributeType,
+    OCPP2_0_1_Namespace.VariableAttributeType,
     HttpMethod.Put,
     CreateOrUpdateVariableAttributeQuerySchema,
     ReportDataTypeSchema,
@@ -479,7 +494,7 @@ export class MonitoringModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.VariableAttributeType,
+    OCPP2_0_1_Namespace.VariableAttributeType,
     HttpMethod.Get,
     VariableAttributeQuerySchema,
   )
@@ -492,7 +507,7 @@ export class MonitoringModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.VariableAttributeType,
+    OCPP2_0_1_Namespace.VariableAttributeType,
     HttpMethod.Delete,
     VariableAttributeQuerySchema,
   )
@@ -505,7 +520,7 @@ export class MonitoringModuleApi
         (deletedCount) =>
           deletedCount.toString() +
           ' rows successfully deleted from ' +
-          Namespace.VariableAttributeType,
+          OCPP2_0_1_Namespace.VariableAttributeType,
       );
   }
 
@@ -522,12 +537,15 @@ export class MonitoringModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input ({@link OCPP2_0_1_Namespace},
+   * {@link OCPP1_6_Namespace} or {@link Namespace}) and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {CallAction} input - The input {@link OCPP2_0_1_Namespace}, {@link OCPP1_6_Namespace} or {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(input: Namespace): string {
+  protected _toDataPath(
+    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
+  ): string {
     const endpointPrefix =
       this._module.config.modules.monitoring.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);

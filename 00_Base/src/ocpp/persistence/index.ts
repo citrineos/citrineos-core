@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { Namespace } from './namespace';
+export { OCPP2_0_1_Namespace, OCPP1_6_Namespace, Namespace } from './namespace';
 export { default as AuthorizationDataSchema } from './schemas/AuthorizationDataSchema.json';
 export { default as BootConfigSchema } from './schemas/BootConfigSchema.json';
 export { default as ChargingStationTypeSchema } from './schemas/ChargingStationTypeSchema.json';
@@ -13,6 +13,7 @@ export { default as UpdateChargingStationPasswordSchema } from './schemas/Update
 
 /**
  * Utility function for creating querystring schemas for fastify route definitions
+ * @param name - The name of the schema
  * @param properties An array of key-type pairs. Types ending in '[]' will be treated as arrays of that type.
  * @param required An array of required keys.
  * @returns

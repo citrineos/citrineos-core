@@ -9,7 +9,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from '.';
 import { OcppRequest, OcppResponse } from '../..';
 import { SystemConfig } from '../../config/types';
-import { CallAction, ErrorCode, OCPP2_0_1_CallAction, OcppError, OCPPVersionType } from '../../ocpp/rpc/message';
+import {
+  CallAction,
+  ErrorCode,
+  OcppError,
+  OCPPVersionType,
+} from '../../ocpp/rpc/message';
 import { RequestBuilder } from '../../util/request';
 import { ICache } from '../cache/cache';
 import { CacheNamespace, IWebsocketConnection } from '../cache/types';
@@ -123,7 +128,9 @@ export abstract class AbstractModule implements IModule {
           this.constructor,
         ) as Array<IHandlerDefinition>
       )
-        .filter((h) => h.protocol === message.protocol && h.action === message.action)
+        .filter(
+          (h) => h.protocol === message.protocol && h.action === message.action,
+        )
         .pop();
       if (handlerDefinition) {
         await handlerDefinition.method.call(this, message, props);
@@ -254,7 +261,8 @@ export abstract class AbstractModule implements IModule {
       .get<string>(identifier, CacheNamespace.Connections)
       .then((connection) => {
         if (connection) {
-          const websocketConnection: IWebsocketConnection = JSON.parse(connection);
+          const websocketConnection: IWebsocketConnection =
+            JSON.parse(connection);
           if (websocketConnection.protocol !== protocol) {
             this._logger.error(
               `Failed sending call. Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: `,

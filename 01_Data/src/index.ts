@@ -14,6 +14,7 @@ export {
   Authorization,
   Boot,
   CallMessage,
+  ChangeConfiguration,
   ChargingProfile,
   ChargingSchedule,
   ChargingStation,
@@ -52,6 +53,7 @@ export {
   SequelizeCallMessageRepository,
   SequelizeCertificateRepository,
   SequelizeInstalledCertificateRepository,
+  SequelizeChangeConfigurationRepository,
   SequelizeChargingProfileRepository,
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeDeviceModelRepository,
@@ -66,5 +68,6 @@ export {
   SequelizeVariableMonitoringRepository,
   SequelizeChargingStationSequenceRepository,
   OCPP2_0_1_Mapper,
+  OCPP1_6_Mapper,
 } from './layers/sequelize'; // TODO ensure all needed modules are properly exported
 export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore';

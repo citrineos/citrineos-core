@@ -1,12 +1,12 @@
 import { Column, Model, Table, DataType } from 'sequelize-typescript';
-import { Namespace } from '@citrineos/base';
+import { OCPP2_0_1_Namespace } from '@citrineos/base';
 
 /**
  * Represents the security information found on a particular charging station.
  */
 @Table
 export class ChargingStationSecurityInfo extends Model {
-  static readonly MODEL_NAME: string = Namespace.ChargingStationSecurityInfo;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ChargingStationSecurityInfo;
 
   @Column({
     type: DataType.STRING,

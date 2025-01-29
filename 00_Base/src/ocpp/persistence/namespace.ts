@@ -6,11 +6,15 @@
 /**
  * Persisted DataTypes and their namespaces
  */
+
 export enum Namespace {
+  BootConfig = 'Boot',
+}
+
+export enum OCPP2_0_1_Namespace {
   AdditionalInfoType = 'AdditionalInfo',
   AuthorizationData = 'Authorization',
   AuthorizationRestrictions = 'AuthorizationRestrictions',
-  BootConfig = 'Boot',
   Certificate = 'Certificate',
   InstalledCertificate = 'InstalledCertificate',
   CertificateChain = 'CertificateChain',
@@ -52,4 +56,8 @@ export enum Namespace {
   VariableMonitoringStatus = 'VariableMonitoringStatus',
   VariableStatus = 'VariableStatus',
   VariableType = 'Variable',
+}
+
+export enum OCPP1_6_Namespace {
+  ChangeConfiguration = 'ChangeConfiguration',
 }

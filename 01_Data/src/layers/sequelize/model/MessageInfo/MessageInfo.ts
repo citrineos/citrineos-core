@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { Table, Model, AutoIncrement, Column, DataType, PrimaryKey, Index, BelongsTo, ForeignKey } from 'sequelize-typescript';
 import { Component } from '../DeviceModel';
 
 @Table
 export class MessageInfo extends Model implements OCPP2_0_1.MessageInfoType {
-  static readonly MODEL_NAME: string = Namespace.MessageInfoType;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.MessageInfoType;
 
   /**
    * Fields

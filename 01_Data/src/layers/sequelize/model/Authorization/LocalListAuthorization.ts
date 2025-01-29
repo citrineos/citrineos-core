@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { type AuthorizationRestrictions } from '../../../../interfaces';
 import { Authorization, IdToken, IdTokenInfo, LocalListVersion, SendLocalList } from '.';
@@ -22,7 +22,7 @@ import { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
  **/
 @Table
 export class LocalListAuthorization extends Model implements OCPP2_0_1.AuthorizationData, AuthorizationRestrictions {
-  static readonly MODEL_NAME: string = Namespace.LocalListAuthorization;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.LocalListAuthorization;
 
   @Column(DataType.ARRAY(DataType.STRING))
   declare allowedConnectorTypes?: string[];
