@@ -1,13 +1,13 @@
-import { Boot, IBootRepository } from '@citrineos/data';
+import { Boot, IBootRepository, OCPP2_0_1_Mapper } from '@citrineos/data';
 import {
   BOOT_STATUS,
   BootConfig,
-  OCPP2_0_1_CALL_SCHEMA_MAP,
   ICache,
   IMessageConfirmation,
   OCPP2_0_1,
-  SystemConfig,
+  OCPP2_0_1_CALL_SCHEMA_MAP,
   OCPP2_0_1_CallAction,
+  SystemConfig,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 
@@ -34,7 +34,7 @@ export class BootNotificationService {
   }
 
   determineBootStatus(
-    bootConfig: Boot | undefined,
+    bootConfig: OCPP2_0_1_Mapper.BootMapper | undefined,
   ): OCPP2_0_1.RegistrationStatusEnumType {
     let bootStatus = bootConfig
       ? bootConfig.status
@@ -65,7 +65,6 @@ export class BootNotificationService {
         bootStatus = OCPP2_0_1.RegistrationStatusEnumType.Accepted;
       }
     }
-
     return bootStatus;
   }
 
@@ -73,18 +72,19 @@ export class BootNotificationService {
     stationId: string,
   ): Promise<OCPP2_0_1.BootNotificationResponse> {
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
-    const bootConfig = await this._bootRepository.readByKey(stationId);
-    const bootStatus = this.determineBootStatus(bootConfig);
+    const boot = await this._bootRepository.readByKey(stationId);
+    const mapper = boot ? OCPP2_0_1_Mapper.BootMapper.fromModel(boot) : undefined;
+    const bootStatus = this.determineBootStatus(mapper);
 
     // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
     return {
       currentTime: new Date().toISOString(),
       status: bootStatus,
-      statusInfo: bootConfig?.statusInfo,
+      statusInfo: mapper?.statusInfo,
       interval:
         bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
-          ? bootConfig?.heartbeatInterval || this._config.heartbeatInterval
-          : bootConfig?.bootRetryInterval || this._config.bootRetryInterval,
+          ? mapper?.heartbeatInterval || this._config.heartbeatInterval
+          : mapper?.bootRetryInterval || this._config.bootRetryInterval,
     };
   }
 
@@ -130,15 +130,18 @@ export class BootNotificationService {
   ): Promise<void> {
     // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
     if (
-      bootNotificationResponseStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
+      bootNotificationResponseStatus ===
+      OCPP2_0_1.RegistrationStatusEnumType.Accepted
     ) {
       if (cachedBootStatus) {
         // Undo blacklisting of charger-originated actions
-        const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(async ([action]) => {
-          if (action !== OCPP2_0_1_CallAction.BootNotification) {
-            return this._cache.remove(action, stationId);
-          }
-        });
+        const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(
+          async ([action]) => {
+            if (action !== OCPP2_0_1_CallAction.BootNotification) {
+              return this._cache.remove(action, stationId);
+            }
+          },
+        );
         await Promise.all(promises);
         // Remove cached boot status
         await this._cache.remove(BOOT_STATUS, stationId);
@@ -150,11 +153,13 @@ export class BootNotificationService {
       // Blacklist all charger-originated actions except BootNotification
       // GetReport messages will need to un-blacklist NotifyReport
       // TriggerMessage will need to un-blacklist the message it triggers
-      const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(async ([action]) => {
-        if (action !== OCPP2_0_1_CallAction.BootNotification) {
-          return this._cache.set(action, 'blacklisted', stationId);
-        }
-      });
+      const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(
+        async ([action]) => {
+          if (action !== OCPP2_0_1_CallAction.BootNotification) {
+            return this._cache.set(action, 'blacklisted', stationId);
+          }
+        },
+      );
       await Promise.all(promises);
     }
   }
