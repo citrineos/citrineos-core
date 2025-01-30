@@ -52,6 +52,8 @@ export function aBoot(updateFunction?: UpdateFunction<Boot>): Boot {
       } as VariableAttribute,
     ],
     bootWithRejectedVariables: faker.datatype.boolean(),
+    changeConfigurationsOnPending: faker.datatype.boolean(),
+    getConfigurationsOnPending: faker.datatype.boolean(),
   } as Boot;
 
   return applyUpdateFunction(boot, updateFunction);
