@@ -19,8 +19,6 @@ import {
   ChargingStationKeyQuerySchema,
   ChargingStationKeyQuerystring,
   CreateSubscriptionSchema,
-  KeyValueQuerystring,
-  KeyValueQuerystringSchema,
   ModelKeyQuerystring,
   ModelKeyQuerystringSchema,
   Subscription,
