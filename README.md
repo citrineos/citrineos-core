@@ -1,3 +1,9 @@
+![CitrineOS Logo](logo_white.png#gh-dark-mode-only)
+![CitrineOS Logo](logo_black.png#gh-light-mode-only)
+<div align="center">
+<img src="OCPP_201_Logo_core_and_advanced_security.png" alt="CitrineOS Certification Logo" width="200" height="100" />
+</div>
+
 # Welcome to CitrineOS
 
 CitrineOS is an open-source project aimed at providing a modular server runtime for managing Electric Vehicle (EV)

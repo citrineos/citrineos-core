@@ -16,7 +16,7 @@ jobs:
       matrix:
         image:
           - name: citrineos-server
-            context: ../
+            context: ./
             dockerfile: ./Server/deploy.Dockerfile
             config: ''
           - name: citrineos-directus
