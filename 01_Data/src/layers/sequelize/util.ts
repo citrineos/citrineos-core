@@ -47,9 +47,8 @@ import { MessageInfo } from './model/MessageInfo';
 import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
 import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
-import { OCPPLog, SetNetworkProfile, StatusNotification } from './model/Location';
+import { SetNetworkProfile, StatusNotification } from './model/Location';
 import { LatestStatusNotification } from './model/Location/LatestStatusNotification';
-import { UserPreferences } from './model/UserPreferences';
 
 export class DefaultSequelizeInstance {
   /**
@@ -141,7 +140,6 @@ export class DefaultSequelizeInstance {
         Location,
         MeterValue,
         MessageInfo,
-        OCPPLog,
         Reservation,
         SalesTariff,
         SecurityEvent,
@@ -153,7 +151,6 @@ export class DefaultSequelizeInstance {
         Transaction,
         TransactionEvent,
         Tariff,
-        UserPreferences,
         VariableAttribute,
         VariableCharacteristics,
         VariableMonitoring,

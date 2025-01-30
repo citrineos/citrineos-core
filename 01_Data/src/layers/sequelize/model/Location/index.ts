@@ -7,5 +7,4 @@ export { ChargingStation } from './ChargingStation';
 export { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 export { StatusNotification } from './StatusNotification';
 export { ServerNetworkProfile } from './ServerNetworkProfile'
-export { SetNetworkProfile } from './SetNetworkProfile'
-export { OCPPLog } from './OCPPLog'
+export { SetNetworkProfile } from './SetNetworkProfile';

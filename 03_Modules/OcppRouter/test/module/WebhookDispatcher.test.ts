@@ -1,10 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { jest } from '@jest/globals';
-import {
-  ISubscriptionRepository,
-  OCPPLog,
-  Subscription,
-} from '@citrineos/data';
+import { ISubscriptionRepository, Subscription } from '@citrineos/data';
 import { WebhookDispatcher } from '../../src';
 import { MessageOrigin } from '@citrineos/base';
 import { aSubscription } from '../providers/SubscriptionProvider';
@@ -30,14 +26,6 @@ describe('WebhookDispatcher', () => {
     } as unknown as jest.Mocked<ISubscriptionRepository>;
 
     webhookDispatcher = new WebhookDispatcher(subscriptionRepository);
-
-    // Force the mock to be recognized as the same type as OCPPLog.create
-    OCPPLog.create = jest.fn() as unknown as typeof OCPPLog.create;
-
-    // Now you can give the mock an implementation safely
-    (OCPPLog.create as jest.Mock).mockImplementation((values, options) => {
-      return Promise.resolve({} as OCPPLog);
-    });
   });
 
   afterEach(() => {

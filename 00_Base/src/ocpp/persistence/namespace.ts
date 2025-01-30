@@ -46,7 +46,6 @@ export enum Namespace {
   TransactionEventRequest = 'TransactionEvent',
   TransactionType = 'Transaction',
   Tariff = 'Tariff',
-  UserPreferences = 'UserPreferences',
   VariableAttributeType = 'VariableAttribute',
   VariableCharacteristicsType = 'VariableCharacteristics',
   VariableMonitoringType = 'VariableMonitoring',

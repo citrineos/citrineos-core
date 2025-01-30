@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { MessageOrigin } from '@citrineos/base';
-import { ISubscriptionRepository, OCPPLog, Subscription } from '@citrineos/data';
+import { ISubscriptionRepository, Subscription } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
 
 export class WebhookDispatcher {
@@ -73,7 +73,6 @@ export class WebhookDispatcher {
     info?: Map<string, string>,
   ) {
     try {
-      await OCPPLog.create({ stationId: identifier, origin: MessageOrigin.ChargingStation, log: message });
       await Promise.all(
         this._onMessageCallbacks
           .get(identifier)
@@ -94,7 +93,6 @@ export class WebhookDispatcher {
     info?: Map<string, string>,
   ) {
     try {
-      await OCPPLog.create({ stationId: identifier, origin: MessageOrigin.ChargingStationManagementSystem, log: message });
       await Promise.all(
         this._sentMessageCallbacks
           .get(identifier)
