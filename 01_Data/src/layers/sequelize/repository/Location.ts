@@ -65,7 +65,9 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     const evseId = statusNotification.evseId;
     const connectorId = statusNotification.connectorId;
     const statusNotificationId = statusNotification.id;
-    await this.latestStatusNotification.deleteAllByQuery({
+    // delete operation doesn't support "include" in query
+    // so we need to find them at first and then delete
+    const existingLatestStatusNotifications: LatestStatusNotification[] = await this.latestStatusNotification.readAllByQuery({
       where: {
         stationId,
       },
@@ -76,8 +78,18 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
             evseId,
             connectorId,
           },
+          require: true,
         },
       ],
+    });
+    const idsToDelete = existingLatestStatusNotifications.map((l) => l.id);
+    await this.latestStatusNotification.deleteAllByQuery({
+      where: {
+        stationId,
+        id: {
+          [Op.in]: idsToDelete,
+        },
+      },
     });
     await this.latestStatusNotification.create(
       LatestStatusNotification.build({
