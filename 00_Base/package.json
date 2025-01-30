@@ -37,8 +37,7 @@
     "eslint": "9.16.0",
     "eslint-config-prettier": "9.1.0",
     "prettier": "3.2.5",
-    "typescript-eslint": "8.17.0",
-    "@types/deasync-promise": "1.0.0"
+    "typescript-eslint": "8.17.0"
   },
   "dependencies": {
     "@types/big.js": "6.2.1",
