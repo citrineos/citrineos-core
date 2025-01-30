@@ -16,7 +16,7 @@
     "start": "cross-env APP_NAME=all APP_ENV=local nodemon",
     "start-docker": "nodemon",
     "start-docker-cloud": "node --inspect=0.0.0.0:9229 dist/index.js",
-    "start-everest": "cd ./everest && cross-env EVEREST_IMAGE_TAG=0.0.16 EVEREST_TARGET_URL=ws://host.docker.internal:8081/cp001 docker compose up"
+    "start-everest": "cd ./everest && cross-env EVEREST_IMAGE_TAG=0.0.23 EVEREST_TARGET_URL=ws://host.docker.internal:8081/cp001 docker compose up"
   },
   "keywords": [
     "ocpp",
