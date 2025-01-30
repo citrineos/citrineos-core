@@ -21,10 +21,12 @@ import {
   CallAction,
   HttpMethod,
   IMessageConfirmation,
-  Namespace,
+  OCPP2_0_1_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
+  OCPP1_6_Namespace,
+  Namespace,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { UpsertTariffRequest } from './model/tariffs';
@@ -40,7 +42,7 @@ export class TransactionsModuleApi
   /**
    * Constructor for the class.
    *
-   * @param {TransactionModule} transactionModule - The transaction module.
+   * @param {TransactionsModule} transactionModule - The transaction module.
    * @param {FastifyInstance} server - The server instance.
    * @param {Logger<ILogObj>} [logger] - Optional logger.
    */
@@ -55,7 +57,10 @@ export class TransactionsModuleApi
   /**
    * Message Endpoint Methods
    */
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.CostUpdated, OCPP2_0_1.CostUpdatedRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.CostUpdated,
+    OCPP2_0_1.CostUpdatedRequestSchema,
+  )
   async costUpdated(
     identifier: string,
     tenantId: string,
@@ -93,7 +98,7 @@ export class TransactionsModuleApi
   }
 
   @AsDataEndpoint(
-    Namespace.TransactionType,
+    OCPP2_0_1_Namespace.TransactionType,
     HttpMethod.Get,
     TransactionEventQuerySchema,
   )
@@ -109,7 +114,12 @@ export class TransactionsModuleApi
   // TODO: Determine how to implement readAllTransactionsByStationIdAndChargingStates as a GET...
   // TODO: Determine how to implement existsActiveTransactionByIdToken as a GET...
 
-  @AsDataEndpoint(Namespace.Tariff, HttpMethod.Put, undefined, TariffSchema)
+  @AsDataEndpoint(
+    OCPP2_0_1_Namespace.Tariff,
+    HttpMethod.Put,
+    undefined,
+    TariffSchema,
+  )
   async upsertTariff(
     request: FastifyRequest<{
       Body: any;
@@ -121,14 +131,18 @@ export class TransactionsModuleApi
     return await this._module.tariffRepository.upsertTariff(tariff);
   }
 
-  @AsDataEndpoint(Namespace.Tariff, HttpMethod.Get, TariffQuerySchema)
+  @AsDataEndpoint(OCPP2_0_1_Namespace.Tariff, HttpMethod.Get, TariffQuerySchema)
   getTariffs(
     request: FastifyRequest<{ Querystring: TariffQueryString }>,
   ): Promise<Tariff[]> {
     return this._module.tariffRepository.readAllByQuerystring(request.query);
   }
 
-  @AsDataEndpoint(Namespace.Tariff, HttpMethod.Delete, TariffQuerySchema)
+  @AsDataEndpoint(
+    OCPP2_0_1_Namespace.Tariff,
+    HttpMethod.Delete,
+    TariffQuerySchema,
+  )
   deleteTariffs(
     request: FastifyRequest<{ Querystring: TariffQueryString }>,
   ): Promise<string> {
@@ -138,7 +152,7 @@ export class TransactionsModuleApi
         (deletedCount: { toString: () => string }) =>
           deletedCount.toString() +
           ' rows successfully deleted from ' +
-          Namespace.Tariff,
+          OCPP2_0_1_Namespace.Tariff,
       );
   }
 
@@ -155,12 +169,15 @@ export class TransactionsModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input ({@link OCPP2_0_1_Namespace},
+   * {@link OCPP1_6_Namespace} or {@link Namespace}) and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {CallAction} input - The input {@link OCPP2_0_1_Namespace}, {@link OCPP1_6_Namespace} or {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(input: Namespace): string {
+  protected _toDataPath(
+    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
+  ): string {
     const endpointPrefix =
       this._module.config.modules.transactions.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);

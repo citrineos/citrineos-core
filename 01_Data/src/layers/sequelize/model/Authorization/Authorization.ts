@@ -5,8 +5,8 @@
 
 import { Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
-import { type AuthorizationRestrictions } from '../../../../interfaces';
 import { IdToken, IdTokenInfo } from '.';
+import { AuthorizationRestrictions } from '../../../../interfaces';
 
 @Table
 export class Authorization extends Model implements AuthorizationRestrictions {

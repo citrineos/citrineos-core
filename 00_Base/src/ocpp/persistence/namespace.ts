@@ -6,31 +6,36 @@
 /**
  * Persisted DataTypes and their namespaces
  */
+
 export enum Namespace {
+  BootConfig = 'Boot',
+  ChargingStation = 'ChargingStation',
+  IdToken = 'IdToken',
+  IdTokenInfo = 'IdTokenInfo', // IdTokenInfoType in OCPP2.0.1, IdTagInfo in OCPP1.6
+  MeterValue = 'MeterValue',
+  StatusNotificationRequest = 'StatusNotification',
+}
+
+export enum OCPP2_0_1_Namespace {
   AdditionalInfoType = 'AdditionalInfo',
   AuthorizationData = 'Authorization',
   AuthorizationRestrictions = 'AuthorizationRestrictions',
-  BootConfig = 'Boot',
   Certificate = 'Certificate',
   InstalledCertificate = 'InstalledCertificate',
   CertificateChain = 'CertificateChain',
   ChargingNeeds = 'ChargingNeeds',
   ChargingProfile = 'ChargingProfile',
   ChargingSchedule = 'ChargingSchedule',
-  ChargingStation = 'ChargingStation',
   ChargingStationSecurityInfo = 'ChargingStationSecurityInfo',
   ComponentType = 'Component',
   CompositeSchedule = 'CompositeSchedule',
   EVSEType = 'Evse',
   EventDataType = 'EventData',
   FileURL = 'FileURL',
-  IdTokenInfoType = 'IdTokenInfo',
-  IdTokenType = 'IdToken',
   LatestStatusNotification = 'LatestStatusNotification',
   LocalListAuthorization = 'LocalListAuthorization',
   LocalListVersion = 'LocalListVersion',
   Location = 'Location',
-  MeterValueType = 'MeterValue',
   MessageInfoType = 'MessageInfo',
   PasswordType = 'Password',
   ReserveNowRequest = 'Reservation',
@@ -39,7 +44,6 @@ export enum Namespace {
   SecurityEventNotificationRequest = 'SecurityEvent',
   SendLocalListRequest = 'SendLocalList',
   ServerNetworkProfile = 'ServerNetworkProfile',
-  StatusNotificationRequest = 'StatusNotification',
   Subscription = 'Subscription',
   SystemConfig = 'SystemConfig',
   TlsCertificates = 'TlsCertificates',
@@ -52,4 +56,9 @@ export enum Namespace {
   VariableMonitoringStatus = 'VariableMonitoringStatus',
   VariableStatus = 'VariableStatus',
   VariableType = 'Variable',
+}
+
+export enum OCPP1_6_Namespace {
+  ChangeConfiguration = 'ChangeConfiguration',
+  Connector = 'Connector',
 }

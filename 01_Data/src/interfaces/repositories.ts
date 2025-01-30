@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type BootConfig, type CallAction, ChargingStationSequenceType, type CrudRepository, OCPP2_0_1 } from '@citrineos/base';
+import { type BootConfig, type CallAction, ChargingStationSequenceType, type CrudRepository, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
 import {
   type Authorization,
@@ -35,11 +35,15 @@ import {
   LocalListVersion,
   SendLocalList,
   InstalledCertificate,
+  ChangeConfiguration,
+  StatusNotification,
+  Connector,
+  TransactionEvent,
 } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
 
-export interface IAuthorizationRepository extends CrudRepository<OCPP2_0_1.AuthorizationData> {
+export interface IAuthorizationRepository extends CrudRepository<Authorization> {
   createOrUpdateByQuerystring: (value: OCPP2_0_1.AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
   updateRestrictionsByQuerystring: (value: AuthorizationRestrictions, query: AuthorizationQuerystring) => Promise<Authorization[]>;
   readAllByQuerystring: (query: AuthorizationQuerystring) => Promise<Authorization[]>;
@@ -58,6 +62,7 @@ export interface IBootRepository extends CrudRepository<BootConfig> {
   readByKey: (key: string) => Promise<Boot | undefined>;
   existsByKey: (key: string) => Promise<boolean>;
   deleteByKey: (key: string) => Promise<Boot | undefined>;
+  createOrUpdateFromOcpp16Response: (key: string, response: OCPP1_6.BootNotificationResponse) => Promise<Boot | undefined>;
 }
 
 export interface IDeviceModelRepository extends CrudRepository<OCPP2_0_1.VariableAttributeType> {
@@ -108,7 +113,9 @@ export interface ILocationRepository extends CrudRepository<Location> {
   readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
   setChargingStationIsOnline: (stationId: string, isOnline: boolean) => Promise<boolean>;
   doesChargingStationExistByStationId: (stationId: string) => Promise<boolean>;
-  addStatusNotificationToChargingStation(stationId: string, statusNotification: OCPP2_0_1.StatusNotificationRequest): Promise<void>;
+  addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotification): Promise<void>;
+  createOrUpdateChargingStation: (chargingStation: ChargingStation) => Promise<ChargingStation>;
+  createOrUpdateConnector(connector: Connector): Promise<Connector | undefined>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {
@@ -123,10 +130,10 @@ export interface ISubscriptionRepository extends CrudRepository<Subscription> {
   deleteByKey(key: string): Promise<Subscription | undefined>;
 }
 
-export interface ITransactionEventRepository extends CrudRepository<OCPP2_0_1.TransactionEventRequest> {
+export interface ITransactionEventRepository extends CrudRepository<TransactionEvent> {
   createOrUpdateTransactionByTransactionEventAndStationId(value: OCPP2_0_1.TransactionEventRequest, stationId: string): Promise<Transaction>;
   createMeterValue(value: OCPP2_0_1.MeterValueType, transactionDatabaseId?: number | null): Promise<void>;
-  readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<OCPP2_0_1.TransactionEventRequest[]>;
+  readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEvent[]>;
   readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
   readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: OCPP2_0_1.EVSEType, chargingStates?: OCPP2_0_1.ChargingStateEnumType[]): Promise<Transaction[]>;
   readAllActiveTransactionsByIdToken(idToken: OCPP2_0_1.IdTokenType): Promise<Transaction[]>;
@@ -188,3 +195,8 @@ export interface IChargingStationSequenceRepository extends CrudRepository<Charg
 }
 
 export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {}
+
+export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {
+  updateStatusByStationIdAndKey(stationId: string, key: string, status: OCPP1_6.ChangeConfigurationResponseStatus): Promise<ChangeConfiguration | undefined>;
+  createOrUpdateChangeConfiguration(configuration: ChangeConfiguration): Promise<ChangeConfiguration | undefined>;
+}

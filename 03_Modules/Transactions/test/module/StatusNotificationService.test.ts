@@ -2,10 +2,14 @@ import {
   Component,
   IDeviceModelRepository,
   ILocationRepository,
+  StatusNotification,
 } from '@citrineos/data';
 import { CrudRepository } from '@citrineos/base';
 import { StatusNotificationService } from '../../src/module/StatusNotificationService';
-import { aStatusNotificationRequest } from '../providers/StatusNotification';
+import {
+  aStatusNotification,
+  aStatusNotificationRequest,
+} from '../providers/StatusNotification';
 import {
   aChargingStation,
   aComponent,
@@ -45,6 +49,9 @@ describe('StatusNotificationService', () => {
     locationRepository.readChargingStationByStationId.mockResolvedValue(
       aChargingStation(),
     );
+    jest.spyOn(StatusNotification, 'build').mockImplementation(() => {
+      return aStatusNotification();
+    });
 
     await statusNotificationService.processStatusNotification(
       MOCK_STATION_ID,

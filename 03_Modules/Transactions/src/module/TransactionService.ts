@@ -1,8 +1,13 @@
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
 import {
   Authorization,
   IAuthorizationRepository,
   ITransactionEventRepository,
   Transaction,
+  OCPP2_0_1_Mapper
 } from '@citrineos/data';
 import {
   IMessageContext,
@@ -33,11 +38,14 @@ export class TransactionService {
   }
 
   async recalculateTotalKwh(transactionDbId: number) {
-    const totalKwh = MeterValueUtils.getTotalKwh(
+    const storedMeterValues =
       await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
         transactionDbId,
-      ),
+      );
+    const meterValueMappers = storedMeterValues.map((meterValue) =>
+      OCPP2_0_1_Mapper.MeterValueMapper.fromModel(meterValue),
     );
+    const totalKwh = MeterValueUtils.getTotalKwh(meterValueMappers);
 
     await Transaction.update(
       { totalKwh: totalKwh },
@@ -80,30 +88,24 @@ export class TransactionService {
     }
 
     // Extract DTO fields from sequelize Model<any, any> objects
+    const idTokenInfoMapper = OCPP2_0_1_Mapper.IdTokenInfoMapper.fromModel(
+      authorization.idTokenInfo,
+    );
     const idTokenInfo: OCPP2_0_1.IdTokenInfoType = {
-      status: authorization.idTokenInfo.status,
-      cacheExpiryDateTime: authorization.idTokenInfo.cacheExpiryDateTime,
-      chargingPriority: authorization.idTokenInfo.chargingPriority,
-      language1: authorization.idTokenInfo.language1,
-      evseId: authorization.idTokenInfo.evseId,
-      groupIdToken: authorization.idTokenInfo.groupIdToken
+      status: idTokenInfoMapper.status,
+      cacheExpiryDateTime: idTokenInfoMapper.cacheExpiryDateTime,
+      chargingPriority: idTokenInfoMapper.chargingPriority,
+      language1: idTokenInfoMapper.language1,
+      evseId: idTokenInfoMapper.evseId,
+      groupIdToken: idTokenInfoMapper.groupIdToken
         ? {
-          additionalInfo:
-            authorization.idTokenInfo.groupIdToken.additionalInfo &&
-              authorization.idTokenInfo.groupIdToken.additionalInfo.length > 0
-              ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                (additionalInfo) => ({
-                  additionalIdToken: additionalInfo.additionalIdToken,
-                  type: additionalInfo.type,
-                }),
-              ) as [OCPP2_0_1.AdditionalInfoType, ...OCPP2_0_1.AdditionalInfoType[]])
-              : undefined,
-          idToken: authorization.idTokenInfo.groupIdToken.idToken,
-          type: authorization.idTokenInfo.groupIdToken.type,
-        }
+            additionalInfo: idTokenInfoMapper.groupIdToken.additionalInfo,
+            idToken: idTokenInfoMapper.groupIdToken.idToken,
+            type: idTokenInfoMapper.groupIdToken.type,
+          }
         : undefined,
-      language2: authorization.idTokenInfo.language2,
-      personalMessage: authorization.idTokenInfo.personalMessage,
+      language2: idTokenInfoMapper.language2,
+      personalMessage: idTokenInfoMapper.personalMessage,
     };
 
     if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
