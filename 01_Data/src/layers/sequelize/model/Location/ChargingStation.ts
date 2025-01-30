@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { Namespace } from '@citrineos/base';
 import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { Location } from './Location';
 import { StatusNotification } from './StatusNotification';
@@ -15,7 +15,7 @@ import { SetNetworkProfile } from './SetNetworkProfile';
  */
 @Table
 export class ChargingStation extends Model {
-  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ChargingStation;
+  static readonly MODEL_NAME: string = Namespace.ChargingStation;
 
   @PrimaryKey
   @Column(DataType.STRING(36))
@@ -56,7 +56,7 @@ export class ChargingStation extends Model {
   declare locationId?: number | null;
 
   @HasMany(() => StatusNotification)
-  declare statusNotifications?: OCPP2_0_1.StatusNotificationRequest[];
+  declare statusNotifications?: StatusNotification[] | null;
 
   /**
    * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.
