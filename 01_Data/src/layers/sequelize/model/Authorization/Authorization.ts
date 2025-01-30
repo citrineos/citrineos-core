@@ -3,13 +3,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { IdToken, IdTokenInfo } from '.';
+import { AuthorizationRestrictions } from '../../../../interfaces';
 
 @Table
-export class Authorization extends Model {
-  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.AuthorizationData;
+export class Authorization extends Model implements AuthorizationRestrictions {
+  static readonly MODEL_NAME: string = Namespace.AuthorizationData;
 
   @Column(DataType.ARRAY(DataType.STRING))
   declare allowedConnectorTypes?: string[];
@@ -22,7 +23,7 @@ export class Authorization extends Model {
     type: DataType.INTEGER,
     unique: true,
   })
-  declare idTokenId?: number;
+  declare idTokenId?: number | null;
 
   @BelongsTo(() => IdToken)
   declare idToken: IdToken;
@@ -32,7 +33,7 @@ export class Authorization extends Model {
   declare idTokenInfoId?: number | null;
 
   @BelongsTo(() => IdTokenInfo)
-  declare idTokenInfo?: IdTokenInfo;
+  declare idTokenInfo?: IdTokenInfo | null;
 
-  declare customData?: OCPP2_0_1.CustomDataType | null;
+  declare customData?: object | null;
 }
