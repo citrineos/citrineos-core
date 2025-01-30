@@ -1,7 +1,9 @@
 import { IsNotEmpty } from 'class-validator';
-import { Authorization, IdToken, IdTokenInfo } from '../../model/Authorization';
+import { Authorization, IdTokenInfo } from '../../model/Authorization';
 import { AbstractMapper } from '../AbstractMapper';
 import { OCPP2_0_1 } from '@citrineos/base';
+import { IdTokenMapper } from '../1.6';
+import { IdTokenInfoMapper } from './IdTokenInfoMapper';
 
 export class AuthorizationMapper extends AbstractMapper<Authorization> {
   @IsNotEmpty()
@@ -11,15 +13,15 @@ export class AuthorizationMapper extends AbstractMapper<Authorization> {
 
   idTokenId: number;
 
-  idToken: IdToken;
+  idToken: IdTokenMapper;
 
   idTokenInfoId: number;
 
-  idTokenInfo: IdTokenInfo;
+  idTokenInfo: IdTokenInfoMapper;
 
   customData: OCPP2_0_1.CustomDataType;
 
-  constructor(allowedConnectorTypes: string[], disallowedEvseIdPrefixes: string[], idTokenId: number, idToken: IdToken, idTokenInfoId: number, idTokenInfo: IdTokenInfo, customData: OCPP2_0_1.CustomDataType) {
+  constructor(allowedConnectorTypes: string[], disallowedEvseIdPrefixes: string[], idTokenId: number, idToken: IdTokenMapper, idTokenInfoId: number, idTokenInfo: IdTokenInfoMapper, customData: OCPP2_0_1.CustomDataType) {
     super();
     this.allowedConnectorTypes = allowedConnectorTypes;
     this.disallowedEvseIdPrefixes = disallowedEvseIdPrefixes;
@@ -48,9 +50,9 @@ export class AuthorizationMapper extends AbstractMapper<Authorization> {
       authorization.allowedConnectorTypes as string[],
       authorization.disallowedEvseIdPrefixes as string[],
       authorization.idTokenId as number,
-      authorization.idToken,
+      IdTokenMapper.fromModel(authorization.idToken),
       authorization.idTokenInfoId as number,
-      authorization.idTokenInfo as IdTokenInfo,
+      IdTokenInfoMapper.fromModel(authorization.idTokenInfo as IdTokenInfo),
       authorization.customData as OCPP2_0_1.CustomDataType,
     );
   }

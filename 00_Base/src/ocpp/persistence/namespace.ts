@@ -14,6 +14,7 @@ export enum Namespace {
   IdTokenInfo = 'IdTokenInfo', // IdTokenInfoType in OCPP2.0.1, IdTagInfo in OCPP1.6
   MeterValue = 'MeterValue',
   StatusNotificationRequest = 'StatusNotification',
+  AuthorizationData = 'Authorization',
 }
 
 export enum OCPP2_0_1_Namespace {

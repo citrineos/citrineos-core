@@ -1,6 +1,8 @@
 import { IsNotEmpty } from 'class-validator';
-import { Authorization, IdToken, IdTokenInfo } from '../../model/Authorization';
+import { Authorization, IdTokenInfo } from '../../model/Authorization';
 import { AbstractMapper } from '../AbstractMapper';
+import { IdTokenMapper } from './IdTokenMapper';
+import { IdTokenInfoMapper } from '../2.0.1';
 
 export class AuthorizationMapper extends AbstractMapper<Authorization> {
   @IsNotEmpty()
@@ -10,13 +12,13 @@ export class AuthorizationMapper extends AbstractMapper<Authorization> {
 
   idTokenId: number;
 
-  idToken: IdToken;
+  idToken: IdTokenMapper;
 
   idTokenInfoId: number;
 
-  idTokenInfo: IdTokenInfo;
+  idTokenInfo: IdTokenInfoMapper;
 
-  constructor(allowedConnectorTypes: string[], disallowedEvseIdPrefixes: string[], idTokenId: number, idToken: IdToken, idTokenInfoId: number, idTokenInfo: IdTokenInfo) {
+  constructor(allowedConnectorTypes: string[], disallowedEvseIdPrefixes: string[], idTokenId: number, idToken: IdTokenMapper, idTokenInfoId: number, idTokenInfo: IdTokenInfoMapper) {
     super();
     this.allowedConnectorTypes = allowedConnectorTypes;
     this.disallowedEvseIdPrefixes = disallowedEvseIdPrefixes;
@@ -29,7 +31,6 @@ export class AuthorizationMapper extends AbstractMapper<Authorization> {
 
   toModel(): Authorization {
     return Authorization.build({
-        
       allowedConnectorTypes: this.allowedConnectorTypes,
       disallowedEvseIdPrefixes: this.disallowedEvseIdPrefixes,
       idTokenId: this.idTokenId,
@@ -44,9 +45,9 @@ export class AuthorizationMapper extends AbstractMapper<Authorization> {
       authorization.allowedConnectorTypes as string[],
       authorization.disallowedEvseIdPrefixes as string[],
       authorization.idTokenId as number,
-      authorization.idToken,
+      IdTokenMapper.fromModel(authorization.idToken),
       authorization.idTokenInfoId as number,
-      authorization.idTokenInfo as IdTokenInfo,
+      IdTokenInfoMapper.fromModel(authorization.idTokenInfo as IdTokenInfo),
     );
   }
 }
