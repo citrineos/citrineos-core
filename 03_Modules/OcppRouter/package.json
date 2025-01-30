@@ -16,8 +16,7 @@
     "ocpp_v201"
   ],
   "license": "Apache-2.0",
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "dependencies": {
     "@citrineos/base": "1.6.0",
     "@citrineos/data": "1.6.0",

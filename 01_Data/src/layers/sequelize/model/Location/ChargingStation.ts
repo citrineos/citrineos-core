@@ -8,6 +8,7 @@ import { Location } from './Location';
 import { StatusNotification } from './StatusNotification';
 import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 import { SetNetworkProfile } from './SetNetworkProfile';
+import { OCPPLog } from './OCPPLog';
 
 /**
  * Represents a charging station.
@@ -30,6 +31,9 @@ export class ChargingStation extends Model {
 
   @HasMany(() => StatusNotification)
   declare statusNotifications?: OCPP2_0_1.StatusNotificationRequest[];
+
+  @HasMany(() => OCPPLog)
+  declare liveLogs?: OCPPLog[];
 
   /**
    * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.
