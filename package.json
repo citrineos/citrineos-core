@@ -2,16 +2,6 @@
   "name": "@citrineos/workspace",
   "version": "1.6.0",
   "private": false,
-  "devDependencies": {
-    "@eslint/js": "9.0.0",
-    "@types/eslint__js": "8.42.3",
-    "concurrently": "8.2.2",
-    "eslint": "9.11.1",
-    "eslint-config-prettier": "9.1.0",
-    "prettier": "3.2.5",
-    "typescript": "5.5.4",
-    "typescript-eslint": "8.7.0"
-  },
   "scripts": {
     "install-all": "npm i --verbose",
     "copy-assets": "npm run copy-assets --prefix ./Server",
@@ -30,7 +20,7 @@
     "lint": "npx eslint ./",
     "lint-fix": "npm run prettier && npx eslint --fix ./",
     "prettier": "prettier --write .",
-    "fresh-and-install-all": "npm run fresh && npm run install-all",
+    "fi": "npm run fresh && npm run install-all",
     "sync-db": "ts-node ./db.sync.ts",
     "start-everest": "npm run start-everest --prefix ./Server",
     "test": "jest --config jest.config.ts",
@@ -51,7 +41,7 @@
     "03_Modules/Transactions",
     "Server"
   ],
-  "dependencies": {
-    "@fastify/cors": "^9.0.1"
+  "engines": {
+    "node": ">=22.11.0"
   }
 }

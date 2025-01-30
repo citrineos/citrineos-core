@@ -1,15 +1,12 @@
 import {
-  MeasurandEnumType,
-  MeterValueType,
-  ReadingContextEnumType,
-  SampledValueType,
+  OCPP2_0_1,
 } from '../ocpp/model';
 
 export class MeterValueUtils {
   private static readonly validContexts = new Set([
-    ReadingContextEnumType.Transaction_Begin,
-    ReadingContextEnumType.Sample_Periodic,
-    ReadingContextEnumType.Transaction_End,
+    OCPP2_0_1.ReadingContextEnumType.Transaction_Begin,
+    OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
+    OCPP2_0_1.ReadingContextEnumType.Transaction_End,
   ]);
 
   /**
@@ -18,7 +15,7 @@ export class MeterValueUtils {
    * @param {array} meterValues - meterValues of a transaction.
    * @return {number} total Kwh based on the overall values (i.e., without phase) in the simpledValues.
    */
-  public static getTotalKwh(meterValues: MeterValueType[]): number {
+  public static getTotalKwh(meterValues: OCPP2_0_1.MeterValueType[]): number {
     const filteredValues = this.filterValidMeterValues(meterValues);
     const timestampToKwhMap = this.getTimestampToKwhMap(filteredValues);
     const sortedValues =
@@ -27,8 +24,8 @@ export class MeterValueUtils {
   }
 
   private static filterValidMeterValues(
-    meterValues: MeterValueType[],
-  ): MeterValueType[] {
+    meterValues: OCPP2_0_1.MeterValueType[],
+  ): OCPP2_0_1.MeterValueType[] {
     return meterValues.filter(
       (mv) =>
         // When missing, context is by default Sample_Periodic by spec
@@ -38,7 +35,7 @@ export class MeterValueUtils {
   }
 
   private static getTimestampToKwhMap(
-    meterValues: MeterValueType[],
+    meterValues: OCPP2_0_1.MeterValueType[],
   ): Map<number, number> {
     const valuesMap = new Map<number, number>();
     for (const meterValue of meterValues) {
@@ -55,16 +52,16 @@ export class MeterValueUtils {
   }
 
   private static findOverallValue(
-    sampledValues: SampledValueType[],
-  ): SampledValueType | undefined {
+    sampledValues: OCPP2_0_1.SampledValueType[],
+  ): OCPP2_0_1.SampledValueType | undefined {
     return sampledValues.find(
       (sv) =>
         !sv.phase &&
-        sv.measurand === MeasurandEnumType.Energy_Active_Import_Register,
+        sv.measurand === OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register,
     );
   }
 
-  private static normalizeToKwh(overallValue: SampledValueType): number | null {
+  private static normalizeToKwh(overallValue: OCPP2_0_1.SampledValueType): number | null {
     let powerOfTen = overallValue.unitOfMeasure?.multiplier ?? 0;
     const unit = overallValue.unitOfMeasure?.unit?.toUpperCase();
     switch (unit) {

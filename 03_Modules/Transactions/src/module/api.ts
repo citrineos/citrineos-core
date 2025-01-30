@@ -19,14 +19,12 @@ import {
   AsDataEndpoint,
   AsMessageEndpoint,
   CallAction,
-  CostUpdatedRequest,
-  CostUpdatedRequestSchema,
-  GetTransactionStatusRequest,
-  GetTransactionStatusRequestSchema,
   HttpMethod,
   IMessageConfirmation,
   Namespace,
-  TransactionType,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
+  OCPPVersion,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { UpsertTariffRequest } from './model/tariffs';
@@ -42,7 +40,7 @@ export class TransactionsModuleApi
   /**
    * Constructor for the class.
    *
-   * @param {TransactionModule} transactionModule - The transaction module.
+   * @param {TransactionsModule} transactionModule - The transaction module.
    * @param {FastifyInstance} server - The server instance.
    * @param {Logger<ILogObj>} [logger] - Optional logger.
    */
@@ -57,18 +55,23 @@ export class TransactionsModuleApi
   /**
    * Message Endpoint Methods
    */
-  @AsMessageEndpoint(CallAction.CostUpdated, CostUpdatedRequestSchema)
+
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.CostUpdated,
+    OCPP2_0_1.CostUpdatedRequestSchema,
+  )
   async costUpdated(
     identifier: string[],
     tenantId: string,
-    request: CostUpdatedRequest,
+    request: OCPP2_0_1.CostUpdatedRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.CostUpdated,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.CostUpdated,
         request,
         callbackUrl,
       ),
@@ -77,26 +80,31 @@ export class TransactionsModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.GetTransactionStatus,
-    GetTransactionStatusRequestSchema,
+    OCPP2_0_1_CallAction.GetTransactionStatus,
+    OCPP2_0_1.GetTransactionStatusRequestSchema,
   )
   getTransactionStatus(
     identifier: string[],
     tenantId: string,
-    request: GetTransactionStatusRequest,
+    request: OCPP2_0_1.GetTransactionStatusRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.GetTransactionStatus,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetTransactionStatus,
         request,
         callbackUrl,
       ),
     );
     return Promise.all(results);
   }
+
+  /**
+   * Data Endpoint Methods
+   */
 
   @AsDataEndpoint(
     Namespace.TransactionType,
@@ -105,15 +113,12 @@ export class TransactionsModuleApi
   )
   getTransactionByStationIdAndTransactionId(
     request: FastifyRequest<{ Querystring: TransactionEventQuerystring }>,
-  ): Promise<TransactionType | undefined> {
+  ): Promise<OCPP2_0_1.TransactionType | undefined> {
     return this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(
       request.query.stationId,
       request.query.transactionId,
     );
   }
-
-  // TODO: Determine how to implement readAllTransactionsByStationIdAndChargingStates as a GET...
-  // TODO: Determine how to implement existsActiveTransactionByIdToken as a GET...
 
   @AsDataEndpoint(Namespace.Tariff, HttpMethod.Put, undefined, TariffSchema)
   async upsertTariff(
@@ -149,7 +154,8 @@ export class TransactionsModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link CallAction}
+   * and the module's endpoint prefix configuration.
    *
    * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
@@ -161,9 +167,10 @@ export class TransactionsModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace}
+   * and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
   protected _toDataPath(input: Namespace): string {

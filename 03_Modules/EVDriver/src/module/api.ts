@@ -11,29 +11,14 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   AsMessageEndpoint,
-  AuthorizationData,
   AuthorizationDataSchema,
   CallAction,
-  CancelReservationRequest,
-  CancelReservationRequestSchema,
-  ChargingProfilePurposeEnumType,
-  ClearCacheRequest,
-  ClearCacheRequestSchema,
-  GetLocalListVersionRequest,
-  GetLocalListVersionRequestSchema,
   HttpMethod,
   IMessageConfirmation,
   Namespace,
-  RequestStartTransactionRequest,
-  RequestStartTransactionRequestSchema,
-  RequestStopTransactionRequest,
-  RequestStopTransactionRequestSchema,
-  ReserveNowRequest,
-  ReserveNowRequestSchema,
-  SendLocalListRequest,
-  SendLocalListRequestSchema,
-  UnlockConnectorRequest,
-  UnlockConnectorRequestSchema,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
+  OCPPVersion,
 } from '@citrineos/base';
 import {
   AuthorizationQuerySchema,
@@ -48,9 +33,6 @@ import {
 import { validateChargingProfileType } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Server API for the provisioning component.
- */
 export class EVDriverModuleApi
   extends AbstractModuleApi<EVDriverModule>
   implements IEVDriverModuleApi
@@ -82,10 +64,10 @@ export class EVDriverModuleApi
   )
   putAuthorization(
     request: FastifyRequest<{
-      Body: AuthorizationData;
+      Body: OCPP2_0_1.AuthorizationData;
       Querystring: AuthorizationQuerystring;
     }>,
-  ): Promise<AuthorizationData | undefined> {
+  ): Promise<OCPP2_0_1.AuthorizationData | undefined> {
     return this._module.authorizeRepository.createOrUpdateByQuerystring(
       request.body,
       request.query,
@@ -103,7 +85,7 @@ export class EVDriverModuleApi
       Body: AuthorizationRestrictions;
       Querystring: AuthorizationQuerystring;
     }>,
-  ): Promise<AuthorizationData[]> {
+  ): Promise<OCPP2_0_1.AuthorizationData[]> {
     return this._module.authorizeRepository.updateRestrictionsByQuerystring(
       request.body,
       request.query,
@@ -117,7 +99,7 @@ export class EVDriverModuleApi
   )
   getAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
-  ): Promise<AuthorizationData[]> {
+  ): Promise<OCPP2_0_1.AuthorizationData[]> {
     return this._module.authorizeRepository.readAllByQuerystring(request.query);
   }
 
@@ -155,27 +137,30 @@ export class EVDriverModuleApi
   /**
    * Message Endpoint Methods
    */
+
   @AsMessageEndpoint(
-    CallAction.RequestStartTransaction,
-    RequestStartTransactionRequestSchema,
+    OCPP2_0_1_CallAction.RequestStartTransaction,
+    OCPP2_0_1.RequestStartTransactionRequestSchema,
   )
   async requestStartTransaction(
     identifier: string[],
     tenantId: string,
-    request: RequestStartTransactionRequest,
+    request: OCPP2_0_1.RequestStartTransactionRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: IMessageConfirmation[] = [];
 
     for (const i of identifier) {
-      let payloadMessage;
+      let payloadMessage: string | undefined;
 
+      // If a Charging Profile is provided, do additional validations
       if (request.chargingProfile) {
         const chargingProfile = { ...request.chargingProfile };
 
+        // In OCPP 2.0.1, the Purpose of the charging profile for a transaction MUST be TxProfile.
         if (
           chargingProfile.chargingProfilePurpose !==
-          ChargingProfilePurposeEnumType.TxProfile
+          OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile
         ) {
           results.push({
             success: false,
@@ -185,6 +170,7 @@ export class EVDriverModuleApi
           continue;
         }
 
+        // It's not valid to supply a transactionId in the charging profile for a new transaction
         if (chargingProfile.transactionId) {
           chargingProfile.transactionId = undefined;
           this._logger.warn(
@@ -192,6 +178,7 @@ export class EVDriverModuleApi
           );
         }
 
+        // Attempt to validate and possibly store the charging profile
         try {
           await validateChargingProfileType(
             chargingProfile,
@@ -233,20 +220,26 @@ export class EVDriverModuleApi
         }
       }
 
+      // Send the call to the station
       try {
         const confirmation = await this._module.sendCall(
           i,
           tenantId,
-          CallAction.RequestStartTransaction,
+          OCPPVersion.OCPP2_0_1,
+          OCPP2_0_1_CallAction.RequestStartTransaction,
           request,
           callbackUrl,
         );
 
-        results.push(
-          payloadMessage
-            ? { success: true, payload: payloadMessage }
-            : confirmation,
-        );
+        if (payloadMessage) {
+          // We have a valid confirmation, plus a warning message
+          results.push({
+            success: true,
+            payload: payloadMessage,
+          });
+        } else {
+          results.push(confirmation);
+        }
       } catch (error) {
         results.push({
           success: false,
@@ -260,20 +253,21 @@ export class EVDriverModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.RequestStopTransaction,
-    RequestStopTransactionRequestSchema,
+    OCPP2_0_1_CallAction.RequestStopTransaction,
+    OCPP2_0_1.RequestStopTransactionRequestSchema,
   )
   async requestStopTransaction(
     identifier: string[],
     tenantId: string,
-    request: RequestStopTransactionRequest,
+    request: OCPP2_0_1.RequestStopTransactionRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.RequestStopTransaction,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.RequestStopTransaction,
         request,
         callbackUrl,
       ),
@@ -282,16 +276,17 @@ export class EVDriverModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.CancelReservation,
-    CancelReservationRequestSchema,
+    OCPP2_0_1_CallAction.CancelReservation,
+    OCPP2_0_1.CancelReservationRequestSchema,
   )
   async cancelReservation(
     identifiers: string[],
     tenantId: string,
-    request: CancelReservationRequest,
+    request: OCPP2_0_1.CancelReservationRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     try {
+      // Attempt to load the reservations for each station ID
       const reservations = await Promise.all(
         identifiers.map((identifier) =>
           this._module.reservationRepository.readOnlyOneByQuery({
@@ -303,10 +298,10 @@ export class EVDriverModuleApi
         ),
       );
 
+      // Identify any stations that did not have the reservation
       const missingReservations = identifiers.filter(
         (identifier, index) => !reservations[index],
       );
-
       if (missingReservations.length > 0) {
         throw new Error(
           `Reservation ${request.reservationId} not found for station IDs: ${missingReservations.join(
@@ -315,7 +310,8 @@ export class EVDriverModuleApi
         );
       }
 
-      const correlationIds = reservations.map((reservation, index) => {
+      // Create a correlationId for each reservation/station
+      const correlationIds = reservations.map((reservation) => {
         const correlationId = uuidv4();
         if (reservation) {
           this._module.callMessageRepository.create(
@@ -328,12 +324,14 @@ export class EVDriverModuleApi
         return correlationId;
       });
 
+      // Send the CancelReservation call for each station
       const results = await Promise.all(
         identifiers.map((identifier, index) =>
           this._module.sendCall(
             identifier,
             tenantId,
-            CallAction.CancelReservation,
+            OCPPVersion.OCPP2_0_1,
+            OCPP2_0_1_CallAction.CancelReservation,
             request,
             callbackUrl,
             correlationIds[index],
@@ -348,7 +346,7 @@ export class EVDriverModuleApi
           error instanceof Error ? error.message : JSON.stringify(error)
         }`,
       );
-
+      // Return a failure for each requested station
       return identifiers.map(() => ({
         success: false,
         payload: error instanceof Error ? error.message : JSON.stringify(error),
@@ -356,14 +354,18 @@ export class EVDriverModuleApi
     }
   }
 
-  @AsMessageEndpoint(CallAction.ReserveNow, ReserveNowRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.ReserveNow,
+    OCPP2_0_1.ReserveNowRequestSchema,
+  )
   async reserveNow(
     identifier: string[],
     tenantId: string,
-    request: ReserveNowRequest,
+    request: OCPP2_0_1.ReserveNowRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: IMessageConfirmation[] = [];
+
     for (const i of identifier) {
       try {
         const storedReservation =
@@ -372,7 +374,7 @@ export class EVDriverModuleApi
             i,
             false,
           );
-  
+
         if (!storedReservation) {
           results.push({
             success: false,
@@ -380,7 +382,8 @@ export class EVDriverModuleApi
           });
           continue;
         }
-  
+
+        // Create correlationId for this reservation
         const correlationId = uuidv4();
         await this._module.callMessageRepository.create(
           CallMessage.build({
@@ -388,16 +391,18 @@ export class EVDriverModuleApi
             reservationId: storedReservation.databaseId,
           }),
         );
-  
+
+        // Send the ReserveNow call
         const confirmation = await this._module.sendCall(
           i,
           tenantId,
-          CallAction.ReserveNow,
+          OCPPVersion.OCPP2_0_1,
+          OCPP2_0_1_CallAction.ReserveNow,
           request,
           callbackUrl,
           correlationId,
         );
-  
+
         results.push(confirmation);
       } catch (error) {
         results.push({
@@ -407,22 +412,26 @@ export class EVDriverModuleApi
         });
       }
     }
-  
+
     return results;
   }
 
-  @AsMessageEndpoint(CallAction.UnlockConnector, UnlockConnectorRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.UnlockConnector,
+    OCPP2_0_1.UnlockConnectorRequestSchema,
+  )
   unlockConnector(
     identifier: string[],
     tenantId: string,
-    request: UnlockConnectorRequest,
+    request: OCPP2_0_1.UnlockConnectorRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.UnlockConnector,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.UnlockConnector,
         request,
         callbackUrl,
       ),
@@ -430,18 +439,22 @@ export class EVDriverModuleApi
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(CallAction.ClearCache, ClearCacheRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.ClearCache,
+    OCPP2_0_1.ClearCacheRequestSchema,
+  )
   clearCache(
     identifier: string[],
     tenantId: string,
-    request: ClearCacheRequest,
+    request: OCPP2_0_1.ClearCacheRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.ClearCache,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.ClearCache,
         request,
         callbackUrl,
       ),
@@ -449,34 +462,38 @@ export class EVDriverModuleApi
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(CallAction.SendLocalList, SendLocalListRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.SendLocalList,
+    OCPP2_0_1.SendLocalListRequestSchema,
+  )
   async sendLocalList(
     identifier: string[],
     tenantId: string,
-    request: SendLocalListRequest,
+    request: OCPP2_0_1.SendLocalListRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: IMessageConfirmation[] = [];
-  
+
     for (const i of identifier) {
       try {
         const correlationId = uuidv4();
-  
+
         await this._module.localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
           i,
           correlationId,
           request,
         );
-  
+
         const confirmation = await this._module.sendCall(
           i,
           tenantId,
-          CallAction.SendLocalList,
+          OCPPVersion.OCPP2_0_1,
+          OCPP2_0_1_CallAction.SendLocalList,
           request,
           callbackUrl,
           correlationId,
         );
-  
+
         results.push(confirmation);
       } catch (error) {
         results.push({
@@ -486,25 +503,26 @@ export class EVDriverModuleApi
         });
       }
     }
-  
+
     return results;
   }
 
   @AsMessageEndpoint(
-    CallAction.GetLocalListVersion,
-    GetLocalListVersionRequestSchema,
+    OCPP2_0_1_CallAction.GetLocalListVersion,
+    OCPP2_0_1.GetLocalListVersionRequestSchema,
   )
   getLocalListVersion(
     identifier: string[],
     tenantId: string,
-    request: GetLocalListVersionRequest,
+    request: OCPP2_0_1.GetLocalListVersionRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.GetLocalListVersion,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetLocalListVersion,
         request,
         callbackUrl,
       ),
@@ -513,7 +531,8 @@ export class EVDriverModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link CallAction}
+   * and the module's endpoint prefix configuration.
    *
    * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
@@ -524,9 +543,10 @@ export class EVDriverModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace}
+   * and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
   protected _toDataPath(input: Namespace): string {

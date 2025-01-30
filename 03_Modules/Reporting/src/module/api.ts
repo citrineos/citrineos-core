@@ -8,20 +8,11 @@ import {
   AbstractModuleApi,
   AsMessageEndpoint,
   CallAction,
-  ComponentVariableType,
-  CustomerInformationRequest,
-  CustomerInformationRequestSchema,
-  GetBaseReportRequest,
-  GetBaseReportRequestSchema,
-  GetLogRequest,
-  GetLogRequestSchema,
-  GetMonitoringReportRequest,
-  GetMonitoringReportRequestSchema,
-  GetReportRequest,
-  GetReportRequestSchema,
   IMessageConfirmation,
-  MonitoringCriterionEnumType,
   Namespace,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
+  OCPPVersion,
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { IReportingModuleApi } from './interface';
@@ -40,7 +31,7 @@ export class ReportingModuleApi
   /**
    * Constructs a new instance of the class.
    *
-   * @param {ReportingModule} ReportingModule - The Reporting module.
+   * @param {ReportingModule} reportingModule - The Reporting module.
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
@@ -56,19 +47,23 @@ export class ReportingModuleApi
    * Message Endpoint Methods
    */
 
-  @AsMessageEndpoint(CallAction.GetBaseReport, GetBaseReportRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.GetBaseReport,
+    OCPP2_0_1.GetBaseReportRequestSchema,
+  )
   getBaseReport(
     identifier: string[],
     tenantId: string,
-    request: GetBaseReportRequest,
+    request: OCPP2_0_1.GetBaseReportRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
-    // TODO: Consider using requestId to send NotifyReportRequests to callbackUrl
+    // For each station, send the GetBaseReport call
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.GetBaseReport,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetBaseReport,
         request,
         callbackUrl,
       ),
@@ -76,19 +71,21 @@ export class ReportingModuleApi
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(CallAction.GetReport, GetReportRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.GetReport,
+    OCPP2_0_1.GetReportRequestSchema,
+  )
   async getCustomReport(
     identifier: string,
     tenantId: string,
-    request: GetReportRequest,
+    request: OCPP2_0_1.GetReportRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
-    // if request size is bigger than BytesPerMessageGetReport,
-    // return error
+    // if request size is bigger than BytesPerMessageGetReport, return error
     const bytesPerMessageGetReport =
       await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
-        CallAction.GetReport,
+        OCPP2_0_1_CallAction.GetReport,
         identifier,
       );
     const requestBytes = getSizeOfRequest(request);
@@ -99,31 +96,33 @@ export class ReportingModuleApi
     }
 
     const componentVariables =
-      request.componentVariable as ComponentVariableType[];
+      request.componentVariable as OCPP2_0_1.ComponentVariableType[];
     if (componentVariables.length === 0) {
+      // Send everything in one call
       return await this._module.sendCall(
         identifier,
         tenantId,
-        CallAction.GetReport,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetReport,
         request,
         callbackUrl,
       );
     }
 
+    // Batching logic
     let itemsPerMessageGetReport =
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
-        CallAction.GetReport,
+        OCPP2_0_1_CallAction.GetReport,
         identifier,
       );
-    // If ItemsPerMessageGetReport not set, send all variables at once
     itemsPerMessageGetReport =
       itemsPerMessageGetReport === null
         ? componentVariables.length
         : itemsPerMessageGetReport;
 
     const confirmations = [];
-    // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
+    // Using multiple calls if needed
     for (const [index, batch] of getBatches(
       componentVariables,
       itemsPerMessageGetReport,
@@ -132,12 +131,13 @@ export class ReportingModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
-          CallAction.GetReport,
+          OCPPVersion.OCPP2_0_1,
+          OCPP2_0_1_CallAction.GetReport,
           {
             componentVariable: batch,
             componentCriteria: request.componentCriteria,
             requestId: request.requestId,
-          } as GetReportRequest,
+          } as OCPP2_0_1.GetReportRequest,
           callbackUrl,
         );
         confirmations.push({
@@ -154,51 +154,50 @@ export class ReportingModuleApi
       }
     }
 
-    // TODO: Consider using requestId to send NotifyMonitoringReportRequests to callbackUrl
+    // Returns a single IMessageConfirmation containing details of each batched call
     return { success: true, payload: confirmations };
   }
 
   @AsMessageEndpoint(
-    CallAction.GetMonitoringReport,
-    GetMonitoringReportRequestSchema,
+    OCPP2_0_1_CallAction.GetMonitoringReport,
+    OCPP2_0_1.GetMonitoringReportRequestSchema,
   )
   async getMonitoringReport(
     identifier: string,
     tenantId: string,
-    request: GetMonitoringReportRequest,
+    request: OCPP2_0_1.GetMonitoringReportRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
+    // If monitoringCriteria & componentVariable are both empty, just call once
     const componentVariable =
-      request.componentVariable as ComponentVariableType[];
+      request.componentVariable as OCPP2_0_1.ComponentVariableType[];
     const monitoringCriteria =
-      request.monitoringCriteria as MonitoringCriterionEnumType[];
+      request.monitoringCriteria as OCPP2_0_1.MonitoringCriterionEnumType[];
 
-    // monitoringCriteria is empty AND componentVariables is empty.
-    // The set of all existing monitors is reported in one or more notifyMonitoringReportRequest messages.
     if (componentVariable.length === 0 && monitoringCriteria.length === 0) {
       return await this._module.sendCall(
         identifier,
         tenantId,
-        CallAction.GetMonitoringReport,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetMonitoringReport,
         request,
         callbackUrl,
       );
     }
 
+    // Otherwise, do batching if needed
     let itemsPerMessageGetReport =
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
-        CallAction.GetReport,
+        OCPP2_0_1_CallAction.GetReport,
         identifier,
       );
-    // If ItemsPerMessageGetReport not set, send all variables at once
     itemsPerMessageGetReport =
       itemsPerMessageGetReport === null
         ? componentVariable.length
         : itemsPerMessageGetReport;
 
     const confirmations = [];
-    // TODO: Below feature doesn't work as intended due to central system behavior (cs has race condition and either sends illegal back-to-back calls or misses calls)
     for (const [index, batch] of getBatches(
       componentVariable,
       itemsPerMessageGetReport,
@@ -207,12 +206,13 @@ export class ReportingModuleApi
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
-          CallAction.GetMonitoringReport,
+          OCPPVersion.OCPP2_0_1,
+          OCPP2_0_1_CallAction.GetMonitoringReport,
           {
             componentVariable: batch,
-            monitoringCriteria: monitoringCriteria,
+            monitoringCriteria,
             requestId: request.requestId,
-          } as GetMonitoringReportRequest,
+          } as OCPP2_0_1.GetMonitoringReportRequest,
           callbackUrl,
         );
         confirmations.push({
@@ -229,22 +229,22 @@ export class ReportingModuleApi
       }
     }
 
-    // TODO: Consider using requestId to send NotifyMonitoringReportRequests to callbackUrl
     return { success: true, payload: confirmations };
   }
 
-  @AsMessageEndpoint(CallAction.GetLog, GetLogRequestSchema)
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetLog, OCPP2_0_1.GetLogRequestSchema)
   getLog(
     identifier: string[],
     tenantId: string,
-    request: GetLogRequest,
+    request: OCPP2_0_1.GetLogRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.GetLog,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetLog,
         request,
         callbackUrl,
       ),
@@ -253,20 +253,21 @@ export class ReportingModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.CustomerInformation,
-    CustomerInformationRequestSchema,
+    OCPP2_0_1_CallAction.CustomerInformation,
+    OCPP2_0_1.CustomerInformationRequestSchema,
   )
   customerInformation(
     identifier: string[],
     tenantId: string,
-    request: CustomerInformationRequest,
+    request: OCPP2_0_1.CustomerInformationRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.CustomerInformation,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.CustomerInformation,
         request,
         callbackUrl,
       ),
@@ -275,7 +276,8 @@ export class ReportingModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link CallAction}
+   * and the module's endpoint prefix configuration.
    *
    * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
@@ -286,9 +288,10 @@ export class ReportingModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace}
+   * and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
   protected _toDataPath(input: Namespace): string {

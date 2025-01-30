@@ -8,18 +8,13 @@ import {
   AsDataEndpoint,
   AsMessageEndpoint,
   CallAction,
-  CertificateSignedRequest,
-  CertificateSignedRequestSchema,
-  DeleteCertificateRequest,
-  DeleteCertificateRequestSchema,
-  GetInstalledCertificateIdsRequest,
-  GetInstalledCertificateIdsRequestSchema,
   HttpMethod,
   IFileAccess,
   IMessageConfirmation,
-  InstallCertificateRequest,
-  InstallCertificateRequestSchema,
   Namespace,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
+  OCPPVersion,
   WebsocketServerConfig,
 } from '@citrineos/base';
 import jsrsasign from 'jsrsasign';
@@ -53,6 +48,7 @@ const enum PemType {
   SubCA = 'SubCA',
   Leaf = 'Leaf',
 }
+
 /**
  * Server API for the Certificates module.
  */
@@ -69,10 +65,10 @@ export class CertificatesModuleApi
    *
    * @param {CertificatesModule} certificatesModule - The Certificates module.
    * @param {FastifyInstance} server - The Fastify server instance.
-   * @param {Logger<ILogObj>} [logger] - The logger instance.
    * @param {IFileAccess} fileAccess - The FileAccess
    * @param {WebsocketNetworkConnection} networkConnection - The NetworkConnection
    * @param {WebsocketServerConfig[]} websocketServersConfig - Configuration for websocket servers
+   * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
   constructor(
     certificatesModule: CertificatesModule,
@@ -93,20 +89,21 @@ export class CertificatesModuleApi
    */
 
   @AsMessageEndpoint(
-    CallAction.CertificateSigned,
-    CertificateSignedRequestSchema,
+    OCPP2_0_1_CallAction.CertificateSigned,
+    OCPP2_0_1.CertificateSignedRequestSchema,
   )
   certificateSigned(
     identifier: string[],
     tenantId: string,
-    request: CertificateSignedRequest,
+    request: OCPP2_0_1.CertificateSignedRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.CertificateSigned,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.CertificateSigned,
         request,
         callbackUrl,
       ),
@@ -115,20 +112,21 @@ export class CertificatesModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.InstallCertificate,
-    InstallCertificateRequestSchema,
+    OCPP2_0_1_CallAction.InstallCertificate,
+    OCPP2_0_1.InstallCertificateRequestSchema,
   )
   installCertificate(
     identifier: string[],
     tenantId: string,
-    request: InstallCertificateRequest,
+    request: OCPP2_0_1.InstallCertificateRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.InstallCertificate,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.InstallCertificate,
         request,
         callbackUrl,
       ),
@@ -137,20 +135,21 @@ export class CertificatesModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.GetInstalledCertificateIds,
-    GetInstalledCertificateIdsRequestSchema,
+    OCPP2_0_1_CallAction.GetInstalledCertificateIds,
+    OCPP2_0_1.GetInstalledCertificateIdsRequestSchema,
   )
   getInstalledCertificateIds(
     identifier: string[],
     tenantId: string,
-    request: GetInstalledCertificateIdsRequest,
+    request: OCPP2_0_1.GetInstalledCertificateIdsRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.GetInstalledCertificateIds,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetInstalledCertificateIds,
         request,
         callbackUrl,
       ),
@@ -159,20 +158,21 @@ export class CertificatesModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.DeleteCertificate,
-    DeleteCertificateRequestSchema,
+    OCPP2_0_1_CallAction.DeleteCertificate,
+    OCPP2_0_1.DeleteCertificateRequestSchema,
   )
   deleteCertificate(
     identifier: string[],
     tenantId: string,
-    request: DeleteCertificateRequest,
+    request: OCPP2_0_1.DeleteCertificateRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.DeleteCertificate,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.DeleteCertificate,
         request,
         callbackUrl,
       ),
@@ -354,7 +354,7 @@ export class CertificatesModuleApi
 
       responseBody = [leafCertificate, subCertificate, certificateFromReq];
     } else {
-      // Generate sub CA certificate and private key singed by external CA server
+      // Generate sub CA certificate and private key signed by external CA server
       // commonName should be a valid domain name
       certificateFromReq.commonName = certRequest.commonName;
       certificateFromReq.pathLen = 0;
@@ -437,7 +437,7 @@ export class CertificatesModuleApi
       {
         certificateType: installReq.certificateType,
         certificate: rootCAPem,
-      } as InstallCertificateRequest,
+      } as OCPP2_0_1.InstallCertificateRequest,
       installReq.callbackUrl,
     );
 
@@ -461,7 +461,8 @@ export class CertificatesModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link CallAction}
+   * and the module's endpoint prefix configuration.
    *
    * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
@@ -473,9 +474,10 @@ export class CertificatesModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace}
+   * and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
   protected _toDataPath(input: Namespace): string {
