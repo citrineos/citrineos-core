@@ -26,14 +26,6 @@ export class SequelizeChargingStationSequenceRepository extends SequelizeReposit
       });
 
       if (!sequenceCreated) {
-        // const updatedSequences = await this.updateAllByQuery({value: storedSequence.value + 1}, {
-        //   where: {
-        //     stationId: stationId,
-        //     type: type
-        //   },
-        //   transaction
-        // });
-        // return updatedSequences[0].value;
         const updatedSequences = await storedSequence.increment('value', { transaction });
         return updatedSequences.value;
       } else {
