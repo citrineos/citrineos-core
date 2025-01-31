@@ -88,6 +88,24 @@ Before you begin, make sure you have the following installed on your system:
    with the exposed localhost 9229 port which is forwarded to the NodeJS service running within docker. The IntelliJ
    `Attach Debugger` Run Configuration was made to attach to a debugging session.
 
+### Runtime configuration
+
+Values from configuration files (`local.ts`, `docker.ts`, `swarm.docker.ts`) may be overridden at runtime via environment variables. Environment variables prefixed with `citrineos_` and hierarchically separated by an underscore will result in overriding said value. For example, the amqp URL:
+```json
+util: {
+    (...)
+    messageBroker: {
+        amqp: {
+            url: 'amqp://guest:guest@localhost:5672'
+            (...)
+        }
+        (...)
+    }
+    (...)
+}
+```
+may be overridden by setting the environment variable `CITRINEOS_util_messageBroker_amqp_url` (case-insensitive).
+
 ### Starting the Server without Docker
 
 CitrineOS requires configuration to allow your OCPP 2.0.1 compliant charging stations to connect.
