@@ -14,6 +14,7 @@ export enum Namespace {
   IdTokenInfo = 'IdTokenInfo', // IdTokenInfoType in OCPP2.0.1, IdTagInfo in OCPP1.6
   MeterValue = 'MeterValue',
   StatusNotificationRequest = 'StatusNotification',
+  Transaction = 'Transaction',
 }
 
 export enum OCPP2_0_1_Namespace {
@@ -48,7 +49,6 @@ export enum OCPP2_0_1_Namespace {
   SystemConfig = 'SystemConfig',
   TlsCertificates = 'TlsCertificates',
   TransactionEventRequest = 'TransactionEvent',
-  TransactionType = 'Transaction',
   Tariff = 'Tariff',
   VariableAttributeType = 'VariableAttribute',
   VariableCharacteristicsType = 'VariableCharacteristics',
@@ -61,4 +61,5 @@ export enum OCPP2_0_1_Namespace {
 export enum OCPP1_6_Namespace {
   ChangeConfiguration = 'ChangeConfiguration',
   Connector = 'Connector',
+  StartTransaction = 'StartTransaction',
 }

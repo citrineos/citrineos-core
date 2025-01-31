@@ -36,7 +36,7 @@ export class IdToken extends Model {
     type: DataType.STRING,
     unique: 'idToken_type',
   })
-  declare type?: string;
+  declare type?: string | null;
 
   @HasOne(() => Authorization)
   declare authorization: Authorization;

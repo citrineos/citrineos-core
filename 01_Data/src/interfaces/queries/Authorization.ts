@@ -7,7 +7,7 @@ import { QuerySchema } from '@citrineos/base';
 
 export interface AuthorizationQuerystring {
   idToken: string;
-  type: string;
+  type: string | null;
 }
 
 export const AuthorizationQuerySchema = QuerySchema(

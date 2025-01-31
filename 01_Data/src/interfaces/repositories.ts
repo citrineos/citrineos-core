@@ -3,7 +3,15 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type BootConfig, type CallAction, ChargingStationSequenceType, type CrudRepository, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
+import {
+  type BootConfig,
+  type CallAction,
+  ChargingStationSequenceType,
+  type CrudRepository,
+  OCPP2_0_1,
+  OCPP1_6,
+  TransactionEventType,
+} from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
 import {
   type Authorization,
@@ -39,6 +47,7 @@ import {
   StatusNotification,
   Connector,
   TransactionEvent,
+  IdToken,
 } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
@@ -133,10 +142,11 @@ export interface ISubscriptionRepository extends CrudRepository<Subscription> {
 export interface ITransactionEventRepository extends CrudRepository<TransactionEvent> {
   createOrUpdateTransactionByTransactionEventAndStationId(value: OCPP2_0_1.TransactionEventRequest, stationId: string): Promise<Transaction>;
   createMeterValue(value: OCPP2_0_1.MeterValueType, transactionDatabaseId?: number | null): Promise<void>;
+  createTransactionByStartTransaction(request: OCPP1_6.StartTransactionRequest, transactionId: number, stationId: string): Promise<Transaction | undefined>;
   readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEvent[]>;
   readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
   readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: OCPP2_0_1.EVSEType, chargingStates?: OCPP2_0_1.ChargingStateEnumType[]): Promise<Transaction[]>;
-  readAllActiveTransactionsByIdToken(idToken: OCPP2_0_1.IdTokenType): Promise<Transaction[]>;
+  readAllActiveTransactionsByIdTokenAndTransactionEventType(idToken: IdToken, eventType: TransactionEventType): Promise<Transaction[]>;
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
   getActiveTransactionByStationIdAndEvseId(stationId: string, evseId: number): Promise<Transaction | undefined>;
   updateTransactionTotalCostById(totalCost: number, id: number): Promise<void>;
