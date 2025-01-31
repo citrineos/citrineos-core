@@ -88,24 +88,24 @@ export class TransactionService {
     }
 
     // Extract DTO fields from sequelize Model<any, any> objects
-    let groupIdToken: OCPP2_0_1.IdTokenType | undefined;
-    if (authorization.idTokenInfo.groupIdToken) {
-      const idTokenMapper = OCPP2_0_1_Mapper.IdTokenMapper.fromModel(authorization.idTokenInfo.groupIdToken);
-      groupIdToken = {
-        additionalInfo: idTokenMapper.additionalInfo,
-        idToken: idTokenMapper.idToken,
-        type: idTokenMapper.type
-      }
-    }
+    const idTokenInfoMapper = OCPP2_0_1_Mapper.IdTokenInfoMapper.fromModel(
+      authorization.idTokenInfo,
+    );
     const idTokenInfo: OCPP2_0_1.IdTokenInfoType = {
-      status: authorization.idTokenInfo.status,
-      cacheExpiryDateTime: authorization.idTokenInfo.cacheExpiryDateTime,
-      chargingPriority: authorization.idTokenInfo.chargingPriority,
-      language1: authorization.idTokenInfo.language1,
-      evseId: authorization.idTokenInfo.evseId,
-      groupIdToken,
-      language2: authorization.idTokenInfo.language2,
-      personalMessage: authorization.idTokenInfo.personalMessage,
+      status: idTokenInfoMapper.status,
+      cacheExpiryDateTime: idTokenInfoMapper.cacheExpiryDateTime,
+      chargingPriority: idTokenInfoMapper.chargingPriority,
+      language1: idTokenInfoMapper.language1,
+      evseId: idTokenInfoMapper.evseId,
+      groupIdToken: idTokenInfoMapper.groupIdToken
+        ? {
+            additionalInfo: idTokenInfoMapper.groupIdToken.additionalInfo,
+            idToken: idTokenInfoMapper.groupIdToken.idToken,
+            type: idTokenInfoMapper.groupIdToken.type,
+          }
+        : undefined,
+      language2: idTokenInfoMapper.language2,
+      personalMessage: idTokenInfoMapper.personalMessage,
     };
 
     if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {

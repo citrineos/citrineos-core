@@ -6,3 +6,4 @@ export { BootMapper } from './BootMapper';
 export { StatusNotificationMapper } from './StatusNotificationMapper';
 export { MeterValueMapper } from './MeterValueMapper';
 export { IdTokenMapper } from './IdTokenMapper';
+export { IdTokenInfoMapper } from './IdTokenInfoMapper';
