@@ -3,16 +3,17 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
+import { Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, HasMany, HasOne, Model, Table } from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
 import { ChargingStation } from '../Location';
+import { StartTransaction } from './StartTransaction';
 
 @Table
-export class Transaction extends Model implements OCPP2_0_1.TransactionType {
-  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.TransactionType;
+export class Transaction extends Model {
+  static readonly MODEL_NAME: string = Namespace.Transaction;
   static readonly TRANSACTION_EVENTS_ALIAS = 'transactionEvents';
   static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter';
 
@@ -49,6 +50,9 @@ export class Transaction extends Model implements OCPP2_0_1.TransactionType {
 
   @HasMany(() => MeterValue)
   declare meterValues?: OCPP2_0_1.MeterValueType[];
+
+  @HasOne(() => StartTransaction)
+  declare startTransaction?: StartTransaction;
 
   @Column(DataType.STRING)
   declare chargingState?: OCPP2_0_1.ChargingStateEnumType | null;

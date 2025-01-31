@@ -98,7 +98,7 @@ export class TransactionsModuleApi
   }
 
   @AsDataEndpoint(
-    OCPP2_0_1_Namespace.TransactionType,
+    Namespace.Transaction,
     HttpMethod.Get,
     TransactionEventQuerySchema,
   )

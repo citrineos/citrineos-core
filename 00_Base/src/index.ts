@@ -51,7 +51,8 @@ export {
 } from './ocpp/rpc/message';
 export {
   ChargingStationSequenceType,
-} from './ocpp/model/requestIds';
+  TransactionEventType,
+} from './ocpp/model/CustomEnums';
 export { IFileAccess } from './interfaces/fileAccess';
 
 // Persistence Interfaces

@@ -7,6 +7,7 @@ import {
   AbstractModule,
   AsHandler,
   CallAction,
+  ChargingStationSequenceType,
   CrudRepository,
   ErrorCode,
   EventGroup,
@@ -36,9 +37,12 @@ import {
   SequelizeRepository,
   Transaction,
   VariableAttribute,
+  OCPP1_6_Mapper,
+  SequelizeChargingStationSequenceRepository,
 } from '@citrineos/data';
 import {
   IAuthorizer,
+  IdGenerator,
   RabbitMqReceiver,
   RabbitMqSender,
   SignedMeterValuesUtil,
@@ -58,6 +62,7 @@ export class TransactionsModule extends AbstractModule {
     OCPP2_0_1_CallAction.StatusNotification,
     OCPP2_0_1_CallAction.TransactionEvent,
     OCPP1_6_CallAction.StatusNotification,
+    OCPP1_6_CallAction.StartTransaction,
   ];
   _responses: CallAction[] = [
     OCPP2_0_1_CallAction.CostUpdated,
@@ -82,6 +87,7 @@ export class TransactionsModule extends AbstractModule {
   private readonly _signedMeterValuesUtil: SignedMeterValuesUtil;
   private _costNotifier: CostNotifier;
   private _costCalculator: CostCalculator;
+  private _idGenerator: IdGenerator;
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
   private readonly _costUpdatedInterval: number | undefined;
@@ -143,6 +149,9 @@ export class TransactionsModule extends AbstractModule {
    *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
+   *
+   * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which
+   * represents a generator for ids.
    */
   constructor(
     config: SystemConfig,
@@ -158,6 +167,7 @@ export class TransactionsModule extends AbstractModule {
     locationRepository?: ILocationRepository,
     tariffRepository?: ITariffRepository,
     reservationRepository?: IReservationRepository,
+    idGenerator?: IdGenerator,
     authorizers?: IAuthorizer[],
   ) {
     super(
@@ -208,6 +218,7 @@ export class TransactionsModule extends AbstractModule {
     this._transactionService = new TransactionService(
       this._transactionEventRepository,
       this._authorizeRepository,
+      this._reservationRepository,
       this._authorizers,
       this._logger,
     );
@@ -231,6 +242,12 @@ export class TransactionsModule extends AbstractModule {
       this._costCalculator,
       this._logger,
     );
+
+    this._idGenerator =
+      idGenerator ||
+      new IdGenerator(
+        new SequelizeChargingStationSequenceRepository(config, this._logger),
+      );
   }
 
   get transactionEventRepository(): ITransactionEventRepository {
@@ -270,17 +287,10 @@ export class TransactionsModule extends AbstractModule {
     const transactionId = transactionEvent.transactionInfo.transactionId;
 
     if (message.payload.reservationId) {
-      await this._reservationRepository.updateAllByQuery(
-        {
-          terminatedByTransaction: transactionId,
-          isActive: false,
-        },
-        {
-          where: {
-            id: message.payload.reservationId,
-            stationId: stationId,
-          },
-        },
+      await this._transactionService.deactivateReservation(
+        transactionId,
+        message.payload.reservationId,
+        stationId,
       );
     }
 
@@ -523,7 +533,11 @@ export class TransactionsModule extends AbstractModule {
     message: IMessage<OCPP1_6.StatusNotificationRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug('StatusNotification received:', message, props);
+    this._logger.debug(
+      'OCPP 1.6 StatusNotification request received:',
+      message,
+      props,
+    );
 
     await this._statusNotificationService.processOcpp16StatusNotification(
       message.context.stationId,
@@ -540,5 +554,73 @@ export class TransactionsModule extends AbstractModule {
       'StatusNotification response sent: ',
       messageConfirmation,
     );
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.StartTransaction)
+  protected async _handleOcpp16StartTransaction(
+    message: IMessage<OCPP1_6.StartTransactionRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug(
+      'OCPP 1.6 StartTransaction request received:',
+      message,
+      props,
+    );
+    const stationId = message.context.stationId;
+    const request = message.payload;
+
+    // Validate idToken
+    const idTagInfo: OCPP1_6_Mapper.IdTagInfoMapper =
+      await this._transactionService.validateOcpp16IdToken(request.idTag, true);
+
+    // Create response
+    const response: OCPP1_6.StartTransactionResponse = {
+      idTagInfo: {
+        expiryDate: idTagInfo.expiryDate,
+        parentIdTag: idTagInfo.parentIdTag?.idToken,
+        status:
+          this._transactionService.mapAuthorizeResponseStatusToStartTransactionResponseStatus(
+            idTagInfo.status,
+          ),
+      },
+      transactionId: 0, // default zero for rejected transaction
+    };
+
+    // Send response to charger
+    if (idTagInfo.status !== OCPP1_6.AuthorizeResponseStatus.Accepted) {
+      await this.sendCallResultWithMessage(message, response);
+    } else {
+      // Store transaction
+      const transactionId = await this._idGenerator.generateRequestId(
+        stationId,
+        ChargingStationSequenceType.transactionId,
+      );
+      this._logger.info(`Generated new transactionId: ${transactionId}`);
+      const newTransaction =
+        await this._transactionEventRepository.createTransactionByStartTransaction(
+          request,
+          transactionId,
+          stationId,
+        );
+      if (!newTransaction) {
+        this._logger.error(
+          `Failed to create transaction for idTag ${request.idTag}`,
+        );
+        response.idTagInfo.status =
+          OCPP1_6.StartTransactionResponseStatus.Invalid;
+      } else {
+        response.transactionId = transactionId;
+      }
+      await this.sendCallResultWithMessage(message, response);
+    }
+
+    // Deactivate reservation
+    if (request.reservationId) {
+      await this._transactionService.deactivateReservation(
+        response.transactionId.toString(),
+        request.reservationId,
+        stationId,
+      );
+    }
   }
 }

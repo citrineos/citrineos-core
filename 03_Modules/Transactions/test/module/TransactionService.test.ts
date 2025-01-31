@@ -1,5 +1,6 @@
 import {
   IAuthorizationRepository,
+  IReservationRepository,
   ITransactionEventRepository,
 } from '@citrineos/data';
 import {
@@ -20,6 +21,7 @@ describe('TransactionService', () => {
   let transactionService: TransactionService;
   let authorizationRepository: jest.Mocked<IAuthorizationRepository>;
   let transactionEventRepository: jest.Mocked<ITransactionEventRepository>;
+  let reservationRepository: jest.Mocked<IReservationRepository>;
   let authorizer: jest.Mocked<IAuthorizer>;
 
   beforeEach(() => {
@@ -28,8 +30,11 @@ describe('TransactionService', () => {
     } as unknown as jest.Mocked<IAuthorizationRepository>;
 
     transactionEventRepository = {
-      readAllActiveTransactionsByIdToken: jest.fn(),
+      readAllActiveTransactionsByIdTokenAndTransactionEventType: jest.fn(),
     } as unknown as jest.Mocked<ITransactionEventRepository>;
+
+    reservationRepository = {
+    } as unknown as jest.Mocked<IReservationRepository>;
 
     authorizer = {
       authorize: jest.fn(),
@@ -38,6 +43,7 @@ describe('TransactionService', () => {
     transactionService = new TransactionService(
       transactionEventRepository,
       authorizationRepository,
+      reservationRepository,
       [authorizer],
     );
   });
@@ -136,7 +142,7 @@ describe('TransactionService', () => {
     authorizationRepository.readAllByQuerystring.mockResolvedValue([
       authorization,
     ]);
-    transactionEventRepository.readAllActiveTransactionsByIdToken.mockResolvedValue(
+    transactionEventRepository.readAllActiveTransactionsByIdTokenAndTransactionEventType.mockResolvedValue(
       [aTransaction(), aTransaction()],
     );
 
@@ -162,7 +168,7 @@ describe('TransactionService', () => {
     authorizationRepository.readAllByQuerystring.mockResolvedValue([
       authorization,
     ]);
-    transactionEventRepository.readAllActiveTransactionsByIdToken.mockResolvedValue(
+    transactionEventRepository.readAllActiveTransactionsByIdTokenAndTransactionEventType.mockResolvedValue(
       [],
     );
     authorizer.authorize.mockResolvedValue({});
