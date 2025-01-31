@@ -4,3 +4,4 @@
 
 export { BootMapper } from './BootMapper';
 export { StatusNotificationMapper } from './StatusNotificationMapper';
+export { MeterValueMapper } from './MeterValueMapper';
