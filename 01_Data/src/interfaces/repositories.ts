@@ -43,7 +43,7 @@ import {
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
 
-export interface IAuthorizationRepository extends CrudRepository<OCPP2_0_1.AuthorizationData> {
+export interface IAuthorizationRepository extends CrudRepository<Authorization> {
   createOrUpdateByQuerystring: (value: OCPP2_0_1.AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
   updateRestrictionsByQuerystring: (value: AuthorizationRestrictions, query: AuthorizationQuerystring) => Promise<Authorization[]>;
   readAllByQuerystring: (query: AuthorizationQuerystring) => Promise<Authorization[]>;

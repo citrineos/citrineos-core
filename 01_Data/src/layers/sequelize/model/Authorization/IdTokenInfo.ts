@@ -8,7 +8,7 @@ import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize
 import { IdToken } from './IdToken';
 
 @Table
-export class IdTokenInfo extends Model implements OCPP2_0_1.IdTokenInfoType {
+export class IdTokenInfo extends Model {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.IdTokenInfoType;
 
   @Column(DataType.STRING)

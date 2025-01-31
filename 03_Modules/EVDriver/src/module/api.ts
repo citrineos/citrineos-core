@@ -23,6 +23,7 @@ import {
   Namespace,
 } from '@citrineos/base';
 import {
+  Authorization,
   AuthorizationQuerySchema,
   AuthorizationQuerystring,
   AuthorizationRestrictions,
@@ -67,13 +68,13 @@ export class EVDriverModuleApi
     AuthorizationQuerySchema,
     AuthorizationDataSchema,
   )
-  putAuthorization(
+  async putAuthorization(
     request: FastifyRequest<{
       Body: OCPP2_0_1.AuthorizationData;
       Querystring: AuthorizationQuerystring;
     }>,
-  ): Promise<OCPP2_0_1.AuthorizationData | undefined> {
-    return this._module.authorizeRepository.createOrUpdateByQuerystring(
+  ): Promise<Authorization | undefined> {
+    return await this._module.authorizeRepository.createOrUpdateByQuerystring(
       request.body,
       request.query,
     );
@@ -85,13 +86,13 @@ export class EVDriverModuleApi
     AuthorizationQuerySchema,
     AuthorizationRestrictionsSchema,
   )
-  putAuthorizationRestrictions(
+  async putAuthorizationRestrictions(
     request: FastifyRequest<{
       Body: AuthorizationRestrictions;
       Querystring: AuthorizationQuerystring;
     }>,
-  ): Promise<OCPP2_0_1.AuthorizationData[]> {
-    return this._module.authorizeRepository.updateRestrictionsByQuerystring(
+  ): Promise<Authorization[]> {
+    return await this._module.authorizeRepository.updateRestrictionsByQuerystring(
       request.body,
       request.query,
     );
@@ -102,10 +103,10 @@ export class EVDriverModuleApi
     HttpMethod.Get,
     AuthorizationQuerySchema,
   )
-  getAuthorization(
+  async getAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
-  ): Promise<OCPP2_0_1.AuthorizationData[]> {
-    return this._module.authorizeRepository.readAllByQuerystring(request.query);
+  ): Promise<Authorization[]> {
+    return await this._module.authorizeRepository.readAllByQuerystring(request.query);
   }
 
   @AsDataEndpoint(
@@ -113,7 +114,7 @@ export class EVDriverModuleApi
     HttpMethod.Delete,
     AuthorizationQuerySchema,
   )
-  deleteAuthorization(
+  async deleteAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
   ): Promise<string> {
     return this._module.authorizeRepository
