@@ -68,15 +68,13 @@ export class EVDriverModuleApi
     AuthorizationQuerySchema,
     AuthorizationDataSchema,
   )
-  putAuthorization(
+  async putAuthorization(
     request: FastifyRequest<{
       Body: OCPP2_0_1.AuthorizationData;
       Querystring: AuthorizationQuerystring;
     }>,
   ): Promise<Authorization | undefined> {
-    // TODO: the change above is just to avoid compile error
-    //  pull the real change when issue 71: generalize authorization task is done
-    return this._module.authorizeRepository.createOrUpdateByQuerystring(
+    return await this._module.authorizeRepository.createOrUpdateByQuerystring(
       request.body,
       request.query,
     );
@@ -88,15 +86,13 @@ export class EVDriverModuleApi
     AuthorizationQuerySchema,
     AuthorizationRestrictionsSchema,
   )
-  putAuthorizationRestrictions(
+  async putAuthorizationRestrictions(
     request: FastifyRequest<{
       Body: AuthorizationRestrictions;
       Querystring: AuthorizationQuerystring;
     }>,
   ): Promise<Authorization[]> {
-    // TODO: the change above is just to avoid compile error
-    //  pull the real change when issue 71: generalize authorization task is done
-    return this._module.authorizeRepository.updateRestrictionsByQuerystring(
+    return await this._module.authorizeRepository.updateRestrictionsByQuerystring(
       request.body,
       request.query,
     );
@@ -107,12 +103,10 @@ export class EVDriverModuleApi
     HttpMethod.Get,
     AuthorizationQuerySchema,
   )
-  getAuthorization(
+  async getAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
   ): Promise<Authorization[]> {
-    // TODO: the change above is just to avoid compile error
-    //  pull the real change when issue 71: generalize authorization task is done
-    return this._module.authorizeRepository.readAllByQuerystring(request.query);
+    return await this._module.authorizeRepository.readAllByQuerystring(request.query);
   }
 
   @AsDataEndpoint(
@@ -120,7 +114,7 @@ export class EVDriverModuleApi
     HttpMethod.Delete,
     AuthorizationQuerySchema,
   )
-  deleteAuthorization(
+  async deleteAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
   ): Promise<string> {
     return this._module.authorizeRepository
