@@ -46,7 +46,7 @@ export class StatusNotificationMapper extends AbstractMapper<StatusNotification>
   toModel(): StatusNotification {
     return StatusNotification.build({
       timestamp: this.timestamp,
-      status: this.status,
+      connectorStatus: this.status,
       connectorId: this.connectorId,
       stationId: this.stationId,
       errorCode: this.errorCode,
@@ -69,16 +69,7 @@ export class StatusNotificationMapper extends AbstractMapper<StatusNotification>
     );
   }
 
-  static fromRequest(stationId: string, statusNotification: OCPP1_6.StatusNotificationRequest): StatusNotificationMapper {
-    return new StatusNotificationMapper(
-      stationId,
-      statusNotification.status,
-      statusNotification.connectorId,
-      statusNotification.errorCode,
-      statusNotification.timestamp,
-      statusNotification.info,
-      statusNotification.vendorId,
-      statusNotification.vendorErrorCode,
-    );
+  static fromRequest(stationId: string, request: OCPP1_6.StatusNotificationRequest): StatusNotificationMapper {
+    return new StatusNotificationMapper(stationId, request.status, request.connectorId, request.errorCode, request.timestamp, request.info, request.vendorId, request.vendorErrorCode);
   }
 }

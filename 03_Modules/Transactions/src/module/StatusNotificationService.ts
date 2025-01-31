@@ -3,13 +3,13 @@ import {
   Evse,
   IDeviceModelRepository,
   ILocationRepository,
+  OCPP1_6_Mapper,
   Variable,
+  Connector,
+  OCPP2_0_1_Mapper,
 } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
-import {
-  CrudRepository,
-  OCPP2_0_1
-} from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
 
 export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;
@@ -44,9 +44,13 @@ export class StatusNotificationService {
     const chargingStation =
       await this._locationRepository.readChargingStationByStationId(stationId);
     if (chargingStation) {
-      await this._locationRepository.addStatusNotificationToChargingStation(
+      const mapper = OCPP2_0_1_Mapper.StatusNotificationMapper.fromRequest(
         stationId,
         statusNotificationRequest,
+      );
+      await this._locationRepository.addStatusNotificationToChargingStation(
+        stationId,
+        mapper.toModel(),
       );
     } else {
       this._logger.warn(
@@ -93,6 +97,42 @@ export class StatusNotificationService {
         reportDataType,
         stationId,
         statusNotificationRequest.timestamp,
+      );
+    }
+  }
+
+  async processOcpp16StatusNotification(
+    stationId: string,
+    statusNotificationRequest: OCPP1_6.StatusNotificationRequest,
+  ) {
+    const chargingStation =
+      await this._locationRepository.readChargingStationByStationId(stationId);
+    if (chargingStation) {
+      const statusNotificationMapper =
+        OCPP1_6_Mapper.StatusNotificationMapper.fromRequest(
+          stationId,
+          statusNotificationRequest,
+        );
+
+      await this._locationRepository.addStatusNotificationToChargingStation(
+          stationId,
+          statusNotificationMapper.toModel(),
+        );
+
+      const connector = {
+        connectorId: statusNotificationRequest.connectorId,
+        stationId,
+        status: statusNotificationRequest.status,
+        timestamp: statusNotificationRequest.timestamp ? statusNotificationRequest.timestamp : (new Date()).toISOString(),
+        errorCode: statusNotificationRequest.errorCode,
+        info: statusNotificationRequest.info,
+        vendorId: statusNotificationRequest.vendorId,
+        vendorErrorCode: statusNotificationRequest.vendorErrorCode,
+      } as Connector;
+      await this._locationRepository.createOrUpdateConnector(connector);
+    } else {
+      this._logger.warn(
+        `Charging station ${stationId} not found. Status notification cannot be associated with a charging station.`,
       );
     }
   }

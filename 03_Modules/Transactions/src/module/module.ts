@@ -16,6 +16,8 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  OCPP1_6,
+  OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
@@ -55,6 +57,7 @@ export class TransactionsModule extends AbstractModule {
     OCPP2_0_1_CallAction.MeterValues,
     OCPP2_0_1_CallAction.StatusNotification,
     OCPP2_0_1_CallAction.TransactionEvent,
+    OCPP1_6_CallAction.StatusNotification,
   ];
   _responses: CallAction[] = [
     OCPP2_0_1_CallAction.CostUpdated,
@@ -247,7 +250,7 @@ export class TransactionsModule extends AbstractModule {
   }
 
   /**
-   * Handle requests
+   * Handle OCPP 2.0.1 requests
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.TransactionEvent)
@@ -293,8 +296,10 @@ export class TransactionsModule extends AbstractModule {
       this._logger.debug('Transaction response sent: ', messageConfirmation);
       // If the transaction is accepted and interval is set, start the cost update
       if (
-        transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started &&
-        response.idTokenInfo?.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted &&
+        transactionEvent.eventType ===
+          OCPP2_0_1.TransactionEventEnumType.Started &&
+        response.idTokenInfo?.status ===
+          OCPP2_0_1.AuthorizationStatusEnumType.Accepted &&
         this._costUpdatedInterval
       ) {
         this._costNotifier.notifyWhileActive(
@@ -315,7 +320,9 @@ export class TransactionsModule extends AbstractModule {
           transactionId,
         );
 
-      if (message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Updated) {
+      if (
+        message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Updated
+      ) {
         // I02 - Show EV Driver Running Total Cost During Charging
         if (
           transaction &&
@@ -351,7 +358,8 @@ export class TransactionsModule extends AbstractModule {
       }
 
       if (
-        message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Ended &&
+        message.payload.eventType ===
+          OCPP2_0_1.TransactionEventEnumType.Ended &&
         transaction
       ) {
         response.totalCost = await this._costCalculator.calculateTotalCost(
@@ -484,7 +492,7 @@ export class TransactionsModule extends AbstractModule {
   }
 
   /**
-   * Handle responses
+   * Handle OCPP 2.0.1 responses
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.CostUpdated)
@@ -504,6 +512,33 @@ export class TransactionsModule extends AbstractModule {
       'GetTransactionStatus response received:',
       message,
       props,
+    );
+  }
+
+  /**
+   * Handle OCPP 1.6 requests
+   */
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.StatusNotification)
+  protected async _handleOcpp16StatusNotification(
+    message: IMessage<OCPP1_6.StatusNotificationRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('StatusNotification received:', message, props);
+
+    await this._statusNotificationService.processOcpp16StatusNotification(
+      message.context.stationId,
+      message.payload,
+    );
+
+    // Create response
+    const response: OCPP1_6.StatusNotificationResponse = {};
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'StatusNotification response sent: ',
+      messageConfirmation,
     );
   }
 }
