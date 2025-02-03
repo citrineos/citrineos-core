@@ -18,12 +18,13 @@
   "author": "S44",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/bcrypt": "5.0.1"
+    "@types/uuid": "9.0.1",
+    "eslint": "8.48.0",
+    "typescript": "5.0.4"
   },
   "dependencies": {
     "@citrineos/base": "1.6.0",
     "@types/sequelize": "4.28.20",
-    "bcrypt": "5.1.1",
     "pg": "8.11.3",
     "pg-hstore": "2.3.4",
     "sequelize-typescript": "2.1.6"

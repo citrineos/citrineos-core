@@ -4,7 +4,6 @@ WORKDIR /usr/local/apps/citrineos
 
 COPY . .
 RUN npm install --workspaces --verbose && npm run compile --workspaces --verbose
-RUN npm rebuild bcrypt --build-from-source && npm rebuild deasync --build-from-source
 
 # The final stage, which copies built files and prepares the run environment
 # Using a slim image to reduce the final image size
