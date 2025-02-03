@@ -134,12 +134,15 @@ export abstract class AbstractModuleApi<T extends IModule>
         Body: OcppRequest;
         Querystring: Record<string, any>;
       }>,
-    ): Promise<IMessageConfirmation> => {
+    ): Promise<IMessageConfirmation[]> => {
       const { identifier, tenantId, callbackUrl, ...extraQueries } =
         request.query;
+
+      const identifiers = Array.isArray(identifier) ? identifier : [identifier];
+
       return method.call(
         this,
-        identifier,
+        identifiers,
         tenantId,
         request.body,
         callbackUrl,

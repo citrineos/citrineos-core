@@ -13,9 +13,9 @@ import {
  */
 export interface ITransactionsModuleApi {
   getTransactionStatus(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.GetTransactionStatusRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation>;
+  ): Promise<IMessageConfirmation[]>;
 }

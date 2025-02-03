@@ -49,10 +49,10 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 enum SetNetworkProfileExtraQuerystrings {
-  websocketServerConfigId = 'websocketServerConfigId'
+  websocketServerConfigId = 'websocketServerConfigId',
 }
 
-/**websocketServerConfigId
+/**
  * Server API for the Configuration component.
  */
 export class ConfigurationModuleApi
@@ -74,7 +74,6 @@ export class ConfigurationModuleApi
     super(ConfigurationComponent, server, logger);
   }
 
-
   /**
    * Message Endpoint Methods
    */
@@ -82,18 +81,21 @@ export class ConfigurationModuleApi
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.SetNetworkProfile,
     OCPP2_0_1.SetNetworkProfileRequestSchema,
-    { websocketServerConfigId: { type: 'string' } }
+    { websocketServerConfigId: { type: 'string' } },
   )
   async setNetworkProfile(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.SetNetworkProfileRequest,
     callbackUrl?: string,
-    extraQueries?: Record<string, any>
-  ): Promise<IMessageConfirmation> {
+    extraQueries?: Record<string, any>,
+  ): Promise<IMessageConfirmation[]> {
     const correlationId = uuidv4();
     if (extraQueries) {
-      const websocketServerConfigId = extraQueries[SetNetworkProfileExtraQuerystrings.websocketServerConfigId];
+      const websocketServerConfigId =
+        extraQueries[
+          SetNetworkProfileExtraQuerystrings.websocketServerConfigId
+        ];
       await SetNetworkProfile.build({
         stationId: identifier,
         correlationId,
@@ -101,18 +103,22 @@ export class ConfigurationModuleApi
         websocketServerConfigId,
         apn: JSON.stringify(request.connectionData.apn),
         vpn: JSON.stringify(request.connectionData.vpn),
-        ...request.connectionData
+        ...request.connectionData,
       }).save();
     }
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.SetNetworkProfile,
-      request,
-      callbackUrl,
-      correlationId,
+
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.SetNetworkProfile,
+        request,
+        callbackUrl,
+        correlationId,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -120,19 +126,22 @@ export class ConfigurationModuleApi
     OCPP2_0_1.ClearDisplayMessageRequestSchema,
   )
   clearDisplayMessage(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.ClearDisplayMessageRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.ClearDisplayMessage,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.ClearDisplayMessage,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -140,36 +149,45 @@ export class ConfigurationModuleApi
     OCPP2_0_1.GetDisplayMessagesRequestSchema,
   )
   getDisplayMessages(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.GetDisplayMessagesRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.GetDisplayMessages,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetDisplayMessages,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.PublishFirmware, OCPP2_0_1.PublishFirmwareRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.PublishFirmware,
+    OCPP2_0_1.PublishFirmwareRequestSchema,
+  )
   publishFirmware(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.PublishFirmwareRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.PublishFirmware,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.PublishFirmware,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -177,35 +195,37 @@ export class ConfigurationModuleApi
     OCPP2_0_1.SetDisplayMessageRequestSchema,
   )
   async setDisplayMessage(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.SetDisplayMessageRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
+  ): Promise<IMessageConfirmation[]> {
     const messageInfo = request.message as OCPP2_0_1.MessageInfoType;
 
     const languageTag = messageInfo.message.language;
     if (languageTag && !validateLanguageTag(languageTag)) {
       const errorMsg =
-        'Language shall be specified as RFC-5646 tags, example: US English is: en-US.';
+        'Language shall be specified as RFC-5646 tags, example: en-US for US English.';
       this._logger.error(errorMsg);
-      return { success: false, payload: errorMsg };
+      return [{ success: false, payload: errorMsg }];
     }
 
-    // According to OCPP 2.0.1, the CSMS MAY include a startTime and endTime when setting a message.
-    // startDateTime is from what date-time should this message be shown. If omitted: directly.
+    // If omitted, startDateTime defaults to "now".
     if (!messageInfo.startDateTime) {
       messageInfo.startDateTime = new Date().toISOString();
     }
 
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.SetDisplayMessage,
-      request,
-      callbackUrl,
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.SetDisplayMessage,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -213,53 +233,65 @@ export class ConfigurationModuleApi
     OCPP2_0_1.UnpublishFirmwareRequestSchema,
   )
   unpublishFirmware(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.UnpublishFirmwareRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.UnpublishFirmware,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.UnpublishFirmware,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.UpdateFirmware, OCPP2_0_1.UpdateFirmwareRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.UpdateFirmware,
+    OCPP2_0_1.UpdateFirmwareRequestSchema,
+  )
   updateFirmware(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.UpdateFirmwareRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.UpdateFirmware,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.UpdateFirmware,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(OCPP2_0_1_CallAction.Reset, OCPP2_0_1.ResetRequestSchema)
   reset(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.ResetRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.Reset,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.Reset,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -267,36 +299,45 @@ export class ConfigurationModuleApi
     OCPP2_0_1.ChangeAvailabilityRequestSchema,
   )
   changeAvailability(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.ChangeAvailabilityRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.ChangeAvailability,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.ChangeAvailability,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.TriggerMessage, OCPP2_0_1.TriggerMessageRequestSchema)
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.TriggerMessage,
+    OCPP2_0_1.TriggerMessageRequestSchema,
+  )
   triggerMessage(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.TriggerMessageRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.TriggerMessage,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.TriggerMessage,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   /**
@@ -407,7 +448,10 @@ export class ConfigurationModuleApi
   async getNetworkProfiles(
     request: FastifyRequest<{ Querystring: NetworkProfileQuerystring }>,
   ): Promise<ChargingStationNetworkProfile[]> {
-    return ChargingStationNetworkProfile.findAll({ where: { stationId: request.query.stationId }, include: [SetNetworkProfile, ServerNetworkProfile] });
+    return ChargingStationNetworkProfile.findAll({
+      where: { stationId: request.query.stationId },
+      include: [SetNetworkProfile, ServerNetworkProfile],
+    });
   }
 
   @AsDataEndpoint(
@@ -422,15 +466,19 @@ export class ConfigurationModuleApi
       where: {
         stationId: request.query.stationId,
         configurationSlot: {
-          [Op.in]: request.query.configurationSlot
-        }
-      }
+          [Op.in]: request.query.configurationSlot,
+        },
+      },
     });
-    return { success: true, payload: `${destroyedRows} rows successfully destroyed` };
+    return {
+      success: true,
+      payload: `${destroyedRows} rows successfully destroyed`,
+    };
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link CallAction}
+   * and the module's endpoint prefix configuration.
    *
    * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
@@ -442,9 +490,10 @@ export class ConfigurationModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace}
+   * and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
   protected _toDataPath(input: Namespace): string {
@@ -500,7 +549,8 @@ export class ConfigurationModuleApi
     const setVariablesResponse: OCPP2_0_1.SetVariablesResponse =
       JSON.parse(responseJsonString);
     const passwordUpdated = setVariablesResponse.setVariableResult.every(
-      (result) => result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Accepted,
+      (result) =>
+        result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Accepted,
     );
     if (!passwordUpdated) {
       throw new Error(`Failure updating password on ${stationId} station`);

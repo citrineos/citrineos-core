@@ -13,15 +13,15 @@ import {
  */
 export interface IConfigurationModuleApi {
   setNetworkProfile(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.SetNetworkProfileRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation>;
+  ): Promise<IMessageConfirmation[]>;
   reset(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.ResetRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation>;
+  ): Promise<IMessageConfirmation[]>;
 }

@@ -48,6 +48,7 @@ const enum PemType {
   SubCA = 'SubCA',
   Leaf = 'Leaf',
 }
+
 /**
  * Server API for the Certificates module.
  */
@@ -64,10 +65,10 @@ export class CertificatesModuleApi
    *
    * @param {CertificatesModule} certificatesModule - The Certificates module.
    * @param {FastifyInstance} server - The Fastify server instance.
-   * @param {Logger<ILogObj>} [logger] - The logger instance.
    * @param {IFileAccess} fileAccess - The FileAccess
    * @param {WebsocketNetworkConnection} networkConnection - The NetworkConnection
    * @param {WebsocketServerConfig[]} websocketServersConfig - Configuration for websocket servers
+   * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
   constructor(
     certificatesModule: CertificatesModule,
@@ -92,19 +93,22 @@ export class CertificatesModuleApi
     OCPP2_0_1.CertificateSignedRequestSchema,
   )
   certificateSigned(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.CertificateSignedRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.CertificateSigned,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.CertificateSigned,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -112,19 +116,22 @@ export class CertificatesModuleApi
     OCPP2_0_1.InstallCertificateRequestSchema,
   )
   installCertificate(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.InstallCertificateRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.InstallCertificate,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.InstallCertificate,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -132,19 +139,22 @@ export class CertificatesModuleApi
     OCPP2_0_1.GetInstalledCertificateIdsRequestSchema,
   )
   getInstalledCertificateIds(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.GetInstalledCertificateIdsRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.GetInstalledCertificateIds,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetInstalledCertificateIds,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
@@ -152,19 +162,22 @@ export class CertificatesModuleApi
     OCPP2_0_1.DeleteCertificateRequestSchema,
   )
   deleteCertificate(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP2_0_1.DeleteCertificateRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.DeleteCertificate,
-      request,
-      callbackUrl,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.DeleteCertificate,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   /**
@@ -341,7 +354,7 @@ export class CertificatesModuleApi
 
       responseBody = [leafCertificate, subCertificate, certificateFromReq];
     } else {
-      // Generate sub CA certificate and private key singed by external CA server
+      // Generate sub CA certificate and private key signed by external CA server
       // commonName should be a valid domain name
       certificateFromReq.commonName = certRequest.commonName;
       certificateFromReq.pathLen = 0;
@@ -390,11 +403,6 @@ export class CertificatesModuleApi
     return responseBody;
   }
 
-  @AsDataEndpoint(Namespace.FileURL, HttpMethod.Get, undefined)
-  async getFileURL(): Promise<string> {
-    return this._fileAccess.getFileURL();
-  }
-
   @AsDataEndpoint(
     Namespace.RootCertificate,
     HttpMethod.Put,
@@ -423,27 +431,38 @@ export class CertificatesModuleApi
         );
     }
 
-    // Send InstallCertificateRequest to the charger
-    await this.installCertificate(
-      installReq.stationId,
+    const confirmations = await this.installCertificate(
+      [installReq.stationId],
       installReq.tenantId,
       {
         certificateType: installReq.certificateType,
         certificate: rootCAPem,
       } as OCPP2_0_1.InstallCertificateRequest,
       installReq.callbackUrl,
-    ).then((confirmation) => {
-      if (!confirmation.success) {
-        throw new Error(
-          `Send InstallCertificateRequest failed: ${confirmation.payload}`,
-        );
-      }
-      this._logger.debug('InstallCertificate confirmation sent:', confirmation);
-    });
+    );
+
+    const failedConfirmations = confirmations.filter(
+      (confirmation) => !confirmation.success,
+    );
+
+    if (failedConfirmations.length > 0) {
+      failedConfirmations.forEach((failure, index) =>
+        this._logger.error(
+          `InstallCertificateRequest failed for stationId: ${installReq.stationId}, index: ${index}, payload: ${failure.payload}`,
+        ),
+      );
+
+      throw new Error(
+        `One or more InstallCertificateRequest operations failed.`,
+      );
+    }
+
+    this._logger.debug('InstallCertificate confirmations:', confirmations);
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link CallAction}
+   * and the module's endpoint prefix configuration.
    *
    * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
@@ -455,9 +474,10 @@ export class CertificatesModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace}
+   * and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
   protected _toDataPath(input: Namespace): string {
