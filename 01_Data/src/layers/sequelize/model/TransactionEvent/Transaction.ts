@@ -49,7 +49,7 @@ export class Transaction extends Model {
   declare transactionEventsFilter?: OCPP2_0_1.TransactionEventRequest[];
 
   @HasMany(() => MeterValue)
-  declare meterValues?: OCPP2_0_1.MeterValueType[];
+  declare meterValues?: MeterValue[];
 
   @HasOne(() => StartTransaction)
   declare startTransaction?: StartTransaction;
@@ -80,7 +80,7 @@ export class Transaction extends Model {
     transactionId: string,
     isActive: boolean,
     transactionEvents: OCPP2_0_1.TransactionEventRequest[],
-    meterValues: OCPP2_0_1.MeterValueType[],
+    meterValues: MeterValue[],
     chargingState?: OCPP2_0_1.ChargingStateEnumType,
     timeSpentCharging?: number,
     totalKwh?: number,
