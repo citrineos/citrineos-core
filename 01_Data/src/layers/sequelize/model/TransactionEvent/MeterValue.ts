@@ -4,9 +4,10 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace } from '@citrineos/base';
-import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { TransactionEvent } from './TransactionEvent';
 import { Transaction } from './Transaction';
+import { Connector } from '../Location';
 
 @Table
 export class MeterValue extends Model {
@@ -30,6 +31,12 @@ export class MeterValue extends Model {
     },
   })
   declare timestamp: string;
+
+  @ForeignKey(() => Connector)
+  declare connectorDatabaseId?: number;
+
+  @BelongsTo(() => Connector)
+  declare connector?: Connector;
 
   declare customData?: object | null;
 }

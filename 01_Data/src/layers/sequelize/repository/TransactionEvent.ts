@@ -424,4 +424,38 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       return newTransaction;
     });
   }
+
+  async updateTransactionByMeterValues(meterValues: MeterValue[], stationId: string, connectorId: number, transactionId?: number | null): Promise<void> {
+    // Find existing connector
+    const connector = await this.connector.readOnlyOneByQuery({
+      where: {
+        connectorId: connectorId,
+        stationId,
+      },
+    });
+    if (!connector) {
+      this.logger.error(`Connector ${connectorId} on station ${stationId} does not exist. Update transaction and meter values ${transactionId} failed.`);
+      return;
+    }
+
+    // Find existing transaction
+    let transaction: Transaction | undefined;
+    if (transactionId) {
+      transaction = await this.readTransactionByStationIdAndTransactionId(stationId, transactionId.toString());
+      if (!transaction) {
+        this.logger.error(`Transaction ${transactionId} on station ${stationId} does not exist.`);
+        return;
+      }
+    }
+
+    // Store meter values
+    await Promise.all(
+      meterValues.map(async (meterValue) => {
+        meterValue.connectorDatabaseId = connector.id;
+        meterValue.transactionDatabaseId = transaction?.id;
+        await meterValue.save();
+        this.meterValue.emit('created', [meterValue]);
+      }),
+    );
+  }
 }

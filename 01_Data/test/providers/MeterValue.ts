@@ -9,6 +9,7 @@ export function aMeterValue(updateFunction?: UpdateFunction<MeterValue>): MeterV
     sampledValue: [...[aOcpp201SampledValue()]],
     timestamp: faker.date.recent().toISOString(),
     customData: { vendorId: faker.string.alpha(10) },
+    connectorDatabaseId: faker.number.int({ min: 0, max: 5 }),
   } as MeterValue;
 
   return applyUpdateFunction(meterValue, updateFunction);

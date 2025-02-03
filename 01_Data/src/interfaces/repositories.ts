@@ -143,6 +143,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   createOrUpdateTransactionByTransactionEventAndStationId(value: OCPP2_0_1.TransactionEventRequest, stationId: string): Promise<Transaction>;
   createMeterValue(value: OCPP2_0_1.MeterValueType, transactionDatabaseId?: number | null): Promise<void>;
   createTransactionByStartTransaction(request: OCPP1_6.StartTransactionRequest, transactionId: number, stationId: string): Promise<Transaction | undefined>;
+  updateTransactionByMeterValues(meterValues: MeterValue[], stationId: string, connectorId: number, transactionId?: number | null,): Promise<void>;
   readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEvent[]>;
   readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
   readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: OCPP2_0_1.EVSEType, chargingStates?: OCPP2_0_1.ChargingStateEnumType[]): Promise<Transaction[]>;

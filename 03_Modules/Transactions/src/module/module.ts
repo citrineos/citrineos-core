@@ -33,20 +33,14 @@ import {
   IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
+  OCPP1_6_Mapper,
   sequelize,
+  SequelizeChargingStationSequenceRepository,
   SequelizeRepository,
   Transaction,
   VariableAttribute,
-  OCPP1_6_Mapper,
-  SequelizeChargingStationSequenceRepository,
 } from '@citrineos/data';
-import {
-  IAuthorizer,
-  IdGenerator,
-  RabbitMqReceiver,
-  RabbitMqSender,
-  SignedMeterValuesUtil,
-} from '@citrineos/util';
+import { IAuthorizer, IdGenerator, RabbitMqReceiver, RabbitMqSender, SignedMeterValuesUtil } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
 import { TransactionService } from './TransactionService';
 import { StatusNotificationService } from './StatusNotificationService';
@@ -63,6 +57,7 @@ export class TransactionsModule extends AbstractModule {
     OCPP2_0_1_CallAction.TransactionEvent,
     OCPP1_6_CallAction.StatusNotification,
     OCPP1_6_CallAction.StartTransaction,
+    OCPP1_6_CallAction.MeterValues,
   ];
   _responses: CallAction[] = [
     OCPP2_0_1_CallAction.CostUpdated,
@@ -622,5 +617,43 @@ export class TransactionsModule extends AbstractModule {
         stationId,
       );
     }
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.MeterValues)
+  protected async _handleOcpp16MeterValues(
+    message: IMessage<OCPP1_6.MeterValuesRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug(
+      'OCPP 1.6 MeterValues request received:',
+      message,
+      props,
+    );
+
+    const stationId = message.context.stationId;
+    const connectorId = message.payload.connectorId;
+    const transactionId = message.payload.transactionId;
+
+    try {
+      const meterValues = OCPP1_6_Mapper.MeterValueMapper.fromRequest(
+        message.payload,
+      ).map((mapper) => mapper.toModel());
+      this._logger.debug(`[Testing] MeterValues: ${JSON.stringify(meterValues)}`);
+
+      await this._transactionEventRepository.updateTransactionByMeterValues(
+        meterValues,
+        stationId,
+        connectorId,
+        transactionId,
+      );
+    } catch (e) {
+      this._logger.error(`Failed to process MeterValues.`, e);
+    }
+
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      {} as OCPP1_6.MeterValuesResponse,
+    );
+    this._logger.debug('MeterValues response sent: ', messageConfirmation);
   }
 }
