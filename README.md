@@ -41,7 +41,7 @@ The system features:
   - `@AsMessageEndpoint` to expose functions allowing to send messages to charging stations
   - `@AsDataEndpoint` to expose CRUD access to entities defined in `01_Data`
 - Utilities to connect and extend various message broker and cache mechanisms
-  - Currently supported brokers are `RabbitMQ` and Google Cloud `PubSub`
+  - Currently supported brokers are `RabbitMQ` and `Kafka`
   - Currently supported caches are `In Memory` and `Redis`
 
 For more information on the project go to [citrineos.github.io](https://citrineos.github.io).

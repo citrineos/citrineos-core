@@ -67,6 +67,9 @@ export class KafkaReceiver
             .createTopics({ topics: [{ topic: this._topicName }] })
             .then(() => {
               this._logger.debug(`Topic ${this._topicName} created.`);
+            })
+            .catch((err) => {
+              this._logger.error('Error creating topic', err);
             });
         } else {
           this._logger.debug(`Topic ${this._topicName} already exists.`);
@@ -125,10 +128,10 @@ export class KafkaReceiver
       });
   }
 
-  shutdown(): void {
-    this._consumerMap.forEach((value) => {
-      value.disconnect();
-    });
+  async shutdown(): Promise<void> {
+    for (const consumer of this._consumerMap.values()) {
+      await consumer.disconnect();
+    }
   }
 
   /**
@@ -138,7 +141,7 @@ export class KafkaReceiver
   /**
    * Underlying Kafka message handler.
    *
-   * @param message The PubSub message to process
+   * @param message The kafka message to process
    */
   private async _onMessage(
     { topic, partition, message }: EachMessagePayload,

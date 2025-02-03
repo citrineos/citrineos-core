@@ -4,10 +4,8 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  ClearCacheRequest,
   IMessageConfirmation,
-  RequestStartTransactionRequest,
-  RequestStopTransactionRequest,
+  OCPP2_0_1
 } from '@citrineos/base';
 
 /**
@@ -17,19 +15,19 @@ export interface IEVDriverModuleApi {
   requestStartTransaction(
     identifier: string[],
     tenantId: string,
-    request: RequestStartTransactionRequest,
+    request: OCPP2_0_1.RequestStartTransactionRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]>;
   requestStopTransaction(
     identifier: string[],
     tenantId: string,
-    request: RequestStopTransactionRequest,
+    request: OCPP2_0_1.RequestStopTransactionRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]>;
   clearCache(
     identifier: string[],
     tenantId: string,
-    request: ClearCacheRequest,
+    request: OCPP2_0_1.ClearCacheRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]>;
 }

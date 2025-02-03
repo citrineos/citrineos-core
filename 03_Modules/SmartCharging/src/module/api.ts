@@ -9,25 +9,12 @@ import { SmartChargingModule } from './module';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
-  AttributeEnumType,
   CallAction,
-  ChargingLimitSourceEnumType,
-  ChargingProfileKindEnumType,
-  ChargingProfilePurposeEnumType,
-  ChargingProfileType,
-  ClearChargingProfileRequest,
-  ClearChargingProfileRequestSchema,
-  ClearedChargingLimitRequestSchema,
-  CustomerInformationRequest,
-  DataEnumType,
-  GetChargingProfilesRequest,
-  GetChargingProfilesRequestSchema,
-  GetCompositeScheduleRequest,
-  GetCompositeScheduleRequestSchema,
   IMessageConfirmation,
   Namespace,
-  SetChargingProfileRequest,
-  SetChargingProfileRequestSchema,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
+  OCPPVersion,
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { VariableAttribute } from '@citrineos/data';
@@ -58,14 +45,15 @@ export class SmartChargingModuleApi
   /**
    * Message endpoints
    */
+
   @AsMessageEndpoint(
-    CallAction.ClearChargingProfile,
-    ClearChargingProfileRequestSchema,
+    OCPP2_0_1_CallAction.ClearChargingProfile,
+    OCPP2_0_1.ClearChargingProfileRequestSchema,
   )
   async clearChargingProfile(
     identifier: string[],
     tenantId: string,
-    request: ClearChargingProfileRequest,
+    request: OCPP2_0_1.ClearChargingProfileRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const responses: IMessageConfirmation[] = [];
@@ -91,7 +79,7 @@ export class SmartChargingModuleApi
             responses.push({
               success: false,
               payload:
-                'At least one of chargingProfilePurpose, stackLevel and evseId must be provided when chargingProfileId is not provided.',
+                'At least one of chargingProfilePurpose, stackLevel, or evseId must be provided when chargingProfileId is not provided.',
             });
             continue;
           }
@@ -110,7 +98,8 @@ export class SmartChargingModuleApi
       // OCPP 2.0.1 Part 2 K10.FR.06
       if (
         chargingProfileCriteria?.chargingProfilePurpose ===
-        ChargingProfilePurposeEnumType.ChargingStationExternalConstraints
+        OCPP2_0_1.ChargingProfilePurposeEnumType
+          .ChargingStationExternalConstraints
       ) {
         responses.push({
           success: false,
@@ -123,7 +112,8 @@ export class SmartChargingModuleApi
       const response = await this._module.sendCall(
         id,
         tenantId,
-        CallAction.ClearChargingProfile,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.ClearChargingProfile,
         request,
         callbackUrl,
       );
@@ -135,13 +125,13 @@ export class SmartChargingModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.GetChargingProfiles,
-    GetChargingProfilesRequestSchema,
+    OCPP2_0_1_CallAction.GetChargingProfiles,
+    OCPP2_0_1.GetChargingProfilesRequestSchema,
   )
   async getChargingProfiles(
     identifier: string[],
     tenantId: string,
-    request: GetChargingProfilesRequest,
+    request: OCPP2_0_1.GetChargingProfilesRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const chargingProfile = request.chargingProfile;
@@ -156,7 +146,7 @@ export class SmartChargingModuleApi
         return identifier.map(() => ({
           success: false,
           payload:
-            'chargingProfilePurpose, stackLevel and chargingLimitSource are not needed when chargingProfileId is provided.',
+            'chargingProfilePurpose, stackLevel, and chargingLimitSource are not needed when chargingProfileId is provided.',
         }));
       }
     } else {
@@ -168,7 +158,7 @@ export class SmartChargingModuleApi
         return identifier.map(() => ({
           success: false,
           payload:
-            'At least one of chargingProfilePurpose, stackLevel and chargingLimitSource must be provided when chargingProfileId is not provided.',
+            'At least one of chargingProfilePurpose, stackLevel, or chargingLimitSource must be provided when chargingProfileId is not provided.',
         }));
       }
     }
@@ -191,18 +181,19 @@ export class SmartChargingModuleApi
       ) {
         return identifier.map(() => ({
           success: false,
-          payload: `The max length of chargingProfileId is ${chargingProfilesEntries.maxLimit}`,
+          payload: `The max length of chargingProfileId is ${chargingProfilesEntries.maxLimit}.`,
         }));
       }
     }
 
-    // Send calls for each identifier and gather the results
+    // Send calls for each station
     const results = await Promise.all(
       identifier.map((id) =>
         this._module.sendCall(
           id,
           tenantId,
-          CallAction.GetChargingProfiles,
+          OCPPVersion.OCPP2_0_1,
+          OCPP2_0_1_CallAction.GetChargingProfiles,
           request,
           callbackUrl,
         ),
@@ -213,22 +204,25 @@ export class SmartChargingModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.SetChargingProfile,
-    SetChargingProfileRequestSchema,
+    OCPP2_0_1_CallAction.SetChargingProfile,
+    OCPP2_0_1.SetChargingProfileRequestSchema,
   )
   async setChargingProfile(
     identifier: string[],
     tenantId: string,
-    request: SetChargingProfileRequest,
+    request: OCPP2_0_1.SetChargingProfileRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
+    // Process each station individually
     return Promise.all(
       identifier.map(async (id) => {
         this._logger.info(
-          `Received SetChargingProfile for station ${id}: ${JSON.stringify(request)}`,
+          `Received SetChargingProfile for station ${id}: ${JSON.stringify(
+            request,
+          )}`,
         );
-        const chargingProfile: ChargingProfileType = request.chargingProfile;
 
+        const chargingProfile = request.chargingProfile;
         // Validate ChargingProfileType's constraints
         try {
           await validateChargingProfileType(
@@ -248,7 +242,7 @@ export class SmartChargingModuleApi
           };
         }
 
-        // Validate use case specific constraints
+        // Additional use case checks
         const now = new Date();
         const validFrom = chargingProfile.validFrom
           ? new Date(chargingProfile.validFrom)
@@ -264,7 +258,6 @@ export class SmartChargingModuleApi
             payload: `chargingProfile validFrom ${chargingProfile.validFrom} should not be in the future.`,
           };
         }
-
         // OCPP 2.0.1 Part 2 K01.FR.37
         if (validTo && validTo.getTime() <= now.getTime()) {
           return {
@@ -273,10 +266,10 @@ export class SmartChargingModuleApi
           };
         }
 
-        let receivedChargingNeeds;
+        // If TxProfile
         if (
           chargingProfile.chargingProfilePurpose ===
-          ChargingProfilePurposeEnumType.TxProfile
+          OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile
         ) {
           // OCPP 2.0.1 Part 2 K01.FR.03
           if (!chargingProfile.transactionId) {
@@ -286,7 +279,6 @@ export class SmartChargingModuleApi
                 'Missing transactionId for chargingProfilePurpose TxProfile.',
             };
           }
-
           // OCPP 2.0.1 Part 2 K01.FR.09
           const transaction =
             await this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(
@@ -299,12 +291,11 @@ export class SmartChargingModuleApi
               payload: `Transaction ${chargingProfile.transactionId} not found on station ${id}.`,
             };
           }
-
           // OCPP 2.0.1 Part 2 K01.FR.16
           if (request.evseId <= 0) {
             return {
               success: false,
-              payload: 'TxProfile SHALL only be used with evseId >0.',
+              payload: 'TxProfile SHALL only be used with evseId > 0.',
             };
           }
 
@@ -320,24 +311,26 @@ export class SmartChargingModuleApi
             };
           }
           this._logger.info(`Found evse: ${JSON.stringify(evse)}`);
-          receivedChargingNeeds =
+
+          // OCPP 2.0.1 Part 2 K01.FR.34
+          // Must have received a NotifyEVChargingNeedsReq if more than one schedule is provided
+          const receivedChargingNeeds =
             await this._module.chargingProfileRepository.findChargingNeedsByEvseDBIdAndTransactionDBId(
               evse.databaseId,
               transaction.id,
             );
-          // OCPP 2.0.1 Part 2 K01.FR.34
           if (
             !receivedChargingNeeds &&
             chargingProfile.chargingSchedule.length > 1
           ) {
             return {
               success: false,
-              payload: `The CSMS has not received a NotifyEVChargingNeedsReq set for the current transaction ${transaction.id}. ChargingProfile SHALL contain only one ChargingScheduleType.`,
+              payload: `No prior NotifyEVChargingNeedsReq found for this transaction ${transaction.id}. Only one ChargingScheduleType allowed without it.`,
             };
           }
 
           // OCPP 2.0.1 Part 2 K01.FR.39
-          const numOfExistedChargingProfile =
+          const numExisted =
             await this._module.chargingProfileRepository.existByQuery({
               where: {
                 stackLevel: chargingProfile.stackLevel,
@@ -346,42 +339,43 @@ export class SmartChargingModuleApi
                 isActive: true,
               },
             });
-          if (numOfExistedChargingProfile > 0) {
+          if (numExisted > 0) {
             return {
               success: false,
-              payload: `${numOfExistedChargingProfile} ChargingProfile with stackLevel ${chargingProfile.stackLevel} and transactionId ${chargingProfile.transactionId} already exists.`,
+              payload: `${numExisted} ChargingProfile with stackLevel ${chargingProfile.stackLevel} and transactionId ${chargingProfile.transactionId} already exists.`,
             };
           }
         } else if (
           chargingProfile.chargingProfilePurpose ===
-          ChargingProfilePurposeEnumType.ChargingStationExternalConstraints
+          OCPP2_0_1.ChargingProfilePurposeEnumType
+            .ChargingStationExternalConstraints
         ) {
           // OCPP 2.0.1 Part 2 K01.FR.22
           return {
             success: false,
             payload:
-              'The CSMS SHALL NOT set chargingProfilePurpose to' +
-              ' ChargingStationExternalConstraints. This purpose is only used when an external system has set a charging limit/schedule.',
+              'The CSMS SHALL NOT set chargingProfilePurpose to ChargingStationExternalConstraints.',
           };
         } else {
+          // E.g., ChargingStationMaxProfile or custom
           if (
             chargingProfile.chargingProfilePurpose ===
-            ChargingProfilePurposeEnumType.ChargingStationMaxProfile
+            OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationMaxProfile
           ) {
             // OCPP 2.0.1 Part 2 K01.FR.38
             if (
               chargingProfile.chargingProfileKind ===
-              ChargingProfileKindEnumType.Relative
+              OCPP2_0_1.ChargingProfileKindEnumType.Relative
             ) {
               return {
                 success: false,
                 payload:
-                  'When chargingProfilePurpose is ChargingStationMaxProfile,' +
-                  ' chargingProfileKind SHALL NOT be Relative',
+                  'When chargingProfilePurpose is ChargingStationMaxProfile, chargingProfileKind SHALL NOT be Relative.',
               };
             }
           }
-          // OCPP 2.0.1 Part 2 K01.FR.06
+
+          // Check for existing profiles with the same stack level and purpose
           const existedChargingProfiles =
             await this._module.chargingProfileRepository.readAllByQuery({
               where: {
@@ -392,16 +386,16 @@ export class SmartChargingModuleApi
               },
             });
           this._logger.info(
-            `Found existing charging profiles: ${JSON.stringify(existedChargingProfiles)}`,
+            `Found existing charging profiles: ${JSON.stringify(
+              existedChargingProfiles,
+            )}`,
           );
           if (existedChargingProfiles.length > 0) {
-            // validFrom must be smaller than or equal to the time when it is set on charger
-            // So no need to check validFrom
             if (!validTo) {
               return {
                 success: false,
                 payload:
-                  'No two charging profiles with same stack level and purpose can be valid at the same time.',
+                  'No two charging profiles with the same stack level and purpose can be valid at the same time.',
               };
             } else {
               for (const existedProfile of existedChargingProfiles) {
@@ -415,7 +409,7 @@ export class SmartChargingModuleApi
                   return {
                     success: false,
                     payload:
-                      'No two charging profiles with same stack level and purpose can be valid at the same time.',
+                      'No two charging profiles with the same stack level and purpose can be valid at the same time.',
                   };
                 }
               }
@@ -423,16 +417,19 @@ export class SmartChargingModuleApi
           }
         }
 
+        // Additional checks on scheduling
         const acPhaseSwitchingSupported: VariableAttribute[] =
           await this._module.deviceModelRepository.readAllByQuerystring({
             stationId: id,
             component_evse_id: request.evseId,
             component_name: 'SmartChargingCtrlr',
             variable_name: 'ACPhaseSwitchingSupported',
-            type: AttributeEnumType.Actual,
+            type: OCPP2_0_1.AttributeEnumType.Actual,
           });
         this._logger.info(
-          `Found ACPhaseSwitchingSupported: ${JSON.stringify(acPhaseSwitchingSupported)}`,
+          `Found ACPhaseSwitchingSupported for station ${id}: ${JSON.stringify(
+            acPhaseSwitchingSupported,
+          )}`,
         );
         const rateUnitMemberList = await this._getChargingRateUnitMemberList();
         for (const chargingSchedule of chargingProfile.chargingSchedule) {
@@ -440,32 +437,38 @@ export class SmartChargingModuleApi
           if (chargingSchedule.chargingSchedulePeriod[0].startPeriod !== 0) {
             return {
               success: false,
-              payload: `ChargingSchedule ${chargingSchedule.id}: The startPeriod of the first chargingSchedulePeriod in a chargingSchedule SHALL always be 0.`,
+              payload:
+                `ChargingSchedule ${chargingSchedule.id}: ` +
+                `The startPeriod of the first chargingSchedulePeriod SHALL be 0.`,
             };
           }
 
           if (
             chargingProfile.chargingProfileKind ===
-              ChargingProfileKindEnumType.Absolute ||
+              OCPP2_0_1.ChargingProfileKindEnumType.Absolute ||
             chargingProfile.chargingProfileKind ===
-              ChargingProfileKindEnumType.Recurring
+              OCPP2_0_1.ChargingProfileKindEnumType.Recurring
           ) {
             // OCPP 2.0.1 Part 2 K01.FR.40
             if (!chargingSchedule.startSchedule) {
               return {
                 success: false,
-                payload: `ChargingSchedule ${chargingSchedule.id}: startSchedule SHALL be set when chargingProfileKind is Absolute or Recurring.`,
+                payload:
+                  `ChargingSchedule ${chargingSchedule.id}: ` +
+                  `startSchedule SHALL be set when chargingProfileKind is Absolute or Recurring.`,
               };
             }
           } else if (
             chargingProfile.chargingProfileKind ===
-            ChargingProfileKindEnumType.Relative
+            OCPP2_0_1.ChargingProfileKindEnumType.Relative
           ) {
             // OCPP 2.0.1 Part 2 K01.FR.41
             if (chargingSchedule.startSchedule) {
               return {
                 success: false,
-                payload: `ChargingSchedule ${chargingSchedule.id}: startSchedule SHALL be absent when chargingProfileKind is Relative.`,
+                payload:
+                  `ChargingSchedule ${chargingSchedule.id}: ` +
+                  `startSchedule SHALL be absent when chargingProfileKind is Relative.`,
               };
             }
           }
@@ -477,23 +480,56 @@ export class SmartChargingModuleApi
           ) {
             return {
               success: false,
-              payload: `ChargingSchedule ${chargingSchedule.id}: chargingRateUnit SHALL be one of ${JSON.stringify(
-                rateUnitMemberList,
-              )}`,
+              payload:
+                `ChargingSchedule ${chargingSchedule.id}: ` +
+                `chargingRateUnit SHALL be one of ${JSON.stringify(
+                  Array.from(rateUnitMemberList),
+                )}.`,
             };
+          }
+
+          // Sort periods by ascending startPeriod
+          chargingSchedule.chargingSchedulePeriod.sort((p1, p2) => {
+            if (p1.startPeriod > p2.startPeriod) return 1;
+            if (p1.startPeriod < p2.startPeriod) return -1;
+            return 0;
+          });
+
+          // More checks on each period
+          for (const chargingSchedulePeriod of chargingSchedule.chargingSchedulePeriod) {
+            if (chargingSchedulePeriod.phaseToUse) {
+              // OCPP 2.0.1 Part 2 K01.FR.19
+              if (chargingSchedulePeriod.numberPhases !== 1) {
+                return {
+                  success: false,
+                  payload: `chargingSchedulePeriod with phaseToUse requires numberPhases=1`,
+                };
+              }
+              // If AC switching not supported
+              if (!acPhaseSwitchingSupported.length) {
+                return {
+                  success: false,
+                  payload: `phaseToUse not allowed if AC phase switching is not supported by station ${id}.`,
+                };
+              }
+            }
           }
         }
 
+        // Save the charging profile, set the source to "CSO"
         await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
           chargingProfile,
           id,
           request.evseId,
-          ChargingLimitSourceEnumType.CSO,
+          OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
         );
+
+        // Finally, send the call to the station
         return this._module.sendCall(
           id,
           tenantId,
-          CallAction.SetChargingProfile,
+          OCPPVersion.OCPP2_0_1,
+          OCPP2_0_1_CallAction.SetChargingProfile,
           request,
           callbackUrl,
         );
@@ -502,13 +538,13 @@ export class SmartChargingModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.ClearedChargingLimit,
-    ClearedChargingLimitRequestSchema,
+    OCPP2_0_1_CallAction.ClearedChargingLimit,
+    OCPP2_0_1.ClearedChargingLimitRequestSchema,
   )
   clearedChargingLimit(
     identifier: string[],
     tenantId: string,
-    request: CustomerInformationRequest,
+    request: OCPP2_0_1.ClearedChargingLimitRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     return Promise.all(
@@ -516,7 +552,8 @@ export class SmartChargingModuleApi
         this._module.sendCall(
           id,
           tenantId,
-          CallAction.ClearedChargingLimit,
+          OCPPVersion.OCPP2_0_1,
+          OCPP2_0_1_CallAction.ClearedChargingLimit,
           request,
           callbackUrl,
         ),
@@ -525,13 +562,13 @@ export class SmartChargingModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.GetCompositeSchedule,
-    GetCompositeScheduleRequestSchema,
+    OCPP2_0_1_CallAction.GetCompositeSchedule,
+    OCPP2_0_1.GetCompositeScheduleRequestSchema,
   )
   async getCompositeSchedule(
     identifier: string[],
     tenantId: string,
-    request: GetCompositeScheduleRequest,
+    request: OCPP2_0_1.GetCompositeScheduleRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     return Promise.all(
@@ -546,30 +583,36 @@ export class SmartChargingModuleApi
           if (!evse) {
             return {
               success: false,
-              payload: `EVSE ${request.evseId} not found`,
+              payload: `EVSE ${request.evseId} not found for station ${id}.`,
             };
           }
-          this._logger.info(`Found evse: ${JSON.stringify(evse)}`);
+          this._logger.info(
+            `Found evse for station ${id}: ${JSON.stringify(evse)}`,
+          );
         }
-  
+
         // OCPP 2.0.1 Part 2 K08.FR.07
         if (request.chargingRateUnit) {
-          const rateUnitMemberList = await this._getChargingRateUnitMemberList();
+          const rateUnitMemberList =
+            await this._getChargingRateUnitMemberList();
           if (
             rateUnitMemberList &&
             !rateUnitMemberList.has(request.chargingRateUnit)
           ) {
             return {
               success: false,
-              payload: `chargingRateUnit SHALL be one of [${Array.from(rateUnitMemberList)}].`,
+              payload:
+                `chargingRateUnit SHALL be one of ` +
+                `[${Array.from(rateUnitMemberList)}].`,
             };
           }
         }
-  
+
         return this._module.sendCall(
           id,
           tenantId,
-          CallAction.GetCompositeSchedule,
+          OCPPVersion.OCPP2_0_1,
+          OCPP2_0_1_CallAction.GetCompositeSchedule,
           request,
           callbackUrl,
         );
@@ -582,7 +625,8 @@ export class SmartChargingModuleApi
    */
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link CallAction}
+   * and the module's endpoint prefix configuration.
    *
    * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
@@ -594,7 +638,8 @@ export class SmartChargingModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace}
+   * and the module's endpoint prefix configuration.
    *
    * @param {CallAction} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
@@ -605,6 +650,9 @@ export class SmartChargingModuleApi
     return super._toDataPath(input, endpointPrefix);
   }
 
+  /**
+   * Returns a set of allowed RateUnit values (if defined on the station).
+   */
   private async _getChargingRateUnitMemberList(): Promise<
     Set<string> | undefined
   > {
@@ -618,7 +666,8 @@ export class SmartChargingModuleApi
     );
     if (
       chargingScheduleChargingRateUnit &&
-      chargingScheduleChargingRateUnit.dataType === DataEnumType.MemberList &&
+      chargingScheduleChargingRateUnit.dataType ===
+        OCPP2_0_1.DataEnumType.MemberList &&
       chargingScheduleChargingRateUnit.valuesList
     ) {
       return stringToSet(chargingScheduleChargingRateUnit.valuesList);

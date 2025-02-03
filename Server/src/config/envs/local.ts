@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
+import { defineConfig, OCPP2_0_1 } from '@citrineos/base';
 import path from 'path';
 
 export function createLocalConfig() {
   return defineConfig({
     env: 'development',
     centralSystem: {
-      host: '0.0.0.0',
+      host: '::',
       port: 8080,
     },
     modules: {
@@ -19,7 +19,7 @@ export function createLocalConfig() {
       configuration: {
         heartbeatInterval: 60,
         bootRetryInterval: 15,
-        unknownChargerStatus: RegistrationStatusEnumType.Accepted,
+        unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
         getBaseReportOnPending: true,
         bootWithRejectedVariables: true,
         autoAccept: true,

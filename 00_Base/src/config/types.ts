@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { z } from 'zod';
-import { RegistrationStatusEnumType } from '../ocpp/model';
+import { OCPP2_0_1 } from '../ocpp/model';
 import { EventGroup } from '..';
 
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
@@ -14,7 +14,7 @@ export const websocketServerInputSchema = z.object({
   host: z.string().default('localhost').optional(),
   port: z.number().int().positive().default(8080).optional(),
   pingInterval: z.number().int().positive().default(60).optional(),
-  protocol: z.string().default('ocpp2.0.1').optional(),
+  protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']).default('ocpp2.0.1').optional(),
   securityProfile: z.number().int().min(0).max(3).default(0).optional(),
   allowUnknownChargingStations: z.boolean().default(false).optional(),
   tlsKeyFilePath: z.string().optional(), // Leaf certificate's private key pem which decrypts the message from client
@@ -44,11 +44,11 @@ export const systemConfigInputSchema = z.object({
       bootRetryInterval: z.number().int().positive().default(10).optional(),
       unknownChargerStatus: z
         .enum([
-          RegistrationStatusEnumType.Accepted,
-          RegistrationStatusEnumType.Pending,
-          RegistrationStatusEnumType.Rejected,
+          OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+          OCPP2_0_1.RegistrationStatusEnumType.Pending,
+          OCPP2_0_1.RegistrationStatusEnumType.Rejected,
         ])
-        .default(RegistrationStatusEnumType.Accepted)
+        .default(OCPP2_0_1.RegistrationStatusEnumType.Accepted)
         .optional(), // Unknown chargers have no entry in BootConfig table
       getBaseReportOnPending: z.boolean().default(true).optional(),
       bootWithRejectedVariables: z.boolean().default(true).optional(),
@@ -129,13 +129,6 @@ export const systemConfigInputSchema = z.object({
       }),
     messageBroker: z
       .object({
-        pubsub: z
-          .object({
-            topicPrefix: z.string().default('ocpp').optional(),
-            topicName: z.string().optional(),
-            servicePath: z.string().optional(),
-          })
-          .optional(),
         kafka: z
           .object({
             topicPrefix: z.string().optional(),
@@ -155,7 +148,7 @@ export const systemConfigInputSchema = z.object({
           })
           .optional(),
       })
-      .refine((obj) => obj.pubsub || obj.kafka || obj.amqp, {
+      .refine((obj) => obj.kafka || obj.amqp, {
         message: 'A message broker implementation must be set',
       }),
     fileAccess: z
@@ -263,7 +256,7 @@ export const websocketServerSchema = z
     host: z.string(),
     port: z.number().int().positive(),
     pingInterval: z.number().int().positive(),
-    protocol: z.string(),
+    protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']),
     securityProfile: z.number().int().min(0).max(3),
     allowUnknownChargingStations: z.boolean(),
     tlsKeyFilePath: z.string().optional(),
@@ -313,9 +306,9 @@ export const systemConfigSchema = z
         heartbeatInterval: z.number().int().positive(),
         bootRetryInterval: z.number().int().positive(),
         unknownChargerStatus: z.enum([
-          RegistrationStatusEnumType.Accepted,
-          RegistrationStatusEnumType.Pending,
-          RegistrationStatusEnumType.Rejected,
+          OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+          OCPP2_0_1.RegistrationStatusEnumType.Pending,
+          OCPP2_0_1.RegistrationStatusEnumType.Rejected,
         ]), // Unknown chargers have no entry in BootConfig table
         getBaseReportOnPending: z.boolean(),
         bootWithRejectedVariables: z.boolean(),
@@ -405,13 +398,6 @@ export const systemConfigSchema = z
         }),
       messageBroker: z
         .object({
-          pubsub: z
-            .object({
-              topicPrefix: z.string(),
-              topicName: z.string().optional(),
-              servicePath: z.string().optional(),
-            })
-            .optional(),
           kafka: z
             .object({
               topicPrefix: z.string().optional(),
@@ -431,7 +417,7 @@ export const systemConfigSchema = z
             })
             .optional(),
         })
-        .refine((obj) => obj.pubsub || obj.kafka || obj.amqp, {
+        .refine((obj) => obj.kafka || obj.amqp, {
           message: 'A message broker implementation must be set',
         }),
       fileAccess: z

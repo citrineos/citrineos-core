@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  GetTransactionStatusRequest,
+  OCPP2_0_1,
   IMessageConfirmation,
 } from '@citrineos/base';
 
@@ -15,7 +15,7 @@ export interface ITransactionsModuleApi {
   getTransactionStatus(
     identifier: string[],
     tenantId: string,
-    request: GetTransactionStatusRequest,
+    request: OCPP2_0_1.GetTransactionStatusRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]>;
 }

@@ -196,7 +196,6 @@ dist
 
 # Files produced by build
 lib/
-package-lock.json
 
 # Sqlite
 .sqlite

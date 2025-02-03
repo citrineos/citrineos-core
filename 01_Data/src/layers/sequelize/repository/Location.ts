@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, StatusNotificationRequest, SystemConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { ChargingStation, Location, SequelizeRepository } from '..';
@@ -49,7 +49,7 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     return await this.chargingStation.existsByKey(stationId);
   }
 
-  async addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotificationRequest): Promise<void> {
+  async addStatusNotificationToChargingStation(stationId: string, statusNotification: OCPP2_0_1.StatusNotificationRequest): Promise<void> {
     const notification = StatusNotification.build({
       stationId,
       ...statusNotification,

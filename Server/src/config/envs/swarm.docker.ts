@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
+import { defineConfig, OCPP2_0_1 } from '@citrineos/base';
 import path from 'path';
 
 export function createDockerConfig() {
@@ -21,7 +21,7 @@ export function createDockerConfig() {
       configuration: {
         heartbeatInterval: 60,
         bootRetryInterval: 15,
-        unknownChargerStatus: RegistrationStatusEnumType.Accepted,
+        unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
         getBaseReportOnPending: true,
         bootWithRejectedVariables: true,
         autoAccept: true,

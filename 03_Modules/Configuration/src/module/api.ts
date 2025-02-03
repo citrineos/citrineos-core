@@ -11,43 +11,17 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   AsMessageEndpoint,
-  AttributeEnumType,
   BootConfig,
   BootConfigSchema,
-  BootNotificationResponse,
   CallAction,
-  ChangeAvailabilityRequest,
-  ChangeAvailabilityRequestSchema,
-  ClearDisplayMessageRequest,
-  ClearDisplayMessageRequestSchema,
-  DataEnumType,
-  GetDisplayMessagesRequest,
-  GetDisplayMessagesRequestSchema,
   HttpMethod,
   IMessageConfirmation,
-  MessageInfoType,
-  MutabilityEnumType,
   Namespace,
-  PublishFirmwareRequest,
-  PublishFirmwareRequestSchema,
-  ResetRequest,
-  ResetRequestSchema,
-  SetDisplayMessageRequest,
-  SetDisplayMessageRequestSchema,
-  SetNetworkProfileRequest,
-  SetNetworkProfileRequestSchema,
-  SetVariableDataType,
-  SetVariablesRequest,
-  SetVariablesResponse,
-  SetVariableStatusEnumType,
-  TriggerMessageRequest,
-  TriggerMessageRequestSchema,
-  UnpublishFirmwareRequest,
-  UnpublishFirmwareRequestSchema,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
+  OCPPVersion,
   UpdateChargingStationPasswordRequest,
   UpdateChargingStationPasswordSchema,
-  UpdateFirmwareRequest,
-  UpdateFirmwareRequestSchema,
 } from '@citrineos/base';
 import {
   Boot,
@@ -78,7 +52,7 @@ enum SetNetworkProfileExtraQuerystrings {
   websocketServerConfigId = 'websocketServerConfigId',
 }
 
-/**websocketServerConfigId
+/**
  * Server API for the Configuration component.
  */
 export class ConfigurationModuleApi
@@ -105,14 +79,14 @@ export class ConfigurationModuleApi
    */
 
   @AsMessageEndpoint(
-    CallAction.SetNetworkProfile,
-    SetNetworkProfileRequestSchema,
+    OCPP2_0_1_CallAction.SetNetworkProfile,
+    OCPP2_0_1.SetNetworkProfileRequestSchema,
     { websocketServerConfigId: { type: 'string' } },
   )
   async setNetworkProfile(
     identifier: string[],
     tenantId: string,
-    request: SetNetworkProfileRequest,
+    request: OCPP2_0_1.SetNetworkProfileRequest,
     callbackUrl?: string,
     extraQueries?: Record<string, any>,
   ): Promise<IMessageConfirmation[]> {
@@ -137,7 +111,8 @@ export class ConfigurationModuleApi
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.SetNetworkProfile,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.SetNetworkProfile,
         request,
         callbackUrl,
         correlationId,
@@ -147,20 +122,21 @@ export class ConfigurationModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.ClearDisplayMessage,
-    ClearDisplayMessageRequestSchema,
+    OCPP2_0_1_CallAction.ClearDisplayMessage,
+    OCPP2_0_1.ClearDisplayMessageRequestSchema,
   )
   clearDisplayMessage(
     identifier: string[],
     tenantId: string,
-    request: ClearDisplayMessageRequest,
+    request: OCPP2_0_1.ClearDisplayMessageRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.ClearDisplayMessage,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.ClearDisplayMessage,
         request,
         callbackUrl,
       ),
@@ -169,39 +145,21 @@ export class ConfigurationModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.GetDisplayMessages,
-    GetDisplayMessagesRequestSchema,
+    OCPP2_0_1_CallAction.GetDisplayMessages,
+    OCPP2_0_1.GetDisplayMessagesRequestSchema,
   )
   getDisplayMessages(
     identifier: string[],
     tenantId: string,
-    request: GetDisplayMessagesRequest,
+    request: OCPP2_0_1.GetDisplayMessagesRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.GetDisplayMessages,
-        request,
-        callbackUrl,
-      ),
-    );
-    return Promise.all(results);
-  }
-
-  @AsMessageEndpoint(CallAction.PublishFirmware, PublishFirmwareRequestSchema)
-  publishFirmware(
-    identifier: string[],
-    tenantId: string,
-    request: PublishFirmwareRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
-      this._module.sendCall(
-        id,
-        tenantId,
-        CallAction.PublishFirmware,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetDisplayMessages,
         request,
         callbackUrl,
       ),
@@ -210,27 +168,49 @@ export class ConfigurationModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.SetDisplayMessage,
-    SetDisplayMessageRequestSchema,
+    OCPP2_0_1_CallAction.PublishFirmware,
+    OCPP2_0_1.PublishFirmwareRequestSchema,
+  )
+  publishFirmware(
+    identifier: string[],
+    tenantId: string,
+    request: OCPP2_0_1.PublishFirmwareRequest,
+    callbackUrl?: string,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.PublishFirmware,
+        request,
+        callbackUrl,
+      ),
+    );
+    return Promise.all(results);
+  }
+
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.SetDisplayMessage,
+    OCPP2_0_1.SetDisplayMessageRequestSchema,
   )
   async setDisplayMessage(
     identifier: string[],
     tenantId: string,
-    request: SetDisplayMessageRequest,
+    request: OCPP2_0_1.SetDisplayMessageRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
-    const messageInfo = request.message as MessageInfoType;
+    const messageInfo = request.message as OCPP2_0_1.MessageInfoType;
 
     const languageTag = messageInfo.message.language;
     if (languageTag && !validateLanguageTag(languageTag)) {
       const errorMsg =
-        'Language shall be specified as RFC-5646 tags, example: US English is: en-US.';
+        'Language shall be specified as RFC-5646 tags, example: en-US for US English.';
       this._logger.error(errorMsg);
       return [{ success: false, payload: errorMsg }];
     }
 
-    // According to OCPP 2.0.1, the CSMS MAY include a startTime and endTime when setting a message.
-    // startDateTime is from what date-time should this message be shown. If omitted: directly.
+    // If omitted, startDateTime defaults to "now".
     if (!messageInfo.startDateTime) {
       messageInfo.startDateTime = new Date().toISOString();
     }
@@ -239,7 +219,8 @@ export class ConfigurationModuleApi
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.SetDisplayMessage,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.SetDisplayMessage,
         request,
         callbackUrl,
       ),
@@ -248,58 +229,21 @@ export class ConfigurationModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.UnpublishFirmware,
-    UnpublishFirmwareRequestSchema,
+    OCPP2_0_1_CallAction.UnpublishFirmware,
+    OCPP2_0_1.UnpublishFirmwareRequestSchema,
   )
   unpublishFirmware(
     identifier: string[],
     tenantId: string,
-    request: UnpublishFirmwareRequest,
+    request: OCPP2_0_1.UnpublishFirmwareRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.UnpublishFirmware,
-        request,
-        callbackUrl,
-      ),
-    );
-    return Promise.all(results);
-  }
-
-  @AsMessageEndpoint(CallAction.UpdateFirmware, UpdateFirmwareRequestSchema)
-  updateFirmware(
-    identifier: string[],
-    tenantId: string,
-    request: UpdateFirmwareRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
-      this._module.sendCall(
-        id,
-        tenantId,
-        CallAction.UpdateFirmware,
-        request,
-        callbackUrl,
-      ),
-    );
-    return Promise.all(results);
-  }
-
-  @AsMessageEndpoint(CallAction.Reset, ResetRequestSchema)
-  reset(
-    identifier: string[],
-    tenantId: string,
-    request: ResetRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
-      this._module.sendCall(
-        id,
-        tenantId,
-        CallAction.Reset,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.UnpublishFirmware,
         request,
         callbackUrl,
       ),
@@ -308,20 +252,21 @@ export class ConfigurationModuleApi
   }
 
   @AsMessageEndpoint(
-    CallAction.ChangeAvailability,
-    ChangeAvailabilityRequestSchema,
+    OCPP2_0_1_CallAction.UpdateFirmware,
+    OCPP2_0_1.UpdateFirmwareRequestSchema,
   )
-  changeAvailability(
+  updateFirmware(
     identifier: string[],
     tenantId: string,
-    request: ChangeAvailabilityRequest,
+    request: OCPP2_0_1.UpdateFirmwareRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.ChangeAvailability,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.UpdateFirmware,
         request,
         callbackUrl,
       ),
@@ -329,18 +274,65 @@ export class ConfigurationModuleApi
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(CallAction.TriggerMessage, TriggerMessageRequestSchema)
-  triggerMessage(
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.Reset, OCPP2_0_1.ResetRequestSchema)
+  reset(
     identifier: string[],
     tenantId: string,
-    request: TriggerMessageRequest,
+    request: OCPP2_0_1.ResetRequest,
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
         id,
         tenantId,
-        CallAction.TriggerMessage,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.Reset,
+        request,
+        callbackUrl,
+      ),
+    );
+    return Promise.all(results);
+  }
+
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.ChangeAvailability,
+    OCPP2_0_1.ChangeAvailabilityRequestSchema,
+  )
+  changeAvailability(
+    identifier: string[],
+    tenantId: string,
+    request: OCPP2_0_1.ChangeAvailabilityRequest,
+    callbackUrl?: string,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.ChangeAvailability,
+        request,
+        callbackUrl,
+      ),
+    );
+    return Promise.all(results);
+  }
+
+  @AsMessageEndpoint(
+    OCPP2_0_1_CallAction.TriggerMessage,
+    OCPP2_0_1.TriggerMessageRequestSchema,
+  )
+  triggerMessage(
+    identifier: string[],
+    tenantId: string,
+    request: OCPP2_0_1.TriggerMessageRequest,
+    callbackUrl?: string,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.TriggerMessage,
         request,
         callbackUrl,
       ),
@@ -360,7 +352,7 @@ export class ConfigurationModuleApi
   )
   putBootConfig(
     request: FastifyRequest<{
-      Body: BootNotificationResponse;
+      Body: OCPP2_0_1.BootNotificationResponse;
       Querystring: ChargingStationKeyQuerystring;
     }>,
   ): Promise<BootConfig | undefined> {
@@ -485,7 +477,8 @@ export class ConfigurationModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link CallAction}
+   * and the module's endpoint prefix configuration.
    *
    * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
@@ -497,9 +490,10 @@ export class ConfigurationModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace}
+   * and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
   protected _toDataPath(input: Namespace): string {
@@ -524,17 +518,18 @@ export class ConfigurationModuleApi
     const messageConfirmation = await this._module.sendCall(
       stationId,
       'T01', // TODO: adjust when multi-tenancy is implemented
-      CallAction.SetVariables,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.SetVariables,
       {
         setVariableData: [
           {
             variable: { name: 'BasicAuthPassword' },
             attributeValue: password,
-            attributeType: AttributeEnumType.Actual,
+            attributeType: OCPP2_0_1.AttributeEnumType.Actual,
             component: { name: 'SecurityCtrlr' },
-          } as SetVariableDataType,
+          } as OCPP2_0_1.SetVariableDataType,
         ],
-      } as SetVariablesRequest,
+      } as OCPP2_0_1.SetVariablesRequest,
       callbackUrl,
       correlationId,
     );
@@ -551,10 +546,11 @@ export class ConfigurationModuleApi
       );
     }
 
-    const setVariablesResponse: SetVariablesResponse =
+    const setVariablesResponse: OCPP2_0_1.SetVariablesResponse =
       JSON.parse(responseJsonString);
     const passwordUpdated = setVariablesResponse.setVariableResult.every(
-      (result) => result.attributeStatus === SetVariableStatusEnumType.Accepted,
+      (result) =>
+        result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Accepted,
     );
     if (!passwordUpdated) {
       throw new Error(`Failure updating password on ${stationId} station`);
@@ -566,8 +562,8 @@ export class ConfigurationModuleApi
     stationId: string,
   ): Promise<VariableAttribute[]> {
     const timestamp = new Date().toISOString();
-    return await this._module.deviceModelRepository
-      .createOrUpdateDeviceModelByStationId(
+    const variableAttributes =
+      await this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(
         {
           component: {
             name: 'SecurityCtrlr',
@@ -577,37 +573,35 @@ export class ConfigurationModuleApi
           },
           variableAttribute: [
             {
-              type: AttributeEnumType.Actual,
+              type: OCPP2_0_1.AttributeEnumType.Actual,
               value: password,
-              mutability: MutabilityEnumType.WriteOnly,
+              mutability: OCPP2_0_1.MutabilityEnumType.WriteOnly,
             },
           ],
           variableCharacteristics: {
-            dataType: DataEnumType.passwordString,
+            dataType: OCPP2_0_1.DataEnumType.passwordString,
             supportsMonitoring: false,
           },
         },
         stationId,
         timestamp,
-      )
-      .then(async (variableAttributes) => {
-        for (let variableAttribute of variableAttributes) {
-          variableAttribute = await variableAttribute.reload({
-            include: [Variable, Component],
-          });
-          this._module.deviceModelRepository.updateResultByStationId(
-            {
-              attributeType: variableAttribute.type,
-              attributeStatus: SetVariableStatusEnumType.Accepted,
-              attributeStatusInfo: { reasonCode: 'SetOnCharger' },
-              component: variableAttribute.component,
-              variable: variableAttribute.variable,
-            },
-            stationId,
-            timestamp,
-          );
-        }
-        return variableAttributes;
+      );
+    for (let variableAttribute of variableAttributes) {
+      variableAttribute = await variableAttribute.reload({
+        include: [Variable, Component],
       });
+      await this._module.deviceModelRepository.updateResultByStationId(
+        {
+          attributeType: variableAttribute.type,
+          attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
+          attributeStatusInfo: { reasonCode: 'SetOnCharger' },
+          component: variableAttribute.component,
+          variable: variableAttribute.variable,
+        },
+        stationId,
+        timestamp,
+      );
+    }
+    return variableAttributes;
   }
 }

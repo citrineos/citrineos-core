@@ -8,6 +8,8 @@ import {
   IAuthenticator,
   ICache,
   IMessageRouter,
+  IWebsocketConnection,
+  OCPPVersionType,
   SystemConfig,
   WebsocketServerConfig,
 } from '@citrineos/base';
@@ -72,7 +74,7 @@ export class WebsocketNetworkConnection {
             this._handleProtocols(
               protocols,
               req,
-              websocketServerConfig.protocol,
+              websocketServerConfig.protocol as OCPPVersionType,
             ),
           clientTracking: false,
         });
@@ -80,7 +82,7 @@ export class WebsocketNetworkConnection {
         _socketServer.on(
           'connection',
           (ws: WebSocket, req: http.IncomingMessage) =>
-            this._onConnection(ws, websocketServerConfig.pingInterval, req),
+            this._onConnection(ws, websocketServerConfig.id, websocketServerConfig.pingInterval, req),
         );
         _socketServer.on('error', (wss: WebSocketServer, error: Error) =>
           this._onError(wss, error),
@@ -168,9 +170,9 @@ export class WebsocketNetworkConnection {
     });
   }
 
-  shutdown(): void {
+  async shutdown(): Promise<void> {
     this._httpServersMap.forEach((server) => server.close());
-    this._router.shutdown();
+    await this._router.shutdown();
   }
 
   /**
@@ -250,21 +252,10 @@ export class WebsocketNetworkConnection {
           websocketServerConfig.allowUnknownChargingStations,
       });
 
-      // Register client
-      const registered = await this._cache.set(
+      this._logger.debug(
+        'Successfully registered websocket client',
         identifier,
-        websocketServerConfig.id,
-        CacheNamespace.Connections,
       );
-      if (!registered) {
-        this._logger.fatal('Failed to register websocket client', identifier);
-        return false;
-      } else {
-        this._logger.debug(
-          'Successfully registered websocket client',
-          identifier,
-        );
-      }
 
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
@@ -300,14 +291,14 @@ export class WebsocketNetworkConnection {
   private _handleProtocols(
     protocols: Set<string>,
     req: http.IncomingMessage,
-    wsServerProtocol: string,
+    wsServerProtocol: OCPPVersionType,
   ) {
     // Only supports configured protocol version
     if (protocols.has(wsServerProtocol)) {
       return wsServerProtocol;
     }
     this._logger.error(
-      `Protocol mismatch. Supported protocols: [${[...protocols].join(', ')}], but requested protocol: '${wsServerProtocol}' not supported.`,
+      `Protocol mismatch. Charger supports: [${[...protocols].join(', ')}], but server expects: '${wsServerProtocol}'.`,
     );
     // Reject the client trying to connect
     return false;
@@ -324,42 +315,62 @@ export class WebsocketNetworkConnection {
    */
   private async _onConnection(
     ws: WebSocket,
+    websocketServerId: string,
     pingInterval: number,
     req: http.IncomingMessage,
   ): Promise<void> {
-    // Pause the WebSocket event emitter until broker is established
-    ws.pause();
+    if (!ws.protocol) {
+      this._logger.debug('Websocket connection without protocol');
+      return;
+    } else {
+      // Pause the WebSocket event emitter until broker is established
+      ws.pause();
 
-    const identifier = this._getClientIdFromUrl(req.url as string);
-    this._identifierConnections.set(identifier, ws);
+      const identifier = this._getClientIdFromUrl(req.url as string);
+      this._identifierConnections.set(identifier, ws);
 
-    try {
-      // Get IP address of client
-      const ip =
-        req.headers['x-forwarded-for']?.toString().split(',')[0].trim() ||
-        req.socket.remoteAddress ||
-        'N/A';
-      const port = req.socket.remotePort as number;
-      this._logger.info('Client websocket connected', identifier, ip, port);
+      try {
+        // Get IP address of client
+        const ip =
+          req.headers['x-forwarded-for']?.toString().split(',')[0].trim() ||
+          req.socket.remoteAddress ||
+          'N/A';
+        const port = req.socket.remotePort as number;
+        this._logger.info('Client websocket connected', identifier, ip, port, ws.protocol);
 
-      this._router.registerConnection(identifier);
+        // Register client
+        const websocketConnection: IWebsocketConnection = {
+          id: websocketServerId,
+          protocol: ws.protocol,
+        }
+        let registered = await this._cache.set(
+          identifier,
+          JSON.stringify(websocketConnection),
+          CacheNamespace.Connections,
+        );
+        registered = registered && await this._router.registerConnection(identifier);
+        if (!registered) {
+          this._logger.fatal('Failed to register websocket client', identifier);
+          throw new Error('Failed to register websocket client');
+        }
 
-      this._logger.info(
-        'Successfully connected new charging station.',
-        identifier,
-      );
+        this._logger.info(
+          'Successfully connected new charging station.',
+          identifier,
+        );
 
-      // Register all websocket events
-      this._registerWebsocketEvents(identifier, ws, pingInterval);
+        // Register all websocket events
+        this._registerWebsocketEvents(identifier, ws, pingInterval);
 
-      // Resume the WebSocket event emitter after events have been subscribed to
-      ws.resume();
-    } catch (error) {
-      this._logger.fatal(
-        'Failed to subscribe to message broker for ',
-        identifier,
-      );
-      ws.close(1011, 'Failed to subscribe to message broker for ' + identifier);
+        // Resume the WebSocket event emitter after events have been subscribed to
+        ws.resume();
+      } catch (error) {
+        this._logger.fatal(
+          'Failed to subscribe to message broker for ',
+          identifier,
+        );
+        ws.close(1011, 'Failed to subscribe to message broker for ' + identifier);
+      }
     }
   }
 
@@ -387,7 +398,7 @@ export class WebsocketNetworkConnection {
       ws.close(1011, event.message);
     };
     ws.onmessage = (event: MessageEvent) => {
-      this._onMessage(identifier, event.data.toString());
+      this._onMessage(identifier, event.data.toString(), ws.protocol as OCPPVersionType);
     };
 
     ws.once('close', () => {
@@ -438,10 +449,11 @@ export class WebsocketNetworkConnection {
    *
    * @param {string} identifier - The client identifier.
    * @param {string} message - The incoming message from the client.
+   * @param {OCPPVersionType} protocol - The OCPP protocol version of the client, 'ocpp1.6' or 'ocpp2.0.1'.
    * @return {void} This function does not return anything.
    */
-  private _onMessage(identifier: string, message: string): void {
-    this._router.onMessage(identifier, message, new Date());
+  private _onMessage(identifier: string, message: string, protocol: OCPPVersionType): void {
+    this._router.onMessage(identifier, message, new Date(), protocol);
   }
 
   /**
