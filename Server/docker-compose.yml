@@ -166,10 +166,6 @@ services:
     depends_on:
       ocpp-db:
         condition: service_healthy
-      amqp-broker:
-        condition: service_healthy
-      localstack:
-        condition: service_healthy
     healthcheck:
       test:
         [

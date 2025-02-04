@@ -185,8 +185,7 @@ export class CitrineOSServer {
     }
 
     // Initialize File Access Implementation
-    this._fileAccess =
-      fileAccess || this.initFileAccess(s3Storage, directusUtil);
+    this._fileAccess = fileAccess || this.initFileAccess(directusUtil);
 
     // Register AJV for schema validation
     this.registerAjv();
