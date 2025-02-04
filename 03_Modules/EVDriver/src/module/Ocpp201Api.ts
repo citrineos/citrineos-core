@@ -3,35 +3,21 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IEVDriverModuleApi } from './interface';
 import { EVDriverModule } from './module';
 import {
   AbstractModuleApi,
-  AsDataEndpoint,
   AsMessageEndpoint,
-  AuthorizationDataSchema,
   CallAction,
-  HttpMethod,
   IMessageConfirmation,
-  OCPP2_0_1_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
-  OCPP1_6_Namespace,
-  Namespace,
 } from '@citrineos/base';
 import {
-  Authorization,
-  AuthorizationQuerySchema,
-  AuthorizationQuerystring,
-  AuthorizationRestrictions,
-  AuthorizationRestrictionsSchema,
   CallMessage,
-  ChargingStationKeyQuerySchema,
-  ChargingStationKeyQuerystring,
-  LocalListVersion,
 } from '@citrineos/data';
 import { validateChargingProfileType } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
@@ -56,94 +42,6 @@ export class EVDriverModuleApi
     logger?: Logger<ILogObj>,
   ) {
     super(evDriverModule, server, logger);
-  }
-
-  /**
-   * Data Endpoint Methods
-   */
-
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.AuthorizationData,
-    HttpMethod.Put,
-    AuthorizationQuerySchema,
-    AuthorizationDataSchema,
-  )
-  putAuthorization(
-    request: FastifyRequest<{
-      Body: OCPP2_0_1.AuthorizationData;
-      Querystring: AuthorizationQuerystring;
-    }>,
-  ): Promise<Authorization | undefined> {
-    // TODO: the change above is just to avoid compile error
-    //  pull the real change when issue 71: generalize authorization task is done
-    return this._module.authorizeRepository.createOrUpdateByQuerystring(
-      request.body,
-      request.query,
-    );
-  }
-
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.AuthorizationRestrictions,
-    HttpMethod.Put,
-    AuthorizationQuerySchema,
-    AuthorizationRestrictionsSchema,
-  )
-  putAuthorizationRestrictions(
-    request: FastifyRequest<{
-      Body: AuthorizationRestrictions;
-      Querystring: AuthorizationQuerystring;
-    }>,
-  ): Promise<Authorization[]> {
-    // TODO: the change above is just to avoid compile error
-    //  pull the real change when issue 71: generalize authorization task is done
-    return this._module.authorizeRepository.updateRestrictionsByQuerystring(
-      request.body,
-      request.query,
-    );
-  }
-
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.AuthorizationData,
-    HttpMethod.Get,
-    AuthorizationQuerySchema,
-  )
-  getAuthorization(
-    request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
-  ): Promise<Authorization[]> {
-    // TODO: the change above is just to avoid compile error
-    //  pull the real change when issue 71: generalize authorization task is done
-    return this._module.authorizeRepository.readAllByQuerystring(request.query);
-  }
-
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.AuthorizationData,
-    HttpMethod.Delete,
-    AuthorizationQuerySchema,
-  )
-  deleteAuthorization(
-    request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
-  ): Promise<string> {
-    return this._module.authorizeRepository
-      .deleteAllByQuerystring(request.query)
-      .then(
-        (deletedCount) =>
-          deletedCount.toString() +
-          ' rows successfully deleted from ' +
-          OCPP2_0_1_Namespace.AuthorizationData,
-      );
-  }
-
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.LocalListVersion,
-    HttpMethod.Get,
-    ChargingStationKeyQuerySchema,
-  )
-  async getLocalAuthorizationListVersion(
-    request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
-  ): Promise<LocalListVersion | undefined> {
-    return await this._module.localAuthListRepository.readOnlyOneByQuery({
-      stationId: request.query.stationId,
-    });
   }
 
   /**
@@ -434,27 +332,14 @@ export class EVDriverModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input ({@link OCPP2_0_1_Namespace},
-   * {@link OCPP1_6_Namespace} or {@link Namespace}) and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link CallAction},
+   *  and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link CallAction}, {@link OCPP1_6_Namespace} or {@link Namespace}.
+   * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
    */
   protected _toMessagePath(input: CallAction): string {
     const endpointPrefix = this._module.config.modules.evdriver.endpointPrefix;
     return super._toMessagePath(input, endpointPrefix);
-  }
-
-  /**
-   * Overrides superclass method to generate the URL path based on the input {@link OCPP2_0_1_Namespace} and the module's endpoint prefix configuration.
-   *
-   * @param {CallAction} input - The input {@link OCPP2_0_1_Namespace}.
-   * @return {string} - The generated URL path.
-   */
-  protected _toDataPath(
-    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
-  ): string {
-    const endpointPrefix = this._module.config.modules.evdriver.endpointPrefix;
-    return super._toDataPath(input, endpointPrefix);
   }
 }
