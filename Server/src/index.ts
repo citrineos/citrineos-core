@@ -52,7 +52,7 @@ import {
   CertificatesModule,
   CertificatesModuleApi,
 } from '@citrineos/certificates';
-import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
+import { EVDriverModule, EVDriverOcpp201MessageApi, EVDriverOcpp16MessageApi, EVDriverDataApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import {
   InternalSmartCharging,
@@ -558,7 +558,9 @@ export class CitrineOSServer {
       this._idGenerator,
     );
     await this.initHandlersAndAddModule(module);
-    this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
+    this.apis.push(new EVDriverOcpp201MessageApi(module, this._server, this._logger));
+    this.apis.push(new EVDriverOcpp16MessageApi(module, this._server, this._logger));
+    this.apis.push(new EVDriverDataApi(module, this._server, this._logger));
   }
 
   private async initMonitoringModule() {

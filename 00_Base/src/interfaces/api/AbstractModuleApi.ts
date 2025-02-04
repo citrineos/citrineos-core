@@ -18,6 +18,7 @@ import {
   Namespace,
   OCPP1_6_Namespace,
   OcppRequest,
+  OCPPVersion,
   SystemConfig,
 } from '../..';
 import { OCPP2_0_1_Namespace } from '../../ocpp/persistence';
@@ -68,12 +69,12 @@ export abstract class AbstractModuleApi<T extends IModule>
         expose.optionalQuerystrings,
       );
     });
-    (
-      Reflect.getMetadata(
-        METADATA_DATA_ENDPOINTS,
-        this.constructor,
-      ) as Array<IDataEndpointDefinition>
-    )?.forEach((expose) => {
+
+    const dataEndpointDefinitions = Reflect.getMetadata(
+      METADATA_DATA_ENDPOINTS,
+      this.constructor,
+    ) as Array<IDataEndpointDefinition>;
+    dataEndpointDefinitions?.forEach((expose) => {
       this._addDataRoute.call(
         this,
         expose.namespace,
@@ -89,24 +90,25 @@ export abstract class AbstractModuleApi<T extends IModule>
         expose.security,
       );
     });
-
     // Add API routes for getting and setting SystemConfig
-    this._addDataRoute.call(
-      this,
-      OCPP2_0_1_Namespace.SystemConfig,
-      () => new Promise((resolve) => resolve(module.config)),
-      HttpMethod.Get,
-    );
-    this._addDataRoute.call(
-      this,
-      OCPP2_0_1_Namespace.SystemConfig,
-      (request: FastifyRequest<{ Body: SystemConfig }>) =>
-        new Promise<void>((resolve) => {
-          module.config = request.body;
-          resolve();
-        }),
-      HttpMethod.Put,
-    );
+    if (dataEndpointDefinitions && dataEndpointDefinitions.length > 0) {
+      this._addDataRoute.call(
+        this,
+        OCPP2_0_1_Namespace.SystemConfig,
+        () => new Promise((resolve) => resolve(module.config)),
+        HttpMethod.Get,
+      );
+      this._addDataRoute.call(
+        this,
+        OCPP2_0_1_Namespace.SystemConfig,
+        (request: FastifyRequest<{ Body: SystemConfig }>) =>
+          new Promise<void>((resolve) => {
+            module.config = request.body;
+            resolve();
+          }),
+        HttpMethod.Put,
+      );
+    }
   }
 
   /**
@@ -455,11 +457,13 @@ export abstract class AbstractModuleApi<T extends IModule>
    *
    * @param {CallAction} input - The {@link CallAction} to convert to a URL path.
    * @param {string} prefix - The module name.
+   * @param {OCPPVersion} ocppVersion - The OCPP version.
    * @returns {string} - String representation of URL path.
    */
-  protected _toMessagePath(input: CallAction, prefix?: string): string {
+  protected _toMessagePath(input: CallAction, prefix?: string, ocppVersion?: OCPPVersion): string {
     const endpointPrefix = prefix || '';
-    return `/ocpp${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
+    const endpointVersion = ocppVersion || OCPPVersion.OCPP2_0_1;
+    return `/ocpp/${endpointVersion.replace(/^ocpp/, "")}${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
   }
 
   /**
