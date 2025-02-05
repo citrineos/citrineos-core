@@ -11,6 +11,7 @@ import { CallAction } from '../../ocpp/rpc/message';
  *
  * @param {CallAction} action - The call action.
  * @param {object} bodySchema - The body schema.
+ * @param {Record<string, any>} optionalQuerystrings - The optional querystrings.
  * @return {void} This function does not return anything.
  */
 export const AsMessageEndpoint = function (
