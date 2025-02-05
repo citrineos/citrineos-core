@@ -50,10 +50,6 @@ export class EVDriverModuleApi
     super(evDriverModule, server, logger);
   }
 
-  /**
-   * Data Endpoint Methods
-   */
-
   @AsDataEndpoint(
     OCPP2_0_1_Namespace.AuthorizationData,
     HttpMethod.Put,
