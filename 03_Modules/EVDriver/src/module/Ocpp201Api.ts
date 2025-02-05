@@ -44,10 +44,6 @@ export class EVDriverModuleApi
     super(evDriverModule, server, logger);
   }
 
-  /**
-   * Message Endpoint Methods
-   */
-
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.RequestStartTransaction,
     OCPP2_0_1.RequestStartTransactionRequestSchema,

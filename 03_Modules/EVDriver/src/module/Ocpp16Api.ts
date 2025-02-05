@@ -39,10 +39,6 @@ export class EVDriverModuleApi
     super(evDriverModule, server, logger);
   }
 
-  /**
-   * Message Endpoint Methods for OCPP 1.6
-   */
-
   @AsMessageEndpoint(
     OCPP1_6_CallAction.RemoteStopTransaction,
     OCPP1_6.RemoteStopTransactionRequestSchema,

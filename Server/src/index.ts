@@ -558,9 +558,11 @@ export class CitrineOSServer {
       this._idGenerator,
     );
     await this.initHandlersAndAddModule(module);
-    this.apis.push(new EVDriverOcpp201MessageApi(module, this._server, this._logger));
-    this.apis.push(new EVDriverOcpp16MessageApi(module, this._server, this._logger));
-    this.apis.push(new EVDriverDataApi(module, this._server, this._logger));
+    this.apis.push(
+      new EVDriverOcpp201MessageApi(module, this._server, this._logger),
+      new EVDriverOcpp16MessageApi(module, this._server, this._logger),
+      new EVDriverDataApi(module, this._server, this._logger)
+    );
   }
 
   private async initMonitoringModule() {

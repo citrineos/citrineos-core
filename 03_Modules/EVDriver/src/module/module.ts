@@ -789,7 +789,7 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug(
-      'RequestStopTransactionResponse received:',
+      'OCPP 1.6 RemoteStopTransaction response received:',
       message,
       props,
     );
