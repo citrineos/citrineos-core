@@ -133,9 +133,10 @@ export class EVDriverModuleApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link OCPP2_0_1_Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input ({@link OCPP2_0_1_Namespace},
+   * {@link OCPP1_6_Namespace} or {@link Namespace}) and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link OCPP2_0_1_Namespace}.
+   * @param {CallAction} input - The input {@link CallAction}, {@link OCPP1_6_Namespace} or {@link Namespace}.
    * @return {string} - The generated URL path.
    */
   protected _toDataPath(
