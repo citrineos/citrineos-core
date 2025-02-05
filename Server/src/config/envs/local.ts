@@ -68,6 +68,9 @@ export function createLocalConfig() {
           exchange: 'citrineos',
         },
       },
+      fileAccess: {
+        currentFileAccess: 's3Storage',
+      },
       swagger: {
         path: '/docs',
         logoPath: path.resolve(

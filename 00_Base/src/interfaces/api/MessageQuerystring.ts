@@ -19,14 +19,14 @@ export const IMessageQuerystringSchema = {
   $id: 'MessageQuerystring',
   type: 'object',
   properties: {
-    identifier: { 
-      oneOf: [
+    identifier: {
+      anyOf: [
         { type: 'string' },
-        { 
-          type: 'array', 
-          items: { type: 'string' }
-        }
-      ] 
+        {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      ],
     },
     tenantId: { type: 'string' },
     callbackUrl: { type: 'string' },

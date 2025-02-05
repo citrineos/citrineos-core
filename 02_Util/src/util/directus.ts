@@ -117,7 +117,7 @@ export class DirectusUtil implements IFileAccess {
   }
 
   getFileURL(): string {
-    throw new Error('Method not implemented.');
+    return 'http://localhost:8050/files';
   }
 
   public async uploadFile(

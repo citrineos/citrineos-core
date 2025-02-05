@@ -166,7 +166,11 @@ export abstract class AbstractModuleApi<T extends IModule>
         body: bodySchema,
         querystring: mergedQuerySchema,
         response: {
-          200: MessageConfirmationSchema,
+          200: {
+            $id: 'MessageConfirmationSchemaArray',
+            type: 'array',
+            items: MessageConfirmationSchema,
+          },
         },
       } as const,
     };
