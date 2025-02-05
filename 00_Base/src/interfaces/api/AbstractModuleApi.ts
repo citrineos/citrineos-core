@@ -340,6 +340,9 @@ export abstract class AbstractModuleApi<T extends IModule>
     schema: any,
   ): object | null => {
     const id = schema['$id'];
+    if (!id) {
+      this._logger.error('Could not register schema because no ID', schema);
+    }
     try {
       const schemaCopy = this.removeUnknownKeys(schema);
       if (
@@ -372,23 +375,12 @@ export abstract class AbstractModuleApi<T extends IModule>
           }
         });
       }
-      if (!id) {
-        this._logger.error('Could not register schema because no ID', schema);
-        // return null;
-      }
-      this._logger.info('Registering schema', id, schemaCopy);
-      if (!this._server.getSchema(id)) {
-        this._server.addSchema(schemaCopy);
-      }
-      if (!fastifyInstance.getSchema(id)) {
-        fastifyInstance.addSchema(schemaCopy);
-      }
-      this._logger.info('Registered schema');
+      fastifyInstance.addSchema(schemaCopy);
+      this._server.addSchema(schemaCopy);
       return {
         $ref: `${id}`,
       };
     } catch (e: any) {
-      this._logger.error('Could not register schema', e, schema);
       // ignore already declared
       if (e.code === 'FST_ERR_SCH_ALREADY_PRESENT') {
         return {
