@@ -1,21 +1,13 @@
-import {
-  Boot,
-  IBootRepository,
-  OCPP2_0_1_Mapper,
-  OCPP1_6_Mapper,
-} from '@citrineos/data';
+import { Boot, IBootRepository } from '@citrineos/data';
 import {
   BOOT_STATUS,
   BootConfig,
+  OCPP2_0_1_CALL_SCHEMA_MAP,
   ICache,
   IMessageConfirmation,
-  OCPP1_6,
-  OCPP1_6_CALL_SCHEMA_MAP,
-  OCPP1_6_CallAction,
   OCPP2_0_1,
-  OCPP2_0_1_CALL_SCHEMA_MAP,
-  OCPP2_0_1_CallAction,
   SystemConfig,
+  OCPP2_0_1_CallAction,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 
@@ -42,20 +34,14 @@ export class BootNotificationService {
   }
 
   determineBootStatus(
-    bootConfig: OCPP2_0_1_Mapper.BootMapper | undefined,
+    bootConfig: Boot | undefined,
   ): OCPP2_0_1.RegistrationStatusEnumType {
     let bootStatus = bootConfig
       ? bootConfig.status
-      : this._config.ocpp2_0_1?.unknownChargerStatus;
-
-    if (!bootStatus) {
-      throw new Error(
-        'Missing ocpp2_0_1.unknownChargerStatus in system config',
-      );
-    }
+      : this._config.unknownChargerStatus;
 
     if (bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Pending) {
-      let needToGetBaseReport = this._config.ocpp2_0_1?.getBaseReportOnPending;
+      let needToGetBaseReport = this._config.getBaseReportOnPending;
       let needToSetVariables = false;
       if (bootConfig) {
         if (
@@ -74,11 +60,12 @@ export class BootNotificationService {
       if (
         !needToGetBaseReport &&
         !needToSetVariables &&
-        this._config.ocpp2_0_1?.autoAccept
+        this._config.autoAccept
       ) {
         bootStatus = OCPP2_0_1.RegistrationStatusEnumType.Accepted;
       }
     }
+
     return bootStatus;
   }
 
@@ -86,18 +73,18 @@ export class BootNotificationService {
     stationId: string,
   ): Promise<OCPP2_0_1.BootNotificationResponse> {
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
-    const bootMapper = await this._bootRepository.readByStationId(stationId);
-    const bootStatus = this.determineBootStatus(bootMapper);
+    const bootConfig = await this._bootRepository.readByKey(stationId);
+    const bootStatus = this.determineBootStatus(bootConfig);
 
     // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
     return {
       currentTime: new Date().toISOString(),
       status: bootStatus,
-      statusInfo: bootMapper?.statusInfo,
+      statusInfo: bootConfig?.statusInfo,
       interval:
         bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
-          ? bootMapper?.heartbeatInterval || this._config.heartbeatInterval
-          : bootMapper?.bootRetryInterval || this._config.bootRetryInterval,
+          ? bootConfig?.heartbeatInterval || this._config.heartbeatInterval
+          : bootConfig?.bootRetryInterval || this._config.bootRetryInterval,
     };
   }
 
@@ -143,18 +130,15 @@ export class BootNotificationService {
   ): Promise<void> {
     // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
     if (
-      bootNotificationResponseStatus ===
-      OCPP2_0_1.RegistrationStatusEnumType.Accepted
+      bootNotificationResponseStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
     ) {
       if (cachedBootStatus) {
         // Undo blacklisting of charger-originated actions
-        const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(
-          async ([action]) => {
-            if (action !== OCPP2_0_1_CallAction.BootNotification) {
-              return this._cache.remove(action, stationId);
-            }
-          },
-        );
+        const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(async ([action]) => {
+          if (action !== OCPP2_0_1_CallAction.BootNotification) {
+            return this._cache.remove(action, stationId);
+          }
+        });
         await Promise.all(promises);
         // Remove cached boot status
         await this._cache.remove(BOOT_STATUS, stationId);
@@ -166,13 +150,11 @@ export class BootNotificationService {
       // Blacklist all charger-originated actions except BootNotification
       // GetReport messages will need to un-blacklist NotifyReport
       // TriggerMessage will need to un-blacklist the message it triggers
-      const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(
-        async ([action]) => {
-          if (action !== OCPP2_0_1_CallAction.BootNotification) {
-            return this._cache.set(action, 'blacklisted', stationId);
-          }
-        },
-      );
+      const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(async ([action]) => {
+        if (action !== OCPP2_0_1_CallAction.BootNotification) {
+          return this._cache.set(action, 'blacklisted', stationId);
+        }
+      });
       await Promise.all(promises);
     }
   }
@@ -244,115 +226,6 @@ export class BootNotificationService {
       throw new Error(
         `GetBaseReport failed: ${JSON.stringify(getBaseReportMessageConfirmation)}`,
       );
-    }
-  }
-
-  /**
-   * Methods for OCPP 1.6
-   */
-
-  determineOcpp16BootStatus(
-    bootConfig: OCPP1_6_Mapper.BootMapper | undefined,
-  ): OCPP1_6.BootNotificationResponseStatus {
-    let bootStatus = bootConfig
-      ? bootConfig.status
-      : this._config.ocpp1_6?.unknownChargerStatus;
-
-    if (!bootStatus) {
-      throw new Error('Missing ocpp1_6.unknownChargerStatus in system config');
-    }
-
-    if (bootStatus === OCPP1_6.BootNotificationResponseStatus.Pending) {
-      let needToGetConfigurations = true;
-      let needToChangeConfigurations = true;
-      if (bootConfig) {
-        if (
-          bootConfig.getConfigurationsOnPending !== undefined &&
-          bootConfig.getConfigurationsOnPending !== null
-        ) {
-          needToGetConfigurations = bootConfig.getConfigurationsOnPending;
-        }
-        if (
-          bootConfig.changeConfigurationsOnPending !== undefined &&
-          bootConfig.changeConfigurationsOnPending !== null
-        ) {
-          needToChangeConfigurations = bootConfig.changeConfigurationsOnPending;
-        }
-      }
-      if (!needToGetConfigurations && !needToChangeConfigurations) {
-        bootStatus = OCPP1_6.BootNotificationResponseStatus.Accepted;
-      }
-    }
-
-    return bootStatus;
-  }
-
-  async createOcpp16BootNotificationResponse(
-    stationId: string,
-  ): Promise<OCPP1_6.BootNotificationResponse> {
-    const boot = await this._bootRepository.readByKey(stationId);
-    const mapper = boot ? new OCPP1_6_Mapper.BootMapper(boot) : undefined;
-    const status = this.determineOcpp16BootStatus(mapper);
-
-    return {
-      currentTime: new Date().toISOString(),
-      status,
-      interval:
-        status === OCPP1_6.BootNotificationResponseStatus.Accepted
-          ? mapper?.heartbeatInterval || this._config.heartbeatInterval
-          : mapper?.bootRetryInterval || this._config.bootRetryInterval,
-    };
-  }
-
-  /**
-   * Determines whether to blacklist or whitelist charger actions based on its boot status.
-   *
-   * If the new boot is accepted and the charger actions were previously blacklisted, then whitelist the charger actions.
-   * If the new boot is not accepted and charger actions were previously whitelisted, then blacklist the charger actions.
-   *
-   * @param stationId
-   * @param cachedBootStatus
-   * @param bootNotificationResponseStatus
-   */
-  async cacheOcpp16ChargerActionsPermissions(
-    stationId: string,
-    cachedBootStatus: OCPP1_6.BootNotificationResponseStatus | null,
-    bootNotificationResponseStatus: OCPP1_6.BootNotificationResponseStatus,
-  ): Promise<void> {
-    // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
-    if (
-      bootNotificationResponseStatus ===
-      OCPP1_6.BootNotificationResponseStatus.Accepted
-    ) {
-      if (cachedBootStatus) {
-        // Undo blacklisting of charger-originated actions
-        const promises = Array.from(OCPP1_6_CALL_SCHEMA_MAP).map(
-          async ([action]) => {
-            if (action !== OCPP1_6_CallAction.BootNotification) {
-              return this._cache.remove(action, stationId);
-            }
-          },
-        );
-        await Promise.all(promises);
-        // Remove cached boot status
-        await this._cache.remove(BOOT_STATUS, stationId);
-        this._logger.debug(
-          `Cached boot status ${cachedBootStatus} removed for station ${stationId}.`,
-        );
-      }
-    } else if (!cachedBootStatus) {
-      // Status is not Accepted; i.e. Status is Rejected or Pending.
-      // Cached boot status for charger did not exist; i.e. this is the first BootNotificationResponse to be Rejected or Pending.
-      // Blacklist all charger-originated actions except BootNotification
-      // ChangeConfiguration, GetConfiguration and TriggerMessage will need to un-blacklist the message it triggers
-      const promises = Array.from(OCPP1_6_CALL_SCHEMA_MAP).map(
-        async ([action]) => {
-          if (action !== OCPP1_6_CallAction.BootNotification) {
-            return this._cache.set(action, 'blacklisted', stationId);
-          }
-        },
-      );
-      await Promise.all(promises);
     }
   }
 }

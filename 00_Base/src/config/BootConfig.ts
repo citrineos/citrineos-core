@@ -3,31 +3,31 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
+import { OCPP2_0_1 } from '../ocpp/model';
+
 export interface BootConfig {
   /**
    *  Also declared in SystemConfig. If absent, SystemConfig value is used.
    */
-  heartbeatInterval?: number | null;
+  heartbeatInterval?: number;
   /**
    * Also declared in SystemConfig. If absent, SystemConfig value is used.
    */
-  bootRetryInterval?: number | null;
-  status: string;
-  statusInfo?: object | null;
+  bootRetryInterval?: number;
+  status: OCPP2_0_1.RegistrationStatusEnumType;
+  statusInfo?: OCPP2_0_1.StatusInfoType | null;
   /**
    * Also declared in SystemConfig. If absent, SystemConfig value is used.
    */
-  getBaseReportOnPending?: boolean | null;
+  getBaseReportOnPending?: boolean;
   /**
    * Ids of variable attributes to be sent in SetVariablesRequest on pending boot
    */
-  pendingBootSetVariableIds?: number[] | null;
+  pendingBootSetVariableIds?: number[];
   /**
    * Also declared in SystemConfig. If absent, SystemConfig value is used.
    */
-  bootWithRejectedVariables?: boolean | null;
-  changeConfigurationsOnPending?: boolean | null;
-  getConfigurationsOnPending?: boolean | null;
+  bootWithRejectedVariables?: boolean;
 }
 
 /**
