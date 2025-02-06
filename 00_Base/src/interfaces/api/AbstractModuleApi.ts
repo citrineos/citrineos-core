@@ -123,13 +123,17 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected _addMessageRoute(
     action: CallAction,
     method: (...args: any[]) => any,
-    bodySchema: object,
+    bodySchema: any,
     optionalQuerystrings?: Record<string, any>,
   ): void {
+    const messagePath = this._toMessagePath(action);
     this._logger.debug(
       `Adding message route for ${action}`,
-      this._toMessagePath(action),
+      messagePath,
     );
+
+    bodySchema['$id'] = messagePath.replace(/\//g, '_');
+    this._logger.debug('Generated a unique id for schema: ', bodySchema['$id']);
 
     /**
      * Executes the handler function for the given request.
