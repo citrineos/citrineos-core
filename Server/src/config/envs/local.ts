@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { defineConfig, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
+import { defineConfig, OCPP2_0_1 } from '@citrineos/base';
 import path from 'path';
 
 export function createLocalConfig() {
@@ -19,15 +19,10 @@ export function createLocalConfig() {
       configuration: {
         heartbeatInterval: 60,
         bootRetryInterval: 15,
-        ocpp2_0_1: {
-          unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
-          getBaseReportOnPending: true,
-          bootWithRejectedVariables: true,
-          autoAccept: true,
-        },
-        ocpp1_6: {
-          unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Accepted,
-        },
+        unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+        getBaseReportOnPending: true,
+        bootWithRejectedVariables: true,
+        autoAccept: true,
         endpointPrefix: '/configuration',
       },
       evdriver: {
@@ -110,15 +105,6 @@ export function createLocalConfig() {
             host: '0.0.0.0',
             port: 8082,
             protocol: 'ocpp2.0.1',
-          },
-          {
-            id: '2',
-            securityProfile: 0,
-            allowUnknownChargingStations: true,
-            pingInterval: 60,
-            host: '0.0.0.0',
-            port: 8092,
-            protocol: 'ocpp1.6',
           },
         ],
       },

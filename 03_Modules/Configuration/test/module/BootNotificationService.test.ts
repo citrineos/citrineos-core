@@ -1,6 +1,10 @@
-import { IBootRepository, OCPP2_0_1_Mapper } from '@citrineos/data';
+import { Boot, IBootRepository } from '@citrineos/data';
 import { BootNotificationService } from '../../src/module/BootNotificationService';
-import { ICache, OCPP1_6, OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import {
+  ICache,
+  OCPP2_0_1,
+  SystemConfig,
+} from '@citrineos/base';
 import { aValidBootConfig } from '../providers/BootConfigProvider';
 import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall';
 
@@ -27,17 +31,12 @@ describe('BootService', () => {
 
     mockConfig = {
       bootRetryInterval: 0,
-      heartbeatInterval: 0,
-      ocpp2_0_1: {
-        unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
-        getBaseReportOnPending: false,
-        bootWithRejectedVariables: false,
-        autoAccept: false,
-      },
-      ocpp1_6: {
-        unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Rejected,
-      },
+      bootWithRejectedVariables: false,
       endpointPrefix: '',
+      heartbeatInterval: 0,
+      unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+      getBaseReportOnPending: false,
+      autoAccept: false,
     };
 
     bootService = new BootNotificationService(
@@ -53,10 +52,10 @@ describe('BootService', () => {
 
   describe('determineBootStatus', () => {
     const runDetermineBootStatusTest = (
-      bootMapper: OCPP2_0_1_Mapper.BootMapper | undefined,
+      bootConfig: Boot | undefined,
       expectedStatus: OCPP2_0_1.RegistrationStatusEnumType,
     ) => {
-      const result = bootService.determineBootStatus(bootMapper);
+      const result = bootService.determineBootStatus(bootConfig);
       expect(result).toBe(expectedStatus);
     };
 
@@ -80,8 +79,7 @@ describe('BootService', () => {
       'should return bootConfig status if not pending',
       ({ bootConfigStatus, expectedStatus }) => {
         const bootConfig = aValidBootConfig(
-          (item: OCPP2_0_1_Mapper.BootMapper) =>
-            (item.status = bootConfigStatus),
+          (item: Boot) => (item.status = bootConfigStatus),
         );
         runDetermineBootStatusTest(bootConfig, expectedStatus);
       },
@@ -89,8 +87,7 @@ describe('BootService', () => {
 
     it('should return Pending status when bootConfig.status is pending and no actions are needed', () => {
       const bootConfig = aValidBootConfig(
-        (item: OCPP2_0_1_Mapper.BootMapper) =>
-          (item.status = OCPP2_0_1.RegistrationStatusEnumType.Pending),
+        (item: Boot) => (item.status = OCPP2_0_1.RegistrationStatusEnumType.Pending),
       );
       runDetermineBootStatusTest(
         bootConfig,
@@ -100,14 +97,10 @@ describe('BootService', () => {
 
     it('should return Accepted status when bootConfig.status is pending and no actions are needed but autoAccept is true', () => {
       const bootConfig = aValidBootConfig(
-        (item: OCPP2_0_1_Mapper.BootMapper) =>
-          (item.getBaseReportOnPending = false),
+        (item: Boot) => (item.getBaseReportOnPending = false),
       );
 
-      if (!mockConfig.ocpp2_0_1) {
-        throw new Error('mockConfig.ocpp2_0_1 is not defined');
-      }
-      jest.replaceProperty(mockConfig.ocpp2_0_1, 'autoAccept', true);
+      jest.replaceProperty(mockConfig, 'autoAccept', true);
 
       runDetermineBootStatusTest(
         bootConfig,
@@ -117,8 +110,7 @@ describe('BootService', () => {
 
     it('should return Pending status when bootConfig.status is pending and getBaseReportOnPending is true', () => {
       const bootConfig = aValidBootConfig(
-        (item: OCPP2_0_1_Mapper.BootMapper) =>
-          (item.getBaseReportOnPending = true),
+        (item: Boot) => (item.getBaseReportOnPending = true),
       );
       runDetermineBootStatusTest(
         bootConfig,
@@ -128,8 +120,7 @@ describe('BootService', () => {
 
     it('should return Pending status when bootConfig.status is pending and pendingBootSetVariables is not empty', () => {
       const bootConfig = aValidBootConfig(
-        (item: OCPP2_0_1_Mapper.BootMapper) =>
-          (item.pendingBootSetVariables = [{}] as any),
+        (item: Boot) => (item.pendingBootSetVariables = [{}] as any),
       );
       runDetermineBootStatusTest(
         bootConfig,
@@ -140,11 +131,7 @@ describe('BootService', () => {
     it('should return Accepted status when bootConfig.status is pending, no actions are needed, and autoAccept is true', () => {
       const bootConfig = aValidBootConfig();
 
-      if (!mockConfig.ocpp2_0_1) {
-        throw new Error('mockConfig.ocpp2_0_1 is not defined');
-      }
-
-      jest.replaceProperty(mockConfig.ocpp2_0_1, 'autoAccept', true);
+      jest.replaceProperty(mockConfig, 'autoAccept', true);
 
       runDetermineBootStatusTest(
         bootConfig,
