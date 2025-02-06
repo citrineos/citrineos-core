@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type BootConfig, Namespace } from '@citrineos/base';
+import { type BootConfig, Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { VariableAttribute } from './DeviceModel';
 
@@ -25,22 +25,22 @@ export class Boot extends Model implements BootConfig {
       return lastBootTimeValue ? lastBootTimeValue.toISOString() : null;
     },
   })
-  declare lastBootTime?: string | null;
+  declare lastBootTime?: string;
 
   @Column(DataType.INTEGER)
-  declare heartbeatInterval?: number | null;
+  declare heartbeatInterval?: number;
 
   @Column(DataType.INTEGER)
-  declare bootRetryInterval?: number | null;
+  declare bootRetryInterval?: number;
 
   @Column(DataType.STRING)
-  declare status: string;
+  declare status: OCPP2_0_1.RegistrationStatusEnumType;
 
   @Column(DataType.JSON)
-  declare statusInfo?: object | null;
+  declare statusInfo?: OCPP2_0_1.StatusInfoType;
 
   @Column(DataType.BOOLEAN)
-  declare getBaseReportOnPending?: boolean | null;
+  declare getBaseReportOnPending?: boolean;
 
   /**
    * Variable attributes to be sent in SetVariablesRequest on pending boot
@@ -49,16 +49,10 @@ export class Boot extends Model implements BootConfig {
   declare pendingBootSetVariables?: VariableAttribute[];
 
   @Column(DataType.JSON)
-  declare variablesRejectedOnLastBoot?: object[] | null;
+  declare variablesRejectedOnLastBoot: OCPP2_0_1.SetVariableResultType[];
 
   @Column(DataType.BOOLEAN)
-  declare bootWithRejectedVariables?: boolean | null;
+  declare bootWithRejectedVariables?: boolean;
 
-  @Column(DataType.BOOLEAN)
-  declare changeConfigurationsOnPending?: boolean | null;
-
-  @Column(DataType.BOOLEAN)
-  declare getConfigurationsOnPending?: boolean | null;
-
-  declare customData?: object;
+  declare customData?: OCPP2_0_1.CustomDataType;
 }
