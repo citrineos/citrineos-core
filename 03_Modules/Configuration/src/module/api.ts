@@ -23,6 +23,7 @@ import {
   UpdateChargingStationPasswordSchema,
   Namespace,
   OCPP1_6_Namespace,
+  BootConfig
 } from '@citrineos/base';
 import {
   Boot,

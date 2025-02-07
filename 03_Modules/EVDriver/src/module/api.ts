@@ -16,6 +16,8 @@ import {
   HttpMethod,
   IMessageConfirmation,
   OCPP2_0_1_Namespace,
+  OCPP1_6_Namespace,
+  Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
