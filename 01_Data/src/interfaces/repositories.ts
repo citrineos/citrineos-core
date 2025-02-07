@@ -38,6 +38,8 @@ import {
   type VariableAttribute,
   VariableCharacteristics,
   type VariableMonitoring,
+  StatusNotification,
+  Connector,
 } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
@@ -86,6 +88,7 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
   /**
    * Creates a SendLocalList.
    * @param {string} stationId - The ID of the station.
+   * @param {string} correlationId - The correlation ID.
    * @param {UpdateEnumType} updateType - The type of update.
    * @param {number} versionNumber - The version number.
    * @param {AuthorizationData[]} localAuthorizationList - The list of authorizations.
@@ -113,7 +116,9 @@ export interface ILocationRepository extends CrudRepository<Location> {
   readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
   setChargingStationIsOnline: (stationId: string, isOnline: boolean) => Promise<boolean>;
   doesChargingStationExistByStationId: (stationId: string) => Promise<boolean>;
-  addStatusNotificationToChargingStation(stationId: string, statusNotification: OCPP2_0_1.StatusNotificationRequest): Promise<void>;
+  addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotification): Promise<void>;
+  createOrUpdateChargingStation(chargingStation: ChargingStation): Promise<ChargingStation>;
+  createOrUpdateConnector(connector: Connector): Promise<Connector | undefined>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {
