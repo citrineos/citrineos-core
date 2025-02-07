@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { z } from 'zod';
-import { OCPP2_0_1 } from '../ocpp/model';
+import { OCPP2_0_1, OCPP1_6 } from '../ocpp/model';
 import { EventGroup } from '..';
 
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
@@ -42,17 +42,33 @@ export const systemConfigInputSchema = z.object({
     configuration: z.object({
       heartbeatInterval: z.number().int().positive().default(60).optional(),
       bootRetryInterval: z.number().int().positive().default(10).optional(),
-      unknownChargerStatus: z
-        .enum([
-          OCPP2_0_1.RegistrationStatusEnumType.Accepted,
-          OCPP2_0_1.RegistrationStatusEnumType.Pending,
-          OCPP2_0_1.RegistrationStatusEnumType.Rejected,
-        ])
-        .default(OCPP2_0_1.RegistrationStatusEnumType.Accepted)
-        .optional(), // Unknown chargers have no entry in BootConfig table
-      getBaseReportOnPending: z.boolean().default(true).optional(),
-      bootWithRejectedVariables: z.boolean().default(true).optional(),
-      autoAccept: z.boolean().default(true).optional(), // If false, only data endpoint can update boot status to accepted
+      ocpp2_0_1: z
+        .object({
+          unknownChargerStatus: z
+            .enum([
+              OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+              OCPP2_0_1.RegistrationStatusEnumType.Pending,
+              OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+            ])
+            .default(OCPP2_0_1.RegistrationStatusEnumType.Accepted)
+            .optional(), // Unknown chargers have no entry in BootConfig table
+          getBaseReportOnPending: z.boolean().default(true).optional(),
+          bootWithRejectedVariables: z.boolean().default(true).optional(),
+          autoAccept: z.boolean().default(true).optional(), // If false, only data endpoint can update boot status to accepted
+        })
+        .optional(),
+      ocpp1_6: z
+        .object({
+          unknownChargerStatus: z
+            .enum([
+              OCPP1_6.BootNotificationResponseStatus.Accepted,
+              OCPP1_6.BootNotificationResponseStatus.Pending,
+              OCPP1_6.BootNotificationResponseStatus.Rejected,
+            ])
+            .default(OCPP1_6.BootNotificationResponseStatus.Accepted)
+            .optional(), // Unknown chargers have no entry in BootConfig table
+        })
+        .optional(),
       endpointPrefix: z.string().default(EventGroup.Configuration).optional(),
       host: z.string().default('localhost').optional(),
       port: z.number().int().positive().default(8081).optional(),
@@ -151,22 +167,6 @@ export const systemConfigInputSchema = z.object({
       .refine((obj) => obj.kafka || obj.amqp, {
         message: 'A message broker implementation must be set',
       }),
-    fileAccess: z
-      .object({
-        currentFileAccess: z.string().default('localstack'),
-        s3Storage: z
-          .object({
-            endpointHost: z.string().default('localstack'),
-            endpointPort: z.number().int().positive().default(4566),
-            accessKeyId: z.string().default('null'),
-            secretAccessKey: z.string().default('null'),
-            region: z.string(),
-            bucketName: z.string().default('citrineos-s3-bucket'),
-            s3ForcePathStyle: z.boolean().default(true),
-          })
-          .optional(),
-      })
-      .optional(),
     swagger: z
       .object({
         path: z.string().default('/docs').optional(),
@@ -186,6 +186,17 @@ export const systemConfigInputSchema = z.object({
       })
       .refine((obj) => obj.generateFlows && !obj.host, {
         message: 'Directus host must be set if generateFlows is true',
+      })
+      .optional(),
+    s3Storage: z
+      .object({
+        endpointHost: z.string().default('localstack'),
+        endpointPort: z.number().int().positive().default(4566),
+        accessKeyId: z.string().default('null'),
+        secretAccessKey: z.string().default('null'),
+        region: z.string(),
+        bucketName: z.string().default('citrineos-s3-bucket'),
+        s3ForcePathStyle: z.boolean().default(true),
       })
       .optional(),
     networkConnection: z.object({
@@ -302,24 +313,41 @@ export const systemConfigSchema = z
         host: z.string().optional(),
         port: z.number().int().positive().optional(),
       }),
-      configuration: z.object({
-        heartbeatInterval: z.number().int().positive(),
-        bootRetryInterval: z.number().int().positive(),
-        unknownChargerStatus: z.enum([
-          OCPP2_0_1.RegistrationStatusEnumType.Accepted,
-          OCPP2_0_1.RegistrationStatusEnumType.Pending,
-          OCPP2_0_1.RegistrationStatusEnumType.Rejected,
-        ]), // Unknown chargers have no entry in BootConfig table
-        getBaseReportOnPending: z.boolean(),
-        bootWithRejectedVariables: z.boolean(),
-        /**
-         * If false, only data endpoint can update boot status to accepted
-         */
-        autoAccept: z.boolean(),
-        endpointPrefix: z.string(),
-        host: z.string().optional(),
-        port: z.number().int().positive().optional(),
-      }), // Configuration module is required
+      configuration: z
+        .object({
+          heartbeatInterval: z.number().int().positive(),
+          bootRetryInterval: z.number().int().positive(),
+          ocpp2_0_1: z
+            .object({
+              unknownChargerStatus: z.enum([
+                OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+                OCPP2_0_1.RegistrationStatusEnumType.Pending,
+                OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+              ]), // Unknown chargers have no entry in BootConfig table
+              getBaseReportOnPending: z.boolean(),
+              bootWithRejectedVariables: z.boolean(),
+              /**
+               * If false, only data endpoint can update boot status to accepted
+               */
+              autoAccept: z.boolean(),
+            })
+            .optional(),
+          ocpp1_6: z
+            .object({
+              unknownChargerStatus: z.enum([
+                OCPP1_6.BootNotificationResponseStatus.Accepted,
+                OCPP1_6.BootNotificationResponseStatus.Pending,
+                OCPP1_6.BootNotificationResponseStatus.Rejected,
+              ]), // Unknown chargers have no entry in BootConfig table
+            })
+            .optional(),
+          endpointPrefix: z.string(),
+          host: z.string().optional(),
+          port: z.number().int().positive().optional(),
+        })
+        .refine((obj) => obj.ocpp1_6 || obj.ocpp2_0_1, {
+          message: 'A protocol configuration must be set',
+        }), // Configuration module is required
       monitoring: z.object({
         endpointPrefix: z.string(),
         host: z.string().optional(),
@@ -420,22 +448,6 @@ export const systemConfigSchema = z
         .refine((obj) => obj.kafka || obj.amqp, {
           message: 'A message broker implementation must be set',
         }),
-      fileAccess: z
-        .object({
-          currentFileAccess: z.string().default('localstack'),
-          s3Storage: z
-            .object({
-              endpointHost: z.string().default('localstack'),
-              endpointPort: z.number().int().positive().default(4566),
-              accessKeyId: z.string().default('null'),
-              secretAccessKey: z.string().default('null'),
-              region: z.string(),
-              bucketName: z.string().default('citrineos-s3-bucket'),
-              s3ForcePathStyle: z.boolean().default(true),
-            })
-            .optional(),
-        })
-        .optional(),
       swagger: z
         .object({
           path: z.string(),
@@ -452,6 +464,17 @@ export const systemConfigSchema = z
           username: z.string().optional(),
           password: z.string().optional(),
           generateFlows: z.boolean(),
+        })
+        .optional(),
+      s3Storage: z
+        .object({
+          endpointHost: z.string().default('localstack'),
+          endpointPort: z.number().int().positive().default(4566),
+          accessKeyId: z.string().default('null'),
+          secretAccessKey: z.string().default('null'),
+          region: z.string(),
+          bucketName: z.string().default('citrineos-s3-bucket'),
+          s3ForcePathStyle: z.boolean().default(true),
         })
         .optional(),
       networkConnection: z.object({

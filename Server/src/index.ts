@@ -111,6 +111,7 @@ export class CitrineOSServer {
    * @param {FastifyInstance} server - optional Fastify server instance
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
    * @param {ICache} cache - cache
+   * @param {IFileAccess} fileAccess - file storage
    */
   // todo rename event group to type
   constructor(
@@ -184,8 +185,11 @@ export class CitrineOSServer {
       });
     }
 
+    const s3Storage = new S3Storage(this._config);
+
     // Initialize File Access Implementation
-    this._fileAccess = fileAccess || this.initFileAccess(directusUtil);
+    this._fileAccess =
+      fileAccess || this.initFileAccess(s3Storage, directusUtil);
 
     // Register AJV for schema validation
     this.registerAjv();
@@ -331,7 +335,7 @@ export class CitrineOSServer {
                   return JSON.stringify(obj, (key, value) => {
                     if (typeof value === 'object' && value !== null) {
                       if (cache.has(value)) {
-                        // Circular reference found, discard key
+                        // Circular reference is found, discard key
                         return '[Circular]';
                       }
                       // Store value in our collection
@@ -530,6 +534,9 @@ export class CitrineOSServer {
       this._repositoryStore.bootRepository,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.messageInfoRepository,
+      this._repositoryStore.locationRepository,
+      this._repositoryStore.changeConfigurationRepository,
+      this._repositoryStore.callMessageRepository,
       this._idGenerator,
     );
     await this.initHandlersAndAddModule(module);
@@ -671,16 +678,13 @@ export class CitrineOSServer {
     }
   }
 
-  private initFileAccess(directus?: IFileAccess): IFileAccess {
-    const fileAccessType = this._config.util.fileAccess?.currentFileAccess;
-
-    if (fileAccessType === 's3Storage') {
-      return new S3Storage(this._config);
-    } else if (fileAccessType === 'directus') {
-      return directus || new DirectusUtil(this._config, this._logger);
-    } else {
-      return directus || new DirectusUtil(this._config, this._logger);
-    }
+  private initFileAccess(
+    fileAccess?: IFileAccess,
+    directus?: IFileAccess,
+  ): IFileAccess {
+    return (
+      fileAccess || directus || new DirectusUtil(this._config, this._logger)
+    );
   }
 
   private initRepositoryStore() {

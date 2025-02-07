@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, SystemConfig, type BootConfig, OCPP2_0_1 } from '@citrineos/base';
+import { CrudRepository, SystemConfig, type BootConfig, OCPP1_6 } from '@citrineos/base';
 import { type IBootRepository } from '../../../interfaces';
 import { Boot } from '../model/Boot';
 import { VariableAttribute } from '../model/DeviceModel';
@@ -53,12 +53,47 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
     return savedBootConfig;
   }
 
-  async updateStatusByKey(status: OCPP2_0_1.RegistrationStatusEnumType, statusInfo: OCPP2_0_1.StatusInfoType | undefined, key: string): Promise<Boot | undefined> {
+  async updateStatusByKey(status: string, statusInfo: object | undefined, key: string): Promise<Boot | undefined> {
     return await this.updateByKey({ status, statusInfo }, key);
   }
 
   async updateLastBootTimeByKey(lastBootTime: string, key: string): Promise<Boot | undefined> {
     return await this.updateByKey({ lastBootTime }, key);
+  }
+
+  async createOrUpdateFromOcpp16Response(key: string, response: OCPP1_6.BootNotificationResponse): Promise<Boot | undefined> {
+    let boot: Boot | undefined;
+    const heartbeatInterval = response.status === OCPP1_6.BootNotificationResponseStatus.Accepted ? response.interval : undefined;
+    const bootRetryInterval = response.status !== OCPP1_6.BootNotificationResponseStatus.Accepted ? response.interval : undefined;
+    await this.s.transaction(async (sequelizeTransaction) => {
+      const [savedBoot, bootCreated] = await this.readOrCreateByQuery({
+        where: {
+          id: key,
+        },
+        defaults: {
+          status: response.status,
+          heartbeatInterval,
+          bootRetryInterval,
+          lastBootTime: response.currentTime,
+        },
+        transaction: sequelizeTransaction,
+      });
+      if (!bootCreated) {
+        boot = await savedBoot.update(
+          {
+            lastBootTime: response.currentTime,
+            heartbeatInterval,
+            bootRetryInterval,
+            status: response.status,
+          },
+          { transaction: sequelizeTransaction },
+        );
+        this.emit('updated', [boot]);
+      } else {
+        boot = savedBoot;
+      }
+    });
+    return boot;
   }
 
   /**
