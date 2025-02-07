@@ -9,6 +9,7 @@
 
 export enum Namespace {
   BootConfig = 'Boot',
+  StatusNotificationRequest = 'StatusNotification',
 }
 
 export enum OCPP2_0_1_Namespace {
@@ -43,7 +44,6 @@ export enum OCPP2_0_1_Namespace {
   SecurityEventNotificationRequest = 'SecurityEvent',
   SendLocalListRequest = 'SendLocalList',
   ServerNetworkProfile = 'ServerNetworkProfile',
-  StatusNotificationRequest = 'StatusNotification',
   Subscription = 'Subscription',
   SystemConfig = 'SystemConfig',
   TlsCertificates = 'TlsCertificates',
