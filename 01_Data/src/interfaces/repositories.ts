@@ -38,6 +38,7 @@ import {
   type VariableAttribute,
   VariableCharacteristics,
   type VariableMonitoring,
+  TransactionEvent,
 } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
@@ -128,10 +129,10 @@ export interface ISubscriptionRepository extends CrudRepository<Subscription> {
   deleteByKey(key: string): Promise<Subscription | undefined>;
 }
 
-export interface ITransactionEventRepository extends CrudRepository<OCPP2_0_1.TransactionEventRequest> {
+export interface ITransactionEventRepository extends CrudRepository<TransactionEvent> {
   createOrUpdateTransactionByTransactionEventAndStationId(value: OCPP2_0_1.TransactionEventRequest, stationId: string): Promise<Transaction>;
   createMeterValue(value: OCPP2_0_1.MeterValueType, transactionDatabaseId?: number | null): Promise<void>;
-  readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<OCPP2_0_1.TransactionEventRequest[]>;
+  readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEvent[]>;
   readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
   readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: OCPP2_0_1.EVSEType, chargingStates?: OCPP2_0_1.ChargingStateEnumType[]): Promise<Transaction[]>;
   readAllActiveTransactionsByIdToken(idToken: OCPP2_0_1.IdTokenType): Promise<Transaction[]>;

@@ -11,7 +11,7 @@ import { MeterValue } from './MeterValue';
 import { Transaction } from './Transaction';
 
 @Table
-export class TransactionEvent extends Model implements OCPP2_0_1.TransactionEventRequest {
+export class TransactionEvent extends Model {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.TransactionEventRequest;
 
   @Column
