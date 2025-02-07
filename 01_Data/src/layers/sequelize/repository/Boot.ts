@@ -10,7 +10,6 @@ import { VariableAttribute } from '../model/DeviceModel';
 import { SequelizeRepository } from '..';
 import { Logger, ILogObj } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
-import { BootMapper } from '../mapper/2.0.1';
 
 export class SequelizeBootRepository extends SequelizeRepository<Boot> implements IBootRepository {
   variableAttributes: CrudRepository<VariableAttribute>;
@@ -60,46 +59,6 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
 
   async updateLastBootTimeByKey(lastBootTime: string, key: string): Promise<Boot | undefined> {
     return await this.updateByKey({ lastBootTime }, key);
-  }
-
-  async readByStationId(stationId: string): Promise<BootMapper | undefined> {
-    const boot = await this.readByKey(stationId);
-    return boot ? new BootMapper(boot) : undefined;
-  }
-
-  async createOrUpdateFromOcpp16Response(key: string, response: OCPP1_6.BootNotificationResponse): Promise<Boot | undefined> {
-    let boot: Boot | undefined;
-    const heartbeatInterval = response.status === OCPP1_6.BootNotificationResponseStatus.Accepted ? response.interval : undefined;
-    const bootRetryInterval = response.status !== OCPP1_6.BootNotificationResponseStatus.Accepted ? response.interval : undefined;
-    await this.s.transaction(async (sequelizeTransaction) => {
-      const [savedBoot, bootCreated] = await this.readOrCreateByQuery({
-        where: {
-          id: key,
-        },
-        defaults: {
-          status: response.status,
-          heartbeatInterval,
-          bootRetryInterval,
-          lastBootTime: response.currentTime,
-        },
-        transaction: sequelizeTransaction,
-      });
-      if (!bootCreated) {
-        boot = await savedBoot.update(
-          {
-            lastBootTime: response.currentTime,
-            heartbeatInterval,
-            bootRetryInterval,
-            status: response.status,
-          },
-          { transaction: sequelizeTransaction },
-        );
-        this.emit('updated', [boot]);
-      } else {
-        boot = savedBoot;
-      }
-    });
-    return boot;
   }
 
   /**
