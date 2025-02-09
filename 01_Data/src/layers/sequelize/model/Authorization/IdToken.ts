@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
+import {OCPP2_0_1_Namespace, OCPP2_0_1, Namespace} from '@citrineos/base';
 import { BelongsToMany, Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
 import { AdditionalInfo } from './AdditionalInfo';
 import { IdTokenAdditionalInfo } from './IdTokenAdditionalInfo';
@@ -11,7 +11,7 @@ import { Authorization } from './Authorization';
 
 @Table
 export class IdToken extends Model implements OCPP2_0_1.IdTokenType {
-  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.IdTokenType;
+  static readonly MODEL_NAME: string = Namespace.IdTokenType;
 
   @BelongsToMany(() => AdditionalInfo, () => IdTokenAdditionalInfo)
   declare additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]] | null;
