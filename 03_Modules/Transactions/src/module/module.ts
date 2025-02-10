@@ -16,6 +16,8 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  OCPP1_6,
+  OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
@@ -30,6 +32,7 @@ import {
   IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
+  MeterValue,
   sequelize,
   SequelizeRepository,
   Transaction,
@@ -55,6 +58,7 @@ export class TransactionsModule extends AbstractModule {
     OCPP2_0_1_CallAction.MeterValues,
     OCPP2_0_1_CallAction.StatusNotification,
     OCPP2_0_1_CallAction.TransactionEvent,
+    OCPP1_6_CallAction.MeterValues,
   ];
   _responses: CallAction[] = [
     OCPP2_0_1_CallAction.CostUpdated,
@@ -504,6 +508,57 @@ export class TransactionsModule extends AbstractModule {
       'GetTransactionStatus response received:',
       message,
       props,
+    );
+  }
+
+  /**
+   * Handle OCPP 1.6 requests
+   */
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.MeterValues)
+  protected async _handleOcpp16MeterValues(
+    message: IMessage<OCPP1_6.MeterValuesRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug(
+      'MeterValues request received:',
+      message,
+      props,
+    );
+
+    const stationId = message.context.stationId;
+    const connectorId = message.payload.connectorId;
+    const transactionId = message.payload.transactionId;
+    const meterValues = message.payload.meterValue;
+
+    if (connectorId !== 0 && transactionId && meterValues.length > 0) {
+      try {
+        const meterValueEntities: MeterValue[] = [];
+        for (const meterValue of meterValues) {
+          if (meterValue.sampledValue && meterValue.sampledValue.length > 0) {
+            meterValueEntities.push(
+              MeterValue.build({
+                ...meterValue,
+                connectorId,
+              })
+            );
+          }
+        }
+        if (meterValueEntities.length > 0) {
+          await this._transactionEventRepository.updateTransactionByMeterValues(
+            meterValueEntities,
+            stationId,
+            transactionId,
+          );
+        }
+      } catch (e) {
+        this._logger.error(`Failed to process MeterValues.`, e);
+      }
+    }
+
+    await this.sendCallResultWithMessage(
+      message,
+      {} as OCPP1_6.MeterValuesResponse,
     );
   }
 }

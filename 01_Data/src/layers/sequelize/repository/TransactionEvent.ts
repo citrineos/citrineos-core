@@ -345,4 +345,22 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   async updateTransactionTotalCostById(totalCost: number, id: number): Promise<void> {
     await this.transaction.updateByKey({ totalCost: totalCost }, id.toString());
   }
+
+  async updateTransactionByMeterValues(meterValues: MeterValue[], stationId: string, transactionId: number): Promise<void> {
+    // Find existing transaction
+    const transaction = await this.readTransactionByStationIdAndTransactionId(stationId, transactionId.toString());
+    if (!transaction) {
+      this.logger.error(`Transaction ${transactionId} on station ${stationId} does not exist.`);
+      return;
+    }
+
+    // Store meter values
+    await Promise.all(
+      meterValues.map(async (meterValue) => {
+        meterValue.transactionDatabaseId = transaction.id;
+        await meterValue.save();
+        this.meterValue.emit('created', [meterValue]);
+      }),
+    );
+  }
 }
