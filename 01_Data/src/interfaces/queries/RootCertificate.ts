@@ -31,3 +31,21 @@ export const InstallRootCertificateSchema = QuerySchema(
   ],
   ['stationId', 'certificateType', 'tenantId'],
 );
+
+export const UploadExistingCertificateSchema = QuerySchema(
+  'UploadExistingCertificateSchema',
+  [
+    ['certificate', 'string'],
+    ['certificateType', 'string'],
+  ],
+  ['certificate', 'certificateType'],
+);
+
+export const RegenerateInstalledCertificateSchema = QuerySchema(
+  'RegenerateInstalledCertificateSchema',
+  [
+    ['installedCertificateId', 'number'],
+    ['validBefore', 'string'],
+  ],
+  ['installedCertificateId'],
+);

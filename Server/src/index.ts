@@ -55,10 +55,17 @@ import {
 import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import {
+  InternalSmartCharging,
+  ISmartCharging,
   SmartChargingModule,
   SmartChargingModuleApi,
 } from '@citrineos/smartcharging';
-import { RepositoryStore, sequelize, Sequelize, ServerNetworkProfile } from '@citrineos/data';
+import {
+  RepositoryStore,
+  sequelize,
+  Sequelize,
+  ServerNetworkProfile,
+} from '@citrineos/data';
 import {
   type FastifyRouteSchemaDef,
   type FastifySchemaCompiler,
@@ -70,10 +77,6 @@ import {
   WebhookDispatcher,
 } from '@citrineos/ocpprouter';
 import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
-import {
-  InternalSmartCharging,
-  ISmartCharging,
-} from '@citrineos/smartcharging';
 import cors from '@fastify/cors';
 
 interface ModuleConfig {
@@ -141,7 +144,7 @@ export class CitrineOSServer {
     // enable cors
     (this._server as any).register(cors, {
       origin: true, // This can be customized to specify allowed origins
-      methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed HTTP methods
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify allowed HTTP methods
     });
 
     // Add health check
@@ -243,26 +246,34 @@ export class CitrineOSServer {
   }
 
   protected async _syncWebsocketConfig() {
-    this._config.util.networkConnection.websocketServers.forEach(async websocketServerConfig => {
-      const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
-        where: {
-          id: websocketServerConfig.id
-        }
-      });
-      serverNetworkProfile.host = websocketServerConfig.host;
-      serverNetworkProfile.port = websocketServerConfig.port;
-      serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
-      serverNetworkProfile.protocol = websocketServerConfig.protocol;
-      serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
-      serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
-      serverNetworkProfile.allowUnknownChargingStations = websocketServerConfig.allowUnknownChargingStations;
-      serverNetworkProfile.tlsKeyFilePath = websocketServerConfig.tlsKeyFilePath;
-      serverNetworkProfile.tlsCertificateChainFilePath = websocketServerConfig.tlsCertificateChainFilePath;
-      serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath = websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
-      serverNetworkProfile.rootCACertificateFilePath = websocketServerConfig.rootCACertificateFilePath;
+    this._config.util.networkConnection.websocketServers.forEach(
+      async (websocketServerConfig) => {
+        const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
+          where: {
+            id: websocketServerConfig.id,
+          },
+        });
+        serverNetworkProfile.host = websocketServerConfig.host;
+        serverNetworkProfile.port = websocketServerConfig.port;
+        serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
+        serverNetworkProfile.protocol = websocketServerConfig.protocol;
+        serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
+        serverNetworkProfile.securityProfile =
+          websocketServerConfig.securityProfile;
+        serverNetworkProfile.allowUnknownChargingStations =
+          websocketServerConfig.allowUnknownChargingStations;
+        serverNetworkProfile.tlsKeyFilePath =
+          websocketServerConfig.tlsKeyFilePath;
+        serverNetworkProfile.tlsCertificateChainFilePath =
+          websocketServerConfig.tlsCertificateChainFilePath;
+        serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath =
+          websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
+        serverNetworkProfile.rootCACertificateFilePath =
+          websocketServerConfig.rootCACertificateFilePath;
 
-      serverNetworkProfile.save();
-    })
+        serverNetworkProfile.save();
+      },
+    );
   }
 
   protected _createSender(): IMessageSender {
@@ -366,7 +377,6 @@ export class CitrineOSServer {
       this._repositoryStore.subscriptionRepository,
     );
 
-     
     const router = new MessageRouterImpl(
       this._config,
       this._cache,
@@ -401,9 +411,13 @@ export class CitrineOSServer {
         this._cache,
         this._createSender(),
         this._createHandler(),
+        this._fileAccess,
         this._logger,
         this._repositoryStore.deviceModelRepository,
         this._repositoryStore.certificateRepository,
+        this._repositoryStore.installedCertificateRepository,
+        this._repositoryStore.installCertificateAttemptRepository,
+        this._repositoryStore.deleteCertificateAttemptRepository,
         this._repositoryStore.locationRepository,
       );
       this.modules.push(module);
@@ -669,17 +683,23 @@ export class CitrineOSServer {
   }
 
   private initIdGenerator() {
-    this._idGenerator = new IdGenerator(this._repositoryStore.chargingStationSequenceRepository);
+    this._idGenerator = new IdGenerator(
+      this._repositoryStore.chargingStationSequenceRepository,
+    );
   }
 
   private initCertificateAuthorityService() {
-    this._certificateAuthorityService = new CertificateAuthorityService(this._config, this._logger);
+    this._certificateAuthorityService = new CertificateAuthorityService(
+      this._config,
+      this._logger,
+    );
   }
 
   private initSmartChargingService() {
-    this._smartChargingService = new InternalSmartCharging(this._repositoryStore.chargingProfileRepository);
+    this._smartChargingService = new InternalSmartCharging(
+      this._repositoryStore.chargingProfileRepository,
+    );
   }
-
 }
 
 async function main() {
