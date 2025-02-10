@@ -42,7 +42,9 @@ import { type ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
 import {
   ConfigurationModule,
-  ConfigurationModuleApi,
+  ConfigurationOcpp201Api,
+  ConfigurationOcpp16Api,
+  ConfigurationDataApi,
 } from '@citrineos/configuration';
 import {
   TransactionsModule,
@@ -52,7 +54,7 @@ import {
   CertificatesModule,
   CertificatesModuleApi,
 } from '@citrineos/certificates';
-import { EVDriverModule, EVDriverOcpp201MessageApi, EVDriverOcpp16MessageApi, EVDriverDataApi } from '@citrineos/evdriver';
+import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import {
   InternalSmartCharging,
@@ -534,7 +536,9 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
-      new ConfigurationModuleApi(module, this._server, this._logger),
+      new ConfigurationOcpp201Api(module, this._server, this._logger),
+      new ConfigurationOcpp16Api(module, this._server, this._logger),
+      new ConfigurationDataApi(module, this._server, this._logger),
     );
   }
 
@@ -558,11 +562,7 @@ export class CitrineOSServer {
       this._idGenerator,
     );
     await this.initHandlersAndAddModule(module);
-    this.apis.push(
-      new EVDriverOcpp201MessageApi(module, this._server, this._logger),
-      new EVDriverOcpp16MessageApi(module, this._server, this._logger),
-      new EVDriverDataApi(module, this._server, this._logger)
-    );
+    this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
   }
 
   private async initMonitoringModule() {

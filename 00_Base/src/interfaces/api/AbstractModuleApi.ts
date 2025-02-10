@@ -38,6 +38,7 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
+  private _ocppVersion: OCPPVersion | undefined;
 
   constructor(module: T, server: FastifyInstance, logger?: Logger<ILogObj>) {
     this._module = module;
@@ -132,8 +133,8 @@ export abstract class AbstractModuleApi<T extends IModule>
       messagePath,
     );
 
-    bodySchema['$id'] = messagePath.replace(/\//g, '_');
-    this._logger.debug('Generated a unique id for schema: ', bodySchema['$id']);
+    // bodySchema['$id'] = messagePath.replace(/\//g, '_');
+    // this._logger.debug('Generated a unique id for schema: ', bodySchema['$id']);
 
     /**
      * Executes the handler function for the given request.
@@ -465,9 +466,10 @@ export abstract class AbstractModuleApi<T extends IModule>
    * @returns {string} - String representation of URL path.
    */
   protected _toMessagePath(input: CallAction, prefix?: string, ocppVersion?: OCPPVersion): string {
+    this._ocppVersion = ocppVersion ? ocppVersion : this._ocppVersion;
     const endpointPrefix = prefix || '';
-    const endpointVersion = ocppVersion || OCPPVersion.OCPP2_0_1;
-    return `/ocpp/${endpointVersion.replace(/^ocpp/, "")}${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
+    const endpointVersion = (ocppVersion ? ocppVersion : OCPPVersion.OCPP2_0_1).replace(/^ocpp/, "");
+    return `/ocpp/${endpointVersion}${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
   }
 
   /**

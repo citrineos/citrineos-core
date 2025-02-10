@@ -17,6 +17,8 @@ import {
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
+  OCPP1_6,
+  OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
@@ -642,6 +644,21 @@ export class ConfigurationModule extends AbstractModule {
           ),
         } as OCPP2_0_1.GetDisplayMessagesRequest,
       );
+    }
+  }
+
+  /**
+   * Handle OCPP 1.6 response
+   */
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.TriggerMessage)
+  protected _handleOcpp16TriggerMessage(
+    message: IMessage<OCPP1_6.TriggerMessageResponse>,
+    props?: HandlerProperties,
+  ): void {
+    this._logger.debug('OCPP 1.6 TriggerMessage response received:', message, props);
+    if (message.payload.status !== OCPP1_6.TriggerMessageResponseStatus.Accepted) {
+      this._logger.error('TriggerMessage failed with status:', message);
     }
   }
 }

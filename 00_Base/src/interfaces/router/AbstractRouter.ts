@@ -195,6 +195,8 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     }
 
     if (schema) {
+      // schema['$id'] = protocol + '_' + schema['$id'];
+      // this._logger.debug('Generated unique schema id', schema['$id']);
       const validate = this._ajv.compile(schema);
       const result = validate(payload);
       if (!result) {
@@ -239,6 +241,8 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     }
 
     if (schema) {
+      // schema['$id'] = protocol + '_' + schema['$id'];
+      // this._logger.debug('Generated unique schema id', schema['$id']);
       const validate = this._ajv.compile(schema);
       const result = validate(payload);
       if (!result) {
