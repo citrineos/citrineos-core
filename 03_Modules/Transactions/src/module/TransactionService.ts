@@ -1,7 +1,7 @@
 import {
   Authorization,
   IAuthorizationRepository,
-  ITransactionEventRepository,
+  ITransactionEventRepository, OCPP2_0_1_Mapper,
   Transaction,
   OCPP2_0_1_Mapper,
 } from '@citrineos/data';
@@ -83,31 +83,7 @@ export class TransactionService {
     }
 
     // Extract DTO fields from sequelize Model<any, any> objects
-    const idTokenInfo: OCPP2_0_1.IdTokenInfoType = {
-      status: authorization.idTokenInfo.status,
-      cacheExpiryDateTime: authorization.idTokenInfo.cacheExpiryDateTime,
-      chargingPriority: authorization.idTokenInfo.chargingPriority,
-      language1: authorization.idTokenInfo.language1,
-      evseId: authorization.idTokenInfo.evseId,
-      groupIdToken: authorization.idTokenInfo.groupIdToken
-        ? {
-          additionalInfo:
-            authorization.idTokenInfo.groupIdToken.additionalInfo &&
-              authorization.idTokenInfo.groupIdToken.additionalInfo.length > 0
-              ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                (additionalInfo) => ({
-                  additionalIdToken: additionalInfo.additionalIdToken,
-                  type: additionalInfo.type,
-                }),
-              ) as [OCPP2_0_1.AdditionalInfoType, ...OCPP2_0_1.AdditionalInfoType[]])
-              : undefined,
-          idToken: authorization.idTokenInfo.groupIdToken.idToken,
-          type: authorization.idTokenInfo.groupIdToken.type,
-        }
-        : undefined,
-      language2: authorization.idTokenInfo.language2,
-      personalMessage: authorization.idTokenInfo.personalMessage,
-    };
+    const idTokenInfo = OCPP2_0_1_Mapper.AuthenticationMapper.toIdTokenInfo(authorization);
 
     if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
       // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit

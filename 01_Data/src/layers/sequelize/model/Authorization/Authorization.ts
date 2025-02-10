@@ -9,7 +9,7 @@ import { type AuthorizationRestrictions } from '../../../../interfaces';
 import { IdToken, IdTokenInfo } from '.';
 
 @Table
-export class Authorization extends Model implements OCPP2_0_1.AuthorizationData, AuthorizationRestrictions {
+export class Authorization extends Model implements AuthorizationRestrictions {
   static readonly MODEL_NAME: string = Namespace.AuthorizationData;
 
   @Column(DataType.ARRAY(DataType.STRING))
@@ -35,5 +35,5 @@ export class Authorization extends Model implements OCPP2_0_1.AuthorizationData,
   @BelongsTo(() => IdTokenInfo)
   declare idTokenInfo?: IdTokenInfo;
 
-  declare customData?: OCPP2_0_1.CustomDataType | null;
+  declare customData?: any | null;
 }

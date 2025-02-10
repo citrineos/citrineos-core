@@ -10,7 +10,7 @@ import { IdTokenAdditionalInfo } from './IdTokenAdditionalInfo';
 import { Authorization } from './Authorization';
 
 @Table
-export class IdToken extends Model implements OCPP2_0_1.IdTokenType {
+export class IdToken extends Model {
   static readonly MODEL_NAME: string = Namespace.IdTokenType;
 
   @BelongsToMany(() => AdditionalInfo, () => IdTokenAdditionalInfo)
@@ -26,10 +26,10 @@ export class IdToken extends Model implements OCPP2_0_1.IdTokenType {
     type: DataType.STRING,
     unique: 'idToken_type',
   })
-  declare type: OCPP2_0_1.IdTokenEnumType;
+  declare type: string;
 
   @HasOne(() => Authorization)
   declare authorization: Authorization;
 
-  declare customData?: OCPP2_0_1.CustomDataType | null;
+  declare customData?: any | null;
 }
