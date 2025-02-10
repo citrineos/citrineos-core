@@ -9,12 +9,9 @@ import {
   AsMessageEndpoint,
   CallAction,
   IMessageConfirmation,
-  OCPP2_0_1_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
-  OCPP1_6_Namespace,
-  Namespace,
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { IReportingModuleApi } from './interface';
@@ -24,7 +21,7 @@ import { getBatches, getSizeOfRequest } from '@citrineos/util';
 /**
  * Server API for the Reporting module.
  */
-export class ReportingModuleApi
+export class ReportingOcpp201Api
   extends AbstractModuleApi<ReportingModule>
   implements IReportingModuleApi
 {
@@ -42,12 +39,8 @@ export class ReportingModuleApi
     server: FastifyInstance,
     logger?: Logger<ILogObj>,
   ) {
-    super(reportingModule, server, logger);
+    super(reportingModule, server, OCPPVersion.OCPP2_0_1, logger);
   }
-
-  /**
-   * Message Endpoint Methods
-   */
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.GetBaseReport,
@@ -287,19 +280,5 @@ export class ReportingModuleApi
   protected _toMessagePath(input: CallAction): string {
     const endpointPrefix = this._module.config.modules.reporting.endpointPrefix;
     return super._toMessagePath(input, endpointPrefix);
-  }
-
-  /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace}
-   * and the module's endpoint prefix configuration.
-   *
-   * @param {Namespace} input - The input {@link Namespace}.
-   * @return {string} - The generated URL path.
-   */
-  protected _toDataPath(
-    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
-  ): string {
-    const endpointPrefix = this._module.config.modules.reporting.endpointPrefix;
-    return super._toDataPath(input, endpointPrefix);
   }
 }

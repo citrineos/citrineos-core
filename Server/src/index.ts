@@ -17,7 +17,7 @@ import {
   type IModuleApi,
   type SystemConfig,
 } from '@citrineos/base';
-import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
+import { MonitoringModule, MonitoringOcpp201Api, MonitoringDataApi } from '@citrineos/monitoring';
 import {
   Authenticator,
   BasicAuthenticationFilter,
@@ -48,19 +48,21 @@ import {
 } from '@citrineos/configuration';
 import {
   TransactionsModule,
-  TransactionsModuleApi,
+  TransactionsOcpp201Api,
+  TransactionsDataApi,
 } from '@citrineos/transactions';
 import {
+  CertificatesDataApi,
   CertificatesModule,
-  CertificatesModuleApi,
+  CertificatesOcpp201Api,
 } from '@citrineos/certificates';
-import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
-import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
+import { EVDriverDataApi, EVDriverModule, EVDriverOcpp201Api } from '@citrineos/evdriver';
+import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
 import {
   InternalSmartCharging,
   ISmartCharging,
   SmartChargingModule,
-  SmartChargingModuleApi,
+  SmartChargingOcpp201Api,
 } from '@citrineos/smartcharging';
 import {
   RepositoryStore,
@@ -511,14 +513,19 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
-      new CertificatesModuleApi(
+      new CertificatesOcpp201Api(
+        module,
+        this._server,
+        this._logger,
+      ),
+      new CertificatesDataApi(
         module,
         this._server,
         this._fileAccess,
         this._networkConnection!,
         this._config.util.networkConnection.websocketServers,
         this._logger,
-      ),
+      )
     );
   }
 
@@ -562,7 +569,10 @@ export class CitrineOSServer {
       this._idGenerator,
     );
     await this.initHandlersAndAddModule(module);
-    this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
+    this.apis.push(
+      new EVDriverOcpp201Api(module, this._server, this._logger),
+      new EVDriverDataApi(module, this._server, this._logger)
+    );
   }
 
   private async initMonitoringModule() {
@@ -577,7 +587,10 @@ export class CitrineOSServer {
       this._idGenerator,
     );
     await this.initHandlersAndAddModule(module);
-    this.apis.push(new MonitoringModuleApi(module, this._server, this._logger));
+    this.apis.push(
+      new MonitoringOcpp201Api(module, this._server, this._logger),
+      new MonitoringDataApi(module, this._server, this._logger)
+    );
   }
 
   private async initReportingModule() {
@@ -592,7 +605,7 @@ export class CitrineOSServer {
       this._repositoryStore.variableMonitoringRepository,
     );
     await this.initHandlersAndAddModule(module);
-    this.apis.push(new ReportingModuleApi(module, this._server, this._logger));
+    this.apis.push(new ReportingOcpp201Api(module, this._server, this._logger));
   }
 
   private async initSmartChargingModule() {
@@ -610,7 +623,7 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
-      new SmartChargingModuleApi(module, this._server, this._logger),
+      new SmartChargingOcpp201Api(module, this._server, this._logger),
     );
   }
 
@@ -631,7 +644,8 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
-      new TransactionsModuleApi(module, this._server, this._logger),
+      new TransactionsOcpp201Api(module, this._server, this._logger),
+      new TransactionsDataApi(module, this._server, this._logger),
     );
   }
 

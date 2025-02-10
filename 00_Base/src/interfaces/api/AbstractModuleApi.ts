@@ -38,11 +38,12 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
-  private _ocppVersion: OCPPVersion | undefined;
+  private readonly _ocppVersion: OCPPVersion | null;
 
-  constructor(module: T, server: FastifyInstance, logger?: Logger<ILogObj>) {
+  constructor(module: T, server: FastifyInstance, ocppVersion: OCPPVersion | null, logger?: Logger<ILogObj>) {
     this._module = module;
     this._server = server;
+    this._ocppVersion = ocppVersion;
 
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
@@ -465,10 +466,9 @@ export abstract class AbstractModuleApi<T extends IModule>
    * @param {OCPPVersion} ocppVersion - The OCPP version.
    * @returns {string} - String representation of URL path.
    */
-  protected _toMessagePath(input: CallAction, prefix?: string, ocppVersion?: OCPPVersion): string {
-    this._ocppVersion = ocppVersion ? ocppVersion : this._ocppVersion;
+  protected _toMessagePath(input: CallAction, prefix?: string): string {
     const endpointPrefix = prefix || '';
-    const endpointVersion = (ocppVersion ? ocppVersion : OCPPVersion.OCPP2_0_1).replace(/^ocpp/, "");
+    const endpointVersion = (this._ocppVersion ? this._ocppVersion : OCPPVersion.OCPP2_0_1).replace(/^ocpp/, "");
     return `/ocpp/${endpointVersion}${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
   }
 

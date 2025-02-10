@@ -44,14 +44,14 @@ import {
 } from '@citrineos/transactions';
 import {
   CertificatesModule,
-  CertificatesModuleApi,
+  CertificatesOcpp201Api,
 } from '@citrineos/certificates';
-import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
+import { EVDriverModule, EVDriverOcpp201Api } from '@citrineos/evdriver';
 import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter';
-import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
+import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
 import {
   SmartChargingModule,
-  SmartChargingModuleApi,
+  SmartChargingOcpp201Api,
 } from '@citrineos/smartcharging';
 import { sequelize } from '@citrineos/data';
 import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
@@ -348,7 +348,7 @@ class ModuleService {
             this._createHandler(),
             this._logger,
           );
-          this._api = new CertificatesModuleApi(
+          this._api = new CertificatesOcpp201Api(
             this._module as CertificatesModule,
             this._server,
             this._logger,
@@ -388,7 +388,7 @@ class ModuleService {
             this._createHandler(),
             this._logger,
           );
-          this._api = new EVDriverModuleApi(
+          this._api = new EVDriverOcpp201Api(
             this._module as EVDriverModule,
             this._server,
             this._logger,
@@ -428,7 +428,7 @@ class ModuleService {
             this._createHandler(),
             this._logger,
           );
-          this._api = new ReportingModuleApi(
+          this._api = new ReportingOcpp201Api(
             this._module as ReportingModule,
             this._server,
             this._logger,
@@ -448,7 +448,7 @@ class ModuleService {
             this._createHandler(),
             this._logger,
           );
-          this._api = new SmartChargingModuleApi(
+          this._api = new SmartChargingOcpp201Api(
             this._module as SmartChargingModule,
             this._server,
             this._logger,

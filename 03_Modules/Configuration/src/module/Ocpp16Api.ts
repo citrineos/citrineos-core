@@ -19,7 +19,7 @@ import {
 /**
  * Server API for the Configuration component.
  */
-export class ConfigurationModuleApi
+export class ConfigurationOcpp16Api
   extends AbstractModuleApi<ConfigurationModule>
   implements IConfigurationModuleApi
 {
@@ -35,7 +35,7 @@ export class ConfigurationModuleApi
     server: FastifyInstance,
     logger?: Logger<ILogObj>,
   ) {
-    super(ConfigurationComponent, server, logger);
+    super(ConfigurationComponent, server, OCPPVersion.OCPP1_6,logger);
   }
 
   @AsMessageEndpoint(
@@ -75,6 +75,6 @@ export class ConfigurationModuleApi
   protected _toMessagePath(input: CallAction): string {
     const endpointPrefix =
       this._module.config.modules.configuration.endpointPrefix;
-    return super._toMessagePath(input, endpointPrefix, OCPPVersion.OCPP1_6);
+    return super._toMessagePath(input, endpointPrefix);
   }
 }

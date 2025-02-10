@@ -50,7 +50,7 @@ import { v4 as uuidv4 } from 'uuid';
 /**
  * Server API for the Configuration component.
  */
-export class ConfigurationModuleApi
+export class ConfigurationDataApi
   extends AbstractModuleApi<ConfigurationModule>
   implements IConfigurationModuleApi
 {
@@ -66,7 +66,7 @@ export class ConfigurationModuleApi
     server: FastifyInstance,
     logger?: Logger<ILogObj>,
   ) {
-    super(ConfigurationComponent, server, logger);
+    super(ConfigurationComponent, server, null, logger);
   }
 
   @AsDataEndpoint(

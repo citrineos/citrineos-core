@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { EVDriverModuleApi } from './module/api';
+export { EVDriverOcpp201Api } from './module/Ocpp201Api';
+export { EVDriverDataApi } from './module/DataApi';
 export { IEVDriverModuleApi } from './module/interface';
 export { EVDriverModule } from './module/module';

@@ -241,7 +241,7 @@ export class EVDriverModule extends AbstractModule {
   }
 
   /**
-   * Handle OCPP 2.0.1 requests
+   * Handle requests
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Authorize)
@@ -564,7 +564,7 @@ export class EVDriverModule extends AbstractModule {
   }
 
   /**
-   * Handle OCPP 2.0.1 responses
+   * Handle responses
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.RequestStartTransaction)
@@ -777,30 +777,6 @@ export class EVDriverModule extends AbstractModule {
       message.payload.versionNumber,
       message.context.stationId,
     );
-  }
-
-  /**
-   * Handle OCPP 1.6 responses
-   */
-
-  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.RemoteStopTransaction)
-  protected async _handleOcpp16RemoteStopTransaction(
-    message: IMessage<OCPP1_6.RemoteStopTransactionResponse>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug(
-      'OCPP 1.6 RemoteStopTransaction response received:',
-      message,
-      props,
-    );
-    if (
-      message.payload.status !==
-      OCPP1_6.RemoteStopTransactionResponseStatus.Accepted
-    ) {
-      this._logger.error(
-        `RemoteStopTransaction failed with status: ${message.payload.status}`,
-      );
-    }
   }
 
   private async _findReservationByCorrelationId(

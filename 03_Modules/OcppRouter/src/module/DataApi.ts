@@ -45,12 +45,8 @@ export class AdminApi
     server: FastifyInstance,
     logger?: Logger<ILogObj>,
   ) {
-    super(ocppRouter, server, logger);
+    super(ocppRouter, server, null, logger);
   }
-
-  /**
-   * Data endpoints
-   */
 
   // N.B.: When adding subscriptions, chargers may be connected to a different instance of Citrine.
   // If this is the case, new subscriptions will not take effect until the charger reconnects.
@@ -112,21 +108,10 @@ export class AdminApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input {@link Namespace}
+   * and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link CallAction}.
-   * @return {string} - The generated URL path.
-   */
-  protected _toMessagePath(input: CallAction): string {
-    const endpointPrefix = '/ocpprouter';
-    return super._toMessagePath(input, endpointPrefix);
-  }
-
-  /**
-   * Overrides superclass method to generate the URL path based on the input ({@link OCPP2_0_1_Namespace},
-   * {@link OCPP1_6_Namespace} or {@link Namespace}) and the module's endpoint prefix configuration.
-   *
-   * @param {CallAction} input - The input {@link OCPP2_0_1_Namespace}, {@link OCPP1_6_Namespace} or {@link Namespace}.
+   * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
   protected _toDataPath(

@@ -15,12 +15,8 @@ import {
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import {
-  SetNetworkProfile,
-} from '@citrineos/data';
-import {
-  validateLanguageTag,
-} from '@citrineos/util';
+import { SetNetworkProfile } from '@citrineos/data';
+import { validateLanguageTag } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
 
 enum SetNetworkProfileExtraQuerystrings {
@@ -30,7 +26,7 @@ enum SetNetworkProfileExtraQuerystrings {
 /**
  * Server API for the Configuration component.
  */
-export class ConfigurationModuleApi
+export class ConfigurationOcpp201Api
   extends AbstractModuleApi<ConfigurationModule>
   implements IConfigurationModuleApi
 {
@@ -46,7 +42,7 @@ export class ConfigurationModuleApi
     server: FastifyInstance,
     logger?: Logger<ILogObj>,
   ) {
-    super(ConfigurationComponent, server, logger);
+    super(ConfigurationComponent, server, OCPPVersion.OCPP2_0_1, logger);
   }
 
   @AsMessageEndpoint(
