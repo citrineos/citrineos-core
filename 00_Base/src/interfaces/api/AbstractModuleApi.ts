@@ -39,13 +39,11 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
   private readonly _ocppVersion: OCPPVersion | null;
-  private readonly _schemaIdPrefix: string;
 
   constructor(module: T, server: FastifyInstance, ocppVersion: OCPPVersion | null, logger?: Logger<ILogObj>) {
     this._module = module;
     this._server = server;
     this._ocppVersion = ocppVersion;
-    this._schemaIdPrefix = this._ocppVersion ? `${this._ocppVersion}-` : '';
 
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
@@ -127,7 +125,7 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected _addMessageRoute(
     action: CallAction,
     method: (...args: any[]) => any,
-    bodySchema: any,
+    bodySchema: object,
     optionalQuerystrings?: Record<string, any>,
   ): void {
     this._logger.debug(
@@ -331,7 +329,7 @@ export abstract class AbstractModuleApi<T extends IModule>
       _opts.schema['body'] = this.registerSchema(
         fastifyInstance,
         _opts.schema['body'],
-        this._schemaIdPrefix,
+        this._ocppVersion ? `${this._ocppVersion}-` : ''
       );
     }
     if (_opts.schema['params']) {
@@ -364,17 +362,14 @@ export abstract class AbstractModuleApi<T extends IModule>
     let id = schema['$id'];
     if (!id) {
       this._logger.error('Could not register schema because no ID', schema);
-    } else {
-      if (schemaIdPrefix) {
-        id = schemaIdPrefix + id;
-      }
     }
 
     try {
       const schemaCopy = this.removeUnknownKeys(schema);
-      if (schemaIdPrefix) {
+      if (id && schemaIdPrefix) {
+        id = schemaIdPrefix + id;
         schemaCopy['$id'] = id;
-        this._logger.debug(`TESTING override schema id ${schemaCopy['$id']}`);
+        this._logger.debug(`Update schema id: ${schemaCopy['$id']}`);
       }
       if (
         schemaCopy.required &&

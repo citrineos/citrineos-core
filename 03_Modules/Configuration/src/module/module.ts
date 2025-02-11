@@ -656,7 +656,7 @@ export class ConfigurationModule extends AbstractModule {
     message: IMessage<OCPP1_6.TriggerMessageResponse>,
     props?: HandlerProperties,
   ): void {
-    this._logger.debug('OCPP 1.6 TriggerMessage response received:', message, props);
+    this._logger.debug('TriggerMessage response received:', message, props);
     if (message.payload.status !== OCPP1_6.TriggerMessageResponseStatus.Accepted) {
       this._logger.error('TriggerMessage failed with status:', message);
     }
