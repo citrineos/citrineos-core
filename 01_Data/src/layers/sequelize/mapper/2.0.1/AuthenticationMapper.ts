@@ -17,7 +17,7 @@ export class AuthenticationMapper {
         return {
             customData: idToken.customData,
             additionalInfo: idToken.additionalInfo && idToken.additionalInfo.length > 0
-                ? ([idToken.additionalInfo.map(this.toAdditionalInfo)] as [any, ...any[]])
+                ? (idToken.additionalInfo.map(this.toAdditionalInfo) as [any, ...any[]])
                 : null,
             idToken: idToken.idToken,
             type: AuthenticationMapper.toIdTokenEnumType(idToken.type),
