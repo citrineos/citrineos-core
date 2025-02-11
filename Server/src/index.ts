@@ -56,7 +56,7 @@ import {
   CertificatesModule,
   CertificatesOcpp201Api,
 } from '@citrineos/certificates';
-import { EVDriverDataApi, EVDriverModule, EVDriverOcpp201Api } from '@citrineos/evdriver';
+import { EVDriverModule, EVDriverOcpp201Api, EVDriverDataApi } from '@citrineos/evdriver';
 import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
 import {
   InternalSmartCharging,

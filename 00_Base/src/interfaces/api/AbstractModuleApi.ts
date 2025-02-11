@@ -39,11 +39,13 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
   private readonly _ocppVersion: OCPPVersion | null;
+  private readonly _schemaIdPrefix: string;
 
   constructor(module: T, server: FastifyInstance, ocppVersion: OCPPVersion | null, logger?: Logger<ILogObj>) {
     this._module = module;
     this._server = server;
     this._ocppVersion = ocppVersion;
+    this._schemaIdPrefix = this._ocppVersion ? `${this._ocppVersion}-` : '';
 
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
@@ -128,14 +130,10 @@ export abstract class AbstractModuleApi<T extends IModule>
     bodySchema: any,
     optionalQuerystrings?: Record<string, any>,
   ): void {
-    const messagePath = this._toMessagePath(action);
     this._logger.debug(
       `Adding message route for ${action}`,
-      messagePath,
+      this._toMessagePath(action),
     );
-
-    // bodySchema['$id'] = messagePath.replace(/\//g, '_');
-    // this._logger.debug('Generated a unique id for schema: ', bodySchema['$id']);
 
     /**
      * Executes the handler function for the given request.
@@ -333,6 +331,7 @@ export abstract class AbstractModuleApi<T extends IModule>
       _opts.schema['body'] = this.registerSchema(
         fastifyInstance,
         _opts.schema['body'],
+        this._schemaIdPrefix,
       );
     }
     if (_opts.schema['params']) {
@@ -360,13 +359,23 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected registerSchema = (
     fastifyInstance: FastifyInstance,
     schema: any,
+    schemaIdPrefix?: string,
   ): object | null => {
-    const id = schema['$id'];
+    let id = schema['$id'];
     if (!id) {
       this._logger.error('Could not register schema because no ID', schema);
+    } else {
+      if (schemaIdPrefix) {
+        id = schemaIdPrefix + id;
+      }
     }
+
     try {
       const schemaCopy = this.removeUnknownKeys(schema);
+      if (schemaIdPrefix) {
+        schemaCopy['$id'] = id;
+        this._logger.debug(`TESTING override schema id ${schemaCopy['$id']}`);
+      }
       if (
         schemaCopy.required &&
         Array.isArray(schemaCopy.required) &&
@@ -463,7 +472,6 @@ export abstract class AbstractModuleApi<T extends IModule>
    *
    * @param {CallAction} input - The {@link CallAction} to convert to a URL path.
    * @param {string} prefix - The module name.
-   * @param {OCPPVersion} ocppVersion - The OCPP version.
    * @returns {string} - String representation of URL path.
    */
   protected _toMessagePath(input: CallAction, prefix?: string): string {

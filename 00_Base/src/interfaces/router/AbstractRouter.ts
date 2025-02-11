@@ -195,8 +195,6 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     }
 
     if (schema) {
-      // schema['$id'] = protocol + '_' + schema['$id'];
-      // this._logger.debug('Generated unique schema id', schema['$id']);
       const validate = this._ajv.compile(schema);
       const result = validate(payload);
       if (!result) {
@@ -217,6 +215,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
    * @param {string} identifier - The identifier of the EVSE.
    * @param {CallAction} action - The original CallAction.
    * @param {CallResult} message - The CallResult object to validate.
+   * @param {string} protocol - The protocol of the Websocket.
    * @return {boolean} - Returns true if the CallResult object is valid, false otherwise.
    */
   protected _validateCallResult(
@@ -241,8 +240,6 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     }
 
     if (schema) {
-      // schema['$id'] = protocol + '_' + schema['$id'];
-      // this._logger.debug('Generated unique schema id', schema['$id']);
       const validate = this._ajv.compile(schema);
       const result = validate(payload);
       if (!result) {

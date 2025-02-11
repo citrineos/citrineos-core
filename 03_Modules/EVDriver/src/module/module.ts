@@ -14,8 +14,6 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
-  OCPP1_6,
-  OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
@@ -67,7 +65,6 @@ export class EVDriverModule extends AbstractModule {
     OCPP2_0_1_CallAction.ReserveNow,
     OCPP2_0_1_CallAction.SendLocalList,
     OCPP2_0_1_CallAction.UnlockConnector,
-    OCPP1_6_CallAction.RemoteStopTransaction,
   ];
 
   protected _authorizeRepository: IAuthorizationRepository;
