@@ -3,3 +3,4 @@
 // SPDX-License-Identifier: Apache 2.0
 
 export { MeterValueMapper } from './MeterValueMapper';
+export { TransactionMapper } from './TransactionMapper';

@@ -169,13 +169,13 @@ export interface UnitOfMeasureType {
  *
  */
 export interface TransactionType {
-  customData?: CustomDataType | null;
+  customData?: object | null;
   /**
    * This contains the Id of the transaction.
    *
    */
   transactionId: string;
-  chargingState?: ChargingStateEnumType | null;
+  chargingState?: string | null;
   /**
    * Transaction. Time_ Spent_ Charging. Elapsed_ Time
    * urn:x-oca:ocpp:uid:1:569415
@@ -183,7 +183,7 @@ export interface TransactionType {
    *
    */
   timeSpentCharging?: number | null;
-  stoppedReason?: ReasonEnumType | null;
+  stoppedReason?: string | null;
   /**
    * The ID given to remote start request (&lt;&lt;requeststarttransactionrequest, RequestStartTransactionRequest&gt;&gt;. This enables to CSMS to match the started transaction to the given start request.
    *
