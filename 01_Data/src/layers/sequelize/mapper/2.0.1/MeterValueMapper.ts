@@ -10,6 +10,7 @@ export class MeterValueMapper {
     return {
       timestamp: meterValue.timestamp,
       sampledValue: MeterValueMapper.toSampledValueTypes(meterValue.sampledValue),
+      customData: meterValue.customData,
     }
   }
 
@@ -31,11 +32,14 @@ export class MeterValueMapper {
           signingMethod: sampledValue.signedMeterValue.signingMethod,
           encodingMethod: sampledValue.signedMeterValue.encodingMethod,
           publicKey: sampledValue.signedMeterValue.publicKey,
+          customData: sampledValue.signedMeterValue.customData,
         } : undefined,
         unitOfMeasure: sampledValue.unitOfMeasure ? {
           unit: sampledValue.unitOfMeasure.unit,
           multiplier: sampledValue.unitOfMeasure.multiplier,
+          customData: sampledValue.unitOfMeasure.customData,
         }: undefined,
+        customData: sampledValue.customData,
       });
     }
     return sampledValueTypes as [OCPP2_0_1.SampledValueType, ...OCPP2_0_1.SampledValueType[]];

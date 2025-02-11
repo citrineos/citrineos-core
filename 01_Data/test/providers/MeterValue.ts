@@ -6,6 +6,9 @@ export function aMeterValue(updateFunction?: UpdateFunction<MeterValue>): MeterV
   const meterValue: MeterValue = {
     sampledValue: [...[aOcpp201SampledValue()]],
     timestamp: faker.date.recent().toISOString(),
+    customData: {
+      vendorId: faker.string.alphanumeric(5),
+    }
   } as MeterValue;
 
   return applyUpdateFunction(meterValue, updateFunction);
@@ -18,6 +21,9 @@ export function aOcpp201SampledValue(updateFunction?: UpdateFunction<object>): o
     unitOfMeasure: {
       unit: 'kWh',
       multiplier: faker.number.int({ min: 0, max: 100 }),
+      customData: {
+        vendorId: faker.string.alphanumeric(5),
+      }
     },
     value: faker.number.int({ min: 0, max: 100 }),
     context: 'Transaction.Begin',
@@ -27,6 +33,12 @@ export function aOcpp201SampledValue(updateFunction?: UpdateFunction<object>): o
       signingMethod: faker.string.alphanumeric(5),
       encodingMethod: faker.string.alphanumeric(5),
       publicKey: faker.string.alphanumeric(5),
+      customData: {
+        vendorId: faker.string.alphanumeric(5),
+      }
+    },
+    customData: {
+      vendorId: faker.string.alphanumeric(5),
     }
   } as object;
 
