@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
+import {Namespace} from '@citrineos/base';
 import { AutoIncrement, BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { ChargingSchedule } from './ChargingSchedule';
 
 @Table
-export class SalesTariff extends Model implements OCPP2_0_1.SalesTariffType {
-  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.SalesTariff;
+export class SalesTariff extends Model {
+  static readonly MODEL_NAME: string = Namespace.SalesTariff;
 
   /**
    * Fields
@@ -31,7 +31,7 @@ export class SalesTariff extends Model implements OCPP2_0_1.SalesTariffType {
   declare salesTariffDescription?: string | null;
 
   @Column(DataType.JSONB)
-  declare salesTariffEntry: [OCPP2_0_1.SalesTariffEntryType, ...OCPP2_0_1.SalesTariffEntryType[]];
+  declare salesTariffEntry: [object, ...object[]];
 
   /**
    * Relations
@@ -44,7 +44,7 @@ export class SalesTariff extends Model implements OCPP2_0_1.SalesTariffType {
   declare chargingScheduleDatabaseId: number;
 
   @BelongsTo(() => ChargingSchedule)
-  declare chargingSchedule: OCPP2_0_1.ChargingScheduleType;
+  declare chargingSchedule: ChargingSchedule;
 
-  declare customData?: OCPP2_0_1.CustomDataType | null;
+  declare customData?: object | null;
 }

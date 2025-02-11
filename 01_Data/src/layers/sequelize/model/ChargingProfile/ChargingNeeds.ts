@@ -2,23 +2,23 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
+import {OCPP2_0_1_Namespace, OCPP2_0_1, Namespace} from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { Evse } from '../DeviceModel';
 import { Transaction } from '../TransactionEvent';
 
 @Table
-export class ChargingNeeds extends Model implements OCPP2_0_1.ChargingNeedsType {
-  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ChargingNeeds;
+export class ChargingNeeds extends Model {
+  static readonly MODEL_NAME: string = Namespace.ChargingNeeds;
 
   /**
    * Fields
    */
   @Column(DataType.JSONB)
-  declare acChargingParameters?: OCPP2_0_1.ACChargingParametersType | null;
+  declare acChargingParameters?: object | null;
 
   @Column(DataType.JSONB)
-  declare dcChargingParameters?: OCPP2_0_1.DCChargingParametersType | null;
+  declare dcChargingParameters?: object | null;
 
   @Column({
     type: DataType.DATE,
@@ -30,7 +30,7 @@ export class ChargingNeeds extends Model implements OCPP2_0_1.ChargingNeedsType 
   declare departureTime?: string | null;
 
   @Column(DataType.STRING)
-  declare requestedEnergyTransfer: OCPP2_0_1.EnergyTransferModeEnumType;
+  declare requestedEnergyTransfer: string;
 
   @Column(DataType.INTEGER)
   declare maxScheduleTuples?: number | null;
@@ -43,14 +43,14 @@ export class ChargingNeeds extends Model implements OCPP2_0_1.ChargingNeedsType 
   declare evseDatabaseId: number;
 
   @BelongsTo(() => Evse)
-  declare evse: OCPP2_0_1.EVSEType;
+  declare evse: Evse;
 
   @ForeignKey(() => Transaction)
   @Column(DataType.INTEGER)
   declare transactionDatabaseId: number;
 
   @BelongsTo(() => Transaction)
-  declare transaction: OCPP2_0_1.TransactionType;
+  declare transaction: Transaction;
 
-  declare customData?: OCPP2_0_1.CustomDataType | null;
+  declare customData?: object | null;
 }
