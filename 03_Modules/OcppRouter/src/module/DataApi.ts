@@ -7,7 +7,6 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   BadRequestError,
-  CallAction,
   HttpMethod,
   Namespace,
   OCPP1_6_Namespace,

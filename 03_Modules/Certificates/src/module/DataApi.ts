@@ -6,7 +6,6 @@
 import {
   AbstractModuleApi,
   AsDataEndpoint,
-  CallAction,
   HttpMethod,
   IFileAccess,
   Namespace,

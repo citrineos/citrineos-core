@@ -3,34 +3,21 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { IEVDriverModuleApi } from './interface';
 import { EVDriverModule } from './module';
 import {
   AbstractModuleApi,
-  AsDataEndpoint,
   AsMessageEndpoint,
-  AuthorizationDataSchema,
   CallAction,
-  HttpMethod,
   IMessageConfirmation,
-  Namespace,
-  OCPP1_6_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
-  OCPP2_0_1_Namespace,
   OCPPVersion,
 } from '@citrineos/base';
 import {
-  AuthorizationQuerySchema,
-  AuthorizationQuerystring,
-  AuthorizationRestrictions,
-  AuthorizationRestrictionsSchema,
   CallMessage,
-  ChargingStationKeyQuerySchema,
-  ChargingStationKeyQuerystring,
-  LocalListVersion,
 } from '@citrineos/data';
 import { validateChargingProfileType } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
@@ -227,10 +214,10 @@ export class EVDriverOcpp201Api
       }
 
       // Create a correlationId for each reservation/station
-      const correlationIds = reservations.map((reservation) => {
+      const correlationIds = reservations.map(async (reservation) => {
         const correlationId = uuidv4();
         if (reservation) {
-          this._module.callMessageRepository.create(
+          await this._module.callMessageRepository.create(
             CallMessage.build({
               correlationId,
               reservationId: reservation.databaseId,
@@ -242,7 +229,7 @@ export class EVDriverOcpp201Api
 
       // Send the CancelReservation call for each station
       const results = await Promise.all(
-        identifiers.map((identifier, index) =>
+        identifiers.map(async (identifier, index) =>
           this._module.sendCall(
             identifier,
             tenantId,
@@ -250,7 +237,7 @@ export class EVDriverOcpp201Api
             OCPP2_0_1_CallAction.CancelReservation,
             request,
             callbackUrl,
-            correlationIds[index],
+            await correlationIds[index],
           ),
         ),
       );
