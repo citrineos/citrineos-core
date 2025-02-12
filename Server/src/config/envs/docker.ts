@@ -73,6 +73,9 @@ export function createDockerConfig() {
           exchange: 'citrineos',
         },
       },
+      fileAccess: {
+        currentFileAccess: 's3Storage',
+      },
       swagger: {
         path: '/docs',
         logoPath: path.resolve(
@@ -86,6 +89,7 @@ export function createDockerConfig() {
         host: 'directus',
         port: 8055,
         generateFlows: false,
+        token: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0',
       },
       networkConnection: {
         websocketServers: [

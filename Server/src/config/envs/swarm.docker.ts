@@ -104,6 +104,9 @@ export function createDockerConfig() {
         port: 8055,
         generateFlows: false,
       },
+      fileAccess: {
+        currentFileAccess: 's3Storage',
+      },
       networkConnection: {
         websocketServers: [
           {

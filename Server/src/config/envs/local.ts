@@ -9,7 +9,7 @@ export function createLocalConfig() {
   return defineConfig({
     env: 'development',
     centralSystem: {
-      host: '0.0.0.0',
+      host: '::',
       port: 8080,
     },
     modules: {
@@ -72,6 +72,9 @@ export function createLocalConfig() {
           url: 'amqp://guest:guest@localhost:5672',
           exchange: 'citrineos',
         },
+      },
+      fileAccess: {
+        currentFileAccess: 's3Storage',
       },
       swagger: {
         path: '/docs',
