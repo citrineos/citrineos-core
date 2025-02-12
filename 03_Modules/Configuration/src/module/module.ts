@@ -80,6 +80,7 @@ export class ConfigurationModule extends AbstractModule {
     OCPP1_6_CallAction.GetConfiguration,
     OCPP1_6_CallAction.ChangeConfiguration,
     OCPP1_6_CallAction.Reset,
+    OCPP1_6_CallAction.ChangeAvailability,
   ];
 
   protected _bootRepository: IBootRepository;
@@ -961,5 +962,13 @@ export class ConfigurationModule extends AbstractModule {
       props?: HandlerProperties,
   ): void {
     this._logger.debug('Reset response received:', message, props);
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.ChangeAvailability)
+  protected _handleOcpp16ChangeAvailability(
+      message: IMessage<OCPP1_6.ChangeAvailabilityResponse>,
+      props?: HandlerProperties,
+  ): void {
+    this._logger.debug('ChangeAvailability response received:', message, props);
   }
 }
