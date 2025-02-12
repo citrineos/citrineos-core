@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { ILogObj, Logger } from 'tslog';
-import { ISmartChargingModuleApi } from './interface';
-import { SmartChargingModule } from './module';
+import { ISmartChargingModuleApi } from '../interface';
+import { SmartChargingModule } from '../module';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,

@@ -5,8 +5,8 @@
 
 import { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { IEVDriverModuleApi } from './interface';
-import { EVDriverModule } from './module';
+import { IEVDriverModuleApi } from '../interface';
+import { EVDriverModule } from '../module';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
