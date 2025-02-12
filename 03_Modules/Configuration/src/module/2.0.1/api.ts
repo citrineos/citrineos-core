@@ -4,8 +4,8 @@
 
 import { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { IConfigurationModuleApi } from './interface';
-import { ConfigurationModule } from './module';
+import { IConfigurationModuleApi } from '../interface';
+import { ConfigurationModule } from '../module';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
