@@ -16,6 +16,8 @@ import {
   HttpMethod,
   IMessageConfirmation,
   OCPP2_0_1_Namespace,
+  OCPP1_6,
+  OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
@@ -26,7 +28,7 @@ import {
   BootConfig
 } from '@citrineos/base';
 import {
-  Boot,
+  Boot, CallMessage, ChangeConfiguration,
   ChargingStationKeyQuerySchema,
   ChargingStationKeyQuerystring,
   ChargingStationNetworkProfile,
@@ -476,6 +478,63 @@ export class ConfigurationModuleApi
       success: true,
       payload: `${destroyedRows} rows successfully destroyed`,
     };
+  }
+
+  // TODO: move this change configuration to ocpp 1.6 api file
+  @AsMessageEndpoint(
+    OCPP1_6_CallAction.ChangeConfiguration,
+    OCPP1_6.ChangeConfigurationRequestSchema,
+  )
+  async changeConfiguration(
+    identifier: string[],
+    tenantId: string,
+    request: OCPP1_6.ChangeConfigurationRequest,
+    callbackUrl?: string,
+  ): Promise<IMessageConfirmation[]> {
+    this._logger.debug('ChangeConfiguration request received:', request);
+    const confirmations = identifier.map(async stationId => {
+      const chargingStation = await this._module.locationRepository.readChargingStationByStationId(stationId);
+      if (!chargingStation) {
+        return {
+          success: false,
+          payload: `Charging station ${stationId} not found`,
+        };
+      }
+
+      const config = await this._module.changeConfigurationRepository.createOrUpdateChangeConfiguration(
+        {
+          stationId,
+          key: request.key,
+          value: request.value,
+          status: null,
+        } as ChangeConfiguration
+      );
+      if (!config) {
+        return {
+          success: false,
+          payload: `Failed to create or update configuration on ${stationId}`,
+        }
+      }
+
+      const correlationId = uuidv4();
+      await this._module.callMessageRepository.create(
+        CallMessage.build({
+          correlationId,
+          databaseId: config.id,
+        }),
+      );
+      return await this._module.sendCall(
+        stationId,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.ChangeConfiguration,
+        request,
+        callbackUrl,
+        correlationId,
+      );
+    });
+
+    return Promise.all(confirmations);
   }
 
   /**
