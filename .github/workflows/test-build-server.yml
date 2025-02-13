@@ -31,6 +31,11 @@ jobs:
       - name: Build and Run Docker Compose
         run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml up -d
 
+      - name: Download Swagger JSON
+        run: |
+          echo "Fetching Swagger JSON..."
+          curl -o swagger.json http://localhost:8080/docs/json | tee
+
       - name: Install Newman
         run: |
           npm install -g newman
