@@ -419,25 +419,6 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('Heartbeat response sent: ', messageConfirmation);
   }
 
-  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.Heartbeat)
-  protected async _handle16Heartbeat(
-    message: IMessage<OCPP1_6.HeartbeatRequest>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug('Heartbeat received:', message, props);
-
-    // Create response
-    const response: OCPP1_6.HeartbeatResponse = {
-      currentTime: new Date().toISOString(),
-    };
-
-    const messageConfirmation = await this.sendCallResultWithMessage(
-      message,
-      response,
-    );
-    this._logger.debug('Heartbeat response sent: ', messageConfirmation);
-  }
-
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyDisplayMessages)
   protected async _handleNotifyDisplayMessages(
     message: IMessage<OCPP2_0_1.NotifyDisplayMessagesRequest>,
@@ -685,5 +666,26 @@ export class ConfigurationModule extends AbstractModule {
         } as OCPP2_0_1.GetDisplayMessagesRequest,
       );
     }
+  }
+
+  //OCPP 1.6 Handlers
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.Heartbeat)
+  protected async _handle16Heartbeat(
+    message: IMessage<OCPP1_6.HeartbeatRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('Heartbeat received:', message, props);
+
+    // Create response
+    const response: OCPP1_6.HeartbeatResponse = {
+      currentTime: new Date().toISOString(),
+    };
+
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug('Heartbeat response sent: ', messageConfirmation);
   }
 }
