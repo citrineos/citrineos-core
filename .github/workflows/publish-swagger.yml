@@ -39,6 +39,7 @@ jobs:
           git config user.email "actions@github.com"
           git add swagger.json
           git commit -m "Update Swagger JSON from PR"
+          git config --unset-all http.https://github.com/.extraheader
           git push origin swagger-updates
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
