@@ -5,7 +5,11 @@ import {
 } from '@citrineos/data';
 import { CrudRepository } from '@citrineos/base';
 import { StatusNotificationService } from '../../src/module/StatusNotificationService';
-import { aStatusNotification, aStatusNotificationRequest } from '../providers/StatusNotification';
+import {
+  aOcpp16StatusNotificationRequest,
+  aStatusNotification,
+  aStatusNotificationRequest,
+} from '../providers/StatusNotification';
 import {
   aChargingStation,
   aComponent,
@@ -32,6 +36,7 @@ describe('StatusNotificationService', () => {
     locationRepository = {
       addStatusNotificationToChargingStation: jest.fn(),
       readChargingStationByStationId: jest.fn(),
+      createOrUpdateConnector: jest.fn(),
     } as unknown as jest.Mocked<ILocationRepository>;
 
     statusNotificationService = new StatusNotificationService(
@@ -122,6 +127,41 @@ describe('StatusNotificationService', () => {
       expect(
         deviceModelRepository.createOrUpdateDeviceModelByStationId,
       ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Test process OCPP 1.6 StatusNotification', () => {
+    it('should save StatusNotification and connector when Charging Station exists', async () => {
+      locationRepository.readChargingStationByStationId.mockResolvedValue(
+        aChargingStation(),
+      );
+      jest.spyOn(StatusNotification, 'build').mockImplementation(() => {
+        return aStatusNotification();
+      });
+
+      await statusNotificationService.processOcpp16StatusNotification(
+        MOCK_STATION_ID,
+        aOcpp16StatusNotificationRequest(),
+      );
+
+      expect(
+        locationRepository.addStatusNotificationToChargingStation,
+      ).toHaveBeenCalled();
+      expect(locationRepository.createOrUpdateConnector).toHaveBeenCalled();
+    });
+
+    it('should not save StatusNotification or connector when Charging Station does not exist', async () => {
+      componentRepository.readOnlyOneByQuery.mockResolvedValue(aComponent());
+
+      await statusNotificationService.processStatusNotification(
+        MOCK_STATION_ID,
+        aStatusNotificationRequest(),
+      );
+
+      expect(
+        locationRepository.addStatusNotificationToChargingStation,
+      ).not.toHaveBeenCalled();
+      expect(locationRepository.createOrUpdateConnector).not.toHaveBeenCalled();
     });
   });
 });

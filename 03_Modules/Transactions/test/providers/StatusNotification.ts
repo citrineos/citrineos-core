@@ -1,4 +1,5 @@
 import {
+  OCPP1_6,
   OCPP2_0_1
 } from '@citrineos/base';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
@@ -29,4 +30,17 @@ export function aStatusNotification(
   } as StatusNotification;
 
   return applyUpdateFunction(statusNotification, updateFunction);
+}
+
+export function aOcpp16StatusNotificationRequest(
+  updateFunction?: UpdateFunction<OCPP1_6.StatusNotificationRequest>,
+): OCPP1_6.StatusNotificationRequest {
+  const request: OCPP1_6.StatusNotificationRequest = {
+    timestamp: new Date().toISOString(),
+    status: OCPP1_6.StatusNotificationRequestStatus.Available,
+    connectorId: MOCK_CONNECTOR_ID,
+    errorCode: OCPP1_6.StatusNotificationRequestErrorCode.NoError,
+  } as OCPP1_6.StatusNotificationRequest;
+
+  return applyUpdateFunction(request, updateFunction);
 }
