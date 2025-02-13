@@ -4,10 +4,9 @@
 
 import {
   defineConfig,
-  OCPP1_6,
-  OCPP2_0_1,
   type SystemConfig,
 } from '@citrineos/base';
+import {RegistrationStatusEnumType} from "@citrineos/base/dist/ocpp/model/2.0.1";
 
 export function createDockerConfig(): SystemConfig {
   return defineConfig({
@@ -25,6 +24,10 @@ export function createDockerConfig(): SystemConfig {
       configuration: {
         heartbeatInterval: 60,
         bootRetryInterval: 15,
+        unknownChargerStatus: RegistrationStatusEnumType.Accepted,
+        getBaseReportOnPending: true,
+        bootWithRejectedVariables: true,
+        autoAccept: true,
         endpointPrefix: 'configuration',
         host: '0.0.0.0',
         port: 8084,
