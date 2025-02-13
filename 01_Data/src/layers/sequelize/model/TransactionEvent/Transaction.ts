@@ -3,16 +3,15 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1, Namespace } from '@citrineos/base';
+import { Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
 import { ChargingStation } from '../Location';
-import { MeterValueMapper } from '../../mapper/2.0.1';
 
 @Table
-export class Transaction extends Model implements OCPP2_0_1.TransactionType {
+export class Transaction extends Model {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
   static readonly TRANSACTION_EVENTS_ALIAS = 'transactionEvents';
   static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter';
@@ -49,7 +48,7 @@ export class Transaction extends Model implements OCPP2_0_1.TransactionType {
   declare transactionEventsFilter?: object[];
 
   @HasMany(() => MeterValue)
-  declare meterValues?: MeterValueMapper[];
+  declare meterValues?: MeterValue[];
 
   @Column(DataType.STRING)
   declare chargingState?: string | null;
@@ -69,7 +68,7 @@ export class Transaction extends Model implements OCPP2_0_1.TransactionType {
   @Column(DataType.DECIMAL)
   declare totalCost?: number;
 
-  declare customData?: object | null;
+  declare customData?: any | null;
 
   static buildTransaction(
     id: string, // todo temp
@@ -77,7 +76,7 @@ export class Transaction extends Model implements OCPP2_0_1.TransactionType {
     transactionId: string,
     isActive: boolean,
     transactionEvents: object[],
-    meterValues: MeterValueMapper[],
+    meterValues: MeterValue[],
     chargingState?: string,
     timeSpentCharging?: number,
     totalKwh?: number,
