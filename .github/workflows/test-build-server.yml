@@ -31,11 +31,6 @@ jobs:
       - name: Build and Run Docker Compose
         run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml up -d
 
-      - name: Download Swagger JSON
-        run: |
-          echo "Fetching Swagger JSON..."
-          curl -o swagger.json http://localhost:8080/docs/json | tee
-
       - name: Install Newman
         run: |
           npm install -g newman
@@ -54,6 +49,12 @@ jobs:
             sleep $RETRY_DELAY
           done
         shell: bash
+
+      - name: Download Swagger JSON
+        run: |
+          echo "Fetching Swagger JSON..."
+          curl -o swagger.json http://localhost:8080/docs/json 
+          cat swagger.json
 
       - name: Get logs for all containers
         if: failure()
