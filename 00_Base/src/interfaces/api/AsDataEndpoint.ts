@@ -8,19 +8,29 @@ import {
   IDataEndpointDefinition,
   METADATA_DATA_ENDPOINTS,
 } from '.';
-import { Namespace } from '../../ocpp/persistence';
+import {
+  Namespace,
+  OCPP1_6_Namespace,
+  OCPP2_0_1_Namespace,
+} from '../../ocpp/persistence';
 
 /**
  * Decorator for use in module API class to expose methods as REST data endpoints.
  *
- * @param {Namespace} namespace - The namespace value.
+ * @param {OCPP2_0_1_Namespace} namespace - The namespace value.
  * @param {HttpMethod} method - The HTTP method value.
  * @param {object} querySchema - The query schema value (optional).
  * @param {object} bodySchema - The body schema value (optional).
+ * @param {object} paramSchema - The param schema value (optional).
+ * @param {object} headerSchema - The header schema value (optional).
+ * @param {object} responseSchema - The response schema value (optional).
+ * @param {object} tags - The tags value (optional).
+ * @param {object} security - The security value (optional).
+ * @param {string} description - The description (optional).
  * @return {void} - No return value.
  */
 export const AsDataEndpoint = function (
-  namespace: Namespace,
+  namespace: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
   method: HttpMethod,
   querySchema?: object,
   bodySchema?: object,

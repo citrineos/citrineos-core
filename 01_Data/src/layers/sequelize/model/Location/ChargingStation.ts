@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { Location } from './Location';
 import { StatusNotification } from './StatusNotification';
@@ -15,7 +15,7 @@ import { SetNetworkProfile } from './SetNetworkProfile';
  */
 @Table
 export class ChargingStation extends Model {
-  static readonly MODEL_NAME: string = Namespace.ChargingStation;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ChargingStation;
 
   @PrimaryKey
   @Column(DataType.STRING(36))

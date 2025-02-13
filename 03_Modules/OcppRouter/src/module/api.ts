@@ -10,6 +10,8 @@ import {
   CallAction,
   HttpMethod,
   Namespace,
+  OCPP1_6_Namespace,
+  OCPP2_0_1_Namespace,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
@@ -60,7 +62,7 @@ export class AdminApi
    * @return {Promise<number>} The id of the created subscription.
    */
   @AsDataEndpoint(
-    Namespace.Subscription,
+    OCPP2_0_1_Namespace.Subscription,
     HttpMethod.Post,
     undefined,
     CreateSubscriptionSchema,
@@ -84,7 +86,7 @@ export class AdminApi
   }
 
   @AsDataEndpoint(
-    Namespace.Subscription,
+    OCPP2_0_1_Namespace.Subscription,
     HttpMethod.Get,
     ChargingStationKeyQuerySchema,
   )
@@ -97,7 +99,7 @@ export class AdminApi
   }
 
   @AsDataEndpoint(
-    Namespace.Subscription,
+    OCPP2_0_1_Namespace.Subscription,
     HttpMethod.Delete,
     ModelKeyQuerystringSchema,
   )
@@ -121,12 +123,15 @@ export class AdminApi
   }
 
   /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace} and the module's endpoint prefix configuration.
+   * Overrides superclass method to generate the URL path based on the input ({@link OCPP2_0_1_Namespace},
+   * {@link OCPP1_6_Namespace} or {@link Namespace}) and the module's endpoint prefix configuration.
    *
-   * @param {CallAction} input - The input {@link Namespace}.
+   * @param {CallAction} input - The input {@link OCPP2_0_1_Namespace}, {@link OCPP1_6_Namespace} or {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(input: Namespace): string {
+  protected _toDataPath(
+    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
+  ): string {
     const endpointPrefix = '/ocpprouter';
     return super._toDataPath(input, endpointPrefix);
   }

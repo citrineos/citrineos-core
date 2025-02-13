@@ -100,6 +100,7 @@ services:
       - 8443:8443
       - 8444:8444
       - 9229:9229
+      - 8092:8092
 
   localstack:
     image: localstack/localstack:latest

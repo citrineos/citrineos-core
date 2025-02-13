@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
+import { OCPP2_0_1_Namespace } from '@citrineos/base';
 import { Column, DataType, Model, Table } from 'sequelize-typescript';
 import { CreationOptional } from 'sequelize';
 
 @Table
 export class Tariff extends Model implements TariffData {
-  static readonly MODEL_NAME: string = Namespace.Tariff;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Tariff;
 
   @Column({
     type: DataType.STRING,

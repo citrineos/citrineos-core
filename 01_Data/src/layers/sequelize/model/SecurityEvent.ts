@@ -3,12 +3,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
 
 @Table
 export class SecurityEvent extends Model implements OCPP2_0_1.SecurityEventNotificationRequest {
-  static readonly MODEL_NAME: string = Namespace.SecurityEventNotificationRequest;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.SecurityEventNotificationRequest;
 
   /**
    * Fields

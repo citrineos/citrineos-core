@@ -11,10 +11,12 @@ import {
   AsMessageEndpoint,
   CallAction,
   IMessageConfirmation,
-  Namespace,
+  OCPP2_0_1_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
+  OCPP1_6_Namespace,
+  Namespace,
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { VariableAttribute } from '@citrineos/data';
@@ -644,7 +646,9 @@ export class SmartChargingModuleApi
    * @param {CallAction} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(input: Namespace): string {
+  protected _toDataPath(
+    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
+  ): string {
     const endpointPrefix =
       this._module.config.modules.smartcharging?.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);

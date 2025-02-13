@@ -14,7 +14,7 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
-  Namespace,
+  OCPP2_0_1_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
@@ -95,15 +95,15 @@ export class CertificatesModule extends AbstractModule {
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.DeviceModelRepository} instance is created and used.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize.deviceModelRepository} instance is created and used.
    *
    * @param {ICertificateRepository} [certificateRepository] - An optional parameter of type {@link ICertificateRepository} which
    * represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.CertificateRepository} instance is created and used.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize.certificateRepository} instance is created and used.
    *
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
    * represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
+   * If no `deviceModelRepository` is provided, a default {@link sequelize.locationRepository} instance is created and used.
    *
    * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
    * type {@link CertificateAuthorityService} which handles certificate authority operations.
@@ -226,8 +226,10 @@ export class CertificatesModule extends AbstractModule {
     this._logger.debug('Sign certificate request received:', message, props);
     const stationId: string = message.context.stationId;
     const csrString: string = message.payload.csr.replace(/\n/g, '');
-    const certificateType: OCPP2_0_1.CertificateSigningUseEnumType | undefined | null =
-      message.payload.certificateType;
+    const certificateType:
+      | OCPP2_0_1.CertificateSigningUseEnumType
+      | undefined
+      | null = message.payload.certificateType;
 
     // TODO OCTT Currently fails the CSMS on test case TC_A_14_CSMS if an invalid csr is rejected
     //  Despite explicitly saying in the protocol "The CSMS may do some checks on the CSR"
@@ -301,7 +303,10 @@ export class CertificatesModule extends AbstractModule {
     this._logger.debug('DeleteCertificate received:', message, props);
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetInstalledCertificateIds)
+  @AsHandler(
+    OCPPVersion.OCPP2_0_1,
+    OCPP2_0_1_CallAction.GetInstalledCertificateIds,
+  )
   protected async _handleGetInstalledCertificateIds(
     message: IMessage<OCPP2_0_1.GetInstalledCertificateIdsResponse>,
     props?: HandlerProperties,
@@ -335,7 +340,7 @@ export class CertificatesModule extends AbstractModule {
       this._logger.info('Attempting to save', records);
       const response = await this._installedCertificateRepository.bulkCreate(
         records,
-        Namespace.InstalledCertificate,
+        OCPP2_0_1_Namespace.InstalledCertificate,
       );
       if (response.length === records.length) {
         this._logger.info(
@@ -362,9 +367,10 @@ export class CertificatesModule extends AbstractModule {
     // Verify certificate type
     if (
       !certificateType ||
-      (certificateType !== OCPP2_0_1.CertificateSigningUseEnumType.V2GCertificate &&
+      (certificateType !==
+        OCPP2_0_1.CertificateSigningUseEnumType.V2GCertificate &&
         certificateType !==
-        OCPP2_0_1.CertificateSigningUseEnumType.ChargingStationCertificate)
+          OCPP2_0_1.CertificateSigningUseEnumType.ChargingStationCertificate)
     ) {
       throw new Error(`Unsupported certificate type: ${certificateType}`);
     }

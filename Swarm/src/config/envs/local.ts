@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  RegistrationStatusEnumType,
   defineConfig,
   type SystemConfig,
 } from '@citrineos/base';
+import {RegistrationStatusEnumType} from "@citrineos/base/dist/ocpp/model/2.0.1";
 
 export function createLocalConfig(): SystemConfig {
   return defineConfig({
@@ -144,5 +144,9 @@ export function createLocalConfig(): SystemConfig {
     logLevel: 2, // debug
     maxCallLengthSeconds: 5,
     maxCachingSeconds: 10,
+    ocpiServer: {
+      host: '0.0.0.0',
+      port: 8085,
+    },
   });
 }
