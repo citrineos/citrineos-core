@@ -59,7 +59,6 @@ export interface IBootRepository extends CrudRepository<BootConfig> {
   readByKey: (key: string) => Promise<Boot | undefined>;
   existsByKey: (key: string) => Promise<boolean>;
   deleteByKey: (key: string) => Promise<Boot | undefined>;
-  createOrUpdateFromOcpp16Response: (key: string, response: OCPP1_6.BootNotificationResponse) => Promise<Boot | undefined>;
 }
 
 export interface IDeviceModelRepository extends CrudRepository<OCPP2_0_1.VariableAttributeType> {

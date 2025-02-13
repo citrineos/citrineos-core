@@ -770,14 +770,7 @@ export class ConfigurationModule extends AbstractModule {
       );
     }
     // Update boot with details of most recently sent BootNotificationResponse
-    const bootEntity =
-      await this._bootRepository.createOrUpdateFromOcpp16Response(
-        stationId,
-        bootNotificationResponse,
-      );
-    if (!bootEntity) {
-      throw new Error('Failed to create or update boot entity');
-    }
+    const bootEntity = await this._bootService.updateOcpp16BootConfig(bootNotificationResponse, stationId);
 
     // 3. Sync configurations
     // If boot notification is not pending, do not start configuration.

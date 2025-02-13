@@ -334,4 +334,30 @@ export class BootNotificationService {
       await Promise.all(promises);
     }
   }
+
+  async updateOcpp16BootConfig(
+    response: OCPP1_6.BootNotificationResponse,
+    stationId: string,
+  ): Promise<Boot> {
+    const heartbeatInterval = response.status === OCPP1_6.BootNotificationResponseStatus.Accepted ? response.interval : undefined;
+    const bootRetryInterval = response.status !== OCPP1_6.BootNotificationResponseStatus.Accepted ? response.interval : undefined;
+
+    const unknownChargerBootConfig: BootConfig = {
+      status: response.status,
+      heartbeatInterval,
+      bootRetryInterval,
+    };
+    let bootConfigDbEntity: Boot | undefined = await this._bootRepository.createOrUpdateByKey(
+      unknownChargerBootConfig,
+      stationId,
+    );
+    if (bootConfigDbEntity) {
+      bootConfigDbEntity = await this._bootRepository.updateLastBootTimeByKey(response.currentTime, stationId);
+    }
+
+    if (!bootConfigDbEntity) {
+      throw new Error('Unable to create/update BootConfig...');
+    }
+    return bootConfigDbEntity;
+  }
 }
