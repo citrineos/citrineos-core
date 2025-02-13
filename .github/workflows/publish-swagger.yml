@@ -1,0 +1,41 @@
+name: Publish Swagger
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+#      - name: Setup Node.js
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version: '22.x'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+#      - name: Set permissions on the uploads directory
+#        run: |
+#          sudo chown 1000:1000 ${{ github.workspace }}/Server/data/directus/uploads
+
+      - name: Build and Run Docker Compose
+        run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml up -d
+
+      - name: Download Swagger JSON
+        run: |
+          echo "Fetching Swagger JSON..."
+          curl -o swagger.json http://localhost:8080/docs/json 
+          cat swagger.json
+
+      - name: Clean up
+        run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml down
