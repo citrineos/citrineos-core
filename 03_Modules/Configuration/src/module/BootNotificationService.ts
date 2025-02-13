@@ -37,7 +37,7 @@ export class BootNotificationService {
     bootConfig: Boot | undefined,
   ): OCPP2_0_1.RegistrationStatusEnumType {
     let bootStatus = bootConfig
-      ? bootConfig.status
+      ? OCPP2_0_1_Mapper.BootMapper.toRegistrationStatusEnumType(bootConfig.status)
       : this._config.unknownChargerStatus;
 
     if (bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Pending) {
@@ -66,7 +66,7 @@ export class BootNotificationService {
       }
     }
 
-    return OCPP2_0_1_Mapper.BootMapper.toRegistrationStatusEnumType(bootStatus);
+    return bootStatus;
   }
 
   async createBootNotificationResponse(
