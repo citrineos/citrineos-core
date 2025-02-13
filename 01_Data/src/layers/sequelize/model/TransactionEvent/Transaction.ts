@@ -26,7 +26,7 @@ export class Transaction extends Model {
   station!: ChargingStation;
 
   @BelongsTo(() => Evse)
-  declare evse?: object | null;
+  declare evse?: Evse | null;
 
   @ForeignKey(() => Evse)
   @Column(DataType.INTEGER)
