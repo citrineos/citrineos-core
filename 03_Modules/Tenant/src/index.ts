@@ -3,6 +3,6 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { TenantDataApi } from './module/api';
+export { TenantDataApi } from './module/DataApi';
 export { ITenantModuleApi } from './module/interface';
 export { TenantModule } from './module/module';
