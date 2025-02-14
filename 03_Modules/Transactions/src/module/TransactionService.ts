@@ -1,7 +1,7 @@
 import {
   Authorization,
   IAuthorizationRepository,
-  ITransactionEventRepository, OCPP2_0_1_Mapper,
+  ITransactionEventRepository,
   Transaction,
   OCPP2_0_1_Mapper,
 } from '@citrineos/data';

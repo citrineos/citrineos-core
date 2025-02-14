@@ -27,7 +27,7 @@ import {
   ServerNetworkProfile,
   Subscription,
   Tariff,
-  type Transaction, TransactionEvent,
+  type Transaction,
   type Variable,
   type VariableAttribute,
   VariableCharacteristics,
