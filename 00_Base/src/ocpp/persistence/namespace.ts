@@ -13,6 +13,7 @@ export enum Namespace {
   ReserveNowRequest = 'Reservation',
   MeterValue = 'MeterValue',
   StatusNotificationRequest = 'StatusNotification',
+  TransactionType = 'Transaction'
 }
 
 export enum OCPP2_0_1_Namespace {
@@ -48,7 +49,6 @@ export enum OCPP2_0_1_Namespace {
   SystemConfig = 'SystemConfig',
   TlsCertificates = 'TlsCertificates',
   TransactionEventRequest = 'TransactionEvent',
-  TransactionType = 'Transaction',
   Tariff = 'Tariff',
   VariableAttributeType = 'VariableAttribute',
   VariableCharacteristicsType = 'VariableCharacteristics',

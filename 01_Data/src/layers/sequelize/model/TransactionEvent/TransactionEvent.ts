@@ -53,10 +53,10 @@ export class TransactionEvent extends Model {
   declare transactionDatabaseId?: string;
 
   @BelongsTo(() => Transaction)
-  declare transaction?: OCPP2_0_1.TransactionType;
+  declare transaction?: Transaction;
 
   @Column(DataType.JSON)
-  declare transactionInfo: OCPP2_0_1.TransactionType;
+  declare transactionInfo: Transaction;
 
   @ForeignKey(() => Evse)
   declare evseId?: number | null;
