@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, MeterValueUtils, OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import { CrudRepository, MeterValueUtils, OCPP1_6, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { type ITransactionEventRepository } from '../../../interfaces';
-import { MeterValue, Transaction, TransactionEvent } from '../model/TransactionEvent';
+import { MeterValue, StartTransaction, Transaction, TransactionEvent } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';
 import { IdToken } from '../model/Authorization';
 import { Evse } from '../model/DeviceModel';
@@ -13,12 +13,15 @@ import { Op, WhereOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { MeterValueMapper } from '../mapper/2.0.1';
+import { Connector } from '../model/Location';
 
 export class SequelizeTransactionEventRepository extends SequelizeRepository<TransactionEvent> implements ITransactionEventRepository {
   transaction: CrudRepository<Transaction>;
   evse: CrudRepository<Evse>;
   idToken: CrudRepository<IdToken>;
   meterValue: CrudRepository<MeterValue>;
+  startTransaction: CrudRepository<StartTransaction>;
+  connector: CrudRepository<Connector>;
 
   constructor(
     config: SystemConfig,
@@ -29,12 +32,16 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     evse?: CrudRepository<Evse>,
     idToken?: CrudRepository<IdToken>,
     meterValue?: CrudRepository<MeterValue>,
+    startTransaction?: CrudRepository<StartTransaction>,
+    connector?: CrudRepository<Connector>,
   ) {
     super(config, namespace, logger, sequelizeInstance);
     this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, Transaction.MODEL_NAME, logger, sequelizeInstance);
     this.evse = evse ? evse : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
     this.idToken = idToken ? idToken : new SequelizeRepository<IdToken>(config, IdToken.MODEL_NAME, logger, sequelizeInstance);
     this.meterValue = meterValue ? meterValue : new SequelizeRepository<MeterValue>(config, MeterValue.MODEL_NAME, logger, sequelizeInstance);
+    this.startTransaction = startTransaction ? startTransaction : new SequelizeRepository<StartTransaction>(config, StartTransaction.MODEL_NAME, logger, sequelizeInstance);
+    this.connector = connector ? connector : new SequelizeRepository<Connector>(config, Connector.MODEL_NAME, logger, sequelizeInstance);
   }
 
   /**
@@ -204,7 +211,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       .then((row) => row as Transaction[]);
   }
 
-  async readAllActiveTransactionsByIdToken(idToken: OCPP2_0_1.IdTokenType): Promise<Transaction[]> {
+  async readAllActiveTransactionsIncludeTransactionEventByIdToken(idToken: OCPP2_0_1.IdTokenType): Promise<Transaction[]> {
     return await this.transaction.readAllByQuery({
       where: { isActive: true },
       include: [
@@ -219,6 +226,28 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
               where: {
                 idToken: idToken.idToken,
                 type: idToken.type,
+              },
+            },
+          ],
+        },
+      ],
+    });
+  }
+
+  async readAllActiveTransactionsIncludeStartTransactionByIdToken(idToken: string): Promise<Transaction[]> {
+    return await this.transaction.readAllByQuery({
+      where: { isActive: true },
+      include: [
+        {
+          model: StartTransaction,
+          required: true,
+          include: [
+            {
+              model: IdToken,
+              required: true,
+              where: {
+                idToken: idToken,
+                type: null,
               },
             },
           ],
@@ -362,5 +391,68 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         this.meterValue.emit('created', [meterValue]);
       }),
     );
+  }
+
+  async createTransactionByStartTransaction(
+    request: OCPP1_6.StartTransactionRequest,
+    transactionId: number,
+    stationId: string
+  ): Promise<Transaction | undefined> {
+    return await this.s.transaction(async (sequelizeTransaction) => {
+      // Build StartTransaction event
+      let event = StartTransaction.build({
+        stationId,
+        ...request,
+      });
+
+      // Associate IdToken with StartTransaction
+      const idToken = await this.idToken.readOnlyOneByQuery({
+        where: {
+          idToken: request.idTag,
+          type: null,
+        },
+        transaction: sequelizeTransaction,
+      });
+      if (!idToken) {
+        this.logger.error(`Unable to find idTag ${request.idTag}.`);
+        return undefined;
+      }
+      event.idTokenDatabaseId = idToken.id;
+
+      // Associate Connector with StartTransaction
+      const connector = await this.connector.readOnlyOneByQuery({
+        where: {
+          connectorId: request.connectorId,
+          stationId,
+        },
+        transaction: sequelizeTransaction,
+      });
+      if (!connector) {
+        this.logger.error(`Unable to find connector ${request.connectorId}.`);
+        return undefined;
+      }
+      event.connectorDatabaseId = connector.id;
+
+      // Store transaction in db
+      let newTransaction = Transaction.build({
+        stationId,
+        isActive: true,
+        transactionId: transactionId.toString(),
+      });
+      newTransaction = await newTransaction.save({ transaction: sequelizeTransaction });
+
+      // Store StartTransaction in db
+      event.transactionDatabaseId = newTransaction.id;
+      event = await event.save({ transaction: sequelizeTransaction });
+      this.startTransaction.emit('created', [event]);
+
+      // Return the new transaction with StartTransaction and IdToken
+      await newTransaction.reload({
+        include: [{ model: StartTransaction, include: [IdToken] }],
+        transaction: sequelizeTransaction,
+      });
+      this.transaction.emit('created', [newTransaction]);
+      return newTransaction;
+    });
   }
 }

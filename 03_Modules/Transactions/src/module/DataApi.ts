@@ -20,7 +20,6 @@ import {
   AsDataEndpoint,
   HttpMethod,
   OCPP2_0_1_Namespace,
-  OCPP2_0_1,
   OCPP1_6_Namespace,
   Namespace,
 } from '@citrineos/base';

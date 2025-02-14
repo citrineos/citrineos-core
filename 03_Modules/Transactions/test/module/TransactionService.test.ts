@@ -1,8 +1,9 @@
 import {
-  IAuthorizationRepository,
+  IAuthorizationRepository, IReservationRepository,
   ITransactionEventRepository,
 } from '@citrineos/data';
 import {
+  OCPP1_6,
   OCPP2_0_1
 } from '@citrineos/base';
 import { TransactionService } from '../../src/module/TransactionService';
@@ -21,16 +22,22 @@ describe('TransactionService', () => {
   let transactionService: TransactionService;
   let authorizationRepository: jest.Mocked<IAuthorizationRepository>;
   let transactionEventRepository: jest.Mocked<ITransactionEventRepository>;
+  let reservationRepository: jest.Mocked<IReservationRepository>;
   let authorizer: jest.Mocked<IAuthorizer>;
 
   beforeEach(() => {
     authorizationRepository = {
       readAllByQuerystring: jest.fn(),
+      readOnlyOneByQuerystring: jest.fn(),
     } as unknown as jest.Mocked<IAuthorizationRepository>;
 
     transactionEventRepository = {
-      readAllActiveTransactionsByIdToken: jest.fn(),
+      readAllActiveTransactionsIncludeTransactionEventByIdToken: jest.fn(),
+      readAllActiveTransactionsIncludeStartTransactionByIdToken: jest.fn(),
     } as unknown as jest.Mocked<ITransactionEventRepository>;
+
+    reservationRepository = {
+    } as unknown as jest.Mocked<IReservationRepository>;
 
     authorizer = {
       authorize: jest.fn(),
@@ -39,6 +46,7 @@ describe('TransactionService', () => {
     transactionService = new TransactionService(
       transactionEventRepository,
       authorizationRepository,
+      reservationRepository,
       [authorizer],
     );
   });
@@ -143,7 +151,7 @@ describe('TransactionService', () => {
     authorizationRepository.readAllByQuerystring.mockResolvedValue([
       authorization,
     ]);
-    transactionEventRepository.readAllActiveTransactionsByIdToken.mockResolvedValue(
+    transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
       [aTransaction(), aTransaction()],
     );
 
@@ -169,7 +177,7 @@ describe('TransactionService', () => {
     authorizationRepository.readAllByQuerystring.mockResolvedValue([
       authorization,
     ]);
-    transactionEventRepository.readAllActiveTransactionsByIdToken.mockResolvedValue(
+    transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
       [],
     );
     authorizer.authorize.mockResolvedValue({});
@@ -188,5 +196,93 @@ describe('TransactionService', () => {
     expect(response.idTokenInfo?.status).toBe(
       OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
     );
+  });
+  
+  describe('Tests for authorizeOcpp16IdToken', () => {
+    it('should return Accepted status when idToken exists and idTokenInfo is valid', async () => {
+      const authorization = anAuthorization();
+      authorizationRepository.readOnlyOneByQuerystring.mockResolvedValue(
+        authorization,
+      );
+      transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken.mockResolvedValue(
+        [],
+      );
+
+      const response = await transactionService.authorizeOcpp16IdToken(
+        faker.string.uuid(),
+      );
+
+      expect(response.idTagInfo.status).toBe(
+        OCPP1_6.StartTransactionResponseStatus.Accepted,
+      );
+      expect(response.idTagInfo.parentIdTag).toBe(
+        authorization.idTokenInfo!.groupIdToken!.idToken,
+      );
+      expect(response.idTagInfo.expiryDate).toBe(
+        authorization.idTokenInfo!.cacheExpiryDateTime,
+      );
+    });
+
+    it('should return Blocked status when idTokenInfo is blocked', async () => {
+      const authorization = anAuthorization(
+        (auth) => {
+          auth.idTokenInfo!.status = OCPP1_6.StartTransactionResponseStatus.Blocked;
+        },
+      );
+      authorizationRepository.readOnlyOneByQuerystring.mockResolvedValue(
+        authorization,
+      );
+
+      const response = await transactionService.authorizeOcpp16IdToken(
+        faker.string.uuid(),
+      );
+
+      expect(response.idTagInfo.status).toBe(
+        OCPP1_6.StartTransactionResponseStatus.Blocked,
+      );
+      expect(response.idTagInfo.parentIdTag).toBeUndefined();
+      expect(response.idTagInfo.expiryDate).toBeUndefined();
+    });
+
+    it('should return Expired status when idTokenInfo.cacheExpiryDateTime is smaller than now', async () => {
+      const authorization = anAuthorization(
+        (auth) => {
+          auth.idTokenInfo!.cacheExpiryDateTime = faker.date.past().toISOString();
+        },
+      );
+      authorizationRepository.readOnlyOneByQuerystring.mockResolvedValue(
+        authorization,
+      );
+
+      const response = await transactionService.authorizeOcpp16IdToken(
+        faker.string.uuid(),
+      );
+
+      expect(response.idTagInfo.status).toBe(
+        OCPP1_6.StartTransactionResponseStatus.Expired,
+      );
+      expect(response.idTagInfo.parentIdTag).toBeUndefined();
+      expect(response.idTagInfo.expiryDate).toBeUndefined();
+    });
+
+    it('should return ConcurrentTx status when an active transaction exists', async () => {
+      const authorization = anAuthorization();
+      authorizationRepository.readOnlyOneByQuerystring.mockResolvedValue(
+        authorization,
+      );
+      transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken.mockResolvedValue(
+        [aTransaction()],
+      );
+
+      const response = await transactionService.authorizeOcpp16IdToken(
+        faker.string.uuid(),
+      );
+
+      expect(response.idTagInfo.status).toBe(
+        OCPP1_6.StartTransactionResponseStatus.ConcurrentTx,
+      );
+      expect(response.idTagInfo.parentIdTag).toBeUndefined();
+      expect(response.idTagInfo.expiryDate).toBeUndefined();
+    });
   });
 });

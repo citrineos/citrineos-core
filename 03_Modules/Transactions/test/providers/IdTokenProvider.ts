@@ -1,4 +1,3 @@
-import { IdToken } from '@citrineos/data';
 import { OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';

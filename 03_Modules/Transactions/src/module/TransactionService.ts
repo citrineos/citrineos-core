@@ -3,12 +3,15 @@ import {
   IAuthorizationRepository,
   ITransactionEventRepository,
   Transaction,
+  OCPP1_6_Mapper,
   OCPP2_0_1_Mapper,
+  IReservationRepository,
 } from '@citrineos/data';
 import {
   IMessageContext,
   MeterValueUtils,
-  OCPP2_0_1
+  OCPP1_6,
+  OCPP2_0_1,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { IAuthorizer } from '@citrineos/util';
@@ -16,17 +19,20 @@ import { IAuthorizer } from '@citrineos/util';
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
   private _authorizeRepository: IAuthorizationRepository;
+  private _reservationRepository: IReservationRepository;
   private _logger: Logger<ILogObj>;
   private _authorizers: IAuthorizer[];
 
   constructor(
     transactionEventRepository: ITransactionEventRepository,
     authorizeRepository: IAuthorizationRepository,
+    reservationRepository: IReservationRepository,
     authorizers?: IAuthorizer[],
     logger?: Logger<ILogObj>,
   ) {
     this._transactionEventRepository = transactionEventRepository;
     this._authorizeRepository = authorizeRepository;
+    this._reservationRepository = reservationRepository;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -142,6 +148,99 @@ export class TransactionService {
     }));
   }
 
+  async authorizeOcpp16IdToken(
+    idToken: string,
+  ): Promise<OCPP1_6.StartTransactionResponse> {
+    const response: OCPP1_6.StartTransactionResponse = {
+      idTagInfo: {
+        status: OCPP1_6.StartTransactionResponseStatus.Invalid,
+      },
+      transactionId: 0, // default zero for rejected transaction
+    };
+
+    try {
+      // Find authorization
+      const authorization =
+        await this._authorizeRepository.readOnlyOneByQuerystring({
+          idToken: idToken,
+          type: null,
+        });
+      if (!authorization) {
+        this._logger.error(`Found no authorization for idToken: ${idToken}`);
+        return response;
+      }
+
+      // Check expiration
+      const idTokenInfo = authorization.idTokenInfo;
+      if (!idTokenInfo) {
+        response.idTagInfo.status =
+          OCPP1_6.StartTransactionResponseStatus.Accepted;
+        return response;
+      }
+
+      const idTokenInfoStatus = OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
+        idTokenInfo.status
+      );
+      if (idTokenInfoStatus !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
+        response.idTagInfo.status = idTokenInfoStatus;
+        return response;
+      }
+
+      if (
+        idTokenInfo.cacheExpiryDateTime &&
+        new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
+      ) {
+        response.idTagInfo.status =
+          OCPP1_6.StartTransactionResponseStatus.Expired;
+        return response;
+      }
+
+      // Check concurrent transactions
+      const activeTransactions =
+        await this._transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken(
+          authorization.idToken.idToken,
+        );
+      if (activeTransactions.length > 0) {
+        response.idTagInfo.status =
+          OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
+        return response;
+      }
+
+      // Accept the idToken
+      response.idTagInfo.status =
+        OCPP1_6.StartTransactionResponseStatus.Accepted;
+      response.idTagInfo.expiryDate = idTokenInfo.cacheExpiryDateTime;
+      response.idTagInfo.parentIdTag = idTokenInfo.groupIdToken
+        ? idTokenInfo.groupIdToken.idToken
+        : undefined;
+      return response;
+    } catch (e) {
+      this._logger.error(`Authorization for idToken ${idToken} failed.`, e);
+      response.idTagInfo.status =
+        OCPP1_6.StartTransactionResponseStatus.Invalid;
+      return response;
+    }
+  }
+
+  async deactivateReservation(
+    transactionId: string,
+    reservationId: number,
+    stationId: string,
+  ): Promise<void> {
+    await this._reservationRepository.updateAllByQuery(
+      {
+        terminatedByTransaction: transactionId,
+        isActive: false,
+      },
+      {
+        where: {
+          id: reservationId,
+          stationId: stationId,
+        },
+      },
+    );
+  }
+
   private async _applyAuthorizers(
     idTokenInfo: OCPP2_0_1.IdTokenInfoType,
     authorization: Authorization,
@@ -164,7 +263,7 @@ export class TransactionService {
     idToken: OCPP2_0_1.IdTokenType,
   ): Promise<boolean> {
     const activeTransactions =
-      await this._transactionEventRepository.readAllActiveTransactionsByIdToken(
+      await this._transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken(
         idToken,
       );
 
