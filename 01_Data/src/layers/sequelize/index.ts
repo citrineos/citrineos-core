@@ -9,7 +9,7 @@ export { Authorization, IdToken, IdTokenInfo, AdditionalInfo, LocalListAuthoriza
 export { Transaction, TransactionEvent, MeterValue } from './model/TransactionEvent';
 export { SecurityEvent } from './model/SecurityEvent';
 export { VariableMonitoring, EventData, VariableMonitoringStatus } from './model/VariableMonitoring';
-export { ChargingStation, ChargingStationNetworkProfile, Location, ServerNetworkProfile, SetNetworkProfile, StatusNotification } from './model/Location';
+export { ChargingStation, ChargingStationNetworkProfile, Location, ServerNetworkProfile, SetNetworkProfile, StatusNotification, Connector } from './model/Location';
 export { ChargingStationSequence } from './model/ChargingStationSequence';
 export { MessageInfo } from './model/MessageInfo';
 export { Tariff } from './model/Tariff';

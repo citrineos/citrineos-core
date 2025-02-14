@@ -14,6 +14,8 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  OCPP1_6,
+  OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
@@ -65,6 +67,7 @@ export class EVDriverModule extends AbstractModule {
     OCPP2_0_1_CallAction.ReserveNow,
     OCPP2_0_1_CallAction.SendLocalList,
     OCPP2_0_1_CallAction.UnlockConnector,
+    OCPP1_6_CallAction.RemoteStopTransaction,
   ];
 
   protected _authorizeRepository: IAuthorizationRepository;
@@ -134,6 +137,9 @@ export class EVDriverModule extends AbstractModule {
    *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
+   *
+   * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which generates
+   * unique identifiers.
    */
   constructor(
     config: SystemConfig,
@@ -238,7 +244,7 @@ export class EVDriverModule extends AbstractModule {
   }
 
   /**
-   * Handle requests
+   * Handle OCPP 2.0.1 requests
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Authorize)
@@ -561,7 +567,7 @@ export class EVDriverModule extends AbstractModule {
   }
 
   /**
-   * Handle responses
+   * Handle OCPP 2.0.1 responses
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.RequestStartTransaction)
@@ -773,6 +779,22 @@ export class EVDriverModule extends AbstractModule {
     await this._localAuthListRepository.validateOrReplaceLocalListVersionForStation(
       message.payload.versionNumber,
       message.context.stationId,
+    );
+  }
+
+  /**
+   * Handle OCPP 1.6 responses
+   */
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.RemoteStopTransaction)
+  protected async _handleOcpp16RemoteStopTransaction(
+    message: IMessage<OCPP1_6.RemoteStopTransactionResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug(
+      'RemoteStopTransactionResponse received:',
+      message,
+      props,
     );
   }
 

@@ -700,6 +700,7 @@ export class ConfigurationModule extends AbstractModule {
   /**
    * Handle OCPP 1.6 requests
    */
+
   @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.BootNotification)
   protected async _handleOcpp16BootNotification(
     message: IMessage<OCPP1_6.BootNotificationRequest>,
@@ -770,14 +771,7 @@ export class ConfigurationModule extends AbstractModule {
       );
     }
     // Update boot with details of most recently sent BootNotificationResponse
-    const bootEntity =
-      await this._bootRepository.createOrUpdateFromOcpp16Response(
-        stationId,
-        bootNotificationResponse,
-      );
-    if (!bootEntity) {
-      throw new Error('Failed to create or update boot entity');
-    }
+    const bootEntity = await this._bootService.updateOcpp16BootConfig(bootNotificationResponse, stationId);
 
     // 3. Sync configurations
     // If boot notification is not pending, do not start configuration.
@@ -946,6 +940,17 @@ export class ConfigurationModule extends AbstractModule {
         },
         existingCallMessage.databaseId,
       );
+    }
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.TriggerMessage)
+  protected _handleOcpp16TriggerMessage(
+    message: IMessage<OCPP1_6.TriggerMessageResponse>,
+    props?: HandlerProperties,
+  ): void {
+    this._logger.debug('TriggerMessage response received:', message, props);
+    if (message.payload.status !== OCPP1_6.TriggerMessageResponseStatus.Accepted) {
+      this._logger.error('TriggerMessage failed with status:', message);
     }
   }
 }
