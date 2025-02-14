@@ -3,21 +3,22 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import { IEVDriverModuleApi } from './interface';
-import { EVDriverModule } from './module';
+import {FastifyInstance, FastifyRequest} from 'fastify';
+import {ILogObj, Logger} from 'tslog';
+import {IEVDriverModuleApi} from './interface';
+import {EVDriverModule} from './module';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
   AuthorizationDataSchema,
   HttpMethod,
-  OCPP2_0_1_Namespace,
-  OCPP1_6_Namespace,
   Namespace,
+  OCPP1_6_Namespace,
   OCPP2_0_1,
+  OCPP2_0_1_Namespace,
 } from '@citrineos/base';
 import {
+  Authorization,
   AuthorizationQuerySchema,
   AuthorizationQuerystring,
   AuthorizationRestrictions,
@@ -47,7 +48,7 @@ export class EVDriverDataApi
   }
 
   @AsDataEndpoint(
-    OCPP2_0_1_Namespace.AuthorizationData,
+      Namespace.AuthorizationData,
     HttpMethod.Put,
     AuthorizationQuerySchema,
     AuthorizationDataSchema,
@@ -57,7 +58,7 @@ export class EVDriverDataApi
       Body: OCPP2_0_1.AuthorizationData;
       Querystring: AuthorizationQuerystring;
     }>,
-  ): Promise<OCPP2_0_1.AuthorizationData | undefined> {
+  ): Promise<Authorization | undefined> {
     return this._module.authorizeRepository.createOrUpdateByQuerystring(
       request.body,
       request.query,
@@ -65,7 +66,7 @@ export class EVDriverDataApi
   }
 
   @AsDataEndpoint(
-    OCPP2_0_1_Namespace.AuthorizationRestrictions,
+      OCPP2_0_1_Namespace.AuthorizationRestrictions,
     HttpMethod.Put,
     AuthorizationQuerySchema,
     AuthorizationRestrictionsSchema,
@@ -75,7 +76,7 @@ export class EVDriverDataApi
       Body: AuthorizationRestrictions;
       Querystring: AuthorizationQuerystring;
     }>,
-  ): Promise<OCPP2_0_1.AuthorizationData[]> {
+  ): Promise<Authorization[]> {
     return this._module.authorizeRepository.updateRestrictionsByQuerystring(
       request.body,
       request.query,
@@ -83,18 +84,18 @@ export class EVDriverDataApi
   }
 
   @AsDataEndpoint(
-    OCPP2_0_1_Namespace.AuthorizationData,
+    Namespace.AuthorizationData,
     HttpMethod.Get,
     AuthorizationQuerySchema,
   )
   getAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
-  ): Promise<OCPP2_0_1.AuthorizationData[]> {
+  ): Promise<Authorization[]> {
     return this._module.authorizeRepository.readAllByQuerystring(request.query);
   }
 
   @AsDataEndpoint(
-    OCPP2_0_1_Namespace.AuthorizationData,
+      Namespace.AuthorizationData,
     HttpMethod.Delete,
     AuthorizationQuerySchema,
   )
@@ -107,7 +108,7 @@ export class EVDriverDataApi
         (deletedCount) =>
           deletedCount.toString() +
           ' rows successfully deleted from ' +
-          OCPP2_0_1_Namespace.AuthorizationData,
+            Namespace.AuthorizationData,
       );
   }
 
