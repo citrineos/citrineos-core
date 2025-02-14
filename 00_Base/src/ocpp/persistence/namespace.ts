@@ -10,6 +10,7 @@
 export enum Namespace {
   BootConfig = 'Boot',
   StatusNotificationRequest = 'StatusNotification',
+  ChargingStation = 'ChargingStation',
 }
 
 export enum OCPP2_0_1_Namespace {
@@ -22,7 +23,6 @@ export enum OCPP2_0_1_Namespace {
   ChargingNeeds = 'ChargingNeeds',
   ChargingProfile = 'ChargingProfile',
   ChargingSchedule = 'ChargingSchedule',
-  ChargingStation = 'ChargingStation',
   ChargingStationSecurityInfo = 'ChargingStationSecurityInfo',
   ComponentType = 'Component',
   CompositeSchedule = 'CompositeSchedule',

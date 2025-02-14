@@ -165,14 +165,31 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
           id: chargingStation.id,
         },
         defaults: {
-          id: chargingStation.id,
           locationId: chargingStation.locationId,
+          chargePointVendor: chargingStation.chargePointVendor,
+          chargePointModel: chargingStation.chargePointModel,
+          chargePointSerialNumber: chargingStation.chargePointSerialNumber,
+          chargeBoxSerialNumber: chargingStation.chargeBoxSerialNumber,
+          firmwareVersion: chargingStation.firmwareVersion,
+          iccid: chargingStation.iccid,
+          imsi: chargingStation.imsi,
+          meterType: chargingStation.meterType,
+          meterSerialNumber: chargingStation.meterSerialNumber,
         },
       });
       if (!chargingStationCreated) {
         await this.chargingStation.updateByKey(
           {
             locationId: chargingStation.locationId,
+            chargePointVendor: chargingStation.chargePointVendor,
+            chargePointModel: chargingStation.chargePointModel,
+            chargePointSerialNumber: chargingStation.chargePointSerialNumber,
+            chargeBoxSerialNumber: chargingStation.chargeBoxSerialNumber,
+            firmwareVersion: chargingStation.firmwareVersion,
+            iccid: chargingStation.iccid,
+            imsi: chargingStation.imsi,
+            meterType: chargingStation.meterType,
+            meterSerialNumber: chargingStation.meterSerialNumber,
           },
           savedChargingStation.id,
         );

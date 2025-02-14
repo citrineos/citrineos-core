@@ -3,13 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  type BootConfig,
-  type CallAction,
-  ChargingStationSequenceType,
-  type CrudRepository,
-  OCPP2_0_1,
-} from '@citrineos/base';
+import { type BootConfig, type CallAction, ChargingStationSequenceType, type CrudRepository, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
 import {
   type Authorization,
@@ -40,12 +34,13 @@ import {
   type VariableMonitoring,
   StatusNotification,
   Connector,
+  LocalListVersion,
+  SendLocalList,
+  InstalledCertificate,
+  ChangeConfiguration,
 } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
-import { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion';
-import { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList';
-import { InstalledCertificate } from '../layers/sequelize/model/Certificate/InstalledCertificate';
 
 export interface IAuthorizationRepository extends CrudRepository<OCPP2_0_1.AuthorizationData> {
   createOrUpdateByQuerystring: (value: OCPP2_0_1.AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
@@ -170,7 +165,7 @@ export interface ICertificateRepository extends CrudRepository<Certificate> {
   createOrUpdateCertificate(certificate: Certificate): Promise<Certificate>;
 }
 
-export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> { }
+export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> {}
 
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
   createOrUpdateChargingProfile(chargingProfile: OCPP2_0_1.ChargingProfileType, stationId: string, evseId?: number | null, chargingLimitSource?: OCPP2_0_1.ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile>;
@@ -186,7 +181,7 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
   createOrUpdateReservation(reserveNowRequest: OCPP2_0_1.ReserveNowRequest, stationId: string, isActive?: boolean): Promise<Reservation | undefined>;
 }
 
-export interface ICallMessageRepository extends CrudRepository<CallMessage> { }
+export interface ICallMessageRepository extends CrudRepository<CallMessage> {}
 
 export interface IChargingStationSecurityInfoRepository extends CrudRepository<ChargingStationSecurityInfo> {
   readChargingStationPublicKeyFileId(stationId: string): Promise<string>;
@@ -197,4 +192,9 @@ export interface IChargingStationSequenceRepository extends CrudRepository<Charg
   getNextSequenceValue(stationId: string, type: ChargingStationSequenceType): Promise<number>;
 }
 
-export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> { }
+export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {}
+
+export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {
+  updateStatusByStationIdAndKey(stationId: string, key: string, status: OCPP1_6.ChangeConfigurationResponseStatus): Promise<ChangeConfiguration | undefined>;
+  createOrUpdateChangeConfiguration(configuration: ChangeConfiguration): Promise<ChangeConfiguration | undefined>;
+}
