@@ -106,15 +106,6 @@ export function createLocalConfig() {
             port: 8082,
             protocol: 'ocpp2.0.1',
           },
-          {
-            id: '2',
-            securityProfile: 0,
-            allowUnknownChargingStations: true,
-            pingInterval: 60,
-            host: '0.0.0.0',
-            port: 8092,
-            protocol: 'ocpp1.6',
-          },
         ],
       },
       certificateAuthority: {

@@ -1,4 +1,4 @@
-import { Boot, IBootRepository } from '@citrineos/data';
+import { Boot, IBootRepository, OCPP2_0_1_Mapper } from '@citrineos/data';
 import {
   BOOT_STATUS,
   BootConfig,
@@ -37,7 +37,7 @@ export class BootNotificationService {
     bootConfig: Boot | undefined,
   ): OCPP2_0_1.RegistrationStatusEnumType {
     let bootStatus = bootConfig
-      ? bootConfig.status
+      ? OCPP2_0_1_Mapper.BootMapper.toRegistrationStatusEnumType(bootConfig.status)
       : this._config.unknownChargerStatus;
 
     if (bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Pending) {
@@ -80,7 +80,7 @@ export class BootNotificationService {
     return {
       currentTime: new Date().toISOString(),
       status: bootStatus,
-      statusInfo: bootConfig?.statusInfo,
+      statusInfo: OCPP2_0_1_Mapper.BootMapper.toStatusInfo(bootConfig?.statusInfo),
       interval:
         bootStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
           ? bootConfig?.heartbeatInterval || this._config.heartbeatInterval

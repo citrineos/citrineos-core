@@ -24,6 +24,33 @@ export class ChargingStation extends Model {
   @Column
   declare isOnline: boolean;
 
+  @Column(DataType.STRING(20))
+  declare chargePointVendor?: string | null;
+
+  @Column(DataType.STRING(20))
+  declare chargePointModel?: string | null;
+
+  @Column(DataType.STRING(25))
+  declare chargePointSerialNumber?: string | null;
+
+  @Column(DataType.STRING(25))
+  declare chargeBoxSerialNumber?: string | null;
+
+  @Column(DataType.STRING(50))
+  declare firmwareVersion?: string | null;
+
+  @Column(DataType.STRING(20))
+  declare iccid?: string | null;
+
+  @Column(DataType.STRING(20))
+  declare imsi?: string | null;
+
+  @Column(DataType.STRING(25))
+  declare meterType?: string | null;
+
+  @Column(DataType.STRING(25))
+  declare meterSerialNumber?: string | null;
+
   @ForeignKey(() => Location)
   @Column(DataType.INTEGER)
   declare locationId?: number | null;
