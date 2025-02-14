@@ -8,8 +8,11 @@
  */
 
 export enum Namespace {
+  AuthorizationData = 'Authorization',
   BootConfig = 'Boot',
   ChargingStation = 'ChargingStation',
+  IdTokenType = 'IdToken',
+  IdTokenInfoType = 'IdTokenInfo',
   ReserveNowRequest = 'Reservation',
   MeterValue = 'MeterValue',
   StatusNotificationRequest = 'StatusNotification',
@@ -17,8 +20,7 @@ export enum Namespace {
 }
 
 export enum OCPP2_0_1_Namespace {
-  AdditionalInfoType = 'AdditionalInfo',
-  AuthorizationData = 'Authorization',
+  AdditionalInfoType = 'AdditionalInfoType',
   AuthorizationRestrictions = 'AuthorizationRestrictions',
   Certificate = 'Certificate',
   InstalledCertificate = 'InstalledCertificate',
@@ -32,8 +34,6 @@ export enum OCPP2_0_1_Namespace {
   EVSEType = 'Evse',
   EventDataType = 'EventData',
   FileURL = 'FileURL',
-  IdTokenInfoType = 'IdTokenInfo',
-  IdTokenType = 'IdToken',
   LatestStatusNotification = 'LatestStatusNotification',
   LocalListAuthorization = 'LocalListAuthorization',
   LocalListVersion = 'LocalListVersion',
