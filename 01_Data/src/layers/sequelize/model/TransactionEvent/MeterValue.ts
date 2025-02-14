@@ -34,5 +34,5 @@ export class MeterValue extends Model {
   @Column(DataType.INTEGER)
   declare connectorId?: number;
 
-  declare customData?: object | null;
+  declare customData?: any | null;
 }

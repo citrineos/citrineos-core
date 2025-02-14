@@ -6,18 +6,15 @@
 import {
   AbstractModuleApi,
   AsDataEndpoint,
-  AsMessageEndpoint,
-  CallAction,
   HttpMethod,
   IFileAccess,
-  IMessageConfirmation,
-  OCPP2_0_1_Namespace,
+  Namespace,
+  OCPP1_6_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPP2_0_1_Namespace,
   OCPPVersion,
   WebsocketServerConfig,
-  OCPP1_6_Namespace,
-  Namespace,
 } from '@citrineos/base';
 import jsrsasign from 'jsrsasign';
 import { FastifyInstance, FastifyRequest } from 'fastify';
@@ -54,7 +51,7 @@ const enum PemType {
 /**
  * Server API for the Certificates module.
  */
-export class CertificatesModuleApi
+export class CertificatesDataApi
   extends AbstractModuleApi<CertificatesModule>
   implements ICertificatesModuleApi
 {
@@ -80,111 +77,11 @@ export class CertificatesModuleApi
     websocketServersConfig: WebsocketServerConfig[],
     logger?: Logger<ILogObj>,
   ) {
-    super(certificatesModule, server, logger);
+    super(certificatesModule, server, OCPPVersion.OCPP2_0_1, logger);
     this._fileAccess = fileAccess;
     this._networkConnection = networkConnection;
     this._websocketServersConfig = websocketServersConfig;
   }
-
-  /**
-   * Interface implementation
-   */
-
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.CertificateSigned,
-    OCPP2_0_1.CertificateSignedRequestSchema,
-  )
-  certificateSigned(
-    identifier: string[],
-    tenantId: string,
-    request: OCPP2_0_1.CertificateSignedRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
-      this._module.sendCall(
-        id,
-        tenantId,
-        OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.CertificateSigned,
-        request,
-        callbackUrl,
-      ),
-    );
-    return Promise.all(results);
-  }
-
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.InstallCertificate,
-    OCPP2_0_1.InstallCertificateRequestSchema,
-  )
-  installCertificate(
-    identifier: string[],
-    tenantId: string,
-    request: OCPP2_0_1.InstallCertificateRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
-      this._module.sendCall(
-        id,
-        tenantId,
-        OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.InstallCertificate,
-        request,
-        callbackUrl,
-      ),
-    );
-    return Promise.all(results);
-  }
-
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.GetInstalledCertificateIds,
-    OCPP2_0_1.GetInstalledCertificateIdsRequestSchema,
-  )
-  getInstalledCertificateIds(
-    identifier: string[],
-    tenantId: string,
-    request: OCPP2_0_1.GetInstalledCertificateIdsRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
-      this._module.sendCall(
-        id,
-        tenantId,
-        OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.GetInstalledCertificateIds,
-        request,
-        callbackUrl,
-      ),
-    );
-    return Promise.all(results);
-  }
-
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.DeleteCertificate,
-    OCPP2_0_1.DeleteCertificateRequestSchema,
-  )
-  deleteCertificate(
-    identifier: string[],
-    tenantId: string,
-    request: OCPP2_0_1.DeleteCertificateRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
-      this._module.sendCall(
-        id,
-        tenantId,
-        OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.DeleteCertificate,
-        request,
-        callbackUrl,
-      ),
-    );
-    return Promise.all(results);
-  }
-
-  /**
-   * Data Endpoint Methods
-   */
 
   @AsDataEndpoint(
     OCPP2_0_1_Namespace.TlsCertificates,
@@ -405,11 +302,6 @@ export class CertificatesModuleApi
     return responseBody;
   }
 
-  @AsDataEndpoint(OCPP2_0_1_Namespace.FileURL, HttpMethod.Get, undefined)
-  async getFileURL(): Promise<string> {
-    return this._fileAccess.getFileURL();
-  }
-
   @AsDataEndpoint(
     OCPP2_0_1_Namespace.RootCertificate,
     HttpMethod.Put,
@@ -438,9 +330,11 @@ export class CertificatesModuleApi
         );
     }
 
-    const confirmations = await this.installCertificate(
-      [installReq.stationId],
+    const confirmation = await this._module.sendCall(
+      installReq.stationId,
       installReq.tenantId,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.InstallCertificate,
       {
         certificateType: installReq.certificateType,
         certificate: rootCAPem,
@@ -448,36 +342,16 @@ export class CertificatesModuleApi
       installReq.callbackUrl,
     );
 
-    const failedConfirmations = confirmations.filter(
-      (confirmation) => !confirmation.success,
-    );
-
-    if (failedConfirmations.length > 0) {
-      failedConfirmations.forEach((failure, index) =>
-        this._logger.error(
-          `InstallCertificateRequest failed for stationId: ${installReq.stationId}, index: ${index}, payload: ${failure.payload}`,
-        ),
+    if (!confirmation.success) {
+      this._logger.error(
+        `InstallCertificateRequest failed for stationId: ${installReq.stationId}, payload: ${confirmation.payload}`,
       );
-
       throw new Error(
-        `One or more InstallCertificateRequest operations failed.`,
+        `InstallCertificateRequest operations failed.`,
       );
     }
 
-    this._logger.debug('InstallCertificate confirmations:', confirmations);
-  }
-
-  /**
-   * Overrides superclass method to generate the URL path based on the input {@link CallAction}
-   * and the module's endpoint prefix configuration.
-   *
-   * @param {CallAction} input - The input {@link CallAction}.
-   * @return {string} - The generated URL path.
-   */
-  protected _toMessagePath(input: CallAction): string {
-    const endpointPrefix =
-      this._module.config.modules.certificates?.endpointPrefix;
-    return super._toMessagePath(input, endpointPrefix);
+    this._logger.debug('InstallCertificate confirmation:', confirmation);
   }
 
   /**
