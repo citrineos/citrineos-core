@@ -4,19 +4,19 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { ILogObj, Logger } from 'tslog';
-import { ISmartChargingModuleApi } from './interface';
-import { SmartChargingModule } from './module';
+import { ISmartChargingModuleApi } from '../interface';
+import { SmartChargingModule } from '../module';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
   CallAction,
   IMessageConfirmation,
-  OCPP2_0_1_Namespace,
+  Namespace,
+  OCPP1_6_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPP2_0_1_Namespace,
   OCPPVersion,
-  OCPP1_6_Namespace,
-  Namespace,
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { VariableAttribute } from '@citrineos/data';
@@ -25,7 +25,7 @@ import { stringToSet, validateChargingProfileType } from '@citrineos/util';
 /**
  * Server API for the SmartCharging module.
  */
-export class SmartChargingModuleApi
+export class SmartChargingOcpp201Api
   extends AbstractModuleApi<SmartChargingModule>
   implements ISmartChargingModuleApi
 {
@@ -41,12 +41,8 @@ export class SmartChargingModuleApi
     server: FastifyInstance,
     logger?: Logger<ILogObj>,
   ) {
-    super(smartChargingModule, server, logger);
+    super(smartChargingModule, server, OCPPVersion.OCPP2_0_1, logger);
   }
-
-  /**
-   * Message endpoints
-   */
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.ClearChargingProfile,
@@ -621,10 +617,6 @@ export class SmartChargingModuleApi
       }),
     );
   }
-
-  /**
-   * Data endpoints
-   */
 
   /**
    * Overrides superclass method to generate the URL path based on the input {@link CallAction}

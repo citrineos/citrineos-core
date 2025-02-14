@@ -11,6 +11,7 @@ export enum Namespace {
   BootConfig = 'Boot',
   ChargingStation = 'ChargingStation',
   ReserveNowRequest = 'Reservation',
+  MeterValue = 'MeterValue',
   StatusNotificationRequest = 'StatusNotification',
 }
 
@@ -36,7 +37,6 @@ export enum OCPP2_0_1_Namespace {
   LocalListAuthorization = 'LocalListAuthorization',
   LocalListVersion = 'LocalListVersion',
   Location = 'Location',
-  MeterValueType = 'MeterValue',
   MessageInfoType = 'MessageInfo',
   PasswordType = 'Password',
   RootCertificate = 'RootCertificate',
