@@ -17,6 +17,8 @@ import {
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
+  OCPP1_6,
+  OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
@@ -24,13 +26,20 @@ import {
 } from '@citrineos/base';
 import {
   Boot,
+  CallMessage,
+  ChangeConfiguration,
   ChargingStation,
   ChargingStationNetworkProfile,
   Component,
   IBootRepository,
+  ICallMessageRepository,
+  IChangeConfigurationRepository,
   IDeviceModelRepository,
+  ILocationRepository,
   IMessageInfoRepository,
   sequelize,
+  SequelizeCallMessageRepository,
+  SequelizeChangeConfigurationRepository,
   SequelizeChargingStationSequenceRepository,
   ServerNetworkProfile,
   SetNetworkProfile,
@@ -54,6 +63,7 @@ export class ConfigurationModule extends AbstractModule {
     OCPP2_0_1_CallAction.Heartbeat,
     OCPP2_0_1_CallAction.NotifyDisplayMessages,
     OCPP2_0_1_CallAction.PublishFirmwareStatusNotification,
+    OCPP1_6_CallAction.BootNotification,
   ];
 
   _responses: CallAction[] = [
@@ -67,11 +77,16 @@ export class ConfigurationModule extends AbstractModule {
     OCPP2_0_1_CallAction.TriggerMessage,
     OCPP2_0_1_CallAction.UnpublishFirmware,
     OCPP2_0_1_CallAction.UpdateFirmware,
+    OCPP1_6_CallAction.GetConfiguration,
+    OCPP1_6_CallAction.ChangeConfiguration,
   ];
 
   protected _bootRepository: IBootRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _messageInfoRepository: IMessageInfoRepository;
+  protected _locationRepository: ILocationRepository;
+  protected _changeConfigurationRepository: IChangeConfigurationRepository;
+  protected _callMessageRepository: ICallMessageRepository;
   protected _bootService: BootNotificationService;
   private _idGenerator: IdGenerator;
 
@@ -102,7 +117,20 @@ export class ConfigurationModule extends AbstractModule {
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is created and used.
    *
    * @param {IMessageInfoRepository} [messageInfoRepository] - An optional parameter of type {@link messageInfoRepository} which
-   * represents a repository for accessing and manipulating variable data.
+   * represents a repository for accessing and manipulating message info data. If no `messageInfoRepository` is provided, a default
+   * {@link SequelizeMessageInfoRepository} instance is created and used.
+   *
+   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link locationRepository} which
+   * represents a repository for accessing and manipulating location data. If no `locationRepository` is provided, a default
+   * {@link SequelizeLocationRepository} instance is created and used.
+   *
+   * @param {IChangeConfigurationRepository} [changeConfigurationRepository] - An optional parameter of type {@link IChangeConfigurationRepository} which
+   * represents a repository for accessing and manipulating change configuration data. If no `changeConfigurationRepository` is provided, a default
+   * {@link SequelizeChangeConfigurationRepository} instance is created and used.
+   *
+   * @param {ICallMessageRepository} [callMessageRepository] - An optional parameter of type {@link ICallMessageRepository} which
+   * represents a repository for accessing and manipulating call message data. If no `callMessageRepository` is provided, a default
+   * {@link SequelizeCallMessageRepository} instance is created and used.
    *
    * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which
    * represents a generator for ids.
@@ -118,6 +146,9 @@ export class ConfigurationModule extends AbstractModule {
     bootRepository?: IBootRepository,
     deviceModelRepository?: IDeviceModelRepository,
     messageInfoRepository?: IMessageInfoRepository,
+    locationRepository?: ILocationRepository,
+    changeConfigurationRepository?: IChangeConfigurationRepository,
+    callMessageRepository?: ICallMessageRepository,
     idGenerator?: IdGenerator,
   ) {
     super(
@@ -138,6 +169,15 @@ export class ConfigurationModule extends AbstractModule {
     this._messageInfoRepository =
       messageInfoRepository ||
       new sequelize.SequelizeMessageInfoRepository(config, this._logger);
+    this._locationRepository =
+      locationRepository ||
+      new sequelize.SequelizeLocationRepository(config, this._logger);
+    this._changeConfigurationRepository =
+      changeConfigurationRepository ||
+      new SequelizeChangeConfigurationRepository(config, this._logger);
+    this._callMessageRepository =
+      callMessageRepository ||
+      new SequelizeCallMessageRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(
       this._deviceModelRepository,
@@ -169,8 +209,20 @@ export class ConfigurationModule extends AbstractModule {
     return this._messageInfoRepository;
   }
 
+  get locationRepository(): ILocationRepository {
+    return this._locationRepository;
+  }
+
+  get changeConfigurationRepository(): IChangeConfigurationRepository {
+    return this._changeConfigurationRepository;
+  }
+
+  get callMessageRepository(): ICallMessageRepository {
+    return this._callMessageRepository;
+  }
+
   /**
-   * Handle requests
+   * Handle OCPP 2.0.1 requests
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.BootNotification)
@@ -202,7 +254,7 @@ export class ConfigurationModule extends AbstractModule {
     const bootNotificationResponseMessageConfirmation: IMessageConfirmation =
       await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
-    // Update device model from boot
+    // Update or create charging station
     await this._deviceModelService.updateDeviceModel(
       chargingStation,
       stationId,
@@ -249,7 +301,7 @@ export class ConfigurationModule extends AbstractModule {
     // TODO Consider refactoring GetBaseReport and SetVariables sections as methods to be used by their respective message api endpoints as well
     if (
       bootConfigDbEntity.getBaseReportOnPending ??
-      this._config.modules.configuration.getBaseReportOnPending
+      this._config.modules.configuration.ocpp2_0_1?.getBaseReportOnPending
     ) {
       // Remove Notify Report from blacklist
       await this._cache.remove(OCPP2_0_1_CallAction.NotifyReport, stationId);
@@ -354,7 +406,7 @@ export class ConfigurationModule extends AbstractModule {
 
       const doNotBootWithRejectedVariables = !(
         bootConfigDbEntity.bootWithRejectedVariables ??
-        this._config.modules.configuration.bootWithRejectedVariables
+        this._config.modules.configuration.ocpp2_0_1?.bootWithRejectedVariables
       );
 
       if (rejectedSetVariable && doNotBootWithRejectedVariables) {
@@ -365,7 +417,7 @@ export class ConfigurationModule extends AbstractModule {
       }
     }
 
-    if (this._config.modules.configuration.autoAccept) {
+    if (this._config.modules.configuration.ocpp2_0_1?.autoAccept) {
       // Update boot config with status accepted
       // TODO: Determine how/if StatusInfo should be generated
       bootConfigDbEntity.status = OCPP2_0_1.RegistrationStatusEnumType.Accepted;
@@ -486,7 +538,7 @@ export class ConfigurationModule extends AbstractModule {
   }
 
   /**
-   * Handle responses
+   * Handle OCPP 2.0.1 responses
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ChangeAvailability)
@@ -641,6 +693,251 @@ export class ConfigurationModule extends AbstractModule {
             ChargingStationSequenceType.getDisplayMessages,
           ),
         } as OCPP2_0_1.GetDisplayMessagesRequest,
+      );
+    }
+  }
+
+  /**
+   * Handle OCPP 1.6 requests
+   */
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.BootNotification)
+  protected async _handleOcpp16BootNotification(
+    message: IMessage<OCPP1_6.BootNotificationRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug(
+      'OCPP 1.6 BootNotification request received:',
+      message,
+      props,
+    );
+
+    const stationId = message.context.stationId;
+    const tenantId = message.context.tenantId;
+    const request = message.payload;
+
+    // 1. Send BootNotification response
+    // Create BootNotification response
+    const bootNotificationResponse: OCPP1_6.BootNotificationResponse =
+      await this._bootService.createOcpp16BootNotificationResponse(stationId);
+    // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
+    const cachedBootStatus: OCPP1_6.BootNotificationResponseStatus | null =
+      await this._cache.get(BOOT_STATUS, stationId);
+    // Blacklist or whitelist charger actions
+    await this._bootService.cacheOcpp16ChargerActionsPermissions(
+      stationId,
+      cachedBootStatus,
+      bootNotificationResponse.status,
+    );
+    // Send BootNotification response
+    const bootNotificationResponseMessageConfirmation: IMessageConfirmation =
+      await this.sendCallResultWithMessage(message, bootNotificationResponse);
+    // Create or update charging station
+    this._logger.debug(`Creating or updating charging station: ${stationId}`);
+    await this._locationRepository.createOrUpdateChargingStation(
+      ChargingStation.build({
+        id: stationId,
+        chargePointVendor: request.chargePointVendor,
+        chargePointModel: request.chargePointModel,
+        chargePointSerialNumber: request.chargePointSerialNumber,
+        chargeBoxSerialNumber: request.chargeBoxSerialNumber,
+        firmwareVersion: request.firmwareVersion,
+        iccid: request.iccid,
+        imsi: request.imsi,
+        meterType: request.meterType,
+        meterSerialNumber: request.meterSerialNumber,
+      }),
+    );
+    // Check if response was successful
+    if (!bootNotificationResponseMessageConfirmation.success) {
+      throw new Error(
+        'Send BootNotification response failed: ' +
+          bootNotificationResponseMessageConfirmation,
+      );
+    }
+
+    // 2. Update boot status in cache and db entity
+    // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
+    if (
+      bootNotificationResponse.status !==
+        OCPP1_6.BootNotificationResponseStatus.Accepted &&
+      (!cachedBootStatus ||
+        bootNotificationResponse.status !== cachedBootStatus)
+    ) {
+      await this._cache.set(
+        BOOT_STATUS,
+        bootNotificationResponse.status,
+        stationId,
+      );
+    }
+    // Update boot with details of most recently sent BootNotificationResponse
+    const bootEntity = await this._bootService.updateOcpp16BootConfig(bootNotificationResponse, stationId);
+
+    // 3. Sync configurations
+    // If boot notification is not pending, do not start configuration.
+    // If cached boot status is not null and pending, configuration is already in progress - do not start configuration again.
+    if (
+      bootNotificationResponse.status !==
+        OCPP1_6.BootNotificationResponseStatus.Pending ||
+      (cachedBootStatus &&
+        cachedBootStatus === OCPP1_6.BootNotificationResponseStatus.Pending)
+    ) {
+      return;
+    }
+    let changeConfigurationsOnPending: boolean = false;
+    let getConfigurationsOnPending: boolean = true;
+    // Change Configurations on charging station
+    const configurations: ChangeConfiguration[] =
+      await this._changeConfigurationRepository.readAllByQuery({
+        where: {
+          stationId,
+        },
+      });
+    // Remove ChangeConfiguration call action from blacklist
+    await this._cache.remove(OCPP1_6_CallAction.ChangeConfiguration, stationId);
+    // Set each configuration on Charging Station
+    for (const config of configurations) {
+      const correlationId = uuidv4();
+
+      // Create call message to enable update configuration status based on response
+      this._logger.debug(
+        `Creating call message for correlationId: ${correlationId}`,
+      );
+      await this.callMessageRepository.create(
+        CallMessage.build({
+          correlationId,
+          databaseId: config.id,
+        }),
+      );
+
+      const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(
+        correlationId,
+        this._config.maxCachingSeconds,
+        stationId,
+      );
+      const changeConfigurationResponseMessageConfirmation: IMessageConfirmation =
+        await this.sendCall(
+          stationId,
+          tenantId,
+          OCPPVersion.OCPP1_6,
+          OCPP1_6_CallAction.ChangeConfiguration,
+          {
+            key: config.key,
+            value: config.value,
+          } as OCPP1_6.ChangeConfigurationRequest,
+          undefined,
+          correlationId,
+        );
+      if (!changeConfigurationResponseMessageConfirmation.success) {
+        changeConfigurationsOnPending = true;
+      }
+      // wait before sending next call
+      await cacheCallbackPromise;
+    }
+
+    // Get Configurations from charging station
+    // Remove GetConfiguration call action from blacklist
+    await this._cache.remove(OCPP1_6_CallAction.GetConfiguration, stationId);
+    // Send GetConfiguration request to charger
+    const getConfigurationResponseMessageConfirmation: IMessageConfirmation =
+      await this.sendCall(
+        stationId,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.GetConfiguration,
+        {} as OCPP1_6.GetConfigurationRequest, // empty to get all configs
+      );
+    if (getConfigurationResponseMessageConfirmation.success) {
+      getConfigurationsOnPending = false;
+    }
+    // Update configuration related fields on boot entity
+    await this._bootRepository.updateByKey(
+      {
+        changeConfigurationsOnPending,
+        getConfigurationsOnPending,
+      },
+      bootEntity.id,
+    );
+
+    // 4. Trigger another boot when pending
+    await this._cache.remove(OCPP1_6_CallAction.TriggerMessage, stationId);
+    await this.sendCall(
+      stationId,
+      tenantId,
+      OCPPVersion.OCPP1_6,
+      OCPP1_6_CallAction.TriggerMessage,
+      {
+        requestedMessage:
+          OCPP1_6.TriggerMessageRequestRequestedMessage.BootNotification,
+      } as OCPP1_6.TriggerMessageRequest,
+    );
+  }
+
+  /**
+   * Handle OCPP 1.6 response
+   */
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.GetConfiguration)
+  protected async _handleOcpp16GetConfiguration(
+    message: IMessage<OCPP1_6.GetConfigurationResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug(
+      'OCPP 1.6 GetConfiguration response received:',
+      message,
+      props,
+    );
+
+    const stationId = message.context.stationId;
+    const configurations = message.payload.configurationKey;
+
+    if (configurations && configurations.length > 0) {
+      for (const config of configurations) {
+        if (config.key) {
+          await this._changeConfigurationRepository.createOrUpdateChangeConfiguration(
+            {
+              stationId,
+              key: config.key,
+              value: config.value,
+              readonly: config.readonly,
+            } as ChangeConfiguration,
+          );
+        }
+      }
+    }
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.ChangeConfiguration)
+  protected async _handleOcpp16ChangeConfiguration(
+    message: IMessage<OCPP1_6.ChangeConfigurationResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug(
+      'OCPP 1.6 ChangeConfiguration response received:',
+      message,
+      props,
+    );
+
+    const status = message.payload.status;
+    const correlationId = message.context.correlationId;
+
+    const existingCallMessage =
+      await this._callMessageRepository.readOnlyOneByQuery({
+        where: {
+          correlationId,
+        },
+      });
+    if (!existingCallMessage || !existingCallMessage.databaseId) {
+      this._logger.error(
+        `No valid callMessage found for correlationId ${correlationId}`,
+      );
+    } else {
+      this._logger.info(
+        `Updating changeConfiguration ${existingCallMessage.databaseId} with status ${status}`,
+      );
+      await this._changeConfigurationRepository.updateByKey(
+        {
+          status,
+        },
+        existingCallMessage.databaseId,
       );
     }
   }

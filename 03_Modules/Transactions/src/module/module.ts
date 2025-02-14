@@ -16,6 +16,8 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  OCPP1_6,
+  OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
@@ -55,6 +57,7 @@ export class TransactionsModule extends AbstractModule {
     OCPP2_0_1_CallAction.MeterValues,
     OCPP2_0_1_CallAction.StatusNotification,
     OCPP2_0_1_CallAction.TransactionEvent,
+    OCPP1_6_CallAction.StatusNotification,
   ];
   _responses: CallAction[] = [
     OCPP2_0_1_CallAction.CostUpdated,
@@ -247,7 +250,7 @@ export class TransactionsModule extends AbstractModule {
   }
 
   /**
-   * Handle requests
+   * Handle OCPP 2.0.1 requests
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.TransactionEvent)
@@ -484,7 +487,7 @@ export class TransactionsModule extends AbstractModule {
   }
 
   /**
-   * Handle responses
+   * Handle OCPP 2.0.1 responses
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.CostUpdated)
@@ -504,6 +507,33 @@ export class TransactionsModule extends AbstractModule {
       'GetTransactionStatus response received:',
       message,
       props,
+    );
+  }
+
+  /**
+   * Handle OCPP 1.6 requests
+   */
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.StatusNotification)
+  protected async _handleOcpp16StatusNotification(
+    message: IMessage<OCPP1_6.StatusNotificationRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('StatusNotification request received:', message, props);
+
+    await this._statusNotificationService.processOcpp16StatusNotification(
+      message.context.stationId,
+      message.payload,
+    );
+
+    // Create response
+    const response: OCPP1_6.StatusNotificationResponse = {};
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug(
+      'StatusNotification response sent: ',
+      messageConfirmation,
     );
   }
 }
