@@ -3,6 +3,7 @@ import {
   IAuthorizationRepository,
   ITransactionEventRepository,
   Transaction,
+  OCPP2_0_1_Mapper,
 } from '@citrineos/data';
 import {
   IMessageContext,
@@ -33,11 +34,13 @@ export class TransactionService {
   }
 
   async recalculateTotalKwh(transactionDbId: number) {
-    const totalKwh = MeterValueUtils.getTotalKwh(
-      await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-        transactionDbId,
-      ),
+    const meterValues = await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
+      transactionDbId,
     );
+    const meterValueTypes = meterValues.map(
+      meterValue => OCPP2_0_1_Mapper.MeterValueMapper.toMeterValueType(meterValue)
+    );
+    const totalKwh = MeterValueUtils.getTotalKwh(meterValueTypes);
 
     await Transaction.update(
       { totalKwh: totalKwh },
