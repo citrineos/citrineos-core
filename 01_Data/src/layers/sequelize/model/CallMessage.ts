@@ -22,4 +22,7 @@ export class CallMessage extends Model {
 
   @Column(DataType.INTEGER)
   declare reservationId?: number;
+
+  @Column(DataType.STRING)
+  declare databaseId?: string;
 }

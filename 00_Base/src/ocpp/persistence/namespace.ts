@@ -9,7 +9,9 @@
 
 export enum Namespace {
   BootConfig = 'Boot',
+  ChargingStation = 'ChargingStation',
   ReserveNowRequest = 'Reservation',
+  StatusNotificationRequest = 'StatusNotification',
 }
 
 export enum OCPP2_0_1_Namespace {
@@ -22,7 +24,6 @@ export enum OCPP2_0_1_Namespace {
   ChargingNeeds = 'ChargingNeeds',
   ChargingProfile = 'ChargingProfile',
   ChargingSchedule = 'ChargingSchedule',
-  ChargingStation = 'ChargingStation',
   ChargingStationSecurityInfo = 'ChargingStationSecurityInfo',
   ComponentType = 'Component',
   CompositeSchedule = 'CompositeSchedule',
@@ -43,7 +44,6 @@ export enum OCPP2_0_1_Namespace {
   SecurityEventNotificationRequest = 'SecurityEvent',
   SendLocalListRequest = 'SendLocalList',
   ServerNetworkProfile = 'ServerNetworkProfile',
-  StatusNotificationRequest = 'StatusNotification',
   Subscription = 'Subscription',
   SystemConfig = 'SystemConfig',
   TlsCertificates = 'TlsCertificates',
@@ -60,4 +60,5 @@ export enum OCPP2_0_1_Namespace {
 
 export enum OCPP1_6_Namespace {
   ChangeConfiguration = 'ChangeConfiguration',
+  Connector = 'Connector',
 }
