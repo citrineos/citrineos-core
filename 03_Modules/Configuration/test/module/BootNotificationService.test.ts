@@ -3,6 +3,7 @@ import { BootNotificationService } from '../../src/module/BootNotificationServic
 import {
   ICache,
   OCPP2_0_1,
+  OCPP1_6,
   SystemConfig,
 } from '@citrineos/base';
 import { aValidBootConfig } from '../providers/BootConfigProvider';
@@ -31,12 +32,17 @@ describe('BootService', () => {
 
     mockConfig = {
       bootRetryInterval: 0,
-      bootWithRejectedVariables: false,
       endpointPrefix: '',
       heartbeatInterval: 0,
-      unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
-      getBaseReportOnPending: false,
-      autoAccept: false,
+      ocpp2_0_1: {
+        unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+        getBaseReportOnPending: false,
+        bootWithRejectedVariables: false,
+        autoAccept: false,
+      },
+      ocpp1_6: {
+        unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Rejected,
+      },
     };
 
     bootService = new BootNotificationService(
@@ -100,7 +106,7 @@ describe('BootService', () => {
         (item: Boot) => (item.getBaseReportOnPending = false),
       );
 
-      jest.replaceProperty(mockConfig, 'autoAccept', true);
+      jest.replaceProperty(mockConfig.ocpp2_0_1!, 'autoAccept', true);
 
       runDetermineBootStatusTest(
         bootConfig,
@@ -131,7 +137,7 @@ describe('BootService', () => {
     it('should return Accepted status when bootConfig.status is pending, no actions are needed, and autoAccept is true', () => {
       const bootConfig = aValidBootConfig();
 
-      jest.replaceProperty(mockConfig, 'autoAccept', true);
+      jest.replaceProperty(mockConfig.ocpp2_0_1!, 'autoAccept', true);
 
       runDetermineBootStatusTest(
         bootConfig,

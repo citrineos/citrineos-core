@@ -26,6 +26,14 @@ export interface BootConfig {
    * Also declared in SystemConfig. If absent, SystemConfig value is used.
    */
   bootWithRejectedVariables?: boolean | null;
+  /**
+   * Specifically for OCPP 1.6 which plays similar role to pendingBootSetVariableIds
+   */
+  changeConfigurationsOnPending?: boolean | null;
+  /**
+   * Specifically for OCPP 1.6 which plays similar role to getBaseReportOnPending
+   */
+  getConfigurationsOnPending?: boolean | null;
 }
 
 /**
