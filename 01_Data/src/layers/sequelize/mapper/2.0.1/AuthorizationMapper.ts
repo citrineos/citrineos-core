@@ -3,28 +3,28 @@ import {
 } from "@citrineos/base";
 import {AdditionalInfo, Authorization, IdToken} from "../../model/Authorization";
 
-export class AuthenticationMapper {
+export class AuthorizationMapper {
 
     static toAuthorizationData(authorization: Authorization): OCPP2_0_1.AuthorizationData {
         return {
             customData: authorization.customData,
-            idToken: AuthenticationMapper.toIdToken(authorization.idToken),
-            idTokenInfo: AuthenticationMapper.toIdTokenInfo(authorization),
+            idToken: AuthorizationMapper.toIdToken(authorization.idToken),
+            idTokenInfo: AuthorizationMapper.toIdTokenInfo(authorization),
         }
     }
 
-    static toIdToken(idToken: IdToken) {
+    static toIdToken(idToken: IdToken): OCPP2_0_1.IdTokenType {
         return {
             customData: idToken.customData,
             additionalInfo: idToken.additionalInfo && idToken.additionalInfo.length > 0
                 ? (idToken.additionalInfo.map(this.toAdditionalInfo) as [any, ...any[]])
                 : null,
             idToken: idToken.idToken,
-            type: AuthenticationMapper.toIdTokenEnumType(idToken.type),
+            type: AuthorizationMapper.toIdTokenEnumType(idToken.type),
         }
     }
 
-    static toAdditionalInfo(additionalInfo: AdditionalInfo) {
+    static toAdditionalInfo(additionalInfo: AdditionalInfo): OCPP2_0_1.AdditionalInfoType {
         return {
             customData: additionalInfo.customData,
             additionalIdToken: additionalInfo.additionalIdToken,
@@ -32,32 +32,33 @@ export class AuthenticationMapper {
         }
     }
 
-    static toIdTokenInfo(authorization: Authorization) {
+    static toIdTokenInfo(authorization: Authorization): OCPP2_0_1.IdTokenInfoType {
         return {
-            status: AuthenticationMapper.toAuthorizationStatusEnumType(authorization.idTokenInfo!.status),
+            status: AuthorizationMapper.toAuthorizationStatusEnumType(authorization.idTokenInfo!.status),
             cacheExpiryDateTime:
             authorization.idTokenInfo?.cacheExpiryDateTime,
             chargingPriority: authorization.idTokenInfo?.chargingPriority,
             language1: authorization.idTokenInfo?.language1,
             evseId: authorization.idTokenInfo?.evseId,
             groupIdToken: authorization.idTokenInfo?.groupIdToken
-                ? AuthenticationMapper.toIdToken(authorization.idTokenInfo?.groupIdToken)
+                ? AuthorizationMapper.toIdToken(authorization.idTokenInfo?.groupIdToken)
                 : undefined,
             language2: authorization.idTokenInfo?.language2,
             personalMessage: authorization.idTokenInfo?.personalMessage,
+            customData: authorization.idTokenInfo?.customData
         };
     }
 
-    static toMessageContentType(messageContent: any) {
+    static toMessageContentType(messageContent: any): OCPP2_0_1.MessageContentType {
         return {
             customData: messageContent.customData,
-            format: AuthenticationMapper.toMessageFormatEnum(messageContent.format),
+            format: AuthorizationMapper.toMessageFormatEnum(messageContent.format),
             language: messageContent.language,
             content: messageContent.content
         }
     }
 
-    static toMessageFormatEnum(messageFormat: string) {
+    static toMessageFormatEnum(messageFormat: string): OCPP2_0_1.MessageFormatEnumType {
         switch (messageFormat) {
             case "ASCII":
                 return OCPP2_0_1.MessageFormatEnumType.ASCII;
@@ -72,7 +73,7 @@ export class AuthenticationMapper {
         }
     }
 
-    static toAuthorizationStatusEnumType(status: string) {
+    static toAuthorizationStatusEnumType(status: string): OCPP2_0_1.AuthorizationStatusEnumType {
         switch (status) {
             case "Accepted":
                 return OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
@@ -99,7 +100,7 @@ export class AuthenticationMapper {
         }
     }
 
-    static toIdTokenEnumType(type: string) {
+    static toIdTokenEnumType(type: string): OCPP2_0_1.IdTokenEnumType {
         switch (type) {
             case "Central":
                 return OCPP2_0_1.IdTokenEnumType.Central;

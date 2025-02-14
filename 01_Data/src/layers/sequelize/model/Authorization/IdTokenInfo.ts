@@ -39,5 +39,5 @@ export class IdTokenInfo extends Model {
   @Column(DataType.JSON)
   declare personalMessage?: any | null;
 
-  declare customData?: object | null;
+  declare customData?: any | null;
 }

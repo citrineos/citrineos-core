@@ -46,7 +46,6 @@ import {
 } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
 import { LocalAuthListService } from './LocalAuthListService';
-import {AuthenticationMapper} from "@citrineos/data/dist/layers/sequelize/mapper/2.0.1";
 
 /**
  * Component that handles provisioning related messages.
@@ -309,7 +308,7 @@ export class EVDriverModule extends AbstractModule {
       .then(async (authorization) => {
         if (authorization) {
           if (authorization.idTokenInfo) {
-            const idTokenInfo = OCPP2_0_1_Mapper.AuthenticationMapper.toIdTokenInfo(authorization);
+            const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
 
             if (idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
               if (

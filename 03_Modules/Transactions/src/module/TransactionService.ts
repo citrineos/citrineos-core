@@ -83,7 +83,7 @@ export class TransactionService {
     }
 
     // Extract DTO fields from sequelize Model<any, any> objects
-    const idTokenInfo = OCPP2_0_1_Mapper.AuthenticationMapper.toIdTokenInfo(authorization);
+    const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
 
     if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
       // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit

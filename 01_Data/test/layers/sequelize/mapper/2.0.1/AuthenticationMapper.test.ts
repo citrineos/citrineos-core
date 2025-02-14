@@ -1,5 +1,5 @@
 import { OCPP2_0_1 } from "@citrineos/base";
-import { AuthenticationMapper } from "../../../../../src/layers/sequelize/mapper/2.0.1";
+import { AuthorizationMapper } from "../../../../../src/layers/sequelize/mapper/2.0.1";
 import { aAuthorization, aIdToken, aIdTokenInfo, aAdditionalInfo } from "../../../../providers/Authorization";
 
 describe("AuthenticationMapper", () => {
@@ -13,7 +13,7 @@ describe("AuthenticationMapper", () => {
         it("should map Authorization to AuthorizationData correctly", () => {
             const authorization = aAuthorization();
 
-            const result = AuthenticationMapper.toAuthorizationData(authorization);
+            const result = AuthorizationMapper.toAuthorizationData(authorization);
 
             expect(result).toHaveProperty("customData");
             validateIdToken(result.idToken, authorization.idToken);
@@ -25,7 +25,7 @@ describe("AuthenticationMapper", () => {
         it("should map IdToken to the correct format", () => {
             const idToken = aIdToken();
 
-            const result = AuthenticationMapper.toIdToken(idToken);
+            const result = AuthorizationMapper.toIdToken(idToken);
 
             validateIdToken(result, idToken);
             expect(result).toHaveProperty("additionalInfo");
@@ -40,7 +40,7 @@ describe("AuthenticationMapper", () => {
                 return token;
             });
 
-            const result = AuthenticationMapper.toIdToken(idToken);
+            const result = AuthorizationMapper.toIdToken(idToken);
 
             if (result.additionalInfo) {
                 expect(result.additionalInfo.length).toBe(2);
@@ -58,7 +58,7 @@ describe("AuthenticationMapper", () => {
         it("should map AdditionalInfo correctly", () => {
             const additionalInfo = aAdditionalInfo();
 
-            const result = AuthenticationMapper.toAdditionalInfo(additionalInfo);
+            const result = AuthorizationMapper.toAdditionalInfo(additionalInfo);
 
             expect(result).toEqual(additionalInfo);
         });
@@ -68,7 +68,7 @@ describe("AuthenticationMapper", () => {
         it("should map IdTokenInfo correctly", () => {
             const authorization = aAuthorization();
 
-            const result = AuthenticationMapper.toIdTokenInfo(authorization);
+            const result = AuthorizationMapper.toIdTokenInfo(authorization);
 
             expect(result).toHaveProperty("status");
             expect(result).toHaveProperty("cacheExpiryDateTime");
@@ -87,7 +87,7 @@ describe("AuthenticationMapper", () => {
                 return auth;
             });
 
-            const result = AuthenticationMapper.toIdTokenInfo(authorization);
+            const result = AuthorizationMapper.toIdTokenInfo(authorization);
 
             expect(result.groupIdToken).toBeUndefined();
         });
@@ -110,14 +110,14 @@ describe("AuthenticationMapper", () => {
 
             statuses.forEach(({ input, output }) => {
                 it(`should return ${output} for status ${input}`, () => {
-                    const result = AuthenticationMapper.toAuthorizationStatusEnumType(input);
+                    const result = AuthorizationMapper.toAuthorizationStatusEnumType(input);
                     expect(result).toBe(output);
                 });
             });
 
             it("should throw an error for unknown statuses", () => {
                 expect(() =>
-                    AuthenticationMapper.toAuthorizationStatusEnumType("InvalidStatus")
+                    AuthorizationMapper.toAuthorizationStatusEnumType("InvalidStatus")
                 ).toThrow("Unknown authorization status");
             });
         });
@@ -136,14 +136,14 @@ describe("AuthenticationMapper", () => {
 
             tokenTypes.forEach(({ input, output }) => {
                 it(`should return ${output} for type ${input}`, () => {
-                    const result = AuthenticationMapper.toIdTokenEnumType(input);
+                    const result = AuthorizationMapper.toIdTokenEnumType(input);
                     expect(result).toBe(output);
                 });
             });
 
             it("should throw an error for unknown types", () => {
                 expect(() =>
-                    AuthenticationMapper.toIdTokenEnumType("InvalidType")
+                    AuthorizationMapper.toIdTokenEnumType("InvalidType")
                 ).toThrow("Unknown idToken type");
             });
         });
@@ -158,14 +158,14 @@ describe("AuthenticationMapper", () => {
 
             formats.forEach(({ input, output }) => {
                 it(`should return ${output} for format ${input}`, () => {
-                    const result = AuthenticationMapper.toMessageFormatEnum(input);
+                    const result = AuthorizationMapper.toMessageFormatEnum(input);
                     expect(result).toBe(output);
                 });
             });
 
             it("should throw an error for unknown message formats", () => {
                 expect(() =>
-                    AuthenticationMapper.toMessageFormatEnum("UnknownFormat")
+                    AuthorizationMapper.toMessageFormatEnum("UnknownFormat")
                 ).toThrow("Unknown message format");
             });
         });
@@ -180,7 +180,7 @@ describe("AuthenticationMapper", () => {
                 content: "Hello World",
             };
 
-            const result = AuthenticationMapper.toMessageContentType(messageContent);
+            const result = AuthorizationMapper.toMessageContentType(messageContent);
 
             expect(result).toEqual({
                 customData: { key: "value" },
@@ -195,7 +195,7 @@ describe("AuthenticationMapper", () => {
                 format: "HTML",
             };
 
-            const result = AuthenticationMapper.toMessageContentType(messageContent);
+            const result = AuthorizationMapper.toMessageContentType(messageContent);
 
             expect(result).toEqual({
                 customData: undefined,
@@ -214,7 +214,7 @@ describe("AuthenticationMapper", () => {
             };
 
             expect(() =>
-                AuthenticationMapper.toMessageContentType(messageContent)
+                AuthorizationMapper.toMessageContentType(messageContent)
             ).toThrow("Unknown message format");
         });
     });

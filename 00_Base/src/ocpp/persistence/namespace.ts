@@ -8,7 +8,6 @@
  */
 
 export enum Namespace {
-  AdditionalInfoType = 'AdditionalInfo',
   AuthorizationData = 'Authorization',
   BootConfig = 'Boot',
   ChargingStation = 'ChargingStation',
@@ -19,6 +18,7 @@ export enum Namespace {
 }
 
 export enum OCPP2_0_1_Namespace {
+  AdditionalInfoType = 'AdditionalInfoType',
   AuthorizationRestrictions = 'AuthorizationRestrictions',
   Certificate = 'Certificate',
   InstalledCertificate = 'InstalledCertificate',
