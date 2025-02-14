@@ -68,7 +68,7 @@ export class BootNotificationService {
       }
     }
 
-    return OCPP2_0_1_Mapper.BootMapper.toRegistrationStatusEnumType(bootStatus);
+    return bootStatus;
   }
 
   async createBootNotificationResponse(
