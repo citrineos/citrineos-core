@@ -121,8 +121,6 @@ export class TransactionsModuleApi
     );
   }
 
-  // TODO: Determine how to implement readAllTransactionsByStationIdAndChargingStates as a GET...
-  // TODO: Determine how to implement existsActiveTransactionByIdToken as a GET...
 
   @AsDataEndpoint(
     OCPP2_0_1_Namespace.Tariff,

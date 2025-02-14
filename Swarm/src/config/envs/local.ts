@@ -4,10 +4,9 @@
 
 import {
   defineConfig,
-  OCPP1_6,
-  OCPP2_0_1,
   type SystemConfig,
 } from '@citrineos/base';
+import {RegistrationStatusEnumType} from "@citrineos/base/dist/ocpp/model/2.0.1";
 
 export function createLocalConfig(): SystemConfig {
   return defineConfig({
@@ -25,15 +24,10 @@ export function createLocalConfig(): SystemConfig {
       configuration: {
         heartbeatInterval: 60,
         bootRetryInterval: 15,
-        ocpp2_0_1: {
-          unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
-          getBaseReportOnPending: true,
-          bootWithRejectedVariables: true,
-          autoAccept: true,
-        },
-        ocpp1_6: {
-          unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Accepted,
-        },
+        unknownChargerStatus: RegistrationStatusEnumType.Accepted,
+        getBaseReportOnPending: true,
+        bootWithRejectedVariables: true,
+        autoAccept: true,
         endpointPrefix: '/configuration',
         host: 'localhost',
         port: 8080,

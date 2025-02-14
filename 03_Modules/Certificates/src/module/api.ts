@@ -405,11 +405,6 @@ export class CertificatesModuleApi
     return responseBody;
   }
 
-  @AsDataEndpoint(OCPP2_0_1_Namespace.FileURL, HttpMethod.Get, undefined)
-  async getFileURL(): Promise<string> {
-    return this._fileAccess.getFileURL();
-  }
-
   @AsDataEndpoint(
     OCPP2_0_1_Namespace.RootCertificate,
     HttpMethod.Put,

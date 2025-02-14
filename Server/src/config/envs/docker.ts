@@ -152,15 +152,6 @@ export function createDockerConfig() {
               '../../assets/certificates/rootCertificate.pem',
             ),
           },
-          {
-            id: '4',
-            securityProfile: 0,
-            allowUnknownChargingStations: true,
-            pingInterval: 60,
-            host: '0.0.0.0',
-            port: 8092,
-            protocol: 'ocpp1.6',
-          },
         ],
       },
       certificateAuthority: {
