@@ -132,7 +132,6 @@ export class DefaultSequelizeInstance {
         ChargingStationNetworkProfile,
         ChargingStationSecurityInfo,
         ChargingStationSequence,
-        ChangeConfiguration,
         Component,
         ComponentVariable,
         CompositeSchedule,
