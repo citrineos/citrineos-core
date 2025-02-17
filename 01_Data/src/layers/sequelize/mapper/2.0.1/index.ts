@@ -3,4 +3,6 @@
 // SPDX-License-Identifier: Apache 2.0
 
 export { BootMapper } from './BootMapper';
+export {AuthorizationMapper} from './AuthorizationMapper';
+
 export { MeterValueMapper } from './MeterValueMapper';
