@@ -3,6 +3,9 @@ name: Publish Swagger
 on:
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
