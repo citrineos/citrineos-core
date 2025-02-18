@@ -42,11 +42,11 @@ export class Transaction extends Model {
   declare isActive: boolean;
 
   @HasMany(() => TransactionEvent, { as: Transaction.TRANSACTION_EVENTS_ALIAS, foreignKey: 'transactionDatabaseId' })
-  declare transactionEvents?: object[];
+  declare transactionEvents?: TransactionEvent[];
 
   // required only for filtering, should not be used to pull transaction events
   @HasMany(() => TransactionEvent, { as: Transaction.TRANSACTION_EVENTS_FILTER_ALIAS, foreignKey: 'transactionDatabaseId' })
-  declare transactionEventsFilter?: object[];
+  declare transactionEventsFilter?: TransactionEvent[];
 
   @HasMany(() => MeterValue)
   declare meterValues?: MeterValue[];
@@ -79,7 +79,7 @@ export class Transaction extends Model {
     stationId: string,
     transactionId: string,
     isActive: boolean,
-    transactionEvents: object[],
+    transactionEvents: TransactionEvent[],
     meterValues: MeterValue[],
     chargingState?: string,
     timeSpentCharging?: number,

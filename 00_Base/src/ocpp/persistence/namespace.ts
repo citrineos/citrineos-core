@@ -13,10 +13,10 @@ export enum Namespace {
   ChargingStation = 'ChargingStation',
   IdTokenType = 'IdToken',
   IdTokenInfoType = 'IdTokenInfo',
-  ReserveNowRequest = 'Reservation',
   MeterValue = 'MeterValue',
+  ReserveNowRequest = 'Reservation',
   StatusNotificationRequest = 'StatusNotification',
-  TransactionType = 'Transaction'
+  TransactionType = 'Transaction',
 }
 
 export enum OCPP2_0_1_Namespace {
