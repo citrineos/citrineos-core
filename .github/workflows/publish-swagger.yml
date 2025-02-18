@@ -57,6 +57,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "Pull Requests: ${{ github.token_permissions.pull-requests }}"
+
           PR_EXISTS=$(gh pr list --repo citrineos/citrineos.github.io --head swagger-updates --state open --json number --jq '.[0].number' || echo "")
 
           if [ -z "$PR_EXISTS" ]; then
