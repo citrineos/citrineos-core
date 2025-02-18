@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   build:
+    permissions: write-all
     strategy:
       matrix:
         os: [ubuntu-latest]
