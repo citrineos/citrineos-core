@@ -18,15 +18,15 @@ export enum Namespace {
   IdTokenInfoType = 'IdTokenInfo',
   ChargingProfile = 'ChargingProfile',
   ChargingSchedule = 'ChargingSchedule',
-  ChargingNeeds = 'ChargingNeeds',
   CompositeSchedule = 'CompositeSchedule',
-  SalesTariff = 'SalesTariff',
+
 }
 
 export enum OCPP2_0_1_Namespace {
   AdditionalInfoType = 'AdditionalInfoType',
   AuthorizationRestrictions = 'AuthorizationRestrictions',
   Certificate = 'Certificate',
+  ChargingNeeds = 'ChargingNeeds',
   InstalledCertificate = 'InstalledCertificate',
   CertificateChain = 'CertificateChain',
   ChargingStation = 'ChargingStation',
@@ -42,6 +42,7 @@ export enum OCPP2_0_1_Namespace {
   MessageInfoType = 'MessageInfo',
   PasswordType = 'Password',
   RootCertificate = 'RootCertificate',
+  SalesTariff = 'SalesTariff',
   SecurityEventNotificationRequest = 'SecurityEvent',
   SendLocalListRequest = 'SendLocalList',
   ServerNetworkProfile = 'ServerNetworkProfile',
