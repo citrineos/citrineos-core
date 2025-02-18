@@ -69,6 +69,7 @@ export class EVDriverModule extends AbstractModule {
     OCPP2_0_1_CallAction.SendLocalList,
     OCPP2_0_1_CallAction.UnlockConnector,
     OCPP1_6_CallAction.RemoteStopTransaction,
+    OCPP1_6_CallAction.RemoteStartTransaction
   ];
 
   protected _authorizeRepository: IAuthorizationRepository;
@@ -769,6 +770,14 @@ export class EVDriverModule extends AbstractModule {
       message,
       props,
     );
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.RemoteStartTransaction)
+  protected async _handleRemoteStartTransaction(
+      message: IMessage<OCPP1_6.RemoteStartTransactionResponse>,
+      props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('RemoteStartTransactionResponse received:', message, props);
   }
 
   private async _findReservationByCorrelationId(

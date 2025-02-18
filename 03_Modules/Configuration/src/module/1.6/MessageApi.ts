@@ -200,6 +200,26 @@ export class ConfigurationOcpp16Api
     return confirmations.flat();
   }
 
+  @AsMessageEndpoint(OCPP1_6_CallAction.Reset, OCPP1_6.ResetRequestSchema)
+  reset(
+      identifier: string[],
+      tenantId: string,
+      request: OCPP1_6.ResetRequest,
+      callbackUrl?: string,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+        this._module.sendCall(
+            id,
+            tenantId,
+            OCPPVersion.OCPP1_6,
+            OCPP1_6_CallAction.Reset,
+            request,
+            callbackUrl,
+        ),
+    );
+    return Promise.all(results);
+  }
+
   /**
    * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
    *

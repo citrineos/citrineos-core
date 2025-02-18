@@ -37,6 +37,30 @@ export class EVDriverOcpp16Api
   }
 
   @AsMessageEndpoint(
+    OCPP1_6_CallAction.RemoteStartTransaction,
+    OCPP1_6.RemoteStartTransactionRequestSchema,
+  )
+  async remoteStartTransaction(
+    identifier: string[],
+    tenantId: string,
+    request: OCPP1_6.RemoteStartTransactionRequest,
+    callbackUrl?: string,
+  ): Promise<IMessageConfirmation[]> {
+    const results = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.RemoteStartTransaction,
+        request,
+        callbackUrl,
+      ),
+    );
+    return Promise.all(results);
+  }
+
+
+  @AsMessageEndpoint(
     OCPP1_6_CallAction.RemoteStopTransaction,
     OCPP1_6.RemoteStopTransactionRequestSchema,
   )
