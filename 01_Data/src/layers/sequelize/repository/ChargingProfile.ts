@@ -69,6 +69,7 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
       await this.updateByKey(
         {
           ...chargingProfile,
+          chargingSchedule: chargingProfile.chargingSchedule.map((s) => ({ ...s })) as [ChargingSchedule]|[ChargingSchedule,ChargingSchedule]|[ChargingSchedule,ChargingSchedule,ChargingSchedule],
           stationId: stationId,
           transactionDatabaseId: transactionDBId,
           evseId: evseId,
