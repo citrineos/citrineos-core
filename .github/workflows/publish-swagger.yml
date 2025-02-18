@@ -43,15 +43,17 @@ jobs:
 #          git add swagger.json
 #          git commit -m "Update Swagger JSON from PR"
 #          git push origin swagger-updates --verbose
-      - name: Push Swagger JSON to citrineos.github.io
+#      - name: Push Swagger JSON to citrineos.github.io
+
+      - name: Download Swagger JSON
         uses: actions/checkout@v4
         with:
-          repository: citrineos/citrineos.github.io.git
+          repository: citrineos/citrineos.github.io
           path: citrineos.github.io
-        run: |
-          ls
+      - run: |
           pwd
-          cp ../swagger.json .
+          ls
+          ls ..
 
       - name: Clean up
         run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml down
