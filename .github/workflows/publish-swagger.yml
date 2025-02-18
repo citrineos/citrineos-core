@@ -49,7 +49,7 @@ jobs:
           git config user.email "actions@github.com"
           git add swagger.json
           git commit -m "Update Swagger JSON from PR"
-          git push origin swagger-updates --verbose
+          git push -f origin swagger-updates --verbose
 
       - name: Create Pull Request
         env:
