@@ -32,17 +32,26 @@ jobs:
           curl --retry 3 --retry-delay 3 --retry-all-errors -o swagger.json http://localhost:8080/docs/json 
           cat swagger.json
 
+#      - name: Push Swagger JSON to citrineos.github.io
+#        run: |
+#          git clone https://github.com/citrineos/citrineos.github.io.git
+#          cd citrineos.github.io
+#          git checkout -b swagger-updates || git checkout swagger-updates
+#          cp ../swagger.json .
+#          git config user.name "GitHub Actions"
+#          git config user.email "actions@github.com"
+#          git add swagger.json
+#          git commit -m "Update Swagger JSON from PR"
+#          git push origin swagger-updates --verbose
       - name: Push Swagger JSON to citrineos.github.io
+        uses: actions/checkout@v4
+        with:
+          repository: citrineos/citrineos.github.io.git
+          path: citrineos.github.io
         run: |
-          git clone https://github.com/citrineos/citrineos.github.io.git
-          cd citrineos.github.io
-          git checkout -b swagger-updates || git checkout swagger-updates
+          ls
+          pwd
           cp ../swagger.json .
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add swagger.json
-          git commit -m "Update Swagger JSON from PR"
-          git push origin swagger-updates --verbose
 
       - name: Clean up
         run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml down
