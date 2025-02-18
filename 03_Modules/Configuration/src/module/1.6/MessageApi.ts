@@ -128,6 +128,78 @@ export class ConfigurationOcpp16Api
     return Promise.all(confirmations);
   }
 
+  @AsMessageEndpoint(
+    OCPP1_6_CallAction.GetConfiguration,
+    OCPP1_6.GetConfigurationRequestSchema,
+  )
+  async getConfiguration(
+    identifier: string[],
+    tenantId: string,
+    request: OCPP1_6.GetConfigurationRequest,
+    callbackUrl?: string,
+  ): Promise<IMessageConfirmation[]> {
+    this._logger.debug('GetConfiguration request received:', request);
+
+    const confirmations = await Promise.all(
+      identifier.map(async (stationId) => {
+        const chargingStation =
+          await this._module.locationRepository.readChargingStationByStationId(
+            stationId,
+          );
+        if (!chargingStation) {
+          return {
+            success: false,
+            payload: `Charging station ${stationId} not found`,
+          };
+        }
+
+        const maxKeysConfig =
+          await this._module.changeConfigurationRepository.readOnlyOneByQuery({
+            where: {
+              stationId: stationId,
+              key: 'GetConfigurationMaxKeys',
+            },
+          });
+        const maxKeys = maxKeysConfig?.value
+          ? parseInt(maxKeysConfig.value, 10)
+          : Number.MAX_SAFE_INTEGER;
+        const keys = request.key || [];
+
+        const sendBatches = async (batches: string[][]) => {
+          return Promise.all(
+            batches.map(async (batch) => {
+              const correlationId = uuidv4();
+              await this._module.callMessageRepository.create(
+                CallMessage.build({ correlationId }),
+              );
+              return await this._module.sendCall(
+                stationId,
+                tenantId,
+                OCPPVersion.OCPP1_6,
+                OCPP1_6_CallAction.GetConfiguration,
+                { key: batch },
+                callbackUrl,
+                correlationId,
+              );
+            }),
+          );
+        };
+
+        if (keys.length === 0 || keys.length <= maxKeys) {
+          return sendBatches([keys]);
+        } else {
+          const batches = [];
+          for (let i = 0; i < keys.length; i += maxKeys) {
+            batches.push(keys.slice(i, i + maxKeys));
+          }
+          return sendBatches(batches);
+        }
+      }),
+    );
+
+    return confirmations.flat();
+  }
+
   /**
    * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
    *
