@@ -50,6 +50,23 @@ jobs:
           git add swagger.json
           git commit -m "Update Swagger JSON from PR"
           git push origin swagger-updates --verbose
+
+      - name: Create Pull Request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_EXISTS=$(gh pr list --repo citrineos/citrineos.github.io --head swagger-updates --state open --json number --jq '.[0].number' || echo "")
+
+          if [ -z "$PR_EXISTS" ]; then
+            echo "Creating a new pull request..."
+            gh pr create --repo citrineos/citrineos.github.io \
+              --base main \
+              --head swagger-updates \
+              --title "Automated Swagger Update" \
+              --body "This PR updates the Swagger JSON automatically from GitHub Actions."
+          else
+            echo "PR already exists (#$PR_EXISTS), no need to create a new one."
+          fi
 #      - name: Push Swagger JSON to citrineos.github.io
 
 #      - name: Download Swagger JSON
