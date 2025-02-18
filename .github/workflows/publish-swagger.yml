@@ -34,7 +34,7 @@ jobs:
 
       - name: Push Swagger JSON to citrineos.github.io
         run: |
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/citrineos/citrineos.github.io.git
+          git clone https://github.com/citrineos/citrineos.github.io.git
           cd citrineos.github.io
           git checkout -b swagger-updates || git checkout swagger-updates
           cp ../swagger.json .
@@ -43,8 +43,6 @@ jobs:
           git add swagger.json
           git commit -m "Update Swagger JSON from PR"
           git push origin swagger-updates --verbose
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Clean up
         run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml down
