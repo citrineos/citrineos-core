@@ -9,7 +9,17 @@ import { AdditionalInfo } from './AdditionalInfo';
 import { IdTokenAdditionalInfo } from './IdTokenAdditionalInfo';
 import { Authorization } from './Authorization';
 
-@Table
+@Table({
+  indexes: [
+    {
+      unique: true,
+      fields: ['idToken'],
+      where: {
+        type: null,
+      },
+    },
+  ],
+})
 export class IdToken extends Model {
   static readonly MODEL_NAME: string = Namespace.IdTokenType;
 
