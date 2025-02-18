@@ -125,17 +125,13 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected _addMessageRoute(
     action: CallAction,
     method: (...args: any[]) => any,
-    bodySchema: any,
+    bodySchema: object,
     optionalQuerystrings?: Record<string, any>,
   ): void {
-    const messagePath = this._toMessagePath(action);
     this._logger.debug(
       `Adding message route for ${action}`,
-      messagePath,
+      this._toMessagePath(action),
     );
-
-    // bodySchema['$id'] = messagePath.replace(/\//g, '_');
-    // this._logger.debug('Generated a unique id for schema: ', bodySchema['$id']);
 
     /**
      * Executes the handler function for the given request.
@@ -333,6 +329,7 @@ export abstract class AbstractModuleApi<T extends IModule>
       _opts.schema['body'] = this.registerSchema(
         fastifyInstance,
         _opts.schema['body'],
+        this._ocppVersion ? `${this._ocppVersion}-` : ''
       );
     }
     if (_opts.schema['params']) {
@@ -360,13 +357,20 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected registerSchema = (
     fastifyInstance: FastifyInstance,
     schema: any,
+    schemaIdPrefix?: string,
   ): object | null => {
-    const id = schema['$id'];
+    let id = schema['$id'];
     if (!id) {
       this._logger.error('Could not register schema because no ID', schema);
     }
+
     try {
       const schemaCopy = this.removeUnknownKeys(schema);
+      if (id && schemaIdPrefix) {
+        id = schemaIdPrefix + id;
+        schemaCopy['$id'] = id;
+        this._logger.debug(`Update schema id: ${schemaCopy['$id']}`);
+      }
       if (
         schemaCopy.required &&
         Array.isArray(schemaCopy.required) &&
@@ -463,7 +467,6 @@ export abstract class AbstractModuleApi<T extends IModule>
    *
    * @param {CallAction} input - The {@link CallAction} to convert to a URL path.
    * @param {string} prefix - The module name.
-   * @param {OCPPVersion} ocppVersion - The OCPP version.
    * @returns {string} - String representation of URL path.
    */
   protected _toMessagePath(input: CallAction, prefix?: string): string {

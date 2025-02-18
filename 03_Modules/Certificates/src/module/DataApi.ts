@@ -6,7 +6,6 @@
 import {
   AbstractModuleApi,
   AsDataEndpoint,
-  CallAction,
   HttpMethod,
   IFileAccess,
   Namespace,
@@ -301,11 +300,6 @@ export class CertificatesDataApi
     }
 
     return responseBody;
-  }
-
-  @AsDataEndpoint(OCPP2_0_1_Namespace.FileURL, HttpMethod.Get, undefined)
-  async getFileURL(): Promise<string> {
-    return this._fileAccess.getFileURL();
   }
 
   @AsDataEndpoint(

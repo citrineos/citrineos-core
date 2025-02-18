@@ -15,6 +15,7 @@ import {
   aTransactionEventRequest,
 } from '../providers/TransactionProvider';
 import { IAuthorizer } from '@citrineos/util';
+import {faker} from "@faker-js/faker";
 
 describe('TransactionService', () => {
   let transactionService: TransactionService;
@@ -68,7 +69,10 @@ describe('TransactionService', () => {
     ]);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
-      item.idToken = authorization.idToken;
+      item.idToken = {
+        idToken: faker.string.uuid(),
+        type: OCPP2_0_1.IdTokenEnumType.Central,
+      }
     });
     const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
@@ -90,7 +94,10 @@ describe('TransactionService', () => {
     ]);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
-      item.idToken = authorization.idToken;
+      item.idToken = {
+        idToken: faker.string.uuid(),
+        type: OCPP2_0_1.IdTokenEnumType.Central,
+      };
       item.eventType = OCPP2_0_1.TransactionEventEnumType.Started;
     });
     const messageContext = aMessageContext();

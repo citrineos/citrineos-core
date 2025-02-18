@@ -18,7 +18,7 @@ import {
   IModuleApi,
   SystemConfig,
 } from '@citrineos/base';
-import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
+import { MonitoringModule, MonitoringOcpp201Api } from '@citrineos/monitoring';
 import {
   Authenticator,
   DirectusUtil,
@@ -36,11 +36,11 @@ import { ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
 import {
   ConfigurationModule,
-  ConfigurationModuleApi,
+  ConfigurationOcpp201Api,
 } from '@citrineos/configuration';
 import {
   TransactionsModule,
-  TransactionsModuleApi,
+  TransactionsOcpp201Api,
 } from '@citrineos/transactions';
 import {
   CertificatesModule,
@@ -54,7 +54,7 @@ import {
   SmartChargingOcpp201Api,
 } from '@citrineos/smartcharging';
 import { sequelize } from '@citrineos/data';
-import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
+import { TenantModule, TenantDataApi } from '@citrineos/tenant';
 import { UnknownStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/UnknownStationFilter';
 import { ConnectedStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/ConnectedStationFilter';
 import { BasicAuthenticationFilter } from '@citrineos/util/dist/networkconnection/authenticator/BasicAuthenticationFilter';
@@ -368,7 +368,7 @@ class ModuleService {
             this._createHandler(),
             this._logger,
           );
-          this._api = new ConfigurationModuleApi(
+          this._api = new ConfigurationOcpp201Api(
             this._module as ConfigurationModule,
             this._server,
             this._logger,
@@ -408,7 +408,7 @@ class ModuleService {
             this._createHandler(),
             this._logger,
           );
-          this._api = new MonitoringModuleApi(
+          this._api = new MonitoringOcpp201Api(
             this._module as MonitoringModule,
             this._server,
             this._logger,
@@ -468,7 +468,7 @@ class ModuleService {
             this._createHandler(),
             this._logger,
           );
-          this._api = new TenantModuleApi(
+          this._api = new TenantDataApi(
             this._module as TenantModule,
             this._server,
             this._logger,
@@ -488,7 +488,7 @@ class ModuleService {
             this._createHandler(),
             this._logger,
           );
-          this._api = new TransactionsModuleApi(
+          this._api = new TransactionsOcpp201Api(
             this._module as TransactionsModule,
             this._server,
             this._logger,

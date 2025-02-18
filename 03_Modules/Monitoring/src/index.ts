@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export { MonitoringOcpp201Api } from './module/Ocpp201Api';
+export { MonitoringOcpp201Api } from './module/2.0.1/MessageApi';
 export { MonitoringDataApi } from './module/DataApi';
 export { IMonitoringModuleApi } from './module/interface';
 export { MonitoringModule } from './module/module';

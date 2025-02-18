@@ -181,7 +181,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     const action = message[2];
     const payload = message[3];
 
-    let schema;
+    let schema: any;
     switch (protocol) {
       case OCPPVersion.OCPP1_6:
         schema = OCPP1_6_CALL_SCHEMA_MAP.get(action);
@@ -195,8 +195,8 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     }
 
     if (schema) {
-      // schema['$id'] = protocol + '_' + schema['$id'];
-      // this._logger.debug('Generated unique schema id', schema['$id']);
+      schema['$id'] = `${protocol}-${schema['$id']}`;
+      this._logger.debug(`Updated call schema id: ${schema['$id']}`);
       const validate = this._ajv.compile(schema);
       const result = validate(payload);
       if (!result) {
@@ -217,6 +217,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
    * @param {string} identifier - The identifier of the EVSE.
    * @param {CallAction} action - The original CallAction.
    * @param {CallResult} message - The CallResult object to validate.
+   * @param {string} protocol - The protocol of the Websocket.
    * @return {boolean} - Returns true if the CallResult object is valid, false otherwise.
    */
   protected _validateCallResult(
@@ -227,7 +228,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
     const payload = message[2];
 
-    let schema;
+    let schema: any;
     switch (protocol) {
       case OCPPVersion.OCPP1_6:
         schema = OCPP1_6_CALL_RESULT_SCHEMA_MAP.get(action);
@@ -241,8 +242,8 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     }
 
     if (schema) {
-      // schema['$id'] = protocol + '_' + schema['$id'];
-      // this._logger.debug('Generated unique schema id', schema['$id']);
+      schema['$id'] = `${protocol}-${schema['$id']}`;
+      this._logger.debug(`Updated call result schema id: ${schema['$id']}`);
       const validate = this._ajv.compile(schema);
       const result = validate(payload);
       if (!result) {

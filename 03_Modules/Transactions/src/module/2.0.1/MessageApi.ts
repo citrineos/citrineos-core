@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { ILogObj, Logger } from 'tslog';
-import { ITransactionsModuleApi } from './interface';
-import { TransactionsModule } from './module';
+import { ITransactionsModuleApi } from '../interface';
+import { TransactionsModule } from '../module';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,

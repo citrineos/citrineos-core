@@ -35,6 +35,7 @@ import {
   SequelizeChargingStationSequenceRepository,
   Tariff,
   VariableAttribute,
+  OCPP2_0_1_Mapper
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
@@ -138,6 +139,9 @@ export class EVDriverModule extends AbstractModule {
    *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
+   *
+   * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which generates
+   * unique identifiers.
    */
   constructor(
     config: SystemConfig,
@@ -242,7 +246,7 @@ export class EVDriverModule extends AbstractModule {
   }
 
   /**
-   * Handle requests
+   * Handle OCPP 2.0.1 requests
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Authorize)
@@ -305,35 +309,7 @@ export class EVDriverModule extends AbstractModule {
       .then(async (authorization) => {
         if (authorization) {
           if (authorization.idTokenInfo) {
-            // Extract DTO fields from sequelize Model<any, any> objects
-            const idTokenInfo: OCPP2_0_1.IdTokenInfoType = {
-              status: authorization.idTokenInfo.status,
-              cacheExpiryDateTime:
-                authorization.idTokenInfo.cacheExpiryDateTime,
-              chargingPriority: authorization.idTokenInfo.chargingPriority,
-              language1: authorization.idTokenInfo.language1,
-              evseId: authorization.idTokenInfo.evseId,
-              groupIdToken: authorization.idTokenInfo.groupIdToken
-                ? {
-                  additionalInfo:
-                    authorization.idTokenInfo.groupIdToken.additionalInfo &&
-                      authorization.idTokenInfo.groupIdToken.additionalInfo
-                        .length > 0
-                      ? (authorization.idTokenInfo.groupIdToken.additionalInfo.map(
-                        (additionalInfo) => ({
-                          additionalIdToken:
-                            additionalInfo.additionalIdToken,
-                          type: additionalInfo.type,
-                        }),
-                      ) as [OCPP2_0_1.AdditionalInfoType, ...OCPP2_0_1.AdditionalInfoType[]])
-                      : undefined,
-                  idToken: authorization.idTokenInfo.groupIdToken.idToken,
-                  type: authorization.idTokenInfo.groupIdToken.type,
-                }
-                : undefined,
-              language2: authorization.idTokenInfo.language2,
-              personalMessage: authorization.idTokenInfo.personalMessage,
-            };
+            const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
 
             if (idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
               if (
@@ -565,7 +541,7 @@ export class EVDriverModule extends AbstractModule {
   }
 
   /**
-   * Handle responses
+   * Handle OCPP 2.0.1 responses
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.RequestStartTransaction)
@@ -777,6 +753,22 @@ export class EVDriverModule extends AbstractModule {
     await this._localAuthListRepository.validateOrReplaceLocalListVersionForStation(
       message.payload.versionNumber,
       message.context.stationId,
+    );
+  }
+
+  /**
+   * Handle OCPP 1.6 responses
+   */
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.RemoteStopTransaction)
+  protected async _handleOcpp16RemoteStopTransaction(
+    message: IMessage<OCPP1_6.RemoteStopTransactionResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug(
+      'RemoteStopTransactionResponse received:',
+      message,
+      props,
     );
   }
 

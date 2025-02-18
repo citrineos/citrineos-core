@@ -4,8 +4,8 @@
 
 import { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { IConfigurationModuleApi } from './interface';
-import { ConfigurationModule } from './module';
+import { IConfigurationModuleApi } from '../interface';
+import { ConfigurationModule } from '../module';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
@@ -13,6 +13,7 @@ import {
   IMessageConfirmation,
   OCPP1_6,
   OCPP1_6_CallAction,
+  OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
 
@@ -43,27 +44,30 @@ export class ConfigurationOcpp16Api
     OCPP1_6.TriggerMessageRequestSchema,
   )
   async triggerMessage(
-    identifier: string,
+    identifier: string[],
     tenantId: string,
     request: OCPP1_6.TriggerMessageRequest,
     callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
+  ): Promise<IMessageConfirmation[]> {
     const connectorId = request.connectorId;
     if (connectorId && connectorId <= 0) {
       const errorMsg: string =
         `connectorId should be either omitted or greater than 0.`;
       this._logger.error(errorMsg);
-      return { success: false, payload: errorMsg };
+      return [{ success: false, payload: errorMsg }];
     }
 
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP1_6,
-      OCPP1_6_CallAction.TriggerMessage,
-      request,
-      callbackUrl,
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP2_0_1_CallAction.TriggerMessage,
+        request,
+        callbackUrl,
+      ),
     );
+    return Promise.all(results);
   }
 
   /**

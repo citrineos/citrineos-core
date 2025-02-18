@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 export { ConfigurationDataApi } from './module/DataApi';
-export { ConfigurationOcpp201Api } from './module/Ocpp201Api';
-export { ConfigurationOcpp16Api } from './module/Ocpp16Api';
+export { ConfigurationOcpp201Api } from './module/2.0.1/MessageApi';
+export { ConfigurationOcpp16Api } from './module/1.6/MessageApi';
 export { IConfigurationModuleApi } from './module/interface';
 export { ConfigurationModule } from './module/module';

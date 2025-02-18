@@ -5,7 +5,6 @@
 
 import {
   AbstractModuleApi,
-  CallAction,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
