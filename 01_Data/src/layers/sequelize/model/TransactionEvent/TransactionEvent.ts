@@ -56,7 +56,7 @@ export class TransactionEvent extends Model {
   declare transaction?: Transaction;
 
   @Column(DataType.JSON)
-  declare transactionInfo: Transaction;
+  declare transactionInfo: OCPP2_0_1.TransactionType;
 
   @ForeignKey(() => Evse)
   declare evseId?: number | null;
