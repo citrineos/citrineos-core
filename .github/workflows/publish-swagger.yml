@@ -51,6 +51,14 @@ jobs:
           repository: citrineos/citrineos.github.io
           path: citrineos.github.io
       - run: |
+          cd citrineos.github.io
+          git checkout -b swagger-updates || git checkout swagger-updates
+          cp ../swagger.json .
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add swagger.json
+          git commit -m "Update Swagger JSON from PR"
+          git push origin swagger-updates --verbose
           pwd
           ls
           ls ..
