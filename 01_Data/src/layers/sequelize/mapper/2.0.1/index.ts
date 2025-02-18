@@ -4,3 +4,5 @@
 
 export { MeterValueMapper } from './MeterValueMapper';
 export { TransactionMapper } from './TransactionMapper';
+export { BootMapper } from './BootMapper';
+export {AuthorizationMapper} from './AuthorizationMapper';

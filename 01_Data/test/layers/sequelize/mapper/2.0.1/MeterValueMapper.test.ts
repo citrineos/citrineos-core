@@ -11,6 +11,7 @@ describe('MeterValueMapper', () => {
       expect(actualMapper).toBeTruthy();
       expect(actualMapper.timestamp).toBe(givenMeterValue.timestamp);
       expect(actualMapper.sampledValue).toEqual(givenMeterValue.sampledValue);
+      expect(actualMapper.customData).toEqual(givenMeterValue.customData);
     });
   });
 });

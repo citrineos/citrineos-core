@@ -31,5 +31,5 @@ export class ChangeConfiguration extends Model {
   declare readonly?: boolean | null;
 
   @Column(DataType.ENUM(...Object.values(OCPP1_6.ChangeConfigurationResponseStatus)))
-  declare status?: OCPP1_6.ChangeConfigurationResponseStatus;
+  declare status?: OCPP1_6.ChangeConfigurationResponseStatus | null;
 }

@@ -8,14 +8,19 @@
  */
 
 export enum Namespace {
+  AuthorizationData = 'Authorization',
   BootConfig = 'Boot',
+  ChargingStation = 'ChargingStation',
+  ReserveNowRequest = 'Reservation',
   MeterValue = 'MeterValue',
-  TransactionType = 'Transaction'
+  TransactionType = 'Transaction',
+  StatusNotificationRequest = 'StatusNotification',
+  IdTokenType = 'IdToken',
+  IdTokenInfoType = 'IdTokenInfo',
 }
 
 export enum OCPP2_0_1_Namespace {
-  AdditionalInfoType = 'AdditionalInfo',
-  AuthorizationData = 'Authorization',
+  AdditionalInfoType = 'AdditionalInfoType',
   AuthorizationRestrictions = 'AuthorizationRestrictions',
   Certificate = 'Certificate',
   InstalledCertificate = 'InstalledCertificate',
@@ -23,28 +28,23 @@ export enum OCPP2_0_1_Namespace {
   ChargingNeeds = 'ChargingNeeds',
   ChargingProfile = 'ChargingProfile',
   ChargingSchedule = 'ChargingSchedule',
-  ChargingStation = 'ChargingStation',
   ChargingStationSecurityInfo = 'ChargingStationSecurityInfo',
   ComponentType = 'Component',
   CompositeSchedule = 'CompositeSchedule',
   EVSEType = 'Evse',
   EventDataType = 'EventData',
   FileURL = 'FileURL',
-  IdTokenInfoType = 'IdTokenInfo',
-  IdTokenType = 'IdToken',
   LatestStatusNotification = 'LatestStatusNotification',
   LocalListAuthorization = 'LocalListAuthorization',
   LocalListVersion = 'LocalListVersion',
   Location = 'Location',
   MessageInfoType = 'MessageInfo',
   PasswordType = 'Password',
-  ReserveNowRequest = 'Reservation',
   RootCertificate = 'RootCertificate',
   SalesTariff = 'SalesTariff',
   SecurityEventNotificationRequest = 'SecurityEvent',
   SendLocalListRequest = 'SendLocalList',
   ServerNetworkProfile = 'ServerNetworkProfile',
-  StatusNotificationRequest = 'StatusNotification',
   Subscription = 'Subscription',
   SystemConfig = 'SystemConfig',
   TlsCertificates = 'TlsCertificates',
@@ -60,4 +60,5 @@ export enum OCPP2_0_1_Namespace {
 
 export enum OCPP1_6_Namespace {
   ChangeConfiguration = 'ChangeConfiguration',
+  Connector = 'Connector',
 }

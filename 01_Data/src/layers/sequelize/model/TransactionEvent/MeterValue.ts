@@ -31,5 +31,8 @@ export class MeterValue extends Model {
   })
   declare timestamp: string;
 
-  declare customData?: object | null;
+  @Column(DataType.INTEGER)
+  declare connectorId?: number;
+
+  declare customData?: any | null;
 }

@@ -46,9 +46,13 @@ function OcppTransformObject({
           if (method) {
             // Set tags based on path key if tags were not passed in
             if (!method.tags) {
+              // Get tag index
+              // e.g, '/ocpp/1.6/evdriver' -> 'evdriver'
+              // e.g, '/data/evdriver' -> 'evdriver'
+              const tagIndex = pathKey.includes('data') ? 2 : 3;
               method.tags = pathKey
                 .split('/')
-                .slice(2, -1)
+                .slice(tagIndex, -1)
                 .map((tag) => tag.charAt(0).toUpperCase() + tag.slice(1));
             }
           }
