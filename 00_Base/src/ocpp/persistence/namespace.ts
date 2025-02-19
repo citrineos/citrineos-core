@@ -6,39 +6,46 @@
 /**
  * Persisted DataTypes and their namespaces
  */
+
 export enum Namespace {
-  AdditionalInfoType = 'AdditionalInfo',
   AuthorizationData = 'Authorization',
-  AuthorizationRestrictions = 'AuthorizationRestrictions',
   BootConfig = 'Boot',
-  Certificate = 'Certificate',
-  InstalledCertificate = 'InstalledCertificate',
-  CertificateChain = 'CertificateChain',
-  ChargingNeeds = 'ChargingNeeds',
+  ChargingStation = 'ChargingStation',
+  ReserveNowRequest = 'Reservation',
+  MeterValue = 'MeterValue',
+  StatusNotificationRequest = 'StatusNotification',
+  IdTokenType = 'IdToken',
+  IdTokenInfoType = 'IdTokenInfo',
   ChargingProfile = 'ChargingProfile',
   ChargingSchedule = 'ChargingSchedule',
+  CompositeSchedule = 'CompositeSchedule',
+
+}
+
+export enum OCPP2_0_1_Namespace {
+  AdditionalInfoType = 'AdditionalInfoType',
+  AuthorizationRestrictions = 'AuthorizationRestrictions',
+  Certificate = 'Certificate',
+  ChargingNeeds = 'ChargingNeeds',
+  InstalledCertificate = 'InstalledCertificate',
+  CertificateChain = 'CertificateChain',
   ChargingStation = 'ChargingStation',
   ChargingStationSecurityInfo = 'ChargingStationSecurityInfo',
   ComponentType = 'Component',
-  CompositeSchedule = 'CompositeSchedule',
   EVSEType = 'Evse',
   EventDataType = 'EventData',
-  IdTokenInfoType = 'IdTokenInfo',
-  IdTokenType = 'IdToken',
+  FileURL = 'FileURL',
   LatestStatusNotification = 'LatestStatusNotification',
   LocalListAuthorization = 'LocalListAuthorization',
   LocalListVersion = 'LocalListVersion',
   Location = 'Location',
-  MeterValueType = 'MeterValue',
   MessageInfoType = 'MessageInfo',
   PasswordType = 'Password',
-  ReserveNowRequest = 'Reservation',
   RootCertificate = 'RootCertificate',
   SalesTariff = 'SalesTariff',
   SecurityEventNotificationRequest = 'SecurityEvent',
   SendLocalListRequest = 'SendLocalList',
   ServerNetworkProfile = 'ServerNetworkProfile',
-  StatusNotificationRequest = 'StatusNotification',
   Subscription = 'Subscription',
   SystemConfig = 'SystemConfig',
   TlsCertificates = 'TlsCertificates',
@@ -50,5 +57,10 @@ export enum Namespace {
   VariableMonitoringType = 'VariableMonitoring',
   VariableMonitoringStatus = 'VariableMonitoringStatus',
   VariableStatus = 'VariableStatus',
-  VariableType = 'Variable'
+  VariableType = 'Variable',
+}
+
+export enum OCPP1_6_Namespace {
+  ChangeConfiguration = 'ChangeConfiguration',
+  Connector = 'Connector',
 }

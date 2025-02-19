@@ -1,0 +1,10 @@
+table:
+  name: directus_notifications
+  schema: public
+object_relationships:
+  - name: directusUserBySender
+    using:
+      foreign_key_constraint_on: sender
+  - name: directus_user
+    using:
+      foreign_key_constraint_on: recipient

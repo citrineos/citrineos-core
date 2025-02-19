@@ -2,7 +2,8 @@ import { Boot, IBootRepository } from '@citrineos/data';
 import { BootNotificationService } from '../../src/module/BootNotificationService';
 import {
   ICache,
-  RegistrationStatusEnumType,
+  OCPP2_0_1,
+  OCPP1_6,
   SystemConfig,
 } from '@citrineos/base';
 import { aValidBootConfig } from '../providers/BootConfigProvider';
@@ -31,12 +32,17 @@ describe('BootService', () => {
 
     mockConfig = {
       bootRetryInterval: 0,
-      bootWithRejectedVariables: false,
       endpointPrefix: '',
       heartbeatInterval: 0,
-      unknownChargerStatus: RegistrationStatusEnumType.Rejected,
-      getBaseReportOnPending: false,
-      autoAccept: false,
+      ocpp2_0_1: {
+        unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+        getBaseReportOnPending: false,
+        bootWithRejectedVariables: false,
+        autoAccept: false,
+      },
+      ocpp1_6: {
+        unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Rejected,
+      },
     };
 
     bootService = new BootNotificationService(
@@ -53,7 +59,7 @@ describe('BootService', () => {
   describe('determineBootStatus', () => {
     const runDetermineBootStatusTest = (
       bootConfig: Boot | undefined,
-      expectedStatus: RegistrationStatusEnumType,
+      expectedStatus: OCPP2_0_1.RegistrationStatusEnumType,
     ) => {
       const result = bootService.determineBootStatus(bootConfig);
       expect(result).toBe(expectedStatus);
@@ -62,18 +68,18 @@ describe('BootService', () => {
     it('should return unknownChargerStatus if bootConfig is undefined', () => {
       runDetermineBootStatusTest(
         undefined,
-        RegistrationStatusEnumType.Rejected,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
       );
     });
 
     it.each([
       {
-        bootConfigStatus: RegistrationStatusEnumType.Accepted,
-        expectedStatus: RegistrationStatusEnumType.Accepted,
+        bootConfigStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+        expectedStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
       },
       {
-        bootConfigStatus: RegistrationStatusEnumType.Rejected,
-        expectedStatus: RegistrationStatusEnumType.Rejected,
+        bootConfigStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+        expectedStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
       },
     ])(
       'should return bootConfig status if not pending',
@@ -87,11 +93,11 @@ describe('BootService', () => {
 
     it('should return Pending status when bootConfig.status is pending and no actions are needed', () => {
       const bootConfig = aValidBootConfig(
-        (item: Boot) => (item.status = RegistrationStatusEnumType.Pending),
+        (item: Boot) => (item.status = OCPP2_0_1.RegistrationStatusEnumType.Pending),
       );
       runDetermineBootStatusTest(
         bootConfig,
-        RegistrationStatusEnumType.Pending,
+        OCPP2_0_1.RegistrationStatusEnumType.Pending,
       );
     });
 
@@ -100,11 +106,11 @@ describe('BootService', () => {
         (item: Boot) => (item.getBaseReportOnPending = false),
       );
 
-      jest.replaceProperty(mockConfig, 'autoAccept', true);
+      jest.replaceProperty(mockConfig.ocpp2_0_1!, 'autoAccept', true);
 
       runDetermineBootStatusTest(
         bootConfig,
-        RegistrationStatusEnumType.Accepted,
+        OCPP2_0_1.RegistrationStatusEnumType.Accepted,
       );
     });
 
@@ -114,7 +120,7 @@ describe('BootService', () => {
       );
       runDetermineBootStatusTest(
         bootConfig,
-        RegistrationStatusEnumType.Pending,
+        OCPP2_0_1.RegistrationStatusEnumType.Pending,
       );
     });
 
@@ -124,18 +130,18 @@ describe('BootService', () => {
       );
       runDetermineBootStatusTest(
         bootConfig,
-        RegistrationStatusEnumType.Pending,
+        OCPP2_0_1.RegistrationStatusEnumType.Pending,
       );
     });
 
     it('should return Accepted status when bootConfig.status is pending, no actions are needed, and autoAccept is true', () => {
       const bootConfig = aValidBootConfig();
 
-      jest.replaceProperty(mockConfig, 'autoAccept', true);
+      jest.replaceProperty(mockConfig.ocpp2_0_1!, 'autoAccept', true);
 
       runDetermineBootStatusTest(
         bootConfig,
-        RegistrationStatusEnumType.Accepted,
+        OCPP2_0_1.RegistrationStatusEnumType.Accepted,
       );
     });
   });
@@ -144,8 +150,8 @@ describe('BootService', () => {
     it('should whitelist charger actions because boot was accepted and charger actions were previously blacklisted', async () => {
       await bootService.cacheChargerActionsPermissions(
         MOCK_STATION_ID,
-        RegistrationStatusEnumType.Pending,
-        RegistrationStatusEnumType.Accepted,
+        OCPP2_0_1.RegistrationStatusEnumType.Pending,
+        OCPP2_0_1.RegistrationStatusEnumType.Accepted,
       );
 
       expect(mockCache.remove).toHaveBeenCalled();
@@ -156,7 +162,7 @@ describe('BootService', () => {
       await bootService.cacheChargerActionsPermissions(
         MOCK_STATION_ID,
         null,
-        RegistrationStatusEnumType.Rejected,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
       );
 
       expect(mockCache.remove).not.toHaveBeenCalled();
@@ -167,7 +173,7 @@ describe('BootService', () => {
       await bootService.cacheChargerActionsPermissions(
         MOCK_STATION_ID,
         null,
-        RegistrationStatusEnumType.Accepted,
+        OCPP2_0_1.RegistrationStatusEnumType.Accepted,
       );
 
       expect(mockCache.remove).not.toHaveBeenCalled();
@@ -177,8 +183,8 @@ describe('BootService', () => {
     it('should do nothing because the boot was not accepted and charger actions were already blacklisted', async () => {
       await bootService.cacheChargerActionsPermissions(
         MOCK_STATION_ID,
-        RegistrationStatusEnumType.Rejected,
-        RegistrationStatusEnumType.Rejected,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
       );
 
       expect(mockCache.remove).not.toHaveBeenCalled();
@@ -219,12 +225,12 @@ describe('BootService', () => {
       ).rejects.toThrow();
     });
 
-    it('should not throw because getBaseReport process completes', () => {
+    it('should not throw because getBaseReport process completes', async () => {
       mockCache.onChange
         .mockResolvedValueOnce('ongoing')
         .mockResolvedValueOnce('complete');
 
-      expect(
+      await expect(
         bootService.confirmGetBaseReportSuccess(
           MOCK_STATION_ID,
           MOCK_REQUEST_ID.toString(),

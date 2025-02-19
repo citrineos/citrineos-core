@@ -3,14 +3,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, WebsocketServerConfig } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPPVersionType, WebsocketServerConfig } from '@citrineos/base';
 import { BelongsToMany, Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 
 @Table
 export class ServerNetworkProfile extends Model implements WebsocketServerConfig {
-    static readonly MODEL_NAME: string = Namespace.ServerNetworkProfile;
+    static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ServerNetworkProfile;
 
     @PrimaryKey
     @Column(DataType.STRING)
@@ -26,7 +26,7 @@ export class ServerNetworkProfile extends Model implements WebsocketServerConfig
     declare pingInterval: number;
 
     @Column(DataType.STRING)
-    declare protocol: string;
+    declare protocol: OCPPVersionType;
 
     @Column(DataType.INTEGER)
     declare messageTimeout: number;

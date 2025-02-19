@@ -1,0 +1,14 @@
+table:
+  name: Reservations
+  schema: public
+object_relationships:
+  - name: Evse
+    using:
+      foreign_key_constraint_on: evseId
+  - name: OcpiReservation
+    using:
+      foreign_key_constraint_on:
+        column: coreReservationId
+        table:
+          name: OcpiReservations
+          schema: public

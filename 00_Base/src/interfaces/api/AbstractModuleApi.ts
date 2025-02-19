@@ -13,8 +13,15 @@ import {
   METADATA_DATA_ENDPOINTS,
   METADATA_MESSAGE_ENDPOINTS,
 } from '.';
-import { MessageConfirmationSchema, OcppRequest, SystemConfig } from '../..';
-import { Namespace } from '../../ocpp/persistence';
+import {
+  MessageConfirmationSchema,
+  Namespace,
+  OCPP1_6_Namespace,
+  OcppRequest,
+  OCPPVersion,
+  SystemConfig,
+} from '../..';
+import { OCPP2_0_1_Namespace } from '../../ocpp/persistence';
 import { CallAction } from '../../ocpp/rpc/message';
 import { IMessageConfirmation } from '../messages';
 import { IModule } from '../modules';
@@ -31,10 +38,12 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
+  private readonly _ocppVersion: OCPPVersion | null;
 
-  constructor(module: T, server: FastifyInstance, logger?: Logger<ILogObj>) {
+  constructor(module: T, server: FastifyInstance, ocppVersion: OCPPVersion | null, logger?: Logger<ILogObj>) {
     this._module = module;
     this._server = server;
+    this._ocppVersion = ocppVersion;
 
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
@@ -62,12 +71,12 @@ export abstract class AbstractModuleApi<T extends IModule>
         expose.optionalQuerystrings,
       );
     });
-    (
-      Reflect.getMetadata(
-        METADATA_DATA_ENDPOINTS,
-        this.constructor,
-      ) as Array<IDataEndpointDefinition>
-    )?.forEach((expose) => {
+
+    const dataEndpointDefinitions = Reflect.getMetadata(
+      METADATA_DATA_ENDPOINTS,
+      this.constructor,
+    ) as Array<IDataEndpointDefinition>;
+    dataEndpointDefinitions?.forEach((expose) => {
       this._addDataRoute.call(
         this,
         expose.namespace,
@@ -83,24 +92,25 @@ export abstract class AbstractModuleApi<T extends IModule>
         expose.security,
       );
     });
-
     // Add API routes for getting and setting SystemConfig
-    this._addDataRoute.call(
-      this,
-      Namespace.SystemConfig,
-      () => new Promise((resolve) => resolve(module.config)),
-      HttpMethod.Get,
-    );
-    this._addDataRoute.call(
-      this,
-      Namespace.SystemConfig,
-      (request: FastifyRequest<{ Body: SystemConfig }>) =>
-        new Promise<void>((resolve) => {
-          module.config = request.body;
-          resolve();
-        }),
-      HttpMethod.Put,
-    );
+    if (dataEndpointDefinitions && dataEndpointDefinitions.length > 0) {
+      this._addDataRoute.call(
+        this,
+        OCPP2_0_1_Namespace.SystemConfig,
+        () => new Promise((resolve) => resolve(module.config)),
+        HttpMethod.Get,
+      );
+      this._addDataRoute.call(
+        this,
+        OCPP2_0_1_Namespace.SystemConfig,
+        (request: FastifyRequest<{ Body: SystemConfig }>) =>
+          new Promise<void>((resolve) => {
+            module.config = request.body;
+            resolve();
+          }),
+        HttpMethod.Put,
+      );
+    }
   }
 
   /**
@@ -134,12 +144,15 @@ export abstract class AbstractModuleApi<T extends IModule>
         Body: OcppRequest;
         Querystring: Record<string, any>;
       }>,
-    ): Promise<IMessageConfirmation> => {
+    ): Promise<IMessageConfirmation[]> => {
       const { identifier, tenantId, callbackUrl, ...extraQueries } =
         request.query;
+
+      const identifiers = Array.isArray(identifier) ? identifier : [identifier];
+
       return method.call(
         this,
-        identifier,
+        identifiers,
         tenantId,
         request.body,
         callbackUrl,
@@ -163,7 +176,11 @@ export abstract class AbstractModuleApi<T extends IModule>
         body: bodySchema,
         querystring: mergedQuerySchema,
         response: {
-          200: MessageConfirmationSchema,
+          200: {
+            $id: 'MessageConfirmationSchemaArray',
+            type: 'array',
+            items: MessageConfirmationSchema,
+          },
         },
       } as const,
     };
@@ -181,13 +198,21 @@ export abstract class AbstractModuleApi<T extends IModule>
   /**
    * Add a message route to the server.
    *
-   * @param {Namespace} namespace - The entity type.
+   * @param {OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace} namespace - The entity type.
    * @param {Function} method - The method to be executed.
-   * @param {object} schema - The schema for the entity.
+   * @param {HttpMethod} httpMethod - The HTTP method to be used.
+   * @param {object} querySchema - The schema for the querystring.
+   * @param {object} paramSchema - The schema for the parameters.
+   * @param {object} headerSchema - The schema for the headers.
+   * @param {object} bodySchema - The schema for the body.
+   * @param {object} responseSchema - The schema for the response.
+   * @param {string[]} tags - The tags for the route.
+   * @param {string} description - The description for the route.
+   * @param {object[]} security - The security for the route.
    * @return {void}
    */
   protected _addDataRoute(
-    namespace: Namespace,
+    namespace: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
     method: (...args: any[]) => any,
     httpMethod: HttpMethod,
     querySchema?: object,
@@ -304,6 +329,7 @@ export abstract class AbstractModuleApi<T extends IModule>
       _opts.schema['body'] = this.registerSchema(
         fastifyInstance,
         _opts.schema['body'],
+        this._ocppVersion ? `${this._ocppVersion}-` : ''
       );
     }
     if (_opts.schema['params']) {
@@ -331,13 +357,20 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected registerSchema = (
     fastifyInstance: FastifyInstance,
     schema: any,
+    schemaIdPrefix?: string,
   ): object | null => {
-    const id = schema['$id'];
+    let id = schema['$id'];
     if (!id) {
       this._logger.error('Could not register schema because no ID', schema);
     }
+
     try {
       const schemaCopy = this.removeUnknownKeys(schema);
+      if (id && schemaIdPrefix) {
+        id = schemaIdPrefix + id;
+        schemaCopy['$id'] = id;
+        this._logger.debug(`Update schema id: ${schemaCopy['$id']}`);
+      }
       if (
         schemaCopy.required &&
         Array.isArray(schemaCopy.required) &&
@@ -433,20 +466,26 @@ export abstract class AbstractModuleApi<T extends IModule>
    * Convert a {@link CallAction} to a normed lowercase URL path.
    *
    * @param {CallAction} input - The {@link CallAction} to convert to a URL path.
+   * @param {string} prefix - The module name.
    * @returns {string} - String representation of URL path.
    */
   protected _toMessagePath(input: CallAction, prefix?: string): string {
     const endpointPrefix = prefix || '';
-    return `/ocpp${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
+    const endpointVersion = (this._ocppVersion ? this._ocppVersion : OCPPVersion.OCPP2_0_1).replace(/^ocpp/, "");
+    return `/ocpp/${endpointVersion}${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
   }
 
   /**
-   * Convert a {@link Namespace} to a normed lowercase URL path.
+   * Convert a namespace to a normed lowercase URL path.
    *
-   * @param {Namespace} input - The {@link Namespace} to convert to a URL path.
+   * @param {OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace} input - The {@link OCPP2_0_1_Namespace} or {@link OCPP1_6_Namespace} or {@link Namespace} to convert to a URL path.
+   * @param {string} prefix - The module name.
    * @returns {string} - String representation of URL path.
    */
-  protected _toDataPath(input: Namespace, prefix?: string): string {
+  protected _toDataPath(
+    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
+    prefix?: string,
+  ): string {
     const endpointPrefix = prefix || '';
     return `/data${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
   }

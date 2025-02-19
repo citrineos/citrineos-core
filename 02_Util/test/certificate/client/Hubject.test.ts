@@ -37,7 +37,7 @@ describe('Hubject', () => {
         },
       },
     } as any;
-    hubject = new Hubject(systemConfig, logger);
+    hubject = new Hubject(systemConfig, logger!);
   });
 
   describe('getSignedContractData', () => {
