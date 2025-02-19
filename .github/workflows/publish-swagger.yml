@@ -27,7 +27,6 @@ jobs:
         run: |
           echo "Fetching Swagger JSON..."
           curl --retry 3 --retry-delay 3 --retry-all-errors -o swagger.json http://localhost:8080/docs/json 
-          cat swagger.json
 
       - name: Setup SSH Key
         run: |
@@ -44,7 +43,7 @@ jobs:
           cp ../swagger.json ./docs/assets
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add swagger.json
+          git add ./docs/assets/swagger.json
           git commit -m "Update Swagger JSON from PR"
           git push -f origin swagger-updates --verbose
 
