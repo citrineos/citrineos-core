@@ -5,10 +5,9 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    outputs:
+      swagger_valid: ${{ steps.validate-swagger.outputs.swagger_valid }}
 
     steps:
       - uses: actions/checkout@v4
@@ -20,24 +19,52 @@ jobs:
         uses: docker/setup-qemu-action@v3
 
       - name: Build and Run Docker Compose
-        run: | 
+        run: |
           docker compose -f ${{ github.workspace }}/Server/docker-compose.yml up -d
 
       - name: Generate Swagger JSON
         run: |
           echo "Fetching Swagger JSON..."
-          curl --retry 3 --retry-delay 3 --retry-all-errors -o swagger.json http://localhost:8080/docs/json 
+          curl --retry 3 --retry-delay 3 --retry-all-errors -o swagger.json http://localhost:8080/docs/json
 
-      - name: Setup SSH Key
+      - name: Validate Swagger JSON
+        id: validate-swagger
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.CITRINEOS_GITHUB_IO_DEPLOY_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          if jq empty swagger.json; then
+            echo "swagger_valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "swagger_valid=false" >> $GITHUB_OUTPUT && exit 1
+          fi
 
-      - name: Push Swagger JSON to citrineos.github.io
+      - name: Upload Swagger JSON as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: swagger-json
+          path: swagger.json
+
+      - name: Clean up Docker
+        run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml down
+
+  publish-swagger:
+    needs: build
+    if: needs.build.outputs.swagger_valid == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Swagger Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: swagger-json
+
+      - name: Checkout citrineos.github.io
+        uses: actions/checkout@v4
+        with:
+          repository: citrineos/citrineos.github.io
+          ssh-key: ${{ secrets.CITRINEOS_GITHUB_IO_DEPLOY_KEY }}
+          path: citrineos.github.io
+
+      - name: Push Swagger JSON
         run: |
-          git clone git@github.com:citrineos/citrineos.github.io.git
           cd citrineos.github.io
           git checkout -b swagger-updates || git checkout swagger-updates
           cp ../swagger.json ./docs/assets
@@ -46,6 +73,3 @@ jobs:
           git add ./docs/assets/swagger.json
           git commit -m "Update Swagger JSON from PR"
           git push -f origin swagger-updates --verbose
-
-      - name: Clean up
-        run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml down
