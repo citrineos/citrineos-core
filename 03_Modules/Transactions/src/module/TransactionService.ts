@@ -160,18 +160,18 @@ export class TransactionService {
 
     try {
       // Find authorization
-      const authorization =
-        await this._authorizeRepository.readOnlyOneByQuerystring({
+      const authorizations =
+        await this._authorizeRepository.readAllByQuerystring({
           idToken: idToken,
           type: null,
         });
-      if (!authorization) {
-        this._logger.error(`Found no authorization for idToken: ${idToken}`);
+      if (authorizations.length !== 1) {
+        this._logger.error(`Found invalid authorizations ${JSON.stringify(authorizations)} for idToken: ${idToken}`);
         return response;
       }
 
       // Check expiration
-      const idTokenInfo = authorization.idTokenInfo;
+      const idTokenInfo = authorizations[0].idTokenInfo;
       if (!idTokenInfo) {
         response.idTagInfo.status =
           OCPP1_6.StartTransactionResponseStatus.Accepted;
@@ -198,7 +198,7 @@ export class TransactionService {
       // Check concurrent transactions
       const activeTransactions =
         await this._transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken(
-          authorization.idToken.idToken,
+          authorizations[0].idToken.idToken,
         );
       if (activeTransactions.length > 0) {
         response.idTagInfo.status =

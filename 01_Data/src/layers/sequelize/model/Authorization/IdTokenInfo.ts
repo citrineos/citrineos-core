@@ -14,7 +14,12 @@ export class IdTokenInfo extends Model {
   @Column(DataType.STRING)
   declare status: string;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('cacheExpiryDateTime')?.toISOString();
+    },
+  })
   declare cacheExpiryDateTime?: string | null;
 
   @Column(DataType.INTEGER)

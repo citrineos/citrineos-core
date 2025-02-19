@@ -132,7 +132,7 @@ export interface ISubscriptionRepository extends CrudRepository<Subscription> {
 export interface ITransactionEventRepository extends CrudRepository<TransactionEvent> {
   createOrUpdateTransactionByTransactionEventAndStationId(value: OCPP2_0_1.TransactionEventRequest, stationId: string): Promise<Transaction>;
   createMeterValue(value: OCPP2_0_1.MeterValueType, transactionDatabaseId?: number | null): Promise<void>;
-  createTransactionByStartTransaction(request: OCPP1_6.StartTransactionRequest, transactionId: number, stationId: string): Promise<Transaction | undefined>;
+  createTransactionByStartTransaction(request: OCPP1_6.StartTransactionRequest, stationId: string): Promise<Transaction>;
   updateTransactionByMeterValues(meterValues: MeterValue[], stationId: string, transactionId: number): Promise<void>;
   readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEvent[]>;
   readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;

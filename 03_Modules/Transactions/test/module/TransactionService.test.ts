@@ -28,7 +28,6 @@ describe('TransactionService', () => {
   beforeEach(() => {
     authorizationRepository = {
       readAllByQuerystring: jest.fn(),
-      readOnlyOneByQuerystring: jest.fn(),
     } as unknown as jest.Mocked<IAuthorizationRepository>;
 
     transactionEventRepository = {
@@ -201,8 +200,8 @@ describe('TransactionService', () => {
   describe('Tests for authorizeOcpp16IdToken', () => {
     it('should return Accepted status when idToken exists and idTokenInfo is valid', async () => {
       const authorization = anAuthorization();
-      authorizationRepository.readOnlyOneByQuerystring.mockResolvedValue(
-        authorization,
+      authorizationRepository.readAllByQuerystring.mockResolvedValue(
+        [authorization],
       );
       transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken.mockResolvedValue(
         [],
@@ -229,8 +228,8 @@ describe('TransactionService', () => {
           auth.idTokenInfo!.status = OCPP1_6.StartTransactionResponseStatus.Blocked;
         },
       );
-      authorizationRepository.readOnlyOneByQuerystring.mockResolvedValue(
-        authorization,
+      authorizationRepository.readAllByQuerystring.mockResolvedValue(
+        [authorization],
       );
 
       const response = await transactionService.authorizeOcpp16IdToken(
@@ -250,8 +249,8 @@ describe('TransactionService', () => {
           auth.idTokenInfo!.cacheExpiryDateTime = faker.date.past().toISOString();
         },
       );
-      authorizationRepository.readOnlyOneByQuerystring.mockResolvedValue(
-        authorization,
+      authorizationRepository.readAllByQuerystring.mockResolvedValue(
+        [authorization],
       );
 
       const response = await transactionService.authorizeOcpp16IdToken(
@@ -267,8 +266,8 @@ describe('TransactionService', () => {
 
     it('should return ConcurrentTx status when an active transaction exists', async () => {
       const authorization = anAuthorization();
-      authorizationRepository.readOnlyOneByQuerystring.mockResolvedValue(
-        authorization,
+      authorizationRepository.readAllByQuerystring.mockResolvedValue(
+        [authorization],
       );
       transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken.mockResolvedValue(
         [aTransaction()],

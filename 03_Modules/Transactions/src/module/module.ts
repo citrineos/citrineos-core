@@ -7,7 +7,6 @@ import {
   AbstractModule,
   AsHandler,
   CallAction,
-  ChargingStationSequenceType,
   CrudRepository,
   ErrorCode,
   EventGroup,
@@ -38,11 +37,9 @@ import {
   SequelizeRepository,
   Transaction,
   VariableAttribute,
-  SequelizeChargingStationSequenceRepository,
 } from '@citrineos/data';
 import {
   IAuthorizer,
-  IdGenerator,
   RabbitMqReceiver,
   RabbitMqSender,
   SignedMeterValuesUtil,
@@ -88,7 +85,6 @@ export class TransactionsModule extends AbstractModule {
   private readonly _signedMeterValuesUtil: SignedMeterValuesUtil;
   private _costNotifier: CostNotifier;
   private _costCalculator: CostCalculator;
-  private _idGenerator: IdGenerator;
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
   private readonly _costUpdatedInterval: number | undefined;
@@ -150,9 +146,6 @@ export class TransactionsModule extends AbstractModule {
    *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
-   *
-   * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which
-   * represents a generator for ids.
    */
   constructor(
     config: SystemConfig,
@@ -168,7 +161,6 @@ export class TransactionsModule extends AbstractModule {
     locationRepository?: ILocationRepository,
     tariffRepository?: ITariffRepository,
     reservationRepository?: IReservationRepository,
-    idGenerator?: IdGenerator,
     authorizers?: IAuthorizer[],
   ) {
     super(
@@ -243,12 +235,6 @@ export class TransactionsModule extends AbstractModule {
       this._costCalculator,
       this._logger,
     );
-
-    this._idGenerator =
-      idGenerator ||
-      new IdGenerator(
-        new SequelizeChargingStationSequenceRepository(config, this._logger),
-      );
   }
 
   get transactionEventRepository(): ITransactionEventRepository {
@@ -617,27 +603,20 @@ export class TransactionsModule extends AbstractModule {
     if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
       await this.sendCallResultWithMessage(message, response);
     } else {
-      const transactionId = await this._idGenerator.generateRequestId(
-        stationId,
-        ChargingStationSequenceType.transactionId,
-      );
-      this._logger.info(`Generated new transactionId: ${transactionId}`);
-      // Create transaction
-      const newTransaction =
-        await this._transactionEventRepository.createTransactionByStartTransaction(
+      try {
+        // Create transaction
+        const newTransaction = await this._transactionEventRepository.createTransactionByStartTransaction(
           request,
-          transactionId,
           stationId,
         );
-      if (!newTransaction) {
+        response.transactionId = parseInt(newTransaction.transactionId);
+      } catch (error) {
         this._logger.error(
-          `Failed to create transaction ${transactionId} for idTag ${request.idTag}`,
+          `Failed to create transaction for idTag ${request.idTag}`, error
         );
         response.idTagInfo = {
           status: OCPP1_6.StartTransactionResponseStatus.Invalid,
         }
-      } else {
-        response.transactionId = transactionId;
       }
       await this.sendCallResultWithMessage(message, response);
     }

@@ -3,8 +3,15 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, MeterValueUtils, OCPP1_6, OCPP2_0_1, SystemConfig } from '@citrineos/base';
-import { type ITransactionEventRepository } from '../../../interfaces';
+import {
+  ChargingStationSequenceType,
+  CrudRepository,
+  MeterValueUtils,
+  OCPP1_6,
+  OCPP2_0_1,
+  SystemConfig,
+} from '@citrineos/base';
+import { IChargingStationSequenceRepository, type ITransactionEventRepository } from '../../../interfaces';
 import { MeterValue, StartTransaction, Transaction, TransactionEvent } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';
 import { IdToken } from '../model/Authorization';
@@ -14,6 +21,7 @@ import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { MeterValueMapper } from '../mapper/2.0.1';
 import { Connector } from '../model/Location';
+import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
 
 export class SequelizeTransactionEventRepository extends SequelizeRepository<TransactionEvent> implements ITransactionEventRepository {
   transaction: CrudRepository<Transaction>;
@@ -22,6 +30,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   meterValue: CrudRepository<MeterValue>;
   startTransaction: CrudRepository<StartTransaction>;
   connector: CrudRepository<Connector>;
+  chargingStationSequence: IChargingStationSequenceRepository;
 
   constructor(
     config: SystemConfig,
@@ -34,6 +43,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     meterValue?: CrudRepository<MeterValue>,
     startTransaction?: CrudRepository<StartTransaction>,
     connector?: CrudRepository<Connector>,
+    chargingStationSequence?: IChargingStationSequenceRepository,
   ) {
     super(config, namespace, logger, sequelizeInstance);
     this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, Transaction.MODEL_NAME, logger, sequelizeInstance);
@@ -42,6 +52,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     this.meterValue = meterValue ? meterValue : new SequelizeRepository<MeterValue>(config, MeterValue.MODEL_NAME, logger, sequelizeInstance);
     this.startTransaction = startTransaction ? startTransaction : new SequelizeRepository<StartTransaction>(config, StartTransaction.MODEL_NAME, logger, sequelizeInstance);
     this.connector = connector ? connector : new SequelizeRepository<Connector>(config, Connector.MODEL_NAME, logger, sequelizeInstance);
+    this.chargingStationSequence = chargingStationSequence || new SequelizeChargingStationSequenceRepository(config, logger);
   }
 
   /**
@@ -247,7 +258,6 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
               required: true,
               where: {
                 idToken: idToken,
-                type: null,
               },
             },
           ],
@@ -395,9 +405,8 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
 
   async createTransactionByStartTransaction(
     request: OCPP1_6.StartTransactionRequest,
-    transactionId: number,
     stationId: string
-  ): Promise<Transaction | undefined> {
+  ): Promise<Transaction> {
     return await this.s.transaction(async (sequelizeTransaction) => {
       // Build StartTransaction event
       let event = StartTransaction.build({
@@ -409,13 +418,12 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       const idToken = await this.idToken.readOnlyOneByQuery({
         where: {
           idToken: request.idTag,
-          type: null,
         },
         transaction: sequelizeTransaction,
       });
       if (!idToken) {
         this.logger.error(`Unable to find idTag ${request.idTag}.`);
-        return undefined;
+        throw new Error(`Unable to find idTag ${request.idTag}.`);
       }
       event.idTokenDatabaseId = idToken.id;
 
@@ -429,10 +437,15 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       });
       if (!connector) {
         this.logger.error(`Unable to find connector ${request.connectorId}.`);
-        return undefined;
+        throw new Error(`Unable to find connector ${request.connectorId}.`);
       }
       event.connectorDatabaseId = connector.id;
 
+      // Generate transactionId
+      const transactionId = await this.chargingStationSequence.getNextSequenceValue(
+        stationId,
+        ChargingStationSequenceType.transactionId
+      );
       // Store transaction in db
       let newTransaction = Transaction.build({
         stationId,
