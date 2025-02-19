@@ -22,7 +22,10 @@ jobs:
           node-version: '22.x'
 
       - name: Install dependencies
-        run: npm i
+        run: npm ci
 
       - name: Lint
         run: npm run lint
+
+      - name: Prettier Check formatting
+        run: npm run prettier:check
