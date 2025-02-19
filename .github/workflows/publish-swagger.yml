@@ -3,10 +3,6 @@ name: Publish Swagger
 on:
   pull_request:
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   build:
     permissions: write-all
@@ -16,8 +12,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -52,44 +46,6 @@ jobs:
           git add swagger.json
           git commit -m "Update Swagger JSON from PR"
           git push -f origin swagger-updates --verbose
-
-      - name: Create Pull Request
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Pull Requests: ${{ github.token_permissions.pull-requests }}"
-
-          PR_EXISTS=$(gh pr list --repo citrineos/citrineos.github.io --head swagger-updates --state open --json number --jq '.[0].number' || echo "")
-
-          if [ -z "$PR_EXISTS" ]; then
-            echo "Creating a new pull request..."
-            gh pr create --repo citrineos/citrineos.github.io \
-              --base main \
-              --head swagger-updates \
-              --title "Automated Swagger Update" \
-              --body "This PR updates the Swagger JSON automatically from GitHub Actions."
-          else
-            echo "PR already exists (#$PR_EXISTS), no need to create a new one."
-          fi
-#      - name: Push Swagger JSON to citrineos.github.io
-
-#      - name: Download Swagger JSON
-#        uses: actions/checkout@v4
-#        with:
-#          repository: citrineos/citrineos.github.io
-#          path: citrineos.github.io
-#      - run: |
-#          cd citrineos.github.io
-#          git checkout -b swagger-updates || git checkout swagger-updates
-#          cp ../swagger.json .
-#          git config user.name "GitHub Actions"
-#          git config user.email "actions@github.com"
-#          git add swagger.json
-#          git commit -m "Update Swagger JSON from PR"
-#          git push origin swagger-updates --verbose
-#          pwd
-#          ls
-#          ls ..
 
       - name: Clean up
         run: docker compose -f ${{ github.workspace }}/Server/docker-compose.yml down
