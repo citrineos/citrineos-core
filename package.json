@@ -25,7 +25,11 @@
     "sync-db": "ts-node ./db.sync.ts",
     "start-everest": "npm run start-everest --prefix ./Server",
     "test": "jest --config jest.config.ts",
-    "coverage": "jest --config jest.config.ts --coverage"
+    "coverage": "jest --config jest.config.ts --coverage",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "**/*.{js,ts,jsx,tsx,json,md}": "prettier --write"
   },
   "workspaces": [
     "00_Base",
