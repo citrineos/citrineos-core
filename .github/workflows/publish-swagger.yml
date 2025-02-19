@@ -23,7 +23,7 @@ jobs:
         run: | 
           docker compose -f ${{ github.workspace }}/Server/docker-compose.yml up -d
 
-      - name: Download Swagger JSON
+      - name: Generate Swagger JSON
         run: |
           echo "Fetching Swagger JSON..."
           curl --retry 3 --retry-delay 3 --retry-all-errors -o swagger.json http://localhost:8080/docs/json 
@@ -41,7 +41,7 @@ jobs:
           git clone git@github.com:citrineos/citrineos.github.io.git
           cd citrineos.github.io
           git checkout -b swagger-updates || git checkout swagger-updates
-          cp ../swagger.json .
+          cp ../swagger.json ./docs/assets
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add swagger.json
