@@ -31,7 +31,7 @@ module.exports = tseslint.config(
       ],
       '@typescript-eslint/no-empty-object-type': 'off',
 
-      'prettier/prettier': 'warn',
+      'prettier/prettier': 'error',
     },
   },
   // Ignore patterns
