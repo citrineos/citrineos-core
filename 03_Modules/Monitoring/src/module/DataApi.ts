@@ -34,7 +34,6 @@ export class MonitoringDataApi
   extends AbstractModuleApi<MonitoringModule>
   implements IMonitoringModuleApi
 {
-
   /**
    * Constructor for the class.
    *
@@ -106,9 +105,7 @@ export class MonitoringDataApi
   getDeviceModelVariables(
     request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>,
   ): Promise<sequelize.VariableAttribute[] | undefined> {
-    return this._module.deviceModelRepository.readAllByQuerystring(
-      request.query,
-    );
+    return this._module.deviceModelRepository.readAllByQuerystring(request.query);
   }
 
   @AsDataEndpoint(
@@ -136,11 +133,8 @@ export class MonitoringDataApi
    * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(
-    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
-  ): string {
-    const endpointPrefix =
-      this._module.config.modules.monitoring.endpointPrefix;
+  protected _toDataPath(input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace): string {
+    const endpointPrefix = this._module.config.modules.monitoring.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
   }
 }

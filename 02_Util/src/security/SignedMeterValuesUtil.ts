@@ -1,13 +1,5 @@
-import {
-  IChargingStationSecurityInfoRepository,
-  sequelize,
-} from '@citrineos/data';
-import {
-  IFileAccess,
-  OCPP2_0_1,
-  SignedMeterValuesConfig,
-  SystemConfig,
-} from '@citrineos/base';
+import { IChargingStationSecurityInfoRepository, sequelize } from '@citrineos/data';
+import { IFileAccess, OCPP2_0_1, SignedMeterValuesConfig, SystemConfig } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import * as crypto from 'node:crypto';
 import { stringToArrayBuffer } from 'pvutils';
@@ -20,9 +12,7 @@ export class SignedMeterValuesUtil {
   private readonly _logger: Logger<ILogObj>;
   private readonly _chargingStationSecurityInfoRepository: IChargingStationSecurityInfoRepository;
 
-  private readonly _signedMeterValuesConfiguration:
-    | SignedMeterValuesConfig
-    | undefined;
+  private readonly _signedMeterValuesConfiguration: SignedMeterValuesConfig | undefined;
 
   /**
    * @param {IFileAccess} [fileAccess] - The `fileAccess` allows access to the configured file storage.
@@ -32,18 +22,11 @@ export class SignedMeterValuesUtil {
    * @param {Logger<ILogObj>} [logger] - The `logger` represents an instance of {@link Logger<ILogObj>}.
    *
    */
-  constructor(
-    fileAccess: IFileAccess,
-    config: SystemConfig,
-    logger: Logger<ILogObj>,
-  ) {
+  constructor(fileAccess: IFileAccess, config: SystemConfig, logger: Logger<ILogObj>) {
     this._fileAccess = fileAccess;
     this._logger = logger;
     this._chargingStationSecurityInfoRepository =
-      new sequelize.SequelizeChargingStationSecurityInfoRepository(
-        config,
-        logger,
-      );
+      new sequelize.SequelizeChargingStationSecurityInfoRepository(config, logger);
 
     this._signedMeterValuesConfiguration =
       config.modules.transactions.signedMeterValuesConfiguration;
@@ -125,9 +108,7 @@ export class SignedMeterValuesUtil {
     const signingMethod = signedMeterValue.signingMethod;
 
     if (!this._signedMeterValuesConfiguration?.publicKeyFileId) {
-      this._logger.warn(
-        'Invalid signature because public key is missing from system config.',
-      );
+      this._logger.warn('Invalid signature because public key is missing from system config.');
       return false;
     }
 
@@ -157,9 +138,7 @@ export class SignedMeterValuesUtil {
 
     const configuredPublicKey = this.formatKey(
       (
-        await this._fileAccess.getFile(
-          this._signedMeterValuesConfiguration.publicKeyFileId,
-        )
+        await this._fileAccess.getFile(this._signedMeterValuesConfiguration.publicKeyFileId)
       ).toString(),
     );
 
@@ -183,9 +162,7 @@ export class SignedMeterValuesUtil {
           signedMeterValue.signedMeterData,
         );
       default:
-        this._logger.warn(
-          `${signingMethod} is not supported for Signed Meter Values.`,
-        );
+        this._logger.warn(`${signingMethod} is not supported for Signed Meter Values.`);
         return false;
     }
   }
@@ -207,16 +184,10 @@ export class SignedMeterValuesUtil {
 
       const signatureBuffer = Buffer.from(signatureData, 'base64');
       // For now, we only care that the signature could be read, regardless of the value in the signature.
-      await crypto.subtle.verify(
-        signingMethod,
-        cryptoPublicKey,
-        signatureBuffer,
-        signatureBuffer,
-      );
+      await crypto.subtle.verify(signingMethod, cryptoPublicKey, signatureBuffer, signatureBuffer);
       return true;
     } catch (e) {
-      const errorMessage =
-        e instanceof DOMException ? e.message : JSON.stringify(e);
+      const errorMessage = e instanceof DOMException ? e.message : JSON.stringify(e);
       this._logger.warn(
         `Error decrypting public key or verifying signature from Signed Meter Value. Error: ${errorMessage}`,
       );

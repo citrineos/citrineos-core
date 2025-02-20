@@ -3,10 +3,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {FastifyInstance, FastifyRequest} from 'fastify';
-import {ILogObj, Logger} from 'tslog';
-import {IEVDriverModuleApi} from './interface';
-import {EVDriverModule} from './module';
+import { FastifyInstance, FastifyRequest } from 'fastify';
+import { ILogObj, Logger } from 'tslog';
+import { IEVDriverModuleApi } from './interface';
+import { EVDriverModule } from './module';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
@@ -39,16 +39,12 @@ export class EVDriverDataApi
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger for logging.
    */
-  constructor(
-    evDriverModule: EVDriverModule,
-    server: FastifyInstance,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(evDriverModule: EVDriverModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
     super(evDriverModule, server, null, logger);
   }
 
   @AsDataEndpoint(
-      Namespace.AuthorizationData,
+    Namespace.AuthorizationData,
     HttpMethod.Put,
     AuthorizationQuerySchema,
     AuthorizationDataSchema,
@@ -66,7 +62,7 @@ export class EVDriverDataApi
   }
 
   @AsDataEndpoint(
-      OCPP2_0_1_Namespace.AuthorizationRestrictions,
+    OCPP2_0_1_Namespace.AuthorizationRestrictions,
     HttpMethod.Put,
     AuthorizationQuerySchema,
     AuthorizationRestrictionsSchema,
@@ -83,22 +79,14 @@ export class EVDriverDataApi
     );
   }
 
-  @AsDataEndpoint(
-    Namespace.AuthorizationData,
-    HttpMethod.Get,
-    AuthorizationQuerySchema,
-  )
+  @AsDataEndpoint(Namespace.AuthorizationData, HttpMethod.Get, AuthorizationQuerySchema)
   getAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
   ): Promise<Authorization[]> {
     return this._module.authorizeRepository.readAllByQuerystring(request.query);
   }
 
-  @AsDataEndpoint(
-      Namespace.AuthorizationData,
-    HttpMethod.Delete,
-    AuthorizationQuerySchema,
-  )
+  @AsDataEndpoint(Namespace.AuthorizationData, HttpMethod.Delete, AuthorizationQuerySchema)
   deleteAuthorization(
     request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
   ): Promise<string> {
@@ -108,7 +96,7 @@ export class EVDriverDataApi
         (deletedCount) =>
           deletedCount.toString() +
           ' rows successfully deleted from ' +
-            Namespace.AuthorizationData,
+          Namespace.AuthorizationData,
       );
   }
 
@@ -132,9 +120,7 @@ export class EVDriverDataApi
    * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(
-    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
-  ): string {
+  protected _toDataPath(input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace): string {
     const endpointPrefix = this._module.config.modules.evdriver.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
   }

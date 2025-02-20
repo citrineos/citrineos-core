@@ -41,9 +41,7 @@ describe('WebhookDispatcher', () => {
 
       await webhookDispatcher.register(subscription.stationId);
 
-      expect(subscriptionRepository.readAllByStationId).toBeCalledWith(
-        subscription.stationId,
-      );
+      expect(subscriptionRepository.readAllByStationId).toBeCalledWith(subscription.stationId);
     });
 
     it('should send request for subscriptions with enabled onConnect', async () => {
@@ -114,20 +112,14 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription);
       await givenRegisteredStations(subscription.stationId);
 
-      await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
-        'Any message',
-      );
+      await webhookDispatcher.dispatchMessageSent(subscription.stationId, 'Any message');
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
 
       await webhookDispatcher.deregister(subscription.stationId);
 
       fetch.mockClear();
-      await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
-        'Any message',
-      );
+      await webhookDispatcher.dispatchMessageSent(subscription.stationId, 'Any message');
       expect(fetch).not.toHaveBeenCalled();
     });
   });
@@ -138,10 +130,7 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription);
       await givenRegisteredStations(subscription.stationId);
 
-      await webhookDispatcher.dispatchMessageReceived(
-        subscription.stationId,
-        'Any message',
-      );
+      await webhookDispatcher.dispatchMessageReceived(subscription.stationId, 'Any message');
 
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -155,10 +144,7 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = 'Accepted reservation';
 
-      await webhookDispatcher.dispatchMessageReceived(
-        subscription.stationId,
-        message,
-      );
+      await webhookDispatcher.dispatchMessageReceived(subscription.stationId, message);
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
         method: 'POST',
@@ -183,10 +169,7 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = 'Rejected reservation';
 
-      await webhookDispatcher.dispatchMessageReceived(
-        subscription.stationId,
-        message,
-      );
+      await webhookDispatcher.dispatchMessageReceived(subscription.stationId, message);
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
         method: 'POST',
@@ -225,10 +208,7 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription);
       await givenRegisteredStations(subscription.stationId);
 
-      await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
-        'Any message',
-      );
+      await webhookDispatcher.dispatchMessageSent(subscription.stationId, 'Any message');
 
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -242,10 +222,7 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = '"totalCost": 12.54';
 
-      await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
-        message,
-      );
+      await webhookDispatcher.dispatchMessageSent(subscription.stationId, message);
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
         method: 'POST',
@@ -270,10 +247,7 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = '"totalCost": 12.54';
 
-      await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
-        message,
-      );
+      await webhookDispatcher.dispatchMessageSent(subscription.stationId, message);
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
         method: 'POST',
@@ -297,10 +271,7 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription);
       await givenRegisteredStations(subscription.stationId);
 
-      await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
-        '"partialCost": 10.54',
-      );
+      await webhookDispatcher.dispatchMessageSent(subscription.stationId, '"partialCost": 10.54');
 
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -315,10 +286,7 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription);
       await givenRegisteredStations(subscription.stationId);
 
-      await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
-        'Any message',
-      );
+      await webhookDispatcher.dispatchMessageSent(subscription.stationId, 'Any message');
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
 
@@ -330,33 +298,22 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription, newSubscription);
 
       fetch.mockClear();
-      await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
-        'Any message',
-      );
+      await webhookDispatcher.dispatchMessageSent(subscription.stationId, 'Any message');
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
 
       subscriptionRepository.readAllByStationId.mockClear();
       await jest.runOnlyPendingTimersAsync();
-      expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(
-        1,
-      );
+      expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(1);
       expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledWith(
         subscription.stationId,
       );
 
       fetch.mockClear();
-      await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
-        'Any message',
-      );
+      await webhookDispatcher.dispatchMessageSent(subscription.stationId, 'Any message');
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
-      expect(fetch).toHaveBeenCalledWith(
-        newSubscription.url,
-        expect.anything(),
-      );
+      expect(fetch).toHaveBeenCalledWith(newSubscription.url, expect.anything());
     });
 
     it('should periodically remove deleted subscriptions for registered stations', async () => {
@@ -377,10 +334,7 @@ describe('WebhookDispatcher', () => {
       await webhookDispatcher.dispatchMessageSent(stationId, 'Any message');
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
-      expect(fetch).toHaveBeenCalledWith(
-        anotherSubscription.url,
-        expect.anything(),
-      );
+      expect(fetch).toHaveBeenCalledWith(anotherSubscription.url, expect.anything());
 
       // Simulate 'anotherSubscription' was deleted
       givenSubscriptions(subscription);
@@ -389,17 +343,12 @@ describe('WebhookDispatcher', () => {
       await webhookDispatcher.dispatchMessageSent(stationId, 'Any message');
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
-      expect(fetch).toHaveBeenCalledWith(
-        anotherSubscription.url,
-        expect.anything(),
-      );
+      expect(fetch).toHaveBeenCalledWith(anotherSubscription.url, expect.anything());
 
       // Run pending timers to trigger subscription refresh
       subscriptionRepository.readAllByStationId.mockClear();
       await jest.runOnlyPendingTimersAsync();
-      expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(
-        1,
-      );
+      expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(1);
       expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledWith(
         subscription.stationId,
       );
@@ -408,10 +357,7 @@ describe('WebhookDispatcher', () => {
       await webhookDispatcher.dispatchMessageSent(stationId, 'Any message');
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
-      expect(fetch).not.toHaveBeenCalledWith(
-        anotherSubscription.url,
-        expect.anything(),
-      );
+      expect(fetch).not.toHaveBeenCalledWith(anotherSubscription.url, expect.anything());
     });
   });
 

@@ -5,11 +5,7 @@ import {
   Transaction,
   OCPP2_0_1_Mapper,
 } from '@citrineos/data';
-import {
-  IMessageContext,
-  MeterValueUtils,
-  OCPP2_0_1
-} from '@citrineos/base';
+import { IMessageContext, MeterValueUtils, OCPP2_0_1 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { IAuthorizer } from '@citrineos/util';
 
@@ -34,11 +30,12 @@ export class TransactionService {
   }
 
   async recalculateTotalKwh(transactionDbId: number) {
-    const meterValues = await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-      transactionDbId,
-    );
-    const meterValueTypes = meterValues.map(
-      meterValue => OCPP2_0_1_Mapper.MeterValueMapper.toMeterValueType(meterValue)
+    const meterValues =
+      await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
+        transactionDbId,
+      );
+    const meterValueTypes = meterValues.map((meterValue) =>
+      OCPP2_0_1_Mapper.MeterValueMapper.toMeterValueType(meterValue),
     );
     const totalKwh = MeterValueUtils.getTotalKwh(meterValueTypes);
 
@@ -47,9 +44,7 @@ export class TransactionService {
       { where: { id: transactionDbId }, returning: false },
     );
 
-    this._logger.debug(
-      `Recalculated ${totalKwh} kWh for ${transactionDbId} transaction`,
-    );
+    this._logger.debug(`Recalculated ${totalKwh} kWh for ${transactionDbId} transaction`);
     return totalKwh;
   }
 
@@ -58,9 +53,7 @@ export class TransactionService {
     messageContext: IMessageContext,
   ): Promise<OCPP2_0_1.TransactionEventResponse> {
     const idToken = transactionEvent.idToken!;
-    const authorizations = await this._authorizeRepository.readAllByQuerystring(
-      { ...idToken },
-    );
+    const authorizations = await this._authorizeRepository.readAllByQuerystring({ ...idToken });
 
     const response: OCPP2_0_1.TransactionEventResponse = {
       idTokenInfo: {
@@ -92,10 +85,7 @@ export class TransactionService {
       return response;
     }
 
-    if (
-      idTokenInfo.cacheExpiryDateTime &&
-      new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
-    ) {
+    if (idTokenInfo.cacheExpiryDateTime && new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
       response.idTokenInfo = {
         status: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
         groupIdToken: idTokenInfo.groupIdToken,
@@ -111,15 +101,11 @@ export class TransactionService {
       if (transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started) {
         const hasConcurrent = await this._hasConcurrentTransactions(idToken);
         if (hasConcurrent) {
-          response.idTokenInfo.status =
-            OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx;
+          response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx;
         }
       }
     }
-    this._logger.debug(
-      'idToken Authorization final status:',
-      response.idTokenInfo.status,
-    );
+    this._logger.debug('idToken Authorization final status:', response.idTokenInfo.status);
     return response;
   }
 
@@ -127,19 +113,18 @@ export class TransactionService {
     meterValues: [OCPP2_0_1.MeterValueType, ...OCPP2_0_1.MeterValueType[]],
     transactionDbId?: number | null,
   ) {
-    return Promise.all(meterValues.map(async (meterValue) => {
-      const hasPeriodic: boolean = meterValue.sampledValue?.some(
-        (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
-      );
-      if (transactionDbId && hasPeriodic) {
-        await this._transactionEventRepository.createMeterValue(
-          meterValue,
-          transactionDbId,
+    return Promise.all(
+      meterValues.map(async (meterValue) => {
+        const hasPeriodic: boolean = meterValue.sampledValue?.some(
+          (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
         );
-      } else {
-        await this._transactionEventRepository.createMeterValue(meterValue);
-      }
-    }));
+        if (transactionDbId && hasPeriodic) {
+          await this._transactionEventRepository.createMeterValue(meterValue, transactionDbId);
+        } else {
+          await this._transactionEventRepository.createMeterValue(meterValue);
+        }
+      }),
+    );
   }
 
   private async _applyAuthorizers(
@@ -160,13 +145,9 @@ export class TransactionService {
     return idTokenInfo;
   }
 
-  private async _hasConcurrentTransactions(
-    idToken: OCPP2_0_1.IdTokenType,
-  ): Promise<boolean> {
+  private async _hasConcurrentTransactions(idToken: OCPP2_0_1.IdTokenType): Promise<boolean> {
     const activeTransactions =
-      await this._transactionEventRepository.readAllActiveTransactionsByIdToken(
-        idToken,
-      );
+      await this._transactionEventRepository.readAllActiveTransactionsByIdToken(idToken);
 
     return activeTransactions.length > 1;
   }

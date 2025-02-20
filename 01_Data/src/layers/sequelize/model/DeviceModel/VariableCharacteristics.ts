@@ -8,7 +8,10 @@ import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize
 import { Variable } from './Variable';
 
 @Table
-export class VariableCharacteristics extends Model implements OCPP2_0_1.VariableCharacteristicsType {
+export class VariableCharacteristics
+  extends Model
+  implements OCPP2_0_1.VariableCharacteristicsType
+{
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableCharacteristicsType;
 
   /**

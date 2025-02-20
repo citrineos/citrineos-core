@@ -14,74 +14,74 @@ import { ServerNetworkProfile } from './ServerNetworkProfile';
  */
 @Table
 export class SetNetworkProfile extends Model {
-    static readonly MODEL_NAME: string = 'SetNetworkProfile';
+  static readonly MODEL_NAME: string = 'SetNetworkProfile';
 
-    @ForeignKey(() => ChargingStation)
-    @Column(DataType.STRING)
-    declare stationId: string;
+  @ForeignKey(() => ChargingStation)
+  @Column(DataType.STRING)
+  declare stationId: string;
 
-    @Index
-    @Column({
-        type: DataType.STRING,
-        unique: true,
-    })
-    declare correlationId: string;
+  @Index
+  @Column({
+    type: DataType.STRING,
+    unique: true,
+  })
+  declare correlationId: string;
 
-    @ForeignKey(() => ServerNetworkProfile)
-    @Column(DataType.STRING)
-    declare websocketServerConfigId?: string;
+  @ForeignKey(() => ServerNetworkProfile)
+  @Column(DataType.STRING)
+  declare websocketServerConfigId?: string;
 
-    @BelongsTo(() => ServerNetworkProfile)
-    declare websocketServerConfig?: ServerNetworkProfile;
+  @BelongsTo(() => ServerNetworkProfile)
+  declare websocketServerConfig?: ServerNetworkProfile;
 
-    @Column(DataType.INTEGER)
-    declare configurationSlot: number;
+  @Column(DataType.INTEGER)
+  declare configurationSlot: number;
 
-    @Column(DataType.STRING)
-    declare ocppVersion: OCPP2_0_1.OCPPVersionEnumType;
+  @Column(DataType.STRING)
+  declare ocppVersion: OCPP2_0_1.OCPPVersionEnumType;
 
-    @Column(DataType.STRING)
-    declare ocppTransport: OCPP2_0_1.OCPPTransportEnumType;
+  @Column(DataType.STRING)
+  declare ocppTransport: OCPP2_0_1.OCPPTransportEnumType;
 
-    /**
-     * Communication_ Function. OCPP_ Central_ System_ URL. URI
-     * urn:x-oca:ocpp:uid:1:569357
-     * URL of the CSMS(s) that this Charging Station  communicates with.
-     *
-     */
-    @Column(DataType.STRING)
-    declare ocppCsmsUrl: string;
+  /**
+   * Communication_ Function. OCPP_ Central_ System_ URL. URI
+   * urn:x-oca:ocpp:uid:1:569357
+   * URL of the CSMS(s) that this Charging Station  communicates with.
+   *
+   */
+  @Column(DataType.STRING)
+  declare ocppCsmsUrl: string;
 
-    /**
-     * Duration in seconds before a message send by the Charging Station via this network connection times-out.
-     * The best setting depends on the underlying network and response times of the CSMS.
-     * If you are looking for a some guideline: use 30 seconds as a starting point.
-     *
-     */
-    @Column(DataType.INTEGER)
-    declare messageTimeout: number;
+  /**
+   * Duration in seconds before a message send by the Charging Station via this network connection times-out.
+   * The best setting depends on the underlying network and response times of the CSMS.
+   * If you are looking for a some guideline: use 30 seconds as a starting point.
+   *
+   */
+  @Column(DataType.INTEGER)
+  declare messageTimeout: number;
 
-    /**
-     * This field specifies the security profile used when connecting to the CSMS with this NetworkConnectionProfile.
-     *
-     */
-    @Column(DataType.INTEGER)
-    declare securityProfile: number;
+  /**
+   * This field specifies the security profile used when connecting to the CSMS with this NetworkConnectionProfile.
+   *
+   */
+  @Column(DataType.INTEGER)
+  declare securityProfile: number;
 
-    @Column(DataType.STRING)
-    declare ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType;
+  @Column(DataType.STRING)
+  declare ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType;
 
-    /**
-     * Stringified JSON of {@link OCPP2_0_1.APNType} for display purposes only
-     * 
-     */
-    @Column(DataType.STRING)
-    declare apn?: string;
+  /**
+   * Stringified JSON of {@link OCPP2_0_1.APNType} for display purposes only
+   *
+   */
+  @Column(DataType.STRING)
+  declare apn?: string;
 
-    /**
-     * Stringified JSON of {@link OCPP2_0_1.VPNType} for display purposes only
-     * 
-     */
-    @Column(DataType.STRING)
-    declare vpn?: string;
+  /**
+   * Stringified JSON of {@link OCPP2_0_1.VPNType} for display purposes only
+   *
+   */
+  @Column(DataType.STRING)
+  declare vpn?: string;
 }

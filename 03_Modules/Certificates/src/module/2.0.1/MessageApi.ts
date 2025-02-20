@@ -24,7 +24,6 @@ export class CertificatesOcpp201Api
   extends AbstractModuleApi<CertificatesModule>
   implements ICertificatesModuleApi
 {
-
   /**
    * Constructs a new instance of the class.
    *
@@ -144,8 +143,7 @@ export class CertificatesOcpp201Api
    * @return {string} - The generated URL path.
    */
   protected _toMessagePath(input: CallAction): string {
-    const endpointPrefix =
-      this._module.config.modules.certificates?.endpointPrefix;
+    const endpointPrefix = this._module.config.modules.certificates?.endpointPrefix;
     return super._toMessagePath(input, endpointPrefix);
   }
 }

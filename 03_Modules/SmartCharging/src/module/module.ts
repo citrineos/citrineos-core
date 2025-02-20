@@ -125,21 +125,17 @@ export class SmartChargingModule extends AbstractModule {
       transactionEventRepository ||
       new sequelize.SequelizeTransactionEventRepository(config, this._logger);
     this._deviceModelRepository =
-      deviceModelRepository ||
-      new sequelize.SequelizeDeviceModelRepository(config, this._logger);
+      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, this._logger);
     this._chargingProfileRepository =
       chargingProfileRepository ||
       new sequelize.SequelizeChargingProfileRepository(config, this._logger);
 
     this._smartChargingService =
-      smartChargingService ||
-      new InternalSmartCharging(this._chargingProfileRepository);
+      smartChargingService || new InternalSmartCharging(this._chargingProfileRepository);
 
     this._idGenerator =
       idGenerator ||
-      new IdGenerator(
-        new SequelizeChargingStationSequenceRepository(config, this._logger),
-      );
+      new IdGenerator(new SequelizeChargingStationSequenceRepository(config, this._logger));
   }
 
   get transactionEventRepository(): ITransactionEventRepository {
@@ -179,11 +175,8 @@ export class SmartChargingModule extends AbstractModule {
 
     // OCPP 2.0.1 Part 2 K17.FR.06
     const hasAcOrDcChargingParameters =
-      givenNeeds.dcChargingParameters !== null ||
-      givenNeeds.acChargingParameters !== null;
-    this._logger.info(
-      `Has AC or DC charging parameters: ${hasAcOrDcChargingParameters}`,
-    );
+      givenNeeds.dcChargingParameters !== null || givenNeeds.acChargingParameters !== null;
+    this._logger.info(`Has AC or DC charging parameters: ${hasAcOrDcChargingParameters}`);
 
     const matchedChargingType =
       ((givenNeeds.dcChargingParameters ?? false) &&
@@ -194,11 +187,7 @@ export class SmartChargingModule extends AbstractModule {
       `Matched chargingParameters and requestedEnergyTransfer type: ${matchedChargingType}`,
     );
 
-    if (
-      !activeTransaction ||
-      !hasAcOrDcChargingParameters ||
-      !matchedChargingType
-    ) {
+    if (!activeTransaction || !hasAcOrDcChargingParameters || !matchedChargingType) {
       await this.sendCallResultWithMessage(message, {
         status: OCPP2_0_1.NotifyEVChargingNeedsStatusEnumType.Rejected,
       } as OCPP2_0_1.NotifyEVChargingNeedsResponse);
@@ -207,12 +196,11 @@ export class SmartChargingModule extends AbstractModule {
 
     let chargingProfile: OCPP2_0_1.ChargingProfileType;
     try {
-      chargingProfile =
-        await this._smartChargingService.calculateChargingProfile(
-          request,
-          activeTransaction,
-          stationId,
-        );
+      chargingProfile = await this._smartChargingService.calculateChargingProfile(
+        request,
+        activeTransaction,
+        stationId,
+      );
     } catch (error) {
       this._logger.error(`Failed to calculate charging profile: ${error}`);
       await this.sendCallResultWithMessage(message, {
@@ -221,14 +209,11 @@ export class SmartChargingModule extends AbstractModule {
       return;
     }
 
-    const chargingNeeds =
-      await this._chargingProfileRepository.createChargingNeeds(
-        request,
-        stationId,
-      );
-    this._logger.info(
-      `Charging needs created: ${JSON.stringify(chargingNeeds)}`,
+    const chargingNeeds = await this._chargingProfileRepository.createChargingNeeds(
+      request,
+      stationId,
     );
+    this._logger.info(`Charging needs created: ${JSON.stringify(chargingNeeds)}`);
 
     await this.sendCallResultWithMessage(message, {
       status: OCPP2_0_1.NotifyEVChargingNeedsStatusEnumType.Accepted,
@@ -240,9 +225,7 @@ export class SmartChargingModule extends AbstractModule {
         stationId,
         request.evseId,
       );
-    this._logger.info(
-      `Charging profile created: ${JSON.stringify(storedChargingProfile)}`,
-    );
+    this._logger.info(`Charging profile created: ${JSON.stringify(storedChargingProfile)}`);
 
     await this.sendCall(
       stationId,
@@ -275,9 +258,7 @@ export class SmartChargingModule extends AbstractModule {
         request.evseId,
       );
     if (!activeTransaction) {
-      this._logger.error(
-        `No active transaction on station ${stationId} evse ${request.evseId}`,
-      );
+      this._logger.error(`No active transaction on station ${stationId} evse ${request.evseId}`);
       return;
     } else {
       this._logger.info(
@@ -296,12 +277,11 @@ export class SmartChargingModule extends AbstractModule {
         `EV charging schedule is NOT within limits of existing ChargingSchedule: ${error}`,
       );
       // Currently, we simply trust the given EV charging schedule and create a new charging profile based on it
-      const setChargingProfileRequest =
-        await this._generateSetChargingProfileRequest(
-          request,
-          activeTransaction,
-          stationId,
-        );
+      const setChargingProfileRequest = await this._generateSetChargingProfileRequest(
+        request,
+        activeTransaction,
+        stationId,
+      );
       await this.sendCall(
         stationId,
         message.context.tenantId,
@@ -322,14 +302,8 @@ export class SmartChargingModule extends AbstractModule {
     // Create response
     const response: OCPP2_0_1.NotifyChargingLimitResponse = {};
 
-    const messageConfirmation = await this.sendCallResultWithMessage(
-      message,
-      response,
-    );
-    this._logger.debug(
-      'NotifyChargingLimit response sent: ',
-      messageConfirmation,
-    );
+    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+    this._logger.debug('NotifyChargingLimit response sent: ', messageConfirmation);
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ReportChargingProfiles)
@@ -339,8 +313,7 @@ export class SmartChargingModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('ReportChargingProfiles received:', message, props);
 
-    const chargingProfiles = message.payload
-      .chargingProfile as OCPP2_0_1.ChargingProfileType[];
+    const chargingProfiles = message.payload.chargingProfile as OCPP2_0_1.ChargingProfileType[];
     for (const chargingProfile of chargingProfiles) {
       await this._chargingProfileRepository.createOrUpdateChargingProfile(
         chargingProfile,
@@ -354,14 +327,8 @@ export class SmartChargingModule extends AbstractModule {
     // Create response
     const response: OCPP2_0_1.ReportChargingProfilesResponse = {};
 
-    const messageConfirmation = await this.sendCallResultWithMessage(
-      message,
-      response,
-    );
-    this._logger.debug(
-      'ReportChargingProfiles response sent: ',
-      messageConfirmation,
-    );
+    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+    this._logger.debug('ReportChargingProfiles response sent: ', messageConfirmation);
   }
 
   /**
@@ -373,15 +340,9 @@ export class SmartChargingModule extends AbstractModule {
     message: IMessage<OCPP2_0_1.ClearChargingProfileResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug(
-      'ClearChargingProfile response received:',
-      message,
-      props,
-    );
+    this._logger.debug('ClearChargingProfile response received:', message, props);
 
-    if (
-      message.payload.status === OCPP2_0_1.ClearChargingProfileStatusEnumType.Accepted
-    ) {
+    if (message.payload.status === OCPP2_0_1.ClearChargingProfileStatusEnumType.Accepted) {
       const stationId: string = message.context.stationId;
       // Set existed profiles to isActive false
       await this._chargingProfileRepository.updateAllByQuery(
@@ -418,9 +379,7 @@ export class SmartChargingModule extends AbstractModule {
         } as OCPP2_0_1.GetChargingProfilesRequest,
       );
     } else {
-      this._logger.error(
-        `Failed to clear charging profile: ${JSON.stringify(message.payload)}`,
-      );
+      this._logger.error(`Failed to clear charging profile: ${JSON.stringify(message.payload)}`);
     }
   }
 
@@ -429,11 +388,7 @@ export class SmartChargingModule extends AbstractModule {
     message: IMessage<OCPP2_0_1.GetChargingProfilesResponse>,
     props?: HandlerProperties,
   ): void {
-    this._logger.debug(
-      'GetChargingProfiles response received:',
-      message,
-      props,
-    );
+    this._logger.debug('GetChargingProfiles response received:', message, props);
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SetChargingProfile)
@@ -444,9 +399,7 @@ export class SmartChargingModule extends AbstractModule {
     this._logger.debug('SetChargingProfile response received:', message, props);
     const response: OCPP2_0_1.SetChargingProfileResponse = message.payload;
     if (response.status === OCPP2_0_1.ChargingProfileStatusEnumType.Rejected) {
-      this._logger.error(
-        `Failed to set charging profile: ${JSON.stringify(response)}`,
-      );
+      this._logger.error(`Failed to set charging profile: ${JSON.stringify(response)}`);
     } else {
       const stationId: string = message.context.stationId;
       // Set existed profiles to isActive false
@@ -487,11 +440,7 @@ export class SmartChargingModule extends AbstractModule {
     message: IMessage<OCPP2_0_1.ClearedChargingLimitResponse>,
     props?: HandlerProperties,
   ): void {
-    this._logger.debug(
-      'ClearedChargingLimit response received:',
-      message,
-      props,
-    );
+    this._logger.debug('ClearedChargingLimit response received:', message, props);
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetCompositeSchedule)
@@ -499,22 +448,15 @@ export class SmartChargingModule extends AbstractModule {
     message: IMessage<OCPP2_0_1.GetCompositeScheduleResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug(
-      'GetCompositeSchedule response received:',
-      message,
-      props,
-    );
+    this._logger.debug('GetCompositeSchedule response received:', message, props);
     const response = message.payload;
     if (response.status === OCPP2_0_1.GenericStatusEnumType.Accepted) {
       if (response.schedule) {
-        const compositeSchedule =
-          await this._chargingProfileRepository.createCompositeSchedule(
-            response.schedule,
-            message.context.stationId,
-          );
-        this._logger.info(
-          `Composite schedule created: ${JSON.stringify(compositeSchedule)}`,
+        const compositeSchedule = await this._chargingProfileRepository.createCompositeSchedule(
+          response.schedule,
+          message.context.stationId,
         );
+        this._logger.info(`Composite schedule created: ${JSON.stringify(compositeSchedule)}`);
       } else {
         this._logger.error(
           `Missing schedule in response: ${response.status} ${JSON.stringify(response.statusInfo)}`,
@@ -547,14 +489,10 @@ export class SmartChargingModule extends AbstractModule {
 
     const purpose = OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile;
     chargingSchedule.id =
-      await this._chargingProfileRepository.getNextChargingScheduleId(
-        stationId,
-      );
+      await this._chargingProfileRepository.getNextChargingScheduleId(stationId);
 
     const chargingProfile: OCPP2_0_1.ChargingProfileType = {
-      id: await this._chargingProfileRepository.getNextChargingProfileId(
-        stationId,
-      ),
+      id: await this._chargingProfileRepository.getNextChargingProfileId(stationId),
       stackLevel: await this._chargingProfileRepository.getNextStackLevel(
         stationId,
         transaction.id,

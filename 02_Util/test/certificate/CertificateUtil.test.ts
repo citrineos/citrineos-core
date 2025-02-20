@@ -26,14 +26,9 @@ describe('CertificateUtil', () => {
       );
       const actualCert = new X509(actualResult.getPEM());
 
-      expect(actualCert.getIssuerString()).toBe(
-        '/CN=localhost SubCA/O=s44/C=US',
-      );
+      expect(actualCert.getIssuerString()).toBe('/CN=localhost SubCA/O=s44/C=US');
       expect(actualCert.getSubjectString()).toBe('/C=US/O=Pionix/DC=CPO');
-      expect(actualCert.getExtKeyUsage().names).toStrictEqual([
-        'digitalSignature',
-        'keyAgreement',
-      ]);
+      expect(actualCert.getExtKeyUsage().names).toStrictEqual(['digitalSignature', 'keyAgreement']);
       expect(actualCert.getExtBasicConstraints().critical).toBe(true);
       expect(actualCert.getSignatureAlgorithmName()).toBe('SHA256withECDSA');
     });
@@ -102,10 +97,7 @@ describe('CertificateUtil', () => {
         }),
       );
 
-      const actualResult = await sendOCSPRequest(
-        givenRequest,
-        givenResponderURL,
-      );
+      const actualResult = await sendOCSPRequest(givenRequest, givenResponderURL);
 
       expect(actualResult).toBe(mockResult);
       const expectedInit: RequestInit = {
@@ -128,9 +120,7 @@ describe('CertificateUtil', () => {
         }),
       );
 
-      await expect(() =>
-        sendOCSPRequest(givenRequest, givenResponderURL),
-      ).rejects.toThrow(
+      await expect(() => sendOCSPRequest(givenRequest, givenResponderURL)).rejects.toThrow(
         `Failed to fetch OCSP response from ${givenResponderURL}: 500 with error: Internal Server Error`,
       );
     });
@@ -140,8 +130,7 @@ describe('CertificateUtil', () => {
     it('successes', async () => {
       const givenEncodedString = readFile('V2GCACertChainSample.pem');
 
-      const actualResult =
-        extractCertificateArrayFromEncodedString(givenEncodedString);
+      const actualResult = extractCertificateArrayFromEncodedString(givenEncodedString);
 
       expect(actualResult?.length).toBe(3);
     });

@@ -1,21 +1,13 @@
-import {
-  IAuthorizationRepository,
-  ITransactionEventRepository,
-} from '@citrineos/data';
-import {
-  OCPP2_0_1
-} from '@citrineos/base';
+import { IAuthorizationRepository, ITransactionEventRepository } from '@citrineos/data';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { TransactionService } from '../../src/module/TransactionService';
 import { anIdToken } from '../providers/IdTokenProvider';
 import { anAuthorization } from '../providers/AuthorizationProvider';
 
 import { aMessageContext } from '../providers/MessageContextProvider';
-import {
-  aTransaction,
-  aTransactionEventRequest,
-} from '../providers/TransactionProvider';
+import { aTransaction, aTransactionEventRequest } from '../providers/TransactionProvider';
 import { IAuthorizer } from '@citrineos/util';
-import {faker} from "@faker-js/faker";
+import { faker } from '@faker-js/faker';
 
 describe('TransactionService', () => {
   let transactionService: TransactionService;
@@ -55,24 +47,20 @@ describe('TransactionService', () => {
       messageContext,
     );
 
-    expect(response.idTokenInfo!.status).toBe(
-      OCPP2_0_1.AuthorizationStatusEnumType.Unknown,
-    );
+    expect(response.idTokenInfo!.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.Unknown);
   });
 
   it('should return Accepted status when idTokenInfo is not defined', async () => {
     const authorization = anAuthorization((auth) => {
       auth.idTokenInfo = undefined;
     });
-    authorizationRepository.readAllByQuerystring.mockResolvedValue([
-      authorization,
-    ]);
+    authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = {
         idToken: faker.string.uuid(),
         type: OCPP2_0_1.IdTokenEnumType.Central,
-      }
+      };
     });
     const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
@@ -80,18 +68,14 @@ describe('TransactionService', () => {
       messageContext,
     );
 
-    expect(response.idTokenInfo?.status).toBe(
-      OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
-    );
+    expect(response.idTokenInfo?.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.Accepted);
   });
 
   it('should return status from idTokenInfo when not Accepted', async () => {
     const authorization = anAuthorization((auth) => {
       auth.idTokenInfo!.status = OCPP2_0_1.AuthorizationStatusEnumType.Blocked;
     });
-    authorizationRepository.readAllByQuerystring.mockResolvedValue([
-      authorization,
-    ]);
+    authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = {
@@ -106,9 +90,7 @@ describe('TransactionService', () => {
       messageContext,
     );
 
-    expect(response.idTokenInfo?.status).toBe(
-      OCPP2_0_1.AuthorizationStatusEnumType.Blocked,
-    );
+    expect(response.idTokenInfo?.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.Blocked);
   });
 
   it('should return Invalid status when cacheExpiryDateTime is expired', async () => {
@@ -117,9 +99,7 @@ describe('TransactionService', () => {
       auth.idTokenInfo!.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
       auth.idTokenInfo!.cacheExpiryDateTime = expiredDate;
     });
-    authorizationRepository.readAllByQuerystring.mockResolvedValue([
-      authorization,
-    ]);
+    authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -131,21 +111,18 @@ describe('TransactionService', () => {
       messageContext,
     );
 
-    expect(response.idTokenInfo?.status).toBe(
-      OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
-    );
+    expect(response.idTokenInfo?.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.Invalid);
   });
 
   it('should return ConcurrentTx status when there are concurrent transactions', async () => {
     const authorization = anAuthorization((auth) => {
       auth.idTokenInfo!.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
     });
-    authorizationRepository.readAllByQuerystring.mockResolvedValue([
-      authorization,
+    authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
+    transactionEventRepository.readAllActiveTransactionsByIdToken.mockResolvedValue([
+      aTransaction(),
+      aTransaction(),
     ]);
-    transactionEventRepository.readAllActiveTransactionsByIdToken.mockResolvedValue(
-      [aTransaction(), aTransaction()],
-    );
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -157,21 +134,15 @@ describe('TransactionService', () => {
       messageContext,
     );
 
-    expect(response.idTokenInfo?.status).toBe(
-      OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
-    );
+    expect(response.idTokenInfo?.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx);
   });
 
   it('should apply authorizers when status is Accepted and transaction is started', async () => {
     const authorization = anAuthorization((auth) => {
       auth.idTokenInfo!.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
     });
-    authorizationRepository.readAllByQuerystring.mockResolvedValue([
-      authorization,
-    ]);
-    transactionEventRepository.readAllActiveTransactionsByIdToken.mockResolvedValue(
-      [],
-    );
+    authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
+    transactionEventRepository.readAllActiveTransactionsByIdToken.mockResolvedValue([]);
     authorizer.authorize.mockResolvedValue({});
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
@@ -185,8 +156,6 @@ describe('TransactionService', () => {
     );
 
     expect(authorizer.authorize).toHaveBeenCalled();
-    expect(response.idTokenInfo?.status).toBe(
-      OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
-    );
+    expect(response.idTokenInfo?.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.Accepted);
   });
 });

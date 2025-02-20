@@ -41,10 +41,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   protected _logger: Logger<ILogObj>;
   protected readonly _handler: IMessageHandler;
   protected readonly _sender: IMessageSender;
-  protected _networkHook: (
-    identifier: string,
-    message: string,
-  ) => Promise<boolean>;
+  protected _networkHook: (identifier: string, message: string) => Promise<boolean>;
 
   /**
    * Constructor of abstract ocpp router.
@@ -101,9 +98,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     return this._config;
   }
 
-  set networkHook(
-    value: (identifier: string, message: string) => Promise<boolean>,
-  ) {
+  set networkHook(value: (identifier: string, message: string) => Promise<boolean>) {
     this._networkHook = value;
   }
 
@@ -123,9 +118,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
    * Public Methods
    */
 
-  async handle(
-    message: IMessage<OcppRequest | OcppResponse | OcppError>,
-  ): Promise<void> {
+  async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>): Promise<void> {
     this._logger.debug('Received message:', message);
 
     if (message.state === MessageState.Response) {
@@ -176,7 +169,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   protected _validateCall(
     identifier: string,
     message: Call,
-    protocol: string, 
+    protocol: string,
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
     const action = message[2];
     const payload = message[3];
@@ -253,11 +246,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
         return { isValid: true };
       }
     } else {
-      this._logger.error(
-        'No schema found for call result with action',
-        action,
-        message,
-      );
+      this._logger.error('No schema found for call result with action', action, message);
       return { isValid: false }; // TODO: Implement config for this behavior
     }
   }

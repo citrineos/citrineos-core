@@ -34,25 +34,13 @@ import addFormats from 'ajv-formats';
 import fastify, { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
-import {
-  ConfigurationModule,
-  ConfigurationOcpp201Api,
-} from '@citrineos/configuration';
-import {
-  TransactionsModule,
-  TransactionsOcpp201Api,
-} from '@citrineos/transactions';
-import {
-  CertificatesModule,
-  CertificatesOcpp201Api,
-} from '@citrineos/certificates';
+import { ConfigurationModule, ConfigurationOcpp201Api } from '@citrineos/configuration';
+import { TransactionsModule, TransactionsOcpp201Api } from '@citrineos/transactions';
+import { CertificatesModule, CertificatesOcpp201Api } from '@citrineos/certificates';
 import { EVDriverModule, EVDriverOcpp201Api } from '@citrineos/evdriver';
 import { AdminApi, MessageRouterImpl } from '@citrineos/ocpprouter';
 import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
-import {
-  SmartChargingModule,
-  SmartChargingOcpp201Api,
-} from '@citrineos/smartcharging';
+import { SmartChargingModule, SmartChargingOcpp201Api } from '@citrineos/smartcharging';
 import { sequelize } from '@citrineos/data';
 import { TenantModule, TenantDataApi } from '@citrineos/tenant';
 import { UnknownStationFilter } from '@citrineos/util/dist/networkconnection/authenticator/UnknownStationFilter';
@@ -77,24 +65,16 @@ class CitrineOSServer {
    * @param {FastifyInstance} server - optional Fastify server instance
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
    */
-  constructor(
-    config: SystemConfig,
-    server?: FastifyInstance,
-    ajv?: Ajv,
-    cache?: ICache,
-  ) {
+  constructor(config: SystemConfig, server?: FastifyInstance, ajv?: Ajv, cache?: ICache) {
     // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
     if (!config.util.messageBroker.amqp) {
-      throw new Error(
-        'This server implementation requires amqp configuration for rabbitMQ.',
-      );
+      throw new Error('This server implementation requires amqp configuration for rabbitMQ.');
     }
     this._config = config;
 
     // Create server instance
-    this._server =
-      server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
+    this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
     // Add health check
     this._server.get('/health', async () => ({ status: 'healthy' }));
@@ -120,11 +100,7 @@ class CitrineOSServer {
     });
 
     // Force sync database
-    sequelize.DefaultSequelizeInstance.getInstance(
-      this._config,
-      this._logger,
-      true,
-    );
+    sequelize.DefaultSequelizeInstance.getInstance(this._config, this._logger, true);
 
     // Set cache implementation
     this._cache =
@@ -148,9 +124,7 @@ class CitrineOSServer {
       const directusUtil = new DirectusUtil(this._config, this._logger);
       this._server.addHook(
         'onRoute',
-        directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(
-          directusUtil,
-        ),
+        directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(directusUtil),
       );
       this._server.addHook('onReady', async () => {
         this._logger.info('Directus actions initialization finished');
@@ -272,15 +246,12 @@ class ModuleService {
     // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
     if (!config.util.messageBroker.amqp) {
-      throw new Error(
-        'This server implementation requires amqp configuration for rabbitMQ.',
-      );
+      throw new Error('This server implementation requires amqp configuration for rabbitMQ.');
     }
     this._config = config;
 
     // Create server instance
-    this._server =
-      server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
+    this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
     // Add health check
     this._server.get('/health', async () => ({ status: 'healthy' }));
@@ -325,9 +296,7 @@ class ModuleService {
       const directusUtil = new DirectusUtil(this._config, this._logger);
       this._server.addHook(
         'onRoute',
-        directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(
-          directusUtil,
-        ),
+        directusUtil.addDirectusMessageApiFlowsFastifyRouteHook.bind(directusUtil),
       );
     }
 
@@ -468,11 +437,7 @@ class ModuleService {
             this._createHandler(),
             this._logger,
           );
-          this._api = new TenantDataApi(
-            this._module as TenantModule,
-            this._server,
-            this._logger,
-          );
+          this._api = new TenantDataApi(this._module as TenantModule, this._server, this._logger);
           // TODO: take actions to make sure module has correct subscriptions and log proof
           this._logger.info('Tenant module started...');
           this._host = this._config.modules.tenant.host as string;
@@ -560,7 +525,5 @@ if (process.env.APP_NAME === EventGroup.General) {
     process.exit(1);
   });
 } else {
-  throw new Error(
-    'Invalid APP_NAME environment variable "${process.env.APP_NAME}"',
-  );
+  throw new Error('Invalid APP_NAME environment variable "${process.env.APP_NAME}"');
 }

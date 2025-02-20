@@ -168,7 +168,7 @@ services:
       timeout: 10s
       retries: 10
       start_period: 5s
-    
+
   data-connector-agent:
     image: hasura/graphql-data-connector:v2.40.3
     restart: always

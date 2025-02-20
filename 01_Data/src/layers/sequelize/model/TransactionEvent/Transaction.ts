@@ -4,7 +4,15 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
+import {
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  Model,
+  Table,
+} from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
@@ -40,11 +48,17 @@ export class Transaction extends Model implements OCPP2_0_1.TransactionType {
   @Column(DataType.BOOLEAN)
   declare isActive: boolean;
 
-  @HasMany(() => TransactionEvent, { as: Transaction.TRANSACTION_EVENTS_ALIAS, foreignKey: 'transactionDatabaseId' })
+  @HasMany(() => TransactionEvent, {
+    as: Transaction.TRANSACTION_EVENTS_ALIAS,
+    foreignKey: 'transactionDatabaseId',
+  })
   declare transactionEvents?: OCPP2_0_1.TransactionEventRequest[];
 
   // required only for filtering, should not be used to pull transaction events
-  @HasMany(() => TransactionEvent, { as: Transaction.TRANSACTION_EVENTS_FILTER_ALIAS, foreignKey: 'transactionDatabaseId' })
+  @HasMany(() => TransactionEvent, {
+    as: Transaction.TRANSACTION_EVENTS_FILTER_ALIAS,
+    foreignKey: 'transactionDatabaseId',
+  })
   declare transactionEventsFilter?: OCPP2_0_1.TransactionEventRequest[];
 
   @HasMany(() => MeterValue)
@@ -67,7 +81,7 @@ export class Transaction extends Model implements OCPP2_0_1.TransactionType {
 
   @Column(DataType.DECIMAL)
   declare totalCost?: number;
-  
+
   declare customData?: OCPP2_0_1.CustomDataType | null;
 
   static buildTransaction(

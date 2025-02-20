@@ -23,15 +23,12 @@ describe('money', () => {
       [99.99, new Big('99.99')],
       [123.01, new Big('123.01')],
       [1001.999, new Big('1001.999')],
-    ] as Array<[number, Big]>)(
-      'should instantiate from number',
-      (numberAmount, expectedAmount) => {
-        const money = Money.of(numberAmount, 'USD');
+    ] as Array<[number, Big]>)('should instantiate from number', (numberAmount, expectedAmount) => {
+      const money = Money.of(numberAmount, 'USD');
 
-        expect(money.amount).toEqual(expectedAmount);
-        expect(money.currency.code).toEqual('USD');
-      },
-    );
+      expect(money.amount).toEqual(expectedAmount);
+      expect(money.currency.code).toEqual('USD');
+    });
 
     it.each([
       [new Big('0'), new Big(0)],
@@ -51,15 +48,12 @@ describe('money', () => {
       [new Big('99.99'), new Big('99.99')],
       [new Big('123.01'), new Big('123.01')],
       [new Big('1001.999'), new Big('1001.999')],
-    ] as Array<[Big, Big]>)(
-      'should instantiate from Big',
-      (bigAmount, expectedAmount) => {
-        const money = Money.of(bigAmount, 'USD');
+    ] as Array<[Big, Big]>)('should instantiate from Big', (bigAmount, expectedAmount) => {
+      const money = Money.of(bigAmount, 'USD');
 
-        expect(money.amount).toEqual(expectedAmount);
-        expect(money.currency.code).toEqual('USD');
-      },
-    );
+      expect(money.amount).toEqual(expectedAmount);
+      expect(money.currency.code).toEqual('USD');
+    });
 
     it.each([
       ['0', new Big(0)],
@@ -79,37 +73,28 @@ describe('money', () => {
       ['99.99', new Big('99.99')],
       ['123.01', new Big('123.01')],
       ['1001.999', new Big('1001.999')],
-    ] as Array<[string, Big]>)(
-      'should instantiate from string',
-      (stringAmount, expectedAmount) => {
-        const money = Money.of(stringAmount, 'USD');
+    ] as Array<[string, Big]>)('should instantiate from string', (stringAmount, expectedAmount) => {
+      const money = Money.of(stringAmount, 'USD');
 
-        expect(money.amount).toEqual(expectedAmount);
-        expect(money.currency.code).toEqual('USD');
-      },
-    );
+      expect(money.amount).toEqual(expectedAmount);
+      expect(money.currency.code).toEqual('USD');
+    });
 
     it('should fail when undefined amount', () => {
       const amount: number | undefined = undefined;
-      expect(() => Money.of(amount!, 'USD')).toThrow(
-        `Amount has to be defined`,
-      );
+      expect(() => Money.of(amount!, 'USD')).toThrow(`Amount has to be defined`);
     });
 
     it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
       'should fail when invalid amount',
       (amount) => {
-        expect(() => Money.of(amount, 'USD')).toThrow(
-          `Invalid money amount: ${amount}`,
-        );
+        expect(() => Money.of(amount, 'USD')).toThrow(`Invalid money amount: ${amount}`);
       },
     );
 
     it('should fail when undefined currency', () => {
       const currency: string | undefined = undefined;
-      expect(() => Money.of('1.00', currency!)).toThrow(
-        `Currency has to be defined`,
-      );
+      expect(() => Money.of('1.00', currency!)).toThrow(`Currency has to be defined`);
     });
 
     it.each([
@@ -127,9 +112,7 @@ describe('money', () => {
       'PLN',
       'CHF',
     ])('should fail when unsupported currency', (currency) => {
-      expect(() => Money.of('1.00', currency)).toThrow(
-        `Unsupported currency code: ${currency}`,
-      );
+      expect(() => Money.of('1.00', currency)).toThrow(`Unsupported currency code: ${currency}`);
     });
   });
 
@@ -158,12 +141,9 @@ describe('money', () => {
       [Money.USD('99.99'), new Big('99.99')],
       [Money.USD('123.01'), new Big('123.01')],
       [Money.USD('1001.999'), new Big('1001.999')],
-    ] as Array<[Money, Big]>)(
-      'should return amount',
-      (money, expectedAmount) => {
-        expect(money.amount).toEqual(expectedAmount);
-      },
-    );
+    ] as Array<[Money, Big]>)('should return amount', (money, expectedAmount) => {
+      expect(money.amount).toEqual(expectedAmount);
+    });
   });
 
   describe('currency', () => {
@@ -177,12 +157,9 @@ describe('money', () => {
       [Money.of('1.00', Currency.of('CAD')), Currency.of('CAD')],
       [Money.of('1.00', 'GBP'), Currency.of('GBP')],
       [Money.of('1.00', Currency.of('GBP')), Currency.of('GBP')],
-    ] as Array<[Money, Currency]>)(
-      'should return currency',
-      (money, expectedCurrency) => {
-        expect(money.currency).toEqual(expectedCurrency);
-      },
-    );
+    ] as Array<[Money, Currency]>)('should return currency', (money, expectedCurrency) => {
+      expect(money.currency).toEqual(expectedCurrency);
+    });
   });
 
   describe('toNumber', () => {
@@ -210,12 +187,9 @@ describe('money', () => {
       [Money.USD('99.99'), 99.99],
       [Money.USD('123.01'), 123.01],
       [Money.USD('1001.999'), 1001.999],
-    ] as Array<[Money, number]>)(
-      'should return amount as number',
-      (money, expectedNumber) => {
-        expect(money.toNumber()).toEqual(expectedNumber);
-      },
-    );
+    ] as Array<[Money, number]>)('should return amount as number', (money, expectedNumber) => {
+      expect(money.toNumber()).toEqual(expectedNumber);
+    });
   });
 
   describe('roundToCurrencyScale', () => {
@@ -264,16 +238,8 @@ describe('money', () => {
       [Money.USD('0.01'), '0.01', Money.USD('0.0001')],
       [Money.USD('0.005'), '0.005', Money.USD('0.000025')],
       [Money.USD('0.0020445'), '0.0005405', Money.USD('0.00000110505225')],
-      [
-        Money.USD('0.0000000032'),
-        '0.0014406509',
-        Money.USD('0.00000000000461008288'),
-      ],
-      [
-        Money.USD('0.6970656124'),
-        '0.0098969742',
-        Money.USD('0.00689884038163000008'),
-      ],
+      [Money.USD('0.0000000032'), '0.0014406509', Money.USD('0.00000000000461008288')],
+      [Money.USD('0.6970656124'), '0.0098969742', Money.USD('0.00689884038163000008')],
 
       [Money.USD('1'), '1', Money.USD('1')],
       [Money.USD('1'), '99', Money.USD('99')],
@@ -291,11 +257,7 @@ describe('money', () => {
       [Money.USD('2.99'), '20.99', Money.USD('62.7601')],
       [Money.USD('2.99'), '20.5105', Money.USD('61.326395')],
 
-      [
-        Money.USD('1'),
-        '0.00000000000014406509',
-        Money.USD('0.00000000000014406509'),
-      ],
+      [Money.USD('1'), '0.00000000000014406509', Money.USD('0.00000000000014406509')],
       [Money.USD('1'), '0.00000000000001', Money.USD('0.00000000000001')],
       [Money.USD('1'), '0.000000003345', Money.USD('0.000000003345')],
       [Money.USD('1'), '0.0001', Money.USD('0.0001')],
@@ -364,21 +326,9 @@ describe('money', () => {
       [Money.USD('1'), Money.USD('800000'), Money.USD('800001')],
       [Money.USD('1'), Money.USD('9000000000000'), Money.USD('9000000000001')],
 
-      [
-        Money.USD('1'),
-        Money.USD('0.00000000000014406509'),
-        Money.USD('1.00000000000014406509'),
-      ],
-      [
-        Money.USD('1'),
-        Money.USD('0.00000000000001'),
-        Money.USD('1.00000000000001'),
-      ],
-      [
-        Money.USD('1'),
-        Money.USD('0.000000003345'),
-        Money.USD('1.000000003345'),
-      ],
+      [Money.USD('1'), Money.USD('0.00000000000014406509'), Money.USD('1.00000000000014406509')],
+      [Money.USD('1'), Money.USD('0.00000000000001'), Money.USD('1.00000000000001')],
+      [Money.USD('1'), Money.USD('0.000000003345'), Money.USD('1.000000003345')],
       [Money.USD('1'), Money.USD('0.0001'), Money.USD('1.0001')],
       [Money.USD('1'), Money.USD('0.09'), Money.USD('1.09')],
       [Money.USD('1'), Money.USD('1.02'), Money.USD('2.02')],
@@ -427,27 +377,11 @@ describe('money', () => {
       [Money.USD('1'), Money.USD('-99'), Money.USD('-98')],
       [Money.USD('1'), Money.USD('-144'), Money.USD('-143')],
       [Money.USD('1'), Money.USD('-800000'), Money.USD('-799999')],
-      [
-        Money.USD('1'),
-        Money.USD('-9000000000000'),
-        Money.USD('-8999999999999'),
-      ],
+      [Money.USD('1'), Money.USD('-9000000000000'), Money.USD('-8999999999999')],
 
-      [
-        Money.USD('1'),
-        Money.USD('-0.00000000000014406509'),
-        Money.USD('0.99999999999985593491'),
-      ],
-      [
-        Money.USD('1'),
-        Money.USD('-0.00000000000001'),
-        Money.USD('0.99999999999999'),
-      ],
-      [
-        Money.USD('1'),
-        Money.USD('-0.000000003345'),
-        Money.USD('0.999999996655'),
-      ],
+      [Money.USD('1'), Money.USD('-0.00000000000014406509'), Money.USD('0.99999999999985593491')],
+      [Money.USD('1'), Money.USD('-0.00000000000001'), Money.USD('0.99999999999999')],
+      [Money.USD('1'), Money.USD('-0.000000003345'), Money.USD('0.999999996655')],
       [Money.USD('1'), Money.USD('-0.0001'), Money.USD('0.9999')],
       [Money.USD('1'), Money.USD('-0.09'), Money.USD('0.91')],
       [Money.USD('1'), Money.USD('-1.02'), Money.USD('-0.02')],
@@ -503,21 +437,9 @@ describe('money', () => {
       [Money.USD('800000'), Money.USD('1'), Money.USD('799999')],
       [Money.USD('9000000000000'), Money.USD('1'), Money.USD('8999999999999')],
 
-      [
-        Money.USD('1'),
-        Money.USD('0.00000000000014406509'),
-        Money.USD('0.99999999999985593491'),
-      ],
-      [
-        Money.USD('1'),
-        Money.USD('0.00000000000001'),
-        Money.USD('0.99999999999999'),
-      ],
-      [
-        Money.USD('1'),
-        Money.USD('0.000000003345'),
-        Money.USD('0.999999996655'),
-      ],
+      [Money.USD('1'), Money.USD('0.00000000000014406509'), Money.USD('0.99999999999985593491')],
+      [Money.USD('1'), Money.USD('0.00000000000001'), Money.USD('0.99999999999999')],
+      [Money.USD('1'), Money.USD('0.000000003345'), Money.USD('0.999999996655')],
       [Money.USD('1'), Money.USD('0.0001'), Money.USD('0.9999')],
       [Money.USD('1'), Money.USD('0.09'), Money.USD('0.91')],
       [Money.USD('1'), Money.USD('1.02'), Money.USD('-0.02')],
@@ -563,21 +485,9 @@ describe('money', () => {
       [Money.USD('1'), Money.USD('-800000'), Money.USD('800001')],
       [Money.USD('1'), Money.USD('-9000000000000'), Money.USD('9000000000001')],
 
-      [
-        Money.USD('1'),
-        Money.USD('-0.00000000000014406509'),
-        Money.USD('1.00000000000014406509'),
-      ],
-      [
-        Money.USD('1'),
-        Money.USD('-0.00000000000001'),
-        Money.USD('1.00000000000001'),
-      ],
-      [
-        Money.USD('1'),
-        Money.USD('-0.000000003345'),
-        Money.USD('1.000000003345'),
-      ],
+      [Money.USD('1'), Money.USD('-0.00000000000014406509'), Money.USD('1.00000000000014406509')],
+      [Money.USD('1'), Money.USD('-0.00000000000001'), Money.USD('1.00000000000001')],
+      [Money.USD('1'), Money.USD('-0.000000003345'), Money.USD('1.000000003345')],
       [Money.USD('1'), Money.USD('-0.0001'), Money.USD('1.0001')],
       [Money.USD('1'), Money.USD('-0.09'), Money.USD('1.09')],
       [Money.USD('1'), Money.USD('-1.02'), Money.USD('2.02')],
@@ -597,14 +507,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('0.00'), Money.USD('1.00')],
-      [
-        Money.USD('0.00000000000000000001'),
-        Money.USD('0.00000000000000000002'),
-      ],
-      [
-        Money.USD('0.00000000000000000009'),
-        Money.USD('0.00000000000000000010'),
-      ],
+      [Money.USD('0.00000000000000000001'), Money.USD('0.00000000000000000002')],
+      [Money.USD('0.00000000000000000009'), Money.USD('0.00000000000000000010')],
       [Money.USD('0.99'), Money.USD('1.00')],
       [Money.USD('20'), Money.USD('100')],
     ])('should return false when amount is smaller', (money, moreMoney) => {
@@ -613,14 +517,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('0.00'), Money.USD('0.00')],
-      [
-        Money.USD('0.00000000000000000001'),
-        Money.USD('0.00000000000000000001'),
-      ],
-      [
-        Money.USD('0.00000000000000000009'),
-        Money.USD('0.00000000000000000009'),
-      ],
+      [Money.USD('0.00000000000000000001'), Money.USD('0.00000000000000000001')],
+      [Money.USD('0.00000000000000000009'), Money.USD('0.00000000000000000009')],
       [Money.USD('0.99'), Money.USD('0.99')],
       [Money.USD('20'), Money.USD('20.00')],
     ])('should return true when amount is equal', (money, sameMoney) => {
@@ -629,14 +527,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('1.00'), Money.USD('0.00')],
-      [
-        Money.USD('0.00000000000000000002'),
-        Money.USD('0.00000000000000000001'),
-      ],
-      [
-        Money.USD('0.00000000000000000010'),
-        Money.USD('0.00000000000000000009'),
-      ],
+      [Money.USD('0.00000000000000000002'), Money.USD('0.00000000000000000001')],
+      [Money.USD('0.00000000000000000010'), Money.USD('0.00000000000000000009')],
       [Money.USD('1.00'), Money.USD('0.99')],
       [Money.USD('100'), Money.USD('99')],
     ])('should return false when amount is greater', (money, lessMoney) => {
@@ -654,14 +546,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('0.00'), Money.USD('1.00')],
-      [
-        Money.USD('0.00000000000000000001'),
-        Money.USD('0.00000000000000000002'),
-      ],
-      [
-        Money.USD('0.00000000000000000009'),
-        Money.USD('0.00000000000000000010'),
-      ],
+      [Money.USD('0.00000000000000000001'), Money.USD('0.00000000000000000002')],
+      [Money.USD('0.00000000000000000009'), Money.USD('0.00000000000000000010')],
       [Money.USD('0.99'), Money.USD('1.00')],
       [Money.USD('20'), Money.USD('100')],
     ])('should return false when amount is smaller', (money, moreMoney) => {
@@ -670,14 +556,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('0.00'), Money.USD('0.00')],
-      [
-        Money.USD('0.00000000000000000001'),
-        Money.USD('0.00000000000000000001'),
-      ],
-      [
-        Money.USD('0.00000000000000000009'),
-        Money.USD('0.00000000000000000009'),
-      ],
+      [Money.USD('0.00000000000000000001'), Money.USD('0.00000000000000000001')],
+      [Money.USD('0.00000000000000000009'), Money.USD('0.00000000000000000009')],
       [Money.USD('0.99'), Money.USD('0.99')],
       [Money.USD('20'), Money.USD('20.00')],
     ])('should return false when amount is equal', (money, sameMoney) => {
@@ -686,14 +566,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('1.00'), Money.USD('0.00')],
-      [
-        Money.USD('0.00000000000000000002'),
-        Money.USD('0.00000000000000000001'),
-      ],
-      [
-        Money.USD('0.00000000000000000010'),
-        Money.USD('0.00000000000000000009'),
-      ],
+      [Money.USD('0.00000000000000000002'), Money.USD('0.00000000000000000001')],
+      [Money.USD('0.00000000000000000010'), Money.USD('0.00000000000000000009')],
       [Money.USD('1.00'), Money.USD('0.99')],
       [Money.USD('100'), Money.USD('99')],
     ])('should return true when amount is greater', (money, lessMoney) => {
@@ -706,21 +580,13 @@ describe('money', () => {
       const dollars = Money.of('1.00', 'USD');
       const euros = Money.of('1.00', 'EUR');
 
-      expect(() => dollars.greaterThanOrEqual(euros)).toThrow(
-        'Currency mismatch',
-      );
+      expect(() => dollars.greaterThanOrEqual(euros)).toThrow('Currency mismatch');
     });
 
     it.each([
       [Money.USD('0.00'), Money.USD('1.00')],
-      [
-        Money.USD('0.00000000000000000001'),
-        Money.USD('0.00000000000000000002'),
-      ],
-      [
-        Money.USD('0.00000000000000000009'),
-        Money.USD('0.00000000000000000010'),
-      ],
+      [Money.USD('0.00000000000000000001'), Money.USD('0.00000000000000000002')],
+      [Money.USD('0.00000000000000000009'), Money.USD('0.00000000000000000010')],
       [Money.USD('0.99'), Money.USD('1.00')],
       [Money.USD('99'), Money.USD('100')],
     ])('should return false when amount is smaller', (money, moreMoney) => {
@@ -729,14 +595,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('0.00'), Money.USD('0.00')],
-      [
-        Money.USD('0.00000000000000000001'),
-        Money.USD('0.00000000000000000001'),
-      ],
-      [
-        Money.USD('0.00000000000000000009'),
-        Money.USD('0.00000000000000000009'),
-      ],
+      [Money.USD('0.00000000000000000001'), Money.USD('0.00000000000000000001')],
+      [Money.USD('0.00000000000000000009'), Money.USD('0.00000000000000000009')],
       [Money.USD('0.99'), Money.USD('0.99')],
       [Money.USD('99'), Money.USD('20.00')],
     ])('should return true when amount is equal', (money, sameMoney) => {
@@ -745,14 +605,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('1.00'), Money.USD('0.00')],
-      [
-        Money.USD('0.00000000000000000002'),
-        Money.USD('0.00000000000000000001'),
-      ],
-      [
-        Money.USD('0.00000000000000000010'),
-        Money.USD('0.00000000000000000009'),
-      ],
+      [Money.USD('0.00000000000000000002'), Money.USD('0.00000000000000000001')],
+      [Money.USD('0.00000000000000000010'), Money.USD('0.00000000000000000009')],
       [Money.USD('1.00'), Money.USD('0.99')],
       [Money.USD('100'), Money.USD('20')],
     ])('should return true when amount is greater', (money, lessMoney) => {
@@ -770,14 +624,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('0.00'), Money.USD('1.00')],
-      [
-        Money.USD('0.00000000000000000001'),
-        Money.USD('0.00000000000000000002'),
-      ],
-      [
-        Money.USD('0.00000000000000000009'),
-        Money.USD('0.00000000000000000010'),
-      ],
+      [Money.USD('0.00000000000000000001'), Money.USD('0.00000000000000000002')],
+      [Money.USD('0.00000000000000000009'), Money.USD('0.00000000000000000010')],
       [Money.USD('0.99'), Money.USD('1.00')],
       [Money.USD('99'), Money.USD('100')],
     ])('should return true when amount is smaller', (money, moreMoney) => {
@@ -786,14 +634,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('0.00'), Money.USD('0.00')],
-      [
-        Money.USD('0.00000000000000000001'),
-        Money.USD('0.00000000000000000001'),
-      ],
-      [
-        Money.USD('0.00000000000000000009'),
-        Money.USD('0.00000000000000000009'),
-      ],
+      [Money.USD('0.00000000000000000001'), Money.USD('0.00000000000000000001')],
+      [Money.USD('0.00000000000000000009'), Money.USD('0.00000000000000000009')],
       [Money.USD('0.99'), Money.USD('0.99')],
       [Money.USD('99'), Money.USD('20.00')],
     ])('should return false when amount is equal', (money, sameMoney) => {
@@ -802,14 +644,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('1.00'), Money.USD('0.00')],
-      [
-        Money.USD('0.00000000000000000002'),
-        Money.USD('0.00000000000000000001'),
-      ],
-      [
-        Money.USD('0.00000000000000000010'),
-        Money.USD('0.00000000000000000009'),
-      ],
+      [Money.USD('0.00000000000000000002'), Money.USD('0.00000000000000000001')],
+      [Money.USD('0.00000000000000000010'), Money.USD('0.00000000000000000009')],
       [Money.USD('1.00'), Money.USD('0.99')],
       [Money.USD('100'), Money.USD('99')],
     ])('should return false when amount is greater', (money, lessMoney) => {
@@ -827,14 +663,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('0.00'), Money.USD('1.00')],
-      [
-        Money.USD('0.00000000000000000001'),
-        Money.USD('0.00000000000000000002'),
-      ],
-      [
-        Money.USD('0.00000000000000000009'),
-        Money.USD('0.00000000000000000010'),
-      ],
+      [Money.USD('0.00000000000000000001'), Money.USD('0.00000000000000000002')],
+      [Money.USD('0.00000000000000000009'), Money.USD('0.00000000000000000010')],
       [Money.USD('0.99'), Money.USD('1.00')],
       [Money.USD('99'), Money.USD('100')],
     ])('should return true when amount is smaller', (money, moreMoney) => {
@@ -843,14 +673,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('0.00'), Money.USD('0.00')],
-      [
-        Money.USD('0.00000000000000000001'),
-        Money.USD('0.00000000000000000001'),
-      ],
-      [
-        Money.USD('0.00000000000000000009'),
-        Money.USD('0.00000000000000000009'),
-      ],
+      [Money.USD('0.00000000000000000001'), Money.USD('0.00000000000000000001')],
+      [Money.USD('0.00000000000000000009'), Money.USD('0.00000000000000000009')],
       [Money.USD('0.99'), Money.USD('0.99')],
       [Money.USD('20'), Money.USD('20.00')],
     ])('should return true when amount is equal', (money, sameMoney) => {
@@ -859,14 +683,8 @@ describe('money', () => {
 
     it.each([
       [Money.USD('1.00'), Money.USD('0.00')],
-      [
-        Money.USD('0.00000000000000000002'),
-        Money.USD('0.00000000000000000001'),
-      ],
-      [
-        Money.USD('0.00000000000000000010'),
-        Money.USD('0.00000000000000000009'),
-      ],
+      [Money.USD('0.00000000000000000002'), Money.USD('0.00000000000000000001')],
+      [Money.USD('0.00000000000000000010'), Money.USD('0.00000000000000000009')],
       [Money.USD('1.00'), Money.USD('0.99')],
       [Money.USD('100'), Money.USD('99')],
     ])('should return false when amount is greater', (money, lessMoney) => {
@@ -875,12 +693,9 @@ describe('money', () => {
   });
 
   describe('isZero', () => {
-    it.each([Money.USD('0')])(
-      'should return true when amount is zero',
-      (money) => {
-        expect(money.isZero()).toEqual(true);
-      },
-    );
+    it.each([Money.USD('0')])('should return true when amount is zero', (money) => {
+      expect(money.isZero()).toEqual(true);
+    });
 
     it.each([
       Money.USD('0.00000000000000000001'),
@@ -926,12 +741,9 @@ describe('money', () => {
       expect(money.isPositive()).toEqual(false);
     });
 
-    it.each([Money.USD('0')])(
-      'should return false when amount is equal to zero',
-      (money) => {
-        expect(money.isPositive()).toEqual(false);
-      },
-    );
+    it.each([Money.USD('0')])('should return false when amount is equal to zero', (money) => {
+      expect(money.isPositive()).toEqual(false);
+    });
   });
 
   describe('isNegative', () => {
@@ -956,11 +768,8 @@ describe('money', () => {
       expect(money.isNegative()).toEqual(false);
     });
 
-    it.each([Money.USD('0')])(
-      'should return false when amount is equal to zero',
-      (money) => {
-        expect(money.isNegative()).toEqual(false);
-      },
-    );
+    it.each([Money.USD('0')])('should return false when amount is equal to zero', (money) => {
+      expect(money.isNegative()).toEqual(false);
+    });
   });
 });

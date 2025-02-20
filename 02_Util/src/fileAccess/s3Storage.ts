@@ -14,12 +14,9 @@ export class S3Storage implements IFileAccess {
 
     this._s3 = new AWS.S3({
       endpoint: `http://${this._config.util.fileAccess?.s3Storage?.endpointHost || 'localstack'}:${this._config.util.fileAccess?.s3Storage?.endpointPort || '4566'}`,
-      accessKeyId:
-        (this._config.util.fileAccess?.s3Storage?.accessKeyId as string) ||
-        'null',
+      accessKeyId: (this._config.util.fileAccess?.s3Storage?.accessKeyId as string) || 'null',
       secretAccessKey:
-        (this._config.util.fileAccess?.s3Storage?.secretAccessKey as string) ||
-        'null',
+        (this._config.util.fileAccess?.s3Storage?.secretAccessKey as string) || 'null',
       s3ForcePathStyle: true,
     });
   }
@@ -29,8 +26,7 @@ export class S3Storage implements IFileAccess {
   }
 
   async getFile(id: string): Promise<Buffer> {
-    const bucketName: string = this._config.util.fileAccess?.s3Storage
-      ?.bucketName as string;
+    const bucketName: string = this._config.util.fileAccess?.s3Storage?.bucketName as string;
 
     try {
       const result = await this._s3
@@ -50,13 +46,8 @@ export class S3Storage implements IFileAccess {
     }
   }
 
-  async uploadFile(
-    fileName: string,
-    content: Buffer,
-    filePath?: string,
-  ): Promise<string> {
-    const bucketName: string = this._config.util.fileAccess?.s3Storage
-      ?.bucketName as string;
+  async uploadFile(fileName: string, content: Buffer, filePath?: string): Promise<string> {
+    const bucketName: string = this._config.util.fileAccess?.s3Storage?.bucketName as string;
     try {
       const result = await this._s3
         .upload({

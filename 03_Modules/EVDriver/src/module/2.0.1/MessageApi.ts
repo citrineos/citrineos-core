@@ -16,9 +16,7 @@ import {
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import {
-  CallMessage,
-} from '@citrineos/data';
+import { CallMessage } from '@citrineos/data';
 import { validateChargingProfileType } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -33,11 +31,7 @@ export class EVDriverOcpp201Api
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger for logging.
    */
-  constructor(
-    evDriverModule: EVDriverModule,
-    server: FastifyInstance,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(evDriverModule: EVDriverModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
     super(evDriverModule, server, OCPPVersion.OCPP2_0_1, logger);
   }
 
@@ -67,8 +61,7 @@ export class EVDriverOcpp201Api
         ) {
           results.push({
             success: false,
-            payload:
-              'The Purpose of the ChargingProfile SHALL always be TxProfile.',
+            payload: 'The Purpose of the ChargingProfile SHALL always be TxProfile.',
           });
           continue;
         }
@@ -100,10 +93,7 @@ export class EVDriverOcpp201Api
               stationId: i,
             });
 
-          if (
-            smartChargingEnabled.length > 0 &&
-            smartChargingEnabled[0].value === 'false'
-          ) {
+          if (smartChargingEnabled.length > 0 && smartChargingEnabled[0].value === 'false') {
             payloadMessage = `SmartCharging is not enabled on charger ${i}. The charging profile will be ignored.`;
             this._logger.warn(payloadMessage);
           } else {
@@ -116,8 +106,7 @@ export class EVDriverOcpp201Api
         } catch (error) {
           results.push({
             success: false,
-            payload:
-              error instanceof Error ? error.message : JSON.stringify(error),
+            payload: error instanceof Error ? error.message : JSON.stringify(error),
           });
           continue;
         }
@@ -146,8 +135,7 @@ export class EVDriverOcpp201Api
       } catch (error) {
         results.push({
           success: false,
-          payload:
-            error instanceof Error ? error.message : JSON.stringify(error),
+          payload: error instanceof Error ? error.message : JSON.stringify(error),
         });
       }
     }
@@ -202,9 +190,7 @@ export class EVDriverOcpp201Api
       );
 
       // Identify any stations that did not have the reservation
-      const missingReservations = identifiers.filter(
-        (identifier, index) => !reservations[index],
-      );
+      const missingReservations = identifiers.filter((identifier, index) => !reservations[index]);
       if (missingReservations.length > 0) {
         throw new Error(
           `Reservation ${request.reservationId} not found for station IDs: ${missingReservations.join(
@@ -257,10 +243,7 @@ export class EVDriverOcpp201Api
     }
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.ReserveNow,
-    OCPP2_0_1.ReserveNowRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.ReserveNow, OCPP2_0_1.ReserveNowRequestSchema)
   async reserveNow(
     identifier: string[],
     tenantId: string,
@@ -272,11 +255,7 @@ export class EVDriverOcpp201Api
     for (const i of identifier) {
       try {
         const storedReservation =
-          await this._module.reservationRepository.createOrUpdateReservation(
-            request,
-            i,
-            false,
-          );
+          await this._module.reservationRepository.createOrUpdateReservation(request, i, false);
 
         if (!storedReservation) {
           results.push({
@@ -310,8 +289,7 @@ export class EVDriverOcpp201Api
       } catch (error) {
         results.push({
           success: false,
-          payload:
-            error instanceof Error ? error.message : JSON.stringify(error),
+          payload: error instanceof Error ? error.message : JSON.stringify(error),
         });
       }
     }
@@ -319,10 +297,7 @@ export class EVDriverOcpp201Api
     return results;
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.UnlockConnector,
-    OCPP2_0_1.UnlockConnectorRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.UnlockConnector, OCPP2_0_1.UnlockConnectorRequestSchema)
   unlockConnector(
     identifier: string[],
     tenantId: string,
@@ -342,10 +317,7 @@ export class EVDriverOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.ClearCache,
-    OCPP2_0_1.ClearCacheRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.ClearCache, OCPP2_0_1.ClearCacheRequestSchema)
   clearCache(
     identifier: string[],
     tenantId: string,
@@ -365,10 +337,7 @@ export class EVDriverOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.SendLocalList,
-    OCPP2_0_1.SendLocalListRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.SendLocalList, OCPP2_0_1.SendLocalListRequestSchema)
   async sendLocalList(
     identifier: string[],
     tenantId: string,
@@ -401,8 +370,7 @@ export class EVDriverOcpp201Api
       } catch (error) {
         results.push({
           success: false,
-          payload:
-            error instanceof Error ? error.message : JSON.stringify(error),
+          payload: error instanceof Error ? error.message : JSON.stringify(error),
         });
       }
     }

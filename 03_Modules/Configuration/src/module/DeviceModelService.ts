@@ -22,9 +22,7 @@ export class DeviceModelService {
    * @param stationId Charging station identifier.
    * @returns ItemsPerMessageSetVariables as a number or null if no such attribute exists.
    */
-  async getItemsPerMessageSetVariablesByStationId(
-    stationId: string,
-  ): Promise<number | null> {
+  async getItemsPerMessageSetVariablesByStationId(stationId: string): Promise<number | null> {
     const itemsPerMessageSetVariablesAttributes: VariableAttribute[] =
       await this._deviceModelRepository.readAllByQuerystring({
         stationId: stationId,
@@ -53,9 +51,7 @@ export class DeviceModelService {
    * @param stationId Charging station identifier.
    * @returns ItemsPerMessageGetVariables as a number or null if no such attribute exists.
    */
-  async getItemsPerMessageGetVariablesByStationId(
-    stationId: string,
-  ): Promise<number | null> {
+  async getItemsPerMessageGetVariablesByStationId(stationId: string): Promise<number | null> {
     const itemsPerMessageGetVariablesAttributes: VariableAttribute[] =
       await this._deviceModelRepository.readAllByQuerystring({
         stationId: stationId,

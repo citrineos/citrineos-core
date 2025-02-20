@@ -49,72 +49,51 @@ export class WebsocketNetworkConnection {
     this._router = router;
 
     this._httpServersMap = new Map<string, http.Server | https.Server>();
-    this._config.util.networkConnection.websocketServers.forEach(
-      (websocketServerConfig) => {
-        let _httpServer;
-        switch (websocketServerConfig.securityProfile) {
-          case 3: // mTLS
-          case 2: // TLS
-            _httpServer = https.createServer(
-              this._generateServerOptions(websocketServerConfig),
-              this._onHttpRequest.bind(this),
-            );
-            break;
-          case 1:
-          case 0:
-          default: // No TLS
-            _httpServer = http.createServer(this._onHttpRequest.bind(this));
-            break;
-        }
+    this._config.util.networkConnection.websocketServers.forEach((websocketServerConfig) => {
+      let _httpServer;
+      switch (websocketServerConfig.securityProfile) {
+        case 3: // mTLS
+        case 2: // TLS
+          _httpServer = https.createServer(
+            this._generateServerOptions(websocketServerConfig),
+            this._onHttpRequest.bind(this),
+          );
+          break;
+        case 1:
+        case 0:
+        default: // No TLS
+          _httpServer = http.createServer(this._onHttpRequest.bind(this));
+          break;
+      }
 
-        // TODO: stop using handleProtocols and switch to shouldHandle or verifyClient; see https://github.com/websockets/ws/issues/1552
-        let _socketServer = new WebSocketServer({
-          noServer: true,
-          handleProtocols: (protocols, req) =>
-            this._handleProtocols(
-              protocols,
-              req,
-              websocketServerConfig.protocol as OCPPVersionType,
-            ),
-          clientTracking: false,
-        });
+      // TODO: stop using handleProtocols and switch to shouldHandle or verifyClient; see https://github.com/websockets/ws/issues/1552
+      let _socketServer = new WebSocketServer({
+        noServer: true,
+        handleProtocols: (protocols, req) =>
+          this._handleProtocols(protocols, req, websocketServerConfig.protocol as OCPPVersionType),
+        clientTracking: false,
+      });
 
-        _socketServer.on(
-          'connection',
-          (ws: WebSocket, req: http.IncomingMessage) =>
-            this._onConnection(ws, websocketServerConfig.id, websocketServerConfig.pingInterval, req),
-        );
-        _socketServer.on('error', (wss: WebSocketServer, error: Error) =>
-          this._onError(wss, error),
-        );
-        _socketServer.on('close', (wss: WebSocketServer) => this._onClose(wss));
+      _socketServer.on('connection', (ws: WebSocket, req: http.IncomingMessage) =>
+        this._onConnection(ws, websocketServerConfig.id, websocketServerConfig.pingInterval, req),
+      );
+      _socketServer.on('error', (wss: WebSocketServer, error: Error) => this._onError(wss, error));
+      _socketServer.on('close', (wss: WebSocketServer) => this._onClose(wss));
 
-        _httpServer.on('upgrade', (request, socket, head) =>
-          this._upgradeRequest(
-            request,
-            socket,
-            head,
-            _socketServer,
-            websocketServerConfig,
-          ),
+      _httpServer.on('upgrade', (request, socket, head) =>
+        this._upgradeRequest(request, socket, head, _socketServer, websocketServerConfig),
+      );
+      _httpServer.on('error', (error) => _socketServer.emit('error', error));
+      // socketServer.close() will not do anything; use httpServer.close()
+      _httpServer.on('close', () => _socketServer.emit('close'));
+      const protocol = websocketServerConfig.securityProfile > 1 ? 'wss' : 'ws';
+      _httpServer.listen(websocketServerConfig.port, websocketServerConfig.host, () => {
+        this._logger.info(
+          `WebsocketServer running on ${protocol}://${websocketServerConfig.host}:${websocketServerConfig.port}/`,
         );
-        _httpServer.on('error', (error) => _socketServer.emit('error', error));
-        // socketServer.close() will not do anything; use httpServer.close()
-        _httpServer.on('close', () => _socketServer.emit('close'));
-        const protocol =
-          websocketServerConfig.securityProfile > 1 ? 'wss' : 'ws';
-        _httpServer.listen(
-          websocketServerConfig.port,
-          websocketServerConfig.host,
-          () => {
-            this._logger.info(
-              `WebsocketServer running on ${protocol}://${websocketServerConfig.host}:${websocketServerConfig.port}/`,
-            );
-          },
-        );
-        this._httpServersMap.set(websocketServerConfig.id, _httpServer);
-      },
-    );
+      });
+      this._httpServersMap.set(websocketServerConfig.id, _httpServer);
+    });
   }
 
   /**
@@ -130,12 +109,8 @@ export class WebsocketNetworkConnection {
         .get(identifier, CacheNamespace.Connections)
         .then((clientConnection) => {
           if (clientConnection) {
-            const websocketConnection =
-              this._identifierConnections.get(identifier);
-            if (
-              websocketConnection &&
-              websocketConnection.readyState === WebSocket.OPEN
-            ) {
+            const websocketConnection = this._identifierConnections.get(identifier);
+            if (websocketConnection && websocketConnection.readyState === WebSocket.OPEN) {
               websocketConnection.send(message, (error) => {
                 if (error) {
                   this._logger.error('On message send error', error);
@@ -145,24 +120,19 @@ export class WebsocketNetworkConnection {
                 }
               });
             } else {
-              const errorMsg =
-                'Websocket connection is not ready - ' + identifier;
+              const errorMsg = 'Websocket connection is not ready - ' + identifier;
               this._logger.fatal(errorMsg);
               websocketConnection?.close(1011, errorMsg);
               reject(new Error(errorMsg)); // Reject with a new error
             }
           } else {
-            const errorMsg =
-              'Cannot identify client connection for ' + identifier;
+            const errorMsg = 'Cannot identify client connection for ' + identifier;
             // This can happen when a charging station disconnects in the moment a message is trying to send.
             // Retry logic on the message sender might not suffice as charging station might connect to different instance.
             this._logger.error(errorMsg);
             this._identifierConnections
               .get(identifier)
-              ?.close(
-                1011,
-                'Failed to get connection information for ' + identifier,
-              );
+              ?.close(1011, 'Failed to get connection information for ' + identifier);
             reject(new Error(errorMsg)); // Reject with a new error
           }
         })
@@ -202,9 +172,7 @@ export class WebsocketNetworkConnection {
         secureContextOptions.ca = rootCA;
       }
       httpsServer.setSecureContext(secureContextOptions);
-      this._logger.info(
-        `Updated TLS certificates in SecureContextOptions for server ${serverId}`,
-      );
+      this._logger.info(`Updated TLS certificates in SecureContextOptions for server ${serverId}`);
     } else {
       throw new TypeError(`Server ${serverId} is not a https server.`);
     }
@@ -248,14 +216,10 @@ export class WebsocketNetworkConnection {
     try {
       const { identifier } = await this._authenticator.authenticate(req, {
         securityProfile: websocketServerConfig.securityProfile,
-        allowUnknownChargingStations:
-          websocketServerConfig.allowUnknownChargingStations,
+        allowUnknownChargingStations: websocketServerConfig.allowUnknownChargingStations,
       });
 
-      this._logger.debug(
-        'Successfully registered websocket client',
-        identifier,
-      );
+      this._logger.debug('Successfully registered websocket client', identifier);
 
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
@@ -342,22 +306,19 @@ export class WebsocketNetworkConnection {
         const websocketConnection: IWebsocketConnection = {
           id: websocketServerId,
           protocol: ws.protocol,
-        }
+        };
         let registered = await this._cache.set(
           identifier,
           JSON.stringify(websocketConnection),
           CacheNamespace.Connections,
         );
-        registered = registered && await this._router.registerConnection(identifier);
+        registered = registered && (await this._router.registerConnection(identifier));
         if (!registered) {
           this._logger.fatal('Failed to register websocket client', identifier);
           throw new Error('Failed to register websocket client');
         }
 
-        this._logger.info(
-          'Successfully connected new charging station.',
-          identifier,
-        );
+        this._logger.info('Successfully connected new charging station.', identifier);
 
         // Register all websocket events
         this._registerWebsocketEvents(identifier, ws, pingInterval);
@@ -365,10 +326,7 @@ export class WebsocketNetworkConnection {
         // Resume the WebSocket event emitter after events have been subscribed to
         ws.resume();
       } catch (error) {
-        this._logger.fatal(
-          'Failed to subscribe to message broker for ',
-          identifier,
-        );
+        this._logger.fatal('Failed to subscribe to message broker for ', identifier);
         ws.close(1011, 'Failed to subscribe to message broker for ' + identifier);
       }
     }
@@ -382,11 +340,7 @@ export class WebsocketNetworkConnection {
    * @param {number} pingInterval - The ping interval in seconds.
    * @return {void} This function does not return anything.
    */
-  private _registerWebsocketEvents(
-    identifier: string,
-    ws: WebSocket,
-    pingInterval: number,
-  ): void {
+  private _registerWebsocketEvents(identifier: string, ws: WebSocket, pingInterval: number): void {
     ws.onerror = (event: ErrorEvent) => {
       this._logger.error(
         'Connection error encountered for',
@@ -410,9 +364,7 @@ export class WebsocketNetworkConnection {
     });
 
     ws.on('ping', async (message) => {
-      this._logger.debug(
-        `Ping received for ${identifier} with message ${JSON.stringify(message)}`,
-      );
+      this._logger.debug(`Ping received for ${identifier} with message ${JSON.stringify(message)}`);
       ws.pong(message);
     });
 
@@ -425,18 +377,10 @@ export class WebsocketNetworkConnection {
 
       if (clientConnection) {
         // Remove expiration for connection and send ping to client in pingInterval seconds.
-        await this._cache.set(
-          identifier,
-          clientConnection,
-          CacheNamespace.Connections,
-        );
+        await this._cache.set(identifier, clientConnection, CacheNamespace.Connections);
         this._ping(identifier, ws, pingInterval);
       } else {
-        this._logger.debug(
-          'Pong received for',
-          identifier,
-          'but client is not alive',
-        );
+        this._logger.debug('Pong received for', identifier, 'but client is not alive');
         ws.close(1011, 'Client is not alive');
       }
     });
@@ -487,11 +431,7 @@ export class WebsocketNetworkConnection {
    * @param {number} pingInterval - The ping interval in milliseconds.
    * @return {void} This function does not return anything.
    */
-  private async _ping(
-    identifier: string,
-    ws: WebSocket,
-    pingInterval: number,
-  ): Promise<void> {
+  private async _ping(identifier: string, ws: WebSocket, pingInterval: number): Promise<void> {
     setTimeout(async () => {
       const clientConnection: string | null = await this._cache.get(
         identifier,
@@ -521,18 +461,14 @@ export class WebsocketNetworkConnection {
     return url.split('/').pop() as string;
   }
 
-  private _generateServerOptions(
-    config: WebsocketServerConfig,
-  ): https.ServerOptions {
+  private _generateServerOptions(config: WebsocketServerConfig): https.ServerOptions {
     const serverOptions: https.ServerOptions = {
       key: fs.readFileSync(config.tlsKeyFilePath as string),
       cert: fs.readFileSync(config.tlsCertificateChainFilePath as string),
     };
 
     if (config.rootCACertificateFilePath) {
-      serverOptions.ca = fs.readFileSync(
-        config.rootCACertificateFilePath as string,
-      );
+      serverOptions.ca = fs.readFileSync(config.rootCACertificateFilePath as string);
     }
 
     if (config.securityProfile > 2) {

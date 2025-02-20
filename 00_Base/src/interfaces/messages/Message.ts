@@ -60,9 +60,7 @@ export interface IMessage<T extends OcppRequest | OcppResponse> {
 /**
  * Default implementation of IMessage
  */
-export class Message<T extends OcppRequest | OcppResponse>
-  implements IMessage<T>
-{
+export class Message<T extends OcppRequest | OcppResponse> implements IMessage<T> {
   /**
    * Fields
    */

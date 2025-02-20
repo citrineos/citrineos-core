@@ -19,11 +19,7 @@
       "type": "string",
       "additionalProperties": false,
       "enum": ["ThresholdMonitoring", "DeltaMonitoring", "PeriodicMonitoring"],
-      "tsEnumNames": [
-        "ThresholdMonitoring",
-        "DeltaMonitoring",
-        "PeriodicMonitoring"
-      ]
+      "tsEnumNames": ["ThresholdMonitoring", "DeltaMonitoring", "PeriodicMonitoring"]
     },
     "ComponentType": {
       "description": "A physical or logical component\r\n",

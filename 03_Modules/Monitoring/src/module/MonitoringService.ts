@@ -1,9 +1,6 @@
 import { IVariableMonitoringRepository } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
-import {
-  OCPP2_0_1,
-  OCPP2_0_1_CallAction
-} from '@citrineos/base';
+import { OCPP2_0_1, OCPP2_0_1_CallAction } from '@citrineos/base';
 
 export class MonitoringService {
   protected _variableMonitoringRepository: IVariableMonitoringRepository;

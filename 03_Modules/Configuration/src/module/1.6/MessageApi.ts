@@ -38,13 +38,10 @@ export class ConfigurationOcpp16Api
     server: FastifyInstance,
     logger?: Logger<ILogObj>,
   ) {
-    super(ConfigurationComponent, server, OCPPVersion.OCPP1_6,logger);
+    super(ConfigurationComponent, server, OCPPVersion.OCPP1_6, logger);
   }
 
-  @AsMessageEndpoint(
-    OCPP1_6_CallAction.TriggerMessage,
-    OCPP1_6.TriggerMessageRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP1_6_CallAction.TriggerMessage, OCPP1_6.TriggerMessageRequestSchema)
   async triggerMessage(
     identifier: string[],
     tenantId: string,
@@ -53,8 +50,7 @@ export class ConfigurationOcpp16Api
   ): Promise<IMessageConfirmation[]> {
     const connectorId = request.connectorId;
     if (connectorId && connectorId <= 0) {
-      const errorMsg: string =
-        `connectorId should be either omitted or greater than 0.`;
+      const errorMsg: string = `connectorId should be either omitted or greater than 0.`;
       this._logger.error(errorMsg);
       return [{ success: false, payload: errorMsg }];
     }
@@ -83,8 +79,9 @@ export class ConfigurationOcpp16Api
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     this._logger.debug('ChangeConfiguration request received:', request);
-    const confirmations = identifier.map(async stationId => {
-      const chargingStation = await this._module.locationRepository.readChargingStationByStationId(stationId);
+    const confirmations = identifier.map(async (stationId) => {
+      const chargingStation =
+        await this._module.locationRepository.readChargingStationByStationId(stationId);
       if (!chargingStation) {
         return {
           success: false,
@@ -92,19 +89,18 @@ export class ConfigurationOcpp16Api
         };
       }
 
-      const config = await this._module.changeConfigurationRepository.createOrUpdateChangeConfiguration(
-        {
+      const config =
+        await this._module.changeConfigurationRepository.createOrUpdateChangeConfiguration({
           stationId,
           key: request.key,
           value: request.value,
           status: null,
-        } as ChangeConfiguration
-      );
+        } as ChangeConfiguration);
       if (!config) {
         return {
           success: false,
           payload: `Failed to create or update configuration on ${stationId}`,
-        }
+        };
       }
 
       const correlationId = uuidv4();
@@ -130,20 +126,20 @@ export class ConfigurationOcpp16Api
 
   @AsMessageEndpoint(OCPP1_6_CallAction.Reset, OCPP1_6.ResetRequestSchema)
   reset(
-      identifier: string[],
-      tenantId: string,
-      request: OCPP1_6.ResetRequest,
-      callbackUrl?: string,
+    identifier: string[],
+    tenantId: string,
+    request: OCPP1_6.ResetRequest,
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
-        this._module.sendCall(
-            id,
-            tenantId,
-            OCPPVersion.OCPP1_6,
-            OCPP1_6_CallAction.Reset,
-            request,
-            callbackUrl,
-        ),
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.Reset,
+        request,
+        callbackUrl,
+      ),
     );
     return Promise.all(results);
   }
@@ -155,8 +151,7 @@ export class ConfigurationOcpp16Api
    * @return {string} - The generated URL path.
    */
   protected _toMessagePath(input: CallAction): string {
-    const endpointPrefix =
-      this._module.config.modules.configuration.endpointPrefix;
+    const endpointPrefix = this._module.config.modules.configuration.endpointPrefix;
     return super._toMessagePath(input, endpointPrefix);
   }
 }

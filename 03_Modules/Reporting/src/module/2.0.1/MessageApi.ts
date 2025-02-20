@@ -34,18 +34,11 @@ export class ReportingOcpp201Api
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
-  constructor(
-    reportingModule: ReportingModule,
-    server: FastifyInstance,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(reportingModule: ReportingModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
     super(reportingModule, server, OCPPVersion.OCPP2_0_1, logger);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.GetBaseReport,
-    OCPP2_0_1.GetBaseReportRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetBaseReport, OCPP2_0_1.GetBaseReportRequestSchema)
   getBaseReport(
     identifier: string[],
     tenantId: string,
@@ -66,10 +59,7 @@ export class ReportingOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.GetReport,
-    OCPP2_0_1.GetReportRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetReport, OCPP2_0_1.GetReportRequestSchema)
   async getCustomReport(
     identifier: string,
     tenantId: string,
@@ -90,8 +80,7 @@ export class ReportingOcpp201Api
       return { success: false, payload: errorMsg };
     }
 
-    const componentVariables =
-      request.componentVariable as OCPP2_0_1.ComponentVariableType[];
+    const componentVariables = request.componentVariable as OCPP2_0_1.ComponentVariableType[];
     if (componentVariables.length === 0) {
       // Send everything in one call
       return await this._module.sendCall(
@@ -112,9 +101,7 @@ export class ReportingOcpp201Api
         identifier,
       );
     itemsPerMessageGetReport =
-      itemsPerMessageGetReport === null
-        ? componentVariables.length
-        : itemsPerMessageGetReport;
+      itemsPerMessageGetReport === null ? componentVariables.length : itemsPerMessageGetReport;
 
     const confirmations = [];
     // Using multiple calls if needed
@@ -164,8 +151,7 @@ export class ReportingOcpp201Api
     callbackUrl?: string,
   ): Promise<IMessageConfirmation> {
     // If monitoringCriteria & componentVariable are both empty, just call once
-    const componentVariable =
-      request.componentVariable as OCPP2_0_1.ComponentVariableType[];
+    const componentVariable = request.componentVariable as OCPP2_0_1.ComponentVariableType[];
     const monitoringCriteria =
       request.monitoringCriteria as OCPP2_0_1.MonitoringCriterionEnumType[];
 
@@ -188,9 +174,7 @@ export class ReportingOcpp201Api
         identifier,
       );
     itemsPerMessageGetReport =
-      itemsPerMessageGetReport === null
-        ? componentVariable.length
-        : itemsPerMessageGetReport;
+      itemsPerMessageGetReport === null ? componentVariable.length : itemsPerMessageGetReport;
 
     const confirmations = [];
     for (const [index, batch] of getBatches(

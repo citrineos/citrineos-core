@@ -1,7 +1,5 @@
 import { ISmartCharging } from './SmartCharging';
-import {
-  OCPP2_0_1
-} from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import {
   IChargingProfileRepository,
   Transaction,
@@ -14,10 +12,7 @@ export class InternalSmartCharging implements ISmartCharging {
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected readonly _logger: Logger<ILogObj>;
 
-  constructor(
-    chargingProfileRepository: IChargingProfileRepository,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(chargingProfileRepository: IChargingProfileRepository, logger?: Logger<ILogObj>) {
     this._chargingProfileRepository = chargingProfileRepository;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
@@ -49,8 +44,7 @@ export class InternalSmartCharging implements ISmartCharging {
     const transferMode = chargingNeeds.requestedEnergyTransfer;
 
     // Default values
-    const profileId =
-      await this._chargingProfileRepository.getNextChargingProfileId(stationId);
+    const profileId = await this._chargingProfileRepository.getNextChargingProfileId(stationId);
     const profilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType =
       OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile;
     // Find existing charging profile and then add 1 as stack level
@@ -61,10 +55,7 @@ export class InternalSmartCharging implements ISmartCharging {
     );
 
     // Create charging schedule
-    const scheduleId =
-      await this._chargingProfileRepository.getNextChargingScheduleId(
-        stationId,
-      );
+    const scheduleId = await this._chargingProfileRepository.getNextChargingScheduleId(stationId);
     let limit = 0;
     let numberPhases: number | undefined;
     let minChargingRate: number | undefined;
@@ -79,7 +70,7 @@ export class InternalSmartCharging implements ISmartCharging {
           numberPhases =
             transferMode === OCPP2_0_1.EnergyTransferModeEnumType.AC_single_phase
               ? 1
-            : transferMode === OCPP2_0_1.EnergyTransferModeEnumType.AC_two_phase
+              : transferMode === OCPP2_0_1.EnergyTransferModeEnumType.AC_two_phase
                 ? 2
                 : 3; // For AC_three_phase
           chargingRateUnit = OCPP2_0_1.ChargingRateUnitEnumType.A; // always use amp for AC
@@ -102,19 +93,13 @@ export class InternalSmartCharging implements ISmartCharging {
         throw new Error('Unsupported energy transfer mode');
     }
 
-    await this._validateLimitAgainstExistingProfile(
-      limit,
-      stationId,
-      transaction.id,
-    );
+    await this._validateLimitAgainstExistingProfile(limit, stationId, transaction.id);
 
     const departureTime = chargingNeeds.departureTime
       ? new Date(chargingNeeds.departureTime)
       : undefined;
     const currentTime = new Date();
-    const duration = departureTime
-      ? departureTime.getTime() - currentTime.getTime()
-      : undefined;
+    const duration = departureTime ? departureTime.getTime() - currentTime.getTime() : undefined;
 
     // Create charging period
     const chargingSchedulePeriod: [
@@ -153,13 +138,11 @@ export class InternalSmartCharging implements ISmartCharging {
     stationId: string,
     transaction: Transaction,
   ): Promise<void> {
-    const givenChargingPeriods =
-      request.chargingSchedule.chargingSchedulePeriod;
-    const existingChargingProfile =
-      await this._findExistingChargingProfileWithHighestStackLevel(
-        stationId,
-        transaction.id,
-      );
+    const givenChargingPeriods = request.chargingSchedule.chargingSchedulePeriod;
+    const existingChargingProfile = await this._findExistingChargingProfileWithHighestStackLevel(
+      stationId,
+      transaction.id,
+    );
 
     // Currently, we simply check the limit in each charging period
     if (existingChargingProfile) {
@@ -168,9 +151,7 @@ export class InternalSmartCharging implements ISmartCharging {
           existingChargingProfile.chargingSchedule[0].chargingSchedulePeriod;
         if (givenChargingPeriods.length === existingChargingPeriods.length) {
           for (let i = 0; i < givenChargingPeriods.length; i++) {
-            if (
-              givenChargingPeriods[i].limit > existingChargingPeriods[i].limit
-            ) {
+            if (givenChargingPeriods[i].limit > existingChargingPeriods[i].limit) {
               throw new Error(
                 `Given limits ${givenChargingPeriods[i].limit} exceeds existing limits ${existingChargingPeriods[i].limit} in charging profile ${existingChargingProfile.databaseId}.`,
               );
@@ -206,17 +187,16 @@ export class InternalSmartCharging implements ISmartCharging {
     stationId: string,
     transactionDatabaseId: string,
   ): Promise<ChargingProfile | undefined> {
-    const existingChargingProfiles =
-      await this._chargingProfileRepository.readAllByQuery({
-        where: {
-          stationId,
-          transactionDatabaseId,
-          chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
-        },
-        order: [['stackLevel', 'DESC']],
-        limit: 1,
-        include: [ChargingSchedule],
-      });
+    const existingChargingProfiles = await this._chargingProfileRepository.readAllByQuery({
+      where: {
+        stationId,
+        transactionDatabaseId,
+        chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+      },
+      order: [['stackLevel', 'DESC']],
+      limit: 1,
+      include: [ChargingSchedule],
+    });
     if (existingChargingProfiles.length > 0) {
       return existingChargingProfiles[0];
     } else {
@@ -229,16 +209,13 @@ export class InternalSmartCharging implements ISmartCharging {
     stationId: string,
     transactionDataBaseId: string,
   ): Promise<void> {
-    const existingChargingProfile =
-      await this._findExistingChargingProfileWithHighestStackLevel(
-        stationId,
-        transactionDataBaseId,
-      );
+    const existingChargingProfile = await this._findExistingChargingProfileWithHighestStackLevel(
+      stationId,
+      transactionDataBaseId,
+    );
 
     if (existingChargingProfile) {
-      this._logger.info(
-        `Found existing charging profile ${existingChargingProfile.databaseId}`,
-      );
+      this._logger.info(`Found existing charging profile ${existingChargingProfile.databaseId}`);
 
       for (const schedule of existingChargingProfile.chargingSchedule) {
         for (const period of schedule.chargingSchedulePeriod) {

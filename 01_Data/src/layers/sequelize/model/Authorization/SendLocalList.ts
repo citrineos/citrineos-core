@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';;
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsToMany, Column, DataType, Model, Table } from 'sequelize-typescript';
 import { SendLocalListAuthorization } from './SendLocalListAuthorization';
 import { LocalListAuthorization } from './LocalListAuthorization';
@@ -55,18 +55,20 @@ export class SendLocalList extends Model implements OCPP2_0_1.SendLocalListReque
                 groupIdToken: {
                   idToken: localListAuth.idTokenInfo?.groupIdToken?.idToken,
                   type: localListAuth.idTokenInfo?.groupIdToken?.type,
-                  additionalInfo: localListAuth.idTokenInfo?.groupIdToken?.additionalInfo?.map((additionalInfo) => {
-                    return {
-                      additionalIdToken: additionalInfo.additionalIdToken,
-                      type: additionalInfo.type,
-                    };
-                  }),
+                  additionalInfo: localListAuth.idTokenInfo?.groupIdToken?.additionalInfo?.map(
+                    (additionalInfo) => {
+                      return {
+                        additionalIdToken: additionalInfo.additionalIdToken,
+                        type: additionalInfo.type,
+                      };
+                    },
+                  ),
                 },
                 language2: localListAuth.idTokenInfo?.language2,
                 personalMessage: localListAuth.idTokenInfo?.personalMessage,
               },
             };
-        }) as [OCPP2_0_1.AuthorizationData, ...OCPP2_0_1.AuthorizationData[]] | null),
+          }) as [OCPP2_0_1.AuthorizationData, ...OCPP2_0_1.AuthorizationData[]] | null),
     };
   }
 }

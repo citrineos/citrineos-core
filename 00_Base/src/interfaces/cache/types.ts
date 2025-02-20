@@ -7,12 +7,12 @@
  * Cache namespace, used for grouping cache entries
  */
 export enum CacheNamespace {
-    CentralSystem = 'csms',
-    ChargingStation = 'cs',
-    Transactions = 'tx',
-    Connections = 'conn',
-    Protocol = 'prtcl',
-    Other = 'other',
+  CentralSystem = 'csms',
+  ChargingStation = 'cs',
+  Transactions = 'tx',
+  Connections = 'conn',
+  Protocol = 'prtcl',
+  Other = 'other',
 }
 
 /**
@@ -20,6 +20,6 @@ export enum CacheNamespace {
  * Is stringified from JSON when stored in the cache
  */
 export interface IWebsocketConnection {
-    id: string;
-    protocol: string;
+  id: string;
+  protocol: string;
 }

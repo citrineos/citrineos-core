@@ -45,9 +45,7 @@ export function parseCertificateChainPem(pem: string): string[] {
  * @param pem - base64 encoded certificate chain string without header and footer
  * @return array of pkijs.CertificateSetItem
  */
-export function extractCertificateArrayFromEncodedString(
-  pem: string,
-): pkijs.CertificateSetItem[] {
+export function extractCertificateArrayFromEncodedString(pem: string): pkijs.CertificateSetItem[] {
   try {
     const cmsSignedBuffer = Buffer.from(pem, 'base64');
     const asn1 = asn1js.fromBER(cmsSignedBuffer);
@@ -94,9 +92,7 @@ export function generateCertificate(
 ): [string, string] {
   // Generate a key pair
   let keyPair;
-  logger.debug(
-    `Private key signAlgorithm: ${certificateEntity.signatureAlgorithm}`,
-  );
+  logger.debug(`Private key signAlgorithm: ${certificateEntity.signatureAlgorithm}`);
   if (certificateEntity.signatureAlgorithm === SignatureAlgorithmEnumType.RSA) {
     keyPair = jsrsasign.KEYUTIL.generateKeypair(
       'RSA',
@@ -168,19 +164,18 @@ export function generateCertificate(
   const caKey = issuerKeyPem ? issuerKeyPem : privateKeyPem;
 
   // Generate certificate
-  const certificate: KJUR.asn1.x509.Certificate =
-    new KJUR.asn1.x509.Certificate({
-      version: 3,
-      serial: { int: moment().valueOf() },
-      notbefore: getValidityTimeString(moment()),
-      notafter: getValidityTimeString(subjectNotAfter),
-      issuer: issuerParam,
-      subject: { str: subjectString },
-      sbjpubkey: keyPair.pubKeyObj,
-      ext: extensions,
-      sigalg: signAlgorithm,
-      cakey: caKey,
-    });
+  const certificate: KJUR.asn1.x509.Certificate = new KJUR.asn1.x509.Certificate({
+    version: 3,
+    serial: { int: moment().valueOf() },
+    notbefore: getValidityTimeString(moment()),
+    notafter: getValidityTimeString(subjectNotAfter),
+    issuer: issuerParam,
+    subject: { str: subjectString },
+    sbjpubkey: keyPair.pubKeyObj,
+    ext: extensions,
+    sigalg: signAlgorithm,
+    cakey: caKey,
+  });
 
   return [certificate.getPEM(), privateKeyPem];
 }
@@ -198,8 +193,7 @@ export function createSignedCertificateFromCSR(
   issuerCertPem: string,
   issuerPrivateKeyPem: string,
 ): KJUR.asn1.x509.Certificate {
-  const csrObj: KJUR.asn1.csr.ParamResponse =
-    jsrsasign.KJUR.asn1.csr.CSRUtil.getParam(csrPem);
+  const csrObj: KJUR.asn1.csr.ParamResponse = jsrsasign.KJUR.asn1.csr.CSRUtil.getParam(csrPem);
   const issuerCertObj = new X509();
   issuerCertObj.readCertPEM(issuerCertPem);
 
@@ -266,9 +260,7 @@ export async function sendOCSPRequest(
 }
 
 export function parseCSRForVerification(csrPem: string): CertificationRequest {
-  const certificateBuffer = stringToArrayBuffer(
-    fromBase64(extractEncodedContentFromCSR(csrPem)),
-  );
+  const certificateBuffer = stringToArrayBuffer(fromBase64(extractEncodedContentFromCSR(csrPem)));
   const asn1 = fromBER(certificateBuffer);
   return new CertificationRequest({ schema: asn1.result });
 }
@@ -276,10 +268,7 @@ export function parseCSRForVerification(csrPem: string): CertificationRequest {
 export function generateCSR(certificate: Certificate): [string, string] {
   let keyPair;
   if (certificate.signatureAlgorithm === SignatureAlgorithmEnumType.RSA) {
-    keyPair = KEYUTIL.generateKeypair(
-      'RSA',
-      certificate.keyLength ? certificate.keyLength : 2048,
-    );
+    keyPair = KEYUTIL.generateKeypair('RSA', certificate.keyLength ? certificate.keyLength : 2048);
   } else {
     keyPair = KEYUTIL.generateKeypair('EC', 'secp256r1');
   }
@@ -306,12 +295,7 @@ export function generateCSR(certificate: Certificate): [string, string] {
         extname: 'keyUsage',
         array: [
           {
-            names: [
-              'digitalSignature',
-              'keyEncipherment',
-              'keyCertSign',
-              'crlSign',
-            ],
+            names: ['digitalSignature', 'keyEncipherment', 'keyCertSign', 'crlSign'],
           },
         ],
       },

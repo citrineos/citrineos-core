@@ -10,7 +10,10 @@ import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { CallMessage } from '../model/CallMessage';
 
-export class SequelizeCallMessageRepository extends SequelizeRepository<CallMessage> implements ICallMessageRepository {
+export class SequelizeCallMessageRepository
+  extends SequelizeRepository<CallMessage>
+  implements ICallMessageRepository
+{
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, CallMessage.MODEL_NAME, logger, sequelizeInstance);
   }

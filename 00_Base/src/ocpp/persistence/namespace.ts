@@ -19,7 +19,6 @@ export enum Namespace {
   ChargingProfile = 'ChargingProfile',
   ChargingSchedule = 'ChargingSchedule',
   CompositeSchedule = 'CompositeSchedule',
-
 }
 
 export enum OCPP2_0_1_Namespace {

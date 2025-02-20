@@ -100,15 +100,12 @@ export class MonitoringModule extends AbstractModule {
     );
 
     this._deviceModelRepository =
-      deviceModelRepository ||
-      new SequelizeDeviceModelRepository(config, this._logger);
+      deviceModelRepository || new SequelizeDeviceModelRepository(config, this._logger);
     this._variableMonitoringRepository =
       variableMonitoringRepository ||
       new SequelizeVariableMonitoringRepository(config, this._logger);
 
-    this._deviceModelService = new DeviceModelService(
-      this._deviceModelRepository,
-    );
+    this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
     this._monitoringService = new MonitoringService(
       this._variableMonitoringRepository,
       this._logger,
@@ -116,9 +113,7 @@ export class MonitoringModule extends AbstractModule {
 
     this._idGenerator =
       idGenerator ||
-      new IdGenerator(
-        new SequelizeChargingStationSequenceRepository(config, this._logger),
-      );
+      new IdGenerator(new SequelizeChargingStationSequenceRepository(config, this._logger));
   }
 
   get deviceModelRepository(): IDeviceModelRepository {
@@ -172,10 +167,7 @@ export class MonitoringModule extends AbstractModule {
     // Create response
     const response: OCPP2_0_1.NotifyEventResponse = {};
 
-    const messageConfirmation = await this.sendCallResultWithMessage(
-      message,
-      response,
-    );
+    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
     this._logger.debug('NotifyEvent response sent:', messageConfirmation);
   }
 
@@ -188,11 +180,7 @@ export class MonitoringModule extends AbstractModule {
     message: IMessage<OCPP2_0_1.SetVariableMonitoringResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug(
-      'SetVariableMonitoring response received:',
-      message,
-      props,
-    );
+    this._logger.debug('SetVariableMonitoring response received:', message, props);
 
     for (const setMonitoringResultType of message.payload.setMonitoringResult) {
       await this._variableMonitoringRepository.updateResultByStationId(
@@ -207,11 +195,7 @@ export class MonitoringModule extends AbstractModule {
     message: IMessage<OCPP2_0_1.ClearVariableMonitoringResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug(
-      'ClearVariableMonitoring response received:',
-      message,
-      props,
-    );
+    this._logger.debug('ClearVariableMonitoring response received:', message, props);
 
     await this._monitoringService.processClearMonitoringResult(
       message.context.stationId,
@@ -224,15 +208,10 @@ export class MonitoringModule extends AbstractModule {
     message: IMessage<OCPP2_0_1.GetMonitoringReportResponse>,
     props?: HandlerProperties,
   ): void {
-    this._logger.debug(
-      'GetMonitoringReport response received:',
-      message,
-      props,
-    );
+    this._logger.debug('GetMonitoringReport response received:', message, props);
 
     const status: OCPP2_0_1.GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: OCPP2_0_1.StatusInfoType | undefined | null =
-      message.payload.statusInfo;
+    const statusInfo: OCPP2_0_1.StatusInfoType | undefined | null = message.payload.statusInfo;
 
     if (
       status === OCPP2_0_1.GenericDeviceModelStatusEnumType.Rejected ||
@@ -255,8 +234,7 @@ export class MonitoringModule extends AbstractModule {
     this._logger.debug('SetMonitoringLevel response received:', message, props);
 
     const status: OCPP2_0_1.GenericStatusEnumType = message.payload.status;
-    const statusInfo: OCPP2_0_1.StatusInfoType | undefined | null =
-      message.payload.statusInfo;
+    const statusInfo: OCPP2_0_1.StatusInfoType | undefined | null = message.payload.statusInfo;
     if (status === OCPP2_0_1.GenericStatusEnumType.Rejected) {
       this._logger.error(
         'Failed to set monitoring level.',
@@ -275,8 +253,7 @@ export class MonitoringModule extends AbstractModule {
     this._logger.debug('SetMonitoringBase response received:', message, props);
 
     const status: OCPP2_0_1.GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: OCPP2_0_1.StatusInfoType | undefined | null =
-      message.payload.statusInfo;
+    const statusInfo: OCPP2_0_1.StatusInfoType | undefined | null = message.payload.statusInfo;
 
     if (
       status === OCPP2_0_1.GenericDeviceModelStatusEnumType.Rejected ||
@@ -297,10 +274,7 @@ export class MonitoringModule extends AbstractModule {
         OCPP2_0_1_CallAction.SetVariableMonitoring,
         stationId,
       );
-      this._logger.debug(
-        'Rejected all variable monitorings on the charger',
-        stationId,
-      );
+      this._logger.debug('Rejected all variable monitorings on the charger', stationId);
 
       await this.sendCall(
         stationId,

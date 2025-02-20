@@ -14,7 +14,13 @@ export class InstallRootCertificateRequest {
   // according to the certificate type, e.g., lets encrypt, hubject.
   fileId?: string;
 
-  constructor(stationId: string, tenantId: string, certificateType: OCPP2_0_1.InstallCertificateUseEnumType, callbackUrl?: string, fileId?: string) {
+  constructor(
+    stationId: string,
+    tenantId: string,
+    certificateType: OCPP2_0_1.InstallCertificateUseEnumType,
+    callbackUrl?: string,
+    fileId?: string,
+  ) {
     this.stationId = stationId;
     this.tenantId = tenantId;
     this.certificateType = certificateType;

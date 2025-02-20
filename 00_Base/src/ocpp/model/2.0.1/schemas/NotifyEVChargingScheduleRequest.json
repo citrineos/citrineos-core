@@ -27,11 +27,7 @@
       "javaType": "CostKindEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "CarbonDioxideEmission",
-        "RelativePricePercentage",
-        "RenewableGenerationPercentage"
-      ],
+      "enum": ["CarbonDioxideEmission", "RelativePricePercentage", "RenewableGenerationPercentage"],
       "tsEnumNames": [
         "CarbonDioxideEmission",
         "RelativePricePercentage",

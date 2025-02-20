@@ -11,15 +11,9 @@ export abstract class Scheduler {
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  protected schedule(
-    key: string,
-    task: () => void,
-    intervalSeconds: number,
-  ): void {
+  protected schedule(key: string, task: () => void, intervalSeconds: number): void {
     if (this._isAlreadyRegistered(key)) {
-      this._logger.debug(
-        `Skipping task registration for ${key} as it is already registered`,
-      );
+      this._logger.debug(`Skipping task registration for ${key} as it is already registered`);
       return;
     }
     this._logger.debug(`Registering scheduled task for ${key}`);

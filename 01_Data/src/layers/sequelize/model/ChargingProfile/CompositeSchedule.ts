@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {OCPP2_0_1_Namespace, OCPP2_0_1, Namespace} from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1, Namespace } from '@citrineos/base';
 import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
 @Table

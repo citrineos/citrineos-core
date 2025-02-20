@@ -20,10 +20,7 @@ import { ILogObj, Logger } from 'tslog';
 /**
  * Implementation of a {@link IMessageSender} using Kafka as the underlying transport.
  */
-export class KafkaSender
-  extends AbstractMessageSender
-  implements IMessageSender
-{
+export class KafkaSender extends AbstractMessageSender implements IMessageSender {
   /**
    * Fields
    */
@@ -56,10 +53,7 @@ export class KafkaSender
       .connect()
       .then(() => admin.listTopics())
       .then((topics) => {
-        if (
-          !topics ||
-          topics.filter((topic) => topic === this._topicName).length === 0
-        ) {
+        if (!topics || topics.filter((topic) => topic === this._topicName).length === 0) {
           this._client
             .admin()
             .createTopics({ topics: [{ topic: this._topicName }] })

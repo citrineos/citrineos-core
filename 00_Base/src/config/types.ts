@@ -213,17 +213,13 @@ export const systemConfigInputSchema = z.object({
           name: z.enum(['hubject']).default('hubject'),
           hubject: z
             .object({
-              baseUrl: z
-                .string()
-                .default('https://open.plugncharge-test.hubject.com'),
+              baseUrl: z.string().default('https://open.plugncharge-test.hubject.com'),
               tokenUrl: z
                 .string()
                 .default(
                   'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
                 ),
-              isoVersion: z
-                .enum(['ISO15118-2', 'ISO15118-20'])
-                .default('ISO15118-2'),
+              isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']).default('ISO15118-2'),
             })
             .optional(),
         })

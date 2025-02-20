@@ -4,10 +4,7 @@ import { OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { aBasicAuthPasswordVariable } from '../../providers/VariableAttributeProvider';
 import { BasicAuthenticationFilter } from '../../../src/networkconnection/authenticator/BasicAuthenticationFilter';
-import {
-  aRequestWithAuthorization,
-  basicAuth,
-} from '../../providers/IncomingMessageProvider';
+import { aRequestWithAuthorization, basicAuth } from '../../providers/IncomingMessageProvider';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider';
 
 type PasswordPair = {
@@ -48,26 +45,11 @@ describe('BasicAuthenticationFilter', () => {
     });
 
     it.each([
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        ' 9a06661c-2332-4897-b0d4-2187671dbe7b',
-      ],
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        '9a06661c-2332-4897-b0d4-2187671dbe7b ',
-      ],
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        '9a06661c-2332-4897-b0d4-2187671dbe7bb',
-      ],
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        '8a06661c-2332-4897-b0d4-2187671dbe7b',
-      ],
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        'bc2696f3-66d5-4027-9eae-be74c1e85fa7',
-      ],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', ' 9a06661c-2332-4897-b0d4-2187671dbe7b'],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', '9a06661c-2332-4897-b0d4-2187671dbe7b '],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', '9a06661c-2332-4897-b0d4-2187671dbe7bb'],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', '8a06661c-2332-4897-b0d4-2187671dbe7b'],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', 'bc2696f3-66d5-4027-9eae-be74c1e85fa7'],
     ])(
       'should reject when station identifier does not match username',
       async (stationId, username) => {
@@ -80,9 +62,7 @@ describe('BasicAuthenticationFilter', () => {
             authenticationOptions,
           ),
         ).rejects.toThrow(`Unauthorized ${stationId}`);
-        expect(
-          deviceModelRepository.readAllByQuerystring,
-        ).not.toHaveBeenCalled();
+        expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
       },
     );
 
@@ -90,11 +70,7 @@ describe('BasicAuthenticationFilter', () => {
       const stationId = faker.string.uuid().toString();
 
       await expect(
-        filter.authenticate(
-          stationId,
-          aRequestWithAuthorization(undefined),
-          authenticationOptions,
-        ),
+        filter.authenticate(stationId, aRequestWithAuthorization(undefined), authenticationOptions),
       ).rejects.toThrow('Auth header missing or incorrectly formatted');
       expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
@@ -103,11 +79,7 @@ describe('BasicAuthenticationFilter', () => {
       const stationId = faker.string.uuid().toString();
 
       await expect(
-        filter.authenticate(
-          stationId,
-          aRequestWithAuthorization(''),
-          authenticationOptions,
-        ),
+        filter.authenticate(stationId, aRequestWithAuthorization(''), authenticationOptions),
       ).rejects.toThrow('Auth header missing or incorrectly formatted');
       expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
@@ -219,9 +191,7 @@ describe('BasicAuthenticationFilter', () => {
         await expect(
           filter.authenticate(
             stationId,
-            aRequestWithAuthorization(
-              basicAuth(stationId, authenticationPassword),
-            ),
+            aRequestWithAuthorization(basicAuth(stationId, authenticationPassword)),
             authenticationOptions,
           ),
         ).rejects.toThrow(`Unauthorized ${stationId}`);
@@ -246,9 +216,7 @@ describe('BasicAuthenticationFilter', () => {
         await expect(async () => {
           await filter.authenticate(
             stationId,
-            aRequestWithAuthorization(
-              basicAuth(stationId, authenticationPassword),
-            ),
+            aRequestWithAuthorization(basicAuth(stationId, authenticationPassword)),
             authenticationOptions,
           );
         }).not.toThrow();
@@ -292,9 +260,7 @@ describe('BasicAuthenticationFilter', () => {
       value: passwordHash,
     } as Partial<VariableAttribute>);
 
-    deviceModelRepository.readAllByQuerystring.mockResolvedValue([
-      passwordVariable,
-    ]);
+    deviceModelRepository.readAllByQuerystring.mockResolvedValue([passwordVariable]);
   }
 
   function givenNoPassword() {

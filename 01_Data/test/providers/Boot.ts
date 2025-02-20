@@ -3,7 +3,9 @@ import { faker } from '@faker-js/faker';
 import { Boot, VariableAttribute } from '../../src';
 import { OCPP2_0_1 } from '@citrineos/base';
 
-export function aSetVariable(updateFunction?: UpdateFunction<OCPP2_0_1.SetVariableResultType>): OCPP2_0_1.SetVariableResultType {
+export function aSetVariable(
+  updateFunction?: UpdateFunction<OCPP2_0_1.SetVariableResultType>,
+): OCPP2_0_1.SetVariableResultType {
   const setVariable: OCPP2_0_1.SetVariableResultType = {
     attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
     component: {

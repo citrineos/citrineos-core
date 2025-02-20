@@ -38,12 +38,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   protected _connection?: amqplib.Connection;
   protected _channel?: amqplib.Channel;
 
-  constructor(
-    config: SystemConfig,
-    logger?: Logger<ILogObj>,
-    module?: IModule,
-    cache?: ICache,
-  ) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, module?: IModule, cache?: ICache) {
     super(config, logger, module);
     this._cache = cache || new MemoryCache();
 
@@ -118,9 +113,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
         await channel.bindQueue(queueName, exchange, '', { action, ...filter });
       }
     } else {
-      this._logger.debug(
-        `Bind ${queueName} on ${exchange} with filter ${JSON.stringify(filter)}.`,
-      );
+      this._logger.debug(`Bind ${queueName} on ${exchange} with filter ${JSON.stringify(filter)}.`);
       await channel.bindQueue(queueName, exchange, '', filter);
     }
 
@@ -142,11 +135,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
       });
 
     // Add queue name to cache
-    await this._cache.set(
-      cacheKey,
-      JSON.stringify(cachedQueues),
-      CacheNamespace.Other,
-    );
+    await this._cache.set(cacheKey, JSON.stringify(cachedQueues), CacheNamespace.Other);
 
     return true;
   }
@@ -229,9 +218,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
         );
         const parsed = plainToInstance(
           Message<OcppRequest | OcppResponse | OcppError>,
-          <Message<OcppRequest | OcppResponse | OcppError>>(
-            JSON.parse(message.content.toString())
-          ),
+          <Message<OcppRequest | OcppResponse | OcppError>>JSON.parse(message.content.toString()),
         );
         await this.handle(parsed, message.properties);
       } catch (error) {

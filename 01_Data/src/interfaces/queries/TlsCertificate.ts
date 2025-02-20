@@ -15,7 +15,11 @@ export const TlsCertificateSchema = QuerySchema(
   ['certificateChain', 'privateKey'],
 );
 
-export const UpdateTlsCertificateQuerySchema = QuerySchema('UpdateTlsCertificateQuerySchema', [['id', 'string']], ['id']);
+export const UpdateTlsCertificateQuerySchema = QuerySchema(
+  'UpdateTlsCertificateQuerySchema',
+  [['id', 'string']],
+  ['id'],
+);
 
 export interface UpdateTlsCertificateQueryString {
   id: string; // websocket server id

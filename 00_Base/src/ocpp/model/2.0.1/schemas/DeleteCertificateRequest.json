@@ -49,12 +49,7 @@
           "maxLength": 40
         }
       },
-      "required": [
-        "hashAlgorithm",
-        "issuerNameHash",
-        "issuerKeyHash",
-        "serialNumber"
-      ]
+      "required": ["hashAlgorithm", "issuerNameHash", "issuerKeyHash", "serialNumber"]
     }
   },
   "type": "object",

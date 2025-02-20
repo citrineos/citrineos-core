@@ -11,12 +11,18 @@ import { type ISecurityEventRepository } from '../../../interfaces/repositories'
 import { Sequelize } from 'sequelize-typescript';
 import { Logger, ILogObj } from 'tslog';
 
-export class SequelizeSecurityEventRepository extends SequelizeRepository<SecurityEvent> implements ISecurityEventRepository {
+export class SequelizeSecurityEventRepository
+  extends SequelizeRepository<SecurityEvent>
+  implements ISecurityEventRepository
+{
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, SecurityEvent.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createByStationId(value: OCPP2_0_1.SecurityEventNotificationRequest, stationId: string): Promise<SecurityEvent> {
+  async createByStationId(
+    value: OCPP2_0_1.SecurityEventNotificationRequest,
+    stationId: string,
+  ): Promise<SecurityEvent> {
     return await this.create(
       SecurityEvent.build({
         stationId,
@@ -25,7 +31,11 @@ export class SequelizeSecurityEventRepository extends SequelizeRepository<Securi
     );
   }
 
-  async readByStationIdAndTimestamps(stationId: string, from?: Date, to?: Date): Promise<SecurityEvent[]> {
+  async readByStationIdAndTimestamps(
+    stationId: string,
+    from?: Date,
+    to?: Date,
+  ): Promise<SecurityEvent[]> {
     const timestampQuery = this.generateTimestampQuery(from?.toISOString(), to?.toISOString());
     return await this.readAllByQuery({
       where: {

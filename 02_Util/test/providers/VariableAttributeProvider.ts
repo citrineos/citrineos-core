@@ -1,12 +1,8 @@
 import { VariableAttribute, VariableStatus } from '@citrineos/data';
 import { faker } from '@faker-js/faker';
-import {
-  OCPP2_0_1
-} from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 
-export function aVariableAttribute(
-  override?: Partial<VariableAttribute>,
-): VariableAttribute {
+export function aVariableAttribute(override?: Partial<VariableAttribute>): VariableAttribute {
   const variableAttribute = {
     stationId: faker.string.uuid(),
     type: OCPP2_0_1.AttributeEnumType.Actual,
@@ -29,8 +25,7 @@ export function aVariableAttribute(
 
   variableAttribute.statuses =
     override?.statuses?.map(
-      (status) =>
-        ({ ...status, variable: variableAttribute }) as VariableStatus,
+      (status) => ({ ...status, variable: variableAttribute }) as VariableStatus,
     ) ??
     ([
       {

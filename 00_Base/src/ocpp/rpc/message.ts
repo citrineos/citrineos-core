@@ -18,11 +18,7 @@ export type Call = [
 /**
  * Definition of CallResult Message (4.2.2 CALLRESULT)
  */
-export type CallResult = [
-  messageTypeId: MessageTypeId,
-  messageId: string,
-  payload: OcppResponse,
-];
+export type CallResult = [messageTypeId: MessageTypeId, messageId: string, payload: OcppResponse];
 
 /**
  * Definition of CallError Message (4.2.1 CALLERROR)

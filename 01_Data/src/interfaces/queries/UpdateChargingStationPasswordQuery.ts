@@ -4,7 +4,10 @@
 
 import { QuerySchema } from '@citrineos/base';
 
-export const UpdateChargingStationPasswordQuerySchema = QuerySchema('UpdateChargingStationPasswordQuerySchema', [['callbackUrl', 'string']]);
+export const UpdateChargingStationPasswordQuerySchema = QuerySchema(
+  'UpdateChargingStationPasswordQuerySchema',
+  [['callbackUrl', 'string']],
+);
 
 export interface UpdateChargingStationPasswordQueryString {
   callbackUrl?: string;

@@ -1,7 +1,5 @@
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
-import {
-  OCPP2_0_1
-} from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 
 const locales = ['en', 'es', 'fr', 'de', 'it', 'nl'];

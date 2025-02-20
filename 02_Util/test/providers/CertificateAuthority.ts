@@ -5,9 +5,7 @@ import jsrsasign from 'jsrsasign';
 import X509 = jsrsasign.X509;
 import x509 = jsrsasign.KJUR.asn1.x509;
 
-export const aValidCertificateItemArray = (
-  pem: string,
-): CertificateSetItem[] => {
+export const aValidCertificateItemArray = (pem: string): CertificateSetItem[] => {
   const cmsSignedBuffer = Buffer.from(pem, 'base64');
   const asn1 = asn1js.fromBER(cmsSignedBuffer);
   const cmsContent = new pkijs.ContentInfo({ schema: asn1.result });

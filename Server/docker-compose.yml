@@ -168,13 +168,7 @@ services:
       ocpp-db:
         condition: service_healthy
     healthcheck:
-      test:
-        [
-          'CMD',
-          'curl',
-          '-f',
-          'http://data-connector-agent:8081/api/v1/athena/health',
-        ]
+      test: ['CMD', 'curl', '-f', 'http://data-connector-agent:8081/api/v1/athena/health']
       interval: 5s
       timeout: 10s
       retries: 10

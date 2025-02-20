@@ -8,12 +8,7 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import fs from 'fs';
-import {
-  HttpHeader,
-  HttpStatus,
-  SystemConfig,
-  UnauthorizedError,
-} from '@citrineos/base';
+import { HttpHeader, HttpStatus, SystemConfig, UnauthorizedError } from '@citrineos/base';
 import * as FastifyAuth from '@fastify/auth';
 import * as packageJson from '../../package.json';
 import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
@@ -35,14 +30,10 @@ function OcppTransformObject({
   console.log('OcppTransformObject: Transforming OpenAPI object...');
   if (openapiObject.paths && openapiObject.components) {
     for (const pathKey in openapiObject.paths) {
-      const path: OpenAPIV3.PathsObject = openapiObject.paths[
-        pathKey
-      ] as OpenAPIV3.PathsObject;
+      const path: OpenAPIV3.PathsObject = openapiObject.paths[pathKey] as OpenAPIV3.PathsObject;
       if (path) {
         for (const methodKey in path) {
-          const method: OpenAPIV3.OperationObject = path[
-            methodKey
-          ] as OpenAPIV3.OperationObject;
+          const method: OpenAPIV3.OperationObject = path[methodKey] as OpenAPIV3.OperationObject;
           if (method) {
             // Set tags based on path key if tags were not passed in
             if (!method.tags) {
@@ -63,10 +54,7 @@ function OcppTransformObject({
   return openapiObject;
 }
 
-const registerSwaggerUi = (
-  systemConfig: SystemConfig,
-  server: FastifyInstance,
-) => {
+const registerSwaggerUi = (systemConfig: SystemConfig, server: FastifyInstance) => {
   const swaggerUiOptions: any = {
     routePrefix: systemConfig.util.swagger?.path,
     securityDefinitions: {
@@ -102,10 +90,7 @@ const registerSwaggerUi = (
   server.register(fastifySwaggerUi, swaggerUiOptions);
 };
 
-export const getHeaderValue = (
-  headers: string[],
-  key: string,
-): string | undefined => {
+export const getHeaderValue = (headers: string[], key: string): string | undefined => {
   for (let i = 0; i < headers.length; i += 2) {
     if (headers[i].toLowerCase() === key.toLowerCase()) {
       return headers[i + 1];
@@ -114,9 +99,7 @@ export const getHeaderValue = (
   return undefined;
 };
 
-const getTokenFromAuthHeader = (
-  authorizationHeader: string | undefined,
-): string | undefined => {
+const getTokenFromAuthHeader = (authorizationHeader: string | undefined): string | undefined => {
   if (!!authorizationHeader) {
     const token = authorizationHeader.split('Bearer ')[1];
     return token;
@@ -124,16 +107,12 @@ const getTokenFromAuthHeader = (
   return undefined;
 };
 
-const getAuthorizationTokenFromRawHeaders = (
-  headers: string[],
-): string | undefined => {
+const getAuthorizationTokenFromRawHeaders = (headers: string[]): string | undefined => {
   const authorizationHeader = getHeaderValue(headers, HttpHeader.Authorization);
   return getTokenFromAuthHeader(authorizationHeader);
 };
 
-export const getAuthorizationTokenFromRequest = (
-  request: FastifyRequest,
-): string => {
+export const getAuthorizationTokenFromRequest = (request: FastifyRequest): string => {
   const token = getAuthorizationTokenFromRawHeaders(request.raw.rawHeaders);
   if (!token) {
     throw new UnauthorizedError('Token not found in headers');
@@ -145,26 +124,18 @@ const registerFastifyAuth = async (server: FastifyInstance) => {
   await server.register(FastifyAuth as any).after();
   console.log((server as any).authorization);
 
-  server.decorate(
-    'authorization',
-    function (request: any, reply: any, done: any) {
-      try {
-        const token = getAuthorizationTokenFromRequest(request);
-        console.log('Received authorization token', token);
-        done();
-      } catch (e) {
-        reply.code(HttpStatus.UNAUTHORIZED);
-      }
-    },
-  );
+  server.decorate('authorization', function (request: any, reply: any, done: any) {
+    try {
+      const token = getAuthorizationTokenFromRequest(request);
+      console.log('Received authorization token', token);
+      done();
+    } catch (e) {
+      reply.code(HttpStatus.UNAUTHORIZED);
+    }
+  });
 };
 
-const buildLocalReference = (
-  json: any,
-  _parent: unknown,
-  _property: unknown,
-  i: number,
-) => {
+const buildLocalReference = (json: any, _parent: unknown, _property: unknown, i: number) => {
   // If title is missing but $id is available, set title to $id
   if (!json.title && json.$id) {
     json.title = json.$id;
@@ -174,10 +145,7 @@ const buildLocalReference = (
   return json.title || json.$id || `def-${i}`;
 };
 
-const registerFastifySwagger = (
-  systemConfig: SystemConfig,
-  server: FastifyInstance,
-) => {
+const registerFastifySwagger = (systemConfig: SystemConfig, server: FastifyInstance) => {
   server.register(fastifySwagger as any, {
     openapi: {
       info: {
@@ -201,10 +169,7 @@ const registerFastifySwagger = (
   });
 };
 
-export async function initSwagger(
-  systemConfig: SystemConfig,
-  server: FastifyInstance,
-) {
+export async function initSwagger(systemConfig: SystemConfig, server: FastifyInstance) {
   registerFastifySwagger(systemConfig, server);
   registerSwaggerUi(systemConfig, server);
   await registerFastifyAuth(server);

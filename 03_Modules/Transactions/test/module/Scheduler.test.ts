@@ -53,11 +53,7 @@ describe('Scheduler', () => {
       const anotherTask = jest.fn();
 
       scheduler.schedule(taskKey, () => task(), taskInterval);
-      scheduler.schedule(
-        anotherTaskKey,
-        () => anotherTask(),
-        anotherTaskInterval,
-      );
+      scheduler.schedule(anotherTaskKey, () => anotherTask(), anotherTaskInterval);
 
       expect(task).toHaveBeenCalledTimes(0);
       expect(anotherTask).toHaveBeenCalledTimes(0);
