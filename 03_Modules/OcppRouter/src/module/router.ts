@@ -442,7 +442,8 @@ export class MessageRouterImpl
               { error: error },
             ];
       const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
-      this._sendMessage(identifier, rawMessage);
+      await this._sendMessage(identifier, rawMessage);
+      return;
     }
 
     try {
