@@ -265,8 +265,11 @@ export class EVDriverModule extends AbstractModule {
       },
     };
 
-    if (message.payload.idToken.type === OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
-      response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
+    if (
+      message.payload.idToken.type === OCPP2_0_1.IdTokenEnumType.NoAuthorization
+    ) {
+      response.idTokenInfo.status =
+        OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
       await this.sendCallResultWithMessage(message, response);
       return;
     }
@@ -310,9 +313,13 @@ export class EVDriverModule extends AbstractModule {
       .then(async (authorization) => {
         if (authorization) {
           if (authorization.idTokenInfo) {
-            const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
+            const idTokenInfo =
+              OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
 
-            if (idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
+            if (
+              idTokenInfo.status ===
+              OCPP2_0_1.AuthorizationStatusEnumType.Accepted
+            ) {
               if (
                 idTokenInfo.cacheExpiryDateTime &&
                 new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
@@ -349,7 +356,8 @@ export class EVDriverModule extends AbstractModule {
                 }
                 if (evseIds && evseIds.size === 0) {
                   response.idTokenInfo = {
-                    status: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
+                    status:
+                      OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
                     groupIdToken: idTokenInfo.groupIdToken,
                     // TODO determine how/if to set personalMessage
                   };
@@ -392,7 +400,8 @@ export class EVDriverModule extends AbstractModule {
                   }
                   if (evseIds && evseIds.size === 0) {
                     response.idTokenInfo = {
-                      status: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
+                      status:
+                        OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
                       groupIdToken: idTokenInfo.groupIdToken,
                       // TODO determine how/if to set personalMessage
                     };
@@ -419,10 +428,8 @@ export class EVDriverModule extends AbstractModule {
                 ) {
                   break;
                 }
-                const result: Partial<OCPP2_0_1.IdTokenType> = await authorizer.authorize(
-                  authorization,
-                  context,
-                );
+                const result: Partial<OCPP2_0_1.IdTokenType> =
+                  await authorizer.authorize(authorization, context);
                 Object.assign(response.idTokenInfo, result);
               }
             } else {
@@ -440,7 +447,8 @@ export class EVDriverModule extends AbstractModule {
         }
 
         if (
-          response.idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted
+          response.idTokenInfo.status ===
+          OCPP2_0_1.AuthorizationStatusEnumType.Accepted
         ) {
           const tariffAvailable: VariableAttribute[] =
             await this._deviceModelRepository.readAllByQuerystring({
@@ -487,7 +495,10 @@ export class EVDriverModule extends AbstractModule {
       });
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ReservationStatusUpdate)
+  @AsHandler(
+    OCPPVersion.OCPP2_0_1,
+    OCPP2_0_1_CallAction.ReservationStatusUpdate,
+  )
   protected async _handleReservationStatusUpdate(
     message: IMessage<OCPP2_0_1.ReservationStatusUpdateRequest>,
     props?: HandlerProperties,
@@ -545,7 +556,10 @@ export class EVDriverModule extends AbstractModule {
    * Handle OCPP 2.0.1 responses
    */
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.RequestStartTransaction)
+  @AsHandler(
+    OCPPVersion.OCPP2_0_1,
+    OCPP2_0_1_CallAction.RequestStartTransaction,
+  )
   protected async _handleRequestStartTransaction(
     message: IMessage<OCPP2_0_1.RequestStartTransactionResponse>,
     props?: HandlerProperties,
@@ -555,7 +569,10 @@ export class EVDriverModule extends AbstractModule {
       message,
       props,
     );
-    if (message.payload.status === OCPP2_0_1.RequestStartStopStatusEnumType.Accepted) {
+    if (
+      message.payload.status ===
+      OCPP2_0_1.RequestStartStopStatusEnumType.Accepted
+    ) {
       // Start transaction with charging profile succeeds,
       // we need to update db entity with the latest data from charger
       const stationId: string = message.context.stationId;
@@ -569,7 +586,8 @@ export class EVDriverModule extends AbstractModule {
             stationId: stationId,
             isActive: true,
             chargingLimitSource: OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
-            chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+            chargingProfilePurpose:
+              OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
           },
           returning: false,
         },
@@ -586,7 +604,8 @@ export class EVDriverModule extends AbstractModule {
             ChargingStationSequenceType.getChargingProfiles,
           ),
           chargingProfile: {
-            chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+            chargingProfilePurpose:
+              OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
             chargingLimitSource: [OCPP2_0_1.ChargingLimitSourceEnumType.CSO],
           } as OCPP2_0_1.ChargingProfileCriterionType,
         } as OCPP2_0_1.GetChargingProfilesRequest,
@@ -624,7 +643,8 @@ export class EVDriverModule extends AbstractModule {
       await this._reservationRepository.updateByKey(
         {
           isActive:
-            message.payload.status === OCPP2_0_1.CancelReservationStatusEnumType.Rejected,
+            message.payload.status ===
+            OCPP2_0_1.CancelReservationStatusEnumType.Rejected,
         },
         reservationId.toString(),
       );
@@ -646,7 +666,8 @@ export class EVDriverModule extends AbstractModule {
       message.context.correlationId,
     );
     if (reservationId) {
-      const status = message.payload.status as OCPP2_0_1.ReserveNowStatusEnumType;
+      const status = message.payload
+        .status as OCPP2_0_1.ReserveNowStatusEnumType;
       await this._reservationRepository.updateByKey(
         {
           reserveStatus: status,
@@ -774,7 +795,10 @@ export class EVDriverModule extends AbstractModule {
   }
 
   @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.Authorize)
-  protected async _handleOCPP16Authorize(message: IMessage<OCPP1_6.AuthorizeRequest>, props?: HandlerProperties): Promise<void> {
+  protected async _handleOCPP16Authorize(
+    message: IMessage<OCPP1_6.AuthorizeRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
     this._logger.debug('OCPP 16 Authorize received: ', message, props);
     const request: OCPP1_6.AuthorizeRequest = message.payload;
 
@@ -791,38 +815,58 @@ export class EVDriverModule extends AbstractModule {
           type: null, //explicitly ignore type
         });
       if (!authorizations || authorizations.length === 0) {
-        this._logger.error(`No authorization found for idToken: ${request.idTag}`);
+        this._logger.error(
+          `No authorization found for idToken: ${request.idTag}`,
+        );
         //below line is just to make it more explicit. Default status is already invalid.
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Invalid;
+        await this.sendCallResultWithMessage(message, response);
+        this._logger.debug('Authorize response sent:', response);
+        return;
       }
-      //If any of the authorizations found are not valid, we reject as we can't understand which token type is meant.
-      // This business logic needs some refinement
-      for (const authorization of authorizations) {
-        if (!authorization.idTokenInfo) {
-          response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Accepted;
+      // If we find more than one token for an idTag it's too opinionated on how to define which one is valid.
+      // For now, we error out, and implementers should change this according to their needs.
+      if (authorizations.length >= 1) {
+        this._logger.error(
+          `Too many authorizations found for idToken: ${request.idTag}`,
+        );
+        response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Invalid;
+        await this.sendCallResultWithMessage(message, response);
+        this._logger.debug('Authorize response sent:', response);
+        return;
+      }
+
+      const authorization = authorizations[0];
+      if (!authorization.idTokenInfo) {
+        response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Accepted;
+      } else {
+        const { cacheExpiryDateTime, groupIdToken, status } =
+          authorization.idTokenInfo;
+        if (cacheExpiryDateTime && new Date() > new Date(cacheExpiryDateTime)) {
+          response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Expired;
         } else {
-          const { cacheExpiryDateTime, groupIdToken, status } = authorization.idTokenInfo;
-          if (cacheExpiryDateTime && new Date() > new Date(cacheExpiryDateTime)) {
-            response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Expired;
-          } else {
-            response.idTagInfo.status = OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(status);
-          }
-          response.idTagInfo.expiryDate = cacheExpiryDateTime;
-          if (groupIdToken) {
-            response.idTagInfo.parentIdTag = groupIdToken.idToken;
-          }
+          response.idTagInfo.status =
+            OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(status);
+        }
+        response.idTagInfo.expiryDate = cacheExpiryDateTime;
+        if (groupIdToken) {
+          response.idTagInfo.parentIdTag = groupIdToken.idToken;
         }
       }
     } catch (error) {
       // Log any unexpected errors
-      this._logger.error(`Failed to retrieve authorization for idToken '${request.idTag}':`, error);
+      this._logger.error(
+        `Failed to retrieve authorization for idToken '${request.idTag}':`,
+        error,
+      );
       // response remains "Invalid" by default
     }
 
-
-    await this.sendCallResultWithMessage(message, response).then((messageConfirmation) => {
-      this._logger.debug('Authorize response sent:', messageConfirmation);
-    });
+    await this.sendCallResultWithMessage(message, response).then(
+      (messageConfirmation) => {
+        this._logger.debug('Authorize response sent:', messageConfirmation);
+      },
+    );
     return;
   }
 
