@@ -250,7 +250,7 @@ export class ConfigurationModule extends AbstractModule {
       await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
     // Update device model from boot
-    this._deviceModelService.updateDeviceModel(
+    await this._deviceModelService.updateDeviceModel(
       chargingStation,
       stationId,
       timestamp,
