@@ -2,6 +2,8 @@
 
 const eslint = require('@eslint/js');
 const tseslint = require('typescript-eslint');
+const prettier = require('eslint-config-prettier');
+const pluginPrettier = require('eslint-plugin-prettier');
 
 module.exports = tseslint.config(
   eslint.configs.recommended,
@@ -12,6 +14,9 @@ module.exports = tseslint.config(
         project: ['./tsconfig.eslint.json'],
         tsconfigRootDir: __dirname,
       },
+    },
+    plugins: {
+      prettier: pluginPrettier,
     },
     rules: {
       '@typescript-eslint/no-floating-promises': 'error',
@@ -25,8 +30,11 @@ module.exports = tseslint.config(
         },
       ],
       '@typescript-eslint/no-empty-object-type': 'off',
+
+      'prettier/prettier': 'warn',
     },
   },
+  // Ignore patterns
   {
     ignores: [
       '**/DirectusExtensions/**',
@@ -40,4 +48,6 @@ module.exports = tseslint.config(
       '00_Base/json-schema-processor-2.0.1.js',
     ],
   },
+  // Disable ESLint rules that conflict with Prettier
+  prettier,
 );

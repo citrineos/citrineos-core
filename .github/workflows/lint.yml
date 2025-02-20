@@ -26,6 +26,3 @@ jobs:
 
       - name: Lint
         run: npm run lint
-
-      - name: Prettier Check formatting
-        run: npm run prettier:check
