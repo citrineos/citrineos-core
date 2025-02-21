@@ -3,10 +3,16 @@ process.env.APP_ENV = 'local'; // needs to be before systemConfig import - caref
 import { DefaultSequelizeInstance } from '@citrineos/data';
 import { systemConfig } from './Server/src/config';
 
-const sequelize = DefaultSequelizeInstance.getInstance(systemConfig);
+
+async function initializeDatabase() {
+    const loadedSystemConfig = await systemConfig;
+    return DefaultSequelizeInstance.getInstance(loadedSystemConfig);
+}
+
+export const sequelize = initializeDatabase();
 
 const syncDatabase = async () => {
-  await sequelize.sync({ alter: true }); // Use { force: true } for dropping and recreating tables
+  await (await sequelize).sync({ alter: true }); // Use { force: true } for dropping and recreating tables
   console.log('Database synchronized successfully');
 };
 

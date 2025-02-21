@@ -6,16 +6,20 @@
 import { SystemConfig } from '@citrineos/base';
 import { createLocalConfig } from './envs/local';
 import { createDockerConfig } from './envs/docker';
+import { getOrCreateS3Config } from './envs/s3';
 
-function getConfig() {
+
+async function getConfig() {
   switch (process.env.APP_ENV) {
     case 'local':
       return createLocalConfig();
     case 'docker':
       return createDockerConfig();
+    case 's3':
+      return await getOrCreateS3Config();
     default:
       throw new Error(`Invalid APP_ENV "${process.env.APP_ENV}"`);
   }
 }
 
-export const systemConfig: SystemConfig = getConfig();
+export const systemConfig: Promise<SystemConfig> = getConfig();
