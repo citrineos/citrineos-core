@@ -514,7 +514,8 @@ export class MessageRouterImpl
               { error: (error as Error).message },
             ];
       const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
-      this._sendMessage(identifier, protocol, rawMessage, callError);
+      await this._sendMessage(identifier, rawMessage);
+      return;
     }
 
     try {

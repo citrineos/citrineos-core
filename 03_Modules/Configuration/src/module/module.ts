@@ -79,6 +79,7 @@ export class ConfigurationModule extends AbstractModule {
     OCPP2_0_1_CallAction.UpdateFirmware,
     OCPP1_6_CallAction.GetConfiguration,
     OCPP1_6_CallAction.ChangeConfiguration,
+    OCPP1_6_CallAction.Reset,
   ];
 
   protected _bootRepository: IBootRepository;
@@ -952,5 +953,13 @@ export class ConfigurationModule extends AbstractModule {
     if (message.payload.status !== OCPP1_6.TriggerMessageResponseStatus.Accepted) {
       this._logger.error('TriggerMessage failed with status:', message);
     }
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP2_0_1_CallAction.Reset)
+  protected _handle16Reset(
+      message: IMessage<OCPP1_6.ResetResponse>,
+      props?: HandlerProperties,
+  ): void {
+    this._logger.debug('Reset response received:', message, props);
   }
 }
