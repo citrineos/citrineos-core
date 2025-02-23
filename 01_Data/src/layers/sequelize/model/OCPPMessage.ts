@@ -4,12 +4,12 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Column, DataType, ForeignKey, Index, Model, Table } from 'sequelize-typescript';
-import { CallAction, MessageOrigin } from '@citrineos/base';
+import { CallAction, MessageOrigin, Namespace } from '@citrineos/base';
 import { ChargingStation } from '..';
 
 @Table
 export class OCPPMessage extends Model {
-  static readonly MODEL_NAME: string = 'OCPPLog';
+  static readonly MODEL_NAME: string = Namespace.OCPPMessage;
 
   @ForeignKey(() => ChargingStation)
   @Index
