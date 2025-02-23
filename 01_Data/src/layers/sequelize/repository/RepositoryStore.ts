@@ -1,7 +1,6 @@
 import {
   IAuthorizationRepository,
   IBootRepository,
-  ICallMessageRepository,
   ICertificateRepository,
   IChangeConfigurationRepository,
   IChargingProfileRepository,
@@ -36,7 +35,6 @@ import { TransactionEvent } from '../model/TransactionEvent';
 import { Component } from '../model/DeviceModel';
 import { SequelizeRepository } from './Base';
 import { SequelizeReservationRepository } from './Reservation';
-import { SequelizeCallMessageRepository } from './CallMessage';
 import { SequelizeLocalAuthListRepository } from './LocalAuthList';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
 import { SequelizeChargingProfileRepository } from './ChargingProfile';
@@ -47,7 +45,6 @@ export class RepositoryStore {
   sequelizeInstance: Sequelize;
   authorizationRepository: IAuthorizationRepository;
   bootRepository: IBootRepository;
-  callMessageRepository: ICallMessageRepository;
   certificateRepository: ICertificateRepository;
   changeConfigurationRepository: IChangeConfigurationRepository;
   chargingProfileRepository: IChargingProfileRepository;
@@ -69,7 +66,6 @@ export class RepositoryStore {
     this.sequelizeInstance = sequelizeInstance;
     this.authorizationRepository = new SequelizeAuthorizationRepository(config, logger, sequelizeInstance);
     this.bootRepository = new SequelizeBootRepository(config, logger, sequelizeInstance);
-    this.callMessageRepository = new SequelizeCallMessageRepository(config, logger, sequelizeInstance);
     this.certificateRepository = new SequelizeCertificateRepository(config, logger, sequelizeInstance);
     this.changeConfigurationRepository = new SequelizeChangeConfigurationRepository(config, logger, sequelizeInstance);
     this.chargingProfileRepository = new SequelizeChargingProfileRepository(config, logger, sequelizeInstance);

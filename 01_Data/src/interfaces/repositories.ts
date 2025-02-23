@@ -39,7 +39,6 @@ import {
   InstalledCertificate,
   ChangeConfiguration,
   OCPPMessage,
-  CallMessage,
 } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
@@ -183,8 +182,6 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
 export interface IReservationRepository extends CrudRepository<Reservation> {
   createOrUpdateReservation(reserveNowRequest: OCPP2_0_1.ReserveNowRequest, stationId: string, isActive?: boolean): Promise<Reservation | undefined>;
 }
-
-export interface ICallMessageRepository extends CrudRepository<CallMessage> {}
 
 export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {}
 

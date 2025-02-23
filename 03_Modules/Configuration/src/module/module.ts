@@ -17,6 +17,7 @@ import {
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
+  MessageOrigin,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
@@ -26,21 +27,20 @@ import {
 } from '@citrineos/base';
 import {
   Boot,
-  CallMessage,
   ChangeConfiguration,
   ChargingStation,
   ChargingStationNetworkProfile,
   Component,
   IBootRepository,
-  ICallMessageRepository,
   IChangeConfigurationRepository,
   IDeviceModelRepository,
   ILocationRepository,
   IMessageInfoRepository,
+  IOCPPMessageRepository,
   sequelize,
-  SequelizeCallMessageRepository,
   SequelizeChangeConfigurationRepository,
   SequelizeChargingStationSequenceRepository,
+  SequelizeOCPPMessageRepository,
   ServerNetworkProfile,
   SetNetworkProfile,
 } from '@citrineos/data';
@@ -49,6 +49,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './DeviceModelService';
 import { BootNotificationService } from './BootNotificationService';
+import { ChangeConfigurationResponseStatus } from '@citrineos/base/src/ocpp/model/1.6';
 
 /**
  * Component that handles Configuration related messages.
@@ -86,7 +87,7 @@ export class ConfigurationModule extends AbstractModule {
   protected _messageInfoRepository: IMessageInfoRepository;
   protected _locationRepository: ILocationRepository;
   protected _changeConfigurationRepository: IChangeConfigurationRepository;
-  protected _callMessageRepository: ICallMessageRepository;
+  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _bootService: BootNotificationService;
   private _idGenerator: IdGenerator;
 
@@ -128,9 +129,9 @@ export class ConfigurationModule extends AbstractModule {
    * represents a repository for accessing and manipulating change configuration data. If no `changeConfigurationRepository` is provided, a default
    * {@link SequelizeChangeConfigurationRepository} instance is created and used.
    *
-   * @param {ICallMessageRepository} [callMessageRepository] - An optional parameter of type {@link ICallMessageRepository} which
-   * represents a repository for accessing and manipulating call message data. If no `callMessageRepository` is provided, a default
-   * {@link SequelizeCallMessageRepository} instance is created and used.
+   * @param {IOCPPMessageRepository} [ocppMessageRepository] - An optional parameter of type {@link IOCPPMessageRepository} which
+   * represents a repository for accessing and manipulating call message data. If no `ocppMessageRepository` is provided, a default
+   * {@link SequelizeOCPPMessageRepository} instance is created and used.
    *
    * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which
    * represents a generator for ids.
@@ -148,7 +149,7 @@ export class ConfigurationModule extends AbstractModule {
     messageInfoRepository?: IMessageInfoRepository,
     locationRepository?: ILocationRepository,
     changeConfigurationRepository?: IChangeConfigurationRepository,
-    callMessageRepository?: ICallMessageRepository,
+    ocppMessageRepository?: IOCPPMessageRepository,
     idGenerator?: IdGenerator,
   ) {
     super(
@@ -175,9 +176,9 @@ export class ConfigurationModule extends AbstractModule {
     this._changeConfigurationRepository =
       changeConfigurationRepository ||
       new SequelizeChangeConfigurationRepository(config, this._logger);
-    this._callMessageRepository =
-      callMessageRepository ||
-      new SequelizeCallMessageRepository(config, this._logger);
+    this._ocppMessageRepository =
+      ocppMessageRepository ||
+      new SequelizeOCPPMessageRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(
       this._deviceModelRepository,
@@ -217,8 +218,8 @@ export class ConfigurationModule extends AbstractModule {
     return this._changeConfigurationRepository;
   }
 
-  get callMessageRepository(): ICallMessageRepository {
-    return this._callMessageRepository;
+  get ocppMessageRepository(): IOCPPMessageRepository {
+    return this._ocppMessageRepository;
   }
 
   /**
@@ -264,12 +265,13 @@ export class ConfigurationModule extends AbstractModule {
     if (!bootNotificationResponseMessageConfirmation.success) {
       throw new Error(
         'BootNotification failed: ' +
-        bootNotificationResponseMessageConfirmation,
+          bootNotificationResponseMessageConfirmation,
       );
     }
 
     if (
-      bootNotificationResponse.status !== OCPP2_0_1.RegistrationStatusEnumType.Accepted &&
+      bootNotificationResponse.status !==
+        OCPP2_0_1.RegistrationStatusEnumType.Accepted &&
       (!cachedBootStatus ||
         bootNotificationResponse.status !== cachedBootStatus)
     ) {
@@ -290,7 +292,8 @@ export class ConfigurationModule extends AbstractModule {
     // If boot notification is not pending, do not start configuration.
     // If cached boot status is not null and pending, configuration is already in progress - do not start configuration again.
     if (
-      bootNotificationResponse.status !== OCPP2_0_1.RegistrationStatusEnumType.Pending ||
+      bootNotificationResponse.status !==
+        OCPP2_0_1.RegistrationStatusEnumType.Pending ||
       (cachedBootStatus &&
         cachedBootStatus === OCPP2_0_1.RegistrationStatusEnumType.Pending)
     ) {
@@ -386,11 +389,13 @@ export class ConfigurationModule extends AbstractModule {
             continue;
           }
 
-          const setVariablesResponse: OCPP2_0_1.SetVariablesResponse = JSON.parse(
-            setVariablesResponseJsonString,
-          );
+          const setVariablesResponse: OCPP2_0_1.SetVariablesResponse =
+            JSON.parse(setVariablesResponseJsonString);
           setVariablesResponse.setVariableResult.forEach((result) => {
-            if (result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Rejected) {
+            if (
+              result.attributeStatus ===
+              OCPP2_0_1.SetVariableStatusEnumType.Rejected
+            ) {
               rejectedSetVariable = true;
             } else if (
               result.attributeStatus ===
@@ -410,7 +415,8 @@ export class ConfigurationModule extends AbstractModule {
       );
 
       if (rejectedSetVariable && doNotBootWithRejectedVariables) {
-        bootConfigDbEntity.status = OCPP2_0_1.RegistrationStatusEnumType.Rejected;
+        bootConfigDbEntity.status =
+          OCPP2_0_1.RegistrationStatusEnumType.Rejected;
         await bootConfigDbEntity.save();
         // No more to do.
         return;
@@ -426,9 +432,15 @@ export class ConfigurationModule extends AbstractModule {
 
     if (rebootSetVariable) {
       // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
-      await this.sendCall(stationId, tenantId, OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.Reset, {
-        type: OCPP2_0_1.ResetEnumType.Immediate,
-      } as OCPP2_0_1.ResetRequest);
+      await this.sendCall(
+        stationId,
+        tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.Reset,
+        {
+          type: OCPP2_0_1.ResetEnumType.Immediate,
+        } as OCPP2_0_1.ResetRequest,
+      );
     } else {
       // We could trigger the new boot immediately rather than wait for the retry, as nothing more now needs to be done.
       // However, B02.FR.02 - Spec allows for TriggerMessageRequest - OCTT fails over trigger
@@ -464,7 +476,8 @@ export class ConfigurationModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('NotifyDisplayMessages received: ', message, props);
 
-    const messageInfoTypes = message.payload.messageInfo as OCPP2_0_1.MessageInfoType[];
+    const messageInfoTypes = message.payload
+      .messageInfo as OCPP2_0_1.MessageInfoType[];
     for (const messageInfoType of messageInfoTypes) {
       let componentId: number | undefined;
       if (messageInfoType.display) {
@@ -495,7 +508,10 @@ export class ConfigurationModule extends AbstractModule {
     );
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.FirmwareStatusNotification)
+  @AsHandler(
+    OCPPVersion.OCPP2_0_1,
+    OCPP2_0_1_CallAction.FirmwareStatusNotification,
+  )
   protected async _handleFirmwareStatusNotification(
     message: IMessage<OCPP2_0_1.FirmwareStatusNotificationRequest>,
     props?: HandlerProperties,
@@ -556,7 +572,10 @@ export class ConfigurationModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('SetNetworkProfile response received:', message, props);
 
-    if (message.payload.status == OCPP2_0_1.SetNetworkProfileStatusEnumType.Accepted) {
+    if (
+      message.payload.status ==
+      OCPP2_0_1.SetNetworkProfileStatusEnumType.Accepted
+    ) {
       const setNetworkProfile = await SetNetworkProfile.findOne({
         where: { correlationId: message.context.correlationId },
       });
@@ -602,7 +621,8 @@ export class ConfigurationModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('SetDisplayMessage response received:', message, props);
 
-    const status = message.payload.status as OCPP2_0_1.DisplayMessageStatusEnumType;
+    const status = message.payload
+      .status as OCPP2_0_1.DisplayMessageStatusEnumType;
     // when charger station accepts the set message info request
     // we trigger a get all display messages request to update stored message info in db
     if (status === OCPP2_0_1.DisplayMessageStatusEnumType.Accepted) {
@@ -675,7 +695,8 @@ export class ConfigurationModule extends AbstractModule {
       props,
     );
 
-    const status = message.payload.status as OCPP2_0_1.ClearMessageStatusEnumType;
+    const status = message.payload
+      .status as OCPP2_0_1.ClearMessageStatusEnumType;
     // when charger station accepts the clear message info request
     // we trigger a get all display messages request to update stored message info in db
     if (status === OCPP2_0_1.ClearMessageStatusEnumType.Accepted) {
@@ -771,7 +792,10 @@ export class ConfigurationModule extends AbstractModule {
       );
     }
     // Update boot with details of most recently sent BootNotificationResponse
-    const bootEntity = await this._bootService.updateOcpp16BootConfig(bootNotificationResponse, stationId);
+    const bootEntity = await this._bootService.updateOcpp16BootConfig(
+      bootNotificationResponse,
+      stationId,
+    );
 
     // 3. Sync configurations
     // If boot notification is not pending, do not start configuration.
@@ -798,17 +822,6 @@ export class ConfigurationModule extends AbstractModule {
     // Set each configuration on Charging Station
     for (const config of configurations) {
       const correlationId = uuidv4();
-
-      // Create call message to enable update configuration status based on response
-      this._logger.debug(
-        `Creating call message for correlationId: ${correlationId}`,
-      );
-      await this.callMessageRepository.create(
-        CallMessage.build({
-          correlationId,
-          databaseId: config.id,
-        }),
-      );
 
       const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(
         correlationId,
@@ -917,29 +930,51 @@ export class ConfigurationModule extends AbstractModule {
       props,
     );
 
-    const status = message.payload.status;
+    const stationId = message.context.stationId;
     const correlationId = message.context.correlationId;
 
-    const existingCallMessage =
-      await this._callMessageRepository.readOnlyOneByQuery({
-        where: {
-          correlationId,
-        },
-      });
-    if (!existingCallMessage || !existingCallMessage.databaseId) {
+    const request = await this._ocppMessageRepository.readOnlyOneByQuery({
+      where: {
+        stationId,
+        correlationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
+
+    if (!request) {
       this._logger.error(
-        `No valid callMessage found for correlationId ${correlationId}`,
+        `No valid ChangeConfigurationRequest found for correlationId ${correlationId}`,
       );
+    }
+
+    const status = message.payload.status;
+    const key = request?.message.key;
+    const value = request?.message.value;
+
+    if (
+      status == ChangeConfigurationResponseStatus.Rejected ||
+      status == ChangeConfigurationResponseStatus.NotSupported
+    ) {
+      this._logger.warn(
+        `Attempted ChangeConfiguration ${correlationId} for ${key}:${value} unsuccessful with status ${status}`,
+      );
+      return;
     } else {
-      this._logger.info(
-        `Updating changeConfiguration ${existingCallMessage.databaseId} with status ${status}`,
-      );
-      await this._changeConfigurationRepository.updateByKey(
-        {
-          status,
-        },
-        existingCallMessage.databaseId,
-      );
+      const config =
+        await this._changeConfigurationRepository.createOrUpdateChangeConfiguration(
+          {
+            stationId,
+            key,
+            value,
+          } as ChangeConfiguration,
+        );
+      if (!config) {
+        this._logger.error(
+          `Failed to create or update configuration ${key}:${value} on ${stationId}`,
+        );
+      } else {
+        this._logger.debug(`Updated changeConfiguration ${key}:${value}`);
+      }
     }
   }
 
@@ -949,7 +984,9 @@ export class ConfigurationModule extends AbstractModule {
     props?: HandlerProperties,
   ): void {
     this._logger.debug('TriggerMessage response received:', message, props);
-    if (message.payload.status !== OCPP1_6.TriggerMessageResponseStatus.Accepted) {
+    if (
+      message.payload.status !== OCPP1_6.TriggerMessageResponseStatus.Accepted
+    ) {
       this._logger.error('TriggerMessage failed with status:', message);
     }
   }

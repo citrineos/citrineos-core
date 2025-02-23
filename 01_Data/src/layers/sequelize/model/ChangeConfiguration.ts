@@ -29,7 +29,4 @@ export class ChangeConfiguration extends Model {
 
   @Column(DataType.BOOLEAN)
   declare readonly?: boolean | null;
-
-  @Column(DataType.ENUM(...Object.values(OCPP1_6.ChangeConfigurationResponseStatus)))
-  declare status?: OCPP1_6.ChangeConfigurationResponseStatus | null;
 }
