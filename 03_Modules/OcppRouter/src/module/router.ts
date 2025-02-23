@@ -21,6 +21,7 @@ import {
   IMessageHandler,
   IMessageRouter,
   IMessageSender,
+  mapToCallAction,
   MessageOrigin,
   MessageState,
   MessageTypeId,
@@ -36,7 +37,11 @@ import {
 } from '@citrineos/base';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
-import { ILocationRepository, ISubscriptionRepository, sequelize } from '@citrineos/data';
+import {
+  ILocationRepository,
+  ISubscriptionRepository,
+  sequelize,
+} from '@citrineos/data';
 import { WebhookDispatcher } from './webhook.dispatcher';
 
 /**
@@ -283,7 +288,7 @@ export class MessageRouterImpl
     origin?: MessageOrigin,
   ): Promise<IMessageConfirmation> {
     const message: Call = [MessageTypeId.Call, correlationId, action, payload];
-    if (await this._sendCallIsAllowed(identifier, message)) {
+    if (await this._sendCallIsAllowed(identifier, protocol, message)) {
       if (
         await this._cache.setIfNotExist(
           identifier,
@@ -446,7 +451,7 @@ export class MessageRouterImpl
     protocol: OCPPVersionType,
   ): Promise<void> {
     const messageId = message[1];
-    const action = message[2] as CallAction;
+    const action = mapToCallAction(protocol, message[2]);
 
     try {
       const isAllowed = await this._onCallIsAllowed(action, identifier);
@@ -593,7 +598,7 @@ export class MessageRouterImpl
           action,
           ...this._validateCallResult(
             identifier,
-            action as CallAction,
+            mapToCallAction(protocol, action),
             message,
             protocol,
           ),
@@ -612,7 +617,7 @@ export class MessageRouterImpl
         return this._routeCallResult(
           identifier,
           message,
-          action as CallAction,
+          mapToCallAction(protocol, action),
           timestamp,
           protocol,
         );
@@ -677,7 +682,7 @@ export class MessageRouterImpl
         return this._routeCallError(
           identifier,
           message,
-          action as CallAction,
+          mapToCallAction(protocol, action),
           timestamp,
           protocol,
         );
@@ -733,6 +738,7 @@ export class MessageRouterImpl
 
   private async _sendCallIsAllowed(
     identifier: string,
+    protocol: OCPPVersionType,
     message: Call,
   ): Promise<boolean> {
     const status = await this._cache.get<string>(BOOT_STATUS, identifier);
@@ -740,7 +746,8 @@ export class MessageRouterImpl
       status === OCPP2_0_1.RegistrationStatusEnumType.Rejected &&
       // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
       !(
-        (message[2] as CallAction) === OCPP2_0_1_CallAction.TriggerMessage &&
+        mapToCallAction(protocol, message[2]) ===
+          OCPP2_0_1_CallAction.TriggerMessage &&
         (message[3] as OCPP2_0_1.TriggerMessageRequest).requestedMessage ==
           OCPP2_0_1.MessageTriggerEnumType.BootNotification
       )
@@ -757,7 +764,7 @@ export class MessageRouterImpl
     protocol: OCPPVersionType,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
-    const action = message[2] as CallAction;
+    const action = mapToCallAction(protocol, message[2]);
     const payload = message[3] as OcppRequest;
 
     const _message: IMessage<OcppRequest> = RequestBuilder.buildCall(
