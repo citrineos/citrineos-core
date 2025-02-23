@@ -14,6 +14,7 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  MessageOrigin,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
@@ -22,9 +23,7 @@ import {
   SystemConfig,
 } from '@citrineos/base';
 import {
-  CallMessage,
   IAuthorizationRepository,
-  ICallMessageRepository,
   IChargingProfileRepository,
   IDeviceModelRepository,
   ILocalAuthListRepository,
@@ -35,7 +34,7 @@ import {
   SequelizeChargingStationSequenceRepository,
   Tariff,
   VariableAttribute,
-  OCPP2_0_1_Mapper
+  OCPP2_0_1_Mapper,
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
@@ -78,7 +77,7 @@ export class EVDriverModule extends AbstractModule {
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected _reservationRepository: IReservationRepository;
-  protected _callMessageRepository: ICallMessageRepository;
+  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   private _certificateAuthorityService: CertificateAuthorityService;
   private _localAuthListService: LocalAuthListService;
@@ -129,9 +128,9 @@ export class EVDriverModule extends AbstractModule {
    * which represents a repository for accessing and manipulating reservation data.
    * If no `reservationRepository` is provided, a default {@link sequelize:reservationRepository} instance is created and used.
    *
-   * @param {ICallMessageRepository} [callMessageRepository]  - An optional parameter of type {@link ICallMessageRepository}
-   * which represents a repository for accessing and manipulating callMessage data.
-   * If no `callMessageRepository` is provided, a default {@link sequelize:callMessageRepository} instance is created and used.
+   * @param {IOCPPMessageRepository} [ocppMessageRepository]  - An optional parameter of type {@link IOCPPMessageRepository}
+   * which represents a repository for accessing and manipulating ocppMessage data.
+   * If no `ocppMessageRepository` is provided, a default {@link sequelize:ocppMessageRepository} instance is created and used.
    *
    * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
    * type {@link CertificateAuthorityService} which handles certificate authority operations.
@@ -155,7 +154,7 @@ export class EVDriverModule extends AbstractModule {
     transactionEventRepository?: ITransactionEventRepository,
     chargingProfileRepository?: IChargingProfileRepository,
     reservationRepository?: IReservationRepository,
-    callMessageRepository?: ICallMessageRepository,
+    ocppMessageRepository?: IOCPPMessageRepository,
     certificateAuthorityService?: CertificateAuthorityService,
     authorizers?: IAuthorizer[],
     idGenerator?: IdGenerator,
@@ -190,9 +189,9 @@ export class EVDriverModule extends AbstractModule {
     this._reservationRepository =
       reservationRepository ||
       new sequelize.SequelizeReservationRepository(config, logger);
-    this._callMessageRepository =
-      callMessageRepository ||
-      new sequelize.SequelizeCallMessageRepository(config, logger);
+    this._ocppMessageRepository =
+      ocppMessageRepository ||
+      new sequelize.SequelizeOCPPMessageRepository(config, logger);
 
     this._certificateAuthorityService =
       certificateAuthorityService ||
@@ -236,8 +235,8 @@ export class EVDriverModule extends AbstractModule {
     return this._reservationRepository;
   }
 
-  get callMessageRepository(): ICallMessageRepository {
-    return this._callMessageRepository;
+  get ocppMessageRepository(): IOCPPMessageRepository {
+    return this._ocppMessageRepository;
   }
 
   get localAuthListService(): LocalAuthListService {
@@ -263,8 +262,11 @@ export class EVDriverModule extends AbstractModule {
       },
     };
 
-    if (message.payload.idToken.type === OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
-      response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
+    if (
+      message.payload.idToken.type === OCPP2_0_1.IdTokenEnumType.NoAuthorization
+    ) {
+      response.idTokenInfo.status =
+        OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
       await this.sendCallResultWithMessage(message, response);
       return;
     }
@@ -308,9 +310,13 @@ export class EVDriverModule extends AbstractModule {
       .then(async (authorization) => {
         if (authorization) {
           if (authorization.idTokenInfo) {
-            const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
+            const idTokenInfo =
+              OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
 
-            if (idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
+            if (
+              idTokenInfo.status ===
+              OCPP2_0_1.AuthorizationStatusEnumType.Accepted
+            ) {
               if (
                 idTokenInfo.cacheExpiryDateTime &&
                 new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
@@ -347,7 +353,8 @@ export class EVDriverModule extends AbstractModule {
                 }
                 if (evseIds && evseIds.size === 0) {
                   response.idTokenInfo = {
-                    status: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
+                    status:
+                      OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
                     groupIdToken: idTokenInfo.groupIdToken,
                     // TODO determine how/if to set personalMessage
                   };
@@ -390,7 +397,8 @@ export class EVDriverModule extends AbstractModule {
                   }
                   if (evseIds && evseIds.size === 0) {
                     response.idTokenInfo = {
-                      status: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
+                      status:
+                        OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
                       groupIdToken: idTokenInfo.groupIdToken,
                       // TODO determine how/if to set personalMessage
                     };
@@ -417,10 +425,8 @@ export class EVDriverModule extends AbstractModule {
                 ) {
                   break;
                 }
-                const result: Partial<OCPP2_0_1.IdTokenType> = await authorizer.authorize(
-                  authorization,
-                  context,
-                );
+                const result: Partial<OCPP2_0_1.IdTokenType> =
+                  await authorizer.authorize(authorization, context);
                 Object.assign(response.idTokenInfo, result);
               }
             } else {
@@ -438,7 +444,8 @@ export class EVDriverModule extends AbstractModule {
         }
 
         if (
-          response.idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted
+          response.idTokenInfo.status ===
+          OCPP2_0_1.AuthorizationStatusEnumType.Accepted
         ) {
           const tariffAvailable: VariableAttribute[] =
             await this._deviceModelRepository.readAllByQuerystring({
@@ -485,7 +492,10 @@ export class EVDriverModule extends AbstractModule {
       });
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ReservationStatusUpdate)
+  @AsHandler(
+    OCPPVersion.OCPP2_0_1,
+    OCPP2_0_1_CallAction.ReservationStatusUpdate,
+  )
   protected async _handleReservationStatusUpdate(
     message: IMessage<OCPP2_0_1.ReservationStatusUpdateRequest>,
     props?: HandlerProperties,
@@ -543,7 +553,10 @@ export class EVDriverModule extends AbstractModule {
    * Handle OCPP 2.0.1 responses
    */
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.RequestStartTransaction)
+  @AsHandler(
+    OCPPVersion.OCPP2_0_1,
+    OCPP2_0_1_CallAction.RequestStartTransaction,
+  )
   protected async _handleRequestStartTransaction(
     message: IMessage<OCPP2_0_1.RequestStartTransactionResponse>,
     props?: HandlerProperties,
@@ -553,7 +566,10 @@ export class EVDriverModule extends AbstractModule {
       message,
       props,
     );
-    if (message.payload.status === OCPP2_0_1.RequestStartStopStatusEnumType.Accepted) {
+    if (
+      message.payload.status ===
+      OCPP2_0_1.RequestStartStopStatusEnumType.Accepted
+    ) {
       // Start transaction with charging profile succeeds,
       // we need to update db entity with the latest data from charger
       const stationId: string = message.context.stationId;
@@ -567,7 +583,8 @@ export class EVDriverModule extends AbstractModule {
             stationId: stationId,
             isActive: true,
             chargingLimitSource: OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
-            chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+            chargingProfilePurpose:
+              OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
           },
           returning: false,
         },
@@ -584,7 +601,8 @@ export class EVDriverModule extends AbstractModule {
             ChargingStationSequenceType.getChargingProfiles,
           ),
           chargingProfile: {
-            chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+            chargingProfilePurpose:
+              OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
             chargingLimitSource: [OCPP2_0_1.ChargingLimitSourceEnumType.CSO],
           } as OCPP2_0_1.ChargingProfileCriterionType,
         } as OCPP2_0_1.GetChargingProfilesRequest,
@@ -615,16 +633,21 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('CancelReservationResponse received:', message, props);
 
-    const reservationId = await this._findReservationByCorrelationId(
-      message.context.correlationId,
-    );
-    if (reservationId) {
+    const request = await this._ocppMessageRepository.readOnlyOneByQuery({
+      where: {
+        stationId: message.context.stationId,
+        correlationId: message.context.correlationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
+    if (request) {
       await this._reservationRepository.updateByKey(
         {
           isActive:
-            message.payload.status === OCPP2_0_1.CancelReservationStatusEnumType.Rejected,
+            message.payload.status ===
+            OCPP2_0_1.CancelReservationStatusEnumType.Rejected,
         },
-        reservationId.toString(),
+        request.message.reservationId,
       );
     } else {
       this._logger.error(
@@ -640,17 +663,22 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('ReserveNowResponse received:', message, props);
 
-    const reservationId = await this._findReservationByCorrelationId(
-      message.context.correlationId,
-    );
-    if (reservationId) {
-      const status = message.payload.status as OCPP2_0_1.ReserveNowStatusEnumType;
+    const request = await this._ocppMessageRepository.readOnlyOneByQuery({
+      where: {
+        stationId: message.context.stationId,
+        correlationId: message.context.correlationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
+    if (request) {
+      const status = message.payload
+        .status as OCPP2_0_1.ReserveNowStatusEnumType;
       await this._reservationRepository.updateByKey(
         {
           reserveStatus: status,
           isActive: status === OCPP2_0_1.ReserveNowStatusEnumType.Accepted,
         },
-        reservationId.toString(),
+        request.message.reservationId,
       );
     } else {
       this._logger.error(
@@ -769,25 +797,5 @@ export class EVDriverModule extends AbstractModule {
       message,
       props,
     );
-  }
-
-  private async _findReservationByCorrelationId(
-    correlationId: string,
-  ): Promise<number | undefined> {
-    try {
-      const callMessage: CallMessage | undefined =
-        await this._callMessageRepository.readOnlyOneByQuery({
-          where: {
-            correlationId,
-          },
-        });
-      if (callMessage && callMessage.reservationId) {
-        return callMessage.reservationId;
-      }
-    } catch (e) {
-      this._logger.error(e);
-    }
-
-    return undefined;
   }
 }

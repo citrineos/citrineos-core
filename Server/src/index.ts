@@ -542,7 +542,7 @@ export class CitrineOSServer {
       this._repositoryStore.messageInfoRepository,
       this._repositoryStore.locationRepository,
       this._repositoryStore.changeConfigurationRepository,
-      this._repositoryStore.callMessageRepository,
+      this._repositoryStore.ocppMessageRepository,
       this._idGenerator,
     );
     await this.initHandlersAndAddModule(module);
@@ -567,7 +567,7 @@ export class CitrineOSServer {
       this._repositoryStore.transactionEventRepository,
       this._repositoryStore.chargingProfileRepository,
       this._repositoryStore.reservationRepository,
-      this._repositoryStore.callMessageRepository,
+      this._repositoryStore.ocppMessageRepository,
       this._certificateAuthorityService,
       [],
       this._idGenerator,
