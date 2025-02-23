@@ -197,6 +197,5 @@ export interface IChargingStationSequenceRepository extends CrudRepository<Charg
 export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {}
 
 export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {
-  updateStatusByStationIdAndKey(stationId: string, key: string, status: OCPP1_6.ChangeConfigurationResponseStatus): Promise<ChangeConfiguration | undefined>;
   createOrUpdateChangeConfiguration(configuration: ChangeConfiguration): Promise<ChangeConfiguration | undefined>;
 }

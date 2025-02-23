@@ -13,6 +13,7 @@ export enum Namespace {
   ChargingStation = 'ChargingStation',
   ReserveNowRequest = 'Reservation',
   MeterValue = 'MeterValue',
+  OCPPMessage = 'OCPPMessage',
   StatusNotificationRequest = 'StatusNotification',
   IdTokenType = 'IdToken',
   IdTokenInfoType = 'IdTokenInfo',

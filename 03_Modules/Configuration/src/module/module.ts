@@ -49,7 +49,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './DeviceModelService';
 import { BootNotificationService } from './BootNotificationService';
-import { ChangeConfigurationResponseStatus } from '@citrineos/base/src/ocpp/model/1.6';
 
 /**
  * Component that handles Configuration related messages.
@@ -948,12 +947,12 @@ export class ConfigurationModule extends AbstractModule {
     }
 
     const status = message.payload.status;
-    const key = request?.message.key;
-    const value = request?.message.value;
+    const key = request?.message[3].key;
+    const value = request?.message[3].value;
 
     if (
-      status == ChangeConfigurationResponseStatus.Rejected ||
-      status == ChangeConfigurationResponseStatus.NotSupported
+      status == OCPP1_6.ChangeConfigurationResponseStatus.Rejected ||
+      status == OCPP1_6.ChangeConfigurationResponseStatus.NotSupported
     ) {
       this._logger.warn(
         `Attempted ChangeConfiguration ${correlationId} for ${key}:${value} unsuccessful with status ${status}`,

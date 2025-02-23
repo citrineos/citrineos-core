@@ -35,6 +35,7 @@ import {
   Tariff,
   VariableAttribute,
   OCPP2_0_1_Mapper,
+  IOCPPMessageRepository,
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
@@ -647,7 +648,7 @@ export class EVDriverModule extends AbstractModule {
             message.payload.status ===
             OCPP2_0_1.CancelReservationStatusEnumType.Rejected,
         },
-        request.message.reservationId,
+        request.message[3].reservationId,
       );
     } else {
       this._logger.error(
@@ -678,7 +679,7 @@ export class EVDriverModule extends AbstractModule {
           reserveStatus: status,
           isActive: status === OCPP2_0_1.ReserveNowStatusEnumType.Accepted,
         },
-        request.message.reservationId,
+        request.message[3].id,
       );
     } else {
       this._logger.error(

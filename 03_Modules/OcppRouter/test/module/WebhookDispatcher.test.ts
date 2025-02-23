@@ -119,6 +119,7 @@ describe('WebhookDispatcher', () => {
         'Any message',
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -131,6 +132,7 @@ describe('WebhookDispatcher', () => {
         'Any message',
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -147,6 +149,7 @@ describe('WebhookDispatcher', () => {
         'Any message',
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -166,6 +169,7 @@ describe('WebhookDispatcher', () => {
         message,
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -196,6 +200,7 @@ describe('WebhookDispatcher', () => {
         message,
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -225,6 +230,7 @@ describe('WebhookDispatcher', () => {
         'Rejected reservation',
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -242,6 +248,7 @@ describe('WebhookDispatcher', () => {
         'Any message',
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -261,6 +268,7 @@ describe('WebhookDispatcher', () => {
         message,
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -291,6 +299,7 @@ describe('WebhookDispatcher', () => {
         message,
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -320,6 +329,7 @@ describe('WebhookDispatcher', () => {
         '"partialCost": 10.54',
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -340,6 +350,7 @@ describe('WebhookDispatcher', () => {
         'Any message',
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -357,6 +368,7 @@ describe('WebhookDispatcher', () => {
         'Any message',
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -376,6 +388,7 @@ describe('WebhookDispatcher', () => {
         'Any message',
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -405,6 +418,7 @@ describe('WebhookDispatcher', () => {
         'Any message',
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -422,6 +436,7 @@ describe('WebhookDispatcher', () => {
         'Any message',
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -446,6 +461,7 @@ describe('WebhookDispatcher', () => {
         'Any message',
         'Any timestamp',
         'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());

@@ -14,24 +14,6 @@ export class SequelizeChangeConfigurationRepository extends SequelizeRepository<
     super(config, ChangeConfiguration.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async updateStatusByStationIdAndKey(stationId: string, key: string, status: OCPP1_6.ChangeConfigurationResponseStatus): Promise<ChangeConfiguration | undefined> {
-    const configurations = await this.updateAllByQuery(
-      { status },
-      {
-        where: {
-          // unique constraint
-          stationId,
-          key,
-        },
-      },
-    );
-    if (configurations && configurations.length > 0) {
-      return configurations[0];
-    } else {
-      return undefined;
-    }
-  }
-
   async createOrUpdateChangeConfiguration(configuration: ChangeConfiguration): Promise<ChangeConfiguration | undefined> {
     let changeConfiguration: ChangeConfiguration | undefined;
     await this.s.transaction(async (sequelizeTransaction) => {
