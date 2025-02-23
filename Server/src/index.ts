@@ -439,7 +439,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       webhookDispatcher,
-      async (_identifier: string, _message: string) => false,
+      async (_identifier: string, _message: string) => {},
       this._logger,
       this._ajv,
       this._repositoryStore.locationRepository,

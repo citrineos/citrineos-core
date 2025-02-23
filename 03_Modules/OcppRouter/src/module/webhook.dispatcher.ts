@@ -3,8 +3,18 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { MessageOrigin } from '@citrineos/base';
-import { ISubscriptionRepository, Subscription } from '@citrineos/data';
+import {
+  CallAction,
+  mapToCallAction,
+  MessageOrigin,
+  MessageTypeId,
+  OCPPVersionType,
+} from '@citrineos/base';
+import {
+  ISubscriptionRepository,
+  OCPPMessage,
+  Subscription,
+} from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
 
 export class WebhookDispatcher {
@@ -70,14 +80,54 @@ export class WebhookDispatcher {
   async dispatchMessageReceived(
     identifier: string,
     message: string,
-    info?: Map<string, string>,
+    timestamp: string,
+    protocol: OCPPVersionType,
+    rpcMessage?: any,
   ) {
     try {
-      await Promise.all(
+      const messageTypeId = rpcMessage ? rpcMessage[0] : undefined;
+      const messageId = rpcMessage ? rpcMessage[1] : undefined;
+      let callAction = undefined;
+      switch (messageTypeId) {
+        case MessageTypeId.Call:
+          callAction = mapToCallAction(protocol, rpcMessage[2]);
+          break;
+        case MessageTypeId.CallResult:
+        case MessageTypeId.CallError:
+          const request = await OCPPMessage.findOne({
+            where: { stationId: identifier, correlationId: messageId },
+          });
+          callAction = request?.action;
+          break;
+        default:
+        // undefined
+      }
+
+      const origin = MessageOrigin.ChargingStation;
+      const info = new Map<string, string>([
+        ['correlationId', messageId],
+        ['origin', origin],
+        ['timestamp', timestamp],
+      ]);
+      if (callAction) {
+        info.set('action', callAction);
+      }
+
+      const promises: Promise<any>[] =
         this._onMessageCallbacks
           .get(identifier)
-          ?.map((callback) => callback(message, info)) ?? [],
+          ?.map((callback) => callback(message, info)) ?? [];
+      promises.push(
+        OCPPMessage.create({
+          stationId: identifier,
+          correlationId: messageId,
+          origin: origin,
+          action: callAction,
+          message: message,
+          timestamp: timestamp,
+        }),
       );
+      await Promise.all(promises);
     } catch (error) {
       this._logger.error(
         `Failed to dispatch message received for ${identifier}`,
@@ -89,15 +139,55 @@ export class WebhookDispatcher {
   async dispatchMessageSent(
     identifier: string,
     message: string,
-    error?: any,
-    info?: Map<string, string>,
+    timestamp: string,
+    protocol: OCPPVersionType,
+    rpcMessage?: any,
   ) {
     try {
-      await Promise.all(
+      this._logger.info('Here');
+      const messageTypeId = rpcMessage ? rpcMessage[0] : undefined;
+      const messageId = rpcMessage ? rpcMessage[1] : undefined;
+      let callAction = undefined;
+      switch (messageTypeId) {
+        case MessageTypeId.Call:
+          callAction = mapToCallAction(protocol, rpcMessage[2]);
+          break;
+        case MessageTypeId.CallResult:
+        case MessageTypeId.CallError:
+          const request = await OCPPMessage.findOne({
+            where: { stationId: identifier, correlationId: messageId },
+          });
+          callAction = request?.action;
+          break;
+        default:
+        // undefined
+      }
+
+      const origin = MessageOrigin.ChargingStationManagementSystem;
+      const info = new Map<string, string>([
+        ['correlationId', messageId],
+        ['origin', origin],
+        ['timestamp', timestamp],
+      ]);
+      if (callAction) {
+        info.set('action', callAction);
+      }
+
+      const promises: Promise<any>[] =
         this._sentMessageCallbacks
           .get(identifier)
-          ?.map((callback) => callback(message, error, info)) ?? [],
-      );
+          ?.map((callback) => callback(message, info)) ?? [];
+      const saved = await OCPPMessage.create({
+        stationId: identifier,
+        correlationId: messageId,
+        origin: origin,
+        action: callAction,
+        message: message,
+        timestamp: timestamp,
+      });
+      this._logger.info(`Saved: ${JSON.stringify(saved)}`);
+      // promises.push(saved);
+      await Promise.all(promises);
     } catch (err) {
       this._logger.error(
         `Failed to dispatch message sent for ${identifier}`,
@@ -296,6 +386,5 @@ export type OnMessageCallback = (
 
 export type OnSentMessageCallback = (
   message: string,
-  error?: any,
   info?: Map<string, string>,
 ) => Promise<boolean>;

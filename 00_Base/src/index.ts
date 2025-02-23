@@ -48,6 +48,7 @@ export {
   OcppError,
   OCPPVersion,
   OCPPVersionType,
+  mapToCallAction,
 } from './ocpp/rpc/message';
 export {
   ChargingStationSequenceType,

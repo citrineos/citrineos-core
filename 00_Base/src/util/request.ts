@@ -24,8 +24,8 @@ export class RequestBuilder {
     payload: OcppRequest,
     eventGroup: EventGroup,
     origin: MessageOrigin,
+    protocol: OCPPVersionType,
     timestamp: Date = new Date(),
-    protocol?: OCPPVersionType,
   ): IMessage<OcppRequest> {
     return {
       origin: origin,
@@ -51,8 +51,8 @@ export class RequestBuilder {
     payload: OcppResponse,
     eventGroup: EventGroup,
     origin: MessageOrigin,
+    protocol: OCPPVersionType,
     timestamp: Date = new Date(),
-    protocol?: OCPPVersionType,
   ): IMessage<OcppResponse> {
     return {
       origin: origin,
@@ -78,8 +78,8 @@ export class RequestBuilder {
     payload: OcppError,
     eventGroup: EventGroup,
     origin: MessageOrigin,
+    protocol: OCPPVersionType,
     timestamp: Date = new Date(),
-    protocol?: OCPPVersionType,
   ): IMessage<OcppError> {
     return {
       origin: origin,
