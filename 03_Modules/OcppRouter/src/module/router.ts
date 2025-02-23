@@ -516,7 +516,8 @@ export class MessageRouterImpl
             ];
       callError = this.removeNulls(callError);
       const rawMessage = JSON.stringify(callError);
-      this._sendMessage(identifier, protocol, rawMessage, callError);
+      await this._sendMessage(identifier, protocol, rawMessage, callError);
+      return;
     }
 
     try {
