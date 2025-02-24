@@ -12,7 +12,6 @@ export enum Namespace {
   BootConfig = 'Boot',
   ChargingStation = 'ChargingStation',
   ReserveNowRequest = 'Reservation',
-  OCPPMessage = 'OCPPMessage',
   MeterValue = 'MeterValue',
   OCPPMessage = 'OCPPMessage',
   StatusNotificationRequest = 'StatusNotification',
