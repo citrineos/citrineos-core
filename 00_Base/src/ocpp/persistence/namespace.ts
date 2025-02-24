@@ -12,6 +12,7 @@ export enum Namespace {
   BootConfig = 'Boot',
   ChargingStation = 'ChargingStation',
   ReserveNowRequest = 'Reservation',
+  OCPPMessage = 'OCPPMessage',
   MeterValue = 'MeterValue',
   OCPPMessage = 'OCPPMessage',
   StatusNotificationRequest = 'StatusNotification',
@@ -20,7 +21,6 @@ export enum Namespace {
   ChargingProfile = 'ChargingProfile',
   ChargingSchedule = 'ChargingSchedule',
   CompositeSchedule = 'CompositeSchedule',
-
 }
 
 export enum OCPP2_0_1_Namespace {

@@ -137,12 +137,13 @@ export class WebhookDispatcher {
           callAction = mapToCallAction(protocol, rpcMessage[2]);
           break;
         case MessageTypeId.CallResult:
-        case MessageTypeId.CallError:
+        case MessageTypeId.CallError: {
           const request = await OCPPMessage.findOne({
             where: { stationId: identifier, correlationId: messageId },
           });
           callAction = request?.action;
           break;
+        }
         default:
         // undefined
       }
@@ -195,12 +196,13 @@ export class WebhookDispatcher {
           callAction = mapToCallAction(protocol, rpcMessage[2]);
           break;
         case MessageTypeId.CallResult:
-        case MessageTypeId.CallError:
+        case MessageTypeId.CallError: {
           const request = await OCPPMessage.findOne({
             where: { stationId: identifier, correlationId: messageId },
           });
           callAction = request?.action;
           break;
+        }
         default:
         // undefined
       }
@@ -308,7 +310,7 @@ export class WebhookDispatcher {
         {
           stationId: subscription.stationId,
           event: 'connected',
-          info: info,
+          info: info ? Object.fromEntries(info) : info,
         },
         subscription.url,
       );
@@ -317,7 +319,11 @@ export class WebhookDispatcher {
   private _onCloseCallback(subscription: Subscription) {
     return (info?: Map<string, string>) =>
       this._subscriptionCallback(
-        { stationId: subscription.stationId, event: 'closed', info: info },
+        {
+          stationId: subscription.stationId,
+          event: 'closed',
+          info: info ? Object.fromEntries(info) : info,
+        },
         subscription.url,
       );
   }
@@ -334,7 +340,7 @@ export class WebhookDispatcher {
             event: 'message',
             origin: MessageOrigin.ChargingStation,
             message: message,
-            info: info,
+            info: info ? Object.fromEntries(info) : info,
           },
           subscription.url,
         );
@@ -346,7 +352,7 @@ export class WebhookDispatcher {
   }
 
   private _onMessageSentCallback(subscription: Subscription) {
-    return async (message: string, error?: any, info?: Map<string, string>) => {
+    return async (message: string, info?: Map<string, string>) => {
       if (
         !subscription.messageRegexFilter ||
         new RegExp(subscription.messageRegexFilter).test(message)
@@ -357,8 +363,7 @@ export class WebhookDispatcher {
             event: 'message',
             origin: MessageOrigin.ChargingStationManagementSystem,
             message: message,
-            error: error,
-            info: info,
+            info: info ? Object.fromEntries(info) : info,
           },
           subscription.url,
         );
@@ -382,8 +387,7 @@ export class WebhookDispatcher {
       event: string;
       origin?: MessageOrigin;
       message?: string;
-      error?: any;
-      info?: Map<string, string>;
+      info?: { [k: string]: string };
     },
     url: string,
   ): Promise<boolean> {

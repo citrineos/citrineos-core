@@ -164,12 +164,16 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = 'Accepted reservation';
 
+      const timestamp = 'Any timestamp';
+      const protocol = 'ocpp2.0.1';
+      const correlationId = '123';
+      const action = 'BootNotification';
       await webhookDispatcher.dispatchMessageReceived(
         subscription.stationId,
         message,
-        'Any timestamp',
-        'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        timestamp,
+        protocol,
+        [2, correlationId, action, {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -182,6 +186,13 @@ describe('WebhookDispatcher', () => {
           event: 'message',
           origin: MessageOrigin.ChargingStation,
           message: message,
+          info: {
+            correlationId: correlationId,
+            origin: 'cs',
+            timestamp: timestamp,
+            protocol: protocol,
+            action: action,
+          },
         }),
       });
     });
@@ -195,12 +206,16 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = 'Rejected reservation';
 
+      const timestamp = 'Any timestamp';
+      const protocol = 'ocpp2.0.1';
+      const correlationId = '123';
+      const action = 'BootNotification';
       await webhookDispatcher.dispatchMessageReceived(
         subscription.stationId,
         message,
-        'Any timestamp',
-        'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        timestamp,
+        protocol,
+        [2, correlationId, action, {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -213,6 +228,13 @@ describe('WebhookDispatcher', () => {
           event: 'message',
           origin: MessageOrigin.ChargingStation,
           message: message,
+          info: {
+            correlationId: correlationId,
+            origin: 'cs',
+            timestamp: timestamp,
+            protocol: protocol,
+            action: action,
+          },
         }),
       });
     });
@@ -263,12 +285,16 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = '"totalCost": 12.54';
 
+      const timestamp = 'Any timestamp';
+      const protocol = 'ocpp2.0.1';
+      const correlationId = '123';
+      const action = 'BootNotification';
       await webhookDispatcher.dispatchMessageSent(
         subscription.stationId,
         message,
-        'Any timestamp',
-        'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        timestamp,
+        protocol,
+        [2, correlationId, action, {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -281,6 +307,13 @@ describe('WebhookDispatcher', () => {
           event: 'message',
           origin: MessageOrigin.ChargingStationManagementSystem,
           message: message,
+          info: {
+            correlationId: correlationId,
+            origin: 'csms',
+            timestamp: timestamp,
+            protocol: protocol,
+            action: action,
+          },
         }),
       });
     });
@@ -294,12 +327,16 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = '"totalCost": 12.54';
 
+      const timestamp = 'Any timestamp';
+      const protocol = 'ocpp2.0.1';
+      const correlationId = '123';
+      const action = 'BootNotification';
       await webhookDispatcher.dispatchMessageSent(
         subscription.stationId,
         message,
-        'Any timestamp',
-        'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        timestamp,
+        protocol,
+        [2, correlationId, action, {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -312,6 +349,13 @@ describe('WebhookDispatcher', () => {
           event: 'message',
           origin: MessageOrigin.ChargingStationManagementSystem,
           message: message,
+          info: {
+            correlationId: correlationId,
+            origin: 'csms',
+            timestamp: timestamp,
+            protocol: protocol,
+            action: action,
+          },
         }),
       });
     });
