@@ -188,7 +188,7 @@ describe('WebhookDispatcher', () => {
           message: message,
           info: {
             correlationId: correlationId,
-            origin: 'csms',
+            origin: 'cs',
             timestamp: timestamp,
             protocol: protocol,
             action: action,
@@ -230,7 +230,7 @@ describe('WebhookDispatcher', () => {
           message: message,
           info: {
             correlationId: correlationId,
-            origin: 'csms',
+            origin: 'cs',
             timestamp: timestamp,
             protocol: protocol,
             action: action,
