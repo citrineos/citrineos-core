@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, SystemConfig, OCPP2_0_1 } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { type BuildOptions, type Includeable, Op, Transaction } from 'sequelize';
 import { type AuthorizationQuerystring, type AuthorizationRestrictions, type IAuthorizationRepository } from '../../../interfaces';
 import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from '../model/Authorization';
@@ -79,7 +79,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
           const updatedValue = valueIdTokenInfo.getDataValue(k);
           if (updatedValue !== undefined) {
             // Null can still be used to remove data
-             
+
             savedIdTokenInfo!.setDataValue(k, updatedValue);
           }
         });
@@ -179,12 +179,27 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
   }
 
   private _constructQuery(queryParams: AuthorizationQuerystring): object {
+    //1.6 doesn't have the concept of token type. But we need to support token type for 2.0.1 messages.
+    // We ignore token type if it's explicitly set to null, as it's coming from a 1.6 message
+    const idTokenWhere: any = {};
+    if (queryParams.idToken) {
+      // exact match
+      idTokenWhere.idToken = queryParams.idToken;
+      // or partial match:
+      // idTokenWhere.idToken = { [Op.like]: `%${queryParams.idToken}%` };
+    }
+
+    // only include type if it's provided
+    if (queryParams.type) {
+      idTokenWhere.type = queryParams.type;
+    }
+
     return {
       where: {},
       include: [
         {
           model: IdToken,
-          where: { idToken: queryParams.idToken, type: queryParams.type },
+          where: idTokenWhere,
           required: true, // This ensures the inner join, so only Authorizations with the matching IdToken are returned
         },
         { model: IdTokenInfo, include: [{ model: IdToken, include: [AdditionalInfo] }] },

@@ -18,6 +18,7 @@ import {
   Namespace,
   OCPP1_6_Namespace,
   OcppRequest,
+  OCPPVersion,
   SystemConfig,
 } from '../..';
 import { OCPP2_0_1_Namespace } from '../../ocpp/persistence';
@@ -37,10 +38,12 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
+  private readonly _ocppVersion: OCPPVersion | null;
 
-  constructor(module: T, server: FastifyInstance, logger?: Logger<ILogObj>) {
+  constructor(module: T, server: FastifyInstance, ocppVersion: OCPPVersion | null, logger?: Logger<ILogObj>) {
     this._module = module;
     this._server = server;
+    this._ocppVersion = ocppVersion;
 
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
@@ -68,12 +71,12 @@ export abstract class AbstractModuleApi<T extends IModule>
         expose.optionalQuerystrings,
       );
     });
-    (
-      Reflect.getMetadata(
-        METADATA_DATA_ENDPOINTS,
-        this.constructor,
-      ) as Array<IDataEndpointDefinition>
-    )?.forEach((expose) => {
+
+    const dataEndpointDefinitions = Reflect.getMetadata(
+      METADATA_DATA_ENDPOINTS,
+      this.constructor,
+    ) as Array<IDataEndpointDefinition>;
+    dataEndpointDefinitions?.forEach((expose) => {
       this._addDataRoute.call(
         this,
         expose.namespace,
@@ -89,24 +92,25 @@ export abstract class AbstractModuleApi<T extends IModule>
         expose.security,
       );
     });
-
     // Add API routes for getting and setting SystemConfig
-    this._addDataRoute.call(
-      this,
-      OCPP2_0_1_Namespace.SystemConfig,
-      () => new Promise((resolve) => resolve(module.config)),
-      HttpMethod.Get,
-    );
-    this._addDataRoute.call(
-      this,
-      OCPP2_0_1_Namespace.SystemConfig,
-      (request: FastifyRequest<{ Body: SystemConfig }>) =>
-        new Promise<void>((resolve) => {
-          module.config = request.body;
-          resolve();
-        }),
-      HttpMethod.Put,
-    );
+    if (dataEndpointDefinitions && dataEndpointDefinitions.length > 0) {
+      this._addDataRoute.call(
+        this,
+        OCPP2_0_1_Namespace.SystemConfig,
+        () => new Promise((resolve) => resolve(module.config)),
+        HttpMethod.Get,
+      );
+      this._addDataRoute.call(
+        this,
+        OCPP2_0_1_Namespace.SystemConfig,
+        (request: FastifyRequest<{ Body: SystemConfig }>) =>
+          new Promise<void>((resolve) => {
+            module.config = request.body;
+            resolve();
+          }),
+        HttpMethod.Put,
+      );
+    }
   }
 
   /**
@@ -325,6 +329,7 @@ export abstract class AbstractModuleApi<T extends IModule>
       _opts.schema['body'] = this.registerSchema(
         fastifyInstance,
         _opts.schema['body'],
+        this._ocppVersion ? `${this._ocppVersion}-` : ''
       );
     }
     if (_opts.schema['params']) {
@@ -352,13 +357,20 @@ export abstract class AbstractModuleApi<T extends IModule>
   protected registerSchema = (
     fastifyInstance: FastifyInstance,
     schema: any,
+    schemaIdPrefix?: string,
   ): object | null => {
-    const id = schema['$id'];
+    let id = schema['$id'];
     if (!id) {
       this._logger.error('Could not register schema because no ID', schema);
     }
+
     try {
       const schemaCopy = this.removeUnknownKeys(schema);
+      if (id && schemaIdPrefix) {
+        id = schemaIdPrefix + id;
+        schemaCopy['$id'] = id;
+        this._logger.debug(`Update schema id: ${schemaCopy['$id']}`);
+      }
       if (
         schemaCopy.required &&
         Array.isArray(schemaCopy.required) &&
@@ -459,7 +471,8 @@ export abstract class AbstractModuleApi<T extends IModule>
    */
   protected _toMessagePath(input: CallAction, prefix?: string): string {
     const endpointPrefix = prefix || '';
-    return `/ocpp${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
+    const endpointVersion = (this._ocppVersion ? this._ocppVersion : OCPPVersion.OCPP2_0_1).replace(/^ocpp/, "");
+    return `/ocpp/${endpointVersion}${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
   }
 
   /**

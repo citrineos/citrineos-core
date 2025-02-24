@@ -3,39 +3,26 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { IEVDriverModuleApi } from './interface';
-import { EVDriverModule } from './module';
+import { IEVDriverModuleApi } from '../interface';
+import { EVDriverModule } from '../module';
 import {
   AbstractModuleApi,
-  AsDataEndpoint,
   AsMessageEndpoint,
-  AuthorizationDataSchema,
   CallAction,
-  HttpMethod,
   IMessageConfirmation,
-  OCPP2_0_1_Namespace,
-  OCPP1_6_Namespace,
-  Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
 import {
-  AuthorizationQuerySchema,
-  AuthorizationQuerystring,
-  AuthorizationRestrictions,
-  AuthorizationRestrictionsSchema,
   CallMessage,
-  ChargingStationKeyQuerySchema,
-  ChargingStationKeyQuerystring,
-  LocalListVersion,
 } from '@citrineos/data';
 import { validateChargingProfileType } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
 
-export class EVDriverModuleApi
+export class EVDriverOcpp201Api
   extends AbstractModuleApi<EVDriverModule>
   implements IEVDriverModuleApi
 {
@@ -51,94 +38,8 @@ export class EVDriverModuleApi
     server: FastifyInstance,
     logger?: Logger<ILogObj>,
   ) {
-    super(evDriverModule, server, logger);
+    super(evDriverModule, server, OCPPVersion.OCPP2_0_1, logger);
   }
-
-  /**
-   * Data Endpoint Methods
-   */
-
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.AuthorizationData,
-    HttpMethod.Put,
-    AuthorizationQuerySchema,
-    AuthorizationDataSchema,
-  )
-  putAuthorization(
-    request: FastifyRequest<{
-      Body: OCPP2_0_1.AuthorizationData;
-      Querystring: AuthorizationQuerystring;
-    }>,
-  ): Promise<OCPP2_0_1.AuthorizationData | undefined> {
-    return this._module.authorizeRepository.createOrUpdateByQuerystring(
-      request.body,
-      request.query,
-    );
-  }
-
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.AuthorizationRestrictions,
-    HttpMethod.Put,
-    AuthorizationQuerySchema,
-    AuthorizationRestrictionsSchema,
-  )
-  putAuthorizationRestrictions(
-    request: FastifyRequest<{
-      Body: AuthorizationRestrictions;
-      Querystring: AuthorizationQuerystring;
-    }>,
-  ): Promise<OCPP2_0_1.AuthorizationData[]> {
-    return this._module.authorizeRepository.updateRestrictionsByQuerystring(
-      request.body,
-      request.query,
-    );
-  }
-
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.AuthorizationData,
-    HttpMethod.Get,
-    AuthorizationQuerySchema,
-  )
-  getAuthorization(
-    request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
-  ): Promise<OCPP2_0_1.AuthorizationData[]> {
-    return this._module.authorizeRepository.readAllByQuerystring(request.query);
-  }
-
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.AuthorizationData,
-    HttpMethod.Delete,
-    AuthorizationQuerySchema,
-  )
-  deleteAuthorization(
-    request: FastifyRequest<{ Querystring: AuthorizationQuerystring }>,
-  ): Promise<string> {
-    return this._module.authorizeRepository
-      .deleteAllByQuerystring(request.query)
-      .then(
-        (deletedCount) =>
-          deletedCount.toString() +
-          ' rows successfully deleted from ' +
-          OCPP2_0_1_Namespace.AuthorizationData,
-      );
-  }
-
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.LocalListVersion,
-    HttpMethod.Get,
-    ChargingStationKeyQuerySchema,
-  )
-  async getLocalAuthorizationListVersion(
-    request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
-  ): Promise<LocalListVersion | undefined> {
-    return await this._module.localAuthListRepository.readOnlyOneByQuery({
-      stationId: request.query.stationId,
-    });
-  }
-
-  /**
-   * Message Endpoint Methods
-   */
 
   @AsMessageEndpoint(
     OCPP2_0_1_CallAction.RequestStartTransaction,
@@ -313,10 +214,10 @@ export class EVDriverModuleApi
       }
 
       // Create a correlationId for each reservation/station
-      const correlationIds = reservations.map((reservation) => {
+      const correlationIds = reservations.map(async (reservation) => {
         const correlationId = uuidv4();
         if (reservation) {
-          this._module.callMessageRepository.create(
+          await this._module.callMessageRepository.create(
             CallMessage.build({
               correlationId,
               reservationId: reservation.databaseId,
@@ -328,7 +229,7 @@ export class EVDriverModuleApi
 
       // Send the CancelReservation call for each station
       const results = await Promise.all(
-        identifiers.map((identifier, index) =>
+        identifiers.map(async (identifier, index) =>
           this._module.sendCall(
             identifier,
             tenantId,
@@ -336,7 +237,7 @@ export class EVDriverModuleApi
             OCPP2_0_1_CallAction.CancelReservation,
             request,
             callbackUrl,
-            correlationIds[index],
+            await correlationIds[index],
           ),
         ),
       );
@@ -542,19 +443,5 @@ export class EVDriverModuleApi
   protected _toMessagePath(input: CallAction): string {
     const endpointPrefix = this._module.config.modules.evdriver.endpointPrefix;
     return super._toMessagePath(input, endpointPrefix);
-  }
-
-  /**
-   * Overrides superclass method to generate the URL path based on the input {@link Namespace}
-   * and the module's endpoint prefix configuration.
-   *
-   * @param {Namespace} input - The input {@link Namespace}.
-   * @return {string} - The generated URL path.
-   */
-  protected _toDataPath(
-    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
-  ): string {
-    const endpointPrefix = this._module.config.modules.evdriver.endpointPrefix;
-    return super._toDataPath(input, endpointPrefix);
   }
 }
