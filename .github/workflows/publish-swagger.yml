@@ -1,9 +1,7 @@
 name: Publish Swagger
 
 on:
-  push:
-    branches:
-      - main
+  pull_request:
 
 jobs:
   build:
@@ -32,11 +30,7 @@ jobs:
       - name: Validate Swagger JSON
         id: validate-swagger
         run: |
-          if jq empty swagger.json; then
-            echo "swagger_valid=true" >> $GITHUB_OUTPUT
-          else
-            echo "swagger_valid=false" >> $GITHUB_OUTPUT && exit 1
-          fi
+          curl -X POST -d @swagger.json -H 'Content-Type:application/json' https://validator.swagger.io/validator/debug
 
       - name: Upload Swagger JSON as Artifact
         uses: actions/upload-artifact@v4
