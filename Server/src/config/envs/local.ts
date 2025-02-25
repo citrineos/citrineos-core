@@ -4,7 +4,6 @@
 
 import { defineConfig, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
 import path from 'path';
-import {z} from "zod";
 
 export function createLocalConfig() {
   return defineConfig({
