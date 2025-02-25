@@ -3,12 +3,14 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { OCPP1_6_Namespace, OCPP1_6 } from '@citrineos/base';
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { ChargingStation } from './ChargingStation';
 
 @Table
 export class Connector extends Model {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.Connector;
 
+  @ForeignKey(() => ChargingStation)
   @Column({
     unique: 'stationId_connectorId',
     allowNull: false,
@@ -45,4 +47,7 @@ export class Connector extends Model {
 
   @Column(DataType.STRING)
   declare vendorErrorCode?: string | null;
+
+  @BelongsTo(() => ChargingStation)
+  declare chargingStation?: ChargingStation;
 }

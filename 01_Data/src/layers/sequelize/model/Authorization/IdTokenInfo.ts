@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {OCPP2_0_1_Namespace, OCPP2_0_1, Namespace} from '@citrineos/base';
+import { Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { IdToken } from './IdToken';
 
@@ -14,7 +14,12 @@ export class IdTokenInfo extends Model {
   @Column(DataType.STRING)
   declare status: string;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('cacheExpiryDateTime')?.toISOString();
+    },
+  })
   declare cacheExpiryDateTime?: string | null;
 
   @Column(DataType.INTEGER)
