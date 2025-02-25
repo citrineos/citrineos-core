@@ -12,7 +12,7 @@ import {
   SystemConfig,
 } from '@citrineos/base';
 import { IChargingStationSequenceRepository, type ITransactionEventRepository } from '../../../interfaces';
-import { MeterValue, StartTransaction, Transaction, TransactionEvent } from '../model/TransactionEvent';
+import { MeterValue, StartTransaction, StopTransaction, Transaction, TransactionEvent } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';
 import { IdToken } from '../model/Authorization';
 import { Evse } from '../model/DeviceModel';
@@ -29,6 +29,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   idToken: CrudRepository<IdToken>;
   meterValue: CrudRepository<MeterValue>;
   startTransaction: CrudRepository<StartTransaction>;
+  stopTransaction: CrudRepository<StopTransaction>;
   connector: CrudRepository<Connector>;
   chargingStationSequence: IChargingStationSequenceRepository;
 
@@ -42,6 +43,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     idToken?: CrudRepository<IdToken>,
     meterValue?: CrudRepository<MeterValue>,
     startTransaction?: CrudRepository<StartTransaction>,
+    stopTransaction?: CrudRepository<StopTransaction>,
     connector?: CrudRepository<Connector>,
     chargingStationSequence?: IChargingStationSequenceRepository,
   ) {
@@ -51,6 +53,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     this.idToken = idToken ? idToken : new SequelizeRepository<IdToken>(config, IdToken.MODEL_NAME, logger, sequelizeInstance);
     this.meterValue = meterValue ? meterValue : new SequelizeRepository<MeterValue>(config, MeterValue.MODEL_NAME, logger, sequelizeInstance);
     this.startTransaction = startTransaction ? startTransaction : new SequelizeRepository<StartTransaction>(config, StartTransaction.MODEL_NAME, logger, sequelizeInstance);
+    this.stopTransaction = stopTransaction ? stopTransaction : new SequelizeRepository<StopTransaction>(config, StopTransaction.MODEL_NAME, logger, sequelizeInstance);
     this.connector = connector ? connector : new SequelizeRepository<Connector>(config, Connector.MODEL_NAME, logger, sequelizeInstance);
     this.chargingStationSequence = chargingStationSequence || new SequelizeChargingStationSequenceRepository(config, logger);
   }
@@ -161,9 +164,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         },
         transaction: sequelizeTransaction,
       });
-      const meterValueTypes = allMeterValues.map(
-        meterValue => MeterValueMapper.toMeterValueType(meterValue)
-      );
+      const meterValueTypes = allMeterValues.map((meterValue) => MeterValueMapper.toMeterValueType(meterValue));
       await finalTransaction.update({ totalKwh: MeterValueUtils.getTotalKwh(meterValueTypes) }, { transaction: sequelizeTransaction });
       await finalTransaction.reload({
         include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, Evse],
@@ -208,11 +209,11 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   async readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: OCPP2_0_1.EVSEType, chargingStates?: OCPP2_0_1.ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
     const includeObj = evse
       ? [
-        {
-          model: Evse,
-          where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null },
-        },
-      ]
+          {
+            model: Evse,
+            where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null },
+          },
+        ]
       : [];
     return await this.transaction
       .readAllByQuery({
@@ -385,6 +386,17 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     await this.transaction.updateByKey({ totalCost: totalCost }, id.toString());
   }
 
+  async updateTransactionWithFinalValues(totalKwh: number, stoppedReason: string, id: number): Promise<void> {
+    await this.transaction.updateByKey(
+      {
+        totalKwh: totalKwh,
+        isActive: false,
+        stoppedReason: stoppedReason,
+      },
+      id.toString(),
+    );
+  }
+
   async updateTransactionByMeterValues(meterValues: MeterValue[], stationId: string, transactionId: number): Promise<void> {
     // Find existing transaction
     const transaction = await this.readTransactionByStationIdAndTransactionId(stationId, transactionId.toString());
@@ -403,10 +415,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     );
   }
 
-  async createTransactionByStartTransaction(
-    request: OCPP1_6.StartTransactionRequest,
-    stationId: string
-  ): Promise<Transaction> {
+  async createTransactionByStartTransaction(request: OCPP1_6.StartTransactionRequest, stationId: string): Promise<Transaction> {
     return await this.s.transaction(async (sequelizeTransaction) => {
       // Build StartTransaction event
       let event = StartTransaction.build({
@@ -442,10 +451,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       event.connectorDatabaseId = connector.id;
 
       // Generate transactionId
-      const transactionId = await this.chargingStationSequence.getNextSequenceValue(
-        stationId,
-        ChargingStationSequenceType.transactionId
-      );
+      const transactionId = await this.chargingStationSequence.getNextSequenceValue(stationId, ChargingStationSequenceType.transactionId);
       // Store transaction in db
       let newTransaction = Transaction.build({
         stationId,
@@ -467,5 +473,35 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       this.transaction.emit('created', [newTransaction]);
       return newTransaction;
     });
+  }
+
+  async createStopTransaction(transactionId: string, stationId: string, meterStop: number, timestamp: Date, meterValues: MeterValue[], reason?: string, idTokenDatabaseId?: number): Promise<StopTransaction> {
+    const transaction = await this.readTransactionByStationIdAndTransactionId(stationId, transactionId);
+
+    if (!transaction) {
+      throw new Error(`Transaction not found for station ${stationId} and transactionId ${transactionId}`);
+    }
+
+    const stopTransaction = await StopTransaction.create({
+      stationId,
+      transactionDatabaseId: transaction.id,
+      meterStop,
+      timestamp: timestamp.toISOString(),
+      reason,
+      idTokenDatabaseId,
+    });
+    this.stopTransaction.emit('created', [stopTransaction]);
+
+    if (meterValues.length > 0) {
+      await Promise.all(
+        meterValues.map(async (meterValue) => {
+          meterValue.transactionDatabaseId = transaction.id;
+          await meterValue.save();
+          this.meterValue.emit('created', [meterValue]);
+        }),
+      );
+    }
+
+    return stopTransaction;
   }
 }

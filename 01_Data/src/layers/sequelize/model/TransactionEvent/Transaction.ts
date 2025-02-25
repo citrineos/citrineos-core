@@ -9,7 +9,7 @@ import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
 import { ChargingStation } from '../Location';
-import { StartTransaction } from './StartTransaction';
+import { StartTransaction, StopTransaction } from './';
 
 @Table
 export class Transaction extends Model {
@@ -53,6 +53,9 @@ export class Transaction extends Model {
 
   @HasOne(() => StartTransaction)
   declare startTransaction?: StartTransaction;
+
+  @HasOne(() => StopTransaction)
+  declare stopTransaction?: StopTransaction;
 
   @Column(DataType.STRING)
   declare chargingState?: string | null;
