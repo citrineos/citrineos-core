@@ -3,12 +3,6 @@ import {ConfigStore} from "./ConfigStore";
 import {CreateBucketCommand, GetObjectCommand, PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import {Readable} from "stream";
 
-interface S3ConfigStoreOptions {
-  endpoint: string;
-  bucketName: string;
-  keyName: string;
-}
-
 export class S3ConfigStore implements ConfigStore {
   private s3Client: S3Client;
   private bucketName: string;
