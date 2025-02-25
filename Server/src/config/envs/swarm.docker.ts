@@ -156,10 +156,10 @@ export function createDockerConfig() {
         s3: {
           endpoint: 'http://minio:9000',
           bucketName: 'citrineos-s3-bucket',
-          keyName: 'config.json',
+          keyName: 'swarm-docker-config.json',
         },
         local: {
-          fileName: 'config.json',
+          fileName: 'swarm-docker-config.json',
           configDir: './data',
         }
       }
