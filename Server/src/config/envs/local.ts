@@ -4,6 +4,7 @@
 
 import { defineConfig, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
 import path from 'path';
+import {z} from "zod";
 
 export function createLocalConfig() {
   return defineConfig({
@@ -144,6 +145,18 @@ export function createLocalConfig() {
           },
         },
       },
+      configStorage: {
+        type: 'local',
+        s3: {
+          endpoint: 'http://localhost:9000',
+          bucketName: 'citrineos-s3-bucket',
+          keyName: 'config.json',
+        },
+        local: {
+          fileName: 'config.json',
+          configDir: './data',
+        }
+      }
     },
     logLevel: 2, // debug
     maxCallLengthSeconds: 30,

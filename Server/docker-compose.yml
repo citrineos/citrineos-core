@@ -78,13 +78,10 @@ services:
       - /usr/local/apps/citrineos/03_Modules/Reporting/dist/
       - /usr/local/apps/citrineos/03_Modules/SmartCharging/dist/
       - /usr/local/apps/citrineos/03_Modules/Transactions/dist/
+      - ~/.aws:/root/.aws
     environment:
       APP_NAME: 'all'
       APP_ENV: 'docker'
-      AWS_ENDPOINT: 'http://localstack:4566'
-      AWS_REGION: 'us-east-1'
-      AWS_ACCESS_KEY_ID: 'test'
-      AWS_SECRET_ACCESS_KEY: 'test'
     depends_on:
       ocpp-db:
         condition: service_healthy

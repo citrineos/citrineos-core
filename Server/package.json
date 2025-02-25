@@ -13,7 +13,7 @@
     "fresh": "rm -rf node_modules package-lock.json && npm run clean",
     "compile": "npm run clean && tsc -p tsconfig.json",
     "copy-assets": "ts-node ./copy-assets.ts ./src/assets ./dist/assets",
-    "start": "cross-env APP_NAME=all AWS_LOCAL=true APP_ENV=s3 AWS_ACCESS_KEY_ID=ROOTNAME AWS_SECRET_ACCESS_KEY=CHANGEME123 AWS_S3_BUCKET_NAME=citrineos-s3-bucket AWS_S3_CONFIG_KEY=server-config.json AWS_S3_ENDPOINT=http://localhost:9000 nodemon",
+    "start": "cross-env APP_NAME=all APP_ENV=local nodemon",
     "start-docker": "nodemon",
     "start-docker-cloud": "node --inspect=0.0.0.0:9229 dist/index.js",
     "start-everest": "cd ./everest && cross-env EVEREST_IMAGE_TAG=0.0.23 EVEREST_TARGET_URL=ws://host.docker.internal:8081/cp001 docker compose up"

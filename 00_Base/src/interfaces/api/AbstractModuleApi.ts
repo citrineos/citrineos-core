@@ -14,11 +14,12 @@ import {
   METADATA_MESSAGE_ENDPOINTS,
 } from '.';
 import {
+  ConfigStoreFactory,
   MessageConfirmationSchema,
   Namespace,
   OCPP1_6_Namespace,
   OcppRequest,
-  OCPPVersion, S3Service,
+  OCPPVersion,
   SystemConfig,
 } from '../..';
 import { OCPP2_0_1_Namespace } from '../../ocpp/persistence';
@@ -415,17 +416,7 @@ export abstract class AbstractModuleApi<T extends IModule>
         this,
         OCPP2_0_1_Namespace.SystemConfig,
         async (request: FastifyRequest<{ Body: SystemConfig }>) => {
-          if (process.env.APP_ENV === 's3') {
-            try {
-              const bucket = process.env.AWS_S3_BUCKET_NAME!;
-              const key = process.env.AWS_S3_CONFIG_KEY!;
-              await S3Service.saveConfig(bucket, key, request.body);
-              console.log('Config updated successfully');
-            } catch (error) {
-              console.error('Error updating config:', error);
-              throw new Error('Failed to update config');
-            }
-          }
+          await ConfigStoreFactory.getInstance().saveConfig(request.body);
           module.config = request.body;
         },
         HttpMethod.Put,
