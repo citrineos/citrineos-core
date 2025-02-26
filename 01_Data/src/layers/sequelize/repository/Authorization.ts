@@ -179,7 +179,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
   }
 
   private _constructQuery(queryParams: AuthorizationQuerystring): object {
-    //1.6 doesn't have the concept of token type. But we need to support token type for 2.0.1 messages.
+    // 1.6 doesn't have the concept of token type. But we need to support token type for 2.0.1 messages.
     // We ignore token type if it's explicitly set to null, as it's coming from a 1.6 message
     const idTokenWhere: any = {};
     if (queryParams.idToken) {

@@ -646,6 +646,7 @@ export class CitrineOSServer {
       this._repositoryStore.componentRepository,
       this._repositoryStore.locationRepository,
       this._repositoryStore.tariffRepository,
+      this._repositoryStore.reservationRepository,
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(

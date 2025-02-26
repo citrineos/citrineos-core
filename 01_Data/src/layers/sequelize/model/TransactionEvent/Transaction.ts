@@ -4,11 +4,12 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, HasMany, HasOne, Model, Table } from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
 import { ChargingStation } from '../Location';
+import { StartTransaction } from './StartTransaction';
 
 @Table
 export class Transaction extends Model {
@@ -49,6 +50,9 @@ export class Transaction extends Model {
 
   @HasMany(() => MeterValue)
   declare meterValues?: MeterValue[];
+
+  @HasOne(() => StartTransaction)
+  declare startTransaction?: StartTransaction;
 
   @Column(DataType.STRING)
   declare chargingState?: string | null;
