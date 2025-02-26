@@ -8,6 +8,7 @@ import {
   TariffQuerySchema,
   TariffQueryString,
   TariffSchema,
+  Transaction,
   TransactionEventQuerySchema,
   TransactionEventQuerystring,
 } from '@citrineos/data';
@@ -19,7 +20,6 @@ import {
   AsDataEndpoint,
   HttpMethod,
   OCPP2_0_1_Namespace,
-  OCPP2_0_1,
   OCPP1_6_Namespace,
   Namespace,
 } from '@citrineos/base';
@@ -50,13 +50,13 @@ export class TransactionsDataApi
   }
 
   @AsDataEndpoint(
-    OCPP2_0_1_Namespace.TransactionType,
+    Namespace.TransactionType,
     HttpMethod.Get,
     TransactionEventQuerySchema,
   )
   getTransactionByStationIdAndTransactionId(
     request: FastifyRequest<{ Querystring: TransactionEventQuerystring }>,
-  ): Promise<OCPP2_0_1.TransactionType | undefined> {
+  ): Promise<Transaction | undefined> {
     return this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(
       request.query.stationId,
       request.query.transactionId,

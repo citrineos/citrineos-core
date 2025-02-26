@@ -63,6 +63,7 @@ export class ConfigurationModule extends AbstractModule {
     OCPP2_0_1_CallAction.Heartbeat,
     OCPP2_0_1_CallAction.NotifyDisplayMessages,
     OCPP2_0_1_CallAction.PublishFirmwareStatusNotification,
+    OCPP1_6_CallAction.Heartbeat,
     OCPP1_6_CallAction.BootNotification,
   ];
 
@@ -80,6 +81,7 @@ export class ConfigurationModule extends AbstractModule {
     OCPP1_6_CallAction.GetConfiguration,
     OCPP1_6_CallAction.ChangeConfiguration,
     OCPP1_6_CallAction.Reset,
+    OCPP1_6_CallAction.ChangeAvailability,
   ];
 
   protected _bootRepository: IBootRepository;
@@ -722,6 +724,24 @@ export class ConfigurationModule extends AbstractModule {
    * Handle OCPP 1.6 requests
    */
 
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.Heartbeat)
+  protected async _handle16Heartbeat(
+    message: IMessage<OCPP1_6.HeartbeatRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('Heartbeat received:', message, props);
+
+    const response: OCPP1_6.HeartbeatResponse = {
+      currentTime: new Date().toISOString(),
+    };
+
+    const messageConfirmation = await this.sendCallResultWithMessage(
+      message,
+      response,
+    );
+    this._logger.debug('Heartbeat response sent: ', messageConfirmation);
+  }
+
   @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.BootNotification)
   protected async _handleOcpp16BootNotification(
     message: IMessage<OCPP1_6.BootNotificationRequest>,
@@ -997,5 +1017,13 @@ export class ConfigurationModule extends AbstractModule {
       props?: HandlerProperties,
   ): void {
     this._logger.debug('Reset response received:', message, props);
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.ChangeAvailability)
+  protected _handleOcpp16ChangeAvailability(
+      message: IMessage<OCPP1_6.ChangeAvailabilityResponse>,
+      props?: HandlerProperties,
+  ): void {
+    this._logger.debug('ChangeAvailability response received:', message, props);
   }
 }

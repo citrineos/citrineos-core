@@ -9,4 +9,5 @@ export enum ChargingStationSequenceType {
     publishFirmware = 'publishFirmware',
     remoteStartId = 'remoteStartId',
     updateFirmware = 'updateFirmware',
+    transactionId = 'transactionId',
 }

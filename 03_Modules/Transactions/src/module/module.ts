@@ -60,6 +60,7 @@ export class TransactionsModule extends AbstractModule {
     OCPP2_0_1_CallAction.TransactionEvent,
     OCPP1_6_CallAction.MeterValues,
     OCPP1_6_CallAction.StatusNotification,
+    OCPP1_6_CallAction.StartTransaction,
   ];
   _responses: CallAction[] = [
     OCPP2_0_1_CallAction.CostUpdated,
@@ -210,6 +211,7 @@ export class TransactionsModule extends AbstractModule {
     this._transactionService = new TransactionService(
       this._transactionEventRepository,
       this._authorizeRepository,
+      this._reservationRepository,
       this._authorizers,
       this._logger,
     );
@@ -272,17 +274,10 @@ export class TransactionsModule extends AbstractModule {
     const transactionId = transactionEvent.transactionInfo.transactionId;
 
     if (message.payload.reservationId) {
-      await this._reservationRepository.updateAllByQuery(
-        {
-          terminatedByTransaction: transactionId,
-          isActive: false,
-        },
-        {
-          where: {
-            id: message.payload.reservationId,
-            stationId: stationId,
-          },
-        },
+      await this._transactionService.deactivateReservation(
+        transactionId,
+        message.payload.reservationId,
+        stationId,
       );
     }
 
@@ -585,5 +580,54 @@ export class TransactionsModule extends AbstractModule {
       message,
       {} as OCPP1_6.MeterValuesResponse,
     );
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.StartTransaction)
+  protected async _handleOcpp16StartTransaction(
+    message: IMessage<OCPP1_6.StartTransactionRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug(
+      'OCPP 1.6 StartTransaction request received:',
+      message,
+      props,
+    );
+    const stationId = message.context.stationId;
+    const request = message.payload;
+
+    // Authorize
+    const response =
+      await this._transactionService.authorizeOcpp16IdToken(request.idTag);
+
+    // Send response to charger
+    if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
+      await this.sendCallResultWithMessage(message, response);
+    } else {
+      try {
+        // Create transaction
+        const newTransaction = await this._transactionEventRepository.createTransactionByStartTransaction(
+          request,
+          stationId,
+        );
+        response.transactionId = parseInt(newTransaction.transactionId);
+      } catch (error) {
+        this._logger.error(
+          `Failed to create transaction for idTag ${request.idTag}`, error
+        );
+        response.idTagInfo = {
+          status: OCPP1_6.StartTransactionResponseStatus.Invalid,
+        }
+      }
+      await this.sendCallResultWithMessage(message, response);
+    }
+
+    // Deactivate reservation
+    if (request.reservationId) {
+      await this._transactionService.deactivateReservation(
+        response.transactionId.toString(),
+        request.reservationId,
+        stationId,
+      );
+    }
   }
 }

@@ -14,6 +14,9 @@ export class AuthorizationMapper {
     }
 
     static toIdToken(idToken: IdToken): OCPP2_0_1.IdTokenType {
+        if (!idToken.type) {
+            throw new Error('IdToken type is missing.');
+        }
         return {
             customData: idToken.customData,
             additionalInfo: idToken.additionalInfo && idToken.additionalInfo.length > 0

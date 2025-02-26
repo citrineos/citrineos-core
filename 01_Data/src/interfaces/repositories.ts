@@ -132,11 +132,13 @@ export interface ISubscriptionRepository extends CrudRepository<Subscription> {
 export interface ITransactionEventRepository extends CrudRepository<TransactionEvent> {
   createOrUpdateTransactionByTransactionEventAndStationId(value: OCPP2_0_1.TransactionEventRequest, stationId: string): Promise<Transaction>;
   createMeterValue(value: OCPP2_0_1.MeterValueType, transactionDatabaseId?: number | null): Promise<void>;
+  createTransactionByStartTransaction(request: OCPP1_6.StartTransactionRequest, stationId: string): Promise<Transaction>;
   updateTransactionByMeterValues(meterValues: MeterValue[], stationId: string, transactionId: number): Promise<void>;
   readAllByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<TransactionEvent[]>;
   readTransactionByStationIdAndTransactionId(stationId: string, transactionId: string): Promise<Transaction | undefined>;
   readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse: OCPP2_0_1.EVSEType, chargingStates?: OCPP2_0_1.ChargingStateEnumType[]): Promise<Transaction[]>;
-  readAllActiveTransactionsByIdToken(idToken: OCPP2_0_1.IdTokenType): Promise<Transaction[]>;
+  readAllActiveTransactionsIncludeTransactionEventByIdToken(idToken: OCPP2_0_1.IdTokenType): Promise<Transaction[]>;
+  readAllActiveTransactionsIncludeStartTransactionByIdToken(idToken: string): Promise<Transaction[]>;
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
   getActiveTransactionByStationIdAndEvseId(stationId: string, evseId: number): Promise<Transaction | undefined>;
   updateTransactionTotalCostById(totalCost: number, id: number): Promise<void>;

@@ -10,16 +10,17 @@
 export enum Namespace {
   AuthorizationData = 'Authorization',
   BootConfig = 'Boot',
-  ChargingStation = 'ChargingStation',
-  ReserveNowRequest = 'Reservation',
-  MeterValue = 'MeterValue',
-  OCPPMessage = 'OCPPMessage',
-  StatusNotificationRequest = 'StatusNotification',
-  IdTokenType = 'IdToken',
-  IdTokenInfoType = 'IdTokenInfo',
   ChargingProfile = 'ChargingProfile',
   ChargingSchedule = 'ChargingSchedule',
+  ChargingStation = 'ChargingStation',
   CompositeSchedule = 'CompositeSchedule',
+  IdTokenType = 'IdToken',
+  IdTokenInfoType = 'IdTokenInfo',
+  MeterValue = 'MeterValue',
+  OCPPMessage = 'OCPPMessage',
+  ReserveNowRequest = 'Reservation',
+  StatusNotificationRequest = 'StatusNotification',
+  TransactionType = 'Transaction',
 }
 
 export enum OCPP2_0_1_Namespace {
@@ -29,7 +30,6 @@ export enum OCPP2_0_1_Namespace {
   ChargingNeeds = 'ChargingNeeds',
   InstalledCertificate = 'InstalledCertificate',
   CertificateChain = 'CertificateChain',
-  ChargingStation = 'ChargingStation',
   ChargingStationSecurityInfo = 'ChargingStationSecurityInfo',
   ComponentType = 'Component',
   EVSEType = 'Evse',
@@ -50,7 +50,6 @@ export enum OCPP2_0_1_Namespace {
   SystemConfig = 'SystemConfig',
   TlsCertificates = 'TlsCertificates',
   TransactionEventRequest = 'TransactionEvent',
-  TransactionType = 'Transaction',
   Tariff = 'Tariff',
   VariableAttributeType = 'VariableAttribute',
   VariableCharacteristicsType = 'VariableCharacteristics',
@@ -63,4 +62,5 @@ export enum OCPP2_0_1_Namespace {
 export enum OCPP1_6_Namespace {
   ChangeConfiguration = 'ChangeConfiguration',
   Connector = 'Connector',
+  StartTransaction = 'StartTransaction',
 }

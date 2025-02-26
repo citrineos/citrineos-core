@@ -30,11 +30,12 @@ import {
   IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
+  OCPP1_6_Mapper,
+  OCPP2_0_1_Mapper,
   sequelize,
   SequelizeChargingStationSequenceRepository,
   Tariff,
   VariableAttribute,
-  OCPP2_0_1_Mapper,
   IOCPPMessageRepository,
 } from '@citrineos/data';
 import {
@@ -799,6 +800,82 @@ export class EVDriverModule extends AbstractModule {
       message,
       props,
     );
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.Authorize)
+  protected async _handleOCPP16Authorize(
+    message: IMessage<OCPP1_6.AuthorizeRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('OCPP 16 Authorize received: ', message, props);
+    const request: OCPP1_6.AuthorizeRequest = message.payload;
+
+    // Default response: Invalid
+    const response: OCPP1_6.AuthorizeResponse = {
+      idTagInfo: {
+        status: OCPP1_6.AuthorizeResponseStatus.Invalid,
+      },
+    };
+    try {
+      const authorizations =
+        await this._authorizeRepository.readAllByQuerystring({
+          idToken: request.idTag,
+          type: null, //explicitly ignore type
+        });
+      if (!authorizations || authorizations.length === 0) {
+        this._logger.error(
+          `No authorization found for idToken: ${request.idTag}`,
+        );
+        //below line is just to make it more explicit. Default status is already invalid.
+        response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Invalid;
+        await this.sendCallResultWithMessage(message, response);
+        this._logger.debug('Authorize response sent:', response);
+        return;
+      }
+      // If we find more than one token for an idTag it's too opinionated on how to define which one is valid.
+      // For now, we error out, and implementers should change this according to their needs.
+      if (authorizations.length >= 1) {
+        this._logger.error(
+          `Too many authorizations found for idToken: ${request.idTag}`,
+        );
+        response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Invalid;
+        await this.sendCallResultWithMessage(message, response);
+        this._logger.debug('Authorize response sent:', response);
+        return;
+      }
+
+      const authorization = authorizations[0];
+      if (!authorization.idTokenInfo) {
+        response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Accepted;
+      } else {
+        const { cacheExpiryDateTime, groupIdToken, status } =
+          authorization.idTokenInfo;
+        if (cacheExpiryDateTime && new Date() > new Date(cacheExpiryDateTime)) {
+          response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Expired;
+        } else {
+          response.idTagInfo.status =
+            OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(status);
+        }
+        response.idTagInfo.expiryDate = cacheExpiryDateTime;
+        if (groupIdToken) {
+          response.idTagInfo.parentIdTag = groupIdToken.idToken;
+        }
+      }
+    } catch (error) {
+      // Log any unexpected errors
+      this._logger.error(
+        `Failed to retrieve authorization for idToken '${request.idTag}':`,
+        error,
+      );
+      // response remains "Invalid" by default
+    }
+
+    await this.sendCallResultWithMessage(message, response).then(
+      (messageConfirmation) => {
+        this._logger.debug('Authorize response sent:', messageConfirmation);
+      },
+    );
+    return;
   }
 
   @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.RemoteStartTransaction)
