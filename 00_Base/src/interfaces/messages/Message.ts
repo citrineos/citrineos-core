@@ -51,18 +51,16 @@ export interface IMessage<T extends OcppRequest | OcppResponse> {
   set payload(value: T);
 
   /**
-   * The protocol of the message (ocpp1.6, ocpp2.0.1, etc), optional because outgoing messages don't need a protocol
+   * The protocol of the message (ocpp1.6, ocpp2.0.1, etc)
    */
-  get protocol(): OCPPVersionType | undefined;
-  set protocol(value: OCPPVersionType | undefined);
+  get protocol(): OCPPVersionType;
+  set protocol(value: OCPPVersionType);
 }
 
 /**
  * Default implementation of IMessage
  */
-export class Message<T extends OcppRequest | OcppResponse>
-  implements IMessage<T>
-{
+export class Message<T extends OcppRequest | OcppResponse> implements IMessage<T> {
   /**
    * Fields
    */
@@ -72,7 +70,7 @@ export class Message<T extends OcppRequest | OcppResponse>
   protected _state: MessageState;
   protected _context: IMessageContext;
   protected _payload: T;
-  protected _protocol: OCPPVersionType | undefined;
+  protected _protocol: OCPPVersionType;
 
   /**
    * Constructs a new instance of Message.
@@ -83,7 +81,7 @@ export class Message<T extends OcppRequest | OcppResponse>
    * @param {MessageState} state - The state of the message.
    * @param {IMessageContext} context - The context of the message.
    * @param {T} payload - The payload of the message.
-   * @param {OCPPVersionType} [protocol] - The protocol of the message, example "ocpp1.6". Optional because outgoing messages don't need a protocol.
+   * @param {OCPPVersionType} [protocol] - The protocol of the message, example "ocpp1.6".
    */
   constructor(
     origin: MessageOrigin,
@@ -92,7 +90,7 @@ export class Message<T extends OcppRequest | OcppResponse>
     state: MessageState,
     context: IMessageContext,
     payload: T,
-    protocol?: OCPPVersionType,
+    protocol: OCPPVersionType,
   ) {
     this._origin = origin;
     this._eventGroup = eventGroup;
@@ -124,7 +122,7 @@ export class Message<T extends OcppRequest | OcppResponse>
   get payload(): T {
     return this._payload;
   }
-  get protocol(): OCPPVersionType | undefined {
+  get protocol(): OCPPVersionType {
     return this._protocol;
   }
   set origin(value: MessageOrigin) {
@@ -145,7 +143,7 @@ export class Message<T extends OcppRequest | OcppResponse>
   set payload(value: T) {
     this._payload = value;
   }
-  set protocol(value: OCPPVersionType | undefined) {
+  set protocol(value: OCPPVersionType) {
     this._protocol = value;
   }
 }

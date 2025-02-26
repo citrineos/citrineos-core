@@ -82,7 +82,12 @@ export class WebsocketNetworkConnection {
         _socketServer.on(
           'connection',
           (ws: WebSocket, req: http.IncomingMessage) =>
-            this._onConnection(ws, websocketServerConfig.id, websocketServerConfig.pingInterval, req),
+            this._onConnection(
+              ws,
+              websocketServerConfig.id,
+              websocketServerConfig.pingInterval,
+              req,
+            ),
         );
         _socketServer.on('error', (wss: WebSocketServer, error: Error) =>
           this._onError(wss, error),
@@ -122,51 +127,53 @@ export class WebsocketNetworkConnection {
    *
    * @param {string} identifier - The identifier of the client.
    * @param {string} message - The message to send.
-   * @return {boolean} True if the method sends the message successfully, false otherwise.
+   * @return {void} rejects the promise if message fails to send, otherwise returns void.
    */
-  sendMessage(identifier: string, message: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this._cache
-        .get(identifier, CacheNamespace.Connections)
-        .then((clientConnection) => {
-          if (clientConnection) {
-            const websocketConnection =
-              this._identifierConnections.get(identifier);
-            if (
-              websocketConnection &&
-              websocketConnection.readyState === WebSocket.OPEN
-            ) {
-              websocketConnection.send(message, (error) => {
-                if (error) {
-                  this._logger.error('On message send error', error);
-                  reject(error); // Reject the promise with the error
-                } else {
-                  resolve(true); // Resolve the promise with true indicating success
-                }
-              });
-            } else {
-              const errorMsg =
-                'Websocket connection is not ready - ' + identifier;
-              this._logger.fatal(errorMsg);
-              websocketConnection?.close(1011, errorMsg);
-              reject(new Error(errorMsg)); // Reject with a new error
-            }
+  sendMessage(identifier: string, message: string): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        const clientConnection = await this._cache.get(
+          identifier,
+          CacheNamespace.Connections,
+        );
+        if (clientConnection) {
+          const websocketConnection =
+            this._identifierConnections.get(identifier);
+          if (
+            websocketConnection &&
+            websocketConnection.readyState === WebSocket.OPEN
+          ) {
+            websocketConnection.send(message, (error) => {
+              if (error) {
+                reject(error); // Reject the promise with the error
+              } else {
+                resolve(); // Resolve the promise with true indicating success
+              }
+            });
           } else {
             const errorMsg =
-              'Cannot identify client connection for ' + identifier;
-            // This can happen when a charging station disconnects in the moment a message is trying to send.
-            // Retry logic on the message sender might not suffice as charging station might connect to different instance.
-            this._logger.error(errorMsg);
-            this._identifierConnections
-              .get(identifier)
-              ?.close(
-                1011,
-                'Failed to get connection information for ' + identifier,
-              );
+              'Websocket connection is not ready - ' + identifier;
+            this._logger.fatal(errorMsg);
+            websocketConnection?.close(1011, errorMsg);
             reject(new Error(errorMsg)); // Reject with a new error
           }
-        })
-        .catch(reject); // In case `_cache.get` fails
+        } else {
+          const errorMsg =
+            'Cannot identify client connection for ' + identifier;
+          // This can happen when a charging station disconnects in the moment a message is trying to send.
+          // Retry logic on the message sender might not suffice as charging station might connect to different instance.
+          this._logger.error(errorMsg);
+          this._identifierConnections
+            .get(identifier)
+            ?.close(
+              1011,
+              'Failed to get connection information for ' + identifier,
+            );
+          reject(new Error(errorMsg)); // Reject with a new error
+        }
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 
@@ -264,7 +271,8 @@ export class WebsocketNetworkConnection {
       /**
        * See {@link IUpgradeError.terminateConnection}
        **/
-      error?.terminateConnection?.(socket) || this._terminateConnectionInternalError(socket);
+      error?.terminateConnection?.(socket) ||
+        this._terminateConnectionInternalError(socket);
       this._logger.warn(error);
     }
   }
@@ -336,19 +344,26 @@ export class WebsocketNetworkConnection {
           req.socket.remoteAddress ||
           'N/A';
         const port = req.socket.remotePort as number;
-        this._logger.info('Client websocket connected', identifier, ip, port, ws.protocol);
+        this._logger.info(
+          'Client websocket connected',
+          identifier,
+          ip,
+          port,
+          ws.protocol,
+        );
 
         // Register client
         const websocketConnection: IWebsocketConnection = {
           id: websocketServerId,
           protocol: ws.protocol,
-        }
+        };
         let registered = await this._cache.set(
           identifier,
           JSON.stringify(websocketConnection),
           CacheNamespace.Connections,
         );
-        registered = registered && await this._router.registerConnection(identifier);
+        registered =
+          registered && (await this._router.registerConnection(identifier));
         if (!registered) {
           this._logger.fatal('Failed to register websocket client', identifier);
           throw new Error('Failed to register websocket client');
@@ -369,7 +384,10 @@ export class WebsocketNetworkConnection {
           'Failed to subscribe to message broker for ',
           identifier,
         );
-        ws.close(1011, 'Failed to subscribe to message broker for ' + identifier);
+        ws.close(
+          1011,
+          'Failed to subscribe to message broker for ' + identifier,
+        );
       }
     }
   }
@@ -398,7 +416,11 @@ export class WebsocketNetworkConnection {
       ws.close(1011, event.message);
     };
     ws.onmessage = (event: MessageEvent) => {
-      this._onMessage(identifier, event.data.toString(), ws.protocol as OCPPVersionType);
+      this._onMessage(
+        identifier,
+        event.data.toString(),
+        ws.protocol as OCPPVersionType,
+      );
     };
 
     ws.once('close', () => {
@@ -452,7 +474,11 @@ export class WebsocketNetworkConnection {
    * @param {OCPPVersionType} protocol - The OCPP protocol version of the client, 'ocpp1.6' or 'ocpp2.0.1'.
    * @return {void} This function does not return anything.
    */
-  private _onMessage(identifier: string, message: string, protocol: OCPPVersionType): void {
+  private _onMessage(
+    identifier: string,
+    message: string,
+    protocol: OCPPVersionType,
+  ): void {
     this._router.onMessage(identifier, message, new Date(), protocol);
   }
 

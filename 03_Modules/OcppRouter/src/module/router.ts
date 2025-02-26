@@ -21,6 +21,7 @@ import {
   IMessageHandler,
   IMessageRouter,
   IMessageSender,
+  mapToCallAction,
   MessageOrigin,
   MessageState,
   MessageTypeId,
@@ -36,7 +37,11 @@ import {
 } from '@citrineos/base';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
-import { ILocationRepository, ISubscriptionRepository, sequelize } from '@citrineos/data';
+import {
+  ILocationRepository,
+  ISubscriptionRepository,
+  sequelize,
+} from '@citrineos/data';
 import { WebhookDispatcher } from './webhook.dispatcher';
 
 /**
@@ -57,7 +62,7 @@ export class MessageRouterImpl
   protected _networkHook: (
     identifier: string,
     message: string,
-  ) => Promise<boolean>;
+  ) => Promise<void>;
   protected _locationRepository: ILocationRepository;
   public subscriptionRepository: ISubscriptionRepository;
 
@@ -69,7 +74,7 @@ export class MessageRouterImpl
    * @param {IMessageSender} [sender] - the message sender
    * @param {IMessageHandler} [handler] - the message handler
    * @param {WebhookDispatcher} [dispatcher] - the webhook dispatcher
-   * @param {Function} networkHook - the network hook needed to send messages to chargers   
+   * @param {Function} networkHook - the network hook needed to send messages to chargers
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
    * represents a repository for accessing and manipulating variable data.
    * If no `locationRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
@@ -84,7 +89,7 @@ export class MessageRouterImpl
     sender: IMessageSender,
     handler: IMessageHandler,
     dispatcher: WebhookDispatcher,
-    networkHook: (identifier: string, message: string) => Promise<boolean>,
+    networkHook: (identifier: string, message: string) => Promise<void>,
     logger?: Logger<ILogObj>,
     ajv?: Ajv,
     locationRepository?: ILocationRepository,
@@ -96,7 +101,7 @@ export class MessageRouterImpl
     this._sender = sender;
     this._handler = handler;
     this._webhookDispatcher = dispatcher;
-    this._networkHook = networkHook;    
+    this._networkHook = networkHook;
     this._locationRepository =
       locationRepository ||
       new sequelize.SequelizeLocationRepository(config, logger);
@@ -130,7 +135,10 @@ export class MessageRouterImpl
       },
     );
 
-    const updateIsOnline = this._locationRepository.setChargingStationIsOnline(connectionIdentifier, true);
+    const updateIsOnline = this._locationRepository.setChargingStationIsOnline(
+      connectionIdentifier,
+      true,
+    );
 
     return Promise.all([
       dispatcherRegistration,
@@ -149,7 +157,10 @@ export class MessageRouterImpl
 
   async deregisterConnection(connectionIdentifier: string): Promise<boolean> {
     this._webhookDispatcher.deregister(connectionIdentifier);
-    this._locationRepository.setChargingStationIsOnline(connectionIdentifier, false);
+    this._locationRepository.setChargingStationIsOnline(
+      connectionIdentifier,
+      false,
+    );
 
     // TODO: ensure that all queue implementations in 02_Util only unsubscribe 1 queue per call
     // ...which will require refactoring this method to unsubscribe request and response queues separately
@@ -164,7 +175,6 @@ export class MessageRouterImpl
     timestamp: Date,
     protocol: OCPPVersionType,
   ): Promise<boolean> {
-    this._webhookDispatcher.dispatchMessageReceived(identifier, message);
     let rpcMessage: any;
     let messageTypeId: MessageTypeId | undefined = undefined;
     let messageId: string = '-1'; // OCPP 2.0.1 part 4, section 4.2.3, "When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId."
@@ -175,18 +185,47 @@ export class MessageRouterImpl
         this._logger.error(
           `Error parsing ${message} from websocket, unable to reply: ${JSON.stringify(error)}`,
         );
+        this._webhookDispatcher.dispatchMessageReceivedUnparsed(
+          identifier,
+          message,
+          timestamp.toISOString(),
+          protocol,
+        );
+        return false;
       }
       messageTypeId = rpcMessage[0];
       messageId = rpcMessage[1];
+      this._webhookDispatcher.dispatchMessageReceived(
+        identifier,
+        message,
+        timestamp.toISOString(),
+        protocol,
+        rpcMessage,
+      );
       switch (messageTypeId) {
         case MessageTypeId.Call:
-          await this._onCall(identifier, rpcMessage as Call, timestamp, protocol);
+          await this._onCall(
+            identifier,
+            rpcMessage as Call,
+            timestamp,
+            protocol,
+          );
           break;
         case MessageTypeId.CallResult:
-          this._onCallResult(identifier, rpcMessage as CallResult, timestamp, protocol);
+          this._onCallResult(
+            identifier,
+            rpcMessage as CallResult,
+            timestamp,
+            protocol,
+          );
           break;
         case MessageTypeId.CallError:
-          this._onCallError(identifier, rpcMessage as CallError, timestamp, protocol);
+          this._onCallError(
+            identifier,
+            rpcMessage as CallError,
+            timestamp,
+            protocol,
+          );
           break;
         default:
           let errorCode;
@@ -214,7 +253,7 @@ export class MessageRouterImpl
         messageTypeId != MessageTypeId.CallResult &&
         messageTypeId != MessageTypeId.CallError
       ) {
-        const callError =
+        let callError =
           error instanceof OcppError
             ? error.asCallError()
             : [
@@ -224,8 +263,9 @@ export class MessageRouterImpl
                 'Unable to process message',
                 { error: error },
               ];
-        const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
-        this._sendMessage(identifier, rawMessage);
+        callError = this.removeNulls(callError);
+        const rawMessage = JSON.stringify(callError);
+        this._sendMessage(identifier, protocol, rawMessage, callError);
       }
       // TODO: Publish raw payload for error reporting
       return false;
@@ -248,8 +288,8 @@ export class MessageRouterImpl
     correlationId = uuidv4(),
     origin?: MessageOrigin,
   ): Promise<IMessageConfirmation> {
-    const message: Call = [MessageTypeId.Call, correlationId, action, payload];
-    if (await this._sendCallIsAllowed(identifier, message)) {
+    let message: Call = [MessageTypeId.Call, correlationId, action, payload];
+    if (await this._sendCallIsAllowed(identifier, protocol, message)) {
       if (
         await this._cache.setIfNotExist(
           identifier,
@@ -258,9 +298,14 @@ export class MessageRouterImpl
           this._config.maxCallLengthSeconds,
         )
       ) {
-        // Intentionally removing NULL values from object for OCPP conformity
-        const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
-        const success = await this._sendMessage(identifier, rawMessage);
+        message = this.removeNulls(message);
+        const rawMessage = JSON.stringify(message);
+        const success = await this._sendMessage(
+          identifier,
+          protocol,
+          rawMessage,
+          message,
+        );
         return { success };
       } else {
         this._logger.info(
@@ -291,11 +336,12 @@ export class MessageRouterImpl
     correlationId: string,
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppResponse,
     origin?: MessageOrigin,
   ): Promise<IMessageConfirmation> {
-    const message: CallResult = [
+    let message: CallResult = [
       MessageTypeId.CallResult,
       correlationId,
       payload,
@@ -314,10 +360,10 @@ export class MessageRouterImpl
     }
     let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
     if (cachedAction === action && cachedMessageId === correlationId) {
-      // Intentionally removing NULL values from object for OCPP conformity
-      const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
+      message = this.removeNulls(message);
+      const rawMessage = JSON.stringify(message);
       const success = await Promise.all([
-        this._sendMessage(identifier, rawMessage),
+        this._sendMessage(identifier, protocol, rawMessage, message),
         this._cache.remove(identifier, CacheNamespace.Transactions),
       ]).then((successes) => successes.every(Boolean));
       return { success };
@@ -343,11 +389,12 @@ export class MessageRouterImpl
     correlationId: string,
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     error: OcppError,
     origin?: MessageOrigin | undefined,
   ): Promise<IMessageConfirmation> {
-    const message: CallError = error.asCallError();
+    let message: CallError = error.asCallError();
     const cachedActionMessageId = await this._cache.get<string>(
       identifier,
       CacheNamespace.Transactions,
@@ -362,10 +409,10 @@ export class MessageRouterImpl
     }
     let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
     if (cachedMessageId === correlationId) {
-      // Intentionally removing NULL values from object for OCPP conformity
-      const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
+      message = this.removeNulls(message);
+      const rawMessage = JSON.stringify(message);
       const success = await Promise.all([
-        this._sendMessage(identifier, rawMessage),
+        this._sendMessage(identifier, protocol, rawMessage, message),
         this._cache.remove(identifier, CacheNamespace.Transactions),
       ]).then((successes) => successes.every(Boolean));
       return { success };
@@ -405,7 +452,7 @@ export class MessageRouterImpl
     protocol: OCPPVersionType,
   ): Promise<void> {
     const messageId = message[1];
-    const action = message[2] as CallAction;
+    const action = mapToCallAction(protocol, message[2]);
 
     try {
       const isAllowed = await this._onCallIsAllowed(action, identifier);
@@ -417,7 +464,11 @@ export class MessageRouterImpl
         );
       }
       // Run schema validation for incoming Call message
-      const { isValid, errors } = this._validateCall(identifier, message, protocol);
+      const { isValid, errors } = this._validateCall(
+        identifier,
+        message,
+        protocol,
+      );
 
       if (!isValid || errors) {
         throw new OcppError(
@@ -445,10 +496,15 @@ export class MessageRouterImpl
         );
       }
     } catch (error) {
-      this._logger.error('Failed to process Call message', identifier, message, error);
+      this._logger.error(
+        'Failed to process Call message',
+        identifier,
+        message,
+        error,
+      );
 
       // Send manual reply since cache was unable to be set
-      const callError =
+      let callError =
         error instanceof OcppError
           ? error.asCallError()
           : [
@@ -456,10 +512,11 @@ export class MessageRouterImpl
               messageId,
               ErrorCode.InternalError,
               'Unable to process message',
-            { error: (error as Error).message },
+              { error: (error as Error).message },
             ];
-      const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
-      await this._sendMessage(identifier, rawMessage);
+      callError = this.removeNulls(callError);
+      const rawMessage = JSON.stringify(callError);
+      await this._sendMessage(identifier, protocol, rawMessage, callError);
       return;
     }
 
@@ -490,6 +547,7 @@ export class MessageRouterImpl
         messageId,
         identifier,
         'undefined',
+        protocol,
         action,
         callError,
       ).finally(() => {
@@ -530,8 +588,7 @@ export class MessageRouterImpl
             { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
           );
         }
-        const [action, cachedMessageId] =
-          cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+        const [action, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
         if (messageId !== cachedMessageId) {
           throw new OcppError(
             messageId,
@@ -542,7 +599,12 @@ export class MessageRouterImpl
         }
         return {
           action,
-          ...this._validateCallResult(identifier, action as CallAction, message, protocol),
+          ...this._validateCallResult(
+            identifier,
+            mapToCallAction(protocol, action),
+            message,
+            protocol,
+          ),
         }; // Run schema validation for incoming CallResult message
       })
       .then(({ action, isValid, errors }) => {
@@ -555,7 +617,13 @@ export class MessageRouterImpl
           );
         }
         // Route call result
-        return this._routeCallResult(identifier, message, action as CallAction, timestamp, protocol);
+        return this._routeCallResult(
+          identifier,
+          message,
+          mapToCallAction(protocol, action),
+          timestamp,
+          protocol,
+        );
       })
       .then((confirmation) => {
         if (!confirmation.success) {
@@ -583,7 +651,12 @@ export class MessageRouterImpl
    * @param {OCPPVersionType} protocol The OCPP protocol version of the message
    * @return {void} This function doesn't return anything.
    */
-  _onCallError(identifier: string, message: CallError, timestamp: Date, protocol: OCPPVersionType): void {
+  _onCallError(
+    identifier: string,
+    message: CallError,
+    timestamp: Date,
+    protocol: OCPPVersionType,
+  ): void {
     const messageId = message[1];
 
     this._logger.debug('Process CallError', identifier, message);
@@ -600,8 +673,7 @@ export class MessageRouterImpl
             { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
           );
         }
-        const [action, cachedMessageId] =
-          cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+        const [action, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
         if (messageId !== cachedMessageId) {
           throw new OcppError(
             messageId,
@@ -610,7 +682,13 @@ export class MessageRouterImpl
             { expectedMessageId: cachedMessageId },
           );
         }
-        return this._routeCallError(identifier, message, action as CallAction, timestamp, protocol);
+        return this._routeCallError(
+          identifier,
+          message,
+          mapToCallAction(protocol, action),
+          timestamp,
+          protocol,
+        );
       })
       .then((confirmation) => {
         if (!confirmation.success) {
@@ -641,24 +719,29 @@ export class MessageRouterImpl
 
   private async _sendMessage(
     identifier: string,
+    protocol: OCPPVersionType,
     rawMessage: string,
+    rpcMessage: any,
   ): Promise<boolean> {
     try {
-      const success = await this._networkHook(identifier, rawMessage);
-      this._webhookDispatcher.dispatchMessageSent(identifier, rawMessage);
-      return success;
+      await this._networkHook(identifier, rawMessage); // Throws an error if the message is not sent, or returns void
     } catch (error) {
-      this._webhookDispatcher.dispatchMessageSent(
-        identifier,
-        rawMessage,
-        error,
-      );
+      // Don't dispatch if the message was not sent
       return false;
     }
+    this._webhookDispatcher.dispatchMessageSent(
+      identifier,
+      rawMessage,
+      new Date().toISOString(),
+      protocol,
+      rpcMessage,
+    );
+    return true;
   }
 
   private async _sendCallIsAllowed(
     identifier: string,
+    protocol: OCPPVersionType,
     message: Call,
   ): Promise<boolean> {
     const status = await this._cache.get<string>(BOOT_STATUS, identifier);
@@ -666,9 +749,10 @@ export class MessageRouterImpl
       status === OCPP2_0_1.RegistrationStatusEnumType.Rejected &&
       // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
       !(
-        (message[2] as CallAction) === OCPP2_0_1_CallAction.TriggerMessage &&
+        mapToCallAction(protocol, message[2]) ===
+          OCPP2_0_1_CallAction.TriggerMessage &&
         (message[3] as OCPP2_0_1.TriggerMessageRequest).requestedMessage ==
-        OCPP2_0_1.MessageTriggerEnumType.BootNotification
+          OCPP2_0_1.MessageTriggerEnumType.BootNotification
       )
     ) {
       return false;
@@ -683,7 +767,7 @@ export class MessageRouterImpl
     protocol: OCPPVersionType,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
-    const action = message[2] as CallAction;
+    const action = mapToCallAction(protocol, message[2]);
     const payload = message[3] as OcppRequest;
 
     const _message: IMessage<OcppRequest> = RequestBuilder.buildCall(
@@ -694,8 +778,8 @@ export class MessageRouterImpl
       payload,
       EventGroup.General, // TODO: Change to appropriate event group
       MessageOrigin.ChargingStation,
-      timestamp,
       protocol,
+      timestamp,
     );
 
     return this._sender.send(_message);
@@ -719,8 +803,8 @@ export class MessageRouterImpl
       payload,
       EventGroup.General,
       MessageOrigin.ChargingStation,
-      timestamp,
       protocol,
+      timestamp,
     );
 
     return this._sender.send(_message);
@@ -731,7 +815,7 @@ export class MessageRouterImpl
     message: CallError,
     action: CallAction,
     timestamp: Date,
-    protocol: OCPPVersionType
+    protocol: OCPPVersionType,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
     const payload = new OcppError(
@@ -749,8 +833,8 @@ export class MessageRouterImpl
       payload,
       EventGroup.General,
       MessageOrigin.ChargingStation,
-      timestamp,
       protocol,
+      timestamp,
     );
 
     // Fulfill callback for api, if needed
@@ -777,5 +861,23 @@ export class MessageRouterImpl
         body: JSON.stringify(message.payload),
       });
     }
+  }
+
+  // Intentionally removing NULL values from object for OCPP conformity
+  private removeNulls<T>(obj: T): T {
+    if (obj === null) return undefined as T;
+    if (typeof obj !== 'object') return obj;
+
+    if (Array.isArray(obj)) {
+      return obj
+        .filter((item) => item !== null)
+        .map((item) => this.removeNulls(item)) as T;
+    }
+
+    const result = {} as T;
+    for (const [key, value] of Object.entries(obj as object)) {
+      result[key as keyof T] = this.removeNulls(value);
+    }
+    return result;
   }
 }

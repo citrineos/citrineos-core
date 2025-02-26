@@ -17,6 +17,7 @@ export enum Namespace {
   IdTokenType = 'IdToken',
   IdTokenInfoType = 'IdTokenInfo',
   MeterValue = 'MeterValue',
+  OCPPMessage = 'OCPPMessage',
   ReserveNowRequest = 'Reservation',
   StatusNotificationRequest = 'StatusNotification',
   TransactionType = 'Transaction',

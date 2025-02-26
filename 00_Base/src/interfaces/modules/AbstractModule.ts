@@ -282,6 +282,7 @@ export abstract class AbstractModule implements IModule {
               payload,
               this._eventGroup,
               origin,
+              protocol,
             ),
           );
         } else {
@@ -312,6 +313,7 @@ export abstract class AbstractModule implements IModule {
     correlationId: string,
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppResponse,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
@@ -325,6 +327,7 @@ export abstract class AbstractModule implements IModule {
         payload,
         this._eventGroup,
         origin,
+        protocol,
       ),
     );
   }
@@ -360,6 +363,7 @@ export abstract class AbstractModule implements IModule {
     correlationId: string,
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppError,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
@@ -373,6 +377,7 @@ export abstract class AbstractModule implements IModule {
         payload,
         this._eventGroup,
         origin,
+        protocol,
       ),
     );
   }
