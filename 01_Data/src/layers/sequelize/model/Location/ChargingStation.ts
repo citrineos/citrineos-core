@@ -8,6 +8,7 @@ import { Location } from './Location';
 import { StatusNotification } from './StatusNotification';
 import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 import { SetNetworkProfile } from './SetNetworkProfile';
+import { Connector } from './Connector';
 
 /**
  * Represents a charging station.
@@ -66,4 +67,9 @@ export class ChargingStation extends Model {
 
   @BelongsToMany(() => SetNetworkProfile, () => ChargingStationNetworkProfile)
   declare networkProfiles?: SetNetworkProfile[] | null;
+
+  @HasMany(() => Connector, {
+    onDelete: 'CASCADE',
+  })
+  declare connectors?: Connector[] | null;
 }
