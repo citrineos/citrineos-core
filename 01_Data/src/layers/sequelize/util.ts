@@ -32,6 +32,7 @@ import {
   InstalledCertificate,
   Location,
   MeterValue,
+  OCPPMessage,
   Reservation,
   SalesTariff,
   SecurityEvent,
@@ -51,6 +52,7 @@ import { Tariff } from './model/Tariff';
 import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
 import { SetNetworkProfile, StatusNotification } from './model/Location';
 import { LatestStatusNotification } from './model/Location/LatestStatusNotification';
+import { StartTransaction } from './model/TransactionEvent';
 
 export class DefaultSequelizeInstance {
   /**
@@ -144,11 +146,13 @@ export class DefaultSequelizeInstance {
         Location,
         MeterValue,
         MessageInfo,
+        OCPPMessage,
         Reservation,
         SalesTariff,
         SecurityEvent,
         SetNetworkProfile,
         ServerNetworkProfile,
+        StartTransaction,
         StatusNotification,
         LatestStatusNotification,
         Subscription,

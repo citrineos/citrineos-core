@@ -50,7 +50,7 @@ export class ChargingNeeds extends Model implements OCPP2_0_1.ChargingNeedsType 
   declare transactionDatabaseId: number;
 
   @BelongsTo(() => Transaction)
-  declare transaction: OCPP2_0_1.TransactionType;
+  declare transaction: Transaction;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
 }

@@ -6,3 +6,4 @@
 export { TransactionEvent } from './TransactionEvent';
 export { Transaction } from './Transaction';
 export { MeterValue } from './MeterValue';
+export { StartTransaction } from './StartTransaction';

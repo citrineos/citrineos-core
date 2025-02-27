@@ -117,6 +117,9 @@ describe('WebhookDispatcher', () => {
       await webhookDispatcher.dispatchMessageSent(
         subscription.stationId,
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -127,6 +130,9 @@ describe('WebhookDispatcher', () => {
       await webhookDispatcher.dispatchMessageSent(
         subscription.stationId,
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -141,6 +147,9 @@ describe('WebhookDispatcher', () => {
       await webhookDispatcher.dispatchMessageReceived(
         subscription.stationId,
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -155,9 +164,16 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = 'Accepted reservation';
 
+      const timestamp = 'Any timestamp';
+      const protocol = 'ocpp2.0.1';
+      const correlationId = '123';
+      const action = 'BootNotification';
       await webhookDispatcher.dispatchMessageReceived(
         subscription.stationId,
         message,
+        timestamp,
+        protocol,
+        [2, correlationId, action, {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -170,6 +186,13 @@ describe('WebhookDispatcher', () => {
           event: 'message',
           origin: MessageOrigin.ChargingStation,
           message: message,
+          info: {
+            correlationId: correlationId,
+            origin: 'cs',
+            timestamp: timestamp,
+            protocol: protocol,
+            action: action,
+          },
         }),
       });
     });
@@ -183,9 +206,16 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = 'Rejected reservation';
 
+      const timestamp = 'Any timestamp';
+      const protocol = 'ocpp2.0.1';
+      const correlationId = '123';
+      const action = 'BootNotification';
       await webhookDispatcher.dispatchMessageReceived(
         subscription.stationId,
         message,
+        timestamp,
+        protocol,
+        [2, correlationId, action, {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -198,6 +228,13 @@ describe('WebhookDispatcher', () => {
           event: 'message',
           origin: MessageOrigin.ChargingStation,
           message: message,
+          info: {
+            correlationId: correlationId,
+            origin: 'cs',
+            timestamp: timestamp,
+            protocol: protocol,
+            action: action,
+          },
         }),
       });
     });
@@ -213,6 +250,9 @@ describe('WebhookDispatcher', () => {
       await webhookDispatcher.dispatchMessageReceived(
         subscription.stationId,
         'Rejected reservation',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -228,6 +268,9 @@ describe('WebhookDispatcher', () => {
       await webhookDispatcher.dispatchMessageSent(
         subscription.stationId,
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -242,9 +285,16 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = '"totalCost": 12.54';
 
+      const timestamp = 'Any timestamp';
+      const protocol = 'ocpp2.0.1';
+      const correlationId = '123';
+      const action = 'BootNotification';
       await webhookDispatcher.dispatchMessageSent(
         subscription.stationId,
         message,
+        timestamp,
+        protocol,
+        [2, correlationId, action, {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -257,6 +307,13 @@ describe('WebhookDispatcher', () => {
           event: 'message',
           origin: MessageOrigin.ChargingStationManagementSystem,
           message: message,
+          info: {
+            correlationId: correlationId,
+            origin: 'csms',
+            timestamp: timestamp,
+            protocol: protocol,
+            action: action,
+          },
         }),
       });
     });
@@ -270,9 +327,16 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = '"totalCost": 12.54';
 
+      const timestamp = 'Any timestamp';
+      const protocol = 'ocpp2.0.1';
+      const correlationId = '123';
+      const action = 'BootNotification';
       await webhookDispatcher.dispatchMessageSent(
         subscription.stationId,
         message,
+        timestamp,
+        protocol,
+        [2, correlationId, action, {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -285,6 +349,13 @@ describe('WebhookDispatcher', () => {
           event: 'message',
           origin: MessageOrigin.ChargingStationManagementSystem,
           message: message,
+          info: {
+            correlationId: correlationId,
+            origin: 'csms',
+            timestamp: timestamp,
+            protocol: protocol,
+            action: action,
+          },
         }),
       });
     });
@@ -300,6 +371,9 @@ describe('WebhookDispatcher', () => {
       await webhookDispatcher.dispatchMessageSent(
         subscription.stationId,
         '"partialCost": 10.54',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -318,6 +392,9 @@ describe('WebhookDispatcher', () => {
       await webhookDispatcher.dispatchMessageSent(
         subscription.stationId,
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -333,6 +410,9 @@ describe('WebhookDispatcher', () => {
       await webhookDispatcher.dispatchMessageSent(
         subscription.stationId,
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -350,6 +430,9 @@ describe('WebhookDispatcher', () => {
       await webhookDispatcher.dispatchMessageSent(
         subscription.stationId,
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -374,7 +457,13 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription, anotherSubscription);
       await givenRegisteredStations(stationId);
 
-      await webhookDispatcher.dispatchMessageSent(stationId, 'Any message');
+      await webhookDispatcher.dispatchMessageSent(
+        stationId,
+        'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
+      );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
       expect(fetch).toHaveBeenCalledWith(
@@ -386,7 +475,13 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription);
 
       fetch.mockClear();
-      await webhookDispatcher.dispatchMessageSent(stationId, 'Any message');
+      await webhookDispatcher.dispatchMessageSent(
+        stationId,
+        'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
+      );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
       expect(fetch).toHaveBeenCalledWith(
@@ -405,7 +500,13 @@ describe('WebhookDispatcher', () => {
       );
 
       fetch.mockClear();
-      await webhookDispatcher.dispatchMessageSent(stationId, 'Any message');
+      await webhookDispatcher.dispatchMessageSent(
+        stationId,
+        'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
+      );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
       expect(fetch).not.toHaveBeenCalledWith(
