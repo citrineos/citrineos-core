@@ -16,8 +16,6 @@ import {
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import { CallMessage, ChangeConfiguration } from '@citrineos/data';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Server API for the Configuration component.
@@ -38,7 +36,7 @@ export class ConfigurationOcpp16Api
     server: FastifyInstance,
     logger?: Logger<ILogObj>,
   ) {
-    super(ConfigurationComponent, server, OCPPVersion.OCPP1_6,logger);
+    super(ConfigurationComponent, server, OCPPVersion.OCPP1_6, logger);
   }
 
   @AsMessageEndpoint(
@@ -53,8 +51,7 @@ export class ConfigurationOcpp16Api
   ): Promise<IMessageConfirmation[]> {
     const connectorId = request.connectorId;
     if (connectorId && connectorId <= 0) {
-      const errorMsg: string =
-        `connectorId should be either omitted or greater than 0.`;
+      const errorMsg: string = `connectorId should be either omitted or greater than 0.`;
       this._logger.error(errorMsg);
       return [{ success: false, payload: errorMsg }];
     }
@@ -83,8 +80,11 @@ export class ConfigurationOcpp16Api
     callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     this._logger.debug('ChangeConfiguration request received:', request);
-    const confirmations = identifier.map(async stationId => {
-      const chargingStation = await this._module.locationRepository.readChargingStationByStationId(stationId);
+    const confirmations = identifier.map(async (stationId) => {
+      const chargingStation =
+        await this._module.locationRepository.readChargingStationByStationId(
+          stationId,
+        );
       if (!chargingStation) {
         return {
           success: false,
@@ -92,28 +92,6 @@ export class ConfigurationOcpp16Api
         };
       }
 
-      const config = await this._module.changeConfigurationRepository.createOrUpdateChangeConfiguration(
-        {
-          stationId,
-          key: request.key,
-          value: request.value,
-          status: null,
-        } as ChangeConfiguration
-      );
-      if (!config) {
-        return {
-          success: false,
-          payload: `Failed to create or update configuration on ${stationId}`,
-        }
-      }
-
-      const correlationId = uuidv4();
-      await this._module.callMessageRepository.create(
-        CallMessage.build({
-          correlationId,
-          databaseId: config.id,
-        }),
-      );
       return await this._module.sendCall(
         stationId,
         tenantId,
@@ -121,7 +99,6 @@ export class ConfigurationOcpp16Api
         OCPP1_6_CallAction.ChangeConfiguration,
         request,
         callbackUrl,
-        correlationId,
       );
     });
 
