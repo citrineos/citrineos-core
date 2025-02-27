@@ -187,8 +187,6 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
 
 export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {}
 
-export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {}
-
 export interface IChargingStationSecurityInfoRepository extends CrudRepository<ChargingStationSecurityInfo> {
   readChargingStationPublicKeyFileId(stationId: string): Promise<string>;
   readOrCreateChargingStationInfo(stationId: string, publicKeyFileId: string): Promise<void>;
