@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SystemConfig, OCPP1_6 } from '@citrineos/base';
+import { SystemConfig } from '@citrineos/base';
 import { IChangeConfigurationRepository } from '../../../interfaces';
 import { ChangeConfiguration, SequelizeRepository } from '..';
 import { Logger, ILogObj } from 'tslog';

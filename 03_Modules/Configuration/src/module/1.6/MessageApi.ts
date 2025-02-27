@@ -16,7 +16,6 @@ import {
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import { ChangeConfiguration } from '@citrineos/data';
 
 /**
  * Server API for the Configuration component.
