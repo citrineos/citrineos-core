@@ -16,9 +16,6 @@ import {
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import {
-  CallMessage,
-} from '@citrineos/data';
 import { validateChargingProfileType } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -213,20 +210,6 @@ export class EVDriverOcpp201Api
         );
       }
 
-      // Create a correlationId for each reservation/station
-      const correlationIds = reservations.map(async (reservation) => {
-        const correlationId = uuidv4();
-        if (reservation) {
-          await this._module.callMessageRepository.create(
-            CallMessage.build({
-              correlationId,
-              reservationId: reservation.databaseId,
-            }),
-          );
-        }
-        return correlationId;
-      });
-
       // Send the CancelReservation call for each station
       const results = await Promise.all(
         identifiers.map(async (identifier, index) =>
@@ -237,7 +220,6 @@ export class EVDriverOcpp201Api
             OCPP2_0_1_CallAction.CancelReservation,
             request,
             callbackUrl,
-            await correlationIds[index],
           ),
         ),
       );
@@ -286,15 +268,6 @@ export class EVDriverOcpp201Api
           continue;
         }
 
-        // Create correlationId for this reservation
-        const correlationId = uuidv4();
-        await this._module.callMessageRepository.create(
-          CallMessage.build({
-            correlationId,
-            reservationId: storedReservation.databaseId,
-          }),
-        );
-
         // Send the ReserveNow call
         const confirmation = await this._module.sendCall(
           i,
@@ -303,7 +276,6 @@ export class EVDriverOcpp201Api
           OCPP2_0_1_CallAction.ReserveNow,
           request,
           callbackUrl,
-          correlationId,
         );
 
         results.push(confirmation);

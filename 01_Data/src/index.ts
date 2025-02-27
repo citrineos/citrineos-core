@@ -13,7 +13,6 @@ export * from 'sequelize-typescript';
 export {
   Authorization,
   Boot,
-  CallMessage,
   ChangeConfiguration,
   ChargingProfile,
   ChargingSchedule,
@@ -52,7 +51,6 @@ export {
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
-  SequelizeCallMessageRepository,
   SequelizeOCPPMessageRepository,
   SequelizeCertificateRepository,
   SequelizeInstalledCertificateRepository,

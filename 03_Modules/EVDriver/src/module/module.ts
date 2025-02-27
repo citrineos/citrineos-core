@@ -14,6 +14,7 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  MessageOrigin,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
@@ -22,9 +23,7 @@ import {
   SystemConfig,
 } from '@citrineos/base';
 import {
-  CallMessage,
   IAuthorizationRepository,
-  ICallMessageRepository,
   IChargingProfileRepository,
   IDeviceModelRepository,
   ILocalAuthListRepository,
@@ -37,6 +36,7 @@ import {
   SequelizeChargingStationSequenceRepository,
   Tariff,
   VariableAttribute,
+  IOCPPMessageRepository,
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
@@ -70,7 +70,7 @@ export class EVDriverModule extends AbstractModule {
     OCPP2_0_1_CallAction.SendLocalList,
     OCPP2_0_1_CallAction.UnlockConnector,
     OCPP1_6_CallAction.RemoteStopTransaction,
-    OCPP1_6_CallAction.RemoteStartTransaction
+    OCPP1_6_CallAction.RemoteStartTransaction,
   ];
 
   protected _authorizeRepository: IAuthorizationRepository;
@@ -80,7 +80,7 @@ export class EVDriverModule extends AbstractModule {
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected _reservationRepository: IReservationRepository;
-  protected _callMessageRepository: ICallMessageRepository;
+  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   private _certificateAuthorityService: CertificateAuthorityService;
   private _localAuthListService: LocalAuthListService;
@@ -131,9 +131,9 @@ export class EVDriverModule extends AbstractModule {
    * which represents a repository for accessing and manipulating reservation data.
    * If no `reservationRepository` is provided, a default {@link sequelize:reservationRepository} instance is created and used.
    *
-   * @param {ICallMessageRepository} [callMessageRepository]  - An optional parameter of type {@link ICallMessageRepository}
-   * which represents a repository for accessing and manipulating callMessage data.
-   * If no `callMessageRepository` is provided, a default {@link sequelize:callMessageRepository} instance is created and used.
+   * @param {IOCPPMessageRepository} [ocppMessageRepository]  - An optional parameter of type {@link IOCPPMessageRepository}
+   * which represents a repository for accessing and manipulating ocppMessage data.
+   * If no `ocppMessageRepository` is provided, a default {@link sequelize:ocppMessageRepository} instance is created and used.
    *
    * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
    * type {@link CertificateAuthorityService} which handles certificate authority operations.
@@ -157,7 +157,7 @@ export class EVDriverModule extends AbstractModule {
     transactionEventRepository?: ITransactionEventRepository,
     chargingProfileRepository?: IChargingProfileRepository,
     reservationRepository?: IReservationRepository,
-    callMessageRepository?: ICallMessageRepository,
+    ocppMessageRepository?: IOCPPMessageRepository,
     certificateAuthorityService?: CertificateAuthorityService,
     authorizers?: IAuthorizer[],
     idGenerator?: IdGenerator,
@@ -192,9 +192,9 @@ export class EVDriverModule extends AbstractModule {
     this._reservationRepository =
       reservationRepository ||
       new sequelize.SequelizeReservationRepository(config, logger);
-    this._callMessageRepository =
-      callMessageRepository ||
-      new sequelize.SequelizeCallMessageRepository(config, logger);
+    this._ocppMessageRepository =
+      ocppMessageRepository ||
+      new sequelize.SequelizeOCPPMessageRepository(config, logger);
 
     this._certificateAuthorityService =
       certificateAuthorityService ||
@@ -238,8 +238,8 @@ export class EVDriverModule extends AbstractModule {
     return this._reservationRepository;
   }
 
-  get callMessageRepository(): ICallMessageRepository {
-    return this._callMessageRepository;
+  get ocppMessageRepository(): IOCPPMessageRepository {
+    return this._ocppMessageRepository;
   }
 
   get localAuthListService(): LocalAuthListService {
@@ -636,17 +636,21 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('CancelReservationResponse received:', message, props);
 
-    const reservationId = await this._findReservationByCorrelationId(
-      message.context.correlationId,
-    );
-    if (reservationId) {
+    const request = await this._ocppMessageRepository.readOnlyOneByQuery({
+      where: {
+        stationId: message.context.stationId,
+        correlationId: message.context.correlationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
+    if (request) {
       await this._reservationRepository.updateByKey(
         {
           isActive:
             message.payload.status ===
             OCPP2_0_1.CancelReservationStatusEnumType.Rejected,
         },
-        reservationId.toString(),
+        request.message[3].reservationId,
       );
     } else {
       this._logger.error(
@@ -662,10 +666,14 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('ReserveNowResponse received:', message, props);
 
-    const reservationId = await this._findReservationByCorrelationId(
-      message.context.correlationId,
-    );
-    if (reservationId) {
+    const request = await this._ocppMessageRepository.readOnlyOneByQuery({
+      where: {
+        stationId: message.context.stationId,
+        correlationId: message.context.correlationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
+    if (request) {
       const status = message.payload
         .status as OCPP2_0_1.ReserveNowStatusEnumType;
       await this._reservationRepository.updateByKey(
@@ -673,7 +681,7 @@ export class EVDriverModule extends AbstractModule {
           reserveStatus: status,
           isActive: status === OCPP2_0_1.ReserveNowStatusEnumType.Accepted,
         },
-        reservationId.toString(),
+        request.message[3].id,
       );
     } else {
       this._logger.error(
@@ -872,29 +880,13 @@ export class EVDriverModule extends AbstractModule {
 
   @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.RemoteStartTransaction)
   protected async _handleRemoteStartTransaction(
-      message: IMessage<OCPP1_6.RemoteStartTransactionResponse>,
-      props?: HandlerProperties,
+    message: IMessage<OCPP1_6.RemoteStartTransactionResponse>,
+    props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug('RemoteStartTransactionResponse received:', message, props);
-  }
-
-  private async _findReservationByCorrelationId(
-    correlationId: string,
-  ): Promise<number | undefined> {
-    try {
-      const callMessage: CallMessage | undefined =
-        await this._callMessageRepository.readOnlyOneByQuery({
-          where: {
-            correlationId,
-          },
-        });
-      if (callMessage && callMessage.reservationId) {
-        return callMessage.reservationId;
-      }
-    } catch (e) {
-      this._logger.error(e);
-    }
-
-    return undefined;
+    this._logger.debug(
+      'RemoteStartTransactionResponse received:',
+      message,
+      props,
+    );
   }
 }
