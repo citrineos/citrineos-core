@@ -8,7 +8,6 @@ import { type AuthorizationQuerystring } from './queries/Authorization';
 import {
   type Authorization,
   type Boot,
-  CallMessage,
   type Certificate,
   ChargingNeeds,
   ChargingProfile,
@@ -39,6 +38,8 @@ import {
   SendLocalList,
   InstalledCertificate,
   ChangeConfiguration,
+  OCPPMessage,
+  CallMessage,
 } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
@@ -189,6 +190,8 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
 }
 
 export interface ICallMessageRepository extends CrudRepository<CallMessage> {}
+
+export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {}
 
 export interface IChargingStationSecurityInfoRepository extends CrudRepository<ChargingStationSecurityInfo> {
   readChargingStationPublicKeyFileId(stationId: string): Promise<string>;

@@ -44,7 +44,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   protected _networkHook: (
     identifier: string,
     message: string,
-  ) => Promise<boolean>;
+  ) => Promise<void>;
 
   /**
    * Constructor of abstract ocpp router.
@@ -56,7 +56,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     cache: ICache,
     handler: IMessageHandler,
     sender: IMessageSender,
-    networkHook: (identifier: string, message: string) => Promise<boolean>,
+    networkHook: (identifier: string, message: string) => Promise<void>,
     logger?: Logger<ILogObj>,
     ajv?: Ajv,
   ) {
@@ -102,7 +102,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   }
 
   set networkHook(
-    value: (identifier: string, message: string) => Promise<boolean>,
+    value: (identifier: string, message: string) => Promise<void>,
   ) {
     this._networkHook = value;
   }
@@ -134,6 +134,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
           message.context.correlationId,
           message.context.stationId,
           message.context.tenantId,
+          message.protocol,
           message.action,
           message.payload,
           message.origin,
@@ -143,6 +144,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
           message.context.correlationId,
           message.context.stationId,
           message.context.tenantId,
+          message.protocol,
           message.action,
           message.payload,
           message.origin,
@@ -152,7 +154,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       await this.sendCall(
         message.context.stationId,
         message.context.tenantId,
-        message.protocol!,
+        message.protocol,
         message.action,
         message.payload,
         message.context.correlationId,
@@ -176,7 +178,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   protected _validateCall(
     identifier: string,
     message: Call,
-    protocol: string, 
+    protocol: string,
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
     const action = message[2];
     const payload = message[3];
@@ -285,6 +287,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     correlationId: string,
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppResponse,
     origin?: MessageOrigin,
@@ -293,6 +296,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     correlationId: string,
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     error: OcppError,
     origin?: MessageOrigin,

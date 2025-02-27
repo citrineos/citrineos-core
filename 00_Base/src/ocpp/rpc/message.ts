@@ -252,3 +252,34 @@ export class OcppError extends Error {
     ] as CallError;
   }
 }
+
+/**
+ * Maps a string to the corresponding OCPP CallAction enum value based on protocol version
+ * @param version OCPP protocol version
+ * @param action String representation of the action
+ * @returns The corresponding enum value
+ * @throws Error if the action is invalid for the specified version
+ */
+export function mapToCallAction(version: OCPPVersionType, action: string): CallAction {
+  // Validate the action string is non-empty
+  if (!action || typeof action !== 'string') {
+      throw new Error('Action must be a non-empty string');
+  }
+
+  switch (version) {
+      case 'ocpp1.6':
+          if (action in OCPP1_6_CallAction) {
+              return OCPP1_6_CallAction[action as keyof typeof OCPP1_6_CallAction];
+          }
+          throw new Error(`Invalid OCPP 1.6 action: ${action}`);
+
+      case 'ocpp2.0.1':
+          if (action in OCPP2_0_1_CallAction) {
+              return OCPP2_0_1_CallAction[action as keyof typeof OCPP2_0_1_CallAction];
+          }
+          throw new Error(`Invalid OCPP 2.0.1 action: ${action}`);
+
+      default:
+          throw new Error(`Unsupported OCPP version: ${version}`);
+  }
+}
