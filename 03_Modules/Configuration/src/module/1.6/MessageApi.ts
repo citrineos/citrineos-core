@@ -16,6 +16,7 @@ import {
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Server API for the Configuration component.
