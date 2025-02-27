@@ -140,17 +140,27 @@ export class ConfigurationOcpp16Api
   ): Promise<IMessageConfirmation[]> {
     this._logger.debug('GetConfiguration request received:', request);
 
-    const confirmations = await Promise.all(
+    let confirmations: {
+      success: boolean;
+      batch: string;
+      message: string;
+      stationId: string;
+    }[] = [];
+
+    await Promise.all(
       identifier.map(async (stationId) => {
         const chargingStation =
           await this._module.locationRepository.readChargingStationByStationId(
             stationId,
           );
         if (!chargingStation) {
-          return {
+          confirmations.push({
             success: false,
-            payload: `Charging station ${stationId} not found`,
-          };
+            batch: `Station ${stationId}`,
+            message: `Charging station ${stationId} not found`,
+            stationId,
+          });
+          return;
         }
 
         const maxKeysConfig =
@@ -167,37 +177,50 @@ export class ConfigurationOcpp16Api
 
         const sendBatches = async (batches: string[][]) => {
           return Promise.all(
-            batches.map(async (batch) => {
-              const correlationId = uuidv4();
-              await this._module.callMessageRepository.create(
-                CallMessage.build({ correlationId }),
-              );
-              return await this._module.sendCall(
-                stationId,
-                tenantId,
-                OCPPVersion.OCPP1_6,
-                OCPP1_6_CallAction.GetConfiguration,
-                { key: batch },
-                callbackUrl,
-                correlationId,
-              );
+            batches.map(async (batch, index) => {
+              try {
+                const correlationId = uuidv4();
+                const batchResult = await this._module.sendCall(
+                  stationId,
+                  tenantId,
+                  OCPPVersion.OCPP1_6,
+                  OCPP1_6_CallAction.GetConfiguration,
+                  { key: batch },
+                  callbackUrl,
+                  correlationId,
+                );
+
+                confirmations.push({
+                  success: batchResult.success,
+                  batch: `[${index}:${index + batch.length}]`,
+                  message: `${batchResult.payload}`,
+                  stationId,
+                });
+              } catch (error) {
+                confirmations.push({
+                  success: false,
+                  batch: `[${index}:${index + batch.length}]`,
+                  message: `${error}`,
+                  stationId,
+                });
+              }
             }),
           );
         };
 
         if (keys.length === 0 || keys.length <= maxKeys) {
-          return sendBatches([keys]);
+          await sendBatches([keys]);
         } else {
           const batches = [];
           for (let i = 0; i < keys.length; i += maxKeys) {
             batches.push(keys.slice(i, i + maxKeys));
           }
-          return sendBatches(batches);
+          await sendBatches(batches);
         }
       }),
     );
 
-    return confirmations.flat();
+    return confirmations;
   }
 
   @AsMessageEndpoint(OCPP1_6_CallAction.Reset, OCPP1_6.ResetRequestSchema)
