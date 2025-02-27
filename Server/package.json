@@ -46,8 +46,7 @@
     "@fastify/cors": "10.0.1",
     "cross-env": "7.0.3",
     "sqlite3": "5.1.6",
-    "ws": "8.17.1",
-    "@aws-sdk/client-s3" : "3.750.0"
+    "ws": "8.17.1"
   },
   "optionalDependencies": {
     "bufferutil": "4.0.8",
