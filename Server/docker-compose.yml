@@ -78,17 +78,23 @@ services:
       - /usr/local/apps/citrineos/03_Modules/Reporting/dist/
       - /usr/local/apps/citrineos/03_Modules/SmartCharging/dist/
       - /usr/local/apps/citrineos/03_Modules/Transactions/dist/
-      - ~/.aws:/root/.aws
     environment:
       APP_NAME: 'all'
       APP_ENV: 'docker'
+      # S3/MinIO configuration
+      AWS_ACCESS_KEY_ID: citrine_user
+      AWS_SECRET_ACCESS_KEY: citrine_password
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT: http://minio:9000
+      AWS_S3_BUCKET: citrineos-s3-bucket
+      AWS_S3_FORCE_PATH_STYLE: 'true'
     depends_on:
       ocpp-db:
         condition: service_healthy
       amqp-broker:
         condition: service_healthy
-      minio:
-        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     ports:
       - 8080:8080
       - 8081:8081
@@ -106,8 +112,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: ROOTNAME
-      MINIO_ROOT_PASSWORD: CHANGEME123
+      MINIO_ROOT_USER: citrine_admin
+      MINIO_ROOT_PASSWORD: citrine_admin_password
     volumes:
       - ./data/minio:/data
     command: server /data --console-address ":9001"
@@ -117,6 +123,27 @@ services:
       timeout: 10s
       retries: 5
       start_period: 20s
+
+  # Initialize MinIO with bucket and user
+  minio-init:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 citrine_admin citrine_admin_password;
+      mc mb myminio/citrineos-s3-bucket --ignore-existing;
+      mc admin user add myminio citrine_user citrine_password;
+      # First create a policy file for our user
+      echo '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:*\"],\"Resource\":[\"arn:aws:s3:::citrineos-s3-bucket/*\",\"arn:aws:s3:::citrineos-s3-bucket\"]}]}' > /tmp/policy.json;
+      # Apply the policy to our user
+      mc admin policy add myminio citrine-policy /tmp/policy.json;
+      mc admin policy attach myminio citrine-policy --user citrine_user;
+      # Create initial config file
+      echo '{\"version\":\"1.0\"}' > /tmp/docker-config.json;
+      mc cp /tmp/docker-config.json myminio/citrineos-s3-bucket/docker-config.json;
+      "
 
   graphql-engine:
     image: hasura/graphql-engine:v2.40.3.cli-migrations-v3
