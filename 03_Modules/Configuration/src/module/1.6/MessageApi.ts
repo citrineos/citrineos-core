@@ -118,12 +118,7 @@ export class ConfigurationOcpp16Api
   ): Promise<IMessageConfirmation[]> {
     this._logger.debug('GetConfiguration request received:', request);
 
-    let confirmations: {
-      success: boolean;
-      batch: string;
-      message: string;
-      stationId: string;
-    }[] = [];
+    const confirmations: IMessageConfirmation[] = [];
 
     await Promise.all(
       identifier.map(async (stationId) => {
@@ -134,9 +129,11 @@ export class ConfigurationOcpp16Api
         if (!chargingStation) {
           confirmations.push({
             success: false,
-            batch: `Station ${stationId}`,
-            message: `Charging station ${stationId} not found`,
-            stationId,
+            payload: {
+              batch: `Station ${stationId}`,
+              message: `Charging station ${stationId} not found`,
+              stationId,
+            },
           });
           return;
         }
@@ -170,16 +167,20 @@ export class ConfigurationOcpp16Api
 
                 confirmations.push({
                   success: batchResult.success,
-                  batch: `[${index}:${index + batch.length}]`,
-                  message: `${batchResult.payload}`,
-                  stationId,
+                  payload: {
+                    batch: `[${index}:${index + batch.length}]`,
+                    message: `${batchResult.payload}`,
+                    stationId,
+                  },
                 });
               } catch (error) {
                 confirmations.push({
                   success: false,
-                  batch: `[${index}:${index + batch.length}]`,
-                  message: `${error}`,
-                  stationId,
+                  payload: {
+                    batch: `[${index}:${index + batch.length}]`,
+                    message: `${error}`,
+                    stationId,
+                  },
                 });
               }
             }),
