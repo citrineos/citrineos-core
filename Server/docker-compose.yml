@@ -81,10 +81,6 @@ services:
     environment:
       APP_NAME: 'all'
       APP_ENV: 'docker'
-      # S3/MinIO configuration - using anonymous access
-      AWS_ENDPOINT: http://minio:9000
-      AWS_S3_BUCKET: citrineos-s3-bucket
-      AWS_S3_FORCE_PATH_STYLE: 'true'
       # Add AWS region (required by the SDK)
       AWS_REGION: us-east-1
       # Skip authentication completely - use public access
@@ -130,7 +126,7 @@ services:
       retries: 5
       start_period: 20s
 
-  # Initialize MinIO with bucket and user - with improved logging
+  # Initialize MinIO
   minio-init:
     image: minio/mc
     depends_on:
