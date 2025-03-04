@@ -137,16 +137,8 @@ services:
       # Enable command echoing and error reporting
       set -x
       
-      echo '[STEP 1] Setting up MinIO alias'
+      echo 'Setting up MinIO alias'
       mc alias set myminio http://minio:9000 minioadmin minioadmin || echo 'FAILED: alias setup'
-      
-      echo '[STEP 2] Creating bucket'
-      mc mb myminio/citrineos-s3-bucket --ignore-existing || echo 'FAILED OR ALREADY EXISTS: bucket creation' 
-      
-      echo '[STEP 3] Setting bucket public'
-      mc anonymous set public myminio/citrineos-s3-bucket || echo 'FAILED: setting public access'
-      
-      echo '[SETUP COMPLETE] MinIO initialization finished successfully'
       "
 
   graphql-engine:
