@@ -322,12 +322,12 @@ export class CitrineOSServer {
     const isCloud = process.env.DEPLOYMENT_TARGET === 'cloud';
     return new Logger<ILogObj>({
       name: 'CitrineOS Logger',
-      minLevel: systemConfig.logLevel,
-      hideLogPositionForProduction: systemConfig.env === 'production',
+      minLevel: this._config.logLevel,
+      hideLogPositionForProduction: this._config.env === 'production',
       overwrite:
-        systemConfig &&
-        systemConfig.logLevel !== undefined &&
-        systemConfig.logLevel <= 2
+        this._config &&
+        this._config.logLevel !== undefined &&
+        this._config.logLevel <= 2
           ? undefined
           : {
               transportJSON: (logObj: any) => {
@@ -742,7 +742,7 @@ export class CitrineOSServer {
 async function main() {
   const server = new CitrineOSServer(
     process.env.APP_NAME as EventGroup,
-    systemConfig,
+    await systemConfig,
   );
   server.run().catch((error: any) => {
     console.error(error);

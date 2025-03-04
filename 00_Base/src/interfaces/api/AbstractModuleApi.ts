@@ -14,6 +14,7 @@ import {
   METADATA_MESSAGE_ENDPOINTS,
 } from '.';
 import {
+  ConfigStoreFactory,
   MessageConfirmationSchema,
   Namespace,
   OCPP1_6_Namespace,
@@ -92,24 +93,9 @@ export abstract class AbstractModuleApi<T extends IModule>
         expose.security,
       );
     });
-    // Add API routes for getting and setting SystemConfig
+
     if (dataEndpointDefinitions && dataEndpointDefinitions.length > 0) {
-      this._addDataRoute.call(
-        this,
-        OCPP2_0_1_Namespace.SystemConfig,
-        () => new Promise((resolve) => resolve(module.config)),
-        HttpMethod.Get,
-      );
-      this._addDataRoute.call(
-        this,
-        OCPP2_0_1_Namespace.SystemConfig,
-        (request: FastifyRequest<{ Body: SystemConfig }>) =>
-          new Promise<void>((resolve) => {
-            module.config = request.body;
-            resolve();
-          }),
-        HttpMethod.Put,
-      );
+      this.registerSystemConfigRoutes(module);
     }
   }
 
@@ -418,6 +404,24 @@ export abstract class AbstractModuleApi<T extends IModule>
       return null;
     }
   };
+
+  protected registerSystemConfigRoutes(module: T) {
+    this._addDataRoute.call(
+        this,
+        OCPP2_0_1_Namespace.SystemConfig,
+        () => new Promise((resolve) => resolve(module.config)),
+        HttpMethod.Get,
+    );
+    this._addDataRoute.call(
+        this,
+        OCPP2_0_1_Namespace.SystemConfig,
+        async (request: FastifyRequest<{ Body: SystemConfig }>) => {
+          await ConfigStoreFactory.getInstance().saveConfig(request.body);
+          module.config = request.body;
+        },
+        HttpMethod.Put,
+    );
+  }
 
   // TODO: for performance reasons can these unknown keys be removed directly from schemas?
   private removeUnknownKeys = (schema: any): any => {

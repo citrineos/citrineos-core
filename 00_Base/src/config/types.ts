@@ -253,6 +253,23 @@ export const systemConfigInputSchema = z.object({
           }
         }),
     }),
+    configStorage: z
+        .object({
+            type: z.enum(['s3', 'local'])
+                .default('s3')
+                .optional(),
+            s3: z
+                .object({
+                    endpoint: z.string(),
+                    bucketName: z.string().default('citrineos-s3-bucket').optional(),
+                    keyName: z.string().default('config.json').optional(),
+                })
+                .optional(),
+            local: z.object({
+              fileName: z.string().default('config.json').optional(),
+              configDir: z.string().default('./data').optional(),
+            }).optional(),
+        })
   }),
   logLevel: z.number().min(0).max(6).default(0).optional(),
   maxCallLengthSeconds: z.number().int().positive().default(5).optional(),
@@ -538,6 +555,22 @@ export const systemConfigSchema = z
             }
           }),
       }),
+      configStorage: z
+          .object({
+            type: z.enum(['s3', 'local'])
+                .default('s3'),
+            s3: z
+                .object({
+                  endpoint: z.string(),
+                  bucketName: z.string().default('citrineos-s3-bucket').optional(),
+                  keyName: z.string().default('config.json').optional(),
+                })
+                .optional(),
+            local: z.object({
+              fileName: z.string().default('config.json').optional(),
+              configDir: z.string().default('./data').optional(),
+            }).optional(),
+          })
     }),
     logLevel: z.number().min(0).max(6),
     maxCallLengthSeconds: z.number().int().positive(),

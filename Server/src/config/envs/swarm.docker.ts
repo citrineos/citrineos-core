@@ -151,6 +151,18 @@ export function createDockerConfig() {
           },
         },
       },
+      configStorage: {
+        type: 'local',
+        s3: {
+          endpoint: 'http://minio:9000',
+          bucketName: 'citrineos-s3-bucket',
+          keyName: 'swarm-docker-config.json',
+        },
+        local: {
+          fileName: 'swarm-docker-config.json',
+          configDir: './data',
+        }
+      }
     },
     logLevel: 2, // debug
     maxCallLengthSeconds: 5,
