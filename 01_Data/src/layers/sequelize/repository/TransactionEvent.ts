@@ -489,6 +489,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       timestamp: timestamp.toISOString(),
       reason,
       idTokenDatabaseId,
+      meterValues,
     });
     this.stopTransaction.emit('created', [stopTransaction]);
 
@@ -496,6 +497,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       await Promise.all(
         meterValues.map(async (meterValue) => {
           meterValue.transactionDatabaseId = transaction.id;
+          meterValue.stopTransactionDatabaseId = stopTransaction.id;
           await meterValue.save();
           this.meterValue.emit('created', [meterValue]);
         }),
