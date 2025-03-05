@@ -144,6 +144,18 @@ export function createLocalConfig() {
           },
         },
       },
+      configStorage: {
+        type: 's3',
+        s3: {
+          endpoint: 'http://localhost:9000',
+          bucketName: 'citrineos-s3-bucket',
+          keyName: 'local-config.json',
+        },
+        local: {
+          fileName: 'local-config.json',
+          configDir: './data',
+        }
+      }
     },
     logLevel: 2, // debug
     maxCallLengthSeconds: 30,

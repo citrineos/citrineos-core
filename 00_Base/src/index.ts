@@ -66,7 +66,9 @@ export { BootConfig, BOOT_STATUS } from './config/BootConfig';
 export { defineConfig } from './config/defineConfig';
 export { SystemConfig, WebsocketServerConfig } from './config/types';
 export { SignedMeterValuesConfig } from './config/signedMeterValuesConfig';
-
+export { ConfigStore, ConfigStoreFactory } from './config/ConfigStore';
+export { S3ConfigStore } from './config/S3ConfigStore';
+export { LocalConfigStore } from './config/LocalConfigStore';
 // Utils
 
 export { RequestBuilder } from './util/request';
