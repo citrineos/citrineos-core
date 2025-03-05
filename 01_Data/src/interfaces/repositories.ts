@@ -143,7 +143,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
   getActiveTransactionByStationIdAndEvseId(stationId: string, evseId: number): Promise<Transaction | undefined>;
   updateTransactionTotalCostById(totalCost: number, id: number): Promise<void>;
-  updateTransactionWithFinalValues(totalKwh: number, stoppedReason: string, id: number): Promise<void>;
+  updateTransactionWithFinalValues(stoppedReason: string, id: number): Promise<void>;
   createStopTransaction(transactionId: string, stationId: string, meterStop: number, timestamp: Date, meterValues: MeterValue[], reason?: string, idTokenDatabaseId?: number): Promise<StopTransaction>;
 }
 

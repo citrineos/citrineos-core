@@ -303,16 +303,15 @@ export class TransactionService {
         return;
       }
 
-      const totalKwh = await this.recalculateTotalKwh(transactionDbId);
+      // TODO: It would be good to make a method to recalculate totalKwh using OCPP 1.6.
 
       this._transactionEventRepository.updateTransactionWithFinalValues(
-        totalKwh,
         stopTransaction.reason as string,
         transaction.id,
       );
 
       this._logger.info(
-        `Transaction ${transactionDbId} finalized with ${totalKwh} kWh.`,
+        `Transaction ${transactionDbId} finalized.`,
       );
     } catch (error) {
       this._logger.error(

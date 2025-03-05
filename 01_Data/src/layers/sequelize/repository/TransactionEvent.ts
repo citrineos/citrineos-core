@@ -386,10 +386,10 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     await this.transaction.updateByKey({ totalCost: totalCost }, id.toString());
   }
 
-  async updateTransactionWithFinalValues(totalKwh: number, stoppedReason: string, id: number): Promise<void> {
+  async updateTransactionWithFinalValues(stoppedReason: string, id: number): Promise<void> {
+    // TODO: Add totalKwh to this update.
     await this.transaction.updateByKey(
       {
-        totalKwh: totalKwh,
         isActive: false,
         stoppedReason: stoppedReason,
       },

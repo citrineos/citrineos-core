@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { OCPP1_6_Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table, HasMany } from 'sequelize-typescript';
 import { Transaction } from './Transaction';
 import { IdToken } from '../Authorization';
 import { MeterValue } from './MeterValue';
@@ -22,7 +22,7 @@ export class StopTransaction extends Model {
   declare transaction: Transaction;
 
   @Column(DataType.INTEGER)
-  declare meterStop: number; // in Wh
+  declare meterStop: number;
 
   @Column({
     type: DataType.DATE,
@@ -41,9 +41,6 @@ export class StopTransaction extends Model {
   @Column(DataType.STRING)
   declare reason?: string;
 
-  @ForeignKey(() => MeterValue)
-  declare meterValuesDatabaseId?: number | null;
-
-  @BelongsTo(() => MeterValue)
-  declare meterValues?: MeterValue;
+  @HasMany(() => MeterValue)
+  declare meterValues?: MeterValue[];
 }

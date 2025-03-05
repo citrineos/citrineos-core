@@ -682,6 +682,7 @@ export class TransactionsModule extends AbstractModule {
       this._logger.error(
         `Failed to create StopTransaction record for transaction ${request.transactionId}`,
       );
+      await this.sendCallResultWithMessage(message, {});
       return;
     }
 
@@ -690,8 +691,13 @@ export class TransactionsModule extends AbstractModule {
       stopTransaction,
     );
 
+    const idTagInfo = await this._authorizeRepository.readAllByQuerystring({
+      idToken: request.idTag as string,
+      type: null,
+    });
+
     await this.sendCallResultWithMessage(message, {
-      idTagInfo: request.idTag ? { status: 'Accepted' } : undefined,
+      idTagInfo: idTagInfo ? { status: 'Accepted' } : undefined,
     });
 
     this._logger.info(
