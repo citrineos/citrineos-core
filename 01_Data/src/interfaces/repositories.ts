@@ -42,6 +42,7 @@ import {
 } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
+import { StopTransaction } from '../layers/sequelize/model/TransactionEvent';
 
 export interface IAuthorizationRepository extends CrudRepository<Authorization> {
   createOrUpdateByQuerystring: (value: OCPP2_0_1.AuthorizationData, query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
@@ -142,6 +143,8 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
   getActiveTransactionByStationIdAndEvseId(stationId: string, evseId: number): Promise<Transaction | undefined>;
   updateTransactionTotalCostById(totalCost: number, id: number): Promise<void>;
+  updateTransactionWithFinalValues(stoppedReason: string, id: number): Promise<void>;
+  createStopTransaction(transactionId: string, stationId: string, meterStop: number, timestamp: Date, meterValues: MeterValue[], reason?: string, idTokenDatabaseId?: number): Promise<StopTransaction>;
 }
 
 export interface IVariableMonitoringRepository extends CrudRepository<OCPP2_0_1.VariableMonitoringType> {

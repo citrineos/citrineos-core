@@ -15,6 +15,7 @@ import {
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { IAuthorizer } from '@citrineos/util';
+import { StopTransaction } from '@citrineos/data/src/layers/sequelize/model/TransactionEvent';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
@@ -40,11 +41,12 @@ export class TransactionService {
   }
 
   async recalculateTotalKwh(transactionDbId: number) {
-    const meterValues = await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-      transactionDbId,
-    );
-    const meterValueTypes = meterValues.map(
-      meterValue => OCPP2_0_1_Mapper.MeterValueMapper.toMeterValueType(meterValue)
+    const meterValues =
+      await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
+        transactionDbId,
+      );
+    const meterValueTypes = meterValues.map((meterValue) =>
+      OCPP2_0_1_Mapper.MeterValueMapper.toMeterValueType(meterValue),
     );
     const totalKwh = MeterValueUtils.getTotalKwh(meterValueTypes);
 
@@ -89,7 +91,8 @@ export class TransactionService {
     }
 
     // Extract DTO fields from sequelize Model<any, any> objects
-    const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
+    const idTokenInfo =
+      OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
 
     if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
       // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
@@ -114,7 +117,10 @@ export class TransactionService {
         authorization,
         messageContext,
       );
-      if (transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started) {
+      if (
+        transactionEvent.eventType ===
+        OCPP2_0_1.TransactionEventEnumType.Started
+      ) {
         const hasConcurrent = await this._hasConcurrentTransactions(idToken);
         if (hasConcurrent) {
           response.idTokenInfo.status =
@@ -133,19 +139,21 @@ export class TransactionService {
     meterValues: [OCPP2_0_1.MeterValueType, ...OCPP2_0_1.MeterValueType[]],
     transactionDbId?: number | null,
   ) {
-    return Promise.all(meterValues.map(async (meterValue) => {
-      const hasPeriodic: boolean = meterValue.sampledValue?.some(
-        (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
-      );
-      if (transactionDbId && hasPeriodic) {
-        await this._transactionEventRepository.createMeterValue(
-          meterValue,
-          transactionDbId,
+    return Promise.all(
+      meterValues.map(async (meterValue) => {
+        const hasPeriodic: boolean = meterValue.sampledValue?.some(
+          (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
         );
-      } else {
-        await this._transactionEventRepository.createMeterValue(meterValue);
-      }
-    }));
+        if (transactionDbId && hasPeriodic) {
+          await this._transactionEventRepository.createMeterValue(
+            meterValue,
+            transactionDbId,
+          );
+        } else {
+          await this._transactionEventRepository.createMeterValue(meterValue);
+        }
+      }),
+    );
   }
 
   async authorizeOcpp16IdToken(
@@ -166,7 +174,9 @@ export class TransactionService {
           type: null,
         });
       if (authorizations.length !== 1) {
-        this._logger.error(`Found invalid authorizations ${JSON.stringify(authorizations)} for idToken: ${idToken}`);
+        this._logger.error(
+          `Found invalid authorizations ${JSON.stringify(authorizations)} for idToken: ${idToken}`,
+        );
         return response;
       }
 
@@ -178,10 +188,13 @@ export class TransactionService {
         return response;
       }
 
-      const idTokenInfoStatus = OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
-        idTokenInfo.status
-      );
-      if (idTokenInfoStatus !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
+      const idTokenInfoStatus =
+        OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
+          idTokenInfo.status,
+        );
+      if (
+        idTokenInfoStatus !== OCPP1_6.StartTransactionResponseStatus.Accepted
+      ) {
         response.idTagInfo.status = idTokenInfoStatus;
         return response;
       }
@@ -247,7 +260,9 @@ export class TransactionService {
     messageContext: IMessageContext,
   ): Promise<OCPP2_0_1.IdTokenInfoType> {
     for (const authorizer of this._authorizers) {
-      if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
+      if (
+        idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted
+      ) {
         break;
       }
       const result: Partial<OCPP2_0_1.IdTokenType> = await authorizer.authorize(
@@ -268,5 +283,41 @@ export class TransactionService {
       );
 
     return activeTransactions.length > 1;
+  }
+
+  async finalizeTransaction(
+    transactionDbId: number,
+    stopTransaction: StopTransaction,
+  ) {
+    try {
+      const transaction =
+        await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
+          stopTransaction.stationId,
+          stopTransaction.transactionDatabaseId,
+        );
+
+      if (!transaction) {
+        this._logger.error(
+          `Transaction ${transactionDbId} not found for finalization.`,
+        );
+        return;
+      }
+
+      // TODO: It would be good to make a method to recalculate totalKwh using OCPP 1.6.
+
+      this._transactionEventRepository.updateTransactionWithFinalValues(
+        stopTransaction.reason as string,
+        transaction.id,
+      );
+
+      this._logger.info(
+        `Transaction ${transactionDbId} finalized.`,
+      );
+    } catch (error) {
+      this._logger.error(
+        `Failed to finalize transaction ${transactionDbId}:`,
+        error,
+      );
+    }
   }
 }
