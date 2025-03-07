@@ -154,8 +154,8 @@ export function createLocalConfig() {
         local: {
           fileName: 'local-config.json',
           configDir: './data',
-        }
-      }
+        },
+      },
     },
     logLevel: 2, // debug
     maxCallLengthSeconds: 30,
@@ -163,6 +163,9 @@ export function createLocalConfig() {
     ocpiServer: {
       host: '0.0.0.0',
       port: 8085,
+    },
+    userPreferences: {
+      // None by default
     },
   });
 }

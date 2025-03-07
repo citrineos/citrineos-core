@@ -200,8 +200,8 @@ export function createDockerConfig() {
         local: {
           fileName: 'docker-config.json',
           configDir: './data',
-        }
-      }
+        },
+      },
     },
     logLevel: 2, // debug
     maxCallLengthSeconds: 5,
@@ -209,6 +209,9 @@ export function createDockerConfig() {
     ocpiServer: {
       host: '0.0.0.0',
       port: 8085,
+    },
+    userPreferences: {
+      // None by default
     },
   });
 }
