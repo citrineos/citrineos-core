@@ -1,8 +1,6 @@
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 
-export const aValidSignedContractData = (
-  updateFunction?: UpdateFunction<object>,
-): object => {
+export const aValidSignedContractData = (updateFunction?: UpdateFunction<object>): object => {
   // This example is from https://hubject.stoplight.io/docs/open-plugncharge/9fabe1661696f-get-signed-contract-data
   const item = {
     CCPResponse: {
@@ -21,9 +19,7 @@ export const aValidSignedContractData = (
   return applyUpdateFunction(item, updateFunction);
 };
 
-export const aValidAuthorizationToken = (
-  updateFunction?: UpdateFunction<object>,
-): object => {
+export const aValidAuthorizationToken = (updateFunction?: UpdateFunction<object>): object => {
   // This example is from https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token
   const item = {
     id: '6bb8b3bc79c2e',
@@ -32,8 +28,7 @@ export const aValidAuthorizationToken = (
     uri: '/docs/Token.md',
     slug: '6bb8b3bc79c2e-authorization-token',
     title: 'Authorization Token',
-    summary:
-      'Please use the following token to authorize your requests on Open Plugncharge:',
+    summary: 'Please use the following token to authorize your requests on Open Plugncharge:',
     project_id: 'cHJqOjk0NTg5',
     branch_id: 'YnI6MTUxOTIwMw',
     branch: 'master',
@@ -47,17 +42,14 @@ export const aValidAuthorizationToken = (
   return applyUpdateFunction(item, updateFunction);
 };
 
-export const aValidRootCertificates = (
-  updateFunction?: UpdateFunction<object>,
-): object => {
+export const aValidRootCertificates = (updateFunction?: UpdateFunction<object>): object => {
   // This example is from https://hubject.stoplight.io/docs/open-plugncharge/fdc9bdfdd4fb2-get-all-root-certificates
   const item = {
     RootCertificateCollection: {
       rootCertificates: [
         {
           rootCertificateId: 'e6c58da2-aeaf-438c-b484-40c3cca35e97',
-          distinguishedName:
-            'CN=US V2G Root CA QA G2, DC=V2G, O=Hubject Inc., C=US',
+          distinguishedName: 'CN=US V2G Root CA QA G2, DC=V2G, O=Hubject Inc., C=US',
           caCertificate:
             'MIICFjCCAbygAwIBAgIQbIqT2zas5F2twNToU49ArDAKBggqhkjOPQQDAjBYMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMSHViamVjdCBJbmMuMRMwEQYKCZImiZPyLGQBGRYDVjJHMR0wGwYDVQQDExRVUyBWMkcgUm9vdCBDQSBRQSBHMjAgFw0yMDA1MTkyMTU5NTlaGA8yMDYwMDUxOTIxNTk1OVowWDELMAkGA1UEBhMCVVMxFTATBgNVBAoTDEh1YmplY3QgSW5jLjETMBEGCgmSJomT8ixkARkWA1YyRzEdMBsGA1UEAxMUVVMgVjJHIFJvb3QgQ0EgUUEgRzIwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAR2/KiLLZNcg4l5jANoMMotv5eY252KPiMegm8N9gOdj3/vskoamOAPD18ot+jczZRwPrxgRhS0Jq4PwlIdCWibo2YwZDAPBgNVHRMBAf8EBTADAQH/MBEGA1UdDgQKBAhK2xerpZDAaDAZBgNVHSAEEjAQMA4GDCsGAQQBg64NAQIBAjATBgNVHSMEDDAKgAhK2xerpZDAaDAOBgNVHQ8BAf8EBAMCAQYwCgYIKoZIzj0EAwIDSAAwRQIhAMUGxn3tBpgOZ/JnaKgFinRufQYRhoTtxFjbNw5d4OebAiBZrbKEoMHbBiWz7dSfwGfmzMQbgqPoGA8SSpA1a053Gg==',
           commonName: 'CN=US V2G Root CA QA G2, DC=V2G, O=Hubject Inc., C=US',

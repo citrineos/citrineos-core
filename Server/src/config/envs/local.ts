@@ -78,10 +78,7 @@ export function createLocalConfig() {
       },
       swagger: {
         path: '/docs',
-        logoPath: path.resolve(
-          path.dirname(__filename),
-          '../../assets/logo.png',
-        ),
+        logoPath: path.resolve(path.dirname(__filename), '../../assets/logo.png'),
         exposeData: true,
         exposeMessage: true,
       },
@@ -154,8 +151,8 @@ export function createLocalConfig() {
         local: {
           fileName: 'local-config.json',
           configDir: './data',
-        }
-      }
+        },
+      },
     },
     logLevel: 2, // debug
     maxCallLengthSeconds: 30,

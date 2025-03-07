@@ -73,8 +73,7 @@ export class MonitoringOcpp201Api
           );
         }
 
-        const setMonitoringData =
-          request.setMonitoringData as OCPP2_0_1.SetMonitoringDataType[];
+        const setMonitoringData = request.setMonitoringData as OCPP2_0_1.SetMonitoringDataType[];
         // For each monitoring data record, do any needed adjustments or DB upserts
         for (const data of setMonitoringData) {
           const [component, variable] =
@@ -86,10 +85,8 @@ export class MonitoringOcpp201Api
           // If Monitor is 'Delta' and variable is not numeric, set monitorValue to 1
           if (
             data.type === OCPP2_0_1.MonitorEnumType.Delta &&
-            variable?.variableCharacteristics?.dataType !==
-              OCPP2_0_1.DataEnumType.decimal &&
-            variable?.variableCharacteristics?.dataType !==
-              OCPP2_0_1.DataEnumType.integer
+            variable?.variableCharacteristics?.dataType !== OCPP2_0_1.DataEnumType.decimal &&
+            variable?.variableCharacteristics?.dataType !== OCPP2_0_1.DataEnumType.integer
           ) {
             data.value = 1;
             this._logger.debug('Updated SetMonitoringData value to 1', data);
@@ -150,11 +147,7 @@ export class MonitoringOcpp201Api
 
     for (const id of identifier) {
       try {
-        this._logger.debug(
-          'ClearVariableMonitoring request received for station',
-          id,
-          request,
-        );
+        this._logger.debug('ClearVariableMonitoring request received for station', id, request);
 
         // Request size check
         const maxBytes =
@@ -249,10 +242,7 @@ export class MonitoringOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.SetVariables,
-    OCPP2_0_1.SetVariablesRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.SetVariables, OCPP2_0_1.SetVariablesRequestSchema)
   async setVariables(
     identifier: string[],
     tenantId: string,
@@ -263,8 +253,7 @@ export class MonitoringOcpp201Api
 
     for (const id of identifier) {
       try {
-        const setVariableData =
-          request.setVariableData as OCPP2_0_1.SetVariableDataType[];
+        const setVariableData = request.setVariableData as OCPP2_0_1.SetVariableDataType[];
 
         // Store variable data in local DB so that the response can find them
         await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(
@@ -304,10 +293,7 @@ export class MonitoringOcpp201Api
     return confirmations;
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.GetVariables,
-    OCPP2_0_1.GetVariablesRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetVariables, OCPP2_0_1.GetVariablesRequestSchema)
   async getVariables(
     identifier: string[],
     tenantId: string,
@@ -333,8 +319,7 @@ export class MonitoringOcpp201Api
           );
         }
 
-        const getVariableData =
-          request.getVariableData as OCPP2_0_1.GetVariableDataType[];
+        const getVariableData = request.getVariableData as OCPP2_0_1.GetVariableDataType[];
 
         // Determine how many items to send per message
         const itemsPerMessage =
@@ -431,8 +416,7 @@ export class MonitoringOcpp201Api
    * @return {string} - The generated URL path.
    */
   protected _toMessagePath(input: CallAction): string {
-    const endpointPrefix =
-      this._module.config.modules.monitoring.endpointPrefix;
+    const endpointPrefix = this._module.config.modules.monitoring.endpointPrefix;
     return super._toMessagePath(input, endpointPrefix);
   }
 }

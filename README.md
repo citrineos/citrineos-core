@@ -1,5 +1,6 @@
 ![CitrineOS Logo](logo_white.png#gh-dark-mode-only)
 ![CitrineOS Logo](logo_black.png#gh-light-mode-only)
+
 <div align="center">
 <img src="OCPP_201_Logo_core_and_advanced_security.png" alt="CitrineOS Certification Logo" width="200" height="100" />
 </div>
@@ -91,6 +92,7 @@ Before you begin, make sure you have the following installed on your system:
 ### Runtime configuration
 
 Values from configuration files (`local.ts`, `docker.ts`, `swarm.docker.ts`) may be overridden at runtime via environment variables. Environment variables prefixed with `citrineos_` and hierarchically separated by an underscore will result in overriding said value. For example, the amqp URL:
+
 ```json
 util: {
     (...)
@@ -104,6 +106,7 @@ util: {
     (...)
 }
 ```
+
 may be overridden by setting the environment variable `CITRINEOS_util_messageBroker_amqp_url` (case-insensitive).
 
 ### Starting the Server without Docker

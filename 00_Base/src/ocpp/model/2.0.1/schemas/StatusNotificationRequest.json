@@ -20,13 +20,7 @@
       "type": "string",
       "additionalProperties": false,
       "enum": ["Available", "Occupied", "Reserved", "Unavailable", "Faulted"],
-      "tsEnumNames": [
-        "Available",
-        "Occupied",
-        "Reserved",
-        "Unavailable",
-        "Faulted"
-      ]
+      "tsEnumNames": ["Available", "Occupied", "Reserved", "Unavailable", "Faulted"]
     }
   },
   "type": "object",

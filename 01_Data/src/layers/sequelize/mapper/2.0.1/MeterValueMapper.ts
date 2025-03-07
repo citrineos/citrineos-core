@@ -11,7 +11,7 @@ export class MeterValueMapper {
       timestamp: meterValue.timestamp,
       sampledValue: MeterValueMapper.toSampledValueTypes(meterValue.sampledValue),
       customData: meterValue.customData,
-    }
+    };
   }
 
   static toSampledValueTypes(sampledValues: any): [OCPP2_0_1.SampledValueType, ...OCPP2_0_1.SampledValueType[]] {
@@ -27,18 +27,22 @@ export class MeterValueMapper {
         measurand: sampledValue.measurand,
         phase: sampledValue.phase,
         location: sampledValue.location,
-        signedMeterValue: sampledValue.signedMeterValue ? {
-          signedMeterData: sampledValue.signedMeterValue.signedMeterData,
-          signingMethod: sampledValue.signedMeterValue.signingMethod,
-          encodingMethod: sampledValue.signedMeterValue.encodingMethod,
-          publicKey: sampledValue.signedMeterValue.publicKey,
-          customData: sampledValue.signedMeterValue.customData,
-        } : undefined,
-        unitOfMeasure: sampledValue.unitOfMeasure ? {
-          unit: sampledValue.unitOfMeasure.unit,
-          multiplier: sampledValue.unitOfMeasure.multiplier,
-          customData: sampledValue.unitOfMeasure.customData,
-        }: undefined,
+        signedMeterValue: sampledValue.signedMeterValue
+          ? {
+              signedMeterData: sampledValue.signedMeterValue.signedMeterData,
+              signingMethod: sampledValue.signedMeterValue.signingMethod,
+              encodingMethod: sampledValue.signedMeterValue.encodingMethod,
+              publicKey: sampledValue.signedMeterValue.publicKey,
+              customData: sampledValue.signedMeterValue.customData,
+            }
+          : undefined,
+        unitOfMeasure: sampledValue.unitOfMeasure
+          ? {
+              unit: sampledValue.unitOfMeasure.unit,
+              multiplier: sampledValue.unitOfMeasure.multiplier,
+              customData: sampledValue.unitOfMeasure.customData,
+            }
+          : undefined,
         customData: sampledValue.customData,
       });
     }

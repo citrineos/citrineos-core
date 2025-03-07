@@ -3,14 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  ChargingStationSequenceType,
-  CrudRepository,
-  MeterValueUtils,
-  OCPP1_6,
-  OCPP2_0_1,
-  SystemConfig,
-} from '@citrineos/base';
+import { ChargingStationSequenceType, CrudRepository, MeterValueUtils, OCPP1_6, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { IChargingStationSequenceRepository, type ITransactionEventRepository } from '../../../interfaces';
 import { MeterValue, StartTransaction, Transaction, TransactionEvent } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';
@@ -161,9 +154,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
         },
         transaction: sequelizeTransaction,
       });
-      const meterValueTypes = allMeterValues.map(
-        meterValue => MeterValueMapper.toMeterValueType(meterValue)
-      );
+      const meterValueTypes = allMeterValues.map((meterValue) => MeterValueMapper.toMeterValueType(meterValue));
       await finalTransaction.update({ totalKwh: MeterValueUtils.getTotalKwh(meterValueTypes) }, { transaction: sequelizeTransaction });
       await finalTransaction.reload({
         include: [{ model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] }, MeterValue, Evse],
@@ -208,11 +199,11 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
   async readAllTransactionsByStationIdAndEvseAndChargingStates(stationId: string, evse?: OCPP2_0_1.EVSEType, chargingStates?: OCPP2_0_1.ChargingStateEnumType[] | undefined): Promise<Transaction[]> {
     const includeObj = evse
       ? [
-        {
-          model: Evse,
-          where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null },
-        },
-      ]
+          {
+            model: Evse,
+            where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null },
+          },
+        ]
       : [];
     return await this.transaction
       .readAllByQuery({
@@ -403,10 +394,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
     );
   }
 
-  async createTransactionByStartTransaction(
-    request: OCPP1_6.StartTransactionRequest,
-    stationId: string
-  ): Promise<Transaction> {
+  async createTransactionByStartTransaction(request: OCPP1_6.StartTransactionRequest, stationId: string): Promise<Transaction> {
     return await this.s.transaction(async (sequelizeTransaction) => {
       // Build StartTransaction event
       let event = StartTransaction.build({
@@ -442,10 +430,7 @@ export class SequelizeTransactionEventRepository extends SequelizeRepository<Tra
       event.connectorDatabaseId = connector.id;
 
       // Generate transactionId
-      const transactionId = await this.chargingStationSequence.getNextSequenceValue(
-        stationId,
-        ChargingStationSequenceType.transactionId
-      );
+      const transactionId = await this.chargingStationSequence.getNextSequenceValue(stationId, ChargingStationSequenceType.transactionId);
       // Store transaction in db
       let newTransaction = Transaction.build({
         stationId,

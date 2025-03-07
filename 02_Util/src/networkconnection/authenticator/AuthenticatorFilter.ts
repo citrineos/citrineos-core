@@ -15,7 +15,7 @@ export abstract class AuthenticatorFilter {
   protected abstract filter(
     identifier: string,
     request: IncomingMessage,
-    options?: AuthenticationOptions
+    options?: AuthenticationOptions,
   ): Promise<void>;
 
   async authenticate(

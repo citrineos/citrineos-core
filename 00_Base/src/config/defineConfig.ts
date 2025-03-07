@@ -4,11 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { z } from 'zod';
-import {
-  type SystemConfig,
-  SystemConfigInput,
-  systemConfigSchema,
-} from './types';
+import { type SystemConfig, SystemConfigInput, systemConfigSchema } from './types';
 
 const CITRINE_ENV_VAR_PREFIX = 'citrineos_';
 
@@ -80,9 +76,7 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
     }
     const lowercaseEnvKey = fullEnvKey.toLowerCase();
     if (lowercaseEnvKey.startsWith(CITRINE_ENV_VAR_PREFIX)) {
-      const envKeyWithoutPrefix = lowercaseEnvKey.substring(
-        CITRINE_ENV_VAR_PREFIX.length,
-      );
+      const envKeyWithoutPrefix = lowercaseEnvKey.substring(CITRINE_ENV_VAR_PREFIX.length);
       const path = envKeyWithoutPrefix.split('_');
 
       let currentConfigPart: Record<string, any> = config;
@@ -102,15 +96,12 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
       }
 
       const finalPart = path[path.length - 1];
-      const keyToUse =
-        currentConfigKeyMap[finalPart.toLowerCase()] || finalPart;
+      const keyToUse = currentConfigKeyMap[finalPart.toLowerCase()] || finalPart;
 
       try {
         currentConfigPart[keyToUse] = JSON.parse(value as string);
       } catch {
-        console.debug(
-          `Mapping '${value}' as string for environment variable '${fullEnvKey}'`,
-        );
+        console.debug(`Mapping '${value}' as string for environment variable '${fullEnvKey}'`);
         currentConfigPart[keyToUse] = value;
       }
     }
@@ -145,8 +136,7 @@ function validateFinalConfig(finalConfig: SystemConfigInput) {
  * @throws Error if required environment variables are not set or if there are parsing errors.
  */
 export function defineConfig(inputConfig: SystemConfigInput): SystemConfig {
-  const configKeyMap: Record<string, any> =
-    getZodSchemaKeyMap(systemConfigSchema);
+  const configKeyMap: Record<string, any> = getZodSchemaKeyMap(systemConfigSchema);
   const appConfig = mergeConfigFromEnvVars<SystemConfigInput>(
     inputConfig,
     process.env,

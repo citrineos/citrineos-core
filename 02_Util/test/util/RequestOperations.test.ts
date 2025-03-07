@@ -30,24 +30,21 @@ describe('extractBasicCredentials', () => {
       expected: { username: 'username', password: 'password' },
     },
     {
-      authorization:
-        'Basic Y3AwMDE6U0VQdHdMY2tiNVFENW9uMEVYY0NBbXVRVm1KKmJ1M1pYbUE6Q2x0Mw==', // cp001:SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3
+      authorization: 'Basic Y3AwMDE6U0VQdHdMY2tiNVFENW9uMEVYY0NBbXVRVm1KKmJ1M1pYbUE6Q2x0Mw==', // cp001:SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3
       expected: {
         username: 'cp001',
         password: 'SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3',
       },
     },
     {
-      authorization:
-        'Basic Y3AwMDE6OjpTRVB0d0xja2I1UUQ1b24wRVhjQ0FtdVFWbUoqYnUzWlhtQTpDbHQz', // cp001:::SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3
+      authorization: 'Basic Y3AwMDE6OjpTRVB0d0xja2I1UUQ1b24wRVhjQ0FtdVFWbUoqYnUzWlhtQTpDbHQz', // cp001:::SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3
       expected: {
         username: 'cp001',
         password: '::SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3',
       },
     },
     {
-      authorization:
-        'Basic Y3AwMDE6IFNFUHR3TGNrYjVRRDVvbjBFWGNDQW11UVZtSipidTNaWG1BOkNsdDM=', // cp001: SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3
+      authorization: 'Basic Y3AwMDE6IFNFUHR3TGNrYjVRRDVvbjBFWGNDQW11UVZtSipidTNaWG1BOkNsdDM=', // cp001: SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3
       expected: {
         username: 'cp001',
         password: ' SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3',

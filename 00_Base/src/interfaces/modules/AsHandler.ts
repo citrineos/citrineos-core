@@ -19,11 +19,7 @@ export const AS_HANDLER_METADATA = 'AS_HANDLER_METADATA';
  * @return {PropertyDescriptor} - the property descriptor
  */
 export const AsHandler = function (protocol: OCPPVersion, action: CallAction) {
-  return (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor,
-  ): PropertyDescriptor => {
+  return (target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor => {
     if (!Reflect.hasMetadata(AS_HANDLER_METADATA, target.constructor)) {
       Reflect.defineMetadata(AS_HANDLER_METADATA, [], target.constructor);
     }

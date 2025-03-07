@@ -1,6 +1,4 @@
-import {
-  OCPP2_0_1,
-} from '../ocpp/model';
+import { OCPP2_0_1 } from '../ocpp/model';
 
 export class MeterValueUtils {
   private static readonly validContexts = new Set([
@@ -18,8 +16,7 @@ export class MeterValueUtils {
   public static getTotalKwh(meterValues: OCPP2_0_1.MeterValueType[]): number {
     const filteredValues = this.filterValidMeterValues(meterValues);
     const timestampToKwhMap = this.getTimestampToKwhMap(filteredValues);
-    const sortedValues =
-      this.getSortedKwhByTimestampAscending(timestampToKwhMap);
+    const sortedValues = this.getSortedKwhByTimestampAscending(timestampToKwhMap);
     return this.calculateTotalKwh(sortedValues);
   }
 
@@ -29,8 +26,7 @@ export class MeterValueUtils {
     return meterValues.filter(
       (mv) =>
         // When missing, context is by default Sample_Periodic by spec
-        !mv.sampledValue[0].context ||
-        this.validContexts.has(mv.sampledValue[0].context),
+        !mv.sampledValue[0].context || this.validContexts.has(mv.sampledValue[0].context),
     );
   }
 
@@ -56,8 +52,7 @@ export class MeterValueUtils {
   ): OCPP2_0_1.SampledValueType | undefined {
     return sampledValues.find(
       (sv) =>
-        !sv.phase &&
-        sv.measurand === OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register,
+        !sv.phase && sv.measurand === OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register,
     );
   }
 
@@ -72,17 +67,13 @@ export class MeterValueUtils {
         powerOfTen -= 3;
         break;
       default:
-        throw new Error(
-          'Unknown unit for Energy.Active.Import.Register: ' + unit,
-        );
+        throw new Error('Unknown unit for Energy.Active.Import.Register: ' + unit);
     }
 
     return overallValue.value * 10 ** powerOfTen;
   }
 
-  private static getSortedKwhByTimestampAscending(
-    valuesMap: Map<number, number>,
-  ): number[] {
+  private static getSortedKwhByTimestampAscending(valuesMap: Map<number, number>): number[] {
     return Array.from(valuesMap.entries())
       .sort((a, b) => a[0] - b[0])
       .map((entry) => entry[1]);

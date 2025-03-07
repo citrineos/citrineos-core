@@ -21,7 +21,7 @@ import {
   UpdateChargingStationPasswordSchema,
   Namespace,
   OCPP1_6_Namespace,
-  BootConfig
+  BootConfig,
 } from '@citrineos/base';
 import {
   Boot,
@@ -41,10 +41,7 @@ import {
   VariableAttribute,
 } from '@citrineos/data';
 import { Op } from 'sequelize';
-import {
-  generatePassword,
-  isValidPassword,
-} from '@citrineos/util';
+import { generatePassword, isValidPassword } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -81,28 +78,17 @@ export class ConfigurationDataApi
       Querystring: ChargingStationKeyQuerystring;
     }>,
   ): Promise<BootConfig | undefined> {
-    return this._module.bootRepository.createOrUpdateByKey(
-      request.body,
-      request.query.stationId,
-    );
+    return this._module.bootRepository.createOrUpdateByKey(request.body, request.query.stationId);
   }
 
-  @AsDataEndpoint(
-    Namespace.BootConfig,
-    HttpMethod.Get,
-    ChargingStationKeyQuerySchema,
-  )
+  @AsDataEndpoint(Namespace.BootConfig, HttpMethod.Get, ChargingStationKeyQuerySchema)
   getBootConfig(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Boot | undefined> {
     return this._module.bootRepository.readByKey(request.query.stationId);
   }
 
-  @AsDataEndpoint(
-    Namespace.BootConfig,
-    HttpMethod.Delete,
-    ChargingStationKeyQuerySchema,
-  )
+  @AsDataEndpoint(Namespace.BootConfig, HttpMethod.Delete, ChargingStationKeyQuerySchema)
   deleteBootConfig(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Boot | undefined> {
@@ -136,29 +122,17 @@ export class ConfigurationDataApi
 
     if (!request.body.setOnCharger) {
       try {
-        await this.updatePasswordOnStation(
-          password,
-          stationId,
-          request.query.callbackUrl,
-        );
+        await this.updatePasswordOnStation(password, stationId, request.query.callbackUrl);
       } catch (error) {
-        this._logger.warn(
-          `Failed updating password on ${stationId} station`,
-          error,
-        );
+        this._logger.warn(`Failed updating password on ${stationId} station`, error);
         return {
           success: false,
           payload: `Failed updating password on ${stationId} station`,
         };
       }
     }
-    const variableAttributes = await this.updatePasswordForStation(
-      password,
-      stationId,
-    );
-    this._logger.debug(
-      `Successfully updated password for ${stationId} station`,
-    );
+    const variableAttributes = await this.updatePasswordForStation(password, stationId);
+    this._logger.debug(`Successfully updated password for ${stationId} station`);
     return {
       success: true,
       payload: `Updated ${variableAttributes.length} attributes`,
@@ -208,11 +182,8 @@ export class ConfigurationDataApi
    * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(
-    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
-  ): string {
-    const endpointPrefix =
-      this._module.config.modules.configuration.endpointPrefix;
+  protected _toDataPath(input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace): string {
+    const endpointPrefix = this._module.config.modules.configuration.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
   }
 
@@ -222,12 +193,11 @@ export class ConfigurationDataApi
     callbackUrl?: string,
   ): Promise<void> {
     const correlationId = uuidv4();
-    const cacheCallbackPromise: Promise<string | null> =
-      this._module.cache.onChange(
-        correlationId,
-        this._module.config.maxCachingSeconds,
-        stationId,
-      );
+    const cacheCallbackPromise: Promise<string | null> = this._module.cache.onChange(
+      correlationId,
+      this._module.config.maxCachingSeconds,
+      stationId,
+    );
 
     const messageConfirmation = await this._module.sendCall(
       stationId,
@@ -248,23 +218,17 @@ export class ConfigurationDataApi
       correlationId,
     );
     if (!messageConfirmation.success) {
-      throw new Error(
-        `Failed sending request to ${stationId} station for updating password`,
-      );
+      throw new Error(`Failed sending request to ${stationId} station for updating password`);
     }
 
     const responseJsonString = await cacheCallbackPromise;
     if (!responseJsonString) {
-      throw new Error(
-        `${stationId} station did not respond in time for updating password`,
-      );
+      throw new Error(`${stationId} station did not respond in time for updating password`);
     }
 
-    const setVariablesResponse: OCPP2_0_1.SetVariablesResponse =
-      JSON.parse(responseJsonString);
+    const setVariablesResponse: OCPP2_0_1.SetVariablesResponse = JSON.parse(responseJsonString);
     const passwordUpdated = setVariablesResponse.setVariableResult.every(
-      (result) =>
-        result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Accepted,
+      (result) => result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Accepted,
     );
     if (!passwordUpdated) {
       throw new Error(`Failure updating password on ${stationId} station`);

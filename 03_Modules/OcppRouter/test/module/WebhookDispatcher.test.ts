@@ -41,9 +41,7 @@ describe('WebhookDispatcher', () => {
 
       await webhookDispatcher.register(subscription.stationId);
 
-      expect(subscriptionRepository.readAllByStationId).toBeCalledWith(
-        subscription.stationId,
-      );
+      expect(subscriptionRepository.readAllByStationId).toBeCalledWith(subscription.stationId);
     });
 
     it('should send request for subscriptions with enabled onConnect', async () => {
@@ -419,9 +417,7 @@ describe('WebhookDispatcher', () => {
 
       subscriptionRepository.readAllByStationId.mockClear();
       await jest.runOnlyPendingTimersAsync();
-      expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(
-        1,
-      );
+      expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(1);
       expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledWith(
         subscription.stationId,
       );
@@ -436,10 +432,7 @@ describe('WebhookDispatcher', () => {
       );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
-      expect(fetch).toHaveBeenCalledWith(
-        newSubscription.url,
-        expect.anything(),
-      );
+      expect(fetch).toHaveBeenCalledWith(newSubscription.url, expect.anything());
     });
 
     it('should periodically remove deleted subscriptions for registered stations', async () => {
@@ -466,10 +459,7 @@ describe('WebhookDispatcher', () => {
       );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
-      expect(fetch).toHaveBeenCalledWith(
-        anotherSubscription.url,
-        expect.anything(),
-      );
+      expect(fetch).toHaveBeenCalledWith(anotherSubscription.url, expect.anything());
 
       // Simulate 'anotherSubscription' was deleted
       givenSubscriptions(subscription);
@@ -484,17 +474,12 @@ describe('WebhookDispatcher', () => {
       );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
-      expect(fetch).toHaveBeenCalledWith(
-        anotherSubscription.url,
-        expect.anything(),
-      );
+      expect(fetch).toHaveBeenCalledWith(anotherSubscription.url, expect.anything());
 
       // Run pending timers to trigger subscription refresh
       subscriptionRepository.readAllByStationId.mockClear();
       await jest.runOnlyPendingTimersAsync();
-      expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(
-        1,
-      );
+      expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(1);
       expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledWith(
         subscription.stationId,
       );
@@ -509,10 +494,7 @@ describe('WebhookDispatcher', () => {
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
-      expect(fetch).not.toHaveBeenCalledWith(
-        anotherSubscription.url,
-        expect.anything(),
-      );
+      expect(fetch).not.toHaveBeenCalledWith(anotherSubscription.url, expect.anything());
     });
   });
 

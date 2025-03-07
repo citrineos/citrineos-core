@@ -21,11 +21,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 import { ICertificatesModuleApi } from './interface';
 import { CertificatesModule } from './module';
-import {
-  generateCertificate,
-  generateCSR,
-  WebsocketNetworkConnection,
-} from '@citrineos/util';
+import { generateCertificate, generateCSR, WebsocketNetworkConnection } from '@citrineos/util';
 import {
   Certificate,
   CountryNameEnumType,
@@ -95,34 +91,26 @@ export class CertificatesDataApi
       Querystring: UpdateTlsCertificateQueryString;
     }>,
   ): Promise<void> {
-    const serverId = (request.query as UpdateTlsCertificateQueryString)
-      .id as string;
-    this._logger.info(
-      `Receive update TLS certificates request for server ${serverId}`,
-    );
+    const serverId = (request.query as UpdateTlsCertificateQueryString).id as string;
+    this._logger.info(`Receive update TLS certificates request for server ${serverId}`);
 
     const certRequest = request.body as TlsCertificatesRequest;
-    const serverConfig: WebsocketServerConfig | undefined =
-      this._websocketServersConfig.find((config) => config.id === serverId);
+    const serverConfig: WebsocketServerConfig | undefined = this._websocketServersConfig.find(
+      (config) => config.id === serverId,
+    );
 
     if (!serverConfig) {
       throw new Error(`websocketServer id ${serverId} does not exist.`);
     } else if (serverConfig && serverConfig.securityProfile < 2) {
       throw new Error(`websocketServer ${serverId} is not tls or mtls server.`);
     } else if (serverConfig.securityProfile === 3 && !certRequest.subCAKey) {
-      throw new Error(
-        `WebsocketServer ${serverId} is mtls server but subCAKey is missing.`,
-      );
+      throw new Error(`WebsocketServer ${serverId} is mtls server but subCAKey is missing.`);
     }
 
-    const tlsKey: string = (
-      await this._fileAccess.getFile(certRequest.privateKey)
-    ).toString();
+    const tlsKey: string = (await this._fileAccess.getFile(certRequest.privateKey)).toString();
     let tlsCertificateChain = '';
     for (const fileId of certRequest.certificateChain) {
-      tlsCertificateChain += (
-        await this._fileAccess.getFile(fileId)
-      ).toString();
+      tlsCertificateChain += (await this._fileAccess.getFile(fileId)).toString();
     }
     const rootCA: string | undefined = certRequest.rootCA
       ? (await this._fileAccess.getFile(certRequest.rootCA)).toString()
@@ -131,14 +119,7 @@ export class CertificatesDataApi
       ? (await this._fileAccess.getFile(certRequest.subCAKey)).toString()
       : undefined;
 
-    this._updateCertificates(
-      serverConfig,
-      serverId,
-      tlsKey,
-      tlsCertificateChain,
-      subCAKey,
-      rootCA,
-    );
+    this._updateCertificates(serverConfig, serverId, tlsKey, tlsCertificateChain, subCAKey, rootCA);
   }
 
   /**
@@ -164,9 +145,7 @@ export class CertificatesDataApi
 
     let certificateFromReq = new Certificate();
     certificateFromReq.serialNumber = moment().valueOf();
-    certificateFromReq.keyLength = certRequest.keyLength
-      ? certRequest.keyLength
-      : 2048;
+    certificateFromReq.keyLength = certRequest.keyLength ? certRequest.keyLength : 2048;
     certificateFromReq.organizationName = certRequest.organizationName;
     certificateFromReq.commonName = certRequest.commonName + ` ${PemType.Root}`;
     if (certRequest.validBefore) {
@@ -258,9 +237,7 @@ export class CertificatesDataApi
       certificateFromReq.commonName = certRequest.commonName;
       certificateFromReq.pathLen = 0;
       const [certificatePem, privateKeyPem] =
-        await this._generateSubCACertificateSignedByCAServer(
-          certificateFromReq,
-        );
+        await this._generateSubCACertificateSignedByCAServer(certificateFromReq);
       certificateFromReq = await this._storeCertificateAndKey(
         certificateFromReq,
         certificatePem,
@@ -278,8 +255,7 @@ export class CertificatesDataApi
       leafCertificate.validBefore = certificateFromReq.validBefore;
       leafCertificate.signedBy = certificateFromReq.id;
       leafCertificate.countryName = certificateFromReq.countryName;
-      leafCertificate.signatureAlgorithm =
-        certificateFromReq.signatureAlgorithm;
+      leafCertificate.signatureAlgorithm = certificateFromReq.signatureAlgorithm;
       leafCertificate.isCA = false;
       leafCertificate.pathLen = undefined;
       const [leafCertificatePem, leafPrivateKeyPem] = generateCertificate(
@@ -320,14 +296,11 @@ export class CertificatesDataApi
 
     let rootCAPem: string;
     if (installReq.fileId) {
-      rootCAPem = (
-        await this._fileAccess.getFile(installReq.fileId)
-      ).toString();
+      rootCAPem = (await this._fileAccess.getFile(installReq.fileId)).toString();
     } else {
-      rootCAPem =
-        await this._module.certificateAuthorityService.getRootCACertificateFromExternalCA(
-          installReq.certificateType,
-        );
+      rootCAPem = await this._module.certificateAuthorityService.getRootCACertificateFromExternalCA(
+        installReq.certificateType,
+      );
     }
 
     const confirmation = await this._module.sendCall(
@@ -346,9 +319,7 @@ export class CertificatesDataApi
       this._logger.error(
         `InstallCertificateRequest failed for stationId: ${installReq.stationId}, payload: ${confirmation.payload}`,
       );
-      throw new Error(
-        `InstallCertificateRequest operations failed.`,
-      );
+      throw new Error(`InstallCertificateRequest operations failed.`);
     }
 
     this._logger.debug('InstallCertificate confirmation:', confirmation);
@@ -361,11 +332,8 @@ export class CertificatesDataApi
    * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(
-    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
-  ): string {
-    const endpointPrefix =
-      this._module.config.modules.certificates?.endpointPrefix;
+  protected _toDataPath(input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace): string {
+    const endpointPrefix = this._module.config.modules.certificates?.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
   }
 
@@ -396,16 +364,9 @@ export class CertificatesDataApi
   ) {
     let rollbackFiles: RollBackFile[] = [];
 
-    if (
-      serverConfig.tlsKeyFilePath &&
-      serverConfig.tlsCertificateChainFilePath
-    ) {
+    if (serverConfig.tlsKeyFilePath && serverConfig.tlsCertificateChainFilePath) {
       try {
-        rollbackFiles = this._replaceFile(
-          serverConfig.tlsKeyFilePath,
-          tlsKey,
-          rollbackFiles,
-        );
+        rollbackFiles = this._replaceFile(serverConfig.tlsKeyFilePath, tlsKey, rollbackFiles);
         rollbackFiles = this._replaceFile(
           serverConfig.tlsCertificateChainFilePath,
           tlsCertificateChain,
@@ -444,14 +405,9 @@ export class CertificatesDataApi
           );
         }
 
-        this._logger.info(
-          `Updated TLS certificate for server ${serverId} successfully.`,
-        );
+        this._logger.info(`Updated TLS certificate for server ${serverId} successfully.`);
       } catch (error) {
-        this._logger.error(
-          `Failed to update certificate for server ${serverId}: `,
-          error,
-        );
+        this._logger.error(`Failed to update certificate for server ${serverId}: `, error);
 
         this._logger.info('Performing rollback...');
         for (const { oldFilePath, newFilePath } of rollbackFiles) {
@@ -475,9 +431,7 @@ export class CertificatesDataApi
   ): Promise<[string, string]> {
     const [csrPem, privateKeyPem] = generateCSR(certificate);
     const signedCertificate =
-      await this._module.certificateAuthorityService.signedSubCaCertificateByExternalCA(
-        csrPem,
-      );
+      await this._module.certificateAuthorityService.signedSubCaCertificateByExternalCA(csrPem);
     return [signedCertificate, privateKeyPem];
   }
 
@@ -512,9 +466,7 @@ export class CertificatesDataApi
     const certObj = new jsrsasign.X509();
     certObj.readCertPEM(certPem);
     certificateEntity.issuerName = certObj.getIssuerString();
-    return await this._module.certificateRepository.createOrUpdateCertificate(
-      certificateEntity,
-    );
+    return await this._module.certificateRepository.createOrUpdateCertificate(certificateEntity);
   }
 }
 

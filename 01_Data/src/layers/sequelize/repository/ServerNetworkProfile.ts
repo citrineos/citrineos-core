@@ -11,7 +11,7 @@ import { ServerNetworkProfile } from '../model/Location';
 import { IServerNetworkProfileRepository } from '../../../interfaces';
 
 export class SequelizeServerNetworkProfileRepository extends SequelizeRepository<ServerNetworkProfile> implements IServerNetworkProfileRepository {
-    constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
-        super(config, ServerNetworkProfile.MODEL_NAME, logger, sequelizeInstance);
-    }
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+    super(config, ServerNetworkProfile.MODEL_NAME, logger, sequelizeInstance);
+  }
 }

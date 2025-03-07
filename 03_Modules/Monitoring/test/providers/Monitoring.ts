@@ -1,6 +1,4 @@
-import {
-  OCPP2_0_1
-} from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 
 export const aClearMonitoringResult = (

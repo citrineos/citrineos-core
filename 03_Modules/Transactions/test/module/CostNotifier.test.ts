@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { expect, jest } from '@jest/globals';
 import { ITransactionEventRepository, Transaction } from '@citrineos/data';
-import { AbstractModule, OCPP2_0_1_CallAction, OCPPVersion, } from '@citrineos/base';
+import { AbstractModule, OCPP2_0_1_CallAction, OCPPVersion } from '@citrineos/base';
 import { CostCalculator } from '../../src/module/CostCalculator';
 import { CostNotifier } from '../../src/module/CostNotifier';
 import { aTransaction } from '../providers/TransactionProvider';
@@ -30,11 +30,7 @@ describe('CostNotifier', () => {
       calculateTotalCost: jest.fn(),
     } as unknown as jest.Mocked<CostCalculator>;
 
-    costNotifier = new CostNotifier(
-      module,
-      transactionEventRepository,
-      costCalculator,
-    );
+    costNotifier = new CostNotifier(module, transactionEventRepository, costCalculator);
   });
 
   afterEach(() => {

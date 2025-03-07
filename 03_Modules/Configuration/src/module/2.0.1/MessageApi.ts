@@ -60,9 +60,7 @@ export class ConfigurationOcpp201Api
     const correlationId = uuidv4();
     if (extraQueries) {
       const websocketServerConfigId =
-        extraQueries[
-          SetNetworkProfileExtraQuerystrings.websocketServerConfigId
-          ];
+        extraQueries[SetNetworkProfileExtraQuerystrings.websocketServerConfigId];
       await SetNetworkProfile.build({
         stationId: identifier,
         correlationId,
@@ -134,10 +132,7 @@ export class ConfigurationOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.PublishFirmware,
-    OCPP2_0_1.PublishFirmwareRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.PublishFirmware, OCPP2_0_1.PublishFirmwareRequestSchema)
   publishFirmware(
     identifier: string[],
     tenantId: string,
@@ -218,10 +213,7 @@ export class ConfigurationOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.UpdateFirmware,
-    OCPP2_0_1.UpdateFirmwareRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.UpdateFirmware, OCPP2_0_1.UpdateFirmwareRequestSchema)
   updateFirmware(
     identifier: string[],
     tenantId: string,
@@ -284,10 +276,7 @@ export class ConfigurationOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.TriggerMessage,
-    OCPP2_0_1.TriggerMessageRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.TriggerMessage, OCPP2_0_1.TriggerMessageRequestSchema)
   triggerMessage(
     identifier: string[],
     tenantId: string,
@@ -314,8 +303,7 @@ export class ConfigurationOcpp201Api
    * @return {string} - The generated URL path.
    */
   protected _toMessagePath(input: CallAction): string {
-    const endpointPrefix =
-      this._module.config.modules.configuration.endpointPrefix;
+    const endpointPrefix = this._module.config.modules.configuration.endpointPrefix;
     return super._toMessagePath(input, endpointPrefix);
   }
 }

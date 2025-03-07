@@ -41,21 +41,11 @@ export class Authenticator implements IAuthenticator {
     this._logger.debug(`Starting authentication for identifier: ${identifier}`);
 
     await this._unknownStationFilter.authenticate(identifier, request, options);
-    await this._connectedStationFilter.authenticate(
-      identifier,
-      request,
-      options,
-    );
+    await this._connectedStationFilter.authenticate(identifier, request, options);
     await this._networkProfileFilter.authenticate(identifier, request, options);
-    await this._basicAuthenticationFilter.authenticate(
-      identifier,
-      request,
-      options,
-    );
+    await this._basicAuthenticationFilter.authenticate(identifier, request, options);
 
-    this._logger.debug(
-      `Authentication successful for identifier: ${identifier}`,
-    );
+    this._logger.debug(`Authentication successful for identifier: ${identifier}`);
     return { identifier };
   }
 

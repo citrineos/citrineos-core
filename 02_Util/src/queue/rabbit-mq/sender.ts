@@ -21,10 +21,7 @@ import { ILogObj, Logger } from 'tslog';
 /**
  * Implementation of a {@link IMessageSender} using RabbitMQ as the underlying transport.
  */
-export class RabbitMqSender
-  extends AbstractMessageSender
-  implements IMessageSender
-{
+export class RabbitMqSender extends AbstractMessageSender implements IMessageSender {
   /**
    * Constants
    */

@@ -18,11 +18,7 @@ export type Call = [
 /**
  * Definition of CallResult Message (4.2.2 CALLRESULT)
  */
-export type CallResult = [
-  messageTypeId: MessageTypeId,
-  messageId: string,
-  payload: OcppResponse,
-];
+export type CallResult = [messageTypeId: MessageTypeId, messageId: string, payload: OcppResponse];
 
 /**
  * Definition of CallError Message (4.2.1 CALLERROR)
@@ -263,23 +259,23 @@ export class OcppError extends Error {
 export function mapToCallAction(version: OCPPVersionType, action: string): CallAction {
   // Validate the action string is non-empty
   if (!action || typeof action !== 'string') {
-      throw new Error('Action must be a non-empty string');
+    throw new Error('Action must be a non-empty string');
   }
 
   switch (version) {
-      case 'ocpp1.6':
-          if (action in OCPP1_6_CallAction) {
-              return OCPP1_6_CallAction[action as keyof typeof OCPP1_6_CallAction];
-          }
-          throw new Error(`Invalid OCPP 1.6 action: ${action}`);
+    case 'ocpp1.6':
+      if (action in OCPP1_6_CallAction) {
+        return OCPP1_6_CallAction[action as keyof typeof OCPP1_6_CallAction];
+      }
+      throw new Error(`Invalid OCPP 1.6 action: ${action}`);
 
-      case 'ocpp2.0.1':
-          if (action in OCPP2_0_1_CallAction) {
-              return OCPP2_0_1_CallAction[action as keyof typeof OCPP2_0_1_CallAction];
-          }
-          throw new Error(`Invalid OCPP 2.0.1 action: ${action}`);
+    case 'ocpp2.0.1':
+      if (action in OCPP2_0_1_CallAction) {
+        return OCPP2_0_1_CallAction[action as keyof typeof OCPP2_0_1_CallAction];
+      }
+      throw new Error(`Invalid OCPP 2.0.1 action: ${action}`);
 
-      default:
-          throw new Error(`Unsupported OCPP version: ${version}`);
+    default:
+      throw new Error(`Unsupported OCPP version: ${version}`);
   }
 }

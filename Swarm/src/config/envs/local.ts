@@ -2,12 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  defineConfig,
-  OCPP1_6,
-  OCPP2_0_1,
-  type SystemConfig,
-} from '@citrineos/base';
+import { defineConfig, OCPP1_6, OCPP2_0_1, type SystemConfig } from '@citrineos/base';
 
 export function createLocalConfig(): SystemConfig {
   return defineConfig({

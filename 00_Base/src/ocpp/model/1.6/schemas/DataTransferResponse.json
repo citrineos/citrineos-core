@@ -17,12 +17,7 @@
       "type": "string",
       "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "UnknownMessageId", "UnknownVendorId"],
-      "tsEnumNames": [
-        "Accepted",
-        "Rejected",
-        "UnknownMessageId",
-        "UnknownVendorId"
-      ]
+      "tsEnumNames": ["Accepted", "Rejected", "UnknownMessageId", "UnknownVendorId"]
     }
   }
 }

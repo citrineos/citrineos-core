@@ -103,12 +103,7 @@
           "maxLength": 40
         }
       },
-      "required": [
-        "hashAlgorithm",
-        "issuerNameHash",
-        "issuerKeyHash",
-        "serialNumber"
-      ]
+      "required": ["hashAlgorithm", "issuerNameHash", "issuerKeyHash", "serialNumber"]
     },
     "StatusInfoType": {
       "description": "Element providing more information about the status.\r\n",

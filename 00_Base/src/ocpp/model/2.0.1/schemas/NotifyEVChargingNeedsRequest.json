@@ -48,12 +48,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "energyAmount",
-        "evMinCurrent",
-        "evMaxCurrent",
-        "evMaxVoltage"
-      ]
+      "required": ["energyAmount", "evMinCurrent", "evMaxCurrent", "evMaxVoltage"]
     },
     "ChargingNeedsType": {
       "description": "Charging_ Needs\r\nurn:x-oca:ocpp:uid:2:233249\r\n",

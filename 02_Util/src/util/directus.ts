@@ -46,30 +46,19 @@ export class DirectusUtil implements IFileAccess {
       )
         .with(staticToken(this._config.util.directus?.token))
         .with(rest());
-    } else if (
-      this._config.util.directus?.username &&
-      this._config.util.directus?.password
-    ) {
+    } else if (this._config.util.directus?.username && this._config.util.directus?.password) {
       // Auth with username and password
       client = createDirectus<Schema>(
         `http://${this._config.util.directus?.host}:${this._config.util.directus?.port}`,
       )
         .with(authentication())
         .with(rest());
-      this._logger.info(
-        `Logging into Directus as ${this._config.util.directus.username}`,
-      );
+      this._logger.info(`Logging into Directus as ${this._config.util.directus.username}`);
       client
-        .login(
-          this._config.util.directus.username,
-          this._config.util.directus.password,
-        )
+        .login(this._config.util.directus.username, this._config.util.directus.password)
         .then()
         .catch((error) => {
-          this._logger.error(
-            'DirectusUtil could not perform client login',
-            error,
-          );
+          this._logger.error('DirectusUtil could not perform client login', error);
         });
     } else {
       // No auth
@@ -90,8 +79,7 @@ export class DirectusUtil implements IFileAccess {
       this._logger.info(`Adding Directus Message API flow for ${messagePath}`);
       // Parse action from url: relies on implementation of _toMessagePath in AbstractModuleApi which puts CallAction in final path part
       const lowercaseAction: string = messagePath.split('/').pop() as string;
-      const action =
-        lowercaseAction.charAt(0).toUpperCase() + lowercaseAction.slice(1);
+      const action = lowercaseAction.charAt(0).toUpperCase() + lowercaseAction.slice(1);
       // _addMessageRoute in AbstractModuleApi adds the bodySchema specified in the @MessageEndpoint decorator to the fastify route schema
       // These body schemas are the ones generated directly from the specification using the json-schema-processor in 00_Base
       const bodySchema: any = routeOptions.schema?.body;
@@ -120,16 +108,9 @@ export class DirectusUtil implements IFileAccess {
     return 'http://localhost:8050/files';
   }
 
-  public async uploadFile(
-    fileName: string,
-    content: Buffer,
-    filePath?: string,
-  ): Promise<string> {
+  public async uploadFile(fileName: string, content: Buffer, filePath?: string): Promise<string> {
     let fileType: string | undefined;
-    if (
-      fileName.lastIndexOf('.') > -1 &&
-      fileName.lastIndexOf('.') < fileName.length - 1
-    ) {
+    if (fileName.lastIndexOf('.') > -1 && fileName.lastIndexOf('.') < fileName.length - 1) {
       fileType = fileName.substring(fileName.lastIndexOf('.'));
     }
     const formData = new FormData();
@@ -149,11 +130,7 @@ export class DirectusUtil implements IFileAccess {
     }
   }
 
-  private async addDirectusFlowForAction(
-    action: string,
-    messagePath: string,
-    bodySchema: object,
-  ) {
+  private async addDirectusFlowForAction(action: string, messagePath: string, bodySchema: object) {
     JSONSchemaFaker.option({
       useExamplesValue: true,
       useDefaultValue: true,
@@ -299,11 +276,7 @@ export class DirectusUtil implements IFileAccess {
 
       if (readFlowsResponse.length > 0) {
         errorLogVerb = 'updating';
-        this._logger.info(
-          'Flow already exists in Directus for ',
-          action,
-          '. Updating Flow.',
-        );
+        this._logger.info('Flow already exists in Directus for ', action, '. Updating Flow.');
 
         const existingFlow = readFlowsResponse[0];
         await this.updateMessageApiFlow(
@@ -326,9 +299,7 @@ export class DirectusUtil implements IFileAccess {
         this._logger.info(`Successfully created Directus Flow for ${action}`);
       }
     } catch (error) {
-      this._logger.error(
-        `Error ${errorLogVerb} Directus Flow: ${JSON.stringify(error)}`,
-      );
+      this._logger.error(`Error ${errorLogVerb} Directus Flow: ${JSON.stringify(error)}`);
     }
   }
 
@@ -377,9 +348,7 @@ export class DirectusUtil implements IFileAccess {
     readOperation: Partial<DirectusOperation<Schema>>,
   ): Promise<void> {
     // Update flow
-    const flowUpdateResponse = await this._client.request(
-      updateFlow(flowId, updatedFlow),
-    );
+    const flowUpdateResponse = await this._client.request(updateFlow(flowId, updatedFlow));
 
     // Update read operation
     const readOperationUpdateResponse = await this._client.request(
@@ -393,10 +362,7 @@ export class DirectusUtil implements IFileAccess {
 
     // Update notification operation
     await this._client.request(
-      updateOperation(
-        webhookOperationUpdateResponse.resolve,
-        notificationOperation,
-      ),
+      updateOperation(webhookOperationUpdateResponse.resolve, notificationOperation),
     );
   }
 }

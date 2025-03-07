@@ -92,10 +92,7 @@ export function createDockerConfig() {
       },
       swagger: {
         path: '/docs',
-        logoPath: path.resolve(
-          path.dirname(__filename),
-          '../../assets/certificates/logo.png',
-        ),
+        logoPath: path.resolve(path.dirname(__filename), '../../assets/certificates/logo.png'),
         exposeData: true,
         exposeMessage: true,
       },
@@ -161,8 +158,8 @@ export function createDockerConfig() {
         local: {
           fileName: 'swarm-docker-config.json',
           configDir: './data',
-        }
-      }
+        },
+      },
     },
     logLevel: 2, // debug
     maxCallLengthSeconds: 5,

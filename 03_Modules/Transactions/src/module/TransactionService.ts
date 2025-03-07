@@ -7,12 +7,7 @@ import {
   OCPP2_0_1_Mapper,
   IReservationRepository,
 } from '@citrineos/data';
-import {
-  IMessageContext,
-  MeterValueUtils,
-  OCPP1_6,
-  OCPP2_0_1,
-} from '@citrineos/base';
+import { IMessageContext, MeterValueUtils, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { IAuthorizer } from '@citrineos/util';
 
@@ -40,11 +35,12 @@ export class TransactionService {
   }
 
   async recalculateTotalKwh(transactionDbId: number) {
-    const meterValues = await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-      transactionDbId,
-    );
-    const meterValueTypes = meterValues.map(
-      meterValue => OCPP2_0_1_Mapper.MeterValueMapper.toMeterValueType(meterValue)
+    const meterValues =
+      await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
+        transactionDbId,
+      );
+    const meterValueTypes = meterValues.map((meterValue) =>
+      OCPP2_0_1_Mapper.MeterValueMapper.toMeterValueType(meterValue),
     );
     const totalKwh = MeterValueUtils.getTotalKwh(meterValueTypes);
 
@@ -53,9 +49,7 @@ export class TransactionService {
       { where: { id: transactionDbId }, returning: false },
     );
 
-    this._logger.debug(
-      `Recalculated ${totalKwh} kWh for ${transactionDbId} transaction`,
-    );
+    this._logger.debug(`Recalculated ${totalKwh} kWh for ${transactionDbId} transaction`);
     return totalKwh;
   }
 
@@ -64,9 +58,7 @@ export class TransactionService {
     messageContext: IMessageContext,
   ): Promise<OCPP2_0_1.TransactionEventResponse> {
     const idToken = transactionEvent.idToken!;
-    const authorizations = await this._authorizeRepository.readAllByQuerystring(
-      { ...idToken },
-    );
+    const authorizations = await this._authorizeRepository.readAllByQuerystring({ ...idToken });
 
     const response: OCPP2_0_1.TransactionEventResponse = {
       idTokenInfo: {
@@ -98,10 +90,7 @@ export class TransactionService {
       return response;
     }
 
-    if (
-      idTokenInfo.cacheExpiryDateTime &&
-      new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
-    ) {
+    if (idTokenInfo.cacheExpiryDateTime && new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
       response.idTokenInfo = {
         status: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
         groupIdToken: idTokenInfo.groupIdToken,
@@ -117,15 +106,11 @@ export class TransactionService {
       if (transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started) {
         const hasConcurrent = await this._hasConcurrentTransactions(idToken);
         if (hasConcurrent) {
-          response.idTokenInfo.status =
-            OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx;
+          response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx;
         }
       }
     }
-    this._logger.debug(
-      'idToken Authorization final status:',
-      response.idTokenInfo.status,
-    );
+    this._logger.debug('idToken Authorization final status:', response.idTokenInfo.status);
     return response;
   }
 
@@ -133,24 +118,21 @@ export class TransactionService {
     meterValues: [OCPP2_0_1.MeterValueType, ...OCPP2_0_1.MeterValueType[]],
     transactionDbId?: number | null,
   ) {
-    return Promise.all(meterValues.map(async (meterValue) => {
-      const hasPeriodic: boolean = meterValue.sampledValue?.some(
-        (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
-      );
-      if (transactionDbId && hasPeriodic) {
-        await this._transactionEventRepository.createMeterValue(
-          meterValue,
-          transactionDbId,
+    return Promise.all(
+      meterValues.map(async (meterValue) => {
+        const hasPeriodic: boolean = meterValue.sampledValue?.some(
+          (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
         );
-      } else {
-        await this._transactionEventRepository.createMeterValue(meterValue);
-      }
-    }));
+        if (transactionDbId && hasPeriodic) {
+          await this._transactionEventRepository.createMeterValue(meterValue, transactionDbId);
+        } else {
+          await this._transactionEventRepository.createMeterValue(meterValue);
+        }
+      }),
+    );
   }
 
-  async authorizeOcpp16IdToken(
-    idToken: string,
-  ): Promise<OCPP1_6.StartTransactionResponse> {
+  async authorizeOcpp16IdToken(idToken: string): Promise<OCPP1_6.StartTransactionResponse> {
     const response: OCPP1_6.StartTransactionResponse = {
       idTagInfo: {
         status: OCPP1_6.StartTransactionResponseStatus.Invalid,
@@ -160,26 +142,26 @@ export class TransactionService {
 
     try {
       // Find authorization
-      const authorizations =
-        await this._authorizeRepository.readAllByQuerystring({
-          idToken: idToken,
-          type: null,
-        });
+      const authorizations = await this._authorizeRepository.readAllByQuerystring({
+        idToken: idToken,
+        type: null,
+      });
       if (authorizations.length !== 1) {
-        this._logger.error(`Found invalid authorizations ${JSON.stringify(authorizations)} for idToken: ${idToken}`);
+        this._logger.error(
+          `Found invalid authorizations ${JSON.stringify(authorizations)} for idToken: ${idToken}`,
+        );
         return response;
       }
 
       // Check expiration
       const idTokenInfo = authorizations[0].idTokenInfo;
       if (!idTokenInfo) {
-        response.idTagInfo.status =
-          OCPP1_6.StartTransactionResponseStatus.Accepted;
+        response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Accepted;
         return response;
       }
 
       const idTokenInfoStatus = OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
-        idTokenInfo.status
+        idTokenInfo.status,
       );
       if (idTokenInfoStatus !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
         response.idTagInfo.status = idTokenInfoStatus;
@@ -190,8 +172,7 @@ export class TransactionService {
         idTokenInfo.cacheExpiryDateTime &&
         new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
       ) {
-        response.idTagInfo.status =
-          OCPP1_6.StartTransactionResponseStatus.Expired;
+        response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Expired;
         return response;
       }
 
@@ -201,14 +182,12 @@ export class TransactionService {
           authorizations[0].idToken.idToken,
         );
       if (activeTransactions.length > 0) {
-        response.idTagInfo.status =
-          OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
+        response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
         return response;
       }
 
       // Accept the idToken
-      response.idTagInfo.status =
-        OCPP1_6.StartTransactionResponseStatus.Accepted;
+      response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Accepted;
       response.idTagInfo.expiryDate = idTokenInfo.cacheExpiryDateTime;
       response.idTagInfo.parentIdTag = idTokenInfo.groupIdToken
         ? idTokenInfo.groupIdToken.idToken
@@ -216,8 +195,7 @@ export class TransactionService {
       return response;
     } catch (e) {
       this._logger.error(`Authorization for idToken ${idToken} failed.`, e);
-      response.idTagInfo.status =
-        OCPP1_6.StartTransactionResponseStatus.Invalid;
+      response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Invalid;
       return response;
     }
   }
@@ -259,9 +237,7 @@ export class TransactionService {
     return idTokenInfo;
   }
 
-  private async _hasConcurrentTransactions(
-    idToken: OCPP2_0_1.IdTokenType,
-  ): Promise<boolean> {
+  private async _hasConcurrentTransactions(idToken: OCPP2_0_1.IdTokenType): Promise<boolean> {
     const activeTransactions =
       await this._transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken(
         idToken,

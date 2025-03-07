@@ -1,9 +1,4 @@
-import {
-  CacheNamespace,
-  ICache,
-  notNull,
-  AuthenticationOptions,
-} from '@citrineos/base';
+import { CacheNamespace, ICache, notNull, AuthenticationOptions } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { IncomingMessage } from 'http';
 import { AuthenticatorFilter } from './AuthenticatorFilter';
@@ -24,10 +19,7 @@ export class ConnectedStationFilter extends AuthenticatorFilter {
     return true;
   }
 
-  protected async filter(
-    identifier: string,
-    _request: IncomingMessage,
-  ): Promise<void> {
+  protected async filter(identifier: string, _request: IncomingMessage): Promise<void> {
     const isAlreadyConnected = notNull(
       await this._cache.get(identifier, CacheNamespace.Connections),
     );

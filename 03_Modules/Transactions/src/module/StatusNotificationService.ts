@@ -8,11 +8,7 @@ import {
   StatusNotification,
 } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
-import {
-  CrudRepository,
-  OCPP2_0_1,
-  OCPP1_6
-} from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
 
 export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;
@@ -115,7 +111,7 @@ export class StatusNotificationService {
         ...statusNotificationRequest,
         stationId,
         connectorStatus: statusNotificationRequest.status,
-      })
+      });
       await this._locationRepository.addStatusNotificationToChargingStation(
         stationId,
         statusNotification,
@@ -125,7 +121,9 @@ export class StatusNotificationService {
         connectorId: statusNotificationRequest.connectorId,
         stationId,
         status: statusNotificationRequest.status,
-        timestamp: statusNotificationRequest.timestamp ? statusNotificationRequest.timestamp : (new Date()).toISOString(),
+        timestamp: statusNotificationRequest.timestamp
+          ? statusNotificationRequest.timestamp
+          : new Date().toISOString(),
         errorCode: statusNotificationRequest.errorCode,
         info: statusNotificationRequest.info,
         vendorId: statusNotificationRequest.vendorId,

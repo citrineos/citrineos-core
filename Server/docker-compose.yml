@@ -107,8 +107,8 @@ services:
     image: quay.io/minio/minio
     container_name: minio
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     environment:
       # Use default credentials for simplicity
       MINIO_ROOT_USER: minioadmin
@@ -120,7 +120,7 @@ services:
       - ./data/minio:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
       interval: 30s
       timeout: 10s
       retries: 5
@@ -136,7 +136,7 @@ services:
       /bin/sh -c "
       # Enable command echoing and error reporting
       set -x
-      
+
       echo 'Setting up MinIO alias'
       mc alias set myminio http://minio:9000 minioadmin minioadmin || echo 'FAILED: alias setup'
       "
@@ -186,13 +186,7 @@ services:
       ocpp-db:
         condition: service_healthy
     healthcheck:
-      test:
-        [
-          'CMD',
-          'curl',
-          '-f',
-          'http://data-connector-agent:8081/api/v1/athena/health',
-        ]
+      test: ['CMD', 'curl', '-f', 'http://data-connector-agent:8081/api/v1/athena/health']
       interval: 5s
       timeout: 10s
       retries: 10

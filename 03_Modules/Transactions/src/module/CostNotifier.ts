@@ -47,19 +47,13 @@ export class CostNotifier extends Scheduler {
     );
   }
 
-  async calculateCostAndNotify(
-    transaction: Transaction,
-    tenantId: string,
-  ): Promise<void> {
+  async calculateCostAndNotify(transaction: Transaction, tenantId: string): Promise<void> {
     const cost = await this._costCalculator.calculateTotalCost(
       transaction.stationId,
       transaction.id,
     );
 
-    await this._transactionEventRepository.updateTransactionTotalCostById(
-      cost,
-      transaction.id,
-    );
+    await this._transactionEventRepository.updateTransactionTotalCostById(cost, transaction.id);
 
     await this._module.sendCall(
       transaction.stationId,
@@ -76,11 +70,7 @@ export class CostNotifier extends Scheduler {
     );
   }
 
-  private async _tryNotify(
-    stationId: string,
-    transactionId: string,
-    tenantId: string,
-  ) {
+  private async _tryNotify(stationId: string, transactionId: string, tenantId: string) {
     try {
       const transaction =
         await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
@@ -98,10 +88,7 @@ export class CostNotifier extends Scheduler {
 
       await this.calculateCostAndNotify(transaction, tenantId);
     } catch (error) {
-      this._logger.error(
-        `Failed to send CostUpdated call for ${transactionId} transaction`,
-        error,
-      );
+      this._logger.error(`Failed to send CostUpdated call for ${transactionId} transaction`, error);
     }
   }
 

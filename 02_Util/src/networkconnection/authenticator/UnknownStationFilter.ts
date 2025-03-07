@@ -12,10 +12,7 @@ import { UpgradeUnknownError } from './errors/UnknownError';
 export class UnknownStationFilter extends AuthenticatorFilter {
   private _locationRepository: ILocationRepository;
 
-  constructor(
-    locationRepository: ILocationRepository,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(locationRepository: ILocationRepository, logger?: Logger<ILogObj>) {
     super(logger);
     this._locationRepository = locationRepository;
   }
@@ -24,14 +21,9 @@ export class UnknownStationFilter extends AuthenticatorFilter {
     return !options.allowUnknownChargingStations;
   }
 
-  protected async filter(
-    identifier: string,
-    _request: IncomingMessage,
-  ): Promise<void> {
+  protected async filter(identifier: string, _request: IncomingMessage): Promise<void> {
     const isStationKnown =
-      await this._locationRepository.doesChargingStationExistByStationId(
-        identifier,
-      );
+      await this._locationRepository.doesChargingStationExistByStationId(identifier);
     if (!isStationKnown) {
       throw new UpgradeUnknownError(`Unknown identifier ${identifier}`);
     }

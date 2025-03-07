@@ -90,30 +90,8 @@
       "javaType": "PhaseEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "L1",
-        "L2",
-        "L3",
-        "N",
-        "L1-N",
-        "L2-N",
-        "L3-N",
-        "L1-L2",
-        "L2-L3",
-        "L3-L1"
-      ],
-      "tsEnumNames": [
-        "L1",
-        "L2",
-        "L3",
-        "N",
-        "L1_N",
-        "L2_N",
-        "L3_N",
-        "L1_L2",
-        "L2_L3",
-        "L3_L1"
-      ]
+      "enum": ["L1", "L2", "L3", "N", "L1-N", "L2-N", "L3-N", "L1-L2", "L2-L3", "L3-L1"],
+      "tsEnumNames": ["L1", "L2", "L3", "N", "L1_N", "L2_N", "L3_N", "L1_L2", "L2_L3", "L3_L1"]
     },
     "ReadingContextEnumType": {
       "description": "Sampled_ Value. Context. Reading_ Context_ Code\r\nurn:x-oca:ocpp:uid:1:569261\r\nType of detail value: start, end or sample. Default = \"Sample.Periodic\"\r\n",
@@ -231,12 +209,7 @@
           "maxLength": 2500
         }
       },
-      "required": [
-        "signedMeterData",
-        "signingMethod",
-        "encodingMethod",
-        "publicKey"
-      ]
+      "required": ["signedMeterData", "signingMethod", "encodingMethod", "publicKey"]
     },
     "UnitOfMeasureType": {
       "description": "Represents a UnitOfMeasure with a multiplier\r\n",

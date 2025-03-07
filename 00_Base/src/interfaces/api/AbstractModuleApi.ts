@@ -33,15 +33,18 @@ import { AuthorizationSecurity } from './AuthorizationSecurity';
 /**
  * Abstract module api class implementation.
  */
-export abstract class AbstractModuleApi<T extends IModule>
-  implements IModuleApi
-{
+export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi {
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
   private readonly _ocppVersion: OCPPVersion | null;
 
-  constructor(module: T, server: FastifyInstance, ocppVersion: OCPPVersion | null, logger?: Logger<ILogObj>) {
+  constructor(
+    module: T,
+    server: FastifyInstance,
+    ocppVersion: OCPPVersion | null,
+    logger?: Logger<ILogObj>,
+  ) {
     this._module = module;
     this._server = server;
     this._ocppVersion = ocppVersion;
@@ -114,10 +117,7 @@ export abstract class AbstractModuleApi<T extends IModule>
     bodySchema: object,
     optionalQuerystrings?: Record<string, any>,
   ): void {
-    this._logger.debug(
-      `Adding message route for ${action}`,
-      this._toMessagePath(action),
-    );
+    this._logger.debug(`Adding message route for ${action}`, this._toMessagePath(action));
 
     /**
      * Executes the handler function for the given request.
@@ -131,8 +131,7 @@ export abstract class AbstractModuleApi<T extends IModule>
         Querystring: Record<string, any>;
       }>,
     ): Promise<IMessageConfirmation[]> => {
-      const { identifier, tenantId, callbackUrl, ...extraQueries } =
-        request.query;
+      const { identifier, tenantId, callbackUrl, ...extraQueries } = request.query;
 
       const identifiers = Array.isArray(identifier) ? identifier : [identifier];
 
@@ -257,11 +256,7 @@ export abstract class AbstractModuleApi<T extends IModule>
       }>,
       reply: FastifyReply,
     ): Promise<unknown> =>
-      (
-        method.call(this, request, reply) as Promise<
-          undefined | string | object
-        >
-      ).catch((err) => {
+      (method.call(this, request, reply) as Promise<undefined | string | object>).catch((err) => {
         // TODO: figure out better error codes & messages
         this._logger.error('Error in handling data route', err);
         const statusCode = err.statusCode ? err.statusCode : 500;
@@ -301,10 +296,7 @@ export abstract class AbstractModuleApi<T extends IModule>
     }
   }
 
-  private registerSchemaForOpts = (
-    fastifyInstance: FastifyInstance,
-    _opts: any,
-  ) => {
+  private registerSchemaForOpts = (fastifyInstance: FastifyInstance, _opts: any) => {
     if (_opts.schema['querystring']) {
       _opts.schema['querystring'] = this.registerSchema(
         fastifyInstance,
@@ -315,27 +307,18 @@ export abstract class AbstractModuleApi<T extends IModule>
       _opts.schema['body'] = this.registerSchema(
         fastifyInstance,
         _opts.schema['body'],
-        this._ocppVersion ? `${this._ocppVersion}-` : ''
+        this._ocppVersion ? `${this._ocppVersion}-` : '',
       );
     }
     if (_opts.schema['params']) {
-      _opts.schema['params'] = this.registerSchema(
-        fastifyInstance,
-        _opts.schema['params'],
-      );
+      _opts.schema['params'] = this.registerSchema(fastifyInstance, _opts.schema['params']);
     }
     if (_opts.schema['headers']) {
-      _opts.schema['headers'] = this.registerSchema(
-        fastifyInstance,
-        _opts.schema['headers'],
-      );
+      _opts.schema['headers'] = this.registerSchema(fastifyInstance, _opts.schema['headers']);
     }
     if (_opts.schema['response']) {
       _opts.schema['response'] = {
-        200: this.registerSchema(
-          fastifyInstance,
-          _opts.schema['response'][200],
-        ),
+        200: this.registerSchema(fastifyInstance, _opts.schema['response'][200]),
       };
     }
   };
@@ -380,10 +363,7 @@ export abstract class AbstractModuleApi<T extends IModule>
             property.$ref = property.$ref.replace('#/definitions/', '');
           }
           if (property.items && property.items.$ref) {
-            property.items.$ref = property.items.$ref.replace(
-              '#/definitions/',
-              '',
-            );
+            property.items.$ref = property.items.$ref.replace('#/definitions/', '');
           }
         });
       }
@@ -407,19 +387,19 @@ export abstract class AbstractModuleApi<T extends IModule>
 
   protected registerSystemConfigRoutes(module: T) {
     this._addDataRoute.call(
-        this,
-        OCPP2_0_1_Namespace.SystemConfig,
-        () => new Promise((resolve) => resolve(module.config)),
-        HttpMethod.Get,
+      this,
+      OCPP2_0_1_Namespace.SystemConfig,
+      () => new Promise((resolve) => resolve(module.config)),
+      HttpMethod.Get,
     );
     this._addDataRoute.call(
-        this,
-        OCPP2_0_1_Namespace.SystemConfig,
-        async (request: FastifyRequest<{ Body: SystemConfig }>) => {
-          await ConfigStoreFactory.getInstance().saveConfig(request.body);
-          module.config = request.body;
-        },
-        HttpMethod.Put,
+      this,
+      OCPP2_0_1_Namespace.SystemConfig,
+      async (request: FastifyRequest<{ Body: SystemConfig }>) => {
+        await ConfigStoreFactory.getInstance().saveConfig(request.body);
+        module.config = request.body;
+      },
+      HttpMethod.Put,
     );
   }
 
@@ -439,11 +419,7 @@ export abstract class AbstractModuleApi<T extends IModule>
       }
 
       // Remove `additionalItems` if `items` is not an array
-      if (
-        'items' in obj &&
-        !Array.isArray(obj.items) &&
-        'additionalItems' in obj
-      ) {
+      if ('items' in obj && !Array.isArray(obj.items) && 'additionalItems' in obj) {
         delete obj.additionalItems;
       }
 
@@ -475,7 +451,10 @@ export abstract class AbstractModuleApi<T extends IModule>
    */
   protected _toMessagePath(input: CallAction, prefix?: string): string {
     const endpointPrefix = prefix || '';
-    const endpointVersion = (this._ocppVersion ? this._ocppVersion : OCPPVersion.OCPP2_0_1).replace(/^ocpp/, "");
+    const endpointVersion = (this._ocppVersion ? this._ocppVersion : OCPPVersion.OCPP2_0_1).replace(
+      /^ocpp/,
+      '',
+    );
     return `/ocpp/${endpointVersion}${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
   }
 

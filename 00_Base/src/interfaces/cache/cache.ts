@@ -54,12 +54,7 @@ export interface ICache {
    * @param {number} [expireSeconds] - The number of seconds after which the key should expire.
    * @returns {Promise<boolean>} - Returns true if the value was set successfully.
    * */
-  set(
-    key: string,
-    value: string,
-    namespace?: string,
-    expireSeconds?: number,
-  ): Promise<boolean>;
+  set(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean>;
 
   /**
    * Sets a value asynchronously in the underlying cache if it doesn't exist. Returns false if the key already exists.

@@ -64,8 +64,7 @@ export class SmartChargingOcpp201Api
         if (!chargingProfileCriteria) {
           responses.push({
             success: false,
-            payload:
-              'Either chargingProfileId or chargingProfileCriteria must be provided',
+            payload: 'Either chargingProfileId or chargingProfileCriteria must be provided',
           });
           continue;
         } else {
@@ -86,8 +85,7 @@ export class SmartChargingOcpp201Api
         if (chargingProfileCriteria) {
           responses.push({
             success: false,
-            payload:
-              'chargingProfileCriteria is not needed when chargingProfileId is provided.',
+            payload: 'chargingProfileCriteria is not needed when chargingProfileId is provided.',
           });
           continue;
         }
@@ -96,8 +94,7 @@ export class SmartChargingOcpp201Api
       // OCPP 2.0.1 Part 2 K10.FR.06
       if (
         chargingProfileCriteria?.chargingProfilePurpose ===
-        OCPP2_0_1.ChargingProfilePurposeEnumType
-          .ChargingStationExternalConstraints
+        OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationExternalConstraints
       ) {
         responses.push({
           success: false,
@@ -162,10 +159,7 @@ export class SmartChargingOcpp201Api
     }
 
     // Validate ChargingProfileCriterionType.chargingProfileId
-    if (
-      chargingProfile.chargingProfileId &&
-      chargingProfile.chargingProfileId.length > 1
-    ) {
+    if (chargingProfile.chargingProfileId && chargingProfile.chargingProfileId.length > 1) {
       const chargingProfilesEntries =
         await this._module.deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
           'Entries',
@@ -174,8 +168,7 @@ export class SmartChargingOcpp201Api
       if (
         chargingProfilesEntries &&
         chargingProfilesEntries.maxLimit &&
-        chargingProfile.chargingProfileId.length >
-          chargingProfilesEntries.maxLimit
+        chargingProfile.chargingProfileId.length > chargingProfilesEntries.maxLimit
       ) {
         return identifier.map(() => ({
           success: false,
@@ -215,9 +208,7 @@ export class SmartChargingOcpp201Api
     return Promise.all(
       identifier.map(async (id) => {
         this._logger.info(
-          `Received SetChargingProfile for station ${id}: ${JSON.stringify(
-            request,
-          )}`,
+          `Received SetChargingProfile for station ${id}: ${JSON.stringify(request)}`,
         );
 
         const chargingProfile = request.chargingProfile;
@@ -235,19 +226,14 @@ export class SmartChargingOcpp201Api
         } catch (error) {
           return {
             success: false,
-            payload:
-              error instanceof Error ? error.message : JSON.stringify(error),
+            payload: error instanceof Error ? error.message : JSON.stringify(error),
           };
         }
 
         // Additional use case checks
         const now = new Date();
-        const validFrom = chargingProfile.validFrom
-          ? new Date(chargingProfile.validFrom)
-          : null;
-        const validTo = chargingProfile.validTo
-          ? new Date(chargingProfile.validTo)
-          : null;
+        const validFrom = chargingProfile.validFrom ? new Date(chargingProfile.validFrom) : null;
+        const validTo = chargingProfile.validTo ? new Date(chargingProfile.validTo) : null;
 
         // OCPP 2.0.1 Part 2 K01.FR.36
         if (validFrom && validFrom.getTime() > now.getTime()) {
@@ -273,8 +259,7 @@ export class SmartChargingOcpp201Api
           if (!chargingProfile.transactionId) {
             return {
               success: false,
-              payload:
-                'Missing transactionId for chargingProfilePurpose TxProfile.',
+              payload: 'Missing transactionId for chargingProfilePurpose TxProfile.',
             };
           }
           // OCPP 2.0.1 Part 2 K01.FR.09
@@ -297,11 +282,10 @@ export class SmartChargingOcpp201Api
             };
           }
 
-          const evse =
-            await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
-              request.evseId,
-              null,
-            );
+          const evse = await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
+            request.evseId,
+            null,
+          );
           if (!evse) {
             return {
               success: false,
@@ -317,10 +301,7 @@ export class SmartChargingOcpp201Api
               evse.databaseId,
               transaction.id,
             );
-          if (
-            !receivedChargingNeeds &&
-            chargingProfile.chargingSchedule.length > 1
-          ) {
+          if (!receivedChargingNeeds && chargingProfile.chargingSchedule.length > 1) {
             return {
               success: false,
               payload: `No prior NotifyEVChargingNeedsReq found for this transaction ${transaction.id}. Only one ChargingScheduleType allowed without it.`,
@@ -328,15 +309,14 @@ export class SmartChargingOcpp201Api
           }
 
           // OCPP 2.0.1 Part 2 K01.FR.39
-          const numExisted =
-            await this._module.chargingProfileRepository.existByQuery({
-              where: {
-                stackLevel: chargingProfile.stackLevel,
-                transactionDatabaseId: transaction.id,
-                chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
-                isActive: true,
-              },
-            });
+          const numExisted = await this._module.chargingProfileRepository.existByQuery({
+            where: {
+              stackLevel: chargingProfile.stackLevel,
+              transactionDatabaseId: transaction.id,
+              chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
+              isActive: true,
+            },
+          });
           if (numExisted > 0) {
             return {
               success: false,
@@ -345,8 +325,7 @@ export class SmartChargingOcpp201Api
           }
         } else if (
           chargingProfile.chargingProfilePurpose ===
-          OCPP2_0_1.ChargingProfilePurposeEnumType
-            .ChargingStationExternalConstraints
+          OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationExternalConstraints
         ) {
           // OCPP 2.0.1 Part 2 K01.FR.22
           return {
@@ -362,8 +341,7 @@ export class SmartChargingOcpp201Api
           ) {
             // OCPP 2.0.1 Part 2 K01.FR.38
             if (
-              chargingProfile.chargingProfileKind ===
-              OCPP2_0_1.ChargingProfileKindEnumType.Relative
+              chargingProfile.chargingProfileKind === OCPP2_0_1.ChargingProfileKindEnumType.Relative
             ) {
               return {
                 success: false,
@@ -384,9 +362,7 @@ export class SmartChargingOcpp201Api
               },
             });
           this._logger.info(
-            `Found existing charging profiles: ${JSON.stringify(
-              existedChargingProfiles,
-            )}`,
+            `Found existing charging profiles: ${JSON.stringify(existedChargingProfiles)}`,
           );
           if (existedChargingProfiles.length > 0) {
             if (!validTo) {
@@ -400,10 +376,7 @@ export class SmartChargingOcpp201Api
                 const existedValidTo = existedProfile.validTo
                   ? new Date(existedProfile.validTo)
                   : null;
-                if (
-                  !existedValidTo ||
-                  existedValidTo.getTime() >= validTo.getTime()
-                ) {
+                if (!existedValidTo || existedValidTo.getTime() >= validTo.getTime()) {
                   return {
                     success: false,
                     payload:
@@ -444,8 +417,7 @@ export class SmartChargingOcpp201Api
           if (
             chargingProfile.chargingProfileKind ===
               OCPP2_0_1.ChargingProfileKindEnumType.Absolute ||
-            chargingProfile.chargingProfileKind ===
-              OCPP2_0_1.ChargingProfileKindEnumType.Recurring
+            chargingProfile.chargingProfileKind === OCPP2_0_1.ChargingProfileKindEnumType.Recurring
           ) {
             // OCPP 2.0.1 Part 2 K01.FR.40
             if (!chargingSchedule.startSchedule) {
@@ -457,8 +429,7 @@ export class SmartChargingOcpp201Api
               };
             }
           } else if (
-            chargingProfile.chargingProfileKind ===
-            OCPP2_0_1.ChargingProfileKindEnumType.Relative
+            chargingProfile.chargingProfileKind === OCPP2_0_1.ChargingProfileKindEnumType.Relative
           ) {
             // OCPP 2.0.1 Part 2 K01.FR.41
             if (chargingSchedule.startSchedule) {
@@ -472,10 +443,7 @@ export class SmartChargingOcpp201Api
           }
 
           // OCPP 2.0.1 Part 2 K01.FR.26
-          if (
-            rateUnitMemberList &&
-            !rateUnitMemberList.has(chargingSchedule.chargingRateUnit)
-          ) {
+          if (rateUnitMemberList && !rateUnitMemberList.has(chargingSchedule.chargingRateUnit)) {
             return {
               success: false,
               payload:
@@ -573,35 +541,26 @@ export class SmartChargingOcpp201Api
       identifier.map(async (id) => {
         // OCPP 2.0.1 Part 2 K08.FR.05
         if (request.evseId !== 0) {
-          const evse =
-            await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
-              request.evseId,
-              null,
-            );
+          const evse = await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
+            request.evseId,
+            null,
+          );
           if (!evse) {
             return {
               success: false,
               payload: `EVSE ${request.evseId} not found for station ${id}.`,
             };
           }
-          this._logger.info(
-            `Found evse for station ${id}: ${JSON.stringify(evse)}`,
-          );
+          this._logger.info(`Found evse for station ${id}: ${JSON.stringify(evse)}`);
         }
 
         // OCPP 2.0.1 Part 2 K08.FR.07
         if (request.chargingRateUnit) {
-          const rateUnitMemberList =
-            await this._getChargingRateUnitMemberList();
-          if (
-            rateUnitMemberList &&
-            !rateUnitMemberList.has(request.chargingRateUnit)
-          ) {
+          const rateUnitMemberList = await this._getChargingRateUnitMemberList();
+          if (rateUnitMemberList && !rateUnitMemberList.has(request.chargingRateUnit)) {
             return {
               success: false,
-              payload:
-                `chargingRateUnit SHALL be one of ` +
-                `[${Array.from(rateUnitMemberList)}].`,
+              payload: `chargingRateUnit SHALL be one of ` + `[${Array.from(rateUnitMemberList)}].`,
             };
           }
         }
@@ -626,8 +585,7 @@ export class SmartChargingOcpp201Api
    * @return {string} - The generated URL path.
    */
   protected _toMessagePath(input: CallAction): string {
-    const endpointPrefix =
-      this._module.config.modules.smartcharging?.endpointPrefix;
+    const endpointPrefix = this._module.config.modules.smartcharging?.endpointPrefix;
     return super._toMessagePath(input, endpointPrefix);
   }
 
@@ -638,32 +596,24 @@ export class SmartChargingOcpp201Api
    * @param {CallAction} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(
-    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
-  ): string {
-    const endpointPrefix =
-      this._module.config.modules.smartcharging?.endpointPrefix;
+  protected _toDataPath(input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace): string {
+    const endpointPrefix = this._module.config.modules.smartcharging?.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
   }
 
   /**
    * Returns a set of allowed RateUnit values (if defined on the station).
    */
-  private async _getChargingRateUnitMemberList(): Promise<
-    Set<string> | undefined
-  > {
+  private async _getChargingRateUnitMemberList(): Promise<Set<string> | undefined> {
     const chargingScheduleChargingRateUnit =
       await this._module.deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
         'RateUnit',
         null,
       );
-    this._logger.info(
-      `Found RateUnit: ${JSON.stringify(chargingScheduleChargingRateUnit)}`,
-    );
+    this._logger.info(`Found RateUnit: ${JSON.stringify(chargingScheduleChargingRateUnit)}`);
     if (
       chargingScheduleChargingRateUnit &&
-      chargingScheduleChargingRateUnit.dataType ===
-        OCPP2_0_1.DataEnumType.MemberList &&
+      chargingScheduleChargingRateUnit.dataType === OCPP2_0_1.DataEnumType.MemberList &&
       chargingScheduleChargingRateUnit.valuesList
     ) {
       return stringToSet(chargingScheduleChargingRateUnit.valuesList);

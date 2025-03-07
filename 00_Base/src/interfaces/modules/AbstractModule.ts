@@ -9,12 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from '.';
 import { OcppRequest, OcppResponse } from '../..';
 import { SystemConfig } from '../../config/types';
-import {
-  CallAction,
-  ErrorCode,
-  OcppError,
-  OCPPVersionType,
-} from '../../ocpp/rpc/message';
+import { CallAction, ErrorCode, OcppError, OCPPVersionType } from '../../ocpp/rpc/message';
 import { RequestBuilder } from '../../util/request';
 import { ICache } from '../cache/cache';
 import { CacheNamespace, IWebsocketConnection } from '../cache/types';
@@ -91,9 +86,7 @@ export abstract class AbstractModule implements IModule {
   set config(config: SystemConfig) {
     this._config = config;
     // Update all necessary settings for hot reload
-    this._logger.info(
-      `Updating system configuration for ${this._eventGroup} module...`,
-    );
+    this._logger.info(`Updating system configuration for ${this._eventGroup} module...`);
     this._logger.settings.minLevel = this._config.logLevel;
   }
 
@@ -123,14 +116,9 @@ export abstract class AbstractModule implements IModule {
     }
     try {
       const handlerDefinition = (
-        Reflect.getMetadata(
-          AS_HANDLER_METADATA,
-          this.constructor,
-        ) as Array<IHandlerDefinition>
+        Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>
       )
-        .filter(
-          (h) => h.protocol === message.protocol && h.action === message.action,
-        )
+        .filter((h) => h.protocol === message.protocol && h.action === message.action)
         .pop();
       if (handlerDefinition) {
         await handlerDefinition.method.call(this, message, props);
@@ -138,10 +126,7 @@ export abstract class AbstractModule implements IModule {
         throw new OcppError(
           message.context.correlationId,
           ErrorCode.NotSupported,
-          'No handler found for action: ' +
-            message.action +
-            ' at module ' +
-            this._eventGroup,
+          'No handler found for action: ' + message.action + ' at module ' + this._eventGroup,
         );
       }
     } catch (error) {
@@ -181,9 +166,7 @@ export abstract class AbstractModule implements IModule {
    * @param props The {@link HandlerProperties} for this {@link IMessage} containing implementation specific metadata. Metadata is not used in the base implementation.
    */
 
-  async handleMessageApiCallback(
-    message: IMessage<OcppResponse>,
-  ): Promise<void> {
+  async handleMessageApiCallback(message: IMessage<OcppResponse>): Promise<void> {
     const url: string | null = await this._cache.get(
       message.context.correlationId,
       AbstractModule.CALLBACK_URL_CACHE_PREFIX + message.context.stationId,
@@ -242,8 +225,7 @@ export abstract class AbstractModule implements IModule {
     correlationId?: string,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
-    const _correlationId: string =
-      correlationId === undefined ? uuidv4() : correlationId;
+    const _correlationId: string = correlationId === undefined ? uuidv4() : correlationId;
     if (callbackUrl) {
       // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
       this._cache
@@ -257,45 +239,39 @@ export abstract class AbstractModule implements IModule {
         .catch((error) => this._logger.error('Failed setting cache: ', error));
     }
     // TODO: Future - Compound key with tenantId
-    return this._cache
-      .get<string>(identifier, CacheNamespace.Connections)
-      .then((connection) => {
-        if (connection) {
-          const websocketConnection: IWebsocketConnection =
-            JSON.parse(connection);
-          if (websocketConnection.protocol !== protocol) {
-            this._logger.error(
-              `Failed sending call. Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: `,
-              identifier,
-            );
-            return Promise.resolve({
-              success: false,
-              payload: `Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: '${identifier}'`,
-            });
-          }
-          return this._sender.sendRequest(
-            RequestBuilder.buildCall(
-              identifier,
-              _correlationId,
-              tenantId,
-              action,
-              payload,
-              this._eventGroup,
-              origin,
-              protocol,
-            ),
-          );
-        } else {
+    return this._cache.get<string>(identifier, CacheNamespace.Connections).then((connection) => {
+      if (connection) {
+        const websocketConnection: IWebsocketConnection = JSON.parse(connection);
+        if (websocketConnection.protocol !== protocol) {
           this._logger.error(
-            'Failed sending call. No connection found for identifier: ',
+            `Failed sending call. Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: `,
             identifier,
           );
           return Promise.resolve({
             success: false,
-            payload: 'No connection found for identifier: ' + identifier,
+            payload: `Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: '${identifier}'`,
           });
         }
-      });
+        return this._sender.sendRequest(
+          RequestBuilder.buildCall(
+            identifier,
+            _correlationId,
+            tenantId,
+            action,
+            payload,
+            this._eventGroup,
+            origin,
+            protocol,
+          ),
+        );
+      } else {
+        this._logger.error('Failed sending call. No connection found for identifier: ', identifier);
+        return Promise.resolve({
+          success: false,
+          payload: 'No connection found for identifier: ' + identifier,
+        });
+      }
+    });
   }
 
   /**
@@ -419,9 +395,7 @@ export abstract class AbstractModule implements IModule {
   public async initHandlers(): Promise<void> {
     const result = await this._initHandler(this._requests, this._responses);
     if (!result) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
+      throw new Error('Could not initialize module due to failure in handler initialization.');
     }
     this._logger.info(`Initialized in ${Date.now() - this.startTime}ms...`);
   }
@@ -433,10 +407,7 @@ export abstract class AbstractModule implements IModule {
    * @param {CallAction[]} responses - The array of call actions for responses.
    * @return {Promise<boolean>} Returns a promise that resolves to a boolean indicating if the initialization was successful.
    */
-  private async _initHandler(
-    requests: CallAction[],
-    responses: CallAction[],
-  ): Promise<boolean> {
+  private async _initHandler(requests: CallAction[], responses: CallAction[]): Promise<boolean> {
     this._handler.module = this;
 
     let success = await this._handler.subscribe(
@@ -449,13 +420,9 @@ export abstract class AbstractModule implements IModule {
 
     success =
       success &&
-      (await this._handler.subscribe(
-        this._eventGroup.toString() + '_responses',
-        responses,
-        {
-          state: MessageState.Response.toString(),
-        },
-      ));
+      (await this._handler.subscribe(this._eventGroup.toString() + '_responses', responses, {
+        state: MessageState.Response.toString(),
+      }));
 
     return success;
   }
