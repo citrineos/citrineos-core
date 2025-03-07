@@ -273,6 +273,9 @@ export const systemConfigInputSchema = z.object({
     host: z.string().default('localhost').optional(),
     port: z.number().int().positive().default(8085).optional(),
   }),
+  userPreferences: z.object({
+    telemetryConsent: z.boolean().default(false).optional(),
+  }),
 });
 
 export type SystemConfigInput = z.infer<typeof systemConfigInputSchema>;
@@ -573,6 +576,9 @@ export const systemConfigSchema = z
     ocpiServer: z.object({
       host: z.string(),
       port: z.number().int().positive(),
+    }),
+    userPreferences: z.object({
+      telemetryConsent: z.boolean().optional(),
     }),
   })
   .refine((obj) => obj.maxCachingSeconds >= obj.maxCallLengthSeconds, {

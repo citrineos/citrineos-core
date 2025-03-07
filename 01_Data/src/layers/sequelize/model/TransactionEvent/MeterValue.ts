@@ -7,6 +7,7 @@ import { Namespace } from '@citrineos/base';
 import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { TransactionEvent } from './TransactionEvent';
 import { Transaction } from './Transaction';
+import { StopTransaction } from './StopTransaction';
 
 @Table
 export class MeterValue extends Model {
@@ -19,6 +20,10 @@ export class MeterValue extends Model {
   @ForeignKey(() => Transaction)
   @Column(DataType.INTEGER)
   declare transactionDatabaseId?: number | null;
+
+  @ForeignKey(() => StopTransaction)
+  @Column(DataType.INTEGER)
+  declare stopTransactionDatabaseId?: number | null;
 
   @Column(DataType.JSON)
   declare sampledValue: [object, ...object[]];
