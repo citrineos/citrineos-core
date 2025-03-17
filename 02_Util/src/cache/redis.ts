@@ -120,12 +120,7 @@ export class RedisCache implements ICache {
     });
   }
 
-  set(
-    key: string,
-    value: string,
-    namespace?: string,
-    expireSeconds?: number,
-  ): Promise<boolean> {
+  set(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean> {
     namespace = namespace || 'default';
     key = `${namespace}:${key}`;
     const setOptions = expireSeconds ? { EX: expireSeconds } : undefined;
@@ -146,11 +141,7 @@ export class RedisCache implements ICache {
     namespace = namespace || 'default';
     key = `${namespace}:${key}`;
     return this._client
-      .set(
-        key,
-        value,
-        expireSeconds ? { EX: expireSeconds, NX: true } : { NX: true },
-      )
+      .set(key, value, expireSeconds ? { EX: expireSeconds, NX: true } : { NX: true })
       .then((result) => {
         if (result) {
           return result === 'OK';

@@ -1,8 +1,6 @@
 import { IVariableMonitoringRepository } from '@citrineos/data';
 import { MonitoringService } from '../../src/module/MonitoringService';
-import {
-  OCPP2_0_1
-} from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { aClearMonitoringResult } from '../providers/Monitoring';
 
 describe('MonitoringService', () => {
@@ -29,10 +27,7 @@ describe('MonitoringService', () => {
         ),
       ];
 
-      await monitoringService.processClearMonitoringResult(
-        'stationId',
-        monitoringResults,
-      );
+      await monitoringService.processClearMonitoringResult('stationId', monitoringResults);
 
       expect(
         mockVariableMonitoringRepository.rejectVariableMonitoringByIdAndStationId,
@@ -49,10 +44,7 @@ describe('MonitoringService', () => {
         ),
       ];
 
-      await monitoringService.processClearMonitoringResult(
-        'stationId',
-        monitoringResults,
-      );
+      await monitoringService.processClearMonitoringResult('stationId', monitoringResults);
 
       expect(
         mockVariableMonitoringRepository.rejectVariableMonitoringByIdAndStationId,

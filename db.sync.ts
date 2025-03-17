@@ -3,10 +3,9 @@ process.env.APP_ENV = 'local'; // needs to be before systemConfig import - caref
 import { DefaultSequelizeInstance } from '@citrineos/data';
 import { systemConfig } from './Server/src/config';
 
-
 async function initializeDatabase() {
-    const loadedSystemConfig = await systemConfig;
-    return DefaultSequelizeInstance.getInstance(loadedSystemConfig);
+  const loadedSystemConfig = await systemConfig;
+  return DefaultSequelizeInstance.getInstance(loadedSystemConfig);
 }
 
 export const sequelize = initializeDatabase();

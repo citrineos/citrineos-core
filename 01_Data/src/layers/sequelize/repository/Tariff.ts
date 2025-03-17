@@ -10,7 +10,10 @@ import { SystemConfig } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { Op } from 'sequelize';
 
-export class SequelizeTariffRepository extends SequelizeRepository<Tariff> implements ITariffRepository {
+export class SequelizeTariffRepository
+  extends SequelizeRepository<Tariff>
+  implements ITariffRepository
+{
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, Tariff.MODEL_NAME, logger, sequelizeInstance);
   }

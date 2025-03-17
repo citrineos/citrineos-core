@@ -9,7 +9,8 @@ import {
   OCPP2_0_1_CALL_SCHEMA_MAP,
   OCPP1_6_CALL_SCHEMA_MAP,
   OCPP2_0_1_CallAction,
-  SystemConfig, OCPP1_6_CallAction,
+  SystemConfig,
+  OCPP1_6_CallAction,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 
@@ -35,9 +36,7 @@ export class BootNotificationService {
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  determineBootStatus(
-    bootConfig: Boot | undefined,
-  ): OCPP2_0_1.RegistrationStatusEnumType {
+  determineBootStatus(bootConfig: Boot | undefined): OCPP2_0_1.RegistrationStatusEnumType {
     let bootStatus = bootConfig
       ? OCPP2_0_1_Mapper.BootMapper.toRegistrationStatusEnumType(bootConfig.status)
       : this._config.ocpp2_0_1!.unknownChargerStatus;
@@ -52,18 +51,11 @@ export class BootNotificationService {
         ) {
           needToGetBaseReport = bootConfig.getBaseReportOnPending;
         }
-        if (
-          bootConfig.pendingBootSetVariables &&
-          bootConfig.pendingBootSetVariables.length > 0
-        ) {
+        if (bootConfig.pendingBootSetVariables && bootConfig.pendingBootSetVariables.length > 0) {
           needToSetVariables = true;
         }
       }
-      if (
-        !needToGetBaseReport &&
-        !needToSetVariables &&
-        this._config.ocpp2_0_1!.autoAccept
-      ) {
+      if (!needToGetBaseReport && !needToSetVariables && this._config.ocpp2_0_1!.autoAccept) {
         bootStatus = OCPP2_0_1.RegistrationStatusEnumType.Accepted;
       }
     }
@@ -94,8 +86,7 @@ export class BootNotificationService {
     bootNotificationResponse: OCPP2_0_1.BootNotificationResponse,
     stationId: string,
   ): Promise<Boot> {
-    let bootConfigDbEntity: Boot | undefined =
-      await this._bootRepository.readByKey(stationId);
+    let bootConfigDbEntity: Boot | undefined = await this._bootRepository.readByKey(stationId);
     if (!bootConfigDbEntity) {
       const unknownChargerBootConfig: BootConfig = {
         status: bootNotificationResponse.status,
@@ -131,9 +122,7 @@ export class BootNotificationService {
     bootNotificationResponseStatus: OCPP2_0_1.RegistrationStatusEnumType,
   ): Promise<void> {
     // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
-    if (
-      bootNotificationResponseStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted
-    ) {
+    if (bootNotificationResponseStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted) {
       if (cachedBootStatus) {
         // Undo blacklisting of charger-originated actions
         const promises = Array.from(OCPP2_0_1_CALL_SCHEMA_MAP).map(async ([action]) => {
@@ -169,12 +158,7 @@ export class BootNotificationService {
     // Commenting out this line, using requestId === 0 until fixed (10/26/2023)
     // const requestId = Math.floor(Math.random() * ConfigurationModule.GET_BASE_REPORT_REQUEST_ID_MAX);
     const requestId = 0;
-    await this._cache.set(
-      requestId.toString(),
-      'ongoing',
-      stationId,
-      maxCachingSeconds,
-    );
+    await this._cache.set(requestId.toString(), 'ongoing', stationId, maxCachingSeconds);
 
     return {
       requestId: requestId,
@@ -220,14 +204,10 @@ export class BootNotificationService {
       if (getBaseReportCacheValue === 'complete') {
         this._logger.debug('GetBaseReport process successful.'); // All NotifyReports have been processed
       } else {
-        throw new Error(
-          'GetBaseReport process failed--message timed out without a response.',
-        );
+        throw new Error('GetBaseReport process failed--message timed out without a response.');
       }
     } else {
-      throw new Error(
-        `GetBaseReport failed: ${JSON.stringify(getBaseReportMessageConfirmation)}`,
-      );
+      throw new Error(`GetBaseReport failed: ${JSON.stringify(getBaseReportMessageConfirmation)}`);
     }
   }
 
@@ -236,25 +216,25 @@ export class BootNotificationService {
    */
 
   determineOcpp16BootStatus(
-      bootConfig: BootConfig | undefined,
+    bootConfig: BootConfig | undefined,
   ): OCPP1_6.BootNotificationResponseStatus {
     let bootStatus = bootConfig
-        ? OCPP1_6_Mapper.BootMapper.toRegistrationStatusEnumType(bootConfig.status)
-        : this._config.ocpp1_6!.unknownChargerStatus;
+      ? OCPP1_6_Mapper.BootMapper.toRegistrationStatusEnumType(bootConfig.status)
+      : this._config.ocpp1_6!.unknownChargerStatus;
 
     if (bootStatus === OCPP1_6.BootNotificationResponseStatus.Pending) {
       let needToGetConfigurations = true;
       let needToChangeConfigurations = true;
       if (bootConfig) {
         if (
-            bootConfig.getConfigurationsOnPending !== undefined &&
-            bootConfig.getConfigurationsOnPending !== null
+          bootConfig.getConfigurationsOnPending !== undefined &&
+          bootConfig.getConfigurationsOnPending !== null
         ) {
           needToGetConfigurations = bootConfig.getConfigurationsOnPending;
         }
         if (
-            bootConfig.changeConfigurationsOnPending !== undefined &&
-            bootConfig.changeConfigurationsOnPending !== null
+          bootConfig.changeConfigurationsOnPending !== undefined &&
+          bootConfig.changeConfigurationsOnPending !== null
         ) {
           needToChangeConfigurations = bootConfig.changeConfigurationsOnPending;
         }
@@ -268,7 +248,7 @@ export class BootNotificationService {
   }
 
   async createOcpp16BootNotificationResponse(
-      stationId: string,
+    stationId: string,
   ): Promise<OCPP1_6.BootNotificationResponse> {
     const boot = await this._bootRepository.readByKey(stationId);
     const status = this.determineOcpp16BootStatus(boot);
@@ -277,9 +257,9 @@ export class BootNotificationService {
       currentTime: new Date().toISOString(),
       status,
       interval:
-          status === OCPP1_6.BootNotificationResponseStatus.Accepted
-              ? boot?.heartbeatInterval || this._config.heartbeatInterval
-              : boot?.bootRetryInterval || this._config.bootRetryInterval,
+        status === OCPP1_6.BootNotificationResponseStatus.Accepted
+          ? boot?.heartbeatInterval || this._config.heartbeatInterval
+          : boot?.bootRetryInterval || this._config.bootRetryInterval,
     };
   }
 
@@ -294,29 +274,24 @@ export class BootNotificationService {
    * @param bootNotificationResponseStatus
    */
   async cacheOcpp16ChargerActionsPermissions(
-      stationId: string,
-      cachedBootStatus: OCPP1_6.BootNotificationResponseStatus | null,
-      bootNotificationResponseStatus: OCPP1_6.BootNotificationResponseStatus,
+    stationId: string,
+    cachedBootStatus: OCPP1_6.BootNotificationResponseStatus | null,
+    bootNotificationResponseStatus: OCPP1_6.BootNotificationResponseStatus,
   ): Promise<void> {
     // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
-    if (
-        bootNotificationResponseStatus ===
-        OCPP1_6.BootNotificationResponseStatus.Accepted
-    ) {
+    if (bootNotificationResponseStatus === OCPP1_6.BootNotificationResponseStatus.Accepted) {
       if (cachedBootStatus) {
         // Undo blacklisting of charger-originated actions
-        const promises = Array.from(OCPP1_6_CALL_SCHEMA_MAP).map(
-            async ([action]) => {
-              if (action !== OCPP1_6_CallAction.BootNotification) {
-                return this._cache.remove(action, stationId);
-              }
-            },
-        );
+        const promises = Array.from(OCPP1_6_CALL_SCHEMA_MAP).map(async ([action]) => {
+          if (action !== OCPP1_6_CallAction.BootNotification) {
+            return this._cache.remove(action, stationId);
+          }
+        });
         await Promise.all(promises);
         // Remove cached boot status
         await this._cache.remove(BOOT_STATUS, stationId);
         this._logger.debug(
-            `Cached boot status ${cachedBootStatus} removed for station ${stationId}.`,
+          `Cached boot status ${cachedBootStatus} removed for station ${stationId}.`,
         );
       }
     } else if (!cachedBootStatus) {
@@ -324,13 +299,11 @@ export class BootNotificationService {
       // Cached boot status for charger did not exist; i.e. this is the first BootNotificationResponse to be Rejected or Pending.
       // Blacklist all charger-originated actions except BootNotification
       // ChangeConfiguration, GetConfiguration and TriggerMessage will need to un-blacklist the message it triggers
-      const promises = Array.from(OCPP1_6_CALL_SCHEMA_MAP).map(
-          async ([action]) => {
-            if (action !== OCPP1_6_CallAction.BootNotification) {
-              return this._cache.set(action, 'blacklisted', stationId);
-            }
-          },
-      );
+      const promises = Array.from(OCPP1_6_CALL_SCHEMA_MAP).map(async ([action]) => {
+        if (action !== OCPP1_6_CallAction.BootNotification) {
+          return this._cache.set(action, 'blacklisted', stationId);
+        }
+      });
       await Promise.all(promises);
     }
   }
@@ -339,8 +312,14 @@ export class BootNotificationService {
     response: OCPP1_6.BootNotificationResponse,
     stationId: string,
   ): Promise<Boot> {
-    const heartbeatInterval = response.status === OCPP1_6.BootNotificationResponseStatus.Accepted ? response.interval : undefined;
-    const bootRetryInterval = response.status !== OCPP1_6.BootNotificationResponseStatus.Accepted ? response.interval : undefined;
+    const heartbeatInterval =
+      response.status === OCPP1_6.BootNotificationResponseStatus.Accepted
+        ? response.interval
+        : undefined;
+    const bootRetryInterval =
+      response.status !== OCPP1_6.BootNotificationResponseStatus.Accepted
+        ? response.interval
+        : undefined;
 
     const unknownChargerBootConfig: BootConfig = {
       status: response.status,
@@ -352,7 +331,10 @@ export class BootNotificationService {
       stationId,
     );
     if (bootConfigDbEntity) {
-      bootConfigDbEntity = await this._bootRepository.updateLastBootTimeByKey(response.currentTime, stationId);
+      bootConfigDbEntity = await this._bootRepository.updateLastBootTimeByKey(
+        response.currentTime,
+        stationId,
+      );
     }
 
     if (!bootConfigDbEntity) {

@@ -50,9 +50,7 @@ export {
   OCPPVersionType,
   mapToCallAction,
 } from './ocpp/rpc/message';
-export {
-  ChargingStationSequenceType,
-} from './ocpp/model/requestIds';
+export { ChargingStationSequenceType } from './ocpp/model/requestIds';
 export { IFileAccess } from './interfaces/fileAccess';
 
 // Persistence Interfaces
@@ -82,32 +80,34 @@ export * from './ocpp/model';
 
 export { UpdateChargingStationPasswordRequest } from './ocpp/model/UpdateChargingStationPasswordRequest';
 
-import {
-  OCPP1_6,
-  OCPP2_0_1,
-} from './ocpp/model/index';
+import { OCPP1_6, OCPP2_0_1 } from './ocpp/model/index';
 import { CallAction, OCPP1_6_CallAction, OCPP2_0_1_CallAction } from './ocpp/rpc/message';
 import Ajv from 'ajv';
 
-export interface OcppRequest { }
+export interface OcppRequest {}
 
-export interface OcppResponse { }
+export interface OcppResponse {}
 
-export const OCPP1_6_CALL_SCHEMA_MAP: Map<CallAction, object> = new Map<
-  OCPP1_6_CallAction,
-  object
->([
-  [OCPP1_6_CallAction.Authorize, OCPP1_6.AuthorizeRequestSchema],
-  [OCPP1_6_CallAction.BootNotification, OCPP1_6.BootNotificationRequestSchema],
-  [OCPP1_6_CallAction.DataTransfer, OCPP1_6.DataTransferRequestSchema],
-  [OCPP1_6_CallAction.DiagnosticsStatusNotification, OCPP1_6.DiagnosticsStatusNotificationRequestSchema],
-  [OCPP1_6_CallAction.FirmwareStatusNotification, OCPP1_6.FirmwareStatusNotificationRequestSchema],
-  [OCPP1_6_CallAction.Heartbeat, OCPP1_6.HeartbeatRequestSchema],
-  [OCPP1_6_CallAction.MeterValues, OCPP1_6.MeterValuesRequestSchema],
-  [OCPP1_6_CallAction.StartTransaction, OCPP1_6.StartTransactionRequestSchema],
-  [OCPP1_6_CallAction.StatusNotification, OCPP1_6.StatusNotificationRequestSchema],
-  [OCPP1_6_CallAction.StopTransaction, OCPP1_6.StopTransactionRequestSchema],
-]);
+export const OCPP1_6_CALL_SCHEMA_MAP: Map<CallAction, object> = new Map<OCPP1_6_CallAction, object>(
+  [
+    [OCPP1_6_CallAction.Authorize, OCPP1_6.AuthorizeRequestSchema],
+    [OCPP1_6_CallAction.BootNotification, OCPP1_6.BootNotificationRequestSchema],
+    [OCPP1_6_CallAction.DataTransfer, OCPP1_6.DataTransferRequestSchema],
+    [
+      OCPP1_6_CallAction.DiagnosticsStatusNotification,
+      OCPP1_6.DiagnosticsStatusNotificationRequestSchema,
+    ],
+    [
+      OCPP1_6_CallAction.FirmwareStatusNotification,
+      OCPP1_6.FirmwareStatusNotificationRequestSchema,
+    ],
+    [OCPP1_6_CallAction.Heartbeat, OCPP1_6.HeartbeatRequestSchema],
+    [OCPP1_6_CallAction.MeterValues, OCPP1_6.MeterValuesRequestSchema],
+    [OCPP1_6_CallAction.StartTransaction, OCPP1_6.StartTransactionRequestSchema],
+    [OCPP1_6_CallAction.StatusNotification, OCPP1_6.StatusNotificationRequestSchema],
+    [OCPP1_6_CallAction.StopTransaction, OCPP1_6.StopTransactionRequestSchema],
+  ],
+);
 
 export const OCPP2_0_1_CALL_SCHEMA_MAP: Map<CallAction, object> = new Map<
   OCPP2_0_1_CallAction,

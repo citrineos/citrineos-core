@@ -28,10 +28,7 @@ import {
 /**
  * Admin API for the OcppRouter.
  */
-export class AdminApi
-  extends AbstractModuleApi<MessageRouterImpl>
-  implements IAdminApi
-{
+export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IAdminApi {
   /**
    * Constructs a new instance of the class.
    *
@@ -39,11 +36,7 @@ export class AdminApi
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
-  constructor(
-    ocppRouter: MessageRouterImpl,
-    server: FastifyInstance,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(ocppRouter: MessageRouterImpl, server: FastifyInstance, logger?: Logger<ILogObj>) {
     super(ocppRouter, server, null, logger);
   }
 
@@ -62,9 +55,7 @@ export class AdminApi
     undefined,
     CreateSubscriptionSchema,
   )
-  async postSubscription(
-    request: FastifyRequest<{ Body: Subscription }>,
-  ): Promise<number> {
+  async postSubscription(request: FastifyRequest<{ Body: Subscription }>): Promise<number> {
     if (
       !request.body.onClose &&
       !request.body.onConnect &&
@@ -80,24 +71,14 @@ export class AdminApi
       .then((subscription) => subscription?.id);
   }
 
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.Subscription,
-    HttpMethod.Get,
-    ChargingStationKeyQuerySchema,
-  )
+  @AsDataEndpoint(OCPP2_0_1_Namespace.Subscription, HttpMethod.Get, ChargingStationKeyQuerySchema)
   async getSubscriptionsByChargingStation(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Subscription[]> {
-    return this._module.subscriptionRepository.readAllByStationId(
-      request.query.stationId,
-    );
+    return this._module.subscriptionRepository.readAllByStationId(request.query.stationId);
   }
 
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.Subscription,
-    HttpMethod.Delete,
-    ModelKeyQuerystringSchema,
-  )
+  @AsDataEndpoint(OCPP2_0_1_Namespace.Subscription, HttpMethod.Delete, ModelKeyQuerystringSchema)
   async deleteSubscriptionById(
     request: FastifyRequest<{ Querystring: ModelKeyQuerystring }>,
   ): Promise<boolean> {
@@ -113,9 +94,7 @@ export class AdminApi
    * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(
-    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
-  ): string {
+  protected _toDataPath(input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace): string {
     const endpointPrefix = '/ocpprouter';
     return super._toDataPath(input, endpointPrefix);
   }

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import {ConfigStore} from "./ConfigStore";
-import {SystemConfig} from "./types";
+import { ConfigStore } from './ConfigStore';
+import { SystemConfig } from './types';
 
 export class LocalConfigStore implements ConfigStore {
   private fileName: string;
@@ -16,7 +16,7 @@ export class LocalConfigStore implements ConfigStore {
     try {
       const filePath = path.join(this.configDir, `/${this.fileName}`);
       if (fs.existsSync(filePath)) {
-        console.log("Config fetched from local storage.");
+        console.log('Config fetched from local storage.');
         return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
       }
       return null;

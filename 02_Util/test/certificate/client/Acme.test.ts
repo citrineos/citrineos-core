@@ -62,23 +62,15 @@ describe('ACME', () => {
       const mockLeafPem = faker.lorem.word();
       const mockSubCAPem = faker.lorem.word();
       const mockCertificate = aValidSignedCertificate();
-      mockCertUtil.parseCertificateChainPem.mockReturnValueOnce([
-        mockLeafPem,
-        mockSubCAPem,
-      ]);
-      mockCertUtil.createSignedCertificateFromCSR.mockReturnValueOnce(
-        mockCertificate,
-      );
+      mockCertUtil.parseCertificateChainPem.mockReturnValueOnce([mockLeafPem, mockSubCAPem]);
+      mockCertUtil.createSignedCertificateFromCSR.mockReturnValueOnce(mockCertificate);
 
       const givenCSR = faker.lorem.word();
       const actualResult = await acme.getCertificateChain(givenCSR);
 
-      const expectedResult =
-        mockCertificate.getPEM().replace(/\n+$/, '') + '\n' + mockSubCAPem;
+      const expectedResult = mockCertificate.getPEM().replace(/\n+$/, '') + '\n' + mockSubCAPem;
       expect(actualResult).toBe(expectedResult);
-      expect(mockCertUtil.parseCertificateChainPem).toHaveBeenCalledWith(
-        mockTlsCertificateChain,
-      );
+      expect(mockCertUtil.parseCertificateChainPem).toHaveBeenCalledWith(mockTlsCertificateChain);
       expect(mockCertUtil.createSignedCertificateFromCSR).toHaveBeenCalledWith(
         givenCSR,
         mockSubCAPem,

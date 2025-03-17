@@ -28,11 +28,7 @@ export class EVDriverOcpp16Api
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger for logging.
    */
-  constructor(
-    evDriverModule: EVDriverModule,
-    server: FastifyInstance,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(evDriverModule: EVDriverModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
     super(evDriverModule, server, OCPPVersion.OCPP1_6, logger);
   }
 
@@ -58,7 +54,6 @@ export class EVDriverOcpp16Api
     );
     return Promise.all(results);
   }
-
 
   @AsMessageEndpoint(
     OCPP1_6_CallAction.RemoteStopTransaction,

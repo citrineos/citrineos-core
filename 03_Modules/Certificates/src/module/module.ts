@@ -129,20 +129,18 @@ export class CertificatesModule extends AbstractModule {
     );
 
     this._deviceModelRepository =
-      deviceModelRepository ||
-      new sequelize.SequelizeDeviceModelRepository(config, logger);
+      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, logger);
     this._certificateRepository =
-      certificateRepository ||
-      new sequelize.SequelizeCertificateRepository(config, logger);
-    this._installedCertificateRepository =
-      new sequelize.SequelizeInstalledCertificateRepository(config, logger);
+      certificateRepository || new sequelize.SequelizeCertificateRepository(config, logger);
+    this._installedCertificateRepository = new sequelize.SequelizeInstalledCertificateRepository(
+      config,
+      logger,
+    );
     this._locationRepository =
-      locationRepository ||
-      new sequelize.SequelizeLocationRepository(config, logger);
+      locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
 
     this._certificateAuthorityService =
-      certificateAuthorityService ||
-      new CertificateAuthorityService(config, this._logger);
+      certificateAuthorityService || new CertificateAuthorityService(config, this._logger);
   }
 
   get certificateAuthorityService(): CertificateAuthorityService {
@@ -166,11 +164,10 @@ export class CertificatesModule extends AbstractModule {
     const request: OCPP2_0_1.Get15118EVCertificateRequest = message.payload;
 
     try {
-      const exiResponse =
-        await this._certificateAuthorityService.getSignedContractData(
-          request.iso15118SchemaVersion,
-          request.exiRequest,
-        );
+      const exiResponse = await this._certificateAuthorityService.getSignedContractData(
+        request.iso15118SchemaVersion,
+        request.exiRequest,
+      );
       await this.sendCallResultWithMessage(message, {
         status: OCPP2_0_1.Iso15118EVCertificateStatusEnumType.Accepted,
         exiResponse: exiResponse,
@@ -201,10 +198,7 @@ export class CertificatesModule extends AbstractModule {
         namehash: reqData.issuerNameHash,
         serial: reqData.serialNumber,
       });
-      const ocspResponse = await sendOCSPRequest(
-        ocspRequest,
-        reqData.responderURL,
-      );
+      const ocspResponse = await sendOCSPRequest(ocspRequest, reqData.responderURL);
       await this.sendCallResultWithMessage(message, {
         status: OCPP2_0_1.GetCertificateStatusEnumType.Accepted,
         ocspResponse: ocspResponse,
@@ -226,10 +220,8 @@ export class CertificatesModule extends AbstractModule {
     this._logger.debug('Sign certificate request received:', message, props);
     const stationId: string = message.context.stationId;
     const csrString: string = message.payload.csr.replace(/\n/g, '');
-    const certificateType:
-      | OCPP2_0_1.CertificateSigningUseEnumType
-      | undefined
-      | null = message.payload.certificateType;
+    const certificateType: OCPP2_0_1.CertificateSigningUseEnumType | undefined | null =
+      message.payload.certificateType;
 
     // TODO OCTT Currently fails the CSMS on test case TC_A_14_CSMS if an invalid csr is rejected
     //  Despite explicitly saying in the protocol "The CSMS may do some checks on the CSR"
@@ -243,12 +235,11 @@ export class CertificatesModule extends AbstractModule {
     try {
       await this._verifySignCertRequest(csrString, stationId, certificateType);
 
-      certificateChainPem =
-        await this._certificateAuthorityService.getCertificateChain(
-          csrString,
-          stationId,
-          certificateType,
-        );
+      certificateChainPem = await this._certificateAuthorityService.getCertificateChain(
+        csrString,
+        stationId,
+        certificateType,
+      );
     } catch (error) {
       this._logger.error('Sign certificate failed:', error);
 
@@ -303,10 +294,7 @@ export class CertificatesModule extends AbstractModule {
     this._logger.debug('DeleteCertificate received:', message, props);
   }
 
-  @AsHandler(
-    OCPPVersion.OCPP2_0_1,
-    OCPP2_0_1_CallAction.GetInstalledCertificateIds,
-  )
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetInstalledCertificateIds)
   protected async _handleGetInstalledCertificateIds(
     message: IMessage<OCPP2_0_1.GetInstalledCertificateIdsResponse>,
     props?: HandlerProperties,
@@ -324,8 +312,7 @@ export class CertificatesModule extends AbstractModule {
       // save new hashes
       const records = certificateHashDataList.map(
         (certificateHashDataWrap: OCPP2_0_1.CertificateHashDataChainType) => {
-          const certificateHashData =
-            certificateHashDataWrap.certificateHashData;
+          const certificateHashData = certificateHashDataWrap.certificateHashData;
           const certificateType = certificateHashDataWrap.certificateType;
           return {
             stationId: message.context.stationId,
@@ -367,10 +354,8 @@ export class CertificatesModule extends AbstractModule {
     // Verify certificate type
     if (
       !certificateType ||
-      (certificateType !==
-        OCPP2_0_1.CertificateSigningUseEnumType.V2GCertificate &&
-        certificateType !==
-          OCPP2_0_1.CertificateSigningUseEnumType.ChargingStationCertificate)
+      (certificateType !== OCPP2_0_1.CertificateSigningUseEnumType.V2GCertificate &&
+        certificateType !== OCPP2_0_1.CertificateSigningUseEnumType.ChargingStationCertificate)
     ) {
       throw new Error(`Unsupported certificate type: ${certificateType}`);
     }
@@ -380,23 +365,17 @@ export class CertificatesModule extends AbstractModule {
     this._logger.info(`Verifying CSR: ${JSON.stringify(csr)}`);
 
     if (!(await csr.verify())) {
-      throw new Error(
-        'Verify the signature on this csr using its public key failed',
-      );
+      throw new Error('Verify the signature on this csr using its public key failed');
     }
 
-    if (
-      certificateType ===
-      OCPP2_0_1.CertificateSigningUseEnumType.ChargingStationCertificate
-    ) {
+    if (certificateType === OCPP2_0_1.CertificateSigningUseEnumType.ChargingStationCertificate) {
       // Verify organization name match the one stored in the device model
-      const organizationName =
-        await this._deviceModelRepository.readAllByQuerystring({
-          stationId: stationId,
-          component_name: 'SecurityCtrlr',
-          variable_name: 'OrganizationName',
-          type: OCPP2_0_1.AttributeEnumType.Actual,
-        });
+      const organizationName = await this._deviceModelRepository.readAllByQuerystring({
+        stationId: stationId,
+        component_name: 'SecurityCtrlr',
+        variable_name: 'OrganizationName',
+        type: OCPP2_0_1.AttributeEnumType.Actual,
+      });
       if (!organizationName || organizationName.length < 1) {
         throw new Error('Expected organizationName not found in DB');
       }
@@ -407,19 +386,14 @@ export class CertificatesModule extends AbstractModule {
       if (!organizationNameAttr) {
         throw new Error('organizationName attribute not found in CSR');
       }
-      if (
-        organizationName[0].value !==
-        organizationNameAttr.value.valueBlock.value
-      ) {
+      if (organizationName[0].value !== organizationNameAttr.value.valueBlock.value) {
         throw new Error(
           `Expect organizationName ${organizationName[0].value} but get ${organizationNameAttr.value} from the csr`,
         );
       }
     }
 
-    this._logger.info(
-      `Verified SignCertRequest for station ${stationId} successfully.`,
-    );
+    this._logger.info(`Verified SignCertRequest for station ${stationId} successfully.`);
   }
 
   private async deleteExistingMatchingCertificateHashes(
@@ -427,11 +401,9 @@ export class CertificatesModule extends AbstractModule {
     certificateHashDataList: OCPP2_0_1.CertificateHashDataChainType[],
   ) {
     try {
-      const certificateTypes = certificateHashDataList.map(
-        (certificateHashData) => {
-          return certificateHashData.certificateType;
-        },
-      );
+      const certificateTypes = certificateHashDataList.map((certificateHashData) => {
+        return certificateHashData.certificateType;
+      });
       if (certificateTypes && certificateTypes.length > 0) {
         await this._installedCertificateRepository.deleteAllByQuery({
           where: {

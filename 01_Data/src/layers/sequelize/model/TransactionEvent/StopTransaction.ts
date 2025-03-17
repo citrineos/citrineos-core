@@ -3,7 +3,15 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { OCPP1_6_Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table, HasMany } from 'sequelize-typescript';
+import {
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+  HasMany,
+} from 'sequelize-typescript';
 import { Transaction } from './Transaction';
 import { IdToken } from '../Authorization';
 import { MeterValue } from './MeterValue';

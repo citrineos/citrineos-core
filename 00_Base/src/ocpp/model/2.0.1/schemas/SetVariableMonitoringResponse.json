@@ -19,13 +19,7 @@
       "javaType": "MonitorEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "UpperThreshold",
-        "LowerThreshold",
-        "Delta",
-        "Periodic",
-        "PeriodicClockAligned"
-      ],
+      "enum": ["UpperThreshold", "LowerThreshold", "Delta", "Periodic", "PeriodicClockAligned"],
       "tsEnumNames": [
         "UpperThreshold",
         "LowerThreshold",

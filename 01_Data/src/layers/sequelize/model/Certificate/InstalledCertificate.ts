@@ -38,7 +38,13 @@ export class InstalledCertificate extends Model implements OCPP2_0_1.Certificate
   declare serialNumber: string;
 
   @Column({
-    type: DataType.ENUM('V2GRootCertificate', 'MORootCertificate', 'CSMSRootCertificate', 'V2GCertificateChain', 'ManufacturerRootCertificate'),
+    type: DataType.ENUM(
+      'V2GRootCertificate',
+      'MORootCertificate',
+      'CSMSRootCertificate',
+      'V2GCertificateChain',
+      'ManufacturerRootCertificate',
+    ),
     allowNull: false,
   })
   declare certificateType: OCPP2_0_1.GetCertificateIdUseEnumType;

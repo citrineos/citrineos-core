@@ -16,17 +16,12 @@ export class MemoryCache implements ICache {
   private _timeoutMap: Map<string, NodeJS.Timeout>;
 
   constructor() {
-    const keySubscriptionMap: Map<string, (arg: string | null) => void> =
-      new Map();
+    const keySubscriptionMap: Map<string, (arg: string | null) => void> = new Map();
     const subscriptionHandler: ProxyHandler<Map<string, string>> = {
       // Returns value on keySubscriptions when Map.set(key, value) is called
       set(target, property, value) {
         const setOutcome = Reflect.set(target, property, value);
-        if (
-          typeof property === 'string' &&
-          keySubscriptionMap.has(property) &&
-          setOutcome
-        ) {
+        if (typeof property === 'string' && keySubscriptionMap.has(property) && setOutcome) {
           (keySubscriptionMap?.get(property) as any)(value);
         }
         return setOutcome;
@@ -34,11 +29,7 @@ export class MemoryCache implements ICache {
       // Returns null on keySubscriptions when Map.delete(key) is called
       deleteProperty(target, property) {
         const deleteOutcome = Reflect.deleteProperty(target, property);
-        if (
-          typeof property === 'string' &&
-          keySubscriptionMap.has(property) &&
-          deleteOutcome
-        ) {
+        if (typeof property === 'string' && keySubscriptionMap.has(property) && deleteOutcome) {
           (keySubscriptionMap?.get(property) as any)(null);
         }
         return deleteOutcome;
@@ -91,14 +82,11 @@ export class MemoryCache implements ICache {
             .set(
               namespaceKey,
               new Promise<string | null>((resolve) => {
-                this._keySubscriptionMap.set(
-                  namespaceKey,
-                  (value: string | null) => {
-                    resolve(value);
-                    this._keySubscriptionMap.delete(namespaceKey);
-                    this._keySubscriptionPromiseMap.delete(namespaceKey);
-                  },
-                );
+                this._keySubscriptionMap.set(namespaceKey, (value: string | null) => {
+                  resolve(value);
+                  this._keySubscriptionMap.delete(namespaceKey);
+                  this._keySubscriptionPromiseMap.delete(namespaceKey);
+                });
               }),
             )
             .get(namespaceKey);

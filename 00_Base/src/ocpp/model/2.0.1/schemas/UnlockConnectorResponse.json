@@ -19,12 +19,7 @@
       "javaType": "UnlockStatusEnum",
       "type": "string",
       "additionalProperties": false,
-      "enum": [
-        "Unlocked",
-        "UnlockFailed",
-        "OngoingAuthorizedTransaction",
-        "UnknownConnector"
-      ],
+      "enum": ["Unlocked", "UnlockFailed", "OngoingAuthorizedTransaction", "UnknownConnector"],
       "tsEnumNames": [
         "Unlocked",
         "UnlockFailed",

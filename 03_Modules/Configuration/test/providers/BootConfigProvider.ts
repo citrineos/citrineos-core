@@ -1,7 +1,5 @@
 import { Boot } from '@citrineos/data';
-import {
-  OCPP2_0_1
-} from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 
@@ -31,9 +29,7 @@ export const aValidSetVariableResult = (
   return applyUpdateFunction(item, updateFunction);
 };
 
-export const aValidBootConfig = (
-  updateFunction?: UpdateFunction<Boot>,
-): Boot => {
+export const aValidBootConfig = (updateFunction?: UpdateFunction<Boot>): Boot => {
   const item: Boot = {
     id: faker.string.uuid(),
     lastBootTime: faker.date.recent().toISOString(),

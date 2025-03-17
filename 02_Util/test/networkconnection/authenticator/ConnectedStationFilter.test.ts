@@ -27,10 +27,7 @@ describe('ConnectedStationFilter', () => {
 
     await filter.authenticate(stationId, aRequest(), anAuthenticationOptions());
 
-    expect(cache.get).toHaveBeenCalledWith(
-      stationId,
-      CacheNamespace.Connections,
-    );
+    expect(cache.get).toHaveBeenCalledWith(stationId, CacheNamespace.Connections);
   });
 
   it('should reject when station is already connected', async () => {
@@ -39,20 +36,13 @@ describe('ConnectedStationFilter', () => {
 
     await expect(
       filter.authenticate(stationId, aRequest(), anAuthenticationOptions()),
-    ).rejects.toThrow(
-      `New connection attempted for already connected identifier ${stationId}`,
-    );
+    ).rejects.toThrow(`New connection attempted for already connected identifier ${stationId}`);
 
-    expect(cache.get).toHaveBeenCalledWith(
-      stationId,
-      CacheNamespace.Connections,
-    );
+    expect(cache.get).toHaveBeenCalledWith(stationId, CacheNamespace.Connections);
   });
 
   function givenStationIsConnected() {
-    cache.get.mockResolvedValue(
-      faker.number.int({ min: 0, max: 3 }).toString() as any,
-    );
+    cache.get.mockResolvedValue(faker.number.int({ min: 0, max: 3 }).toString() as any);
   }
 
   function givenStationIsNotConnected() {

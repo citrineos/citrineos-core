@@ -39,10 +39,7 @@ export class TransactionsOcpp201Api
     super(transactionModule, server, OCPPVersion.OCPP2_0_1, logger);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.CostUpdated,
-    OCPP2_0_1.CostUpdatedRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP2_0_1_CallAction.CostUpdated, OCPP2_0_1.CostUpdatedRequestSchema)
   async costUpdated(
     identifier: string[],
     tenantId: string,
@@ -93,8 +90,7 @@ export class TransactionsOcpp201Api
    * @return {string} - The generated URL path.
    */
   protected _toMessagePath(input: CallAction): string {
-    const endpointPrefix =
-      this._module.config.modules.transactions.endpointPrefix;
+    const endpointPrefix = this._module.config.modules.transactions.endpointPrefix;
     return super._toMessagePath(input, endpointPrefix);
   }
 }

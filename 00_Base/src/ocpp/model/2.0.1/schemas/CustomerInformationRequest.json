@@ -97,12 +97,7 @@
           "maxLength": 40
         }
       },
-      "required": [
-        "hashAlgorithm",
-        "issuerNameHash",
-        "issuerKeyHash",
-        "serialNumber"
-      ]
+      "required": ["hashAlgorithm", "issuerNameHash", "issuerKeyHash", "serialNumber"]
     },
     "IdTokenType": {
       "description": "Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.\r\n",

@@ -21,7 +21,9 @@ export class LocalListVersion extends Model {
   declare versionNumber: number;
 
   @BelongsToMany(() => LocalListAuthorization, () => LocalListVersionAuthorization)
-  declare localAuthorizationList?: [LocalListAuthorization, ...LocalListAuthorization[]] | undefined;
+  declare localAuthorizationList?:
+    | [LocalListAuthorization, ...LocalListAuthorization[]]
+    | undefined;
 
   customData?: OCPP2_0_1.CustomDataType | null | undefined;
 }

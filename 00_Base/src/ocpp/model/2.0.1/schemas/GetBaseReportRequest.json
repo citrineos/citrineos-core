@@ -20,11 +20,7 @@
       "type": "string",
       "additionalProperties": false,
       "enum": ["ConfigurationInventory", "FullInventory", "SummaryInventory"],
-      "tsEnumNames": [
-        "ConfigurationInventory",
-        "FullInventory",
-        "SummaryInventory"
-      ]
+      "tsEnumNames": ["ConfigurationInventory", "FullInventory", "SummaryInventory"]
     }
   },
   "type": "object",

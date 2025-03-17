@@ -17,10 +17,7 @@ import { ILogObj, Logger } from 'tslog';
 /**
  * Server API for the Tenant module.
  */
-export class TenantDataApi
-  extends AbstractModuleApi<TenantModule>
-  implements ITenantModuleApi
-{
+export class TenantDataApi extends AbstractModuleApi<TenantModule> implements ITenantModuleApi {
   /**
    *
    * Constructs a new instance of the class.
@@ -29,11 +26,7 @@ export class TenantDataApi
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
-  constructor(
-    tenantModule: TenantModule,
-    server: FastifyInstance,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(tenantModule: TenantModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
     super(tenantModule, server, null, logger);
   }
 
@@ -44,9 +37,7 @@ export class TenantDataApi
    * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(
-    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
-  ): string {
+  protected _toDataPath(input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace): string {
     const endpointPrefix = this._module.config.modules.tenant.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
   }

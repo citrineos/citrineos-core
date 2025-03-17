@@ -178,34 +178,24 @@ export class TransactionsModule extends AbstractModule {
       transactionEventRepository ||
       new sequelize.SequelizeTransactionEventRepository(config, logger);
     this._authorizeRepository =
-      authorizeRepository ||
-      new sequelize.SequelizeAuthorizationRepository(config, logger);
+      authorizeRepository || new sequelize.SequelizeAuthorizationRepository(config, logger);
     this._deviceModelRepository =
-      deviceModelRepository ||
-      new sequelize.SequelizeDeviceModelRepository(config, logger);
+      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, logger);
     this._componentRepository =
       componentRepository ||
       new SequelizeRepository<Component>(config, Component.MODEL_NAME, logger);
     this._locationRepository =
-      locationRepository ||
-      new sequelize.SequelizeLocationRepository(config, logger);
+      locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
     this._tariffRepository =
-      tariffRepository ||
-      new sequelize.SequelizeTariffRepository(config, logger);
+      tariffRepository || new sequelize.SequelizeTariffRepository(config, logger);
     this._reservationRepository =
-      reservationRepository ||
-      new sequelize.SequelizeReservationRepository(config, logger);
+      reservationRepository || new sequelize.SequelizeReservationRepository(config, logger);
 
     this._authorizers = authorizers || [];
 
-    this._signedMeterValuesUtil = new SignedMeterValuesUtil(
-      fileAccess,
-      config,
-      this._logger,
-    );
+    this._signedMeterValuesUtil = new SignedMeterValuesUtil(fileAccess, config, this._logger);
 
-    this._sendCostUpdatedOnMeterValue =
-      config.modules.transactions.sendCostUpdatedOnMeterValue;
+    this._sendCostUpdatedOnMeterValue = config.modules.transactions.sendCostUpdatedOnMeterValue;
     this._costUpdatedInterval = config.modules.transactions.costUpdatedInterval;
 
     this._transactionService = new TransactionService(
@@ -286,10 +276,7 @@ export class TransactionsModule extends AbstractModule {
         transactionEvent,
         message.context,
       );
-      const messageConfirmation = await this.sendCallResultWithMessage(
-        message,
-        response,
-      );
+      const messageConfirmation = await this.sendCallResultWithMessage(message, response);
       this._logger.debug('Transaction response sent: ', messageConfirmation);
       // If the transaction is accepted and interval is set, start the cost update
       if (
@@ -317,11 +304,7 @@ export class TransactionsModule extends AbstractModule {
 
       if (message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Updated) {
         // I02 - Show EV Driver Running Total Cost During Charging
-        if (
-          transaction &&
-          transaction.isActive &&
-          this._sendCostUpdatedOnMeterValue
-        ) {
+        if (transaction && transaction.isActive && this._sendCostUpdatedOnMeterValue) {
           response.totalCost = await this._costCalculator.calculateTotalCost(
             stationId,
             transaction.id,
@@ -339,8 +322,7 @@ export class TransactionsModule extends AbstractModule {
             type: OCPP2_0_1.AttributeEnumType.Actual,
           });
         const supportTariff: boolean =
-          tariffAvailableAttributes.length !== 0 &&
-          Boolean(tariffAvailableAttributes[0].value);
+          tariffAvailableAttributes.length !== 0 && Boolean(tariffAvailableAttributes[0].value);
 
         if (supportTariff && transaction && transaction.isActive) {
           this._logger.debug(
@@ -350,10 +332,7 @@ export class TransactionsModule extends AbstractModule {
         }
       }
 
-      if (
-        message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Ended &&
-        transaction
-      ) {
+      if (message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Ended && transaction) {
         response.totalCost = await this._costCalculator.calculateTotalCost(
           stationId,
           transaction.id,
@@ -370,11 +349,10 @@ export class TransactionsModule extends AbstractModule {
       }
 
       if (transactionEvent.meterValue) {
-        const meterValuesValid =
-          await this._signedMeterValuesUtil.validateMeterValues(
-            stationId,
-            transactionEvent.meterValue,
-          );
+        const meterValuesValid = await this._signedMeterValuesUtil.validateMeterValues(
+          stationId,
+          transactionEvent.meterValue,
+        );
 
         if (!meterValuesValid) {
           this._logger.warn(
@@ -383,10 +361,7 @@ export class TransactionsModule extends AbstractModule {
         }
       }
 
-      const messageConfirmation = await this.sendCallResultWithMessage(
-        message,
-        response,
-      );
+      const messageConfirmation = await this.sendCallResultWithMessage(message, response);
       this._logger.debug('Transaction response sent: ', messageConfirmation);
     }
   }
@@ -419,10 +394,7 @@ export class TransactionsModule extends AbstractModule {
         );
       }
 
-      await this._transactionService.createMeterValues(
-        meterValues,
-        activeTransaction?.id,
-      );
+      await this._transactionService.createMeterValues(meterValues, activeTransaction?.id);
 
       if (activeTransaction) {
         await this._costNotifier.calculateCostAndNotify(
@@ -434,11 +406,10 @@ export class TransactionsModule extends AbstractModule {
       await this._transactionService.createMeterValues(meterValues);
     }
 
-    const meterValuesValid =
-      await this._signedMeterValuesUtil.validateMeterValues(
-        stationId,
-        meterValues,
-      );
+    const meterValuesValid = await this._signedMeterValuesUtil.validateMeterValues(
+      stationId,
+      meterValues,
+    );
 
     if (!meterValuesValid) {
       throw new OcppError(
@@ -452,10 +423,7 @@ export class TransactionsModule extends AbstractModule {
       // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
     };
 
-    const messageConfirmation = await this.sendCallResultWithMessage(
-      message,
-      response,
-    );
+    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
     this._logger.debug('MeterValues response sent: ', messageConfirmation);
   }
 
@@ -473,14 +441,8 @@ export class TransactionsModule extends AbstractModule {
 
     // Create response
     const response: OCPP2_0_1.StatusNotificationResponse = {};
-    const messageConfirmation = await this.sendCallResultWithMessage(
-      message,
-      response,
-    );
-    this._logger.debug(
-      'StatusNotification response sent: ',
-      messageConfirmation,
-    );
+    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+    this._logger.debug('StatusNotification response sent: ', messageConfirmation);
   }
 
   /**
@@ -500,11 +462,7 @@ export class TransactionsModule extends AbstractModule {
     message: IMessage<OCPP2_0_1.GetTransactionStatusResponse>,
     props?: HandlerProperties,
   ): void {
-    this._logger.debug(
-      'GetTransactionStatus response received:',
-      message,
-      props,
-    );
+    this._logger.debug('GetTransactionStatus response received:', message, props);
   }
 
   /**
@@ -525,14 +483,8 @@ export class TransactionsModule extends AbstractModule {
 
     // Create response
     const response: OCPP1_6.StatusNotificationResponse = {};
-    const messageConfirmation = await this.sendCallResultWithMessage(
-      message,
-      response,
-    );
-    this._logger.debug(
-      'StatusNotification response sent: ',
-      messageConfirmation,
-    );
+    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+    this._logger.debug('StatusNotification response sent: ', messageConfirmation);
   }
 
   @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.MeterValues)
@@ -540,11 +492,7 @@ export class TransactionsModule extends AbstractModule {
     message: IMessage<OCPP1_6.MeterValuesRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug(
-      'MeterValues request received:',
-      message,
-      props,
-    );
+    this._logger.debug('MeterValues request received:', message, props);
 
     const stationId = message.context.stationId;
     const connectorId = message.payload.connectorId;
@@ -560,7 +508,7 @@ export class TransactionsModule extends AbstractModule {
               MeterValue.build({
                 ...meterValue,
                 connectorId,
-              })
+              }),
             );
           }
         }
@@ -576,10 +524,7 @@ export class TransactionsModule extends AbstractModule {
       }
     }
 
-    await this.sendCallResultWithMessage(
-      message,
-      {} as OCPP1_6.MeterValuesResponse,
-    );
+    await this.sendCallResultWithMessage(message, {} as OCPP1_6.MeterValuesResponse);
   }
 
   @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.StartTransaction)
@@ -587,17 +532,12 @@ export class TransactionsModule extends AbstractModule {
     message: IMessage<OCPP1_6.StartTransactionRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug(
-      'OCPP 1.6 StartTransaction request received:',
-      message,
-      props,
-    );
+    this._logger.debug('OCPP 1.6 StartTransaction request received:', message, props);
     const stationId = message.context.stationId;
     const request = message.payload;
 
     // Authorize
-    const response =
-      await this._transactionService.authorizeOcpp16IdToken(request.idTag);
+    const response = await this._transactionService.authorizeOcpp16IdToken(request.idTag);
 
     // Send response to charger
     if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
@@ -605,18 +545,17 @@ export class TransactionsModule extends AbstractModule {
     } else {
       try {
         // Create transaction
-        const newTransaction = await this._transactionEventRepository.createTransactionByStartTransaction(
-          request,
-          stationId,
-        );
+        const newTransaction =
+          await this._transactionEventRepository.createTransactionByStartTransaction(
+            request,
+            stationId,
+          );
         response.transactionId = parseInt(newTransaction.transactionId);
       } catch (error) {
-        this._logger.error(
-          `Failed to create transaction for idTag ${request.idTag}`, error
-        );
+        this._logger.error(`Failed to create transaction for idTag ${request.idTag}`, error);
         response.idTagInfo = {
           status: OCPP1_6.StartTransactionResponseStatus.Invalid,
-        }
+        };
       }
       await this.sendCallResultWithMessage(message, response);
     }
@@ -636,25 +575,18 @@ export class TransactionsModule extends AbstractModule {
     message: IMessage<OCPP1_6.StopTransactionRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug(
-      'OCPP 1.6 StopTransaction request received:',
-      message,
-      props,
-    );
+    this._logger.debug('OCPP 1.6 StopTransaction request received:', message, props);
 
     const stationId = message.context.stationId;
     const request = message.payload;
 
-    const transaction =
-      await this._transactionEventRepository.readOnlyOneByQuery({
-        stationId,
-        transactionId: request.transactionId.toString(),
-      });
+    const transaction = await this._transactionEventRepository.readOnlyOneByQuery({
+      stationId,
+      transactionId: request.transactionId.toString(),
+    });
 
     if (!transaction) {
-      this._logger.error(
-        `Transaction ${request.transactionId} not found or already stopped.`,
-      );
+      this._logger.error(`Transaction ${request.transactionId} not found or already stopped.`);
       await this.sendCallResultWithMessage(message, {});
       return;
     }
@@ -666,17 +598,15 @@ export class TransactionsModule extends AbstractModule {
       : null;
     const idTokenDatabaseId = idTokenRecord ? idTokenRecord.id : undefined;
 
-    const stopTransaction =
-      await this._transactionEventRepository.createStopTransaction(
-        request.transactionId.toString(),
-        stationId,
-        request.meterStop,
-        new Date(request.timestamp),
-        request.transactionData?.map((data) => MeterValue.build({ ...data })) ||
-          [],
-        request.reason || (request.idTag ? 'Remote' : 'Local'),
-        idTokenDatabaseId,
-      );
+    const stopTransaction = await this._transactionEventRepository.createStopTransaction(
+      request.transactionId.toString(),
+      stationId,
+      request.meterStop,
+      new Date(request.timestamp),
+      request.transactionData?.map((data) => MeterValue.build({ ...data })) || [],
+      request.reason || (request.idTag ? 'Remote' : 'Local'),
+      idTokenDatabaseId,
+    );
 
     if (!stopTransaction) {
       this._logger.error(
@@ -686,10 +616,7 @@ export class TransactionsModule extends AbstractModule {
       return;
     }
 
-    await this._transactionService.finalizeTransaction(
-      transaction.id,
-      stopTransaction,
-    );
+    await this._transactionService.finalizeTransaction(transaction.id, stopTransaction);
 
     const idTagInfo = await this._authorizeRepository.readAllByQuerystring({
       idToken: request.idTag as string,
@@ -700,8 +627,6 @@ export class TransactionsModule extends AbstractModule {
       idTagInfo: idTagInfo ? { status: 'Accepted' } : undefined,
     });
 
-    this._logger.info(
-      `Transaction ${request.transactionId} stopped successfully.`,
-    );
+    this._logger.info(`Transaction ${request.transactionId} stopped successfully.`);
   }
 }

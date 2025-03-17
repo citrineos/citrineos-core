@@ -49,8 +49,7 @@ fs.readdir(path, (error, files) => {
 
       if (enums.length > 0) {
         enums.forEach((entry) => {
-          let { enumName, enumDocumentation, enumDefinition } =
-            splitEnum(entry);
+          let { enumName, enumDocumentation, enumDefinition } = splitEnum(entry);
           if (enumName == 'DataEnumType') {
             // Adding missing type for DataEnumType... type in OCPP 2.0.1 appendix but not in part 3 JSON schemas
             let lastLineIndex = enumDefinition.lastIndexOf(`'`);
@@ -72,17 +71,13 @@ fs.readdir(path, (error, files) => {
     // Export all definitions and schemas
     for (let key of globalDefinitions) {
       exportStatements.push(`export { ${key} } from './types/${key}';`);
-      exportStatements.push(
-        `export { default as ${key}Schema } from './schemas/${key}.json';`,
-      );
+      exportStatements.push(`export { default as ${key}Schema } from './schemas/${key}.json';`);
     }
 
     if (writeToFile) {
       fs.writeFileSync(
         `./src/ocpp/model/1.6/enums/index.ts`,
-        licenseComment +
-          Object.values(globalEnumDefinitions).sort().join('\n\n') +
-          '\n',
+        licenseComment + Object.values(globalEnumDefinitions).sort().join('\n\n') + '\n',
       );
       fs.writeFileSync(
         `./src/ocpp/model/1.6/index.ts`,
@@ -147,14 +142,8 @@ async function processJsonSchema(data, writeToFile = true) {
 
         // Extend the generated interface with Request or Response
         if (schemaType) {
-          const interfaceNamePattern = new RegExp(
-            `export interface ${id}`,
-            'g',
-          );
-          ts = ts.replace(
-            interfaceNamePattern,
-            `export interface ${id} extends ${schemaType}`,
-          );
+          const interfaceNamePattern = new RegExp(`export interface ${id}`, 'g');
+          ts = ts.replace(interfaceNamePattern, `export interface ${id} extends ${schemaType}`);
         }
 
         // Extract enums
@@ -184,19 +173,13 @@ async function processJsonSchema(data, writeToFile = true) {
         ts = ts.replaceAll(regex, '$1 | null;');
 
         if (writeToFile) {
-          fs.writeFileSync(
-            `./src/ocpp/model/1.6/types/${id}.ts`,
-            ts.replace(/\n+$/, '\n'),
-          );
+          fs.writeFileSync(`./src/ocpp/model/1.6/types/${id}.ts`, ts.replace(/\n+$/, '\n'));
 
           // Format JSON with Prettier
           prettier
             .format(JSON.stringify(jsonSchema, null, 2), { parser: 'json' })
             .then((formattedJson) => {
-              fs.writeFileSync(
-                `./src/ocpp/model/1.6/schemas/${id}.json`,
-                formattedJson,
-              );
+              fs.writeFileSync(`./src/ocpp/model/1.6/schemas/${id}.json`, formattedJson);
             });
         }
 
@@ -218,12 +201,7 @@ function processEnumNames(definitionsRoot, node, uniqueEnumNames, title) {
         node[key] = { $ref: `#/definitions/${uniqueKey}` };
         uniqueEnumNames.push(uniqueKey);
       } else {
-        uniqueEnumNames = processEnumNames(
-          definitionsRoot,
-          node[key],
-          uniqueEnumNames,
-          title,
-        );
+        uniqueEnumNames = processEnumNames(definitionsRoot, node[key], uniqueEnumNames, title);
       }
     }
   }
@@ -262,18 +240,13 @@ function extractEnums(ts) {
     });
   }
 
-  return [
-    ...(matches ? matches : []),
-    ...(undocumentedMatches ? undocumentedMatches : []),
-  ];
+  return [...(matches ? matches : []), ...(undocumentedMatches ? undocumentedMatches : [])];
 }
 
 function splitEnum(enumDefinition) {
   const commentPattern = /^\/\*\*\s*\n([^\*]|(\*(?!\/)))*\*\/\n/gm;
   const namePattern = /export enum (\w)*/g;
-  const enumName = enumDefinition
-    .match(namePattern)[0]
-    .replace('export enum ', '');
+  const enumName = enumDefinition.match(namePattern)[0].replace('export enum ', '');
   let enumDocumentation = enumDefinition.match(commentPattern);
   enumDocumentation = enumDocumentation ? enumDocumentation[0] : '';
   return { enumName, enumDocumentation, enumDefinition };

@@ -25,9 +25,7 @@ export function anEvse(updateFunction?: UpdateFunction<Evse>): Evse {
   return applyUpdateFunction(evse, updateFunction);
 }
 
-export function aComponent(
-  updateFunction?: UpdateFunction<Component>,
-): Component {
+export function aComponent(updateFunction?: UpdateFunction<Component>): Component {
   const component: Component = {
     name: 'Any',
   } as Component;

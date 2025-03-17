@@ -9,7 +9,10 @@ import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 
-export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageInfo> implements IMessageInfoRepository {
+export class SequelizeMessageInfoRepository
+  extends SequelizeRepository<MessageInfo>
+  implements IMessageInfoRepository
+{
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, MessageInfo.MODEL_NAME, logger, sequelizeInstance);
   }
@@ -29,7 +32,11 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
     );
   }
 
-  async createOrUpdateByMessageInfoTypeAndStationId(message: OCPP2_0_1.MessageInfoType, stationId: string, componentId?: number): Promise<MessageInfo> {
+  async createOrUpdateByMessageInfoTypeAndStationId(
+    message: OCPP2_0_1.MessageInfoType,
+    stationId: string,
+    componentId?: number,
+  ): Promise<MessageInfo> {
     return await this.s.transaction(async (transaction) => {
       const savedMessageInfo = await this.s.models[MessageInfo.MODEL_NAME].findOne({
         where: {
@@ -52,7 +59,10 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
         active: true,
       };
       if (savedMessageInfo) {
-        return (await this.updateByKey(messageInfo, savedMessageInfo.dataValues.databaseId)) as MessageInfo;
+        return (await this.updateByKey(
+          messageInfo,
+          savedMessageInfo.dataValues.databaseId,
+        )) as MessageInfo;
       }
       const createdMessageInfo = await MessageInfo.create(messageInfo, { transaction });
       this.emit('created', [createdMessageInfo]);

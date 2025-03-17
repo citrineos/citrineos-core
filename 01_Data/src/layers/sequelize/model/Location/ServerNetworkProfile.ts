@@ -10,45 +10,45 @@ import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 
 @Table
 export class ServerNetworkProfile extends Model implements WebsocketServerConfig {
-    static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ServerNetworkProfile;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ServerNetworkProfile;
 
-    @PrimaryKey
-    @Column(DataType.STRING)
-    declare id: string;
+  @PrimaryKey
+  @Column(DataType.STRING)
+  declare id: string;
 
-    @Column(DataType.STRING)
-    declare host: string;
+  @Column(DataType.STRING)
+  declare host: string;
 
-    @Column(DataType.INTEGER)
-    declare port: number;
+  @Column(DataType.INTEGER)
+  declare port: number;
 
-    @Column(DataType.INTEGER)
-    declare pingInterval: number;
+  @Column(DataType.INTEGER)
+  declare pingInterval: number;
 
-    @Column(DataType.STRING)
-    declare protocol: OCPPVersionType;
+  @Column(DataType.STRING)
+  declare protocol: OCPPVersionType;
 
-    @Column(DataType.INTEGER)
-    declare messageTimeout: number;
+  @Column(DataType.INTEGER)
+  declare messageTimeout: number;
 
-    @Column(DataType.INTEGER)
-    declare securityProfile: number;
+  @Column(DataType.INTEGER)
+  declare securityProfile: number;
 
-    @Column(DataType.BOOLEAN)
-    declare allowUnknownChargingStations: boolean;
+  @Column(DataType.BOOLEAN)
+  declare allowUnknownChargingStations: boolean;
 
-    @Column(DataType.STRING)
-    declare tlsKeyFilePath?: string;
+  @Column(DataType.STRING)
+  declare tlsKeyFilePath?: string;
 
-    @Column(DataType.STRING)
-    declare tlsCertificateChainFilePath?: string;
+  @Column(DataType.STRING)
+  declare tlsCertificateChainFilePath?: string;
 
-    @Column(DataType.STRING)
-    declare mtlsCertificateAuthorityKeyFilePath?: string;
+  @Column(DataType.STRING)
+  declare mtlsCertificateAuthorityKeyFilePath?: string;
 
-    @Column(DataType.STRING)
-    declare rootCACertificateFilePath?: string;
+  @Column(DataType.STRING)
+  declare rootCACertificateFilePath?: string;
 
-    @BelongsToMany(() => ChargingStation, () => ChargingStationNetworkProfile)
-    declare chargingStations?: ChargingStation[] | null;
+  @BelongsToMany(() => ChargingStation, () => ChargingStationNetworkProfile)
+  declare chargingStations?: ChargingStation[] | null;
 }

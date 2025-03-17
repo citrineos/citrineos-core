@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  OCPP2_0_1,
-  SystemConfig,
-} from '@citrineos/base';
+import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import {
   IChargingStationCertificateAuthorityClient,
   IV2GCertificateAuthorityClient,
@@ -50,8 +47,7 @@ export class CertificateAuthorityService {
       : new Logger<ILogObj>({ name: this.constructor.name });
 
     this._chargingStationClient =
-      chargingStationClient ||
-      this._instantiateChargingStationClient(config, this._logger);
+      chargingStationClient || this._instantiateChargingStationClient(config, this._logger);
     this._v2gClient = v2gClient || this._instantiateV2GClient(config);
   }
 
@@ -90,19 +86,11 @@ export class CertificateAuthorityService {
   }
 
   async signedSubCaCertificateByExternalCA(csrString: string): Promise<string> {
-    return await this._chargingStationClient.signCertificateByExternalCA(
-      csrString,
-    );
+    return await this._chargingStationClient.signCertificateByExternalCA(csrString);
   }
 
-  async getSignedContractData(
-    iso15118SchemaVersion: string,
-    exiRequest: string,
-  ): Promise<string> {
-    return await this._v2gClient.getSignedContractData(
-      iso15118SchemaVersion,
-      exiRequest,
-    );
+  async getSignedContractData(iso15118SchemaVersion: string, exiRequest: string): Promise<string> {
+    return await this._v2gClient.getSignedContractData(iso15118SchemaVersion, exiRequest);
   }
 
   async getRootCACertificateFromExternalCA(
@@ -111,8 +99,7 @@ export class CertificateAuthorityService {
     switch (certificateType) {
       case OCPP2_0_1.InstallCertificateUseEnumType.V2GRootCertificate: {
         const caCerts = await this._v2gClient.getCACertificates();
-        const rootCACert =
-          extractCertificateArrayFromEncodedString(caCerts).pop();
+        const rootCACert = extractCertificateArrayFromEncodedString(caCerts).pop();
         if (rootCACert) {
           return createPemBlock(
             'CERTIFICATE',
@@ -125,17 +112,11 @@ export class CertificateAuthorityService {
       case OCPP2_0_1.InstallCertificateUseEnumType.CSMSRootCertificate:
         return await this._chargingStationClient.getRootCACertificate();
       default:
-        throw new Error(
-          `Certificate type: ${certificateType} not implemented.`,
-        );
+        throw new Error(`Certificate type: ${certificateType} not implemented.`);
     }
   }
 
-  updateSecurityCertChainKeyMap(
-    serverId: string,
-    certificateChain: string,
-    privateKey: string,
-  ) {
+  updateSecurityCertChainKeyMap(serverId: string, certificateChain: string, privateKey: string) {
     this._chargingStationClient.updateCertificateChainKeyMap(
       serverId,
       certificateChain,
@@ -152,11 +133,8 @@ export class CertificateAuthorityService {
   public async validateCertificateChainPem(
     certificateChainPem: string,
   ): Promise<OCPP2_0_1.AuthorizeCertificateStatusEnumType> {
-    const certificatePems: string[] =
-      parseCertificateChainPem(certificateChainPem);
-    this._logger.debug(
-      `Found ${certificatePems.length} certificates in chain.`,
-    );
+    const certificatePems: string[] = parseCertificateChainPem(certificateChainPem);
+    this._logger.debug(`Found ${certificatePems.length} certificates in chain.`);
     if (certificatePems.length < 1) {
       return OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
     }
@@ -180,9 +158,7 @@ export class CertificateAuthorityService {
         }
       }
       if (!rootCertPem) {
-        this._logger.error(
-          `Cannot find root certificate for certificate ${lastCertInChain}`,
-        );
+        this._logger.error(`Cannot find root certificate for certificate ${lastCertInChain}`);
         return OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
       } else {
         certificatePems.push(rootCertPem);
@@ -221,9 +197,7 @@ export class CertificateAuthorityService {
             return OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
           }
         } else {
-          this._logger.error(
-            `Certificate ${certificatePems[i]} has no OCSP URL.`,
-          );
+          this._logger.error(`Certificate ${certificatePems[i]} has no OCSP URL.`);
           return OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError;
         }
       }
@@ -275,10 +249,7 @@ export class CertificateAuthorityService {
    * @param {string} caCerts - CA certificates.
    * @return {string} The certificate chain pem.
    */
-  private _createCertificateChainWithoutRootCA(
-    signedCert: string,
-    caCerts: string,
-  ): string {
+  private _createCertificateChainWithoutRootCA(signedCert: string, caCerts: string): string {
     let certificateChain = '';
     // Add Cert
     const leafRaw = extractCertificateArrayFromEncodedString(signedCert)[0];
@@ -288,15 +259,11 @@ export class CertificateAuthorityService {
         Buffer.from(leafRaw.toSchema().toBER(false)).toString('base64'),
       );
     } else {
-      throw new Error(
-        `Cannot extract leaf certificate from the pem: ${signedCert}`,
-      );
+      throw new Error(`Cannot extract leaf certificate from the pem: ${signedCert}`);
     }
 
     // Add Chain without Root CA Certificate
-    const chainWithoutRoot = extractCertificateArrayFromEncodedString(
-      caCerts,
-    ).slice(0, -1);
+    const chainWithoutRoot = extractCertificateArrayFromEncodedString(caCerts).slice(0, -1);
     chainWithoutRoot.forEach((certItem) => {
       const cert = certItem as Certificate;
       certificateChain += createPemBlock(
@@ -308,17 +275,13 @@ export class CertificateAuthorityService {
     return certificateChain;
   }
 
-  private _instantiateV2GClient(
-    config: SystemConfig,
-  ): IV2GCertificateAuthorityClient {
+  private _instantiateV2GClient(config: SystemConfig): IV2GCertificateAuthorityClient {
     switch (config.util.certificateAuthority.v2gCA.name) {
       case 'hubject': {
         return new Hubject(config);
       }
       default: {
-        throw new Error(
-          `Unsupported V2G CA: ${config.util.certificateAuthority.v2gCA.name}`,
-        );
+        throw new Error(`Unsupported V2G CA: ${config.util.certificateAuthority.v2gCA.name}`);
       }
     }
   }

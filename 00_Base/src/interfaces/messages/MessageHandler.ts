@@ -42,10 +42,7 @@ export interface IMessageHandler {
    * @param message - The message to be handled.
    * @param props - Optional properties for the handler.
    */
-  handle(
-    message: IMessage<OcppRequest | OcppResponse>,
-    props?: HandlerProperties,
-  ): void;
+  handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void;
 
   /**
    * Shuts down the handler. Unregister all handlers and opening up any resources.

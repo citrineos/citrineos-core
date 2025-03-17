@@ -1,7 +1,4 @@
-export function assert(
-  predicate: boolean | (() => boolean),
-  message?: string,
-): asserts predicate {
+export function assert(predicate: boolean | (() => boolean), message?: string): asserts predicate {
   switch (typeof predicate) {
     case 'boolean': {
       if (!predicate) {
@@ -33,19 +30,10 @@ export function notNull(object: any): boolean {
  * @returns
  */
 
-export function deepDirectionalEqual(
-  obj1: any,
-  obj2: any,
-  seenObjects = new WeakSet(),
-): boolean {
+export function deepDirectionalEqual(obj1: any, obj2: any, seenObjects = new WeakSet()): boolean {
   if (obj1 === obj2) return true;
 
-  if (
-    typeof obj1 !== 'object' ||
-    obj1 === null ||
-    typeof obj2 !== 'object' ||
-    obj2 === null
-  ) {
+  if (typeof obj1 !== 'object' || obj1 === null || typeof obj2 !== 'object' || obj2 === null) {
     return false;
   }
 
@@ -61,10 +49,7 @@ export function deepDirectionalEqual(
   const keys2 = Object.keys(obj2);
 
   for (const key of keys1) {
-    if (
-      !keys2.includes(key) ||
-      !deepDirectionalEqual(obj1[key], obj2[key], seenObjects)
-    ) {
+    if (!keys2.includes(key) || !deepDirectionalEqual(obj1[key], obj2[key], seenObjects)) {
       return false;
     }
   }

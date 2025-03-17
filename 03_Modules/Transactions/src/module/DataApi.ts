@@ -49,11 +49,7 @@ export class TransactionsDataApi
     super(transactionModule, server, null, logger);
   }
 
-  @AsDataEndpoint(
-    Namespace.TransactionType,
-    HttpMethod.Get,
-    TransactionEventQuerySchema,
-  )
+  @AsDataEndpoint(Namespace.TransactionType, HttpMethod.Get, TransactionEventQuerySchema)
   getTransactionByStationIdAndTransactionId(
     request: FastifyRequest<{ Querystring: TransactionEventQuerystring }>,
   ): Promise<Transaction | undefined> {
@@ -63,45 +59,28 @@ export class TransactionsDataApi
     );
   }
 
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.Tariff,
-    HttpMethod.Put,
-    undefined,
-    TariffSchema,
-  )
+  @AsDataEndpoint(OCPP2_0_1_Namespace.Tariff, HttpMethod.Put, undefined, TariffSchema)
   async upsertTariff(
     request: FastifyRequest<{
       Body: any;
     }>,
   ): Promise<Tariff> {
-    const tariff = this.buildTariff(
-      plainToInstance(UpsertTariffRequest, request.body),
-    );
+    const tariff = this.buildTariff(plainToInstance(UpsertTariffRequest, request.body));
     return await this._module.tariffRepository.upsertTariff(tariff);
   }
 
   @AsDataEndpoint(OCPP2_0_1_Namespace.Tariff, HttpMethod.Get, TariffQuerySchema)
-  getTariffs(
-    request: FastifyRequest<{ Querystring: TariffQueryString }>,
-  ): Promise<Tariff[]> {
+  getTariffs(request: FastifyRequest<{ Querystring: TariffQueryString }>): Promise<Tariff[]> {
     return this._module.tariffRepository.readAllByQuerystring(request.query);
   }
 
-  @AsDataEndpoint(
-    OCPP2_0_1_Namespace.Tariff,
-    HttpMethod.Delete,
-    TariffQuerySchema,
-  )
-  deleteTariffs(
-    request: FastifyRequest<{ Querystring: TariffQueryString }>,
-  ): Promise<string> {
+  @AsDataEndpoint(OCPP2_0_1_Namespace.Tariff, HttpMethod.Delete, TariffQuerySchema)
+  deleteTariffs(request: FastifyRequest<{ Querystring: TariffQueryString }>): Promise<string> {
     return this._module.tariffRepository
       .deleteAllByQuerystring(request.query)
       .then(
         (deletedCount: { toString: () => string }) =>
-          deletedCount.toString() +
-          ' rows successfully deleted from ' +
-          OCPP2_0_1_Namespace.Tariff,
+          deletedCount.toString() + ' rows successfully deleted from ' + OCPP2_0_1_Namespace.Tariff,
       );
   }
 
@@ -112,11 +91,8 @@ export class TransactionsDataApi
    * @param {Namespace} input - The input {@link Namespace}.
    * @return {string} - The generated URL path.
    */
-  protected _toDataPath(
-    input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace,
-  ): string {
-    const endpointPrefix =
-      this._module.config.modules.transactions.endpointPrefix;
+  protected _toDataPath(input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace): string {
+    const endpointPrefix = this._module.config.modules.transactions.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
   }
 

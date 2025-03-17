@@ -51,7 +51,7 @@ import { Tariff } from './model/Tariff';
 import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
 import { SetNetworkProfile, StatusNotification } from './model/Location';
 import { LatestStatusNotification } from './model/Location/LatestStatusNotification';
-import { StartTransaction } from './model/TransactionEvent';
+import { StartTransaction, StopTransaction } from './model/TransactionEvent';
 
 export class DefaultSequelizeInstance {
   /**
@@ -68,7 +68,9 @@ export class DefaultSequelizeInstance {
   public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): Sequelize {
     if (!DefaultSequelizeInstance.instance) {
       DefaultSequelizeInstance.config = config;
-      DefaultSequelizeInstance.logger = logger ? logger.getSubLogger({ name: this.name }) : new Logger<ILogObj>({ name: this.name });
+      DefaultSequelizeInstance.logger = logger
+        ? logger.getSubLogger({ name: this.name })
+        : new Logger<ILogObj>({ name: this.name });
 
       DefaultSequelizeInstance.instance = this.createSequelizeInstance();
     }
@@ -88,7 +90,10 @@ export class DefaultSequelizeInstance {
         break;
       } catch (error) {
         retryCount++;
-        this.logger.error(`Failed to connect to the database (attempt ${retryCount}/${maxRetries}):`, error);
+        this.logger.error(
+          `Failed to connect to the database (attempt ${retryCount}/${maxRetries}):`,
+          error,
+        );
         if (retryCount < maxRetries) {
           this.logger.info(`Retrying in ${retryDelay / 1000} seconds...`);
           await new Promise((resolve) => setTimeout(resolve, retryDelay));
@@ -152,6 +157,7 @@ export class DefaultSequelizeInstance {
         ServerNetworkProfile,
         StartTransaction,
         StatusNotification,
+        StopTransaction,
         LatestStatusNotification,
         Subscription,
         Transaction,

@@ -40,10 +40,7 @@ export class ConfigurationOcpp16Api
     super(ConfigurationComponent, server, OCPPVersion.OCPP1_6, logger);
   }
 
-  @AsMessageEndpoint(
-    OCPP1_6_CallAction.TriggerMessage,
-    OCPP1_6.TriggerMessageRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP1_6_CallAction.TriggerMessage, OCPP1_6.TriggerMessageRequestSchema)
   async triggerMessage(
     identifier: string[],
     tenantId: string,
@@ -83,9 +80,7 @@ export class ConfigurationOcpp16Api
     this._logger.debug('ChangeConfiguration request received:', request);
     const confirmations = identifier.map(async (stationId) => {
       const chargingStation =
-        await this._module.locationRepository.readChargingStationByStationId(
-          stationId,
-        );
+        await this._module.locationRepository.readChargingStationByStationId(stationId);
       if (!chargingStation) {
         return {
           success: false,
@@ -106,10 +101,7 @@ export class ConfigurationOcpp16Api
     return Promise.all(confirmations);
   }
 
-  @AsMessageEndpoint(
-    OCPP1_6_CallAction.GetConfiguration,
-    OCPP1_6.GetConfigurationRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP1_6_CallAction.GetConfiguration, OCPP1_6.GetConfigurationRequestSchema)
   async getConfiguration(
     identifier: string[],
     tenantId: string,
@@ -123,9 +115,7 @@ export class ConfigurationOcpp16Api
     await Promise.all(
       identifier.map(async (stationId) => {
         const chargingStation =
-          await this._module.locationRepository.readChargingStationByStationId(
-            stationId,
-          );
+          await this._module.locationRepository.readChargingStationByStationId(stationId);
         if (!chargingStation) {
           confirmations.push({
             success: false,
@@ -138,13 +128,12 @@ export class ConfigurationOcpp16Api
           return;
         }
 
-        const maxKeysConfig =
-          await this._module.changeConfigurationRepository.readOnlyOneByQuery({
-            where: {
-              stationId: stationId,
-              key: 'GetConfigurationMaxKeys',
-            },
-          });
+        const maxKeysConfig = await this._module.changeConfigurationRepository.readOnlyOneByQuery({
+          where: {
+            stationId: stationId,
+            key: 'GetConfigurationMaxKeys',
+          },
+        });
         const maxKeys = maxKeysConfig?.value
           ? parseInt(maxKeysConfig.value, 10)
           : Number.MAX_SAFE_INTEGER;
@@ -204,43 +193,40 @@ export class ConfigurationOcpp16Api
 
   @AsMessageEndpoint(OCPP1_6_CallAction.Reset, OCPP1_6.ResetRequestSchema)
   reset(
-      identifier: string[],
-      tenantId: string,
-      request: OCPP1_6.ResetRequest,
-      callbackUrl?: string,
+    identifier: string[],
+    tenantId: string,
+    request: OCPP1_6.ResetRequest,
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
-        this._module.sendCall(
-            id,
-            tenantId,
-            OCPPVersion.OCPP1_6,
-            OCPP1_6_CallAction.Reset,
-            request,
-            callbackUrl,
-        ),
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.Reset,
+        request,
+        callbackUrl,
+      ),
     );
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-      OCPP1_6_CallAction.ChangeAvailability,
-      OCPP1_6.ChangeAvailabilityRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP1_6_CallAction.ChangeAvailability, OCPP1_6.ChangeAvailabilityRequestSchema)
   changeAvailability(
-      identifier: string[],
-      tenantId: string,
-      request: OCPP1_6.ChangeAvailabilityRequest,
-      callbackUrl?: string,
+    identifier: string[],
+    tenantId: string,
+    request: OCPP1_6.ChangeAvailabilityRequest,
+    callbackUrl?: string,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
-        this._module.sendCall(
-            id,
-            tenantId,
-            OCPPVersion.OCPP1_6,
-            OCPP1_6_CallAction.ChangeAvailability,
-            request,
-            callbackUrl,
-        ),
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.ChangeAvailability,
+        request,
+        callbackUrl,
+      ),
     );
     return Promise.all(results);
   }
@@ -252,8 +238,7 @@ export class ConfigurationOcpp16Api
    * @return {string} - The generated URL path.
    */
   protected _toMessagePath(input: CallAction): string {
-    const endpointPrefix =
-      this._module.config.modules.configuration.endpointPrefix;
+    const endpointPrefix = this._module.config.modules.configuration.endpointPrefix;
     return super._toMessagePath(input, endpointPrefix);
   }
 }

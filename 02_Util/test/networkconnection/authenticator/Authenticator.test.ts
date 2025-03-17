@@ -49,9 +49,7 @@ describe('Authenticator', () => {
 
   it('should reject when unknown station filter rejects', async () => {
     const stationId = faker.string.uuid().toString();
-    unknownStationFilter.authenticate.mockRejectedValue(
-      new Error('Unknown station'),
-    );
+    unknownStationFilter.authenticate.mockRejectedValue(new Error('Unknown station'));
 
     await expect(
       authenticator.authenticate(
@@ -68,9 +66,7 @@ describe('Authenticator', () => {
   it('should reject when connected station filter rejects', async () => {
     const stationId = faker.string.uuid().toString();
     unknownStationFilter.authenticate.mockResolvedValue(undefined);
-    connectedStationFilter.authenticate.mockRejectedValue(
-      new Error('Station already connected'),
-    );
+    connectedStationFilter.authenticate.mockRejectedValue(new Error('Station already connected'));
 
     await expect(
       authenticator.authenticate(
@@ -87,9 +83,7 @@ describe('Authenticator', () => {
     const stationId = faker.string.uuid().toString();
     unknownStationFilter.authenticate.mockResolvedValue(undefined);
     connectedStationFilter.authenticate.mockResolvedValue(undefined);
-    networkProfileFilter.authenticate.mockRejectedValue(
-      new Error('Unauthorized'),
-    );
+    networkProfileFilter.authenticate.mockRejectedValue(new Error('Unauthorized'));
 
     await expect(
       authenticator.authenticate(
@@ -106,9 +100,7 @@ describe('Authenticator', () => {
     unknownStationFilter.authenticate.mockResolvedValue(undefined);
     connectedStationFilter.authenticate.mockResolvedValue(undefined);
     networkProfileFilter.authenticate.mockResolvedValue(undefined);
-    basicAuthenticationFilter.authenticate.mockRejectedValue(
-      new Error('Unauthorized'),
-    );
+    basicAuthenticationFilter.authenticate.mockRejectedValue(new Error('Unauthorized'));
 
     await expect(async () => {
       await authenticator.authenticate(

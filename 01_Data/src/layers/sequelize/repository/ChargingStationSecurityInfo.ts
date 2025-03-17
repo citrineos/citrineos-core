@@ -5,7 +5,10 @@ import { Sequelize } from 'sequelize-typescript';
 import { SystemConfig } from '@citrineos/base';
 import { IChargingStationSecurityInfoRepository } from '../../../interfaces';
 
-export class SequelizeChargingStationSecurityInfoRepository extends SequelizeRepository<ChargingStationSecurityInfo> implements IChargingStationSecurityInfoRepository {
+export class SequelizeChargingStationSecurityInfoRepository
+  extends SequelizeRepository<ChargingStationSecurityInfo>
+  implements IChargingStationSecurityInfoRepository
+{
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, ChargingStationSecurityInfo.MODEL_NAME, logger, sequelizeInstance);
   }

@@ -20,10 +20,7 @@ export function extractBasicCredentials(req: IncomingMessage): {
   }
 
   const base64Credentials = authHeader.split(' ')[1];
-  const decodedCredentials = Buffer.from(
-    base64Credentials,
-    'base64',
-  ).toString();
+  const decodedCredentials = Buffer.from(base64Credentials, 'base64').toString();
 
   const [username, password] = splitOnce(decodedCredentials, ':');
 

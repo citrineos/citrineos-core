@@ -6,27 +6,25 @@
 import { QuerySchema } from '@citrineos/base';
 
 export interface NetworkProfileQuerystring {
-    stationId: string;
+  stationId: string;
 }
 
 export const NetworkProfileQuerySchema = QuerySchema(
-    'NetworkProfileQuerySchema',
-    [
-        ['stationId', 'string']
-    ],
-    ['stationId']
+  'NetworkProfileQuerySchema',
+  [['stationId', 'string']],
+  ['stationId'],
 );
 
 export interface NetworkProfileDeleteQuerystring {
-    stationId: string;
-    configurationSlot: number[];
+  stationId: string;
+  configurationSlot: number[];
 }
 
 export const NetworkProfileDeleteQuerySchema = QuerySchema(
-    'NetworkProfileDeleteQuerySchema',
-    [
-        ['stationId', 'string'],
-        ['configurationSlot', 'number[]']
-    ],
-    ['stationId', 'configurationSlot']
+  'NetworkProfileDeleteQuerySchema',
+  [
+    ['stationId', 'string'],
+    ['configurationSlot', 'number[]'],
+  ],
+  ['stationId', 'configurationSlot'],
 );

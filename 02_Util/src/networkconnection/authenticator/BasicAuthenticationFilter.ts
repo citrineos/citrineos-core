@@ -13,10 +13,7 @@ import { UpgradeAuthenticationError } from './errors/AuthenticationError';
 export class BasicAuthenticationFilter extends AuthenticatorFilter {
   private _deviceModelRepository: IDeviceModelRepository;
 
-  constructor(
-    deviceModelRepository: IDeviceModelRepository,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(deviceModelRepository: IDeviceModelRepository, logger?: Logger<ILogObj>) {
     super(logger);
     this._deviceModelRepository = deviceModelRepository;
   }
@@ -25,21 +22,13 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
     return options.securityProfile === 1 || options.securityProfile === 2;
   }
 
-  protected async filter(
-    identifier: string,
-    request: IncomingMessage,
-  ): Promise<void> {
+  protected async filter(identifier: string, request: IncomingMessage): Promise<void> {
     const { username, password } = extractBasicCredentials(request);
     if (!username || !password) {
-      throw new UpgradeAuthenticationError(
-        'Auth header missing or incorrectly formatted',
-      );
+      throw new UpgradeAuthenticationError('Auth header missing or incorrectly formatted');
     }
 
-    if (
-      username !== identifier ||
-      !(await this._isPasswordValid(username, password))
-    ) {
+    if (username !== identifier || !(await this._isPasswordValid(username, password))) {
       throw new UpgradeAuthenticationError(`Unauthorized ${identifier}`);
     }
   }

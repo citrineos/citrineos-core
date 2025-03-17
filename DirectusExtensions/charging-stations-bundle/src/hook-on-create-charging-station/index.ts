@@ -19,10 +19,7 @@ export default defineHook(({ action }, { env }) => {
     };
 
     console.log(
-      'Subscribing to ' +
-        subscriptionUrl +
-        ' with request body ' +
-        JSON.stringify(requestBody),
+      'Subscribing to ' + subscriptionUrl + ' with request body ' + JSON.stringify(requestBody),
     );
     fetch(subscriptionUrl, {
       method: 'POST',

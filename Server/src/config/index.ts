@@ -1,4 +1,4 @@
-import {ConfigStoreFactory, SystemConfig} from '@citrineos/base';
+import { ConfigStoreFactory, SystemConfig } from '@citrineos/base';
 import { createLocalConfig } from './envs/local';
 import { createDockerConfig } from './envs/docker';
 
