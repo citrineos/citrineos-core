@@ -55,12 +55,14 @@ export class SendLocalList extends Model implements OCPP2_0_1.SendLocalListReque
                 groupIdToken: {
                   idToken: localListAuth.idTokenInfo?.groupIdToken?.idToken,
                   type: localListAuth.idTokenInfo?.groupIdToken?.type,
-                  additionalInfo: localListAuth.idTokenInfo?.groupIdToken?.additionalInfo?.map((additionalInfo) => {
-                    return {
-                      additionalIdToken: additionalInfo.additionalIdToken,
-                      type: additionalInfo.type,
-                    };
-                  }),
+                  additionalInfo: localListAuth.idTokenInfo?.groupIdToken?.additionalInfo?.map(
+                    (additionalInfo) => {
+                      return {
+                        additionalIdToken: additionalInfo.additionalIdToken,
+                        type: additionalInfo.type,
+                      };
+                    },
+                  ),
                 },
                 language2: localListAuth.idTokenInfo?.language2,
                 personalMessage: localListAuth.idTokenInfo?.personalMessage,

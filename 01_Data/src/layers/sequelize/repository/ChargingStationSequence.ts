@@ -5,14 +5,20 @@ import { ChargingStationSequenceType, SystemConfig } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
 
-export class SequelizeChargingStationSequenceRepository extends SequelizeRepository<ChargingStationSequence> implements IChargingStationSequenceRepository {
+export class SequelizeChargingStationSequenceRepository
+  extends SequelizeRepository<ChargingStationSequence>
+  implements IChargingStationSequenceRepository
+{
   private static readonly SEQUENCE_START = 1;
 
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, ChargingStationSequence.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async getNextSequenceValue(stationId: string, type: ChargingStationSequenceType): Promise<number> {
+  async getNextSequenceValue(
+    stationId: string,
+    type: ChargingStationSequenceType,
+  ): Promise<number> {
     return await this.s.transaction(async (transaction) => {
       const [storedSequence, sequenceCreated] = await this.readOrCreateByQuery({
         where: {

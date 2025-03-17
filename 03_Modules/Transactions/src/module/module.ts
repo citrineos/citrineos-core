@@ -575,25 +575,18 @@ export class TransactionsModule extends AbstractModule {
     message: IMessage<OCPP1_6.StopTransactionRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug(
-      'OCPP 1.6 StopTransaction request received:',
-      message,
-      props,
-    );
+    this._logger.debug('OCPP 1.6 StopTransaction request received:', message, props);
 
     const stationId = message.context.stationId;
     const request = message.payload;
 
-    const transaction =
-      await this._transactionEventRepository.readOnlyOneByQuery({
-        stationId,
-        transactionId: request.transactionId.toString(),
-      });
+    const transaction = await this._transactionEventRepository.readOnlyOneByQuery({
+      stationId,
+      transactionId: request.transactionId.toString(),
+    });
 
     if (!transaction) {
-      this._logger.error(
-        `Transaction ${request.transactionId} not found or already stopped.`,
-      );
+      this._logger.error(`Transaction ${request.transactionId} not found or already stopped.`);
       await this.sendCallResultWithMessage(message, {});
       return;
     }
@@ -605,17 +598,15 @@ export class TransactionsModule extends AbstractModule {
       : null;
     const idTokenDatabaseId = idTokenRecord ? idTokenRecord.id : undefined;
 
-    const stopTransaction =
-      await this._transactionEventRepository.createStopTransaction(
-        request.transactionId.toString(),
-        stationId,
-        request.meterStop,
-        new Date(request.timestamp),
-        request.transactionData?.map((data) => MeterValue.build({ ...data })) ||
-          [],
-        request.reason || (request.idTag ? 'Remote' : 'Local'),
-        idTokenDatabaseId,
-      );
+    const stopTransaction = await this._transactionEventRepository.createStopTransaction(
+      request.transactionId.toString(),
+      stationId,
+      request.meterStop,
+      new Date(request.timestamp),
+      request.transactionData?.map((data) => MeterValue.build({ ...data })) || [],
+      request.reason || (request.idTag ? 'Remote' : 'Local'),
+      idTokenDatabaseId,
+    );
 
     if (!stopTransaction) {
       this._logger.error(
@@ -625,10 +616,7 @@ export class TransactionsModule extends AbstractModule {
       return;
     }
 
-    await this._transactionService.finalizeTransaction(
-      transaction.id,
-      stopTransaction,
-    );
+    await this._transactionService.finalizeTransaction(transaction.id, stopTransaction);
 
     const idTagInfo = await this._authorizeRepository.readAllByQuerystring({
       idToken: request.idTag as string,
@@ -639,8 +627,6 @@ export class TransactionsModule extends AbstractModule {
       idTagInfo: idTagInfo ? { status: 'Accepted' } : undefined,
     });
 
-    this._logger.info(
-      `Transaction ${request.transactionId} stopped successfully.`,
-    );
+    this._logger.info(`Transaction ${request.transactionId} stopped successfully.`);
   }
 }

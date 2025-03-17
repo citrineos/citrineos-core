@@ -1,6 +1,11 @@
 import { OCPP2_0_1 } from '@citrineos/base';
 import { AuthorizationMapper } from '../../../../../src/layers/sequelize/mapper/2.0.1';
-import { aAuthorization, aIdToken, aIdTokenInfo, aAdditionalInfo } from '../../../../providers/Authorization';
+import {
+  aAuthorization,
+  aIdToken,
+  aIdTokenInfo,
+  aAdditionalInfo,
+} from '../../../../providers/Authorization';
 
 describe('AuthenticationMapper', () => {
   // Helper function to validate common structure
@@ -99,8 +104,14 @@ describe('AuthenticationMapper', () => {
         { input: 'Expired', output: OCPP2_0_1.AuthorizationStatusEnumType.Expired },
         { input: 'Invalid', output: OCPP2_0_1.AuthorizationStatusEnumType.Invalid },
         { input: 'NoCredit', output: OCPP2_0_1.AuthorizationStatusEnumType.NoCredit },
-        { input: 'NotAllowedTypeEVSE', output: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE },
-        { input: 'NotAtThisLocation', output: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation },
+        {
+          input: 'NotAllowedTypeEVSE',
+          output: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
+        },
+        {
+          input: 'NotAtThisLocation',
+          output: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
+        },
         { input: 'NotAtThisTime', output: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisTime },
         { input: 'Unknown', output: OCPP2_0_1.AuthorizationStatusEnumType.Unknown },
       ];
@@ -113,7 +124,9 @@ describe('AuthenticationMapper', () => {
       });
 
       it('should throw an error for unknown statuses', () => {
-        expect(() => AuthorizationMapper.toAuthorizationStatusEnumType('InvalidStatus')).toThrow('Unknown authorization status');
+        expect(() => AuthorizationMapper.toAuthorizationStatusEnumType('InvalidStatus')).toThrow(
+          'Unknown authorization status',
+        );
       });
     });
 
@@ -137,7 +150,9 @@ describe('AuthenticationMapper', () => {
       });
 
       it('should throw an error for unknown types', () => {
-        expect(() => AuthorizationMapper.toIdTokenEnumType('InvalidType')).toThrow('Unknown idToken type');
+        expect(() => AuthorizationMapper.toIdTokenEnumType('InvalidType')).toThrow(
+          'Unknown idToken type',
+        );
       });
     });
 
@@ -157,7 +172,9 @@ describe('AuthenticationMapper', () => {
       });
 
       it('should throw an error for unknown message formats', () => {
-        expect(() => AuthorizationMapper.toMessageFormatEnum('UnknownFormat')).toThrow('Unknown message format');
+        expect(() => AuthorizationMapper.toMessageFormatEnum('UnknownFormat')).toThrow(
+          'Unknown message format',
+        );
       });
     });
   });
@@ -204,7 +221,9 @@ describe('AuthenticationMapper', () => {
         content: 'Hello World',
       };
 
-      expect(() => AuthorizationMapper.toMessageContentType(messageContent)).toThrow('Unknown message format');
+      expect(() => AuthorizationMapper.toMessageContentType(messageContent)).toThrow(
+        'Unknown message format',
+      );
     });
   });
 });

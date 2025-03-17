@@ -11,7 +11,10 @@ import { StatusNotification } from '../model/Location';
 import { Op } from 'sequelize';
 import { LatestStatusNotification } from '../model/Location/LatestStatusNotification';
 
-export class SequelizeLocationRepository extends SequelizeRepository<Location> implements ILocationRepository {
+export class SequelizeLocationRepository
+  extends SequelizeRepository<Location>
+  implements ILocationRepository
+{
   chargingStation: CrudRepository<ChargingStation>;
   statusNotification: CrudRepository<StatusNotification>;
   latestStatusNotification: CrudRepository<LatestStatusNotification>;
@@ -27,10 +30,33 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     connector?: CrudRepository<Connector>,
   ) {
     super(config, Location.MODEL_NAME, logger, sequelizeInstance);
-    this.chargingStation = chargingStation ? chargingStation : new SequelizeRepository<ChargingStation>(config, ChargingStation.MODEL_NAME, logger, sequelizeInstance);
-    this.statusNotification = statusNotification ? statusNotification : new SequelizeRepository<StatusNotification>(config, StatusNotification.MODEL_NAME, logger, sequelizeInstance);
-    this.latestStatusNotification = latestStatusNotification ? latestStatusNotification : new SequelizeRepository<LatestStatusNotification>(config, LatestStatusNotification.MODEL_NAME, logger, sequelizeInstance);
-    this.connector = connector ? connector : new SequelizeRepository<Connector>(config, Connector.MODEL_NAME, logger, sequelizeInstance);
+    this.chargingStation = chargingStation
+      ? chargingStation
+      : new SequelizeRepository<ChargingStation>(
+          config,
+          ChargingStation.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.statusNotification = statusNotification
+      ? statusNotification
+      : new SequelizeRepository<StatusNotification>(
+          config,
+          StatusNotification.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.latestStatusNotification = latestStatusNotification
+      ? latestStatusNotification
+      : new SequelizeRepository<LatestStatusNotification>(
+          config,
+          LatestStatusNotification.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.connector = connector
+      ? connector
+      : new SequelizeRepository<Connector>(config, Connector.MODEL_NAME, logger, sequelizeInstance);
   }
 
   async readLocationById(id: number): Promise<Location | undefined> {
@@ -52,7 +78,10 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     return await this.chargingStation.existsByKey(stationId);
   }
 
-  async addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotification): Promise<void> {
+  async addStatusNotificationToChargingStation(
+    stationId: string,
+    statusNotification: StatusNotification,
+  ): Promise<void> {
     const savedStatusNotification = await this.statusNotification.create(statusNotification);
     try {
       await this.updateLatestStatusNotification(stationId, savedStatusNotification);
@@ -61,27 +90,31 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
     }
   }
 
-  async updateLatestStatusNotification(stationId: string, statusNotification: StatusNotification): Promise<void> {
+  async updateLatestStatusNotification(
+    stationId: string,
+    statusNotification: StatusNotification,
+  ): Promise<void> {
     const evseId = statusNotification.evseId;
     const connectorId = statusNotification.connectorId;
     const statusNotificationId = statusNotification.id;
     // delete operation doesn't support "include" in query
     // so we need to find them at first and then delete
-    const existingLatestStatusNotifications: LatestStatusNotification[] = await this.latestStatusNotification.readAllByQuery({
-      where: {
-        stationId,
-      },
-      include: [
-        {
-          model: StatusNotification,
-          where: {
-            evseId,
-            connectorId,
-          },
-          require: true,
+    const existingLatestStatusNotifications: LatestStatusNotification[] =
+      await this.latestStatusNotification.readAllByQuery({
+        where: {
+          stationId,
         },
-      ],
-    });
+        include: [
+          {
+            model: StatusNotification,
+            where: {
+              evseId,
+              connectorId,
+            },
+            require: true,
+          },
+        ],
+      });
     const idsToDelete = existingLatestStatusNotifications.map((l) => l.id);
     await this.latestStatusNotification.deleteAllByQuery({
       where: {
@@ -160,23 +193,24 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
 
   async createOrUpdateChargingStation(chargingStation: ChargingStation): Promise<ChargingStation> {
     if (chargingStation.id) {
-      const [savedChargingStation, chargingStationCreated] = await this.chargingStation.readOrCreateByQuery({
-        where: {
-          id: chargingStation.id,
-        },
-        defaults: {
-          locationId: chargingStation.locationId,
-          chargePointVendor: chargingStation.chargePointVendor,
-          chargePointModel: chargingStation.chargePointModel,
-          chargePointSerialNumber: chargingStation.chargePointSerialNumber,
-          chargeBoxSerialNumber: chargingStation.chargeBoxSerialNumber,
-          firmwareVersion: chargingStation.firmwareVersion,
-          iccid: chargingStation.iccid,
-          imsi: chargingStation.imsi,
-          meterType: chargingStation.meterType,
-          meterSerialNumber: chargingStation.meterSerialNumber,
-        },
-      });
+      const [savedChargingStation, chargingStationCreated] =
+        await this.chargingStation.readOrCreateByQuery({
+          where: {
+            id: chargingStation.id,
+          },
+          defaults: {
+            locationId: chargingStation.locationId,
+            chargePointVendor: chargingStation.chargePointVendor,
+            chargePointModel: chargingStation.chargePointModel,
+            chargePointSerialNumber: chargingStation.chargePointSerialNumber,
+            chargeBoxSerialNumber: chargingStation.chargeBoxSerialNumber,
+            firmwareVersion: chargingStation.firmwareVersion,
+            iccid: chargingStation.iccid,
+            imsi: chargingStation.imsi,
+            meterType: chargingStation.meterType,
+            meterSerialNumber: chargingStation.meterSerialNumber,
+          },
+        });
       if (!chargingStationCreated) {
         await this.chargingStation.updateByKey(
           {

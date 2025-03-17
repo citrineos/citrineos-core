@@ -14,7 +14,9 @@ export class MeterValueMapper {
     };
   }
 
-  static toSampledValueTypes(sampledValues: any): [OCPP2_0_1.SampledValueType, ...OCPP2_0_1.SampledValueType[]] {
+  static toSampledValueTypes(
+    sampledValues: any,
+  ): [OCPP2_0_1.SampledValueType, ...OCPP2_0_1.SampledValueType[]] {
     if (!(sampledValues instanceof Array) || sampledValues.length === 0) {
       throw new Error(`Invalid sampledValues: ${JSON.stringify(sampledValues)}`);
     }

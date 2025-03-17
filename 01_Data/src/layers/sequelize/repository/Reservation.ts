@@ -11,18 +11,34 @@ import { ILogObj, Logger } from 'tslog';
 import { Reservation } from '../model/Reservation';
 import { Evse } from '../model/DeviceModel';
 
-export class SequelizeReservationRepository extends SequelizeRepository<Reservation> implements IReservationRepository {
+export class SequelizeReservationRepository
+  extends SequelizeRepository<Reservation>
+  implements IReservationRepository
+{
   evse: CrudRepository<Evse>;
   logger: Logger<ILogObj>;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, evse?: CrudRepository<Evse>) {
+  constructor(
+    config: SystemConfig,
+    logger?: Logger<ILogObj>,
+    sequelizeInstance?: Sequelize,
+    evse?: CrudRepository<Evse>,
+  ) {
     super(config, Reservation.MODEL_NAME, logger, sequelizeInstance);
-    this.evse = evse ? evse : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
+    this.evse = evse
+      ? evse
+      : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
 
-    this.logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
+    this.logger = logger
+      ? logger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  async createOrUpdateReservation(reserveNowRequest: OCPP2_0_1.ReserveNowRequest, stationId: string, isActive?: boolean): Promise<Reservation | undefined> {
+  async createOrUpdateReservation(
+    reserveNowRequest: OCPP2_0_1.ReserveNowRequest,
+    stationId: string,
+    isActive?: boolean,
+  ): Promise<Reservation | undefined> {
     let evseDBId: number | null = null;
     if (reserveNowRequest.evseId) {
       const [evse] = await this.evse.readAllByQuery({

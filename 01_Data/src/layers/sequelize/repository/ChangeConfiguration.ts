@@ -9,12 +9,17 @@ import { ChangeConfiguration, SequelizeRepository } from '..';
 import { Logger, ILogObj } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
 
-export class SequelizeChangeConfigurationRepository extends SequelizeRepository<ChangeConfiguration> implements IChangeConfigurationRepository {
+export class SequelizeChangeConfigurationRepository
+  extends SequelizeRepository<ChangeConfiguration>
+  implements IChangeConfigurationRepository
+{
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, ChangeConfiguration.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createOrUpdateChangeConfiguration(configuration: ChangeConfiguration): Promise<ChangeConfiguration | undefined> {
+  async createOrUpdateChangeConfiguration(
+    configuration: ChangeConfiguration,
+  ): Promise<ChangeConfiguration | undefined> {
     let changeConfiguration: ChangeConfiguration | undefined;
     await this.s.transaction(async (sequelizeTransaction) => {
       const [savedConfig, created] = await this.readOrCreateByQuery({
@@ -30,7 +35,10 @@ export class SequelizeChangeConfigurationRepository extends SequelizeRepository<
       if (created) {
         changeConfiguration = savedConfig;
       } else {
-        changeConfiguration = await savedConfig.update({ ...configuration }, { transaction: sequelizeTransaction });
+        changeConfiguration = await savedConfig.update(
+          { ...configuration },
+          { transaction: sequelizeTransaction },
+        );
         this.emit('updated', [changeConfiguration]);
       }
     });

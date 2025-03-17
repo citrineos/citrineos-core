@@ -16,7 +16,10 @@ export class AuthorizationMapper {
     }
     return {
       customData: idToken.customData,
-      additionalInfo: idToken.additionalInfo && idToken.additionalInfo.length > 0 ? (idToken.additionalInfo.map(this.toAdditionalInfo) as [any, ...any[]]) : null,
+      additionalInfo:
+        idToken.additionalInfo && idToken.additionalInfo.length > 0
+          ? (idToken.additionalInfo.map(this.toAdditionalInfo) as [any, ...any[]])
+          : null,
       idToken: idToken.idToken,
       type: AuthorizationMapper.toIdTokenEnumType(idToken.type),
     };
@@ -37,7 +40,9 @@ export class AuthorizationMapper {
       chargingPriority: authorization.idTokenInfo?.chargingPriority,
       language1: authorization.idTokenInfo?.language1,
       evseId: authorization.idTokenInfo?.evseId,
-      groupIdToken: authorization.idTokenInfo?.groupIdToken ? AuthorizationMapper.toIdToken(authorization.idTokenInfo?.groupIdToken) : undefined,
+      groupIdToken: authorization.idTokenInfo?.groupIdToken
+        ? AuthorizationMapper.toIdToken(authorization.idTokenInfo?.groupIdToken)
+        : undefined,
       language2: authorization.idTokenInfo?.language2,
       personalMessage: authorization.idTokenInfo?.personalMessage,
       customData: authorization.idTokenInfo?.customData,

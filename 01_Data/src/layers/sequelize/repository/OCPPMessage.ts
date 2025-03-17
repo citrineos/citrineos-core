@@ -10,7 +10,10 @@ import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { OCPPMessage } from '../model/OCPPMessage';
 
-export class SequelizeOCPPMessageRepository extends SequelizeRepository<OCPPMessage> implements IOCPPMessageRepository {
+export class SequelizeOCPPMessageRepository
+  extends SequelizeRepository<OCPPMessage>
+  implements IOCPPMessageRepository
+{
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, OCPPMessage.MODEL_NAME, logger, sequelizeInstance);
   }

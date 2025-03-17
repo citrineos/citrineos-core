@@ -4,7 +4,16 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, HasMany, HasOne, Model, Table } from 'sequelize-typescript';
+import {
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  HasOne,
+  Model,
+  Table,
+} from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
@@ -41,11 +50,17 @@ export class Transaction extends Model {
   @Column(DataType.BOOLEAN)
   declare isActive: boolean;
 
-  @HasMany(() => TransactionEvent, { as: Transaction.TRANSACTION_EVENTS_ALIAS, foreignKey: 'transactionDatabaseId' })
+  @HasMany(() => TransactionEvent, {
+    as: Transaction.TRANSACTION_EVENTS_ALIAS,
+    foreignKey: 'transactionDatabaseId',
+  })
   declare transactionEvents?: TransactionEvent[];
 
   // required only for filtering, should not be used to pull transaction events
-  @HasMany(() => TransactionEvent, { as: Transaction.TRANSACTION_EVENTS_FILTER_ALIAS, foreignKey: 'transactionDatabaseId' })
+  @HasMany(() => TransactionEvent, {
+    as: Transaction.TRANSACTION_EVENTS_FILTER_ALIAS,
+    foreignKey: 'transactionDatabaseId',
+  })
   declare transactionEventsFilter?: TransactionEvent[];
 
   @HasMany(() => MeterValue)

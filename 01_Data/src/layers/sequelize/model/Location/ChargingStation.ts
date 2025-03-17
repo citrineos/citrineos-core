@@ -3,7 +3,17 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace } from '@citrineos/base';
-import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import {
+  BelongsTo,
+  BelongsToMany,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
 import { Location } from './Location';
 import { StatusNotification } from './StatusNotification';
 import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
