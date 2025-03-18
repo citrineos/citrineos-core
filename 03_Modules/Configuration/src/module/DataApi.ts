@@ -120,7 +120,7 @@ export class ConfigurationDataApi
     }
     const password = request.body.password || generatePassword();
 
-    if (!request.body.setOnCharger) {
+    if (request.body.setOnCharger) {
       try {
         await this.updatePasswordOnStation(password, stationId, request.query.callbackUrl);
       } catch (error) {
