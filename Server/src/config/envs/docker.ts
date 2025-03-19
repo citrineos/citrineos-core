@@ -74,8 +74,10 @@ export function createDockerConfig() {
         },
       },
       fileAccess: {
-        local: {
-          defaultFilePath: '/data',
+        s3: {
+          endpoint: 'http://minio:9000',
+          defaultBucketName: 'citrineos-s3-bucket',
+          s3ForcePathStyle: true,
         },
       },
       swagger: {
