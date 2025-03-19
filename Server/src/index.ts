@@ -6,11 +6,12 @@
 import {
   type AbstractModule,
   Ajv,
+  ConfigStoreFactory,
   EventGroup,
   eventGroupFromString,
   type IAuthenticator,
   type ICache,
-  type IFileAccess,
+  type IFileStorage,
   type IMessageHandler,
   type IMessageSender,
   type IModule,
@@ -87,7 +88,7 @@ export class CitrineOSServer {
   private readonly _server: FastifyInstance;
   private readonly _cache: ICache;
   private readonly _ajv: Ajv;
-  private readonly _fileAccess: IFileAccess;
+  private readonly _fileStorage: IFileStorage;
   private readonly modules: IModule[] = [];
   private readonly apis: IModuleApi[] = [];
   private _sequelizeInstance!: Sequelize;
@@ -111,7 +112,7 @@ export class CitrineOSServer {
    * @param {FastifyInstance} server - optional Fastify server instance
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
    * @param {ICache} cache - cache
-   * @param {IFileAccess} fileAccess - file storage
+   * @param {IFileStorage} fileStorage - file storage
    */
   // todo rename event group to type
   constructor(
@@ -120,7 +121,7 @@ export class CitrineOSServer {
     server?: FastifyInstance,
     ajv?: Ajv,
     cache?: ICache,
-    fileAccess?: IFileAccess,
+    fileStorage?: IFileStorage,
   ) {
     // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
@@ -157,9 +158,8 @@ export class CitrineOSServer {
       .catch((error) => this._logger.error('Could not initialize swagger', error));
 
     // Add Directus Message API flow creation if enabled
-    let directusUtil: DirectusUtil | undefined = undefined;
-    if (this._config.util.directus?.generateFlows) {
-      directusUtil = new DirectusUtil(this._config, this._logger);
+    if (this._config.util.fileAccess.directus?.generateFlows) {
+      const directusUtil = ConfigStoreFactory.getInstance() as DirectusUtil;
       this._server.addHook('onRoute', (routeOptions: RouteOptions) => {
         directusUtil!
           .addDirectusMessageApiFlowsFastifyRouteHook(routeOptions, this._server.getSchemas())
@@ -175,7 +175,7 @@ export class CitrineOSServer {
     }
 
     // Initialize File Access Implementation
-    this._fileAccess = fileAccess || this.initFileAccess(directusUtil);
+    this._fileStorage = ConfigStoreFactory.getInstance();
 
     // Register AJV for schema validation
     this.registerAjv();
@@ -489,7 +489,7 @@ export class CitrineOSServer {
       new CertificatesDataApi(
         module,
         this._server,
-        this._fileAccess,
+        this._fileStorage,
         this._networkConnection!,
         this._config.util.networkConnection.websocketServers,
         this._logger,
@@ -601,7 +601,7 @@ export class CitrineOSServer {
     const module = new TransactionsModule(
       this._config,
       this._cache,
-      this._fileAccess,
+      this._fileStorage,
       this._createSender(),
       this._createHandler(),
       this._logger,
@@ -657,18 +657,6 @@ export class CitrineOSServer {
       this.initNetworkConnection();
     } else {
       await this.initModule();
-    }
-  }
-
-  private initFileAccess(directus?: IFileAccess): IFileAccess {
-    const fileAccessType = this._config.util.fileAccess?.currentFileAccess;
-
-    if (fileAccessType === 's3Storage') {
-      return new S3Storage(this._config);
-    } else if (fileAccessType === 'directus') {
-      return directus || new DirectusUtil(this._config, this._logger);
-    } else {
-      return directus || new DirectusUtil(this._config, this._logger);
     }
   }
 

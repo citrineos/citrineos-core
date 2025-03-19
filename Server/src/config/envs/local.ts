@@ -74,19 +74,15 @@ export function createLocalConfig() {
         },
       },
       fileAccess: {
-        currentFileAccess: 's3Storage',
+        local: {
+          defaultFilePath: '/data',
+        },
       },
       swagger: {
         path: '/docs',
         logoPath: path.resolve(path.dirname(__filename), '../../assets/logo.png'),
         exposeData: true,
         exposeMessage: true,
-      },
-      directus: {
-        host: '0.0.0.0',
-        port: 8055,
-        generateFlows: false,
-        token: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0',
       },
       networkConnection: {
         websocketServers: [
@@ -141,18 +137,6 @@ export function createLocalConfig() {
           },
         },
       },
-      configStorage: {
-        type: 's3',
-        s3: {
-          endpoint: 'http://localhost:9000',
-          bucketName: 'citrineos-s3-bucket',
-          keyName: 'local-config.json',
-        },
-        local: {
-          fileName: 'local-config.json',
-          configDir: './data',
-        },
-      },
     },
     logLevel: 2, // debug
     maxCallLengthSeconds: 30,
@@ -164,5 +148,6 @@ export function createLocalConfig() {
     userPreferences: {
       // None by default
     },
+    configFileName: 'config.json',
   });
 }

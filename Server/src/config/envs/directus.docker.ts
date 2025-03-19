@@ -5,7 +5,7 @@
 import { defineConfig, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
 import path from 'path';
 
-export function createDockerConfig() {
+export function createDirectusConfig() {
   return defineConfig({
     env: 'development',
     centralSystem: {
@@ -74,8 +74,10 @@ export function createDockerConfig() {
         },
       },
       fileAccess: {
-        local: {
-          defaultFilePath: '/data',
+        directus: {
+          host: 'directus',
+          port: 8055,
+          generateFlows: false,
         },
       },
       swagger: {

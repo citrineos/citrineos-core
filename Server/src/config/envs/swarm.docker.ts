@@ -96,13 +96,12 @@ export function createDockerConfig() {
         exposeData: true,
         exposeMessage: true,
       },
-      directus: {
-        host: 'directus',
-        port: 8055,
-        generateFlows: false,
-      },
       fileAccess: {
-        currentFileAccess: 's3Storage',
+        s3: {
+          endpoint: 'http://minio:9000',
+          defaultBucketName: 'citrineos-s3-bucket',
+          s3ForcePathStyle: true,
+        },
       },
       networkConnection: {
         websocketServers: [
@@ -148,18 +147,6 @@ export function createDockerConfig() {
           },
         },
       },
-      configStorage: {
-        type: 'local',
-        s3: {
-          endpoint: 'http://minio:9000',
-          bucketName: 'citrineos-s3-bucket',
-          keyName: 'swarm-docker-config.json',
-        },
-        local: {
-          fileName: 'swarm-docker-config.json',
-          configDir: './data',
-        },
-      },
     },
     logLevel: 2, // debug
     maxCallLengthSeconds: 5,
@@ -171,5 +158,6 @@ export function createDockerConfig() {
     userPreferences: {
       // None by default
     },
+    configFileName: 'config.json',
   });
 }

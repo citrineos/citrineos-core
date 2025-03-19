@@ -12,7 +12,7 @@ import {
   EventGroup,
   HandlerProperties,
   ICache,
-  IFileAccess,
+  IFileStorage,
   IMessage,
   IMessageHandler,
   IMessageSender,
@@ -78,7 +78,7 @@ export class TransactionsModule extends AbstractModule {
   protected _transactionService: TransactionService;
   protected _statusNotificationService: StatusNotificationService;
 
-  protected _fileAccess: IFileAccess;
+  protected _fileStorage: IFileStorage;
 
   private readonly _authorizers: IAuthorizer[];
 
@@ -96,7 +96,7 @@ export class TransactionsModule extends AbstractModule {
    *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
    *
-   * @param {IFileAccess} [fileAccess] - The `fileAccess` allows access to the configured file storage.
+   * @param {IFileStorage} [fileStorage] - The `fileStorage` allows access to the configured file storage.
    *
    * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
    * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
@@ -150,7 +150,7 @@ export class TransactionsModule extends AbstractModule {
   constructor(
     config: SystemConfig,
     cache: ICache,
-    fileAccess: IFileAccess,
+    fileStorage: IFileStorage,
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
@@ -172,7 +172,7 @@ export class TransactionsModule extends AbstractModule {
       logger,
     );
 
-    this._fileAccess = fileAccess;
+    this._fileStorage = fileStorage;
 
     this._transactionEventRepository =
       transactionEventRepository ||
@@ -193,7 +193,7 @@ export class TransactionsModule extends AbstractModule {
 
     this._authorizers = authorizers || [];
 
-    this._signedMeterValuesUtil = new SignedMeterValuesUtil(fileAccess, config, this._logger);
+    this._signedMeterValuesUtil = new SignedMeterValuesUtil(fileStorage, config, this._logger);
 
     this._sendCostUpdatedOnMeterValue = config.modules.transactions.sendCostUpdatedOnMeterValue;
     this._costUpdatedInterval = config.modules.transactions.costUpdatedInterval;

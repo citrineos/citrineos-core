@@ -1,6 +1,8 @@
-import { ConfigStoreFactory, SystemConfig } from '@citrineos/base';
+import { ConfigStore, ConfigStoreFactory, SystemConfig } from '@citrineos/base';
 import { createLocalConfig } from './envs/local';
 import { createDockerConfig } from './envs/docker';
+import { createDirectusConfig } from './envs/directus.docker';
+import { DirectusUtil, LocalStorage, S3Storage } from '@citrineos/util';
 
 async function getConfigFromEnv(): Promise<SystemConfig> {
   switch (process.env.APP_ENV) {
@@ -8,6 +10,8 @@ async function getConfigFromEnv(): Promise<SystemConfig> {
       return createLocalConfig();
     case 'docker':
       return createDockerConfig();
+    case 'directus':
+      return createDirectusConfig();
     default:
       throw new Error(`Invalid APP_ENV "${process.env.APP_ENV}"`);
   }
@@ -16,7 +20,26 @@ async function getConfigFromEnv(): Promise<SystemConfig> {
 async function getOrCreateConfig(): Promise<SystemConfig> {
   const config = await getConfigFromEnv();
 
-  const configStore = ConfigStoreFactory.create(config.util.configStorage);
+  let fileStorage: ConfigStore | undefined;
+  if (config.util.fileAccess.local) {
+    fileStorage = new LocalStorage(
+      config.util.fileAccess.local.defaultFilePath,
+      config.configFileName,
+      config.configDir,
+    );
+  } else if (config.util.fileAccess.s3) {
+    fileStorage = new S3Storage(config.util.fileAccess.s3, config.configFileName, config.configDir);
+  } else if (config.util.fileAccess.directus) {
+    fileStorage = new DirectusUtil(
+      config.util.fileAccess.directus,
+      config.configFileName,
+      config.configDir,
+    );
+  } else {
+    throw new Error('Invalid file access configuration');
+  }
+
+  const configStore = ConfigStoreFactory.setConfigStore(fileStorage);
 
   try {
     let fetchedConfig = await configStore.fetchConfig();

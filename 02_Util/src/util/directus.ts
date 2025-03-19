@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IFileAccess, SystemConfig } from '@citrineos/base';
+import { ConfigStore, SystemConfig } from '@citrineos/base';
 import { sequelize } from '@citrineos/data';
 import {
   authentication,
@@ -11,7 +11,7 @@ import {
   createOperation,
   DirectusFlow,
   DirectusOperation,
-  readAssetArrayBuffer,
+  readAssetBlob,
   readFlows,
   rest,
   RestClient,
@@ -28,45 +28,66 @@ interface Schema {
   // No custom collections needed
 }
 
-export class DirectusUtil implements IFileAccess {
-  protected readonly _config: SystemConfig;
+export class DirectusUtil implements ConfigStore {
   protected readonly _logger: Logger<ILogObj>;
   private readonly _client: RestClient<Schema>;
+  private readonly _configFileName: string;
+  private readonly _configDir?: string;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
-    this._config = config;
+  constructor(
+    config: SystemConfig['util']['fileAccess']['directus'],
+    configFileName: string,
+    configDir?: string,
+    logger?: Logger<ILogObj>,
+  ) {
+    // config = config;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
     let client;
-    if (this._config.util.directus?.token) {
+    if (config!.token) {
       // Auth with static token
-      client = createDirectus(
-        `http://${this._config.util.directus?.host}:${this._config.util.directus?.port}`,
-      )
-        .with(staticToken(this._config.util.directus?.token))
+      client = createDirectus(`http://${config!.host}:${config!.port}`)
+        .with(staticToken(config!.token))
         .with(rest());
-    } else if (this._config.util.directus?.username && this._config.util.directus?.password) {
+    } else if (config!.username && config!.password) {
       // Auth with username and password
-      client = createDirectus<Schema>(
-        `http://${this._config.util.directus?.host}:${this._config.util.directus?.port}`,
-      )
+      client = createDirectus<Schema>(`http://${config!.host}:${config!.port}`)
         .with(authentication())
         .with(rest());
-      this._logger.info(`Logging into Directus as ${this._config.util.directus.username}`);
+      this._logger.info(`Logging into Directus as ${config!.username}`);
       client
-        .login(this._config.util.directus.username, this._config.util.directus.password)
+        .login(config!.username, config!.password)
         .then()
         .catch((error) => {
           this._logger.error('DirectusUtil could not perform client login', error);
         });
     } else {
       // No auth
-      client = createDirectus<Schema>(
-        `http://${this._config.util.directus?.host}:${this._config.util.directus?.port}`,
-      ).with(rest());
+      client = createDirectus<Schema>(`http://${config!.host}:${config!.port}`).with(rest());
     }
     this._client = client;
+    this._configFileName = configFileName;
+    this._configDir = configDir;
+  }
+
+  async fetchConfig(): Promise<SystemConfig | null> {
+    const configString = await this.getFile(this._configFileName);
+    if (!configString) return null;
+    return JSON.parse(configString) as SystemConfig;
+  }
+
+  async saveConfig(config: SystemConfig): Promise<void> {
+    try {
+      const fileId = await this.saveFile(
+        this._configFileName,
+        Buffer.from(JSON.stringify(config, null, 2)),
+        this._configDir,
+      );
+      this._logger.debug(`File saved: ${fileId}`);
+    } catch (error) {
+      this._logger.error(`Error saving file: ${error}`);
+    }
   }
 
   public async addDirectusMessageApiFlowsFastifyRouteHook(
@@ -93,22 +114,17 @@ export class DirectusUtil implements IFileAccess {
     }
   }
 
-  public async getFile(id: string): Promise<Buffer> {
-    this._logger.info(`Get file ${id}`);
+  public async getFile(id: string): Promise<string | undefined> {
     try {
-      const result = await this._client.request(readAssetArrayBuffer(id));
-      return Buffer.from(result);
+      const result = await this._client.request(readAssetBlob(id));
+      return String(result.text());
     } catch (error) {
-      this._logger.error('Get file failed: ', error);
-      throw new Error(`Get file ${id} failed`);
+      this._logger.error(`Get file ${id} failed: ${JSON.stringify(error)}`);
+      return undefined;
     }
   }
 
-  getFileURL(): string {
-    return 'http://localhost:8050/files';
-  }
-
-  public async uploadFile(fileName: string, content: Buffer, filePath?: string): Promise<string> {
+  public async saveFile(fileName: string, content: Buffer, filePath?: string): Promise<string> {
     let fileType: string | undefined;
     if (fileName.lastIndexOf('.') > -1 && fileName.lastIndexOf('.') < fileName.length - 1) {
       fileType = fileName.substring(fileName.lastIndexOf('.'));
