@@ -1,5 +1,5 @@
 import { IChargingStationSecurityInfoRepository, sequelize } from '@citrineos/data';
-import { IFileAccess, OCPP2_0_1, SignedMeterValuesConfig, SystemConfig } from '@citrineos/base';
+import { IFileStorage, OCPP2_0_1, SignedMeterValuesConfig, SystemConfig } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import * as crypto from 'node:crypto';
 import { stringToArrayBuffer } from 'pvutils';
@@ -8,22 +8,22 @@ import { stringToArrayBuffer } from 'pvutils';
  * Util to process and validate signed meter values.
  */
 export class SignedMeterValuesUtil {
-  private readonly _fileAccess: IFileAccess;
+  private readonly _fileStorage: IFileStorage;
   private readonly _logger: Logger<ILogObj>;
   private readonly _chargingStationSecurityInfoRepository: IChargingStationSecurityInfoRepository;
 
   private readonly _signedMeterValuesConfiguration: SignedMeterValuesConfig | undefined;
 
   /**
-   * @param {IFileAccess} [fileAccess] - The `fileAccess` allows access to the configured file storage.
+   * @param {IFileStorage} [fileStorage] - The `fileStorage` allows access to the configured file storage.
    *
    * @param {SystemConfig} config - The `config` contains the current system configuration settings.
    *
    * @param {Logger<ILogObj>} [logger] - The `logger` represents an instance of {@link Logger<ILogObj>}.
    *
    */
-  constructor(fileAccess: IFileAccess, config: SystemConfig, logger: Logger<ILogObj>) {
-    this._fileAccess = fileAccess;
+  constructor(fileStorage: IFileStorage, config: SystemConfig, logger: Logger<ILogObj>) {
+    this._fileStorage = fileStorage;
     this._logger = logger;
     this._chargingStationSecurityInfoRepository =
       new sequelize.SequelizeChargingStationSecurityInfoRepository(config, logger);
@@ -137,9 +137,7 @@ export class SignedMeterValuesUtil {
     }
 
     const configuredPublicKey = this.formatKey(
-      (
-        await this._fileAccess.getFile(this._signedMeterValuesConfiguration.publicKeyFileId)
-      ).toString(),
+      await this._fileStorage.getFile(this._signedMeterValuesConfiguration.publicKeyFileId),
     );
 
     if (incomingPublicKeyString.length > 0) {
@@ -195,7 +193,10 @@ export class SignedMeterValuesUtil {
     }
   }
 
-  private formatKey(key: string) {
+  private formatKey(key: string | undefined): string {
+    if (!key) {
+      throw new Error('Public key file is missing.');
+    }
     return key
       .replace('-----BEGIN PUBLIC KEY-----', '')
       .replace('-----END PUBLIC KEY-----', '')

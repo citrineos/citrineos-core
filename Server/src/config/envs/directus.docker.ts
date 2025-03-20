@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { defineConfig, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
+import { defineConfig, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
 import path from 'path';
 
-export function createLocalConfig() {
+export function createDirectusConfig() {
   return defineConfig({
     env: 'development',
     centralSystem: {
-      host: '::',
+      host: '0.0.0.0',
       port: 8080,
     },
     modules: {
@@ -52,7 +52,7 @@ export function createLocalConfig() {
     },
     data: {
       sequelize: {
-        host: 'localhost',
+        host: 'ocpp-db',
         port: 5432,
         database: 'citrine',
         dialect: 'postgres',
@@ -69,13 +69,15 @@ export function createLocalConfig() {
       },
       messageBroker: {
         amqp: {
-          url: 'amqp://guest:guest@localhost:5672',
+          url: 'amqp://guest:guest@amqp-broker:5672',
           exchange: 'citrineos',
         },
       },
       fileAccess: {
-        local: {
-          defaultFilePath: '/data',
+        directus: {
+          host: 'directus',
+          port: 8055,
+          generateFlows: false,
         },
       },
       swagger: {
@@ -106,6 +108,52 @@ export function createLocalConfig() {
           },
           {
             id: '2',
+            securityProfile: 2,
+            allowUnknownChargingStations: false,
+            pingInterval: 60,
+            host: '0.0.0.0',
+            port: 8443,
+            protocol: 'ocpp2.0.1',
+            tlsKeyFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/leafKey.pem',
+            ),
+            tlsCertificateChainFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/certChain.pem',
+            ),
+            rootCACertificateFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/rootCertificate.pem',
+            ),
+          },
+          {
+            id: '3',
+            securityProfile: 3,
+            allowUnknownChargingStations: false,
+            pingInterval: 60,
+            host: '0.0.0.0',
+            port: 8444,
+            protocol: 'ocpp2.0.1',
+            tlsKeyFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/leafKey.pem',
+            ),
+            tlsCertificateChainFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/certChain.pem',
+            ),
+            mtlsCertificateAuthorityKeyFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/subCAKey.pem',
+            ),
+            rootCACertificateFilePath: path.resolve(
+              path.dirname(__filename),
+              '../../assets/certificates/rootCertificate.pem',
+            ),
+          },
+          {
+            id: '4',
             securityProfile: 0,
             allowUnknownChargingStations: true,
             pingInterval: 60,
@@ -139,8 +187,8 @@ export function createLocalConfig() {
       },
     },
     logLevel: 2, // debug
-    maxCallLengthSeconds: 30,
-    maxCachingSeconds: 30,
+    maxCallLengthSeconds: 5,
+    maxCachingSeconds: 10,
     ocpiServer: {
       host: '0.0.0.0',
       port: 8085,

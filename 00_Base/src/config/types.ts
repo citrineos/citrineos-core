@@ -169,39 +169,54 @@ export const systemConfigInputSchema = z.object({
       }),
     fileAccess: z
       .object({
-        currentFileAccess: z.string().default('localstack'),
-        s3Storage: z
+        s3: z
           .object({
-            endpointHost: z.string().default('localstack'),
-            endpointPort: z.number().int().positive().default(4566),
-            accessKeyId: z.string().default('null'),
-            secretAccessKey: z.string().default('null'),
-            region: z.string(),
-            bucketName: z.string().default('citrineos-s3-bucket'),
+            region: z.string().optional(),
+            endpoint: z.string().optional(),
+            defaultBucketName: z.string().default('citrineos-s3-bucket'),
             s3ForcePathStyle: z.boolean().default(true),
+            accessKeyId: z.string().optional(),
+            secretAccessKey: z.string().optional(),
+          })
+          .optional(),
+        local: z
+          .object({
+            defaultFilePath: z.string().default('/data'),
+          })
+          .optional(),
+        directus: z
+          .object({
+            host: z.string().default('localhost').optional(),
+            port: z.number().int().positive().default(8055).optional(),
+            token: z.string().optional(),
+            username: z.string().optional(),
+            password: z.string().optional(),
+            generateFlows: z.boolean().default(false).optional(),
+          })
+          .refine((obj) => obj.generateFlows && !obj.host, {
+            message: 'Directus host must be set if generateFlows is true',
           })
           .optional(),
       })
-      .optional(),
+      .refine((obj) => obj.s3 || obj.local || obj.directus, {
+        message: 'A file access implementation must be set',
+      })
+      .refine(
+        (obj) => {
+          const implementations = [obj.s3, obj.local, obj.directus];
+          const presentCount = implementations.filter(Boolean).length;
+          return presentCount <= 1;
+        },
+        {
+          message: 'Only one file access implementation should be set',
+        },
+      ),
     swagger: z
       .object({
         path: z.string().default('/docs').optional(),
         logoPath: z.string(),
         exposeData: z.boolean().default(true).optional(),
         exposeMessage: z.boolean().default(true).optional(),
-      })
-      .optional(),
-    directus: z
-      .object({
-        host: z.string().default('localhost').optional(),
-        port: z.number().int().positive().default(8055).optional(),
-        token: z.string().optional(),
-        username: z.string().optional(),
-        password: z.string().optional(),
-        generateFlows: z.boolean().default(false).optional(),
-      })
-      .refine((obj) => obj.generateFlows && !obj.host, {
-        message: 'Directus host must be set if generateFlows is true',
       })
       .optional(),
     networkConnection: z.object({
@@ -249,22 +264,6 @@ export const systemConfigInputSchema = z.object({
           }
         }),
     }),
-    configStorage: z.object({
-      type: z.enum(['s3', 'local']).default('s3').optional(),
-      s3: z
-        .object({
-          endpoint: z.string(),
-          bucketName: z.string().default('citrineos-s3-bucket').optional(),
-          keyName: z.string().default('config.json').optional(),
-        })
-        .optional(),
-      local: z
-        .object({
-          fileName: z.string().default('config.json').optional(),
-          configDir: z.string().default('./data').optional(),
-        })
-        .optional(),
-    }),
   }),
   logLevel: z.number().min(0).max(6).default(0).optional(),
   maxCallLengthSeconds: z.number().int().positive().default(5).optional(),
@@ -276,6 +275,8 @@ export const systemConfigInputSchema = z.object({
   userPreferences: z.object({
     telemetryConsent: z.boolean().default(false).optional(),
   }),
+  configFileName: z.string().default('config.json').optional(),
+  configDir: z.string().optional(),
 });
 
 export type SystemConfigInput = z.infer<typeof systemConfigInputSchema>;
@@ -470,36 +471,51 @@ export const systemConfigSchema = z
         }),
       fileAccess: z
         .object({
-          currentFileAccess: z.string().default('localstack'),
-          s3Storage: z
+          s3: z
             .object({
-              endpointHost: z.string().default('localstack'),
-              endpointPort: z.number().int().positive().default(4566),
-              accessKeyId: z.string().default('null'),
-              secretAccessKey: z.string().default('null'),
-              region: z.string(),
-              bucketName: z.string().default('citrineos-s3-bucket'),
+              region: z.string().optional(),
+              endpoint: z.string().optional(),
+              defaultBucketName: z.string().default('citrineos-s3-bucket'),
               s3ForcePathStyle: z.boolean().default(true),
+              accessKeyId: z.string().optional(),
+              secretAccessKey: z.string().optional(),
+            })
+            .optional(),
+          local: z
+            .object({
+              defaultFilePath: z.string().default('/data'),
+            })
+            .optional(),
+          directus: z
+            .object({
+              host: z.string(),
+              port: z.number().int().positive(),
+              token: z.string().optional(),
+              username: z.string().optional(),
+              password: z.string().optional(),
+              generateFlows: z.boolean(),
             })
             .optional(),
         })
-        .optional(),
+        .refine((obj) => obj.s3 || obj.local || obj.directus, {
+          message: 'A file access implementation must be set',
+        })
+        .refine(
+          (obj) => {
+            const implementations = [obj.s3, obj.local, obj.directus];
+            const presentCount = implementations.filter(Boolean).length;
+            return presentCount <= 1;
+          },
+          {
+            message: 'Only one file access implementation should be set',
+          },
+        ),
       swagger: z
         .object({
           path: z.string(),
           logoPath: z.string(),
           exposeData: z.boolean(),
           exposeMessage: z.boolean(),
-        })
-        .optional(),
-      directus: z
-        .object({
-          host: z.string(),
-          port: z.number().int().positive(),
-          token: z.string().optional(),
-          username: z.string().optional(),
-          password: z.string().optional(),
-          generateFlows: z.boolean(),
         })
         .optional(),
       networkConnection: z.object({
@@ -553,22 +569,6 @@ export const systemConfigSchema = z
             }
           }),
       }),
-      configStorage: z.object({
-        type: z.enum(['s3', 'local']).default('s3'),
-        s3: z
-          .object({
-            endpoint: z.string(),
-            bucketName: z.string().default('citrineos-s3-bucket').optional(),
-            keyName: z.string().default('config.json').optional(),
-          })
-          .optional(),
-        local: z
-          .object({
-            fileName: z.string().default('config.json').optional(),
-            configDir: z.string().default('./data').optional(),
-          })
-          .optional(),
-      }),
     }),
     logLevel: z.number().min(0).max(6),
     maxCallLengthSeconds: z.number().int().positive(),
@@ -580,6 +580,8 @@ export const systemConfigSchema = z
     userPreferences: z.object({
       telemetryConsent: z.boolean().optional(),
     }),
+    configFileName: z.string().default('config.json'),
+    configDir: z.string().optional(),
   })
   .refine((obj) => obj.maxCachingSeconds >= obj.maxCallLengthSeconds, {
     message: 'maxCachingSeconds cannot be less than maxCallLengthSeconds',

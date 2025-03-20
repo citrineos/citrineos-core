@@ -51,7 +51,7 @@ export {
   mapToCallAction,
 } from './ocpp/rpc/message';
 export { ChargingStationSequenceType } from './ocpp/model/requestIds';
-export { IFileAccess } from './interfaces/fileAccess';
+export { IFileAccess, IFileStorage } from './interfaces/files';
 
 // Persistence Interfaces
 
@@ -65,8 +65,7 @@ export { defineConfig } from './config/defineConfig';
 export { SystemConfig, WebsocketServerConfig } from './config/types';
 export { SignedMeterValuesConfig } from './config/signedMeterValuesConfig';
 export { ConfigStore, ConfigStoreFactory } from './config/ConfigStore';
-export { S3ConfigStore } from './config/S3ConfigStore';
-export { LocalConfigStore } from './config/LocalConfigStore';
+
 // Utils
 
 export { RequestBuilder } from './util/request';

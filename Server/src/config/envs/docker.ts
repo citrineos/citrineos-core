@@ -74,19 +74,17 @@ export function createDockerConfig() {
         },
       },
       fileAccess: {
-        currentFileAccess: 's3Storage',
+        s3: {
+          endpoint: 'http://minio:9000',
+          defaultBucketName: 'citrineos-s3-bucket',
+          s3ForcePathStyle: true,
+        },
       },
       swagger: {
         path: '/docs',
         logoPath: path.resolve(path.dirname(__filename), '../../assets/logo.png'),
         exposeData: true,
         exposeMessage: true,
-      },
-      directus: {
-        host: 'directus',
-        port: 8055,
-        generateFlows: false,
-        token: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0',
       },
       networkConnection: {
         websocketServers: [
@@ -187,18 +185,6 @@ export function createDockerConfig() {
           },
         },
       },
-      configStorage: {
-        type: 's3',
-        s3: {
-          endpoint: 'http://minio:9000',
-          bucketName: 'citrineos-s3-bucket',
-          keyName: 'docker-config.json',
-        },
-        local: {
-          fileName: 'docker-config.json',
-          configDir: './data',
-        },
-      },
     },
     logLevel: 2, // debug
     maxCallLengthSeconds: 5,
@@ -210,5 +196,6 @@ export function createDockerConfig() {
     userPreferences: {
       // None by default
     },
+    configFileName: 'config.json',
   });
 }

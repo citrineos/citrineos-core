@@ -7,7 +7,7 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   HttpMethod,
-  IFileAccess,
+  IFileStorage,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_0_1,
@@ -53,14 +53,14 @@ export class CertificatesDataApi
 {
   private readonly _networkConnection: WebsocketNetworkConnection;
   private readonly _websocketServersConfig: WebsocketServerConfig[];
-  private readonly _fileAccess: IFileAccess;
+  private readonly _fileStorage: IFileStorage;
 
   /**
    * Constructs a new instance of the class.
    *
    * @param {CertificatesModule} certificatesModule - The Certificates module.
    * @param {FastifyInstance} server - The Fastify server instance.
-   * @param {IFileAccess} fileAccess - The FileAccess
+   * @param {IFileStorage} fileStorage - The fileStorage
    * @param {WebsocketNetworkConnection} networkConnection - The NetworkConnection
    * @param {WebsocketServerConfig[]} websocketServersConfig - Configuration for websocket servers
    * @param {Logger<ILogObj>} [logger] - The logger instance.
@@ -68,13 +68,13 @@ export class CertificatesDataApi
   constructor(
     certificatesModule: CertificatesModule,
     server: FastifyInstance,
-    fileAccess: IFileAccess,
+    fileStorage: IFileStorage,
     networkConnection: WebsocketNetworkConnection,
     websocketServersConfig: WebsocketServerConfig[],
     logger?: Logger<ILogObj>,
   ) {
     super(certificatesModule, server, OCPPVersion.OCPP2_0_1, logger);
-    this._fileAccess = fileAccess;
+    this._fileStorage = fileStorage;
     this._networkConnection = networkConnection;
     this._websocketServersConfig = websocketServersConfig;
   }
@@ -107,16 +107,16 @@ export class CertificatesDataApi
       throw new Error(`WebsocketServer ${serverId} is mtls server but subCAKey is missing.`);
     }
 
-    const tlsKey: string = (await this._fileAccess.getFile(certRequest.privateKey)).toString();
+    const tlsKey: string = (await this._fileStorage.getFile(certRequest.privateKey))!.toString();
     let tlsCertificateChain = '';
     for (const fileId of certRequest.certificateChain) {
-      tlsCertificateChain += (await this._fileAccess.getFile(fileId)).toString();
+      tlsCertificateChain += (await this._fileStorage.getFile(fileId))!.toString();
     }
     const rootCA: string | undefined = certRequest.rootCA
-      ? (await this._fileAccess.getFile(certRequest.rootCA)).toString()
+      ? (await this._fileStorage.getFile(certRequest.rootCA))!.toString()
       : undefined;
     const subCAKey: string | undefined = certRequest.subCAKey
-      ? (await this._fileAccess.getFile(certRequest.subCAKey)).toString()
+      ? (await this._fileStorage.getFile(certRequest.subCAKey))!.toString()
       : undefined;
 
     this._updateCertificates(serverConfig, serverId, tlsKey, tlsCertificateChain, subCAKey, rootCA);
@@ -296,7 +296,7 @@ export class CertificatesDataApi
 
     let rootCAPem: string;
     if (installReq.fileId) {
-      rootCAPem = (await this._fileAccess.getFile(installReq.fileId)).toString();
+      rootCAPem = (await this._fileStorage.getFile(installReq.fileId))!.toString();
     } else {
       rootCAPem = await this._module.certificateAuthorityService.getRootCACertificateFromExternalCA(
         installReq.certificateType,
@@ -452,12 +452,12 @@ export class CertificatesDataApi
     filePath?: string,
   ): Promise<Certificate> {
     // Store certificate and private key in file storage
-    certificateEntity.privateKeyFileId = await this._fileAccess.uploadFile(
+    certificateEntity.privateKeyFileId = await this._fileStorage.saveFile(
       `${filePrefix}_Key_${certificateEntity.serialNumber}.pem`,
       Buffer.from(keyPem),
       filePath,
     );
-    certificateEntity.certificateFileId = await this._fileAccess.uploadFile(
+    certificateEntity.certificateFileId = await this._fileStorage.saveFile(
       `${filePrefix}_Certificate_${certificateEntity.serialNumber}.pem`,
       Buffer.from(certPem),
       filePath,

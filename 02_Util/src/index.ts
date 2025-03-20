@@ -11,8 +11,9 @@ export { BasicAuthenticationFilter } from './networkconnection/authenticator/Bas
 export { IAuthorizer } from './authorization';
 export { MemoryCache } from './cache/memory';
 export { RedisCache } from './cache/redis';
-export { S3Storage } from './fileAccess/s3Storage';
-export { FtpServer } from './fileAccess/ftpServer';
+export { S3Storage } from './files/s3Storage';
+export { FtpServer } from './files/ftpServer';
+export { LocalStorage } from './files/localStorage';
 export * from './queue';
 export * from './networkconnection';
 export * from './certificate';
