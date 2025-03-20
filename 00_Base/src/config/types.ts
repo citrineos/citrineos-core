@@ -199,7 +199,7 @@ export const systemConfigInputSchema = z.object({
           .optional(),
       })
       .refine((obj) => obj.s3 || obj.local || obj.directus, {
-        message: 'A message broker implementation must be set',
+        message: 'A file access implementation must be set',
       })
       .refine(
         (obj) => {
