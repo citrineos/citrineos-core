@@ -208,7 +208,7 @@ export const systemConfigInputSchema = z.object({
           return presentCount <= 1;
         },
         {
-          message: 'Only one message broker implementation should be set',
+          message: 'Only one file access implementation should be set',
         },
       ),
     swagger: z
