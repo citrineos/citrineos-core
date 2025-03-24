@@ -20,7 +20,7 @@
   "devDependencies": {
     "@types/uuid": "9.0.1",
     "eslint": "8.48.0",
-    "typescript": "5.0.4"
+    "typescript": "^5.8.2"
   },
   "dependencies": {
     "@citrineos/base": "1.6.0",
