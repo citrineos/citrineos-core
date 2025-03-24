@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Column, DataType, ForeignKey, Index, Model, Table } from 'sequelize-typescript';
-import { CallAction, MessageOrigin, Namespace } from '@citrineos/base';
+import { CallAction, MessageOrigin, Namespace, OCPPVersion } from '@citrineos/base';
 import { ChargingStation } from '..';
 
 @Table
@@ -22,6 +22,9 @@ export class OCPPMessage extends Model {
 
   @Column(DataType.STRING)
   declare origin: MessageOrigin;
+
+  @Column(DataType.STRING)
+  declare protocol: OCPPVersion;
 
   @Column(DataType.STRING)
   declare action?: CallAction;
