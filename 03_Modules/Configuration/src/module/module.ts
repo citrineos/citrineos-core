@@ -78,10 +78,11 @@ export class ConfigurationModule extends AbstractModule {
     OCPP2_0_1_CallAction.TriggerMessage,
     OCPP2_0_1_CallAction.UnpublishFirmware,
     OCPP2_0_1_CallAction.UpdateFirmware,
-    OCPP1_6_CallAction.GetConfiguration,
-    OCPP1_6_CallAction.ChangeConfiguration,
-    OCPP1_6_CallAction.Reset,
     OCPP1_6_CallAction.ChangeAvailability,
+    OCPP1_6_CallAction.ChangeConfiguration,
+    OCPP1_6_CallAction.GetConfiguration,
+    OCPP1_6_CallAction.Reset,
+    OCPP1_6_CallAction.TriggerMessage,
   ];
 
   protected _bootRepository: IBootRepository;
@@ -902,7 +903,7 @@ export class ConfigurationModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPPVersion.OCPP1_6, OCPP2_0_1_CallAction.Reset)
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.Reset)
   protected _handle16Reset(
     message: IMessage<OCPP1_6.ResetResponse>,
     props?: HandlerProperties,
