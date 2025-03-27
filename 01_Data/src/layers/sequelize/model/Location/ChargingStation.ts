@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
+import { Namespace, OCPPVersion } from '@citrineos/base';
 import {
   BelongsTo,
   BelongsToMany,
@@ -34,6 +34,9 @@ export class ChargingStation extends Model {
 
   @Column
   declare isOnline: boolean;
+
+  @Column(DataType.STRING)
+  declare protocol?: OCPPVersion | null;
 
   @Column(DataType.STRING(20))
   declare chargePointVendor?: string | null;

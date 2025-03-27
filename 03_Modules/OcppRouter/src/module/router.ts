@@ -30,6 +30,7 @@ import {
   OcppError,
   OcppRequest,
   OcppResponse,
+  OCPPVersion,
   OCPPVersionType,
   RequestBuilder,
   RetryMessageError,
@@ -99,7 +100,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   }
 
   // TODO: Below method should lock these tables so that a rapid connect-disconnect cannot result in race condition.
-  async registerConnection(connectionIdentifier: string): Promise<boolean> {
+  async registerConnection(connectionIdentifier: string, protocol: OCPPVersion): Promise<boolean> {
     const dispatcherRegistration = this._webhookDispatcher.register(connectionIdentifier);
 
     const requestSubscription = this._handler.subscribe(connectionIdentifier, undefined, {
@@ -114,16 +115,17 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       origin: MessageOrigin.ChargingStationManagementSystem.toString(),
     });
 
-    const updateIsOnline = this._locationRepository.setChargingStationIsOnline(
+    const onlineCharger = this._locationRepository.setChargingStationIsOnlineAndOCPPVersion(
       connectionIdentifier,
       true,
+      protocol,
     );
 
     return Promise.all([
       dispatcherRegistration,
       requestSubscription,
       responseSubscription,
-      updateIsOnline,
+      onlineCharger,
     ])
       .then((resolvedArray) => resolvedArray[1] && resolvedArray[2])
       .catch((error) => {
@@ -134,7 +136,12 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
   async deregisterConnection(connectionIdentifier: string): Promise<boolean> {
     this._webhookDispatcher.deregister(connectionIdentifier);
-    this._locationRepository.setChargingStationIsOnline(connectionIdentifier, false);
+
+    const offlineCharger = await this._locationRepository.setChargingStationIsOnlineAndOCPPVersion(
+      connectionIdentifier,
+      true,
+      null,
+    );
 
     // TODO: ensure that all queue implementations in 02_Util only unsubscribe 1 queue per call
     // ...which will require refactoring this method to unsubscribe request and response queues separately

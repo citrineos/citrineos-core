@@ -10,6 +10,7 @@ import {
   type CrudRepository,
   OCPP2_0_1,
   OCPP1_6,
+  OCPPVersion,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
 import {
@@ -171,7 +172,11 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
 export interface ILocationRepository extends CrudRepository<Location> {
   readLocationById: (id: number) => Promise<Location | undefined>;
   readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
-  setChargingStationIsOnline: (stationId: string, isOnline: boolean) => Promise<boolean>;
+  setChargingStationIsOnlineAndOCPPVersion: (
+    stationId: string,
+    isOnline: boolean,
+    ocppVersion: OCPPVersion | null,
+  ) => Promise<ChargingStation | undefined>;
   doesChargingStationExistByStationId: (stationId: string) => Promise<boolean>;
   addStatusNotificationToChargingStation(
     stationId: string,
