@@ -311,7 +311,7 @@ export class WebsocketNetworkConnection {
           JSON.stringify(websocketConnection),
           CacheNamespace.Connections,
         );
-        registered = registered && (await this._router.registerConnection(identifier));
+        registered = registered && (await this._router.registerConnection(identifier, ws.protocol));
         if (!registered) {
           this._logger.fatal('Failed to register websocket client', identifier);
           throw new Error('Failed to register websocket client');

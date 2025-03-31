@@ -2,12 +2,11 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, SystemConfig } from '@citrineos/base';
+import { CrudRepository, OCPPVersion, SystemConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
-import { ChargingStation, Connector, Location, SequelizeRepository } from '..';
+import { ChargingStation, Connector, Location, SequelizeRepository, StatusNotification } from '..';
 import { type ILocationRepository } from '../../..';
-import { StatusNotification } from '../model/Location';
 import { Op } from 'sequelize';
 import { LatestStatusNotification } from '../model/Location/LatestStatusNotification';
 
@@ -70,8 +69,15 @@ export class SequelizeLocationRepository
     return await this.chargingStation.readByKey(stationId);
   }
 
-  async setChargingStationIsOnline(stationId: string, isOnline: boolean): Promise<boolean> {
-    return !!(await this.chargingStation.updateByKey({ isOnline: isOnline }, stationId));
+  async setChargingStationIsOnlineAndOCPPVersion(
+    stationId: string,
+    isOnline: boolean,
+    ocppVersion: OCPPVersion | null,
+  ): Promise<ChargingStation | undefined> {
+    return await this.chargingStation.updateByKey(
+      { isOnline: isOnline, protocol: ocppVersion },
+      stationId,
+    );
   }
 
   async doesChargingStationExistByStationId(stationId: string): Promise<boolean> {
