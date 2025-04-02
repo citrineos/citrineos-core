@@ -30,9 +30,14 @@ describe('WebhookDispatcher', () => {
       readAllByStationId: jest.fn(),
     } as unknown as jest.Mocked<ISubscriptionRepository>;
 
-    jest.spyOn(OCPPMessage, 'sequelize', 'get').mockReturnValue({
-      transaction: jest.fn(() => mockTransaction),
-    } as any);
+    Object.defineProperty(OCPPMessage, 'sequelize', {
+      configurable: true, // Allow further modifications
+      value: {
+        transaction: jest.fn(() => mockTransaction),
+      },
+    });
+    OCPPMessage.findOne = jest.fn(() => Promise.resolve(null));
+    OCPPMessage.create = jest.fn(() => Promise.resolve({} as any));
 
     webhookDispatcher = new WebhookDispatcher(subscriptionRepository);
   });
