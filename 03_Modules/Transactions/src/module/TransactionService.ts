@@ -246,30 +246,4 @@ export class TransactionService {
 
     return activeTransactions.length > 1;
   }
-
-  async finalizeTransaction(transactionDbId: number, stopTransaction: StopTransaction) {
-    try {
-      const transaction =
-        await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
-          stopTransaction.stationId,
-          stopTransaction.transactionDatabaseId,
-        );
-
-      if (!transaction) {
-        this._logger.error(`Transaction ${transactionDbId} not found for finalization.`);
-        return;
-      }
-
-      // TODO: It would be good to make a method to recalculate totalKwh using OCPP 1.6.
-
-      this._transactionEventRepository.updateTransactionWithFinalValues(
-        stopTransaction.reason as string,
-        transaction.id,
-      );
-
-      this._logger.info(`Transaction ${transactionDbId} finalized.`);
-    } catch (error) {
-      this._logger.error(`Failed to finalize transaction ${transactionDbId}:`, error);
-    }
-  }
 }
