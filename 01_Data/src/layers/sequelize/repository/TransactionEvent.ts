@@ -489,17 +489,6 @@ export class SequelizeTransactionEventRepository
     await this.transaction.updateByKey({ totalCost: totalCost }, id.toString());
   }
 
-  async updateTransactionWithFinalValues(stoppedReason: string, id: number): Promise<void> {
-    // TODO: Add totalKwh to this update.
-    await this.transaction.updateByKey(
-      {
-        isActive: false,
-        stoppedReason: stoppedReason,
-      },
-      id.toString(),
-    );
-  }
-
   async updateTransactionByMeterValues(
     meterValues: MeterValue[],
     stationId: string,
@@ -592,7 +581,7 @@ export class SequelizeTransactionEventRepository
   }
 
   async createStopTransaction(
-    transactionId: string,
+    transactionDatabaseId: number,
     stationId: string,
     meterStop: number,
     timestamp: Date,
@@ -600,20 +589,9 @@ export class SequelizeTransactionEventRepository
     reason?: string,
     idTokenDatabaseId?: number,
   ): Promise<StopTransaction> {
-    const transaction = await this.readTransactionByStationIdAndTransactionId(
-      stationId,
-      transactionId,
-    );
-
-    if (!transaction) {
-      throw new Error(
-        `Transaction not found for station ${stationId} and transactionId ${transactionId}`,
-      );
-    }
-
     const stopTransaction = await StopTransaction.create({
       stationId,
-      transactionDatabaseId: transaction.id,
+      transactionDatabaseId,
       meterStop,
       timestamp: timestamp.toISOString(),
       reason,
@@ -625,7 +603,7 @@ export class SequelizeTransactionEventRepository
     if (meterValues.length > 0) {
       await Promise.all(
         meterValues.map(async (meterValue) => {
-          meterValue.transactionDatabaseId = transaction.id;
+          meterValue.transactionDatabaseId = transactionDatabaseId;
           meterValue.stopTransactionDatabaseId = stopTransaction.id;
           await meterValue.save();
           this.meterValue.emit('created', [meterValue]);

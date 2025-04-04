@@ -25,6 +25,7 @@ import {
   SystemConfig,
 } from '@citrineos/base';
 import {
+  Authorization,
   Component,
   IAuthorizationRepository,
   IDeviceModelRepository,
@@ -49,6 +50,7 @@ import { TransactionService } from './TransactionService';
 import { StatusNotificationService } from './StatusNotificationService';
 import { CostNotifier } from './CostNotifier';
 import { CostCalculator } from './CostCalculator';
+import { StartTransaction } from '@citrineos/data/src/layers/sequelize/model/TransactionEvent';
 
 /**
  * Component that handles transaction related messages.
@@ -580,53 +582,81 @@ export class TransactionsModule extends AbstractModule {
     const stationId = message.context.stationId;
     const request = message.payload;
 
-    const transaction = await this._transactionEventRepository.readOnlyOneByQuery({
-      stationId,
-      transactionId: request.transactionId.toString(),
-    });
-
-    if (!transaction) {
-      this._logger.error(`Transaction ${request.transactionId} not found or already stopped.`);
-      await this.sendCallResultWithMessage(message, {});
-      return;
-    }
-
-    const idTokenRecord = request.idTag
+    const authorization: Authorization | undefined = request.idTag
       ? await this._authorizeRepository.readOnlyOneByQuery({
           idToken: request.idTag,
         })
-      : null;
-    const idTokenDatabaseId = idTokenRecord ? idTokenRecord.id : undefined;
+      : undefined;
+
+    let idTokenInfoStatus = authorization?.idTokenInfo?.status;
+    if (authorization === undefined && request.idTag) {
+      // Unknown idTag, fallback to Invalid
+      idTokenInfoStatus = OCPP1_6.StopTransactionResponseStatus.Invalid;
+    }
+    switch (idTokenInfoStatus) {
+      case 'Accepted':
+      case 'Blocked':
+      case 'Expired':
+      case 'ConcurrentTx':
+      case 'Invalid':
+        break;
+      default: // Other OCPP 2.0.1 statuses default to Invalid for OCPP 1.6
+        idTokenInfoStatus = OCPP1_6.StopTransactionResponseStatus.Invalid;
+    }
+
+    const stopTransactionResponse: OCPP1_6.StopTransactionResponse = {
+      ...(request.idTag
+        ? {
+            idTagInfo: {
+              expiryDate: authorization?.idTokenInfo?.cacheExpiryDateTime,
+              parentIdTag: authorization?.idTokenInfo?.groupIdToken?.idToken,
+              status: idTokenInfoStatus as OCPP1_6.StopTransactionResponseStatus, // Ensure this is cast to the correct type
+            },
+          }
+        : {}),
+    };
+
+    await this.sendCallResultWithMessage(message, stopTransactionResponse);
+
+    const transaction = await Transaction.findOne({
+      where: {
+        stationId,
+        transactionId: request.transactionId,
+      },
+      include: [StartTransaction],
+    });
+
+    if (!transaction) {
+      this._logger.error(`Transaction ${request.transactionId} not found.`);
+      return;
+    }
 
     const stopTransaction = await this._transactionEventRepository.createStopTransaction(
-      request.transactionId.toString(),
+      transaction.id,
       stationId,
       request.meterStop,
       new Date(request.timestamp),
       request.transactionData?.map((data) => MeterValue.build({ ...data })) || [],
       request.reason || (request.idTag ? 'Remote' : 'Local'),
-      idTokenDatabaseId,
+      authorization?.id,
     );
 
     if (!stopTransaction) {
       this._logger.error(
         `Failed to create StopTransaction record for transaction ${request.transactionId}`,
       );
-      await this.sendCallResultWithMessage(message, {});
-      return;
     }
 
-    await this._transactionService.finalizeTransaction(transaction.id, stopTransaction);
-
-    const idTagInfo = await this._authorizeRepository.readAllByQuerystring({
-      idToken: request.idTag as string,
-      type: null,
-    });
-
-    await this.sendCallResultWithMessage(message, {
-      idTagInfo: idTagInfo ? { status: 'Accepted' } : undefined,
-    });
-
-    this._logger.info(`Transaction ${request.transactionId} stopped successfully.`);
+    if (transaction.startTransaction) {
+      transaction.totalKwh = request.meterStop - transaction.startTransaction.meterStart;
+    } else {
+      this._logger.warn(
+        `StartTransaction record not found at station ${stationId} for transactionId ${request.transactionId}. 
+        Cannot calculate totalKwh.`,
+      );
+    }
+    transaction.isActive = false;
+    transaction.stoppedReason = request.reason;
+    await transaction.save();
   }
 }
