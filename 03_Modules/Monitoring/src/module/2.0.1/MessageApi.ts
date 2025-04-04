@@ -377,9 +377,8 @@ export class MonitoringOcpp201Api
   ): Promise<IMessageConfirmation[]> {
     const confirmations: IMessageConfirmation[] = [];
     const allData = requestData[dataKey] as any[];
-    let batchIndex = 0;
 
-    for (const batch of getBatches(allData, itemsPerMessage)) {
+    for (const [batchIndex, batch] of getBatches(allData, itemsPerMessage)) {
       const batchRequest = { ...requestData, [dataKey]: batch };
       try {
         const confirmation = await this._module.sendCall(
@@ -402,7 +401,6 @@ export class MonitoringOcpp201Api
           }`,
         });
       }
-      batchIndex++;
     }
 
     return confirmations;

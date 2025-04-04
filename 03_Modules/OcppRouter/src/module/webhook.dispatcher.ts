@@ -3,13 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  CallAction,
-  mapToCallAction,
-  MessageOrigin,
-  MessageTypeId,
-  OCPPVersionType,
-} from '@citrineos/base';
+import { mapToCallAction, MessageOrigin, MessageTypeId, OCPPVersionType } from '@citrineos/base';
 import { ISubscriptionRepository, OCPPMessage, Subscription } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
@@ -86,19 +80,18 @@ export class WebhookDispatcher {
         ['action', callAction],
       ]);
 
+      const messagePromise = OCPPMessage.create({
+        stationId: identifier,
+        correlationId: messageId,
+        origin: origin,
+        protocol: protocol,
+        action: null,
+        message: message,
+        timestamp: timestamp,
+      });
       const promises: Promise<any>[] =
         this._onMessageCallbacks.get(identifier)?.map((callback) => callback(message, info)) ?? [];
-      promises.push(
-        OCPPMessage.create({
-          stationId: identifier,
-          correlationId: messageId,
-          origin: origin,
-          protocol: protocol,
-          action: callAction,
-          message: message,
-          timestamp: timestamp,
-        }),
-      );
+      promises.push(messagePromise);
       await Promise.all(promises);
     } catch (error) {
       this._logger.error(`Failed to dispatch message received for ${identifier}`, error);
@@ -112,39 +105,41 @@ export class WebhookDispatcher {
     protocol: OCPPVersionType,
     rpcMessage: any,
   ) {
+    const transaction = await OCPPMessage.sequelize!.transaction();
     try {
       const messageTypeId = rpcMessage[0];
       const messageId = rpcMessage[1];
+      const origin = MessageOrigin.ChargingStation;
+
+      const relatedMessage = await OCPPMessage.findOne({
+        where: { stationId: identifier, correlationId: messageId },
+        transaction,
+      });
       let callAction = undefined;
       switch (messageTypeId) {
         case MessageTypeId.Call:
-          callAction = mapToCallAction(protocol, rpcMessage[2]);
+          try {
+            callAction = mapToCallAction(protocol, rpcMessage[2]);
+            if (relatedMessage && !relatedMessage.action) {
+              // Update the related message with the correct action if it was missing
+              await relatedMessage.update({ action: callAction }, { transaction });
+            }
+          } catch (error) {
+            this._logger.warn(`Failed to map call action ${callAction} for ${messageId}`, error);
+            return this.dispatchMessageReceivedUnparsed(identifier, message, timestamp, protocol);
+          }
           break;
         case MessageTypeId.CallResult:
         case MessageTypeId.CallError: {
-          const request = await OCPPMessage.findOne({
-            where: { stationId: identifier, correlationId: messageId },
-          });
-          callAction = request?.action;
+          callAction = relatedMessage?.action;
           break;
         }
         default:
         // undefined
       }
 
-      const origin = MessageOrigin.ChargingStation;
-      const info = new Map<string, string>([
-        ['correlationId', messageId],
-        ['origin', origin],
-        ['timestamp', timestamp],
-        ['protocol', protocol],
-        ['action', callAction ? callAction : 'undefined'],
-      ]);
-
-      const promises: Promise<any>[] =
-        this._onMessageCallbacks.get(identifier)?.map((callback) => callback(message, info)) ?? [];
-      promises.push(
-        OCPPMessage.create({
+      await OCPPMessage.create(
+        {
           stationId: identifier,
           correlationId: messageId,
           origin: origin,
@@ -152,8 +147,73 @@ export class WebhookDispatcher {
           action: callAction,
           message: rpcMessage,
           timestamp: timestamp,
-        }),
+        },
+        { transaction },
       );
+      await transaction.commit();
+
+      try {
+        const info = new Map<string, string>([
+          ['correlationId', messageId],
+          ['origin', origin],
+          ['timestamp', timestamp],
+          ['protocol', protocol],
+          ['action', callAction ? callAction : 'undefined'],
+        ]);
+
+        const promises: Promise<any>[] =
+          this._onMessageCallbacks.get(identifier)?.map((callback) =>
+            callback(message, info).catch((reason) => {
+              this._logger.error(
+                `Failed to execute onMessage callback for ${identifier} with messageId ${messageId}: ${reason}`,
+              );
+              return false;
+            }),
+          ) ?? [];
+
+        await Promise.all(promises);
+      } catch (err) {
+        this._logger.error(`Failed to dispatch message received for ${identifier} : ${err}`);
+      }
+    } catch (err) {
+      this._logger.error(`Failed to save message received for ${identifier}`, err);
+      await transaction.rollback();
+    }
+  }
+
+  async dispatchMessageSentUnparsed(
+    identifier: string,
+    message: string,
+    timestamp: string,
+    protocol: OCPPVersionType,
+  ) {
+    try {
+      // UUID generated so that unparsed messages don't end up referencing each other
+      const messageId = uuidv4();
+      const callAction = 'unparsed';
+
+      const origin = MessageOrigin.ChargingStationManagementSystem;
+      const info = new Map<string, string>([
+        ['correlationId', messageId],
+        ['origin', origin],
+        ['timestamp', timestamp],
+        ['protocol', protocol],
+        ['action', callAction],
+      ]);
+
+      const messagePromise = OCPPMessage.create({
+        stationId: identifier,
+        correlationId: messageId,
+        origin: origin,
+        protocol: protocol,
+        action: null,
+        message: message,
+        timestamp: timestamp,
+      });
+      const promises: Promise<any>[] =
+        this._sentMessageCallbacks.get(identifier)?.map((callback) => callback(message, info)) ??
+        [];
+      promises.push(messagePromise);
       await Promise.all(promises);
     } catch (error) {
       this._logger.error(`Failed to dispatch message received for ${identifier}`, error);
@@ -167,40 +227,41 @@ export class WebhookDispatcher {
     protocol: OCPPVersionType,
     rpcMessage: any,
   ) {
+    const transaction = await OCPPMessage.sequelize!.transaction();
     try {
       const messageTypeId = rpcMessage[0];
       const messageId = rpcMessage[1];
+      const origin = MessageOrigin.ChargingStationManagementSystem;
+
+      const relatedMessage = await OCPPMessage.findOne({
+        where: { stationId: identifier, correlationId: messageId },
+        transaction,
+      });
       let callAction = undefined;
       switch (messageTypeId) {
         case MessageTypeId.Call:
-          callAction = mapToCallAction(protocol, rpcMessage[2]);
+          try {
+            callAction = mapToCallAction(protocol, rpcMessage[2]);
+            if (relatedMessage && !relatedMessage.action) {
+              // Update the related message with the correct action if it was missing
+              await relatedMessage.update({ action: callAction }, { transaction });
+            }
+          } catch (error) {
+            this._logger.warn(`Failed to map call action ${callAction} for ${messageId}`, error);
+            return this.dispatchMessageSentUnparsed(identifier, message, timestamp, protocol);
+          }
           break;
         case MessageTypeId.CallResult:
         case MessageTypeId.CallError: {
-          const request = await OCPPMessage.findOne({
-            where: { stationId: identifier, correlationId: messageId },
-          });
-          callAction = request?.action;
+          callAction = relatedMessage?.action;
           break;
         }
         default:
         // undefined
       }
 
-      const origin = MessageOrigin.ChargingStationManagementSystem;
-      const info = new Map<string, string>([
-        ['correlationId', messageId],
-        ['origin', origin],
-        ['timestamp', timestamp],
-        ['protocol', protocol],
-        ['action', callAction ? callAction : 'undefined'],
-      ]);
-
-      const promises: Promise<any>[] =
-        this._sentMessageCallbacks.get(identifier)?.map((callback) => callback(message, info)) ??
-        [];
-      promises.push(
-        OCPPMessage.create({
+      await OCPPMessage.create(
+        {
           stationId: identifier,
           correlationId: messageId,
           origin: origin,
@@ -208,11 +269,36 @@ export class WebhookDispatcher {
           action: callAction,
           message: rpcMessage,
           timestamp: timestamp,
-        }),
+        },
+        { transaction },
       );
-      await Promise.all(promises);
+      await transaction.commit();
+
+      try {
+        const info = new Map<string, string>([
+          ['correlationId', messageId],
+          ['origin', origin],
+          ['timestamp', timestamp],
+          ['protocol', protocol],
+          ['action', callAction ? callAction : 'undefined'],
+        ]);
+        const promises: Promise<any>[] =
+          this._sentMessageCallbacks.get(identifier)?.map((callback) =>
+            callback(message, info).catch((reason) => {
+              this._logger.error(
+                `Failed to execute sentMessage callback for ${identifier} with messageId ${messageId}: ${reason}`,
+              );
+              return false;
+            }),
+          ) ?? [];
+
+        await Promise.all(promises);
+      } catch (err) {
+        this._logger.error(`Failed to dispatch message sent for ${identifier} : ${err}`);
+      }
     } catch (err) {
-      this._logger.error(`Failed to dispatch message sent for ${identifier}`, err);
+      this._logger.error(`Failed to save message sent for ${identifier}`, err);
+      await transaction.rollback();
     }
   }
 

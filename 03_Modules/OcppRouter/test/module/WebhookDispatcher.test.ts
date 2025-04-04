@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { jest } from '@jest/globals';
-import { ISubscriptionRepository, Subscription } from '@citrineos/data';
+import { ISubscriptionRepository, OCPPMessage, Subscription } from '@citrineos/data';
 import { WebhookDispatcher } from '../../src';
 import { MessageOrigin } from '@citrineos/base';
 import { aSubscription } from '../providers/SubscriptionProvider';
@@ -15,6 +15,11 @@ describe('WebhookDispatcher', () => {
   );
   global.fetch = fetch;
 
+  // Mock transaction object
+  const mockTransaction = {
+    commit: jest.fn(),
+    rollback: jest.fn(),
+  };
   let subscriptionRepository: jest.Mocked<ISubscriptionRepository>;
   let webhookDispatcher: WebhookDispatcher;
 
@@ -24,6 +29,15 @@ describe('WebhookDispatcher', () => {
     subscriptionRepository = {
       readAllByStationId: jest.fn(),
     } as unknown as jest.Mocked<ISubscriptionRepository>;
+
+    Object.defineProperty(OCPPMessage, 'sequelize', {
+      configurable: true, // Allow further modifications
+      value: {
+        transaction: jest.fn(() => mockTransaction),
+      },
+    });
+    OCPPMessage.findOne = jest.fn(() => Promise.resolve(null));
+    OCPPMessage.create = jest.fn(() => Promise.resolve({} as any));
 
     webhookDispatcher = new WebhookDispatcher(subscriptionRepository);
   });

@@ -139,7 +139,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
     const offlineCharger = await this._locationRepository.setChargingStationIsOnlineAndOCPPVersion(
       connectionIdentifier,
-      true,
+      false,
       null,
     );
 
@@ -624,6 +624,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     try {
       await this._networkHook(identifier, rawMessage); // Throws an error if the message is not sent, or returns void
     } catch (error) {
+      this._logger.error('Failed to send message:', identifier, rawMessage, error);
       // Don't dispatch if the message was not sent
       return false;
     }

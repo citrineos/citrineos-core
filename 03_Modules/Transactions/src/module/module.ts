@@ -63,6 +63,7 @@ export class TransactionsModule extends AbstractModule {
     OCPP1_6_CallAction.MeterValues,
     OCPP1_6_CallAction.StatusNotification,
     OCPP1_6_CallAction.StartTransaction,
+    OCPP1_6_CallAction.StopTransaction,
   ];
   _responses: CallAction[] = [
     OCPP2_0_1_CallAction.CostUpdated,
