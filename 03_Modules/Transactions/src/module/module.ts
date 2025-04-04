@@ -36,6 +36,7 @@ import {
   MeterValue,
   sequelize,
   SequelizeRepository,
+  StartTransaction,
   Transaction,
   VariableAttribute,
 } from '@citrineos/data';
@@ -50,7 +51,6 @@ import { TransactionService } from './TransactionService';
 import { StatusNotificationService } from './StatusNotificationService';
 import { CostNotifier } from './CostNotifier';
 import { CostCalculator } from './CostCalculator';
-import { StartTransaction } from '@citrineos/data/src/layers/sequelize/model/TransactionEvent';
 
 /**
  * Component that handles transaction related messages.
@@ -622,7 +622,7 @@ export class TransactionsModule extends AbstractModule {
     const transaction = await Transaction.findOne({
       where: {
         stationId,
-        transactionId: request.transactionId,
+        transactionId: request.transactionId.toString(),
       },
       include: [StartTransaction],
     });

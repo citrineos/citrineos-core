@@ -156,6 +156,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     timestamp: Date,
     protocol: OCPPVersionType,
   ): Promise<boolean> {
+    let success = true;
     let rpcMessage: any;
     let messageTypeId: MessageTypeId | undefined = undefined;
     let messageId: string = '-1'; // OCPP 2.0.1 part 4, section 4.2.3, "When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId."
@@ -166,32 +167,19 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         this._logger.error(
           `Error parsing ${message} from websocket, unable to reply: ${JSON.stringify(error)}`,
         );
-        this._webhookDispatcher.dispatchMessageReceivedUnparsed(
-          identifier,
-          message,
-          timestamp.toISOString(),
-          protocol,
-        );
-        return false;
+        throw error;
       }
       messageTypeId = rpcMessage[0];
       messageId = rpcMessage[1];
-      this._webhookDispatcher.dispatchMessageReceived(
-        identifier,
-        message,
-        timestamp.toISOString(),
-        protocol,
-        rpcMessage,
-      );
       switch (messageTypeId) {
         case MessageTypeId.Call:
           await this._onCall(identifier, rpcMessage as Call, timestamp, protocol);
           break;
         case MessageTypeId.CallResult:
-          this._onCallResult(identifier, rpcMessage as CallResult, timestamp, protocol);
+          await this._onCallResult(identifier, rpcMessage as CallResult, timestamp, protocol);
           break;
         case MessageTypeId.CallError:
-          this._onCallError(identifier, rpcMessage as CallError, timestamp, protocol);
+          await this._onCallError(identifier, rpcMessage as CallError, timestamp, protocol);
           break;
         default:
           let errorCode;
@@ -212,8 +200,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             {},
           );
       }
-      return true;
     } catch (error) {
+      success = false; // ensure we return false in case of an error
       this._logger.error('Error processing message:', message, error);
       if (messageTypeId != MessageTypeId.CallResult && messageTypeId != MessageTypeId.CallError) {
         let callError =
@@ -230,9 +218,15 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         const rawMessage = JSON.stringify(callError);
         this._sendMessage(identifier, protocol, rawMessage, callError);
       }
-      // TODO: Publish raw payload for error reporting
-      return false;
     }
+    await this._webhookDispatcher.dispatchMessageReceived(
+      identifier,
+      message,
+      timestamp.toISOString(),
+      protocol,
+      rpcMessage,
+    );
+    return success;
   }
 
   /**
@@ -398,9 +392,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protocol: OCPPVersionType,
   ): Promise<void> {
     const messageId = message[1];
-    const action = mapToCallAction(protocol, message[2]);
+    let action = null;
 
     try {
+      action = mapToCallAction(protocol, message[2]);
       const isAllowed = await this._onCallIsAllowed(action, identifier);
       if (!isAllowed) {
         throw new OcppError(messageId, ErrorCode.SecurityError, `Action ${action} not allowed`);

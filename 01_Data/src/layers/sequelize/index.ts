@@ -21,7 +21,13 @@ export {
   LocalListVersion,
   SendLocalList,
 } from './model/Authorization';
-export { Transaction, TransactionEvent, MeterValue } from './model/TransactionEvent';
+export {
+  StartTransaction,
+  StopTransaction,
+  Transaction,
+  TransactionEvent,
+  MeterValue,
+} from './model/TransactionEvent';
 export { SecurityEvent } from './model/SecurityEvent';
 export {
   VariableMonitoring,

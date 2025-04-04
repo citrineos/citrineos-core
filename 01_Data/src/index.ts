@@ -25,6 +25,8 @@ export {
   MeterValue,
   OCPPMessage,
   Tariff,
+  StartTransaction,
+  StopTransaction,
   Transaction,
   Reservation,
   Subscription,

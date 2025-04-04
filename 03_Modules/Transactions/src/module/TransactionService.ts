@@ -10,7 +10,6 @@ import {
 import { IMessageContext, MeterValueUtils, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { IAuthorizer } from '@citrineos/util';
-import { StopTransaction } from '@citrineos/data/src/layers/sequelize/model/TransactionEvent';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
