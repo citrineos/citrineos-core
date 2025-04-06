@@ -649,7 +649,7 @@ export class TransactionsModule extends AbstractModule {
     }
 
     if (transaction.startTransaction) {
-      transaction.totalKwh = request.meterStop - transaction.startTransaction.meterStart;
+      transaction.totalKwh = (request.meterStop - transaction.startTransaction.meterStart) / 1000; // Convert from Wh to kWh
     } else {
       this._logger.warn(
         `StartTransaction record not found at station ${stationId} for transactionId ${request.transactionId}. 
