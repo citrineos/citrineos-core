@@ -2,13 +2,23 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ComponentType, type CustomDataType, MonitorEnumType, Namespace, type VariableMonitoringType, VariableType } from '@citrineos/base';
-import { AutoIncrement, BelongsTo, Column, DataType, ForeignKey, Index, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
+import {
+  AutoIncrement,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Index,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
 import { Component, Variable } from '../DeviceModel';
 
 @Table
-export class VariableMonitoring extends Model implements VariableMonitoringType {
-  static readonly MODEL_NAME: string = Namespace.VariableMonitoringType;
+export class VariableMonitoring extends Model implements OCPP2_0_1.VariableMonitoringType {
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableMonitoringType;
 
   /**
    * Fields
@@ -38,7 +48,7 @@ export class VariableMonitoring extends Model implements VariableMonitoringType 
   declare value: number;
 
   @Column(DataType.STRING)
-  declare type: MonitorEnumType;
+  declare type: OCPP2_0_1.MonitorEnumType;
 
   @Column(DataType.INTEGER)
   declare severity: number;
@@ -48,7 +58,7 @@ export class VariableMonitoring extends Model implements VariableMonitoringType 
    */
 
   @BelongsTo(() => Variable)
-  declare variable: VariableType;
+  declare variable: OCPP2_0_1.VariableType;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -57,7 +67,7 @@ export class VariableMonitoring extends Model implements VariableMonitoringType 
   declare variableId?: number | null;
 
   @BelongsTo(() => Component)
-  declare component: ComponentType;
+  declare component: OCPP2_0_1.ComponentType;
 
   @ForeignKey(() => Component)
   @Column({
@@ -65,5 +75,5 @@ export class VariableMonitoring extends Model implements VariableMonitoringType 
   })
   declare componentId?: number | null;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

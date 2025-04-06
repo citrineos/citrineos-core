@@ -5,13 +5,10 @@
 import { IChargingStationCertificateAuthorityClient } from './interface';
 import { SystemConfig } from '@citrineos/base';
 import * as acme from 'acme-client';
+import { Client } from 'acme-client';
 import { ILogObj, Logger } from 'tslog';
 import fs from 'fs';
-import { Client } from 'acme-client';
-import {
-  createSignedCertificateFromCSR,
-  parseCertificateChainPem,
-} from '../CertificateUtil';
+import { createSignedCertificateFromCSR, parseCertificateChainPem } from '../CertificateUtil';
 
 export class Acme implements IChargingStationCertificateAuthorityClient {
   private readonly _directoryUrl: string = acme.directory.letsencrypt.staging;
@@ -35,14 +32,8 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       if (server.securityProfile === 3) {
         try {
           this._securityCertChainKeyMap.set(server.id, [
-            fs.readFileSync(
-              server.tlsCertificateChainFilePath as string,
-              'utf8',
-            ),
-            fs.readFileSync(
-              server.mtlsCertificateAuthorityKeyFilePath as string,
-              'utf8',
-            ),
+            fs.readFileSync(server.tlsCertificateChainFilePath as string, 'utf8'),
+            fs.readFileSync(server.mtlsCertificateAuthorityKeyFilePath as string, 'utf8'),
           ]);
         } catch (error) {
           this._logger.error(
@@ -55,11 +46,9 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       }
     });
 
-    this._email =
-      config.util.certificateAuthority.chargingStationCA.acme?.email;
+    this._email = config.util.certificateAuthority.chargingStationCA.acme?.email;
     const accountKey = fs.readFileSync(
-      config.util.certificateAuthority.chargingStationCA?.acme
-        ?.accountKeyFilePath as string,
+      config.util.certificateAuthority.chargingStationCA?.acme?.accountKeyFilePath as string,
     );
     const acmeEnv: string | undefined =
       config.util.certificateAuthority.chargingStationCA?.acme?.env;
@@ -80,14 +69,10 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
    * @return {Promise<string>} The CA certificate pem.
    */
   async getRootCACertificate(): Promise<string> {
-    const response = await fetch(
-      `https://letsencrypt.org/certs/${this._preferredChain.file}.pem`,
-    );
+    const response = await fetch(`https://letsencrypt.org/certs/${this._preferredChain.file}.pem`);
 
     if (!response.ok && response.status !== 304) {
-      throw new Error(
-        `Failed to fetch certificate: ${response.status}: ${await response.text()}`,
-      );
+      throw new Error(`Failed to fetch certificate: ${response.status}: ${await response.text()}`);
     }
 
     return await response.text();
@@ -102,8 +87,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
    * @return {Promise<string>} The signed certificate.
    */
   async signCertificateByExternalCA(csrString: string): Promise<string> {
-    const folderPath =
-      '/usr/local/apps/citrineos/Server/src/assets/.well-known/acme-challenge';
+    const folderPath = '/usr/local/apps/citrineos/Server/src/assets/.well-known/acme-challenge';
 
     const cert = await this._client?.auto({
       csr: csrString,
@@ -128,9 +112,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
         fs.writeFileSync(filePath, fileContents);
       },
       challengeRemoveFn: async (_authz, _challenge, _keyAuthorization) => {
-        this._logger.debug(
-          `Triggered challengeRemoveFn(). Would remove "${folderPath}`,
-        );
+        this._logger.debug(`Triggered challengeRemoveFn(). Would remove "${folderPath}`);
         fs.rmSync(folderPath, { recursive: true, force: true });
       },
     });
@@ -150,11 +132,12 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
    * @return {Promise<string>} - The signed certificate followed by sub CA in PEM format.
    */
   async getCertificateChain(csrString: string): Promise<string> {
-    const [serverId, [certChain, subCAPrivateKey]] =
-      this._securityCertChainKeyMap.entries().next().value;
-    this._logger.debug(
-      `Found certificate chain in server ${serverId}: ${certChain}`,
-    );
+    const nextEntry = this._securityCertChainKeyMap.entries().next().value;
+    if (!nextEntry) {
+      throw new Error('Failed to get certificate chain, securityCertChainKeyMap is empty');
+    }
+    const [serverId, [certChain, subCAPrivateKey]] = nextEntry;
+    this._logger.debug(`Found certificate chain in server ${serverId}: ${certChain}`);
 
     const certChainArray: string[] = parseCertificateChainPem(certChain);
     if (certChainArray.length < 2) {
@@ -181,13 +164,8 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     privateKey: string,
   ): void {
     if (this._securityCertChainKeyMap.has(serverId)) {
-      this._securityCertChainKeyMap.set(serverId, [
-        certificateChain,
-        privateKey,
-      ]);
-      this._logger.info(
-        `Updated certificate chain key map for server ${serverId}`,
-      );
+      this._securityCertChainKeyMap.set(serverId, [certificateChain, privateKey]);
+      this._logger.info(`Updated certificate chain key map for server ${serverId}`);
     } else {
       this._logger.error(`Server ${serverId} not found in the map`);
     }

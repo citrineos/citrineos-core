@@ -17,8 +17,7 @@ export class Money {
     } catch (error) {
       throw new Error(`Invalid money amount: ${amount}`);
     }
-    this._currency =
-      typeof currency === 'string' ? Currency.of(currency) : currency;
+    this._currency = typeof currency === 'string' ? Currency.of(currency) : currency;
   }
 
   get amount(): Big {

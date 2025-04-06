@@ -1,11 +1,6 @@
 import { IVariableMonitoringRepository } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
-import {
-  CallAction,
-  ClearMonitoringResultType,
-  ClearMonitoringStatusEnumType,
-  StatusInfoType,
-} from '@citrineos/base';
+import { OCPP2_0_1, OCPP2_0_1_CallAction } from '@citrineos/base';
 
 export class MonitoringService {
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
@@ -24,27 +19,27 @@ export class MonitoringService {
   async processClearMonitoringResult(
     stationId: string,
     clearMonitoringResult: [
-      ClearMonitoringResultType,
-      ...ClearMonitoringResultType[],
+      OCPP2_0_1.ClearMonitoringResultType,
+      ...OCPP2_0_1.ClearMonitoringResultType[],
     ],
   ): Promise<void> {
     for (const clearMonitoringResultType of clearMonitoringResult) {
-      const resultStatus: ClearMonitoringStatusEnumType =
+      const resultStatus: OCPP2_0_1.ClearMonitoringStatusEnumType =
         clearMonitoringResultType.status;
       const monitorId: number = clearMonitoringResultType.id;
 
       // Reject the variable monitoring if Charging Station accepts to clear or cannot find it.
       if (
-        resultStatus === ClearMonitoringStatusEnumType.Accepted ||
-        resultStatus === ClearMonitoringStatusEnumType.NotFound
+        resultStatus === OCPP2_0_1.ClearMonitoringStatusEnumType.Accepted ||
+        resultStatus === OCPP2_0_1.ClearMonitoringStatusEnumType.NotFound
       ) {
         await this._variableMonitoringRepository.rejectVariableMonitoringByIdAndStationId(
-          CallAction.ClearVariableMonitoring,
+          OCPP2_0_1_CallAction.ClearVariableMonitoring,
           monitorId,
           stationId,
         );
       } else {
-        const statusInfo: StatusInfoType | undefined | null =
+        const statusInfo: OCPP2_0_1.StatusInfoType | undefined | null =
           clearMonitoringResultType.statusInfo;
         this._logger.error(
           'Failed to clear variable monitoring.',

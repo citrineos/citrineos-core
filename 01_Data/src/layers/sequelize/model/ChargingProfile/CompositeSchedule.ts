@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingRateUnitEnumType, ChargingSchedulePeriodType, CompositeScheduleType, CustomDataType, Namespace } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1, Namespace } from '@citrineos/base';
 import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
 @Table
-export class CompositeSchedule extends Model implements CompositeScheduleType {
+export class CompositeSchedule extends Model {
   static readonly MODEL_NAME: string = Namespace.CompositeSchedule;
 
   @Column(DataType.STRING)
@@ -28,10 +28,10 @@ export class CompositeSchedule extends Model implements CompositeScheduleType {
   declare scheduleStart: string;
 
   @Column(DataType.STRING)
-  declare chargingRateUnit: ChargingRateUnitEnumType;
+  declare chargingRateUnit: string;
 
   @Column(DataType.JSONB)
-  declare chargingSchedulePeriod: [ChargingSchedulePeriodType, ...ChargingSchedulePeriodType[]];
+  declare chargingSchedulePeriod: [object, ...object[]];
 
-  declare customData?: CustomDataType | null;
+  declare customData?: object | null;
 }

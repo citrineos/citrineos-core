@@ -47,9 +47,7 @@ describe('UnknownStationFilter', () => {
       ),
     ).rejects.toThrow(`Unknown identifier ${stationId}`);
 
-    expect(
-      locationRepository.doesChargingStationExistByStationId,
-    ).toHaveBeenCalledWith(stationId);
+    expect(locationRepository.doesChargingStationExistByStationId).toHaveBeenCalledWith(stationId);
   });
 
   it('should not reject unknown station when unknown stations are allowed', async () => {
@@ -62,20 +60,16 @@ describe('UnknownStationFilter', () => {
       anAuthenticationOptions({ allowUnknownChargingStations: true }),
     );
 
-    expect(
-      locationRepository.doesChargingStationExistByStationId,
-    ).not.toHaveBeenCalledWith(stationId);
+    expect(locationRepository.doesChargingStationExistByStationId).not.toHaveBeenCalledWith(
+      stationId,
+    );
   });
 
   function givenStationExists() {
-    locationRepository.doesChargingStationExistByStationId.mockResolvedValue(
-      true,
-    );
+    locationRepository.doesChargingStationExistByStationId.mockResolvedValue(true);
   }
 
   function givenStationDoesNotExist() {
-    locationRepository.doesChargingStationExistByStationId.mockResolvedValue(
-      false,
-    );
+    locationRepository.doesChargingStationExistByStationId.mockResolvedValue(false);
   }
 });

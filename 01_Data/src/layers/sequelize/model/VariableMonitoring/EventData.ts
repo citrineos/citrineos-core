@@ -1,13 +1,13 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
-import { ComponentType, type CustomDataType, type EventDataType, EventNotificationEnumType, EventTriggerEnumType, Namespace, VariableType } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Index, Model, Table } from 'sequelize-typescript';
 import { Component, Variable } from '../DeviceModel';
 
 @Table
-export class EventData extends Model implements EventDataType {
-  static readonly MODEL_NAME: string = Namespace.EventDataType;
+export class EventData extends Model implements OCPP2_0_1.EventDataType {
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.EventDataType;
 
   /**
    * Fields
@@ -26,7 +26,7 @@ export class EventData extends Model implements EventDataType {
   declare eventId: number;
 
   @Column(DataType.STRING)
-  declare trigger: EventTriggerEnumType;
+  declare trigger: OCPP2_0_1.EventTriggerEnumType;
 
   @Column(DataType.INTEGER)
   declare cause?: number | null;
@@ -59,13 +59,13 @@ export class EventData extends Model implements EventDataType {
   declare variableMonitoringId?: number | null;
 
   @Column(DataType.STRING)
-  declare eventNotificationType: EventNotificationEnumType;
+  declare eventNotificationType: OCPP2_0_1.EventNotificationEnumType;
 
   /**
    * Relations
    */
   @BelongsTo(() => Variable)
-  declare variable: VariableType;
+  declare variable: OCPP2_0_1.VariableType;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -74,7 +74,7 @@ export class EventData extends Model implements EventDataType {
   declare variableId?: number;
 
   @BelongsTo(() => Component)
-  declare component: ComponentType;
+  declare component: OCPP2_0_1.ComponentType;
 
   @ForeignKey(() => Component)
   @Column({
@@ -82,5 +82,5 @@ export class EventData extends Model implements EventDataType {
   })
   declare componentId?: number;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

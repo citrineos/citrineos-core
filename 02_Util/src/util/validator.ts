@@ -2,11 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  AttributeEnumType,
-  ChargingProfilePurposeEnumType,
-  ChargingProfileType,
-} from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { getNumberOfFractionDigit } from './parser';
 import {
   IChargingProfileRepository,
@@ -41,7 +37,7 @@ export function validateLanguageTag(languageTag: string): boolean {
  * @param evseId evse id
  */
 export async function validateChargingProfileType(
-  chargingProfileType: ChargingProfileType,
+  chargingProfileType: OCPP2_0_1.ChargingProfileType,
   stationId: string,
   deviceModelRepository: IDeviceModelRepository,
   chargingProfileRepository: IChargingProfileRepository,
@@ -55,17 +51,15 @@ export async function validateChargingProfileType(
 
   if (
     chargingProfileType.chargingProfilePurpose ===
-      ChargingProfilePurposeEnumType.ChargingStationMaxProfile &&
+      OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationMaxProfile &&
     evseId !== 0
   ) {
-    throw new Error(
-      'When chargingProfilePurpose is ChargingStationMaxProfile, evseId SHALL be 0',
-    );
+    throw new Error('When chargingProfilePurpose is ChargingStationMaxProfile, evseId SHALL be 0');
   }
 
   if (
     chargingProfileType.chargingProfilePurpose !==
-      ChargingProfilePurposeEnumType.TxProfile &&
+      OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile &&
     chargingProfileType.transactionId
   ) {
     throw new Error(
@@ -75,20 +69,16 @@ export async function validateChargingProfileType(
 
   let receivedChargingNeeds;
   if (chargingProfileType.transactionId && evseId) {
-    const transaction =
-      await transactionEventRepository.readTransactionByStationIdAndTransactionId(
-        stationId,
-        chargingProfileType.transactionId,
-      );
+    const transaction = await transactionEventRepository.readTransactionByStationIdAndTransactionId(
+      stationId,
+      chargingProfileType.transactionId,
+    );
     if (!transaction) {
       throw new Error(
         `Transaction ${chargingProfileType.transactionId} not found on station ${stationId}.`,
       );
     }
-    const evse = await deviceModelRepository.findEvseByIdAndConnectorId(
-      evseId,
-      null,
-    );
+    const evse = await deviceModelRepository.findEvseByIdAndConnectorId(evseId, null);
     if (!evse) {
       throw new Error(`Evse ${evseId} not found.`);
     }
@@ -98,21 +88,18 @@ export async function validateChargingProfileType(
         evse.databaseId,
         transaction.id,
       );
-    logger.info(
-      `Found ChargingNeeds: ${JSON.stringify(receivedChargingNeeds)}`,
-    );
+    logger.info(`Found ChargingNeeds: ${JSON.stringify(receivedChargingNeeds)}`);
   }
 
-  const periodsPerSchedules: VariableAttribute[] =
-    await deviceModelRepository.readAllByQuerystring({
+  const periodsPerSchedules: VariableAttribute[] = await deviceModelRepository.readAllByQuerystring(
+    {
       stationId: stationId,
       component_name: 'SmartChargingCtrlr',
       variable_name: 'PeriodsPerSchedule',
-      type: AttributeEnumType.Actual,
-    });
-  logger.info(
-    `Found PeriodsPerSchedule: ${JSON.stringify(periodsPerSchedules)}`,
+      type: OCPP2_0_1.AttributeEnumType.Actual,
+    },
   );
+  logger.info(`Found PeriodsPerSchedule: ${JSON.stringify(periodsPerSchedules)}`);
   let periodsPerSchedule;
   if (periodsPerSchedules.length > 0 && periodsPerSchedules[0].value) {
     periodsPerSchedule = Number(periodsPerSchedules[0].value);
@@ -126,10 +113,7 @@ export async function validateChargingProfileType(
         `chargingSchedule ${chargingSchedule.id}: minChargingRate accepts at most one digit fraction (e.g. 8.1).`,
       );
     }
-    if (
-      periodsPerSchedule &&
-      chargingSchedule.chargingSchedulePeriod.length > periodsPerSchedule
-    ) {
+    if (periodsPerSchedule && chargingSchedule.chargingSchedulePeriod.length > periodsPerSchedule) {
       throw new Error(
         `ChargingSchedule ${chargingSchedule.id}: The number of chargingSchedulePeriod SHALL not exceed ${periodsPerSchedule}.`,
       );
@@ -167,8 +151,7 @@ export async function validateChargingProfileType(
         );
       }
 
-      for (const salesTariffEntry of chargingSchedule.salesTariff
-        .salesTariffEntry) {
+      for (const salesTariffEntry of chargingSchedule.salesTariff.salesTariffEntry) {
         if (salesTariffEntry.consumptionCost) {
           for (const consumptionCost of salesTariffEntry.consumptionCost) {
             if (consumptionCost.cost) {

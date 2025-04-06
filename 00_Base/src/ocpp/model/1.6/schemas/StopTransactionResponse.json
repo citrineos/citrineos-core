@@ -1,0 +1,34 @@
+{
+  "title": "StopTransactionResponse",
+  "type": "object",
+  "properties": {
+    "idTagInfo": {
+      "type": "object",
+      "properties": {
+        "expiryDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "parentIdTag": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "status": {
+          "$ref": "#/definitions/StopTransactionResponseStatus"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["status"]
+    }
+  },
+  "additionalProperties": false,
+  "$id": "StopTransactionResponse",
+  "definitions": {
+    "StopTransactionResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
+      "tsEnumNames": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"]
+    }
+  }
+}

@@ -45,11 +45,7 @@ describe('splitOnce', () => {
   );
 
   it.each([
-    [
-      'multiple----separators-at-once',
-      '-',
-      ['multiple', '---separators-at-once'],
-    ],
+    ['multiple----separators-at-once', '-', ['multiple', '---separators-at-once']],
     [
       'cp001:::SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3',
       ':',

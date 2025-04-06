@@ -3,15 +3,25 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingStateEnumType, type CustomDataType, EVSEType, type MeterValueType, Namespace, ReasonEnumType, type TransactionEventRequest, type TransactionType } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
+import { Namespace } from '@citrineos/base';
+import {
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  HasOne,
+  Model,
+  Table,
+} from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
 import { ChargingStation } from '../Location';
+import { StartTransaction, StopTransaction } from './';
 
 @Table
-export class Transaction extends Model implements TransactionType {
+export class Transaction extends Model {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
   static readonly TRANSACTION_EVENTS_ALIAS = 'transactionEvents';
   static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter';
@@ -26,7 +36,7 @@ export class Transaction extends Model implements TransactionType {
   station!: ChargingStation;
 
   @BelongsTo(() => Evse)
-  declare evse?: EVSEType;
+  declare evse?: Evse | null;
 
   @ForeignKey(() => Evse)
   @Column(DataType.INTEGER)
@@ -40,18 +50,30 @@ export class Transaction extends Model implements TransactionType {
   @Column(DataType.BOOLEAN)
   declare isActive: boolean;
 
-  @HasMany(() => TransactionEvent, { as: Transaction.TRANSACTION_EVENTS_ALIAS, foreignKey: 'transactionDatabaseId' })
-  declare transactionEvents?: TransactionEventRequest[];
+  @HasMany(() => TransactionEvent, {
+    as: Transaction.TRANSACTION_EVENTS_ALIAS,
+    foreignKey: 'transactionDatabaseId',
+  })
+  declare transactionEvents?: TransactionEvent[];
 
   // required only for filtering, should not be used to pull transaction events
-  @HasMany(() => TransactionEvent, { as: Transaction.TRANSACTION_EVENTS_FILTER_ALIAS, foreignKey: 'transactionDatabaseId' })
-  declare transactionEventsFilter?: TransactionEventRequest[];
+  @HasMany(() => TransactionEvent, {
+    as: Transaction.TRANSACTION_EVENTS_FILTER_ALIAS,
+    foreignKey: 'transactionDatabaseId',
+  })
+  declare transactionEventsFilter?: TransactionEvent[];
 
   @HasMany(() => MeterValue)
-  declare meterValues?: MeterValueType[];
+  declare meterValues?: MeterValue[];
+
+  @HasOne(() => StartTransaction)
+  declare startTransaction?: StartTransaction;
+
+  @HasOne(() => StopTransaction)
+  declare stopTransaction?: StopTransaction;
 
   @Column(DataType.STRING)
-  declare chargingState?: ChargingStateEnumType | null;
+  declare chargingState?: string | null;
 
   @Column(DataType.BIGINT)
   declare timeSpentCharging?: number | null;
@@ -60,7 +82,7 @@ export class Transaction extends Model implements TransactionType {
   declare totalKwh?: number | null;
 
   @Column(DataType.STRING)
-  declare stoppedReason?: ReasonEnumType | null;
+  declare stoppedReason?: string | null;
 
   @Column(DataType.INTEGER)
   declare remoteStartId?: number | null;
@@ -68,22 +90,22 @@ export class Transaction extends Model implements TransactionType {
   @Column(DataType.DECIMAL)
   declare totalCost?: number;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: any | null;
 
   static buildTransaction(
     id: string, // todo temp
     stationId: string,
     transactionId: string,
     isActive: boolean,
-    transactionEvents: TransactionEventRequest[],
-    meterValues: MeterValueType[],
-    chargingState?: ChargingStateEnumType,
+    transactionEvents: TransactionEvent[],
+    meterValues: MeterValue[],
+    chargingState?: string,
     timeSpentCharging?: number,
     totalKwh?: number,
-    stoppedReason?: ReasonEnumType,
+    stoppedReason?: string,
     remoteStartId?: number,
-    customData?: CustomDataType,
     totalCost?: number,
+    customData?: object,
   ) {
     const transaction = new Transaction();
     transaction.id = id;
@@ -97,8 +119,8 @@ export class Transaction extends Model implements TransactionType {
     transaction.totalKwh = totalKwh;
     transaction.stoppedReason = stoppedReason;
     transaction.remoteStartId = remoteStartId;
-    transaction.customData = customData;
     transaction.totalCost = totalCost;
+    transaction.customData = customData;
     return transaction;
   }
 }

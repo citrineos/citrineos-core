@@ -8,46 +8,28 @@ import {
   AsHandler,
   CallAction,
   ChargingStationSequenceType,
-  ClearVariableMonitoringResponse,
-  EventDataType,
   EventGroup,
-  GenericDeviceModelStatusEnumType,
-  GenericStatusEnumType,
-  GetMonitoringReportRequest,
-  GetMonitoringReportResponse,
-  GetVariablesResponse,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageHandler,
   IMessageSender,
-  NotifyEventRequest,
-  NotifyEventResponse,
-  ReportDataType,
-  SetMonitoringBaseResponse,
-  SetMonitoringLevelResponse,
-  SetVariableMonitoringResponse,
-  SetVariablesResponse,
-  StatusInfoType,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
+  OCPPVersion,
   SystemConfig,
 } from '@citrineos/base';
 import {
   IDeviceModelRepository,
   IVariableMonitoringRepository,
+  SequelizeChargingStationSequenceRepository,
   SequelizeDeviceModelRepository,
   SequelizeVariableMonitoringRepository,
 } from '@citrineos/data';
-import {
-  IdGenerator,
-  RabbitMqReceiver,
-  RabbitMqSender,
-  Timer,
-} from '@citrineos/util';
-import deasyncPromise from 'deasync-promise';
+import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './services';
 import { MonitoringService } from './MonitoringService';
-import {SequelizeChargingStationSequenceRepository} from "@citrineos/data";
 
 /**
  * Component that handles monitoring related messages.
@@ -56,15 +38,15 @@ export class MonitoringModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
   protected _monitoringService: MonitoringService;
 
-  protected _requests: CallAction[] = [CallAction.NotifyEvent];
-  protected _responses: CallAction[] = [
-    CallAction.ClearVariableMonitoring,
-    CallAction.GetVariables,
-    CallAction.SetMonitoringBase,
-    CallAction.SetMonitoringLevel,
-    CallAction.GetMonitoringReport,
-    CallAction.SetVariableMonitoring,
-    CallAction.SetVariables,
+  _requests: CallAction[] = [OCPP2_0_1_CallAction.NotifyEvent];
+  _responses: CallAction[] = [
+    OCPP2_0_1_CallAction.ClearVariableMonitoring,
+    OCPP2_0_1_CallAction.GetVariables,
+    OCPP2_0_1_CallAction.SetMonitoringBase,
+    OCPP2_0_1_CallAction.SetMonitoringLevel,
+    OCPP2_0_1_CallAction.GetMonitoringReport,
+    OCPP2_0_1_CallAction.SetVariableMonitoring,
+    OCPP2_0_1_CallAction.SetVariables,
   ];
 
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -117,37 +99,21 @@ export class MonitoringModule extends AbstractModule {
       logger,
     );
 
-    const timer = new Timer();
-    this._logger.info('Initializing...');
-
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
     this._deviceModelRepository =
-      deviceModelRepository ||
-      new SequelizeDeviceModelRepository(config, this._logger);
+      deviceModelRepository || new SequelizeDeviceModelRepository(config, this._logger);
     this._variableMonitoringRepository =
       variableMonitoringRepository ||
       new SequelizeVariableMonitoringRepository(config, this._logger);
 
-    this._deviceModelService = new DeviceModelService(
-      this._deviceModelRepository,
-    );
+    this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
     this._monitoringService = new MonitoringService(
       this._variableMonitoringRepository,
       this._logger,
     );
 
     this._idGenerator =
-        idGenerator ||
-        new IdGenerator(
-            new SequelizeChargingStationSequenceRepository(config, this._logger),
-        );
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
+      idGenerator ||
+      new IdGenerator(new SequelizeChargingStationSequenceRepository(config, this._logger));
   }
 
   get deviceModelRepository(): IDeviceModelRepository {
@@ -161,15 +127,15 @@ export class MonitoringModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(CallAction.NotifyEvent)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyEvent)
   protected async _handleNotifyEvent(
-    message: IMessage<NotifyEventRequest>,
+    message: IMessage<OCPP2_0_1.NotifyEventRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('NotifyEvent received:', message, props);
     const stationId = message.context.stationId;
 
-    const events = message.payload.eventData as EventDataType[];
+    const events = message.payload.eventData as OCPP2_0_1.EventDataType[];
     for (const event of events) {
       const [component, variable] =
         await this._deviceModelRepository.findOrCreateEvseAndComponentAndVariable(
@@ -182,7 +148,7 @@ export class MonitoringModule extends AbstractModule {
         variable?.id,
         stationId,
       );
-      const reportDataType: ReportDataType = {
+      const reportDataType: OCPP2_0_1.ReportDataType = {
         component,
         variable,
         variableAttribute: [
@@ -199,29 +165,22 @@ export class MonitoringModule extends AbstractModule {
     }
 
     // Create response
-    const response: NotifyEventResponse = {};
+    const response: OCPP2_0_1.NotifyEventResponse = {};
 
-    this.sendCallResultWithMessage(message, response).then(
-      (messageConfirmation) => {
-        this._logger.debug('NotifyEvent response sent:', messageConfirmation);
-      },
-    );
+    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+    this._logger.debug('NotifyEvent response sent:', messageConfirmation);
   }
 
   /**
    * Handle responses
    */
 
-  @AsHandler(CallAction.SetVariableMonitoring)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SetVariableMonitoring)
   protected async _handleSetVariableMonitoring(
-    message: IMessage<SetVariableMonitoringResponse>,
+    message: IMessage<OCPP2_0_1.SetVariableMonitoringResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug(
-      'SetVariableMonitoring response received:',
-      message,
-      props,
-    );
+    this._logger.debug('SetVariableMonitoring response received:', message, props);
 
     for (const setMonitoringResultType of message.payload.setMonitoringResult) {
       await this._variableMonitoringRepository.updateResultByStationId(
@@ -231,16 +190,12 @@ export class MonitoringModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.ClearVariableMonitoring)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ClearVariableMonitoring)
   protected async _handleClearVariableMonitoring(
-    message: IMessage<ClearVariableMonitoringResponse>,
+    message: IMessage<OCPP2_0_1.ClearVariableMonitoringResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug(
-      'ClearVariableMonitoring response received:',
-      message,
-      props,
-    );
+    this._logger.debug('ClearVariableMonitoring response received:', message, props);
 
     await this._monitoringService.processClearMonitoringResult(
       message.context.stationId,
@@ -248,24 +203,19 @@ export class MonitoringModule extends AbstractModule {
     );
   }
 
-  @AsHandler(CallAction.GetMonitoringReport)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetMonitoringReport)
   protected _handleGetMonitoringReport(
-    message: IMessage<GetMonitoringReportResponse>,
+    message: IMessage<OCPP2_0_1.GetMonitoringReportResponse>,
     props?: HandlerProperties,
   ): void {
-    this._logger.debug(
-      'GetMonitoringReport response received:',
-      message,
-      props,
-    );
+    this._logger.debug('GetMonitoringReport response received:', message, props);
 
-    const status: GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: StatusInfoType | undefined | null =
-      message.payload.statusInfo;
+    const status: OCPP2_0_1.GenericDeviceModelStatusEnumType = message.payload.status;
+    const statusInfo: OCPP2_0_1.StatusInfoType | undefined | null = message.payload.statusInfo;
 
     if (
-      status === GenericDeviceModelStatusEnumType.Rejected ||
-      status === GenericDeviceModelStatusEnumType.NotSupported
+      status === OCPP2_0_1.GenericDeviceModelStatusEnumType.Rejected ||
+      status === OCPP2_0_1.GenericDeviceModelStatusEnumType.NotSupported
     ) {
       this._logger.error(
         'Failed to get monitoring report.',
@@ -276,17 +226,16 @@ export class MonitoringModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.SetMonitoringLevel)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SetMonitoringLevel)
   protected _handleSetMonitoringLevel(
-    message: IMessage<SetMonitoringLevelResponse>,
+    message: IMessage<OCPP2_0_1.SetMonitoringLevelResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('SetMonitoringLevel response received:', message, props);
 
-    const status: GenericStatusEnumType = message.payload.status;
-    const statusInfo: StatusInfoType | undefined | null =
-      message.payload.statusInfo;
-    if (status === GenericStatusEnumType.Rejected) {
+    const status: OCPP2_0_1.GenericStatusEnumType = message.payload.status;
+    const statusInfo: OCPP2_0_1.StatusInfoType | undefined | null = message.payload.statusInfo;
+    if (status === OCPP2_0_1.GenericStatusEnumType.Rejected) {
       this._logger.error(
         'Failed to set monitoring level.',
         status,
@@ -296,20 +245,19 @@ export class MonitoringModule extends AbstractModule {
     }
   }
 
-  @AsHandler(CallAction.SetMonitoringBase)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SetMonitoringBase)
   protected async _handleSetMonitoringBase(
-    message: IMessage<SetMonitoringBaseResponse>,
+    message: IMessage<OCPP2_0_1.SetMonitoringBaseResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('SetMonitoringBase response received:', message, props);
 
-    const status: GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: StatusInfoType | undefined | null =
-      message.payload.statusInfo;
+    const status: OCPP2_0_1.GenericDeviceModelStatusEnumType = message.payload.status;
+    const statusInfo: OCPP2_0_1.StatusInfoType | undefined | null = message.payload.statusInfo;
 
     if (
-      status === GenericDeviceModelStatusEnumType.Rejected ||
-      status === GenericDeviceModelStatusEnumType.NotSupported
+      status === OCPP2_0_1.GenericDeviceModelStatusEnumType.Rejected ||
+      status === OCPP2_0_1.GenericDeviceModelStatusEnumType.NotSupported
     ) {
       this._logger.error(
         'Failed to set monitoring base.',
@@ -323,51 +271,52 @@ export class MonitoringModule extends AbstractModule {
       // Then request a GetMonitoringReport for all monitorings
       const stationId: string = message.context.stationId;
       await this._variableMonitoringRepository.rejectAllVariableMonitoringsByStationId(
-        CallAction.SetVariableMonitoring,
+        OCPP2_0_1_CallAction.SetVariableMonitoring,
         stationId,
       );
-      this._logger.debug(
-        'Rejected all variable monitorings on the charger',
-        stationId,
-      );
+      this._logger.debug('Rejected all variable monitorings on the charger', stationId);
 
       await this.sendCall(
         stationId,
         message.context.tenantId,
-        CallAction.GetMonitoringReport,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.GetMonitoringReport,
         {
-          requestId: await this._idGenerator.generateRequestId(message.context.stationId, ChargingStationSequenceType.getMonitoringReport),
-        } as GetMonitoringReportRequest,
+          requestId: await this._idGenerator.generateRequestId(
+            message.context.stationId,
+            ChargingStationSequenceType.getMonitoringReport,
+          ),
+        } as OCPP2_0_1.GetMonitoringReportRequest,
       );
     }
   }
 
-  @AsHandler(CallAction.GetVariables)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetVariables)
   protected async _handleGetVariables(
-    message: IMessage<GetVariablesResponse>,
+    message: IMessage<OCPP2_0_1.GetVariablesResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetVariables response received:', message, props);
-    this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(
+    await this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(
       message.payload.getVariableResult,
       message.context.stationId,
       message.context.timestamp,
     );
   }
 
-  @AsHandler(CallAction.SetVariables)
+  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SetVariables)
   protected async _handleSetVariables(
-    message: IMessage<SetVariablesResponse>,
+    message: IMessage<OCPP2_0_1.SetVariablesResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('SetVariables response received:', message, props);
 
-    message.payload.setVariableResult.forEach(async (setVariableResultType) => {
-      this._deviceModelRepository.updateResultByStationId(
+    for (const setVariableResultType of message.payload.setVariableResult) {
+      await this._deviceModelRepository.updateResultByStationId(
         setVariableResultType,
         message.context.stationId,
         message.context.timestamp,
       );
-    });
+    }
   }
 }

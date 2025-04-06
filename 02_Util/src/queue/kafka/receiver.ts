@@ -22,10 +22,7 @@ import { ILogObj, Logger } from 'tslog';
 /**
  * Implementation of a {@link IMessageHandler} using Kafka as the underlying transport.
  */
-export class KafkaReceiver
-  extends AbstractMessageHandler
-  implements IMessageHandler
-{
+export class KafkaReceiver extends AbstractMessageHandler implements IMessageHandler {
   /**
    * Fields
    */
@@ -33,11 +30,7 @@ export class KafkaReceiver
   private _topicName: string;
   private _consumerMap: Map<string, Consumer>;
 
-  constructor(
-    config: SystemConfig,
-    logger?: Logger<ILogObj>,
-    module?: IModule,
-  ) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, module?: IModule) {
     super(config, logger, module);
 
     this._consumerMap = new Map<string, Consumer>();
@@ -58,15 +51,15 @@ export class KafkaReceiver
       .then(() => admin.listTopics())
       .then((topics) => {
         this._logger.debug('Topics:', topics);
-        if (
-          !topics ||
-          topics.filter((topic) => topic === this._topicName).length === 0
-        ) {
+        if (!topics || topics.filter((topic) => topic === this._topicName).length === 0) {
           this._client
             .admin()
             .createTopics({ topics: [{ topic: this._topicName }] })
             .then(() => {
               this._logger.debug(`Topic ${this._topicName} created.`);
+            })
+            .catch((err) => {
+              this._logger.error('Error creating topic', err);
             });
         } else {
           this._logger.debug(`Topic ${this._topicName} already exists.`);
@@ -83,19 +76,12 @@ export class KafkaReceiver
     actions?: CallAction[],
     filter?: { [k: string]: string },
   ): Promise<boolean> {
-    this._logger.debug(
-      `Subscribing to ${this._topicName}...`,
-      identifier,
-      actions,
-      filter,
-    );
+    this._logger.debug(`Subscribing to ${this._topicName}...`, identifier, actions, filter);
 
     const consumer = this._client.consumer({ groupId: 'test-group' });
     return consumer
       .connect()
-      .then(() =>
-        consumer.subscribe({ topic: this._topicName, fromBeginning: false }),
-      )
+      .then(() => consumer.subscribe({ topic: this._topicName, fromBeginning: false }))
       .then(() =>
         consumer.run({
           autoCommit: false,
@@ -125,10 +111,10 @@ export class KafkaReceiver
       });
   }
 
-  shutdown(): void {
-    this._consumerMap.forEach((value) => {
-      value.disconnect();
-    });
+  async shutdown(): Promise<void> {
+    for (const consumer of this._consumerMap.values()) {
+      await consumer.disconnect();
+    }
   }
 
   /**
@@ -138,7 +124,7 @@ export class KafkaReceiver
   /**
    * Underlying Kafka message handler.
    *
-   * @param message The PubSub message to process
+   * @param message The kafka message to process
    */
   private async _onMessage(
     { topic, partition, message }: EachMessagePayload,
@@ -165,8 +151,6 @@ export class KafkaReceiver
         this._logger.error('Error while processing message:', error, message);
       }
     }
-    await consumer.commitOffsets([
-      { topic, partition, offset: message.offset },
-    ]);
+    await consumer.commitOffsets([{ topic, partition, offset: message.offset }]);
   }
 }

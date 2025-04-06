@@ -2,13 +2,23 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ChargingProfileType, ChargingRateUnitEnumType, ChargingSchedulePeriodType, ChargingScheduleType, CustomDataType, Namespace, SalesTariffType } from '@citrineos/base';
-import { AutoIncrement, BelongsTo, Column, DataType, ForeignKey, HasOne, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import { OCPP2_0_1_Namespace, OCPP2_0_1, Namespace } from '@citrineos/base';
+import {
+  AutoIncrement,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasOne,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
 import { ChargingProfile } from './ChargingProfile';
 import { SalesTariff } from './SalesTariff';
 
 @Table
-export class ChargingSchedule extends Model implements ChargingScheduleType {
+export class ChargingSchedule extends Model {
   static readonly MODEL_NAME: string = Namespace.ChargingSchedule;
 
   /**
@@ -32,10 +42,10 @@ export class ChargingSchedule extends Model implements ChargingScheduleType {
   declare stationId: string;
 
   @Column(DataType.STRING)
-  declare chargingRateUnit: ChargingRateUnitEnumType;
+  declare chargingRateUnit: string;
 
   @Column(DataType.JSONB)
-  declare chargingSchedulePeriod: [ChargingSchedulePeriodType, ...ChargingSchedulePeriodType[]];
+  declare chargingSchedulePeriod: [any, ...any[]];
 
   @Column(DataType.INTEGER)
   declare duration?: number | null;
@@ -61,14 +71,14 @@ export class ChargingSchedule extends Model implements ChargingScheduleType {
    * Relations
    */
   @BelongsTo(() => ChargingProfile)
-  declare chargingProfile: ChargingProfileType;
+  declare chargingProfile: ChargingProfile;
 
   @ForeignKey(() => ChargingProfile)
   @Column(DataType.INTEGER)
   declare chargingProfileDatabaseId?: number;
 
   @HasOne(() => SalesTariff)
-  declare salesTariff?: SalesTariffType;
+  declare salesTariff?: SalesTariff;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: object | null;
 }

@@ -19,9 +19,7 @@ export default defineDisplay({
         : relations.o2m?.collection;
 
     const junction_table =
-      relations.o2m?.meta?.junction_field != null
-        ? relations.o2m?.collection
-        : null;
+      relations.o2m?.meta?.junction_field != null ? relations.o2m?.collection : null;
     const { useFieldsStore } = useStores();
     const fieldsStore = useFieldsStore();
 
@@ -35,8 +33,7 @@ export default defineDisplay({
         width: 'full',
       };
     } else {
-      const fields: Field[] =
-        fieldsStore.getFieldsForCollection(relatedCollection);
+      const fields: Field[] = fieldsStore.getFieldsForCollection(relatedCollection);
       const field_choices: object[] = [];
 
       // console.log("fields", fields);

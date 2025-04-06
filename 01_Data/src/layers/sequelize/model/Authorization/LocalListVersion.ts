@@ -3,15 +3,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
-import { CustomDataType } from '@citrineos/base/src/ocpp/model/types/SendLocalListRequest';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsToMany, Column, DataType, Model, Table } from 'sequelize-typescript';
 import { LocalListAuthorization } from '.';
 import { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
 
 @Table
 export class LocalListVersion extends Model {
-  static readonly MODEL_NAME: string = Namespace.LocalListVersion;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.LocalListVersion;
 
   @Column({
     unique: true,
@@ -22,7 +21,9 @@ export class LocalListVersion extends Model {
   declare versionNumber: number;
 
   @BelongsToMany(() => LocalListAuthorization, () => LocalListVersionAuthorization)
-  declare localAuthorizationList?: [LocalListAuthorization, ...LocalListAuthorization[]] | undefined;
+  declare localAuthorizationList?:
+    | [LocalListAuthorization, ...LocalListAuthorization[]]
+    | undefined;
 
-  customData?: CustomDataType | null | undefined;
+  customData?: OCPP2_0_1.CustomDataType | null | undefined;
 }

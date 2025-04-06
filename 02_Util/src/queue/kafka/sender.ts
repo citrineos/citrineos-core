@@ -20,10 +20,7 @@ import { ILogObj, Logger } from 'tslog';
 /**
  * Implementation of a {@link IMessageSender} using Kafka as the underlying transport.
  */
-export class KafkaSender
-  extends AbstractMessageSender
-  implements IMessageSender
-{
+export class KafkaSender extends AbstractMessageSender implements IMessageSender {
   /**
    * Fields
    */
@@ -56,19 +53,22 @@ export class KafkaSender
       .connect()
       .then(() => admin.listTopics())
       .then((topics) => {
-        if (
-          !topics ||
-          topics.filter((topic) => topic === this._topicName).length === 0
-        ) {
+        if (!topics || topics.filter((topic) => topic === this._topicName).length === 0) {
           this._client
             .admin()
             .createTopics({ topics: [{ topic: this._topicName }] })
             .then(() => {
               this._logger.debug(`Topic ${this._topicName} created.`);
+            })
+            .catch((error) => {
+              this._logger.error('Failed to create topic', error);
             });
         }
       })
-      .then(() => admin.disconnect());
+      .then(() => admin.disconnect())
+      .catch((error) => {
+        this._logger.error('Failed to connect to Kafka', error);
+      });
   }
 
   /**
@@ -99,7 +99,7 @@ export class KafkaSender
   }
 
   /**
-   * Publishes the given message to Google PubSub.
+   * Publishes the given message to kafka.
    *
    * @param message The {@link IMessage} to publish
    * @param payload The payload to within the {@link IMessage}
@@ -157,9 +157,9 @@ export class KafkaSender
   /**
    * Interface implementation
    */
-  shutdown(): void {
-    this._producers.forEach((producer) => {
-      producer.disconnect();
-    });
+  async shutdown(): Promise<void> {
+    for (const producer of this._producers) {
+      await producer.disconnect();
+    }
   }
 }

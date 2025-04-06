@@ -16,17 +16,12 @@ export class MemoryCache implements ICache {
   private _timeoutMap: Map<string, NodeJS.Timeout>;
 
   constructor() {
-    const keySubscriptionMap: Map<string, (arg: string | null) => void> =
-      new Map();
+    const keySubscriptionMap: Map<string, (arg: string | null) => void> = new Map();
     const subscriptionHandler: ProxyHandler<Map<string, string>> = {
       // Returns value on keySubscriptions when Map.set(key, value) is called
       set(target, property, value) {
         const setOutcome = Reflect.set(target, property, value);
-        if (
-          typeof property === 'string' &&
-          keySubscriptionMap.has(property) &&
-          setOutcome
-        ) {
+        if (typeof property === 'string' && keySubscriptionMap.has(property) && setOutcome) {
           (keySubscriptionMap?.get(property) as any)(value);
         }
         return setOutcome;
@@ -34,11 +29,7 @@ export class MemoryCache implements ICache {
       // Returns null on keySubscriptions when Map.delete(key) is called
       deleteProperty(target, property) {
         const deleteOutcome = Reflect.deleteProperty(target, property);
-        if (
-          typeof property === 'string' &&
-          keySubscriptionMap.has(property) &&
-          deleteOutcome
-        ) {
+        if (typeof property === 'string' && keySubscriptionMap.has(property) && deleteOutcome) {
           (keySubscriptionMap?.get(property) as any)(null);
         }
         return deleteOutcome;
@@ -91,14 +82,11 @@ export class MemoryCache implements ICache {
             .set(
               namespaceKey,
               new Promise<string | null>((resolve) => {
-                this._keySubscriptionMap.set(
-                  namespaceKey,
-                  (value: string | null) => {
-                    resolve(value);
-                    this._keySubscriptionMap.delete(namespaceKey);
-                    this._keySubscriptionPromiseMap.delete(namespaceKey);
-                  },
-                );
+                this._keySubscriptionMap.set(namespaceKey, (value: string | null) => {
+                  resolve(value);
+                  this._keySubscriptionMap.delete(namespaceKey);
+                  this._keySubscriptionPromiseMap.delete(namespaceKey);
+                });
               }),
             )
             .get(namespaceKey);
@@ -140,24 +128,6 @@ export class MemoryCache implements ICache {
     return null;
   }
 
-  getSync<T>(
-    key: string,
-    namespace?: string,
-    classConstructor?: () => ClassConstructor<T>,
-  ): T | null {
-    namespace = namespace || 'default';
-    const namespaceKey = `${namespace}:${key}`;
-    const value = this._cache.get(namespaceKey);
-    if (value) {
-      if (classConstructor) {
-        return plainToInstance(classConstructor(), JSON.parse(value));
-      }
-      return value as T;
-    } else {
-      return null;
-    }
-  }
-
   async set(
     key: string,
     value: string,
@@ -193,30 +163,6 @@ export class MemoryCache implements ICache {
     if (this._cache.has(namespaceKey)) {
       return false;
     }
-    this._cache.set(namespaceKey, value);
-    if (this._timeoutMap.has(namespaceKey)) {
-      clearTimeout(this._timeoutMap.get(namespaceKey));
-    }
-    if (expireSeconds) {
-      this._timeoutMap.set(
-        namespaceKey,
-        setTimeout(() => {
-          this._cache.delete(namespaceKey);
-        }, expireSeconds * 1000),
-      );
-    }
-    this.resolveOnChange(namespaceKey, value);
-    return true;
-  }
-
-  setSync(
-    key: string,
-    value: string,
-    namespace?: string,
-    expireSeconds?: number,
-  ): boolean {
-    namespace = namespace || 'default';
-    const namespaceKey = `${namespace}:${key}`;
     this._cache.set(namespaceKey, value);
     if (this._timeoutMap.has(namespaceKey)) {
       clearTimeout(this._timeoutMap.get(namespaceKey));

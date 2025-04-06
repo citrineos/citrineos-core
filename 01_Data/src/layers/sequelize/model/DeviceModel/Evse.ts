@@ -3,12 +3,22 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type CustomDataType, type EVSEType, Namespace } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { AutoIncrement, Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript';
 
-@Table
-export class Evse extends Model implements EVSEType {
-  static readonly MODEL_NAME: string = Namespace.EVSEType;
+@Table({
+  indexes: [
+    {
+      unique: true,
+      fields: ['id'],
+      where: {
+        connectorId: null,
+      },
+    },
+  ],
+})
+export class Evse extends Model implements OCPP2_0_1.EVSEType {
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.EVSEType;
 
   /**
    * Fields
@@ -31,5 +41,5 @@ export class Evse extends Model implements EVSEType {
   })
   declare connectorId?: number | null;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

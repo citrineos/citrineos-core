@@ -12,8 +12,8 @@ import {
   AdditionalInfo,
   Authorization,
   Boot,
-  CallMessage,
   Certificate,
+  ChangeConfiguration,
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
@@ -23,6 +23,7 @@ import {
   ChargingStationSequence,
   Component,
   CompositeSchedule,
+  Connector,
   EventData,
   Evse,
   IdToken,
@@ -30,6 +31,7 @@ import {
   InstalledCertificate,
   Location,
   MeterValue,
+  OCPPMessage,
   Reservation,
   SalesTariff,
   SecurityEvent,
@@ -47,9 +49,9 @@ import { MessageInfo } from './model/MessageInfo';
 import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
 import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
-import { OCPPLog, SetNetworkProfile, StatusNotification } from './model/Location';
+import { SetNetworkProfile, StatusNotification } from './model/Location';
 import { LatestStatusNotification } from './model/Location/LatestStatusNotification';
-import { UserPreferences } from './model/UserPreferences';
+import { StartTransaction, StopTransaction } from './model/TransactionEvent';
 
 export class DefaultSequelizeInstance {
   /**
@@ -66,7 +68,9 @@ export class DefaultSequelizeInstance {
   public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): Sequelize {
     if (!DefaultSequelizeInstance.instance) {
       DefaultSequelizeInstance.config = config;
-      DefaultSequelizeInstance.logger = logger ? logger.getSubLogger({ name: this.name }) : new Logger<ILogObj>({ name: this.name });
+      DefaultSequelizeInstance.logger = logger
+        ? logger.getSubLogger({ name: this.name })
+        : new Logger<ILogObj>({ name: this.name });
 
       DefaultSequelizeInstance.instance = this.createSequelizeInstance();
     }
@@ -86,7 +90,10 @@ export class DefaultSequelizeInstance {
         break;
       } catch (error) {
         retryCount++;
-        this.logger.error(`Failed to connect to the database (attempt ${retryCount}/${maxRetries}):`, error);
+        this.logger.error(
+          `Failed to connect to the database (attempt ${retryCount}/${maxRetries}):`,
+          error,
+        );
         if (retryCount < maxRetries) {
           this.logger.info(`Retrying in ${retryDelay / 1000} seconds...`);
           await new Promise((resolve) => setTimeout(resolve, retryDelay));
@@ -120,9 +127,9 @@ export class DefaultSequelizeInstance {
         AdditionalInfo,
         Authorization,
         Boot,
-        CallMessage,
         Certificate,
         InstalledCertificate,
+        ChangeConfiguration,
         ChargingNeeds,
         ChargingProfile,
         ChargingSchedule,
@@ -133,6 +140,7 @@ export class DefaultSequelizeInstance {
         Component,
         ComponentVariable,
         CompositeSchedule,
+        Connector,
         Evse,
         EventData,
         IdToken,
@@ -141,19 +149,20 @@ export class DefaultSequelizeInstance {
         Location,
         MeterValue,
         MessageInfo,
-        OCPPLog,
+        OCPPMessage,
         Reservation,
         SalesTariff,
         SecurityEvent,
         SetNetworkProfile,
         ServerNetworkProfile,
+        StartTransaction,
         StatusNotification,
+        StopTransaction,
         LatestStatusNotification,
         Subscription,
         Transaction,
         TransactionEvent,
         Tariff,
-        UserPreferences,
         VariableAttribute,
         VariableCharacteristics,
         VariableMonitoring,

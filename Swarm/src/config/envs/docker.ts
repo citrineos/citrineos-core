@@ -2,11 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  RegistrationStatusEnumType,
-  defineConfig,
-  type SystemConfig,
-} from '@citrineos/base';
+import { defineConfig, OCPP1_6, OCPP2_0_1, type SystemConfig } from '@citrineos/base';
 
 export function createDockerConfig(): SystemConfig {
   return defineConfig({
@@ -24,10 +20,15 @@ export function createDockerConfig(): SystemConfig {
       configuration: {
         heartbeatInterval: 60,
         bootRetryInterval: 15,
-        unknownChargerStatus: RegistrationStatusEnumType.Accepted,
-        getBaseReportOnPending: true,
-        bootWithRejectedVariables: true,
-        autoAccept: true,
+        ocpp2_0_1: {
+          unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+          getBaseReportOnPending: true,
+          bootWithRejectedVariables: true,
+          autoAccept: true,
+        },
+        ocpp1_6: {
+          unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Accepted,
+        },
         endpointPrefix: 'configuration',
         host: '0.0.0.0',
         port: 8084,
@@ -146,5 +147,9 @@ export function createDockerConfig(): SystemConfig {
     logLevel: 2, // debug
     maxCallLengthSeconds: 5,
     maxCachingSeconds: 10,
+    ocpiServer: {
+      host: '0.0.0.0',
+      port: 8085,
+    },
   });
 }

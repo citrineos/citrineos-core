@@ -21,10 +21,7 @@ import { ILogObj, Logger } from 'tslog';
 /**
  * Implementation of a {@link IMessageSender} using RabbitMQ as the underlying transport.
  */
-export class RabbitMqSender
-  extends AbstractMessageSender
-  implements IMessageSender
-{
+export class RabbitMqSender extends AbstractMessageSender implements IMessageSender {
   /**
    * Constants
    */
@@ -45,9 +42,13 @@ export class RabbitMqSender
   constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
     super(config, logger);
 
-    this._connect().then((channel) => {
-      this._channel = channel;
-    });
+    this._connect()
+      .then((channel) => {
+        this._channel = channel;
+      })
+      .catch((error) => {
+        this._logger.error('Failed to connect to RabbitMQ', error);
+      });
   }
 
   /**

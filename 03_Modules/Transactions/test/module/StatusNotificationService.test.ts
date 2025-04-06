@@ -2,10 +2,15 @@ import {
   Component,
   IDeviceModelRepository,
   ILocationRepository,
+  StatusNotification,
 } from '@citrineos/data';
 import { CrudRepository } from '@citrineos/base';
 import { StatusNotificationService } from '../../src/module/StatusNotificationService';
-import { aStatusNotificationRequest } from '../providers/StatusNotification';
+import {
+  aOcpp16StatusNotificationRequest,
+  aStatusNotification,
+  aStatusNotificationRequest,
+} from '../providers/StatusNotification';
 import {
   aChargingStation,
   aComponent,
@@ -32,6 +37,7 @@ describe('StatusNotificationService', () => {
     locationRepository = {
       addStatusNotificationToChargingStation: jest.fn(),
       readChargingStationByStationId: jest.fn(),
+      createOrUpdateConnector: jest.fn(),
     } as unknown as jest.Mocked<ILocationRepository>;
 
     statusNotificationService = new StatusNotificationService(
@@ -42,33 +48,28 @@ describe('StatusNotificationService', () => {
   });
 
   it('should save StatusNotification for Charging Station because Charging Station exists', async () => {
-    locationRepository.readChargingStationByStationId.mockResolvedValue(
-      aChargingStation(),
-    );
+    locationRepository.readChargingStationByStationId.mockResolvedValue(aChargingStation());
+    jest.spyOn(StatusNotification, 'build').mockImplementation(() => {
+      return aStatusNotification();
+    });
 
     await statusNotificationService.processStatusNotification(
       MOCK_STATION_ID,
       aStatusNotificationRequest(),
     );
 
-    expect(
-      locationRepository.addStatusNotificationToChargingStation,
-    ).toHaveBeenCalled();
+    expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalled();
   });
 
   it('should not save StatusNotification for Charging Station because Charging Station does not exist', async () => {
-    locationRepository.readChargingStationByStationId.mockResolvedValue(
-      undefined,
-    );
+    locationRepository.readChargingStationByStationId.mockResolvedValue(undefined);
 
     await statusNotificationService.processStatusNotification(
       MOCK_STATION_ID,
       aStatusNotificationRequest(),
     );
 
-    expect(
-      locationRepository.addStatusNotificationToChargingStation,
-    ).not.toHaveBeenCalled();
+    expect(locationRepository.addStatusNotificationToChargingStation).not.toHaveBeenCalled();
   });
 
   it('should save Component and Variable ReportData because Component and Variable exist', async () => {
@@ -89,9 +90,7 @@ describe('StatusNotificationService', () => {
       aStatusNotificationRequest(),
     );
 
-    expect(
-      deviceModelRepository.createOrUpdateDeviceModelByStationId,
-    ).toHaveBeenCalled();
+    expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalled();
   });
 
   describe('Component or Variable does not exist', () => {
@@ -103,9 +102,7 @@ describe('StatusNotificationService', () => {
         aStatusNotificationRequest(),
       );
 
-      expect(
-        deviceModelRepository.createOrUpdateDeviceModelByStationId,
-      ).not.toHaveBeenCalled();
+      expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
     });
 
     it('should not save Component and Variable ReportData because Variable does not exist', async () => {
@@ -116,9 +113,36 @@ describe('StatusNotificationService', () => {
         aStatusNotificationRequest(),
       );
 
-      expect(
-        deviceModelRepository.createOrUpdateDeviceModelByStationId,
-      ).not.toHaveBeenCalled();
+      expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Test process OCPP 1.6 StatusNotification', () => {
+    it('should save StatusNotification and connector when Charging Station exists', async () => {
+      locationRepository.readChargingStationByStationId.mockResolvedValue(aChargingStation());
+      jest.spyOn(StatusNotification, 'build').mockImplementation(() => {
+        return aStatusNotification();
+      });
+
+      await statusNotificationService.processOcpp16StatusNotification(
+        MOCK_STATION_ID,
+        aOcpp16StatusNotificationRequest(),
+      );
+
+      expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalled();
+      expect(locationRepository.createOrUpdateConnector).toHaveBeenCalled();
+    });
+
+    it('should not save StatusNotification or connector when Charging Station does not exist', async () => {
+      componentRepository.readOnlyOneByQuery.mockResolvedValue(aComponent());
+
+      await statusNotificationService.processStatusNotification(
+        MOCK_STATION_ID,
+        aStatusNotificationRequest(),
+      );
+
+      expect(locationRepository.addStatusNotificationToChargingStation).not.toHaveBeenCalled();
+      expect(locationRepository.createOrUpdateConnector).not.toHaveBeenCalled();
     });
   });
 });

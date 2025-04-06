@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
+import { defineConfig, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
 import path from 'path';
 
 export function createDockerConfig() {
@@ -21,10 +21,15 @@ export function createDockerConfig() {
       configuration: {
         heartbeatInterval: 60,
         bootRetryInterval: 15,
-        unknownChargerStatus: RegistrationStatusEnumType.Accepted,
-        getBaseReportOnPending: true,
-        bootWithRejectedVariables: true,
-        autoAccept: true,
+        ocpp2_0_1: {
+          unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+          getBaseReportOnPending: true,
+          bootWithRejectedVariables: true,
+          autoAccept: true,
+        },
+        ocpp1_6: {
+          unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Accepted,
+        },
         endpointPrefix: 'configuration',
         host: '0.0.0.0',
         port: 8084,
@@ -87,17 +92,16 @@ export function createDockerConfig() {
       },
       swagger: {
         path: '/docs',
-        logoPath: path.resolve(
-          path.dirname(__filename),
-          '../../assets/certificates/logo.png',
-        ),
+        logoPath: path.resolve(path.dirname(__filename), '../../assets/certificates/logo.png'),
         exposeData: true,
         exposeMessage: true,
       },
-      directus: {
-        host: 'directus',
-        port: 8055,
-        generateFlows: false,
+      fileAccess: {
+        s3: {
+          endpoint: 'http://minio:9000',
+          defaultBucketName: 'citrineos-s3-bucket',
+          s3ForcePathStyle: true,
+        },
       },
       networkConnection: {
         websocketServers: [
@@ -151,5 +155,9 @@ export function createDockerConfig() {
       host: '0.0.0.0',
       port: 8085,
     },
+    userPreferences: {
+      // None by default
+    },
+    configFileName: 'config.json',
   });
 }

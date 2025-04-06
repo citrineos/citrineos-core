@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
+import { OCPP2_0_1_Namespace } from '@citrineos/base';
 import { Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { Point } from 'geojson';
@@ -13,7 +13,7 @@ import { Point } from 'geojson';
  */
 @Table
 export class Location extends Model {
-  static readonly MODEL_NAME: string = Namespace.Location;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Location;
 
   @Column(DataType.STRING)
   declare name: string;

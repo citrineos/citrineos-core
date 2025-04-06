@@ -7,7 +7,7 @@
  * The message querystring interface, used for every OCPP message endpoint to validate query parameters.
  */
 export interface IMessageQuerystring {
-  identifier: string;
+  identifier: string | string[];
   tenantId: string;
   callbackUrl?: string;
 }
@@ -19,7 +19,15 @@ export const IMessageQuerystringSchema = {
   $id: 'MessageQuerystring',
   type: 'object',
   properties: {
-    identifier: { type: 'string' },
+    identifier: {
+      anyOf: [
+        { type: 'string' },
+        {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      ],
+    },
     tenantId: { type: 'string' },
     callbackUrl: { type: 'string' },
   },

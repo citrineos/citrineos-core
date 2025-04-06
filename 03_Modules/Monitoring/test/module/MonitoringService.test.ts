@@ -1,9 +1,6 @@
 import { IVariableMonitoringRepository } from '@citrineos/data';
 import { MonitoringService } from '../../src/module/MonitoringService';
-import {
-  ClearMonitoringResultType,
-  ClearMonitoringStatusEnumType,
-} from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { aClearMonitoringResult } from '../providers/Monitoring';
 
 describe('MonitoringService', () => {
@@ -21,19 +18,16 @@ describe('MonitoringService', () => {
   describe('processClearMonitoringResult', () => {
     it('should reject variable monitoring because clear monitoring result status is either Accepted or NotFound', async () => {
       const monitoringResults: [
-        ClearMonitoringResultType,
-        ...ClearMonitoringResultType[],
+        OCPP2_0_1.ClearMonitoringResultType,
+        ...OCPP2_0_1.ClearMonitoringResultType[],
       ] = [
         aClearMonitoringResult(),
         aClearMonitoringResult(
-          (cmr) => (cmr.status = ClearMonitoringStatusEnumType.NotFound),
+          (cmr) => (cmr.status = OCPP2_0_1.ClearMonitoringStatusEnumType.NotFound),
         ),
       ];
 
-      await monitoringService.processClearMonitoringResult(
-        'stationId',
-        monitoringResults,
-      );
+      await monitoringService.processClearMonitoringResult('stationId', monitoringResults);
 
       expect(
         mockVariableMonitoringRepository.rejectVariableMonitoringByIdAndStationId,
@@ -42,18 +36,15 @@ describe('MonitoringService', () => {
 
     it('should not reject variable monitoring because  clear monitoring result status is Rejected (so neither Accepted nor NotFound)', async () => {
       const monitoringResults: [
-        ClearMonitoringResultType,
-        ...ClearMonitoringResultType[],
+        OCPP2_0_1.ClearMonitoringResultType,
+        ...OCPP2_0_1.ClearMonitoringResultType[],
       ] = [
         aClearMonitoringResult(
-          (cmr) => (cmr.status = ClearMonitoringStatusEnumType.Rejected),
+          (cmr) => (cmr.status = OCPP2_0_1.ClearMonitoringStatusEnumType.Rejected),
         ),
       ];
 
-      await monitoringService.processClearMonitoringResult(
-        'stationId',
-        monitoringResults,
-      );
+      await monitoringService.processClearMonitoringResult('stationId', monitoringResults);
 
       expect(
         mockVariableMonitoringRepository.rejectVariableMonitoringByIdAndStationId,

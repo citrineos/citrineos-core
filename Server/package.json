@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/server",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "description": "The OCPP server implementation which acts right on top of an asynchronous WebSocket.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,7 +16,7 @@
     "start": "cross-env APP_NAME=all APP_ENV=local nodemon",
     "start-docker": "nodemon",
     "start-docker-cloud": "node --inspect=0.0.0.0:9229 dist/index.js",
-    "start-everest": "cd ./everest && cross-env EVEREST_IMAGE_TAG=0.0.16 EVEREST_TARGET_URL=ws://host.docker.internal:8081/cp001 docker-compose up"
+    "start-everest": "cd ./everest && cross-env EVEREST_IMAGE_TAG=0.0.23 EVEREST_TARGET_URL=ws://host.docker.internal:8081/cp001 docker compose up"
   },
   "keywords": [
     "ocpp",
@@ -26,37 +26,27 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/amqplib": "0.10.1",
-    "@types/bcrypt": "5.0.2",
-    "@types/deasync-promise": "1.0.0",
-    "@types/uuid": "9.0.1",
     "@types/ws": "8.5.4",
-    "nodemon": "2.0.22",
-    "ts-node": "10.9.1",
-    "typescript": "5.0.4"
+    "nodemon": "3.1.7",
+    "ts-node": "10.9.1"
   },
   "dependencies": {
-    "@citrineos/base": "1.5.1",
-    "@citrineos/certificates": "1.5.1",
-    "@citrineos/configuration": "1.5.1",
-    "@citrineos/data": "1.5.1",
-    "@citrineos/evdriver": "1.5.1",
-    "@citrineos/monitoring": "1.5.1",
-    "@citrineos/reporting": "1.5.1",
-    "@citrineos/smartcharging": "1.5.1",
-    "@citrineos/tenant": "1.5.1",
-    "@citrineos/transactions": "1.5.1",
-    "@citrineos/util": "1.5.1",
+    "@citrineos/base": "1.6.0",
+    "@citrineos/certificates": "1.6.0",
+    "@citrineos/configuration": "1.6.0",
+    "@citrineos/data": "1.6.0",
+    "@citrineos/evdriver": "1.6.0",
+    "@citrineos/monitoring": "1.6.0",
+    "@citrineos/reporting": "1.6.0",
+    "@citrineos/smartcharging": "1.6.0",
+    "@citrineos/tenant": "1.6.0",
+    "@citrineos/transactions": "1.6.0",
+    "@citrineos/util": "1.6.0",
     "@directus/extensions": "1.0.10",
-    "@fastify/type-provider-json-schema-to-ts": "2.2.2",
+    "@fastify/cors": "10.0.1",
     "cross-env": "7.0.3",
-    "fastify": "4.22.2",
     "sqlite3": "5.1.6",
-    "tslog": "4.9.2",
-    "uuid": "9.0.0",
     "ws": "8.17.1"
-  },
-  "engines": {
-    "node": ">=18"
   },
   "optionalDependencies": {
     "bufferutil": "4.0.8",

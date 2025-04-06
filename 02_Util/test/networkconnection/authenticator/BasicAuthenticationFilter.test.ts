@@ -1,13 +1,10 @@
 import { jest } from '@jest/globals';
 import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
-import { AttributeEnumType } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { aBasicAuthPasswordVariable } from '../../providers/VariableAttributeProvider';
 import { BasicAuthenticationFilter } from '../../../src/networkconnection/authenticator/BasicAuthenticationFilter';
-import {
-  aRequestWithAuthorization,
-  basicAuth,
-} from '../../providers/IncomingMessageProvider';
+import { aRequestWithAuthorization, basicAuth } from '../../providers/IncomingMessageProvider';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider';
 
 type PasswordPair = {
@@ -18,12 +15,12 @@ type PasswordPair = {
 describe('BasicAuthenticationFilter', () => {
   const password: PasswordPair = {
     plaintext: 'SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3',
-    hash: '$2b$10$p2i423u55xbzTZ4yiiRog.QIKEQpg6G3oMtv.FTMfZdST7f9NSC2u',
+    hash: 'PBKDF2:1000:64:sha512:salt:8a9ee05c38e81af180a43e5a707cfd70bf3624400e7c986ab4b8ef9c7a7647cd17a3c0f1860ebe08f7173dc1414c13f5a25528b08e9facd16fa4d089b35ba808',
   };
 
   const anotherPassword: PasswordPair = {
     plaintext: '_Oec8yF4r1hH6ildo4yvM25:SU2hpL*jobDskYos',
-    hash: '$2b$10$rLoAseNoS.CC2tBBfowOFudwh0g8PiJeD1a7Zcw5ux.HREo/qblzC',
+    hash: 'PBKDF2:1000:64:sha512:salt:7f87adf79f3050b0639c079c30c6696efaa1a84b437907de7f6545aac15322ee29a2d9cd66d459d41de9af56b2834c2a7cd3c3f7fa897db3d8f94a3a1c147ca2',
   };
 
   let deviceModelRepository: jest.Mocked<IDeviceModelRepository>;
@@ -48,26 +45,11 @@ describe('BasicAuthenticationFilter', () => {
     });
 
     it.each([
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        ' 9a06661c-2332-4897-b0d4-2187671dbe7b',
-      ],
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        '9a06661c-2332-4897-b0d4-2187671dbe7b ',
-      ],
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        '9a06661c-2332-4897-b0d4-2187671dbe7bb',
-      ],
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        '8a06661c-2332-4897-b0d4-2187671dbe7b',
-      ],
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        'bc2696f3-66d5-4027-9eae-be74c1e85fa7',
-      ],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', ' 9a06661c-2332-4897-b0d4-2187671dbe7b'],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', '9a06661c-2332-4897-b0d4-2187671dbe7b '],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', '9a06661c-2332-4897-b0d4-2187671dbe7bb'],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', '8a06661c-2332-4897-b0d4-2187671dbe7b'],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', 'bc2696f3-66d5-4027-9eae-be74c1e85fa7'],
     ])(
       'should reject when station identifier does not match username',
       async (stationId, username) => {
@@ -80,9 +62,7 @@ describe('BasicAuthenticationFilter', () => {
             authenticationOptions,
           ),
         ).rejects.toThrow(`Unauthorized ${stationId}`);
-        expect(
-          deviceModelRepository.readAllByQuerystring,
-        ).not.toHaveBeenCalled();
+        expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
       },
     );
 
@@ -90,11 +70,7 @@ describe('BasicAuthenticationFilter', () => {
       const stationId = faker.string.uuid().toString();
 
       await expect(
-        filter.authenticate(
-          stationId,
-          aRequestWithAuthorization(undefined),
-          authenticationOptions,
-        ),
+        filter.authenticate(stationId, aRequestWithAuthorization(undefined), authenticationOptions),
       ).rejects.toThrow('Auth header missing or incorrectly formatted');
       expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
@@ -103,11 +79,7 @@ describe('BasicAuthenticationFilter', () => {
       const stationId = faker.string.uuid().toString();
 
       await expect(
-        filter.authenticate(
-          stationId,
-          aRequestWithAuthorization(''),
-          authenticationOptions,
-        ),
+        filter.authenticate(stationId, aRequestWithAuthorization(''), authenticationOptions),
       ).rejects.toThrow('Auth header missing or incorrectly formatted');
       expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
@@ -181,7 +153,7 @@ describe('BasicAuthenticationFilter', () => {
         stationId: stationId,
         component_name: 'SecurityCtrlr',
         variable_name: 'BasicAuthPassword',
-        type: AttributeEnumType.Actual,
+        type: OCPP2_0_1.AttributeEnumType.Actual,
       });
     });
 
@@ -219,9 +191,7 @@ describe('BasicAuthenticationFilter', () => {
         await expect(
           filter.authenticate(
             stationId,
-            aRequestWithAuthorization(
-              basicAuth(stationId, authenticationPassword),
-            ),
+            aRequestWithAuthorization(basicAuth(stationId, authenticationPassword)),
             authenticationOptions,
           ),
         ).rejects.toThrow(`Unauthorized ${stationId}`);
@@ -246,9 +216,7 @@ describe('BasicAuthenticationFilter', () => {
         await expect(async () => {
           await filter.authenticate(
             stationId,
-            aRequestWithAuthorization(
-              basicAuth(stationId, authenticationPassword),
-            ),
+            aRequestWithAuthorization(basicAuth(stationId, authenticationPassword)),
             authenticationOptions,
           );
         }).not.toThrow();
@@ -292,9 +260,7 @@ describe('BasicAuthenticationFilter', () => {
       value: passwordHash,
     } as Partial<VariableAttribute>);
 
-    deviceModelRepository.readAllByQuerystring.mockResolvedValue([
-      passwordVariable,
-    ]);
+    deviceModelRepository.readAllByQuerystring.mockResolvedValue([passwordVariable]);
   }
 
   function givenNoPassword() {

@@ -1,0 +1,196 @@
+services:
+  amqp-broker:
+    image: rabbitmq:3-management
+    ports:
+      - 15672:15672
+      - 5672:5672
+    environment:
+      RABBITMQ_DEFAULT_USER: 'guest'
+      RABBITMQ_DEFAULT_PASS: 'guest'
+    volumes:
+      - ./data/rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  ocpp-db:
+    image: postgis/postgis:16-3.5
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data/postgresql/pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: citrine
+      POSTGRES_USER: citrine
+      POSTGRES_PASSWORD: 'citrine'
+    healthcheck:
+      test: 'pg_isready --username=citrine'
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+  citrine:
+    build:
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
+    volumes:
+      - ../package-lock.json:/usr/local/apps/citrineos/package-lock-host.json
+      - ../package.json:/usr/local/apps/citrineos/package.json
+      - ../tsconfig.json:/usr/local/apps/citrineos/tsconfig.json
+      - ../tsconfig.build.json:/usr/local/apps/citrineos/tsconfig.build.json
+      - ../Server:/usr/local/apps/citrineos/Server
+      - ../00_Base:/usr/local/apps/citrineos/00_Base
+      - ../01_Data:/usr/local/apps/citrineos/01_Data
+      - ../02_Util:/usr/local/apps/citrineos/02_Util
+      - ../03_Modules/Certificates:/usr/local/apps/citrineos/03_Modules/Certificates
+      - ../03_Modules/Configuration:/usr/local/apps/citrineos/03_Modules/Configuration
+      - ../03_Modules/EVDriver:/usr/local/apps/citrineos/03_Modules/EVDriver
+      - ../03_Modules/Monitoring:/usr/local/apps/citrineos/03_Modules/Monitoring
+      - ../03_Modules/OcppRouter:/usr/local/apps/citrineos/03_Modules/OcppRouter
+      - ../03_Modules/Reporting:/usr/local/apps/citrineos/03_Modules/Reporting
+      - ../03_Modules/SmartCharging:/usr/local/apps/citrineos/03_Modules/SmartCharging
+      - ../03_Modules/Transactions:/usr/local/apps/citrineos/03_Modules/Transactions
+      - /usr/local/apps/citrineos/node_modules
+      - /usr/local/apps/citrineos/Server/node_modules
+      - /usr/local/apps/citrineos/00_Base/node_modules
+      - /usr/local/apps/citrineos/01_Data/node_modules
+      - /usr/local/apps/citrineos/02_Util/node_modules
+      - /usr/local/apps/citrineos/03_Modules/Certificates/node_modules
+      - /usr/local/apps/citrineos/03_Modules/Configuration/node_modules
+      - /usr/local/apps/citrineos/03_Modules/EVDriver/node_modules
+      - /usr/local/apps/citrineos/03_Modules/Monitoring/node_modules
+      - /usr/local/apps/citrineos/03_Modules/OcppRouter/node_modules
+      - /usr/local/apps/citrineos/03_Modules/Reporting/node_modules
+      - /usr/local/apps/citrineos/03_Modules/SmartCharging/node_modules
+      - /usr/local/apps/citrineos/03_Modules/Transactions/node_modules
+      - /usr/local/apps/citrineos/dist/
+      - /usr/local/apps/citrineos/Server/dist/
+      - /usr/local/apps/citrineos/00_Base/dist/
+      - /usr/local/apps/citrineos/01_Data/dist/
+      - /usr/local/apps/citrineos/02_Util/dist/
+      - /usr/local/apps/citrineos/03_Modules/Certificates/dist/
+      - /usr/local/apps/citrineos/03_Modules/Configuration/dist/
+      - /usr/local/apps/citrineos/03_Modules/EVDriver/dist/
+      - /usr/local/apps/citrineos/03_Modules/Monitoring/dist/
+      - /usr/local/apps/citrineos/03_Modules/OcppRouter/dist/
+      - /usr/local/apps/citrineos/03_Modules/Reporting/dist/
+      - /usr/local/apps/citrineos/03_Modules/SmartCharging/dist/
+      - /usr/local/apps/citrineos/03_Modules/Transactions/dist/
+    environment:
+      APP_NAME: 'all'
+      APP_ENV: 'directus'
+      # Add AWS region (required by the SDK)
+      AWS_REGION: us-east-1
+      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
+
+    depends_on:
+      ocpp-db:
+        condition: service_healthy
+      amqp-broker:
+        condition: service_healthy
+      directus:
+        condition: service_healthy
+    ports:
+      - 8080:8080
+      - 8081:8081
+      - 8082:8082
+      - 8085:8085
+      - 8443:8443
+      - 8444:8444
+      - 9229:9229
+      - 8092:8092
+
+  directus:
+    build:
+      context: ../DirectusExtensions
+      dockerfile: ./directus.Dockerfile
+    ports:
+      - 8055:8055
+    volumes:
+      - ./data/directus/uploads:/directus/uploads
+      - ./directus-env-config.cjs:/directus/config.cjs
+    depends_on:
+      ocpp-db:
+        condition: service_healthy
+    environment:
+      APP_NAME: 'all'
+      KEY: '1234567890'
+      SECRET: '0987654321'
+      ADMIN_EMAIL: 'admin@citrineos.com'
+      ADMIN_PASSWORD: 'CitrineOS!'
+      CONFIG_PATH: '/directus/config.cjs'
+      EXTENSIONS_AUTO_RELOAD: 'true'
+      EXTENSIONS_CACHE_TTL: '1s'
+      DB_CLIENT: 'pg'
+      DB_HOST: ocpp-db
+      DB_PORT: 5432
+      DB_DATABASE: 'citrine'
+      DB_USER: 'citrine'
+      DB_PASSWORD: 'citrine'
+      WEBSOCKETS_ENABLED: 'true'
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://127.0.0.1:8055/server/health || exit 1
+      start_period: 15s
+      interval: 15s
+      timeout: 15s
+      retries: 3
+
+  graphql-engine:
+    image: hasura/graphql-engine:v2.40.3.cli-migrations-v3
+    volumes:
+      - ./hasura-metadata:/hasura-metadata
+    ports:
+      - 8090:8080
+    restart: always
+    environment:
+      ## postgres database to store Hasura metadata
+      HASURA_GRAPHQL_DATABASE_URL: postgres://citrine:citrine@host.docker.internal:5432/citrine
+      ## enable the console served by server
+      HASURA_GRAPHQL_ENABLE_CONSOLE: 'true' # set to "false" to disable console
+      ## enable debugging mode. It is recommended to disable this in production
+      HASURA_GRAPHQL_DEV_MODE: 'true'
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_ENABLE_TELEMETRY: 'false'
+      ## uncomment next line to run console offline (i.e load console assets from server instead of CDN)
+      # HASURA_GRAPHQL_CONSOLE_ASSETS_DIR: /srv/console-assets
+      ## uncomment next line to set an admin secret
+      # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+      HASURA_GRAPHQL_METADATA_DEFAULTS: '{"backend_configs":{"dataconnector":{"athena":{"uri":"http://data-connector-agent:8081/api/v1/athena"},"mariadb":{"uri":"http://data-connector-agent:8081/api/v1/mariadb"},"mysql8":{"uri":"http://data-connector-agent:8081/api/v1/mysql"},"oracle":{"uri":"http://data-connector-agent:8081/api/v1/oracle"},"snowflake":{"uri":"http://data-connector-agent:8081/api/v1/snowflake"}}}}'
+    depends_on:
+      data-connector-agent:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/healthz']
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 5s
+
+  data-connector-agent:
+    image: hasura/graphql-data-connector:v2.40.3
+    restart: always
+    ports:
+      - 8091:8081
+    environment:
+      QUARKUS_LOG_LEVEL: ERROR # FATAL, ERROR, WARN, INFO, DEBUG, TRACE
+      ## https://quarkus.io/guides/opentelemetry#configuration-reference
+      QUARKUS_OPENTELEMETRY_ENABLED: 'false'
+      ## QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    depends_on:
+      ocpp-db:
+        condition: service_healthy
+      amqp-broker:
+        condition: service_healthy
+      directus:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8081/api/v1/athena/health']
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  db_data:

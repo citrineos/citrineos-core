@@ -3,14 +3,8 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import {
-  ICache,
-  OcppError,
-  OcppRequest,
-  OcppResponse,
-  SystemConfig,
-} from '../..';
-import { CallAction } from '../../ocpp/rpc/message';
+import { ICache, OcppError, OcppRequest, OcppResponse, SystemConfig } from '../..';
+import { CallAction, OCPPVersionType } from '../../ocpp/rpc/message';
 import {
   HandlerProperties,
   IMessage,
@@ -32,6 +26,7 @@ export interface IModule {
   sendCall(
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
     correlationId?: string,
@@ -41,6 +36,7 @@ export interface IModule {
     correlationId: string,
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppResponse,
     origin?: MessageOrigin,
@@ -49,14 +45,12 @@ export interface IModule {
     correlationId: string,
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     error: OcppError,
     origin?: MessageOrigin,
   ): Promise<IMessageConfirmation>;
 
-  handle(
-    message: IMessage<OcppRequest | OcppResponse>,
-    props?: HandlerProperties,
-  ): Promise<void>;
-  shutdown(): void;
+  handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): Promise<void>;
+  shutdown(): Promise<void>;
 }

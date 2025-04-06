@@ -1,13 +1,5 @@
 {
-  "exclude": [
-    "**/*.test.ts",
-    "**/*.stub.ts",
-    "./node_modules",
-    "**/__tests__/*",
-    "./dist",
-    "./**/dist",
-    "./**/**/dist"
-  ],
+  "exclude": ["./node_modules", "**/__tests__/*", "./dist", "./**/dist", "./**/**/dist"],
   "include": [
     "00_Base/**/*.ts",
     "00_Base/**/*.json",

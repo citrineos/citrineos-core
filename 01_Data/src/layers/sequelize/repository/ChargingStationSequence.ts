@@ -5,48 +5,38 @@ import { ChargingStationSequenceType, SystemConfig } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
 
-export class SequelizeChargingStationSequenceRepository extends SequelizeRepository<ChargingStationSequence> implements IChargingStationSequenceRepository {
-  private static readonly SEQUENCE_START = 0;
+export class SequelizeChargingStationSequenceRepository
+  extends SequelizeRepository<ChargingStationSequence>
+  implements IChargingStationSequenceRepository
+{
+  private static readonly SEQUENCE_START = 1;
 
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, ChargingStationSequence.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async getNextSequenceValue(stationId: string, type: ChargingStationSequenceType): Promise<number> {
+  async getNextSequenceValue(
+    stationId: string,
+    type: ChargingStationSequenceType,
+  ): Promise<number> {
     return await this.s.transaction(async (transaction) => {
-      const [results, _] = await this.s.query(
-        `
-                    UPDATE "ChargingStationSequences"
-                    SET "value" = value + 1
-                    WHERE "stationId" = :stationId
-                      AND "type" = :type RETURNING "value";
-                `,
-        {
-          replacements: { stationId, type },
-          type: 'UPDATE',
-          transaction,
+      const [storedSequence, sequenceCreated] = await this.readOrCreateByQuery({
+        where: {
+          stationId: stationId,
+          type: type,
         },
-      );
+        defaults: {
+          value: SequelizeChargingStationSequenceRepository.SEQUENCE_START,
+        },
+        transaction,
+      });
 
-      if (results?.length === 0) {
-        const [insertResults, _] = await this.s.query(
-          `
-                        INSERT INTO "ChargingStationSequences" ("stationId", "type", "value")
-                        VALUES (:stationId, :type, :value) RETURNING "value";
-                    `,
-          {
-            replacements: {
-              stationId,
-              type,
-              value: SequelizeChargingStationSequenceRepository.SEQUENCE_START,
-            },
-            type: 'INSERT',
-            transaction,
-          },
-        );
-        return (insertResults[0] as any)?.value;
+      if (!sequenceCreated) {
+        const updatedSequences = await storedSequence.increment('value', { transaction });
+        return updatedSequences.value;
+      } else {
+        return storedSequence.value;
       }
-      return (results[0] as any)?.value;
     });
   }
 }

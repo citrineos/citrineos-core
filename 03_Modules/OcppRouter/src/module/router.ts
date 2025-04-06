@@ -21,18 +21,20 @@ import {
   IMessageHandler,
   IMessageRouter,
   IMessageSender,
+  mapToCallAction,
   MessageOrigin,
   MessageState,
-  MessageTriggerEnumType,
   MessageTypeId,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
   OcppError,
   OcppRequest,
   OcppResponse,
-  RegistrationStatusEnumType,
+  OCPPVersion,
+  OCPPVersionType,
   RequestBuilder,
   RetryMessageError,
   SystemConfig,
-  TriggerMessageRequest,
 } from '@citrineos/base';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
@@ -42,10 +44,7 @@ import { WebhookDispatcher } from './webhook.dispatcher';
 /**
  * Implementation of the ocpp router
  */
-export class MessageRouterImpl
-  extends AbstractMessageRouter
-  implements IMessageRouter
-{
+export class MessageRouterImpl extends AbstractMessageRouter implements IMessageRouter {
   /**
    * Fields
    */
@@ -54,10 +53,7 @@ export class MessageRouterImpl
   protected _cache: ICache;
   protected _sender: IMessageSender;
   protected _handler: IMessageHandler;
-  protected _networkHook: (
-    identifier: string,
-    message: string,
-  ) => Promise<boolean>;
+  protected _networkHook: (identifier: string, message: string) => Promise<void>;
   protected _locationRepository: ILocationRepository;
   public subscriptionRepository: ISubscriptionRepository;
 
@@ -69,7 +65,7 @@ export class MessageRouterImpl
    * @param {IMessageSender} [sender] - the message sender
    * @param {IMessageHandler} [handler] - the message handler
    * @param {WebhookDispatcher} [dispatcher] - the webhook dispatcher
-   * @param {Function} networkHook - the network hook needed to send messages to chargers   
+   * @param {Function} networkHook - the network hook needed to send messages to chargers
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
    * represents a repository for accessing and manipulating variable data.
    * If no `locationRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
@@ -84,7 +80,7 @@ export class MessageRouterImpl
     sender: IMessageSender,
     handler: IMessageHandler,
     dispatcher: WebhookDispatcher,
-    networkHook: (identifier: string, message: string) => Promise<boolean>,
+    networkHook: (identifier: string, message: string) => Promise<void>,
     logger?: Logger<ILogObj>,
     ajv?: Ajv,
     locationRepository?: ILocationRepository,
@@ -96,60 +92,56 @@ export class MessageRouterImpl
     this._sender = sender;
     this._handler = handler;
     this._webhookDispatcher = dispatcher;
-    this._networkHook = networkHook;    
+    this._networkHook = networkHook;
     this._locationRepository =
-      locationRepository ||
-      new sequelize.SequelizeLocationRepository(config, logger);
+      locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
     this.subscriptionRepository =
-      subscriptionRepository ||
-      new sequelize.SequelizeSubscriptionRepository(config, this._logger);
+      subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
   }
 
   // TODO: Below method should lock these tables so that a rapid connect-disconnect cannot result in race condition.
-  async registerConnection(connectionIdentifier: string): Promise<boolean> {
-    const dispatcherRegistration =
-      this._webhookDispatcher.register(connectionIdentifier);
+  async registerConnection(connectionIdentifier: string, protocol: OCPPVersion): Promise<boolean> {
+    const dispatcherRegistration = this._webhookDispatcher.register(connectionIdentifier);
 
-    const requestSubscription = this._handler.subscribe(
+    const requestSubscription = this._handler.subscribe(connectionIdentifier, undefined, {
+      stationId: connectionIdentifier,
+      state: MessageState.Request.toString(),
+      origin: MessageOrigin.ChargingStationManagementSystem.toString(),
+    });
+
+    const responseSubscription = this._handler.subscribe(connectionIdentifier, undefined, {
+      stationId: connectionIdentifier,
+      state: MessageState.Response.toString(),
+      origin: MessageOrigin.ChargingStationManagementSystem.toString(),
+    });
+
+    const onlineCharger = this._locationRepository.setChargingStationIsOnlineAndOCPPVersion(
       connectionIdentifier,
-      undefined,
-      {
-        stationId: connectionIdentifier,
-        state: MessageState.Request.toString(),
-        origin: MessageOrigin.ChargingStationManagementSystem.toString(),
-      },
+      true,
+      protocol,
     );
-
-    const responseSubscription = this._handler.subscribe(
-      connectionIdentifier,
-      undefined,
-      {
-        stationId: connectionIdentifier,
-        state: MessageState.Response.toString(),
-        origin: MessageOrigin.ChargingStationManagementSystem.toString(),
-      },
-    );
-
-    const updateIsOnline = this._locationRepository.setChargingStationIsOnline(connectionIdentifier, true);
 
     return Promise.all([
       dispatcherRegistration,
       requestSubscription,
       responseSubscription,
-      updateIsOnline,
+      onlineCharger,
     ])
       .then((resolvedArray) => resolvedArray[1] && resolvedArray[2])
       .catch((error) => {
-        this._logger.error(
-          `Error registering connection for ${connectionIdentifier}: ${error}`,
-        );
+        this._logger.error(`Error registering connection for ${connectionIdentifier}: ${error}`);
         return false;
       });
   }
 
   async deregisterConnection(connectionIdentifier: string): Promise<boolean> {
     this._webhookDispatcher.deregister(connectionIdentifier);
-    this._locationRepository.setChargingStationIsOnline(connectionIdentifier, false);
+
+    const offlineCharger = await this._locationRepository.setChargingStationIsOnlineAndOCPPVersion(
+      connectionIdentifier,
+      false,
+      null,
+    );
 
     // TODO: ensure that all queue implementations in 02_Util only unsubscribe 1 queue per call
     // ...which will require refactoring this method to unsubscribe request and response queues separately
@@ -162,8 +154,9 @@ export class MessageRouterImpl
     identifier: string,
     message: string,
     timestamp: Date,
+    protocol: OCPPVersionType,
   ): Promise<boolean> {
-    this._webhookDispatcher.dispatchMessageReceived(identifier, message);
+    let success = true;
     let rpcMessage: any;
     let messageTypeId: MessageTypeId | undefined = undefined;
     let messageId: string = '-1'; // OCPP 2.0.1 part 4, section 4.2.3, "When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId."
@@ -174,35 +167,44 @@ export class MessageRouterImpl
         this._logger.error(
           `Error parsing ${message} from websocket, unable to reply: ${JSON.stringify(error)}`,
         );
+        throw error;
       }
       messageTypeId = rpcMessage[0];
       messageId = rpcMessage[1];
       switch (messageTypeId) {
         case MessageTypeId.Call:
-          await this._onCall(identifier, rpcMessage as Call, timestamp);
+          await this._onCall(identifier, rpcMessage as Call, timestamp, protocol);
           break;
         case MessageTypeId.CallResult:
-          this._onCallResult(identifier, rpcMessage as CallResult, timestamp);
+          await this._onCallResult(identifier, rpcMessage as CallResult, timestamp, protocol);
           break;
         case MessageTypeId.CallError:
-          this._onCallError(identifier, rpcMessage as CallError, timestamp);
+          await this._onCallError(identifier, rpcMessage as CallError, timestamp, protocol);
           break;
         default:
+          let errorCode;
+          switch (protocol) {
+            case 'ocpp1.6':
+              errorCode = ErrorCode.FormationViolation;
+              break;
+            case 'ocpp2.0.1':
+              errorCode = ErrorCode.FormatViolation;
+              break;
+            default:
+              throw new Error('Unknown protocol: ' + protocol);
+          }
           throw new OcppError(
             messageId,
-            ErrorCode.FormatViolation,
+            errorCode,
             'Unknown message type id: ' + messageTypeId,
             {},
           );
       }
-      return true;
     } catch (error) {
+      success = false; // ensure we return false in case of an error
       this._logger.error('Error processing message:', message, error);
-      if (
-        messageTypeId != MessageTypeId.CallResult &&
-        messageTypeId != MessageTypeId.CallError
-      ) {
-        const callError =
+      if (messageTypeId != MessageTypeId.CallResult && messageTypeId != MessageTypeId.CallError) {
+        let callError =
           error instanceof OcppError
             ? error.asCallError()
             : [
@@ -212,12 +214,19 @@ export class MessageRouterImpl
                 'Unable to process message',
                 { error: error },
               ];
-        const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
-        this._sendMessage(identifier, rawMessage);
+        callError = this.removeNulls(callError);
+        const rawMessage = JSON.stringify(callError);
+        this._sendMessage(identifier, protocol, rawMessage, callError);
       }
-      // TODO: Publish raw payload for error reporting
-      return false;
     }
+    await this._webhookDispatcher.dispatchMessageReceived(
+      identifier,
+      message,
+      timestamp.toISOString(),
+      protocol,
+      rpcMessage,
+    );
+    return success;
   }
 
   /**
@@ -230,13 +239,14 @@ export class MessageRouterImpl
   async sendCall(
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
     correlationId = uuidv4(),
     origin?: MessageOrigin,
   ): Promise<IMessageConfirmation> {
-    const message: Call = [MessageTypeId.Call, correlationId, action, payload];
-    if (await this._sendCallIsAllowed(identifier, message)) {
+    let message: Call = [MessageTypeId.Call, correlationId, action, payload];
+    if (await this._sendCallIsAllowed(identifier, protocol, message)) {
       if (
         await this._cache.setIfNotExist(
           identifier,
@@ -245,9 +255,9 @@ export class MessageRouterImpl
           this._config.maxCallLengthSeconds,
         )
       ) {
-        // Intentionally removing NULL values from object for OCPP conformity
-        const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
-        const success = await this._sendMessage(identifier, rawMessage);
+        message = this.removeNulls(message);
+        const rawMessage = JSON.stringify(message);
+        const success = await this._sendMessage(identifier, protocol, rawMessage, message);
         return { success };
       } else {
         this._logger.info(
@@ -258,11 +268,7 @@ export class MessageRouterImpl
         throw new RetryMessageError('Call already in progress');
       }
     } else {
-      this._logger.info(
-        'RegistrationStatus Rejected, unable to send',
-        identifier,
-        message,
-      );
+      this._logger.info('RegistrationStatus Rejected, unable to send', identifier, message);
       return { success: false };
     }
   }
@@ -278,15 +284,12 @@ export class MessageRouterImpl
     correlationId: string,
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppResponse,
     origin?: MessageOrigin,
   ): Promise<IMessageConfirmation> {
-    const message: CallResult = [
-      MessageTypeId.CallResult,
-      correlationId,
-      payload,
-    ];
+    let message: CallResult = [MessageTypeId.CallResult, correlationId, payload];
     const cachedActionMessageId = await this._cache.get<string>(
       identifier,
       CacheNamespace.Transactions,
@@ -301,10 +304,10 @@ export class MessageRouterImpl
     }
     let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
     if (cachedAction === action && cachedMessageId === correlationId) {
-      // Intentionally removing NULL values from object for OCPP conformity
-      const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
+      message = this.removeNulls(message);
+      const rawMessage = JSON.stringify(message);
       const success = await Promise.all([
-        this._sendMessage(identifier, rawMessage),
+        this._sendMessage(identifier, protocol, rawMessage, message),
         this._cache.remove(identifier, CacheNamespace.Transactions),
       ]).then((successes) => successes.every(Boolean));
       return { success };
@@ -330,29 +333,26 @@ export class MessageRouterImpl
     correlationId: string,
     identifier: string,
     tenantId: string,
+    protocol: OCPPVersionType,
     action: CallAction,
     error: OcppError,
     origin?: MessageOrigin | undefined,
   ): Promise<IMessageConfirmation> {
-    const message: CallError = error.asCallError();
+    let message: CallError = error.asCallError();
     const cachedActionMessageId = await this._cache.get<string>(
       identifier,
       CacheNamespace.Transactions,
     );
     if (!cachedActionMessageId) {
-      this._logger.error(
-        'Failed to send callError due to missing message id',
-        identifier,
-        message,
-      );
+      this._logger.error('Failed to send callError due to missing message id', identifier, message);
       return { success: false };
     }
     let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
     if (cachedMessageId === correlationId) {
-      // Intentionally removing NULL values from object for OCPP conformity
-      const rawMessage = JSON.stringify(message, (k, v) => v ?? undefined);
+      message = this.removeNulls(message);
+      const rawMessage = JSON.stringify(message);
       const success = await Promise.all([
-        this._sendMessage(identifier, rawMessage),
+        this._sendMessage(identifier, protocol, rawMessage, message),
         this._cache.remove(identifier, CacheNamespace.Transactions),
       ]).then((successes) => successes.every(Boolean));
       return { success };
@@ -367,9 +367,9 @@ export class MessageRouterImpl
     }
   }
 
-  shutdown(): void {
-    this._sender.shutdown();
-    this._handler.shutdown();
+  async shutdown(): Promise<void> {
+    await this._sender.shutdown();
+    await this._handler.shutdown();
   }
 
   /**
@@ -382,35 +382,31 @@ export class MessageRouterImpl
    * @param {string} identifier - The client identifier.
    * @param {Call} message - The Call message received.
    * @param {Date} timestamp Time at which the message was received from the charger.
+   * @param {string} protocol The OCPP protocol version of the message
    * @return {void}
    */
   async _onCall(
     identifier: string,
     message: Call,
     timestamp: Date,
+    protocol: OCPPVersionType,
   ): Promise<void> {
     const messageId = message[1];
-    const action = message[2] as CallAction;
+    let action = null;
 
     try {
+      action = mapToCallAction(protocol, message[2]);
       const isAllowed = await this._onCallIsAllowed(action, identifier);
       if (!isAllowed) {
-        throw new OcppError(
-          messageId,
-          ErrorCode.SecurityError,
-          `Action ${action} not allowed`,
-        );
+        throw new OcppError(messageId, ErrorCode.SecurityError, `Action ${action} not allowed`);
       }
       // Run schema validation for incoming Call message
-      const { isValid, errors } = this._validateCall(identifier, message);
+      const { isValid, errors } = this._validateCall(identifier, message, protocol);
 
       if (!isValid || errors) {
-        throw new OcppError(
-          messageId,
-          ErrorCode.FormatViolation,
-          'Invalid message format',
-          { errors: errors },
-        );
+        throw new OcppError(messageId, ErrorCode.FormatViolation, 'Invalid message format', {
+          errors: errors,
+        });
       }
 
       // Ensure only one call is processed at a time
@@ -422,16 +418,13 @@ export class MessageRouterImpl
       );
 
       if (!successfullySet) {
-        throw new OcppError(
-          messageId,
-          ErrorCode.RpcFrameworkError,
-          'Call already in progress',
-          {},
-        );
+        throw new OcppError(messageId, ErrorCode.RpcFrameworkError, 'Call already in progress', {});
       }
     } catch (error) {
+      this._logger.error('Failed to process Call message', identifier, message, error);
+
       // Send manual reply since cache was unable to be set
-      const callError =
+      let callError =
         error instanceof OcppError
           ? error.asCallError()
           : [
@@ -439,19 +432,17 @@ export class MessageRouterImpl
               messageId,
               ErrorCode.InternalError,
               'Unable to process message',
-              { error: error },
+              { error: (error as Error).message },
             ];
-      const rawMessage = JSON.stringify(callError, (k, v) => v ?? undefined);
-      this._sendMessage(identifier, rawMessage);
+      callError = this.removeNulls(callError);
+      const rawMessage = JSON.stringify(callError);
+      await this._sendMessage(identifier, protocol, rawMessage, callError);
+      return;
     }
 
     try {
       // Route call
-      const confirmation = await this._routeCall(
-        identifier,
-        message,
-        timestamp,
-      );
+      const confirmation = await this._routeCall(identifier, message, timestamp, protocol);
 
       if (!confirmation.success) {
         throw new OcppError(messageId, ErrorCode.InternalError, 'Call failed', {
@@ -467,15 +458,11 @@ export class MessageRouterImpl
             });
       // TODO: identifier may not be unique, may require combination of tenantId and identifier.
       // find way to include tenantId here
-      this.sendCallError(
-        messageId,
-        identifier,
-        'undefined',
-        action,
-        callError,
-      ).finally(() => {
-        this._cache.remove(identifier, CacheNamespace.Transactions);
-      });
+      this.sendCallError(messageId, identifier, 'undefined', protocol, action, callError).finally(
+        () => {
+          this._cache.remove(identifier, CacheNamespace.Transactions);
+        },
+      );
     }
   }
 
@@ -485,12 +472,14 @@ export class MessageRouterImpl
    * @param {string} identifier - The client identifier that made the call.
    * @param {CallResult} message - The OCPP CallResult message.
    * @param {Date} timestamp Time at which the message was received from the charger.
+   * @param {OCPPVersionType} protocol The OCPP protocol version of the message
    * @return {void}
    */
   _onCallResult(
     identifier: string,
     message: CallResult,
     timestamp: Date,
+    protocol: OCPPVersionType,
   ): void {
     const messageId = message[1];
     const payload = message[2];
@@ -509,43 +498,42 @@ export class MessageRouterImpl
             { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
           );
         }
-        const [actionString, cachedMessageId] =
-          cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+        const [action, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
         if (messageId !== cachedMessageId) {
-          throw new OcppError(
-            messageId,
-            ErrorCode.InternalError,
-            "MessageId doesn't match",
-            { expectedMessageId: cachedMessageId },
-          );
+          throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", {
+            expectedMessageId: cachedMessageId,
+          });
         }
-        const action: CallAction =
-          CallAction[actionString as keyof typeof CallAction]; // Parse CallAction
         return {
           action,
-          ...this._validateCallResult(identifier, action, message),
+          ...this._validateCallResult(
+            identifier,
+            mapToCallAction(protocol, action),
+            message,
+            protocol,
+          ),
         }; // Run schema validation for incoming CallResult message
       })
       .then(({ action, isValid, errors }) => {
         if (!isValid || errors) {
-          throw new OcppError(
-            messageId,
-            ErrorCode.FormatViolation,
-            'Invalid message format',
-            { errors: errors },
-          );
+          throw new OcppError(messageId, ErrorCode.FormatViolation, 'Invalid message format', {
+            errors: errors,
+          });
         }
         // Route call result
-        return this._routeCallResult(identifier, message, action, timestamp);
+        return this._routeCallResult(
+          identifier,
+          message,
+          mapToCallAction(protocol, action),
+          timestamp,
+          protocol,
+        );
       })
       .then((confirmation) => {
         if (!confirmation.success) {
-          throw new OcppError(
-            messageId,
-            ErrorCode.InternalError,
-            'CallResult failed',
-            { details: confirmation.payload },
-          );
+          throw new OcppError(messageId, ErrorCode.InternalError, 'CallResult failed', {
+            details: confirmation.payload,
+          });
         }
       })
       .catch((error) => {
@@ -561,9 +549,15 @@ export class MessageRouterImpl
    * @param {string} identifier - The client identifier.
    * @param {CallError} message - The error message.
    * @param {Date} timestamp Time at which the message was received from the charger.
+   * @param {OCPPVersionType} protocol The OCPP protocol version of the message
    * @return {void} This function doesn't return anything.
    */
-  _onCallError(identifier: string, message: CallError, timestamp: Date): void {
+  _onCallError(
+    identifier: string,
+    message: CallError,
+    timestamp: Date,
+    protocol: OCPPVersionType,
+  ): void {
     const messageId = message[1];
 
     this._logger.debug('Process CallError', identifier, message);
@@ -580,19 +574,19 @@ export class MessageRouterImpl
             { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
           );
         }
-        const [actionString, cachedMessageId] =
-          cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+        const [action, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
         if (messageId !== cachedMessageId) {
-          throw new OcppError(
-            messageId,
-            ErrorCode.InternalError,
-            "MessageId doesn't match",
-            { expectedMessageId: cachedMessageId },
-          );
+          throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", {
+            expectedMessageId: cachedMessageId,
+          });
         }
-        const action: CallAction =
-          CallAction[actionString as keyof typeof CallAction]; // Parse CallAction
-        return this._routeCallError(identifier, message, action, timestamp);
+        return this._routeCallError(
+          identifier,
+          message,
+          mapToCallAction(protocol, action),
+          timestamp,
+          protocol,
+        );
       })
       .then((confirmation) => {
         if (!confirmation.success) {
@@ -612,45 +606,46 @@ export class MessageRouterImpl
    * @param {string} identifier - The identifier to be checked.
    * @return {Promise<boolean>} A promise that resolves to a boolean indicating if the action and identifier are allowed.
    */
-  private _onCallIsAllowed(
-    action: CallAction,
-    identifier: string,
-  ): Promise<boolean> {
-    return this._cache
-      .exists(action, identifier)
-      .then((blacklisted) => !blacklisted);
+  private _onCallIsAllowed(action: CallAction, identifier: string): Promise<boolean> {
+    return this._cache.exists(action, identifier).then((blacklisted) => !blacklisted);
   }
 
   private async _sendMessage(
     identifier: string,
+    protocol: OCPPVersionType,
     rawMessage: string,
+    rpcMessage: any,
   ): Promise<boolean> {
     try {
-      const success = await this._networkHook(identifier, rawMessage);
-      this._webhookDispatcher.dispatchMessageSent(identifier, rawMessage);
-      return success;
+      await this._networkHook(identifier, rawMessage); // Throws an error if the message is not sent, or returns void
     } catch (error) {
-      this._webhookDispatcher.dispatchMessageSent(
-        identifier,
-        rawMessage,
-        error,
-      );
+      this._logger.error('Failed to send message:', identifier, rawMessage, error);
+      // Don't dispatch if the message was not sent
       return false;
     }
+    this._webhookDispatcher.dispatchMessageSent(
+      identifier,
+      rawMessage,
+      new Date().toISOString(),
+      protocol,
+      rpcMessage,
+    );
+    return true;
   }
 
   private async _sendCallIsAllowed(
     identifier: string,
+    protocol: OCPPVersionType,
     message: Call,
   ): Promise<boolean> {
     const status = await this._cache.get<string>(BOOT_STATUS, identifier);
     if (
-      status === RegistrationStatusEnumType.Rejected &&
+      status === OCPP2_0_1.RegistrationStatusEnumType.Rejected &&
       // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
       !(
-        (message[2] as CallAction) === CallAction.TriggerMessage &&
-        (message[3] as TriggerMessageRequest).requestedMessage ==
-          MessageTriggerEnumType.BootNotification
+        mapToCallAction(protocol, message[2]) === OCPP2_0_1_CallAction.TriggerMessage &&
+        (message[3] as OCPP2_0_1.TriggerMessageRequest).requestedMessage ==
+          OCPP2_0_1.MessageTriggerEnumType.BootNotification
       )
     ) {
       return false;
@@ -662,9 +657,10 @@ export class MessageRouterImpl
     connectionIdentifier: string,
     message: Call,
     timestamp: Date,
+    protocol: OCPPVersionType,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
-    const action = message[2] as CallAction;
+    const action = mapToCallAction(protocol, message[2]);
     const payload = message[3] as OcppRequest;
 
     const _message: IMessage<OcppRequest> = RequestBuilder.buildCall(
@@ -675,6 +671,7 @@ export class MessageRouterImpl
       payload,
       EventGroup.General, // TODO: Change to appropriate event group
       MessageOrigin.ChargingStation,
+      protocol,
       timestamp,
     );
 
@@ -686,6 +683,7 @@ export class MessageRouterImpl
     message: CallResult,
     action: CallAction,
     timestamp: Date,
+    protocol: OCPPVersionType,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
     const payload = message[2] as OcppResponse;
@@ -698,6 +696,7 @@ export class MessageRouterImpl
       payload,
       EventGroup.General,
       MessageOrigin.ChargingStation,
+      protocol,
       timestamp,
     );
 
@@ -709,14 +708,10 @@ export class MessageRouterImpl
     message: CallError,
     action: CallAction,
     timestamp: Date,
+    protocol: OCPPVersionType,
   ): Promise<IMessageConfirmation> {
     const messageId = message[1];
-    const payload = new OcppError(
-      messageId,
-      message[2],
-      message[3],
-      message[4],
-    );
+    const payload = new OcppError(messageId, message[2], message[3], message[4]);
 
     const _message: IMessage<OcppError> = RequestBuilder.buildCallError(
       connectionIdentifier,
@@ -726,6 +721,7 @@ export class MessageRouterImpl
       payload,
       EventGroup.General,
       MessageOrigin.ChargingStation,
+      protocol,
       timestamp,
     );
 
@@ -737,9 +733,7 @@ export class MessageRouterImpl
     return { success: false };
   }
 
-  private async _handleMessageApiCallback(
-    message: IMessage<OcppError>,
-  ): Promise<void> {
+  private async _handleMessageApiCallback(message: IMessage<OcppError>): Promise<void> {
     const url: string | null = await this._cache.get(
       message.context.correlationId,
       AbstractModule.CALLBACK_URL_CACHE_PREFIX + message.context.stationId,
@@ -753,5 +747,21 @@ export class MessageRouterImpl
         body: JSON.stringify(message.payload),
       });
     }
+  }
+
+  // Intentionally removing NULL values from object for OCPP conformity
+  private removeNulls<T>(obj: T): T {
+    if (obj === null) return undefined as T;
+    if (typeof obj !== 'object') return obj;
+
+    if (Array.isArray(obj)) {
+      return obj.filter((item) => item !== null).map((item) => this.removeNulls(item)) as T;
+    }
+
+    const result = {} as T;
+    for (const [key, value] of Object.entries(obj as object)) {
+      result[key as keyof T] = this.removeNulls(value);
+    }
+    return result;
   }
 }

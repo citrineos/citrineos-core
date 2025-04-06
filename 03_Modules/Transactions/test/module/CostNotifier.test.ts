@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { expect, jest } from '@jest/globals';
 import { ITransactionEventRepository, Transaction } from '@citrineos/data';
-import { AbstractModule, CallAction } from '@citrineos/base';
+import { AbstractModule, OCPP2_0_1_CallAction, OCPPVersion } from '@citrineos/base';
 import { CostCalculator } from '../../src/module/CostCalculator';
 import { CostNotifier } from '../../src/module/CostNotifier';
 import { aTransaction } from '../providers/TransactionProvider';
@@ -30,11 +30,7 @@ describe('CostNotifier', () => {
       calculateTotalCost: jest.fn(),
     } as unknown as jest.Mocked<CostCalculator>;
 
-    costNotifier = new CostNotifier(
-      module,
-      transactionEventRepository,
-      costCalculator,
-    );
+    costNotifier = new CostNotifier(module, transactionEventRepository, costCalculator);
   });
 
   afterEach(() => {
@@ -135,7 +131,8 @@ describe('CostNotifier', () => {
     expect(module.sendCall).toHaveBeenLastCalledWith(
       transaction.stationId,
       tenantId,
-      CallAction.CostUpdated,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.CostUpdated,
       {
         totalCost: totalCost,
         transactionId: transaction.transactionId,

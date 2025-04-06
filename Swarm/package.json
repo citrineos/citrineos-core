@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/swarm",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "description": "The OCPP swarm implementation which acts right on top of an asynchronous WebSocket with separate servers for each module.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -37,8 +37,6 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/amqplib": "0.10.1",
-    "@types/bcrypt": "5.0.2",
-    "@types/deasync-promise": "1.0.0",
     "@types/uuid": "9.0.1",
     "@types/ws": "8.5.4",
     "nodemon": "2.0.22",

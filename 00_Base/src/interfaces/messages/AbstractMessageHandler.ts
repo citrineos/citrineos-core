@@ -4,13 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { ILogObj, Logger } from 'tslog';
-import {
-  IMessage,
-  IMessageHandler,
-  OcppError,
-  OcppRequest,
-  OcppResponse,
-} from '../..';
+import { IMessage, IMessageHandler, OcppError, OcppRequest, OcppResponse } from '../..';
 import { SystemConfig } from '../../config/types';
 import { CallAction } from '../../ocpp/rpc/message';
 import { IModule } from '../modules';
@@ -34,11 +28,7 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
    * @param config The system configuration.
    * @param logger [Optional] The logger to use.
    */
-  constructor(
-    config: SystemConfig,
-    logger?: Logger<ILogObj>,
-    module?: IModule,
-  ) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, module?: IModule) {
     this._config = config;
     this._module = module;
     this._logger = logger
@@ -78,5 +68,5 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
     filter?: { [k: string]: string },
   ): Promise<boolean>;
   abstract unsubscribe(identifier: string): Promise<boolean>;
-  abstract shutdown(): void;
+  abstract shutdown(): Promise<void>;
 }

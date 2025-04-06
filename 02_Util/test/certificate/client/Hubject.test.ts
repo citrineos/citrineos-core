@@ -37,7 +37,7 @@ describe('Hubject', () => {
         },
       },
     } as any;
-    hubject = new Hubject(systemConfig, logger);
+    hubject = new Hubject(systemConfig, logger!);
   });
 
   describe('getSignedContractData', () => {
@@ -52,8 +52,7 @@ describe('Hubject', () => {
         .mockReturnValueOnce(
           Promise.resolve({
             status: 200,
-            text: () =>
-              Promise.resolve(JSON.stringify(aValidSignedContractData())),
+            text: () => Promise.resolve(JSON.stringify(aValidSignedContractData())),
           }),
         );
 
@@ -98,8 +97,7 @@ describe('Hubject', () => {
         .mockReturnValueOnce(
           Promise.resolve({
             status: 200,
-            text: () =>
-              Promise.resolve(JSON.stringify(aValidRootCertificates())),
+            text: () => Promise.resolve(JSON.stringify(aValidRootCertificates())),
           }),
         );
 
@@ -141,9 +139,7 @@ describe('Hubject', () => {
         );
 
       const givenCSRString = faker.lorem.word();
-      await expect(() =>
-        hubject.getSignedCertificate(givenCSRString),
-      ).rejects.toThrow(
+      await expect(() => hubject.getSignedCertificate(givenCSRString)).rejects.toThrow(
         'Get signed certificate response is unexpected: 500: Internal Server Error',
       );
 

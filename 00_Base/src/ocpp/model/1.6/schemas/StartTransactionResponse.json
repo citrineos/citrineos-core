@@ -1,0 +1,38 @@
+{
+  "title": "StartTransactionResponse",
+  "type": "object",
+  "properties": {
+    "idTagInfo": {
+      "type": "object",
+      "properties": {
+        "expiryDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "parentIdTag": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "status": {
+          "$ref": "#/definitions/StartTransactionResponseStatus"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["status"]
+    },
+    "transactionId": {
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["idTagInfo", "transactionId"],
+  "$id": "StartTransactionResponse",
+  "definitions": {
+    "StartTransactionResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
+      "tsEnumNames": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"]
+    }
+  }
+}

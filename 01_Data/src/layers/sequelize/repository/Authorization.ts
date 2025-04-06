@@ -3,16 +3,23 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type AuthorizationData, CrudRepository, type IdTokenType, SystemConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { type BuildOptions, type Includeable, Op, Transaction } from 'sequelize';
-import { type AuthorizationQuerystring, type AuthorizationRestrictions, type IAuthorizationRepository } from '../../../interfaces';
+import {
+  type AuthorizationQuerystring,
+  type AuthorizationRestrictions,
+  type IAuthorizationRepository,
+} from '../../../interfaces';
 import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from '../model/Authorization';
 import { SequelizeRepository } from './Base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { IdTokenAdditionalInfo } from '../model/Authorization/IdTokenAdditionalInfo';
 
-export class SequelizeAuthorizationRepository extends SequelizeRepository<Authorization> implements IAuthorizationRepository {
+export class SequelizeAuthorizationRepository
+  extends SequelizeRepository<Authorization>
+  implements IAuthorizationRepository
+{
   idToken: CrudRepository<IdToken>;
   idTokenInfo: CrudRepository<IdTokenInfo>;
   additionalInfo: CrudRepository<AdditionalInfo>;
@@ -28,13 +35,40 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     idTokenAdditionalInfo?: CrudRepository<IdTokenAdditionalInfo>,
   ) {
     super(config, Authorization.MODEL_NAME, logger, sequelizeInstance);
-    this.idToken = idToken ? idToken : new SequelizeRepository<IdToken>(config, IdToken.MODEL_NAME, logger, sequelizeInstance);
-    this.idTokenInfo = idTokenInfo ? idTokenInfo : new SequelizeRepository<IdTokenInfo>(config, IdTokenInfo.MODEL_NAME, logger, sequelizeInstance);
-    this.additionalInfo = additionalInfo ? additionalInfo : new SequelizeRepository<AdditionalInfo>(config, AdditionalInfo.MODEL_NAME, logger, sequelizeInstance);
-    this.idTokenAdditionalInfo = idTokenAdditionalInfo ? idTokenAdditionalInfo : new SequelizeRepository<IdTokenAdditionalInfo>(config, IdTokenAdditionalInfo.MODEL_NAME, logger, sequelizeInstance);
+    this.idToken = idToken
+      ? idToken
+      : new SequelizeRepository<IdToken>(config, IdToken.MODEL_NAME, logger, sequelizeInstance);
+    this.idTokenInfo = idTokenInfo
+      ? idTokenInfo
+      : new SequelizeRepository<IdTokenInfo>(
+          config,
+          IdTokenInfo.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.additionalInfo = additionalInfo
+      ? additionalInfo
+      : new SequelizeRepository<AdditionalInfo>(
+          config,
+          AdditionalInfo.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.idTokenAdditionalInfo = idTokenAdditionalInfo
+      ? idTokenAdditionalInfo
+      : new SequelizeRepository<IdTokenAdditionalInfo>(
+          config,
+          IdTokenAdditionalInfo.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
   }
 
-  async createOrUpdateByQuerystring(value: AuthorizationData, query: AuthorizationQuerystring, transaction?: Transaction): Promise<Authorization | undefined> {
+  async createOrUpdateByQuerystring(
+    value: OCPP2_0_1.AuthorizationData,
+    query: AuthorizationQuerystring,
+    transaction?: Transaction,
+  ): Promise<Authorization | undefined> {
     if (value.idToken.idToken !== query.idToken || value.idToken.type !== query.type) {
       throw new Error('Authorization idToken does not match query');
     }
@@ -52,7 +86,8 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
       transaction,
     });
 
-    const authorizationModel = savedAuthorizationModel ?? Authorization.build({}, this._createInclude(value));
+    const authorizationModel =
+      savedAuthorizationModel ?? Authorization.build({}, this._createInclude(value));
 
     const updatedIdToken = await this._updateIdToken(value.idToken, transaction);
     authorizationModel.idTokenId = updatedIdToken.id;
@@ -72,20 +107,25 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
         });
 
         if (!savedIdTokenInfo) {
-          throw new Error(`IdTokenInfo for foreign key ${authorizationModel.idTokenInfoId} not found`);
+          throw new Error(
+            `IdTokenInfo for foreign key ${authorizationModel.idTokenInfoId} not found`,
+          );
         }
 
         Object.keys(valueIdTokenInfo.dataValues).forEach((k) => {
           const updatedValue = valueIdTokenInfo.getDataValue(k);
           if (updatedValue !== undefined) {
             // Null can still be used to remove data
-             
+
             savedIdTokenInfo!.setDataValue(k, updatedValue);
           }
         });
 
         if (value.idTokenInfo.groupIdToken) {
-          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken, transaction);
+          const savedGroupIdToken = await this._updateIdToken(
+            value.idTokenInfo.groupIdToken,
+            transaction,
+          );
           if (!savedIdTokenInfo.groupIdTokenId) {
             savedIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
           }
@@ -96,7 +136,10 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
         await savedIdTokenInfo.save({ transaction });
       } else {
         if (value.idTokenInfo.groupIdToken) {
-          const savedGroupIdToken = await this._updateIdToken(value.idTokenInfo.groupIdToken, transaction);
+          const savedGroupIdToken = await this._updateIdToken(
+            value.idTokenInfo.groupIdToken,
+            transaction,
+          );
           valueIdTokenInfo.groupIdTokenId = savedGroupIdToken.id;
         }
         const createdIdTokenInfo = await valueIdTokenInfo.save({ transaction });
@@ -111,7 +154,10 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     return await authorizationModel.save({ transaction });
   }
 
-  async updateRestrictionsByQuerystring(value: AuthorizationRestrictions, query: AuthorizationQuerystring): Promise<Authorization[]> {
+  async updateRestrictionsByQuerystring(
+    value: AuthorizationRestrictions,
+    query: AuthorizationQuerystring,
+  ): Promise<Authorization[]> {
     return await this.updateAllByQuery(value, query);
   }
 
@@ -119,7 +165,9 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     return await super.readAllByQuery(this._constructQuery(query));
   }
 
-  async readOnlyOneByQuerystring(query: AuthorizationQuerystring): Promise<Authorization | undefined> {
+  async readOnlyOneByQuerystring(
+    query: AuthorizationQuerystring,
+  ): Promise<Authorization | undefined> {
     return await super.readOnlyOneByQuery(this._constructQuery(query));
   }
 
@@ -135,7 +183,10 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
    * Private Methods
    */
 
-  private async _updateIdToken(value: IdTokenType, transaction?: Transaction): Promise<IdToken> {
+  private async _updateIdToken(
+    value: OCPP2_0_1.IdTokenType,
+    transaction?: Transaction,
+  ): Promise<IdToken> {
     const [savedIdTokenModel] = await IdToken.findOrCreate({
       where: { idToken: value.idToken, type: value.type },
       transaction,
@@ -179,12 +230,27 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
   }
 
   private _constructQuery(queryParams: AuthorizationQuerystring): object {
+    // 1.6 doesn't have the concept of token type. But we need to support token type for 2.0.1 messages.
+    // We ignore token type if it's explicitly set to null, as it's coming from a 1.6 message
+    const idTokenWhere: any = {};
+    if (queryParams.idToken) {
+      // exact match
+      idTokenWhere.idToken = queryParams.idToken;
+      // or partial match:
+      // idTokenWhere.idToken = { [Op.like]: `%${queryParams.idToken}%` };
+    }
+
+    // only include type if it's provided
+    if (queryParams.type) {
+      idTokenWhere.type = queryParams.type;
+    }
+
     return {
       where: {},
       include: [
         {
           model: IdToken,
-          where: { idToken: queryParams.idToken, type: queryParams.type },
+          where: idTokenWhere,
           required: true, // This ensures the inner join, so only Authorizations with the matching IdToken are returned
         },
         { model: IdTokenInfo, include: [{ model: IdToken, include: [AdditionalInfo] }] },
@@ -192,7 +258,7 @@ export class SequelizeAuthorizationRepository extends SequelizeRepository<Author
     };
   }
 
-  private _createInclude(value: AuthorizationData): BuildOptions {
+  private _createInclude(value: OCPP2_0_1.AuthorizationData): BuildOptions {
     const include: Includeable[] = [];
     if (value.idTokenInfo) {
       const idTokenInfoInclude: Includeable[] = [];

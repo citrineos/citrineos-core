@@ -3,6 +3,7 @@ import { ILocationRepository } from '@citrineos/data';
 import { IncomingMessage } from 'http';
 import { AuthenticatorFilter } from './AuthenticatorFilter';
 import { AuthenticationOptions } from '@citrineos/base';
+import { UpgradeUnknownError } from './errors/UnknownError';
 
 /**
  * Filter used to block connections from charging stations that are not recognized in the system.
@@ -11,10 +12,7 @@ import { AuthenticationOptions } from '@citrineos/base';
 export class UnknownStationFilter extends AuthenticatorFilter {
   private _locationRepository: ILocationRepository;
 
-  constructor(
-    locationRepository: ILocationRepository,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(locationRepository: ILocationRepository, logger?: Logger<ILogObj>) {
     super(logger);
     this._locationRepository = locationRepository;
   }
@@ -23,16 +21,11 @@ export class UnknownStationFilter extends AuthenticatorFilter {
     return !options.allowUnknownChargingStations;
   }
 
-  protected async filter(
-    identifier: string,
-    _request: IncomingMessage,
-  ): Promise<void> {
+  protected async filter(identifier: string, _request: IncomingMessage): Promise<void> {
     const isStationKnown =
-      await this._locationRepository.doesChargingStationExistByStationId(
-        identifier,
-      );
+      await this._locationRepository.doesChargingStationExistByStationId(identifier);
     if (!isStationKnown) {
-      throw Error(`Unknown identifier ${identifier}`);
+      throw new UpgradeUnknownError(`Unknown identifier ${identifier}`);
     }
   }
 }

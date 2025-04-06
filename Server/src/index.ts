@@ -5,20 +5,20 @@
 
 import {
   type AbstractModule,
-  type AbstractModuleApi,
   Ajv,
+  ConfigStoreFactory,
   EventGroup,
   eventGroupFromString,
   type IAuthenticator,
   type ICache,
-  type IFileAccess,
+  type IFileStorage,
   type IMessageHandler,
   type IMessageSender,
   type IModule,
   type IModuleApi,
   type SystemConfig,
 } from '@citrineos/base';
-import { MonitoringModule, MonitoringModuleApi } from '@citrineos/monitoring';
+import { MonitoringModule, MonitoringOcpp201Api, MonitoringDataApi } from '@citrineos/monitoring';
 import {
   Authenticator,
   BasicAuthenticationFilter,
@@ -34,6 +34,7 @@ import {
   RedisCache,
   UnknownStationFilter,
   WebsocketNetworkConnection,
+  S3Storage,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import addFormats from 'ajv-formats';
@@ -42,21 +43,32 @@ import { type ILogObj, Logger } from 'tslog';
 import { systemConfig } from './config';
 import {
   ConfigurationModule,
-  ConfigurationModuleApi,
+  ConfigurationOcpp201Api,
+  ConfigurationOcpp16Api,
+  ConfigurationDataApi,
 } from '@citrineos/configuration';
 import {
   TransactionsModule,
-  TransactionsModuleApi,
+  TransactionsOcpp201Api,
+  TransactionsDataApi,
 } from '@citrineos/transactions';
 import {
+  CertificatesDataApi,
   CertificatesModule,
-  CertificatesModuleApi,
+  CertificatesOcpp201Api,
 } from '@citrineos/certificates';
-import { EVDriverModule, EVDriverModuleApi } from '@citrineos/evdriver';
-import { ReportingModule, ReportingModuleApi } from '@citrineos/reporting';
 import {
+  EVDriverModule,
+  EVDriverOcpp201Api,
+  EVDriverOcpp16Api,
+  EVDriverDataApi,
+} from '@citrineos/evdriver';
+import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
+import {
+  InternalSmartCharging,
+  ISmartCharging,
   SmartChargingModule,
-  SmartChargingModuleApi,
+  SmartChargingOcpp201Api,
 } from '@citrineos/smartcharging';
 import { RepositoryStore, sequelize, Sequelize, ServerNetworkProfile } from '@citrineos/data';
 import {
@@ -64,23 +76,8 @@ import {
   type FastifySchemaCompiler,
   type FastifyValidationResult,
 } from 'fastify/types/schema';
-import {
-  AdminApi,
-  MessageRouterImpl,
-  WebhookDispatcher,
-} from '@citrineos/ocpprouter';
-import { TenantModule, TenantModuleApi } from '@citrineos/tenant';
-import {
-  InternalSmartCharging,
-  ISmartCharging,
-} from '@citrineos/smartcharging';
+import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocpprouter';
 import cors from '@fastify/cors';
-
-interface ModuleConfig {
-  ModuleClass: new (...args: any[]) => AbstractModule;
-  ModuleApiClass: new (...args: any[]) => AbstractModuleApi<any>;
-  configModule: any; // todo type?
-}
 
 export class CitrineOSServer {
   /**
@@ -91,7 +88,7 @@ export class CitrineOSServer {
   private readonly _server: FastifyInstance;
   private readonly _cache: ICache;
   private readonly _ajv: Ajv;
-  private readonly _fileAccess: IFileAccess;
+  private readonly _fileStorage: IFileStorage;
   private readonly modules: IModule[] = [];
   private readonly apis: IModuleApi[] = [];
   private _sequelizeInstance!: Sequelize;
@@ -115,6 +112,7 @@ export class CitrineOSServer {
    * @param {FastifyInstance} server - optional Fastify server instance
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
    * @param {ICache} cache - cache
+   * @param {IFileStorage} fileStorage - file storage
    */
   // todo rename event group to type
   constructor(
@@ -123,20 +121,17 @@ export class CitrineOSServer {
     server?: FastifyInstance,
     ajv?: Ajv,
     cache?: ICache,
-    fileAccess?: IFileAccess,
+    fileStorage?: IFileStorage,
   ) {
     // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
     if (!config.util.messageBroker.amqp) {
-      throw new Error(
-        'This server implementation requires amqp configuration for rabbitMQ.',
-      );
+      throw new Error('This server implementation requires amqp configuration for rabbitMQ.');
     }
 
     this.appName = appName;
     this._config = config;
-    this._server =
-      server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
+    this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
     // enable cors
     (this._server as any).register(cors, {
@@ -158,17 +153,20 @@ export class CitrineOSServer {
     this._cache = this.initCache(cache);
 
     // Initialize Swagger if enabled
-    this.initSwagger();
+    this.initSwagger()
+      .then()
+      .catch((error) => this._logger.error('Could not initialize swagger', error));
 
     // Add Directus Message API flow creation if enabled
-    let directusUtil: DirectusUtil | undefined = undefined;
-    if (this._config.util.directus?.generateFlows) {
-      directusUtil = new DirectusUtil(this._config, this._logger);
+    if (this._config.util.fileAccess.directus?.generateFlows) {
+      const directusUtil = ConfigStoreFactory.getInstance() as DirectusUtil;
       this._server.addHook('onRoute', (routeOptions: RouteOptions) => {
-        directusUtil!.addDirectusMessageApiFlowsFastifyRouteHook(
-          routeOptions,
-          this._server.getSchemas(),
-        );
+        directusUtil!
+          .addDirectusMessageApiFlowsFastifyRouteHook(routeOptions, this._server.getSchemas())
+          .then()
+          .catch((error) => {
+            this._logger.error('Could not add Directus Message API flow', error);
+          });
       });
 
       this._server.addHook('onReady', async () => {
@@ -177,7 +175,7 @@ export class CitrineOSServer {
     }
 
     // Initialize File Access Implementation
-    this._fileAccess = this.initFileAccess(fileAccess, directusUtil);
+    this._fileStorage = ConfigStoreFactory.getInstance();
 
     // Register AJV for schema validation
     this.registerAjv();
@@ -187,32 +185,34 @@ export class CitrineOSServer {
     this.initIdGenerator();
     this.initCertificateAuthorityService();
     this.initSmartChargingService();
-
-    // Initialize module & API
-    // Always initialize API after SwaggerUI
-    this.initSystem();
   }
 
   async initialize(): Promise<void> {
+    // Initialize module & API
+    // Always initialize API after SwaggerUI
+    await this.initSystem();
+
     // Initialize database
     await this.initDb();
 
     // Set up shutdown handlers
-    process.on('SIGINT', this.shutdown.bind(this));
-    process.on('SIGTERM', this.shutdown.bind(this));
-    process.on('SIGQUIT', this.shutdown.bind(this));
+    for (const event of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
+      process.on(event, async () => {
+        await this.shutdown();
+      });
+    }
   }
 
-  shutdown() {
+  async shutdown() {
     // todo shut down depending on setup
     // Shut down all modules and central system
-    this.modules.forEach((module) => {
-      module.shutdown();
-    });
-    this._networkConnection?.shutdown();
+    for (const module of this.modules) {
+      await module.shutdown();
+    }
+    await this._networkConnection?.shutdown();
 
     // Shutdown server
-    this._server.close().then(); // todo async?
+    await this._server.close();
 
     setTimeout(() => {
       console.log('Exiting...');
@@ -223,7 +223,7 @@ export class CitrineOSServer {
   async run(): Promise<void> {
     try {
       await this.initialize();
-      this._syncWebsocketConfig();
+      await this._syncWebsocketConfig();
       await this._server
         .listen({
           host: this.host,
@@ -243,11 +243,11 @@ export class CitrineOSServer {
   }
 
   protected async _syncWebsocketConfig() {
-    this._config.util.networkConnection.websocketServers.forEach(async websocketServerConfig => {
+    for (const websocketServerConfig of this._config.util.networkConnection.websocketServers) {
       const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
         where: {
-          id: websocketServerConfig.id
-        }
+          id: websocketServerConfig.id,
+        },
       });
       serverNetworkProfile.host = websocketServerConfig.host;
       serverNetworkProfile.port = websocketServerConfig.port;
@@ -255,14 +255,18 @@ export class CitrineOSServer {
       serverNetworkProfile.protocol = websocketServerConfig.protocol;
       serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
       serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
-      serverNetworkProfile.allowUnknownChargingStations = websocketServerConfig.allowUnknownChargingStations;
+      serverNetworkProfile.allowUnknownChargingStations =
+        websocketServerConfig.allowUnknownChargingStations;
       serverNetworkProfile.tlsKeyFilePath = websocketServerConfig.tlsKeyFilePath;
-      serverNetworkProfile.tlsCertificateChainFilePath = websocketServerConfig.tlsCertificateChainFilePath;
-      serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath = websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
-      serverNetworkProfile.rootCACertificateFilePath = websocketServerConfig.rootCACertificateFilePath;
+      serverNetworkProfile.tlsCertificateChainFilePath =
+        websocketServerConfig.tlsCertificateChainFilePath;
+      serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath =
+        websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
+      serverNetworkProfile.rootCACertificateFilePath =
+        websocketServerConfig.rootCACertificateFilePath;
 
-      serverNetworkProfile.save();
-    })
+      await serverNetworkProfile.save();
+    }
   }
 
   protected _createSender(): IMessageSender {
@@ -297,12 +301,54 @@ export class CitrineOSServer {
   }
 
   private initLogger() {
+    const isCloud = process.env.DEPLOYMENT_TARGET === 'cloud';
     return new Logger<ILogObj>({
       name: 'CitrineOS Logger',
-      minLevel: systemConfig.logLevel,
-      hideLogPositionForProduction: systemConfig.env === 'production',
+      minLevel: this._config.logLevel,
+      hideLogPositionForProduction: this._config.env === 'production',
+      overwrite:
+        this._config && this._config.logLevel !== undefined && this._config.logLevel <= 2
+          ? undefined
+          : {
+              transportJSON: (logObj: any) => {
+                function jsonStringifyRecursive(obj: unknown) {
+                  const cache = new Set();
+                  return JSON.stringify(obj, (key, value) => {
+                    if (typeof value === 'object' && value !== null) {
+                      if (cache.has(value)) {
+                        // Circular reference is found, discard key
+                        return '[Circular]';
+                      }
+                      // Store value in our collection
+                      cache.add(value);
+                    }
+                    if (typeof value === 'bigint') {
+                      return `${value}`;
+                    }
+                    if (typeof value === 'undefined') {
+                      return '[undefined]';
+                    }
+                    return value;
+                  });
+                }
+                if (logObj._meta) {
+                  const { path, name, date, logLevelId, logLevelName } = logObj._meta;
+                  const { _meta, ...rest } = logObj;
+                  logObj = {
+                    ...rest,
+                    path: path?.fullFilePath,
+                    name,
+                    date,
+                    logLevelId,
+                    logLevelName,
+                  };
+                }
+                console.log(jsonStringifyRecursive(logObj));
+              },
+            },
       // Disable colors for cloud deployment as some cloud logging environments such as cloudwatch can not interpret colors
-      stylePrettyLogs: process.env.DEPLOYMENT_TARGET !== 'cloud',
+      stylePrettyLogs: !isCloud,
+      type: isCloud ? 'json' : 'pretty',
     });
   }
 
@@ -324,9 +370,9 @@ export class CitrineOSServer {
     );
   }
 
-  private initSwagger() {
+  private async initSwagger() {
     if (this._config.util.swagger) {
-      initSwagger(this._config, this._server);
+      await initSwagger(this._config, this._server);
     }
   }
 
@@ -346,34 +392,25 @@ export class CitrineOSServer {
       ),
       new ConnectedStationFilter(this._cache, this._logger),
       new NetworkProfileFilter(
-        new sequelize.SequelizeDeviceModelRepository(
-          this._config,
-          this._logger,
-        ),
+        new sequelize.SequelizeDeviceModelRepository(this._config, this._logger),
         this._logger,
       ),
       new BasicAuthenticationFilter(
-        new sequelize.SequelizeDeviceModelRepository(
-          this._config,
-          this._logger,
-        ),
+        new sequelize.SequelizeDeviceModelRepository(this._config, this._logger),
         this._logger,
       ),
       this._logger,
     );
 
-    const webhookDispatcher = new WebhookDispatcher(
-      this._repositoryStore.subscriptionRepository,
-    );
+    const webhookDispatcher = new WebhookDispatcher(this._repositoryStore.subscriptionRepository);
 
-     
     const router = new MessageRouterImpl(
       this._config,
       this._cache,
       this._createSender(),
       this._createHandler(),
       webhookDispatcher,
-      async (_identifier: string, _message: string) => false,
+      async (_identifier: string, _message: string) => {},
       this._logger,
       this._ajv,
       this._repositoryStore.locationRepository,
@@ -394,144 +431,38 @@ export class CitrineOSServer {
     this.port = this._config.centralSystem.port;
   }
 
-  private initAllModules() {
+  private async initHandlersAndAddModule(module: AbstractModule) {
+    await module.initHandlers();
+    this.modules.push(module);
+  }
+
+  private async initAllModules() {
     if (this._config.modules.certificates) {
-      const module = new CertificatesModule(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.certificateRepository,
-        this._repositoryStore.locationRepository,
-      );
-      this.modules.push(module);
-      this.apis.push(
-        new CertificatesModuleApi(
-          module,
-          this._server,
-          this._fileAccess,
-          this._networkConnection!,
-          this._config.util.networkConnection.websocketServers,
-          this._logger,
-        ),
-      );
+      await this.initCertificatesModule();
     }
 
     if (this._config.modules.configuration) {
-      const module = new ConfigurationModule(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.bootRepository,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.messageInfoRepository,
-        this._idGenerator,
-      );
-      this.modules.push(module);
-      this.apis.push(
-        new ConfigurationModuleApi(module, this._server, this._logger),
-      );
+      await this.initConfigurationModule();
     }
 
     if (this._config.modules.evdriver) {
-      const module = new EVDriverModule(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.authorizationRepository,
-        this._repositoryStore.localAuthListRepository,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.tariffRepository,
-        this._repositoryStore.transactionEventRepository,
-        this._repositoryStore.chargingProfileRepository,
-        this._repositoryStore.reservationRepository,
-        this._repositoryStore.callMessageRepository,
-        this._certificateAuthorityService,
-        [],
-        this._idGenerator,
-      );
-      this.modules.push(module);
-      this.apis.push(new EVDriverModuleApi(module, this._server, this._logger));
+      await this.initEVDriverModule();
     }
 
     if (this._config.modules.monitoring) {
-      const module = new MonitoringModule(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.variableMonitoringRepository,
-        this._idGenerator,
-      );
-      this.modules.push(module);
-      this.apis.push(
-        new MonitoringModuleApi(module, this._server, this._logger),
-      );
+      await this.initMonitoringModule();
     }
 
     if (this._config.modules.reporting) {
-      const module = new ReportingModule(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.securityEventRepository,
-        this._repositoryStore.variableMonitoringRepository,
-      );
-      this.modules.push(module);
-      this.apis.push(
-        new ReportingModuleApi(module, this._server, this._logger),
-      );
+      await this.initReportingModule();
     }
 
     if (this._config.modules.smartcharging) {
-      const module = new SmartChargingModule(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.transactionEventRepository,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.chargingProfileRepository,
-        this._smartChargingService,
-        this._idGenerator,
-      );
-      this.modules.push(module);
-      this.apis.push(
-        new SmartChargingModuleApi(module, this._server, this._logger),
-      );
+      await this.initSmartChargingModule();
     }
 
     if (this._config.modules.transactions) {
-      const module = new TransactionsModule(
-        this._config,
-        this._cache,
-        this._fileAccess,
-        this._createSender(),
-        this._createHandler(),
-        this._logger,
-        this._repositoryStore.transactionEventRepository,
-        this._repositoryStore.authorizationRepository,
-        this._repositoryStore.deviceModelRepository,
-        this._repositoryStore.componentRepository,
-        this._repositoryStore.locationRepository,
-        this._repositoryStore.tariffRepository,
-      );
-      this.modules.push(module);
-      this.apis.push(
-        new TransactionsModuleApi(module, this._server, this._logger),
-      );
+      await this.initTransactionsModule();
     }
 
     // TODO: take actions to make sure module has correct subscriptions and log proof
@@ -541,119 +472,192 @@ export class CitrineOSServer {
     }
   }
 
-  private initModule(moduleConfig: ModuleConfig) {
-    if (moduleConfig.configModule !== null) {
-      const module = new moduleConfig.ModuleClass(
-        this._config,
-        this._cache,
-        this._createSender(),
-        this._createHandler(),
+  private async initCertificatesModule() {
+    const module = new CertificatesModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.certificateRepository,
+      this._repositoryStore.locationRepository,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new CertificatesOcpp201Api(module, this._server, this._logger),
+      new CertificatesDataApi(
+        module,
+        this._server,
+        this._fileStorage,
+        this._networkConnection!,
+        this._config.util.networkConnection.websocketServers,
         this._logger,
-      );
-      this.modules.push(module);
-      if (moduleConfig.ModuleApiClass === CertificatesModuleApi) {
-        this.apis.push(
-          new moduleConfig.ModuleApiClass(
-            module,
-            this._server,
-            this._fileAccess,
-            this._networkConnection,
-            this._config.util.networkConnection.websocketServers,
-            this._logger,
-          ),
-        );
-      } else {
-        this.apis.push(
-          new moduleConfig.ModuleApiClass(module, this._server, this._logger),
-        );
-      }
-
-      // TODO: take actions to make sure module has correct subscriptions and log proof
-      this._logger?.info(`${moduleConfig.ModuleClass.name} module started...`);
-      if (this.eventGroup !== EventGroup.All) {
-        this.host = moduleConfig.configModule.host as string;
-        this.port = moduleConfig.configModule.port as number;
-      }
-    } else {
-      throw new Error(`No config for ${this.eventGroup} module`);
-    }
+      ),
+    );
   }
 
-  private getModuleConfig(): ModuleConfig {
-    switch (this.eventGroup) {
+  private async initConfigurationModule() {
+    const module = new ConfigurationModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.bootRepository,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.messageInfoRepository,
+      this._repositoryStore.locationRepository,
+      this._repositoryStore.changeConfigurationRepository,
+      this._repositoryStore.ocppMessageRepository,
+      this._idGenerator,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new ConfigurationOcpp201Api(module, this._server, this._logger),
+      new ConfigurationOcpp16Api(module, this._server, this._logger),
+      new ConfigurationDataApi(module, this._server, this._logger),
+    );
+  }
+
+  private async initEVDriverModule() {
+    const module = new EVDriverModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.authorizationRepository,
+      this._repositoryStore.localAuthListRepository,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.tariffRepository,
+      this._repositoryStore.transactionEventRepository,
+      this._repositoryStore.chargingProfileRepository,
+      this._repositoryStore.reservationRepository,
+      this._repositoryStore.ocppMessageRepository,
+      this._certificateAuthorityService,
+      [],
+      this._idGenerator,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new EVDriverOcpp201Api(module, this._server, this._logger),
+      new EVDriverOcpp16Api(module, this._server, this._logger),
+      new EVDriverDataApi(module, this._server, this._logger),
+    );
+  }
+
+  private async initMonitoringModule() {
+    const module = new MonitoringModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.variableMonitoringRepository,
+      this._idGenerator,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new MonitoringOcpp201Api(module, this._server, this._logger),
+      new MonitoringDataApi(module, this._server, this._logger),
+    );
+  }
+
+  private async initReportingModule() {
+    const module = new ReportingModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.securityEventRepository,
+      this._repositoryStore.variableMonitoringRepository,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(new ReportingOcpp201Api(module, this._server, this._logger));
+  }
+
+  private async initSmartChargingModule() {
+    const module = new SmartChargingModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.transactionEventRepository,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.chargingProfileRepository,
+      this._smartChargingService,
+      this._idGenerator,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(new SmartChargingOcpp201Api(module, this._server, this._logger));
+  }
+
+  private async initTransactionsModule() {
+    const module = new TransactionsModule(
+      this._config,
+      this._cache,
+      this._fileStorage,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.transactionEventRepository,
+      this._repositoryStore.authorizationRepository,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.componentRepository,
+      this._repositoryStore.locationRepository,
+      this._repositoryStore.tariffRepository,
+      this._repositoryStore.reservationRepository,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new TransactionsOcpp201Api(module, this._server, this._logger),
+      new TransactionsDataApi(module, this._server, this._logger),
+    );
+  }
+
+  private async initModule(eventGroup = this.eventGroup) {
+    switch (eventGroup) {
       case EventGroup.Certificates:
-        return {
-          ModuleClass: CertificatesModule,
-          ModuleApiClass: CertificatesModuleApi,
-          configModule: this._config.modules.certificates,
-        };
+        await this.initCertificatesModule();
+        break;
       case EventGroup.Configuration:
-        return {
-          ModuleClass: ConfigurationModule,
-          ModuleApiClass: ConfigurationModuleApi,
-          configModule: this._config.modules.configuration,
-        };
+        await this.initConfigurationModule();
+        break;
       case EventGroup.EVDriver:
-        return {
-          ModuleClass: EVDriverModule,
-          ModuleApiClass: EVDriverModuleApi,
-          configModule: this._config.modules.evdriver,
-        };
+        await this.initEVDriverModule();
+        break;
       case EventGroup.Monitoring:
-        return {
-          ModuleClass: MonitoringModule,
-          ModuleApiClass: MonitoringModuleApi,
-          configModule: this._config.modules.monitoring,
-        };
+        await this.initMonitoringModule();
+        break;
       case EventGroup.Reporting:
-        return {
-          ModuleClass: ReportingModule,
-          ModuleApiClass: ReportingModuleApi,
-          configModule: this._config.modules.reporting,
-        };
+        await this.initReportingModule();
+        break;
       case EventGroup.SmartCharging:
-        return {
-          ModuleClass: SmartChargingModule,
-          ModuleApiClass: SmartChargingModuleApi,
-          configModule: this._config.modules.smartcharging,
-        };
-      case EventGroup.Tenant:
-        return {
-          ModuleClass: TenantModule,
-          ModuleApiClass: TenantModuleApi,
-          configModule: this._config.modules.tenant,
-        };
+        await this.initSmartChargingModule();
+        break;
       case EventGroup.Transactions:
-        return {
-          ModuleClass: TransactionsModule,
-          ModuleApiClass: TransactionsModuleApi,
-          configModule: this._config.modules.transactions,
-        };
+        await this.initTransactionsModule();
+        break;
       default:
         throw new Error('Unhandled module type: ' + this.appName);
     }
   }
 
-  private initSystem() {
+  private async initSystem() {
     this.eventGroup = eventGroupFromString(this.appName);
     if (this.eventGroup === EventGroup.All) {
       this.initNetworkConnection();
-      this.initAllModules();
+      await this.initAllModules();
     } else if (this.eventGroup === EventGroup.General) {
       this.initNetworkConnection();
     } else {
-      const moduleConfig: ModuleConfig = this.getModuleConfig();
-      this.initModule(moduleConfig);
+      await this.initModule();
     }
-  }
-
-  private initFileAccess(
-    fileAccess?: IFileAccess,
-    directus?: IFileAccess,
-  ): IFileAccess {
-    return (
-      fileAccess || directus || new DirectusUtil(this._config, this._logger)
-    );
   }
 
   private initRepositoryStore() {
@@ -677,16 +681,14 @@ export class CitrineOSServer {
   }
 
   private initSmartChargingService() {
-    this._smartChargingService = new InternalSmartCharging(this._repositoryStore.chargingProfileRepository);
+    this._smartChargingService = new InternalSmartCharging(
+      this._repositoryStore.chargingProfileRepository,
+    );
   }
-
 }
 
 async function main() {
-  const server = new CitrineOSServer(
-    process.env.APP_NAME as EventGroup,
-    systemConfig,
-  );
+  const server = new CitrineOSServer(process.env.APP_NAME as EventGroup, await systemConfig);
   server.run().catch((error: any) => {
     console.error(error);
     process.exit(1);

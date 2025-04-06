@@ -3,13 +3,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type AuthorizationData, type CustomDataType, Namespace } from '@citrineos/base';
+import { Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { type AuthorizationRestrictions } from '../../../../interfaces';
 import { IdToken, IdTokenInfo } from '.';
 
 @Table
-export class Authorization extends Model implements AuthorizationData, AuthorizationRestrictions {
+export class Authorization extends Model implements AuthorizationRestrictions {
   static readonly MODEL_NAME: string = Namespace.AuthorizationData;
 
   @Column(DataType.ARRAY(DataType.STRING))
@@ -35,5 +35,5 @@ export class Authorization extends Model implements AuthorizationData, Authoriza
   @BelongsTo(() => IdTokenInfo)
   declare idTokenInfo?: IdTokenInfo;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: any | null;
 }

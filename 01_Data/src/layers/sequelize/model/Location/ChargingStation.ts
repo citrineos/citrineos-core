@@ -2,13 +2,23 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, StatusNotificationRequest } from '@citrineos/base';
-import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import { Namespace, OCPPVersion } from '@citrineos/base';
+import {
+  BelongsTo,
+  BelongsToMany,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
 import { Location } from './Location';
 import { StatusNotification } from './StatusNotification';
 import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 import { SetNetworkProfile } from './SetNetworkProfile';
-import { OCPPLog } from './OCPPLog';
+import { Connector } from './Connector';
 
 /**
  * Represents a charging station.
@@ -25,15 +35,42 @@ export class ChargingStation extends Model {
   @Column
   declare isOnline: boolean;
 
+  @Column(DataType.STRING)
+  declare protocol?: OCPPVersion | null;
+
+  @Column(DataType.STRING(20))
+  declare chargePointVendor?: string | null;
+
+  @Column(DataType.STRING(20))
+  declare chargePointModel?: string | null;
+
+  @Column(DataType.STRING(25))
+  declare chargePointSerialNumber?: string | null;
+
+  @Column(DataType.STRING(25))
+  declare chargeBoxSerialNumber?: string | null;
+
+  @Column(DataType.STRING(50))
+  declare firmwareVersion?: string | null;
+
+  @Column(DataType.STRING(20))
+  declare iccid?: string | null;
+
+  @Column(DataType.STRING(20))
+  declare imsi?: string | null;
+
+  @Column(DataType.STRING(25))
+  declare meterType?: string | null;
+
+  @Column(DataType.STRING(25))
+  declare meterSerialNumber?: string | null;
+
   @ForeignKey(() => Location)
   @Column(DataType.INTEGER)
   declare locationId?: number | null;
 
   @HasMany(() => StatusNotification)
-  declare statusNotifications?: StatusNotificationRequest[];
-
-  @HasMany(() => OCPPLog)
-  declare liveLogs?: OCPPLog[];
+  declare statusNotifications?: StatusNotification[] | null;
 
   /**
    * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.
@@ -43,4 +80,9 @@ export class ChargingStation extends Model {
 
   @BelongsToMany(() => SetNetworkProfile, () => ChargingStationNetworkProfile)
   declare networkProfiles?: SetNetworkProfile[] | null;
+
+  @HasMany(() => Connector, {
+    onDelete: 'CASCADE',
+  })
+  declare connectors?: Connector[] | null;
 }

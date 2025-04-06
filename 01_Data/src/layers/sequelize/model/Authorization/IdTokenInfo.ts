@@ -3,18 +3,23 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AuthorizationStatusEnumType, type CustomDataType, type IdTokenInfoType, MessageContentType, Namespace } from '@citrineos/base';
+import { Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { IdToken } from './IdToken';
 
 @Table
-export class IdTokenInfo extends Model implements IdTokenInfoType {
+export class IdTokenInfo extends Model {
   static readonly MODEL_NAME: string = Namespace.IdTokenInfoType;
 
   @Column(DataType.STRING)
-  declare status: AuthorizationStatusEnumType;
+  declare status: string;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('cacheExpiryDateTime')?.toISOString();
+    },
+  })
   declare cacheExpiryDateTime?: string | null;
 
   @Column(DataType.INTEGER)
@@ -37,7 +42,7 @@ export class IdTokenInfo extends Model implements IdTokenInfoType {
   declare language2?: string | null;
 
   @Column(DataType.JSON)
-  declare personalMessage?: MessageContentType | null;
+  declare personalMessage?: any | null;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: any | null;
 }

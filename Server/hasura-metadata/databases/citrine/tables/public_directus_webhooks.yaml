@@ -1,0 +1,7 @@
+table:
+  name: directus_webhooks
+  schema: public
+object_relationships:
+  - name: directus_flow
+    using:
+      foreign_key_constraint_on: migrated_flow

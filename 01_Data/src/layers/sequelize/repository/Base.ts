@@ -7,18 +7,33 @@ import { CrudRepository, type SystemConfig } from '@citrineos/base';
 import { type Model, type Sequelize } from 'sequelize-typescript';
 import { DefaultSequelizeInstance } from '../util';
 import { type ILogObj, Logger } from 'tslog';
-import { AggregateOptions, Attributes, FindAndCountOptions, FindOptions, ModelStatic, QueryTypes, UpdateOptions } from 'sequelize';
+import {
+  AggregateOptions,
+  Attributes,
+  FindAndCountOptions,
+  FindOptions,
+  ModelStatic,
+  QueryTypes,
+  UpdateOptions,
+} from 'sequelize';
 
 export class SequelizeRepository<T extends Model<any, any>> extends CrudRepository<T> {
   protected s: Sequelize;
   protected namespace: string;
   protected logger: Logger<ILogObj>;
 
-  constructor(config: SystemConfig, namespace: string, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+  constructor(
+    config: SystemConfig,
+    namespace: string,
+    logger?: Logger<ILogObj>,
+    sequelizeInstance?: Sequelize,
+  ) {
     super();
     this.s = sequelizeInstance ?? DefaultSequelizeInstance.getInstance(config, logger);
     this.namespace = namespace;
-    this.logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
+    this.logger = logger
+      ? logger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
   async readByKey(key: string | number): Promise<T | undefined> {
@@ -26,7 +41,9 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   }
 
   async readAllByQuery(query: object): Promise<T[]> {
-    return await this.s.models[this.namespace].findAll(query as FindOptions<any>).then((row) => row as T[]);
+    return await this.s.models[this.namespace]
+      .findAll(query as FindOptions<any>)
+      .then((row) => row as T[]);
   }
 
   async readAllBySqlString(sqlString: string): Promise<object[]> {
@@ -54,7 +71,9 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     return await this.s.models[this.namespace].findAll(query).then((row) => row.length);
   }
 
-  async findAndCount(options: Omit<FindAndCountOptions<Attributes<T>>, 'group'>): Promise<{ rows: T[]; count: number }> {
+  async findAndCount(
+    options: Omit<FindAndCountOptions<Attributes<T>>, 'group'>,
+  ): Promise<{ rows: T[]; count: number }> {
     return (this.s.models[this.namespace] as ModelStatic<T>).findAndCountAll(options);
   }
 
@@ -73,12 +92,16 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   }
 
   protected async _readOrCreateByQuery(query: object): Promise<[T, boolean]> {
-    return await this.s.models[this.namespace].findOrCreate(query as FindOptions<any>).then((result) => [result[0] as T, result[1]]);
+    return await this.s.models[this.namespace]
+      .findOrCreate(query as FindOptions<any>)
+      .then((result) => [result[0] as T, result[1]]);
   }
 
   protected async _updateByKey(value: Partial<T>, key: string): Promise<T | undefined> {
     const primaryKey = this.s.models[this.namespace].primaryKeyAttribute;
-    return await this._updateAllByQuery(value, { where: { [primaryKey]: key } }).then((rows) => (rows && rows.length === 1 ? rows[0] : undefined));
+    return await this._updateAllByQuery(value, { where: { [primaryKey]: key } }).then((rows) =>
+      rows && rows.length === 1 ? rows[0] : undefined,
+    );
   }
 
   protected async _updateAllByQuery(value: Partial<T>, query: object): Promise<T[]> {
@@ -97,7 +120,9 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
 
   protected async _deleteByKey(key: string): Promise<T | undefined> {
     return this.s.transaction(async (transaction) => {
-      const entryToDelete = await this.s.models[this.namespace].findByPk(key, { transaction }).then((row) => row as T);
+      const entryToDelete = await this.s.models[this.namespace]
+        .findByPk(key, { transaction })
+        .then((row) => row as T);
 
       if (entryToDelete) {
         await entryToDelete.destroy({ transaction: transaction });

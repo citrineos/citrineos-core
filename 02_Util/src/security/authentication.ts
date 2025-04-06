@@ -13,9 +13,7 @@ const SYMBOLS = '*-_=:+|@.';
 const CHARSET = [...LOWERCASE, ...UPPERCASE, ...DIGITS, ...SYMBOLS];
 
 export function generatePassword(): string {
-  return [...randomBytes(MAX_LENGTH)]
-    .map((value) => CHARSET[value % CHARSET.length])
-    .join('');
+  return [...randomBytes(MAX_LENGTH)].map((value) => CHARSET[value % CHARSET.length]).join('');
 }
 
 export function isValidPassword(password: string): boolean {

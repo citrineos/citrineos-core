@@ -2,23 +2,23 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ACChargingParametersType, ChargingNeedsType, CustomDataType, DCChargingParametersType, EnergyTransferModeEnumType, EVSEType, Namespace, TransactionType } from '@citrineos/base';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { Evse } from '../DeviceModel';
 import { Transaction } from '../TransactionEvent';
 
 @Table
-export class ChargingNeeds extends Model implements ChargingNeedsType {
-  static readonly MODEL_NAME: string = Namespace.ChargingNeeds;
+export class ChargingNeeds extends Model implements OCPP2_0_1.ChargingNeedsType {
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ChargingNeeds;
 
   /**
    * Fields
    */
   @Column(DataType.JSONB)
-  declare acChargingParameters?: ACChargingParametersType | null;
+  declare acChargingParameters?: OCPP2_0_1.ACChargingParametersType | null;
 
   @Column(DataType.JSONB)
-  declare dcChargingParameters?: DCChargingParametersType | null;
+  declare dcChargingParameters?: OCPP2_0_1.DCChargingParametersType | null;
 
   @Column({
     type: DataType.DATE,
@@ -30,7 +30,7 @@ export class ChargingNeeds extends Model implements ChargingNeedsType {
   declare departureTime?: string | null;
 
   @Column(DataType.STRING)
-  declare requestedEnergyTransfer: EnergyTransferModeEnumType;
+  declare requestedEnergyTransfer: OCPP2_0_1.EnergyTransferModeEnumType;
 
   @Column(DataType.INTEGER)
   declare maxScheduleTuples?: number | null;
@@ -43,14 +43,14 @@ export class ChargingNeeds extends Model implements ChargingNeedsType {
   declare evseDatabaseId: number;
 
   @BelongsTo(() => Evse)
-  declare evse: EVSEType;
+  declare evse: OCPP2_0_1.EVSEType;
 
   @ForeignKey(() => Transaction)
   @Column(DataType.INTEGER)
   declare transactionDatabaseId: number;
 
   @BelongsTo(() => Transaction)
-  declare transaction: TransactionType;
+  declare transaction: Transaction;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

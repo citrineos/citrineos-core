@@ -3,8 +3,16 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type AuthorizationData, type CustomDataType, IdTokenInfoType, IdTokenType, Namespace } from '@citrineos/base';
-import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
+import {
+  BelongsTo,
+  BelongsToMany,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
 import { type AuthorizationRestrictions } from '../../../../interfaces';
 import { Authorization, IdToken, IdTokenInfo, LocalListVersion, SendLocalList } from '.';
 import { SendLocalListAuthorization } from './SendLocalListAuthorization';
@@ -21,8 +29,11 @@ import { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
  *
  **/
 @Table
-export class LocalListAuthorization extends Model implements AuthorizationData, AuthorizationRestrictions {
-  static readonly MODEL_NAME: string = Namespace.LocalListAuthorization;
+export class LocalListAuthorization
+  extends Model
+  implements OCPP2_0_1.AuthorizationData, AuthorizationRestrictions
+{
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.LocalListAuthorization;
 
   @Column(DataType.ARRAY(DataType.STRING))
   declare allowedConnectorTypes?: string[];
@@ -35,14 +46,14 @@ export class LocalListAuthorization extends Model implements AuthorizationData, 
   declare idTokenId?: number;
 
   @BelongsTo(() => IdToken)
-  declare idToken: IdTokenType;
+  declare idToken: OCPP2_0_1.IdTokenType;
 
   @ForeignKey(() => IdTokenInfo)
   @Column(DataType.INTEGER)
   declare idTokenInfoId?: number | null;
 
   @BelongsTo(() => IdTokenInfo)
-  declare idTokenInfo?: IdTokenInfoType;
+  declare idTokenInfo?: OCPP2_0_1.IdTokenInfoType;
 
   @ForeignKey(() => Authorization)
   @Column(DataType.INTEGER)
@@ -57,5 +68,5 @@ export class LocalListAuthorization extends Model implements AuthorizationData, 
   @BelongsToMany(() => LocalListVersion, () => LocalListVersionAuthorization)
   declare localListVersions?: LocalListVersion[];
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
 }

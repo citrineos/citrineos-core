@@ -11,18 +11,15 @@ import { CallAction } from '../../ocpp/rpc/message';
  *
  * @param {CallAction} action - The call action.
  * @param {object} bodySchema - The body schema.
+ * @param {Record<string, any>} optionalQuerystrings - The optional querystrings.
  * @return {void} This function does not return anything.
  */
 export const AsMessageEndpoint = function (
   action: CallAction,
   bodySchema: object,
-  optionalQuerystrings?: Record<string, any>
+  optionalQuerystrings?: Record<string, any>,
 ) {
-  return (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor,
-  ): void => {
+  return (target: any, propertyKey: string, descriptor: PropertyDescriptor): void => {
     if (!Reflect.hasMetadata(METADATA_MESSAGE_ENDPOINTS, target.constructor)) {
       Reflect.defineMetadata(
         METADATA_MESSAGE_ENDPOINTS,
@@ -39,12 +36,8 @@ export const AsMessageEndpoint = function (
       method: descriptor.value,
       methodName: propertyKey,
       bodySchema: bodySchema,
-      optionalQuerystrings: optionalQuerystrings
+      optionalQuerystrings: optionalQuerystrings,
     });
-    Reflect.defineMetadata(
-      METADATA_MESSAGE_ENDPOINTS,
-      messageEndpoints,
-      target.constructor,
-    );
+    Reflect.defineMetadata(METADATA_MESSAGE_ENDPOINTS, messageEndpoints, target.constructor);
   };
 };

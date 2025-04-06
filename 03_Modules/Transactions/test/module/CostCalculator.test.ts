@@ -35,19 +35,12 @@ describe('CostCalculator', () => {
       { tariff: aTariff({ pricePerKwh: 0.25 }), kwh: 20, expectedCost: 5.0 },
       { tariff: aTariff({ pricePerKwh: 0.47 }), kwh: 20, expectedCost: 9.4 },
       { tariff: aTariff({ pricePerKwh: 0.61 }), kwh: 20, expectedCost: 12.2 },
-    ])(
-      'should calculate cost using provided kWh',
-      async ({ tariff, kwh, expectedCost }) => {
-        givenTariff(tariff);
-        expect(
-          await costCalculator.calculateTotalCost(
-            tariff.stationId,
-            faker.number.int(),
-            kwh,
-          ),
-        ).toBe(expectedCost);
-      },
-    );
+    ])('should calculate cost using provided kWh', async ({ tariff, kwh, expectedCost }) => {
+      givenTariff(tariff);
+      expect(
+        await costCalculator.calculateTotalCost(tariff.stationId, faker.number.int(), kwh),
+      ).toBe(expectedCost);
+    });
 
     it.each([
       { tariff: aTariff({ pricePerKwh: 0.09 }), kwh: 20, expectedCost: 1.8 },
@@ -63,15 +56,10 @@ describe('CostCalculator', () => {
         givenTariff(tariff);
         givenRecalculatedKwh(kwh);
 
-        expect(
-          await costCalculator.calculateTotalCost(
-            tariff.stationId,
-            transactionDbId,
-          ),
-        ).toBe(expectedCost);
-        expect(transactionService.recalculateTotalKwh).toHaveBeenCalledWith(
-          transactionDbId,
+        expect(await costCalculator.calculateTotalCost(tariff.stationId, transactionDbId)).toBe(
+          expectedCost,
         );
+        expect(transactionService.recalculateTotalKwh).toHaveBeenCalledWith(transactionDbId);
       },
     );
 
@@ -106,70 +94,44 @@ describe('CostCalculator', () => {
         kwh: 20.99,
         expectedCost: 12.8,
       },
-    ])(
-      'should floor cost to 2 decimal places',
-      async ({ tariff, kwh, expectedCost }) => {
-        givenTariff(tariff);
-        expect(
-          await costCalculator.calculateTotalCost(
-            tariff.stationId,
-            faker.number.int(),
-            kwh,
-          ),
-        ).toBe(expectedCost);
-      },
-    );
+    ])('should floor cost to 2 decimal places', async ({ tariff, kwh, expectedCost }) => {
+      givenTariff(tariff);
+      expect(
+        await costCalculator.calculateTotalCost(tariff.stationId, faker.number.int(), kwh),
+      ).toBe(expectedCost);
+    });
 
     it('should return 0 when tariff not found', async () => {
       const anyStationId = faker.string.uuid();
-      expect(
-        await costCalculator.calculateTotalCost(
-          anyStationId,
-          faker.number.int(),
-          20.99,
-        ),
-      ).toBe(0);
+      expect(await costCalculator.calculateTotalCost(anyStationId, faker.number.int(), 20.99)).toBe(
+        0,
+      );
     });
 
     it('should return 0 when pricePerKwh is 0', async () => {
       const tariff = givenTariff(aTariff({ pricePerKwh: 0.0 }));
       expect(
-        await costCalculator.calculateTotalCost(
-          tariff.stationId,
-          faker.number.int(),
-          20.99,
-        ),
+        await costCalculator.calculateTotalCost(tariff.stationId, faker.number.int(), 20.99),
       ).toBe(0);
     });
 
     it('should return 0 when kWh is 0', async () => {
       const tariff = givenTariff(aTariff({ pricePerKwh: 0.61 }));
-      expect(
-        await costCalculator.calculateTotalCost(
-          tariff.stationId,
-          faker.number.int(),
-          0,
-        ),
-      ).toBe(0);
+      expect(await costCalculator.calculateTotalCost(tariff.stationId, faker.number.int(), 0)).toBe(
+        0,
+      );
     });
 
     it.each([
       { tariff: aTariff({ pricePerKwh: 0.01 }), kwh: 0.99 },
       { tariff: aTariff({ pricePerKwh: 0.2 }), kwh: 0.049 },
       { tariff: aTariff({ pricePerKwh: 0.23 }), kwh: 0.02 },
-    ])(
-      'should return 0 when calculated cost is less than 0.01',
-      async ({ tariff, kwh }) => {
-        givenTariff(tariff);
-        expect(
-          await costCalculator.calculateTotalCost(
-            tariff.stationId,
-            faker.number.int(),
-            kwh,
-          ),
-        ).toBe(0);
-      },
-    );
+    ])('should return 0 when calculated cost is less than 0.01', async ({ tariff, kwh }) => {
+      givenTariff(tariff);
+      expect(
+        await costCalculator.calculateTotalCost(tariff.stationId, faker.number.int(), kwh),
+      ).toBe(0);
+    });
   });
 
   function givenTariff(tariff: Tariff) {

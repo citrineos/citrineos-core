@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
+import { defineConfig, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
 import path from 'path';
 
 export function createLocalConfig() {
@@ -19,10 +19,15 @@ export function createLocalConfig() {
       configuration: {
         heartbeatInterval: 60,
         bootRetryInterval: 15,
-        unknownChargerStatus: RegistrationStatusEnumType.Accepted,
-        getBaseReportOnPending: true,
-        bootWithRejectedVariables: true,
-        autoAccept: true,
+        ocpp2_0_1: {
+          unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+          getBaseReportOnPending: true,
+          bootWithRejectedVariables: true,
+          autoAccept: true,
+        },
+        ocpp1_6: {
+          unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Accepted,
+        },
         endpointPrefix: '/configuration',
       },
       evdriver: {
@@ -68,20 +73,16 @@ export function createLocalConfig() {
           exchange: 'citrineos',
         },
       },
+      fileAccess: {
+        local: {
+          defaultFilePath: '/data',
+        },
+      },
       swagger: {
         path: '/docs',
-        logoPath: path.resolve(
-          path.dirname(__filename),
-          '../../assets/logo.png',
-        ),
+        logoPath: path.resolve(path.dirname(__filename), '../../assets/logo.png'),
         exposeData: true,
         exposeMessage: true,
-      },
-      directus: {
-        host: '0.0.0.0',
-        port: 8055,
-        generateFlows: false,
-        token: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0',
       },
       networkConnection: {
         websocketServers: [
@@ -102,6 +103,15 @@ export function createLocalConfig() {
             host: '0.0.0.0',
             port: 8082,
             protocol: 'ocpp2.0.1',
+          },
+          {
+            id: '2',
+            securityProfile: 0,
+            allowUnknownChargingStations: true,
+            pingInterval: 60,
+            host: '0.0.0.0',
+            port: 8092,
+            protocol: 'ocpp1.6',
           },
         ],
       },
@@ -135,5 +145,9 @@ export function createLocalConfig() {
       host: '0.0.0.0',
       port: 8085,
     },
+    userPreferences: {
+      // None by default
+    },
+    configFileName: 'config.json',
   });
 }

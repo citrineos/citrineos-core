@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
+import { defineConfig, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
 import path from 'path';
 
 export function createDockerConfig() {
@@ -19,10 +19,15 @@ export function createDockerConfig() {
       configuration: {
         heartbeatInterval: 60,
         bootRetryInterval: 15,
-        unknownChargerStatus: RegistrationStatusEnumType.Accepted,
-        getBaseReportOnPending: true,
-        bootWithRejectedVariables: true,
-        autoAccept: true,
+        ocpp2_0_1: {
+          unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+          getBaseReportOnPending: true,
+          bootWithRejectedVariables: true,
+          autoAccept: true,
+        },
+        ocpp1_6: {
+          unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Accepted,
+        },
         endpointPrefix: '/configuration',
       },
       evdriver: {
@@ -68,19 +73,18 @@ export function createDockerConfig() {
           exchange: 'citrineos',
         },
       },
+      fileAccess: {
+        s3: {
+          endpoint: 'http://minio:9000',
+          defaultBucketName: 'citrineos-s3-bucket',
+          s3ForcePathStyle: true,
+        },
+      },
       swagger: {
         path: '/docs',
-        logoPath: path.resolve(
-          path.dirname(__filename),
-          '../../assets/logo.png',
-        ),
+        logoPath: path.resolve(path.dirname(__filename), '../../assets/logo.png'),
         exposeData: true,
         exposeMessage: true,
-      },
-      directus: {
-        host: 'directus',
-        port: 8055,
-        generateFlows: false,
       },
       networkConnection: {
         websocketServers: [
@@ -148,6 +152,15 @@ export function createDockerConfig() {
               '../../assets/certificates/rootCertificate.pem',
             ),
           },
+          {
+            id: '4',
+            securityProfile: 0,
+            allowUnknownChargingStations: true,
+            pingInterval: 60,
+            host: '0.0.0.0',
+            port: 8092,
+            protocol: 'ocpp1.6',
+          },
         ],
       },
       certificateAuthority: {
@@ -180,5 +193,9 @@ export function createDockerConfig() {
       host: '0.0.0.0',
       port: 8085,
     },
+    userPreferences: {
+      // None by default
+    },
+    configFileName: 'config.json',
   });
 }
