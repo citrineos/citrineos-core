@@ -6,7 +6,16 @@
 import { z } from 'zod';
 import { type SystemConfig, SystemConfigInput, systemConfigSchema } from './types';
 
-const CITRINE_ENV_VAR_PREFIX = 'citrineos_';
+const args = process.argv.slice(2);
+let dynamicPrefix = 'citrineos_';
+for (const arg of args) {
+  if (arg.startsWith('--env-prefix=')) {
+    dynamicPrefix += arg.split('=')[1].toLowerCase();
+    break;
+  }
+}
+
+const CITRINE_ENV_VAR_PREFIX = dynamicPrefix;
 
 /**
  * Finds a case-insensitive match for a key in an object.
@@ -69,6 +78,7 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
   configKeyMap: Record<string, any>,
 ): T {
   const config: T = { ...defaultConfig };
+  const errors: string[] = [];
 
   for (const [fullEnvKey, value] of Object.entries(envVars)) {
     if (!value) {
@@ -81,6 +91,7 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
 
       let currentConfigPart: Record<string, any> = config;
       let currentConfigKeyMap: Record<string, any> = configKeyMap;
+      let validMapping = true;
 
       for (let i = 0; i < path.length - 1; i++) {
         const part = path[i];
@@ -89,10 +100,16 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
           currentConfigPart = currentConfigPart[matchingKey];
           currentConfigKeyMap = currentConfigKeyMap[matchingKey];
         } else {
-          currentConfigPart[part] = {};
-          currentConfigPart = currentConfigPart[part];
-          currentConfigKeyMap = currentConfigKeyMap[part];
+          errors.push(
+            `Environment variable '${fullEnvKey}' refers to unknown configuration segment '${part}'.`,
+          );
+          validMapping = false;
+          break;
         }
+      }
+
+      if (!validMapping) {
+        continue;
       }
 
       const finalPart = path[path.length - 1];
@@ -101,10 +118,15 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
       try {
         currentConfigPart[keyToUse] = JSON.parse(value as string);
       } catch {
-        console.debug(`Mapping '${value}' as string for environment variable '${fullEnvKey}'`);
+        console.debug(`Mapping '${value}' as string for environment variable '${fullEnvKey}'.`);
         currentConfigPart[keyToUse] = value;
       }
     }
+  }
+
+  if (errors.length > 0) {
+    errors.forEach((err) => console.error(err));
+    throw new Error(`Configuration errors: ${errors.join('; ')}`);
   }
 
   return config as T;
