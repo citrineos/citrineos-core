@@ -6,7 +6,8 @@
 import { z } from 'zod';
 import { type SystemConfig, SystemConfigInput, systemConfigSchema } from './types';
 
-const args = process.argv.slice(2);
+const args = typeof process !== 'undefined' && process.argv ? process.argv.slice(2) : [];
+
 let dynamicPrefix = 'citrineos_';
 for (const arg of args) {
   if (arg.startsWith('--env-prefix=')) {
