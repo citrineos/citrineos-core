@@ -57,7 +57,7 @@ services:
       WEBSOCKETS_ENABLED: 'true'
   citrine:
     build:
-      context: ..
+      context: ../
       dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
@@ -77,7 +77,7 @@ services:
       APP_NAME: 'general'
   certificates:
     build:
-      context: ..
+      context: ../
       dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
@@ -95,8 +95,8 @@ services:
       APP_NAME: 'certificates'
   configuration:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -116,8 +116,8 @@ services:
       APP_NAME: 'configuration'
   evdriver:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -137,8 +137,8 @@ services:
       APP_NAME: 'evdriver'
   monitoring:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -158,8 +158,8 @@ services:
       APP_NAME: 'monitoring'
   reporting:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -179,8 +179,8 @@ services:
       APP_NAME: 'reporting'
   smartcharging:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -200,8 +200,8 @@ services:
       APP_NAME: 'smartcharging'
   tenant:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -221,8 +221,8 @@ services:
       APP_NAME: 'tenant'
   transactions:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
