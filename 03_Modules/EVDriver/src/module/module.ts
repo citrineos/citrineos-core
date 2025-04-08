@@ -739,7 +739,7 @@ export class EVDriverModule extends AbstractModule {
       }
       // If we find more than one token for an idTag it's too opinionated on how to define which one is valid.
       // For now, we error out, and implementers should change this according to their needs.
-      if (authorizations.length >= 1) {
+      if (authorizations.length > 1) {
         this._logger.error(`Too many authorizations found for idToken: ${request.idTag}`);
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Invalid;
         await this.sendCallResultWithMessage(message, response);
