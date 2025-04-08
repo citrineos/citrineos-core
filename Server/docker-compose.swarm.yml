@@ -16,7 +16,7 @@ services:
       timeout: 10s
       retries: 3
   ocpp-db:
-    image: citrineos/postgres:preseeded
+    image: postgis/postgis:16-3.5
     ports:
       - 5432:5432
     volumes:
@@ -57,7 +57,7 @@ services:
       WEBSOCKETS_ENABLED: 'true'
   citrine:
     build:
-      context: ..
+      context: ../
       dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
@@ -73,11 +73,11 @@ services:
     expose:
       - 8080-8082
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
+      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'general'
   certificates:
     build:
-      context: ..
+      context: ../
       dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
@@ -91,12 +91,12 @@ services:
     expose:
       - 8083
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
+      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'certificates'
   configuration:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -112,12 +112,12 @@ services:
       - ./:/usr/configuration
       - /usr/configuration/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
+      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'configuration'
   evdriver:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -133,12 +133,12 @@ services:
       - ./:/usr/evdriver
       - /usr/evdriver/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
+      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'evdriver'
   monitoring:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -154,12 +154,12 @@ services:
       - ./:/usr/monitoring
       - /usr/monitoring/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
+      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'monitoring'
   reporting:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -175,12 +175,12 @@ services:
       - ./:/usr/reporting
       - /usr/reporting/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
+      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'reporting'
   smartcharging:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -196,12 +196,12 @@ services:
       - ./:/usr/smartcharging
       - /usr/smartcharging/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
+      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'smartcharging'
   tenant:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -217,12 +217,12 @@ services:
       - ./:/usr/tenant
       - /usr/tenant/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
+      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'tenant'
   transactions:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -238,5 +238,5 @@ services:
       - ./:/usr/transactions
       - /usr/transactions/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
+      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'transactions'

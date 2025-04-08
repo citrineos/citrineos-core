@@ -104,7 +104,7 @@ services:
       - 8092:8092
 
   minio:
-    image: quay.io/minio/minio
+    image: minio/minio
     container_name: minio
     ports:
       - '9000:9000'
