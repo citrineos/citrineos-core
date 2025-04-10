@@ -190,13 +190,17 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     }
 
     if (schema) {
-      schema['$id'] = `${protocol}-${schema['$id']}`;
-      this._logger.debug(`Updated call schema id: ${schema['$id']}`);
-      const validate = this._ajv.compile(schema);
+      let validate = this._ajv.getSchema(schema['$id']);
+      if (!validate) {
+        schema['$id'] = `${protocol}-${schema['$id']}`;
+        this._logger.debug(`Updated call result schema id: ${schema['$id']}`);
+        validate = this._ajv.compile(schema);
+      }
       const result = validate(payload);
       if (!result) {
-        this._logger.debug('Validate Call failed', validate.errors);
-        return { isValid: false, errors: validate.errors };
+        const validationErrorsDeepCopy = JSON.parse(JSON.stringify(validate.errors));
+        this._logger.debug('Validate CallResult failed', validationErrorsDeepCopy);
+        return { isValid: false, errors: validationErrorsDeepCopy };
       } else {
         return { isValid: true };
       }
