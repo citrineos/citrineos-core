@@ -584,8 +584,9 @@ export class TransactionsModule extends AbstractModule {
     const request = message.payload;
 
     const authorization: Authorization | undefined = request.idTag
-      ? await this._authorizeRepository.readOnlyOneByQuery({
+      ? await this._authorizeRepository.readOnlyOneByQuerystring({
           idToken: request.idTag,
+          type: null, //explicitly ignore type
         })
       : undefined;
 
