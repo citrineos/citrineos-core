@@ -11,7 +11,7 @@ const args = typeof process !== 'undefined' && process.argv ? process.argv.slice
 let dynamicPrefix = 'citrineos_';
 for (const arg of args) {
   if (arg.startsWith('--env-prefix=')) {
-    dynamicPrefix += arg.split('=')[1].toLowerCase();
+    dynamicPrefix = arg.split('=')[1].toLowerCase();
     break;
   }
 }
@@ -97,16 +97,29 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
       for (let i = 0; i < path.length - 1; i++) {
         const part = path[i];
         const matchingKey = findCaseInsensitiveMatch(currentConfigKeyMap, part);
-        if (matchingKey && typeof currentConfigPart[matchingKey] === 'object') {
-          currentConfigPart = currentConfigPart[matchingKey];
-          currentConfigKeyMap = currentConfigKeyMap[matchingKey];
-        } else {
+        if (!matchingKey) {
           errors.push(
             `Environment variable '${fullEnvKey}' refers to unknown configuration segment '${part}'.`,
           );
           validMapping = false;
           break;
         }
+
+        if (currentConfigPart[matchingKey] === undefined) {
+          currentConfigPart[matchingKey] = {};
+        } else if (
+          typeof currentConfigPart[matchingKey] !== 'object' ||
+          currentConfigPart[matchingKey] === null
+        ) {
+          errors.push(
+            `Environment variable '${fullEnvKey}' refers to configuration segment '${part}', but its current value is not an object.`,
+          );
+          validMapping = false;
+          break;
+        }
+
+        currentConfigPart = currentConfigPart[matchingKey];
+        currentConfigKeyMap = currentConfigKeyMap[matchingKey];
       }
 
       if (!validMapping) {
