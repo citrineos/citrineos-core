@@ -640,7 +640,7 @@ export class TransactionsModule extends AbstractModule {
       new Date(request.timestamp),
       request.transactionData?.map((data) => MeterValue.build({ ...data })) || [],
       request.reason || (request.idTag ? 'Remote' : 'Local'),
-      authorization?.id,
+      authorization?.idTokenId,
     );
 
     if (!stopTransaction) {
