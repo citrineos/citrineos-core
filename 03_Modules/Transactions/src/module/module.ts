@@ -584,8 +584,9 @@ export class TransactionsModule extends AbstractModule {
     const request = message.payload;
 
     const authorization: Authorization | undefined = request.idTag
-      ? await this._authorizeRepository.readOnlyOneByQuery({
+      ? await this._authorizeRepository.readOnlyOneByQuerystring({
           idToken: request.idTag,
+          type: null, //explicitly ignore type
         })
       : undefined;
 
@@ -639,7 +640,7 @@ export class TransactionsModule extends AbstractModule {
       new Date(request.timestamp),
       request.transactionData?.map((data) => MeterValue.build({ ...data })) || [],
       request.reason || (request.idTag ? 'Remote' : 'Local'),
-      authorization?.id,
+      authorization?.idTokenId,
     );
 
     if (!stopTransaction) {
