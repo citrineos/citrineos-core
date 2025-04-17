@@ -512,6 +512,17 @@ export class SequelizeTransactionEventRepository
         this.meterValue.emit('created', [meterValue]);
       }),
     );
+
+    // Update transaction total kWh
+    const allMeterValues = await this.meterValue.readAllByQuery({
+      where: {
+        transactionDatabaseId: transaction.id,
+      },
+    });
+    const meterValueTypes = allMeterValues.map((meterValue) =>
+      MeterValueMapper.toMeterValueType(meterValue),
+    );
+    await transaction.update({ totalKwh: MeterValueUtils.getTotalKwh(meterValueTypes) });
   }
 
   async createTransactionByStartTransaction(
