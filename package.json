@@ -16,7 +16,7 @@
     "clean": "npm run clean-dist && npm run clean-tsbuildinfo",
     "start": "cd ./Server && npm run start",
     "start-docker": "cd ./Server && npm run start-docker",
-    "start-docker-cloud": "cd ./Server && npm run start-docker-cloud --env-prefix=TOPAZEV_",
+    "start-docker-cloud": "cd ./Server && npm run start-docker-cloud",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix",
     "prettier": "prettier --write .",
