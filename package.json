@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "private": false,
   "scripts": {
     "install-all": "npm i --verbose",
@@ -16,7 +16,7 @@
     "clean": "npm run clean-dist && npm run clean-tsbuildinfo",
     "start": "cd ./Server && npm run start",
     "start-docker": "cd ./Server && npm run start-docker",
-    "start-docker-cloud": "cd ./Server && npm run start-docker-cloud",
+    "start-docker-cloud": "cd ./Server && npm run start-docker-cloud --env-prefix=TOPAZEV_",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix",
     "prettier": "prettier --write .",
