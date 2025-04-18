@@ -1,4 +1,5 @@
-FROM node:22 AS build
+# Use a specific base image with platform support
+FROM --platform=${BUILDPLATFORM:-linux/amd64} node:22 AS build
 
 WORKDIR /usr/local/apps/citrineos
 
