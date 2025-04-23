@@ -30,6 +30,10 @@ export class StartTransaction extends Model {
   declare reservationId?: number | null;
 
   @ForeignKey(() => Transaction)
+  @Column({
+    type: DataType.STRING,
+    unique: true,
+  })
   declare transactionDatabaseId: string;
 
   @BelongsTo(() => Transaction)

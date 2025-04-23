@@ -24,6 +24,10 @@ export class StopTransaction extends Model {
   declare stationId: string;
 
   @ForeignKey(() => Transaction)
+  @Column({
+    type: DataType.STRING,
+    unique: true,
+  })
   declare transactionDatabaseId: string;
 
   @BelongsTo(() => Transaction)
