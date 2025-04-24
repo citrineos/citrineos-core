@@ -47,10 +47,10 @@ import {
   InstalledCertificate,
   ChangeConfiguration,
   OCPPMessage,
+  StopTransaction,
 } from '../layers/sequelize';
 import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
-import { StopTransaction } from '../layers/sequelize/model/TransactionEvent';
 
 export interface IAuthorizationRepository extends CrudRepository<Authorization> {
   createOrUpdateByQuerystring: (
@@ -257,6 +257,11 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     reason?: string,
     idTokenDatabaseId?: number,
   ): Promise<StopTransaction>;
+  updateTransactionByStationIdAndTransactionId(
+    transaction: Partial<Transaction>,
+    transactionId: string,
+    stationId: string,
+  ): Promise<Transaction | undefined>;
 }
 
 export interface IVariableMonitoringRepository

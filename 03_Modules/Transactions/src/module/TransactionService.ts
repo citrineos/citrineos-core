@@ -6,8 +6,15 @@ import {
   OCPP1_6_Mapper,
   OCPP2_0_1_Mapper,
   IReservationRepository,
+  IOCPPMessageRepository,
 } from '@citrineos/data';
-import { IMessageContext, MeterValueUtils, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
+import {
+  IMessageContext,
+  MessageOrigin,
+  MeterValueUtils,
+  OCPP1_6,
+  OCPP2_0_1,
+} from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { IAuthorizer } from '@citrineos/util';
 
@@ -15,6 +22,7 @@ export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
   private _authorizeRepository: IAuthorizationRepository;
   private _reservationRepository: IReservationRepository;
+  private _ocppMessageRepository: IOCPPMessageRepository;
   private _logger: Logger<ILogObj>;
   private _authorizers: IAuthorizer[];
 
@@ -22,12 +30,14 @@ export class TransactionService {
     transactionEventRepository: ITransactionEventRepository,
     authorizeRepository: IAuthorizationRepository,
     reservationRepository: IReservationRepository,
+    ocppMessageRepository: IOCPPMessageRepository,
     authorizers?: IAuthorizer[],
     logger?: Logger<ILogObj>,
   ) {
     this._transactionEventRepository = transactionEventRepository;
     this._authorizeRepository = authorizeRepository;
     this._reservationRepository = reservationRepository;
+    this._ocppMessageRepository = ocppMessageRepository;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -217,6 +227,43 @@ export class TransactionService {
         },
       },
     );
+  }
+
+  async updateTransactionStatus(
+    stationId: string,
+    correlationId: string,
+    ongoingIndicator: boolean,
+  ) {
+    const request = await this._ocppMessageRepository.readOnlyOneByQuery({
+      where: {
+        stationId,
+        correlationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
+    if (!request) {
+      this._logger.error(
+        `No valid GetTransactionStatusRequest found for correlationId ${correlationId}`,
+      );
+      return;
+    }
+
+    const transactionId = request.message[3].transactionId;
+    if (!transactionId) {
+      this._logger.error(`No valid transactionId found from the message ${request.message[3]}`);
+      return;
+    }
+
+    const updatedTransaction =
+      await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+        { isActive: ongoingIndicator },
+        transactionId,
+        stationId,
+      );
+    if (!updatedTransaction) {
+      this._logger.error(`Update transaction ${transactionId} failed.`);
+    }
+    this._logger.info(`Updated transaction ${transactionId} isActive to ${ongoingIndicator}`);
   }
 
   private async _applyAuthorizers(

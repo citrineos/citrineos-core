@@ -30,11 +30,13 @@ import {
   IAuthorizationRepository,
   IDeviceModelRepository,
   ILocationRepository,
+  IOCPPMessageRepository,
   IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
   MeterValue,
   sequelize,
+  SequelizeOCPPMessageRepository,
   SequelizeRepository,
   StartTransaction,
   Transaction,
@@ -77,6 +79,7 @@ export class TransactionsModule extends AbstractModule {
   protected _locationRepository: ILocationRepository;
   protected _tariffRepository: ITariffRepository;
   protected _reservationRepository: IReservationRepository;
+  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   protected _transactionService: TransactionService;
   protected _statusNotificationService: StatusNotificationService;
@@ -147,6 +150,10 @@ export class TransactionsModule extends AbstractModule {
    * which represents a repository for accessing and manipulating reservation data.
    * If no `reservationRepository` is provided, a default {@link sequelize:reservationRepository} instance is created and used.
    *
+   * @param {IOCPPMessageRepository} [ocppMessageRepository] - An optional parameter of type {@link IOCPPMessageRepository}
+   * which represents a repository for accessing and manipulating OCPP Message data.
+   * If no `ocppMessageRepository` is provided, a default {@link sequelize:ocppMessageRepository} instance is created and used.
+   *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
    */
@@ -164,6 +171,7 @@ export class TransactionsModule extends AbstractModule {
     locationRepository?: ILocationRepository,
     tariffRepository?: ITariffRepository,
     reservationRepository?: IReservationRepository,
+    ocppMessageRepository?: IOCPPMessageRepository,
     authorizers?: IAuthorizer[],
   ) {
     super(
@@ -193,6 +201,8 @@ export class TransactionsModule extends AbstractModule {
       tariffRepository || new sequelize.SequelizeTariffRepository(config, logger);
     this._reservationRepository =
       reservationRepository || new sequelize.SequelizeReservationRepository(config, logger);
+    this._ocppMessageRepository =
+      ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
 
     this._authorizers = authorizers || [];
 
@@ -205,6 +215,7 @@ export class TransactionsModule extends AbstractModule {
       this._transactionEventRepository,
       this._authorizeRepository,
       this._reservationRepository,
+      this._ocppMessageRepository,
       this._authorizers,
       this._logger,
     );
@@ -244,6 +255,10 @@ export class TransactionsModule extends AbstractModule {
 
   get tariffRepository(): ITariffRepository {
     return this._tariffRepository;
+  }
+
+  get ocppMessageRepository(): IOCPPMessageRepository {
+    return this._ocppMessageRepository;
   }
 
   /**
@@ -461,11 +476,20 @@ export class TransactionsModule extends AbstractModule {
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetTransactionStatus)
-  protected _handleGetTransactionStatus(
+  protected async _handleGetTransactionStatus(
     message: IMessage<OCPP2_0_1.GetTransactionStatusResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('GetTransactionStatus response received:', message, props);
+
+    const response = message.payload;
+    if (response.ongoingIndicator !== null && response.ongoingIndicator !== undefined) {
+      await this._transactionService.updateTransactionStatus(
+        message.context.stationId,
+        message.context.correlationId,
+        response.ongoingIndicator,
+      );
+    }
   }
 
   /**
