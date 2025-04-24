@@ -624,4 +624,19 @@ export class SequelizeTransactionEventRepository
 
     return stopTransaction;
   }
+
+  async updateTransactionByStationIdAndTransactionId(
+    transaction: Partial<Transaction>,
+    transactionId: string,
+    stationId: string,
+  ): Promise<Transaction | undefined> {
+    const transactions = await this.transaction.updateAllByQuery(transaction, {
+      where: {
+        // unique constraint
+        transactionId,
+        stationId,
+      },
+    });
+    return transactions.length > 0 ? transactions[0] : undefined;
+  }
 }
