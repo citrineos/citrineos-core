@@ -1,3 +1,13 @@
 table:
   name: StartTransactions
   schema: public
+object_relationships:
+  - name: Connector
+    using:
+      foreign_key_constraint_on: connectorDatabaseId
+  - name: IdToken
+    using:
+      foreign_key_constraint_on: idTokenDatabaseId
+  - name: Transaction
+    using:
+      foreign_key_constraint_on: transactionDatabaseId

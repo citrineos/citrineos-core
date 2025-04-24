@@ -1,3 +1,21 @@
 table:
   name: TransactionEvents
   schema: public
+object_relationships:
+  - name: Evse
+    using:
+      foreign_key_constraint_on: evseId
+  - name: IdToken
+    using:
+      foreign_key_constraint_on: idTokenId
+  - name: Transaction
+    using:
+      foreign_key_constraint_on: transactionDatabaseId
+array_relationships:
+  - name: MeterValues
+    using:
+      foreign_key_constraint_on:
+        column: transactionEventId
+        table:
+          name: MeterValues
+          schema: public

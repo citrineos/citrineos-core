@@ -1,3 +1,13 @@
 table:
   name: ChargingStationNetworkProfiles
   schema: public
+object_relationships:
+  - name: ChargingStation
+    using:
+      foreign_key_constraint_on: stationId
+  - name: ServerNetworkProfile
+    using:
+      foreign_key_constraint_on: websocketServerConfigId
+  - name: SetNetworkProfile
+    using:
+      foreign_key_constraint_on: setNetworkProfileId

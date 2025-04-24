@@ -1,3 +1,18 @@
 table:
   name: StopTransactions
   schema: public
+object_relationships:
+  - name: IdToken
+    using:
+      foreign_key_constraint_on: idTokenDatabaseId
+  - name: Transaction
+    using:
+      foreign_key_constraint_on: transactionDatabaseId
+array_relationships:
+  - name: MeterValues
+    using:
+      foreign_key_constraint_on:
+        column: stopTransactionDatabaseId
+        table:
+          name: MeterValues
+          schema: public

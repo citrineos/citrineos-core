@@ -1,3 +1,10 @@
 table:
   name: Authorizations
   schema: public
+object_relationships:
+  - name: IdToken
+    using:
+      foreign_key_constraint_on: idTokenId
+  - name: IdTokenInfo
+    using:
+      foreign_key_constraint_on: idTokenInfoId

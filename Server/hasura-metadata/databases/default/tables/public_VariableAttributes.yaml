@@ -1,3 +1,27 @@
 table:
   name: VariableAttributes
   schema: public
+object_relationships:
+  - name: Boot
+    using:
+      foreign_key_constraint_on: bootConfigId
+  - name: ChargingStation
+    using:
+      foreign_key_constraint_on: stationId
+  - name: Component
+    using:
+      foreign_key_constraint_on: componentId
+  - name: Evse
+    using:
+      foreign_key_constraint_on: evseDatabaseId
+  - name: Variable
+    using:
+      foreign_key_constraint_on: variableId
+array_relationships:
+  - name: VariableStatuses
+    using:
+      foreign_key_constraint_on:
+        column: variableAttributeId
+        table:
+          name: VariableStatuses
+          schema: public
