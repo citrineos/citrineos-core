@@ -31,7 +31,7 @@ export class StartTransaction extends Model {
 
   @ForeignKey(() => Transaction)
   @Column({
-    type: DataType.STRING,
+    type: DataType.INTEGER,
     unique: true,
   })
   declare transactionDatabaseId: string;
