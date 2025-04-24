@@ -1,7 +1,0 @@
-table:
-  name: VersionEndpoints
-  schema: public
-object_relationships:
-  - name: Version
-    using:
-      foreign_key_constraint_on: versionId

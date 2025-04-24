@@ -1,0 +1,3 @@
+table:
+  name: Transactions
+  schema: public

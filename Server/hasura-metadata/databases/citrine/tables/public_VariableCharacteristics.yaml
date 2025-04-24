@@ -1,7 +1,0 @@
-table:
-  name: VariableCharacteristics
-  schema: public
-object_relationships:
-  - name: Variable
-    using:
-      foreign_key_constraint_on: variableId

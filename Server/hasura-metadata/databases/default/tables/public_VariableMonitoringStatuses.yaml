@@ -1,0 +1,3 @@
+table:
+  name: VariableMonitoringStatuses
+  schema: public

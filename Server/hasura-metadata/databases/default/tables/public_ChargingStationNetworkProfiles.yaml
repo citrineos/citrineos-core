@@ -1,0 +1,3 @@
+table:
+  name: ChargingStationNetworkProfiles
+  schema: public

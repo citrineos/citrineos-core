@@ -1,0 +1,3 @@
+table:
+  name: StopTransactions
+  schema: public

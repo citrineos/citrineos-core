@@ -1,7 +1,0 @@
-table:
-  name: VariableStatuses
-  schema: public
-object_relationships:
-  - name: VariableAttribute
-    using:
-      foreign_key_constraint_on: variableAttributeId

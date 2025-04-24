@@ -1,0 +1,3 @@
+table:
+  name: MeterValues
+  schema: public
