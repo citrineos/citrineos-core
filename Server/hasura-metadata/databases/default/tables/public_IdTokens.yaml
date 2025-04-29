@@ -24,6 +24,20 @@ array_relationships:
         table:
           name: IdTokenInfos
           schema: public
+  - name: StartTransactions
+    using:
+      foreign_key_constraint_on:
+        column: idTokenDatabaseId
+        table:
+          name: StartTransactions
+          schema: public
+  - name: StopTransactions
+    using:
+      foreign_key_constraint_on:
+        column: idTokenDatabaseId
+        table:
+          name: StopTransactions
+          schema: public
   - name: TransactionEvents
     using:
       foreign_key_constraint_on:

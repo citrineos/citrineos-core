@@ -138,10 +138,7 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
     }
   }
 
-  if (errors.length > 0) {
-    errors.forEach((err) => console.error(err));
-    throw new Error(`Configuration errors: ${errors.join('; ')}`);
-  }
+  errors.forEach((err) => console.error(err));
 
   return config as T;
 }

@@ -8,10 +8,3 @@ object_relationships:
   - name: IdTokenInfo
     using:
       foreign_key_constraint_on: idTokenInfoId
-  - name: OcpiToken
-    using:
-      foreign_key_constraint_on:
-        column: authorization_id
-        table:
-          name: OcpiTokens
-          schema: public

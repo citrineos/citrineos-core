@@ -2,6 +2,9 @@ table:
   name: MeterValues
   schema: public
 object_relationships:
+  - name: StopTransaction
+    using:
+      foreign_key_constraint_on: stopTransactionDatabaseId
   - name: Transaction
     using:
       foreign_key_constraint_on: transactionDatabaseId

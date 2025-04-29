@@ -1,5 +1,6 @@
 import {
   IAuthorizationRepository,
+  IOCPPMessageRepository,
   IReservationRepository,
   ITransactionEventRepository,
 } from '@citrineos/data';
@@ -18,6 +19,7 @@ describe('TransactionService', () => {
   let authorizationRepository: jest.Mocked<IAuthorizationRepository>;
   let transactionEventRepository: jest.Mocked<ITransactionEventRepository>;
   let reservationRepository: jest.Mocked<IReservationRepository>;
+  let ocppMessageRepository: jest.Mocked<IOCPPMessageRepository>;
   let authorizer: jest.Mocked<IAuthorizer>;
 
   beforeEach(() => {
@@ -32,6 +34,8 @@ describe('TransactionService', () => {
 
     reservationRepository = {} as unknown as jest.Mocked<IReservationRepository>;
 
+    ocppMessageRepository = {} as unknown as jest.Mocked<IOCPPMessageRepository>;
+
     authorizer = {
       authorize: jest.fn(),
     } as jest.Mocked<IAuthorizer>;
@@ -40,6 +44,7 @@ describe('TransactionService', () => {
       transactionEventRepository,
       authorizationRepository,
       reservationRepository,
+      ocppMessageRepository,
       [authorizer],
     );
   });
