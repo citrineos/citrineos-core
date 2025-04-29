@@ -29,6 +29,7 @@ here: <https://github.com/citrineos/citrineos>.
 - [Linting and Prettier](#linting-and-prettier)
 - [Information on Docker setup](#information-on-docker-setup)
 - [Generating OCPP Interfaces](#generating-ocpp-interfaces)
+- [Hasura Metadata](#hasura-metadata)
 - [Contributing](#contributing)
 - [Licensing](#licensing)
 - [Support and contact](#support-and-contact)
@@ -247,6 +248,47 @@ npm run generate-interfaces -- ../../Path/To/OCPP-2.0.1_part3_JSON_schemas
 ```
 
 This will replace all the files in `00_Base/src/ocpp/model/`,
+
+## Hasura Metadata
+
+In order for Hasura to track the existing Citrine tables and relationships, this repository comes with Hasura metadata already exported into the `hasura-metadata` folder.
+Running the Docker container will automatically import this metadata and track all tables and relationships.
+
+Unfortunately, Hasura doesn't currently support importing metadata from a JSON (which is the format if you export your metadata from the Hasura UI or API).
+Refer to this issue for more information: https://github.com/hasura/graphql-engine/issues/8423#issuecomment-1115996153.
+
+Therefore, you must use the Hasura CLI to re-export your metadata, should something change with it. As explained in the Hasura docs https://hasura.io/docs/2.0/migrations-metadata-seeds/auto-apply-migrations/#auto-apply-metadata,
+Hasura provides an image called `hasura/graphql-engine:<version>.cli-migrations-v3` that will process and import the metadata first before starting the server and
+runs the Hasura CLI internally. This is the image CitrineOS normally uses in order to automatically load accurate metadata. However, if you want to capture the current state of your database, you should use a normal version tag (such as `v2.40.3` instead of `v2.40.3.cli-migrations-v3`). Then proceed to the hasura console at `localhost:8090`, go to the data tab, use the sidebar to navigate to the database schema at default>public, and track all of the tables, relationships, and functions you need. Then proceed with the below instructions.
+
+You can follow these steps to re-export your metadata via the Hasura CLI in the `graphql-engine` container:
+
+- (if the hasura cli isn't installed):
+
+```
+curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
+```
+
+- (If not yet initialized) Initialize the Hasura project in the `graphql-engine` container (you can do this via the Docker Desktop `exec` view):
+
+```
+hasura-cli init
+OR
+hasura init
+
+enter any name you wish for the project (i.e. citrine)
+```
+
+- Export the metadata by executing this command in `graphql-engine` container:
+
+```
+hasura-cli metadata export
+OR
+hasura metadata export
+```
+
+- Find the exported files in the `graphql-engine` container's files in the metadata filepath `<name of project i.e. citrine>/metadata` and pull that metadata backup onto your local machine
+- Copy the contents of the copied `metadata` folder into the `hasura-metadata` folder in this repository
 
 ## Contributing
 

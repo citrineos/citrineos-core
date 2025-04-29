@@ -1,0 +1,18 @@
+table:
+  name: ServerNetworkProfiles
+  schema: public
+array_relationships:
+  - name: ChargingStationNetworkProfiles
+    using:
+      foreign_key_constraint_on:
+        column: websocketServerConfigId
+        table:
+          name: ChargingStationNetworkProfiles
+          schema: public
+  - name: SetNetworkProfiles
+    using:
+      foreign_key_constraint_on:
+        column: websocketServerConfigId
+        table:
+          name: SetNetworkProfiles
+          schema: public

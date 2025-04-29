@@ -1,0 +1,15 @@
+table:
+  name: Connectors
+  schema: public
+object_relationships:
+  - name: ChargingStation
+    using:
+      foreign_key_constraint_on: stationId
+array_relationships:
+  - name: StartTransactions
+    using:
+      foreign_key_constraint_on:
+        column: connectorDatabaseId
+        table:
+          name: StartTransactions
+          schema: public

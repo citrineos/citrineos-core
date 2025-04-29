@@ -1,11 +1,11 @@
 table:
-  name: directus_activity
+  name: Locations
   schema: public
 array_relationships:
-  - name: directus_revisions
+  - name: ChargingStations
     using:
       foreign_key_constraint_on:
-        column: activity
+        column: locationId
         table:
-          name: directus_revisions
+          name: ChargingStations
           schema: public

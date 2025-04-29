@@ -8,6 +8,20 @@ object_relationships:
   - name: Evse
     using:
       foreign_key_constraint_on: evseDatabaseId
+  - name: StartTransaction
+    using:
+      foreign_key_constraint_on:
+        column: transactionDatabaseId
+        table:
+          name: StartTransactions
+          schema: public
+  - name: StopTransaction
+    using:
+      foreign_key_constraint_on:
+        column: transactionDatabaseId
+        table:
+          name: StopTransactions
+          schema: public
 array_relationships:
   - name: ChargingNeeds
     using:

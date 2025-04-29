@@ -1,7 +1,0 @@
-table:
-  name: OcpiTokens
-  schema: public
-object_relationships:
-  - name: Authorization
-    using:
-      foreign_key_constraint_on: authorization_id
