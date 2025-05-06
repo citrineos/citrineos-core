@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { defineConfig, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
+import { defineConfig, RegistrationStatusEnumType } from '@citrineos/base';
 import path from 'path';
+import 'dotenv/config';
 
 export function createDockerConfig() {
   return defineConfig({
@@ -19,15 +20,10 @@ export function createDockerConfig() {
       configuration: {
         heartbeatInterval: 60,
         bootRetryInterval: 15,
-        ocpp2_0_1: {
-          unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Accepted,
-          getBaseReportOnPending: true,
-          bootWithRejectedVariables: true,
-          autoAccept: true,
-        },
-        ocpp1_6: {
-          unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Accepted,
-        },
+        unknownChargerStatus: RegistrationStatusEnumType.Accepted,
+        getBaseReportOnPending: true,
+        bootWithRejectedVariables: true,
+        autoAccept: true,
         endpointPrefix: '/configuration',
       },
       evdriver: {
@@ -53,11 +49,11 @@ export function createDockerConfig() {
     data: {
       sequelize: {
         host: 'ocpp-db',
-        port: 5432,
-        database: 'citrine',
+        port: process.env.POSTGRES_PORT ? parseInt(process.env.POSTGRES_PORT, 10) : undefined,
+        database: process.env.POSTGRES_DB,
         dialect: 'postgres',
-        username: 'citrine',
-        password: 'citrine',
+        username: process.env.POSTGRES_USER,
+        password: process.env.POSTGRES_PASSWORD,
         storage: '',
         sync: false,
         alter: true,
@@ -69,22 +65,23 @@ export function createDockerConfig() {
       },
       messageBroker: {
         amqp: {
-          url: 'amqp://guest:guest@amqp-broker:5672',
+          url: `amqp://${process.env.RABBITMQ_USER}:${process.env.RABBITMQ_PASSWORD}@${process.env.RABBITMQ_HOST}:${process.env.RABBITMQ_PORT}`,
           exchange: 'citrineos',
-        },
-      },
-      fileAccess: {
-        s3: {
-          endpoint: 'http://minio:9000',
-          defaultBucketName: 'citrineos-s3-bucket',
-          s3ForcePathStyle: true,
         },
       },
       swagger: {
         path: '/docs',
-        logoPath: path.resolve(path.dirname(__filename), '../../assets/logo.png'),
+        logoPath: path.resolve(
+          path.dirname(__filename),
+          '../../assets/logo.png',
+        ),
         exposeData: true,
         exposeMessage: true,
+      },
+      directus: {
+        host: 'directus',
+        port: 8055,
+        generateFlows: false,
       },
       networkConnection: {
         websocketServers: [
@@ -152,15 +149,6 @@ export function createDockerConfig() {
               '../../assets/certificates/rootCertificate.pem',
             ),
           },
-          {
-            id: '4',
-            securityProfile: 0,
-            allowUnknownChargingStations: true,
-            pingInterval: 60,
-            host: '0.0.0.0',
-            port: 8092,
-            protocol: 'ocpp1.6',
-          },
         ],
       },
       certificateAuthority: {
@@ -193,9 +181,5 @@ export function createDockerConfig() {
       host: '0.0.0.0',
       port: 8085,
     },
-    userPreferences: {
-      // None by default
-    },
-    configFileName: 'config.json',
   });
 }

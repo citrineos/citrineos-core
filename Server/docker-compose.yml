@@ -1,40 +1,73 @@
+version: '3.8'
+name: citrineos-core
 services:
-  amqp-broker:
+  citrineos-rabbitmq:
+    container_name: citrineos-rabbitmq
     image: rabbitmq:3-management
     ports:
       - 15672:15672
       - 5672:5672
     environment:
-      RABBITMQ_DEFAULT_USER: 'guest'
-      RABBITMQ_DEFAULT_PASS: 'guest'
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     volumes:
       - ./data/rabbitmq:/var/lib/rabbitmq
     healthcheck:
-      test: rabbitmq-diagnostics -q check_port_connectivity
+      test: rabbitmq-diagnostics -q ping
       interval: 10s
       timeout: 10s
       retries: 3
+    networks:
+      citrineos-net:
+        aliases:
+          - amqp-broker
 
-  ocpp-db:
-    image: postgis/postgis:16-3.5
+  citrineos-postgis:
+    container_name: citrineos-postgis
+    image: citrineos/postgis-custom:1.1.0
     ports:
-      - 5432:5432
+      - 5433:${POSTGRES_PORT}
     volumes:
       - ./data/postgresql/pgdata:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: citrine
-      POSTGRES_USER: citrine
-      POSTGRES_PASSWORD: 'citrine'
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGPORT: ${POSTGRES_PORT}
     healthcheck:
-      test: 'pg_isready --username=citrine'
+      test: 'pg_isready --username=${POSTGRES_USER} -p ${POSTGRES_PORT}'
       interval: 5s
       timeout: 10s
       retries: 5
+    networks:
+      citrineos-net:
+        aliases:
+          - ocpp-db
 
-  citrine:
+  citrineos-directus-core:
+    container_name: citrineos-directus-core
     build:
       context: ../
       dockerfile: ./Server/deploy.Dockerfile
+    environment:
+      APP_NAME: 'all'
+      APP_ENV: 'docker'
+      CITRINEOS_UTIL_DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
+    ports:
+      - 8083:8080
+      - 8084:8081
+      - 8086:8082
+      - 8085:8085
+      - 8443:8443
+      - 8444:8444
+      - 9229:9229
+    depends_on:
+      citrineos-postgis:
+        condition: service_healthy
+      citrineos-rabbitmq:
+        condition: service_healthy
+      citrineos-directus-webui:
+        condition: service_healthy
     volumes:
       - ../package-lock.json:/usr/local/apps/citrineos/package-lock-host.json
       - ../package.json:/usr/local/apps/citrineos/package.json
@@ -78,93 +111,44 @@ services:
       - /usr/local/apps/citrineos/03_Modules/Reporting/dist/
       - /usr/local/apps/citrineos/03_Modules/SmartCharging/dist/
       - /usr/local/apps/citrineos/03_Modules/Transactions/dist/
-    environment:
-      APP_NAME: 'all'
-      APP_ENV: 'docker'
-      # Add AWS region (required by the SDK)
-      AWS_REGION: us-east-1
-      # Skip authentication completely - use public access
-      AWS_ACCESS_KEY_ID: minioadmin
-      AWS_SECRET_ACCESS_KEY: minioadmin
-    depends_on:
-      ocpp-db:
-        condition: service_healthy
-      amqp-broker:
-        condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
-    ports:
-      - 8080:8080
-      - 8081:8081
-      - 8082:8082
-      - 8085:8085
-      - 8443:8443
-      - 8444:8444
-      - 9229:9229
-      - 8092:8092
+    networks:
+      - citrineos-net
 
-  minio:
-    image: minio/minio
-    container_name: minio
+  citrineos-directus-webui:
+    container_name: citrineos-directus-webui
+    image: ghcr.io/citrineos/citrineos-directus:latest
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - 8055:8055
     environment:
-      # Use default credentials for simplicity
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-      # Enable public buckets
-      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
-      MINIO_SERVER_URL: http://localhost:9000
+      KEY: ${DIRECTUS_KEY}
+      SECRET: ${DIRECTUS_SECRET}
+      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+      DB_CLIENT: 'pg'
+      DB_HOST: citrineos-postgis
+      DB_PORT: ${POSTGRES_PORT}
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      EXTENSIONS_AUTO_RELOAD: 'true'
+      EXTENSIONS_CACHE_TTL: '1s'
+      WEBSOCKETS_ENABLED: 'true'
     volumes:
-      - ./data/minio:/data
-    command: server /data --console-address ":9001"
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
-
-  # Initialize MinIO
-  minio-init:
-    image: minio/mc
+      - ./data/directus/uploads:/directus/uploads
     depends_on:
-      minio:
+      citrineos-postgis:
         condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      # Enable command echoing and error reporting
-      set -x
-
-      echo 'Setting up MinIO alias'
-      mc alias set myminio http://minio:9000 minioadmin minioadmin || echo 'FAILED: alias setup'
-      "
-
-  graphql-engine:
-    image: hasura/graphql-engine:v2.40.3.cli-migrations-v3
-    volumes:
-      - ./hasura-metadata:/hasura-metadata
-    ports:
-      - 8090:8080
-    restart: always
-    environment:
-      ## postgres database to store Hasura metadata
-      HASURA_GRAPHQL_DATABASE_URL: postgres://citrine:citrine@ocpp-db:5432/citrine
-      ## enable the console served by server
-      HASURA_GRAPHQL_ENABLE_CONSOLE: 'true' # set to "false" to disable console
-      ## enable debugging mode. It is recommended to disable this in production
-      HASURA_GRAPHQL_DEV_MODE: 'true'
-      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
-      HASURA_GRAPHQL_ENABLE_TELEMETRY: 'false'
-      ## uncomment next line to run console offline (i.e load console assets from server instead of CDN)
-      # HASURA_GRAPHQL_CONSOLE_ASSETS_DIR: /srv/console-assets
-      ## uncomment next line to set an admin secret
-      # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
-      HASURA_GRAPHQL_METADATA_DEFAULTS: '{"backend_configs":{"dataconnector":{"athena":{"uri":"http://data-connector-agent:8081/api/v1/athena"},"mariadb":{"uri":"http://data-connector-agent:8081/api/v1/mariadb"},"mysql8":{"uri":"http://data-connector-agent:8081/api/v1/mysql"},"oracle":{"uri":"http://data-connector-agent:8081/api/v1/oracle"},"snowflake":{"uri":"http://data-connector-agent:8081/api/v1/snowflake"}}}}'
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://graphql-engine:8080/healthz']
-      interval: 5s
-      timeout: 10s
-      retries: 20
-      start_period: 5s
+      test: wget --no-verbose --tries=1 --spider http://127.0.0.1:8055/server/health || exit 1
+      start_period: 15s
+      interval: 15s
+      timeout: 15s
+      retries: 10
+    networks:
+      - citrineos-net
+
+# Networks
+networks:
+  citrineos-net:
+    name: citrineos-net
+    driver: bridge
