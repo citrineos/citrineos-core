@@ -6,6 +6,12 @@
 import { z } from 'zod';
 import { OCPP2_0_1, OCPP1_6 } from '../ocpp/model';
 import { EventGroup } from '..';
+import { OCPP1_6_CallAction, OCPP2_0_1_CallAction } from '../ocpp/rpc/message';
+
+const OCPP1_6_CallActionSchema = z.nativeEnum(OCPP1_6_CallAction);
+const OCPP2_0_1_CallActionSchema = z.nativeEnum(OCPP2_0_1_CallAction);
+
+const CallActionSchema = z.union([OCPP1_6_CallActionSchema, OCPP2_0_1_CallActionSchema]);
 
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
 export const websocketServerInputSchema = z.object({
@@ -37,11 +43,15 @@ export const systemConfigInputSchema = z.object({
         endpointPrefix: z.string().default(EventGroup.Certificates).optional(),
         host: z.string().default('localhost').optional(),
         port: z.number().int().positive().default(8081).optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       })
       .optional(),
     configuration: z.object({
       heartbeatInterval: z.number().int().positive().default(60).optional(),
       bootRetryInterval: z.number().int().positive().default(10).optional(),
+      requests: z.array(CallActionSchema),
+      responses: z.array(CallActionSchema),
       ocpp2_0_1: z
         .object({
           unknownChargerStatus: z
@@ -77,22 +87,30 @@ export const systemConfigInputSchema = z.object({
       endpointPrefix: z.string().default(EventGroup.EVDriver).optional(),
       host: z.string().default('localhost').optional(),
       port: z.number().int().positive().default(8081).optional(),
+      requests: z.array(CallActionSchema),
+      responses: z.array(CallActionSchema),
     }),
     monitoring: z.object({
       endpointPrefix: z.string().default(EventGroup.Monitoring).optional(),
       host: z.string().default('localhost').optional(),
       port: z.number().int().positive().default(8081).optional(),
+      requests: z.array(CallActionSchema),
+      responses: z.array(CallActionSchema),
     }),
     reporting: z.object({
       endpointPrefix: z.string().default(EventGroup.Reporting).optional(),
       host: z.string().default('localhost').optional(),
       port: z.number().int().positive().default(8081).optional(),
+      requests: z.array(CallActionSchema),
+      responses: z.array(CallActionSchema),
     }),
     smartcharging: z
       .object({
         endpointPrefix: z.string().default(EventGroup.SmartCharging).optional(),
         host: z.string().default('localhost').optional(),
         port: z.number().int().positive().default(8081).optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       })
       .optional(),
     tenant: z
@@ -100,10 +118,14 @@ export const systemConfigInputSchema = z.object({
         endpointPrefix: z.string().default(EventGroup.Tenant).optional(),
         host: z.string().default('localhost').optional(),
         port: z.number().int().positive().default(8081).optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       })
       .optional(),
     transactions: z.object({
       endpointPrefix: z.string().default(EventGroup.Transactions).optional(),
+      requests: z.array(CallActionSchema),
+      responses: z.array(CallActionSchema),
       host: z.string().default('localhost').optional(),
       port: z.number().int().positive().default(8081).optional(),
       costUpdatedInterval: z.number().int().positive().default(60).optional(),
@@ -327,12 +349,16 @@ export const systemConfigSchema = z
           endpointPrefix: z.string(),
           host: z.string().optional(),
           port: z.number().int().positive().optional(),
+          requests: z.array(CallActionSchema),
+          responses: z.array(CallActionSchema),
         })
         .optional(),
       evdriver: z.object({
         endpointPrefix: z.string(),
         host: z.string().optional(),
         port: z.number().int().positive().optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       }),
       configuration: z
         .object({
@@ -365,6 +391,8 @@ export const systemConfigSchema = z
           endpointPrefix: z.string(),
           host: z.string().optional(),
           port: z.number().int().positive().optional(),
+          requests: z.array(CallActionSchema),
+          responses: z.array(CallActionSchema),
         })
         .refine((obj) => obj.ocpp1_6 || obj.ocpp2_0_1, {
           message: 'A protocol configuration must be set',
@@ -373,23 +401,31 @@ export const systemConfigSchema = z
         endpointPrefix: z.string(),
         host: z.string().optional(),
         port: z.number().int().positive().optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       }),
       reporting: z.object({
         endpointPrefix: z.string(),
         host: z.string().optional(),
         port: z.number().int().positive().optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       }),
       smartcharging: z
         .object({
           endpointPrefix: z.string(),
           host: z.string().optional(),
           port: z.number().int().positive().optional(),
+          requests: z.array(CallActionSchema),
+          responses: z.array(CallActionSchema),
         })
         .optional(),
       tenant: z.object({
         endpointPrefix: z.string(),
         host: z.string().optional(),
         port: z.number().int().positive().optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       }),
       transactions: z
         .object({
@@ -398,6 +434,8 @@ export const systemConfigSchema = z
           port: z.number().int().positive().optional(),
           costUpdatedInterval: z.number().int().positive().optional(),
           sendCostUpdatedOnMeterValue: z.boolean().optional(),
+          requests: z.array(CallActionSchema),
+          responses: z.array(CallActionSchema),
           signedMeterValuesConfiguration: z
             .object({
               publicKeyFileId: z.string(),
