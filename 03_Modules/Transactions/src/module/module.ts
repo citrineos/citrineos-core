@@ -58,20 +58,9 @@ import { CostCalculator } from './CostCalculator';
  * Component that handles transaction related messages.
  */
 export class TransactionsModule extends AbstractModule {
-  _requests: CallAction[] = [
-    OCPP2_0_1_CallAction.MeterValues,
-    OCPP2_0_1_CallAction.StatusNotification,
-    OCPP2_0_1_CallAction.TransactionEvent,
-    OCPP1_6_CallAction.MeterValues,
-    OCPP1_6_CallAction.StatusNotification,
-    OCPP1_6_CallAction.StartTransaction,
-    OCPP1_6_CallAction.StopTransaction,
-  ];
-  _responses: CallAction[] = [
-    OCPP2_0_1_CallAction.CostUpdated,
-    OCPP2_0_1_CallAction.GetTransactionStatus,
-  ];
+  _requests: CallAction[] = [];
 
+  _responses: CallAction[] = [];
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _authorizeRepository: IAuthorizationRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -182,6 +171,9 @@ export class TransactionsModule extends AbstractModule {
       EventGroup.Transactions,
       logger,
     );
+
+    this._requests = config.modules.transactions.requests;
+    this._responses = config.modules.transactions.responses;
 
     this._fileStorage = fileStorage;
 
