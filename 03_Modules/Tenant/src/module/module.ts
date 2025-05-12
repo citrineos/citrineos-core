@@ -59,5 +59,7 @@ export class TenantModule extends AbstractModule {
       EventGroup.Tenant,
       logger,
     );
+    this._requests = config.modules.tenant.requests;
+    this._responses = config.modules.tenant.responses;
   }
 }

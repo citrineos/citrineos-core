@@ -56,34 +56,9 @@ import { BootNotificationService } from './BootNotificationService';
 export class ConfigurationModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
 
-  _requests: CallAction[] = [
-    OCPP2_0_1_CallAction.BootNotification,
-    OCPP2_0_1_CallAction.DataTransfer,
-    OCPP2_0_1_CallAction.FirmwareStatusNotification,
-    OCPP2_0_1_CallAction.Heartbeat,
-    OCPP2_0_1_CallAction.NotifyDisplayMessages,
-    OCPP2_0_1_CallAction.PublishFirmwareStatusNotification,
-    OCPP1_6_CallAction.Heartbeat,
-    OCPP1_6_CallAction.BootNotification,
-  ];
+  _requests: CallAction[] = [];
 
-  _responses: CallAction[] = [
-    OCPP2_0_1_CallAction.ChangeAvailability,
-    OCPP2_0_1_CallAction.ClearDisplayMessage,
-    OCPP2_0_1_CallAction.GetDisplayMessages,
-    OCPP2_0_1_CallAction.PublishFirmware,
-    OCPP2_0_1_CallAction.Reset,
-    OCPP2_0_1_CallAction.SetDisplayMessage,
-    OCPP2_0_1_CallAction.SetNetworkProfile,
-    OCPP2_0_1_CallAction.TriggerMessage,
-    OCPP2_0_1_CallAction.UnpublishFirmware,
-    OCPP2_0_1_CallAction.UpdateFirmware,
-    OCPP1_6_CallAction.ChangeAvailability,
-    OCPP1_6_CallAction.ChangeConfiguration,
-    OCPP1_6_CallAction.GetConfiguration,
-    OCPP1_6_CallAction.Reset,
-    OCPP1_6_CallAction.TriggerMessage,
-  ];
+  _responses: CallAction[] = [];
 
   protected _bootRepository: IBootRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -163,6 +138,9 @@ export class ConfigurationModule extends AbstractModule {
       EventGroup.Configuration,
       logger,
     );
+
+    this._requests = config.modules.configuration.requests;
+    this._responses = config.modules.configuration.responses;
 
     this._bootRepository =
       bootRepository || new sequelize.SequelizeBootRepository(config, this._logger);
