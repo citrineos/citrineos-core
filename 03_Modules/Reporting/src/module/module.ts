@@ -49,21 +49,9 @@ export class ReportingModule extends AbstractModule {
    * Fields
    */
 
-  _requests: CallAction[] = [
-    OCPP2_0_1_CallAction.LogStatusNotification,
-    OCPP2_0_1_CallAction.NotifyCustomerInformation,
-    OCPP2_0_1_CallAction.NotifyReport,
-    OCPP2_0_1_CallAction.SecurityEventNotification,
-    OCPP2_0_1_CallAction.NotifyMonitoringReport,
-  ];
+  _requests: CallAction[] = [];
 
-  _responses: CallAction[] = [
-    OCPP2_0_1_CallAction.CustomerInformation,
-    OCPP2_0_1_CallAction.GetLog,
-    OCPP2_0_1_CallAction.GetReport,
-    OCPP2_0_1_CallAction.GetBaseReport,
-    OCPP2_0_1_CallAction.GetMonitoringReport,
-  ];
+  _responses: CallAction[] = [];
 
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _securityEventRepository: ISecurityEventRepository;
@@ -114,6 +102,9 @@ export class ReportingModule extends AbstractModule {
       EventGroup.Reporting,
       logger,
     );
+
+    this._requests = config.modules.reporting.requests;
+    this._responses = config.modules.reporting.responses;
 
     this._deviceModelRepository =
       deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, this._logger);

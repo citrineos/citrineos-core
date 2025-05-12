@@ -56,22 +56,9 @@ export class EVDriverModule extends AbstractModule {
    * Fields
    */
 
-  _requests: CallAction[] = [
-    OCPP2_0_1_CallAction.Authorize,
-    OCPP2_0_1_CallAction.ReservationStatusUpdate,
-  ];
-  _responses: CallAction[] = [
-    OCPP2_0_1_CallAction.CancelReservation,
-    OCPP2_0_1_CallAction.ClearCache,
-    OCPP2_0_1_CallAction.GetLocalListVersion,
-    OCPP2_0_1_CallAction.RequestStartTransaction,
-    OCPP2_0_1_CallAction.RequestStopTransaction,
-    OCPP2_0_1_CallAction.ReserveNow,
-    OCPP2_0_1_CallAction.SendLocalList,
-    OCPP2_0_1_CallAction.UnlockConnector,
-    OCPP1_6_CallAction.RemoteStopTransaction,
-    OCPP1_6_CallAction.RemoteStartTransaction,
-  ];
+  _requests: CallAction[] = [];
+
+  _responses: CallAction[] = [];
 
   protected _authorizeRepository: IAuthorizationRepository;
   protected _localAuthListRepository: ILocalAuthListRepository;
@@ -170,6 +157,9 @@ export class EVDriverModule extends AbstractModule {
       EventGroup.EVDriver,
       logger,
     );
+
+    this._requests = config.modules.evdriver.requests;
+    this._responses = config.modules.evdriver.responses;
 
     this._authorizeRepository =
       authorizeRepository || new sequelize.SequelizeAuthorizationRepository(config, logger);
