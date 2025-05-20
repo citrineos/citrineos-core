@@ -5,6 +5,9 @@ object_relationships:
   - name: Location
     using:
       foreign_key_constraint_on: locationId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
 array_relationships:
   - name: ChargingStationNetworkProfiles
     using:

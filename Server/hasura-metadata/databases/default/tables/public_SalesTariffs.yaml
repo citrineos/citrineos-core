@@ -5,3 +5,6 @@ object_relationships:
   - name: ChargingSchedule
     using:
       foreign_key_constraint_on: chargingScheduleDatabaseId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
