@@ -43,7 +43,13 @@ export {
   InstallRootCertificateSchema,
 } from './queries/RootCertificate';
 export { CreateSubscriptionSchema } from './queries/Subscription';
-export { WebsocketQuerystring, WebsocketQuerySchema } from './queries/Websocket';
+export {
+  WebsocketGetQuerystring,
+  WebsocketGetQuerySchema,
+  WebsocketDeleteQuerystring,
+  WebsocketDeleteQuerySchema,
+  WebsocketRequestSchema,
+} from './queries/Websocket';
 
 // Data projection models
 export { AuthorizationRestrictions } from './projections/AuthorizationRestrictions';

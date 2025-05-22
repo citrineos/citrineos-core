@@ -5,12 +5,48 @@
 
 import { QuerySchema } from '@citrineos/base';
 
-export interface WebsocketQuerystring {
-  websocketId: string;
+export interface WebsocketGetQuerystring {
+  id?: string;
+  tenantId?: number;
 }
 
-export const WebsocketQuerySchema = QuerySchema(
+export const WebsocketGetQuerySchema = QuerySchema('WebsocketQuerySchema', [
+  ['id', 'string'],
+  ['tenantId', 'string'],
+]);
+
+export interface WebsocketDeleteQuerystring {
+  id: string;
+}
+
+export const WebsocketDeleteQuerySchema = QuerySchema(
   'WebsocketQuerySchema',
-  [['websocketId', 'string']],
-  ['websocketId'],
+  [['id', 'string']],
+  ['id'],
+);
+
+export const WebsocketRequestSchema = QuerySchema(
+  'WebsocketRequestSchema',
+  [
+    ['id', 'string'],
+    ['host', 'string'],
+    ['port', 'number'],
+    ['pingInterval', 'number'],
+    ['protocol', 'string'],
+    ['securityProfile', 'number'],
+    ['allowUnknownChargingStations', 'boolean'],
+    ['tlsKeyFilePath', 'string'],
+    ['tlsCertificateChainFilePath', 'string'],
+    ['mtlsCertificateAuthorityKeyFilePath', 'string'],
+    ['rootCACertificateFilePath', 'string'],
+  ],
+  [
+    'id',
+    'host',
+    'port',
+    'pingInterval',
+    'protocol',
+    'securityProfile',
+    'allowUnknownChargingStations',
+  ],
 );

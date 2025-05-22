@@ -25,9 +25,14 @@ import {
   ModelKeyQuerystring,
   ModelKeyQuerystringSchema,
   Subscription,
-  WebsocketQuerySchema,
-  WebsocketQuerystring,
+  WebsocketGetQuerySchema,
+  WebsocketGetQuerystring,
 } from '@citrineos/data';
+import {
+  WebsocketDeleteQuerySchema,
+  WebsocketDeleteQuerystring,
+  WebsocketRequestSchema,
+} from '@citrineos/data/dist/interfaces/queries/Websocket';
 
 /**
  * Admin API for the OcppRouter.
@@ -91,24 +96,29 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
       .then(() => true);
   }
 
-  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Get, WebsocketQuerySchema)
-  async getWebsocketConfiguration(
-    request: FastifyRequest<{ Querystring: WebsocketQuerystring }>,
-  ): Promise<WebsocketServerConfig> {
-    const websocketConfig = this._module.config.util.networkConnection.websocketServers.find(
-      (ws) => ws.id === request.query.websocketId,
-    );
-
-    if (!websocketConfig) {
-      throw new NotFoundError(
-        `Could not find websocket configuration with id ${request.query.websocketId}`,
+  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Get, WebsocketGetQuerySchema)
+  async getWebsocketConfigurations(
+    request: FastifyRequest<{ Querystring: WebsocketGetQuerystring }>,
+  ): Promise<WebsocketServerConfig[] | WebsocketServerConfig> {
+    if (request.query.id) {
+      const websocketConfig = this._module.config.util.networkConnection.websocketServers.find(
+        (ws) => ws.id === request.query.id,
       );
+
+      if (!websocketConfig) {
+        throw new NotFoundError(
+          `Could not find websocket configuration with id ${request.query.id}`,
+        );
+      } else {
+        return websocketConfig;
+      }
     } else {
-      return websocketConfig;
+      // TODO when available (coming soon in a separate feature), filter by tenantId if the tenantId query param exists
+      return this._module.config.util.networkConnection.websocketServers;
     }
   }
 
-  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Post)
+  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Post, undefined, WebsocketRequestSchema)
   async createWebsocketConfiguration(
     request: FastifyRequest<{ Body: WebsocketServerConfig }>,
   ): Promise<WebsocketServerConfig> {
@@ -127,13 +137,13 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
     }
   }
 
-  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Delete)
+  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Delete, WebsocketDeleteQuerySchema)
   async deleteWebsocketConfiguration(
-    request: FastifyRequest<{ Querystring: WebsocketQuerystring }>,
+    request: FastifyRequest<{ Querystring: WebsocketDeleteQuerystring }>,
   ): Promise<void> {
     const existingConfigIndex =
       this._module.config.util.networkConnection.websocketServers.findIndex(
-        (ws) => ws.id === request.query.websocketId,
+        (ws) => ws.id === request.query.id,
       );
 
     if (existingConfigIndex) {
