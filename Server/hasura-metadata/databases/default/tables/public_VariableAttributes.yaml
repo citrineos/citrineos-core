@@ -14,6 +14,9 @@ object_relationships:
   - name: Evse
     using:
       foreign_key_constraint_on: evseDatabaseId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
   - name: Variable
     using:
       foreign_key_constraint_on: variableId
