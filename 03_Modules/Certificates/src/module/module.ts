@@ -55,18 +55,9 @@ export class CertificatesModule extends AbstractModule {
    * Fields
    */
 
-  _requests: CallAction[] = [
-    OCPP2_0_1_CallAction.Get15118EVCertificate,
-    OCPP2_0_1_CallAction.GetCertificateStatus,
-    OCPP2_0_1_CallAction.SignCertificate,
-  ];
+  _requests: CallAction[] = [];
 
-  _responses: CallAction[] = [
-    OCPP2_0_1_CallAction.CertificateSigned,
-    OCPP2_0_1_CallAction.DeleteCertificate,
-    OCPP2_0_1_CallAction.GetInstalledCertificateIds,
-    OCPP2_0_1_CallAction.InstallCertificate,
-  ];
+  _responses: CallAction[] = [];
 
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _certificateRepository: ICertificateRepository;
@@ -127,6 +118,9 @@ export class CertificatesModule extends AbstractModule {
       EventGroup.Certificates,
       logger,
     );
+
+    this._requests = config.modules.certificates?.requests ?? [];
+    this._responses = config.modules.certificates?.responses ?? [];
 
     this._deviceModelRepository =
       deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, logger);

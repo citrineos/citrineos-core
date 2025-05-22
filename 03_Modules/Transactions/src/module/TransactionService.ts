@@ -113,10 +113,12 @@ export class TransactionService {
         authorization,
         messageContext,
       );
-      if (transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started) {
-        const hasConcurrent = await this._hasConcurrentTransactions(idToken);
-        if (hasConcurrent) {
-          response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx;
+      if (authorization.concurrentTransaction === true) {
+        if (transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started) {
+          const hasConcurrent = await this._hasConcurrentTransactions(idToken);
+          if (hasConcurrent) {
+            response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx;
+          }
         }
       }
     }

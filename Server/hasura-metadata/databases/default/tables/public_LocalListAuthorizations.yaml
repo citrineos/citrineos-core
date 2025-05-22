@@ -1,7 +1,10 @@
 table:
-  name: Authorizations
+  name: LocalListAuthorizations
   schema: public
 object_relationships:
+  - name: Authorization
+    using:
+      foreign_key_constraint_on: authorizationId
   - name: IdToken
     using:
       foreign_key_constraint_on: idTokenId
@@ -12,10 +15,17 @@ object_relationships:
     using:
       foreign_key_constraint_on: tenantId
 array_relationships:
-  - name: LocalListAuthorizations
+  - name: LocalListVersionAuthorizations
     using:
       foreign_key_constraint_on:
         column: authorizationId
         table:
-          name: LocalListAuthorizations
+          name: LocalListVersionAuthorizations
+          schema: public
+  - name: SendLocalListAuthorizations
+    using:
+      foreign_key_constraint_on:
+        column: authorizationId
+        table:
+          name: SendLocalListAuthorizations
           schema: public

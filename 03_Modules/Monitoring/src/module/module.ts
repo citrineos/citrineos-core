@@ -38,16 +38,9 @@ export class MonitoringModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
   protected _monitoringService: MonitoringService;
 
-  _requests: CallAction[] = [OCPP2_0_1_CallAction.NotifyEvent];
-  _responses: CallAction[] = [
-    OCPP2_0_1_CallAction.ClearVariableMonitoring,
-    OCPP2_0_1_CallAction.GetVariables,
-    OCPP2_0_1_CallAction.SetMonitoringBase,
-    OCPP2_0_1_CallAction.SetMonitoringLevel,
-    OCPP2_0_1_CallAction.GetMonitoringReport,
-    OCPP2_0_1_CallAction.SetVariableMonitoring,
-    OCPP2_0_1_CallAction.SetVariables,
-  ];
+  _requests: CallAction[] = [];
+
+  _responses: CallAction[] = [];
 
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
@@ -98,6 +91,9 @@ export class MonitoringModule extends AbstractModule {
       EventGroup.Monitoring,
       logger,
     );
+
+    this._requests = config.modules.monitoring.requests;
+    this._responses = config.modules.monitoring.responses;
 
     this._deviceModelRepository =
       deviceModelRepository || new SequelizeDeviceModelRepository(config, this._logger);

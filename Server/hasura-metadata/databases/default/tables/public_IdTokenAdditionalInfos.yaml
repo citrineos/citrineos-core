@@ -8,3 +8,6 @@ object_relationships:
   - name: IdToken
     using:
       foreign_key_constraint_on: idTokenId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId

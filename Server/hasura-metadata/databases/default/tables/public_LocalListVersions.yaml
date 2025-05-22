@@ -1,18 +1,15 @@
 table:
-  name: ChargingProfiles
+  name: LocalListVersions
   schema: public
 object_relationships:
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
-  - name: Transaction
-    using:
-      foreign_key_constraint_on: transactionDatabaseId
 array_relationships:
-  - name: ChargingSchedules
+  - name: LocalListVersionAuthorizations
     using:
       foreign_key_constraint_on:
-        column: chargingProfileDatabaseId
+        column: localListVersionId
         table:
-          name: ChargingSchedules
+          name: LocalListVersionAuthorizations
           schema: public

@@ -4,7 +4,15 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import {
+  BelongsTo,
+  Column,
+  DataType,
+  Default,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
 import { type AuthorizationRestrictions } from '../../../../interfaces';
 import { IdToken, IdTokenInfo } from '.';
 
@@ -34,6 +42,10 @@ export class Authorization extends Model implements AuthorizationRestrictions {
 
   @BelongsTo(() => IdTokenInfo)
   declare idTokenInfo?: IdTokenInfo;
+
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  declare concurrentTransaction?: boolean;
 
   declare customData?: any | null;
 }

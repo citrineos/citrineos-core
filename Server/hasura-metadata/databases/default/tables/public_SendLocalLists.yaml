@@ -1,18 +1,15 @@
 table:
-  name: ChargingProfiles
+  name: SendLocalLists
   schema: public
 object_relationships:
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
-  - name: Transaction
-    using:
-      foreign_key_constraint_on: transactionDatabaseId
 array_relationships:
-  - name: ChargingSchedules
+  - name: SendLocalListAuthorizations
     using:
       foreign_key_constraint_on:
-        column: chargingProfileDatabaseId
+        column: sendLocalListId
         table:
-          name: ChargingSchedules
+          name: SendLocalListAuthorizations
           schema: public

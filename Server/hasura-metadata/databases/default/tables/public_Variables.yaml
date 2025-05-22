@@ -2,6 +2,9 @@ table:
   name: Variables
   schema: public
 object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
   - name: VariableCharacteristic
     using:
       foreign_key_constraint_on:

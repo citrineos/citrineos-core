@@ -39,20 +39,9 @@ export class SmartChargingModule extends AbstractModule {
    * Fields
    */
 
-  _requests: CallAction[] = [
-    OCPP2_0_1_CallAction.NotifyChargingLimit,
-    OCPP2_0_1_CallAction.NotifyEVChargingNeeds,
-    OCPP2_0_1_CallAction.NotifyEVChargingSchedule,
-    OCPP2_0_1_CallAction.ReportChargingProfiles,
-  ];
+  _requests: CallAction[] = [];
 
-  _responses: CallAction[] = [
-    OCPP2_0_1_CallAction.ClearChargingProfile,
-    OCPP2_0_1_CallAction.ClearedChargingLimit,
-    OCPP2_0_1_CallAction.GetChargingProfiles,
-    OCPP2_0_1_CallAction.GetCompositeSchedule,
-    OCPP2_0_1_CallAction.SetChargingProfile,
-  ];
+  _responses: CallAction[] = [];
 
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -120,6 +109,9 @@ export class SmartChargingModule extends AbstractModule {
       EventGroup.SmartCharging,
       logger,
     );
+
+    this._requests = config.modules.smartcharging?.requests ?? [];
+    this._responses = config.modules.smartcharging?.responses ?? [];
 
     this._transactionEventRepository =
       transactionEventRepository ||
