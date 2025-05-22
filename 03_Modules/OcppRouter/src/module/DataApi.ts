@@ -9,8 +9,10 @@ import {
   BadRequestError,
   HttpMethod,
   Namespace,
+  NotFoundError,
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
+  WebsocketServerConfig,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
@@ -23,6 +25,8 @@ import {
   ModelKeyQuerystring,
   ModelKeyQuerystringSchema,
   Subscription,
+  WebsocketQuerySchema,
+  WebsocketQuerystring,
 } from '@citrineos/data';
 
 /**
@@ -85,6 +89,57 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
     return this._module.subscriptionRepository
       .deleteByKey(request.query.id.toString())
       .then(() => true);
+  }
+
+  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Get, WebsocketQuerySchema)
+  async getWebsocketConfiguration(
+    request: FastifyRequest<{ Querystring: WebsocketQuerystring }>,
+  ): Promise<WebsocketServerConfig> {
+    const websocketConfig = this._module.config.util.networkConnection.websocketServers.find(
+      (ws) => ws.id === request.query.websocketId,
+    );
+
+    if (!websocketConfig) {
+      throw new NotFoundError(
+        `Could not find websocket configuration with id ${request.query.websocketId}`,
+      );
+    } else {
+      return websocketConfig;
+    }
+  }
+
+  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Post)
+  async createWebsocketConfiguration(
+    request: FastifyRequest<{ Body: WebsocketServerConfig }>,
+  ): Promise<WebsocketServerConfig> {
+    const existingConfig = this._module.config.util.networkConnection.websocketServers.find(
+      (ws) => ws.id === request.body.id,
+    );
+
+    if (existingConfig) {
+      throw new BadRequestError(
+        `Websocket configuration with id ${request.body.id} already exists.`,
+      );
+    } else {
+      this._module.config.util.networkConnection.websocketServers.push(request.body);
+      // TODO store back into file storage
+      return request.body;
+    }
+  }
+
+  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Delete)
+  async deleteWebsocketConfiguration(
+    request: FastifyRequest<{ Querystring: WebsocketQuerystring }>,
+  ): Promise<void> {
+    const existingConfigIndex =
+      this._module.config.util.networkConnection.websocketServers.findIndex(
+        (ws) => ws.id === request.query.websocketId,
+      );
+
+    if (existingConfigIndex) {
+      this._module.config.util.networkConnection.websocketServers.splice(existingConfigIndex, 1);
+      // TODO store back into file storage
+    }
   }
 
   /**
