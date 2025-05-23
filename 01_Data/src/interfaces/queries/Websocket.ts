@@ -10,7 +10,7 @@ export interface WebsocketGetQuerystring {
   tenantId?: number;
 }
 
-export const WebsocketGetQuerySchema = QuerySchema('WebsocketQuerySchema', [
+export const WebsocketGetQuerySchema = QuerySchema('WebsocketGetQuerySchema', [
   ['id', 'string'],
   ['tenantId', 'string'],
 ]);
@@ -20,7 +20,7 @@ export interface WebsocketDeleteQuerystring {
 }
 
 export const WebsocketDeleteQuerySchema = QuerySchema(
-  'WebsocketQuerySchema',
+  'WebsocketDeleteQuerySchema',
   [['id', 'string']],
   ['id'],
 );

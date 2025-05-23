@@ -7,6 +7,7 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   BadRequestError,
+  ConfigStoreFactory,
   HttpMethod,
   Namespace,
   NotFoundError,
@@ -132,7 +133,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
       );
     } else {
       this._module.config.util.networkConnection.websocketServers.push(request.body);
-      // TODO store back into file storage
+      await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
       return request.body;
     }
   }
@@ -148,7 +149,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
 
     if (existingConfigIndex) {
       this._module.config.util.networkConnection.websocketServers.splice(existingConfigIndex, 1);
-      // TODO store back into file storage
+      await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
     }
   }
 
