@@ -34,7 +34,6 @@ import {
   RedisCache,
   UnknownStationFilter,
   WebsocketNetworkConnection,
-  S3Storage,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import addFormats from 'ajv-formats';
@@ -112,7 +111,6 @@ export class CitrineOSServer {
    * @param {FastifyInstance} server - optional Fastify server instance
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
    * @param {ICache} cache - cache
-   * @param {IFileStorage} fileStorage - file storage
    */
   // todo rename event group to type
   constructor(
@@ -121,7 +119,6 @@ export class CitrineOSServer {
     server?: FastifyInstance,
     ajv?: Ajv,
     cache?: ICache,
-    fileStorage?: IFileStorage,
   ) {
     // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration

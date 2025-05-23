@@ -12,6 +12,7 @@ export {
   IModuleApi,
 } from './interfaces/api';
 export { BadRequestError } from './interfaces/api/exceptions/BadRequestError';
+export { NotFoundError } from './interfaces/api/exceptions/NotFoundError';
 export { ICache } from './interfaces/cache/cache';
 export { CacheNamespace, IWebsocketConnection } from './interfaces/cache/types';
 export {
