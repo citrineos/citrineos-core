@@ -23,3 +23,23 @@ array_relationships:
         table:
           name: LocalListAuthorizations
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - language1
+        - language2
+        - status
+        - chargingPriority
+        - groupIdTokenId
+        - id
+        - tenantId
+        - personalMessage
+        - cacheExpiryDateTime
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

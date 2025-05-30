@@ -10,6 +10,7 @@ import {
   AbstractModuleApi,
   AsMessageEndpoint,
   CallAction,
+  DEFAULT_TENANT_ID,
   IMessageConfirmation,
   OCPP1_6,
   OCPP1_6_CallAction,
@@ -43,9 +44,9 @@ export class ConfigurationOcpp16Api
   @AsMessageEndpoint(OCPP1_6_CallAction.TriggerMessage, OCPP1_6.TriggerMessageRequestSchema)
   async triggerMessage(
     identifier: string[],
-    tenantId: string,
     request: OCPP1_6.TriggerMessageRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const connectorId = request.connectorId;
     if (connectorId && connectorId <= 0) {
@@ -73,14 +74,16 @@ export class ConfigurationOcpp16Api
   )
   async changeConfiguration(
     identifier: string[],
-    tenantId: string,
     request: OCPP1_6.ChangeConfigurationRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     this._logger.debug('ChangeConfiguration request received:', request);
     const confirmations = identifier.map(async (stationId) => {
-      const chargingStation =
-        await this._module.locationRepository.readChargingStationByStationId(stationId);
+      const chargingStation = await this._module.locationRepository.readChargingStationByStationId(
+        tenantId,
+        stationId,
+      );
       if (!chargingStation) {
         return {
           success: false,
@@ -104,9 +107,9 @@ export class ConfigurationOcpp16Api
   @AsMessageEndpoint(OCPP1_6_CallAction.GetConfiguration, OCPP1_6.GetConfigurationRequestSchema)
   async getConfiguration(
     identifier: string[],
-    tenantId: string,
     request: OCPP1_6.GetConfigurationRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     this._logger.debug('GetConfiguration request received:', request);
 
@@ -115,7 +118,7 @@ export class ConfigurationOcpp16Api
     await Promise.all(
       identifier.map(async (stationId) => {
         const chargingStation =
-          await this._module.locationRepository.readChargingStationByStationId(stationId);
+          await this._module.locationRepository.readChargingStationByStationId(tenantId, stationId);
         if (!chargingStation) {
           confirmations.push({
             success: false,
@@ -128,12 +131,16 @@ export class ConfigurationOcpp16Api
           return;
         }
 
-        const maxKeysConfig = await this._module.changeConfigurationRepository.readOnlyOneByQuery({
-          where: {
-            stationId: stationId,
-            key: 'GetConfigurationMaxKeys',
+        const maxKeysConfig = await this._module.changeConfigurationRepository.readOnlyOneByQuery(
+          tenantId,
+          {
+            where: {
+              tenantId: tenantId,
+              stationId: stationId,
+              key: 'GetConfigurationMaxKeys',
+            },
           },
-        });
+        );
         const maxKeys = maxKeysConfig?.value
           ? parseInt(maxKeysConfig.value, 10)
           : Number.MAX_SAFE_INTEGER;
@@ -194,9 +201,9 @@ export class ConfigurationOcpp16Api
   @AsMessageEndpoint(OCPP1_6_CallAction.Reset, OCPP1_6.ResetRequestSchema)
   reset(
     identifier: string[],
-    tenantId: string,
     request: OCPP1_6.ResetRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
@@ -214,9 +221,9 @@ export class ConfigurationOcpp16Api
   @AsMessageEndpoint(OCPP1_6_CallAction.ChangeAvailability, OCPP1_6.ChangeAvailabilityRequestSchema)
   changeAvailability(
     identifier: string[],
-    tenantId: string,
     request: OCPP1_6.ChangeAvailabilityRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(

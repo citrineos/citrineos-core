@@ -3,14 +3,23 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { QuerySchema } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, QuerySchema } from '@citrineos/base';
 
 export interface ChargingStationKeyQuerystring {
   stationId: string;
+  tenantId: number;
 }
 
-export const ChargingStationKeyQuerySchema = QuerySchema(
-  'ChargingStationKeyQuerySchema',
-  [['stationId', 'string']],
-  ['stationId'],
-);
+export const ChargingStationKeyQuerySchema = QuerySchema('ChargingStationKeyQuerySchema', [
+  {
+    key: 'stationId',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'tenantId',
+    type: 'number',
+    required: true,
+    defaultValue: String(DEFAULT_TENANT_ID),
+  },
+]);

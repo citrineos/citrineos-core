@@ -2,7 +2,7 @@ import { jest } from '@jest/globals';
 import { faker } from '@faker-js/faker';
 import { aRequest } from '../../providers/IncomingMessageProvider';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider';
-import { CacheNamespace, ICache } from '@citrineos/base';
+import { CacheNamespace, DEFAULT_TENANT_ID, ICache } from '@citrineos/base';
 import { ConnectedStationFilter } from '../../../src/networkconnection/authenticator/ConnectedStationFilter';
 
 describe('ConnectedStationFilter', () => {
@@ -25,7 +25,7 @@ describe('ConnectedStationFilter', () => {
     const stationId = faker.string.uuid().toString();
     givenStationIsNotConnected();
 
-    await filter.authenticate(stationId, aRequest(), anAuthenticationOptions());
+    await filter.authenticate(DEFAULT_TENANT_ID, stationId, aRequest(), anAuthenticationOptions());
 
     expect(cache.get).toHaveBeenCalledWith(stationId, CacheNamespace.Connections);
   });
@@ -35,7 +35,7 @@ describe('ConnectedStationFilter', () => {
     givenStationIsConnected();
 
     await expect(
-      filter.authenticate(stationId, aRequest(), anAuthenticationOptions()),
+      filter.authenticate(DEFAULT_TENANT_ID, stationId, aRequest(), anAuthenticationOptions()),
     ).rejects.toThrow(`New connection attempted for already connected identifier ${stationId}`);
 
     expect(cache.get).toHaveBeenCalledWith(stationId, CacheNamespace.Connections);

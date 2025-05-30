@@ -28,3 +28,28 @@ array_relationships:
         table:
           name: VariableStatuses
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - constant
+        - persistent
+        - bootConfigId
+        - dataType
+        - mutability
+        - stationId
+        - type
+        - value
+        - componentId
+        - evseDatabaseId
+        - id
+        - tenantId
+        - variableId
+        - createdAt
+        - generatedAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

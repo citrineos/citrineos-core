@@ -2,32 +2,73 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { QuerySchema } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, QuerySchema } from '@citrineos/base';
 
-export const GenerateCertificateChainSchema = QuerySchema(
-  'GenerateCertificateChainSchema',
-  [
-    ['keyLength', 'number'],
-    ['organizationName', 'string'],
-    ['commonName', 'string'],
-    ['validBefore', 'string'],
-    ['filePath', 'string'],
-    ['selfSigned', 'boolean'],
-    ['countryName', 'string'],
-    ['signatureAlgorithm', 'string'],
-    ['pathLen', 'number'],
-  ],
-  ['selfSigned', 'commonName', 'organizationName'],
-);
+export const GenerateCertificateChainSchema = QuerySchema('GenerateCertificateChainSchema', [
+  {
+    key: 'commonName',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'organizationName',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'selfSigned',
+    type: 'boolean',
+    required: true,
+  },
+  {
+    key: 'countryName',
+    type: 'string',
+  },
+  {
+    key: 'filePath',
+    type: 'string',
+  },
+  {
+    key: 'keyLength',
+    type: 'number',
+  },
+  {
+    key: 'pathLen',
+    type: 'number',
+  },
+  {
+    key: 'signatureAlgorithm',
+    type: 'string',
+  },
+  {
+    key: 'validBefore',
+    type: 'string',
+  },
+]);
 
-export const InstallRootCertificateSchema = QuerySchema(
-  'InstallRootCertificateSchema',
-  [
-    ['stationId', 'string'],
-    ['certificateType', 'string'],
-    ['tenantId', 'string'],
-    ['callbackUrl', 'string'],
-    ['fileId', 'string'],
-  ],
-  ['stationId', 'certificateType', 'tenantId'],
-);
+export const InstallRootCertificateSchema = QuerySchema('InstallRootCertificateSchema', [
+  {
+    key: 'certificateType',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'stationId',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'tenantId',
+    type: 'number',
+    required: true,
+    defaultValue: String(DEFAULT_TENANT_ID),
+  },
+  {
+    key: 'callbackUrl',
+    type: 'string',
+  },
+  {
+    key: 'fileId',
+    type: 'string',
+  },
+]);

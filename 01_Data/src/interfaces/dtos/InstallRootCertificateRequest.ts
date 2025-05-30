@@ -8,7 +8,7 @@ export class InstallRootCertificateRequest {
   // Fields for InstallCertificate message request
   stationId: string;
   certificateType: OCPP2_0_1.InstallCertificateUseEnumType;
-  tenantId: string;
+  tenantId: number;
   callbackUrl?: string;
   // The file id of the root CA certificate. If not provided, it uses one from the external CA Server
   // according to the certificate type, e.g., lets encrypt, hubject.
@@ -16,7 +16,7 @@ export class InstallRootCertificateRequest {
 
   constructor(
     stationId: string,
-    tenantId: string,
+    tenantId: number,
     certificateType: OCPP2_0_1.InstallCertificateUseEnumType,
     callbackUrl?: string,
     fileId?: string,

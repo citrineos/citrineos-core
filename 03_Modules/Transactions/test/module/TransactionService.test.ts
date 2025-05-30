@@ -4,7 +4,7 @@ import {
   IReservationRepository,
   ITransactionEventRepository,
 } from '@citrineos/data';
-import { OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
 import { TransactionService } from '../../src/module/TransactionService';
 import { anIdToken } from '../providers/IdTokenProvider';
 import { anAuthorization } from '../providers/AuthorizationProvider';
@@ -57,6 +57,7 @@ describe('TransactionService', () => {
     });
     const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
+      DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
     );
@@ -78,6 +79,7 @@ describe('TransactionService', () => {
     });
     const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
+      DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
     );
@@ -100,6 +102,7 @@ describe('TransactionService', () => {
     });
     const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
+      DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
     );
@@ -121,6 +124,7 @@ describe('TransactionService', () => {
     });
     const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
+      DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
     );
@@ -143,6 +147,7 @@ describe('TransactionService', () => {
     });
     const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
+      DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
     );
@@ -166,6 +171,7 @@ describe('TransactionService', () => {
     });
     const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
+      DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
     );
@@ -189,6 +195,7 @@ describe('TransactionService', () => {
     });
     const messageContext = aMessageContext();
     const response = await transactionService.authorizeIdToken(
+      DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
     );
@@ -205,7 +212,10 @@ describe('TransactionService', () => {
         [],
       );
 
-      const response = await transactionService.authorizeOcpp16IdToken(faker.string.uuid());
+      const response = await transactionService.authorizeOcpp16IdToken(
+        DEFAULT_TENANT_ID,
+        faker.string.uuid(),
+      );
 
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Accepted);
       expect(response.idTagInfo.parentIdTag).toBe(authorization.idTokenInfo!.groupIdToken!.idToken);
@@ -218,7 +228,10 @@ describe('TransactionService', () => {
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
-      const response = await transactionService.authorizeOcpp16IdToken(faker.string.uuid());
+      const response = await transactionService.authorizeOcpp16IdToken(
+        DEFAULT_TENANT_ID,
+        faker.string.uuid(),
+      );
 
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Blocked);
       expect(response.idTagInfo.parentIdTag).toBeUndefined();
@@ -231,7 +244,10 @@ describe('TransactionService', () => {
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
-      const response = await transactionService.authorizeOcpp16IdToken(faker.string.uuid());
+      const response = await transactionService.authorizeOcpp16IdToken(
+        DEFAULT_TENANT_ID,
+        faker.string.uuid(),
+      );
 
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Expired);
       expect(response.idTagInfo.parentIdTag).toBeUndefined();
@@ -245,7 +261,10 @@ describe('TransactionService', () => {
         [aTransaction()],
       );
 
-      const response = await transactionService.authorizeOcpp16IdToken(faker.string.uuid());
+      const response = await transactionService.authorizeOcpp16IdToken(
+        DEFAULT_TENANT_ID,
+        faker.string.uuid(),
+      );
 
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.ConcurrentTx);
       expect(response.idTagInfo.parentIdTag).toBeUndefined();

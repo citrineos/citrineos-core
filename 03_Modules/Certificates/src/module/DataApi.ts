@@ -24,6 +24,8 @@ import { CertificatesModule } from './module';
 import { generateCertificate, generateCSR, WebsocketNetworkConnection } from '@citrineos/util';
 import {
   Certificate,
+  TenantQueryString,
+  TenantQuerySchema,
   CountryNameEnumType,
   GenerateCertificateChainRequest,
   GenerateCertificateChainSchema,
@@ -131,16 +133,20 @@ export class CertificatesDataApi
   @AsDataEndpoint(
     OCPP2_0_1_Namespace.CertificateChain,
     HttpMethod.Post,
-    undefined,
+    TenantQuerySchema,
     GenerateCertificateChainSchema,
   )
   async generateCertificateChain(
-    request: FastifyRequest<{ Body: GenerateCertificateChainRequest }>,
+    request: FastifyRequest<{
+      Body: GenerateCertificateChainRequest;
+      Querystring: TenantQueryString;
+    }>,
   ): Promise<Certificate[]> {
     this._logger.info(
       `Receiving generate certificate chain request ${JSON.stringify(request.body)}`,
     );
 
+    const tenantId = request.query.tenantId;
     const certRequest = request.body as GenerateCertificateChainRequest;
 
     let certificateFromReq = new Certificate();
@@ -172,6 +178,7 @@ export class CertificatesDataApi
         this._logger,
       );
       certificateFromReq = await this._storeCertificateAndKey(
+        tenantId,
         certificateFromReq,
         rootCertificatePem,
         rootPrivateKeyPem,
@@ -198,6 +205,7 @@ export class CertificatesDataApi
         rootCertificatePem,
       );
       subCertificate = await this._storeCertificateAndKey(
+        tenantId,
         subCertificate,
         subCertificatePem,
         subPrivateKeyPem,
@@ -223,6 +231,7 @@ export class CertificatesDataApi
         subCertificatePem,
       );
       leafCertificate = await this._storeCertificateAndKey(
+        tenantId,
         leafCertificate,
         leafCertificatePem,
         leafPrivateKeyPem,
@@ -239,6 +248,7 @@ export class CertificatesDataApi
       const [certificatePem, privateKeyPem] =
         await this._generateSubCACertificateSignedByCAServer(certificateFromReq);
       certificateFromReq = await this._storeCertificateAndKey(
+        tenantId,
         certificateFromReq,
         certificatePem,
         privateKeyPem,
@@ -265,6 +275,7 @@ export class CertificatesDataApi
         certificatePem,
       );
       leafCertificate = await this._storeCertificateAndKey(
+        tenantId,
         leafCertificate,
         leafCertificatePem,
         leafPrivateKeyPem,
@@ -445,6 +456,7 @@ export class CertificatesDataApi
    * @return certificate stored in db
    */
   private async _storeCertificateAndKey(
+    tenantId: number,
     certificateEntity: Certificate,
     certPem: string,
     keyPem: string,
@@ -466,7 +478,11 @@ export class CertificatesDataApi
     const certObj = new jsrsasign.X509();
     certObj.readCertPEM(certPem);
     certificateEntity.issuerName = certObj.getIssuerString();
-    return await this._module.certificateRepository.createOrUpdateCertificate(certificateEntity);
+    certificateEntity.tenantId = tenantId;
+    return await this._module.certificateRepository.createOrUpdateCertificate(
+      tenantId,
+      certificateEntity,
+    );
   }
 }
 

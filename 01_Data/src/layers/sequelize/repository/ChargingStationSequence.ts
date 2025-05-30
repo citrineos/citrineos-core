@@ -16,12 +16,14 @@ export class SequelizeChargingStationSequenceRepository
   }
 
   async getNextSequenceValue(
+    tenantId: number,
     stationId: string,
     type: ChargingStationSequenceType,
   ): Promise<number> {
     return await this.s.transaction(async (transaction) => {
-      const [storedSequence, sequenceCreated] = await this.readOrCreateByQuery({
+      const [storedSequence, sequenceCreated] = await this.readOrCreateByQuery(tenantId, {
         where: {
+          tenantId: tenantId,
           stationId: stationId,
           type: type,
         },

@@ -31,12 +31,17 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
         );
   }
 
-  async createOrUpdateByKey(value: BootConfig, key: string): Promise<Boot | undefined> {
+  async createOrUpdateByKey(
+    tenantId: number,
+    value: BootConfig,
+    key: string,
+  ): Promise<Boot | undefined> {
     let savedBootConfig: Boot | undefined;
     let created;
     await this.s.transaction(async (sequelizeTransaction) => {
-      const [boot, bootCreated] = await this.readOrCreateByQuery({
+      const [boot, bootCreated] = await this.readOrCreateByQuery(tenantId, {
         where: {
+          tenantId,
           id: key,
         },
         defaults: {
@@ -57,6 +62,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
     if (savedBootConfig) {
       if (value.pendingBootSetVariableIds) {
         savedBootConfig.pendingBootSetVariables = await this.manageSetVariables(
+          tenantId,
           value.pendingBootSetVariableIds,
           key,
           savedBootConfig.id,
@@ -70,15 +76,20 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
   }
 
   async updateStatusByKey(
+    tenantId: number,
     status: OCPP2_0_1.RegistrationStatusEnumType,
     statusInfo: OCPP2_0_1.StatusInfoType | undefined,
     key: string,
   ): Promise<Boot | undefined> {
-    return await this.updateByKey({ status, statusInfo }, key);
+    return await this.updateByKey(tenantId, { status, statusInfo }, key);
   }
 
-  async updateLastBootTimeByKey(lastBootTime: string, key: string): Promise<Boot | undefined> {
-    return await this.updateByKey({ lastBootTime }, key);
+  async updateLastBootTimeByKey(
+    tenantId: number,
+    lastBootTime: string,
+    key: string,
+  ): Promise<Boot | undefined> {
+    return await this.updateByKey(tenantId, { lastBootTime }, key);
   }
 
   /**
@@ -86,6 +97,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
    */
 
   private async manageSetVariables(
+    tenantId: number,
     setVariableIds: number[],
     stationId: string,
     bootConfigId: string,
@@ -93,6 +105,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
     const managedSetVariables: VariableAttribute[] = [];
     // Unassigns variables
     await this.variableAttributes.updateAllByQuery(
+      tenantId,
       { bootConfigId: null },
       {
         where: {
@@ -103,6 +116,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
     // Assigns variables, or throws an error if variable with id does not exist
     for (const setVariableId of setVariableIds) {
       const setVariable: VariableAttribute | undefined = await this.variableAttributes.updateByKey(
+        tenantId,
         { bootConfigId },
         setVariableId.toString(),
       );

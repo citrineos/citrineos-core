@@ -58,3 +58,28 @@ array_relationships:
         table:
           name: VariableAttributes
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - isOnline
+        - chargeBoxSerialNumber
+        - chargePointModel
+        - chargePointSerialNumber
+        - chargePointVendor
+        - firmwareVersion
+        - iccid
+        - id
+        - imsi
+        - meterSerialNumber
+        - meterType
+        - protocol
+        - locationId
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

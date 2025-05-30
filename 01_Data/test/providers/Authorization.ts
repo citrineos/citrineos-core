@@ -1,7 +1,6 @@
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 import { faker } from '@faker-js/faker';
-import { Authorization, IdToken } from '@citrineos/data';
-import { AdditionalInfo, IdTokenInfo } from '../../src';
+import { Authorization, IdToken, AdditionalInfo, IdTokenInfo } from '../../src';
 
 export function aAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {
   return applyUpdateFunction(
