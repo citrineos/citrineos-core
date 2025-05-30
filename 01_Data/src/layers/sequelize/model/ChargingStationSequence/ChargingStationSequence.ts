@@ -1,9 +1,10 @@
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { ChargingStation } from '../Location';
 import { ChargingStationSequenceType } from '@citrineos/base';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class ChargingStationSequence extends Model {
+export class ChargingStationSequence extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = 'ChargingStationSequence';
 
   @ForeignKey(() => ChargingStation)

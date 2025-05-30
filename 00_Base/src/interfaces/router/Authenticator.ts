@@ -8,6 +8,7 @@ import { AuthenticationOptions } from './AuthenticationOptions';
 export interface IAuthenticator {
   authenticate(
     request: IncomingMessage,
+    tenantId: number,
     options: AuthenticationOptions,
   ): Promise<{ identifier: string }>;
 }

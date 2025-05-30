@@ -17,7 +17,11 @@ export class SequelizeCertificateRepository
     super(config, Certificate.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createOrUpdateCertificate(certificate: Certificate): Promise<Certificate> {
+  async createOrUpdateCertificate(
+    tenantId: number,
+    certificate: Certificate,
+  ): Promise<Certificate> {
+    certificate.tenantId = tenantId;
     return await this.s.transaction(async (transaction) => {
       const savedCert = await this.s.models[Certificate.MODEL_NAME].findOne({
         where: {
@@ -32,7 +36,7 @@ export class SequelizeCertificateRepository
         return savedCertificate;
       } else {
         return (
-          await this.updateAllByQuery(certificate, {
+          await this.updateAllByQuery(tenantId, certificate, {
             where: {
               serialNumber: certificate.serialNumber,
               issuerName: certificate.issuerName,

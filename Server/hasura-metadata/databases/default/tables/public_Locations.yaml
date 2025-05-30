@@ -13,3 +13,23 @@ array_relationships:
         table:
           name: ChargingStations
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - address
+        - city
+        - country
+        - name
+        - postalCode
+        - state
+        - id
+        - tenantId
+        - createdAt
+        - updatedAt
+        - coordinates
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

@@ -21,6 +21,7 @@ import {
   OcppRequest,
   OCPPVersion,
   SystemConfig,
+  systemConfigSchema,
 } from '../..';
 import { OCPP2_0_1_Namespace } from '../../ocpp/persistence';
 import { CallAction } from '../../ocpp/rpc/message';
@@ -29,6 +30,7 @@ import { IModule } from '../modules';
 import { IMessageQuerystringSchema } from './MessageQuerystring';
 import { IModuleApi } from './ModuleApi';
 import { AuthorizationSecurity } from './AuthorizationSecurity';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 /**
  * Abstract module api class implementation.
@@ -138,9 +140,9 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
       return method.call(
         this,
         identifiers,
-        tenantId,
         request.body,
         callbackUrl,
+        tenantId,
         Object.keys(extraQueries).length > 0 ? extraQueries : undefined,
       );
     };
@@ -392,6 +394,11 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
       () => new Promise((resolve) => resolve(module.config)),
       HttpMethod.Get,
     );
+
+    const systemConfigJsonSchema: any = zodToJsonSchema(systemConfigSchema, {
+      name: 'SystemConfigSchema',
+      $refStrategy: 'none',
+    });
     this._addDataRoute.call(
       this,
       OCPP2_0_1_Namespace.SystemConfig,
@@ -400,6 +407,13 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
         module.config = request.body;
       },
       HttpMethod.Put,
+      undefined,
+      undefined,
+      undefined,
+      {
+        ...systemConfigJsonSchema,
+        $id: 'SystemConfigSchema',
+      },
     );
   }
 

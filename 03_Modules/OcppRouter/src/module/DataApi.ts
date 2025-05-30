@@ -7,6 +7,7 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   BadRequestError,
+  DEFAULT_TENANT_ID,
   HttpMethod,
   Namespace,
   OCPP1_6_Namespace,
@@ -23,6 +24,8 @@ import {
   ModelKeyQuerystring,
   ModelKeyQuerystringSchema,
   Subscription,
+  TenantQueryString,
+  TenantQuerySchema,
 } from '@citrineos/data';
 
 /**
@@ -52,10 +55,14 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
   @AsDataEndpoint(
     OCPP2_0_1_Namespace.Subscription,
     HttpMethod.Post,
-    undefined,
+    TenantQuerySchema,
     CreateSubscriptionSchema,
   )
-  async postSubscription(request: FastifyRequest<{ Body: Subscription }>): Promise<number> {
+  async postSubscription(
+    request: FastifyRequest<{ Body: Subscription; Querystring: TenantQueryString }>,
+  ): Promise<number> {
+    const tenantId = request.query.tenantId;
+    request.body.tenantId = tenantId;
     if (
       !request.body.onClose &&
       !request.body.onConnect &&
@@ -67,7 +74,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
       );
     }
     return this._module.subscriptionRepository
-      .create(request.body as Subscription)
+      .create(tenantId, request.body as Subscription)
       .then((subscription) => subscription?.id);
   }
 
@@ -75,15 +82,19 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
   async getSubscriptionsByChargingStation(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Subscription[]> {
-    return this._module.subscriptionRepository.readAllByStationId(request.query.stationId);
+    return this._module.subscriptionRepository.readAllByStationId(
+      request.query.tenantId,
+      request.query.stationId,
+    );
   }
 
   @AsDataEndpoint(OCPP2_0_1_Namespace.Subscription, HttpMethod.Delete, ModelKeyQuerystringSchema)
   async deleteSubscriptionById(
     request: FastifyRequest<{ Querystring: ModelKeyQuerystring }>,
   ): Promise<boolean> {
+    const tenantId = request.query.tenantId ?? DEFAULT_TENANT_ID;
     return this._module.subscriptionRepository
-      .deleteByKey(request.query.id.toString())
+      .deleteByKey(tenantId, request.query.id.toString())
       .then(() => true);
   }
 

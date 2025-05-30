@@ -8,6 +8,8 @@ import {
   TariffQuerySchema,
   TariffQueryString,
   TariffSchema,
+  TenantQueryString,
+  TenantQuerySchema,
   Transaction,
   TransactionEventQuerySchema,
   TransactionEventQuerystring,
@@ -54,30 +56,35 @@ export class TransactionsDataApi
     request: FastifyRequest<{ Querystring: TransactionEventQuerystring }>,
   ): Promise<Transaction | undefined> {
     return this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(
+      request.query.tenantId,
       request.query.stationId,
       request.query.transactionId,
     );
   }
 
-  @AsDataEndpoint(OCPP2_0_1_Namespace.Tariff, HttpMethod.Put, undefined, TariffSchema)
+  @AsDataEndpoint(OCPP2_0_1_Namespace.Tariff, HttpMethod.Put, TenantQuerySchema, TariffSchema)
   async upsertTariff(
     request: FastifyRequest<{
       Body: any;
+      Querystring: TenantQueryString;
     }>,
   ): Promise<Tariff> {
     const tariff = this.buildTariff(plainToInstance(UpsertTariffRequest, request.body));
-    return await this._module.tariffRepository.upsertTariff(tariff);
+    return await this._module.tariffRepository.upsertTariff(request.query.tenantId, tariff);
   }
 
   @AsDataEndpoint(OCPP2_0_1_Namespace.Tariff, HttpMethod.Get, TariffQuerySchema)
   getTariffs(request: FastifyRequest<{ Querystring: TariffQueryString }>): Promise<Tariff[]> {
-    return this._module.tariffRepository.readAllByQuerystring(request.query);
+    return this._module.tariffRepository.readAllByQuerystring(
+      request.query.tenantId,
+      request.query,
+    );
   }
 
   @AsDataEndpoint(OCPP2_0_1_Namespace.Tariff, HttpMethod.Delete, TariffQuerySchema)
   deleteTariffs(request: FastifyRequest<{ Querystring: TariffQueryString }>): Promise<string> {
     return this._module.tariffRepository
-      .deleteAllByQuerystring(request.query)
+      .deleteAllByQuerystring(request.query.tenantId, request.query)
       .then(
         (deletedCount: { toString: () => string }) =>
           deletedCount.toString() + ' rows successfully deleted from ' + OCPP2_0_1_Namespace.Tariff,

@@ -4,10 +4,11 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { Namespace } from '@citrineos/base';
-import { BelongsToMany, Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
+import { BelongsToMany, Column, DataType, HasOne, Table } from 'sequelize-typescript';
 import { AdditionalInfo } from './AdditionalInfo';
 import { IdTokenAdditionalInfo } from './IdTokenAdditionalInfo';
 import { Authorization } from './Authorization';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table({
   indexes: [
@@ -20,7 +21,7 @@ import { Authorization } from './Authorization';
     },
   ],
 })
-export class IdToken extends Model {
+export class IdToken extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = Namespace.IdTokenType;
 
   @BelongsToMany(() => AdditionalInfo, () => IdTokenAdditionalInfo)

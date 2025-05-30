@@ -275,7 +275,9 @@ export class EVDriverModule extends AbstractModule {
     }
 
     await this._authorizeRepository
-      .readOnlyOneByQuerystring({ ...request.idToken })
+      .readOnlyOneByQuerystring(context.tenantId, {
+        ...request.idToken,
+      })
       .then(async (authorization) => {
         if (authorization) {
           if (authorization.idTokenInfo) {
@@ -300,7 +302,8 @@ export class EVDriverModule extends AbstractModule {
                 if (authorization.allowedConnectorTypes) {
                   evseIds = new Set();
                   const connectorTypes: VariableAttribute[] =
-                    await this._deviceModelRepository.readAllByQuerystring({
+                    await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
+                      tenantId: context.tenantId,
                       stationId: message.context.stationId,
                       component_name: 'Connector',
                       variable_name: 'ConnectorType',
@@ -328,7 +331,8 @@ export class EVDriverModule extends AbstractModule {
                   if (authorization.disallowedEvseIdPrefixes) {
                     evseIds = evseIds ? evseIds : new Set();
                     const evseIdAttributes: VariableAttribute[] =
-                      await this._deviceModelRepository.readAllByQuerystring({
+                      await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
+                        tenantId: context.tenantId,
                         stationId: message.context.stationId,
                         component_name: 'EVSE',
                         variable_name: 'EvseId',
@@ -393,7 +397,8 @@ export class EVDriverModule extends AbstractModule {
 
         if (response.idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
           const tariffAvailable: VariableAttribute[] =
-            await this._deviceModelRepository.readAllByQuerystring({
+            await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
+              tenantId: context.tenantId,
               stationId: message.context.stationId,
               component_name: 'TariffCostCtrlr',
               variable_name: 'Available',
@@ -402,7 +407,8 @@ export class EVDriverModule extends AbstractModule {
             });
 
           const displayMessageAvailable: VariableAttribute[] =
-            await this._deviceModelRepository.readAllByQuerystring({
+            await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
+              tenantId: context.tenantId,
               stationId: message.context.stationId,
               component_name: 'DisplayMessageCtrlr',
               variable_name: 'Available',
@@ -416,6 +422,7 @@ export class EVDriverModule extends AbstractModule {
           ) {
             // TODO: refactor the workaround below after tariff implementation is finalized.
             const tariff: Tariff | undefined = await this._tariffRepository.findByStationId(
+              context.tenantId,
               message.context.stationId,
             );
             if (tariff) {
@@ -445,18 +452,23 @@ export class EVDriverModule extends AbstractModule {
     try {
       const status = message.payload
         .reservationUpdateStatus as OCPP2_0_1.ReservationUpdateStatusEnumType;
-      const reservation = await this._reservationRepository.readOnlyOneByQuery({
-        where: {
-          stationId: message.context.stationId,
-          id: message.payload.reservationId,
+      const reservation = await this._reservationRepository.readOnlyOneByQuery(
+        message.context.tenantId,
+        {
+          where: {
+            tenantId: message.context.tenantId,
+            stationId: message.context.stationId,
+            id: message.payload.reservationId,
+          },
         },
-      });
+      );
       if (reservation) {
         if (
           status === OCPP2_0_1.ReservationUpdateStatusEnumType.Expired ||
           status === OCPP2_0_1.ReservationUpdateStatusEnumType.Removed
         ) {
           await this._reservationRepository.updateByKey(
+            message.context.tenantId,
             {
               isActive: false,
             },
@@ -493,6 +505,7 @@ export class EVDriverModule extends AbstractModule {
       const stationId: string = message.context.stationId;
       // 1. Clear all existing profiles: find existing active profiles and set them to isActive false
       await this._chargingProfileRepository.updateAllByQuery(
+        message.context.tenantId,
         {
           isActive: false,
         },
@@ -514,6 +527,7 @@ export class EVDriverModule extends AbstractModule {
         OCPP2_0_1_CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
+            message.context.tenantId,
             message.context.stationId,
             ChargingStationSequenceType.getChargingProfiles,
           ),
@@ -543,8 +557,9 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('CancelReservationResponse received:', message, props);
 
-    const request = await this._ocppMessageRepository.readOnlyOneByQuery({
+    const request = await this._ocppMessageRepository.readOnlyOneByQuery(message.context.tenantId, {
       where: {
+        tenantId: message.context.tenantId,
         stationId: message.context.stationId,
         correlationId: message.context.correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
@@ -552,6 +567,7 @@ export class EVDriverModule extends AbstractModule {
     });
     if (request) {
       await this._reservationRepository.updateByKey(
+        message.context.tenantId,
         {
           isActive: message.payload.status === OCPP2_0_1.CancelReservationStatusEnumType.Rejected,
         },
@@ -571,8 +587,9 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('ReserveNowResponse received:', message, props);
 
-    const request = await this._ocppMessageRepository.readOnlyOneByQuery({
+    const request = await this._ocppMessageRepository.readOnlyOneByQuery(message.context.tenantId, {
       where: {
+        tenantId: message.context.tenantId,
         stationId: message.context.stationId,
         correlationId: message.context.correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
@@ -581,6 +598,7 @@ export class EVDriverModule extends AbstractModule {
     if (request) {
       const status = message.payload.status as OCPP2_0_1.ReserveNowStatusEnumType;
       await this._reservationRepository.updateByKey(
+        message.context.tenantId,
         {
           reserveStatus: status,
           isActive: status === OCPP2_0_1.ReserveNowStatusEnumType.Accepted,
@@ -621,6 +639,7 @@ export class EVDriverModule extends AbstractModule {
 
     const sendLocalListRequest =
       await this._localAuthListRepository.getSendLocalListRequestByStationIdAndCorrelationId(
+        message.context.tenantId,
         stationId,
         message.context.correlationId,
       );
@@ -637,6 +656,7 @@ export class EVDriverModule extends AbstractModule {
     switch (sendLocalListResponse.status) {
       case OCPP2_0_1.SendLocalListStatusEnumType.Accepted:
         await this._localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
+          message.context.tenantId,
           stationId,
           sendLocalListRequest,
         );
@@ -683,6 +703,7 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('GetLocalListVersionResponse received:', message, props);
 
     await this._localAuthListRepository.validateOrReplaceLocalListVersionForStation(
+      message.context.tenantId,
       message.payload.versionNumber,
       message.context.stationId,
     );
@@ -715,10 +736,13 @@ export class EVDriverModule extends AbstractModule {
       },
     };
     try {
-      const authorizations = await this._authorizeRepository.readAllByQuerystring({
-        idToken: request.idTag,
-        type: null, //explicitly ignore type
-      });
+      const authorizations = await this._authorizeRepository.readAllByQuerystring(
+        message.context.tenantId,
+        {
+          idToken: request.idTag,
+          type: null, //explicitly ignore type
+        },
+      );
       if (!authorizations || authorizations.length === 0) {
         this._logger.error(`No authorization found for idToken: ${request.idTag}`);
         //below line is just to make it more explicit. Default status is already invalid.

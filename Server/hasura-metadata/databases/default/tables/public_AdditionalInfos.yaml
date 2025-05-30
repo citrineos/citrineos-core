@@ -13,3 +13,18 @@ array_relationships:
         table:
           name: IdTokenAdditionalInfos
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - additionalIdToken
+        - type
+        - id
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

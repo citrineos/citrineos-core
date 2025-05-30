@@ -131,6 +131,7 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
           action: message.action.toString(),
           state: message.state.toString(),
           ...message.context,
+          tenantId: message.context.tenantId.toString(),
         },
       },
     );

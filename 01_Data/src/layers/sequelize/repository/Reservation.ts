@@ -35,13 +35,14 @@ export class SequelizeReservationRepository
   }
 
   async createOrUpdateReservation(
+    tenantId: number,
     reserveNowRequest: OCPP2_0_1.ReserveNowRequest,
     stationId: string,
     isActive?: boolean,
   ): Promise<Reservation | undefined> {
     let evseDBId: number | null = null;
     if (reserveNowRequest.evseId) {
-      const [evse] = await this.evse.readAllByQuery({
+      const [evse] = await this.evse.readAllByQuery(tenantId, {
         where: {
           id: reserveNowRequest.evseId,
           connectorId: null,
@@ -55,8 +56,9 @@ export class SequelizeReservationRepository
       }
     }
 
-    const [storedReservation, created] = await this.readOrCreateByQuery({
+    const [storedReservation, created] = await this.readOrCreateByQuery(tenantId, {
       where: {
+        tenantId,
         // unique constraints
         stationId,
         id: reserveNowRequest.id,
@@ -72,6 +74,7 @@ export class SequelizeReservationRepository
 
     if (!created) {
       return await this.updateByKey(
+        tenantId,
         {
           expiryDateTime: reserveNowRequest.expiryDateTime,
           connectorType: reserveNowRequest.connectorType ?? null,
@@ -87,7 +90,7 @@ export class SequelizeReservationRepository
     }
   }
 
-  async getNextReservationId(stationId: string): Promise<number> {
-    return await this.readNextValue('id', { where: { stationId } });
+  async getNextReservationId(tenantId: number, stationId: string): Promise<number> {
+    return await this.readNextValue(tenantId, 'id', { where: { stationId } });
   }
 }

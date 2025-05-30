@@ -11,3 +11,23 @@ object_relationships:
   - name: Transaction
     using:
       foreign_key_constraint_on: transactionDatabaseId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - requestedEnergyTransfer
+        - evseDatabaseId
+        - id
+        - maxScheduleTuples
+        - tenantId
+        - transactionDatabaseId
+        - acChargingParameters
+        - dcChargingParameters
+        - createdAt
+        - departureTime
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

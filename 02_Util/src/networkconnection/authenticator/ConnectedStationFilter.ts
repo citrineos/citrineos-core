@@ -19,7 +19,11 @@ export class ConnectedStationFilter extends AuthenticatorFilter {
     return true;
   }
 
-  protected async filter(identifier: string, _request: IncomingMessage): Promise<void> {
+  protected async filter(
+    tenantId: number,
+    identifier: string,
+    _request: IncomingMessage,
+  ): Promise<void> {
     const isAlreadyConnected = notNull(
       await this._cache.get(identifier, CacheNamespace.Connections),
     );

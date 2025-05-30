@@ -16,3 +16,28 @@ array_relationships:
         table:
           name: ChargingSchedules
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - isActive
+        - chargingLimitSource
+        - chargingProfileKind
+        - chargingProfilePurpose
+        - recurrencyKind
+        - stationId
+        - databaseId
+        - evseId
+        - id
+        - stackLevel
+        - tenantId
+        - transactionDatabaseId
+        - createdAt
+        - updatedAt
+        - validFrom
+        - validTo
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

@@ -3,11 +3,12 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
+  DEFAULT_TENANT_ID,
   defineConfig,
   OCPP1_6,
+  OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
-  OCPP1_6_CallAction,
 } from '@citrineos/base';
 import path from 'path';
 
@@ -202,12 +203,8 @@ export function createDockerConfig() {
         exposeData: true,
         exposeMessage: true,
       },
-      fileAccess: {
-        directus: {
-          host: 'directus',
-          port: 8055,
-          generateFlows: false,
-        },
+      authProvider: {
+        localByPass: true,
       },
       networkConnection: {
         websocketServers: [
@@ -219,6 +216,7 @@ export function createDockerConfig() {
             host: '0.0.0.0',
             port: 8081,
             protocol: 'ocpp2.0.1',
+            tenantId: DEFAULT_TENANT_ID,
           },
           {
             id: '1',
@@ -228,6 +226,7 @@ export function createDockerConfig() {
             host: '0.0.0.0',
             port: 8082,
             protocol: 'ocpp2.0.1',
+            tenantId: DEFAULT_TENANT_ID,
           },
         ],
       },
@@ -264,6 +263,5 @@ export function createDockerConfig() {
     userPreferences: {
       // None by default
     },
-    configFileName: 'config.json',
   });
 }

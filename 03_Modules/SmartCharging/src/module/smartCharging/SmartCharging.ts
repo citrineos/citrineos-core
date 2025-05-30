@@ -18,6 +18,7 @@ export interface ISmartCharging {
   calculateChargingProfile(
     request: OCPP2_0_1.NotifyEVChargingNeedsRequest,
     transaction: Transaction,
+    tenantId: number,
     stationId: string,
   ): Promise<OCPP2_0_1.ChargingProfileType>;
 
@@ -30,6 +31,7 @@ export interface ISmartCharging {
    **/
   checkLimitsOfChargingSchedule(
     request: OCPP2_0_1.NotifyEVChargingScheduleRequest,
+    tenantId: number,
     stationId: string,
     transaction: Transaction,
   ): Promise<void>;

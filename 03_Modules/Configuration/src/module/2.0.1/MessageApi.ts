@@ -10,6 +10,7 @@ import {
   AbstractModuleApi,
   AsMessageEndpoint,
   CallAction,
+  DEFAULT_TENANT_ID,
   IMessageConfirmation,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
@@ -52,10 +53,10 @@ export class ConfigurationOcpp201Api
   )
   async setNetworkProfile(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.SetNetworkProfileRequest,
     callbackUrl?: string,
     extraQueries?: Record<string, any>,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const correlationId = uuidv4();
     if (extraQueries) {
@@ -63,6 +64,7 @@ export class ConfigurationOcpp201Api
         extraQueries[SetNetworkProfileExtraQuerystrings.websocketServerConfigId];
       await SetNetworkProfile.build({
         stationId: identifier,
+        tenantId,
         correlationId,
         configurationSlot: request.configurationSlot,
         websocketServerConfigId,
@@ -92,9 +94,9 @@ export class ConfigurationOcpp201Api
   )
   clearDisplayMessage(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.ClearDisplayMessageRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
@@ -115,9 +117,9 @@ export class ConfigurationOcpp201Api
   )
   getDisplayMessages(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.GetDisplayMessagesRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
@@ -135,9 +137,9 @@ export class ConfigurationOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.PublishFirmware, OCPP2_0_1.PublishFirmwareRequestSchema)
   publishFirmware(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.PublishFirmwareRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
@@ -158,9 +160,9 @@ export class ConfigurationOcpp201Api
   )
   async setDisplayMessage(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.SetDisplayMessageRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const messageInfo = request.message as OCPP2_0_1.MessageInfoType;
 
@@ -196,9 +198,9 @@ export class ConfigurationOcpp201Api
   )
   unpublishFirmware(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.UnpublishFirmwareRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
@@ -216,9 +218,9 @@ export class ConfigurationOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.UpdateFirmware, OCPP2_0_1.UpdateFirmwareRequestSchema)
   updateFirmware(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.UpdateFirmwareRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
@@ -236,9 +238,9 @@ export class ConfigurationOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.Reset, OCPP2_0_1.ResetRequestSchema)
   reset(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.ResetRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
@@ -259,9 +261,9 @@ export class ConfigurationOcpp201Api
   )
   changeAvailability(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.ChangeAvailabilityRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
@@ -279,9 +281,9 @@ export class ConfigurationOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.TriggerMessage, OCPP2_0_1.TriggerMessageRequestSchema)
   triggerMessage(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.TriggerMessageRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(

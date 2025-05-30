@@ -50,6 +50,7 @@ export class SignedMeterValuesUtil {
    * @param meterValues - The list of meter values
    */
   public async validateMeterValues(
+    tenantId: number,
     stationId: string,
     meterValues: [OCPP2_0_1.MeterValueType, ...OCPP2_0_1.MeterValueType[]],
   ): Promise<boolean> {
@@ -57,6 +58,7 @@ export class SignedMeterValuesUtil {
       for (const sampledValue of meterValue.sampledValue) {
         if (sampledValue.signedMeterValue) {
           const validMeterValues = await this.validateSignedSampledValue(
+            tenantId,
             stationId,
             sampledValue.signedMeterValue,
           );
@@ -71,6 +73,7 @@ export class SignedMeterValuesUtil {
   }
 
   private async validateSignedSampledValue(
+    tenantId: number,
     stationId: string,
     signedMeterValue: OCPP2_0_1.SignedMeterValueType,
   ): Promise<boolean> {
@@ -80,6 +83,7 @@ export class SignedMeterValuesUtil {
 
       if (this._signedMeterValuesConfiguration && incomingPublicKeyIsValid) {
         await this._chargingStationSecurityInfoRepository.readOrCreateChargingStationInfo(
+          tenantId,
           stationId,
           this._signedMeterValuesConfiguration.publicKeyFileId,
         );
@@ -91,6 +95,7 @@ export class SignedMeterValuesUtil {
     } else {
       const chargingStationPublicKeyFileId =
         await this._chargingStationSecurityInfoRepository.readChargingStationPublicKeyFileId(
+          tenantId,
           stationId,
         );
       return await this.validateSignedMeterValueSignature(

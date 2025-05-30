@@ -3,19 +3,19 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BelongsTo,
   BelongsToMany,
   Column,
   DataType,
   ForeignKey,
-  Model,
   Table,
 } from 'sequelize-typescript';
 import { Evse } from './Evse';
 import { Variable } from './Variable';
 import { ComponentVariable } from './ComponentVariable';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table({
   indexes: [
@@ -28,7 +28,7 @@ import { ComponentVariable } from './ComponentVariable';
     },
   ],
 })
-export class Component extends Model implements OCPP2_0_1.ComponentType {
+export class Component extends BaseModelWithTenant implements OCPP2_0_1.ComponentType {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ComponentType;
 
   /**

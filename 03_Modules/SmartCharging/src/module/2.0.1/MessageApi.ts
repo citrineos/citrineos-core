@@ -10,6 +10,7 @@ import {
   AbstractModuleApi,
   AsMessageEndpoint,
   CallAction,
+  DEFAULT_TENANT_ID,
   IMessageConfirmation,
   Namespace,
   OCPP1_6_Namespace,
@@ -50,9 +51,9 @@ export class SmartChargingOcpp201Api
   )
   async clearChargingProfile(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.ClearChargingProfileRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const responses: IMessageConfirmation[] = [];
 
@@ -125,9 +126,9 @@ export class SmartChargingOcpp201Api
   )
   async getChargingProfiles(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.GetChargingProfilesRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const chargingProfile = request.chargingProfile;
 
@@ -162,6 +163,7 @@ export class SmartChargingOcpp201Api
     if (chargingProfile.chargingProfileId && chargingProfile.chargingProfileId.length > 1) {
       const chargingProfilesEntries =
         await this._module.deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
+          tenantId,
           'Entries',
           'ChargingProfiles',
         );
@@ -200,9 +202,9 @@ export class SmartChargingOcpp201Api
   )
   async setChargingProfile(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.SetChargingProfileRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     // Process each station individually
     return Promise.all(
@@ -216,6 +218,7 @@ export class SmartChargingOcpp201Api
         try {
           await validateChargingProfileType(
             chargingProfile,
+            tenantId,
             id,
             this._module.deviceModelRepository,
             this._module.chargingProfileRepository,
@@ -265,6 +268,7 @@ export class SmartChargingOcpp201Api
           // OCPP 2.0.1 Part 2 K01.FR.09
           const transaction =
             await this._module.transactionEventRepository.readTransactionByStationIdAndTransactionId(
+              tenantId,
               id,
               chargingProfile.transactionId,
             );
@@ -283,6 +287,7 @@ export class SmartChargingOcpp201Api
           }
 
           const evse = await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
+            tenantId,
             request.evseId,
             null,
           );
@@ -298,6 +303,7 @@ export class SmartChargingOcpp201Api
           // Must have received a NotifyEVChargingNeedsReq if more than one schedule is provided
           const receivedChargingNeeds =
             await this._module.chargingProfileRepository.findChargingNeedsByEvseDBIdAndTransactionDBId(
+              tenantId,
               evse.databaseId,
               transaction.id,
             );
@@ -309,12 +315,13 @@ export class SmartChargingOcpp201Api
           }
 
           // OCPP 2.0.1 Part 2 K01.FR.39
-          const numExisted = await this._module.chargingProfileRepository.existByQuery({
+          const numExisted = await this._module.chargingProfileRepository.existByQuery(tenantId, {
             where: {
               stackLevel: chargingProfile.stackLevel,
               transactionDatabaseId: transaction.id,
               chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
               isActive: true,
+              tenantId,
             },
           });
           if (numExisted > 0) {
@@ -353,12 +360,13 @@ export class SmartChargingOcpp201Api
 
           // Check for existing profiles with the same stack level and purpose
           const existedChargingProfiles =
-            await this._module.chargingProfileRepository.readAllByQuery({
+            await this._module.chargingProfileRepository.readAllByQuery(tenantId, {
               where: {
                 stackLevel: chargingProfile.stackLevel,
                 chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
                 evseId: request.evseId,
                 isActive: true,
+                tenantId,
               },
             });
           this._logger.info(
@@ -390,7 +398,8 @@ export class SmartChargingOcpp201Api
 
         // Additional checks on scheduling
         const acPhaseSwitchingSupported: VariableAttribute[] =
-          await this._module.deviceModelRepository.readAllByQuerystring({
+          await this._module.deviceModelRepository.readAllByQuerystring(tenantId, {
+            tenantId,
             stationId: id,
             component_evse_id: request.evseId,
             component_name: 'SmartChargingCtrlr',
@@ -402,7 +411,7 @@ export class SmartChargingOcpp201Api
             acPhaseSwitchingSupported,
           )}`,
         );
-        const rateUnitMemberList = await this._getChargingRateUnitMemberList();
+        const rateUnitMemberList = await this._getChargingRateUnitMemberList(tenantId);
         for (const chargingSchedule of chargingProfile.chargingSchedule) {
           // OCPP 2.0.1 Part 2 K01.FR.31
           if (chargingSchedule.chargingSchedulePeriod[0].startPeriod !== 0) {
@@ -484,6 +493,7 @@ export class SmartChargingOcpp201Api
 
         // Save the charging profile, set the source to "CSO"
         await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
+          tenantId,
           chargingProfile,
           id,
           request.evseId,
@@ -509,9 +519,9 @@ export class SmartChargingOcpp201Api
   )
   clearedChargingLimit(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.ClearedChargingLimitRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     return Promise.all(
       identifier.map((id) =>
@@ -533,15 +543,16 @@ export class SmartChargingOcpp201Api
   )
   async getCompositeSchedule(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.GetCompositeScheduleRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     return Promise.all(
       identifier.map(async (id) => {
         // OCPP 2.0.1 Part 2 K08.FR.05
         if (request.evseId !== 0) {
           const evse = await this._module.deviceModelRepository.findEvseByIdAndConnectorId(
+            tenantId,
             request.evseId,
             null,
           );
@@ -556,7 +567,7 @@ export class SmartChargingOcpp201Api
 
         // OCPP 2.0.1 Part 2 K08.FR.07
         if (request.chargingRateUnit) {
-          const rateUnitMemberList = await this._getChargingRateUnitMemberList();
+          const rateUnitMemberList = await this._getChargingRateUnitMemberList(tenantId);
           if (rateUnitMemberList && !rateUnitMemberList.has(request.chargingRateUnit)) {
             return {
               success: false,
@@ -604,9 +615,10 @@ export class SmartChargingOcpp201Api
   /**
    * Returns a set of allowed RateUnit values (if defined on the station).
    */
-  private async _getChargingRateUnitMemberList(): Promise<Set<string> | undefined> {
+  private async _getChargingRateUnitMemberList(tenantId: number): Promise<Set<string> | undefined> {
     const chargingScheduleChargingRateUnit =
       await this._module.deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
+        tenantId,
         'RateUnit',
         null,
       );

@@ -2,11 +2,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace, OCPP2_0_1, Namespace } from '@citrineos/base';
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { Namespace } from '@citrineos/base';
+import { Column, DataType, Table } from 'sequelize-typescript';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class CompositeSchedule extends Model {
+export class CompositeSchedule extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = Namespace.CompositeSchedule;
 
   @Column(DataType.STRING)

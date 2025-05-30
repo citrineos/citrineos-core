@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ConfigStore, SystemConfig } from '@citrineos/base';
+import { BootstrapConfig, ConfigStore, SystemConfig } from '@citrineos/base';
 import { sequelize } from '@citrineos/data';
 import {
   authentication,
@@ -35,7 +35,7 @@ export class DirectusUtil implements ConfigStore {
   private readonly _configDir?: string;
 
   constructor(
-    config: SystemConfig['util']['fileAccess']['directus'],
+    config: BootstrapConfig['fileAccess']['directus'],
     configFileName: string,
     configDir?: string,
     logger?: Logger<ILogObj>,

@@ -8,7 +8,7 @@ export { ConnectedStationFilter } from './networkconnection/authenticator/Connec
 export { NetworkProfileFilter } from './networkconnection/authenticator/NetworkProfileFilter';
 export { BasicAuthenticationFilter } from './networkconnection/authenticator/BasicAuthenticationFilter';
 
-export { IAuthorizer } from './authorization';
+export * from './authorization';
 export { MemoryCache } from './cache/memory';
 export { RedisCache } from './cache/redis';
 export { S3Storage } from './files/s3Storage';

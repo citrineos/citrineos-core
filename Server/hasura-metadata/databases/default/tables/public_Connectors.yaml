@@ -16,3 +16,24 @@ array_relationships:
         table:
           name: StartTransactions
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - info
+        - stationId
+        - vendorErrorCode
+        - vendorId
+        - connectorId
+        - id
+        - tenantId
+        - createdAt
+        - timestamp
+        - updatedAt
+        - errorCode
+        - status
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

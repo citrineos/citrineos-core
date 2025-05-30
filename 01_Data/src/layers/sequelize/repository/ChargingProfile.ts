@@ -87,6 +87,7 @@ export class SequelizeChargingProfileRepository
   }
 
   async createOrUpdateChargingProfile(
+    tenantId: number,
     chargingProfile: OCPP2_0_1.ChargingProfileType,
     stationId: string,
     evseId?: number | null,
@@ -104,8 +105,9 @@ export class SequelizeChargingProfileRepository
       transactionDBId = activeTransaction?.id;
     }
 
-    const [savedChargingProfile, profileCreated] = await this.readOrCreateByQuery({
+    const [savedChargingProfile, profileCreated] = await this.readOrCreateByQuery(tenantId, {
       where: {
+        tenantId: tenantId,
         stationId: stationId,
         id: chargingProfile.id,
       },
@@ -119,6 +121,7 @@ export class SequelizeChargingProfileRepository
     });
     if (!profileCreated) {
       await this.updateByKey(
+        tenantId,
         {
           ...chargingProfile,
           chargingSchedule: chargingProfile.chargingSchedule.map((s) => ({ ...s })) as
@@ -134,13 +137,13 @@ export class SequelizeChargingProfileRepository
         savedChargingProfile.databaseId.toString(),
       );
       // delete existed charging schedules and sales tariff
-      const deletedChargingSchedules = await this.chargingSchedule.deleteAllByQuery({
+      const deletedChargingSchedules = await this.chargingSchedule.deleteAllByQuery(tenantId, {
         where: {
           chargingProfileDatabaseId: savedChargingProfile.databaseId,
         },
       });
       for (const deletedSchedule of deletedChargingSchedules) {
-        await this.salesTariff.deleteAllByQuery({
+        await this.salesTariff.deleteAllByQuery(tenantId, {
           where: {
             chargingScheduleDatabaseId: deletedSchedule.databaseId,
           },
@@ -150,7 +153,9 @@ export class SequelizeChargingProfileRepository
 
     for (const chargingSchedule of chargingProfile.chargingSchedule) {
       const savedChargingSchedule = await this.chargingSchedule.create(
+        tenantId,
         ChargingSchedule.build({
+          tenantId,
           stationId,
           chargingProfileDatabaseId: savedChargingProfile.databaseId,
           ...chargingSchedule,
@@ -158,7 +163,9 @@ export class SequelizeChargingProfileRepository
       );
       if (chargingSchedule.salesTariff) {
         await this.salesTariff.create(
+          tenantId,
           SalesTariff.build({
+            tenantId,
             chargingScheduleDatabaseId: savedChargingSchedule.databaseId,
             ...chargingSchedule.salesTariff,
           }),
@@ -170,6 +177,7 @@ export class SequelizeChargingProfileRepository
   }
 
   async createChargingNeeds(
+    tenantId: number,
     chargingNeedsReq: OCPP2_0_1.NotifyEVChargingNeedsRequest,
     stationId: string,
   ): Promise<ChargingNeeds> {
@@ -178,7 +186,7 @@ export class SequelizeChargingProfileRepository
         stationId,
         isActive: true,
       },
-      include: [{ model: Evse, where: { id: chargingNeedsReq.evseId }, required: true }], // required: true ensures the inner join
+      include: [{ model: Evse, where: { id: chargingNeedsReq.evseId }, required: true }],
     });
     if (!activeTransaction) {
       throw new Error(
@@ -187,7 +195,9 @@ export class SequelizeChargingProfileRepository
     }
 
     return await this.chargingNeeds.create(
+      tenantId,
       ChargingNeeds.build({
+        tenantId,
         ...chargingNeedsReq.chargingNeeds,
         evseDatabaseId: activeTransaction.evseDatabaseId,
         transactionDatabaseId: activeTransaction.id,
@@ -197,10 +207,11 @@ export class SequelizeChargingProfileRepository
   }
 
   async findChargingNeedsByEvseDBIdAndTransactionDBId(
+    tenantId: number,
     evseDBId: number,
     transactionDataBaseId: number | null,
   ): Promise<ChargingNeeds | undefined> {
-    const chargingNeedsArray = await this.chargingNeeds.readAllByQuery({
+    const chargingNeedsArray = await this.chargingNeeds.readAllByQuery(tenantId, {
       where: {
         evseDatabaseId: evseDBId,
         transactionDatabaseId: transactionDataBaseId,
@@ -212,31 +223,36 @@ export class SequelizeChargingProfileRepository
   }
 
   async createCompositeSchedule(
+    tenantId: number,
     compositeSchedule: OCPP2_0_1.CompositeScheduleType,
     stationId: string,
   ): Promise<CompositeSchedule> {
     return await this.compositeSchedule.create(
+      tenantId,
       CompositeSchedule.build({
+        tenantId,
         ...compositeSchedule,
         stationId,
       }),
     );
   }
 
-  async getNextChargingScheduleId(stationId: string): Promise<number> {
-    return await this.chargingSchedule.readNextValue('id', { where: { stationId } });
+  async getNextChargingScheduleId(tenantId: number, stationId: string): Promise<number> {
+    return await this.chargingSchedule.readNextValue(tenantId, 'id', { where: { stationId } });
   }
 
-  async getNextChargingProfileId(stationId: string): Promise<number> {
-    return await this.readNextValue('id', { where: { stationId } });
+  async getNextChargingProfileId(tenantId: number, stationId: string): Promise<number> {
+    return await this.readNextValue(tenantId, 'id', { where: { stationId } });
   }
 
   async getNextStackLevel(
+    tenantId: number,
     stationId: string,
     transactionDatabaseId: number | null,
     profilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType,
   ): Promise<number> {
     return await this.readNextValue(
+      tenantId,
       'stackLevel',
       {
         where: {

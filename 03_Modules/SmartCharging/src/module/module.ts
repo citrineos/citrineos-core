@@ -153,11 +153,13 @@ export class SmartChargingModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('NotifyEVChargingNeeds received:', message, props);
     const request = message.payload;
+    const tenantId = message.context.tenantId;
     const stationId = message.context.stationId;
     const givenNeeds: OCPP2_0_1.ChargingNeedsType = request.chargingNeeds;
 
     const activeTransaction =
       await this._transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
+        tenantId,
         stationId,
         request.evseId,
       );
@@ -191,6 +193,7 @@ export class SmartChargingModule extends AbstractModule {
       chargingProfile = await this._smartChargingService.calculateChargingProfile(
         request,
         activeTransaction,
+        tenantId,
         stationId,
       );
     } catch (error) {
@@ -202,6 +205,7 @@ export class SmartChargingModule extends AbstractModule {
     }
 
     const chargingNeeds = await this._chargingProfileRepository.createChargingNeeds(
+      tenantId,
       request,
       stationId,
     );
@@ -213,6 +217,7 @@ export class SmartChargingModule extends AbstractModule {
 
     const storedChargingProfile =
       await this.chargingProfileRepository.createOrUpdateChargingProfile(
+        tenantId,
         chargingProfile,
         stationId,
         request.evseId,
@@ -235,6 +240,7 @@ export class SmartChargingModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('NotifyEVChargingSchedule received:', message, props);
     const request = message.payload as OCPP2_0_1.NotifyEVChargingScheduleRequest;
+    const tenantId = message.context.tenantId;
     const stationId = message.context.stationId;
 
     // There are different definitions for Accepted and Rejected in NotifyEVChargingScheduleResponse
@@ -246,6 +252,7 @@ export class SmartChargingModule extends AbstractModule {
 
     const activeTransaction =
       await this._transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
+        tenantId,
         stationId,
         request.evseId,
       );
@@ -261,6 +268,7 @@ export class SmartChargingModule extends AbstractModule {
     try {
       await this._smartChargingService.checkLimitsOfChargingSchedule(
         request,
+        tenantId,
         stationId,
         activeTransaction,
       );
@@ -272,6 +280,7 @@ export class SmartChargingModule extends AbstractModule {
       const setChargingProfileRequest = await this._generateSetChargingProfileRequest(
         request,
         activeTransaction,
+        tenantId,
         stationId,
       );
       await this.sendCall(
@@ -306,8 +315,10 @@ export class SmartChargingModule extends AbstractModule {
     this._logger.debug('ReportChargingProfiles received:', message, props);
 
     const chargingProfiles = message.payload.chargingProfile as OCPP2_0_1.ChargingProfileType[];
+    const tenantId = message.context.tenantId;
     for (const chargingProfile of chargingProfiles) {
       await this._chargingProfileRepository.createOrUpdateChargingProfile(
+        tenantId,
         chargingProfile,
         message.context.stationId,
         message.payload.evseId,
@@ -334,15 +345,18 @@ export class SmartChargingModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('ClearChargingProfile response received:', message, props);
 
+    const tenantId = message.context.tenantId;
     if (message.payload.status === OCPP2_0_1.ClearChargingProfileStatusEnumType.Accepted) {
       const stationId: string = message.context.stationId;
       // Set existed profiles to isActive false
       await this._chargingProfileRepository.updateAllByQuery(
+        tenantId,
         {
           isActive: false,
         },
         {
           where: {
+            tenantId: tenantId,
             stationId: stationId,
             isActive: true,
           },
@@ -357,6 +371,7 @@ export class SmartChargingModule extends AbstractModule {
         OCPP2_0_1_CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
+            message.context.tenantId,
             message.context.stationId,
             ChargingStationSequenceType.getChargingProfiles,
           ),
@@ -389,6 +404,7 @@ export class SmartChargingModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('SetChargingProfile response received:', message, props);
+    const tenantId = message.context.tenantId;
     const response: OCPP2_0_1.SetChargingProfileResponse = message.payload;
     if (response.status === OCPP2_0_1.ChargingProfileStatusEnumType.Rejected) {
       this._logger.error(`Failed to set charging profile: ${JSON.stringify(response)}`);
@@ -396,11 +412,13 @@ export class SmartChargingModule extends AbstractModule {
       const stationId: string = message.context.stationId;
       // Set existed profiles to isActive false
       await this._chargingProfileRepository.updateAllByQuery(
+        tenantId,
         {
           isActive: false,
         },
         {
           where: {
+            tenantId: tenantId,
             stationId: stationId,
             isActive: true,
             chargingLimitSource: OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
@@ -416,6 +434,7 @@ export class SmartChargingModule extends AbstractModule {
         OCPP2_0_1_CallAction.GetChargingProfiles,
         {
           requestId: await this._idGenerator.generateRequestId(
+            message.context.tenantId,
             message.context.stationId,
             ChargingStationSequenceType.getChargingProfiles,
           ),
@@ -441,10 +460,12 @@ export class SmartChargingModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetCompositeSchedule response received:', message, props);
+    const tenantId = message.context.tenantId;
     const response = message.payload;
     if (response.status === OCPP2_0_1.GenericStatusEnumType.Accepted) {
       if (response.schedule) {
         const compositeSchedule = await this._chargingProfileRepository.createCompositeSchedule(
+          tenantId,
           response.schedule,
           message.context.stationId,
         );
@@ -475,17 +496,21 @@ export class SmartChargingModule extends AbstractModule {
   private async _generateSetChargingProfileRequest(
     request: OCPP2_0_1.NotifyEVChargingScheduleRequest,
     transaction: Transaction,
+    tenantId: number,
     stationId: string,
   ): Promise<OCPP2_0_1.SetChargingProfileRequest> {
     const { chargingSchedule, evseId } = request;
 
     const purpose = OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile;
-    chargingSchedule.id =
-      await this._chargingProfileRepository.getNextChargingScheduleId(stationId);
+    chargingSchedule.id = await this._chargingProfileRepository.getNextChargingScheduleId(
+      tenantId,
+      stationId,
+    );
 
     const chargingProfile: OCPP2_0_1.ChargingProfileType = {
-      id: await this._chargingProfileRepository.getNextChargingProfileId(stationId),
+      id: await this._chargingProfileRepository.getNextChargingProfileId(tenantId, stationId),
       stackLevel: await this._chargingProfileRepository.getNextStackLevel(
+        tenantId,
         stationId,
         transaction.id,
         purpose,

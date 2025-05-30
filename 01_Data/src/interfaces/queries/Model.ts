@@ -3,14 +3,23 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { QuerySchema } from '@citrineos/base';
+import { QuerySchema, DEFAULT_TENANT_ID } from '@citrineos/base';
 
 export interface ModelKeyQuerystring {
   id: number;
+  tenantId: number;
 }
 
-export const ModelKeyQuerystringSchema = QuerySchema(
-  'ModelKeyQuerystringSchema',
-  [['id', 'number']],
-  ['id'],
-);
+export const ModelKeyQuerystringSchema = QuerySchema('ModelKeyQuerystringSchema', [
+  {
+    key: 'id',
+    type: 'number',
+    required: true,
+  },
+  {
+    key: 'tenantId',
+    type: 'number',
+    required: true,
+    defaultValue: String(DEFAULT_TENANT_ID),
+  },
+]);

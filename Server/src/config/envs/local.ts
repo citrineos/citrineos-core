@@ -3,11 +3,12 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
+  DEFAULT_TENANT_ID,
   defineConfig,
   OCPP1_6,
+  OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
-  OCPP1_6_CallAction,
 } from '@citrineos/base';
 import path from 'path';
 
@@ -166,7 +167,7 @@ export function createLocalConfig() {
         password: 'citrine',
         storage: '',
         sync: false,
-        alter: true,
+        alter: false,
       },
     },
     util: {
@@ -179,10 +180,8 @@ export function createLocalConfig() {
           exchange: 'citrineos',
         },
       },
-      fileAccess: {
-        local: {
-          defaultFilePath: '/data',
-        },
+      authProvider: {
+        localByPass: true,
       },
       swagger: {
         path: '/docs',
@@ -200,6 +199,7 @@ export function createLocalConfig() {
             host: '0.0.0.0',
             port: 8081,
             protocol: 'ocpp2.0.1',
+            tenantId: DEFAULT_TENANT_ID,
           },
           {
             id: '1',
@@ -209,6 +209,7 @@ export function createLocalConfig() {
             host: '0.0.0.0',
             port: 8082,
             protocol: 'ocpp2.0.1',
+            tenantId: DEFAULT_TENANT_ID,
           },
           {
             id: '2',
@@ -218,6 +219,7 @@ export function createLocalConfig() {
             host: '0.0.0.0',
             port: 8092,
             protocol: 'ocpp1.6',
+            tenantId: DEFAULT_TENANT_ID,
           },
         ],
       },
@@ -254,6 +256,5 @@ export function createLocalConfig() {
     userPreferences: {
       // None by default
     },
-    configFileName: 'config.json',
   });
 }

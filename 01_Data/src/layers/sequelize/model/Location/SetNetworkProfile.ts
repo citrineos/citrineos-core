@@ -4,16 +4,17 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { OCPP2_0_1 } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Index, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, Index, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { ServerNetworkProfile } from './ServerNetworkProfile';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 /**
  * The CallMessage model can be extended with new optional fields,
  * e.g. chargingProfileId, for other correlationId related lookups.
  */
 @Table
-export class SetNetworkProfile extends Model {
+export class SetNetworkProfile extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = 'SetNetworkProfile';
 
   @ForeignKey(() => ChargingStation)

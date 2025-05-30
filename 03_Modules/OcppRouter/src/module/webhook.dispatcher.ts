@@ -3,7 +3,15 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { mapToCallAction, MessageOrigin, MessageTypeId, OCPPVersionType } from '@citrineos/base';
+import {
+  createIdentifier,
+  getStationIdFromIdentifier,
+  getTenantIdFromIdentifier,
+  mapToCallAction,
+  MessageOrigin,
+  MessageTypeId,
+  OCPPVersionType,
+} from '@citrineos/base';
 import { ISubscriptionRepository, OCPPMessage, Subscription } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
@@ -33,9 +41,10 @@ export class WebhookDispatcher {
     }, WebhookDispatcher.SUBSCRIPTION_REFRESH_INTERVAL_MS);
   }
 
-  async register(identifier: string) {
+  async register(tenantId: number, stationId: string) {
+    const identifier = createIdentifier(tenantId, stationId);
     try {
-      await this._loadSubscriptionsForConnection(identifier);
+      await this._loadSubscriptionsForConnection(tenantId, stationId);
       await Promise.all(
         this._onConnectionCallbacks.get(identifier)?.map((callback) => callback()) ?? [],
       );
@@ -45,7 +54,8 @@ export class WebhookDispatcher {
     }
   }
 
-  async deregister(identifier: string) {
+  async deregister(tenantId: number, stationId: string) {
+    const identifier = createIdentifier(tenantId, stationId);
     try {
       await Promise.all(
         this._onCloseCallbacks.get(identifier)?.map((callback) => callback()) ?? [],
@@ -61,11 +71,13 @@ export class WebhookDispatcher {
   }
 
   protected async _dispatchMessageReceivedUnparsed(
-    identifier: string,
+    tenantId: number,
+    stationId: string,
     message: string,
     timestamp: string,
     protocol: OCPPVersionType,
   ) {
+    const identifier = createIdentifier(tenantId, stationId);
     try {
       // UUID generated so that unparsed messages don't end up referencing each other
       const messageId = uuidv4();
@@ -81,7 +93,8 @@ export class WebhookDispatcher {
       ]);
 
       const messagePromise = OCPPMessage.create({
-        stationId: identifier,
+        tenantId: tenantId,
+        stationId: stationId,
         correlationId: messageId,
         origin: origin,
         protocol: protocol,
@@ -105,9 +118,17 @@ export class WebhookDispatcher {
     protocol: OCPPVersionType,
     rpcMessage?: any,
   ) {
+    const tenantId = getTenantIdFromIdentifier(identifier);
+    const stationId = getStationIdFromIdentifier(identifier);
     if (!rpcMessage) {
       // If rpcMessage is not provided, fallback to unparsed message handling
-      return this._dispatchMessageReceivedUnparsed(identifier, message, timestamp, protocol);
+      return this._dispatchMessageReceivedUnparsed(
+        tenantId,
+        stationId,
+        message,
+        timestamp,
+        protocol,
+      );
     }
     const transaction = await OCPPMessage.sequelize!.transaction();
     try {
@@ -116,7 +137,7 @@ export class WebhookDispatcher {
       const origin = MessageOrigin.ChargingStation;
 
       const relatedMessage = await OCPPMessage.findOne({
-        where: { stationId: identifier, correlationId: messageId },
+        where: { tenantId: tenantId, stationId: stationId, correlationId: messageId },
         transaction,
       });
       let callAction = undefined;
@@ -143,7 +164,8 @@ export class WebhookDispatcher {
 
       await OCPPMessage.create(
         {
-          stationId: identifier,
+          tenantId: tenantId,
+          stationId: stationId,
           correlationId: messageId,
           origin: origin,
           protocol: protocol,
@@ -191,6 +213,8 @@ export class WebhookDispatcher {
     protocol: OCPPVersionType,
     rpcMessage: any,
   ) {
+    const tenantId = getTenantIdFromIdentifier(identifier);
+    const stationId = getStationIdFromIdentifier(identifier);
     const transaction = await OCPPMessage.sequelize!.transaction();
     try {
       const messageTypeId = rpcMessage[0];
@@ -198,7 +222,7 @@ export class WebhookDispatcher {
       const origin = MessageOrigin.ChargingStationManagementSystem;
 
       const relatedMessage = await OCPPMessage.findOne({
-        where: { stationId: identifier, correlationId: messageId },
+        where: { tenantId: tenantId, stationId: stationId, correlationId: messageId },
         transaction,
       });
       let callAction = undefined;
@@ -225,7 +249,8 @@ export class WebhookDispatcher {
 
       await OCPPMessage.create(
         {
-          stationId: identifier,
+          tenantId: tenantId,
+          stationId: stationId,
           correlationId: messageId,
           origin: origin,
           protocol: protocol,
@@ -270,23 +295,31 @@ export class WebhookDispatcher {
       return;
     }
     this._logger.debug(`Refreshing subscriptions for ${this._identifiers.size} identifiers`);
-    this._identifiers.forEach((identifier) => this._loadSubscriptionsForConnection(identifier));
+    this._identifiers.forEach((identifier) =>
+      this._loadSubscriptionsForConnection(
+        getTenantIdFromIdentifier(identifier),
+        getStationIdFromIdentifier(identifier),
+      ),
+    );
   }
 
   /**
    * Loads all subscriptions for a given connection into memory
    *
-   * @param {string} connectionIdentifier - the identifier of the connection
+   * @param {number} tenantId
+   * @param {string} stationId
    * @return {Promise<void>} a promise that resolves once all subscriptions are loaded
    */
-  private async _loadSubscriptionsForConnection(connectionIdentifier: string) {
+  private async _loadSubscriptionsForConnection(tenantId: number, stationId: string) {
     const onConnectionCallbacks: OnConnectionCallback[] = [];
     const onCloseCallbacks: OnCloseCallback[] = [];
     const onMessageCallbacks: OnMessageCallback[] = [];
     const sentMessageCallbacks: OnSentMessageCallback[] = [];
 
-    const subscriptions =
-      await this._subscriptionRepository.readAllByStationId(connectionIdentifier);
+    const subscriptions = await this._subscriptionRepository.readAllByStationId(
+      tenantId,
+      stationId,
+    );
 
     for (const subscription of subscriptions) {
       if (subscription.onConnect) {
@@ -315,6 +348,7 @@ export class WebhookDispatcher {
       }
     }
 
+    const connectionIdentifier = createIdentifier(tenantId, stationId);
     this._onConnectionCallbacks.set(connectionIdentifier, onConnectionCallbacks);
     this._onCloseCallbacks.set(connectionIdentifier, onCloseCallbacks);
     this._onMessageCallbacks.set(connectionIdentifier, onMessageCallbacks);

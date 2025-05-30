@@ -48,3 +48,18 @@ array_relationships:
         table:
           name: VariableAttributes
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - connectorId
+        - databaseId
+        - id
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

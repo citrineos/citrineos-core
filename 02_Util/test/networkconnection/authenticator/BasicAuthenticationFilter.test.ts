@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
-import { OCPP2_0_1 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { aBasicAuthPasswordVariable } from '../../providers/VariableAttributeProvider';
 import { BasicAuthenticationFilter } from '../../../src/networkconnection/authenticator/BasicAuthenticationFilter';
@@ -57,6 +57,7 @@ describe('BasicAuthenticationFilter', () => {
 
         await expect(
           filter.authenticate(
+            DEFAULT_TENANT_ID,
             stationId,
             aRequestWithAuthorization(basicAuth(username, password.plaintext)),
             authenticationOptions,
@@ -70,7 +71,12 @@ describe('BasicAuthenticationFilter', () => {
       const stationId = faker.string.uuid().toString();
 
       await expect(
-        filter.authenticate(stationId, aRequestWithAuthorization(undefined), authenticationOptions),
+        filter.authenticate(
+          DEFAULT_TENANT_ID,
+          stationId,
+          aRequestWithAuthorization(undefined),
+          authenticationOptions,
+        ),
       ).rejects.toThrow('Auth header missing or incorrectly formatted');
       expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
@@ -79,7 +85,12 @@ describe('BasicAuthenticationFilter', () => {
       const stationId = faker.string.uuid().toString();
 
       await expect(
-        filter.authenticate(stationId, aRequestWithAuthorization(''), authenticationOptions),
+        filter.authenticate(
+          DEFAULT_TENANT_ID,
+          stationId,
+          aRequestWithAuthorization(''),
+          authenticationOptions,
+        ),
       ).rejects.toThrow('Auth header missing or incorrectly formatted');
       expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
@@ -89,6 +100,7 @@ describe('BasicAuthenticationFilter', () => {
 
       await expect(
         filter.authenticate(
+          DEFAULT_TENANT_ID,
           stationId,
           aRequestWithAuthorization(
             `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6ImNwMDAxIiwiaWF0IjoxNTE2MjM5MDIyfQ.Y3LDdxSufp_2nOqUmBWTR5CyQ2eEBWPPzjRIJqc6bn8`,
@@ -104,6 +116,7 @@ describe('BasicAuthenticationFilter', () => {
 
       await expect(
         filter.authenticate(
+          DEFAULT_TENANT_ID,
           stationId,
           aRequestWithAuthorization(basicAuth('', password.plaintext)),
           authenticationOptions,
@@ -117,6 +130,7 @@ describe('BasicAuthenticationFilter', () => {
 
       await expect(
         filter.authenticate(
+          DEFAULT_TENANT_ID,
           stationId,
           aRequestWithAuthorization(basicAuth(stationId, '')),
           authenticationOptions,
@@ -130,6 +144,7 @@ describe('BasicAuthenticationFilter', () => {
 
       await expect(
         filter.authenticate(
+          DEFAULT_TENANT_ID,
           stationId,
           aRequestWithAuthorization(basicAuth('', '')),
           authenticationOptions,
@@ -144,12 +159,14 @@ describe('BasicAuthenticationFilter', () => {
 
       await expect(
         filter.authenticate(
+          DEFAULT_TENANT_ID,
           stationId,
           aRequestWithAuthorization(basicAuth(stationId, password.plaintext)),
           authenticationOptions,
         ),
       ).rejects.toThrow(`Unauthorized ${stationId}`);
-      expect(deviceModelRepository.readAllByQuerystring).toHaveBeenCalledWith({
+      expect(deviceModelRepository.readAllByQuerystring).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
+        tenantId: DEFAULT_TENANT_ID,
         stationId: stationId,
         component_name: 'SecurityCtrlr',
         variable_name: 'BasicAuthPassword',
@@ -190,6 +207,7 @@ describe('BasicAuthenticationFilter', () => {
 
         await expect(
           filter.authenticate(
+            DEFAULT_TENANT_ID,
             stationId,
             aRequestWithAuthorization(basicAuth(stationId, authenticationPassword)),
             authenticationOptions,
@@ -215,6 +233,7 @@ describe('BasicAuthenticationFilter', () => {
 
         await expect(async () => {
           await filter.authenticate(
+            DEFAULT_TENANT_ID,
             stationId,
             aRequestWithAuthorization(basicAuth(stationId, authenticationPassword)),
             authenticationOptions,
@@ -234,6 +253,7 @@ describe('BasicAuthenticationFilter', () => {
       const stationId = faker.string.uuid().toString();
 
       await filter.authenticate(
+        DEFAULT_TENANT_ID,
         stationId,
         aRequestWithAuthorization(undefined),
         authenticationOptions,
@@ -245,6 +265,7 @@ describe('BasicAuthenticationFilter', () => {
       const stationId = faker.string.uuid().toString();
 
       await filter.authenticate(
+        DEFAULT_TENANT_ID,
         stationId,
         aRequestWithAuthorization(basicAuth(stationId, password.plaintext)),
         authenticationOptions,

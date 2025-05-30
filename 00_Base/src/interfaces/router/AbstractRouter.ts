@@ -267,12 +267,16 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     protocol: string,
   ): Promise<boolean>;
 
-  abstract registerConnection(connectionIdentifier: string, protocol: string): Promise<boolean>;
-  abstract deregisterConnection(connectionIdentifier: string): Promise<boolean>;
+  abstract registerConnection(
+    tenantId: number,
+    stationId: string,
+    protocol: string,
+  ): Promise<boolean>;
+  abstract deregisterConnection(tenantId: number, stationId: string): Promise<boolean>;
 
   abstract sendCall(
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
     protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
@@ -281,8 +285,8 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   ): Promise<IMessageConfirmation>;
   abstract sendCallResult(
     correlationId: string,
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
     protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppResponse,
@@ -290,8 +294,8 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   ): Promise<IMessageConfirmation>;
   abstract sendCallError(
     correlationId: string,
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
     protocol: OCPPVersionType,
     action: CallAction,
     error: OcppError,

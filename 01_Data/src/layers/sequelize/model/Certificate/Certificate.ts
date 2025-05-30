@@ -3,11 +3,12 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { OCPP2_0_1_Namespace } from '@citrineos/base';
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, Table } from 'sequelize-typescript';
 import { CountryNameEnumType, SignatureAlgorithmEnumType } from './index';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class Certificate extends Model {
+export class Certificate extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Certificate;
 
   /**

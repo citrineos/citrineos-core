@@ -64,10 +64,11 @@ export class BootNotificationService {
   }
 
   async createBootNotificationResponse(
+    tenantId: number,
     stationId: string,
   ): Promise<OCPP2_0_1.BootNotificationResponse> {
     // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
-    const bootConfig = await this._bootRepository.readByKey(stationId);
+    const bootConfig = await this._bootRepository.readByKey(tenantId, stationId);
     const bootStatus = this.determineBootStatus(bootConfig);
 
     // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
@@ -84,15 +85,20 @@ export class BootNotificationService {
 
   async updateBootConfig(
     bootNotificationResponse: OCPP2_0_1.BootNotificationResponse,
+    tenantId: number,
     stationId: string,
   ): Promise<Boot> {
-    let bootConfigDbEntity: Boot | undefined = await this._bootRepository.readByKey(stationId);
+    let bootConfigDbEntity: Boot | undefined = await this._bootRepository.readByKey(
+      tenantId,
+      stationId,
+    );
     if (!bootConfigDbEntity) {
       const unknownChargerBootConfig: BootConfig = {
         status: bootNotificationResponse.status,
         statusInfo: bootNotificationResponse.statusInfo,
       };
       bootConfigDbEntity = await this._bootRepository.createOrUpdateByKey(
+        tenantId,
         unknownChargerBootConfig,
         stationId,
       );
@@ -248,9 +254,10 @@ export class BootNotificationService {
   }
 
   async createOcpp16BootNotificationResponse(
+    tenantId: number,
     stationId: string,
   ): Promise<OCPP1_6.BootNotificationResponse> {
-    const boot = await this._bootRepository.readByKey(stationId);
+    const boot = await this._bootRepository.readByKey(tenantId, stationId);
     const status = this.determineOcpp16BootStatus(boot);
 
     return {
@@ -310,6 +317,7 @@ export class BootNotificationService {
 
   async updateOcpp16BootConfig(
     response: OCPP1_6.BootNotificationResponse,
+    tenantId: number,
     stationId: string,
   ): Promise<Boot> {
     const heartbeatInterval =
@@ -327,11 +335,13 @@ export class BootNotificationService {
       bootRetryInterval,
     };
     let bootConfigDbEntity: Boot | undefined = await this._bootRepository.createOrUpdateByKey(
+      tenantId,
       unknownChargerBootConfig,
       stationId,
     );
     if (bootConfigDbEntity) {
       bootConfigDbEntity = await this._bootRepository.updateLastBootTimeByKey(
+        tenantId,
         response.currentTime,
         stationId,
       );
