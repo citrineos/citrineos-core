@@ -3,11 +3,12 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
+  DEFAULT_TENANT_ID,
   defineConfig,
-  OCPP2_0_1,
   OCPP1_6,
-  OCPP2_0_1_CallAction,
   OCPP1_6_CallAction,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
 } from '@citrineos/base';
 import path from 'path';
 
@@ -166,7 +167,7 @@ export function createDockerConfig() {
         password: 'citrine',
         storage: '',
         sync: false,
-        alter: true,
+        alter: false,
       },
     },
     util: {
@@ -179,12 +180,8 @@ export function createDockerConfig() {
           exchange: 'citrineos',
         },
       },
-      fileAccess: {
-        s3: {
-          endpoint: 'http://minio:9000',
-          defaultBucketName: 'citrineos-s3-bucket',
-          s3ForcePathStyle: true,
-        },
+      authProvider: {
+        localByPass: true,
       },
       swagger: {
         path: '/docs',
@@ -202,6 +199,7 @@ export function createDockerConfig() {
             host: '0.0.0.0',
             port: 8081,
             protocol: 'ocpp2.0.1',
+            tenantId: DEFAULT_TENANT_ID,
           },
           {
             id: '1',
@@ -211,6 +209,7 @@ export function createDockerConfig() {
             host: '0.0.0.0',
             port: 8082,
             protocol: 'ocpp2.0.1',
+            tenantId: DEFAULT_TENANT_ID,
           },
           {
             id: '2',
@@ -232,6 +231,7 @@ export function createDockerConfig() {
               path.dirname(__filename),
               '../../assets/certificates/rootCertificate.pem',
             ),
+            tenantId: DEFAULT_TENANT_ID,
           },
           {
             id: '3',
@@ -257,6 +257,7 @@ export function createDockerConfig() {
               path.dirname(__filename),
               '../../assets/certificates/rootCertificate.pem',
             ),
+            tenantId: DEFAULT_TENANT_ID,
           },
           {
             id: '4',
@@ -266,6 +267,7 @@ export function createDockerConfig() {
             host: '0.0.0.0',
             port: 8092,
             protocol: 'ocpp1.6',
+            tenantId: DEFAULT_TENANT_ID,
           },
         ],
       },
@@ -302,6 +304,5 @@ export function createDockerConfig() {
     userPreferences: {
       // None by default
     },
-    configFileName: 'config.json',
   });
 }

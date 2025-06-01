@@ -19,3 +19,22 @@ array_relationships:
         table:
           name: MeterValues
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - reason
+        - stationId
+        - id
+        - idTokenDatabaseId
+        - meterStop
+        - tenantId
+        - transactionDatabaseId
+        - createdAt
+        - timestamp
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

@@ -217,25 +217,45 @@ ports. By default these ports are directly accessible by using
 So, if you want to access the **amqp-broker** default management port via your
 localhost, you need to access `localhost:15672`.
 
-## File Access Configuration
+# Bootstrap Configuration Environment Variables
 
-The file access system can be configured by modifying the `fileAccess` property in the configuration file. By default, CitrineOS uses `s3Storage` from LocalStack.
+All environment variables use the `CITRINEOS_` prefix.
+Additional prefixes can be added by passing the --env-prefix argument to nodemon (see "start:instance1" in Server/package.json)
+Here's the complete list of environment variables that are used in bootstrapping the application (this is not the full system configuration):
 
-To use Directus as the file access system instead of LocalStack, perform the following steps:
+## Basic Configuration
 
-1. Update the configuration file `Server/src/config/envs/[local/docker].ts` to:
+- `CITRINEOS_CONFIG_FILENAME` - Name of the main config file (default: `config.json`)
+- `CITRINEOS_CONFIG_DIR` - Directory containing the config file (optional)
+- `CITRINEOS_FILE_ACCESS_TYPE` - Type of file access: `local`, `s3`, or `directus`
 
-   ```javascript
-   fileAccess: {
-       currentFileAccess: 'directus',
-   },
-   ```
+## Local File Access
 
-2. Start Directus using the specific Docker Compose file:
+When `CITRINEOS_FILE_ACCESS_TYPE=local`:
 
-   ```shell
-   docker-compose -f docker-compose-directus.yml up -d
-   ```
+- `CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH` - Default file path (default: `/data`)
+
+## S3 File Access
+
+When `CITRINEOS_FILE_ACCESS_TYPE=s3`:
+
+- `CITRINEOS_FILE_ACCESS_S3_REGION` - AWS region (optional)
+- `CITRINEOS_FILE_ACCESS_S3_ENDPOINT` - S3 endpoint URL (for MinIO or custom S3)
+- `CITRINEOS_FILE_ACCESS_S3_DEFAULT_BUCKET_NAME` - S3 bucket name (default: `citrineos-s3-bucket`)
+- `CITRINEOS_FILE_ACCESS_S3_FORCE_PATH_STYLE` - Force path style (true/false, default: `true`)
+- `CITRINEOS_FILE_ACCESS_S3_ACCESS_KEY_ID` - S3 access key ID
+- `CITRINEOS_FILE_ACCESS_S3_SECRET_ACCESS_KEY` - S3 secret access key
+
+## Directus File Access
+
+When `CITRINEOS_FILE_ACCESS_TYPE=directus`:
+
+- `CITRINEOS_FILE_ACCESS_DIRECTUS_HOST` - Directus host (default: `localhost`)
+- `CITRINEOS_FILE_ACCESS_DIRECTUS_PORT` - Directus port (default: `8055`)
+- `CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN` - Directus API token
+- `CITRINEOS_FILE_ACCESS_DIRECTUS_USERNAME` - Directus username
+- `CITRINEOS_FILE_ACCESS_DIRECTUS_PASSWORD` - Directus password
+- `CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS` - Generate flows (true/false, default: `false`)
 
 ## Generating OCPP Interfaces
 

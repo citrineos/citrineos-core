@@ -44,3 +44,19 @@ array_relationships:
         table:
           name: VariableMonitorings
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - instance
+        - name
+        - evseDatabaseId
+        - id
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

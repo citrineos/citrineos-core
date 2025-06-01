@@ -10,7 +10,7 @@
  */
 export interface IMessageContext {
   correlationId: string;
-  tenantId: string;
+  tenantId: number;
   stationId: string;
   timestamp: string; // Iso Timestamp
 }

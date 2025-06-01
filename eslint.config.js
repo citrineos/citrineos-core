@@ -44,6 +44,7 @@ module.exports = tseslint.config(
       '**/lib/**',
       'eslint.config.js',
       'Server/directus-env-config.cjs',
+      'Server/src/config/sequelize.bridge.config.js',
       '00_Base/json-schema-processor-1.6.js',
       '00_Base/json-schema-processor-2.0.1.js',
     ],

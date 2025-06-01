@@ -17,7 +17,7 @@ export class ConfigStoreFactory {
     if (this.instance === null) {
       this.instance = configStorage;
     } else {
-      throw new Error('ConfigStore has already been initialized.');
+      console.warn('ConfigStore has already been initialized.');
     }
     return this.instance;
   }

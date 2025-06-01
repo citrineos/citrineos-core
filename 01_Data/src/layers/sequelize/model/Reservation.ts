@@ -9,14 +9,14 @@ import {
   Column,
   DataType,
   ForeignKey,
-  Model,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
 import { Evse } from './DeviceModel';
+import { BaseModelWithTenant } from './BaseModelWithTenant';
 
 @Table
-export class Reservation extends Model {
+export class Reservation extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = Namespace.ReserveNowRequest;
 
   /**

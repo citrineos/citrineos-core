@@ -45,38 +45,54 @@ export abstract class CrudRepository<T> extends EventEmitter {
 
   /**
    * Creates a new entry in the database with the specified value.
-   * If a namespace is provided, the entry will be created within that namespace.
    *
+   * @param tenantId - The tenant ID for which to create the entry.
    * @param value - The value of the entry.
    * @param namespace - The optional namespace to create the entry in.
    * @returns A Promise that resolves to the created entry.
    */
-  public async create(value: T, namespace?: string): Promise<T> {
-    const result = await this._create(value, namespace);
+  public async create(tenantId: number, value: T, namespace?: string): Promise<T> {
+    const result = await this._create(tenantId, value, namespace);
     this.emit('created', [result]);
     return result;
   }
 
+  /**
+   * Creates multiple entries in the database.
+   *
+   * @param tenantId - The tenant ID for which to create the entries.
+   * @param values - The values of the entries.
+   * @param clazz - The class of the model.
+   * @param namespace - The optional namespace to create the entries in.
+   * @returns A Promise that resolves to the created entries.
+   */
   public async bulkCreate(
+    tenantId: number,
     values: T[],
-    clazz: any, // todo: should Model be in base so it can be used here?
+    clazz: any,
+    namespace?: string,
   ): Promise<T[]> {
-    const result = await this._bulkCreate(values, clazz);
+    const result = await this._bulkCreate(tenantId, values, namespace);
     this.emit('created', result);
     return result;
   }
 
   /**
    * Creates a new entry in the database with the specified value and key.
-   * If a namespace is provided, the entry will be created within that namespace.
    *
+   * @param tenantId - The tenant ID for which to create the entry.
    * @param value - The value of the entry.
    * @param key - The key of the entry.
    * @param namespace - The optional namespace to create the entry in.
    * @returns A Promise that resolves to the created entry.
    */
-  public async createByKey(value: T, key: string, namespace?: string): Promise<T> {
-    const result = await this._createByKey(value, key, namespace);
+  public async createByKey(
+    tenantId: number,
+    value: T,
+    key: string,
+    namespace?: string,
+  ): Promise<T> {
+    const result = await this._createByKey(tenantId, value, key, namespace);
     this.emit('created', [result]);
     return result;
   }
@@ -84,12 +100,17 @@ export abstract class CrudRepository<T> extends EventEmitter {
   /**
    * Attempts to read a value from storage based on the given query, or throws an exception if more than one value is found.
    *
+   * @param tenantId - The tenant ID for which to read the entry.
    * @param query - The query to use.
    * @param namespace - Optional namespace for the query.
    * @returns A promise that resolves to the value associated with the query if it exists. An exception is thrown if more than one value is found.
    */
-  public async readOnlyOneByQuery(query: object, namespace?: string): Promise<T | undefined> {
-    const results = await this.readAllByQuery(query, namespace);
+  public async readOnlyOneByQuery(
+    tenantId: number,
+    query: object,
+    namespace?: string,
+  ): Promise<T | undefined> {
+    const results = await this.readAllByQuery(tenantId, query, namespace);
     if (results.length > 1) {
       throw new Error(`More than one value found for query: ${JSON.stringify(query)}`);
     }
@@ -99,12 +120,17 @@ export abstract class CrudRepository<T> extends EventEmitter {
   /**
    * Reads the first matching value from storage based on the given query, or creates a matching value if none exists.
    *
+   * @param tenantId - The tenant ID for which to read or create the entry.
    * @param query - The query to use.
    * @param namespace - Optional namespace for the query.
    * @returns A promise that resolves to an array where the first element is the value associated with the query, either an existing value or the newly created value, and the second element is a boolean indicating whether the entry was created.
    */
-  public async readOrCreateByQuery(query: object, namespace?: string): Promise<[T, boolean]> {
-    const result = await this._readOrCreateByQuery(query, namespace);
+  public async readOrCreateByQuery(
+    tenantId: number,
+    query: object,
+    namespace?: string,
+  ): Promise<[T, boolean]> {
+    const result = await this._readOrCreateByQuery(tenantId, query, namespace);
     if (result[1]) {
       this.emit('created', [result[0]]);
     }
@@ -112,67 +138,73 @@ export abstract class CrudRepository<T> extends EventEmitter {
   }
 
   /**
-   * Updates the value associated with the given key in the specified namespace.
-   * If no namespace is provided, the default namespace is used.
+   * Updates the value associated with the given key.
    *
+   * @param tenantId - The tenant ID for which to update the entry.
    * @param value - The new value to associate with the key.
    * @param key - The key to update.
    * @param namespace - The namespace in which to update the key.
    * @returns A promise that resolves to the updated value, or undefined if the key does not exist.
    */
   public async updateByKey(
+    tenantId: number,
     value: Partial<T>,
     key: string,
     namespace?: string,
   ): Promise<T | undefined> {
-    const result = await this._updateByKey(value, key, namespace);
+    const result = await this._updateByKey(tenantId, value, key, namespace);
     this.emit('updated', result ? [result] : []);
     return result;
   }
 
   /**
-   * Updates the values associated with the given query in the specified namespace.
-   * If no namespace is provided, the default namespace is used.
+   * Updates the values associated with the given query.
    *
+   * @param tenantId - The tenant ID for which to update the entries.
    * @param value - The new value to associate with the query.
    * @param query - The query to use.
    * @param namespace - Optional namespace for the query.
    * @returns A promise that resolves to the updated values associated with the query.
    */
   public async updateAllByQuery(
+    tenantId: number,
     value: Partial<T>,
     query: object,
     namespace?: string,
   ): Promise<T[]> {
-    const result = await this._updateAllByQuery(value, query, namespace);
+    const result = await this._updateAllByQuery(tenantId, value, query, namespace);
     this.emit('updated', result);
     return result;
   }
 
   /**
    * Deletes a key from the specified namespace.
-   * If no namespace is provided, the key is deleted from the default namespace.
    *
+   * @param tenantId - The tenant ID for which to delete the entry.
    * @param key - The key to delete.
    * @param namespace - Optional. The namespace from which to delete the key.
    * @returns A Promise that resolves to the deleted entry, or undefined there was no matching entry.
    */
-  public async deleteByKey(key: string, namespace?: string): Promise<T | undefined> {
-    const result = await this._deleteByKey(key, namespace);
+  public async deleteByKey(
+    tenantId: number,
+    key: string,
+    namespace?: string,
+  ): Promise<T | undefined> {
+    const result = await this._deleteByKey(tenantId, key, namespace);
     this.emit('deleted', result ? [result] : []);
     return result;
   }
 
   /**
    * Deletes all values associated with a query from the specified namespace.
-   * If no namespace is provided, the values are deleted from the default namespace.
    *
+   * @param tenantId - The tenant ID for which to delete the entries.
    * @param query - The query to use.
    * @param namespace - Optional. The namespace from which to delete the values.
    * @returns A Promise that resolves to the deleted entries.
    */
-  public async deleteAllByQuery(query: object, namespace?: string): Promise<T[]> {
-    const result = await this._deleteAllByQuery(query, namespace);
+  public async deleteAllByQuery(tenantId: number, query: object, namespace?: string): Promise<T[]> {
+    const result = await this._deleteAllByQuery(tenantId, query, namespace);
     this.emit('deleted', result);
     return result;
   }
@@ -180,24 +212,31 @@ export abstract class CrudRepository<T> extends EventEmitter {
   /**
    * Reads a value from storage based on the given key.
    *
+   * @param tenantId - The tenant ID for which to read the entry.
    * @param key - The key to look up in storage.
    * @param namespace - Optional namespace for the key.
    * @returns A promise that resolves to the value associated with the key, or undefined if the key does not exist.
    */
-  abstract readByKey(key: string | number, namespace?: string): Promise<T | undefined>;
+  abstract readByKey(
+    tenantId: number,
+    key: string | number,
+    namespace?: string,
+  ): Promise<T | undefined>;
 
   /**
    * Reads values from storage based on the given query.
    *
+   * @param tenantId - The tenant ID for which to read the entries.
    * @param query - The query to use.
    * @param namespace - Optional namespace for the query.
    * @returns A promise that resolves to the values associated with the query.
    */
-  abstract readAllByQuery(query: object, namespace?: string): Promise<T[]>;
+  abstract readAllByQuery(tenantId: number, query: object, namespace?: string): Promise<T[]>;
 
   /**
    * Attempts to read next id.
    *
+   * @param tenantId - The tenant ID for which to read the next value.
    * @param columnName - The name of the column which needs a next value. The column must be integer.
    * @param query - The query to use.
    * @param startValue - If no existing value is found, this value will be used. By default, it is 1.
@@ -205,6 +244,7 @@ export abstract class CrudRepository<T> extends EventEmitter {
    * @returns An integer that is the next id to use
    */
   abstract readNextValue(
+    tenantId: number,
     columnName: string,
     query?: object,
     startValue?: number,
@@ -213,44 +253,63 @@ export abstract class CrudRepository<T> extends EventEmitter {
 
   /**
    * Checks if a key exists in the specified namespace.
-   * If no namespace is provided, the key is checked in the default namespace.
    *
+   * @param tenantId - The tenant ID for which to check the key.
    * @param key - The key to check.
    * @param namespace - Optional. The namespace in which to check the key.
    * @returns A Promise that resolves to a boolean indicating whether the key exists.
    */
-  abstract existsByKey(key: string, namespace?: string): Promise<boolean>;
+  abstract existsByKey(tenantId: number, key: string, namespace?: string): Promise<boolean>;
 
   /**
    * Checks how many values associated with a query exists in the specified namespace.
-   * If no namespace is provided, the query is checked in the default namespace.
    *
+   * @param tenantId - The tenant ID for which to check the query.
    * @param query - The query to use.
    * @param namespace - Optional. The namespace in which to check the query.
    * @returns A Promise that resolves to the number of values matching the query.
    */
-  abstract existByQuery(query: object, namespace?: string): Promise<number>;
+  abstract existByQuery(tenantId: number, query: object, namespace?: string): Promise<number>;
 
-  protected abstract _create(value: T, namespace?: string): Promise<T>;
-  protected abstract _bulkCreate(value: T[], namespace?: string): Promise<T[]>;
+  protected abstract _create(tenantId: number, value: T, namespace?: string): Promise<T>;
+  protected abstract _bulkCreate(tenantId: number, value: T[], namespace?: string): Promise<T[]>;
 
-  protected abstract _createByKey(value: T, key: string, namespace?: string): Promise<T>;
+  protected abstract _createByKey(
+    tenantId: number,
+    value: T,
+    key: string,
+    namespace?: string,
+  ): Promise<T>;
 
-  protected abstract _readOrCreateByQuery(query: object, namespace?: string): Promise<[T, boolean]>;
+  protected abstract _readOrCreateByQuery(
+    tenantId: number,
+    query: object,
+    namespace?: string,
+  ): Promise<[T, boolean]>;
 
   protected abstract _updateByKey(
+    tenantId: number,
     value: Partial<T>,
     key: string,
     namespace?: string,
   ): Promise<T | undefined>;
 
   protected abstract _updateAllByQuery(
+    tenantId: number,
     value: Partial<T>,
     query: object,
     namespace?: string,
   ): Promise<T[]>;
 
-  protected abstract _deleteByKey(key: string, namespace?: string): Promise<T | undefined>;
+  protected abstract _deleteByKey(
+    tenantId: number,
+    key: string,
+    namespace?: string,
+  ): Promise<T | undefined>;
 
-  protected abstract _deleteAllByQuery(query: object, namespace?: string): Promise<T[]>;
+  protected abstract _deleteAllByQuery(
+    tenantId: number,
+    query: object,
+    namespace?: string,
+  ): Promise<T[]>;
 }

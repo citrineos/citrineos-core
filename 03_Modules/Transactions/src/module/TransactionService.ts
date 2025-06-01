@@ -44,9 +44,10 @@ export class TransactionService {
     this._authorizers = authorizers || [];
   }
 
-  async recalculateTotalKwh(transactionDbId: number) {
+  async recalculateTotalKwh(tenantId: number, transactionDbId: number) {
     const meterValues =
       await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
+        tenantId,
         transactionDbId,
       );
     const meterValueTypes = meterValues.map((meterValue) =>
@@ -64,11 +65,14 @@ export class TransactionService {
   }
 
   async authorizeIdToken(
+    tenantId: number,
     transactionEvent: OCPP2_0_1.TransactionEventRequest,
     messageContext: IMessageContext,
   ): Promise<OCPP2_0_1.TransactionEventResponse> {
     const idToken = transactionEvent.idToken!;
-    const authorizations = await this._authorizeRepository.readAllByQuerystring({ ...idToken });
+    const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
+      ...idToken,
+    });
 
     const response: OCPP2_0_1.TransactionEventResponse = {
       idTokenInfo: {
@@ -115,7 +119,7 @@ export class TransactionService {
       );
       if (authorization.concurrentTransaction === true) {
         if (transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started) {
-          const hasConcurrent = await this._hasConcurrentTransactions(idToken);
+          const hasConcurrent = await this._hasConcurrentTransactions(tenantId, idToken);
           if (hasConcurrent) {
             response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx;
           }
@@ -127,6 +131,7 @@ export class TransactionService {
   }
 
   async createMeterValues(
+    tenantId: number,
     meterValues: [OCPP2_0_1.MeterValueType, ...OCPP2_0_1.MeterValueType[]],
     transactionDbId?: number | null,
   ) {
@@ -136,15 +141,22 @@ export class TransactionService {
           (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
         );
         if (transactionDbId && hasPeriodic) {
-          await this._transactionEventRepository.createMeterValue(meterValue, transactionDbId);
+          await this._transactionEventRepository.createMeterValue(
+            tenantId,
+            meterValue,
+            transactionDbId,
+          );
         } else {
-          await this._transactionEventRepository.createMeterValue(meterValue);
+          await this._transactionEventRepository.createMeterValue(tenantId, meterValue);
         }
       }),
     );
   }
 
-  async authorizeOcpp16IdToken(idToken: string): Promise<OCPP1_6.StartTransactionResponse> {
+  async authorizeOcpp16IdToken(
+    tenantId: number,
+    idToken: string,
+  ): Promise<OCPP1_6.StartTransactionResponse> {
     const response: OCPP1_6.StartTransactionResponse = {
       idTagInfo: {
         status: OCPP1_6.StartTransactionResponseStatus.Invalid,
@@ -154,7 +166,7 @@ export class TransactionService {
 
     try {
       // Find authorization
-      const authorizations = await this._authorizeRepository.readAllByQuerystring({
+      const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
         idToken: idToken,
         type: null,
       });
@@ -191,6 +203,7 @@ export class TransactionService {
       // Check concurrent transactions
       const activeTransactions =
         await this._transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken(
+          tenantId,
           authorizations[0].idToken.idToken,
         );
       if (activeTransactions.length > 0) {
@@ -213,17 +226,20 @@ export class TransactionService {
   }
 
   async deactivateReservation(
+    tenantId: number,
     transactionId: string,
     reservationId: number,
     stationId: string,
   ): Promise<void> {
     await this._reservationRepository.updateAllByQuery(
+      tenantId,
       {
         terminatedByTransaction: transactionId,
         isActive: false,
       },
       {
         where: {
+          tenantId,
           id: reservationId,
           stationId: stationId,
         },
@@ -232,12 +248,14 @@ export class TransactionService {
   }
 
   async updateTransactionStatus(
+    tenantId: number,
     stationId: string,
     correlationId: string,
     ongoingIndicator: boolean,
   ) {
-    const request = await this._ocppMessageRepository.readOnlyOneByQuery({
+    const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
+        tenantId,
         stationId,
         correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
@@ -258,6 +276,7 @@ export class TransactionService {
 
     const updatedTransaction =
       await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+        tenantId,
         { isActive: ongoingIndicator },
         transactionId,
         stationId,
@@ -286,9 +305,13 @@ export class TransactionService {
     return idTokenInfo;
   }
 
-  private async _hasConcurrentTransactions(idToken: OCPP2_0_1.IdTokenType): Promise<boolean> {
+  private async _hasConcurrentTransactions(
+    tenantId: number,
+    idToken: OCPP2_0_1.IdTokenType,
+  ): Promise<boolean> {
     const activeTransactions =
       await this._transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken(
+        tenantId,
         idToken,
       );
 

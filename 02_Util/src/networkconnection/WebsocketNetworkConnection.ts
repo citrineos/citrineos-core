@@ -21,6 +21,11 @@ import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from 'ws';
 import { ILogObj, Logger } from 'tslog';
 import { SecureContextOptions } from 'tls';
 import { IUpgradeError } from './authenticator/errors/IUpgradeError';
+import {
+  createIdentifier,
+  getStationIdFromIdentifier,
+  getTenantIdFromIdentifier,
+} from '@citrineos/base/dist/interfaces/cache/types';
 
 export class WebsocketNetworkConnection {
   protected _cache: ICache;
@@ -75,7 +80,7 @@ export class WebsocketNetworkConnection {
       });
 
       _socketServer.on('connection', (ws: WebSocket, req: http.IncomingMessage) =>
-        this._onConnection(ws, websocketServerConfig.id, websocketServerConfig.pingInterval, req),
+        this._onConnection(ws, websocketServerConfig, websocketServerConfig.pingInterval, req),
       );
       _socketServer.on('error', (wss: WebSocketServer, error: Error) => this._onError(wss, error));
       _socketServer.on('close', (wss: WebSocketServer) => this._onClose(wss));
@@ -213,10 +218,14 @@ export class WebsocketNetworkConnection {
     this._logger.debug('On upgrade request', req.method, req.url, req.headers);
 
     try {
-      const { identifier } = await this._authenticator.authenticate(req, {
-        securityProfile: websocketServerConfig.securityProfile,
-        allowUnknownChargingStations: websocketServerConfig.allowUnknownChargingStations,
-      });
+      const { identifier } = await this._authenticator.authenticate(
+        req,
+        websocketServerConfig.tenantId,
+        {
+          securityProfile: websocketServerConfig.securityProfile,
+          allowUnknownChargingStations: websocketServerConfig.allowUnknownChargingStations,
+        },
+      );
 
       this._logger.debug('Successfully registered websocket client', identifier);
 
@@ -247,13 +256,13 @@ export class WebsocketNetworkConnection {
    * Internal method to handle new client connection and ensures supported protocols are used.
    *
    * @param {Set<string>} protocols - The set of protocols to handle.
-   * @param {IncomingMessage} req - The request object.
+   * @param {IncomingMessage} _req - The request object.
    * @param {string} wsServerProtocol - The websocket server protocol.
    * @return {boolean|string} - Returns the protocol version if successful, otherwise false.
    */
   private _handleProtocols(
     protocols: Set<string>,
-    req: http.IncomingMessage,
+    _req: http.IncomingMessage,
     wsServerProtocol: OCPPVersionType,
   ) {
     // Only supports configured protocol version
@@ -272,13 +281,14 @@ export class WebsocketNetworkConnection {
    * This happens after successful protocol exchange with client.
    *
    * @param {WebSocket} ws - The WebSocket object representing the connection.
+   * @param {WebsocketServerConfig} websocketServerConfig - The websocket server configuration.
    * @param {number} pingInterval - The ping interval in seconds.
    * @param {IncomingMessage} req - The request object associated with the connection.
    * @return {void}
    */
   private async _onConnection(
     ws: WebSocket,
-    websocketServerId: string,
+    websocketServerConfig: WebsocketServerConfig,
     pingInterval: number,
     req: http.IncomingMessage,
   ): Promise<void> {
@@ -289,7 +299,10 @@ export class WebsocketNetworkConnection {
       // Pause the WebSocket event emitter until broker is established
       ws.pause();
 
-      const identifier = this._getClientIdFromUrl(req.url as string);
+      const stationId = this._getClientIdFromUrl(req.url as string);
+      const tenantId = websocketServerConfig.tenantId;
+      const identifier = createIdentifier(tenantId, stationId);
+
       this._identifierConnections.set(identifier, ws);
 
       try {
@@ -303,7 +316,7 @@ export class WebsocketNetworkConnection {
 
         // Register client
         const websocketConnection: IWebsocketConnection = {
-          id: websocketServerId,
+          id: websocketServerConfig.id,
           protocol: ws.protocol,
         };
         let registered = await this._cache.set(
@@ -311,7 +324,8 @@ export class WebsocketNetworkConnection {
           JSON.stringify(websocketConnection),
           CacheNamespace.Connections,
         );
-        registered = registered && (await this._router.registerConnection(identifier, ws.protocol));
+        registered =
+          registered && (await this._router.registerConnection(tenantId, stationId, ws.protocol));
         if (!registered) {
           this._logger.fatal('Failed to register websocket client', identifier);
           throw new Error('Failed to register websocket client');
@@ -334,7 +348,7 @@ export class WebsocketNetworkConnection {
   /**
    * Internal method to register event listeners for the WebSocket connection.
    *
-   * @param {string} identifier - The unique identifier for the connection.
+   * @param {string} identifier - The unique identifier of the connection, i.e. the combination of tenantId and stationId.
    * @param {WebSocket} ws - The WebSocket object representing the connection.
    * @param {number} pingInterval - The ping interval in seconds.
    * @return {void} This function does not return anything.
@@ -359,7 +373,10 @@ export class WebsocketNetworkConnection {
       this._logger.info('Connection closed for', identifier);
       this._cache.remove(identifier, CacheNamespace.Connections);
       this._identifierConnections.delete(identifier);
-      this._router.deregisterConnection(identifier);
+      this._router.deregisterConnection(
+        getTenantIdFromIdentifier(identifier),
+        getStationIdFromIdentifier(identifier),
+      );
     });
 
     ws.on('ping', async (message) => {

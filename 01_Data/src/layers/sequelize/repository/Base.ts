@@ -36,23 +36,41 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  async readByKey(key: string | number): Promise<T | undefined> {
-    return await this.s.models[this.namespace].findByPk(key).then((row) => row as T);
+  async readByKey(
+    tenantId: number,
+    key: string | number,
+    namespace: string = this.namespace,
+  ): Promise<T | undefined> {
+    return await this.s.models[namespace].findByPk(key).then((row) => row as T);
   }
 
-  async readAllByQuery(query: object): Promise<T[]> {
-    return await this.s.models[this.namespace]
+  async readAllByQuery(
+    tenantId: number,
+    query: object,
+    namespace: string = this.namespace,
+  ): Promise<T[]> {
+    return await this.s.models[namespace]
       .findAll(query as FindOptions<any>)
       .then((row) => row as T[]);
   }
 
-  async readAllBySqlString(sqlString: string): Promise<object[]> {
+  async readAllBySqlString(
+    tenantId: number,
+    sqlString: string,
+    namespace: string = this.namespace,
+  ): Promise<object[]> {
     return await this.s.query(`${sqlString}`, { type: QueryTypes.SELECT });
   }
 
-  async readNextValue(columnName: string, query?: object, startValue?: number): Promise<number> {
+  async readNextValue(
+    tenantId: number,
+    columnName: string,
+    query?: object,
+    startValue?: number,
+    namespace: string = this.namespace,
+  ): Promise<number> {
     const options = query ? (query as AggregateOptions<any>) : undefined;
-    const maxValue = await this.s.models[this.namespace].max(columnName, options);
+    const maxValue = await this.s.models[namespace].max(columnName, options);
     if (maxValue === null || maxValue === undefined) {
       // maxValue can be 0, so we need to specifically check for null or undefined
       return startValue ?? 1;
@@ -63,52 +81,92 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     return maxValue + 1;
   }
 
-  async existsByKey(key: string): Promise<boolean> {
-    return await this.s.models[this.namespace].findByPk(key).then((row) => row !== null);
+  async existsByKey(
+    tenantId: number,
+    key: string,
+    namespace: string = this.namespace,
+  ): Promise<boolean> {
+    return await this.s.models[namespace].findByPk(key).then((row) => row !== null);
   }
 
-  async existByQuery(query: object): Promise<number> {
-    return await this.s.models[this.namespace].findAll(query).then((row) => row.length);
+  async existByQuery(
+    tenantId: number,
+    query: object,
+    namespace: string = this.namespace,
+  ): Promise<number> {
+    return await this.s.models[namespace].findAll(query).then((row) => row.length);
   }
 
   async findAndCount(
+    tenantId: number,
     options: Omit<FindAndCountOptions<Attributes<T>>, 'group'>,
+    namespace: string = this.namespace,
   ): Promise<{ rows: T[]; count: number }> {
-    return (this.s.models[this.namespace] as ModelStatic<T>).findAndCountAll(options);
+    return (this.s.models[namespace] as ModelStatic<T>).findAndCountAll(options);
   }
 
-  protected async _create(value: T): Promise<T> {
+  protected async _create(
+    tenantId: number,
+    value: T,
+    namespace: string = this.namespace,
+  ): Promise<T> {
     return await value.save();
   }
 
-  protected async _bulkCreate(values: T[]): Promise<T[]> {
-    return await (this.s.models[this.namespace] as ModelStatic<T>).bulkCreate(values as any);
+  protected async _bulkCreate(
+    tenantId: number,
+    values: T[],
+    namespace: string = this.namespace,
+  ): Promise<T[]> {
+    return await (this.s.models[namespace] as ModelStatic<T>).bulkCreate(values as any);
   }
 
-  protected async _createByKey(value: T, key: string): Promise<T> {
-    const primaryKey = this.s.models[this.namespace].primaryKeyAttribute;
+  protected async _createByKey(
+    tenantId: number,
+    value: T,
+    key: string,
+    namespace: string = this.namespace,
+  ): Promise<T> {
+    const primaryKey = this.s.models[namespace].primaryKeyAttribute;
     value.setDataValue(primaryKey, key);
-    return await value.save();
+    return (await this.s.models[namespace].create(value.toJSON())) as T;
   }
 
-  protected async _readOrCreateByQuery(query: object): Promise<[T, boolean]> {
-    return await this.s.models[this.namespace]
+  protected async _readOrCreateByQuery(
+    tenantId: number,
+    query: object,
+    namespace: string = this.namespace,
+  ): Promise<[T, boolean]> {
+    return await this.s.models[namespace]
       .findOrCreate(query as FindOptions<any>)
       .then((result) => [result[0] as T, result[1]]);
   }
 
-  protected async _updateByKey(value: Partial<T>, key: string): Promise<T | undefined> {
-    const primaryKey = this.s.models[this.namespace].primaryKeyAttribute;
-    return await this._updateAllByQuery(value, { where: { [primaryKey]: key } }).then((rows) =>
-      rows && rows.length === 1 ? rows[0] : undefined,
-    );
+  protected async _updateByKey(
+    tenantId: number,
+    value: Partial<T>,
+    key: string,
+    namespace: string = this.namespace,
+  ): Promise<T | undefined> {
+    const primaryKey = this.s.models[namespace].primaryKeyAttribute;
+    return await this._updateAllByQuery(
+      tenantId,
+      value,
+      { where: { [primaryKey]: key } },
+      namespace,
+    ).then((rows) => (rows && rows.length === 1 ? rows[0] : undefined));
   }
 
-  protected async _updateAllByQuery(value: Partial<T>, query: object): Promise<T[]> {
+  protected async _updateAllByQuery(
+    tenantId: number,
+    value: Partial<T>,
+    query: object,
+    namespace: string = this.namespace,
+  ): Promise<T[]> {
     const updateOptions = query as UpdateOptions<any>;
     updateOptions.returning = true;
     // Lengthy type conversion to satisfy sequelize-typescript
-    return await (this.s.models[this.namespace] as ModelStatic<T>)
+    return await (this.s.models[namespace] as ModelStatic<T>)
       .update(
         value,
         updateOptions as Omit<UpdateOptions<Attributes<T>>, 'returning'> & {
@@ -118,14 +176,21 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
       .then((result) => result[1] as T[]);
   }
 
-  protected async _deleteByKey(key: string): Promise<T | undefined> {
+  protected async _deleteByKey(
+    tenantId: number,
+    key: string,
+    namespace: string = this.namespace,
+  ): Promise<T | undefined> {
     return this.s.transaction(async (transaction) => {
-      const entryToDelete = await this.s.models[this.namespace]
+      const entryToDelete = await this.s.models[namespace]
         .findByPk(key, { transaction })
         .then((row) => row as T);
 
       if (entryToDelete) {
-        await entryToDelete.destroy({ transaction: transaction });
+        await this.s.models[namespace].destroy({
+          where: { [this.s.models[namespace].primaryKeyAttribute]: key },
+          transaction,
+        });
         return entryToDelete;
       } else {
         return undefined;
@@ -133,15 +198,21 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     });
   }
 
-  protected async _deleteAllByQuery(query: object): Promise<T[]> {
+  protected async _deleteAllByQuery(
+    tenantId: number,
+    query: object,
+    namespace: string = this.namespace,
+  ): Promise<T[]> {
     return this.s.transaction(async (transaction) => {
-      const entriesToDelete = await this.s.models[this.namespace]
+      const entriesToDelete = await this.s.models[namespace]
         .findAll({
           ...query,
           transaction,
         })
         .then((rows) => rows as T[]);
-      const deletedCount = await this.s.models[this.namespace].destroy({ ...query, transaction });
+
+      const deletedCount = await this.s.models[namespace].destroy({ ...query, transaction });
+
       if (entriesToDelete.length === deletedCount) {
         return entriesToDelete;
       } else {

@@ -10,3 +10,5 @@ export { AdditionalInfo } from './AdditionalInfo';
 export { LocalListVersion } from './LocalListVersion';
 export { SendLocalList } from './SendLocalList';
 export { LocalListAuthorization } from './LocalListAuthorization';
+export { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
+export { SendLocalListAuthorization } from './SendLocalListAuthorization';

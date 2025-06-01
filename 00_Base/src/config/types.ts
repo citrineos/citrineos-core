@@ -5,8 +5,8 @@
 
 import { z } from 'zod';
 import { OCPP2_0_1, OCPP1_6 } from '../ocpp/model';
-import { EventGroup } from '..';
 import { OCPP1_6_CallAction, OCPP2_0_1_CallAction } from '../ocpp/rpc/message';
+import { EventGroup } from '../interfaces/messages';
 
 const OCPP1_6_CallActionSchema = z.nativeEnum(OCPP1_6_CallAction);
 const OCPP2_0_1_CallActionSchema = z.nativeEnum(OCPP2_0_1_CallAction);
@@ -15,7 +15,6 @@ const CallActionSchema = z.union([OCPP1_6_CallActionSchema, OCPP2_0_1_CallAction
 
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
 export const websocketServerInputSchema = z.object({
-  // TODO: Add support for tenant ids on server level for tenant-specific behavior
   id: z.string().optional(),
   host: z.string().default('localhost').optional(),
   port: z.number().int().positive().default(8080).optional(),
@@ -29,6 +28,7 @@ export const websocketServerInputSchema = z.object({
   // charging station certificate and csms certificate)
   rootCACertificateFilePath: z.string().optional(), // Root CA certificate that overrides default CA certificates
   // allowed by Mozilla
+  tenantId: z.number(),
 });
 
 export const systemConfigInputSchema = z.object({
@@ -189,50 +189,22 @@ export const systemConfigInputSchema = z.object({
       .refine((obj) => obj.kafka || obj.amqp, {
         message: 'A message broker implementation must be set',
       }),
-    fileAccess: z
+    authProvider: z
       .object({
-        s3: z
+        oidc: z
           .object({
-            region: z.string().optional(),
-            endpoint: z.string().optional(),
-            defaultBucketName: z.string().default('citrineos-s3-bucket'),
-            s3ForcePathStyle: z.boolean().default(true),
-            accessKeyId: z.string().optional(),
-            secretAccessKey: z.string().optional(),
+            jwksUri: z.string(),
+            issuer: z.string(),
+            audience: z.string(),
+            cacheTime: z.number().int().positive().optional(),
+            rateLimit: z.boolean().default(false).optional(),
           })
           .optional(),
-        local: z
-          .object({
-            defaultFilePath: z.string().default('/data'),
-          })
-          .optional(),
-        directus: z
-          .object({
-            host: z.string().default('localhost').optional(),
-            port: z.number().int().positive().default(8055).optional(),
-            token: z.string().optional(),
-            username: z.string().optional(),
-            password: z.string().optional(),
-            generateFlows: z.boolean().default(false).optional(),
-          })
-          .refine((obj) => obj.generateFlows && !obj.host, {
-            message: 'Directus host must be set if generateFlows is true',
-          })
-          .optional(),
+        localByPass: z.boolean().default(false).optional(),
       })
-      .refine((obj) => obj.s3 || obj.local || obj.directus, {
-        message: 'A file access implementation must be set',
-      })
-      .refine(
-        (obj) => {
-          const implementations = [obj.s3, obj.local, obj.directus];
-          const presentCount = implementations.filter(Boolean).length;
-          return presentCount <= 1;
-        },
-        {
-          message: 'Only one file access implementation should be set',
-        },
-      ),
+      .refine((obj) => obj.oidc || obj.localByPass, {
+        message: 'An auth provider implementation must be set',
+      }),
     swagger: z
       .object({
         path: z.string().default('/docs').optional(),
@@ -297,15 +269,14 @@ export const systemConfigInputSchema = z.object({
   userPreferences: z.object({
     telemetryConsent: z.boolean().default(false).optional(),
   }),
-  configFileName: z.string().default('config.json').optional(),
-  configDir: z.string().optional(),
+  rbacRulesFileName: z.string().default('rbac-rules.json').optional(),
+  rbacRulesDir: z.string().optional(),
 });
 
 export type SystemConfigInput = z.infer<typeof systemConfigInputSchema>;
 
 export const websocketServerSchema = z
   .object({
-    // TODO: Add support for tenant ids on server level for tenant-specific behavior
     id: z.string(),
     host: z.string(),
     port: z.number().int().positive(),
@@ -317,6 +288,7 @@ export const websocketServerSchema = z
     tlsCertificateChainFilePath: z.string().optional(),
     mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
     rootCACertificateFilePath: z.string().optional(),
+    tenantId: z.number(),
   })
   .refine((obj) => {
     switch (obj.securityProfile) {
@@ -507,47 +479,22 @@ export const systemConfigSchema = z
         .refine((obj) => obj.kafka || obj.amqp, {
           message: 'A message broker implementation must be set',
         }),
-      fileAccess: z
+      authProvider: z
         .object({
-          s3: z
+          oidc: z
             .object({
-              region: z.string().optional(),
-              endpoint: z.string().optional(),
-              defaultBucketName: z.string().default('citrineos-s3-bucket'),
-              s3ForcePathStyle: z.boolean().default(true),
-              accessKeyId: z.string().optional(),
-              secretAccessKey: z.string().optional(),
+              jwksUri: z.string(),
+              issuer: z.string(),
+              audience: z.string(),
+              cacheTime: z.number().int().positive().optional(),
+              rateLimit: z.boolean(),
             })
             .optional(),
-          local: z
-            .object({
-              defaultFilePath: z.string().default('/data'),
-            })
-            .optional(),
-          directus: z
-            .object({
-              host: z.string(),
-              port: z.number().int().positive(),
-              token: z.string().optional(),
-              username: z.string().optional(),
-              password: z.string().optional(),
-              generateFlows: z.boolean(),
-            })
-            .optional(),
+          localByPass: z.boolean(),
         })
-        .refine((obj) => obj.s3 || obj.local || obj.directus, {
-          message: 'A file access implementation must be set',
-        })
-        .refine(
-          (obj) => {
-            const implementations = [obj.s3, obj.local, obj.directus];
-            const presentCount = implementations.filter(Boolean).length;
-            return presentCount <= 1;
-          },
-          {
-            message: 'Only one file access implementation should be set',
-          },
-        ),
+        .refine((obj) => obj.oidc || obj.localByPass, {
+          message: 'An auth provider implementation must be set',
+        }),
       swagger: z
         .object({
           path: z.string(),
@@ -618,12 +565,31 @@ export const systemConfigSchema = z
     userPreferences: z.object({
       telemetryConsent: z.boolean().optional(),
     }),
-    configFileName: z.string().default('config.json'),
-    configDir: z.string().optional(),
+    rbacRulesFileName: z.string().optional(),
+    rbacRulesDir: z.string().optional(),
   })
   .refine((obj) => obj.maxCachingSeconds >= obj.maxCallLengthSeconds, {
     message: 'maxCachingSeconds cannot be less than maxCallLengthSeconds',
   });
+
+export const HttpMethodSchema = z.record(
+  z.string(), // HTTP method (GET, POST, etc., or * for all methods)
+  z.array(z.string()), // Array of role names required for this method
+);
+
+export const UrlPatternSchema = z.record(
+  z.string(), // URL pattern (/api/users, /api/users/:id, etc.)
+  HttpMethodSchema,
+);
+
+export const TenantSchema = z.record(
+  z.string(), // Tenant ID
+  UrlPatternSchema,
+);
+
+export const RbacRulesSchema = TenantSchema;
+
+export type RbacRules = z.infer<typeof RbacRulesSchema>;
 
 export type WebsocketServerConfig = z.infer<typeof websocketServerSchema>;
 export type SystemConfig = z.infer<typeof systemConfigSchema>;

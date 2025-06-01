@@ -10,7 +10,6 @@ import {
   DataType,
   ForeignKey,
   HasMany,
-  Model,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
@@ -19,13 +18,14 @@ import { StatusNotification } from './StatusNotification';
 import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 import { SetNetworkProfile } from './SetNetworkProfile';
 import { Connector } from './Connector';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 /**
  * Represents a charging station.
  * Currently, this data model is internal to CitrineOS. In the future, it will be analogous to an OCPI ChargingStation.
  */
 @Table
-export class ChargingStation extends Model {
+export class ChargingStation extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = Namespace.ChargingStation;
 
   @PrimaryKey

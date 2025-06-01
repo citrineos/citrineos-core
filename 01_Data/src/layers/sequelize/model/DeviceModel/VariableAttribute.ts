@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BelongsTo,
   Column,
@@ -11,7 +11,6 @@ import {
   ForeignKey,
   HasMany,
   Index,
-  Model,
   Table,
 } from 'sequelize-typescript';
 import { Variable } from './Variable';
@@ -21,6 +20,7 @@ import { Boot } from '../Boot';
 import { VariableStatus } from './VariableStatus';
 import { ChargingStation } from '../Location';
 import { CryptoUtils } from '../../../../util/CryptoUtils';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table({
   indexes: [
@@ -80,7 +80,10 @@ import { CryptoUtils } from '../../../../util/CryptoUtils';
     },
   ],
 })
-export class VariableAttribute extends Model implements OCPP2_0_1.VariableAttributeType {
+export class VariableAttribute
+  extends BaseModelWithTenant
+  implements OCPP2_0_1.VariableAttributeType
+{
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableAttributeType;
 
   /**

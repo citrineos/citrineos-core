@@ -8,3 +8,26 @@ object_relationships:
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - active
+        - priority
+        - state
+        - stationId
+        - transactionId
+        - databaseId
+        - displayComponentId
+        - id
+        - tenantId
+        - message
+        - createdAt
+        - endDateTime
+        - startDateTime
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

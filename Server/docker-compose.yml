@@ -86,6 +86,15 @@ services:
       # Skip authentication completely - use public access
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
+      # Bootstrap Configuration Environment Variables
+      CITRINEOS_CONFIG_FILENAME: 'config.json'
+      # CITRINEOS_CONFIG_DIR: '/custom/config/path'  # Optional - uncomment if needed
+      CITRINEOS_FILE_ACCESS_TYPE: 's3'
+      CITRINEOS_FILE_ACCESS_S3_ENDPOINT: 'http://minio:9000'
+      CITRINEOS_FILE_ACCESS_S3_DEFAULT_BUCKET_NAME: 'citrineos-s3-bucket'
+      CITRINEOS_FILE_ACCESS_S3_FORCE_PATH_STYLE: 'true'
+      CITRINEOS_FILE_ACCESS_S3_ACCESS_KEY_ID: 'minioadmin'
+      CITRINEOS_FILE_ACCESS_S3_SECRET_ACCESS_KEY: 'minioadmin'
     depends_on:
       ocpp-db:
         condition: service_healthy
@@ -160,7 +169,7 @@ services:
       ## uncomment next line to run console offline (i.e load console assets from server instead of CDN)
       # HASURA_GRAPHQL_CONSOLE_ASSETS_DIR: /srv/console-assets
       ## uncomment next line to set an admin secret
-      # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+      HASURA_GRAPHQL_ADMIN_SECRET: CitrineOS!
       HASURA_GRAPHQL_METADATA_DEFAULTS: '{"backend_configs":{"dataconnector":{"athena":{"uri":"http://data-connector-agent:8081/api/v1/athena"},"mariadb":{"uri":"http://data-connector-agent:8081/api/v1/mariadb"},"mysql8":{"uri":"http://data-connector-agent:8081/api/v1/mysql"},"oracle":{"uri":"http://data-connector-agent:8081/api/v1/oracle"},"snowflake":{"uri":"http://data-connector-agent:8081/api/v1/snowflake"}}}}'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://graphql-engine:8080/healthz']

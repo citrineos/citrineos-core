@@ -13,3 +13,20 @@ array_relationships:
         table:
           name: SendLocalListAuthorizations
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - correlationId
+        - stationId
+        - updateType
+        - id
+        - tenantId
+        - versionNumber
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

@@ -20,16 +20,18 @@ export class NetworkProfileFilter extends AuthenticatorFilter {
     this._deviceModelRepository = deviceModelRepository;
   }
 
-  protected shouldFilter(options: AuthenticationOptions): boolean {
+  protected shouldFilter(_options: AuthenticationOptions): boolean {
     return true;
   }
 
   protected async filter(
+    tenantId: number,
     identifier: string,
     request: IncomingMessage,
     options: AuthenticationOptions,
   ): Promise<void> {
     const isConfigurationSlotAllowed = await this._isConfigurationSlotAllowed(
+      tenantId,
       identifier,
       options.securityProfile,
     );
@@ -40,8 +42,13 @@ export class NetworkProfileFilter extends AuthenticatorFilter {
     }
   }
 
-  private async _isConfigurationSlotAllowed(identifier: string, securityProfile: number) {
-    const r = await this._deviceModelRepository.readAllByQuerystring({
+  private async _isConfigurationSlotAllowed(
+    tenantId: number,
+    identifier: string,
+    securityProfile: number,
+  ) {
+    const r = await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+      tenantId,
       stationId: identifier,
       component_name: 'OCPPCommCtrlr',
       variable_name: 'NetworkConfigurationPriority',
