@@ -134,67 +134,6 @@ export class MeterValueUtils {
     return valuesMap;
   }
 
-  private static getTimestampToKwhMap(
-    meterValues: OCPP2_0_1.MeterValueType[],
-  ): Map<number, number> {
-    const valuesMap = new Map<number, number>();
-
-    for (const meterValue of meterValues) {
-      const timestamp = Date.parse(meterValue.timestamp);
-      let energyValue = null;
-
-      // Try strategies in order of preference
-
-      // 1. Overall Energy.Active.Import.Register
-      energyValue = this.findMeasurandValue(
-        meterValue.sampledValue,
-        OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register,
-        false,
-      );
-
-      // 2. Energy.Active.Import.Interval
-      if (energyValue === null) {
-        energyValue = this.findMeasurandValue(
-          meterValue.sampledValue,
-          OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Interval,
-          false,
-        );
-      }
-
-      // 3. Energy.Active.Net
-      if (energyValue === null) {
-        energyValue = this.findMeasurandValue(
-          meterValue.sampledValue,
-          OCPP2_0_1.MeasurandEnumType.Energy_Active_Net,
-          false,
-        );
-      }
-
-      // 4. Sum of phased Energy.Active.Import.Register values
-      if (energyValue === null) {
-        energyValue = this.sumPhasedValues(
-          meterValue.sampledValue,
-          OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register,
-        );
-      }
-
-      // 5. Sum of phased Energy.Active.Import.Interval values
-      if (energyValue === null) {
-        energyValue = this.sumPhasedValues(
-          meterValue.sampledValue,
-          OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Interval,
-        );
-      }
-
-      // Store the value if we found one
-      if (energyValue !== null) {
-        valuesMap.set(timestamp, energyValue);
-      }
-    }
-
-    return valuesMap;
-  }
-
   /**
    * Find a specific measurand value from sampledValues
    * @param sampledValues Array of sampled values
@@ -207,7 +146,13 @@ export class MeterValueUtils {
     measurand: OCPP2_0_1.MeasurandEnumType,
     phased: boolean,
   ): number | null {
-    const value = sampledValues.find((sv) => sv.measurand === measurand && !phased === !sv.phase);
+    const value = sampledValues.find(
+      (sv) =>
+        (sv.measurand === measurand ||
+          (!sv.measurand && // Default to Energy.Active.Import.Register if measurand is missing
+            measurand === OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register)) &&
+        !phased === !sv.phase,
+    );
     return value ? this.normalizeToKwh(value) : null;
   }
 
