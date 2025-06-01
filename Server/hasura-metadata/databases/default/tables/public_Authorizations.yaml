@@ -8,3 +8,31 @@ object_relationships:
   - name: IdTokenInfo
     using:
       foreign_key_constraint_on: idTokenInfoId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: LocalListAuthorizations
+    using:
+      foreign_key_constraint_on:
+        column: authorizationId
+        table:
+          name: LocalListAuthorizations
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - allowedConnectorTypes
+        - disallowedEvseIdPrefixes
+        - id
+        - idTokenId
+        - idTokenInfoId
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

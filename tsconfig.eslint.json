@@ -28,7 +28,9 @@
     "Server/**/*.ts",
     "Server/**/*.json",
     "./db.sync.ts",
-    "jest.config.ts"
+    "jest.config.ts",
+    "migrations/**/*.ts",
+    "seeders/**/*.ts"
   ],
   "compilerOptions": {
     "target": "es6",

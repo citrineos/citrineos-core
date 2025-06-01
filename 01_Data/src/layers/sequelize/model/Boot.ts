@@ -4,11 +4,12 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { type BootConfig, Namespace } from '@citrineos/base';
-import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import { Column, DataType, HasMany, PrimaryKey, Table } from 'sequelize-typescript';
 import { VariableAttribute } from './DeviceModel';
+import { BaseModelWithTenant } from './BaseModelWithTenant';
 
 @Table
-export class Boot extends Model implements BootConfig {
+export class Boot extends BaseModelWithTenant implements BootConfig {
   static readonly MODEL_NAME: string = Namespace.BootConfig;
 
   /**

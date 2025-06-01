@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace, OCPP2_0_1, Namespace } from '@citrineos/base';
+import { Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
   BelongsTo,
@@ -10,15 +10,15 @@ import {
   DataType,
   ForeignKey,
   HasOne,
-  Model,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
 import { ChargingProfile } from './ChargingProfile';
 import { SalesTariff } from './SalesTariff';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class ChargingSchedule extends Model {
+export class ChargingSchedule extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = Namespace.ChargingSchedule;
 
   /**

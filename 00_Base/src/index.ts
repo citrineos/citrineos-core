@@ -10,11 +10,21 @@ export {
   AsMessageEndpoint,
   HttpMethod,
   IModuleApi,
+  IApiAuthProvider,
+  ApiAuthorizationResult,
+  ApiAuthenticationResult,
+  UserInfo,
 } from './interfaces/api';
 export { BadRequestError } from './interfaces/api/exceptions/BadRequestError';
 export { NotFoundError } from './interfaces/api/exceptions/NotFoundError';
 export { ICache } from './interfaces/cache/cache';
-export { CacheNamespace, IWebsocketConnection } from './interfaces/cache/types';
+export {
+  CacheNamespace,
+  IWebsocketConnection,
+  createIdentifier,
+  getStationIdFromIdentifier,
+  getTenantIdFromIdentifier,
+} from './interfaces/cache/types';
 export {
   AbstractMessageRouter,
   IAuthenticator,
@@ -56,16 +66,18 @@ export { IFileAccess, IFileStorage } from './interfaces/files';
 
 // Persistence Interfaces
 
+export { TenantContextManager } from './interfaces/tenant';
 export { CrudEvent, CrudRepository } from './interfaces/repository';
 export * from './ocpp/persistence';
 
 // Configuration Types
 
 export { BootConfig, BOOT_STATUS } from './config/BootConfig';
-export { defineConfig } from './config/defineConfig';
-export { SystemConfig, WebsocketServerConfig } from './config/types';
+export { defineConfig, DEFAULT_TENANT_ID } from './config/defineConfig';
+export { SystemConfig, systemConfigSchema, WebsocketServerConfig } from './config/types';
 export { SignedMeterValuesConfig } from './config/signedMeterValuesConfig';
 export { ConfigStore, ConfigStoreFactory } from './config/ConfigStore';
+export { BootstrapConfig, loadBootstrapConfig } from './config/boostrap.config';
 
 // Utils
 

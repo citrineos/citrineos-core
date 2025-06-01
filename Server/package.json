@@ -13,11 +13,11 @@
     "fresh": "rm -rf node_modules package-lock.json && npm run clean",
     "compile": "npm run clean && tsc -p tsconfig.json",
     "copy-assets": "ts-node ./copy-assets.ts ./src/assets ./dist/assets",
-    "start": "cross-env APP_NAME=all APP_ENV=local nodemon",
-    "start:instance1": "cross-env APP_NAME=all APP_ENV=local nodemon dist/index.js --env-prefix=instance1_",
-    "start:instance2": "cross-env APP_NAME=all APP_ENV=local nodemon dist/index.js --env-prefix=instance2_",
+    "start": "cross-env APP_NAME=all APP_ENV=local CITRINEOS_CONFIG_FILENAME=config.json CITRINEOS_FILE_ACCESS_TYPE=local CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH=/data nodemon",
+    "start:instance1": "cross-env APP_NAME=all APP_ENV=local CITRINEOS_CONFIG_FILENAME=config.json CITRINEOS_FILE_ACCESS_TYPE=local CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH=/data nodemon dist/index.js --env-prefix=instance1_",
+    "start:instance2": "cross-env APP_NAME=all APP_ENV=local CITRINEOS_CONFIG_FILENAME=config.json CITRINEOS_FILE_ACCESS_TYPE=local CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH=/data nodemon dist/index.js --env-prefix=instance2_",
     "start-docker": "nodemon",
-    "start-docker-cloud": "node --inspect=0.0.0.0:9229 dist/index.js",
+    "start-docker-cloud": "npm run migrate --prefix ../ && node --inspect=0.0.0.0:9229 dist/index.js",
     "start-everest": "cd ./everest && cross-env EVEREST_IMAGE_TAG=0.0.23 EVEREST_TARGET_URL=ws://host.docker.internal:8081/cp001 docker compose up"
   },
   "keywords": [

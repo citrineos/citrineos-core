@@ -24,8 +24,8 @@ export interface IModule {
   sender: IMessageSender;
   handler: IMessageHandler;
   sendCall(
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
     protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
@@ -34,8 +34,8 @@ export interface IModule {
   ): Promise<IMessageConfirmation>;
   sendCallResult(
     correlationId: string,
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
     protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppResponse,
@@ -43,8 +43,8 @@ export interface IModule {
   ): Promise<IMessageConfirmation>;
   sendCallError(
     correlationId: string,
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
     protocol: OCPPVersionType,
     action: CallAction,
     error: OcppError,

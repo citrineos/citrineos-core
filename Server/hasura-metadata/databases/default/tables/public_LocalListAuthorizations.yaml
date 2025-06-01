@@ -1,0 +1,49 @@
+table:
+  name: LocalListAuthorizations
+  schema: public
+object_relationships:
+  - name: Authorization
+    using:
+      foreign_key_constraint_on: authorizationId
+  - name: IdToken
+    using:
+      foreign_key_constraint_on: idTokenId
+  - name: IdTokenInfo
+    using:
+      foreign_key_constraint_on: idTokenInfoId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: LocalListVersionAuthorizations
+    using:
+      foreign_key_constraint_on:
+        column: authorizationId
+        table:
+          name: LocalListVersionAuthorizations
+          schema: public
+  - name: SendLocalListAuthorizations
+    using:
+      foreign_key_constraint_on:
+        column: authorizationId
+        table:
+          name: SendLocalListAuthorizations
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - allowedConnectorTypes
+        - disallowedEvseIdPrefixes
+        - authorizationId
+        - id
+        - idTokenId
+        - idTokenInfoId
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

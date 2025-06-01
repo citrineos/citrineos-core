@@ -1,10 +1,18 @@
-import { ConfigStore, ConfigStoreFactory, SystemConfig } from '@citrineos/base';
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
+import { BootstrapConfig, loadBootstrapConfig, SystemConfig } from '@citrineos/base';
+import { loadSystemConfig } from './config.loader';
 import { createLocalConfig } from './envs/local';
 import { createDockerConfig } from './envs/docker';
 import { createDirectusConfig } from './envs/directus.docker';
-import { DirectusUtil, LocalStorage, S3Storage } from '@citrineos/util';
 
-async function getConfigFromEnv(): Promise<SystemConfig> {
+/**
+ * Get default config based on environment
+ * Note: This is only used if no config exists in storage
+ */
+function getDefaultConfig(): SystemConfig {
   switch (process.env.APP_ENV) {
     case 'local':
       return createLocalConfig();
@@ -17,47 +25,17 @@ async function getConfigFromEnv(): Promise<SystemConfig> {
   }
 }
 
-async function getOrCreateConfig(): Promise<SystemConfig> {
-  const config = await getConfigFromEnv();
-
-  let fileStorage: ConfigStore | undefined;
-  if (config.util.fileAccess.local) {
-    fileStorage = new LocalStorage(
-      config.util.fileAccess.local.defaultFilePath,
-      config.configFileName,
-      config.configDir,
-    );
-  } else if (config.util.fileAccess.s3) {
-    fileStorage = new S3Storage(config.util.fileAccess.s3, config.configFileName, config.configDir);
-  } else if (config.util.fileAccess.directus) {
-    fileStorage = new DirectusUtil(
-      config.util.fileAccess.directus,
-      config.configFileName,
-      config.configDir,
-    );
-  } else {
-    throw new Error('Invalid file access configuration');
-  }
-
-  const configStore = ConfigStoreFactory.setConfigStore(fileStorage);
-
+// Export a promise that resolves to the system configuration
+export async function getSystemConfig(bootstrapConfig: BootstrapConfig): Promise<SystemConfig> {
   try {
-    let fetchedConfig = await configStore.fetchConfig();
-
-    if (!fetchedConfig) {
-      console.warn('No config found. Creating default config...');
-      fetchedConfig = config;
-      await configStore.saveConfig(fetchedConfig);
-      console.log('Default config saved.');
-    } else {
-      console.log('Config fetched.');
-    }
-
-    return fetchedConfig;
+    return await loadSystemConfig(bootstrapConfig, getDefaultConfig());
   } catch (error) {
-    console.error('Failed to get or create config:', error);
+    console.error('Failed to initialize system configuration:', error);
     throw error;
   }
 }
 
-export const systemConfig: Promise<SystemConfig> = getOrCreateConfig();
+export const systemConfig: Promise<SystemConfig> = (async () => {
+  const bootstrapConfig = loadBootstrapConfig();
+  return await getSystemConfig(bootstrapConfig);
+})();

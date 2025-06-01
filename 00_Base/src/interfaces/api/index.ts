@@ -21,3 +21,9 @@ export { IDataEndpointDefinition } from './DataEndpointDefinition';
 export { IMessageEndpointDefinition } from './MessageEndpointDefinition';
 export { IMessageQuerystring } from './MessageQuerystring';
 export { IModuleApi } from './ModuleApi';
+export {
+  IApiAuthProvider,
+  ApiAuthorizationResult,
+  ApiAuthenticationResult,
+  UserInfo,
+} from './auth';

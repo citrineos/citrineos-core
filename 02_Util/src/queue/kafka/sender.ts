@@ -143,6 +143,7 @@ export class KafkaSender extends AbstractMessageSender implements IMessageSender
                 action: message.action.toString(),
                 state: message.state.toString(),
                 ...message.context,
+                tenantId: message.context.tenantId.toString(),
               },
               value: JSON.stringify(message),
             },

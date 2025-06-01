@@ -166,10 +166,12 @@ export class ReportingModule extends AbstractModule {
       const stationId: string = message.context.stationId;
       const [component, variable] =
         await this._deviceModelRepository.findOrCreateEvseAndComponentAndVariable(
+          message.context.tenantId,
           monitorType.component,
           monitorType.variable,
         );
       await this._variableMonitoringRepository.createOrUpdateByMonitoringDataTypeAndStationId(
+        message.context.tenantId,
         monitorType,
         component ? component.id : null,
         variable ? variable.id : null,
@@ -203,6 +205,7 @@ export class ReportingModule extends AbstractModule {
       }
       const variableAttributes =
         await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+          message.context.tenantId,
           reportDataType,
           message.context.stationId,
           timestamp,
@@ -213,6 +216,7 @@ export class ReportingModule extends AbstractModule {
           include: [Component, Variable],
         });
         await this._deviceModelRepository.updateResultByStationId(
+          message.context.tenantId,
           {
             attributeType: variableAttribute.type,
             attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
@@ -260,6 +264,7 @@ export class ReportingModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('SecurityEventNotification request received:', message, props);
     await this._securityEventRepository.createByStationId(
+      message.context.tenantId,
       message.payload,
       message.context.stationId,
     );

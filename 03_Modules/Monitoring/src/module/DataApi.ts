@@ -24,6 +24,7 @@ import {
   ReportDataTypeSchema,
   OCPP1_6_Namespace,
   Namespace,
+  DEFAULT_TENANT_ID,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 
@@ -61,6 +62,8 @@ export class MonitoringDataApi
       Querystring: CreateOrUpdateVariableAttributeQuerystring;
     }>,
   ): Promise<sequelize.VariableAttribute[]> {
+    const tenantId = request.query.tenantId ?? DEFAULT_TENANT_ID;
+
     // fill in default values where omitted
     for (const variableAttr of request.body.variableAttribute) {
       if (!variableAttr.mutability) {
@@ -70,6 +73,7 @@ export class MonitoringDataApi
     const timestamp = new Date().toISOString();
     const variableAttributes =
       await this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(
+        tenantId,
         request.body,
         request.query.stationId,
         timestamp,
@@ -82,6 +86,7 @@ export class MonitoringDataApi
           include: [Variable, Component],
         });
         await this._module.deviceModelRepository.updateResultByStationId(
+          tenantId,
           {
             attributeType: variableAttribute.type,
             attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
@@ -105,7 +110,10 @@ export class MonitoringDataApi
   getDeviceModelVariables(
     request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>,
   ): Promise<sequelize.VariableAttribute[] | undefined> {
-    return this._module.deviceModelRepository.readAllByQuerystring(request.query);
+    return this._module.deviceModelRepository.readAllByQuerystring(
+      request.query.tenantId,
+      request.query,
+    );
   }
 
   @AsDataEndpoint(
@@ -116,8 +124,10 @@ export class MonitoringDataApi
   deleteDeviceModelVariables(
     request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>,
   ): Promise<string> {
+    const tenantId = request.query.tenantId ?? DEFAULT_TENANT_ID;
+    request.query.tenantId = tenantId;
     return this._module.deviceModelRepository
-      .deleteAllByQuerystring(request.query)
+      .deleteAllByQuerystring(tenantId, request.query)
       .then(
         (deletedCount) =>
           deletedCount.toString() +

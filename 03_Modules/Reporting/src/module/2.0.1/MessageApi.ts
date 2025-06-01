@@ -8,6 +8,7 @@ import {
   AbstractModuleApi,
   AsMessageEndpoint,
   CallAction,
+  DEFAULT_TENANT_ID,
   IMessageConfirmation,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
@@ -41,9 +42,9 @@ export class ReportingOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.GetBaseReport, OCPP2_0_1.GetBaseReportRequestSchema)
   getBaseReport(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.GetBaseReportRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     // For each station, send the GetBaseReport call
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
@@ -62,15 +63,16 @@ export class ReportingOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.GetReport, OCPP2_0_1.GetReportRequestSchema)
   async getCustomReport(
     identifier: string,
-    tenantId: string,
     request: OCPP2_0_1.GetReportRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation> {
     // if request size is bigger than BytesPerMessageGetReport, return error
     const bytesPerMessageGetReport =
       await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
         OCPP2_0_1_CallAction.GetReport,
+        tenantId,
         identifier,
       );
     const requestBytes = getSizeOfRequest(request);
@@ -98,6 +100,7 @@ export class ReportingOcpp201Api
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
         OCPP2_0_1_CallAction.GetReport,
+        tenantId,
         identifier,
       );
     itemsPerMessageGetReport =
@@ -146,9 +149,9 @@ export class ReportingOcpp201Api
   )
   async getMonitoringReport(
     identifier: string,
-    tenantId: string,
     request: OCPP2_0_1.GetMonitoringReportRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation> {
     // If monitoringCriteria & componentVariable are both empty, just call once
     const componentVariable = request.componentVariable as OCPP2_0_1.ComponentVariableType[];
@@ -171,6 +174,7 @@ export class ReportingOcpp201Api
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
         OCPP2_0_1_CallAction.GetReport,
+        tenantId,
         identifier,
       );
     itemsPerMessageGetReport =
@@ -214,9 +218,9 @@ export class ReportingOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.GetLog, OCPP2_0_1.GetLogRequestSchema)
   getLog(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.GetLogRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
@@ -237,9 +241,9 @@ export class ReportingOcpp201Api
   )
   customerInformation(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.CustomerInformationRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(

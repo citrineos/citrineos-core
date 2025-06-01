@@ -3,12 +3,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { LocalListVersion } from './LocalListVersion';
 import { LocalListAuthorization } from './LocalListAuthorization';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class LocalListVersionAuthorization extends Model {
+export class LocalListVersionAuthorization extends BaseModelWithTenant {
   // Namespace enum not used as this is not a model required by CitrineOS
   static readonly MODEL_NAME: string = 'LocalListVersionAuthorization';
 

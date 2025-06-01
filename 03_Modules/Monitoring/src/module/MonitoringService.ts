@@ -17,6 +17,7 @@ export class MonitoringService {
   }
 
   async processClearMonitoringResult(
+    tenantId: number,
     stationId: string,
     clearMonitoringResult: [
       OCPP2_0_1.ClearMonitoringResultType,
@@ -34,6 +35,7 @@ export class MonitoringService {
         resultStatus === OCPP2_0_1.ClearMonitoringStatusEnumType.NotFound
       ) {
         await this._variableMonitoringRepository.rejectVariableMonitoringByIdAndStationId(
+          tenantId,
           OCPP2_0_1_CallAction.ClearVariableMonitoring,
           monitorId,
           stationId,

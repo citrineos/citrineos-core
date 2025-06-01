@@ -11,3 +11,22 @@ object_relationships:
   - name: SetNetworkProfile
     using:
       foreign_key_constraint_on: setNetworkProfileId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - stationId
+        - websocketServerConfigId
+        - configurationSlot
+        - setNetworkProfileId
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

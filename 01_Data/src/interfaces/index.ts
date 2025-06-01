@@ -38,6 +38,7 @@ export {
   TlsCertificateSchema,
   UpdateTlsCertificateQuerySchema,
 } from './queries/TlsCertificate';
+export { TenantQuerySchema, TenantQueryString } from './queries/Tenant';
 export {
   GenerateCertificateChainSchema,
   InstallRootCertificateSchema,

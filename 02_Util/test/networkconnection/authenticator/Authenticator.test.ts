@@ -7,6 +7,7 @@ import { BasicAuthenticationFilter } from '../../../src/networkconnection/authen
 import { UnknownStationFilter } from '../../../src/networkconnection/authenticator/UnknownStationFilter';
 import { aRequest } from '../../providers/IncomingMessageProvider';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 describe('Authenticator', () => {
   let unknownStationFilter: jest.Mocked<UnknownStationFilter>;
@@ -54,6 +55,7 @@ describe('Authenticator', () => {
     await expect(
       authenticator.authenticate(
         aRequest({ url: `wss://citrineos.io/${stationId}` }),
+        DEFAULT_TENANT_ID,
         anAuthenticationOptions(),
       ),
     ).rejects.toThrow();
@@ -71,6 +73,7 @@ describe('Authenticator', () => {
     await expect(
       authenticator.authenticate(
         aRequest({ url: `wss://citrineos.io/${stationId}` }),
+        DEFAULT_TENANT_ID,
         anAuthenticationOptions(),
       ),
     ).rejects.toThrow();
@@ -88,6 +91,7 @@ describe('Authenticator', () => {
     await expect(
       authenticator.authenticate(
         aRequest({ url: `wss://citrineos.io/${stationId}` }),
+        DEFAULT_TENANT_ID,
         anAuthenticationOptions(),
       ),
     ).rejects.toThrow();
@@ -105,6 +109,7 @@ describe('Authenticator', () => {
     await expect(async () => {
       await authenticator.authenticate(
         aRequest({ url: `wss://citrineos.io/${stationId}` }),
+        DEFAULT_TENANT_ID,
         anAuthenticationOptions(),
       );
     }).rejects.toThrow();
@@ -119,6 +124,7 @@ describe('Authenticator', () => {
 
     const identifier = await authenticator.authenticate(
       aRequest({ url: `wss://citrineos.io/${stationId}` }),
+      DEFAULT_TENANT_ID,
       anAuthenticationOptions(),
     );
 

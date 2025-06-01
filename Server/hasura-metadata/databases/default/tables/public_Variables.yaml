@@ -2,6 +2,9 @@ table:
   name: Variables
   schema: public
 object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
   - name: VariableCharacteristic
     using:
       foreign_key_constraint_on:
@@ -38,3 +41,18 @@ array_relationships:
         table:
           name: VariableMonitorings
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - instance
+        - name
+        - id
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

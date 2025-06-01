@@ -25,17 +25,18 @@ export class SequelizeSubscriptionRepository
    * @param value {@link Subscription} object which may have been deserialized from JSON
    * @returns Saved {@link Subscription} if successful, undefined otherwise
    */
-  create(value: Subscription): Promise<Subscription> {
+  create(tenantId: number, value: Subscription): Promise<Subscription> {
     const { ...rawSubscription } = value;
+    rawSubscription.tenantId = tenantId;
     rawSubscription.id = null;
-    return super.create(Subscription.build({ ...rawSubscription }));
+    return super.create(tenantId, Subscription.build({ ...rawSubscription }));
   }
 
-  readAllByStationId(stationId: string): Promise<Subscription[]> {
-    return super.readAllByQuery({ where: { stationId: stationId } });
+  readAllByStationId(tenantId: number, stationId: string): Promise<Subscription[]> {
+    return super.readAllByQuery(tenantId, { where: { stationId: stationId } });
   }
 
-  deleteByKey(key: string): Promise<Subscription | undefined> {
-    return super.deleteByKey(key);
+  deleteByKey(tenantId: number, key: string): Promise<Subscription | undefined> {
+    return super.deleteByKey(tenantId, key);
   }
 }

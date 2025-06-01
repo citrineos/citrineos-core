@@ -8,8 +8,8 @@ import {
   type CallAction,
   ChargingStationSequenceType,
   type CrudRepository,
-  OCPP2_0_1,
   OCPP1_6,
+  OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/base';
 import { type AuthorizationQuerystring } from './queries/Authorization';
@@ -17,6 +17,7 @@ import {
   type Authorization,
   type Boot,
   type Certificate,
+  ChangeConfiguration,
   ChargingNeeds,
   ChargingProfile,
   type ChargingStation,
@@ -24,104 +25,130 @@ import {
   ChargingStationSequence,
   type Component,
   CompositeSchedule,
+  Connector,
   type EventData,
   Evse,
+  InstalledCertificate,
+  LocalListVersion,
   type Location,
   MessageInfo,
   MeterValue,
+  OCPPMessage,
   Reservation,
   type SecurityEvent,
+  SendLocalList,
   ServerNetworkProfile,
+  StatusNotification,
+  StopTransaction,
   Subscription,
   Tariff,
+  Tenant,
   type Transaction,
+  TransactionEvent,
   type Variable,
   type VariableAttribute,
   VariableCharacteristics,
   type VariableMonitoring,
-  TransactionEvent,
-  StatusNotification,
-  Connector,
-  LocalListVersion,
-  SendLocalList,
-  InstalledCertificate,
-  ChangeConfiguration,
-  OCPPMessage,
-  StopTransaction,
 } from '../layers/sequelize';
-import { type AuthorizationRestrictions, type VariableAttributeQuerystring } from '.';
+import { type VariableAttributeQuerystring } from '.';
 import { TariffQueryString } from './queries/Tariff';
 
 export interface IAuthorizationRepository extends CrudRepository<Authorization> {
-  createOrUpdateByQuerystring: (
-    value: OCPP2_0_1.AuthorizationData,
-    query: AuthorizationQuerystring,
-  ) => Promise<Authorization | undefined>;
-  updateRestrictionsByQuerystring: (
-    value: AuthorizationRestrictions,
+  readAllByQuerystring: (
+    tenantId: number,
     query: AuthorizationQuerystring,
   ) => Promise<Authorization[]>;
-  readAllByQuerystring: (query: AuthorizationQuerystring) => Promise<Authorization[]>;
-  readOnlyOneByQuerystring: (query: AuthorizationQuerystring) => Promise<Authorization | undefined>;
-  existByQuerystring: (query: AuthorizationQuerystring) => Promise<number>;
-  deleteAllByQuerystring: (query: AuthorizationQuerystring) => Promise<Authorization[]>;
+  readOnlyOneByQuerystring: (
+    tenantId: number,
+    query: AuthorizationQuerystring,
+  ) => Promise<Authorization | undefined>;
 }
 
 /**
  * Key is StationId
  */
 export interface IBootRepository extends CrudRepository<BootConfig> {
-  createOrUpdateByKey: (value: BootConfig, key: string) => Promise<Boot | undefined>;
+  createOrUpdateByKey: (
+    tenantId: number,
+    value: BootConfig,
+    key: string,
+  ) => Promise<Boot | undefined>;
   updateStatusByKey: (
+    tenantId: number,
     status: OCPP2_0_1.RegistrationStatusEnumType,
     statusInfo: OCPP2_0_1.StatusInfoType | undefined,
     key: string,
   ) => Promise<Boot | undefined>;
-  updateLastBootTimeByKey: (lastBootTime: string, key: string) => Promise<Boot | undefined>;
-  readByKey: (key: string) => Promise<Boot | undefined>;
-  existsByKey: (key: string) => Promise<boolean>;
-  deleteByKey: (key: string) => Promise<Boot | undefined>;
+  updateLastBootTimeByKey: (
+    tenantId: number,
+    lastBootTime: string,
+    key: string,
+  ) => Promise<Boot | undefined>;
+  readByKey: (tenantId: number, key: string) => Promise<Boot | undefined>;
+  existsByKey: (tenantId: number, key: string) => Promise<boolean>;
+  deleteByKey: (tenantId: number, key: string) => Promise<Boot | undefined>;
 }
 
 export interface IDeviceModelRepository extends CrudRepository<OCPP2_0_1.VariableAttributeType> {
   createOrUpdateDeviceModelByStationId(
+    tenantId: number,
     value: OCPP2_0_1.ReportDataType,
     stationId: string,
     isoTimestamp: string,
   ): Promise<VariableAttribute[]>;
   createOrUpdateByGetVariablesResultAndStationId(
+    tenantId: number,
     getVariablesResult: OCPP2_0_1.GetVariableResultType[],
     stationId: string,
     isoTimestamp: string,
   ): Promise<VariableAttribute[]>;
   createOrUpdateBySetVariablesDataAndStationId(
+    tenantId: number,
     setVariablesData: OCPP2_0_1.SetVariableDataType[],
     stationId: string,
     isoTimestamp: string,
   ): Promise<VariableAttribute[]>;
   updateResultByStationId(
+    tenantId: number,
     result: OCPP2_0_1.SetVariableResultType,
     stationId: string,
     isoTimestamp: string,
   ): Promise<VariableAttribute | undefined>;
-  readAllSetVariableByStationId(stationId: string): Promise<OCPP2_0_1.SetVariableDataType[]>;
-  readAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
-  existByQuerystring(query: VariableAttributeQuerystring): Promise<number>;
-  deleteAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]>;
+  readAllSetVariableByStationId(
+    tenantId: number,
+    stationId: string,
+  ): Promise<OCPP2_0_1.SetVariableDataType[]>;
+  readAllByQuerystring(
+    tenantId: number,
+    query: VariableAttributeQuerystring,
+  ): Promise<VariableAttribute[]>;
+  existByQuerystring(tenantId: number, query: VariableAttributeQuerystring): Promise<number>;
+  deleteAllByQuerystring(
+    tenantId: number,
+    query: VariableAttributeQuerystring,
+  ): Promise<VariableAttribute[]>;
   findComponentAndVariable(
+    tenantId: number,
     componentType: OCPP2_0_1.ComponentType,
     variableType: OCPP2_0_1.VariableType,
   ): Promise<[Component | undefined, Variable | undefined]>;
   findOrCreateEvseAndComponentAndVariable(
+    tenantId: number,
     componentType: OCPP2_0_1.ComponentType,
     variableType: OCPP2_0_1.VariableType,
   ): Promise<[Component, Variable]>;
   findOrCreateEvseAndComponent(
+    tenantId: number,
     componentType: OCPP2_0_1.ComponentType,
     stationId: string,
   ): Promise<Component>;
-  findEvseByIdAndConnectorId(id: number, connectorId: number | null): Promise<Evse | undefined>;
+  findEvseByIdAndConnectorId(
+    tenantId: number,
+    id: number,
+    connectorId: number | null,
+  ): Promise<Evse | undefined>;
   findVariableCharacteristicsByVariableNameAndVariableInstance(
+    tenantId: number,
     variableName: string,
     variableInstance: string | null,
   ): Promise<VariableCharacteristics | undefined>;
@@ -130,6 +157,7 @@ export interface IDeviceModelRepository extends CrudRepository<OCPP2_0_1.Variabl
 export interface ILocalAuthListRepository extends CrudRepository<LocalListVersion> {
   /**
    * Creates a SendLocalList.
+   * @param {number} tenantId - The tenant ID.
    * @param {string} stationId - The ID of the station.
    * @param {string} correlationId - The correlation ID.
    * @param {UpdateEnumType} updateType - The type of update.
@@ -138,6 +166,7 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
    * @return {SendLocalList} The database object. Contains the correlationId to be used for the sendLocalListRequest.
    */
   createSendLocalListFromRequestData(
+    tenantId: number,
     stationId: string,
     correlationId: string,
     updateType: OCPP2_0_1.UpdateEnumType,
@@ -146,109 +175,138 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
   ): Promise<SendLocalList>;
   /**
    * Used to process GetLocalListVersionResponse, if version is unknown it will create or update LocalListVersion with the new version and an empty localAuthorizationList.
+   * @param tenantId
    * @param versionNumber
    * @param stationId
    */
   validateOrReplaceLocalListVersionForStation(
+    tenantId: number,
     versionNumber: number,
     stationId: string,
   ): Promise<void>;
   getSendLocalListRequestByStationIdAndCorrelationId(
+    tenantId: number,
     stationId: string,
     correlationId: string,
   ): Promise<SendLocalList | undefined>;
   /**
    * Used to process SendLocalListResponse.
+   * @param tenantId
    * @param stationId
    * @param {SendLocalList} sendLocalList - The SendLocalList object created from the associated SendLocalListRequest.
    * @returns {LocalListVersion} LocalListVersion - The updated LocalListVersion.
    */
   createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
+    tenantId: number,
     stationId: string,
     sendLocalList: SendLocalList,
   ): Promise<LocalListVersion>;
 }
 
 export interface ILocationRepository extends CrudRepository<Location> {
-  readLocationById: (id: number) => Promise<Location | undefined>;
-  readChargingStationByStationId: (stationId: string) => Promise<ChargingStation | undefined>;
+  readLocationById: (tenantId: number, id: number) => Promise<Location | undefined>;
+  readChargingStationByStationId: (
+    tenantId: number,
+    stationId: string,
+  ) => Promise<ChargingStation | undefined>;
   setChargingStationIsOnlineAndOCPPVersion: (
+    tenantId: number,
     stationId: string,
     isOnline: boolean,
     ocppVersion: OCPPVersion | null,
   ) => Promise<ChargingStation | undefined>;
-  doesChargingStationExistByStationId: (stationId: string) => Promise<boolean>;
+  doesChargingStationExistByStationId: (tenantId: number, stationId: string) => Promise<boolean>;
   addStatusNotificationToChargingStation(
+    tenantId: number,
     stationId: string,
     statusNotification: StatusNotification,
   ): Promise<void>;
-  createOrUpdateChargingStation(chargingStation: ChargingStation): Promise<ChargingStation>;
-  createOrUpdateConnector(connector: Connector): Promise<Connector | undefined>;
+  createOrUpdateChargingStation(
+    tenantId: number,
+    chargingStation: ChargingStation,
+  ): Promise<ChargingStation>;
+  createOrUpdateConnector(tenantId: number, connector: Connector): Promise<Connector | undefined>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {
   createByStationId: (
+    tenantId: number,
     value: OCPP2_0_1.SecurityEventNotificationRequest,
     stationId: string,
   ) => Promise<SecurityEvent>;
   readByStationIdAndTimestamps: (
+    tenantId: number,
     stationId: string,
     from?: Date,
     to?: Date,
   ) => Promise<SecurityEvent[]>;
-  deleteByKey: (key: string) => Promise<SecurityEvent | undefined>;
+  deleteByKey: (tenantId: number, key: string) => Promise<SecurityEvent | undefined>;
 }
 
 export interface ISubscriptionRepository extends CrudRepository<Subscription> {
-  create(value: Subscription): Promise<Subscription>;
-  readAllByStationId(stationId: string): Promise<Subscription[]>;
-  deleteByKey(key: string): Promise<Subscription | undefined>;
+  create(tenantId: number, value: Subscription): Promise<Subscription>;
+  readAllByStationId(tenantId: number, stationId: string): Promise<Subscription[]>;
+  deleteByKey(tenantId: number, key: string): Promise<Subscription | undefined>;
 }
 
 export interface ITransactionEventRepository extends CrudRepository<TransactionEvent> {
   createOrUpdateTransactionByTransactionEventAndStationId(
+    tenantId: number,
     value: OCPP2_0_1.TransactionEventRequest,
     stationId: string,
   ): Promise<Transaction>;
   createMeterValue(
+    tenantId: number,
     value: OCPP2_0_1.MeterValueType,
     transactionDatabaseId?: number | null,
   ): Promise<void>;
   createTransactionByStartTransaction(
+    tenantId: number,
     request: OCPP1_6.StartTransactionRequest,
     stationId: string,
   ): Promise<Transaction>;
   updateTransactionByMeterValues(
+    tenantId: number,
     meterValues: MeterValue[],
     stationId: string,
     transactionId: number,
   ): Promise<void>;
   readAllByStationIdAndTransactionId(
+    tenantId: number,
     stationId: string,
     transactionId: string,
   ): Promise<TransactionEvent[]>;
   readTransactionByStationIdAndTransactionId(
+    tenantId: number,
     stationId: string,
     transactionId: string,
   ): Promise<Transaction | undefined>;
   readAllTransactionsByStationIdAndEvseAndChargingStates(
+    tenantId: number,
     stationId: string,
     evse: OCPP2_0_1.EVSEType,
     chargingStates?: OCPP2_0_1.ChargingStateEnumType[],
   ): Promise<Transaction[]>;
   readAllActiveTransactionsIncludeTransactionEventByIdToken(
+    tenantId: number,
     idToken: OCPP2_0_1.IdTokenType,
   ): Promise<Transaction[]>;
   readAllActiveTransactionsIncludeStartTransactionByIdToken(
+    tenantId: number,
     idToken: string,
   ): Promise<Transaction[]>;
-  readAllMeterValuesByTransactionDataBaseId(transactionDataBaseId: number): Promise<MeterValue[]>;
+  readAllMeterValuesByTransactionDataBaseId(
+    tenantId: number,
+    transactionDataBaseId: number,
+  ): Promise<MeterValue[]>;
   getActiveTransactionByStationIdAndEvseId(
+    tenantId: number,
     stationId: string,
     evseId: number,
   ): Promise<Transaction | undefined>;
-  updateTransactionTotalCostById(totalCost: number, id: number): Promise<void>;
+  updateTransactionTotalCostById(tenantId: number, totalCost: number, id: number): Promise<void>;
   createStopTransaction(
+    tenantId: number,
     transactionDatabaseId: number,
     stationId: string,
     meterStop: number,
@@ -258,6 +316,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     idTokenDatabaseId?: number,
   ): Promise<StopTransaction>;
   updateTransactionByStationIdAndTransactionId(
+    tenantId: number,
     transaction: Partial<Transaction>,
     transactionId: string,
     stationId: string,
@@ -267,28 +326,37 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
 export interface IVariableMonitoringRepository
   extends CrudRepository<OCPP2_0_1.VariableMonitoringType> {
   createOrUpdateByMonitoringDataTypeAndStationId(
+    tenantId: number,
     value: OCPP2_0_1.MonitoringDataType,
     componentId: string,
     variableId: string,
     stationId: string,
   ): Promise<VariableMonitoring[]>;
   createOrUpdateBySetMonitoringDataTypeAndStationId(
+    tenantId: number,
     value: OCPP2_0_1.SetMonitoringDataType,
     componentId: string,
     variableId: string,
     stationId: string,
   ): Promise<VariableMonitoring>;
-  rejectAllVariableMonitoringsByStationId(action: CallAction, stationId: string): Promise<void>;
+  rejectAllVariableMonitoringsByStationId(
+    tenantId: number,
+    action: CallAction,
+    stationId: string,
+  ): Promise<void>;
   rejectVariableMonitoringByIdAndStationId(
+    tenantId: number,
     action: CallAction,
     id: number,
     stationId: string,
   ): Promise<void>;
   updateResultByStationId(
+    tenantId: number,
     result: OCPP2_0_1.SetMonitoringResultType,
     stationId: string,
   ): Promise<VariableMonitoring>;
   createEventDatumByComponentIdAndVariableIdAndStationId(
+    tenantId: number,
     event: OCPP2_0_1.EventDataType,
     componentId: string,
     variableId: string,
@@ -297,8 +365,9 @@ export interface IVariableMonitoringRepository
 }
 
 export interface IMessageInfoRepository extends CrudRepository<OCPP2_0_1.MessageInfoType> {
-  deactivateAllByStationId(stationId: string): Promise<void>;
+  deactivateAllByStationId(tenantId: number, stationId: string): Promise<void>;
   createOrUpdateByMessageInfoTypeAndStationId(
+    tenantId: number,
     value: OCPP2_0_1.MessageInfoType,
     stationId: string,
     componentId?: number,
@@ -306,20 +375,21 @@ export interface IMessageInfoRepository extends CrudRepository<OCPP2_0_1.Message
 }
 
 export interface ITariffRepository extends CrudRepository<Tariff> {
-  findByStationId(stationId: string): Promise<Tariff | undefined>;
-  readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]>;
-  deleteAllByQuerystring(query: TariffQueryString): Promise<Tariff[]>;
-  upsertTariff(tariff: Tariff): Promise<Tariff>;
+  findByStationId(tenantId: number, stationId: string): Promise<Tariff | undefined>;
+  readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
+  deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
+  upsertTariff(tenantId: number, tariff: Tariff): Promise<Tariff>;
 }
 
 export interface ICertificateRepository extends CrudRepository<Certificate> {
-  createOrUpdateCertificate(certificate: Certificate): Promise<Certificate>;
+  createOrUpdateCertificate(tenantId: number, certificate: Certificate): Promise<Certificate>;
 }
 
 export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> {}
 
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
   createOrUpdateChargingProfile(
+    tenantId: number,
     chargingProfile: OCPP2_0_1.ChargingProfileType,
     stationId: string,
     evseId?: number | null,
@@ -327,20 +397,24 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
     isActive?: boolean,
   ): Promise<ChargingProfile>;
   createChargingNeeds(
+    tenantId: number,
     chargingNeeds: OCPP2_0_1.NotifyEVChargingNeedsRequest,
     stationId: string,
   ): Promise<ChargingNeeds>;
   findChargingNeedsByEvseDBIdAndTransactionDBId(
+    tenantId: number,
     evseDBId: number,
     transactionDataBaseId: number,
   ): Promise<ChargingNeeds | undefined>;
   createCompositeSchedule(
+    tenantId: number,
     compositeSchedule: OCPP2_0_1.CompositeScheduleType,
     stationId: string,
   ): Promise<CompositeSchedule>;
-  getNextChargingProfileId(stationId: string): Promise<number>;
-  getNextChargingScheduleId(stationId: string): Promise<number>;
+  getNextChargingProfileId(tenantId: number, stationId: string): Promise<number>;
+  getNextChargingScheduleId(tenantId: number, stationId: string): Promise<number>;
   getNextStackLevel(
+    tenantId: number,
     stationId: string,
     transactionDatabaseId: number | null,
     profilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType,
@@ -349,6 +423,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
 
 export interface IReservationRepository extends CrudRepository<Reservation> {
   createOrUpdateReservation(
+    tenantId: number,
     reserveNowRequest: OCPP2_0_1.ReserveNowRequest,
     stationId: string,
     isActive?: boolean,
@@ -359,19 +434,30 @@ export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {}
 
 export interface IChargingStationSecurityInfoRepository
   extends CrudRepository<ChargingStationSecurityInfo> {
-  readChargingStationPublicKeyFileId(stationId: string): Promise<string>;
-  readOrCreateChargingStationInfo(stationId: string, publicKeyFileId: string): Promise<void>;
+  readChargingStationPublicKeyFileId(tenantId: number, stationId: string): Promise<string>;
+  readOrCreateChargingStationInfo(
+    tenantId: number,
+    stationId: string,
+    publicKeyFileId: string,
+  ): Promise<void>;
 }
 
 export interface IChargingStationSequenceRepository
   extends CrudRepository<ChargingStationSequence> {
-  getNextSequenceValue(stationId: string, type: ChargingStationSequenceType): Promise<number>;
+  getNextSequenceValue(
+    tenantId: number,
+    stationId: string,
+    type: ChargingStationSequenceType,
+  ): Promise<number>;
 }
 
 export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {}
 
 export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {
   createOrUpdateChangeConfiguration(
+    tenantId: number,
     configuration: ChangeConfiguration,
   ): Promise<ChangeConfiguration | undefined>;
 }
+
+export interface ITenantRepository extends CrudRepository<Tenant> {}

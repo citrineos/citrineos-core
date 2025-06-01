@@ -10,6 +10,7 @@ import {
   AbstractModuleApi,
   AsMessageEndpoint,
   CallAction,
+  DEFAULT_TENANT_ID,
   IMessageConfirmation,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
@@ -42,9 +43,9 @@ export class TransactionsOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.CostUpdated, OCPP2_0_1.CostUpdatedRequestSchema)
   async costUpdated(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.CostUpdatedRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results = identifier.map((id) =>
       this._module.sendCall(
@@ -65,9 +66,9 @@ export class TransactionsOcpp201Api
   )
   getTransactionStatus(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.GetTransactionStatusRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results = identifier.map((id) =>
       this._module.sendCall(

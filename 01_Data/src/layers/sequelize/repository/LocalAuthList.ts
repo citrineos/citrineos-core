@@ -59,18 +59,23 @@ export class SequelizeLocalAuthListRepository
   }
 
   async createSendLocalListFromRequestData(
+    tenantId: number,
     stationId: string,
     correlationId: string,
     updateType: OCPP2_0_1.UpdateEnumType,
     versionNumber: number,
     localAuthorizationList?: OCPP2_0_1.AuthorizationData[],
   ): Promise<SendLocalList> {
-    const sendLocalList = await SendLocalList.create({
-      stationId,
-      correlationId,
-      versionNumber,
-      updateType,
-    });
+    const sendLocalList = await this.sendLocalList.create(
+      tenantId,
+      SendLocalList.build({
+        tenantId,
+        stationId,
+        correlationId,
+        versionNumber,
+        updateType,
+      }),
+    );
     for (const authData of localAuthorizationList ?? []) {
       const auth = await Authorization.findOne({
         include: [
@@ -108,6 +113,7 @@ export class SequelizeLocalAuthListRepository
       }
       // While new IdTokens will NOT be created or newly associated via message api, idTokenInfo can be allowed to be unique for the local auth list
       const localListAuthIdTokenInfo = await IdTokenInfo.create({
+        tenantId,
         ...authData.idTokenInfo,
         groupIdTokenId: auth.idTokenInfo?.groupIdTokenId,
       });
@@ -119,6 +125,7 @@ export class SequelizeLocalAuthListRepository
         ...authorizationFields
       } = auth;
       const localListAuthorization = await this.localListAuthorization.create(
+        tenantId,
         LocalListAuthorization.build({
           ...authorizationFields,
           idTokenInfoId: localListAuthIdTokenInfo.id,
@@ -126,6 +133,7 @@ export class SequelizeLocalAuthListRepository
         }),
       );
       await SendLocalListAuthorization.create({
+        tenantId,
         sendLocalListId: sendLocalList.id,
         authorizationId: localListAuthorization.id,
       });
@@ -139,6 +147,7 @@ export class SequelizeLocalAuthListRepository
   }
 
   async validateOrReplaceLocalListVersionForStation(
+    tenantId: number,
     versionNumber: number,
     stationId: string,
   ): Promise<void> {
@@ -159,7 +168,7 @@ export class SequelizeLocalAuthListRepository
       }
       if (!localListVersion) {
         const newLocalListVersion = await LocalListVersion.create(
-          { stationId, versionNumber },
+          { tenantId, stationId, versionNumber },
           { transaction },
         );
         this.emit('created', [newLocalListVersion]);
@@ -171,21 +180,28 @@ export class SequelizeLocalAuthListRepository
   }
 
   async getSendLocalListRequestByStationIdAndCorrelationId(
+    tenantId: number,
     stationId: string,
     correlationId: string,
   ): Promise<SendLocalList | undefined> {
-    return this.sendLocalList.readOnlyOneByQuery({ where: { stationId, correlationId } });
+    return this.sendLocalList.readOnlyOneByQuery(tenantId, { where: { stationId, correlationId } });
   }
 
   async createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
+    tenantId: number,
     stationId: string,
     sendLocalList: SendLocalList,
   ): Promise<LocalListVersion> {
     switch (sendLocalList.updateType) {
       case OCPP2_0_1.UpdateEnumType.Full:
-        return this.replaceLocalListVersionFromStationIdAndSendLocalList(stationId, sendLocalList);
+        return this.replaceLocalListVersionFromStationIdAndSendLocalList(
+          tenantId,
+          stationId,
+          sendLocalList,
+        );
       case OCPP2_0_1.UpdateEnumType.Differential:
         return this.updateLocalListVersionFromStationIdAndSendLocalListRequest(
+          tenantId,
           stationId,
           sendLocalList,
         );
@@ -193,6 +209,7 @@ export class SequelizeLocalAuthListRepository
   }
 
   private async replaceLocalListVersionFromStationIdAndSendLocalList(
+    tenantId: number,
     stationId: string,
     sendLocalList: SendLocalList,
   ): Promise<LocalListVersion> {
@@ -214,6 +231,7 @@ export class SequelizeLocalAuthListRepository
 
       const localListVersion = await LocalListVersion.create(
         {
+          tenantId,
           stationId,
           versionNumber: sendLocalList.versionNumber,
         },
@@ -227,6 +245,7 @@ export class SequelizeLocalAuthListRepository
       for (const auth of sendLocalList.localAuthorizationList) {
         await LocalListVersionAuthorization.create(
           {
+            tenantId,
             localListVersionId: localListVersion.id,
             authorizationId: auth.id,
           },
@@ -243,6 +262,7 @@ export class SequelizeLocalAuthListRepository
   }
 
   private async updateLocalListVersionFromStationIdAndSendLocalListRequest(
+    tenantId: number,
     stationId: string,
     sendLocalList: SendLocalList,
   ): Promise<LocalListVersion> {
@@ -250,6 +270,7 @@ export class SequelizeLocalAuthListRepository
       if (!sendLocalList.localAuthorizationList) {
         // See D01.FR.05
         const localListVersion = await this._updateAllByQuery(
+          tenantId,
           { versionNumber: sendLocalList.versionNumber },
           { where: { stationId }, transaction },
         );
@@ -288,6 +309,7 @@ export class SequelizeLocalAuthListRepository
         }
         await LocalListVersionAuthorization.create(
           {
+            tenantId,
             localListVersionId: localListVersion.id,
             authorizationId: sendAuth.id,
           },

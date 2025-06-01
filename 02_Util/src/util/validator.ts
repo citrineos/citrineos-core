@@ -38,6 +38,7 @@ export function validateLanguageTag(languageTag: string): boolean {
  */
 export async function validateChargingProfileType(
   chargingProfileType: OCPP2_0_1.ChargingProfileType,
+  tenantId: number,
   stationId: string,
   deviceModelRepository: IDeviceModelRepository,
   chargingProfileRepository: IChargingProfileRepository,
@@ -70,6 +71,7 @@ export async function validateChargingProfileType(
   let receivedChargingNeeds;
   if (chargingProfileType.transactionId && evseId) {
     const transaction = await transactionEventRepository.readTransactionByStationIdAndTransactionId(
+      tenantId,
       stationId,
       chargingProfileType.transactionId,
     );
@@ -78,13 +80,14 @@ export async function validateChargingProfileType(
         `Transaction ${chargingProfileType.transactionId} not found on station ${stationId}.`,
       );
     }
-    const evse = await deviceModelRepository.findEvseByIdAndConnectorId(evseId, null);
+    const evse = await deviceModelRepository.findEvseByIdAndConnectorId(tenantId, evseId, null);
     if (!evse) {
       throw new Error(`Evse ${evseId} not found.`);
     }
     logger.info(`Found evse: ${JSON.stringify(evse)}`);
     receivedChargingNeeds =
       await chargingProfileRepository.findChargingNeedsByEvseDBIdAndTransactionDBId(
+        tenantId,
         evse.databaseId,
         transaction.id,
       );
@@ -92,7 +95,9 @@ export async function validateChargingProfileType(
   }
 
   const periodsPerSchedules: VariableAttribute[] = await deviceModelRepository.readAllByQuerystring(
+    tenantId,
     {
+      tenantId: tenantId,
       stationId: stationId,
       component_name: 'SmartChargingCtrlr',
       variable_name: 'PeriodsPerSchedule',
