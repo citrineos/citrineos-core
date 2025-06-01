@@ -11,42 +11,78 @@ export interface WebsocketGetQuerystring {
 }
 
 export const WebsocketGetQuerySchema = QuerySchema('WebsocketGetQuerySchema', [
-  ['id', 'string'],
-  ['tenantId', 'string'],
+  {
+    key: 'id',
+    type: 'string',
+  },
+  {
+    key: 'tenantId',
+    type: 'string',
+  },
 ]);
 
 export interface WebsocketDeleteQuerystring {
   id: string;
 }
 
-export const WebsocketDeleteQuerySchema = QuerySchema(
-  'WebsocketDeleteQuerySchema',
-  [['id', 'string']],
-  ['id'],
-);
+export const WebsocketDeleteQuerySchema = QuerySchema('WebsocketDeleteQuerySchema', [
+  {
+    key: 'id',
+    type: 'string',
+    required: true,
+  },
+]);
 
-export const WebsocketRequestSchema = QuerySchema(
-  'WebsocketRequestSchema',
-  [
-    ['id', 'string'],
-    ['host', 'string'],
-    ['port', 'number'],
-    ['pingInterval', 'number'],
-    ['protocol', 'string'],
-    ['securityProfile', 'number'],
-    ['allowUnknownChargingStations', 'boolean'],
-    ['tlsKeyFilePath', 'string'],
-    ['tlsCertificateChainFilePath', 'string'],
-    ['mtlsCertificateAuthorityKeyFilePath', 'string'],
-    ['rootCACertificateFilePath', 'string'],
-  ],
-  [
-    'id',
-    'host',
-    'port',
-    'pingInterval',
-    'protocol',
-    'securityProfile',
-    'allowUnknownChargingStations',
-  ],
-);
+export const WebsocketRequestSchema = QuerySchema('WebsocketRequestSchema', [
+  {
+    key: 'id',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'host',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'port',
+    type: 'number',
+    required: true,
+  },
+  {
+    key: 'pingInterval',
+    type: 'number',
+    required: true,
+  },
+  {
+    key: 'protocol',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'securityProfile',
+    type: 'number',
+    required: true,
+  },
+  {
+    key: 'allowUnknownChargingStations',
+    type: 'boolean',
+    required: true,
+  },
+  {
+    key: 'tlsKeyFilePath',
+    type: 'string',
+  },
+  {
+    key: 'tlsCertificateChainFilePath',
+    type: 'string',
+  },
+  {
+    key: 'mtlsCertificateAuthorityKeyFilePath',
+    type: 'string',
+  },
+  {
+    key: 'rootCACertificateFilePath',
+    type: 'string',
+  },
+]);
