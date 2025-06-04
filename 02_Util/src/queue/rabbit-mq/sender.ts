@@ -33,6 +33,8 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    */
   protected _connection?: amqplib.Connection;
   protected _channel?: amqplib.Channel;
+  private _reconnecting = false;
+  private _abortReconnectController?: AbortController;
 
   /**
    * Constructor for the class.
@@ -173,48 +175,73 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
 
   /**
    * Connect to RabbitMQ with retry logic.
-   * This method will keep trying to connect until successful.
+   * This method will keep trying to connect until successful, unless aborted.
    *
+   * @param {AbortSignal} [abortSignal] - Optional abort signal to stop retrying.
    * @return {Promise<amqplib.Channel>} A promise that resolves to the AMQP channel.
    */
-  protected async _connectWithRetry(): Promise<amqplib.Channel> {
+  protected async _connectWithRetry(abortSignal?: AbortSignal): Promise<amqplib.Channel> {
     let reconnectAttempts = 0;
     while (true) {
+      if (abortSignal?.aborted) {
+        this._logger.warn('RabbitMQ reconnect aborted by signal.');
+        throw new Error('RabbitMQ reconnect aborted');
+      }
       try {
         const channel = await this._connect();
         this._setupConnectionListeners();
         return channel;
       } catch (err) {
-        this._logger.error(`RabbitMQ reconnect attempt ${++reconnectAttempts} failed`, err);
+        this._logger.error(
+          `RabbitMQ reconnect attempt ${++reconnectAttempts} failed (context: _connectWithRetry)`,
+          err,
+        );
         await new Promise((res) => setTimeout(res, RabbitMqSender.RECONNECT_DELAY));
       }
     }
   }
+
   /**
    * Setup listeners for connection and channel events.
    * This will handle disconnections and errors.
+   * Ensures listeners are not attached multiple times to the same connection.
    */
   private _setupConnectionListeners() {
     if (this._connection) {
+      // Only attach listeners if not already attached to this connection
+      if ((this._connection as any)._listenersAttached) return;
       this._connection.removeAllListeners('close');
       this._connection.removeAllListeners('error');
       this._connection.on('close', () => this._handleDisconnect());
       this._connection.on('error', () => this._handleDisconnect());
+      (this._connection as any)._listenersAttached = true;
     }
   }
+
   /**
    * Handle RabbitMQ disconnection.
    * This method will attempt to reconnect to RabbitMQ when the connection is lost.
+   * Debounces concurrent reconnects.
    */
   private async _handleDisconnect() {
+    if (this._reconnecting) {
+      this._logger.warn('RabbitMQ reconnect already in progress, skipping duplicate reconnect.');
+      return;
+    }
+    this._reconnecting = true;
+    this._abortReconnectController?.abort();
+    this._abortReconnectController = new AbortController();
+
     this._logger.warn('RabbitMQ connection lost. Attempting to reconnect...');
     this._channel = undefined;
     this._connection = undefined;
     try {
-      this._channel = await this._connectWithRetry();
+      this._channel = await this._connectWithRetry(this._abortReconnectController.signal);
       this._logger.info('RabbitMQ reconnected successfully.');
     } catch (err) {
-      this._logger.error('Failed to reconnect to RabbitMQ', err);
+      this._logger.error('Failed to reconnect to RabbitMQ (context: _handleDisconnect)', err);
+    } finally {
+      this._reconnecting = false;
     }
   }
 }
