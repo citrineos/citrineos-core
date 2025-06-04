@@ -30,6 +30,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
    */
   private static readonly QUEUE_PREFIX = 'rabbit_queue_';
   private static readonly CACHE_PREFIX = 'rabbit_subscription_';
+  private static readonly RECONNECT_DELAY = 5000;
 
   /**
    * Fields
@@ -42,7 +43,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     super(config, logger, module);
     this._cache = cache || new MemoryCache();
 
-    this._connect()
+    this._connectWithRetry()
       .then((channel) => {
         this._channel = channel;
       })
@@ -199,11 +200,57 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
         return channel;
       });
   }
-
+  /**
+   * Connect to RabbitMQ with retry logic.
+   * This method will keep trying to connect until successful.
+   *
+   * @return {Promise<amqplib.Channel>} A promise that resolves to the AMQP channel.
+   */
+  protected async _connectWithRetry(): Promise<amqplib.Channel> {
+    let reconnectAttempts = 0;
+    while (true) {
+      try {
+        const channel = await this._connect();
+        this._setupConnectionListeners();
+        return channel;
+      } catch (err) {
+        this._logger.error(`RabbitMQ reconnect attempt ${++reconnectAttempts} failed`, err);
+        await new Promise((res) => setTimeout(res, RabbitMqReceiver.RECONNECT_DELAY));
+      }
+    }
+  }
+  /**
+   * Setup listeners for connection and channel events.
+   * This will handle disconnections and errors.
+   */
+  private _setupConnectionListeners() {
+    if (this._connection) {
+      this._connection.removeAllListeners('close');
+      this._connection.removeAllListeners('error');
+      this._connection.on('close', () => this._handleDisconnect());
+      this._connection.on('error', () => this._handleDisconnect());
+    }
+  }
+  /**
+   * Handle RabbitMQ disconnection.
+   * This method will attempt to reconnect to RabbitMQ when the connection is lost.
+   */
+  private async _handleDisconnect() {
+    this._logger.warn('RabbitMQ connection lost. Attempting to reconnect...');
+    this._channel = undefined;
+    this._connection = undefined;
+    try {
+      this._channel = await this._connectWithRetry();
+      this._logger.info('RabbitMQ reconnected successfully.');
+    } catch (err) {
+      this._logger.error('Failed to reconnect to RabbitMQ', err);
+    }
+  }
   /**
    * Underlying RabbitMQ message handler.
    *
    * @param message The AMQPMessage to process
+   * @param channel
    */
   protected async _onMessage(
     message: amqplib.ConsumeMessage | null,
