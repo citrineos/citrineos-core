@@ -146,6 +146,7 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    * @return {Promise<void>} A promise that resolves when the client is closed.
    */
   shutdown(): Promise<void> {
+    this._abortReconnectController?.abort();
     return Promise.resolve();
   }
 

@@ -177,6 +177,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   }
 
   shutdown(): Promise<void> {
+    this._abortReconnectController?.abort();
     return Promise.resolve();
   }
 
