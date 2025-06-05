@@ -103,6 +103,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   async registerConnection(connectionIdentifier: string, protocol: OCPPVersion): Promise<boolean> {
     const dispatcherRegistration = this._webhookDispatcher.register(connectionIdentifier);
 
+    await this._handler.initConnection();
     const requestSubscription = this._handler.subscribe(connectionIdentifier, undefined, {
       stationId: connectionIdentifier,
       state: MessageState.Request.toString(),

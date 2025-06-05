@@ -116,8 +116,10 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
     }
 
     const exchange = this._config.util.messageBroker.amqp?.exchange as string;
-    const channel = this._channel || (await this._connect());
-    this._channel = channel;
+    if (!this._channel) {
+      throw new Error('RabbitMQ is down: cannot unsubscribe.');
+    }
+    const channel = this._channel;
 
     this._logger.debug(`Publishing to ${exchange}:`, message);
 
@@ -155,26 +157,6 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    */
 
   /**
-   * Connect to RabbitMQ
-   */
-  protected _connect(): Promise<amqplib.Channel> {
-    return amqplib
-      .connect(this._config.util.messageBroker.amqp?.url || '')
-      .then(async (connection) => {
-        this._connection = connection;
-        return connection.createChannel();
-      })
-      .then((channel) => {
-        // Add listener for channel errors
-        channel.on('error', (err) => {
-          this._logger.error('AMQP channel error', err);
-          // TODO: add recovery logic
-        });
-        return channel;
-      });
-  }
-
-  /**
    * Connect to RabbitMQ with retry logic.
    * This method will keep trying to connect until successful, unless aborted.
    *
@@ -183,18 +165,29 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    */
   protected async _connectWithRetry(abortSignal?: AbortSignal): Promise<amqplib.Channel> {
     let reconnectAttempts = 0;
+    const url = this._config.util.messageBroker.amqp?.url;
+    if (!url) {
+      throw new Error('RabbitMQ URL is not configured');
+    }
     while (true) {
       if (abortSignal?.aborted) {
         this._logger.warn('RabbitMQ reconnect aborted by signal.');
         throw new Error('RabbitMQ reconnect aborted');
       }
       try {
-        const channel = await this._connect();
+        const connection = await amqplib.connect(url);
+        this._connection = connection;
+        const channel = await connection.createChannel();
+        channel.on('error', (err) => {
+          this._logger.error('AMQP channel error', err);
+          // TODO: add recovery logic
+        });
         this._setupConnectionListeners();
         return channel;
       } catch (err) {
+        reconnectAttempts++;
         this._logger.error(
-          `RabbitMQ reconnect attempt ${++reconnectAttempts} failed (context: _connectWithRetry)`,
+          `RabbitMQ reconnect attempt ${reconnectAttempts} failed (context: _connectWithRetry)`,
           err,
         );
         await new Promise((res) => setTimeout(res, RabbitMqSender.RECONNECT_DELAY));
