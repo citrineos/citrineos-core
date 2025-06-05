@@ -4,10 +4,11 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { OCPP1_6_Namespace } from '@citrineos/base';
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, Table } from 'sequelize-typescript';
+import { BaseModelWithTenant } from './BaseModelWithTenant';
 
 @Table
-export class ChangeConfiguration extends Model {
+export class ChangeConfiguration extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.ChangeConfiguration;
 
   @Column({

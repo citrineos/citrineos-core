@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "1.6.3",
+  "version": "1.7.0",
   "private": false,
   "scripts": {
     "install-all": "npm i --verbose",
@@ -14,9 +14,9 @@
     "clean-tsbuildinfo": "find . -name tsconfig.tsbuildinfo -not -path '*/node_modules/*' -exec rm -f {} +",
     "clean-dist": "find . -type d -name dist -not -path '*/node_modules/*' -exec rm -rf {} +",
     "clean": "npm run clean-dist && npm run clean-tsbuildinfo",
-    "start": "cd ./Server && npm run start",
-    "start-docker": "cd ./Server && npm run start-docker",
-    "start-docker-cloud": "cd ./Server && npm run start-docker-cloud",
+    "start": "npm run start --prefix ./Server",
+    "start-docker": "npm run start-docker --prefix ./Server",
+    "start-docker-cloud": "npm run start-docker-cloud --prefix ./Server",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix",
     "prettier": "prettier --write .",
@@ -25,7 +25,8 @@
     "start-everest": "npm run start-everest --prefix ./Server",
     "test": "jest --config jest.config.ts",
     "coverage": "jest --config jest.config.ts --coverage",
-    "prepare": "husky"
+    "prepare": "husky",
+    "migrate": "npx sequelize-cli db:migrate && echo migration completed successfully"
   },
   "lint-staged": {
     "**/*.{js,ts,jsx,tsx,json,md}": "prettier --write"
@@ -49,6 +50,7 @@
     "node": ">=22.11.0"
   },
   "devDependencies": {
+    "sequelize-cli": "^6.6.2",
     "typescript": "^5.8.2"
   }
 }

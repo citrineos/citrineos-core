@@ -3,18 +3,29 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { QuerySchema } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, QuerySchema } from '@citrineos/base';
 
 export interface TransactionEventQuerystring {
   stationId: string;
   transactionId: string;
+  tenantId: number;
 }
 
-export const TransactionEventQuerySchema = QuerySchema(
-  'TransactionEventQuerySchema',
-  [
-    ['stationId', 'string'],
-    ['transactionId', 'string'],
-  ],
-  ['stationId', 'transactionId'],
-);
+export const TransactionEventQuerySchema = QuerySchema('TransactionEventQuerySchema', [
+  {
+    key: 'stationId',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'transactionId',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'tenantId',
+    type: 'number',
+    required: true,
+    defaultValue: String(DEFAULT_TENANT_ID),
+  },
+]);

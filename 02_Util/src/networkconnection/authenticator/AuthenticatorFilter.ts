@@ -13,12 +13,14 @@ export abstract class AuthenticatorFilter {
 
   protected abstract shouldFilter(options: AuthenticationOptions): boolean;
   protected abstract filter(
+    tenantId: number,
     identifier: string,
     request: IncomingMessage,
     options?: AuthenticationOptions,
   ): Promise<void>;
 
   async authenticate(
+    tenantId: number,
     identifier: string,
     request: IncomingMessage,
     options: AuthenticationOptions,
@@ -26,7 +28,7 @@ export abstract class AuthenticatorFilter {
     if (this.shouldFilter(options)) {
       this._logger.debug(`Applying filter for: ${identifier}`);
       try {
-        await this.filter(identifier, request, options);
+        await this.filter(tenantId, identifier, request, options);
         this._logger.debug(`Filter passed for: ${identifier}`);
       } catch (error) {
         this._logger.warn(`Filter failed for: ${identifier}`);

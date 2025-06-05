@@ -115,13 +115,15 @@ export class SequelizeTransactionEventRepository
    * @returns Saved TransactionEvent
    */
   async createOrUpdateTransactionByTransactionEventAndStationId(
+    tenantId: number,
     value: OCPP2_0_1.TransactionEventRequest,
     stationId: string,
   ): Promise<Transaction> {
     let evse: Evse | undefined;
     if (value.evse) {
-      [evse] = await this.evse.readOrCreateByQuery({
+      [evse] = await this.evse.readOrCreateByQuery(tenantId, {
         where: {
+          tenantId,
           id: value.evse.id,
           connectorId: value.evse.connectorId ? value.evse.connectorId : null,
         },
@@ -131,7 +133,7 @@ export class SequelizeTransactionEventRepository
     return await this.s.transaction(async (sequelizeTransaction) => {
       let finalTransaction: Transaction;
       let created = false;
-      const existingTransaction = await this.transaction.readOnlyOneByQuery({
+      const existingTransaction = await this.transaction.readOnlyOneByQuery(tenantId, {
         where: {
           stationId,
           transactionId: value.transactionInfo.transactionId,
@@ -151,6 +153,7 @@ export class SequelizeTransactionEventRepository
         );
       } else {
         const newTransaction = Transaction.build({
+          tenantId,
           stationId,
           isActive: value.eventType !== OCPP2_0_1.TransactionEventEnumType.Ended,
           ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
@@ -164,25 +167,22 @@ export class SequelizeTransactionEventRepository
       const transactionDatabaseId = finalTransaction.id;
 
       let event = TransactionEvent.build({
+        tenantId,
         stationId,
         transactionDatabaseId,
         ...value,
       });
 
       if (value.idToken && value.idToken.type !== OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
-        // TODO: ensure that Authorization is passed into this method if idToken exists
-        // At this point, token MUST already be authorized and thus exist in the database
-        // It can be either the primary idToken of an Authorization or a group idToken
-        const idToken = await this.idToken.readOnlyOneByQuery({
+        const idToken = await this.idToken.readOnlyOneByQuery(tenantId, {
           where: {
             idToken: value.idToken.idToken,
             type: value.idToken.type,
           },
-          transaction: sequelizeTransaction,
+          sequelizeTransaction,
         });
         if (!idToken) {
           // TODO: Log Warning...
-          // TODO: Save raw transaction event in TransactionEvent model
         } else {
           event.idTokenId = idToken.id;
         }
@@ -195,6 +195,7 @@ export class SequelizeTransactionEventRepository
           value.meterValue.map(async (meterValue) => {
             const savedMeterValue = await MeterValue.create(
               {
+                tenantId,
                 transactionEventId: event.id,
                 transactionDatabaseId: transactionDatabaseId,
                 ...meterValue,
@@ -208,7 +209,7 @@ export class SequelizeTransactionEventRepository
       await event.reload({ include: [MeterValue], transaction: sequelizeTransaction });
       this.emit('created', [event]);
 
-      const allMeterValues = await this.meterValue.readAllByQuery({
+      const allMeterValues = await this.meterValue.readAllByQuery(tenantId, {
         where: {
           transactionDatabaseId,
         },
@@ -237,11 +238,12 @@ export class SequelizeTransactionEventRepository
   }
 
   async readAllByStationIdAndTransactionId(
+    tenantId: number,
     stationId: string,
     transactionId: string,
   ): Promise<TransactionEvent[]> {
     return await super
-      .readAllByQuery({
+      .readAllByQuery(tenantId, {
         where: { stationId },
         include: [{ model: Transaction, where: { transactionId } }, MeterValue, Evse, IdToken],
       })
@@ -254,26 +256,18 @@ export class SequelizeTransactionEventRepository
   }
 
   async readTransactionByStationIdAndTransactionId(
+    tenantId: number,
     stationId: string,
     transactionId: string,
   ): Promise<Transaction | undefined> {
-    return await this.transaction.readOnlyOneByQuery({
+    return await this.transaction.readOnlyOneByQuery(tenantId, {
       where: { stationId, transactionId },
       include: [MeterValue, Evse],
     });
   }
 
-  /**
-   * @param stationId StationId of the charging station where the transaction took place.
-   * @param evse Evse where the transaction took place.
-   * @param chargingStates Optional list of {@link ChargingStateEnumType}s the transactions must be in.
-   * If not present, will grab transactions regardless of charging state. If not present, will grab transactions
-   * without charging states, such as transactions started when a parking bay occupancy detector detects
-   * an EV (trigger reason "EVDetected")
-   *
-   * @returns List of transactions which meet the requirements.
-   */
   async readAllTransactionsByStationIdAndEvseAndChargingStates(
+    tenantId: number,
     stationId: string,
     evse?: OCPP2_0_1.EVSEType,
     chargingStates?: OCPP2_0_1.ChargingStateEnumType[] | undefined,
@@ -287,7 +281,7 @@ export class SequelizeTransactionEventRepository
         ]
       : [];
     return await this.transaction
-      .readAllByQuery({
+      .readAllByQuery(tenantId, {
         where: {
           stationId,
           ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}),
@@ -298,9 +292,10 @@ export class SequelizeTransactionEventRepository
   }
 
   async readAllActiveTransactionsIncludeTransactionEventByIdToken(
+    tenantId: number,
     idToken: OCPP2_0_1.IdTokenType,
   ): Promise<Transaction[]> {
-    return await this.transaction.readAllByQuery({
+    return await this.transaction.readAllByQuery(tenantId, {
       where: { isActive: true },
       include: [
         {
@@ -323,9 +318,10 @@ export class SequelizeTransactionEventRepository
   }
 
   async readAllActiveTransactionsIncludeStartTransactionByIdToken(
+    tenantId: number,
     idToken: string,
   ): Promise<Transaction[]> {
-    return await this.transaction.readAllByQuery({
+    return await this.transaction.readAllByQuery(tenantId, {
       where: { isActive: true },
       include: [
         {
@@ -346,17 +342,21 @@ export class SequelizeTransactionEventRepository
   }
 
   async readAllMeterValuesByTransactionDataBaseId(
+    tenantId: number,
     transactionDataBaseId: number,
   ): Promise<MeterValue[]> {
     return this.meterValue
-      .readAllByQuery({
+      .readAllByQuery(tenantId, {
         where: { transactionDatabaseId: transactionDataBaseId },
       })
       .then((row) => row as MeterValue[]);
   }
 
-  findByTransactionId(transactionId: string): Promise<Transaction | undefined> {
-    return this.transaction.readOnlyOneByQuery({
+  async findByTransactionId(
+    tenantId: number,
+    transactionId: string,
+  ): Promise<Transaction | undefined> {
+    return this.transaction.readOnlyOneByQuery(tenantId, {
       where: { transactionId },
       include: [
         { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] },
@@ -367,6 +367,7 @@ export class SequelizeTransactionEventRepository
   }
 
   async getTransactions(
+    tenantId: number,
     dateFrom?: Date,
     dateTo?: Date,
     offset?: number,
@@ -399,10 +400,10 @@ export class SequelizeTransactionEventRepository
       queryOptions.limit = limit;
     }
 
-    return this.transaction.readAllByQuery(queryOptions);
+    return this.transaction.readAllByQuery(tenantId, queryOptions);
   }
 
-  async getTransactionsCount(dateFrom?: Date, dateTo?: Date): Promise<number> {
+  async getTransactionsCount(tenantId: number, dateFrom?: Date, dateTo?: Date): Promise<number> {
     const queryOptions: WhereOptions<any> = {
       where: {},
     };
@@ -420,12 +421,15 @@ export class SequelizeTransactionEventRepository
     return Transaction.count(queryOptions);
   }
 
-  async readAllTransactionsByQuery(query: object): Promise<Transaction[]> {
-    return await this.transaction.readAllByQuery(query);
+  async readAllTransactionsByQuery(tenantId: number, query: object): Promise<Transaction[]> {
+    return await this.transaction.readAllByQuery(tenantId, query);
   }
 
-  async getEvseIdsWithActiveTransactionByStationId(stationId: string): Promise<number[]> {
-    const activeTransactions = await this.transaction.readAllByQuery({
+  async getEvseIdsWithActiveTransactionByStationId(
+    tenantId: number,
+    stationId: string,
+  ): Promise<number[]> {
+    const activeTransactions = await this.transaction.readAllByQuery(tenantId, {
       where: {
         stationId: stationId,
         isActive: true,
@@ -444,13 +448,12 @@ export class SequelizeTransactionEventRepository
   }
 
   async getActiveTransactionByStationIdAndEvseId(
+    tenantId: number,
     stationId: string,
     evseId: number,
   ): Promise<Transaction | undefined> {
-    // TODO: replace with readOneByQuery after we add the logic
-    //  to guarantee that only one active transaction per evse exists
     return await this.transaction
-      .readAllByQuery({
+      .readAllByQuery(tenantId, {
         where: {
           stationId,
           isActive: true,
@@ -459,7 +462,7 @@ export class SequelizeTransactionEventRepository
           { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] },
           MeterValue,
           { model: Evse, where: { id: evseId }, required: true },
-        ], // required: true ensures the inner join
+        ],
       })
       .then((transactions) => {
         if (transactions.length > 1) {
@@ -470,12 +473,14 @@ export class SequelizeTransactionEventRepository
   }
 
   async createMeterValue(
+    tenantId: number,
     meterValue: OCPP2_0_1.MeterValueType,
     transactionDatabaseId?: number | null,
   ): Promise<void> {
     await this.s.transaction(async (sequelizeTransaction) => {
       const savedMeterValue = await MeterValue.create(
         {
+          tenantId,
           transactionDatabaseId: transactionDatabaseId,
           ...meterValue,
         },
@@ -485,17 +490,23 @@ export class SequelizeTransactionEventRepository
     });
   }
 
-  async updateTransactionTotalCostById(totalCost: number, id: number): Promise<void> {
-    await this.transaction.updateByKey({ totalCost: totalCost }, id.toString());
+  async updateTransactionTotalCostById(
+    tenantId: number,
+    totalCost: number,
+    id: number,
+  ): Promise<void> {
+    await this.transaction.updateByKey(tenantId, { totalCost: totalCost }, id.toString());
   }
 
   async updateTransactionByMeterValues(
+    tenantId: number,
     meterValues: MeterValue[],
     stationId: string,
     transactionId: number,
   ): Promise<void> {
     // Find existing transaction
     const transaction = await this.readTransactionByStationIdAndTransactionId(
+      tenantId,
       stationId,
       transactionId.toString(),
     );
@@ -514,7 +525,7 @@ export class SequelizeTransactionEventRepository
     );
 
     // Update transaction total kWh
-    const allMeterValues = await this.meterValue.readAllByQuery({
+    const allMeterValues = await this.meterValue.readAllByQuery(tenantId, {
       where: {
         transactionDatabaseId: transaction.id,
       },
@@ -526,22 +537,24 @@ export class SequelizeTransactionEventRepository
   }
 
   async createTransactionByStartTransaction(
+    tenantId: number,
     request: OCPP1_6.StartTransactionRequest,
     stationId: string,
   ): Promise<Transaction> {
     return await this.s.transaction(async (sequelizeTransaction) => {
       // Build StartTransaction event
       let event = StartTransaction.build({
+        tenantId,
         stationId,
         ...request,
       });
 
       // Associate IdToken with StartTransaction
-      const idToken = await this.idToken.readOnlyOneByQuery({
+      const idToken = await this.idToken.readOnlyOneByQuery(tenantId, {
         where: {
           idToken: request.idTag,
         },
-        transaction: sequelizeTransaction,
+        sequelizeTransaction,
       });
       if (!idToken) {
         this.logger.error(`Unable to find idTag ${request.idTag}.`);
@@ -550,12 +563,12 @@ export class SequelizeTransactionEventRepository
       event.idTokenDatabaseId = idToken.id;
 
       // Associate Connector with StartTransaction
-      const connector = await this.connector.readOnlyOneByQuery({
+      const connector = await this.connector.readOnlyOneByQuery(tenantId, {
         where: {
           connectorId: request.connectorId,
           stationId,
         },
-        transaction: sequelizeTransaction,
+        sequelizeTransaction,
       });
       if (!connector) {
         this.logger.error(`Unable to find connector ${request.connectorId}.`);
@@ -565,11 +578,13 @@ export class SequelizeTransactionEventRepository
 
       // Generate transactionId
       const transactionId = await this.chargingStationSequence.getNextSequenceValue(
+        tenantId,
         stationId,
         ChargingStationSequenceType.transactionId,
       );
       // Store transaction in db
       let newTransaction = Transaction.build({
+        tenantId,
         stationId,
         isActive: true,
         transactionId: transactionId.toString(),
@@ -592,6 +607,7 @@ export class SequelizeTransactionEventRepository
   }
 
   async createStopTransaction(
+    tenantId: number,
     transactionDatabaseId: number,
     stationId: string,
     meterStop: number,
@@ -601,6 +617,7 @@ export class SequelizeTransactionEventRepository
     idTokenDatabaseId?: number,
   ): Promise<StopTransaction> {
     const stopTransaction = await StopTransaction.create({
+      tenantId,
       stationId,
       transactionDatabaseId,
       meterStop,
@@ -626,11 +643,12 @@ export class SequelizeTransactionEventRepository
   }
 
   async updateTransactionByStationIdAndTransactionId(
+    tenantId: number,
     transaction: Partial<Transaction>,
     transactionId: string,
     stationId: string,
   ): Promise<Transaction | undefined> {
-    const transactions = await this.transaction.updateAllByQuery(transaction, {
+    const transactions = await this.transaction.updateAllByQuery(tenantId, transaction, {
       where: {
         // unique constraint
         transactionId,

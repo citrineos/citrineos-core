@@ -5,6 +5,9 @@ object_relationships:
   - name: ServerNetworkProfile
     using:
       foreign_key_constraint_on: websocketServerConfigId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
 array_relationships:
   - name: ChargingStationNetworkProfiles
     using:
@@ -13,3 +16,28 @@ array_relationships:
         table:
           name: ChargingStationNetworkProfiles
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - apn
+        - correlationId
+        - ocppCsmsUrl
+        - ocppInterface
+        - ocppTransport
+        - ocppVersion
+        - stationId
+        - vpn
+        - websocketServerConfigId
+        - configurationSlot
+        - id
+        - messageTimeout
+        - securityProfile
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

@@ -11,7 +11,6 @@ import {
   ForeignKey,
   HasMany,
   HasOne,
-  Model,
   Table,
 } from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
@@ -19,9 +18,10 @@ import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
 import { ChargingStation } from '../Location';
 import { StartTransaction, StopTransaction } from './';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class Transaction extends Model {
+export class Transaction extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
   static readonly TRANSACTION_EVENTS_ALIAS = 'transactionEvents';
   static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter';

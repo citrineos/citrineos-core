@@ -20,6 +20,8 @@ export {
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
+  LocalListVersionAuthorization,
+  SendLocalListAuthorization,
 } from './model/Authorization';
 export {
   StartTransaction,
@@ -64,6 +66,7 @@ export { OCPPMessage } from './model/OCPPMessage';
 export { Reservation } from './model/Reservation';
 export { ChargingStationSecurityInfo } from './model/ChargingStationSecurityInfo';
 export { ChangeConfiguration } from './model/ChangeConfiguration';
+export { Tenant } from './model/Tenant';
 
 // Sequelize Repositories
 export { SequelizeRepository } from './repository/Base';
@@ -86,6 +89,7 @@ export { SequelizeReservationRepository } from './repository/Reservation';
 export { SequelizeChargingStationSecurityInfoRepository } from './repository/ChargingStationSecurityInfo';
 export { SequelizeChargingStationSequenceRepository } from './repository/ChargingStationSequence';
 export { SequelizeChangeConfigurationRepository } from './repository/ChangeConfiguration';
+export { SequelizeTenantRepository } from './repository/Tenant';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util';

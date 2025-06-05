@@ -7,6 +7,7 @@ import {
   AbstractModuleApi,
   AsMessageEndpoint,
   CallAction,
+  DEFAULT_TENANT_ID,
   IMessageConfirmation,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
@@ -49,9 +50,9 @@ export class CertificatesOcpp201Api
   )
   certificateSigned(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.CertificateSignedRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
@@ -72,9 +73,9 @@ export class CertificatesOcpp201Api
   )
   installCertificate(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.InstallCertificateRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
@@ -95,9 +96,9 @@ export class CertificatesOcpp201Api
   )
   getInstalledCertificateIds(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.GetInstalledCertificateIdsRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(
@@ -118,9 +119,9 @@ export class CertificatesOcpp201Api
   )
   deleteCertificate(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.DeleteCertificateRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
       this._module.sendCall(

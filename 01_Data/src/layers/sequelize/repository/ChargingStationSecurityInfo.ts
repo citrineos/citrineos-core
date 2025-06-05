@@ -13,14 +13,19 @@ export class SequelizeChargingStationSecurityInfoRepository
     super(config, ChargingStationSecurityInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async readChargingStationPublicKeyFileId(stationId: string): Promise<string> {
-    const existingInfo = await this.readOnlyOneByQuery({ where: { stationId } });
+  async readChargingStationPublicKeyFileId(tenantId: number, stationId: string): Promise<string> {
+    const existingInfo = await this.readOnlyOneByQuery(tenantId, { where: { stationId } });
     return existingInfo ? existingInfo.publicKeyFileId : '';
   }
 
-  async readOrCreateChargingStationInfo(stationId: string, publicKeyFileId: string): Promise<void> {
-    await this.readOrCreateByQuery({
+  async readOrCreateChargingStationInfo(
+    tenantId: number,
+    stationId: string,
+    publicKeyFileId: string,
+  ): Promise<void> {
+    await this.readOrCreateByQuery(tenantId, {
       where: {
+        tenantId,
         stationId,
       },
       defaults: {

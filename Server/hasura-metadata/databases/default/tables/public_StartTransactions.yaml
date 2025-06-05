@@ -8,6 +8,29 @@ object_relationships:
   - name: IdToken
     using:
       foreign_key_constraint_on: idTokenDatabaseId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
   - name: Transaction
     using:
       foreign_key_constraint_on: transactionDatabaseId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - stationId
+        - connectorDatabaseId
+        - id
+        - idTokenDatabaseId
+        - meterStart
+        - reservationId
+        - tenantId
+        - transactionDatabaseId
+        - createdAt
+        - timestamp
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

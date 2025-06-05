@@ -3,12 +3,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { AdditionalInfo } from './AdditionalInfo';
 import { IdToken } from './IdToken';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class IdTokenAdditionalInfo extends Model {
+export class IdTokenAdditionalInfo extends BaseModelWithTenant {
   // Namespace enum not used as this is not a model required by CitrineOS
   static readonly MODEL_NAME: string = 'IdTokenAdditionalInfo';
 

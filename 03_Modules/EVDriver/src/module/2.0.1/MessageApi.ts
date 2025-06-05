@@ -11,6 +11,7 @@ import {
   AbstractModuleApi,
   AsMessageEndpoint,
   CallAction,
+  DEFAULT_TENANT_ID,
   IMessageConfirmation,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
@@ -40,9 +41,9 @@ export class EVDriverOcpp201Api
   )
   async requestStartTransaction(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.RequestStartTransactionRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: IMessageConfirmation[] = [];
 
@@ -77,6 +78,7 @@ export class EVDriverOcpp201Api
         try {
           await validateChargingProfileType(
             chargingProfile,
+            tenantId,
             i,
             this._module.deviceModelRepository,
             this._module.chargingProfileRepository,
@@ -86,9 +88,10 @@ export class EVDriverOcpp201Api
           );
 
           const smartChargingEnabled =
-            await this._module.deviceModelRepository.readAllByQuerystring({
+            await this._module.deviceModelRepository.readAllByQuerystring(tenantId, {
               component_name: 'SmartChargingCtrlr',
               variable_name: 'Enabled',
+              tenantId,
               stationId: i,
             });
 
@@ -97,6 +100,7 @@ export class EVDriverOcpp201Api
             this._logger.warn(payloadMessage);
           } else {
             await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
+              tenantId,
               chargingProfile,
               i,
               request.evseId,
@@ -148,9 +152,9 @@ export class EVDriverOcpp201Api
   )
   async requestStopTransaction(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.RequestStopTransactionRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results = identifier.map((id) =>
       this._module.sendCall(
@@ -171,18 +175,19 @@ export class EVDriverOcpp201Api
   )
   async cancelReservation(
     identifiers: string[],
-    tenantId: string,
     request: OCPP2_0_1.CancelReservationRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     try {
       // Attempt to load the reservations for each station ID
       const reservations = await Promise.all(
         identifiers.map((identifier) =>
-          this._module.reservationRepository.readOnlyOneByQuery({
+          this._module.reservationRepository.readOnlyOneByQuery(tenantId, {
             where: {
               id: request.reservationId,
               stationId: identifier,
+              tenantId,
             },
           }),
         ),
@@ -200,7 +205,7 @@ export class EVDriverOcpp201Api
 
       // Send the CancelReservation call for each station
       const results = await Promise.all(
-        identifiers.map(async (identifier, index) =>
+        identifiers.map(async (identifier, _index) =>
           this._module.sendCall(
             identifier,
             tenantId,
@@ -230,16 +235,21 @@ export class EVDriverOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.ReserveNow, OCPP2_0_1.ReserveNowRequestSchema)
   async reserveNow(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.ReserveNowRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: IMessageConfirmation[] = [];
 
     for (const i of identifier) {
       try {
         const storedReservation =
-          await this._module.reservationRepository.createOrUpdateReservation(request, i, false);
+          await this._module.reservationRepository.createOrUpdateReservation(
+            tenantId,
+            request,
+            i,
+            false,
+          );
 
         if (!storedReservation) {
           results.push({
@@ -274,9 +284,9 @@ export class EVDriverOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.UnlockConnector, OCPP2_0_1.UnlockConnectorRequestSchema)
   unlockConnector(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.UnlockConnectorRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results = identifier.map((id) =>
       this._module.sendCall(
@@ -294,9 +304,9 @@ export class EVDriverOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.ClearCache, OCPP2_0_1.ClearCacheRequestSchema)
   clearCache(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.ClearCacheRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results = identifier.map((id) =>
       this._module.sendCall(
@@ -314,9 +324,9 @@ export class EVDriverOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.SendLocalList, OCPP2_0_1.SendLocalListRequestSchema)
   async sendLocalList(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.SendLocalListRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: IMessageConfirmation[] = [];
 
@@ -325,6 +335,7 @@ export class EVDriverOcpp201Api
         const correlationId = uuidv4();
 
         await this._module.localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+          tenantId,
           i,
           correlationId,
           request,
@@ -358,9 +369,9 @@ export class EVDriverOcpp201Api
   )
   getLocalListVersion(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.GetLocalListVersionRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results = identifier.map((id) =>
       this._module.sendCall(

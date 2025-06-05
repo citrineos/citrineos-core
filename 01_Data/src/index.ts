@@ -50,6 +50,7 @@ export {
   StatusNotification,
   ChargingStationSecurityInfo,
   ChargingStationNetworkProfile,
+  Tenant,
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -70,6 +71,7 @@ export {
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
   SequelizeChargingStationSequenceRepository,
+  SequelizeTenantRepository,
   OCPP2_0_1_Mapper,
   OCPP1_6_Mapper,
 } from './layers/sequelize'; // TODO ensure all needed modules are properly exported

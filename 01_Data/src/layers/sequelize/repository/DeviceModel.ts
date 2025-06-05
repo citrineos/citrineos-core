@@ -83,6 +83,7 @@ export class SequelizeDeviceModelRepository
   }
 
   async createOrUpdateDeviceModelByStationId(
+    tenantId: number,
     value: OCPP2_0_1.ReportDataType,
     stationId: string,
     isoTimestamp: string,
@@ -96,6 +97,7 @@ export class SequelizeDeviceModelRepository
     }
 
     const [component, variable] = await this.findOrCreateEvseAndComponentAndVariable(
+      tenantId,
       value.component,
       value.variable,
       stationId,
@@ -107,6 +109,7 @@ export class SequelizeDeviceModelRepository
       const variableCharacteristicsType = value.variableCharacteristics;
       dataType = variableCharacteristicsType.dataType;
       const vc = {
+        tenantId,
         unit: variableCharacteristicsType.unit ?? null,
         dataType,
         minLimit: variableCharacteristicsType.minLimit ?? null,
@@ -132,7 +135,7 @@ export class SequelizeDeviceModelRepository
           this.variableCharacteristics.emit('created', [createdVariableCharacteristics]);
           return createdVariableCharacteristics;
         } else {
-          return await this.variableCharacteristics.updateAllByQuery(vc, {
+          return await this.variableCharacteristics.updateAllByQuery(tenantId, vc, {
             where: {
               variableId: variable.id,
             },
@@ -144,28 +147,31 @@ export class SequelizeDeviceModelRepository
 
     return await Promise.all(
       value.variableAttribute.map(async (variableAttribute) => {
-        const [savedVariableAttribute, variableAttributeCreated] = await this.readOrCreateByQuery({
-          where: {
-            // the composite unique index of VariableAttribute
-            stationId: stationId,
-            variableId: variable.id,
-            componentId: component.id,
-            type: variableAttribute.type ?? OCPP2_0_1.AttributeEnumType.Actual,
+        const [savedVariableAttribute, variableAttributeCreated] = await this.readOrCreateByQuery(
+          tenantId,
+          {
+            where: {
+              tenantId,
+              // the composite unique index of VariableAttribute
+              stationId: stationId,
+              variableId: variable.id,
+              componentId: component.id,
+              type: variableAttribute.type ?? OCPP2_0_1.AttributeEnumType.Actual,
+            },
+            defaults: {
+              evseDatabaseId: component.evseDatabaseId,
+              dataType,
+              value: variableAttribute.value,
+              generatedAt: isoTimestamp,
+              mutability: variableAttribute.mutability ?? OCPP2_0_1.MutabilityEnumType.ReadWrite,
+              persistent: variableAttribute.persistent ? variableAttribute.persistent : false,
+              constant: variableAttribute.constant ? variableAttribute.constant : false,
+            },
           },
-          defaults: {
-            // used to define what must be created in case nothing was found. If the defaults do not
-            // contain values for every column, Sequelize will take the values given to where (if present).
-            evseDatabaseId: component.evseDatabaseId,
-            dataType,
-            value: variableAttribute.value,
-            generatedAt: isoTimestamp,
-            mutability: variableAttribute.mutability ?? OCPP2_0_1.MutabilityEnumType.ReadWrite,
-            persistent: variableAttribute.persistent ? variableAttribute.persistent : false,
-            constant: variableAttribute.constant ? variableAttribute.constant : false,
-          },
-        });
+        );
         if (!variableAttributeCreated) {
           return (await this.updateByKey(
+            tenantId,
             {
               evseDatabaseId: component.evseDatabaseId,
               dataType: dataType ?? savedVariableAttribute.dataType,
@@ -185,14 +191,16 @@ export class SequelizeDeviceModelRepository
   }
 
   async findOrCreateEvseAndComponentAndVariable(
+    tenantId: number,
     componentType: OCPP2_0_1.ComponentType,
     variableType: OCPP2_0_1.VariableType,
     stationId?: string,
   ): Promise<[Component, Variable]> {
-    const component = await this.findOrCreateEvseAndComponent(componentType, stationId);
+    const component = await this.findOrCreateEvseAndComponent(tenantId, componentType, stationId);
 
-    const [variable] = await this.variable.readOrCreateByQuery({
+    const [variable] = await this.variable.readOrCreateByQuery(tenantId, {
       where: {
+        tenantId,
         name: variableType.name,
         instance: variableType.instance ? variableType.instance : null,
       },
@@ -201,24 +209,24 @@ export class SequelizeDeviceModelRepository
       },
     });
 
-    // TODO discuss & verify appropriate way to remove associations between components and variables (not currently possible)
-
     // This can happen asynchronously
-    await this.componentVariable.readOrCreateByQuery({
-      where: { componentId: component.id, variableId: variable.id },
+    await this.componentVariable.readOrCreateByQuery(tenantId, {
+      where: { tenantId, componentId: component.id, variableId: variable.id },
     });
 
     return [component, variable];
   }
 
   async findOrCreateEvseAndComponent(
+    tenantId: number,
     componentType: OCPP2_0_1.ComponentType,
     stationId?: string,
   ): Promise<Component> {
     const evse = componentType.evse
       ? (
-          await this.evse.readOrCreateByQuery({
+          await this.evse.readOrCreateByQuery(tenantId, {
             where: {
+              tenantId,
               id: componentType.evse.id,
               connectorId: componentType.evse.connectorId ? componentType.evse.connectorId : null,
             },
@@ -226,46 +234,42 @@ export class SequelizeDeviceModelRepository
         )[0]
       : undefined;
 
-    const [component, componentCreated] = await this.component.readOrCreateByQuery({
+    const [component, componentCreated] = await this.component.readOrCreateByQuery(tenantId, {
       where: {
+        tenantId,
         name: componentType.name,
         instance: componentType.instance ? componentType.instance : null,
-      },
-      defaults: {
-        // Explicit assignment because evse field is a relation and is not able to accept a default value
-        name: componentType.name,
-        instance: componentType.instance,
       },
     });
     // Note: this permits changing the evse related to the component
     if (component.evseDatabaseId !== evse?.databaseId && evse) {
-      await this.component.updateByKey({ evseDatabaseId: evse.databaseId }, component.get('id'));
+      await this.component.updateByKey(
+        tenantId,
+        { evseDatabaseId: evse.databaseId },
+        component.get('id'),
+      );
     }
 
     if (componentCreated && stationId) {
-      // Only execute if this method is called in the context of a specific station
-      // Excerpt from OCPP 2.0.1 Part 1 Architecture & Topology - 4.2 :
-      // "When a Charging Station does not report: Present, Available and/or Enabled
-      // the Central System SHALL assume them to be readonly and set to true."
-      // These default variables and their attributes are created here if the component is new,
-      // and they will be overwritten if they are included in the update
       const defaultComponentVariableNames = ['Present', 'Available', 'Enabled'];
       for (const defaultComponentVariableName of defaultComponentVariableNames) {
         const [defaultComponentVariable, _defaultComponentVariableCreated] =
-          await this.variable.readOrCreateByQuery({
+          await this.variable.readOrCreateByQuery(tenantId, {
             where: {
+              tenantId,
               name: defaultComponentVariableName,
               instance: null,
             },
           });
 
-        // This can happen asynchronously
-        await this.componentVariable.readOrCreateByQuery({
-          where: { componentId: component.id, variableId: defaultComponentVariable.id },
+        await this.componentVariable.readOrCreateByQuery(tenantId, {
+          where: { tenantId, componentId: component.id, variableId: defaultComponentVariable.id },
         });
 
         await this.create(
+          tenantId,
           VariableAttribute.build({
+            tenantId,
             stationId,
             variableId: defaultComponentVariable.id,
             componentId: component.id,
@@ -282,6 +286,7 @@ export class SequelizeDeviceModelRepository
   }
 
   async createOrUpdateByGetVariablesResultAndStationId(
+    tenantId: number,
     getVariablesResult: OCPP2_0_1.GetVariableResultType[],
     stationId: string,
     isoTimestamp: string,
@@ -290,6 +295,7 @@ export class SequelizeDeviceModelRepository
     for (const result of getVariablesResult) {
       const savedVariableAttribute = (
         await this.createOrUpdateDeviceModelByStationId(
+          tenantId,
           {
             component: {
               ...result.component,
@@ -309,8 +315,10 @@ export class SequelizeDeviceModelRepository
         )
       )[0];
       await this.variableStatus.create(
+        tenantId,
         VariableStatus.build(
           {
+            tenantId,
             value: result.attributeValue,
             status: result.attributeStatus,
             statusInfo: result.attributeStatusInfo,
@@ -325,6 +333,7 @@ export class SequelizeDeviceModelRepository
   }
 
   async createOrUpdateBySetVariablesDataAndStationId(
+    tenantId: number,
     setVariablesData: OCPP2_0_1.SetVariableDataType[],
     stationId: string,
     isoTimestamp: string,
@@ -333,6 +342,7 @@ export class SequelizeDeviceModelRepository
     for (const data of setVariablesData) {
       const savedVariableAttribute = (
         await this.createOrUpdateDeviceModelByStationId(
+          tenantId,
           {
             component: {
               ...data.component,
@@ -357,11 +367,12 @@ export class SequelizeDeviceModelRepository
   }
 
   async updateResultByStationId(
+    tenantId: number,
     result: OCPP2_0_1.SetVariableResultType,
     stationId: string,
     isoTimestamp: string,
   ): Promise<VariableAttribute | undefined> {
-    const savedVariableAttribute = await super.readOnlyOneByQuery({
+    const savedVariableAttribute = await super.readOnlyOneByQuery(tenantId, {
       where: { stationId, type: result.attributeType ?? OCPP2_0_1.AttributeEnumType.Actual },
       include: [
         {
@@ -382,7 +393,9 @@ export class SequelizeDeviceModelRepository
     });
     if (savedVariableAttribute) {
       await this.variableStatus.create(
+        tenantId,
         VariableStatus.build({
+          tenantId,
           value: savedVariableAttribute.value,
           status: result.attributeStatus,
           statusInfo: result.attributeStatusInfo,
@@ -391,7 +404,7 @@ export class SequelizeDeviceModelRepository
       );
       if (result.attributeStatus !== OCPP2_0_1.SetVariableStatusEnumType.Accepted) {
         const mostRecentAcceptedStatus = (
-          await this.variableStatus.readAllByQuery({
+          await this.variableStatus.readAllByQuery(tenantId, {
             where: {
               variableAttributeId: savedVariableAttribute.get('id'),
               status: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
@@ -413,8 +426,11 @@ export class SequelizeDeviceModelRepository
     }
   }
 
-  async readAllSetVariableByStationId(stationId: string): Promise<OCPP2_0_1.SetVariableDataType[]> {
-    const variableAttributeArray = await super.readAllByQuery({
+  async readAllSetVariableByStationId(
+    tenantId: number,
+    stationId: string,
+  ): Promise<OCPP2_0_1.SetVariableDataType[]> {
+    const variableAttributeArray = await super.readAllByQuery(tenantId, {
       where: {
         stationId,
         bootConfigSetId: { [Op.ne]: null },
@@ -427,40 +443,50 @@ export class SequelizeDeviceModelRepository
     );
   }
 
-  async readAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]> {
+  async readAllByQuerystring(
+    tenantId: number,
+    query: VariableAttributeQuerystring,
+  ): Promise<VariableAttribute[]> {
     const readQuery = this.constructQuery(query);
     readQuery.include.push(VariableStatus);
-    return await super.readAllByQuery(readQuery);
+    return await super.readAllByQuery(tenantId, readQuery);
   }
 
-  async existByQuerystring(query: VariableAttributeQuerystring): Promise<number> {
-    return await super.existByQuery(this.constructQuery(query));
+  async existByQuerystring(tenantId: number, query: VariableAttributeQuerystring): Promise<number> {
+    return await super.existByQuery(tenantId, this.constructQuery(query));
   }
 
-  async deleteAllByQuerystring(query: VariableAttributeQuerystring): Promise<VariableAttribute[]> {
-    return await super.deleteAllByQuery(this.constructQuery(query));
+  async deleteAllByQuerystring(
+    tenantId: number,
+    query: VariableAttributeQuerystring,
+  ): Promise<VariableAttribute[]> {
+    return await super.deleteAllByQuery(tenantId, this.constructQuery(query));
   }
 
   async findComponentAndVariable(
+    tenantId: number,
     componentType: OCPP2_0_1.ComponentType,
     variableType: OCPP2_0_1.VariableType,
   ): Promise<[Component | undefined, Variable | undefined]> {
-    const component = await this.component.readOnlyOneByQuery({
+    const component = await this.component.readOnlyOneByQuery(tenantId, {
       where: {
         name: componentType.name,
         instance: componentType.instance ? componentType.instance : null,
       },
     });
-    const variable = await this.variable.readOnlyOneByQuery({
+    const variable = await this.variable.readOnlyOneByQuery(tenantId, {
       where: {
         name: variableType.name,
         instance: variableType.instance ? variableType.instance : null,
       },
     });
     if (variable) {
-      const variableCharacteristics = await this.variableCharacteristics.readOnlyOneByQuery({
-        where: { variableId: variable.get('id') },
-      });
+      const variableCharacteristics = await this.variableCharacteristics.readOnlyOneByQuery(
+        tenantId,
+        {
+          where: { variableId: variable.get('id') },
+        },
+      );
       variable.variableCharacteristics = variableCharacteristics;
     }
 
@@ -468,12 +494,12 @@ export class SequelizeDeviceModelRepository
   }
 
   async findEvseByIdAndConnectorId(
+    tenantId: number,
     id: number,
     connectorId: number | null,
   ): Promise<Evse | undefined> {
-    const storedEvses = await this.evse.readAllByQuery({
+    const storedEvses = await this.evse.readAllByQuery(tenantId, {
       where: {
-        // unique constraints
         id: id,
         connectorId: connectorId,
       },
@@ -482,10 +508,11 @@ export class SequelizeDeviceModelRepository
   }
 
   async findVariableCharacteristicsByVariableNameAndVariableInstance(
+    tenantId: number,
     variableName: string,
     variableInstance: string | null,
   ): Promise<VariableCharacteristics | undefined> {
-    const variableCharacteristics = await this.variableCharacteristics.readAllByQuery({
+    const variableCharacteristics = await this.variableCharacteristics.readAllByQuery(tenantId, {
       include: [
         {
           model: Variable,

@@ -2,6 +2,29 @@ table:
   name: VariableCharacteristics
   schema: public
 object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
   - name: Variable
     using:
       foreign_key_constraint_on: variableId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - supportsMonitoring
+        - dataType
+        - unit
+        - valuesList
+        - id
+        - tenantId
+        - variableId
+        - maxLimit
+        - minLimit
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

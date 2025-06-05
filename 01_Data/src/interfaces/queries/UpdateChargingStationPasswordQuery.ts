@@ -2,13 +2,25 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { QuerySchema } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, QuerySchema } from '@citrineos/base';
 
 export const UpdateChargingStationPasswordQuerySchema = QuerySchema(
   'UpdateChargingStationPasswordQuerySchema',
-  [['callbackUrl', 'string']],
+  [
+    {
+      key: 'tenantId',
+      type: 'number',
+      required: true,
+      defaultValue: String(DEFAULT_TENANT_ID),
+    },
+    {
+      key: 'callbackUrl',
+      type: 'string',
+    },
+  ],
 );
 
 export interface UpdateChargingStationPasswordQueryString {
+  tenantId: number;
   callbackUrl?: string;
 }

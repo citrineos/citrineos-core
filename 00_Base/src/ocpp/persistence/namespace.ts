@@ -21,6 +21,7 @@ export enum Namespace {
   ReserveNowRequest = 'Reservation',
   StatusNotificationRequest = 'StatusNotification',
   TransactionType = 'Transaction',
+  Websocket = 'Websocket',
 }
 
 export enum OCPP2_0_1_Namespace {

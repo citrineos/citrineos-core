@@ -55,18 +55,9 @@ export class CertificatesModule extends AbstractModule {
    * Fields
    */
 
-  _requests: CallAction[] = [
-    OCPP2_0_1_CallAction.Get15118EVCertificate,
-    OCPP2_0_1_CallAction.GetCertificateStatus,
-    OCPP2_0_1_CallAction.SignCertificate,
-  ];
+  _requests: CallAction[] = [];
 
-  _responses: CallAction[] = [
-    OCPP2_0_1_CallAction.CertificateSigned,
-    OCPP2_0_1_CallAction.DeleteCertificate,
-    OCPP2_0_1_CallAction.GetInstalledCertificateIds,
-    OCPP2_0_1_CallAction.InstallCertificate,
-  ];
+  _responses: CallAction[] = [];
 
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _certificateRepository: ICertificateRepository;
@@ -127,6 +118,9 @@ export class CertificatesModule extends AbstractModule {
       EventGroup.Certificates,
       logger,
     );
+
+    this._requests = config.modules.certificates?.requests ?? [];
+    this._responses = config.modules.certificates?.responses ?? [];
 
     this._deviceModelRepository =
       deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, logger);
@@ -233,7 +227,12 @@ export class CertificatesModule extends AbstractModule {
 
     let certificateChainPem: string;
     try {
-      await this._verifySignCertRequest(csrString, stationId, certificateType);
+      await this._verifySignCertRequest(
+        csrString,
+        message.context.tenantId,
+        stationId,
+        certificateType,
+      );
 
       certificateChainPem = await this._certificateAuthorityService.getCertificateChain(
         csrString,
@@ -306,6 +305,7 @@ export class CertificatesModule extends AbstractModule {
     if (certificateHashDataList && certificateHashDataList.length > 0) {
       // delete previous hashes for station
       await this.deleteExistingMatchingCertificateHashes(
+        message.context.tenantId,
         message.context.stationId,
         certificateHashDataList,
       );
@@ -315,6 +315,7 @@ export class CertificatesModule extends AbstractModule {
           const certificateHashData = certificateHashDataWrap.certificateHashData;
           const certificateType = certificateHashDataWrap.certificateType;
           return {
+            tenantId: message.context.tenantId,
             stationId: message.context.stationId,
             hashAlgorithm: certificateHashData.hashAlgorithm,
             issuerNameHash: certificateHashData.issuerNameHash,
@@ -326,6 +327,7 @@ export class CertificatesModule extends AbstractModule {
       );
       this._logger.info('Attempting to save', records);
       const response = await this._installedCertificateRepository.bulkCreate(
+        message.context.tenantId,
         records,
         OCPP2_0_1_Namespace.InstalledCertificate,
       );
@@ -348,6 +350,7 @@ export class CertificatesModule extends AbstractModule {
 
   private async _verifySignCertRequest(
     csrString: string,
+    tenantId: number,
     stationId: string,
     certificateType?: OCPP2_0_1.CertificateSigningUseEnumType | null,
   ): Promise<void> {
@@ -370,7 +373,8 @@ export class CertificatesModule extends AbstractModule {
 
     if (certificateType === OCPP2_0_1.CertificateSigningUseEnumType.ChargingStationCertificate) {
       // Verify organization name match the one stored in the device model
-      const organizationName = await this._deviceModelRepository.readAllByQuerystring({
+      const organizationName = await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+        tenantId: tenantId,
         stationId: stationId,
         component_name: 'SecurityCtrlr',
         variable_name: 'OrganizationName',
@@ -397,6 +401,7 @@ export class CertificatesModule extends AbstractModule {
   }
 
   private async deleteExistingMatchingCertificateHashes(
+    tenantId: number,
     stationId: string,
     certificateHashDataList: OCPP2_0_1.CertificateHashDataChainType[],
   ) {
@@ -405,8 +410,9 @@ export class CertificatesModule extends AbstractModule {
         return certificateHashData.certificateType;
       });
       if (certificateTypes && certificateTypes.length > 0) {
-        await this._installedCertificateRepository.deleteAllByQuery({
+        await this._installedCertificateRepository.deleteAllByQuery(tenantId, {
           where: {
+            tenantId,
             stationId,
             certificateType: {
               [Op.in]: certificateTypes,

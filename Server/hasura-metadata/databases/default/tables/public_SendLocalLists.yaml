@@ -1,0 +1,32 @@
+table:
+  name: SendLocalLists
+  schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: SendLocalListAuthorizations
+    using:
+      foreign_key_constraint_on:
+        column: sendLocalListId
+        table:
+          name: SendLocalListAuthorizations
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - correlationId
+        - stationId
+        - updateType
+        - id
+        - tenantId
+        - versionNumber
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

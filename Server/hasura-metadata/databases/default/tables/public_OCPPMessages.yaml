@@ -1,3 +1,27 @@
 table:
   name: OCPPMessages
   schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - action
+        - correlationId
+        - origin
+        - protocol
+        - stationId
+        - id
+        - tenantId
+        - message
+        - createdAt
+        - timestamp
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""
