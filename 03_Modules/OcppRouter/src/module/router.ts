@@ -112,6 +112,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   ): Promise<boolean> {
     const dispatcherRegistration = this._webhookDispatcher.register(tenantId, stationId);
 
+    await this._handler.initConnection();
     const connectionIdentifier = createIdentifier(tenantId, stationId);
     const requestSubscription = this._handler.subscribe(connectionIdentifier, undefined, {
       tenantId: tenantId.toString(),

@@ -414,6 +414,7 @@ export abstract class AbstractModule implements IModule {
   private async _initHandler(requests: CallAction[], responses: CallAction[]): Promise<boolean> {
     this._handler.module = this;
 
+    await this.handler.initConnection();
     let success = await this._handler.subscribe(
       this._eventGroup.toString() + '_requests',
       requests,
