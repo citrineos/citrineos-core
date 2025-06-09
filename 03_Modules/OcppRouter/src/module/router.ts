@@ -102,6 +102,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
     this.subscriptionRepository =
       subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
+    this._handler.initConnection();
   }
 
   // TODO: Below method should lock these tables so that a rapid connect-disconnect cannot result in race condition.
@@ -112,7 +113,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   ): Promise<boolean> {
     const dispatcherRegistration = this._webhookDispatcher.register(tenantId, stationId);
 
-    await this._handler.initConnection();
     const connectionIdentifier = createIdentifier(tenantId, stationId);
     const requestSubscription = this._handler.subscribe(connectionIdentifier, undefined, {
       tenantId: tenantId.toString(),
