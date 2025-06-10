@@ -153,4 +153,8 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
     }
     await consumer.commitOffsets([{ topic, partition, offset: message.offset }]);
   }
+
+  initConnection(): Promise<void> {
+    return Promise.resolve(undefined);
+  }
 }

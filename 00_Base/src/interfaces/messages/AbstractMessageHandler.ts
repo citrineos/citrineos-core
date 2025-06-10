@@ -69,4 +69,5 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
   ): Promise<boolean>;
   abstract unsubscribe(identifier: string): Promise<boolean>;
   abstract shutdown(): Promise<void>;
+  abstract initConnection(): Promise<void>;
 }

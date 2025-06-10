@@ -102,6 +102,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
     this.subscriptionRepository =
       subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
+    this._handler.initConnection();
   }
 
   // TODO: Below method should lock these tables so that a rapid connect-disconnect cannot result in race condition.
