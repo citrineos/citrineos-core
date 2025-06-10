@@ -19,12 +19,17 @@ export class DeviceModelService {
    * are associated with alternate options. That structure is not supported by this logic, and that
    * structure is a violation of Part 2 - Specification of OCPP 2.0.1.
    * In that case, the first attribute will be returned.
+   * @param tenantId
    * @param stationId Charging station identifier.
    * @returns ItemsPerMessageSetVariables as a number or null if no such attribute exists.
    */
-  async getItemsPerMessageSetVariablesByStationId(stationId: string): Promise<number | null> {
+  async getItemsPerMessageSetVariablesByStationId(
+    tenantId: number,
+    stationId: string,
+  ): Promise<number | null> {
     const itemsPerMessageSetVariablesAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuerystring({
+      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+        tenantId: tenantId,
         stationId: stationId,
         component_name: 'DeviceDataCtrlr',
         variable_name: 'ItemsPerMessage',
@@ -48,12 +53,17 @@ export class DeviceModelService {
    * are associated with alternate options. That structure is not supported by this logic, and that
    * structure is a violation of Part 2 - Specification of OCPP 2.0.1.
    * In that case, the first attribute will be returned.
+   * @param tenantId
    * @param stationId Charging station identifier.
    * @returns ItemsPerMessageGetVariables as a number or null if no such attribute exists.
    */
-  async getItemsPerMessageGetVariablesByStationId(stationId: string): Promise<number | null> {
+  async getItemsPerMessageGetVariablesByStationId(
+    tenantId: number,
+    stationId: string,
+  ): Promise<number | null> {
     const itemsPerMessageGetVariablesAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuerystring({
+      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+        tenantId: tenantId,
         stationId: stationId,
         component_name: 'DeviceDataCtrlr',
         variable_name: 'ItemsPerMessage',
@@ -72,6 +82,7 @@ export class DeviceModelService {
 
   async updateDeviceModel(
     chargingStation: any,
+    tenantId: number,
     stationId: string,
     timestamp: string,
   ): Promise<void> {
@@ -112,6 +123,7 @@ export class DeviceModelService {
       .filter((attr) => attr.value !== undefined)
       .map((attr) =>
         this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+          tenantId,
           {
             component: { name: attr.component },
             variable: { name: attr.variable },

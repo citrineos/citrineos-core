@@ -25,10 +25,12 @@ export class DeviceModelService {
   async getItemsPerMessageByComponentAndVariableInstanceAndStationId(
     componentName: string,
     variableInstance: string,
+    tenantId: number,
     stationId: string,
   ): Promise<number | null> {
     const itemsPerMessageAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuerystring({
+      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+        tenantId: tenantId,
         stationId: stationId,
         component_name: componentName,
         variable_name: 'ItemsPerMessage',
@@ -58,10 +60,12 @@ export class DeviceModelService {
   async getBytesPerMessageByComponentAndVariableInstanceAndStationId(
     componentName: string,
     variableInstance: string,
+    tenantId: number,
     stationId: string,
   ): Promise<number | null> {
     const bytesPerMessageAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuerystring({
+      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+        tenantId: tenantId,
         stationId: stationId,
         component_name: componentName,
         variable_name: 'BytesPerMessage',

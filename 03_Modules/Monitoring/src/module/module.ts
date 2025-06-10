@@ -38,16 +38,9 @@ export class MonitoringModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
   protected _monitoringService: MonitoringService;
 
-  _requests: CallAction[] = [OCPP2_0_1_CallAction.NotifyEvent];
-  _responses: CallAction[] = [
-    OCPP2_0_1_CallAction.ClearVariableMonitoring,
-    OCPP2_0_1_CallAction.GetVariables,
-    OCPP2_0_1_CallAction.SetMonitoringBase,
-    OCPP2_0_1_CallAction.SetMonitoringLevel,
-    OCPP2_0_1_CallAction.GetMonitoringReport,
-    OCPP2_0_1_CallAction.SetVariableMonitoring,
-    OCPP2_0_1_CallAction.SetVariables,
-  ];
+  _requests: CallAction[] = [];
+
+  _responses: CallAction[] = [];
 
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
@@ -99,6 +92,9 @@ export class MonitoringModule extends AbstractModule {
       logger,
     );
 
+    this._requests = config.modules.monitoring.requests;
+    this._responses = config.modules.monitoring.responses;
+
     this._deviceModelRepository =
       deviceModelRepository || new SequelizeDeviceModelRepository(config, this._logger);
     this._variableMonitoringRepository =
@@ -139,10 +135,12 @@ export class MonitoringModule extends AbstractModule {
     for (const event of events) {
       const [component, variable] =
         await this._deviceModelRepository.findOrCreateEvseAndComponentAndVariable(
+          message.context.tenantId,
           event.component,
           event.variable,
         );
       await this._variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId(
+        message.context.tenantId,
         event,
         component?.id,
         variable?.id,
@@ -158,6 +156,7 @@ export class MonitoringModule extends AbstractModule {
         ],
       };
       await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+        message.context.tenantId,
         reportDataType,
         stationId,
         message.payload.generatedAt,
@@ -184,6 +183,7 @@ export class MonitoringModule extends AbstractModule {
 
     for (const setMonitoringResultType of message.payload.setMonitoringResult) {
       await this._variableMonitoringRepository.updateResultByStationId(
+        message.context.tenantId,
         setMonitoringResultType,
         message.context.stationId,
       );
@@ -198,6 +198,7 @@ export class MonitoringModule extends AbstractModule {
     this._logger.debug('ClearVariableMonitoring response received:', message, props);
 
     await this._monitoringService.processClearMonitoringResult(
+      message.context.tenantId,
       message.context.stationId,
       message.payload.clearMonitoringResult,
     );
@@ -271,6 +272,7 @@ export class MonitoringModule extends AbstractModule {
       // Then request a GetMonitoringReport for all monitorings
       const stationId: string = message.context.stationId;
       await this._variableMonitoringRepository.rejectAllVariableMonitoringsByStationId(
+        message.context.tenantId,
         OCPP2_0_1_CallAction.SetVariableMonitoring,
         stationId,
       );
@@ -283,6 +285,7 @@ export class MonitoringModule extends AbstractModule {
         OCPP2_0_1_CallAction.GetMonitoringReport,
         {
           requestId: await this._idGenerator.generateRequestId(
+            message.context.tenantId,
             message.context.stationId,
             ChargingStationSequenceType.getMonitoringReport,
           ),
@@ -298,6 +301,7 @@ export class MonitoringModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('GetVariables response received:', message, props);
     await this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(
+      message.context.tenantId,
       message.payload.getVariableResult,
       message.context.stationId,
       message.context.timestamp,
@@ -313,6 +317,7 @@ export class MonitoringModule extends AbstractModule {
 
     for (const setVariableResultType of message.payload.setVariableResult) {
       await this._deviceModelRepository.updateResultByStationId(
+        message.context.tenantId,
         setVariableResultType,
         message.context.stationId,
         message.context.timestamp,

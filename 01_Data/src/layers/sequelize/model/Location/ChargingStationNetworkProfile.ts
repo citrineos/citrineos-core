@@ -3,13 +3,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { ServerNetworkProfile } from './ServerNetworkProfile';
 import { SetNetworkProfile } from './SetNetworkProfile';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class ChargingStationNetworkProfile extends Model {
+export class ChargingStationNetworkProfile extends BaseModelWithTenant {
   // Namespace enum not used as this is not a model required by CitrineOS
   static readonly MODEL_NAME: string = 'ChargingStationNetworkProfile';
 

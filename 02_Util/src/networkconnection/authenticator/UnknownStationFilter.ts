@@ -21,9 +21,15 @@ export class UnknownStationFilter extends AuthenticatorFilter {
     return !options.allowUnknownChargingStations;
   }
 
-  protected async filter(identifier: string, _request: IncomingMessage): Promise<void> {
-    const isStationKnown =
-      await this._locationRepository.doesChargingStationExistByStationId(identifier);
+  protected async filter(
+    tenantId: number,
+    identifier: string,
+    _request: IncomingMessage,
+  ): Promise<void> {
+    const isStationKnown = await this._locationRepository.doesChargingStationExistByStationId(
+      tenantId,
+      identifier,
+    );
     if (!isStationKnown) {
       throw new UpgradeUnknownError(`Unknown identifier ${identifier}`);
     }

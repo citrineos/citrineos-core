@@ -2,12 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP1_6_Namespace, OCPP1_6 } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { OCPP1_6, OCPP1_6_Namespace } from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class Connector extends Model {
+export class Connector extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.Connector;
 
   @ForeignKey(() => ChargingStation)

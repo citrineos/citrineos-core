@@ -1,9 +1,13 @@
-import { OCPP2_0_1_Namespace, OCPP2_0_1 } from '@citrineos/base';
-import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { ChargingStation } from '../Location';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class InstalledCertificate extends Model implements OCPP2_0_1.CertificateHashDataType {
+export class InstalledCertificate
+  extends BaseModelWithTenant
+  implements OCPP2_0_1.CertificateHashDataType
+{
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.InstalledCertificate;
 
   @ForeignKey(() => ChargingStation)

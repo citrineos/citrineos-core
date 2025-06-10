@@ -1,13 +1,17 @@
-import { faker } from '@faker-js/faker';
 import { expect, jest } from '@jest/globals';
 import { ITransactionEventRepository, Transaction } from '@citrineos/data';
-import { AbstractModule, OCPP2_0_1_CallAction, OCPPVersion } from '@citrineos/base';
+import {
+  AbstractModule,
+  DEFAULT_TENANT_ID,
+  OCPP2_0_1_CallAction,
+  OCPPVersion,
+} from '@citrineos/base';
 import { CostCalculator } from '../../src/module/CostCalculator';
 import { CostNotifier } from '../../src/module/CostNotifier';
 import { aTransaction } from '../providers/TransactionProvider';
 
 describe('CostNotifier', () => {
-  const anyTenantId = faker.string.uuid();
+  const anyTenantId = DEFAULT_TENANT_ID;
 
   let transactionEventRepository: jest.Mocked<ITransactionEventRepository>;
   let module: jest.Mocked<AbstractModule>;
@@ -125,7 +129,7 @@ describe('CostNotifier', () => {
 
   function assertLastCostUpdatedCall(
     transaction: Transaction,
-    tenantId: string,
+    tenantId: number,
     totalCost: number,
   ) {
     expect(module.sendCall).toHaveBeenLastCalledWith(

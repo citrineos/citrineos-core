@@ -5,6 +5,36 @@ object_relationships:
   - name: Component
     using:
       foreign_key_constraint_on: componentId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
   - name: Variable
     using:
       foreign_key_constraint_on: variableId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - cleared
+        - actualValue
+        - eventNotificationType
+        - stationId
+        - techCode
+        - techInfo
+        - transactionId
+        - trigger
+        - cause
+        - componentId
+        - eventId
+        - id
+        - tenantId
+        - variableId
+        - variableMonitoringId
+        - createdAt
+        - timestamp
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

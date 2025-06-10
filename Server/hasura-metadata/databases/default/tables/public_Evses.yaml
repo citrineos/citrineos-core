@@ -1,6 +1,10 @@
 table:
   name: Evses
   schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
 array_relationships:
   - name: ChargingNeeds
     using:
@@ -44,3 +48,18 @@ array_relationships:
         table:
           name: VariableAttributes
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - connectorId
+        - databaseId
+        - id
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

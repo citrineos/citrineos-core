@@ -14,6 +14,7 @@ import {
   ISecurityEventRepository,
   ISubscriptionRepository,
   ITariffRepository,
+  ITenantRepository,
   ITransactionEventRepository,
   IVariableMonitoringRepository,
 } from '../../../interfaces';
@@ -39,7 +40,7 @@ import { SequelizeLocalAuthListRepository } from './LocalAuthList';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
 import { SequelizeChargingProfileRepository } from './ChargingProfile';
 import { SequelizeChangeConfigurationRepository } from './ChangeConfiguration';
-import { SequelizeOCPPMessageRepository } from '..';
+import { SequelizeOCPPMessageRepository, SequelizeTenantRepository } from '..';
 
 export class RepositoryStore {
   sequelizeInstance: Sequelize;
@@ -61,6 +62,7 @@ export class RepositoryStore {
   tariffRepository: ITariffRepository;
   transactionEventRepository: ITransactionEventRepository;
   variableMonitoringRepository: IVariableMonitoringRepository;
+  tenantRepository: ITenantRepository;
 
   constructor(config: SystemConfig, logger: Logger<ILogObj>, sequelizeInstance: Sequelize) {
     this.sequelizeInstance = sequelizeInstance;
@@ -143,5 +145,6 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     );
+    this.tenantRepository = new SequelizeTenantRepository(config, logger, sequelizeInstance);
   }
 }

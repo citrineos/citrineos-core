@@ -9,6 +9,9 @@ object_relationships:
         table:
           name: Authorizations
           schema: public
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
 array_relationships:
   - name: IdTokenAdditionalInfos
     using:
@@ -23,6 +26,13 @@ array_relationships:
         column: groupIdTokenId
         table:
           name: IdTokenInfos
+          schema: public
+  - name: LocalListAuthorizations
+    using:
+      foreign_key_constraint_on:
+        column: idTokenId
+        table:
+          name: LocalListAuthorizations
           schema: public
   - name: StartTransactions
     using:
@@ -45,3 +55,18 @@ array_relationships:
         table:
           name: TransactionEvents
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - idToken
+        - type
+        - id
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

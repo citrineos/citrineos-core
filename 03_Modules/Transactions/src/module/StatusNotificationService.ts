@@ -37,17 +37,22 @@ export class StatusNotificationService {
    * @param {StatusNotificationRequest} statusNotificationRequest
    */
   async processStatusNotification(
+    tenantId: number,
     stationId: string,
     statusNotificationRequest: OCPP2_0_1.StatusNotificationRequest,
   ) {
-    const chargingStation =
-      await this._locationRepository.readChargingStationByStationId(stationId);
+    const chargingStation = await this._locationRepository.readChargingStationByStationId(
+      tenantId,
+      stationId,
+    );
     if (chargingStation) {
       const statusNotification = StatusNotification.build({
+        tenantId,
         stationId,
         ...statusNotificationRequest,
       });
       await this._locationRepository.addStatusNotificationToChargingStation(
+        tenantId,
         stationId,
         statusNotification,
       );
@@ -57,8 +62,9 @@ export class StatusNotificationService {
       );
     }
 
-    const component = await this._componentRepository.readOnlyOneByQuery({
+    const component = await this._componentRepository.readOnlyOneByQuery(tenantId, {
       where: {
+        tenantId,
         name: 'Connector',
       },
       include: [
@@ -93,6 +99,7 @@ export class StatusNotificationService {
         ],
       };
       await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+        tenantId,
         reportDataType,
         stationId,
         statusNotificationRequest.timestamp,
@@ -101,23 +108,29 @@ export class StatusNotificationService {
   }
 
   async processOcpp16StatusNotification(
+    tenantId: number,
     stationId: string,
     statusNotificationRequest: OCPP1_6.StatusNotificationRequest,
   ) {
-    const chargingStation =
-      await this._locationRepository.readChargingStationByStationId(stationId);
+    const chargingStation = await this._locationRepository.readChargingStationByStationId(
+      tenantId,
+      stationId,
+    );
     if (chargingStation) {
       const statusNotification = StatusNotification.build({
+        tenantId,
         ...statusNotificationRequest,
         stationId,
         connectorStatus: statusNotificationRequest.status,
       });
       await this._locationRepository.addStatusNotificationToChargingStation(
+        tenantId,
         stationId,
         statusNotification,
       );
 
       const connector = {
+        tenantId,
         connectorId: statusNotificationRequest.connectorId,
         stationId,
         status: statusNotificationRequest.status,
@@ -129,7 +142,7 @@ export class StatusNotificationService {
         vendorId: statusNotificationRequest.vendorId,
         vendorErrorCode: statusNotificationRequest.vendorErrorCode,
       } as Connector;
-      await this._locationRepository.createOrUpdateConnector(connector);
+      await this._locationRepository.createOrUpdateConnector(tenantId, connector);
     } else {
       this._logger.warn(
         `Charging station ${stationId} not found. Status notification cannot be associated with a charging station.`,

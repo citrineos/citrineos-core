@@ -29,6 +29,8 @@ describe('BootService', () => {
       bootRetryInterval: 0,
       endpointPrefix: '',
       heartbeatInterval: 0,
+      requests: [],
+      responses: [],
       ocpp2_0_1: {
         unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
         getBaseReportOnPending: false,

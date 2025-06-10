@@ -5,6 +5,9 @@ object_relationships:
   - name: ChargingProfile
     using:
       foreign_key_constraint_on: chargingProfileDatabaseId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
 array_relationships:
   - name: SalesTariffs
     using:
@@ -13,3 +16,25 @@ array_relationships:
         table:
           name: SalesTariffs
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - chargingRateUnit
+        - startSchedule
+        - stationId
+        - chargingProfileDatabaseId
+        - databaseId
+        - duration
+        - id
+        - tenantId
+        - chargingSchedulePeriod
+        - minChargingRate
+        - createdAt
+        - timeBase
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

@@ -2,6 +2,26 @@ table:
   name: VariableStatuses
   schema: public
 object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
   - name: VariableAttribute
     using:
       foreign_key_constraint_on: variableAttributeId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - status
+        - value
+        - id
+        - tenantId
+        - variableAttributeId
+        - statusInfo
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

@@ -7,10 +7,14 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   BadRequestError,
+  ConfigStoreFactory,
+  DEFAULT_TENANT_ID,
   HttpMethod,
   Namespace,
+  NotFoundError,
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
+  WebsocketServerConfig,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
@@ -23,7 +27,16 @@ import {
   ModelKeyQuerystring,
   ModelKeyQuerystringSchema,
   Subscription,
+  TenantQueryString,
+  TenantQuerySchema,
+  WebsocketGetQuerySchema,
+  WebsocketGetQuerystring,
 } from '@citrineos/data';
+import {
+  WebsocketDeleteQuerySchema,
+  WebsocketDeleteQuerystring,
+  WebsocketRequestSchema,
+} from '@citrineos/data/dist/interfaces/queries/Websocket';
 
 /**
  * Admin API for the OcppRouter.
@@ -52,10 +65,14 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
   @AsDataEndpoint(
     OCPP2_0_1_Namespace.Subscription,
     HttpMethod.Post,
-    undefined,
+    TenantQuerySchema,
     CreateSubscriptionSchema,
   )
-  async postSubscription(request: FastifyRequest<{ Body: Subscription }>): Promise<number> {
+  async postSubscription(
+    request: FastifyRequest<{ Body: Subscription; Querystring: TenantQueryString }>,
+  ): Promise<number> {
+    const tenantId = request.query.tenantId;
+    request.body.tenantId = tenantId;
     if (
       !request.body.onClose &&
       !request.body.onConnect &&
@@ -67,7 +84,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
       );
     }
     return this._module.subscriptionRepository
-      .create(request.body as Subscription)
+      .create(tenantId, request.body as Subscription)
       .then((subscription) => subscription?.id);
   }
 
@@ -75,16 +92,76 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
   async getSubscriptionsByChargingStation(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Subscription[]> {
-    return this._module.subscriptionRepository.readAllByStationId(request.query.stationId);
+    return this._module.subscriptionRepository.readAllByStationId(
+      request.query.tenantId,
+      request.query.stationId,
+    );
   }
 
   @AsDataEndpoint(OCPP2_0_1_Namespace.Subscription, HttpMethod.Delete, ModelKeyQuerystringSchema)
   async deleteSubscriptionById(
     request: FastifyRequest<{ Querystring: ModelKeyQuerystring }>,
   ): Promise<boolean> {
+    const tenantId = request.query.tenantId ?? DEFAULT_TENANT_ID;
     return this._module.subscriptionRepository
-      .deleteByKey(request.query.id.toString())
+      .deleteByKey(tenantId, request.query.id.toString())
       .then(() => true);
+  }
+
+  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Get, WebsocketGetQuerySchema)
+  async getWebsocketConfigurations(
+    request: FastifyRequest<{ Querystring: WebsocketGetQuerystring }>,
+  ): Promise<WebsocketServerConfig[] | WebsocketServerConfig> {
+    if (request.query.id) {
+      const websocketConfig = this._module.config.util.networkConnection.websocketServers.find(
+        (ws) => ws.id === request.query.id,
+      );
+
+      if (!websocketConfig) {
+        throw new NotFoundError(
+          `Could not find websocket configuration with id ${request.query.id}`,
+        );
+      } else {
+        return websocketConfig;
+      }
+    } else {
+      // TODO when available (coming soon in a separate feature), filter by tenantId if the tenantId query param exists
+      return this._module.config.util.networkConnection.websocketServers;
+    }
+  }
+
+  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Post, undefined, WebsocketRequestSchema)
+  async createWebsocketConfiguration(
+    request: FastifyRequest<{ Body: WebsocketServerConfig }>,
+  ): Promise<WebsocketServerConfig> {
+    const existingConfig = this._module.config.util.networkConnection.websocketServers.find(
+      (ws) => ws.id === request.body.id,
+    );
+
+    if (existingConfig) {
+      throw new BadRequestError(
+        `Websocket configuration with id ${request.body.id} already exists.`,
+      );
+    } else {
+      this._module.config.util.networkConnection.websocketServers.push(request.body);
+      await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
+      return request.body;
+    }
+  }
+
+  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Delete, WebsocketDeleteQuerySchema)
+  async deleteWebsocketConfiguration(
+    request: FastifyRequest<{ Querystring: WebsocketDeleteQuerystring }>,
+  ): Promise<void> {
+    const existingConfigIndex =
+      this._module.config.util.networkConnection.websocketServers.findIndex(
+        (ws) => ws.id === request.query.id,
+      );
+
+    if (existingConfigIndex) {
+      this._module.config.util.networkConnection.websocketServers.splice(existingConfigIndex, 1);
+      await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
+    }
   }
 
   /**

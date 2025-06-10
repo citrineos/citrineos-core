@@ -28,13 +28,13 @@ export class CostNotifier extends Scheduler {
    * @param {string} stationId - The identifier of the client connection.
    * @param {string} transactionId - The identifier of the transaction.
    * @param {number} intervalSeconds - The costUpdated interval in seconds.
-   * @param {string} tenantId - The identifier of the tenant.
+   * @param {number} tenantId - The identifier of the tenant.
    * @return {void} This function does not return anything.
    */
   notifyWhileActive(
     stationId: string,
     transactionId: string,
-    tenantId: string,
+    tenantId: number,
     intervalSeconds: number,
   ): void {
     this._logger.debug(
@@ -47,13 +47,18 @@ export class CostNotifier extends Scheduler {
     );
   }
 
-  async calculateCostAndNotify(transaction: Transaction, tenantId: string): Promise<void> {
+  async calculateCostAndNotify(transaction: Transaction, tenantId: number): Promise<void> {
     const cost = await this._costCalculator.calculateTotalCost(
+      tenantId,
       transaction.stationId,
       transaction.id,
     );
 
-    await this._transactionEventRepository.updateTransactionTotalCostById(cost, transaction.id);
+    await this._transactionEventRepository.updateTransactionTotalCostById(
+      tenantId,
+      cost,
+      transaction.id,
+    );
 
     await this._module.sendCall(
       transaction.stationId,
@@ -70,10 +75,11 @@ export class CostNotifier extends Scheduler {
     );
   }
 
-  private async _tryNotify(stationId: string, transactionId: string, tenantId: string) {
+  private async _tryNotify(stationId: string, transactionId: string, tenantId: number) {
     try {
       const transaction =
         await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
+          tenantId,
           stationId,
           transactionId,
         );

@@ -17,8 +17,9 @@ export class SequelizeMessageInfoRepository
     super(config, MessageInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async deactivateAllByStationId(stationId: string): Promise<void> {
+  async deactivateAllByStationId(tenantId: number, stationId: string): Promise<void> {
     await this.updateAllByQuery(
+      tenantId,
       {
         active: false,
       },
@@ -33,6 +34,7 @@ export class SequelizeMessageInfoRepository
   }
 
   async createOrUpdateByMessageInfoTypeAndStationId(
+    tenantId: number,
     message: OCPP2_0_1.MessageInfoType,
     stationId: string,
     componentId?: number,
@@ -47,6 +49,7 @@ export class SequelizeMessageInfoRepository
       });
 
       const messageInfo = {
+        tenantId: tenantId,
         stationId: stationId,
         displayComponentId: componentId ?? null,
         id: message.id,
@@ -60,6 +63,7 @@ export class SequelizeMessageInfoRepository
       };
       if (savedMessageInfo) {
         return (await this.updateByKey(
+          tenantId,
           messageInfo,
           savedMessageInfo.dataValues.databaseId,
         )) as MessageInfo;

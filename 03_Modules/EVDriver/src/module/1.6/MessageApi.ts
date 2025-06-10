@@ -11,6 +11,7 @@ import {
   AbstractModuleApi,
   AsMessageEndpoint,
   CallAction,
+  DEFAULT_TENANT_ID,
   IMessageConfirmation,
   OCPP1_6,
   OCPP1_6_CallAction,
@@ -38,9 +39,9 @@ export class EVDriverOcpp16Api
   )
   async remoteStartTransaction(
     identifier: string[],
-    tenantId: string,
     request: OCPP1_6.RemoteStartTransactionRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results = identifier.map((id) =>
       this._module.sendCall(
@@ -61,9 +62,9 @@ export class EVDriverOcpp16Api
   )
   async remoteStopTransaction(
     identifier: string[],
-    tenantId: string,
     request: OCPP1_6.RemoteStopTransactionRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results = identifier.map((id) =>
       this._module.sendCall(

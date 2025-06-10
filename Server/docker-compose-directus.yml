@@ -83,7 +83,13 @@ services:
       APP_ENV: 'directus'
       # Add AWS region (required by the SDK)
       AWS_REGION: us-east-1
-      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
+      # Bootstrap Configuration
+      CITRINEOS_CONFIG_FILENAME: 'config.json'
+      CITRINEOS_FILE_ACCESS_TYPE: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_HOST: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_PORT: '8055'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS: 'false'
 
     depends_on:
       ocpp-db:

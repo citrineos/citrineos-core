@@ -18,12 +18,14 @@ export class SequelizeChangeConfigurationRepository
   }
 
   async createOrUpdateChangeConfiguration(
+    tenantId: number,
     configuration: ChangeConfiguration,
   ): Promise<ChangeConfiguration | undefined> {
     let changeConfiguration: ChangeConfiguration | undefined;
     await this.s.transaction(async (sequelizeTransaction) => {
-      const [savedConfig, created] = await this.readOrCreateByQuery({
+      const [savedConfig, created] = await this.readOrCreateByQuery(tenantId, {
         where: {
+          tenantId: tenantId,
           stationId: configuration.stationId,
           key: configuration.key,
         },

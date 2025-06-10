@@ -1,0 +1,27 @@
+table:
+  name: LocalListVersionAuthorizations
+  schema: public
+object_relationships:
+  - name: LocalListAuthorization
+    using:
+      foreign_key_constraint_on: authorizationId
+  - name: LocalListVersion
+    using:
+      foreign_key_constraint_on: localListVersionId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - authorizationId
+        - localListVersionId
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

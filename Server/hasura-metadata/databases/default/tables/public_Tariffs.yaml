@@ -1,3 +1,28 @@
 table:
   name: Tariffs
   schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - currency
+        - stationId
+        - id
+        - tenantId
+        - authorizationAmount
+        - paymentFee
+        - pricePerKwh
+        - pricePerMin
+        - pricePerSession
+        - taxRate
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

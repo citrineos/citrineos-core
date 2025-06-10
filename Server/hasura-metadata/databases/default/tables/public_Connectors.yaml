@@ -5,6 +5,9 @@ object_relationships:
   - name: ChargingStation
     using:
       foreign_key_constraint_on: stationId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
 array_relationships:
   - name: StartTransactions
     using:
@@ -13,3 +16,24 @@ array_relationships:
         table:
           name: StartTransactions
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - info
+        - stationId
+        - vendorErrorCode
+        - vendorId
+        - connectorId
+        - id
+        - tenantId
+        - createdAt
+        - timestamp
+        - updatedAt
+        - errorCode
+        - status
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

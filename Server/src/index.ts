@@ -6,9 +6,11 @@
 import {
   type AbstractModule,
   Ajv,
+  BootstrapConfig,
   ConfigStoreFactory,
   EventGroup,
   eventGroupFromString,
+  IApiAuthProvider,
   type IAuthenticator,
   type ICache,
   type IFileStorage,
@@ -16,9 +18,10 @@ import {
   type IMessageSender,
   type IModule,
   type IModuleApi,
+  loadBootstrapConfig,
   type SystemConfig,
 } from '@citrineos/base';
-import { MonitoringModule, MonitoringOcpp201Api, MonitoringDataApi } from '@citrineos/monitoring';
+import { MonitoringDataApi, MonitoringModule, MonitoringOcpp201Api } from '@citrineos/monitoring';
 import {
   Authenticator,
   BasicAuthenticationFilter,
@@ -27,30 +30,31 @@ import {
   DirectusUtil,
   IdGenerator,
   initSwagger,
+  LocalBypassAuthProvider,
   MemoryCache,
   NetworkProfileFilter,
+  OIDCAuthProvider,
   RabbitMqReceiver,
   RabbitMqSender,
   RedisCache,
   UnknownStationFilter,
   WebsocketNetworkConnection,
-  S3Storage,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import addFormats from 'ajv-formats';
 import fastify, { type FastifyInstance, RouteOptions } from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
-import { systemConfig } from './config';
+import { getSystemConfig } from './config';
 import {
-  ConfigurationModule,
-  ConfigurationOcpp201Api,
-  ConfigurationOcpp16Api,
   ConfigurationDataApi,
+  ConfigurationModule,
+  ConfigurationOcpp16Api,
+  ConfigurationOcpp201Api,
 } from '@citrineos/configuration';
 import {
+  TransactionsDataApi,
   TransactionsModule,
   TransactionsOcpp201Api,
-  TransactionsDataApi,
 } from '@citrineos/transactions';
 import {
   CertificatesDataApi,
@@ -58,10 +62,10 @@ import {
   CertificatesOcpp201Api,
 } from '@citrineos/certificates';
 import {
-  EVDriverModule,
-  EVDriverOcpp201Api,
-  EVDriverOcpp16Api,
   EVDriverDataApi,
+  EVDriverModule,
+  EVDriverOcpp16Api,
+  EVDriverOcpp201Api,
 } from '@citrineos/evdriver';
 import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
 import {
@@ -78,11 +82,13 @@ import {
 } from 'fastify/types/schema';
 import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocpprouter';
 import cors from '@fastify/cors';
+import ApiAuthPlugin from '@citrineos/util/dist/authorization/ApiAuthPlugin';
 
 export class CitrineOSServer {
   /**
    * Fields
    */
+  private readonly _bootstrapConfig: BootstrapConfig;
   private readonly _config: SystemConfig;
   private readonly _logger: Logger<ILogObj>;
   private readonly _server: FastifyInstance;
@@ -112,16 +118,17 @@ export class CitrineOSServer {
    * @param {FastifyInstance} server - optional Fastify server instance
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
    * @param {ICache} cache - cache
-   * @param {IFileStorage} fileStorage - file storage
+   * @param {IFileStorage} _fileStorage - file storage
    */
   // todo rename event group to type
   constructor(
     appName: string,
+    bootstrapConfig: BootstrapConfig,
     config: SystemConfig,
     server?: FastifyInstance,
     ajv?: Ajv,
     cache?: ICache,
-    fileStorage?: IFileStorage,
+    _fileStorage?: IFileStorage,
   ) {
     // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
@@ -130,6 +137,7 @@ export class CitrineOSServer {
     }
 
     this.appName = appName;
+    this._bootstrapConfig = bootstrapConfig;
     this._config = config;
     this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
@@ -139,6 +147,7 @@ export class CitrineOSServer {
       methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed HTTP methods
     });
 
+    console.log('Bootstrap configuration loaded');
     // Add health check
     this.initHealthCheck();
 
@@ -158,7 +167,7 @@ export class CitrineOSServer {
       .catch((error) => this._logger.error('Could not initialize swagger', error));
 
     // Add Directus Message API flow creation if enabled
-    if (this._config.util.fileAccess.directus?.generateFlows) {
+    if (this._bootstrapConfig.fileAccess.directus?.generateFlows) {
       const directusUtil = ConfigStoreFactory.getInstance() as DirectusUtil;
       this._server.addHook('onRoute', (routeOptions: RouteOptions) => {
         directusUtil!
@@ -179,6 +188,9 @@ export class CitrineOSServer {
 
     // Register AJV for schema validation
     this.registerAjv();
+
+    // Register API authentication
+    this.registerApiAuth();
 
     // Initialize repository store
     this.initRepositoryStore();
@@ -331,6 +343,7 @@ export class CitrineOSServer {
                     return value;
                   });
                 }
+
                 if (logObj._meta) {
                   const { path, name, date, logLevelId, logLevelName } = logObj._meta;
                   const { _meta, ...rest } = logObj;
@@ -382,6 +395,20 @@ export class CitrineOSServer {
       routeSchema: FastifyRouteSchemaDef<any>,
     ) => this._ajv?.compile(routeSchema.schema) as FastifyValidationResult;
     this._server.setValidatorCompiler(fastifySchemaCompiler);
+  }
+
+  private registerApiAuth() {
+    const authProvider = this.initApiAuthProvider();
+    this._server.register(ApiAuthPlugin, {
+      provider: authProvider,
+      options: {
+        excludedRoutes: [
+          '/health', // Health check endpoint
+          '/docs', // API documentation
+        ],
+        debug: this._config.logLevel <= 2, // Enable debug logs in dev mode
+      },
+    });
   }
 
   private initNetworkConnection() {
@@ -469,6 +496,17 @@ export class CitrineOSServer {
     if (this.eventGroup !== EventGroup.All) {
       this.host = this._config.centralSystem.host as string;
       this.port = this._config.centralSystem.port as number;
+    }
+  }
+
+  private initApiAuthProvider(): IApiAuthProvider {
+    this._logger.info('Initializing API authentication provider,', this._config.util.authProvider);
+    if (this._config.util.authProvider.oidc) {
+      return new OIDCAuthProvider(this._config.util.authProvider.oidc, this._logger);
+    } else if (this._config.util.authProvider.localByPass) {
+      return new LocalBypassAuthProvider(this._logger);
+    } else {
+      throw new Error('No valid API authentication provider configured');
     }
   }
 
@@ -689,7 +727,9 @@ export class CitrineOSServer {
 }
 
 async function main() {
-  const server = new CitrineOSServer(process.env.APP_NAME as EventGroup, await systemConfig);
+  const bootstrapConfig = loadBootstrapConfig();
+  const config = await getSystemConfig(bootstrapConfig);
+  const server = new CitrineOSServer(process.env.APP_NAME as EventGroup, bootstrapConfig, config);
   server.run().catch((error: any) => {
     console.error(error);
     process.exit(1);

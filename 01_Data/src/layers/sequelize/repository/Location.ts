@@ -58,45 +58,55 @@ export class SequelizeLocationRepository
       : new SequelizeRepository<Connector>(config, Connector.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async readLocationById(id: number): Promise<Location | undefined> {
-    return await this.readOnlyOneByQuery({
+  async readLocationById(tenantId: number, id: number): Promise<Location | undefined> {
+    return await this.readOnlyOneByQuery(tenantId, {
       where: { id },
       include: [ChargingStation],
     });
   }
 
-  async readChargingStationByStationId(stationId: string): Promise<ChargingStation | undefined> {
-    return await this.chargingStation.readByKey(stationId);
+  async readChargingStationByStationId(
+    tenantId: number,
+    stationId: string,
+  ): Promise<ChargingStation | undefined> {
+    return await this.chargingStation.readByKey(tenantId, stationId);
   }
 
   async setChargingStationIsOnlineAndOCPPVersion(
+    tenantId: number,
     stationId: string,
     isOnline: boolean,
     ocppVersion: OCPPVersion | null,
   ): Promise<ChargingStation | undefined> {
     return await this.chargingStation.updateByKey(
+      tenantId,
       { isOnline: isOnline, protocol: ocppVersion },
       stationId,
     );
   }
 
-  async doesChargingStationExistByStationId(stationId: string): Promise<boolean> {
-    return await this.chargingStation.existsByKey(stationId);
+  async doesChargingStationExistByStationId(tenantId: number, stationId: string): Promise<boolean> {
+    return await this.chargingStation.existsByKey(tenantId, stationId);
   }
 
   async addStatusNotificationToChargingStation(
+    tenantId: number,
     stationId: string,
     statusNotification: StatusNotification,
   ): Promise<void> {
-    const savedStatusNotification = await this.statusNotification.create(statusNotification);
+    const savedStatusNotification = await this.statusNotification.create(
+      tenantId,
+      statusNotification,
+    );
     try {
-      await this.updateLatestStatusNotification(stationId, savedStatusNotification);
+      await this.updateLatestStatusNotification(tenantId, stationId, savedStatusNotification);
     } catch (e: any) {
       this.logger.error(`Failed to update latest status notification with error: ${e.message}`, e);
     }
   }
 
   async updateLatestStatusNotification(
+    tenantId: number,
     stationId: string,
     statusNotification: StatusNotification,
   ): Promise<void> {
@@ -106,7 +116,7 @@ export class SequelizeLocationRepository
     // delete operation doesn't support "include" in query
     // so we need to find them at first and then delete
     const existingLatestStatusNotifications: LatestStatusNotification[] =
-      await this.latestStatusNotification.readAllByQuery({
+      await this.latestStatusNotification.readAllByQuery(tenantId, {
         where: {
           stationId,
         },
@@ -122,7 +132,7 @@ export class SequelizeLocationRepository
         ],
       });
     const idsToDelete = existingLatestStatusNotifications.map((l) => l.id);
-    await this.latestStatusNotification.deleteAllByQuery({
+    await this.latestStatusNotification.deleteAllByQuery(tenantId, {
       where: {
         stationId,
         id: {
@@ -131,14 +141,19 @@ export class SequelizeLocationRepository
       },
     });
     await this.latestStatusNotification.create(
+      tenantId,
       LatestStatusNotification.build({
+        tenantId,
         stationId,
         statusNotificationId,
       }),
     );
   }
 
-  async getChargingStationsByIds(stationIds: string[]): Promise<ChargingStation[]> {
+  async getChargingStationsByIds(
+    tenantId: number,
+    stationIds: string[],
+  ): Promise<ChargingStation[]> {
     const query = {
       where: {
         id: {
@@ -147,14 +162,19 @@ export class SequelizeLocationRepository
       },
     };
 
-    return this.chargingStation.readAllByQuery(query);
+    return this.chargingStation.readAllByQuery(tenantId, query);
   }
 
-  async createOrUpdateLocationWithChargingStations(location: Partial<Location>): Promise<Location> {
+  async createOrUpdateLocationWithChargingStations(
+    tenantId: number,
+    location: Partial<Location>,
+  ): Promise<Location> {
+    location.tenantId = tenantId;
     let savedLocation;
     if (location.id) {
-      const result = await this.readOrCreateByQuery({
+      const result = await this.readOrCreateByQuery(tenantId, {
         where: {
+          tenantId,
           id: location.id,
         },
         defaults: {
@@ -181,27 +201,32 @@ export class SequelizeLocationRepository
         values.country = location.country ?? undefined;
         values.coordinates = location.coordinates ?? undefined;
 
-        await this.updateByKey({ ...values }, savedLocation.id);
+        await this.updateByKey(tenantId, { ...values }, savedLocation.id);
       }
     } else {
-      savedLocation = await this.create(Location.build({ ...location }));
+      savedLocation = await this.create(tenantId, Location.build({ ...location }));
     }
 
     if (location.chargingPool && location.chargingPool.length > 0) {
       for (const chargingStation of location.chargingPool) {
         chargingStation.locationId = savedLocation.id;
-        await this.createOrUpdateChargingStation(chargingStation);
+        await this.createOrUpdateChargingStation(tenantId, chargingStation);
       }
     }
 
     return savedLocation.reload({ include: ChargingStation });
   }
 
-  async createOrUpdateChargingStation(chargingStation: ChargingStation): Promise<ChargingStation> {
+  async createOrUpdateChargingStation(
+    tenantId: number,
+    chargingStation: ChargingStation,
+  ): Promise<ChargingStation> {
+    chargingStation.tenantId = tenantId;
     if (chargingStation.id) {
       const [savedChargingStation, chargingStationCreated] =
-        await this.chargingStation.readOrCreateByQuery({
+        await this.chargingStation.readOrCreateByQuery(tenantId, {
           where: {
+            tenantId,
             id: chargingStation.id,
           },
           defaults: {
@@ -219,6 +244,7 @@ export class SequelizeLocationRepository
         });
       if (!chargingStationCreated) {
         await this.chargingStation.updateByKey(
+          tenantId,
           {
             locationId: chargingStation.locationId,
             chargePointVendor: chargingStation.chargePointVendor,
@@ -237,25 +263,35 @@ export class SequelizeLocationRepository
 
       return savedChargingStation;
     } else {
-      return await this.chargingStation.create(ChargingStation.build({ ...chargingStation }));
+      return await this.chargingStation.create(
+        tenantId,
+        ChargingStation.build({ ...chargingStation }),
+      );
     }
   }
 
-  async createOrUpdateConnector(connector: Connector): Promise<Connector | undefined> {
+  async createOrUpdateConnector(
+    tenantId: number,
+    connector: Connector,
+  ): Promise<Connector | undefined> {
     let result;
     await this.s.transaction(async (sequelizeTransaction) => {
-      const [savedConnector, connectorCreated] = await this.connector.readOrCreateByQuery({
-        where: {
-          stationId: connector.stationId,
-          connectorId: connector.connectorId,
+      const [savedConnector, connectorCreated] = await this.connector.readOrCreateByQuery(
+        tenantId,
+        {
+          where: {
+            tenantId,
+            stationId: connector.stationId,
+            connectorId: connector.connectorId,
+          },
+          defaults: {
+            ...connector,
+          },
+          transaction: sequelizeTransaction,
         },
-        defaults: {
-          ...connector,
-        },
-        transaction: sequelizeTransaction,
-      });
+      );
       if (!connectorCreated) {
-        const updatedConnectors = await this.connector.updateAllByQuery(connector, {
+        const updatedConnectors = await this.connector.updateAllByQuery(tenantId, connector, {
           where: {
             id: savedConnector.id,
           },

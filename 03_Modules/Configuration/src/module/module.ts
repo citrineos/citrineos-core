@@ -56,34 +56,9 @@ import { BootNotificationService } from './BootNotificationService';
 export class ConfigurationModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
 
-  _requests: CallAction[] = [
-    OCPP2_0_1_CallAction.BootNotification,
-    OCPP2_0_1_CallAction.DataTransfer,
-    OCPP2_0_1_CallAction.FirmwareStatusNotification,
-    OCPP2_0_1_CallAction.Heartbeat,
-    OCPP2_0_1_CallAction.NotifyDisplayMessages,
-    OCPP2_0_1_CallAction.PublishFirmwareStatusNotification,
-    OCPP1_6_CallAction.Heartbeat,
-    OCPP1_6_CallAction.BootNotification,
-  ];
+  _requests: CallAction[] = [];
 
-  _responses: CallAction[] = [
-    OCPP2_0_1_CallAction.ChangeAvailability,
-    OCPP2_0_1_CallAction.ClearDisplayMessage,
-    OCPP2_0_1_CallAction.GetDisplayMessages,
-    OCPP2_0_1_CallAction.PublishFirmware,
-    OCPP2_0_1_CallAction.Reset,
-    OCPP2_0_1_CallAction.SetDisplayMessage,
-    OCPP2_0_1_CallAction.SetNetworkProfile,
-    OCPP2_0_1_CallAction.TriggerMessage,
-    OCPP2_0_1_CallAction.UnpublishFirmware,
-    OCPP2_0_1_CallAction.UpdateFirmware,
-    OCPP1_6_CallAction.ChangeAvailability,
-    OCPP1_6_CallAction.ChangeConfiguration,
-    OCPP1_6_CallAction.GetConfiguration,
-    OCPP1_6_CallAction.Reset,
-    OCPP1_6_CallAction.TriggerMessage,
-  ];
+  _responses: CallAction[] = [];
 
   protected _bootRepository: IBootRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -164,6 +139,9 @@ export class ConfigurationModule extends AbstractModule {
       logger,
     );
 
+    this._requests = config.modules.configuration.requests;
+    this._responses = config.modules.configuration.responses;
+
     this._bootRepository =
       bootRepository || new sequelize.SequelizeBootRepository(config, this._logger);
     this._deviceModelRepository =
@@ -233,7 +211,7 @@ export class ConfigurationModule extends AbstractModule {
     const chargingStation = message.payload.chargingStation;
 
     const bootNotificationResponse: OCPP2_0_1.BootNotificationResponse =
-      await this._bootService.createBootNotificationResponse(stationId);
+      await this._bootService.createBootNotificationResponse(tenantId, stationId);
 
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
     const cachedBootStatus: OCPP2_0_1.RegistrationStatusEnumType | null = await this._cache.get(
@@ -252,7 +230,12 @@ export class ConfigurationModule extends AbstractModule {
       await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
     // Update or create charging station
-    await this._deviceModelService.updateDeviceModel(chargingStation, stationId, timestamp);
+    await this._deviceModelService.updateDeviceModel(
+      chargingStation,
+      tenantId,
+      stationId,
+      timestamp,
+    );
 
     if (!bootNotificationResponseMessageConfirmation.success) {
       throw new Error('BootNotification failed: ' + bootNotificationResponseMessageConfirmation);
@@ -269,6 +252,7 @@ export class ConfigurationModule extends AbstractModule {
     // Update charger-specific boot config with details of most recently sent BootNotificationResponse
     const bootConfigDbEntity: Boot = await this._bootService.updateBootConfig(
       bootNotificationResponse,
+      tenantId,
       stationId,
     );
 
@@ -325,12 +309,14 @@ export class ConfigurationModule extends AbstractModule {
       bootConfigDbEntity.variablesRejectedOnLastBoot = [];
 
       let setVariableData: OCPP2_0_1.SetVariableDataType[] =
-        await this._deviceModelRepository.readAllSetVariableByStationId(stationId);
+        await this._deviceModelRepository.readAllSetVariableByStationId(tenantId, stationId);
 
       // If ItemsPerMessageSetVariables not set, send all variables at once
       const itemsPerMessageSetVariables =
-        (await this._deviceModelService.getItemsPerMessageSetVariablesByStationId(stationId)) ??
-        setVariableData.length;
+        (await this._deviceModelService.getItemsPerMessageSetVariablesByStationId(
+          tenantId,
+          stationId,
+        )) ?? setVariableData.length;
 
       while (setVariableData.length > 0) {
         const correlationId = uuidv4();
@@ -436,17 +422,21 @@ export class ConfigurationModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('NotifyDisplayMessages received: ', message, props);
 
+    const tenantId = message.context.tenantId;
+
     const messageInfoTypes = message.payload.messageInfo as OCPP2_0_1.MessageInfoType[];
     for (const messageInfoType of messageInfoTypes) {
       let componentId: number | undefined;
       if (messageInfoType.display) {
         const component: Component = await this._deviceModelRepository.findOrCreateEvseAndComponent(
+          tenantId,
           messageInfoType.display,
-          message.context.tenantId,
+          message.context.stationId,
         );
         componentId = component.id;
       }
       await this._messageInfoRepository.createOrUpdateByMessageInfoTypeAndStationId(
+        tenantId,
         messageInfoType,
         message.context.stationId,
         componentId,
@@ -560,7 +550,10 @@ export class ConfigurationModule extends AbstractModule {
     // when charger station accepts the set message info request
     // we trigger a get all display messages request to update stored message info in db
     if (status === OCPP2_0_1.DisplayMessageStatusEnumType.Accepted) {
-      await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId);
+      await this._messageInfoRepository.deactivateAllByStationId(
+        message.context.tenantId,
+        message.context.stationId,
+      );
       await this.sendCall(
         message.context.stationId,
         message.context.tenantId,
@@ -568,6 +561,7 @@ export class ConfigurationModule extends AbstractModule {
         OCPP2_0_1_CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
+            message.context.tenantId,
             message.context.stationId,
             ChargingStationSequenceType.getDisplayMessages,
           ),
@@ -627,7 +621,10 @@ export class ConfigurationModule extends AbstractModule {
     // when charger station accepts the clear message info request
     // we trigger a get all display messages request to update stored message info in db
     if (status === OCPP2_0_1.ClearMessageStatusEnumType.Accepted) {
-      await this._messageInfoRepository.deactivateAllByStationId(message.context.stationId);
+      await this._messageInfoRepository.deactivateAllByStationId(
+        message.context.tenantId,
+        message.context.stationId,
+      );
       await this.sendCall(
         message.context.stationId,
         message.context.tenantId,
@@ -635,6 +632,7 @@ export class ConfigurationModule extends AbstractModule {
         OCPP2_0_1_CallAction.GetDisplayMessages,
         {
           requestId: await this._idGenerator.generateRequestId(
+            message.context.tenantId,
             message.context.stationId,
             ChargingStationSequenceType.getDisplayMessages,
           ),
@@ -676,7 +674,7 @@ export class ConfigurationModule extends AbstractModule {
     // 1. Send BootNotification response
     // Create BootNotification response
     const bootNotificationResponse: OCPP1_6.BootNotificationResponse =
-      await this._bootService.createOcpp16BootNotificationResponse(stationId);
+      await this._bootService.createOcpp16BootNotificationResponse(tenantId, stationId);
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
     const cachedBootStatus: OCPP1_6.BootNotificationResponseStatus | null = await this._cache.get(
       BOOT_STATUS,
@@ -694,7 +692,9 @@ export class ConfigurationModule extends AbstractModule {
     // Create or update charging station
     this._logger.debug(`Creating or updating charging station: ${stationId}`);
     await this._locationRepository.createOrUpdateChargingStation(
+      tenantId,
       ChargingStation.build({
+        tenantId,
         id: stationId,
         chargePointVendor: request.chargePointVendor,
         chargePointModel: request.chargePointModel,
@@ -725,6 +725,7 @@ export class ConfigurationModule extends AbstractModule {
     // Update boot with details of most recently sent BootNotificationResponse
     const bootEntity = await this._bootService.updateOcpp16BootConfig(
       bootNotificationResponse,
+      tenantId,
       stationId,
     );
 
@@ -741,7 +742,7 @@ export class ConfigurationModule extends AbstractModule {
     let getConfigurationsOnPending: boolean = true;
     // Change Configurations on charging station
     const configurations: ChangeConfiguration[] =
-      await this._changeConfigurationRepository.readAllByQuery({
+      await this._changeConfigurationRepository.readAllByQuery(tenantId, {
         where: {
           stationId,
         },
@@ -793,6 +794,7 @@ export class ConfigurationModule extends AbstractModule {
     }
     // Update configuration related fields on boot entity
     await this._bootRepository.updateByKey(
+      tenantId,
       {
         changeConfigurationsOnPending,
         getConfigurationsOnPending,
@@ -823,13 +825,14 @@ export class ConfigurationModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('OCPP 1.6 GetConfiguration response received:', message, props);
 
+    const tenantId = message.context.tenantId;
     const stationId = message.context.stationId;
     const configurations = message.payload.configurationKey;
 
     if (configurations && configurations.length > 0) {
       for (const config of configurations) {
         if (config.key) {
-          await this._changeConfigurationRepository.createOrUpdateChangeConfiguration({
+          await this._changeConfigurationRepository.createOrUpdateChangeConfiguration(tenantId, {
             stationId,
             key: config.key,
             value: config.value,
@@ -847,10 +850,11 @@ export class ConfigurationModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('OCPP 1.6 ChangeConfiguration response received:', message, props);
 
+    const tenantId = message.context.tenantId;
     const stationId = message.context.stationId;
     const correlationId = message.context.correlationId;
 
-    const request = await this._ocppMessageRepository.readOnlyOneByQuery({
+    const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
         stationId,
         correlationId,
@@ -877,11 +881,15 @@ export class ConfigurationModule extends AbstractModule {
       );
       return;
     } else {
-      const config = await this._changeConfigurationRepository.createOrUpdateChangeConfiguration({
-        stationId,
-        key,
-        value,
-      } as ChangeConfiguration);
+      const config = await this._changeConfigurationRepository.createOrUpdateChangeConfiguration(
+        tenantId,
+        {
+          tenantId,
+          stationId,
+          key,
+          value,
+        } as ChangeConfiguration,
+      );
       if (!config) {
         this._logger.error(
           `Failed to create or update configuration ${key}:${value} on ${stationId}`,

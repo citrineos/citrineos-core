@@ -3,13 +3,14 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { OCPP1_6_Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { Transaction } from './Transaction';
 import { IdToken } from '../Authorization';
 import { Connector } from '../Location';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class StartTransaction extends Model {
+export class StartTransaction extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.StartTransaction;
 
   @Column(DataType.STRING)

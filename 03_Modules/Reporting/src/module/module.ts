@@ -49,21 +49,9 @@ export class ReportingModule extends AbstractModule {
    * Fields
    */
 
-  _requests: CallAction[] = [
-    OCPP2_0_1_CallAction.LogStatusNotification,
-    OCPP2_0_1_CallAction.NotifyCustomerInformation,
-    OCPP2_0_1_CallAction.NotifyReport,
-    OCPP2_0_1_CallAction.SecurityEventNotification,
-    OCPP2_0_1_CallAction.NotifyMonitoringReport,
-  ];
+  _requests: CallAction[] = [];
 
-  _responses: CallAction[] = [
-    OCPP2_0_1_CallAction.CustomerInformation,
-    OCPP2_0_1_CallAction.GetLog,
-    OCPP2_0_1_CallAction.GetReport,
-    OCPP2_0_1_CallAction.GetBaseReport,
-    OCPP2_0_1_CallAction.GetMonitoringReport,
-  ];
+  _responses: CallAction[] = [];
 
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _securityEventRepository: ISecurityEventRepository;
@@ -114,6 +102,9 @@ export class ReportingModule extends AbstractModule {
       EventGroup.Reporting,
       logger,
     );
+
+    this._requests = config.modules.reporting.requests;
+    this._responses = config.modules.reporting.responses;
 
     this._deviceModelRepository =
       deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, this._logger);
@@ -175,10 +166,12 @@ export class ReportingModule extends AbstractModule {
       const stationId: string = message.context.stationId;
       const [component, variable] =
         await this._deviceModelRepository.findOrCreateEvseAndComponentAndVariable(
+          message.context.tenantId,
           monitorType.component,
           monitorType.variable,
         );
       await this._variableMonitoringRepository.createOrUpdateByMonitoringDataTypeAndStationId(
+        message.context.tenantId,
         monitorType,
         component ? component.id : null,
         variable ? variable.id : null,
@@ -212,6 +205,7 @@ export class ReportingModule extends AbstractModule {
       }
       const variableAttributes =
         await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+          message.context.tenantId,
           reportDataType,
           message.context.stationId,
           timestamp,
@@ -222,6 +216,7 @@ export class ReportingModule extends AbstractModule {
           include: [Component, Variable],
         });
         await this._deviceModelRepository.updateResultByStationId(
+          message.context.tenantId,
           {
             attributeType: variableAttribute.type,
             attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
@@ -269,6 +264,7 @@ export class ReportingModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('SecurityEventNotification request received:', message, props);
     await this._securityEventRepository.createByStationId(
+      message.context.tenantId,
       message.payload,
       message.context.stationId,
     );

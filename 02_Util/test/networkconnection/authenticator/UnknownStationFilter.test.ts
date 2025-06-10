@@ -4,6 +4,7 @@ import { faker } from '@faker-js/faker';
 import { UnknownStationFilter } from '../../../src/networkconnection/authenticator/UnknownStationFilter';
 import { aRequest } from '../../providers/IncomingMessageProvider';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 describe('UnknownStationFilter', () => {
   let locationRepository: jest.Mocked<ILocationRepository>;
@@ -28,6 +29,7 @@ describe('UnknownStationFilter', () => {
       givenStationExists();
 
       await filter.authenticate(
+        DEFAULT_TENANT_ID,
         stationId,
         aRequest(),
         anAuthenticationOptions({ allowUnknownChargingStations }),
@@ -41,13 +43,17 @@ describe('UnknownStationFilter', () => {
 
     await expect(
       filter.authenticate(
+        DEFAULT_TENANT_ID,
         stationId,
         aRequest(),
         anAuthenticationOptions({ allowUnknownChargingStations: false }),
       ),
     ).rejects.toThrow(`Unknown identifier ${stationId}`);
 
-    expect(locationRepository.doesChargingStationExistByStationId).toHaveBeenCalledWith(stationId);
+    expect(locationRepository.doesChargingStationExistByStationId).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
+      stationId,
+    );
   });
 
   it('should not reject unknown station when unknown stations are allowed', async () => {
@@ -55,6 +61,7 @@ describe('UnknownStationFilter', () => {
     givenStationDoesNotExist();
 
     await filter.authenticate(
+      DEFAULT_TENANT_ID,
       stationId,
       aRequest(),
       anAuthenticationOptions({ allowUnknownChargingStations: true }),

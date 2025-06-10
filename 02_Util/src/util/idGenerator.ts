@@ -11,7 +11,11 @@ export class IdGenerator {
     this._stationSequenceRepository = stationSequenceRepository;
   }
 
-  async generateRequestId(stationId: string, type: ChargingStationSequenceType): Promise<number> {
-    return this._stationSequenceRepository.getNextSequenceValue(stationId, type);
+  async generateRequestId(
+    tenantId: number,
+    stationId: string,
+    type: ChargingStationSequenceType,
+  ): Promise<number> {
+    return this._stationSequenceRepository.getNextSequenceValue(tenantId, stationId, type);
   }
 }

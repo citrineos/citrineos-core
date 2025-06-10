@@ -19,7 +19,7 @@ export class RequestBuilder {
   static buildCall(
     stationId: string,
     correlationId: string,
-    tenantId: string,
+    tenantId: number,
     action: CallAction,
     payload: OcppRequest,
     eventGroup: EventGroup,
@@ -46,7 +46,7 @@ export class RequestBuilder {
   static buildCallResult(
     stationId: string,
     correlationId: string,
-    tenantId: string,
+    tenantId: number,
     action: CallAction,
     payload: OcppResponse,
     eventGroup: EventGroup,
@@ -73,7 +73,7 @@ export class RequestBuilder {
   static buildCallError(
     stationId: string,
     correlationId: string,
-    tenantId: string,
+    tenantId: number,
     action: CallAction,
     payload: OcppError,
     eventGroup: EventGroup,

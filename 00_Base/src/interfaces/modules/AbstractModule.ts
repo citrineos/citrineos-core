@@ -12,7 +12,7 @@ import { SystemConfig } from '../../config/types';
 import { CallAction, ErrorCode, OcppError, OCPPVersionType } from '../../ocpp/rpc/message';
 import { RequestBuilder } from '../../util/request';
 import { ICache } from '../cache/cache';
-import { CacheNamespace, IWebsocketConnection } from '../cache/types';
+import { CacheNamespace, createIdentifier, IWebsocketConnection } from '../cache/types';
 import {
   EventGroup,
   HandlerProperties,
@@ -205,8 +205,8 @@ export abstract class AbstractModule implements IModule {
   /**
    * Sends a call with the specified identifier, tenantId, protocol, action, payload, and origin.
    *
-   * @param {string} identifier - The identifier of the call.
-   * @param {string} tenantId - The tenant ID.
+   * @param {string} stationId - The identifier of the station making the call.
+   * @param {number} tenantId - The identifier of the tenant.
    * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @param {CallAction} action - The action to be performed.
    * @param {OcppRequest} payload - The payload of the call.
@@ -216,8 +216,8 @@ export abstract class AbstractModule implements IModule {
    * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
    */
   public async sendCall(
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
     protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
@@ -225,7 +225,9 @@ export abstract class AbstractModule implements IModule {
     correlationId?: string,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
+    const identifier = createIdentifier(tenantId, stationId);
     const _correlationId: string = correlationId === undefined ? uuidv4() : correlationId;
+
     if (callbackUrl) {
       // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
       this._cache
@@ -254,7 +256,7 @@ export abstract class AbstractModule implements IModule {
         }
         return this._sender.sendRequest(
           RequestBuilder.buildCall(
-            identifier,
+            stationId,
             _correlationId,
             tenantId,
             action,
@@ -278,8 +280,9 @@ export abstract class AbstractModule implements IModule {
    * Sends the call result message and returns a Promise that resolves with the confirmation message.
    *
    * @param {string} correlationId - The correlation ID of the message.
-   * @param {string} identifier - The identifier of the message.
-   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} stationId - The identifier of the station making the call.
+   * @param {number} tenantId - The identifier of the tenant.
+   * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @param {CallAction} action - The call action.
    * @param {OcppResponse} payload - The payload of the call result message.
    * @param {MessageOrigin} origin - (optional) The origin of the message.
@@ -287,8 +290,8 @@ export abstract class AbstractModule implements IModule {
    */
   public sendCallResult(
     correlationId: string,
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
     protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppResponse,
@@ -296,7 +299,7 @@ export abstract class AbstractModule implements IModule {
   ): Promise<IMessageConfirmation> {
     return this._sender.sendResponse(
       RequestBuilder.buildCallResult(
-        identifier,
+        stationId,
         correlationId,
         tenantId,
         action,
@@ -328,8 +331,9 @@ export abstract class AbstractModule implements IModule {
    * Sends the call error message and returns a Promise that resolves with the confirmation message.
    *
    * @param {string} correlationId - The correlation ID of the message.
-   * @param {string} identifier - The identifier of the message.
-   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} stationId - The identifier of the station making the call.
+   * @param {number} tenantId - The identifier of the tenant.
+   * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @param {CallAction} action - The call action.
    * @param {OcppError} payload - The payload of the call error message.
    * @param {MessageOrigin} origin - (optional) The origin of the message.
@@ -337,8 +341,8 @@ export abstract class AbstractModule implements IModule {
    */
   public sendCallError(
     correlationId: string,
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
     protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppError,
@@ -346,7 +350,7 @@ export abstract class AbstractModule implements IModule {
   ): Promise<IMessageConfirmation> {
     return this._sender.sendResponse(
       RequestBuilder.buildCallError(
-        identifier,
+        stationId,
         correlationId,
         tenantId,
         action,
@@ -410,6 +414,7 @@ export abstract class AbstractModule implements IModule {
   private async _initHandler(requests: CallAction[], responses: CallAction[]): Promise<boolean> {
     this._handler.module = this;
 
+    await this.handler.initConnection();
     let success = await this._handler.subscribe(
       this._eventGroup.toString() + '_requests',
       requests,

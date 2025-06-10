@@ -58,20 +58,9 @@ import { CostCalculator } from './CostCalculator';
  * Component that handles transaction related messages.
  */
 export class TransactionsModule extends AbstractModule {
-  _requests: CallAction[] = [
-    OCPP2_0_1_CallAction.MeterValues,
-    OCPP2_0_1_CallAction.StatusNotification,
-    OCPP2_0_1_CallAction.TransactionEvent,
-    OCPP1_6_CallAction.MeterValues,
-    OCPP1_6_CallAction.StatusNotification,
-    OCPP1_6_CallAction.StartTransaction,
-    OCPP1_6_CallAction.StopTransaction,
-  ];
-  _responses: CallAction[] = [
-    OCPP2_0_1_CallAction.CostUpdated,
-    OCPP2_0_1_CallAction.GetTransactionStatus,
-  ];
+  _requests: CallAction[] = [];
 
+  _responses: CallAction[] = [];
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _authorizeRepository: IAuthorizationRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -183,6 +172,9 @@ export class TransactionsModule extends AbstractModule {
       logger,
     );
 
+    this._requests = config.modules.transactions.requests;
+    this._responses = config.modules.transactions.responses;
+
     this._fileStorage = fileStorage;
 
     this._transactionEventRepository =
@@ -271,9 +263,11 @@ export class TransactionsModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('Transaction event received:', message, props);
+    const tenantId: number = message.context.tenantId;
     const stationId: string = message.context.stationId;
 
     await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
+      tenantId,
       message.payload,
       stationId,
     );
@@ -283,6 +277,7 @@ export class TransactionsModule extends AbstractModule {
 
     if (message.payload.reservationId) {
       await this._transactionService.deactivateReservation(
+        tenantId,
         transactionId,
         message.payload.reservationId,
         stationId,
@@ -291,6 +286,7 @@ export class TransactionsModule extends AbstractModule {
 
     if (transactionEvent.idToken) {
       const response = await this._transactionService.authorizeIdToken(
+        tenantId,
         transactionEvent,
         message.context,
       );
@@ -316,6 +312,7 @@ export class TransactionsModule extends AbstractModule {
 
       const transaction: Transaction | undefined =
         await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
+          tenantId,
           stationId,
           transactionId,
         );
@@ -324,6 +321,7 @@ export class TransactionsModule extends AbstractModule {
         // I02 - Show EV Driver Running Total Cost During Charging
         if (transaction && transaction.isActive && this._sendCostUpdatedOnMeterValue) {
           response.totalCost = await this._costCalculator.calculateTotalCost(
+            tenantId,
             stationId,
             transaction.id,
             transaction.totalKwh,
@@ -332,7 +330,8 @@ export class TransactionsModule extends AbstractModule {
 
         // I06 - Update Tariff Information During Transaction
         const tariffAvailableAttributes: VariableAttribute[] =
-          await this._deviceModelRepository.readAllByQuerystring({
+          await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+            tenantId,
             stationId: stationId,
             component_name: 'TariffCostCtrlr',
             variable_instance: 'Tariff',
@@ -352,6 +351,7 @@ export class TransactionsModule extends AbstractModule {
 
       if (message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Ended && transaction) {
         response.totalCost = await this._costCalculator.calculateTotalCost(
+          tenantId,
           stationId,
           transaction.id,
           transaction.totalKwh,
@@ -361,6 +361,7 @@ export class TransactionsModule extends AbstractModule {
       // Store total cost in db
       if (response.totalCost && transaction) {
         await this._transactionEventRepository.updateTransactionTotalCostById(
+          tenantId,
           response.totalCost,
           transaction.id,
         );
@@ -368,6 +369,7 @@ export class TransactionsModule extends AbstractModule {
 
       if (transactionEvent.meterValue) {
         const meterValuesValid = await this._signedMeterValuesUtil.validateMeterValues(
+          tenantId,
           stationId,
           transactionEvent.meterValue,
         );
@@ -394,6 +396,7 @@ export class TransactionsModule extends AbstractModule {
     // TODO: Meter values can be triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
 
     const meterValues = message.payload.meterValue;
+    const tenantId = message.context.tenantId;
     const stationId = message.context.stationId;
     const evseId = message.payload.evseId;
 
@@ -401,6 +404,7 @@ export class TransactionsModule extends AbstractModule {
     if (this._sendCostUpdatedOnMeterValue && evseId !== 0) {
       const activeTransaction: Transaction | undefined =
         await this.transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
+          tenantId,
           stationId,
           evseId,
         );
@@ -412,7 +416,11 @@ export class TransactionsModule extends AbstractModule {
         );
       }
 
-      await this._transactionService.createMeterValues(meterValues, activeTransaction?.id);
+      await this._transactionService.createMeterValues(
+        tenantId,
+        meterValues,
+        activeTransaction?.id,
+      );
 
       if (activeTransaction) {
         await this._costNotifier.calculateCostAndNotify(
@@ -421,10 +429,11 @@ export class TransactionsModule extends AbstractModule {
         );
       }
     } else {
-      await this._transactionService.createMeterValues(meterValues);
+      await this._transactionService.createMeterValues(tenantId, meterValues);
     }
 
     const meterValuesValid = await this._signedMeterValuesUtil.validateMeterValues(
+      tenantId,
       stationId,
       meterValues,
     );
@@ -453,6 +462,7 @@ export class TransactionsModule extends AbstractModule {
     this._logger.debug('StatusNotification received:', message, props);
 
     await this._statusNotificationService.processStatusNotification(
+      message.context.tenantId,
       message.context.stationId,
       message.payload,
     );
@@ -485,6 +495,7 @@ export class TransactionsModule extends AbstractModule {
     const response = message.payload;
     if (response.ongoingIndicator !== null && response.ongoingIndicator !== undefined) {
       await this._transactionService.updateTransactionStatus(
+        message.context.tenantId,
         message.context.stationId,
         message.context.correlationId,
         response.ongoingIndicator,
@@ -504,6 +515,7 @@ export class TransactionsModule extends AbstractModule {
     this._logger.debug('StatusNotification request received:', message, props);
 
     await this._statusNotificationService.processOcpp16StatusNotification(
+      message.context.tenantId,
       message.context.stationId,
       message.payload,
     );
@@ -521,6 +533,7 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('MeterValues request received:', message, props);
 
+    const tenantId = message.context.tenantId;
     const stationId = message.context.stationId;
     const connectorId = message.payload.connectorId;
     const transactionId = message.payload.transactionId;
@@ -533,6 +546,7 @@ export class TransactionsModule extends AbstractModule {
           if (meterValue.sampledValue && meterValue.sampledValue.length > 0) {
             meterValueEntities.push(
               MeterValue.build({
+                tenantId,
                 ...meterValue,
                 connectorId,
               }),
@@ -541,6 +555,7 @@ export class TransactionsModule extends AbstractModule {
         }
         if (meterValueEntities.length > 0) {
           await this._transactionEventRepository.updateTransactionByMeterValues(
+            tenantId,
             meterValueEntities,
             stationId,
             transactionId,
@@ -560,11 +575,12 @@ export class TransactionsModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('OCPP 1.6 StartTransaction request received:', message, props);
+    const tenantId = message.context.tenantId;
     const stationId = message.context.stationId;
     const request = message.payload;
 
     // Authorize
-    const response = await this._transactionService.authorizeOcpp16IdToken(request.idTag);
+    const response = await this._transactionService.authorizeOcpp16IdToken(tenantId, request.idTag);
 
     // Send response to charger
     if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
@@ -574,6 +590,7 @@ export class TransactionsModule extends AbstractModule {
         // Create transaction
         const newTransaction =
           await this._transactionEventRepository.createTransactionByStartTransaction(
+            tenantId,
             request,
             stationId,
           );
@@ -590,6 +607,7 @@ export class TransactionsModule extends AbstractModule {
     // Deactivate reservation
     if (request.reservationId) {
       await this._transactionService.deactivateReservation(
+        tenantId,
         response.transactionId.toString(),
         request.reservationId,
         stationId,
@@ -604,11 +622,12 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('OCPP 1.6 StopTransaction request received:', message, props);
 
+    const tenantId = message.context.tenantId;
     const stationId = message.context.stationId;
     const request = message.payload;
 
     const authorization: Authorization | undefined = request.idTag
-      ? await this._authorizeRepository.readOnlyOneByQuerystring({
+      ? await this._authorizeRepository.readOnlyOneByQuerystring(tenantId, {
           idToken: request.idTag,
           type: null, //explicitly ignore type
         })
@@ -658,11 +677,12 @@ export class TransactionsModule extends AbstractModule {
     }
 
     const stopTransaction = await this._transactionEventRepository.createStopTransaction(
+      tenantId,
       transaction.id,
       stationId,
       request.meterStop,
       new Date(request.timestamp),
-      request.transactionData?.map((data) => MeterValue.build({ ...data })) || [],
+      request.transactionData?.map((data) => MeterValue.build({ tenantId, ...data })) || [],
       request.reason || (request.idTag ? 'Remote' : 'Local'),
       authorization?.idTokenId,
     );

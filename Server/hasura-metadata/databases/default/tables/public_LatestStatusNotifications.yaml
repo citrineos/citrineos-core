@@ -8,3 +8,21 @@ object_relationships:
   - name: StatusNotification
     using:
       foreign_key_constraint_on: statusNotificationId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - stationId
+        - id
+        - statusNotificationId
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

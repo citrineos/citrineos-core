@@ -73,8 +73,15 @@ services:
     expose:
       - 8080-8082
     environment:
-      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'general'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      CITRINEOS_CONFIG_FILENAME: 'config.json'
+      CITRINEOS_FILE_ACCESS_TYPE: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_HOST: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_PORT: '8055'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS: 'false'
   certificates:
     build:
       context: ../
@@ -91,8 +98,15 @@ services:
     expose:
       - 8083
     environment:
-      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'certificates'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      CITRINEOS_CONFIG_FILENAME: 'config.json'
+      CITRINEOS_FILE_ACCESS_TYPE: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_HOST: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_PORT: '8055'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS: 'false'
   configuration:
     build:
       context: ../
@@ -112,8 +126,15 @@ services:
       - ./:/usr/configuration
       - /usr/configuration/node_modules
     environment:
-      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'configuration'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      CITRINEOS_CONFIG_FILENAME: 'config.json'
+      CITRINEOS_FILE_ACCESS_TYPE: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_HOST: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_PORT: '8055'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS: 'false'
   evdriver:
     build:
       context: ../
@@ -133,8 +154,15 @@ services:
       - ./:/usr/evdriver
       - /usr/evdriver/node_modules
     environment:
-      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'evdriver'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      CITRINEOS_CONFIG_FILENAME: 'config.json'
+      CITRINEOS_FILE_ACCESS_TYPE: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_HOST: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_PORT: '8055'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS: 'false'
   monitoring:
     build:
       context: ../
@@ -154,8 +182,15 @@ services:
       - ./:/usr/monitoring
       - /usr/monitoring/node_modules
     environment:
-      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'monitoring'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      CITRINEOS_CONFIG_FILENAME: 'config.json'
+      CITRINEOS_FILE_ACCESS_TYPE: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_HOST: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_PORT: '8055'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS: 'false'
   reporting:
     build:
       context: ../
@@ -175,8 +210,15 @@ services:
       - ./:/usr/reporting
       - /usr/reporting/node_modules
     environment:
-      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'reporting'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      CITRINEOS_CONFIG_FILENAME: 'config.json'
+      CITRINEOS_FILE_ACCESS_TYPE: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_HOST: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_PORT: '8055'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS: 'false'
   smartcharging:
     build:
       context: ../
@@ -196,8 +238,15 @@ services:
       - ./:/usr/smartcharging
       - /usr/smartcharging/node_modules
     environment:
-      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'smartcharging'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      CITRINEOS_CONFIG_FILENAME: 'config.json'
+      CITRINEOS_FILE_ACCESS_TYPE: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_HOST: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_PORT: '8055'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS: 'false'
   tenant:
     build:
       context: ../
@@ -217,8 +266,15 @@ services:
       - ./:/usr/tenant
       - /usr/tenant/node_modules
     environment:
-      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'tenant'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      CITRINEOS_CONFIG_FILENAME: 'config.json'
+      CITRINEOS_FILE_ACCESS_TYPE: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_HOST: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_PORT: '8055'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS: 'false'
   transactions:
     build:
       context: ../
@@ -238,5 +294,12 @@ services:
       - ./:/usr/transactions
       - /usr/transactions/node_modules
     environment:
-      CITRINEOS_UTIL_FILEACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
       APP_NAME: 'transactions'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      CITRINEOS_CONFIG_FILENAME: 'config.json'
+      CITRINEOS_FILE_ACCESS_TYPE: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_HOST: 'directus'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_PORT: '8055'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN: 'MY_DIRECTUS_STATIC_TOKEN'
+      CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS: 'false'

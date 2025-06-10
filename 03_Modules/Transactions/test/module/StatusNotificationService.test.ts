@@ -4,7 +4,7 @@ import {
   ILocationRepository,
   StatusNotification,
 } from '@citrineos/data';
-import { CrudRepository } from '@citrineos/base';
+import { CrudRepository, DEFAULT_TENANT_ID } from '@citrineos/base';
 import { StatusNotificationService } from '../../src/module/StatusNotificationService';
 import {
   aOcpp16StatusNotificationRequest,
@@ -54,6 +54,7 @@ describe('StatusNotificationService', () => {
     });
 
     await statusNotificationService.processStatusNotification(
+      DEFAULT_TENANT_ID,
       MOCK_STATION_ID,
       aStatusNotificationRequest(),
     );
@@ -65,6 +66,7 @@ describe('StatusNotificationService', () => {
     locationRepository.readChargingStationByStationId.mockResolvedValue(undefined);
 
     await statusNotificationService.processStatusNotification(
+      DEFAULT_TENANT_ID,
       MOCK_STATION_ID,
       aStatusNotificationRequest(),
     );
@@ -86,6 +88,7 @@ describe('StatusNotificationService', () => {
     );
 
     await statusNotificationService.processStatusNotification(
+      DEFAULT_TENANT_ID,
       MOCK_STATION_ID,
       aStatusNotificationRequest(),
     );
@@ -98,6 +101,7 @@ describe('StatusNotificationService', () => {
       componentRepository.readOnlyOneByQuery.mockResolvedValue(undefined);
 
       await statusNotificationService.processStatusNotification(
+        DEFAULT_TENANT_ID,
         MOCK_STATION_ID,
         aStatusNotificationRequest(),
       );
@@ -109,6 +113,7 @@ describe('StatusNotificationService', () => {
       componentRepository.readOnlyOneByQuery.mockResolvedValue(aComponent());
 
       await statusNotificationService.processStatusNotification(
+        DEFAULT_TENANT_ID,
         MOCK_STATION_ID,
         aStatusNotificationRequest(),
       );
@@ -125,6 +130,7 @@ describe('StatusNotificationService', () => {
       });
 
       await statusNotificationService.processOcpp16StatusNotification(
+        DEFAULT_TENANT_ID,
         MOCK_STATION_ID,
         aOcpp16StatusNotificationRequest(),
       );
@@ -137,6 +143,7 @@ describe('StatusNotificationService', () => {
       componentRepository.readOnlyOneByQuery.mockResolvedValue(aComponent());
 
       await statusNotificationService.processStatusNotification(
+        DEFAULT_TENANT_ID,
         MOCK_STATION_ID,
         aStatusNotificationRequest(),
       );

@@ -1,0 +1,366 @@
+table:
+  name: Tenants
+  schema: public
+array_relationships:
+  - name: AdditionalInfos
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: AdditionalInfos
+          schema: public
+  - name: Authorizations
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Authorizations
+          schema: public
+  - name: Boots
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Boots
+          schema: public
+  - name: Certificates
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Certificates
+          schema: public
+  - name: ChangeConfigurations
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: ChangeConfigurations
+          schema: public
+  - name: ChargingNeeds
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: ChargingNeeds
+          schema: public
+  - name: ChargingProfiles
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: ChargingProfiles
+          schema: public
+  - name: ChargingSchedules
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: ChargingSchedules
+          schema: public
+  - name: ChargingStationNetworkProfiles
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: ChargingStationNetworkProfiles
+          schema: public
+  - name: ChargingStationSecurityInfos
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: ChargingStationSecurityInfos
+          schema: public
+  - name: ChargingStationSequences
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: ChargingStationSequences
+          schema: public
+  - name: ChargingStations
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: ChargingStations
+          schema: public
+  - name: ComponentVariables
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: ComponentVariables
+          schema: public
+  - name: Components
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Components
+          schema: public
+  - name: CompositeSchedules
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: CompositeSchedules
+          schema: public
+  - name: Connectors
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Connectors
+          schema: public
+  - name: EventData
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: EventData
+          schema: public
+  - name: Evses
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Evses
+          schema: public
+  - name: IdTokenAdditionalInfos
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: IdTokenAdditionalInfos
+          schema: public
+  - name: IdTokenInfos
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: IdTokenInfos
+          schema: public
+  - name: IdTokens
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: IdTokens
+          schema: public
+  - name: InstalledCertificates
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: InstalledCertificates
+          schema: public
+  - name: LatestStatusNotifications
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: LatestStatusNotifications
+          schema: public
+  - name: LocalListAuthorizations
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: LocalListAuthorizations
+          schema: public
+  - name: LocalListVersionAuthorizations
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: LocalListVersionAuthorizations
+          schema: public
+  - name: LocalListVersions
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: LocalListVersions
+          schema: public
+  - name: Locations
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Locations
+          schema: public
+  - name: MessageInfos
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: MessageInfos
+          schema: public
+  - name: MeterValues
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: MeterValues
+          schema: public
+  - name: OCPPMessages
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: OCPPMessages
+          schema: public
+  - name: Reservations
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Reservations
+          schema: public
+  - name: SalesTariffs
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: SalesTariffs
+          schema: public
+  - name: SecurityEvents
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: SecurityEvents
+          schema: public
+  - name: SendLocalListAuthorizations
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: SendLocalListAuthorizations
+          schema: public
+  - name: SendLocalLists
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: SendLocalLists
+          schema: public
+  - name: ServerNetworkProfiles
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: ServerNetworkProfiles
+          schema: public
+  - name: SetNetworkProfiles
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: SetNetworkProfiles
+          schema: public
+  - name: StartTransactions
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: StartTransactions
+          schema: public
+  - name: StatusNotifications
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: StatusNotifications
+          schema: public
+  - name: StopTransactions
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: StopTransactions
+          schema: public
+  - name: Subscriptions
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Subscriptions
+          schema: public
+  - name: Tariffs
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Tariffs
+          schema: public
+  - name: TransactionEvents
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: TransactionEvents
+          schema: public
+  - name: Transactions
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Transactions
+          schema: public
+  - name: VariableAttributes
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: VariableAttributes
+          schema: public
+  - name: VariableCharacteristics
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: VariableCharacteristics
+          schema: public
+  - name: VariableMonitoringStatuses
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: VariableMonitoringStatuses
+          schema: public
+  - name: VariableMonitorings
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: VariableMonitorings
+          schema: public
+  - name: VariableStatuses
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: VariableStatuses
+          schema: public
+  - name: Variables
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Variables
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - createdAt
+        - updatedAt
+      filter:
+        id:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""
