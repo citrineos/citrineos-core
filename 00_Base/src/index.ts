@@ -247,4 +247,5 @@ export { assert, notNull, deepDirectionalEqual } from './assertion/assertion';
 export { UnauthorizedError } from './interfaces/api/exception/UnauthorizedError';
 export { AuthorizationSecurity } from './interfaces/api/AuthorizationSecurity';
 export { Ajv };
+export * from './interfaces/dto';
 export declare type Constructable<T> = new (...args: any[]) => T;
