@@ -193,6 +193,31 @@ Furthermore, [Visual Studio
 Code](https://code.visualstudio.com/docs/setup/linux) might be handy as
 a common integrated development environment.
 
+### ARM64 (Apple Silicon) Compatibility
+
+If you're running on Apple Silicon Macs (ARM64 architecture), use the ARM64-compatible docker-compose file:
+
+```shell
+cd Server
+docker-compose -f docker-compose.arm64.yml up -d
+```
+
+The `docker-compose.arm64.yml` file includes platform specifications (`platform: linux/amd64`) and compatible image versions for:
+
+- RabbitMQ (uses version 3.12-management for better emulation compatibility)
+- PostGIS/PostgreSQL
+- MinIO and MinIO client
+- Hasura GraphQL Engine
+
+**Note:** The ARM64 version runs these services through x86_64 emulation, which may have slightly reduced performance but provides full compatibility.
+
+For regular x86_64 systems, continue using the standard `docker-compose.yml`:
+
+```shell
+cd Server
+docker-compose up -d
+```
+
 Once Docker is running, the following services should be available:
 
 - **CitrineOS** (service name: citrineos) with ports
