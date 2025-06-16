@@ -24,6 +24,7 @@ export interface ITransactionDto extends IBaseDto {
   stoppedReason?: any;
   remoteStartId?: number | null;
   totalCost?: number;
+  events?: ITransactionEventDto[];
 }
 
 export enum TransactionDtoProps {
@@ -44,4 +45,5 @@ export enum TransactionDtoProps {
   remoteStartId = 'remoteStartId',
   totalCost = 'totalCost',
   evse = 'evse',
+  events = 'events',
 }
