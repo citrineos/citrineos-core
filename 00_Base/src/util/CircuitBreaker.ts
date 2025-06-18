@@ -39,6 +39,7 @@ export class CircuitBreaker {
   }
 
   private emitStateChange(state: CircuitBreakerState, reason?: string) {
+    console.log(`[CircuitBreaker] State changed to ${state}${reason ? `: ${reason}` : ''}`);
     for (const cb of this.onStateChangeCbs) cb(state, reason);
   }
 }

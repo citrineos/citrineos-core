@@ -175,15 +175,33 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
   }
 
   private _onCircuitBreakerStateChange(state: CircuitBreakerState, reason?: string) {
-    if (state === 'CLOSED') {
-      this._logger.error('Circuit breaker CLOSED: shutting down Kafka receiver. Reason:', reason);
-      void this.shutdown();
-    }
-    if (state === 'OPEN') {
-      this._logger.info(
-        'Circuit breaker OPEN: attempting to re-initialize Kafka admin connection.',
-      );
-      this._initAdmin();
+    this._logger.info(`[CircuitBreaker] State changed to ${state}${reason ? `: ${reason}` : ''}`);
+    switch (state) {
+      case 'FAILING':
+        this._logger.warn(
+          'Circuit breaker is FAILING. Kafka sender will not send messages until recovery. Reason:',
+          reason,
+        );
+        break;
+
+      case 'CLOSED':
+        this._logger.error(
+          'Circuit breaker is CLOSED. Shutting down Kafka sender. Reason:',
+          reason,
+        );
+        void this.shutdown();
+        break;
+
+      case 'OPEN':
+        this._logger.info(
+          'Circuit breaker is OPEN. Will attempt to (re)initialize Kafka admin connection.',
+        );
+        this._initAdmin();
+        break;
+
+      default:
+        this._logger.warn('Unknown circuit breaker state:', state);
+        break;
     }
   }
 

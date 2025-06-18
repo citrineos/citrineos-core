@@ -204,14 +204,22 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
   }
 
   private _onCircuitBreakerStateChange(state: CircuitBreakerState, reason?: string) {
+    this._logger.info(`[CircuitBreaker] State changed to ${state}${reason ? `: ${reason}` : ''}`);
+
     if (state === 'CLOSED') {
       this._logger.error('Circuit breaker CLOSED: shutting down RabbitMQ sender. Reason:', reason);
       void this.shutdown();
     }
     if (state === 'OPEN') {
-      this._logger.info('Circuit breaker OPEN: attempting to re-initialize RabbitMQ connection.');
+      this._logger.info(
+        'Circuit breaker is OPEN. Will attempt to (re)initialize RabbitMQ connection.',
+      );
       this._connectWithRetry()
         .then((channel) => {
+          this._logger.info(
+            'RabbitMQ connection successfully (re)initialized after circuit breaker OPEN.',
+          );
+
           this._channel = channel;
         })
         .catch((err) => {
