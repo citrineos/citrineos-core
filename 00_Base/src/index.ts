@@ -46,7 +46,15 @@ export {
   MessageState,
   RetryMessageError,
 } from './interfaces/messages';
-export { AbstractModule, AsHandler, IModule } from './interfaces/modules';
+// export { AbstractModule, AsHandler, IModule } from './interfaces/modules';
+// export type { CircuitBreakerState, CircuitBreakerOptions } from './interfaces/modules';
+export {
+  AbstractModule,
+  AsHandler,
+  IModule,
+  type CircuitBreakerState,
+  type CircuitBreakerOptions,
+} from './interfaces/modules';
 export {
   Call,
   CallAction,
@@ -249,3 +257,4 @@ export { AuthorizationSecurity } from './interfaces/api/AuthorizationSecurity';
 export { Ajv };
 export * from './interfaces/dto';
 export declare type Constructable<T> = new (...args: any[]) => T;
+export { CircuitBreaker } from './util/CircuitBreaker';

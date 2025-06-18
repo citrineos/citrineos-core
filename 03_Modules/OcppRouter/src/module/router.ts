@@ -35,6 +35,9 @@ import {
   RequestBuilder,
   RetryMessageError,
   SystemConfig,
+  CircuitBreaker,
+  CircuitBreakerOptions,
+  CircuitBreakerState,
 } from '@citrineos/base';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
@@ -45,11 +48,6 @@ import {
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
 } from '@citrineos/base';
-import { CircuitBreaker } from '../../../../00_Base/src/util/CircuitBreaker';
-import {
-  CircuitBreakerOptions,
-  CircuitBreakerState,
-} from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
 
 /**
  * Implementation of the ocpp router

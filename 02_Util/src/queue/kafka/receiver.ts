@@ -14,12 +14,12 @@ import {
   OcppResponse,
   RetryMessageError,
   SystemConfig,
+  CircuitBreaker,
+  CircuitBreakerState,
 } from '@citrineos/base';
 import { plainToInstance } from 'class-transformer';
 import { Admin, Consumer, EachMessagePayload, Kafka } from 'kafkajs';
 import { ILogObj, Logger } from 'tslog';
-import { CircuitBreakerState } from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
-import { CircuitBreaker } from '../../../../00_Base/src/util/CircuitBreaker';
 
 /**
  * Implementation of a {@link IMessageHandler} using Kafka as the underlying transport.
@@ -40,8 +40,7 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
     circuitBreaker?: CircuitBreaker,
   ) {
     super(config, logger, module);
-    if (!circuitBreaker) throw new Error('CircuitBreaker instance required');
-    this._circuitBreaker = circuitBreaker;
+    this._circuitBreaker = circuitBreaker ?? new CircuitBreaker();
     this._circuitBreaker.onStateChange(this._onCircuitBreakerStateChange.bind(this));
     this._consumerMap = new Map<string, Consumer>();
     this._client = new Kafka({

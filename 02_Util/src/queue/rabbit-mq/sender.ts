@@ -13,12 +13,12 @@ import {
   OcppRequest,
   OcppResponse,
   SystemConfig,
+  CircuitBreakerState,
+  CircuitBreaker,
 } from '@citrineos/base';
 import * as amqplib from 'amqplib';
 import { instanceToPlain } from 'class-transformer';
 import { ILogObj, Logger } from 'tslog';
-import { CircuitBreakerState } from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
-import { CircuitBreaker } from '../../../../00_Base/src/util/CircuitBreaker';
 
 /**
  * Implementation of a {@link IMessageSender} using RabbitMQ as the underlying transport.
@@ -47,8 +47,7 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    */
   constructor(config: SystemConfig, logger?: Logger<ILogObj>, circuitBreaker?: CircuitBreaker) {
     super(config, logger);
-    if (!circuitBreaker) throw new Error('CircuitBreaker instance required');
-    this._circuitBreaker = circuitBreaker;
+    this._circuitBreaker = circuitBreaker ?? new CircuitBreaker();
     this._circuitBreaker.onStateChange(this._onCircuitBreakerStateChange.bind(this));
     this._connectWithRetry()
       .then((channel) => {

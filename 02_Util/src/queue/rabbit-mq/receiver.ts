@@ -18,10 +18,10 @@ import {
   OcppResponse,
   RetryMessageError,
   SystemConfig,
+  CircuitBreakerState,
+  CircuitBreaker,
 } from '@citrineos/base';
 import { plainToInstance } from 'class-transformer';
-import { CircuitBreakerState } from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
-import { CircuitBreaker } from '../../../../00_Base/src/util/CircuitBreaker';
 
 /**
  * Implementation of a {@link IMessageHandler} using RabbitMQ as the underlying transport.
@@ -52,8 +52,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   ) {
     super(config, logger, module);
     this._cache = cache || new MemoryCache();
-    if (!circuitBreaker) throw new Error('CircuitBreaker instance required');
-    this._circuitBreaker = circuitBreaker;
+    this._circuitBreaker = circuitBreaker ?? new CircuitBreaker();
     this._circuitBreaker.onStateChange(this._onCircuitBreakerStateChange.bind(this));
   }
 
