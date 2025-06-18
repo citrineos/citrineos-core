@@ -16,11 +16,8 @@ import {
 } from '@citrineos/base';
 import { Admin, Kafka, Producer } from 'kafkajs';
 import { ILogObj, Logger } from 'tslog';
-import type {
-  CircuitBreakerState,
-  ICircuitBreaker,
-} from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
-
+import { CircuitBreakerState } from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
+import { CircuitBreaker } from '../../../../00_Base/src/util/CircuitBreaker';
 /**
  * Implementation of a {@link IMessageSender} using Kafka as the underlying transport.
  */
@@ -31,14 +28,14 @@ export class KafkaSender extends AbstractMessageSender implements IMessageSender
   private _client: Kafka;
   private _topicName: string;
   private _producers: Array<Producer>;
-  private _circuitBreaker: ICircuitBreaker;
+  private _circuitBreaker: CircuitBreaker;
 
   /**
    * Constructor
    *
    * @param topicPrefix Custom topic prefix, defaults to "ocpp"
    */
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, circuitBreaker?: ICircuitBreaker) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, circuitBreaker?: CircuitBreaker) {
     super(config, logger);
     if (!circuitBreaker) throw new Error('CircuitBreaker instance required');
     this._circuitBreaker = circuitBreaker;

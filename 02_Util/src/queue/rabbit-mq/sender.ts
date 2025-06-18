@@ -17,10 +17,8 @@ import {
 import * as amqplib from 'amqplib';
 import { instanceToPlain } from 'class-transformer';
 import { ILogObj, Logger } from 'tslog';
-import type {
-  CircuitBreakerState,
-  ICircuitBreaker,
-} from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
+import { CircuitBreakerState } from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
+import { CircuitBreaker } from '../../../../00_Base/src/util/CircuitBreaker';
 
 /**
  * Implementation of a {@link IMessageSender} using RabbitMQ as the underlying transport.
@@ -39,7 +37,7 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
   protected _channel?: amqplib.Channel;
   private _reconnecting = false;
   private _abortReconnectController?: AbortController;
-  private _circuitBreaker: ICircuitBreaker;
+  private _circuitBreaker: CircuitBreaker;
 
   /**
    * Constructor for the class.
@@ -47,7 +45,7 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
    * @param {SystemConfig} config - The system configuration.
    * @param {Logger<ILogObj>} [logger] - The logger object.
    */
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, circuitBreaker?: ICircuitBreaker) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, circuitBreaker?: CircuitBreaker) {
     super(config, logger);
     if (!circuitBreaker) throw new Error('CircuitBreaker instance required');
     this._circuitBreaker = circuitBreaker;

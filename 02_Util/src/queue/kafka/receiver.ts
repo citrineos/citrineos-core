@@ -18,10 +18,8 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { Admin, Consumer, EachMessagePayload, Kafka } from 'kafkajs';
 import { ILogObj, Logger } from 'tslog';
-import type {
-  CircuitBreakerState,
-  ICircuitBreaker,
-} from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
+import { CircuitBreakerState } from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
+import { CircuitBreaker } from '../../../../00_Base/src/util/CircuitBreaker';
 
 /**
  * Implementation of a {@link IMessageHandler} using Kafka as the underlying transport.
@@ -33,13 +31,13 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
   private _client: Kafka;
   private _topicName: string;
   private _consumerMap: Map<string, Consumer>;
-  private _circuitBreaker: ICircuitBreaker;
+  private _circuitBreaker: CircuitBreaker;
 
   constructor(
     config: SystemConfig,
     logger?: Logger<ILogObj>,
     module?: IModule,
-    circuitBreaker?: ICircuitBreaker,
+    circuitBreaker?: CircuitBreaker,
   ) {
     super(config, logger, module);
     if (!circuitBreaker) throw new Error('CircuitBreaker instance required');

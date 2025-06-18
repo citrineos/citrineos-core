@@ -20,10 +20,8 @@ import {
   SystemConfig,
 } from '@citrineos/base';
 import { plainToInstance } from 'class-transformer';
-import type {
-  CircuitBreakerState,
-  ICircuitBreaker,
-} from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
+import { CircuitBreakerState } from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
+import { CircuitBreaker } from '../../../../00_Base/src/util/CircuitBreaker';
 
 /**
  * Implementation of a {@link IMessageHandler} using RabbitMQ as the underlying transport.
@@ -43,14 +41,14 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   protected _connection?: amqplib.Connection;
   protected _channel?: amqplib.Channel;
   private _abortReconnectController?: AbortController;
-  private _circuitBreaker: ICircuitBreaker;
+  private _circuitBreaker: CircuitBreaker;
 
   constructor(
     config: SystemConfig,
     logger?: Logger<ILogObj>,
     module?: IModule,
     cache?: ICache,
-    circuitBreaker?: ICircuitBreaker,
+    circuitBreaker?: CircuitBreaker,
   ) {
     super(config, logger, module);
     this._cache = cache || new MemoryCache();

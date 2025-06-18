@@ -50,7 +50,6 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   protected websocketServer?: {
     closeAllConnections: () => void;
     rejectNewConnections: boolean;
-    // ...other properties/methods as needed...
   };
 
   protected readonly _handler: IMessageHandler;
@@ -71,6 +70,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     logger?: Logger<ILogObj>,
     ajv?: Ajv,
     circuitBreakerOptions?: CircuitBreakerOptions,
+    circuitBreaker?: CircuitBreaker,
   ) {
     this._config = config;
     this._cache = cache;
@@ -89,10 +89,13 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
 
-    this._circuitBreaker = new CircuitBreaker({
-      ...circuitBreakerOptions,
-      onStateChange: this.handleCircuitBreakerStateChange.bind(this),
-    });
+    // Allow DI for CircuitBreaker, otherwise instantiate
+    this._circuitBreaker =
+      circuitBreaker ||
+      new CircuitBreaker({
+        ...circuitBreakerOptions,
+        onStateChange: this.handleCircuitBreakerStateChange.bind(this),
+      });
 
     // Set module for proper message flow.
     this._handler.module = this;
@@ -102,11 +105,9 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     switch (state) {
       case 'CLOSED':
         this._logger.warn('Circuit breaker closed', reason);
-        this.onCircuitBreakerClosed(reason);
         break;
       case 'OPEN':
         this._logger.info('Circuit breaker opened', reason);
-        this.onCircuitBreakerOpen();
         break;
       case 'FAILING':
         this._logger.warn('Circuit breaker failing', reason);
@@ -114,26 +115,6 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       default:
         this._logger.error('Unknown circuit breaker state', state, reason);
         return;
-    }
-  }
-
-  // Subclasses can override for custom actions
-  protected onCircuitBreakerClosed(reason?: string) {
-    if (this.websocketServer) {
-      this.websocketServer.closeAllConnections();
-      this.websocketServer.rejectNewConnections = true;
-      this._logger.warn(
-        'Websocket server closed and new connections rejected due to circuit breaker CLOSED state.',
-        reason,
-      );
-      // Optionally: trigger pre-programmed messages here
-    }
-  }
-
-  protected onCircuitBreakerOpen() {
-    if (this.websocketServer) {
-      this.websocketServer.rejectNewConnections = false;
-      this._logger.info('Websocket server accepting new connections (circuit breaker OPEN).');
     }
   }
 
