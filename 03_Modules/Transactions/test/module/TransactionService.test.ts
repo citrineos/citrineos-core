@@ -4,7 +4,7 @@ import {
   IReservationRepository,
   ITransactionEventRepository,
 } from '@citrineos/data';
-import { DEFAULT_TENANT_ID, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP1_6, OCPP2_0_1, RealTimeAuthEnumType } from '@citrineos/base';
 import { TransactionService } from '../../src/module/TransactionService';
 import { anIdToken } from '../providers/IdTokenProvider';
 import { anAuthorization } from '../providers/AuthorizationProvider';
@@ -182,6 +182,7 @@ describe('TransactionService', () => {
   it('should apply authorizers when status is Accepted and transaction is started', async () => {
     const authorization = anAuthorization((auth) => {
       auth.idTokenInfo!.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
+      auth.realTimeAuth = RealTimeAuthEnumType.Allowed;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
