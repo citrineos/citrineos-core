@@ -18,6 +18,10 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { Admin, Consumer, EachMessagePayload, Kafka } from 'kafkajs';
 import { ILogObj, Logger } from 'tslog';
+import type {
+  CircuitBreakerState,
+  ICircuitBreaker,
+} from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
 
 /**
  * Implementation of a {@link IMessageHandler} using Kafka as the underlying transport.
@@ -29,10 +33,18 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
   private _client: Kafka;
   private _topicName: string;
   private _consumerMap: Map<string, Consumer>;
+  private _circuitBreaker: ICircuitBreaker;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, module?: IModule) {
+  constructor(
+    config: SystemConfig,
+    logger?: Logger<ILogObj>,
+    module?: IModule,
+    circuitBreaker?: ICircuitBreaker,
+  ) {
     super(config, logger, module);
-
+    if (!circuitBreaker) throw new Error('CircuitBreaker instance required');
+    this._circuitBreaker = circuitBreaker;
+    this._circuitBreaker.onStateChange(this._onCircuitBreakerStateChange.bind(this));
     this._consumerMap = new Map<string, Consumer>();
     this._client = new Kafka({
       brokers: this._config.util.messageBroker.kafka?.brokers || [],
@@ -43,8 +55,11 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
         password: this._config.util.messageBroker.kafka?.sasl.password || '',
       },
     });
-
     this._topicName = `${this._config.util.messageBroker.kafka?.topicPrefix}-${this._config.util.messageBroker.kafka?.topicName}`;
+    this._initAdmin();
+  }
+
+  private _initAdmin() {
     const admin: Admin = this._client.admin();
     admin
       .connect()
@@ -57,17 +72,21 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
             .createTopics({ topics: [{ topic: this._topicName }] })
             .then(() => {
               this._logger.debug(`Topic ${this._topicName} created.`);
+              this._circuitBreaker.triggerSuccess();
             })
             .catch((err) => {
               this._logger.error('Error creating topic', err);
+              this._circuitBreaker.triggerFailure(err?.message);
             });
         } else {
           this._logger.debug(`Topic ${this._topicName} already exists.`);
+          this._circuitBreaker.triggerSuccess();
         }
       })
       .then(() => admin.disconnect())
       .catch((err) => {
         this._logger.error(err);
+        this._circuitBreaker.triggerFailure(err?.message);
       });
   }
 
@@ -76,8 +95,11 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
     actions?: CallAction[],
     filter?: { [k: string]: string },
   ): Promise<boolean> {
+    if (this._circuitBreaker.state === 'CLOSED') {
+      this._logger.error('Circuit breaker is CLOSED. Cannot subscribe to Kafka topic.');
+      return Promise.resolve(false);
+    }
     this._logger.debug(`Subscribing to ${this._topicName}...`, identifier, actions, filter);
-
     const consumer = this._client.consumer({ groupId: 'test-group' });
     return consumer
       .connect()
@@ -87,11 +109,12 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
           autoCommit: false,
           eachMessage: (payload) => this._onMessage(payload, consumer),
         }),
-      ) // TODO: Add filter
+      )
       .then(() => this._consumerMap.set(identifier, consumer))
       .then(() => true)
       .catch((err) => {
         this._logger.error(err);
+        this._circuitBreaker.triggerFailure(err?.message);
         return false;
       });
   }
@@ -152,6 +175,19 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
       }
     }
     await consumer.commitOffsets([{ topic, partition, offset: message.offset }]);
+  }
+
+  private _onCircuitBreakerStateChange(state: CircuitBreakerState, reason?: string) {
+    if (state === 'CLOSED') {
+      this._logger.error('Circuit breaker CLOSED: shutting down Kafka receiver. Reason:', reason);
+      void this.shutdown();
+    }
+    if (state === 'OPEN') {
+      this._logger.info(
+        'Circuit breaker OPEN: attempting to re-initialize Kafka admin connection.',
+      );
+      this._initAdmin();
+    }
   }
 
   initConnection(): Promise<void> {

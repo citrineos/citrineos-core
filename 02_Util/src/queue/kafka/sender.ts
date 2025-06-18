@@ -16,6 +16,10 @@ import {
 } from '@citrineos/base';
 import { Admin, Kafka, Producer } from 'kafkajs';
 import { ILogObj, Logger } from 'tslog';
+import type {
+  CircuitBreakerState,
+  ICircuitBreaker,
+} from '../../../../00_Base/src/interfaces/modules/CircuitBreaker';
 
 /**
  * Implementation of a {@link IMessageSender} using Kafka as the underlying transport.
@@ -27,15 +31,18 @@ export class KafkaSender extends AbstractMessageSender implements IMessageSender
   private _client: Kafka;
   private _topicName: string;
   private _producers: Array<Producer>;
+  private _circuitBreaker: ICircuitBreaker;
 
   /**
    * Constructor
    *
    * @param topicPrefix Custom topic prefix, defaults to "ocpp"
    */
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, circuitBreaker?: ICircuitBreaker) {
     super(config, logger);
-
+    if (!circuitBreaker) throw new Error('CircuitBreaker instance required');
+    this._circuitBreaker = circuitBreaker;
+    this._circuitBreaker.onStateChange(this._onCircuitBreakerStateChange.bind(this));
     this._client = new Kafka({
       brokers: config.util.messageBroker.kafka?.brokers || [],
       ssl: true,
@@ -47,7 +54,10 @@ export class KafkaSender extends AbstractMessageSender implements IMessageSender
     });
     this._producers = new Array<Producer>();
     this._topicName = `${this._config.util.messageBroker.kafka?.topicPrefix}-${this._config.util.messageBroker.kafka?.topicName}`;
+    this._initAdmin();
+  }
 
+  private _initAdmin() {
     const admin: Admin = this._client.admin();
     admin
       .connect()
@@ -59,15 +69,20 @@ export class KafkaSender extends AbstractMessageSender implements IMessageSender
             .createTopics({ topics: [{ topic: this._topicName }] })
             .then(() => {
               this._logger.debug(`Topic ${this._topicName} created.`);
+              this._circuitBreaker.triggerSuccess();
             })
             .catch((error) => {
               this._logger.error('Failed to create topic', error);
+              this._circuitBreaker.triggerFailure(error?.message);
             });
+        } else {
+          this._circuitBreaker.triggerSuccess();
         }
       })
       .then(() => admin.disconnect())
       .catch((error) => {
         this._logger.error('Failed to connect to Kafka', error);
+        this._circuitBreaker.triggerFailure(error?.message);
       });
   }
 
@@ -111,24 +126,25 @@ export class KafkaSender extends AbstractMessageSender implements IMessageSender
     payload?: OcppRequest | OcppResponse | OcppError,
     state?: MessageState,
   ): Promise<IMessageConfirmation> {
+    if (this._circuitBreaker.state === 'CLOSED') {
+      return Promise.resolve({
+        success: false,
+        payload: 'Circuit breaker is CLOSED. Cannot send message.',
+      });
+    }
     if (payload) {
       message.payload = payload;
     }
-
     if (state) {
       message.state = state;
     }
-
     if (!message.state) {
       throw new Error('Message state must be set');
     }
-
     if (!message.payload) {
       throw new Error('Message payload must be set');
     }
-
     this._logger.debug(`Publishing to ${this._topicName}:`, message);
-
     const producer = this._client.producer();
     return producer
       .connect()
@@ -152,7 +168,10 @@ export class KafkaSender extends AbstractMessageSender implements IMessageSender
       )
       .then(() => this._producers.push(producer))
       .then((result) => ({ success: true, result }))
-      .catch((error) => ({ success: false, error }));
+      .catch((error) => {
+        this._circuitBreaker.triggerFailure(error?.message);
+        return { success: false, error };
+      });
   }
 
   /**
@@ -161,6 +180,19 @@ export class KafkaSender extends AbstractMessageSender implements IMessageSender
   async shutdown(): Promise<void> {
     for (const producer of this._producers) {
       await producer.disconnect();
+    }
+  }
+
+  private _onCircuitBreakerStateChange(state: CircuitBreakerState, reason?: string) {
+    if (state === 'CLOSED') {
+      this._logger.error('Circuit breaker CLOSED: shutting down Kafka sender. Reason:', reason);
+      void this.shutdown();
+    }
+    if (state === 'OPEN') {
+      this._logger.info(
+        'Circuit breaker OPEN: attempting to re-initialize Kafka admin connection.',
+      );
+      this._initAdmin();
     }
   }
 }

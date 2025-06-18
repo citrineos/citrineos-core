@@ -6,7 +6,13 @@
 import 'reflect-metadata';
 import { ILogObj, Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
-import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from '.';
+import {
+  AS_HANDLER_METADATA,
+  CircuitBreakerOptions,
+  CircuitBreakerState,
+  IHandlerDefinition,
+  IModule,
+} from '.';
 import { OcppRequest, OcppResponse } from '../..';
 import { SystemConfig } from '../../config/types';
 import { CallAction, ErrorCode, OcppError, OCPPVersionType } from '../../ocpp/rpc/message';
@@ -23,11 +29,13 @@ import {
   MessageOrigin,
   MessageState,
 } from '../messages';
+import { CircuitBreaker } from '../../util/CircuitBreaker';
 
 export abstract class AbstractModule implements IModule {
   public static readonly CALLBACK_URL_CACHE_PREFIX: string = 'CALLBACK_URL_';
 
   protected _config: SystemConfig;
+  protected _circuitBreaker: CircuitBreaker;
   protected readonly _cache: ICache;
   protected readonly _handler: IMessageHandler;
   protected readonly _sender: IMessageSender;
@@ -45,6 +53,7 @@ export abstract class AbstractModule implements IModule {
     sender: IMessageSender,
     eventGroup: EventGroup,
     logger?: Logger<ILogObj>,
+    circuitBreakerOptions?: CircuitBreakerOptions,
   ) {
     this._logger = this._initLogger(logger);
     this._logger.info('Initializing...');
@@ -54,8 +63,41 @@ export abstract class AbstractModule implements IModule {
     this._eventGroup = eventGroup;
     this._cache = cache;
 
+    this._circuitBreaker = new CircuitBreaker({
+      ...circuitBreakerOptions,
+      onStateChange: this.handleCircuitBreakerStateChange.bind(this),
+    });
+
     // Set module for proper message flow.
     this.handler.module = this;
+  }
+
+  protected handleCircuitBreakerStateChange(state: CircuitBreakerState, reason?: string) {
+    switch (state) {
+      case 'CLOSED':
+        this._logger.info('Circuit breaker closed', reason);
+        this.onCircuitBreakerClosed(reason);
+        break;
+      case 'OPEN':
+        this._logger.warn('Circuit breaker opened', reason);
+        this.onCircuitBreakerOpen();
+        break;
+      case 'FAILING':
+        this._logger.warn('Circuit breaker failing', reason);
+        break;
+      default:
+        this._logger.error('Unknown circuit breaker state', state, reason);
+        return;
+    }
+  }
+
+  // Subclasses can override for custom actions
+  protected onCircuitBreakerClosed(reason?: string) {
+    // Default: do nothing
+  }
+
+  protected onCircuitBreakerOpen() {
+    // Default: do nothing
   }
 
   /**
