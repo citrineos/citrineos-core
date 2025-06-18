@@ -20,6 +20,7 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
+  RealTimeAuthEnumType,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -369,17 +370,19 @@ export class EVDriverModule extends AbstractModule {
                 }
               }
 
-              for (const authorizer of this._authorizers) {
-                if (
-                  response.idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted
-                ) {
-                  break;
+              if (authorization.realTimeAuth === RealTimeAuthEnumType.Allowed) {
+                for (const authorizer of this._authorizers) {
+                  if (
+                    response.idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted
+                  ) {
+                    break;
+                  }
+                  const result: Partial<OCPP2_0_1.IdTokenType> = await authorizer.authorize(
+                    authorization,
+                    context,
+                  );
+                  Object.assign(response.idTokenInfo, result);
                 }
-                const result: Partial<OCPP2_0_1.IdTokenType> = await authorizer.authorize(
-                  authorization,
-                  context,
-                );
-                Object.assign(response.idTokenInfo, result);
               }
             } else {
               // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
