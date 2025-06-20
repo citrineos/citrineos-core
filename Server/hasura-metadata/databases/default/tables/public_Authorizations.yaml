@@ -2,12 +2,9 @@ table:
   name: Authorizations
   schema: public
 object_relationships:
-  - name: IdToken
+  - name: groupIdToken
     using:
-      foreign_key_constraint_on: idTokenId
-  - name: IdTokenInfo
-    using:
-      foreign_key_constraint_on: idTokenInfoId
+      foreign_key_constraint_on: groupIdTokenId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
@@ -26,11 +23,21 @@ select_permissions:
         - allowedConnectorTypes
         - disallowedEvseIdPrefixes
         - id
-        - idTokenId
-        - idTokenInfoId
         - tenantId
         - createdAt
         - updatedAt
+        - idToken
+        - type
+        - additionalInfo
+        - status
+        - cacheExpiryDateTime
+        - chargingPriority
+        - language1
+        - language2
+        - personalMessage
+        - groupIdTokenId
+        - concurrentTransaction
+        - customData
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

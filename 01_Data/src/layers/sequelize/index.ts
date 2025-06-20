@@ -14,8 +14,6 @@ export {
 } from './model/DeviceModel';
 export {
   Authorization,
-  IdToken,
-  IdTokenInfo,
   AdditionalInfo,
   LocalListAuthorization,
   LocalListVersion,
