@@ -43,6 +43,13 @@ export class CircuitBreaker {
     this.emitStateChange('OPEN');
   }
 
+  close(reason?: string) {
+    if (this._state !== 'CLOSED') {
+      this._state = 'CLOSED';
+      this.emitStateChange('CLOSED', reason);
+    }
+  }
+
   private emitStateChange(state: CircuitBreakerState, reason?: string) {
     console.log(`[CircuitBreaker] State changed to ${state}${reason ? `: ${reason}` : ''}`);
     for (const cb of this.onStateChangeCbs) cb(state, reason);

@@ -35,6 +35,9 @@ import {
   RequestBuilder,
   RetryMessageError,
   SystemConfig,
+  CircuitBreaker,
+  CircuitBreakerOptions,
+  CircuitBreakerState,
 } from '@citrineos/base';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
@@ -61,6 +64,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   protected _networkHook: (identifier: string, message: string) => Promise<void>;
   protected _locationRepository: ILocationRepository;
   public subscriptionRepository: ISubscriptionRepository;
+  protected _circuitBreaker: CircuitBreaker;
+  protected _reconnectInterval?: NodeJS.Timeout;
+  protected static readonly DEFAULT_MAX_RECONNECT_DELAY = 30; // seconds
+  protected _maxReconnectDelay: number;
+  protected _failingReconnectDelay: number = 1; // start with 1 second
 
   /**
    * Constructor for the class.
@@ -78,6 +86,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {ISubscriptionRepository} [subscriptionRepository] - the subscription repository
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
    * @param {Ajv} [ajv] - the Ajv object, for message validation (optional)
+   * @param {CircuitBreakerOptions} [circuitBreakerOptions] - options to configure the circuit breaker
    */
   constructor(
     config: SystemConfig,
@@ -90,6 +99,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     ajv?: Ajv,
     locationRepository?: ILocationRepository,
     subscriptionRepository?: ISubscriptionRepository,
+    circuitBreakerOptions?: CircuitBreakerOptions,
   ) {
     super(config, cache, handler, sender, networkHook, logger, ajv);
 
@@ -103,6 +113,18 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this.subscriptionRepository =
       subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
     this._handler.initConnection();
+    if (circuitBreakerOptions) {
+      this._circuitBreaker = new CircuitBreaker({
+        ...circuitBreakerOptions,
+        onStateChange: this.handleCircuitBreakerStateChange.bind(this),
+      });
+    } else {
+      this._circuitBreaker = new CircuitBreaker({
+        onStateChange: this.handleCircuitBreakerStateChange.bind(this),
+      });
+    }
+    this._maxReconnectDelay =
+      config.maxReconnectDelay ?? MessageRouterImpl.DEFAULT_MAX_RECONNECT_DELAY;
   }
 
   // TODO: Below method should lock these tables so that a rapid connect-disconnect cannot result in race condition.
@@ -806,5 +828,77 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       result[key as keyof T] = this.removeNulls(value);
     }
     return result;
+  }
+
+  protected handleCircuitBreakerStateChange(state: CircuitBreakerState, reason?: string) {
+    switch (state) {
+      case 'CLOSED':
+        this._logger.warn('Circuit breaker closed', reason);
+        this._failingReconnectDelay = 1; // reset backoff
+        this.onCircuitBreakerClosed(reason);
+        break;
+      case 'OPEN':
+        this._logger.info('Circuit breaker opened', reason);
+        this._failingReconnectDelay = 1; // reset backoff
+        this.onCircuitBreakerOpen();
+        break;
+      case 'FAILING':
+        this._logger.warn('Circuit breaker failing', reason);
+        this._attemptExponentialReconnect();
+        break;
+      default:
+        this._logger.error('Unknown circuit breaker state', state, reason);
+        return;
+    }
+  }
+
+  private _attemptExponentialReconnect() {
+    if (this._failingReconnectDelay > this._maxReconnectDelay) {
+      this._logger.warn('Max reconnect delay reached, moving to CLOSED state.');
+      this._circuitBreaker.close('Max reconnect delay reached');
+      return;
+    }
+    this._logger.info(
+      `Attempting reconnect in ${this._failingReconnectDelay} seconds (exponential backoff)...`,
+    );
+    setTimeout(() => {
+      this.onBrokerReconnect();
+      this._failingReconnectDelay = Math.min(
+        this._failingReconnectDelay * 2,
+        this._maxReconnectDelay,
+      );
+    }, this._failingReconnectDelay * 1000);
+  }
+
+  protected onCircuitBreakerClosed(reason?: string) {
+    this._logger.warn(
+      'Circuit breaker CLOSED. Will attempt to reconnect every',
+      this._maxReconnectDelay,
+      'seconds.',
+      reason,
+    );
+    if (this._reconnectInterval) {
+      clearInterval(this._reconnectInterval);
+    }
+    this._reconnectInterval = setInterval(() => {
+      this._logger.info('Attempting broker reconnection due to circuit breaker CLOSED...');
+      this.onBrokerReconnect();
+    }, this._maxReconnectDelay * 1000);
+  }
+
+  protected onCircuitBreakerOpen() {
+    this._logger.info('Circuit breaker OPEN. Stopping reconnection attempts.');
+    if (this._reconnectInterval) {
+      clearInterval(this._reconnectInterval);
+      this._reconnectInterval = undefined;
+    }
+  }
+
+  protected onBrokerDisconnect(reason?: string) {
+    this._circuitBreaker?.triggerFailure(reason);
+  }
+
+  protected onBrokerReconnect() {
+    this._circuitBreaker?.triggerSuccess();
   }
 }

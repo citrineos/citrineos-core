@@ -29,7 +29,6 @@ import {
 } from '../..';
 import { ILogObj, Logger } from 'tslog';
 import { IMessageRouter } from './Router';
-import { CircuitBreaker, CircuitBreakerOptions, CircuitBreakerState } from '../modules';
 
 export abstract class AbstractMessageRouter implements IMessageRouter {
   /**
@@ -40,10 +39,6 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   protected _cache: ICache;
   protected _config: SystemConfig;
   protected _logger: Logger<ILogObj>;
-  protected _circuitBreaker: CircuitBreaker;
-
-  protected websocketServer?: any;
-
   protected readonly _handler: IMessageHandler;
   protected readonly _sender: IMessageSender;
   protected _networkHook: (identifier: string, message: string) => Promise<void>;
@@ -61,7 +56,6 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     networkHook: (identifier: string, message: string) => Promise<void>,
     logger?: Logger<ILogObj>,
     ajv?: Ajv,
-    circuitBreakerOptions?: CircuitBreakerOptions,
   ) {
     this._config = config;
     this._cache = cache;
@@ -80,62 +74,10 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
 
-    this._circuitBreaker = new CircuitBreaker({
-      ...circuitBreakerOptions,
-      onStateChange: this.handleCircuitBreakerStateChange.bind(this),
-    });
-
     // Set module for proper message flow.
     this._handler.module = this;
   }
 
-  protected handleCircuitBreakerStateChange(state: CircuitBreakerState, reason?: string) {
-    switch (state) {
-      case 'CLOSED':
-        this._logger.warn('Circuit breaker closed', reason);
-        this.onCircuitBreakerClosed(reason);
-        break;
-      case 'OPEN':
-        this._logger.info('Circuit breaker opened', reason);
-        this.onCircuitBreakerOpen();
-        break;
-      case 'FAILING':
-        this._logger.warn('Circuit breaker failing', reason);
-        break;
-      default:
-        this._logger.error('Unknown circuit breaker state', state, reason);
-        return;
-    }
-  }
-
-  // Subclasses can override for custom actions
-  protected onCircuitBreakerClosed(reason?: string) {
-    if (this.websocketServer) {
-      this.websocketServer.closeAllConnections();
-      this.websocketServer.rejectNewConnections = true;
-      this._logger.warn(
-        'Websocket server closed and new connections rejected due to circuit breaker CLOSED state.',
-        reason,
-      );
-      // Optionally: trigger pre-programmed messages here
-    }
-  }
-
-  protected onCircuitBreakerOpen() {
-    if (this.websocketServer) {
-      this.websocketServer.rejectNewConnections = false;
-      this._logger.info('Websocket server accepting new connections (circuit breaker OPEN).');
-    }
-  }
-
-  // Call these on broker events
-  protected onBrokerDisconnect(reason?: string) {
-    this._circuitBreaker.triggerFailure(reason);
-  }
-
-  protected onBrokerReconnect() {
-    this._circuitBreaker.triggerSuccess();
-  }
   /**
    * Getters & Setters
    */
