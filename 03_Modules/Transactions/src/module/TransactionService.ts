@@ -14,7 +14,6 @@ import {
   MeterValueUtils,
   OCPP1_6,
   OCPP2_0_1,
-  RealTimeAuthEnumType,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { IAuthorizer } from '@citrineos/util';
@@ -293,17 +292,15 @@ export class TransactionService {
     authorization: Authorization,
     messageContext: IMessageContext,
   ): Promise<OCPP2_0_1.IdTokenInfoType> {
-    if (authorization.realTimeAuth === RealTimeAuthEnumType.Allowed) {
-      for (const authorizer of this._authorizers) {
-        if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
-          break;
-        }
-        const result: Partial<OCPP2_0_1.IdTokenType> = await authorizer.authorize(
-          authorization,
-          messageContext,
-        );
-        Object.assign(idTokenInfo, result);
+    for (const authorizer of this._authorizers) {
+      if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
+        break;
       }
+      const result: Partial<OCPP2_0_1.IdTokenType> = await authorizer.authorize(
+        authorization,
+        messageContext,
+      );
+      Object.assign(idTokenInfo, result);
     }
     return idTokenInfo;
   }
