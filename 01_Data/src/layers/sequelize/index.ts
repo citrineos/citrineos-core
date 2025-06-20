@@ -8,7 +8,7 @@ export {
   VariableAttribute,
   VariableCharacteristics,
   Component,
-  Evse,
+  EvseType,
   Variable,
   VariableStatus,
 } from './model/DeviceModel';
