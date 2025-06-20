@@ -53,6 +53,9 @@ export abstract class AbstractModule implements IModule {
     this._sender = sender;
     this._eventGroup = eventGroup;
     this._cache = cache;
+
+    // Set module for proper message flow.
+    this.handler.module = this;
   }
 
   /**
