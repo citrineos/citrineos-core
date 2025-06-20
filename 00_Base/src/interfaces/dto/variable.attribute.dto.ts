@@ -2,18 +2,21 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { IBaseDto } from './base.dto';
+import { IComponentDto } from './component.dto';
+import { IVariableDto } from './variable.dto';
+import { AttributeEnumType, DataEnumType, MutabilityEnumType } from '../../ocpp/model/2.0.1';
 
 export interface IVariableAttributeDto extends IBaseDto {
   id: number;
   stationId: string;
-  type?: any; // Use AttributeEnumType if available
-  dataType: any; // Use DataEnumType if available
+  type?: AttributeEnumType;
+  dataType: DataEnumType;
   value?: string | null;
-  mutability?: any; // Use MutabilityEnumType if available
+  mutability?: MutabilityEnumType;
   persistent: boolean;
   constant: boolean;
-  variableId?: any | null; // Use IVariableDto if available
-  componentId?: any | null; // Use IComponentDto if available
+  variableId?: IVariableDto | null;
+  componentId?: IComponentDto | null;
   evseDatabaseId?: number | null;
   generatedAt?: string;
 }

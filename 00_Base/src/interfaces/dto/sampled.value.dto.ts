@@ -2,15 +2,33 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { IBaseDto } from './base.dto';
+import {
+  LocationEnumType,
+  MeasurandEnumType,
+  PhaseEnumType,
+  ReadingContextEnumType,
+} from '../../ocpp/model/2.0.1';
 
 export interface ISampledValueDto extends IBaseDto {
   value: number;
-  context?: any; // Use ReadingContextEnumType if available
-  measurand?: any; // Use MeasurandEnumType if available
-  phase?: any; // Use PhaseEnumType if available
-  location?: any; // Use LocationEnumType if available
-  signedMeterValue?: any; // Use SignedMeterValue if available
-  unitOfMeasure?: any; // Use UnitOfMeasure if available
+  context?: ReadingContextEnumType;
+  measurand?: MeasurandEnumType;
+  phase?: PhaseEnumType | null;
+  location?: LocationEnumType;
+  signedMeterValue?: ISignedMeterValue;
+  unitOfMeasure?: IUnitOfMeasure;
+}
+
+export interface ISignedMeterValue {
+  signedMeterData: string;
+  signingMethod: string;
+  encodingMethod: string;
+  publicKey: string;
+}
+
+export interface IUnitOfMeasure {
+  unit?: string;
+  multiplier?: number;
 }
 
 export enum SampledValueDtoProps {
