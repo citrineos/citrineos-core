@@ -34,6 +34,28 @@ export class Location extends BaseModelWithTenant {
   @Column(DataType.STRING)
   declare country: string;
 
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: true,
+  })
+  declare publishUpstream: boolean;
+
+  @Column({
+    type: DataType.STRING,
+    defaultValue: 'UTC',
+    validate: {
+      isTimezone(value: string) {
+        try {
+          Intl.DateTimeFormat(undefined, { timeZone: value });
+          return true;
+        } catch (ex) {
+          return false;
+        }
+      },
+    },
+  })
+  declare timeZone: string;
+
   /**
    * [longitude, latitude]
    */
