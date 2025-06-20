@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
+import { Namespace, RealTimeAuthEnumType } from '@citrineos/base';
 import { BelongsTo, Column, DataType, Default, ForeignKey, Table } from 'sequelize-typescript';
 import { type AuthorizationRestrictions } from '../../../../interfaces';
 import { IdToken, IdTokenInfo } from '.';
@@ -18,6 +18,10 @@ export class Authorization extends BaseModelWithTenant implements AuthorizationR
 
   @Column(DataType.ARRAY(DataType.STRING))
   declare disallowedEvseIdPrefixes?: string[];
+
+  @Default(RealTimeAuthEnumType.Never)
+  @Column(DataType.ENUM(...Object.values(RealTimeAuthEnumType)))
+  declare realTimeAuth: RealTimeAuthEnumType;
 
   @ForeignKey(() => IdToken)
   @Column({

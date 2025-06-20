@@ -4,6 +4,7 @@
 import { IBaseDto } from './base.dto';
 import { IIdTokenDto } from './id.token.dto';
 import { IIdTokenInfoDto } from './id.token.info.dto';
+import { RealTimeAuthEnumType } from '../../util/enums';
 
 export interface IAuthorizationDto extends IBaseDto {
   id: number;
@@ -14,6 +15,7 @@ export interface IAuthorizationDto extends IBaseDto {
   idTokenInfoId: number;
   idTokenInfo?: IIdTokenInfoDto;
   concurrentTransaction?: boolean;
+  realTimeAuth: RealTimeAuthEnumType;
 }
 
 export enum AuthorizationDtoProps {
@@ -25,4 +27,5 @@ export enum AuthorizationDtoProps {
   idTokenInfoId = 'idTokenInfoId',
   idTokenInfo = 'idTokenInfo',
   concurrentTransaction = 'concurrentTransaction',
+  realTimeAuth = 'realTimeAuth',
 }
