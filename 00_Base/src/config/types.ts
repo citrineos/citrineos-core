@@ -262,6 +262,7 @@ export const systemConfigInputSchema = z.object({
   logLevel: z.number().min(0).max(6).default(0).optional(),
   maxCallLengthSeconds: z.number().int().positive().default(5).optional(),
   maxCachingSeconds: z.number().int().positive().default(10).optional(),
+  maxReconnectDelay: z.number().int().positive().default(30).optional(),
   ocpiServer: z.object({
     host: z.string().default('localhost').optional(),
     port: z.number().int().positive().default(8085).optional(),
@@ -558,6 +559,7 @@ export const systemConfigSchema = z
     logLevel: z.number().min(0).max(6),
     maxCallLengthSeconds: z.number().int().positive(),
     maxCachingSeconds: z.number().int().positive(),
+    maxReconnectDelay: z.number().int().positive().default(30),
     ocpiServer: z.object({
       host: z.string(),
       port: z.number().int().positive(),
