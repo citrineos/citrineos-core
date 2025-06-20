@@ -32,6 +32,7 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
   private _topicName: string;
   private _consumerMap: Map<string, Consumer>;
   private _circuitBreaker: CircuitBreaker;
+  private _reconnectInterval?: NodeJS.Timeout;
 
   constructor(
     config: SystemConfig,
@@ -184,18 +185,40 @@ export class KafkaReceiver extends AbstractMessageHandler implements IMessageHan
         );
         break;
 
-      case 'CLOSED':
+      case 'CLOSED': {
         this._logger.error(
-          'Circuit breaker is CLOSED. Shutting down Kafka sender. Reason:',
+          'Circuit breaker is CLOSED. Shutting down Kafka receiver. Reason:',
           reason,
         );
         void this.shutdown();
+        if (this._reconnectInterval) {
+          clearInterval(this._reconnectInterval);
+        }
+        const delay = (this._config.maxReconnectDelay || 30) * 1000;
+        this._logger.warn(
+          `Starting continuous reconnect attempts every ${delay / 1000} seconds while circuit breaker is CLOSED.`,
+        );
+        this._reconnectInterval = setInterval(() => {
+          this._logger.info('Attempting Kafka reconnect due to circuit breaker CLOSED...');
+          try {
+            this._initAdmin();
+            this._logger.info('Kafka reconnect attempt finished (success or already open).');
+          } catch (err) {
+            this._logger.error('Kafka reconnect attempt failed.', err);
+          }
+        }, delay);
         break;
+      }
 
       case 'OPEN':
         this._logger.info(
           'Circuit breaker is OPEN. Will attempt to (re)initialize Kafka admin connection.',
         );
+        if (this._reconnectInterval) {
+          this._logger.info('Clearing reconnect interval as circuit breaker is now OPEN.');
+          clearInterval(this._reconnectInterval);
+          this._reconnectInterval = undefined;
+        }
         this._initAdmin();
         break;
 

@@ -38,6 +38,7 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
   private _reconnecting = false;
   private _abortReconnectController?: AbortController;
   private _circuitBreaker: CircuitBreaker;
+  private _reconnectInterval?: NodeJS.Timeout;
 
   /**
    * Constructor for the class.
@@ -203,31 +204,71 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
     }
   }
 
+  private _startReconnectInterval() {
+    if (this._reconnectInterval) {
+      clearInterval(this._reconnectInterval);
+    }
+    const delay = (this._config.maxReconnectDelay || 30) * 1000;
+    this._logger.warn(
+      `Starting continuous reconnect attempts every ${delay / 1000} seconds while circuit breaker is CLOSED.`,
+    );
+    this._reconnectInterval = setInterval(() => {
+      this._logger.info('Attempting RabbitMQ reconnect due to circuit breaker CLOSED...');
+      this._connectWithRetry()
+        .then((channel) => {
+          this._logger.info('RabbitMQ reconnect attempt succeeded.');
+          this._channel = channel;
+          this._circuitBreaker.triggerSuccess();
+        })
+        .catch((err) => {
+          this._logger.error('RabbitMQ reconnect attempt failed.', err);
+        });
+    }, delay);
+  }
+
   private _onCircuitBreakerStateChange(state: CircuitBreakerState, reason?: string) {
     this._logger.info(`[CircuitBreaker] State changed to ${state}${reason ? `: ${reason}` : ''}`);
 
-    if (state === 'CLOSED') {
-      this._logger.error('Circuit breaker CLOSED: shutting down RabbitMQ sender. Reason:', reason);
-      void this.shutdown();
-    }
-    if (state === 'OPEN') {
-      this._logger.info(
-        'Circuit breaker is OPEN. Will attempt to (re)initialize RabbitMQ connection.',
-      );
-      this._connectWithRetry()
-        .then((channel) => {
-          this._logger.info(
-            'RabbitMQ connection successfully (re)initialized after circuit breaker OPEN.',
-          );
-
-          this._channel = channel;
-        })
-        .catch((err) => {
-          this._logger.error(
-            'Failed to re-initialize RabbitMQ connection after circuit breaker OPEN',
-            err,
-          );
-        });
+    switch (state) {
+      case 'CLOSED': {
+        this._logger.error(
+          'Circuit breaker CLOSED: shutting down RabbitMQ sender. Reason:',
+          reason,
+        );
+        void this.shutdown();
+        this._startReconnectInterval();
+        break;
+      }
+      case 'OPEN': {
+        this._logger.info(
+          'Circuit breaker is OPEN. Will attempt to (re)initialize RabbitMQ connection.',
+        );
+        if (this._reconnectInterval) {
+          this._logger.info('Clearing reconnect interval as circuit breaker is now OPEN.');
+          clearInterval(this._reconnectInterval);
+          this._reconnectInterval = undefined;
+        }
+        this._connectWithRetry()
+          .then((channel) => {
+            this._logger.info('RabbitMQ connection (re)initialized.');
+            this._channel = channel;
+            this._circuitBreaker.triggerSuccess();
+          })
+          .catch((err) => {
+            this._logger.error('RabbitMQ (re)init failed.', err);
+          });
+        break;
+      }
+      case 'FAILING': {
+        this._logger.warn(
+          'Circuit breaker is FAILING. RabbitMQ sender will not send messages until recovery. Reason:',
+          reason,
+        );
+        break;
+      }
+      default:
+        this._logger.warn('Unknown circuit breaker state:', state);
+        break;
     }
   }
 
@@ -258,5 +299,8 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
     this._connection = undefined;
     this._channel = undefined;
     this._circuitBreaker.triggerFailure('RabbitMQ connection lost');
+    if (this._circuitBreaker.state === 'CLOSED') {
+      this._startReconnectInterval();
+    }
   }
 }

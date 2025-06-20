@@ -878,6 +878,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       reason,
     );
     if (this._reconnectInterval) {
+      this._logger.info(
+        'A reconnect interval was already running. Clearing it before starting a new one.',
+      );
       clearInterval(this._reconnectInterval);
     }
     this._reconnectInterval = setInterval(() => {
@@ -889,6 +892,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   protected onCircuitBreakerOpen() {
     this._logger.info('Circuit breaker OPEN. Stopping reconnection attempts.');
     if (this._reconnectInterval) {
+      this._logger.info('Clearing reconnect interval as circuit breaker is now OPEN.');
       clearInterval(this._reconnectInterval);
       this._reconnectInterval = undefined;
     }
