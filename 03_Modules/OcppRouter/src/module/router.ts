@@ -35,9 +35,6 @@ import {
   RequestBuilder,
   RetryMessageError,
   SystemConfig,
-  CircuitBreaker,
-  CircuitBreakerOptions,
-  CircuitBreakerState,
 } from '@citrineos/base';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
@@ -56,16 +53,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   /**
    * Fields
    */
-
-  protected _circuitBreaker: CircuitBreaker;
-  /**
-   * Websocket server control for circuit breaker integration.
-   * Implement in subclasses or concrete routers.
-   */
-  protected websocketServer?: {
-    closeAllConnections: () => void;
-    rejectNewConnections: boolean;
-  };
 
   private _webhookDispatcher: WebhookDispatcher;
   protected _cache: ICache;
@@ -91,8 +78,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {ISubscriptionRepository} [subscriptionRepository] - the subscription repository
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
    * @param {Ajv} [ajv] - the Ajv object, for message validation (optional)
-   * @param {CircuitBreakerOptions} [circuitBreakerOptions] - options for the circuit breaker
-   * @param {CircuitBreaker} [circuitBreaker] - an instance of a circuit breaker (optional)
    */
   constructor(
     config: SystemConfig,
@@ -105,8 +90,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     ajv?: Ajv,
     locationRepository?: ILocationRepository,
     subscriptionRepository?: ISubscriptionRepository,
-    circuitBreakerOptions?: CircuitBreakerOptions,
-    circuitBreaker?: CircuitBreaker,
   ) {
     super(config, cache, handler, sender, networkHook, logger, ajv);
 
@@ -120,61 +103,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this.subscriptionRepository =
       subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
     this._handler.initConnection();
-    // Allow DI for CircuitBreaker, otherwise instantiate
-    this._circuitBreaker =
-      circuitBreaker ||
-      new CircuitBreaker({
-        ...circuitBreakerOptions,
-        onStateChange: this.handleCircuitBreakerStateChange.bind(this),
-      });
-  }
-
-  protected handleCircuitBreakerStateChange(state: CircuitBreakerState, reason?: string) {
-    switch (state) {
-      case 'CLOSED':
-        this._logger.warn('Circuit breaker closed', reason);
-        this.onCircuitBreakerClosed(reason);
-        break;
-      case 'OPEN':
-        this._logger.info('Circuit breaker opened', reason);
-        this.onCircuitBreakerOpen();
-        break;
-      case 'FAILING':
-        this._logger.warn('Circuit breaker failing', reason);
-        break;
-      default:
-        this._logger.error('Unknown circuit breaker state', state, reason);
-        return;
-    }
-  }
-
-  // Subclasses can override for custom actions
-  protected onCircuitBreakerClosed(reason?: string) {
-    if (this.websocketServer) {
-      this.websocketServer.closeAllConnections();
-      this.websocketServer.rejectNewConnections = true;
-      this._logger.warn(
-        'Websocket server closed and new connections rejected due to circuit breaker CLOSED state.',
-        reason,
-      );
-      // Optionally: trigger pre-programmed messages here
-    }
-  }
-
-  protected onCircuitBreakerOpen() {
-    if (this.websocketServer) {
-      this.websocketServer.rejectNewConnections = false;
-      this._logger.info('Websocket server accepting new connections (circuit breaker OPEN).');
-    }
-  }
-
-  // Call these on broker events
-  protected onBrokerDisconnect(reason?: string) {
-    this._circuitBreaker.triggerFailure(reason);
-  }
-
-  protected onBrokerReconnect() {
-    this._circuitBreaker.triggerSuccess();
   }
 
   // TODO: Below method should lock these tables so that a rapid connect-disconnect cannot result in race condition.

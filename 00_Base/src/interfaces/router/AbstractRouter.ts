@@ -29,8 +29,7 @@ import {
 } from '../..';
 import { ILogObj, Logger } from 'tslog';
 import { IMessageRouter } from './Router';
-import { CircuitBreaker } from '../../util/CircuitBreaker';
-import { CircuitBreakerOptions, CircuitBreakerState } from '../modules/CircuitBreaker';
+import { CircuitBreaker, CircuitBreakerOptions, CircuitBreakerState } from '../modules';
 
 export abstract class AbstractMessageRouter implements IMessageRouter {
   /**
@@ -43,14 +42,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   protected _logger: Logger<ILogObj>;
   protected _circuitBreaker: CircuitBreaker;
 
-  /**
-   * Websocket server control for circuit breaker integration.
-   * Implement in subclasses or concrete routers.
-   */
-  protected websocketServer?: {
-    closeAllConnections: () => void;
-    rejectNewConnections: boolean;
-  };
+  protected websocketServer?: any;
 
   protected readonly _handler: IMessageHandler;
   protected readonly _sender: IMessageSender;
@@ -70,7 +62,6 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     logger?: Logger<ILogObj>,
     ajv?: Ajv,
     circuitBreakerOptions?: CircuitBreakerOptions,
-    circuitBreaker?: CircuitBreaker,
   ) {
     this._config = config;
     this._cache = cache;
@@ -89,13 +80,10 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
 
-    // Allow DI for CircuitBreaker, otherwise instantiate
-    this._circuitBreaker =
-      circuitBreaker ||
-      new CircuitBreaker({
-        ...circuitBreakerOptions,
-        onStateChange: this.handleCircuitBreakerStateChange.bind(this),
-      });
+    this._circuitBreaker = new CircuitBreaker({
+      ...circuitBreakerOptions,
+      onStateChange: this.handleCircuitBreakerStateChange.bind(this),
+    });
 
     // Set module for proper message flow.
     this._handler.module = this;
@@ -105,9 +93,11 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     switch (state) {
       case 'CLOSED':
         this._logger.warn('Circuit breaker closed', reason);
+        this.onCircuitBreakerClosed(reason);
         break;
       case 'OPEN':
         this._logger.info('Circuit breaker opened', reason);
+        this.onCircuitBreakerOpen();
         break;
       case 'FAILING':
         this._logger.warn('Circuit breaker failing', reason);
@@ -115,6 +105,26 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       default:
         this._logger.error('Unknown circuit breaker state', state, reason);
         return;
+    }
+  }
+
+  // Subclasses can override for custom actions
+  protected onCircuitBreakerClosed(reason?: string) {
+    if (this.websocketServer) {
+      this.websocketServer.closeAllConnections();
+      this.websocketServer.rejectNewConnections = true;
+      this._logger.warn(
+        'Websocket server closed and new connections rejected due to circuit breaker CLOSED state.',
+        reason,
+      );
+      // Optionally: trigger pre-programmed messages here
+    }
+  }
+
+  protected onCircuitBreakerOpen() {
+    if (this.websocketServer) {
+      this.websocketServer.rejectNewConnections = false;
+      this._logger.info('Websocket server accepting new connections (circuit breaker OPEN).');
     }
   }
 
@@ -126,7 +136,6 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   protected onBrokerReconnect() {
     this._circuitBreaker.triggerSuccess();
   }
-
   /**
    * Getters & Setters
    */
