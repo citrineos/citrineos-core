@@ -39,8 +39,6 @@ export {
   InstalledCertificate,
   CountryNameEnumType,
   TransactionEvent,
-  IdToken,
-  IdTokenInfo,
   AdditionalInfo,
   LocalListAuthorization,
   LocalListVersion,

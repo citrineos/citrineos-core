@@ -171,7 +171,7 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
     correlationId: string,
     updateType: OCPP2_0_1.UpdateEnumType,
     versionNumber: number,
-    localAuthorizationList?: OCPP2_0_1.AuthorizationData[],
+    localAuthorizationList?: Authorization[], // was OCPP2_0_1.AuthorizationData[]
   ): Promise<SendLocalList>;
   /**
    * Used to process GetLocalListVersionResponse, if version is unknown it will create or update LocalListVersion with the new version and an empty localAuthorizationList.
@@ -289,7 +289,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   ): Promise<Transaction[]>;
   readAllActiveTransactionsIncludeTransactionEventByIdToken(
     tenantId: number,
-    idToken: OCPP2_0_1.IdTokenType,
+    idToken: string, // was OCPP2_0_1.IdTokenType
   ): Promise<Transaction[]>;
   readAllActiveTransactionsIncludeStartTransactionByIdToken(
     tenantId: number,
