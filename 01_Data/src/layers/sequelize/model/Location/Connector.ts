@@ -6,6 +6,7 @@ import { OCPP1_6, OCPP1_6_Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { Evse } from './Evse';
 
 @Table
 export class Connector extends BaseModelWithTenant {
@@ -18,6 +19,14 @@ export class Connector extends BaseModelWithTenant {
     type: DataType.STRING,
   })
   declare stationId: string;
+
+  @ForeignKey(() => Evse)
+  @Column({
+    unique: 'stationId_connectorId',
+    allowNull: false,
+    type: DataType.STRING,
+  })
+  declare evseId: string;
 
   @Column({
     unique: 'stationId_connectorId',
@@ -51,4 +60,7 @@ export class Connector extends BaseModelWithTenant {
 
   @BelongsTo(() => ChargingStation)
   declare chargingStation?: ChargingStation;
+
+  @BelongsTo(() => Evse)
+  declare evse?: Evse;
 }
