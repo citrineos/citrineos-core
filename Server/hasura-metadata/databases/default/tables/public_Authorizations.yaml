@@ -2,15 +2,12 @@ table:
   name: Authorizations
   schema: public
 object_relationships:
-  - name: IdToken
-    using:
-      foreign_key_constraint_on: idTokenId
-  - name: IdTokenInfo
-    using:
-      foreign_key_constraint_on: idTokenInfoId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
+  - name: GroupAuthorization
+    using:
+      foreign_key_constraint_on: groupIdTokenId
 array_relationships:
   - name: LocalListAuthorizations
     using:
@@ -26,8 +23,18 @@ select_permissions:
         - allowedConnectorTypes
         - disallowedEvseIdPrefixes
         - id
-        - idTokenId
-        - idTokenInfoId
+        - idToken
+        - idTokenType
+        - additionalInfo
+        - status
+        - cacheExpiryDateTime
+        - chargingPriority
+        - language1
+        - language2
+        - personalMessage
+        - groupIdTokenId
+        - concurrentTransaction
+        - customData
         - tenantId
         - createdAt
         - updatedAt

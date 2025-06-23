@@ -67,7 +67,8 @@ describe('TransactionService', () => {
 
   it('should return Accepted status when idTokenInfo is not defined', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.idTokenInfo = undefined;
+      // idTokenInfo is now flat, so set status directly
+      auth.status = undefined as any; // purposely set to undefined for test, but TS will error, so use 'as any'
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
@@ -89,7 +90,7 @@ describe('TransactionService', () => {
 
   it('should return status from idTokenInfo when not Accepted', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.idTokenInfo!.status = OCPP2_0_1.AuthorizationStatusEnumType.Blocked;
+      auth.status = OCPP2_0_1.AuthorizationStatusEnumType.Blocked;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
@@ -113,8 +114,8 @@ describe('TransactionService', () => {
   it('should return Invalid status when cacheExpiryDateTime is expired', async () => {
     const expiredDate = new Date(Date.now() - 1000).toISOString();
     const authorization = anAuthorization((auth) => {
-      auth.idTokenInfo!.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
-      auth.idTokenInfo!.cacheExpiryDateTime = expiredDate;
+      auth.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
+      auth.cacheExpiryDateTime = expiredDate;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
@@ -134,7 +135,7 @@ describe('TransactionService', () => {
 
   it('should not return ConcurrentTx status when there are concurrent transactions and concurrentTx is false', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.idTokenInfo!.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
+      auth.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
@@ -158,7 +159,7 @@ describe('TransactionService', () => {
   it('should return ConcurrentTx status when there are concurrent transactions and concurrentTx is true', async () => {
     const authorization = anAuthorization((auth) => {
       auth.concurrentTransaction = true;
-      auth.idTokenInfo!.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
+      auth.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
@@ -181,7 +182,7 @@ describe('TransactionService', () => {
 
   it('should apply authorizers when status is Accepted and transaction is started', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.idTokenInfo!.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
+      auth.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
@@ -218,13 +219,13 @@ describe('TransactionService', () => {
       );
 
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Accepted);
-      expect(response.idTagInfo.parentIdTag).toBe(authorization.idTokenInfo!.groupIdToken!.idToken);
-      expect(response.idTagInfo.expiryDate).toBe(authorization.idTokenInfo!.cacheExpiryDateTime);
+      expect(response.idTagInfo.parentIdTag).toBe(authorization.groupIdTokenId);
+      expect(response.idTagInfo.expiryDate).toBe(authorization.cacheExpiryDateTime);
     });
 
     it('should return Blocked status when idTokenInfo is blocked', async () => {
       const authorization = anAuthorization((auth) => {
-        auth.idTokenInfo!.status = OCPP1_6.StartTransactionResponseStatus.Blocked;
+        auth.status = OCPP1_6.StartTransactionResponseStatus.Blocked;
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
@@ -240,7 +241,7 @@ describe('TransactionService', () => {
 
     it('should return Expired status when idTokenInfo.cacheExpiryDateTime is smaller than now', async () => {
       const authorization = anAuthorization((auth) => {
-        auth.idTokenInfo!.cacheExpiryDateTime = faker.date.past().toISOString();
+        auth.cacheExpiryDateTime = faker.date.past().toISOString();
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 

@@ -1,18 +1,16 @@
 import { Authorization } from '@citrineos/data';
-
-import { faker } from '@faker-js/faker';
 import { anIdToken } from './IdTokenProvider';
-import { anIdTokenInfo } from './IdTokenInfoProvider';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 export function anAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {
+  const idTokenObj = anIdToken();
   const item: Authorization = {
     tenantId: DEFAULT_TENANT_ID,
-    idTokenId: faker.number.int({ min: 1, max: 100 }),
-    idToken: anIdToken(),
-    idTokenInfoId: faker.number.int({ min: 1, max: 100 }),
-    idTokenInfo: anIdTokenInfo(),
+    idToken: idTokenObj.idToken, // string value
+    idTokenType: idTokenObj.type, // string value
+    status: 'Accepted', // default valid status
+    // Optionally add more default fields as needed
   } as Authorization;
 
   return applyUpdateFunction(item, updateFunction);

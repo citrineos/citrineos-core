@@ -85,8 +85,8 @@ export class TransactionService {
       return response;
     }
     const authorization = authorizations[0];
-    if (!authorization.idTokenInfo) {
-      // Assumed to always be valid without IdTokenInfo
+    if (!authorization.status) {
+      // Assumed to always be valid without status
       response.idTokenInfo = {
         status: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
         // TODO determine how/if to set personalMessage
@@ -177,15 +177,15 @@ export class TransactionService {
         return response;
       }
 
-      // Check expiration
-      const idTokenInfo = authorizations[0].idTokenInfo;
-      if (!idTokenInfo) {
+      // Check expiration and status
+      const authorization = authorizations[0];
+      if (!authorization.status) {
         response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Accepted;
         return response;
       }
 
       const idTokenInfoStatus = OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
-        idTokenInfo.status,
+        authorization.status,
       );
       if (idTokenInfoStatus !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
         response.idTagInfo.status = idTokenInfoStatus;
@@ -193,8 +193,8 @@ export class TransactionService {
       }
 
       if (
-        idTokenInfo.cacheExpiryDateTime &&
-        new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
+        authorization.cacheExpiryDateTime &&
+        new Date() > new Date(authorization.cacheExpiryDateTime)
       ) {
         response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Expired;
         return response;
@@ -204,7 +204,7 @@ export class TransactionService {
       const activeTransactions =
         await this._transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken(
           tenantId,
-          authorizations[0].idToken.idToken,
+          authorization.idToken,
         );
       if (activeTransactions.length > 0) {
         response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
@@ -213,10 +213,16 @@ export class TransactionService {
 
       // Accept the idToken
       response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Accepted;
-      response.idTagInfo.expiryDate = idTokenInfo.cacheExpiryDateTime;
-      response.idTagInfo.parentIdTag = idTokenInfo.groupIdToken
-        ? idTokenInfo.groupIdToken.idToken
-        : undefined;
+      response.idTagInfo.expiryDate = authorization.cacheExpiryDateTime;
+      if (authorization.groupIdTokenId) {
+        // Look up the referenced Authorization for parentIdTag
+        const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(tenantId, {
+          where: { id: authorization.groupIdTokenId },
+        });
+        if (parentAuth) {
+          response.idTagInfo.parentIdTag = parentAuth.idToken;
+        }
+      }
       return response;
     } catch (e) {
       this._logger.error(`Authorization for idToken ${idToken} failed.`, e);

@@ -280,119 +280,109 @@ export class EVDriverModule extends AbstractModule {
       })
       .then(async (authorization) => {
         if (authorization) {
-          if (authorization.idTokenInfo) {
-            const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
+          // Use flat fields directly instead of authorization.idTokenInfo
+          const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
 
-            if (idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
-              if (
-                idTokenInfo.cacheExpiryDateTime &&
-                new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
-              ) {
+          if (idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
+            if (
+              idTokenInfo.cacheExpiryDateTime &&
+              new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
+            ) {
+              response.idTokenInfo = {
+                status: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
+                groupIdToken: idTokenInfo.groupIdToken,
+                // TODO determine how/if to set personalMessage
+              };
+            } else {
+              // If charging station does not have values and evses associated with the component/variable pairs below,
+              // this logic will break. CSMS's aiming to use the allowedConnectorTypes or disallowedEvseIdPrefixes
+              // Authorization restrictions MUST provide these variable attributes as defined in Physical Component
+              // list of Part 2 - Appendices of OCPP 2.0.1
+              let evseIds: Set<number> | undefined;
+              if (authorization.allowedConnectorTypes) {
+                evseIds = new Set();
+                const connectorTypes: VariableAttribute[] =
+                  await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
+                    tenantId: context.tenantId,
+                    stationId: message.context.stationId,
+                    component_name: 'Connector',
+                    variable_name: 'ConnectorType',
+                    type: OCPP2_0_1.AttributeEnumType.Actual,
+                  });
+                for (const connectorType of connectorTypes) {
+                  if (
+                    authorization.allowedConnectorTypes.indexOf(connectorType.value as string) > 0
+                  ) {
+                    evseIds.add(connectorType.evse?.id as number);
+                  }
+                }
+              }
+              if (evseIds && evseIds.size === 0) {
                 response.idTokenInfo = {
-                  status: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
+                  status: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
                   groupIdToken: idTokenInfo.groupIdToken,
                   // TODO determine how/if to set personalMessage
                 };
               } else {
-                // If charging station does not have values and evses associated with the component/variable pairs below,
-                // this logic will break. CSMS's aiming to use the allowedConnectorTypes or disallowedEvseIdPrefixes
-                // Authorization restrictions MUST provide these variable attributes as defined in Physical Component
-                // list of Part 2 - Appendices of OCPP 2.0.1
-                let evseIds: Set<number> | undefined;
-                if (authorization.allowedConnectorTypes) {
-                  evseIds = new Set();
-                  const connectorTypes: VariableAttribute[] =
+                if (authorization.disallowedEvseIdPrefixes) {
+                  evseIds = evseIds ? evseIds : new Set();
+                  const evseIdAttributes: VariableAttribute[] =
                     await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
                       tenantId: context.tenantId,
                       stationId: message.context.stationId,
-                      component_name: 'Connector',
-                      variable_name: 'ConnectorType',
+                      component_name: 'EVSE',
+                      variable_name: 'EvseId',
                       type: OCPP2_0_1.AttributeEnumType.Actual,
                     });
-                  for (const connectorType of connectorTypes) {
-                    if (
-                      authorization.allowedConnectorTypes.indexOf(connectorType.value as string) > 0
-                    ) {
-                      evseIds.add(connectorType.evse?.id as number);
+                  for (const evseIdAttribute of evseIdAttributes) {
+                    const evseIdAllowed: boolean = authorization.disallowedEvseIdPrefixes.some(
+                      (disallowedEvseId) =>
+                        (evseIdAttribute.value as string).startsWith(disallowedEvseId),
+                    );
+                    if (evseIdAllowed && !authorization.allowedConnectorTypes) {
+                      evseIds.add(evseIdAttribute.evse?.id as number);
+                    } else if (!evseIdAllowed && authorization.allowedConnectorTypes) {
+                      evseIds.delete(evseIdAttribute.evse?.id as number);
                     }
                   }
                 }
                 if (evseIds && evseIds.size === 0) {
                   response.idTokenInfo = {
-                    status: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
+                    status: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
                     groupIdToken: idTokenInfo.groupIdToken,
                     // TODO determine how/if to set personalMessage
                   };
                 } else {
-                  // EVSEID prefixes here follow the ISO 15118/IEC 63119-2 format, unlike the evseId list on the
-                  // IdTokenInfo object which refers to the serial evse ids defined within OCPP 2.0.1's 3-tier model
-                  // Thus, the EvseId variable of the EVSE component defined in Part 2 - Appendices of OCPP 2.0.1
-                  // Needs to be looked up to perform the match
-                  if (authorization.disallowedEvseIdPrefixes) {
-                    evseIds = evseIds ? evseIds : new Set();
-                    const evseIdAttributes: VariableAttribute[] =
-                      await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
-                        tenantId: context.tenantId,
-                        stationId: message.context.stationId,
-                        component_name: 'EVSE',
-                        variable_name: 'EvseId',
-                        type: OCPP2_0_1.AttributeEnumType.Actual,
-                      });
-                    for (const evseIdAttribute of evseIdAttributes) {
-                      const evseIdAllowed: boolean = authorization.disallowedEvseIdPrefixes.some(
-                        (disallowedEvseId) =>
-                          (evseIdAttribute.value as string).startsWith(disallowedEvseId),
-                      );
-                      // If evseId allowed and evseIds were not already filtered by connector type, add to set
-                      // If evseId not allowed and evseIds were already filtered by connector type, remove from set
-                      if (evseIdAllowed && !authorization.allowedConnectorTypes) {
-                        evseIds.add(evseIdAttribute.evse?.id as number);
-                      } else if (!evseIdAllowed && authorization.allowedConnectorTypes) {
-                        evseIds.delete(evseIdAttribute.evse?.id as number);
-                      }
-                    }
-                  }
-                  if (evseIds && evseIds.size === 0) {
-                    response.idTokenInfo = {
-                      status: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
-                      groupIdToken: idTokenInfo.groupIdToken,
-                      // TODO determine how/if to set personalMessage
-                    };
-                  } else {
-                    // TODO: Determine how to check for NotAtThisTime
-                    response.idTokenInfo = idTokenInfo;
-                    const evseId: number[] = [...(evseIds ? evseIds.values() : [])];
-                    if (evseId.length > 0) {
-                      response.idTokenInfo.evseId = [evseId.pop() as number, ...evseId];
-                    }
+                  // TODO: Determine how to check for NotAtThisTime
+                  response.idTokenInfo = idTokenInfo;
+                  const evseId: number[] = [...(evseIds ? evseIds.values() : [])];
+                  if (evseId.length > 0) {
+                    response.idTokenInfo.evseId = [evseId.pop() as number, ...evseId];
                   }
                 }
               }
+            }
 
-              for (const authorizer of this._authorizers) {
-                if (
-                  response.idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted
-                ) {
-                  break;
-                }
-                const result: Partial<OCPP2_0_1.IdTokenType> = await authorizer.authorize(
-                  authorization,
-                  context,
-                );
-                Object.assign(response.idTokenInfo, result);
+            for (const authorizer of this._authorizers) {
+              if (response.idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
+                break;
               }
-            } else {
-              // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
-              // N.B. Other statuses should not be allowed to be stored.
-              response.idTokenInfo = idTokenInfo;
+              const result: Partial<OCPP2_0_1.IdTokenType> = await authorizer.authorize(
+                authorization,
+                context,
+              );
+              Object.assign(response.idTokenInfo, result);
             }
           } else {
-            // Assumed to always be valid without IdTokenInfo
-            response.idTokenInfo = {
-              status: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
-              // TODO determine how/if to set personalMessage
-            };
+            // Blocked, Expired, Invalid, NoCredit
+            response.idTokenInfo = idTokenInfo;
           }
+        } else {
+          // Assumed to always be valid without IdTokenInfo
+          response.idTokenInfo = {
+            status: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
+            // TODO determine how/if to set personalMessage
+          };
         }
 
         if (response.idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
@@ -762,18 +752,27 @@ export class EVDriverModule extends AbstractModule {
       }
 
       const authorization = authorizations[0];
-      if (!authorization.idTokenInfo) {
+      if (!authorization.status) {
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Accepted;
       } else {
-        const { cacheExpiryDateTime, groupIdToken, status } = authorization.idTokenInfo;
+        const cacheExpiryDateTime = authorization.cacheExpiryDateTime;
+        const groupIdTokenId = authorization.groupIdTokenId;
+        const status = authorization.status;
         if (cacheExpiryDateTime && new Date() > new Date(cacheExpiryDateTime)) {
           response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Expired;
         } else {
           response.idTagInfo.status = OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(status);
         }
         response.idTagInfo.expiryDate = cacheExpiryDateTime;
-        if (groupIdToken) {
-          response.idTagInfo.parentIdTag = groupIdToken.idToken;
+        if (groupIdTokenId) {
+          // Look up the referenced Authorization for parentIdTag
+          const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(
+            message.context.tenantId,
+            { where: { id: groupIdTokenId } },
+          );
+          if (parentAuth) {
+            response.idTagInfo.parentIdTag = parentAuth.idToken;
+          }
         }
       }
     } catch (error) {
