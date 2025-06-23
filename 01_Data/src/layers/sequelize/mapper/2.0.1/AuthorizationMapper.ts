@@ -1,51 +1,39 @@
 import { OCPP2_0_1 } from '@citrineos/base';
-import { AdditionalInfo, Authorization, IdToken } from '../../model/Authorization';
+import { AdditionalInfo, Authorization } from '../../model/Authorization';
 
 export class AuthorizationMapper {
   static toAuthorizationData(authorization: Authorization): OCPP2_0_1.AuthorizationData {
     return {
       customData: authorization.customData,
-      idToken: AuthorizationMapper.toIdToken(authorization.idToken),
+      idToken: AuthorizationMapper.toIdToken(authorization),
       idTokenInfo: AuthorizationMapper.toIdTokenInfo(authorization),
     };
   }
 
-  static toIdToken(idToken: IdToken): OCPP2_0_1.IdTokenType {
-    if (!idToken.type) {
+  static toIdToken(authorization: Authorization): OCPP2_0_1.IdTokenType {
+    if (!authorization.idTokenType) {
       throw new Error('IdToken type is missing.');
     }
     return {
-      customData: idToken.customData,
-      additionalInfo:
-        idToken.additionalInfo && idToken.additionalInfo.length > 0
-          ? (idToken.additionalInfo.map(this.toAdditionalInfo) as [any, ...any[]])
-          : null,
-      idToken: idToken.idToken,
-      type: AuthorizationMapper.toIdTokenEnumType(idToken.type),
-    };
-  }
-
-  static toAdditionalInfo(additionalInfo: AdditionalInfo): OCPP2_0_1.AdditionalInfoType {
-    return {
-      customData: additionalInfo.customData,
-      additionalIdToken: additionalInfo.additionalIdToken,
-      type: additionalInfo.type,
+      customData: authorization.customData,
+      additionalInfo: authorization.additionalInfo ?? null,
+      idToken: authorization.idToken,
+      type: AuthorizationMapper.toIdTokenEnumType(authorization.idTokenType),
     };
   }
 
   static toIdTokenInfo(authorization: Authorization): OCPP2_0_1.IdTokenInfoType {
     return {
-      status: AuthorizationMapper.toAuthorizationStatusEnumType(authorization.idTokenInfo!.status),
-      cacheExpiryDateTime: authorization.idTokenInfo?.cacheExpiryDateTime,
-      chargingPriority: authorization.idTokenInfo?.chargingPriority,
-      language1: authorization.idTokenInfo?.language1,
-      evseId: authorization.idTokenInfo?.evseId,
-      groupIdToken: authorization.idTokenInfo?.groupIdToken
-        ? AuthorizationMapper.toIdToken(authorization.idTokenInfo?.groupIdToken)
+      status: AuthorizationMapper.toAuthorizationStatusEnumType(authorization.status),
+      cacheExpiryDateTime: authorization.cacheExpiryDateTime,
+      chargingPriority: authorization.chargingPriority,
+      language1: authorization.language1,
+      groupIdToken: authorization.groupIdToken
+        ? AuthorizationMapper.toIdToken(authorization.groupIdToken)
         : undefined,
-      language2: authorization.idTokenInfo?.language2,
-      personalMessage: authorization.idTokenInfo?.personalMessage,
-      customData: authorization.idTokenInfo?.customData,
+      language2: authorization.language2,
+      personalMessage: authorization.personalMessage,
+      customData: authorization.customData,
     };
   }
 

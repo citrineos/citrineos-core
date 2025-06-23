@@ -5,7 +5,6 @@
 
 import { Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { AdditionalInfo } from './AdditionalInfo';
-import { IdToken } from './IdToken';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
@@ -13,11 +12,10 @@ export class IdTokenAdditionalInfo extends BaseModelWithTenant {
   // Namespace enum not used as this is not a model required by CitrineOS
   static readonly MODEL_NAME: string = 'IdTokenAdditionalInfo';
 
-  @ForeignKey(() => IdToken)
-  @Column(DataType.INTEGER)
-  declare idTokenId: number;
-
   @ForeignKey(() => AdditionalInfo)
   @Column(DataType.INTEGER)
   declare additionalInfoId: number;
+
+  // This join table is no longer needed, but kept for migration compatibility if required.
+  // You may safely remove this file if not referenced elsewhere.
 }

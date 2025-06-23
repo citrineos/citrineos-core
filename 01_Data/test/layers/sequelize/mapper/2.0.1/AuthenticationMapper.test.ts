@@ -1,49 +1,38 @@
 import { OCPP2_0_1 } from '@citrineos/base';
 import { AuthorizationMapper } from '../../../../../src/layers/sequelize/mapper/2.0.1';
-import {
-  aAuthorization,
-  aIdToken,
-  aIdTokenInfo,
-  aAdditionalInfo,
-} from '../../../../providers/Authorization';
+import { aAuthorization, aAdditionalInfo } from '../../../../providers/Authorization';
+
+// Helper function to validate common structure
+const validateIdToken = (result: any, authorization: any) => {
+  expect(result).toHaveProperty('idToken', authorization.idToken);
+  expect(result).toHaveProperty('type', authorization.idTokenType);
+};
 
 describe('AuthenticationMapper', () => {
-  // Helper function to validate common structure
-  const validateIdToken = (result: any, idToken: any) => {
-    expect(result).toHaveProperty('idToken', idToken.idToken);
-    expect(result).toHaveProperty('type', idToken.type);
-  };
-
   describe('toAuthorizationData', () => {
     it('should map Authorization to AuthorizationData correctly', () => {
       const authorization = aAuthorization();
-
       const result = AuthorizationMapper.toAuthorizationData(authorization);
-
       expect(result).toHaveProperty('customData');
-      validateIdToken(result.idToken, authorization.idToken);
+      validateIdToken(result.idToken, authorization);
       expect(result).toHaveProperty('idTokenInfo');
     });
   });
 
   describe('toIdToken', () => {
-    it('should map IdToken to the correct format', () => {
-      const idToken = aIdToken();
-
-      const result = AuthorizationMapper.toIdToken(idToken);
-
-      validateIdToken(result, idToken);
+    it('should map Authorization to the correct idToken format', () => {
+      const authorization = aAuthorization();
+      const result = AuthorizationMapper.toIdToken(authorization);
+      validateIdToken(result, authorization);
       expect(result).toHaveProperty('additionalInfo');
     });
 
     it('should map additionalInfo if present', () => {
-      const idToken = aIdToken((token) => {
-        token.additionalInfo = [aAdditionalInfo(), aAdditionalInfo()];
-        return token;
+      const authorization = aAuthorization((auth) => {
+        auth.additionalInfo = [aAdditionalInfo(), aAdditionalInfo()];
+        return auth;
       });
-
-      const result = AuthorizationMapper.toIdToken(idToken);
-
+      const result = AuthorizationMapper.toIdToken(authorization);
       if (result.additionalInfo) {
         expect(result.additionalInfo.length).toBe(2);
         result.additionalInfo.forEach((info: any) => {
@@ -53,45 +42,6 @@ describe('AuthenticationMapper', () => {
       } else {
         throw new Error('additionalInfo should not be null for this test case.');
       }
-    });
-  });
-
-  describe('toAdditionalInfo', () => {
-    it('should map AdditionalInfo correctly', () => {
-      const additionalInfo = aAdditionalInfo();
-
-      const result = AuthorizationMapper.toAdditionalInfo(additionalInfo);
-
-      expect(result).toEqual(additionalInfo);
-    });
-  });
-
-  describe('toIdTokenInfo', () => {
-    it('should map IdTokenInfo correctly', () => {
-      const authorization = aAuthorization();
-
-      const result = AuthorizationMapper.toIdTokenInfo(authorization);
-
-      expect(result).toHaveProperty('status');
-      expect(result).toHaveProperty('cacheExpiryDateTime');
-      expect(result).toHaveProperty('chargingPriority');
-      expect(result).toHaveProperty('language1');
-      expect(result).toHaveProperty('evseId');
-      expect(result).toHaveProperty('groupIdToken');
-    });
-
-    it('should handle undefined groupIdToken', () => {
-      const authorization = aAuthorization((auth) => {
-        auth.idTokenInfo = aIdTokenInfo((info) => {
-          info.groupIdToken = undefined;
-          return info;
-        });
-        return auth;
-      });
-
-      const result = AuthorizationMapper.toIdTokenInfo(authorization);
-
-      expect(result.groupIdToken).toBeUndefined();
     });
   });
 

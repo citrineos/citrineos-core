@@ -4,17 +4,12 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
-import { BelongsToMany, Column, DataType, Table } from 'sequelize-typescript';
-import { IdToken } from './IdToken';
-import { IdTokenAdditionalInfo } from './IdTokenAdditionalInfo';
+import { Column, DataType, Table } from 'sequelize-typescript';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class AdditionalInfo extends BaseModelWithTenant implements OCPP2_0_1.AdditionalInfoType {
+export class AdditionalInfo extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.AdditionalInfoType;
-
-  @BelongsToMany(() => IdToken, () => IdTokenAdditionalInfo)
-  declare additionalInfo?: OCPP2_0_1.IdTokenType[];
 
   @Column({
     type: DataType.STRING,
@@ -28,5 +23,6 @@ export class AdditionalInfo extends BaseModelWithTenant implements OCPP2_0_1.Add
   })
   declare type: string;
 
+  @Column(DataType.JSONB)
   declare customData?: OCPP2_0_1.CustomDataType | null;
 }

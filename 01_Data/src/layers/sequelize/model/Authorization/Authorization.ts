@@ -6,7 +6,6 @@
 import { Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, Default, ForeignKey, Table } from 'sequelize-typescript';
 import { type AuthorizationRestrictions } from '../../../../interfaces';
-import { IdToken, IdTokenInfo } from '.';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
@@ -19,22 +18,51 @@ export class Authorization extends BaseModelWithTenant implements AuthorizationR
   @Column(DataType.ARRAY(DataType.STRING))
   declare disallowedEvseIdPrefixes?: string[];
 
-  @ForeignKey(() => IdToken)
   @Column({
-    type: DataType.INTEGER,
-    unique: true,
+    type: DataType.STRING,
+    unique: 'idToken_type',
   })
-  declare idTokenId?: number;
+  declare idToken: string;
 
-  @BelongsTo(() => IdToken)
-  declare idToken: IdToken;
+  @Column({
+    type: DataType.STRING,
+    unique: 'idToken_type',
+  })
+  declare idTokenType?: string | null;
 
-  @ForeignKey(() => IdTokenInfo)
+  @Column(DataType.JSONB)
+  declare additionalInfo?: any | null; // JSONB for AdditionalInfo
+
+  @Column(DataType.STRING)
+  declare status: string;
+
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('cacheExpiryDateTime')?.toISOString();
+    },
+  })
+  declare cacheExpiryDateTime?: string | null;
+
   @Column(DataType.INTEGER)
-  declare idTokenInfoId?: number | null;
+  declare chargingPriority?: number | null;
 
-  @BelongsTo(() => IdTokenInfo)
-  declare idTokenInfo?: IdTokenInfo;
+  @Column(DataType.STRING)
+  declare language1?: string | null;
+
+  @Column(DataType.STRING)
+  declare language2?: string | null;
+
+  @Column(DataType.JSON)
+  declare personalMessage?: any | null;
+
+  // Reference to another Authorization for groupIdToken
+  @ForeignKey(() => Authorization)
+  @Column(DataType.INTEGER)
+  declare groupIdTokenId?: number | null;
+
+  @BelongsTo(() => Authorization, { foreignKey: 'groupIdTokenId', as: 'groupIdToken' })
+  declare groupIdToken?: Authorization;
 
   @Default(false)
   @Column(DataType.BOOLEAN)

@@ -13,7 +13,7 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { type AuthorizationRestrictions } from '../../../../interfaces';
-import { Authorization, IdToken, IdTokenInfo, LocalListVersion, SendLocalList } from '.';
+import { Authorization, SendLocalList, LocalListVersion } from '.';
 import { SendLocalListAuthorization } from './SendLocalListAuthorization';
 import { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
@@ -41,19 +41,54 @@ export class LocalListAuthorization
   @Column(DataType.ARRAY(DataType.STRING))
   declare disallowedEvseIdPrefixes?: string[];
 
-  @ForeignKey(() => IdToken)
+  // Store flat fields with unique names
+  @Column(DataType.STRING)
+  declare idTokenValue: string;
+
+  @Column(DataType.STRING)
+  declare idTokenType?: string;
+
+  @Column(DataType.JSONB)
+  declare additionalInfo?: any;
+
+  // Getter/setter for interface compatibility
+  get idToken(): OCPP2_0_1.IdTokenType {
+    return {
+      idToken: this.getDataValue('idTokenValue'),
+      type: this.getDataValue('idTokenType'),
+      additionalInfo: this.getDataValue('additionalInfo'),
+      customData: this.customData,
+    };
+  }
+  set idToken(_val: OCPP2_0_1.IdTokenType) {
+    // No-op setter
+  }
+
+  // Flattened IdTokenInfo fields
+  @Column(DataType.STRING)
+  declare status: string;
+
+  @Column(DataType.DATE)
+  declare cacheExpiryDateTime?: string | null;
+
   @Column(DataType.INTEGER)
-  declare idTokenId?: number;
+  declare chargingPriority?: number | null;
 
-  @BelongsTo(() => IdToken)
-  declare idToken: OCPP2_0_1.IdTokenType;
+  @Column(DataType.STRING)
+  declare language1?: string | null;
 
-  @ForeignKey(() => IdTokenInfo)
+  @Column(DataType.STRING)
+  declare language2?: string | null;
+
+  @Column(DataType.JSON)
+  declare personalMessage?: any | null;
+
+  @ForeignKey(() => Authorization)
   @Column(DataType.INTEGER)
-  declare idTokenInfoId?: number | null;
+  declare groupIdTokenId?: number | null;
 
-  @BelongsTo(() => IdTokenInfo)
-  declare idTokenInfo?: OCPP2_0_1.IdTokenInfoType;
+  @BelongsTo(() => Authorization, { foreignKey: 'groupIdTokenId', as: 'groupIdToken' })
+  declare groupIdToken?: Authorization;
 
   @ForeignKey(() => Authorization)
   @Column(DataType.INTEGER)
