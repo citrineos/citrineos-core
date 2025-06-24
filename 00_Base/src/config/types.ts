@@ -490,7 +490,7 @@ export const systemConfigSchema = z
               rateLimit: z.boolean(),
             })
             .optional(),
-          localByPass: z.boolean(),
+          localByPass: z.boolean().default(false).optional(),
         })
         .refine((obj) => obj.oidc || obj.localByPass, {
           message: 'An auth provider implementation must be set',

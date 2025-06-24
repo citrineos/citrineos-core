@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { z } from 'zod';
-import { CITRINE_ENV_VAR_PREFIX } from './defineConfig';
+import { BOOSTRAP_CONFIG_ENV_VAR_PREFIX } from './defineConfig';
 
 // Bootstrap schema only contains what's needed to access config storage
 export const bootstrapConfigSchema = z.object({
@@ -64,7 +64,7 @@ export type BootstrapConfig = z.infer<typeof bootstrapConfigSchema>;
  * Helper function to load environment variables based on prefix
  */
 function getEnvVarValue(key: string): string | undefined {
-  const envKey = `${CITRINE_ENV_VAR_PREFIX}${key}`.toUpperCase();
+  const envKey = `${BOOSTRAP_CONFIG_ENV_VAR_PREFIX}${key}`.toUpperCase();
   return process.env[envKey];
 }
 

@@ -17,6 +17,7 @@ for (const arg of args) {
 }
 
 export const CITRINE_ENV_VAR_PREFIX = dynamicPrefix;
+export const BOOSTRAP_CONFIG_ENV_VAR_PREFIX = `bootstrap_${CITRINE_ENV_VAR_PREFIX}`;
 
 /**
  * Finds a case-insensitive match for a key in an object.

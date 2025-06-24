@@ -177,7 +177,7 @@ const apiAuthPlugin: FastifyPluginAsync<{
     // Skip authentication for excluded routes
     if (isExcludedRoute(request.url)) {
       if (options.debug) {
-        _logger.debug(`Skipping authentication for excluded route: ${request.url}`);
+        _logger.trace(`Skipping authentication for excluded route: ${request.url}`);
       }
       return;
     }
