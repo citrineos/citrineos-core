@@ -51,7 +51,7 @@ export class TransactionEvent extends BaseModelWithTenant {
   declare reservationId?: number | null;
 
   @ForeignKey(() => Transaction)
-  declare transactionDatabaseId?: string;
+  declare transactionDatabaseId: string;
 
   @BelongsTo(() => Transaction)
   declare transaction?: Transaction;
