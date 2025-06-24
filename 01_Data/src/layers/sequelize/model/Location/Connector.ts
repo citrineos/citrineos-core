@@ -21,11 +21,7 @@ export class Connector extends BaseModelWithTenant {
   declare stationId: string;
 
   @ForeignKey(() => Evse)
-  @Column({
-    unique: 'stationId_connectorId',
-    allowNull: false,
-    type: DataType.STRING,
-  })
+  @Column(DataType.STRING)
   declare evseId: string;
 
   @Column({

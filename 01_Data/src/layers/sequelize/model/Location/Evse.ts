@@ -12,22 +12,14 @@ export class Evse extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = Namespace.Evse;
 
   @ForeignKey(() => ChargingStation)
-  @Column({
-    unique: 'stationId_evseId',
-    allowNull: false,
-    type: DataType.STRING,
-  })
+  @Column(DataType.STRING)
   declare stationId: string;
 
-  @Column({
-    type: DataType.INTEGER,
-    unique: 'stationId_evseId',
-    allowNull: false,
-  })
+  @Column(DataType.STRING)
   declare evseId: number;
 
   @Column(DataType.STRING)
-  declare physicalReference?: string;
+  declare physicalReference?: string | null;
 
   @Column(DataType.BOOLEAN)
   declare removed?: boolean;
