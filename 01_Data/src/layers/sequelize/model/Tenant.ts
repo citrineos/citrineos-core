@@ -145,15 +145,6 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
   @HasMany(() => EventData)
   declare eventDatas: EventData[];
 
-  // @HasMany(() => IdToken)
-  // declare idTokens: IdToken[];
-
-  // @HasMany(() => IdTokenAdditionalInfo)
-  // declare idTokenAdditionalInfos: IdTokenAdditionalInfo[];
-
-  // @HasMany(() => IdTokenInfo)
-  // declare idTokenInfos: IdTokenInfo[];
-
   @HasMany(() => Location)
   declare locations: Location[];
 
