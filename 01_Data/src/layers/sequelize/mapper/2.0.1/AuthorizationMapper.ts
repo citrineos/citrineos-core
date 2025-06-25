@@ -1,5 +1,5 @@
 import { OCPP2_0_1 } from '@citrineos/base';
-import { AdditionalInfo, Authorization } from '../../model/Authorization';
+import { Authorization } from '../../model/Authorization';
 
 export class AuthorizationMapper {
   static toAuthorizationData(authorization: Authorization): OCPP2_0_1.AuthorizationData {
@@ -28,9 +28,6 @@ export class AuthorizationMapper {
       cacheExpiryDateTime: authorization.cacheExpiryDateTime,
       chargingPriority: authorization.chargingPriority,
       language1: authorization.language1,
-      groupIdToken: authorization.groupIdToken
-        ? AuthorizationMapper.toIdToken(authorization.groupIdToken)
-        : undefined,
       language2: authorization.language2,
       personalMessage: authorization.personalMessage,
       customData: authorization.customData,

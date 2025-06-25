@@ -6,7 +6,6 @@
 import { Transaction as SequelizeTransaction } from 'sequelize';
 
 export { SequelizeTransaction };
-export { IdTokenAdditionalInfo } from './layers/sequelize/model/Authorization/IdTokenAdditionalInfo';
 export * as sequelize from './layers/sequelize';
 export * from './interfaces';
 export * from 'sequelize-typescript';
@@ -39,7 +38,6 @@ export {
   InstalledCertificate,
   CountryNameEnumType,
   TransactionEvent,
-  AdditionalInfo,
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,

@@ -219,7 +219,7 @@ describe('TransactionService', () => {
       );
 
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Accepted);
-      expect(response.idTagInfo.parentIdTag).toBe(authorization.groupIdTokenId);
+      expect(response.idTagInfo.parentIdTag).toBe(authorization.groupAuthorizationId);
       expect(response.idTagInfo.expiryDate).toBe(authorization.cacheExpiryDateTime);
     });
 

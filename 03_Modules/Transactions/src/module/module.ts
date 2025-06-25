@@ -650,9 +650,9 @@ export class TransactionsModule extends AbstractModule {
     }
 
     let parentIdTag: string | undefined = undefined;
-    if (authorization?.groupIdTokenId) {
+    if (authorization?.groupAuthorizationId) {
       const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(tenantId, {
-        where: { id: authorization.groupIdTokenId },
+        where: { id: authorization.groupAuthorizationId },
       });
       if (parentAuth) {
         parentIdTag = parentAuth.idToken;

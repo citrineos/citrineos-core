@@ -14,7 +14,6 @@ export {
 } from './model/DeviceModel';
 export {
   Authorization,
-  AdditionalInfo,
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,

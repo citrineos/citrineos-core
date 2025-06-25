@@ -5,13 +5,13 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 export function anAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {
   const idTokenObj = anIdToken();
-  const item: Authorization = {
-    tenantId: DEFAULT_TENANT_ID,
-    idToken: idTokenObj.idToken, // string value
-    idTokenType: idTokenObj.type, // string value
-    status: 'Accepted', // default valid status
-    // Optionally add more default fields as needed
-  } as Authorization;
+  const item = Object.create(Authorization.prototype) as Authorization;
+  item.tenantId = DEFAULT_TENANT_ID;
+  item.idToken = idTokenObj.idToken;
+  item.idTokenType = idTokenObj.type;
+  item.status = 'Accepted';
+  item.groupAuthorizationId = 1;
+  // Optionally add more default fields as needed
 
   return applyUpdateFunction(item, updateFunction);
 }

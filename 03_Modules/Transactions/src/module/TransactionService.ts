@@ -214,10 +214,10 @@ export class TransactionService {
       // Accept the idToken
       response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Accepted;
       response.idTagInfo.expiryDate = authorization.cacheExpiryDateTime;
-      if (authorization.groupIdTokenId) {
+      if (authorization.groupAuthorizationId) {
         // Look up the referenced Authorization for parentIdTag
         const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(tenantId, {
-          where: { id: authorization.groupIdTokenId },
+          where: { id: authorization.groupAuthorizationId },
         });
         if (parentAuth) {
           response.idTagInfo.parentIdTag = parentAuth.idToken;

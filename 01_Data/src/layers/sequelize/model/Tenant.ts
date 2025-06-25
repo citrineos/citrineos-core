@@ -1,7 +1,6 @@
 import { Optional } from 'sequelize';
 import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import {
-  AdditionalInfo,
   Authorization,
   LocalListAuthorization,
   LocalListVersion,
@@ -87,9 +86,6 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
   /**
    * Relationships
    */
-
-  @HasMany(() => AdditionalInfo)
-  declare additionalInfos: AdditionalInfo[];
 
   @HasMany(() => Authorization)
   declare authorizations: Authorization[];

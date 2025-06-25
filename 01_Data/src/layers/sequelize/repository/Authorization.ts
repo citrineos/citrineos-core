@@ -5,7 +5,7 @@
 
 import { CrudRepository, SystemConfig } from '@citrineos/base';
 import { type AuthorizationQuerystring, type IAuthorizationRepository } from '../../../interfaces';
-import { AdditionalInfo, Authorization } from '../model/Authorization';
+import { Authorization } from '../model/Authorization';
 import { SequelizeRepository } from './Base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
@@ -14,23 +14,8 @@ export class SequelizeAuthorizationRepository
   extends SequelizeRepository<Authorization>
   implements IAuthorizationRepository
 {
-  additionalInfo: CrudRepository<AdditionalInfo>;
-
-  constructor(
-    config: SystemConfig,
-    logger?: Logger<ILogObj>,
-    sequelizeInstance?: Sequelize,
-    additionalInfo?: CrudRepository<AdditionalInfo>,
-  ) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, Authorization.MODEL_NAME, logger, sequelizeInstance);
-    this.additionalInfo = additionalInfo
-      ? additionalInfo
-      : new SequelizeRepository<AdditionalInfo>(
-          config,
-          AdditionalInfo.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
   }
 
   async readAllByQuerystring(

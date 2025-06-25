@@ -1,6 +1,6 @@
 import { OCPP2_0_1 } from '@citrineos/base';
 import { AuthorizationMapper } from '../../../../../src/layers/sequelize/mapper/2.0.1';
-import { aAuthorization, aAdditionalInfo } from '../../../../providers/Authorization';
+import { aAuthorization } from '../../../../providers/Authorization';
 
 // Helper function to validate common structure
 const validateIdToken = (result: any, authorization: any) => {
@@ -29,19 +29,12 @@ describe('AuthenticationMapper', () => {
 
     it('should map additionalInfo if present', () => {
       const authorization = aAuthorization((auth) => {
-        auth.additionalInfo = [aAdditionalInfo(), aAdditionalInfo()];
+        auth.additionalInfo = { key: 'value' };
         return auth;
       });
       const result = AuthorizationMapper.toIdToken(authorization);
-      if (result.additionalInfo) {
-        expect(result.additionalInfo.length).toBe(2);
-        result.additionalInfo.forEach((info: any) => {
-          expect(info).toHaveProperty('additionalIdToken');
-          expect(info).toHaveProperty('type');
-        });
-      } else {
-        throw new Error('additionalInfo should not be null for this test case.');
-      }
+      expect(result).toHaveProperty('additionalInfo');
+      expect(result.additionalInfo).toEqual({ key: 'value' });
     });
   });
 

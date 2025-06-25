@@ -91,10 +91,10 @@ export class SequelizeLocalAuthListRepository
           `Authorization idToken in SendLocalListRequest ${JSON.stringify(authData.idToken)} does not match idToken in database { idToken: ${auth.idToken}, idTokenType: ${auth.idTokenType} } (update the idToken first)`,
         );
       }
-      // If groupIdToken is present, compare its id to groupIdTokenId
+      // If groupAuthorizationId is present, compare its id to groupAuthorizationId
       if (authData.idTokenInfo?.groupIdToken) {
-        let groupIdTokenAuthId: number | undefined;
-        // Only perform groupIdTokenId check if groupIdToken is an object with idToken and type
+        let groupAuthorizationAuthId: number | undefined;
+        // Only perform groupAuthorizationId check if groupIdToken is an object with idToken and type
         if (
           authData.idTokenInfo?.groupIdToken &&
           typeof authData.idTokenInfo.groupIdToken === 'object' &&
@@ -107,18 +107,21 @@ export class SequelizeLocalAuthListRepository
               idTokenType: authData.idTokenInfo.groupIdToken.type,
             },
           });
-          const groupIdTokenAuthId = groupAuth?.id;
-          if (!auth.groupIdTokenId || groupIdTokenAuthId !== auth.groupIdTokenId) {
+          const groupAuthorizationAuthId = groupAuth?.id;
+          if (
+            !auth.groupAuthorizationId ||
+            groupAuthorizationAuthId !== auth.groupAuthorizationId
+          ) {
             throw new Error(
-              `Authorization groupIdToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match groupIdTokenId in database ${JSON.stringify(auth.groupIdTokenId)} (update the groupIdToken first)`,
+              `Authorization groupIdToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match groupAuthorizationId in database ${JSON.stringify(auth.groupAuthorizationId)} (update the groupAuthorization first)`,
             );
           }
         } else if (typeof authData.idTokenInfo.groupIdToken === 'number') {
-          groupIdTokenAuthId = authData.idTokenInfo.groupIdToken;
+          groupAuthorizationAuthId = authData.idTokenInfo.groupIdToken;
         }
-        if (!auth.groupIdTokenId || groupIdTokenAuthId !== auth.groupIdTokenId) {
+        if (!auth.groupAuthorizationId || groupAuthorizationAuthId !== auth.groupAuthorizationId) {
           throw new Error(
-            `Authorization groupIdToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match groupIdTokenId in database ${JSON.stringify(auth.groupIdTokenId)} (update the groupIdToken first)`,
+            `Authorization groupIdToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match groupAuthorizationId in database ${JSON.stringify(auth.groupAuthorizationId)} (update the groupAuthorization first)`,
           );
         }
       }

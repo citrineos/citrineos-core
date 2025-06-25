@@ -25,14 +25,15 @@ export class SendLocalList extends BaseModelWithTenant implements OCPP2_0_1.Send
   @Column(DataType.STRING)
   declare updateType: OCPP2_0_1.UpdateEnumType;
 
+  // ORM relation: LocalListAuthorization[]; API contract: AuthorizationData[]
   @BelongsToMany(() => LocalListAuthorization, () => SendLocalListAuthorization)
-  declare localAuthorizationList?: [LocalListAuthorization, ...LocalListAuthorization[]] | null;
+  declare localAuthorizationList?: any;
 
   customData?: OCPP2_0_1.CustomDataType | null | undefined;
 
   toSendLocalListRequest(): OCPP2_0_1.SendLocalListRequest {
     const localAuthList = (this.localAuthorizationList || [])
-      .map((localListAuth) => {
+      .map((localListAuth: LocalListAuthorization) => {
         return {
           idToken: {
             idToken: String(localListAuth.idToken), // ensure string
@@ -44,11 +45,11 @@ export class SendLocalList extends BaseModelWithTenant implements OCPP2_0_1.Send
             cacheExpiryDateTime: localListAuth.cacheExpiryDateTime,
             chargingPriority: localListAuth.chargingPriority,
             language1: localListAuth.language1,
-            groupIdToken: localListAuth.groupIdTokenId,
+            groupIdToken: localListAuth.groupAuthorizationId,
             language2: localListAuth.language2,
             personalMessage: localListAuth.personalMessage,
           },
-        };
+        } as OCPP2_0_1.AuthorizationData;
       })
       .filter(Boolean);
     return {

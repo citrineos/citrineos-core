@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: Apache 2.0
 
 export { Authorization } from './Authorization';
-export { AdditionalInfo } from './AdditionalInfo';
 export { LocalListVersion } from './LocalListVersion';
 export { SendLocalList } from './SendLocalList';
 export { LocalListAuthorization } from './LocalListAuthorization';

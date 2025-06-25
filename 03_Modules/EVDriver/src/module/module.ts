@@ -756,7 +756,7 @@ export class EVDriverModule extends AbstractModule {
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Accepted;
       } else {
         const cacheExpiryDateTime = authorization.cacheExpiryDateTime;
-        const groupIdTokenId = authorization.groupIdTokenId;
+        const groupAuthorizationId = authorization.groupAuthorizationId;
         const status = authorization.status;
         if (cacheExpiryDateTime && new Date() > new Date(cacheExpiryDateTime)) {
           response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Expired;
@@ -764,11 +764,11 @@ export class EVDriverModule extends AbstractModule {
           response.idTagInfo.status = OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(status);
         }
         response.idTagInfo.expiryDate = cacheExpiryDateTime;
-        if (groupIdTokenId) {
+        if (groupAuthorizationId) {
           // Look up the referenced Authorization for parentIdTag
           const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(
             message.context.tenantId,
-            { where: { id: groupIdTokenId } },
+            { where: { id: groupAuthorizationId } },
           );
           if (parentAuth) {
             response.idTagInfo.parentIdTag = parentAuth.idToken;

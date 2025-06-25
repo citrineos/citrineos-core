@@ -1,6 +1,6 @@
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 import { faker } from '@faker-js/faker';
-import { Authorization, AdditionalInfo } from '../../src';
+import { Authorization } from '../../src';
 
 export function aAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {
   return applyUpdateFunction(
@@ -8,12 +8,12 @@ export function aAuthorization(updateFunction?: UpdateFunction<Authorization>): 
       customData: { exampleKey: faker.lorem.word() },
       idToken: faker.string.uuid(),
       idTokenType: 'Central',
-      additionalInfo: [aAdditionalInfo()],
+      additionalInfo: { key: faker.lorem.word() }, // now a flat JSONB object
       status: 'Accepted',
       cacheExpiryDateTime: faker.date.future().toISOString(),
       chargingPriority: faker.number.int({ min: 1, max: 5 }),
       language1: faker.helpers.arrayElement(['en', 'es', 'fr', 'de', 'it', 'nl']),
-      groupIdTokenId: faker.number.int({ min: 1, max: 100 }),
+      groupAuthorizationId: faker.number.int({ min: 1, max: 100 }), // renamed property
       language2: faker.helpers.arrayElement(['en', 'es', 'fr', 'de', 'it', 'nl']),
       personalMessage: {
         customData: { message: faker.lorem.sentence() },
@@ -23,12 +23,4 @@ export function aAuthorization(updateFunction?: UpdateFunction<Authorization>): 
     } as Authorization,
     updateFunction,
   );
-}
-
-export function aAdditionalInfo(): AdditionalInfo {
-  return {
-    customData: faker.helpers.maybe(() => ({ key: faker.lorem.word() }), { probability: 0.8 }),
-    additionalIdToken: faker.string.uuid(),
-    type: 'Central',
-  } as AdditionalInfo;
 }
