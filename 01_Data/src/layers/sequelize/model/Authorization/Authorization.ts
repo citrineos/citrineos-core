@@ -56,13 +56,13 @@ export class Authorization extends BaseModelWithTenant implements AuthorizationR
   @Column(DataType.JSON)
   declare personalMessage?: any | null;
 
-  // Reference to another Authorization for groupIdToken
+  // Reference to another Authorization for groupAuthorization
   @ForeignKey(() => Authorization)
   @Column(DataType.INTEGER)
-  declare groupIdTokenId?: number | null;
+  declare groupAuthorizationId?: number | null;
 
-  @BelongsTo(() => Authorization, { foreignKey: 'groupIdTokenId', as: 'groupIdToken' })
-  declare groupIdToken?: Authorization;
+  @BelongsTo(() => Authorization, { foreignKey: 'groupAuthorizationId', as: 'groupAuthorization' })
+  declare groupAuthorization?: Authorization;
 
   @Default(false)
   @Column(DataType.BOOLEAN)

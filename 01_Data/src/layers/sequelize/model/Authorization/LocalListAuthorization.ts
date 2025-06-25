@@ -70,10 +70,10 @@ export class LocalListAuthorization
 
   @ForeignKey(() => Authorization)
   @Column(DataType.INTEGER)
-  declare groupIdTokenId?: number | null;
+  declare groupAuthorizationId?: number | null;
 
-  @BelongsTo(() => Authorization, { foreignKey: 'groupIdTokenId', as: 'groupIdToken' })
-  declare groupIdToken?: Authorization;
+  @BelongsTo(() => Authorization, { foreignKey: 'groupAuthorizationId', as: 'groupAuthorization' })
+  declare groupAuthorization?: Authorization;
 
   @ForeignKey(() => Authorization)
   @Column(DataType.INTEGER)
