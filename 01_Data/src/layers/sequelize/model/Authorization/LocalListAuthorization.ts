@@ -28,12 +28,12 @@ import { BaseModelWithTenant } from '../BaseModelWithTenant';
  * In turn, the 'authorization' relation on this table links back to the "actual" authorization.
  *
  **/
-@Table
+@Table // implements the same as Authorization, not OCPP2_0_1.AuthorizationData
 export class LocalListAuthorization
   extends BaseModelWithTenant
-  implements OCPP2_0_1.AuthorizationData, AuthorizationRestrictions
+  implements AuthorizationRestrictions
 {
-  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.LocalListAuthorization;
+  static readonly MODEL_NAME: string = 'LocalListAuthorization';
 
   @Column(DataType.ARRAY(DataType.STRING))
   declare allowedConnectorTypes?: string[];
@@ -41,30 +41,15 @@ export class LocalListAuthorization
   @Column(DataType.ARRAY(DataType.STRING))
   declare disallowedEvseIdPrefixes?: string[];
 
-  // Store flat fields with unique names
   @Column(DataType.STRING)
-  declare idTokenValue: string;
+  declare idToken: string;
 
   @Column(DataType.STRING)
-  declare idTokenType?: string;
+  declare idTokenType?: string | null;
 
   @Column(DataType.JSONB)
-  declare additionalInfo?: any;
+  declare additionalInfo?: any | null;
 
-  // Getter/setter for interface compatibility
-  get idToken(): OCPP2_0_1.IdTokenType {
-    return {
-      idToken: this.getDataValue('idTokenValue'),
-      type: this.getDataValue('idTokenType'),
-      additionalInfo: this.getDataValue('additionalInfo'),
-      customData: this.customData,
-    };
-  }
-  set idToken(_val: OCPP2_0_1.IdTokenType) {
-    // No-op setter
-  }
-
-  // Flattened IdTokenInfo fields
   @Column(DataType.STRING)
   declare status: string;
 
@@ -103,5 +88,5 @@ export class LocalListAuthorization
   @BelongsToMany(() => LocalListVersion, () => LocalListVersionAuthorization)
   declare localListVersions?: LocalListVersion[];
 
-  declare customData?: OCPP2_0_1.CustomDataType | null;
+  declare customData?: any | null;
 }
