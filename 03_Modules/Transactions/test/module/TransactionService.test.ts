@@ -25,6 +25,7 @@ describe('TransactionService', () => {
   beforeEach(() => {
     authorizationRepository = {
       readAllByQuerystring: jest.fn(),
+      readOnlyOneByQuery: jest.fn().mockResolvedValue({ idToken: 1 }),
     } as unknown as jest.Mocked<IAuthorizationRepository>;
 
     transactionEventRepository = {
@@ -213,9 +214,10 @@ describe('TransactionService', () => {
         [],
       );
 
+      // Use the same idToken as the mock authorization
       const response = await transactionService.authorizeOcpp16IdToken(
         DEFAULT_TENANT_ID,
-        faker.string.uuid(),
+        authorization.idToken,
       );
 
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Accepted);

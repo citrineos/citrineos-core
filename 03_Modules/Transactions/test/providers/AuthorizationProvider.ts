@@ -11,6 +11,7 @@ export function anAuthorization(updateFunction?: UpdateFunction<Authorization>):
   item.idTokenType = idTokenObj.type;
   item.status = 'Accepted';
   item.groupAuthorizationId = 1;
+  item.cacheExpiryDateTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   // Optionally add more default fields as needed
 
   return applyUpdateFunction(item, updateFunction);
