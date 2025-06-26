@@ -58,7 +58,7 @@ For more information on the project go to [citrineos.github.io](https://citrineo
 
 Before you begin, make sure you have the following installed on your system:
 
-- Node.js (v18 or higher): [Download Node.js](https://nodejs.org/)
+- Node.js (v22.11 or higher): [Download Node.js](https://nodejs.org/)
 - npm (Node Package Manager): [Download npm](https://www.npmjs.com/get-npm)
 - Docker (Optional). Version >= 20.10: [Download Docker](https://docs.docker.com/get-docker/)
 
