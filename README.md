@@ -229,6 +229,21 @@ Here's the complete list of environment variables that are used in bootstrapping
 - `BOOTSTRAP_CITRINEOS_CONFIG_DIR` - Directory containing the config file (optional)
 - `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE` - Type of file access: `local`, `s3`, or `directus`
 
+## Database Configuration
+
+Database connection details (moved from system config to bootstrap config for better security and 12-factor compliance):
+
+- `BOOTSTRAP_CITRINEOS_DATABASE_HOST` - Database host (default: `localhost`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_PORT` - Database port (default: `5432`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_NAME` - Database name (default: `citrine`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_DIALECT` - Database dialect (default: `postgres`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_USERNAME` - Database username (optional)
+- `BOOTSTRAP_CITRINEOS_DATABASE_PASSWORD` - Database password (optional)
+- `BOOTSTRAP_CITRINEOS_DATABASE_SYNC` - Enable database sync (via sequelize) (true/false, default: `false`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_ALTER` - Enable database alter (via sequelize) (true/false, default: `false`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_MAX_RETRIES` - Maximum connection retries (default: `3`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_RETRY_DELAY` - Retry delay in milliseconds (default: `1000`)
+
 ## Local File Access
 
 When `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=local`:
