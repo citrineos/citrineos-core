@@ -7,7 +7,7 @@ object_relationships:
       foreign_key_constraint_on: tenantId
   - name: GroupAuthorization
     using:
-      foreign_key_constraint_on: groupIdTokenId
+      foreign_key_constraint_on: groupAuthorizationId
 array_relationships:
   - name: LocalListAuthorizations
     using:
@@ -32,7 +32,7 @@ select_permissions:
         - language1
         - language2
         - personalMessage
-        - groupIdTokenId
+        - groupAuthorizationId
         - concurrentTransaction
         - customData
         - tenantId
