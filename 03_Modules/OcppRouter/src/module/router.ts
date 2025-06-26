@@ -8,6 +8,7 @@ import {
   AbstractModule,
   Ajv,
   BOOT_STATUS,
+  BootstrapConfig,
   CacheNamespace,
   Call,
   CallAction,
@@ -65,7 +66,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   /**
    * Constructor for the class.
    *
-   * @param {SystemConfig} config - the system configuration
+   * @param {BootstrapConfig & SystemConfig} config - the system configuration
    * @param {ICache} cache - the cache object
    * @param {IMessageSender} [sender] - the message sender
    * @param {IMessageHandler} [handler] - the message handler
@@ -80,7 +81,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {Ajv} [ajv] - the Ajv object, for message validation (optional)
    */
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig & SystemConfig,
     cache: ICache,
     sender: IMessageSender,
     handler: IMessageHandler,

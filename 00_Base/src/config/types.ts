@@ -138,19 +138,6 @@ export const systemConfigInputSchema = z.object({
         .optional(),
     }),
   }),
-  data: z.object({
-    sequelize: z.object({
-      host: z.string().default('localhost').optional(),
-      port: z.number().int().positive().default(5432).optional(),
-      database: z.string().default('csms').optional(),
-      dialect: z.any().default('sqlite').optional(),
-      username: z.string().optional(),
-      password: z.string().optional(),
-      storage: z.string().default('csms.sqlite').optional(),
-      sync: z.boolean().default(false).optional(),
-      alter: z.boolean().default(false).optional(),
-    }),
-  }),
   util: z.object({
     cache: z
       .object({
@@ -424,22 +411,7 @@ export const systemConfigSchema = z
               'Can only update cost based on the interval or in response to a transaction event /meter value' +
               ' update. Not allowed to have both costUpdatedInterval and sendCostUpdatedOnMeterValue configured',
           },
-        ), // Transactions module is required
-    }),
-    data: z.object({
-      sequelize: z.object({
-        host: z.string(),
-        port: z.number().int().positive(),
-        database: z.string(),
-        dialect: z.any(),
-        username: z.string(),
-        password: z.string(),
-        storage: z.string(),
-        sync: z.boolean(),
-        alter: z.boolean().optional(),
-        maxRetries: z.number().int().positive().optional(),
-        retryDelay: z.number().int().positive().optional(),
-      }),
+        ),
     }),
     util: z.object({
       cache: z

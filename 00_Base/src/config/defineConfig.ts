@@ -149,17 +149,8 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
  * @param finalConfig The final system configuration.
  * @throws Error if required properties are not set.
  */
-function validateFinalConfig(finalConfig: SystemConfigInput) {
-  if (!finalConfig.data.sequelize.username) {
-    throw new Error(
-      'CITRINEOS_DATA_SEQUELIZE_USERNAME must be set if username not provided in config',
-    );
-  }
-  if (!finalConfig.data.sequelize.password) {
-    throw new Error(
-      'CITRINEOS_DATA_SEQUELIZE_PASSWORD must be set if password not provided in config',
-    );
-  }
+function validateFinalConfig(finalConfig: SystemConfigInput): SystemConfig {
+  return systemConfigSchema.parse(finalConfig);
 }
 
 /**
@@ -177,9 +168,7 @@ export function defineConfig(inputConfig: SystemConfigInput): SystemConfig {
     configKeyMap,
   );
 
-  validateFinalConfig(appConfig);
-
-  return systemConfigSchema.parse(appConfig);
+  return validateFinalConfig(appConfig);
 }
 
 export const DEFAULT_TENANT_ID = 1;

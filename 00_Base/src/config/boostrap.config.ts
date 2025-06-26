@@ -5,16 +5,32 @@
 import { z } from 'zod';
 import { BOOSTRAP_CONFIG_ENV_VAR_PREFIX } from './defineConfig';
 
-// Bootstrap schema only contains what's needed to access config storage
+// Bootstrap schema contains what's needed to start the application
 export const bootstrapConfigSchema = z.object({
   configFileName: z.string().default('config.json'),
   configDir: z.string().optional(),
+
+  // Database configuration
+  database: z.object({
+    host: z.string().default('localhost'),
+    port: z.number().int().positive().default(5432),
+    database: z.string().default('citrine'),
+    dialect: z.string().default('postgres'),
+    username: z.string().default('citrine'),
+    password: z.string().default('citrine'),
+    sync: z.boolean().default(false),
+    alter: z.boolean().default(false),
+    maxRetries: z.number().int().positive().default(3),
+    retryDelay: z.number().int().positive().default(1000),
+  }),
+
+  // File access configuration
   fileAccess: z
     .object({
       type: z.enum(['local', 's3', 'directus']),
       local: z
         .object({
-          defaultFilePath: z.string().default('/data'),
+          defaultFilePath: z.string().default('data'),
         })
         .optional(),
       s3: z
@@ -86,26 +102,45 @@ export function loadBootstrapConfig(): BootstrapConfig {
   const config: Record<string, any> = {
     configFileName: getEnvVarValue('config_filename') || 'config.json',
     configDir: getEnvVarValue('config_dir'),
+
+    // Database configuration
+    database: {
+      host: getEnvVarValue('database_host'),
+      port: getEnvVarValue('database_port') && parseInt(getEnvVarValue('database_port')!, 10),
+      database: getEnvVarValue('database_name'),
+      dialect: getEnvVarValue('database_dialect'),
+      username: getEnvVarValue('database_username'),
+      password: getEnvVarValue('database_password'),
+      sync: getEnvVarValue('database_sync') && parseEnvValue(getEnvVarValue('database_sync')!),
+      alter: getEnvVarValue('database_alter') && parseEnvValue(getEnvVarValue('database_alter')!),
+      maxRetries:
+        getEnvVarValue('database_max_retries') &&
+        parseInt(getEnvVarValue('database_max_retries')!, 10),
+      retryDelay:
+        getEnvVarValue('database_retry_delay') &&
+        parseInt(getEnvVarValue('database_retry_delay')!, 10),
+    },
+
     fileAccess: {
       type: getEnvVarValue('file_access_type') || 'local',
     },
   };
 
+  // File access configuration
   switch (config.fileAccess.type) {
     case 'local':
       config.fileAccess.local = {
-        defaultFilePath: getEnvVarValue('file_access_local_default_file_path') || '/data',
+        defaultFilePath: getEnvVarValue('file_access_local_default_file_path'),
       };
       break;
     case 's3':
       config.fileAccess.s3 = {
         region: getEnvVarValue('file_access_s3_region'),
         endpoint: getEnvVarValue('file_access_s3_endpoint'),
-        defaultBucketName:
-          getEnvVarValue('file_access_s3_default_bucket_name') || 'citrineos-s3-bucket',
-        s3ForcePathStyle: getEnvVarValue('file_access_s3_force_path_style')
-          ? parseEnvValue(getEnvVarValue('file_access_s3_force_path_style')!)
-          : true,
+        defaultBucketName: getEnvVarValue('file_access_s3_default_bucket_name'),
+        s3ForcePathStyle:
+          getEnvVarValue('file_access_s3_force_path_style') &&
+          parseEnvValue(getEnvVarValue('file_access_s3_force_path_style')!),
         accessKeyId: getEnvVarValue('file_access_s3_access_key_id'),
         secretAccessKey: getEnvVarValue('file_access_s3_secret_access_key'),
       };
@@ -113,9 +148,9 @@ export function loadBootstrapConfig(): BootstrapConfig {
     case 'directus':
       config.fileAccess.directus = {
         host: getEnvVarValue('file_access_directus_host'),
-        port: getEnvVarValue('file_access_directus_port')
-          ? parseInt(getEnvVarValue('file_access_directus_port')!, 10)
-          : undefined,
+        port:
+          getEnvVarValue('file_access_directus_port') &&
+          parseInt(getEnvVarValue('file_access_directus_port')!, 10),
         token: getEnvVarValue('file_access_directus_token'),
         username: getEnvVarValue('file_access_directus_username'),
         password: getEnvVarValue('file_access_directus_password'),

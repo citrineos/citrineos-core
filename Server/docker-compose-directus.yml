@@ -84,6 +84,7 @@ services:
       # Add AWS region (required by the SDK)
       AWS_REGION: us-east-1
       # Bootstrap Configuration
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
       BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
       BOOTSTRAP_CITRINEOS_FILE_FILE_ACCESS_TYPE: 'directus'
       BOOTSTRAP_CITRINEOS_FILE_FILE_ACCESS_DIRECTUS_HOST: 'directus'
