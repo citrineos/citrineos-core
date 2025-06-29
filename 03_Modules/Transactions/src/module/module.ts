@@ -633,7 +633,7 @@ export class TransactionsModule extends AbstractModule {
         })
       : undefined;
 
-    let idTokenInfoStatus = authorization?.idTokenInfo?.status;
+    let idTokenInfoStatus = authorization?.status;
     if (authorization === undefined && request.idTag) {
       // Unknown idTag, fallback to Invalid
       idTokenInfoStatus = OCPP1_6.StopTransactionResponseStatus.Invalid;
@@ -649,12 +649,22 @@ export class TransactionsModule extends AbstractModule {
         idTokenInfoStatus = OCPP1_6.StopTransactionResponseStatus.Invalid;
     }
 
+    let parentIdTag: string | undefined = undefined;
+    if (authorization?.groupAuthorizationId) {
+      const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(tenantId, {
+        where: { id: authorization.groupAuthorizationId },
+      });
+      if (parentAuth) {
+        parentIdTag = parentAuth.idToken;
+      }
+    }
+
     const stopTransactionResponse: OCPP1_6.StopTransactionResponse = {
       ...(request.idTag
         ? {
             idTagInfo: {
-              expiryDate: authorization?.idTokenInfo?.cacheExpiryDateTime,
-              parentIdTag: authorization?.idTokenInfo?.groupIdToken?.idToken,
+              expiryDate: authorization?.cacheExpiryDateTime,
+              parentIdTag,
               status: idTokenInfoStatus as OCPP1_6.StopTransactionResponseStatus, // Ensure this is cast to the correct type
             },
           }
@@ -684,7 +694,7 @@ export class TransactionsModule extends AbstractModule {
       new Date(request.timestamp),
       request.transactionData?.map((data) => MeterValue.build({ tenantId, ...data })) || [],
       request.reason || (request.idTag ? 'Remote' : 'Local'),
-      authorization?.idTokenId,
+      authorization?.id,
     );
 
     if (!stopTransaction) {

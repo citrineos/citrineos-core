@@ -9,7 +9,6 @@ import { Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
 import { ComponentVariable } from './model/DeviceModel/ComponentVariable';
 import {
-  AdditionalInfo,
   Authorization,
   Boot,
   Certificate,
@@ -26,8 +25,6 @@ import {
   Connector,
   EventData,
   Evse,
-  IdToken,
-  IdTokenInfo,
   InstalledCertificate,
   LocalListAuthorization,
   LocalListVersion,
@@ -54,7 +51,6 @@ import { VariableStatus } from './model/DeviceModel';
 import { MessageInfo } from './model/MessageInfo';
 import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
-import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
 import { SetNetworkProfile, StatusNotification } from './model/Location';
 import { LatestStatusNotification } from './model/Location/LatestStatusNotification';
 import { StartTransaction, StopTransaction } from './model/TransactionEvent';
@@ -130,7 +126,6 @@ export class DefaultSequelizeInstance {
       password: this.config.data.sequelize.password,
       storage: this.config.data.sequelize.storage,
       models: [
-        AdditionalInfo,
         Authorization,
         Boot,
         Certificate,
@@ -149,9 +144,6 @@ export class DefaultSequelizeInstance {
         Connector,
         Evse,
         EventData,
-        IdToken,
-        IdTokenAdditionalInfo,
-        IdTokenInfo,
         Location,
         MeterValue,
         MessageInfo,

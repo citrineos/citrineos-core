@@ -6,7 +6,7 @@ import { IBaseDto } from './base.dto';
 export interface IConnectorDto extends IBaseDto {
   id: number;
   stationId: string;
-  connectorId: number;
+  connectorId?: number | undefined;
   status?: any;
   errorCode?: any;
   info?: string;

@@ -8,10 +8,13 @@ export interface IEvseDto extends IBaseDto {
   id: number;
   connectorId?: number | null;
   // customData?: CustomDataType | null; // Uncomment and define if needed
+  VariableAttributes?: any[];
 }
 
 export enum EvseDtoProps {
   databaseId = 'databaseId',
   id = 'id',
   connectorId = 'connectorId',
+  customData = 'customData',
+  VariableAttributes = 'VariableAttributes',
 }

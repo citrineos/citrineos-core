@@ -13,7 +13,7 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { type AuthorizationRestrictions } from '../../../../interfaces';
-import { Authorization, IdToken, IdTokenInfo, LocalListVersion, SendLocalList } from '.';
+import { Authorization, SendLocalList, LocalListVersion } from '.';
 import { SendLocalListAuthorization } from './SendLocalListAuthorization';
 import { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
@@ -28,12 +28,12 @@ import { BaseModelWithTenant } from '../BaseModelWithTenant';
  * In turn, the 'authorization' relation on this table links back to the "actual" authorization.
  *
  **/
-@Table
+@Table // implements the same as Authorization, not OCPP2_0_1.AuthorizationData
 export class LocalListAuthorization
   extends BaseModelWithTenant
-  implements OCPP2_0_1.AuthorizationData, AuthorizationRestrictions
+  implements AuthorizationRestrictions
 {
-  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.LocalListAuthorization;
+  static readonly MODEL_NAME: string = 'LocalListAuthorization';
 
   @Column(DataType.ARRAY(DataType.STRING))
   declare allowedConnectorTypes?: string[];
@@ -41,19 +41,39 @@ export class LocalListAuthorization
   @Column(DataType.ARRAY(DataType.STRING))
   declare disallowedEvseIdPrefixes?: string[];
 
-  @ForeignKey(() => IdToken)
+  @Column(DataType.STRING)
+  declare idToken: string;
+
+  @Column(DataType.STRING)
+  declare idTokenType?: string | null;
+
+  @Column(DataType.JSONB)
+  declare additionalInfo?: any | null;
+
+  @Column(DataType.STRING)
+  declare status: string;
+
+  @Column(DataType.DATE)
+  declare cacheExpiryDateTime?: string | null;
+
   @Column(DataType.INTEGER)
-  declare idTokenId?: number;
+  declare chargingPriority?: number | null;
 
-  @BelongsTo(() => IdToken)
-  declare idToken: OCPP2_0_1.IdTokenType;
+  @Column(DataType.STRING)
+  declare language1?: string | null;
 
-  @ForeignKey(() => IdTokenInfo)
+  @Column(DataType.STRING)
+  declare language2?: string | null;
+
+  @Column(DataType.JSON)
+  declare personalMessage?: any | null;
+
+  @ForeignKey(() => Authorization)
   @Column(DataType.INTEGER)
-  declare idTokenInfoId?: number | null;
+  declare groupAuthorizationId?: number | null;
 
-  @BelongsTo(() => IdTokenInfo)
-  declare idTokenInfo?: OCPP2_0_1.IdTokenInfoType;
+  @BelongsTo(() => Authorization, { foreignKey: 'groupAuthorizationId', as: 'groupAuthorization' })
+  declare groupAuthorization?: Authorization;
 
   @ForeignKey(() => Authorization)
   @Column(DataType.INTEGER)
@@ -68,5 +88,5 @@ export class LocalListAuthorization
   @BelongsToMany(() => LocalListVersion, () => LocalListVersionAuthorization)
   declare localListVersions?: LocalListVersion[];
 
-  declare customData?: OCPP2_0_1.CustomDataType | null;
+  declare customData?: any | null;
 }

@@ -46,7 +46,14 @@ export {
   MessageState,
   RetryMessageError,
 } from './interfaces/messages';
-export { AbstractModule, AsHandler, IModule } from './interfaces/modules';
+export {
+  AbstractModule,
+  AsHandler,
+  IModule,
+  CircuitBreaker,
+  type CircuitBreakerState,
+  type CircuitBreakerOptions,
+} from './interfaces/modules';
 export {
   Call,
   CallAction,
