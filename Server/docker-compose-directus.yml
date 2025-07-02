@@ -110,8 +110,7 @@ services:
 
   directus:
     build:
-      context: ../DirectusExtensions
-      dockerfile: ./directus.Dockerfile
+      dockerfile: ../DirectusExtensions/directus.Dockerfile
     ports:
       - 8055:8055
     volumes:

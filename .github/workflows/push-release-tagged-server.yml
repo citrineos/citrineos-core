@@ -22,7 +22,7 @@ jobs:
           - name: citrineos-directus
             context: ./DirectusExtensions
             dockerfile: ./DirectusExtensions/directus.Dockerfile
-            config: ./Server/directus-env-config.cjs
+            config: directus-env-config.cjs
 
     steps:
       - uses: actions/checkout@v4
@@ -46,11 +46,8 @@ jobs:
             ${{ runner.os }}-buildx-${{ matrix.image.name }}-
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Extract metadata
         id: meta
@@ -61,7 +58,6 @@ jobs:
             type=ref,event=tag
             type=raw,value=latest
 
-      # For citrineos-server: direct multi-platform build
       - name: Build and push server image
         if: ${{ matrix.image.name == 'citrineos-server' }}
         uses: docker/build-push-action@v5
@@ -75,12 +71,10 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
 
-      # For citrineos-directus: build with config file injection
-      - name: Prepare Directus config
+      - name: Prepare Directus build context
         if: ${{ matrix.image.name == 'citrineos-directus' }}
         run: |
-          # Copy config file to build context so it can be added during build
-          cp ${{ matrix.image.config }} ${{ matrix.image.context }}/config.cjs
+          cp ./Server/directus-env-config.cjs ./DirectusExtensions/
 
       - name: Build and push Directus image
         if: ${{ matrix.image.name == 'citrineos-directus' }}
@@ -95,7 +89,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
           build-args: |
-            CONFIG_FILE=config.cjs
+            CONFIG_FILE=${{ matrix.image.config }}
 
       # Move cache to avoid ever-growing cache
       - name: Move cache
