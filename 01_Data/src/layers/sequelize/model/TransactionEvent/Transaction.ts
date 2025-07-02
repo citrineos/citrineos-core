@@ -16,7 +16,7 @@ import {
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
-import { ChargingStation } from '../Location';
+import { ChargingStation, Location } from '../Location';
 import { StartTransaction, StopTransaction } from './';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
@@ -25,6 +25,13 @@ export class Transaction extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
   static readonly TRANSACTION_EVENTS_ALIAS = 'transactionEvents';
   static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter';
+
+  @Column(DataType.INTEGER)
+  @ForeignKey(() => Location)
+  locationId?: number;
+
+  @BelongsTo(() => Location)
+  location?: Location;
 
   @Column({
     unique: 'stationId_transactionId',

@@ -29,7 +29,7 @@ import { Op, WhereOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { MeterValueMapper } from '../mapper/2.0.1';
-import { Connector } from '../model/Location';
+import { ChargingStation, Connector } from '../model/Location';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
 
 export class SequelizeTransactionEventRepository
@@ -38,6 +38,7 @@ export class SequelizeTransactionEventRepository
 {
   transaction: CrudRepository<Transaction>;
   evse: CrudRepository<Evse>;
+  station: CrudRepository<ChargingStation>;
   idToken: CrudRepository<IdToken>;
   meterValue: CrudRepository<MeterValue>;
   startTransaction: CrudRepository<StartTransaction>;
@@ -51,6 +52,7 @@ export class SequelizeTransactionEventRepository
     namespace = TransactionEvent.MODEL_NAME,
     sequelizeInstance?: Sequelize,
     transaction?: CrudRepository<Transaction>,
+    station?: CrudRepository<ChargingStation>,
     evse?: CrudRepository<Evse>,
     idToken?: CrudRepository<IdToken>,
     meterValue?: CrudRepository<MeterValue>,
@@ -71,6 +73,14 @@ export class SequelizeTransactionEventRepository
     this.evse = evse
       ? evse
       : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
+    this.station = station
+      ? station
+      : new SequelizeRepository<ChargingStation>(
+          config,
+          ChargingStation.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
     this.idToken = idToken
       ? idToken
       : new SequelizeRepository<IdToken>(config, IdToken.MODEL_NAME, logger, sequelizeInstance);
@@ -159,6 +169,19 @@ export class SequelizeTransactionEventRepository
           ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
           ...value.transactionInfo,
         });
+
+        const chargingStation = await this.station.readByKey(tenantId, stationId);
+        if (!chargingStation) {
+          this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
+        } else {
+          if (chargingStation.locationId) {
+            newTransaction.locationId = chargingStation.locationId;
+          } else {
+            this.logger.warn(
+              `Charging station with stationId ${stationId} does not have a locationId. Transaction ${newTransaction.transactionId} will not be associated with a location, which may prevent it from being sent to upstream partners.`,
+            );
+          }
+        }
 
         finalTransaction = await newTransaction.save({ transaction: sequelizeTransaction });
         created = true;
