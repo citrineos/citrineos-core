@@ -6,27 +6,40 @@ import { RealTimeAuthEnumType } from '@citrineos/base';
 import { DataType } from 'sequelize-typescript';
 
 const TABLE_NAME = 'Authorizations';
-const COLUMN_NAME = 'realTimeAuth';
+const COLUMNS = [
+  {
+    name: 'realTimeAuth',
+    attributes: {
+      type: DataType.ENUM(...Object.values(RealTimeAuthEnumType)),
+      allowNull: false,
+      defaultValue: RealTimeAuthEnumType.Never,
+    },
+  },
+  {
+    name: 'realTimeAuthUrl',
+    attributes: {
+      type: DataType.STRING,
+      allowNull: true,
+    },
+  },
+];
 
 export = {
   up: async (queryInterface: QueryInterface) => {
     const tableDescription = await queryInterface.describeTable(TABLE_NAME);
-    if (!tableDescription[COLUMN_NAME]) {
-      await queryInterface.addColumn(TABLE_NAME, COLUMN_NAME, {
-        type: DataType.ENUM(...Object.values(RealTimeAuthEnumType)),
-        allowNull: false,
-        defaultValue: RealTimeAuthEnumType.Never,
-      });
+    for (const column of COLUMNS) {
+      if (!tableDescription[column.name]) {
+        await queryInterface.addColumn(TABLE_NAME, column.name, column.attributes);
+      }
     }
   },
 
   down: async (queryInterface: QueryInterface) => {
     const tableDescription = await queryInterface.describeTable(TABLE_NAME);
-    if (tableDescription[COLUMN_NAME]) {
-      await queryInterface.removeColumn(TABLE_NAME, COLUMN_NAME);
-      await queryInterface.sequelize.query(
-        `DROP TYPE IF EXISTS "enum_${TABLE_NAME}_${COLUMN_NAME}";`,
-      );
+    for (const column of COLUMNS) {
+      if (tableDescription[column.name]) {
+        await queryInterface.removeColumn(TABLE_NAME, column.name);
+      }
     }
   },
 };

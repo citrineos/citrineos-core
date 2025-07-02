@@ -6,3 +6,4 @@ export { IAuthorizer } from './authorization';
 export * from './ApiAuthPlugin';
 export { LocalBypassAuthProvider } from './provider/LocalByPassAuthProvider';
 export { OIDCAuthProvider } from './provider/OIDCAuthProvider';
+export { RealTimeAuthorizer } from './RealTimeAuthorizer';
