@@ -21,6 +21,7 @@ describe('TransactionService', () => {
   let reservationRepository: jest.Mocked<IReservationRepository>;
   let ocppMessageRepository: jest.Mocked<IOCPPMessageRepository>;
   let authorizer: jest.Mocked<IAuthorizer>;
+  let realTimeAuthorizer: jest.Mocked<IAuthorizer>;
 
   beforeEach(() => {
     authorizationRepository = {
@@ -41,11 +42,16 @@ describe('TransactionService', () => {
       authorize: jest.fn(),
     } as jest.Mocked<IAuthorizer>;
 
+    realTimeAuthorizer = {
+      authorize: jest.fn(),
+    } as jest.Mocked<IAuthorizer>;
+
     transactionService = new TransactionService(
       transactionEventRepository,
       authorizationRepository,
       reservationRepository,
       ocppMessageRepository,
+      realTimeAuthorizer,
       [authorizer],
     );
   });
@@ -142,6 +148,7 @@ describe('TransactionService', () => {
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
       [aTransaction(), aTransaction()],
     );
+    authorizer.authorize.mockResolvedValue({ status: 'Accepted' });
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -166,6 +173,7 @@ describe('TransactionService', () => {
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
       [aTransaction(), aTransaction()],
     );
+    authorizer.authorize.mockResolvedValue({ status: 'Accepted' });
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -189,7 +197,7 @@ describe('TransactionService', () => {
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
       [],
     );
-    authorizer.authorize.mockResolvedValue({});
+    authorizer.authorize.mockResolvedValue({ status: 'Accepted' });
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -213,10 +221,12 @@ describe('TransactionService', () => {
       transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken.mockResolvedValue(
         [],
       );
+      authorizer.authorize.mockResolvedValue({ status: 'Accepted' });
 
       // Use the same idToken as the mock authorization
+      const messageContext = aMessageContext();
       const response = await transactionService.authorizeOcpp16IdToken(
-        DEFAULT_TENANT_ID,
+        messageContext,
         authorization.idToken,
       );
 
@@ -231,8 +241,9 @@ describe('TransactionService', () => {
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
+      const messageContext = aMessageContext();
       const response = await transactionService.authorizeOcpp16IdToken(
-        DEFAULT_TENANT_ID,
+        messageContext,
         faker.string.uuid(),
       );
 
@@ -247,8 +258,9 @@ describe('TransactionService', () => {
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
+      const messageContext = aMessageContext();
       const response = await transactionService.authorizeOcpp16IdToken(
-        DEFAULT_TENANT_ID,
+        messageContext,
         faker.string.uuid(),
       );
 
@@ -264,8 +276,9 @@ describe('TransactionService', () => {
         [aTransaction()],
       );
 
+      const messageContext = aMessageContext();
       const response = await transactionService.authorizeOcpp16IdToken(
-        DEFAULT_TENANT_ID,
+        messageContext,
         faker.string.uuid(),
       );
 

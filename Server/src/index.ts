@@ -28,6 +28,7 @@ import {
   CertificateAuthorityService,
   ConnectedStationFilter,
   DirectusUtil,
+  IAuthorizer,
   IdGenerator,
   initSwagger,
   LocalBypassAuthProvider,
@@ -36,6 +37,7 @@ import {
   OIDCAuthProvider,
   RabbitMqReceiver,
   RabbitMqSender,
+  RealTimeAuthorizer,
   RedisCache,
   UnknownStationFilter,
   WebsocketNetworkConnection,
@@ -107,6 +109,7 @@ export class CitrineOSServer {
   private _idGenerator!: IdGenerator;
   private _certificateAuthorityService!: CertificateAuthorityService;
   private _smartChargingService!: ISmartCharging;
+  private _realTimeAuthorizer!: IAuthorizer;
 
   private readonly appName: string;
 
@@ -197,6 +200,7 @@ export class CitrineOSServer {
     this.initIdGenerator();
     this.initCertificateAuthorityService();
     this.initSmartChargingService();
+    this.initRealTimeAuthorizer();
   }
 
   async initialize(): Promise<void> {
@@ -573,7 +577,9 @@ export class CitrineOSServer {
       this._repositoryStore.chargingProfileRepository,
       this._repositoryStore.reservationRepository,
       this._repositoryStore.ocppMessageRepository,
+      this._repositoryStore.locationRepository,
       this._certificateAuthorityService,
+      this._realTimeAuthorizer,
       [],
       this._idGenerator,
     );
@@ -651,6 +657,7 @@ export class CitrineOSServer {
       this._repositoryStore.tariffRepository,
       this._repositoryStore.reservationRepository,
       this._repositoryStore.ocppMessageRepository,
+      this._realTimeAuthorizer,
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
@@ -722,6 +729,13 @@ export class CitrineOSServer {
   private initSmartChargingService() {
     this._smartChargingService = new InternalSmartCharging(
       this._repositoryStore.chargingProfileRepository,
+    );
+  }
+
+  private initRealTimeAuthorizer() {
+    this._realTimeAuthorizer = new RealTimeAuthorizer(
+      this._repositoryStore.locationRepository,
+      this._logger,
     );
   }
 }

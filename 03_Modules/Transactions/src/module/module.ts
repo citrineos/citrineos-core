@@ -46,6 +46,7 @@ import {
   IAuthorizer,
   RabbitMqReceiver,
   RabbitMqSender,
+  RealTimeAuthorizer,
   SignedMeterValuesUtil,
 } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
@@ -76,6 +77,7 @@ export class TransactionsModule extends AbstractModule {
   protected _fileStorage: IFileStorage;
 
   private readonly _authorizers: IAuthorizer[];
+  private readonly _realTimeAuthorizer: IAuthorizer;
 
   private readonly _signedMeterValuesUtil: SignedMeterValuesUtil;
   private _costNotifier: CostNotifier;
@@ -145,6 +147,9 @@ export class TransactionsModule extends AbstractModule {
    *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
+   *
+   * @param {IAuthorizer} [realTimeAuthorizer] - An optional parameter of type {@link IAuthorizer} which represents
+   * a real-time authorizer that can be used to authorize real-time requests.
    */
   constructor(
     config: SystemConfig,
@@ -161,6 +166,7 @@ export class TransactionsModule extends AbstractModule {
     tariffRepository?: ITariffRepository,
     reservationRepository?: IReservationRepository,
     ocppMessageRepository?: IOCPPMessageRepository,
+    realTimeAuthorizer?: IAuthorizer,
     authorizers?: IAuthorizer[],
   ) {
     super(
@@ -197,6 +203,8 @@ export class TransactionsModule extends AbstractModule {
       ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
 
     this._authorizers = authorizers || [];
+    this._realTimeAuthorizer =
+      realTimeAuthorizer || new RealTimeAuthorizer(this._locationRepository, this._logger);
 
     this._signedMeterValuesUtil = new SignedMeterValuesUtil(fileStorage, config, this._logger);
 
@@ -208,6 +216,7 @@ export class TransactionsModule extends AbstractModule {
       this._authorizeRepository,
       this._reservationRepository,
       this._ocppMessageRepository,
+      this._realTimeAuthorizer,
       this._authorizers,
       this._logger,
     );
@@ -580,7 +589,10 @@ export class TransactionsModule extends AbstractModule {
     const request = message.payload;
 
     // Authorize
-    const response = await this._transactionService.authorizeOcpp16IdToken(tenantId, request.idTag);
+    const response = await this._transactionService.authorizeOcpp16IdToken(
+      message.context,
+      request.idTag,
+    );
 
     // Send response to charger
     if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
