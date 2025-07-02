@@ -90,6 +90,9 @@ export class Tariff extends BaseModelWithTenant implements TariffData {
   })
   declare taxRate?: number | null;
 
+  @Column(DataType.JSONB)
+  declare tariffAltText?: object[] | null;
+
   declare id: number;
   declare updatedAt: CreationOptional<Date>;
 
