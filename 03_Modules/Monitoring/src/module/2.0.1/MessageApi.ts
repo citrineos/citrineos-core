@@ -10,6 +10,7 @@ import {
   AbstractModuleApi,
   AsMessageEndpoint,
   CallAction,
+  DEFAULT_TENANT_ID,
   IMessageConfirmation,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
@@ -49,9 +50,9 @@ export class MonitoringOcpp201Api
   )
   async setVariableMonitoring(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.SetVariableMonitoringRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     // For each station, check request size, process monitoring data, and handle batch sending
     const confirmations: IMessageConfirmation[] = [];
@@ -63,6 +64,7 @@ export class MonitoringOcpp201Api
           await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
             OCPP2_0_1_CallAction.SetVariableMonitoring,
+            tenantId,
             id,
           );
         const requestBytes = getSizeOfRequest(request);
@@ -78,6 +80,7 @@ export class MonitoringOcpp201Api
         for (const data of setMonitoringData) {
           const [component, variable] =
             await this._module.deviceModelRepository.findComponentAndVariable(
+              tenantId,
               data.component,
               data.variable,
             );
@@ -94,6 +97,7 @@ export class MonitoringOcpp201Api
 
           if (component && variable) {
             await this._module.variableMonitoringRepository.createOrUpdateBySetMonitoringDataTypeAndStationId(
+              tenantId,
               data,
               component.id,
               variable.id,
@@ -107,6 +111,7 @@ export class MonitoringOcpp201Api
           (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
             OCPP2_0_1_CallAction.SetVariableMonitoring,
+            tenantId,
             id,
           )) ?? setMonitoringData.length;
 
@@ -139,9 +144,9 @@ export class MonitoringOcpp201Api
   )
   async clearVariableMonitoring(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.ClearVariableMonitoringRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const confirmations: IMessageConfirmation[] = [];
 
@@ -154,6 +159,7 @@ export class MonitoringOcpp201Api
           await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
             OCPP2_0_1_CallAction.ClearVariableMonitoring,
+            tenantId,
             id,
           );
         const requestBytes = getSizeOfRequest(request);
@@ -170,6 +176,7 @@ export class MonitoringOcpp201Api
           (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
             OCPP2_0_1_CallAction.ClearVariableMonitoring,
+            tenantId,
             id,
           )) ?? ids.length;
 
@@ -202,9 +209,9 @@ export class MonitoringOcpp201Api
   )
   setMonitoringLevel(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.SetMonitoringLevelRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results = identifier.map((id) =>
       this._module.sendCall(
@@ -225,9 +232,9 @@ export class MonitoringOcpp201Api
   )
   setMonitoringBase(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.SetMonitoringBaseRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results = identifier.map((id) =>
       this._module.sendCall(
@@ -245,9 +252,9 @@ export class MonitoringOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.SetVariables, OCPP2_0_1.SetVariablesRequestSchema)
   async setVariables(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.SetVariablesRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const confirmations: IMessageConfirmation[] = [];
 
@@ -257,6 +264,7 @@ export class MonitoringOcpp201Api
 
         // Store variable data in local DB so that the response can find them
         await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(
+          tenantId,
           setVariableData,
           id,
           new Date().toISOString(),
@@ -267,6 +275,7 @@ export class MonitoringOcpp201Api
           (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentDeviceDataCtrlr,
             OCPP2_0_1_CallAction.SetVariables,
+            tenantId,
             id,
           )) ?? setVariableData.length;
 
@@ -296,9 +305,9 @@ export class MonitoringOcpp201Api
   @AsMessageEndpoint(OCPP2_0_1_CallAction.GetVariables, OCPP2_0_1.GetVariablesRequestSchema)
   async getVariables(
     identifier: string[],
-    tenantId: string,
     request: OCPP2_0_1.GetVariablesRequest,
     callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const confirmations: IMessageConfirmation[] = [];
 
@@ -309,6 +318,7 @@ export class MonitoringOcpp201Api
           await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentDeviceDataCtrlr,
             OCPP2_0_1_CallAction.GetVariables,
+            tenantId,
             id,
           );
         const requestBytes = getSizeOfRequest(request);
@@ -326,6 +336,7 @@ export class MonitoringOcpp201Api
           (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentDeviceDataCtrlr,
             OCPP2_0_1_CallAction.GetVariables,
+            tenantId,
             id,
           )) ?? getVariableData.length;
 
@@ -367,7 +378,7 @@ export class MonitoringOcpp201Api
    */
   private async processBatches(
     stationId: string,
-    tenantId: string,
+    tenantId: number,
     version: OCPPVersion,
     action: OCPP2_0_1_CallAction,
     requestData: Record<string, any>,

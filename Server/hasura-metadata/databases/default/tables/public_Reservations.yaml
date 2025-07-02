@@ -5,3 +5,29 @@ object_relationships:
   - name: Evse
     using:
       foreign_key_constraint_on: evseId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - isActive
+        - connectorType
+        - reserveStatus
+        - stationId
+        - terminatedByTransaction
+        - databaseId
+        - evseId
+        - id
+        - tenantId
+        - groupIdToken
+        - idToken
+        - createdAt
+        - expiryDateTime
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

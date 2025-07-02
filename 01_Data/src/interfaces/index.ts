@@ -38,11 +38,19 @@ export {
   TlsCertificateSchema,
   UpdateTlsCertificateQuerySchema,
 } from './queries/TlsCertificate';
+export { TenantQuerySchema, TenantQueryString } from './queries/Tenant';
 export {
   GenerateCertificateChainSchema,
   InstallRootCertificateSchema,
 } from './queries/RootCertificate';
 export { CreateSubscriptionSchema } from './queries/Subscription';
+export {
+  WebsocketGetQuerystring,
+  WebsocketGetQuerySchema,
+  WebsocketDeleteQuerystring,
+  WebsocketDeleteQuerySchema,
+  WebsocketRequestSchema,
+} from './queries/Websocket';
 
 // Data projection models
 export { AuthorizationRestrictions } from './projections/AuthorizationRestrictions';

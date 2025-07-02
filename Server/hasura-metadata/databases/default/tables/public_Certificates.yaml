@@ -1,3 +1,33 @@
 table:
   name: Certificates
   schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - serialNumber
+        - isCA
+        - certificateFileId
+        - commonName
+        - countryName
+        - issuerName
+        - organizationName
+        - privateKeyFileId
+        - signatureAlgorithm
+        - signedBy
+        - id
+        - keyLength
+        - pathLen
+        - tenantId
+        - createdAt
+        - updatedAt
+        - validBefore
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

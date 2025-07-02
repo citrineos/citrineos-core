@@ -78,21 +78,25 @@ export class ConfigurationDataApi
       Querystring: ChargingStationKeyQuerystring;
     }>,
   ): Promise<BootConfig | undefined> {
-    return this._module.bootRepository.createOrUpdateByKey(request.body, request.query.stationId);
+    return this._module.bootRepository.createOrUpdateByKey(
+      request.query.tenantId,
+      request.body,
+      request.query.stationId,
+    );
   }
 
   @AsDataEndpoint(Namespace.BootConfig, HttpMethod.Get, ChargingStationKeyQuerySchema)
   getBootConfig(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Boot | undefined> {
-    return this._module.bootRepository.readByKey(request.query.stationId);
+    return this._module.bootRepository.readByKey(request.query.tenantId, request.query.stationId);
   }
 
   @AsDataEndpoint(Namespace.BootConfig, HttpMethod.Delete, ChargingStationKeyQuerySchema)
   deleteBootConfig(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Boot | undefined> {
-    return this._module.bootRepository.deleteByKey(request.query.stationId);
+    return this._module.bootRepository.deleteByKey(request.query.tenantId, request.query.stationId);
   }
 
   @AsDataEndpoint(
@@ -108,7 +112,10 @@ export class ConfigurationDataApi
     }>,
   ): Promise<IMessageConfirmation> {
     const stationId = request.body.stationId;
-    this._logger.debug(`Updating password for ${stationId} station`);
+    const tenantId = request.query.tenantId;
+
+    this._logger.debug(`Updating password for ${stationId} station in tenant ${tenantId}`);
+
     if (request.body.setOnCharger && !request.body.password) {
       return {
         success: false,
@@ -122,7 +129,12 @@ export class ConfigurationDataApi
 
     if (!request.body.setOnCharger) {
       try {
-        await this.updatePasswordOnStation(password, stationId, request.query.callbackUrl);
+        await this.updatePasswordOnStation(
+          password,
+          stationId,
+          tenantId,
+          request.query.callbackUrl,
+        );
       } catch (error) {
         this._logger.warn(`Failed updating password on ${stationId} station`, error);
         return {
@@ -131,7 +143,7 @@ export class ConfigurationDataApi
         };
       }
     }
-    const variableAttributes = await this.updatePasswordForStation(password, stationId);
+    const variableAttributes = await this.updatePasswordForStation(password, tenantId, stationId);
     this._logger.debug(`Successfully updated password for ${stationId} station`);
     return {
       success: true,
@@ -148,7 +160,7 @@ export class ConfigurationDataApi
     request: FastifyRequest<{ Querystring: NetworkProfileQuerystring }>,
   ): Promise<ChargingStationNetworkProfile[]> {
     return ChargingStationNetworkProfile.findAll({
-      where: { stationId: request.query.stationId },
+      where: { stationId: request.query.stationId, tenantId: request.query.tenantId },
       include: [SetNetworkProfile, ServerNetworkProfile],
     });
   }
@@ -164,6 +176,7 @@ export class ConfigurationDataApi
     const destroyedRows = await ChargingStationNetworkProfile.destroy({
       where: {
         stationId: request.query.stationId,
+        tenantId: request.query.tenantId,
         configurationSlot: {
           [Op.in]: request.query.configurationSlot,
         },
@@ -190,6 +203,7 @@ export class ConfigurationDataApi
   private async updatePasswordOnStation(
     password: string,
     stationId: string,
+    tenantId: number,
     callbackUrl?: string,
   ): Promise<void> {
     const correlationId = uuidv4();
@@ -201,7 +215,7 @@ export class ConfigurationDataApi
 
     const messageConfirmation = await this._module.sendCall(
       stationId,
-      'T01', // TODO: adjust when multi-tenancy is implemented
+      tenantId,
       OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.SetVariables,
       {
@@ -237,11 +251,13 @@ export class ConfigurationDataApi
 
   private async updatePasswordForStation(
     password: string,
+    tenantId: number,
     stationId: string,
   ): Promise<VariableAttribute[]> {
     const timestamp = new Date().toISOString();
     const variableAttributes =
       await this._module.deviceModelRepository.createOrUpdateDeviceModelByStationId(
+        tenantId,
         {
           component: {
             name: 'SecurityCtrlr',
@@ -269,6 +285,7 @@ export class ConfigurationDataApi
         include: [Variable, Component],
       });
       await this._module.deviceModelRepository.updateResultByStationId(
+        tenantId,
         {
           attributeType: variableAttribute.type,
           attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,

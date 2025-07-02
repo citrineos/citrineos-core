@@ -51,4 +51,6 @@ export interface IMessageHandler {
 
   get module(): IModule | undefined;
   set module(value: IModule | undefined);
+
+  initConnection(): Promise<void>;
 }

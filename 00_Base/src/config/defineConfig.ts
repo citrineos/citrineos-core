@@ -16,7 +16,7 @@ for (const arg of args) {
   }
 }
 
-const CITRINE_ENV_VAR_PREFIX = dynamicPrefix;
+export const CITRINE_ENV_VAR_PREFIX = dynamicPrefix;
 
 /**
  * Finds a case-insensitive match for a key in an object.
@@ -180,3 +180,5 @@ export function defineConfig(inputConfig: SystemConfigInput): SystemConfig {
 
   return systemConfigSchema.parse(appConfig);
 }
+
+export const DEFAULT_TENANT_ID = 1;

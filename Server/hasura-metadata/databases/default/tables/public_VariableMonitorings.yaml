@@ -5,6 +5,9 @@ object_relationships:
   - name: Component
     using:
       foreign_key_constraint_on: componentId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
   - name: Variable
     using:
       foreign_key_constraint_on: variableId
@@ -16,3 +19,24 @@ array_relationships:
         table:
           name: VariableMonitoringStatuses
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - transaction
+        - stationId
+        - type
+        - componentId
+        - databaseId
+        - id
+        - severity
+        - tenantId
+        - value
+        - variableId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

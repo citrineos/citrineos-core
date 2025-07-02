@@ -8,3 +8,20 @@ object_relationships:
   - name: IdToken
     using:
       foreign_key_constraint_on: idTokenId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - additionalInfoId
+        - idTokenId
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

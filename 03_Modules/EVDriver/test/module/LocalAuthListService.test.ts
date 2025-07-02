@@ -11,13 +11,14 @@ import {
   VariableCharacteristics,
 } from '@citrineos/data';
 import { LocalAuthListService } from '../../src/module/LocalAuthListService';
-import { OCPP2_0_1 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
 
 describe('LocalAuthListService', () => {
   let mockLocalAuthListRepository: jest.Mocked<ILocalAuthListRepository>;
   let mockDeviceModelRepository: jest.Mocked<IDeviceModelRepository>;
   let localAuthListService: LocalAuthListService;
 
+  const tenantId = DEFAULT_TENANT_ID;
   const stationId = 'station-1';
   const correlationId = 'test-correlation-id';
   const initialVersionNumber = 2;
@@ -85,6 +86,7 @@ describe('LocalAuthListService', () => {
 
     const result =
       await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
@@ -92,6 +94,7 @@ describe('LocalAuthListService', () => {
 
     expect(result).toEqual(mockSendLocalList);
     expect(mockLocalAuthListRepository.createSendLocalListFromRequestData).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
       stationId,
       expectedCorrelationId,
       expectedUpdateType,
@@ -108,6 +111,7 @@ describe('LocalAuthListService', () => {
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest_0,
@@ -121,6 +125,7 @@ describe('LocalAuthListService', () => {
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest_negative,
@@ -138,6 +143,7 @@ describe('LocalAuthListService', () => {
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
@@ -180,6 +186,7 @@ describe('LocalAuthListService', () => {
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
@@ -237,6 +244,7 @@ describe('LocalAuthListService', () => {
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
@@ -271,6 +279,7 @@ describe('LocalAuthListService', () => {
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
@@ -303,6 +312,7 @@ describe('LocalAuthListService', () => {
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
@@ -365,6 +375,7 @@ describe('LocalAuthListService', () => {
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
@@ -429,6 +440,7 @@ describe('LocalAuthListService', () => {
 
     const result =
       await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,

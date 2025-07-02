@@ -1,6 +1,10 @@
 table:
   name: ServerNetworkProfiles
   schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
 array_relationships:
   - name: ChargingStationNetworkProfiles
     using:
@@ -16,3 +20,27 @@ array_relationships:
         table:
           name: SetNetworkProfiles
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - allowUnknownChargingStations
+        - host
+        - id
+        - mtlsCertificateAuthorityKeyFilePath
+        - protocol
+        - rootCACertificateFilePath
+        - tlsCertificateChainFilePath
+        - tlsKeyFilePath
+        - messageTimeout
+        - pingInterval
+        - port
+        - securityProfile
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

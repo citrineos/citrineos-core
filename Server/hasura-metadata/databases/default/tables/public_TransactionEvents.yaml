@@ -8,6 +8,9 @@ object_relationships:
   - name: IdToken
     using:
       foreign_key_constraint_on: idTokenId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
   - name: Transaction
     using:
       foreign_key_constraint_on: transactionDatabaseId
@@ -19,3 +22,29 @@ array_relationships:
         table:
           name: MeterValues
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - offline
+        - eventType
+        - stationId
+        - triggerReason
+        - evseId
+        - id
+        - idTokenId
+        - numberOfPhasesUsed
+        - reservationId
+        - seqNo
+        - tenantId
+        - transactionDatabaseId
+        - transactionInfo
+        - cableMaxCurrent
+        - createdAt
+        - timestamp
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

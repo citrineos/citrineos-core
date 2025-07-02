@@ -5,6 +5,9 @@ object_relationships:
   - name: Evse
     using:
       foreign_key_constraint_on: evseDatabaseId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
 array_relationships:
   - name: ComponentVariables
     using:
@@ -41,3 +44,19 @@ array_relationships:
         table:
           name: VariableMonitorings
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - instance
+        - name
+        - evseDatabaseId
+        - id
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

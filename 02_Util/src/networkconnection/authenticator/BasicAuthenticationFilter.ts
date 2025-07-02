@@ -22,20 +22,25 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
     return options.securityProfile === 1 || options.securityProfile === 2;
   }
 
-  protected async filter(identifier: string, request: IncomingMessage): Promise<void> {
+  protected async filter(
+    tenantId: number,
+    identifier: string,
+    request: IncomingMessage,
+  ): Promise<void> {
     const { username, password } = extractBasicCredentials(request);
     if (!username || !password) {
       throw new UpgradeAuthenticationError('Auth header missing or incorrectly formatted');
     }
 
-    if (username !== identifier || !(await this._isPasswordValid(username, password))) {
+    if (username !== identifier || !(await this._isPasswordValid(tenantId, username, password))) {
       throw new UpgradeAuthenticationError(`Unauthorized ${identifier}`);
     }
   }
 
-  private async _isPasswordValid(username: string, password: string) {
+  private async _isPasswordValid(tenantId: number, username: string, password: string) {
     return await this._deviceModelRepository
-      .readAllByQuerystring({
+      .readAllByQuerystring(tenantId, {
+        tenantId,
         stationId: username,
         component_name: 'SecurityCtrlr',
         variable_name: 'BasicAuthPassword',

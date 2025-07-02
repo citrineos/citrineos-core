@@ -4,7 +4,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { ConfigStore, SystemConfig } from '@citrineos/base';
+import { BootstrapConfig, ConfigStore, SystemConfig } from '@citrineos/base';
 import { Readable } from 'stream';
 import { ILogObj, Logger } from 'tslog';
 
@@ -16,7 +16,7 @@ export class S3Storage implements ConfigStore {
   private configBucketName: string | undefined;
 
   constructor(
-    config: SystemConfig['util']['fileAccess']['s3'],
+    config: BootstrapConfig['fileAccess']['s3'],
     configFileName: string,
     configDir?: string,
     logger?: Logger<ILogObj>,

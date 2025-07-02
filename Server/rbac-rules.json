@@ -1,0 +1,219 @@
+{
+  "1": {
+    "/data/ocpprouter/subscription": {
+      "GET": ["user", "admin"],
+      "POST": ["user", "admin"],
+      "DELETE": ["user", "admin"]
+    },
+    "/data/ocpprouter/systemConfig": {
+      "GET": ["user", "admin"],
+      "PUT": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/certificates/certificateSigned": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/certificates/installCertificate": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/certificates/getInstalledCertificateIds": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/certificates/deleteCertificate": {
+      "POST": ["user", "admin"]
+    },
+    "/data/certificates/tlsCertificates": {
+      "PUT": ["user", "admin"]
+    },
+    "/data/certificates/certificateChain": {
+      "POST": ["user", "admin"]
+    },
+    "/data/certificates/rootCertificate": {
+      "PUT": ["user", "admin"]
+    },
+    "/data/certificates/systemConfig": {
+      "GET": ["user", "admin"],
+      "PUT": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/configuration/setNetworkProfile": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/configuration/clearDisplayMessage": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/configuration/getDisplayMessages": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/configuration/publishFirmware": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/configuration/setDisplayMessage": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/configuration/unpublishFirmware": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/configuration/updateFirmware": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/configuration/reset": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/configuration/changeAvailability": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/configuration/triggerMessage": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/1.6/configuration/triggerMessage": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/1.6/configuration/changeConfiguration": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/1.6/configuration/getConfiguration": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/1.6/configuration/reset": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/1.6/configuration/changeAvailability": {
+      "POST": ["user", "admin"]
+    },
+    "/data/configuration/boot": {
+      "GET": ["user", "admin"],
+      "PUT": ["user", "admin"],
+      "DELETE": ["user", "admin"]
+    },
+    "/data/configuration/password": {
+      "POST": ["user", "admin"]
+    },
+    "/data/configuration/serverNetworkProfile": {
+      "GET": ["user", "admin"],
+      "DELETE": ["user", "admin"]
+    },
+    "/data/configuration/systemConfig": {
+      "GET": ["user", "admin"],
+      "PUT": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/evdriver/requestStartTransaction": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/evdriver/requestStopTransaction": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/evdriver/cancelReservation": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/evdriver/reserveNow": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/evdriver/unlockConnector": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/evdriver/clearCache": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/evdriver/sendLocalList": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/evdriver/getLocalListVersion": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/1.6/evdriver/remoteStartTransaction": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/1.6/evdriver/remoteStopTransaction": {
+      "POST": ["user", "admin"]
+    },
+    "/data/evdriver/authorization": {
+      "GET": ["user", "admin"],
+      "PUT": ["user", "admin"],
+      "DELETE": ["user", "admin"]
+    },
+    "/data/evdriver/authorizationRestrictions": {
+      "PUT": ["user", "admin"]
+    },
+    "/data/evdriver/localListVersion": {
+      "GET": ["user", "admin"]
+    },
+    "/data/evdriver/systemConfig": {
+      "GET": ["user", "admin"],
+      "PUT": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/monitoring/setVariableMonitoring": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/monitoring/clearVariableMonitoring": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/monitoring/setMonitoringLevel": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/monitoring/setMonitoringBase": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/monitoring/setVariables": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/monitoring/getVariables": {
+      "POST": ["user", "admin"]
+    },
+    "/data/monitoring/variableAttribute": {
+      "GET": ["user", "admin"],
+      "PUT": ["user", "admin"],
+      "DELETE": ["user", "admin"]
+    },
+    "/data/monitoring/systemConfig": {
+      "GET": ["user", "admin"],
+      "PUT": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/reporting/getBaseReport": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/reporting/getReport": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/reporting/getMonitoringReport": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/reporting/getLog": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/reporting/customerInformation": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/smartcharging/clearChargingProfile": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/smartcharging/getChargingProfiles": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/smartcharging/setChargingProfile": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/smartcharging/clearedChargingLimit": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/smartcharging/getCompositeSchedule": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/transactions/costUpdated": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/2.0.1/transactions/getTransactionStatus": {
+      "POST": ["user", "admin"]
+    },
+    "/data/transactions/transaction": {
+      "GET": ["user", "admin"]
+    },
+    "/data/transactions/tariff": {
+      "GET": ["user", "admin"],
+      "PUT": ["user", "admin"],
+      "DELETE": ["user", "admin"]
+    },
+    "/data/transactions/systemConfig": {
+      "GET": ["user", "admin"],
+      "PUT": ["user", "admin"]
+    }
+  }
+}

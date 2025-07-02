@@ -24,3 +24,9 @@
 **/DirectusExtensions
 **/Swarm
 **/data
+
+# include sequelize bridge
+!Server/
+!Server/src/
+!Server/src/config/
+!Server/src/config/sequelize.bridge.config.js

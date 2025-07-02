@@ -4,12 +4,13 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { OCPP2_0_1_Namespace, OCPPVersionType, WebsocketServerConfig } from '@citrineos/base';
-import { BelongsToMany, Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import { BelongsToMany, Column, DataType, PrimaryKey, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
+import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class ServerNetworkProfile extends Model implements WebsocketServerConfig {
+export class ServerNetworkProfile extends BaseModelWithTenant implements WebsocketServerConfig {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ServerNetworkProfile;
 
   @PrimaryKey

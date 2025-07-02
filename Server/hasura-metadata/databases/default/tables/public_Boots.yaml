@@ -1,6 +1,10 @@
 table:
   name: Boots
   schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
 array_relationships:
   - name: VariableAttributes
     using:
@@ -9,3 +13,26 @@ array_relationships:
         table:
           name: VariableAttributes
           schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - bootWithRejectedVariables
+        - changeConfigurationsOnPending
+        - getBaseReportOnPending
+        - getConfigurationsOnPending
+        - id
+        - status
+        - bootRetryInterval
+        - heartbeatInterval
+        - tenantId
+        - statusInfo
+        - variablesRejectedOnLastBoot
+        - createdAt
+        - lastBootTime
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""
