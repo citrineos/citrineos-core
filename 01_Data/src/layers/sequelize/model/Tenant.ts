@@ -54,6 +54,8 @@ import { LatestStatusNotification } from './Location/LatestStatusNotification';
 import { Subscription } from './Subscription';
 import { Tariff } from './Tariff';
 import { TenantPartner } from './TenantPartner';
+import { CredentialRole, Version } from '../../../interfaces/ocpi';
+import { JSONB } from '../util';
 
 export enum TenantAttributeProps {
   id = 'id',
@@ -85,10 +87,10 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
   declare name: string;
 
   @Column(DataType.JSONB)
-  declare serverCredentialsRoles: object;
+  declare serverCredentialsRoles: JSONB<CredentialRole[]>;
 
   @Column(DataType.JSONB)
-  declare serverVersions: object;
+  declare serverVersions: JSONB<Version[]>;
 
   /**
    * Relationships

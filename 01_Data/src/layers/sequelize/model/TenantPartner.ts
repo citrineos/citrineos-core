@@ -8,6 +8,8 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 import { Tenant } from './Tenant';
+import { CredentialRole, Version, VersionEndpoint } from '../../../interfaces/ocpi';
+import { JSONB } from '../util';
 
 @Table
 export class TenantPartner extends Model {
@@ -22,31 +24,21 @@ export class TenantPartner extends Model {
   @BelongsTo(() => Tenant)
   declare tenant: Tenant;
 
-  // OCPI/Protocol-agnostic partner details
   @Column(DataType.JSONB)
-  declare businessDetails: object;
+  declare clientCredentialsRoles: JSONB<CredentialRole[]>;
 
   @Column(DataType.JSONB)
-  declare clientCredentialsRoles: object;
+  declare clientVersions: JSONB<Version[]>;
 
   @Column(DataType.JSONB)
-  declare clientInformations: object;
+  declare cpoTenants: JSONB;
 
   @Column(DataType.JSONB)
-  declare clientVersions: object;
+  declare endpoints: JSONB;
 
   @Column(DataType.JSONB)
-  declare cpoTenants: object;
+  declare versions: JSONB<Version[]>;
 
   @Column(DataType.JSONB)
-  declare endpoints: object;
-
-  @Column(DataType.JSONB)
-  declare images: object;
-
-  @Column(DataType.JSONB)
-  declare versions: object;
-
-  @Column(DataType.JSONB)
-  declare versionEndpoints: object;
+  declare versionEndpoints: JSONB<VersionEndpoint[]>;
 }
