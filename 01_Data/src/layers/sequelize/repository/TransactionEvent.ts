@@ -37,6 +37,7 @@ export class SequelizeTransactionEventRepository
   implements ITransactionEventRepository
 {
   transaction: CrudRepository<Transaction>;
+  authorization: CrudRepository<Authorization>;
   evse: CrudRepository<Evse>;
   station: CrudRepository<ChargingStation>;
   meterValue: CrudRepository<MeterValue>;
@@ -51,6 +52,7 @@ export class SequelizeTransactionEventRepository
     namespace = TransactionEvent.MODEL_NAME,
     sequelizeInstance?: Sequelize,
     transaction?: CrudRepository<Transaction>,
+    authorization?: CrudRepository<Authorization>,
     station?: CrudRepository<ChargingStation>,
     evse?: CrudRepository<Evse>,
     meterValue?: CrudRepository<MeterValue>,
@@ -65,6 +67,14 @@ export class SequelizeTransactionEventRepository
       : new SequelizeRepository<Transaction>(
           config,
           Transaction.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.authorization = authorization
+      ? authorization
+      : new SequelizeRepository<Authorization>(
+          config,
+          Authorization.MODEL_NAME,
           logger,
           sequelizeInstance,
         );
@@ -147,10 +157,29 @@ export class SequelizeTransactionEventRepository
       });
 
       if (existingTransaction) {
+        let authorizationId = existingTransaction.authorizationId;
+        if (!authorizationId && value.idToken) {
+          // Find Authorization by IdToken
+          const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+            where: {
+              idToken: value.idToken.idToken,
+              idTokenType: value.idToken.type,
+            },
+            transaction: sequelizeTransaction,
+          });
+          if (authorization) {
+            authorizationId = authorization.id;
+          } else {
+            this.logger.warn(
+              `Authorization with idToken ${value.idToken.idToken} : ${value.idToken.type} does not exist. Transaction ${existingTransaction.transactionId} will not be associated with an authorization.`,
+            );
+          }
+        }
         finalTransaction = await existingTransaction.update(
           {
             isActive: value.eventType !== OCPP2_0_1.TransactionEventEnumType.Ended,
             ...value.transactionInfo,
+            authorizationId,
           },
           {
             transaction: sequelizeTransaction,
@@ -164,6 +193,24 @@ export class SequelizeTransactionEventRepository
           ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
           ...value.transactionInfo,
         });
+
+        if (value.idToken) {
+          // Find Authorization by IdToken
+          const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+            where: {
+              idToken: value.idToken.idToken,
+              idTokenType: value.idToken.type,
+            },
+            transaction: sequelizeTransaction,
+          });
+          if (authorization) {
+            newTransaction.authorizationId = authorization.id;
+          } else {
+            this.logger.warn(
+              `Authorization with idToken ${value.idToken.idToken} : ${value.idToken.type} does not exist. Transaction ${newTransaction.transactionId} will not be associated with an authorization.`,
+            );
+          }
+        }
 
         const chargingStation = await this.station.readByKey(tenantId, stationId);
         if (!chargingStation) {
@@ -583,6 +630,18 @@ export class SequelizeTransactionEventRepository
       }
       event.connectorDatabaseId = connector.id;
 
+      // Find Authorization by IdToken
+      const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+        where: {
+          idToken: request.idTag,
+          idTokenType: null, // OCPP 1.6 does not have idTokenType
+        },
+        transaction: sequelizeTransaction,
+      });
+      if (!authorization) {
+        this.logger.warn(`Authorization with idToken ${request.idTag} does not exist.`);
+      }
+
       // Generate transactionId
       const transactionId = await this.chargingStationSequence.getNextSequenceValue(
         tenantId,
@@ -595,6 +654,7 @@ export class SequelizeTransactionEventRepository
         stationId,
         isActive: true,
         transactionId: transactionId.toString(),
+        authorizationId: authorization ? authorization.id : null,
       });
 
       const chargingStation = await this.station.readByKey(tenantId, stationId);
