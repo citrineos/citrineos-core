@@ -53,6 +53,9 @@ import { SecurityEvent } from './SecurityEvent';
 import { LatestStatusNotification } from './Location/LatestStatusNotification';
 import { Subscription } from './Subscription';
 import { Tariff } from './Tariff';
+import { TenantPartner } from './TenantPartner';
+import { CredentialRole, Version } from '../../../interfaces/ocpi';
+import { JSONB } from '../util';
 
 export enum TenantAttributeProps {
   id = 'id',
@@ -82,6 +85,12 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
 
   @Column(DataType.STRING)
   declare name: string;
+
+  @Column(DataType.JSONB)
+  declare serverCredentialsRoles: JSONB<CredentialRole[]>;
+
+  @Column(DataType.JSONB)
+  declare serverVersions: JSONB<Version[]>;
 
   /**
    * Relationships
@@ -224,4 +233,7 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
 
   @HasMany(() => SendLocalListAuthorization)
   declare sendLocalListAuthorizations: SendLocalListAuthorization[];
+
+  @HasMany(() => TenantPartner)
+  declare tenantPartners: TenantPartner[];
 }

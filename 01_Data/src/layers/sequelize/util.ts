@@ -178,3 +178,5 @@ export class DefaultSequelizeInstance {
     });
   }
 }
+
+export type JSONB<T = any> = T | Record<string, unknown>;
