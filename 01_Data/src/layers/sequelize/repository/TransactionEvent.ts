@@ -612,6 +612,20 @@ export class SequelizeTransactionEventRepository
         isActive: true,
         transactionId: transactionId.toString(),
       });
+
+      const chargingStation = await this.station.readByKey(tenantId, stationId);
+      if (!chargingStation) {
+        this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
+      } else {
+        if (chargingStation.locationId) {
+          newTransaction.locationId = chargingStation.locationId;
+        } else {
+          this.logger.warn(
+            `Charging station with stationId ${stationId} does not have a locationId. Transaction ${newTransaction.transactionId} will not be associated with a location, which may prevent it from being sent to upstream partners.`,
+          );
+        }
+      }
+
       newTransaction = await newTransaction.save({ transaction: sequelizeTransaction });
 
       // Store StartTransaction in db
