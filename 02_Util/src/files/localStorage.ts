@@ -27,8 +27,9 @@ export class LocalStorage implements ConfigStore {
     const absoluteFilePath = path.join(
       process.cwd(),
       filePath ? filePath : this.defaultFilePath,
-      `/${fileName}`,
+      fileName,
     );
+    this._logger.debug(`Saving file to ${absoluteFilePath}`);
     fs.writeFileSync(absoluteFilePath, content, 'utf-8');
     return absoluteFilePath;
   }
@@ -37,8 +38,9 @@ export class LocalStorage implements ConfigStore {
     const absoluteFilePath = path.join(
       process.cwd(),
       filePath ? filePath : this.defaultFilePath,
-      `/${id}`,
+      id,
     );
+    this._logger.debug(`Getting file from ${absoluteFilePath}`);
     if (!fs.existsSync(absoluteFilePath)) {
       return;
     }

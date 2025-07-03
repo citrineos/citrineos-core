@@ -88,8 +88,7 @@ export class CitrineOSServer {
   /**
    * Fields
    */
-  private readonly _bootstrapConfig: BootstrapConfig;
-  private readonly _config: SystemConfig;
+  private readonly _config: BootstrapConfig & SystemConfig;
   private readonly _logger: Logger<ILogObj>;
   private readonly _server: FastifyInstance;
   private readonly _cache: ICache;
@@ -114,7 +113,7 @@ export class CitrineOSServer {
    * Constructor for the class.
    *
    * @param {EventGroup} appName - app type
-   * @param {SystemConfig} config - config
+   * @param {SystemConfig} systemConfig - config
    * @param {FastifyInstance} server - optional Fastify server instance
    * @param {Ajv} ajv - optional Ajv JSON schema validator instance
    * @param {ICache} cache - cache
@@ -124,21 +123,19 @@ export class CitrineOSServer {
   constructor(
     appName: string,
     bootstrapConfig: BootstrapConfig,
-    config: SystemConfig,
+    systemConfig: SystemConfig,
     server?: FastifyInstance,
     ajv?: Ajv,
     cache?: ICache,
     _fileStorage?: IFileStorage,
   ) {
-    // Set system config
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
-    if (!config.util.messageBroker.amqp) {
+    if (!systemConfig.util.messageBroker.amqp) {
       throw new Error('This server implementation requires amqp configuration for rabbitMQ.');
     }
 
     this.appName = appName;
-    this._bootstrapConfig = bootstrapConfig;
-    this._config = config;
+    this._config = { ...bootstrapConfig, ...systemConfig };
     this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
     // enable cors
@@ -167,7 +164,7 @@ export class CitrineOSServer {
       .catch((error) => this._logger.error('Could not initialize swagger', error));
 
     // Add Directus Message API flow creation if enabled
-    if (this._bootstrapConfig.fileAccess.directus?.generateFlows) {
+    if (this._config.fileAccess.directus?.generateFlows) {
       const directusUtil = ConfigStoreFactory.getInstance() as DirectusUtil;
       this._server.addHook('onRoute', (routeOptions: RouteOptions) => {
         directusUtil!

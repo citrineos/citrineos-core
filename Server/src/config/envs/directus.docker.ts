@@ -157,19 +157,6 @@ export function createDirectusConfig() {
         ],
       },
     },
-    data: {
-      sequelize: {
-        host: 'ocpp-db',
-        port: 5432,
-        database: 'citrine',
-        dialect: 'postgres',
-        username: 'citrine',
-        password: 'citrine',
-        storage: '',
-        sync: false,
-        alter: false,
-      },
-    },
     util: {
       cache: {
         memory: true,

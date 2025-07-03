@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, SystemConfig } from '@citrineos/base';
+import { CrudRepository, BootstrapConfig } from '@citrineos/base';
 import { type AuthorizationQuerystring, type IAuthorizationRepository } from '../../../interfaces';
 import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from '../model/Authorization';
 import { SequelizeRepository } from './Base';
@@ -21,7 +21,7 @@ export class SequelizeAuthorizationRepository
   idTokenAdditionalInfo: CrudRepository<IdTokenAdditionalInfo>;
 
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig,
     logger?: Logger<ILogObj>,
     sequelizeInstance?: Sequelize,
     idToken?: CrudRepository<IdToken>,

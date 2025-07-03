@@ -6,6 +6,7 @@
 import {
   AbstractModule,
   AsHandler,
+  BootstrapConfig,
   CallAction,
   CrudRepository,
   ErrorCode,
@@ -87,7 +88,7 @@ export class TransactionsModule extends AbstractModule {
   /**
    * This is the constructor function that initializes the {@link TransactionsModule}.
    *
-   * @param {SystemConfig} config - The `config` contains configuration settings for the module.
+   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
    *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
    *
@@ -147,7 +148,7 @@ export class TransactionsModule extends AbstractModule {
    * a list of authorizers that can be used to authorize requests.
    */
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig & SystemConfig,
     cache: ICache,
     fileStorage: IFileStorage,
     sender?: IMessageSender,

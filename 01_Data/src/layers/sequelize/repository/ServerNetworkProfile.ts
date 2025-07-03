@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SystemConfig } from '@citrineos/base';
+import { BootstrapConfig } from '@citrineos/base';
 import { SequelizeRepository } from './Base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
@@ -14,7 +14,7 @@ export class SequelizeServerNetworkProfileRepository
   extends SequelizeRepository<ServerNetworkProfile>
   implements IServerNetworkProfileRepository
 {
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, ServerNetworkProfile.MODEL_NAME, logger, sequelizeInstance);
   }
 }

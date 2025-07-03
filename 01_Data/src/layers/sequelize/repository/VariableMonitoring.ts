@@ -14,7 +14,7 @@ import {
   CrudRepository,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
-  SystemConfig,
+  BootstrapConfig,
 } from '@citrineos/base';
 import { Component, Variable } from '../model/DeviceModel';
 import { Sequelize } from 'sequelize-typescript';
@@ -28,7 +28,7 @@ export class SequelizeVariableMonitoringRepository
   variableMonitoringStatus: CrudRepository<VariableMonitoringStatus>;
 
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig,
     logger?: Logger<ILogObj>,
     sequelizeInstance?: Sequelize,
     eventData?: CrudRepository<EventData>,

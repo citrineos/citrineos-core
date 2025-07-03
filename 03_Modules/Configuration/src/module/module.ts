@@ -7,6 +7,7 @@ import {
   AbstractModule,
   AsHandler,
   BOOT_STATUS,
+  BootstrapConfig,
   CallAction,
   ChargingStationSequenceType,
   ErrorCode,
@@ -76,7 +77,7 @@ export class ConfigurationModule extends AbstractModule {
   /**
    * This is the constructor function that initializes the {@link ConfigurationModule}.
    *
-   * @param {SystemConfig} config - The `config` contains configuration settings for the module.
+   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
    *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
    *
@@ -117,7 +118,7 @@ export class ConfigurationModule extends AbstractModule {
    *If no `deviceModelRepository` is provided, a default {@link sequelize:messageInfoRepository} instance is created and used.
    */
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig & SystemConfig,
     cache: ICache,
     sender?: IMessageSender,
     handler?: IMessageHandler,
