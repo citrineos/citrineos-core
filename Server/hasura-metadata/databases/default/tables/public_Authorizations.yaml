@@ -31,6 +31,7 @@ select_permissions:
         - tenantId
         - createdAt
         - updatedAt
+        - concurrentTransaction
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
