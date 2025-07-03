@@ -1,10 +1,16 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto } from './base.dto';
-import { IEvseDto } from './evse.dto';
-import { IChargingStationDto } from './charging.station.dto';
-import { ITransactionEventDto } from './transaction.event.dto';
+
+import {
+  IBaseDto,
+  IChargingStationDto,
+  IEvseDto,
+  IMeterValueDto,
+  IStartTransactionDto,
+  IStopTransactionDto,
+  ITransactionEventDto,
+} from '../..';
 
 export interface ITransactionDto extends IBaseDto {
   id: number;
@@ -15,16 +21,15 @@ export interface ITransactionDto extends IBaseDto {
   evse?: IEvseDto;
   evseDatabaseId?: number;
   isActive: boolean;
-  meterValues?: any[];
-  startTransaction?: any;
-  stopTransaction?: any;
+  meterValues?: IMeterValueDto[];
+  startTransaction?: IStartTransactionDto;
+  stopTransaction?: IStopTransactionDto;
   chargingState?: any;
   timeSpentCharging?: number | null;
   totalKwh?: number | null;
   stoppedReason?: any;
   remoteStartId?: number | null;
   totalCost?: number;
-  events?: ITransactionEventDto[];
 }
 
 export enum TransactionDtoProps {
@@ -37,13 +42,12 @@ export enum TransactionDtoProps {
   isActive = 'isActive',
   meterValues = 'meterValues',
   startTransaction = 'StartTransaction',
-  stopTransaction = 'stopTransaction',
+  stopTransaction = 'StopTransaction',
   chargingState = 'chargingState',
   timeSpentCharging = 'timeSpentCharging',
   totalKwh = 'totalKwh',
   stoppedReason = 'stoppedReason',
   remoteStartId = 'remoteStartId',
   totalCost = 'totalCost',
-  evse = 'evse',
-  events = 'events',
+  evse = 'Evse',
 }

@@ -16,15 +16,23 @@ import {
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
 import { Evse } from '../DeviceModel';
-import { ChargingStation } from '../Location';
+import { ChargingStation, Location } from '../Location';
 import { StartTransaction, StopTransaction } from './';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { Authorization } from '../Authorization';
 
 @Table
 export class Transaction extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
   static readonly TRANSACTION_EVENTS_ALIAS = 'transactionEvents';
   static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter';
+
+  @Column(DataType.INTEGER)
+  @ForeignKey(() => Location)
+  locationId?: number;
+
+  @BelongsTo(() => Location)
+  location?: Location;
 
   @Column({
     unique: 'stationId_transactionId',
@@ -41,6 +49,13 @@ export class Transaction extends BaseModelWithTenant {
   @ForeignKey(() => Evse)
   @Column(DataType.INTEGER)
   declare evseDatabaseId?: number;
+
+  @Column(DataType.INTEGER)
+  @ForeignKey(() => Authorization)
+  authorizationId?: number;
+
+  @BelongsTo(() => Authorization)
+  authorization?: Authorization;
 
   @Column({
     unique: 'stationId_transactionId',
@@ -90,37 +105,6 @@ export class Transaction extends BaseModelWithTenant {
   @Column(DataType.DECIMAL)
   declare totalCost?: number;
 
+  @Column(DataType.JSONB)
   declare customData?: any | null;
-
-  static buildTransaction(
-    id: string, // todo temp
-    stationId: string,
-    transactionId: string,
-    isActive: boolean,
-    transactionEvents: TransactionEvent[],
-    meterValues: MeterValue[],
-    chargingState?: string,
-    timeSpentCharging?: number,
-    totalKwh?: number,
-    stoppedReason?: string,
-    remoteStartId?: number,
-    totalCost?: number,
-    customData?: object,
-  ) {
-    const transaction = new Transaction();
-    transaction.id = id;
-    transaction.stationId = stationId;
-    transaction.transactionId = transactionId;
-    transaction.isActive = isActive;
-    transaction.transactionEvents = transactionEvents;
-    transaction.meterValues = meterValues;
-    transaction.chargingState = chargingState;
-    transaction.timeSpentCharging = timeSpentCharging;
-    transaction.totalKwh = totalKwh;
-    transaction.stoppedReason = stoppedReason;
-    transaction.remoteStartId = remoteStartId;
-    transaction.totalCost = totalCost;
-    transaction.customData = customData;
-    return transaction;
-  }
 }

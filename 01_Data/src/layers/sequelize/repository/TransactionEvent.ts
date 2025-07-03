@@ -28,7 +28,7 @@ import { Op, WhereOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { MeterValueMapper } from '../mapper/2.0.1';
-import { Connector } from '../model/Location';
+import { ChargingStation, Connector } from '../model/Location';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
 import { Authorization } from '../model/Authorization';
 
@@ -37,7 +37,9 @@ export class SequelizeTransactionEventRepository
   implements ITransactionEventRepository
 {
   transaction: CrudRepository<Transaction>;
+  authorization: CrudRepository<Authorization>;
   evse: CrudRepository<Evse>;
+  station: CrudRepository<ChargingStation>;
   meterValue: CrudRepository<MeterValue>;
   startTransaction: CrudRepository<StartTransaction>;
   stopTransaction: CrudRepository<StopTransaction>;
@@ -50,6 +52,8 @@ export class SequelizeTransactionEventRepository
     namespace = TransactionEvent.MODEL_NAME,
     sequelizeInstance?: Sequelize,
     transaction?: CrudRepository<Transaction>,
+    authorization?: CrudRepository<Authorization>,
+    station?: CrudRepository<ChargingStation>,
     evse?: CrudRepository<Evse>,
     meterValue?: CrudRepository<MeterValue>,
     startTransaction?: CrudRepository<StartTransaction>,
@@ -66,9 +70,25 @@ export class SequelizeTransactionEventRepository
           logger,
           sequelizeInstance,
         );
+    this.authorization = authorization
+      ? authorization
+      : new SequelizeRepository<Authorization>(
+          config,
+          Authorization.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
     this.evse = evse
       ? evse
       : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
+    this.station = station
+      ? station
+      : new SequelizeRepository<ChargingStation>(
+          config,
+          ChargingStation.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
     this.meterValue = meterValue
       ? meterValue
       : new SequelizeRepository<MeterValue>(
@@ -137,10 +157,29 @@ export class SequelizeTransactionEventRepository
       });
 
       if (existingTransaction) {
+        let authorizationId = existingTransaction.authorizationId;
+        if (!authorizationId && value.idToken) {
+          // Find Authorization by IdToken
+          const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+            where: {
+              idToken: value.idToken.idToken,
+              idTokenType: value.idToken.type,
+            },
+            transaction: sequelizeTransaction,
+          });
+          if (authorization) {
+            authorizationId = authorization.id;
+          } else {
+            this.logger.warn(
+              `Authorization with idToken ${value.idToken.idToken} : ${value.idToken.type} does not exist. Transaction ${existingTransaction.transactionId} will not be associated with an authorization.`,
+            );
+          }
+        }
         finalTransaction = await existingTransaction.update(
           {
             isActive: value.eventType !== OCPP2_0_1.TransactionEventEnumType.Ended,
             ...value.transactionInfo,
+            authorizationId,
           },
           {
             transaction: sequelizeTransaction,
@@ -154,6 +193,37 @@ export class SequelizeTransactionEventRepository
           ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
           ...value.transactionInfo,
         });
+
+        if (value.idToken) {
+          // Find Authorization by IdToken
+          const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+            where: {
+              idToken: value.idToken.idToken,
+              idTokenType: value.idToken.type,
+            },
+            transaction: sequelizeTransaction,
+          });
+          if (authorization) {
+            newTransaction.authorizationId = authorization.id;
+          } else {
+            this.logger.warn(
+              `Authorization with idToken ${value.idToken.idToken} : ${value.idToken.type} does not exist. Transaction ${newTransaction.transactionId} will not be associated with an authorization.`,
+            );
+          }
+        }
+
+        const chargingStation = await this.station.readByKey(tenantId, stationId);
+        if (!chargingStation) {
+          this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
+        } else {
+          if (chargingStation.locationId) {
+            newTransaction.locationId = chargingStation.locationId;
+          } else {
+            this.logger.warn(
+              `Charging station with stationId ${stationId} does not have a locationId. Transaction ${newTransaction.transactionId} will not be associated with a location, which may prevent it from being sent to upstream partners.`,
+            );
+          }
+        }
 
         finalTransaction = await newTransaction.save({ transaction: sequelizeTransaction });
         created = true;
@@ -560,6 +630,18 @@ export class SequelizeTransactionEventRepository
       }
       event.connectorDatabaseId = connector.id;
 
+      // Find Authorization by IdToken
+      const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+        where: {
+          idToken: request.idTag,
+          idTokenType: null, // OCPP 1.6 does not have idTokenType
+        },
+        transaction: sequelizeTransaction,
+      });
+      if (!authorization) {
+        this.logger.warn(`Authorization with idToken ${request.idTag} does not exist.`);
+      }
+
       // Generate transactionId
       const transactionId = await this.chargingStationSequence.getNextSequenceValue(
         tenantId,
@@ -572,7 +654,22 @@ export class SequelizeTransactionEventRepository
         stationId,
         isActive: true,
         transactionId: transactionId.toString(),
+        authorizationId: authorization ? authorization.id : null,
       });
+
+      const chargingStation = await this.station.readByKey(tenantId, stationId);
+      if (!chargingStation) {
+        this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
+      } else {
+        if (chargingStation.locationId) {
+          newTransaction.locationId = chargingStation.locationId;
+        } else {
+          this.logger.warn(
+            `Charging station with stationId ${stationId} does not have a locationId. Transaction ${newTransaction.transactionId} will not be associated with a location, which may prevent it from being sent to upstream partners.`,
+          );
+        }
+      }
+
       newTransaction = await newTransaction.save({ transaction: sequelizeTransaction });
 
       // Store StartTransaction in db
