@@ -9,8 +9,6 @@ import { ILogObj, Logger } from 'tslog';
 import { IAuthorizationRepository, ILocalAuthListRepository } from '../../../interfaces';
 import {
   Authorization,
-  IdToken,
-  IdTokenInfo,
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
@@ -78,57 +76,61 @@ export class SequelizeLocalAuthListRepository
     );
     for (const authData of localAuthorizationList ?? []) {
       const auth = await Authorization.findOne({
-        include: [
-          {
-            model: IdToken,
-            where: {
-              idToken: authData.idToken.idToken,
-              type: authData.idToken.type,
-            },
-          },
-          {
-            model: IdTokenInfo,
-            include: [IdToken],
-          },
-        ],
+        where: {
+          idToken: authData.idToken.idToken,
+          idTokenType: authData.idToken.type,
+        },
       });
       if (!auth) {
         throw new Error(
           `Authorization not found for ${JSON.stringify(authData)}, invalid SendLocalListRequest (create necessary Authorizations first)`,
         );
       }
-      if (!deepDirectionalEqual(authData.idToken, auth.idToken)) {
+      if (authData.idToken.idToken !== auth.idToken || authData.idToken.type !== auth.idTokenType) {
         throw new Error(
-          `Authorization idToken in SendLocalListRequest ${JSON.stringify(authData.idToken)} does not match idToken in database ${JSON.stringify(auth.idToken)} (update the idToken first)`,
+          `Authorization idToken in SendLocalListRequest ${JSON.stringify(authData.idToken)} does not match idToken in database { idToken: ${auth.idToken}, idTokenType: ${auth.idTokenType} } (update the idToken first)`,
         );
       }
-      if (
-        authData.idTokenInfo?.groupIdToken &&
-        (!auth.idTokenInfo?.groupIdToken ||
-          !deepDirectionalEqual(authData.idTokenInfo.groupIdToken, auth.idTokenInfo.groupIdToken))
-      ) {
-        throw new Error(
-          `Authorization group idToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match group idToken in database ${JSON.stringify(auth.idTokenInfo?.groupIdToken)} (update the group idToken first)`,
-        );
+      // If groupAuthorizationId is present, compare its id to groupAuthorizationId
+      if (authData.idTokenInfo?.groupIdToken) {
+        let groupAuthorizationAuthId: number | undefined;
+        // Only perform groupAuthorizationId check if groupIdToken is an object with idToken and type
+        if (
+          authData.idTokenInfo?.groupIdToken &&
+          typeof authData.idTokenInfo.groupIdToken === 'object' &&
+          'idToken' in authData.idTokenInfo.groupIdToken &&
+          'type' in authData.idTokenInfo.groupIdToken
+        ) {
+          const groupAuth = await Authorization.findOne({
+            where: {
+              idToken: authData.idTokenInfo.groupIdToken.idToken,
+              idTokenType: authData.idTokenInfo.groupIdToken.type,
+            },
+          });
+          const groupAuthorizationAuthId = groupAuth?.id;
+          if (
+            !auth.groupAuthorizationId ||
+            groupAuthorizationAuthId !== auth.groupAuthorizationId
+          ) {
+            throw new Error(
+              `Authorization groupIdToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match groupAuthorizationId in database ${JSON.stringify(auth.groupAuthorizationId)} (update the groupAuthorization first)`,
+            );
+          }
+        } else if (typeof authData.idTokenInfo.groupIdToken === 'number') {
+          groupAuthorizationAuthId = authData.idTokenInfo.groupIdToken;
+        }
+        if (!auth.groupAuthorizationId || groupAuthorizationAuthId !== auth.groupAuthorizationId) {
+          throw new Error(
+            `Authorization groupIdToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match groupAuthorizationId in database ${JSON.stringify(auth.groupAuthorizationId)} (update the groupAuthorization first)`,
+          );
+        }
       }
-      // While new IdTokens will NOT be created or newly associated via message api, idTokenInfo can be allowed to be unique for the local auth list
-      const localListAuthIdTokenInfo = await IdTokenInfo.create({
-        tenantId,
-        ...authData.idTokenInfo,
-        groupIdTokenId: auth.idTokenInfo?.groupIdTokenId,
-      });
-
-      const {
-        id,
-        idTokenInfoId: _idTokenInfoId,
-        idTokenInfo: _idTokenInfo,
-        ...authorizationFields
-      } = auth;
+      // No longer create IdTokenInfo, just use Authorization fields
+      const { id, ...authorizationFields } = auth;
       const localListAuthorization = await this.localListAuthorization.create(
         tenantId,
         LocalListAuthorization.build({
           ...authorizationFields,
-          idTokenInfoId: localListAuthIdTokenInfo.id,
           authorizationId: id,
         }),
       );

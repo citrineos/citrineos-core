@@ -23,7 +23,6 @@ import {
   TransactionEvent,
 } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';
-import { IdToken } from '../model/Authorization';
 import { Evse } from '../model/DeviceModel';
 import { Op, WhereOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
@@ -31,6 +30,7 @@ import { ILogObj, Logger } from 'tslog';
 import { MeterValueMapper } from '../mapper/2.0.1';
 import { ChargingStation, Connector } from '../model/Location';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
+import { Authorization } from '../model/Authorization';
 
 export class SequelizeTransactionEventRepository
   extends SequelizeRepository<TransactionEvent>
@@ -39,7 +39,6 @@ export class SequelizeTransactionEventRepository
   transaction: CrudRepository<Transaction>;
   evse: CrudRepository<Evse>;
   station: CrudRepository<ChargingStation>;
-  idToken: CrudRepository<IdToken>;
   meterValue: CrudRepository<MeterValue>;
   startTransaction: CrudRepository<StartTransaction>;
   stopTransaction: CrudRepository<StopTransaction>;
@@ -54,7 +53,6 @@ export class SequelizeTransactionEventRepository
     transaction?: CrudRepository<Transaction>,
     station?: CrudRepository<ChargingStation>,
     evse?: CrudRepository<Evse>,
-    idToken?: CrudRepository<IdToken>,
     meterValue?: CrudRepository<MeterValue>,
     startTransaction?: CrudRepository<StartTransaction>,
     stopTransaction?: CrudRepository<StopTransaction>,
@@ -81,9 +79,6 @@ export class SequelizeTransactionEventRepository
           logger,
           sequelizeInstance,
         );
-    this.idToken = idToken
-      ? idToken
-      : new SequelizeRepository<IdToken>(config, IdToken.MODEL_NAME, logger, sequelizeInstance);
     this.meterValue = meterValue
       ? meterValue
       : new SequelizeRepository<MeterValue>(
@@ -197,17 +192,19 @@ export class SequelizeTransactionEventRepository
       });
 
       if (value.idToken && value.idToken.type !== OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
-        const idToken = await this.idToken.readOnlyOneByQuery(tenantId, {
+        const authorization = await Authorization.findOne({
           where: {
             idToken: value.idToken.idToken,
-            type: value.idToken.type,
+            idTokenType: value.idToken.type,
           },
-          sequelizeTransaction,
+          transaction: sequelizeTransaction,
         });
-        if (!idToken) {
+        if (!authorization) {
           // TODO: Log Warning...
         } else {
-          event.idTokenId = idToken.id;
+          event.idTokenValue = authorization.idToken;
+          event.idTokenType =
+            typeof authorization.idTokenType === 'string' ? authorization.idTokenType : undefined;
         }
       }
 
@@ -247,7 +244,7 @@ export class SequelizeTransactionEventRepository
       );
       await finalTransaction.reload({
         include: [
-          { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] },
+          { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [Evse] },
           MeterValue,
           Evse,
         ],
@@ -268,7 +265,7 @@ export class SequelizeTransactionEventRepository
     return await super
       .readAllByQuery(tenantId, {
         where: { stationId },
-        include: [{ model: Transaction, where: { transactionId } }, MeterValue, Evse, IdToken],
+        include: [{ model: Transaction, where: { transactionId } }, MeterValue, Evse],
       })
       .then((transactionEvents) => {
         transactionEvents?.forEach(
@@ -327,7 +324,7 @@ export class SequelizeTransactionEventRepository
           required: true,
           include: [
             {
-              model: IdToken,
+              model: Evse,
               required: true,
               where: {
                 idToken: idToken.idToken,
@@ -352,7 +349,7 @@ export class SequelizeTransactionEventRepository
           required: true,
           include: [
             {
-              model: IdToken,
+              model: Evse,
               required: true,
               where: {
                 idToken: idToken,
@@ -382,7 +379,7 @@ export class SequelizeTransactionEventRepository
     return this.transaction.readOnlyOneByQuery(tenantId, {
       where: { transactionId },
       include: [
-        { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] },
+        { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [Evse] },
         MeterValue,
         Evse,
       ],
@@ -399,7 +396,7 @@ export class SequelizeTransactionEventRepository
     const queryOptions: any = {
       where: {},
       include: [
-        { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] },
+        { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [Evse] },
         MeterValue,
         Evse,
       ],
@@ -482,7 +479,7 @@ export class SequelizeTransactionEventRepository
           isActive: true,
         },
         include: [
-          { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [IdToken] },
+          { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [Evse] },
           MeterValue,
           { model: Evse, where: { id: evseId }, required: true },
         ],
@@ -572,19 +569,6 @@ export class SequelizeTransactionEventRepository
         ...request,
       });
 
-      // Associate IdToken with StartTransaction
-      const idToken = await this.idToken.readOnlyOneByQuery(tenantId, {
-        where: {
-          idToken: request.idTag,
-        },
-        sequelizeTransaction,
-      });
-      if (!idToken) {
-        this.logger.error(`Unable to find idTag ${request.idTag}.`);
-        throw new Error(`Unable to find idTag ${request.idTag}.`);
-      }
-      event.idTokenDatabaseId = idToken.id;
-
       // Associate Connector with StartTransaction
       const connector = await this.connector.readOnlyOneByQuery(tenantId, {
         where: {
@@ -635,7 +619,7 @@ export class SequelizeTransactionEventRepository
 
       // Return the new transaction with StartTransaction and IdToken
       await newTransaction.reload({
-        include: [{ model: StartTransaction, include: [IdToken] }],
+        include: [{ model: StartTransaction, include: [Evse] }],
         transaction: sequelizeTransaction,
       });
       this.transaction.emit('created', [newTransaction]);
@@ -651,7 +635,6 @@ export class SequelizeTransactionEventRepository
     timestamp: Date,
     meterValues: MeterValue[],
     reason?: string,
-    idTokenDatabaseId?: number,
   ): Promise<StopTransaction> {
     const stopTransaction = await StopTransaction.create({
       tenantId,
@@ -660,7 +643,6 @@ export class SequelizeTransactionEventRepository
       meterStop,
       timestamp: timestamp.toISOString(),
       reason,
-      idTokenDatabaseId,
       meterValues,
     });
     this.stopTransaction.emit('created', [stopTransaction]);
