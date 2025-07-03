@@ -89,8 +89,13 @@ const apiAuthPlugin: FastifyPluginAsync<{
     if (url === '/health') {
       return true;
     }
-
-    return !!options.excludedRoutes?.some((route) => url === route || url.startsWith(`${route}/`));
+    const isExcluded = !!options.excludedRoutes?.some(
+      (route) => url === route || url.startsWith(`${route}/`),
+    );
+    if (isExcluded && options.debug) {
+      _logger.debug(`Skipping authentication for excluded route: ${url}`);
+    }
+    return isExcluded;
   }
 
   // Authentication decorator - validates token from Authorization header

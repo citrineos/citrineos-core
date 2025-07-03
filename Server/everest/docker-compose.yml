@@ -11,7 +11,6 @@ services:
     build:
       dockerfile: Dockerfile
       args:
-        - EVEREST_TARGET_URL=${EVEREST_TARGET_URL}
         - EVEREST_IMAGE_TAG=${EVEREST_IMAGE_TAG}
     platform: linux/x86_64
     ports:
@@ -25,6 +24,8 @@ services:
       - mqtt-server
     environment:
       - MQTT_SERVER_ADDRESS=mqtt-server
+      - EVEREST_TARGET_URL=${EVEREST_TARGET_URL}
+      - OCPP_VERSION=${OCPP_VERSION}
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=0
     extra_hosts:
