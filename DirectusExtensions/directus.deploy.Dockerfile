@@ -8,4 +8,7 @@ COPY charging-stations-bundle/package.json /directus/extensions/directus-extensi
 COPY charging-stations-bundle/src /directus/extensions/directus-extension-charging-stations-bundle/src
 RUN npm install --prefix /directus/extensions/directus-extension-charging-stations-bundle && npm run build --prefix /directus/extensions/directus-extension-charging-stations-bundle
 
+ARG CONFIG_FILE
+COPY ${CONFIG_FILE} /directus/config.cjs
+
 USER node

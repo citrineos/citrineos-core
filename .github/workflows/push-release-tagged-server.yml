@@ -21,7 +21,7 @@ jobs:
             config: ''
           - name: citrineos-directus
             context: ./DirectusExtensions
-            dockerfile: ./DirectusExtensions/directus.Dockerfile
+            dockerfile: ./DirectusExtensions/directus.deploy.Dockerfile
             config: directus-env-config.cjs
 
     steps:
