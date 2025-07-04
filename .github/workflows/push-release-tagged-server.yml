@@ -21,8 +21,8 @@ jobs:
             config: ''
           - name: citrineos-directus
             context: ./DirectusExtensions
-            dockerfile: ./DirectusExtensions/directus.Dockerfile
-            config: ./Server/directus-env-config.cjs
+            dockerfile: ./DirectusExtensions/directus.deploy.Dockerfile
+            config: directus-env-config.cjs
 
     steps:
       - uses: actions/checkout@v4
@@ -41,46 +41,58 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-buildx-${{ matrix.image.name }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-buildx-
-
-      - name: Build image
-        run: |
-          docker buildx build \
-            --file ${{ matrix.image.dockerfile }} \
-            --tag ${{ matrix.image.name }} \
-            --cache-from type=local,src=/tmp/.buildx-cache \
-            --cache-to type=local,dest=/tmp/.buildx-cache \
-            --load \
-            ${{ matrix.image.context }}
-
-      - name: Copy config file to Directus container
-        if: ${{ matrix.image.name == 'citrineos-directus' }}
-        run: |
-          container_id=$(docker create ${{ matrix.image.name }})
-          docker cp ${{ matrix.image.config }} $container_id:/directus/config.cjs
-          docker commit $container_id ${{ matrix.image.name }}
-          docker rm $container_id
+            ${{ runner.os }}-buildx-${{ matrix.image.name }}-
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push image
         run: |
-          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/${{ matrix.image.name }}
-          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          VERSION=$(echo $VERSION | sed -e 's/^v//')
-          echo IMAGE_ID=$IMAGE_ID
-          echo VERSION=$VERSION
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image.name }}
+          tags: |
+            type=ref,event=tag
+            type=raw,value=latest
 
-          docker tag ${{ matrix.image.name }} $IMAGE_ID:$VERSION
-          docker tag ${{ matrix.image.name }} $IMAGE_ID:latest
-          docker push $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:latest
+      - name: Build and push server image
+        if: ${{ matrix.image.name == 'citrineos-server' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      - name: Prepare Directus build context
+        if: ${{ matrix.image.name == 'citrineos-directus' }}
+        run: |
+          cp ./Server/directus-env-config.cjs ./DirectusExtensions/
+
+      - name: Build and push Directus image
+        if: ${{ matrix.image.name == 'citrineos-directus' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          build-args: |
+            CONFIG_FILE=${{ matrix.image.config }}
+
+      # Move cache to avoid ever-growing cache
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
