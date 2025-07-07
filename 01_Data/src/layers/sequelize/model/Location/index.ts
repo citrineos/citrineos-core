@@ -4,6 +4,7 @@
 
 export { Location } from './Location';
 export { ChargingStation } from './ChargingStation';
+export { Evse } from './Evse';
 export { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 export { StatusNotification } from './StatusNotification';
 export { ServerNetworkProfile } from './ServerNetworkProfile';

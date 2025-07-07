@@ -12,7 +12,7 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { Evse } from './DeviceModel';
+import { EvseType } from './DeviceModel';
 import { BaseModelWithTenant } from './BaseModelWithTenant';
 
 @Table
@@ -69,11 +69,11 @@ export class Reservation extends BaseModelWithTenant {
   /**
    * Relations
    */
-  @ForeignKey(() => Evse)
+  @ForeignKey(() => EvseType)
   declare evseId?: number | null;
 
-  @BelongsTo(() => Evse)
-  declare evse?: Evse;
+  @BelongsTo(() => EvseType)
+  declare evse?: EvseType;
 
   declare customData?: any | null;
 }

@@ -19,6 +19,7 @@ import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 import { SetNetworkProfile } from './SetNetworkProfile';
 import { Connector } from './Connector';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { Evse } from './Evse';
 
 /**
  * Represents a charging station.
@@ -80,6 +81,11 @@ export class ChargingStation extends BaseModelWithTenant {
 
   @BelongsToMany(() => SetNetworkProfile, () => ChargingStationNetworkProfile)
   declare networkProfiles?: SetNetworkProfile[] | null;
+
+  @HasMany(() => Evse, {
+    onDelete: 'CASCADE',
+  })
+  declare evses?: Evse[] | null;
 
   @HasMany(() => Connector, {
     onDelete: 'CASCADE',

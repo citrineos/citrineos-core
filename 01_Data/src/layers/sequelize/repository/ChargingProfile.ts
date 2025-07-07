@@ -6,7 +6,7 @@
 import { CrudRepository, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { SequelizeRepository } from './Base';
 import { IChargingProfileRepository } from '../../../interfaces';
-import { Evse } from '../model/DeviceModel';
+import { EvseType } from '../model/DeviceModel';
 import { Sequelize } from 'sequelize-typescript';
 import { Logger, ILogObj } from 'tslog';
 import {
@@ -17,6 +17,7 @@ import {
   SalesTariff,
 } from '../model/ChargingProfile';
 import { Transaction } from '../model/TransactionEvent';
+import { Evse } from '../model';
 
 export class SequelizeChargingProfileRepository
   extends SequelizeRepository<ChargingProfile>
@@ -26,7 +27,7 @@ export class SequelizeChargingProfileRepository
   chargingSchedule: CrudRepository<ChargingSchedule>;
   salesTariff: CrudRepository<SalesTariff>;
   transaction: CrudRepository<Transaction>;
-  evse: CrudRepository<Evse>;
+  evse: CrudRepository<EvseType>;
   compositeSchedule: CrudRepository<CompositeSchedule>;
 
   constructor(
@@ -37,7 +38,7 @@ export class SequelizeChargingProfileRepository
     chargingSchedule?: CrudRepository<ChargingSchedule>,
     salesTariff?: CrudRepository<SalesTariff>,
     transaction?: CrudRepository<Transaction>,
-    evse?: CrudRepository<Evse>,
+    evse?: CrudRepository<EvseType>,
     compositeSchedule?: CrudRepository<CompositeSchedule>,
   ) {
     super(config, ChargingProfile.MODEL_NAME, logger, sequelizeInstance);
@@ -59,7 +60,7 @@ export class SequelizeChargingProfileRepository
         );
     this.evse = evse
       ? evse
-      : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
+      : new SequelizeRepository<EvseType>(config, EvseType.MODEL_NAME, logger, sequelizeInstance);
     this.salesTariff = salesTariff
       ? salesTariff
       : new SequelizeRepository<SalesTariff>(
@@ -186,7 +187,7 @@ export class SequelizeChargingProfileRepository
         stationId,
         isActive: true,
       },
-      include: [{ model: Evse, where: { id: chargingNeedsReq.evseId }, required: true }],
+      include: [{ model: Evse, where: { evseTypeId: chargingNeedsReq.evseId }, required: true }],
     });
     if (!activeTransaction) {
       throw new Error(
@@ -199,7 +200,7 @@ export class SequelizeChargingProfileRepository
       ChargingNeeds.build({
         tenantId,
         ...chargingNeedsReq.chargingNeeds,
-        evseDatabaseId: activeTransaction.evseDatabaseId,
+        evseId: activeTransaction.evseId,
         transactionDatabaseId: activeTransaction.id,
         maxScheduleTuples: chargingNeedsReq.maxScheduleTuples,
       }),

@@ -23,12 +23,12 @@ import {
   TransactionEvent,
 } from '../model/TransactionEvent';
 import { SequelizeRepository } from './Base';
-import { Evse } from '../model/DeviceModel';
+import { EvseType } from '../model/DeviceModel';
 import { Op, WhereOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { MeterValueMapper } from '../mapper/2.0.1';
-import { ChargingStation, Connector } from '../model/Location';
+import { ChargingStation, Connector, Evse } from '../model/Location';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
 import { Authorization } from '../model/Authorization';
 
@@ -157,6 +157,17 @@ export class SequelizeTransactionEventRepository
       });
 
       if (existingTransaction) {
+        let evseId = existingTransaction.evseId;
+        if (!evseId && value.evse) {
+          const [evse] = await this.evse.readOrCreateByQuery(tenantId, {
+            where: {
+              tenantId,
+              stationId,
+              evseTypeId: value.evse.id,
+            },
+          });
+          evseId = evse.id;
+        }
         let authorizationId = existingTransaction.authorizationId;
         if (!authorizationId && value.idToken) {
           // Find Authorization by IdToken
@@ -180,6 +191,7 @@ export class SequelizeTransactionEventRepository
             isActive: value.eventType !== OCPP2_0_1.TransactionEventEnumType.Ended,
             ...value.transactionInfo,
             authorizationId,
+            evseId,
           },
           {
             transaction: sequelizeTransaction,
@@ -190,9 +202,19 @@ export class SequelizeTransactionEventRepository
           tenantId,
           stationId,
           isActive: value.eventType !== OCPP2_0_1.TransactionEventEnumType.Ended,
-          ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
           ...value.transactionInfo,
         });
+
+        if (value.evse) {
+          const [evse] = await this.evse.readOrCreateByQuery(tenantId, {
+            where: {
+              tenantId,
+              stationId,
+              evseTypeId: value.evse.id,
+            },
+          });
+          newTransaction.evseId = evse.id;
+        }
 
         if (value.idToken) {
           // Find Authorization by IdToken
@@ -293,7 +315,7 @@ export class SequelizeTransactionEventRepository
         include: [
           { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [Evse] },
           MeterValue,
-          Evse,
+          EvseType,
         ],
         transaction: sequelizeTransaction,
       });
@@ -329,7 +351,7 @@ export class SequelizeTransactionEventRepository
   ): Promise<Transaction | undefined> {
     return await this.transaction.readOnlyOneByQuery(tenantId, {
       where: { stationId, transactionId },
-      include: [MeterValue, Evse],
+      include: [MeterValue, EvseType],
     });
   }
 
@@ -342,7 +364,7 @@ export class SequelizeTransactionEventRepository
     const includeObj = evse
       ? [
           {
-            model: Evse,
+            model: EvseType,
             where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null },
           },
         ]
@@ -428,7 +450,7 @@ export class SequelizeTransactionEventRepository
       include: [
         { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [Evse] },
         MeterValue,
-        Evse,
+        EvseType,
       ],
     });
   }
@@ -445,7 +467,7 @@ export class SequelizeTransactionEventRepository
       include: [
         { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [Evse] },
         MeterValue,
-        Evse,
+        EvseType,
       ],
     };
 
@@ -501,7 +523,7 @@ export class SequelizeTransactionEventRepository
         stationId: stationId,
         isActive: true,
       },
-      include: [Evse],
+      include: [EvseType],
     });
 
     const evseIds: number[] = [];
@@ -528,7 +550,7 @@ export class SequelizeTransactionEventRepository
         include: [
           { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [Evse] },
           MeterValue,
-          { model: Evse, where: { id: evseId }, required: true },
+          { model: EvseType, where: { id: evseId }, required: true },
         ],
       })
       .then((transactions) => {

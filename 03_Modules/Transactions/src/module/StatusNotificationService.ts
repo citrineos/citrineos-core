@@ -1,6 +1,6 @@
 import {
   Component,
-  Evse,
+  EvseType,
   IDeviceModelRepository,
   ILocationRepository,
   Variable,
@@ -69,7 +69,7 @@ export class StatusNotificationService {
       },
       include: [
         {
-          model: Evse,
+          model: EvseType,
           where: {
             id: statusNotificationRequest.evseId,
             connectorId: statusNotificationRequest.connectorId,

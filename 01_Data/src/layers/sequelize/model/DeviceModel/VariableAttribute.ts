@@ -15,7 +15,7 @@ import {
 } from 'sequelize-typescript';
 import { Variable } from './Variable';
 import { Component } from './Component';
-import { Evse } from './Evse';
+import { EvseType } from './Evse';
 import { Boot } from '../Boot';
 import { VariableStatus } from './VariableStatus';
 import { ChargingStation } from '../Location';
@@ -185,10 +185,10 @@ export class VariableAttribute
   })
   declare componentId?: number | null;
 
-  @BelongsTo(() => Evse)
+  @BelongsTo(() => EvseType)
   declare evse?: OCPP2_0_1.EVSEType;
 
-  @ForeignKey(() => Evse)
+  @ForeignKey(() => EvseType)
   @Column(DataType.INTEGER)
   declare evseDatabaseId?: number | null;
 

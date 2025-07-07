@@ -8,7 +8,7 @@ export {
   VariableAttribute,
   VariableCharacteristics,
   Component,
-  Evse,
+  EvseType,
   Variable,
   VariableStatus,
 } from './model/DeviceModel';
@@ -35,6 +35,7 @@ export {
 } from './model/VariableMonitoring';
 export {
   ChargingStation,
+  Evse,
   ChargingStationNetworkProfile,
   Location,
   ServerNetworkProfile,

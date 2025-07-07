@@ -47,7 +47,7 @@ import {
   VariableMonitoring,
   VariableMonitoringStatus,
 } from '.';
-import { VariableStatus } from './model/DeviceModel';
+import { EvseType, VariableStatus } from './model/DeviceModel';
 import { MessageInfo } from './model/MessageInfo';
 import { Subscription } from './model/Subscription';
 import { Tariff } from './model/Tariff';
@@ -143,6 +143,7 @@ export class DefaultSequelizeInstance {
         CompositeSchedule,
         Connector,
         Evse,
+        EvseType,
         EventData,
         Location,
         MeterValue,
