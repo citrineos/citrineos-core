@@ -168,6 +168,25 @@ export class SequelizeTransactionEventRepository
           });
           evseId = evse.id;
         }
+        let connectorId = existingTransaction.connectorId;
+        if (!connectorId && value.evse?.connectorId) {
+          const [evse] = await this.evse.readOrCreateByQuery(tenantId, {
+            where: {
+              tenantId,
+              stationId,
+              evseTypeId: value.evse.id,
+            },
+          });
+          const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
+            where: {
+              tenantId,
+              stationId,
+              evseId: evse.id,
+              evseTypeConnectorId: value.evse.connectorId,
+            },
+          });
+          connectorId = connector.id;
+        }
         let authorizationId = existingTransaction.authorizationId;
         if (!authorizationId && value.idToken) {
           // Find Authorization by IdToken
@@ -214,6 +233,17 @@ export class SequelizeTransactionEventRepository
             },
           });
           newTransaction.evseId = evse.id;
+          if (value.evse?.connectorId) {
+            const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
+              where: {
+                tenantId,
+                stationId,
+                evseId: evse.id,
+                evseTypeConnectorId: value.evse.connectorId,
+              },
+            });
+            newTransaction.connectorId = connector.id;
+          }
         }
 
         if (value.idToken) {
@@ -674,6 +704,8 @@ export class SequelizeTransactionEventRepository
       let newTransaction = Transaction.build({
         tenantId,
         stationId,
+        evseId: connector.evseId,
+        connectorId: connector.id,
         isActive: true,
         transactionId: transactionId.toString(),
         authorizationId: authorization ? authorization.id : null,

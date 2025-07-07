@@ -15,7 +15,7 @@ import {
 } from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
-import { Evse, ChargingStation, Location } from '../Location';
+import { Evse, ChargingStation, Location, Connector } from '../Location';
 import { StartTransaction, StopTransaction } from './';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 import { Authorization } from '../Authorization';
@@ -48,6 +48,13 @@ export class Transaction extends BaseModelWithTenant {
 
   @BelongsTo(() => Evse)
   declare evse?: Evse | null;
+
+  @Column(DataType.INTEGER)
+  @ForeignKey(() => Connector)
+  declare connectorId?: number;
+
+  @BelongsTo(() => Connector)
+  declare connector?: Connector | null;
 
   @Column(DataType.INTEGER)
   @ForeignKey(() => Authorization)
