@@ -17,21 +17,19 @@ export interface Version {
   url: string;
 }
 
-export interface VersionEndpoint {
-  identifier: string;
+export interface Endpoint {
+  module: string;
   url: string;
-  role: 'SENDER' | 'RECEIVER';
+  roles: string[];
 }
 
 export interface CredentialRole {
   role: 'CPO' | 'EMSP' | 'HUB' | 'NAP' | 'NSP' | 'SCSP';
   business_details?: BusinessDetails;
-  party_id: string;
-  country_code: string;
 }
 
 export interface Credentials {
-  token: string;
-  url: string;
-  roles: CredentialRole[];
+  token?: string;
+  connectionUrl?: string;
+  certificateRef?: string;
 }
