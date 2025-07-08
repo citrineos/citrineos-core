@@ -13,12 +13,12 @@ import {
 } from '../..';
 
 export interface ITransactionDto extends IBaseDto {
-  id: number;
+  id?: number;
   transactionId: string;
   stationId: string;
   transactionEvents?: ITransactionEventDto[];
   chargingStation?: IChargingStationDto;
-  evse?: IEvseDto;
+  evse?: IEvseDto | null;
   evseDatabaseId?: number;
   isActive: boolean;
   meterValues?: IMeterValueDto[];

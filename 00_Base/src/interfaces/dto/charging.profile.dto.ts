@@ -1,22 +1,19 @@
-import {
-  ChargingLimitSourceEnumType,
-  ChargingProfileKindEnumType,
-  ChargingProfilePurposeEnumType,
-  RecurrencyKindEnumType,
-} from '../../ocpp/model/2.0.1';
+import { IBaseDto, ITransactionDto } from '../..';
 
-export interface IChargingProfileDto {
+export interface IChargingProfileDto extends IBaseDto {
   databaseId: number;
-  id: number;
   stationId: string;
-  chargingProfileKind: ChargingProfileKindEnumType;
-  chargingProfilePurpose: ChargingProfilePurposeEnumType;
-  recurrencyKind?: RecurrencyKindEnumType;
+  id?: number;
+  chargingProfileKind: any;
+  chargingProfilePurpose: any;
+  recurrencyKind?: any;
   stackLevel: number;
-  validFrom: Date | null;
-  validTo: Date | null;
+  validFrom?: string | null;
+  validTo?: string | null;
   evseId?: number | null;
-  isActive: boolean | null;
-  chargingLimitSource: ChargingLimitSourceEnumType | null;
-  transactionDatabaseId: number | null;
+  isActive: boolean;
+  chargingLimitSource?: any;
+  chargingSchedule: any[];
+  transactionDatabaseId?: number | null;
+  transaction?: ITransactionDto;
 }
