@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { IVariableDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { BelongsToMany, Column, DataType, HasMany, HasOne, Table } from 'sequelize-typescript';
 import { Component } from './Component';
 import { VariableAttribute } from './VariableAttribute';
@@ -22,7 +22,7 @@ import { BaseModelWithTenant } from '../BaseModelWithTenant';
     },
   ],
 })
-export class Variable extends BaseModelWithTenant implements OCPP2_0_1.VariableType {
+export class Variable extends BaseModelWithTenant implements OCPP2_0_1.VariableType, IVariableDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableType;
 
   /**
@@ -46,13 +46,13 @@ export class Variable extends BaseModelWithTenant implements OCPP2_0_1.VariableT
    */
 
   @BelongsToMany(() => Component, () => ComponentVariable)
-  declare components?: OCPP2_0_1.ComponentType[];
+  declare components?: Component[];
 
   @HasMany(() => VariableAttribute)
   declare variableAttributes?: VariableAttribute[];
 
   @HasOne(() => VariableCharacteristics)
-  declare variableCharacteristics?: OCPP2_0_1.VariableCharacteristicsType;
+  declare variableCharacteristics?: VariableCharacteristics;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
 

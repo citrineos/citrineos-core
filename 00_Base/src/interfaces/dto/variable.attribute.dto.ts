@@ -8,6 +8,7 @@ import {
   IComponentDto,
   IEvseDto,
   IVariableDto,
+  IVariableStatusDto,
 } from '../..';
 
 export interface IVariableAttributeDto extends IBaseDto {
@@ -27,7 +28,7 @@ export interface IVariableAttributeDto extends IBaseDto {
   componentId?: number | null;
   evse?: IEvseDto;
   evseDatabaseId?: number | null;
-  statuses?: any;
+  statuses?: IVariableStatusDto[];
   bootConfig?: IBootDto;
   bootConfigId?: string | null;
 }

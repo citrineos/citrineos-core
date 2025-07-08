@@ -1,4 +1,4 @@
-import { IBaseDto, IEvseDto } from '../..';
+import { IBaseDto, IEvseTypeDto } from '../..';
 
 export interface IReservationDto extends IBaseDto {
   databaseId: number;
@@ -12,5 +12,20 @@ export interface IReservationDto extends IBaseDto {
   idToken: object;
   groupIdToken?: object | null;
   evseId?: number | null;
-  evse?: IEvseDto | null;
+  evse?: IEvseTypeDto | null;
+}
+
+export enum ReservationDtoProps {
+  databaseId = 'databaseId',
+  id = 'id',
+  stationId = 'stationId',
+  expiryDateTime = 'expiryDateTime',
+  connectorType = 'connectorType',
+  reserveStatus = 'reserveStatus',
+  isActive = 'isActive',
+  terminatedByTransaction = 'terminatedByTransaction',
+  idToken = 'idToken',
+  groupIdToken = 'groupIdToken',
+  evseId = 'evseId',
+  evse = 'evse',
 }

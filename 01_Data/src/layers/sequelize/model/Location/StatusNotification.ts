@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
+import { IStatusNotificationDto, Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class StatusNotification extends BaseModelWithTenant {
+export class StatusNotification extends BaseModelWithTenant implements IStatusNotificationDto {
   static readonly MODEL_NAME: string = Namespace.StatusNotificationRequest;
 
   @ForeignKey(() => ChargingStation)

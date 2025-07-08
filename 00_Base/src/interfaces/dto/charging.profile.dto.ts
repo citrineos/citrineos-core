@@ -1,4 +1,5 @@
 import { IBaseDto, ITransactionDto } from '../..';
+import { IChargingScheduleDto } from './charging.schedule.dto';
 
 export interface IChargingProfileDto extends IBaseDto {
   databaseId: number;
@@ -13,7 +14,25 @@ export interface IChargingProfileDto extends IBaseDto {
   evseId?: number | null;
   isActive: boolean;
   chargingLimitSource?: any;
-  chargingSchedule: any[];
+  chargingSchedule: IChargingScheduleDto[];
   transactionDatabaseId?: number | null;
   transaction?: ITransactionDto;
+}
+
+export enum ChargingProfileDtoProps {
+  databaseId = 'databaseId',
+  stationId = 'stationId',
+  id = 'id',
+  chargingProfileKind = 'chargingProfileKind',
+  chargingProfilePurpose = 'chargingProfilePurpose',
+  recurrencyKind = 'recurrencyKind',
+  stackLevel = 'stackLevel',
+  validFrom = 'validFrom',
+  validTo = 'validTo',
+  evseId = 'evseId',
+  isActive = 'isActive',
+  chargingLimitSource = 'chargingLimitSource',
+  chargingSchedule = 'chargingSchedule',
+  transactionDatabaseId = 'transactionDatabaseId',
+  transaction = 'transaction',
 }

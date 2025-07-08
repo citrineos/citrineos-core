@@ -15,3 +15,15 @@ export interface IVariableCharacteristicsDto extends IBaseDto {
   variable: IVariableDto;
   variableId?: number | null;
 }
+
+export enum VariableCharacteristicsDtoProps {
+  id = 'id',
+  unit = 'unit',
+  dataType = 'dataType',
+  minLimit = 'minLimit',
+  maxLimit = 'maxLimit',
+  valuesList = 'valuesList',
+  supportsMonitoring = 'supportsMonitoring',
+  variable = 'variable',
+  variableId = 'variableId',
+}

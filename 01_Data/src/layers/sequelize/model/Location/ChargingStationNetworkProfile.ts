@@ -8,9 +8,13 @@ import { ChargingStation } from './ChargingStation';
 import { ServerNetworkProfile } from './ServerNetworkProfile';
 import { SetNetworkProfile } from './SetNetworkProfile';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { IChargingStationNetworkProfileDto } from '@citrineos/base';
 
 @Table
-export class ChargingStationNetworkProfile extends BaseModelWithTenant {
+export class ChargingStationNetworkProfile
+  extends BaseModelWithTenant
+  implements IChargingStationNetworkProfileDto
+{
   // Namespace enum not used as this is not a model required by CitrineOS
   static readonly MODEL_NAME: string = 'ChargingStationNetworkProfile';
 

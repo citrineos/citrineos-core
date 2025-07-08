@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace } from '@citrineos/base';
+import { ISubscriptionDto, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { Column, DataType, Index, Table } from 'sequelize-typescript';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class Subscription extends BaseModelWithTenant {
+export class Subscription extends BaseModelWithTenant implements ISubscriptionDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Subscription;
 
   @Index
