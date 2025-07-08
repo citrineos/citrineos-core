@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
+import { IChargingScheduleDto, Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
   BelongsTo,
@@ -18,7 +18,7 @@ import { SalesTariff } from './SalesTariff';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class ChargingSchedule extends BaseModelWithTenant {
+export class ChargingSchedule extends BaseModelWithTenant implements IChargingScheduleDto {
   static readonly MODEL_NAME: string = Namespace.ChargingSchedule;
 
   /**

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 // Auto-generated barrel file for DTO interfaces
+export * from './json';
 export * from './authorization.dto';
 export * from './base.dto';
 export * from './charging.station.dto';
@@ -9,13 +10,11 @@ export * from './charging.station.sequence.dto';
 export * from './component.dto';
 export * from './connector.dto';
 export * from './evse.dto';
-export * from './id.token.dto';
-export * from './id.token.info.dto';
+export * from './evse.type.dto';
 export * from './latest.status.notification.dto';
 export * from './location.dto';
 export * from './meter.value.dto';
 export * from './ocpp.message.dto';
-export * from './sampled.value.dto';
 export * from './start.transaction.dto';
 export * from './status.notification.dto';
 export * from './stop.transaction.dto';
@@ -35,3 +34,12 @@ export * from './tariff.dto';
 export * from './variable.monitoring.dto';
 export * from './charging.profile.dto';
 export * from './change.availability.request.dto';
+export * from './charging.schedule.dto';
+export * from './sales.tariff.dto';
+export * from './variable.characteristics.dto';
+export * from './variable.status.dto';
+export * from './component.variable.dto';
+export * from './set.network.profile.dto';
+export * from './charging.station.network.profile.dto';
+export * from './event.data.dto';
+export * from './variable.monitoring.status.dto';

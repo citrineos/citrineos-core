@@ -1,28 +1,16 @@
-import {
-  CustomDataType,
-  MessageContentType,
-  MessageFormatEnumType,
-  MessagePriorityEnumType,
-  MessageStateEnumType,
-} from '../../ocpp/model/2.0.1';
+import { IBaseDto, IComponentDto } from '../..';
 
-export interface IMessageContentTypeDto {
-  format: MessageFormatEnumType;
-  content: string;
-  language?: string | null;
-  customData?: CustomDataType | null;
-}
-
-export interface IMessageInfoDto {
+export interface IMessageInfoDto extends IBaseDto {
   databaseId: number;
-  id: number;
   stationId: string;
-  priority: MessagePriorityEnumType;
-  state?: MessageStateEnumType | null;
-  startDateTime?: any;
-  endDateTime?: any;
+  id?: number;
+  priority: any;
+  state?: any;
+  startDateTime?: string | null;
+  endDateTime?: string | null;
   transactionId?: string | null;
-  message: MessageContentType;
+  message: any;
   active: boolean;
+  display: IComponentDto;
   displayComponentId?: number | null;
 }

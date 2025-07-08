@@ -6,11 +6,11 @@ import { IMeterValueDto } from './meter.value.dto';
 import { IIdTokenDto } from './id.token.dto';
 
 export interface IStopTransactionDto extends IBaseDto {
-  id: number;
+  id?: number;
   stationId: string;
   transactionDatabaseId?: string;
   meterStop: number;
-  timestamp: Date;
+  timestamp: string; // ISO 8601 format
   idTokenDatabaseId?: number | null;
   reason?: string;
   meterValues?: IMeterValueDto[];

@@ -6,10 +6,10 @@ import { IConnectorDto } from './connector.dto';
 import { IIdTokenDto } from './id.token.dto';
 
 export interface IStartTransactionDto extends IBaseDto {
-  id: number;
+  id?: number;
   stationId: string;
   meterStart: number;
-  timestamp: Date;
+  timestamp: string; // ISO 8601 format
   reservationId?: number | null;
   transactionDatabaseId?: string;
   idTokenDatabaseId?: number | null;

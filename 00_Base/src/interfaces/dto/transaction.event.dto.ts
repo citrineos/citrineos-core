@@ -2,26 +2,25 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { IBaseDto } from './base.dto';
-import { IIdTokenDto } from './id.token.dto';
 import { IMeterValueDto } from './meter.value.dto';
 import { TriggerReasonEnumType } from '../../ocpp/model/2.0.1';
 
 export interface ITransactionEventDto extends IBaseDto {
-  id: number;
+  id?: number;
   stationId: string;
-  evseId?: number;
+  evseId?: number | null;
   transactionDatabaseId?: string;
   eventType: any;
   meterValues?: IMeterValueDto[];
-  timestamp: Date;
+  timestamp: string; // ISO 8601 format
   triggerReason: TriggerReasonEnumType;
   seqNo: number;
-  offline?: boolean;
-  numberOfPhasesUsed?: number;
-  cableMaxCurrent?: number;
-  reservationId?: number;
-  idTokenId?: number | null;
-  idToken?: IIdTokenDto;
+  offline?: boolean | null;
+  numberOfPhasesUsed?: number | null;
+  cableMaxCurrent?: number | null;
+  reservationId?: number | null;
+  idTokenValue?: string | null;
+  idTokenType?: string | null;
   // transactionInfo?: any; // Uncomment and type if needed
 }
 
@@ -39,6 +38,6 @@ export enum TransactionEventDtoProps {
   numberOfPhasesUsed = 'numberOfPhasesUsed',
   cableMaxCurrent = 'cableMaxCurrent',
   reservationId = 'reservationId',
-  idToken = 'IdToken',
-  idTokenId = 'idTokenId',
+  idTokenValue = 'IdTokenValue',
+  idTokenType = 'idTokenType',
 }

@@ -1,15 +1,17 @@
-import { ConnectorEnumType, IdTokenType, ReserveNowStatusEnumType } from '../../ocpp/model/2.0.1';
+import { IBaseDto, IEvseDto } from '../..';
+import { IEvseTypeDto } from './evse.type.dto';
 
-export interface IReservationDto {
+export interface IReservationDto extends IBaseDto {
   databaseId: number;
-  id: number;
+  id?: number;
   stationId: string;
-  expiryDateTime: any;
-  connectorType: ConnectorEnumType | null;
-  reserveStatus: ReserveNowStatusEnumType | null;
+  expiryDateTime: string;
+  connectorType?: string | null;
+  reserveStatus?: string | null;
   isActive: boolean;
-  terminatedByTransaction: string | null;
-  idToken: IdTokenType;
-  groupIdToken: IdTokenType;
-  evseId: number | null;
+  terminatedByTransaction?: string | null;
+  idToken: object;
+  groupIdToken?: object | null;
+  evseId?: number | null;
+  evse?: IEvseTypeDto | null;
 }

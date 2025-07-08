@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { IBaseDto } from './base.dto';
-import { ISampledValueDto } from './sampled.value.dto';
+import { SampledValue } from './json';
 
 export interface IMeterValueDto extends IBaseDto {
-  id: number;
+  id?: number;
   transactionEventId?: number | null;
   transactionDatabaseId?: number | null;
-  sampledValue: ISampledValueDto[];
-  timestamp: Date;
+  sampledValue: [SampledValue, ...SampledValue[]];
+  timestamp: string; // ISO 8601 format
   connectorId?: number | null;
 }
 

@@ -3,13 +3,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
+import { IAuthorizationDto, Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, Default, ForeignKey, Table } from 'sequelize-typescript';
-import { type AuthorizationRestrictions } from '../../../../interfaces';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class Authorization extends BaseModelWithTenant implements AuthorizationRestrictions {
+export class Authorization extends BaseModelWithTenant implements IAuthorizationDto {
   static readonly MODEL_NAME: string = Namespace.AuthorizationData;
 
   @Column(DataType.ARRAY(DataType.STRING))

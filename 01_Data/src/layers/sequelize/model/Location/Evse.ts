@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
+import { IEvseDto, Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class Evse extends BaseModelWithTenant {
+export class Evse extends BaseModelWithTenant implements IEvseDto {
   static readonly MODEL_NAME: string = Namespace.Evse;
 
   @ForeignKey(() => ChargingStation)
