@@ -15,7 +15,7 @@ import {
 import { Variable } from './Variable';
 import { ComponentVariable } from './ComponentVariable';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
-import { Evse } from '../Location';
+import { EvseType } from './EvseType';
 
 @Table({
   indexes: [
@@ -54,10 +54,10 @@ export class Component
    * Relations
    */
 
-  @BelongsTo(() => Evse)
-  declare evse?: Evse;
+  @BelongsTo(() => EvseType)
+  declare evse?: EvseType;
 
-  @ForeignKey(() => Evse)
+  @ForeignKey(() => EvseType)
   @Column(DataType.INTEGER)
   declare evseDatabaseId?: number | null;
 

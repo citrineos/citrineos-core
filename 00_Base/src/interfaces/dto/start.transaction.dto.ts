@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { IBaseDto } from './base.dto';
 import { IConnectorDto } from './connector.dto';
-import { IIdTokenDto } from './id.token.dto';
 
 export interface IStartTransactionDto extends IBaseDto {
   id?: number;
@@ -14,7 +13,6 @@ export interface IStartTransactionDto extends IBaseDto {
   transactionDatabaseId?: string;
   idTokenDatabaseId?: number | null;
   connectorDatabaseId: number;
-  idToken?: IIdTokenDto;
   connector?: IConnectorDto;
 }
 
@@ -27,6 +25,5 @@ export enum StartTransactionDtoProps {
   transactionDatabaseId = 'transactionDatabaseId',
   idTokenDatabaseId = 'idTokenDatabaseId',
   connectorDatabaseId = 'connectorDatabaseId',
-  idToken = 'IdToken',
   connector = 'connector',
 }
