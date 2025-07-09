@@ -1,6 +1,7 @@
 services:
   amqp-broker:
-    image: rabbitmq:3-management
+    image: rabbitmq:3.12-management
+    platform: linux/amd64
     ports:
       - 15672:15672
       - 5672:5672
@@ -17,6 +18,7 @@ services:
 
   ocpp-db:
     image: postgis/postgis:16-3.5
+    platform: linux/amd64
     ports:
       - 5432:5432
     volumes:
@@ -86,12 +88,6 @@ services:
       # Skip authentication completely - use public access
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
-      # Bootstrap Configuration Environment Variables
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
-      # CITRINEOS_CONFIG_DIR: '/custom/config/path'  # Optional - uncomment if needed
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: 'local'
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: '/data'
     depends_on:
       ocpp-db:
         condition: service_healthy
@@ -108,9 +104,16 @@ services:
       - 8444:8444
       - 9229:9229
       - 8092:8092
+    healthcheck:
+      test: ['CMD-SHELL', 'node -e "const net = require(\"net\"); const client = net.createConnection(8080, \"127.0.0.1\", () => { client.end(); process.exit(0); }); client.on(\"error\", () => process.exit(1)); client.setTimeout(5000, () => { client.destroy(); process.exit(1); });"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   minio:
     image: minio/minio
+    platform: linux/amd64
     container_name: minio
     ports:
       - '9000:9000'
@@ -135,6 +138,7 @@ services:
   # Initialize MinIO
   minio-init:
     image: minio/mc
+    platform: linux/amd64
     depends_on:
       minio:
         condition: service_healthy
@@ -149,11 +153,19 @@ services:
 
   graphql-engine:
     image: hasura/graphql-engine:v2.40.3.cli-migrations-v3
+    platform: linux/arm64
     volumes:
       - ./hasura-metadata:/hasura-metadata
     ports:
       - 8090:8080
     restart: always
+    depends_on:
+      citrine:
+        # ensures hasura migrations will run only after citrine is healthy,
+        # meaning 01_Data/dist/layers/sequelize/util.js was executed and logged
+        # CitrineOS Logger:DefaultSequelizeInstance Database altered,
+        # which means the database is ready to be used by hasura
+        condition: service_healthy
     environment:
       ## postgres database to store Hasura metadata
       HASURA_GRAPHQL_DATABASE_URL: postgres://citrine:citrine@ocpp-db:5432/citrine
@@ -165,12 +177,12 @@ services:
       HASURA_GRAPHQL_ENABLE_TELEMETRY: 'false'
       ## uncomment next line to run console offline (i.e load console assets from server instead of CDN)
       # HASURA_GRAPHQL_CONSOLE_ASSETS_DIR: /srv/console-assets
-      ## uncomment next line to set an admin secret - warning, without configuration this will cause upstream services to fail
-      # HASURA_GRAPHQL_ADMIN_SECRET: CitrineOS!
+      ## uncomment next line to set an admin secret
+      # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
       HASURA_GRAPHQL_METADATA_DEFAULTS: '{"backend_configs":{"dataconnector":{"athena":{"uri":"http://data-connector-agent:8081/api/v1/athena"},"mariadb":{"uri":"http://data-connector-agent:8081/api/v1/mariadb"},"mysql8":{"uri":"http://data-connector-agent:8081/api/v1/mysql"},"oracle":{"uri":"http://data-connector-agent:8081/api/v1/oracle"},"snowflake":{"uri":"http://data-connector-agent:8081/api/v1/snowflake"}}}}'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://graphql-engine:8080/healthz']
       interval: 5s
       timeout: 10s
       retries: 20
-      start_period: 5s
+      start_period: 5s 
