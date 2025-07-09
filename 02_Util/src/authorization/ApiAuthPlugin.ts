@@ -101,19 +101,15 @@ const apiAuthPlugin: FastifyPluginAsync<{
   // Authentication decorator - validates token from Authorization header
   fastify.decorate('authenticate', async function (request: FastifyRequest, reply: FastifyReply) {
     try {
-      // Extract Authorization header
-      const authHeader = request.headers.authorization;
-
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      // Extract token
+      const token = await provider.extractToken(request);
+      if (!token) {
         reply.code(HttpStatus.UNAUTHORIZED).send({
           error: 'Unauthorized',
           message: 'Missing or invalid authorization header',
         });
         return;
       }
-
-      // Extract token
-      const token = authHeader.split('Bearer ')[1];
 
       // Authenticate token
       const authResult = await provider.authenticateToken(token);
