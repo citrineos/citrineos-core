@@ -1,7 +1,7 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
-import { IEventDataDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { IEventDataDto, IVariableDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Index, Table } from 'sequelize-typescript';
 import { Component, Variable } from '../DeviceModel';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
@@ -69,7 +69,7 @@ export class EventData
    * Relations
    */
   @BelongsTo(() => Variable)
-  declare variable: OCPP2_0_1.VariableType;
+  declare variable: IVariableDto;
 
   @ForeignKey(() => Variable)
   @Column({

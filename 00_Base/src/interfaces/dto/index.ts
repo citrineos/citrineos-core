@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 // Auto-generated barrel file for DTO interfaces
+export * from './enum';
 export * from './json';
 export * from './authorization.dto';
 export * from './base.dto';
@@ -31,6 +32,7 @@ export * from './reservation.dto';
 export * from './server.network.profile.dto';
 export * from './subscription.dto';
 export * from './tariff.dto';
+export * from './tenant.dto';
 export * from './variable.monitoring.dto';
 export * from './charging.profile.dto';
 export * from './change.availability.request.dto';

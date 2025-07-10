@@ -1,9 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto, IComponentDto, IVariableAttributeDto, IVariableCharacteristicsDto } from '../..';
+import {
+  IBaseDto,
+  IComponentDto,
+  IVariableAttributeDto,
+  IVariableCharacteristicsDto,
+  OCPP2_0_1,
+} from '../..';
 
-export interface IVariableDto extends IBaseDto {
+export interface IVariableDto extends IBaseDto, OCPP2_0_1.VariableType {
   id?: number;
   name: string;
   instance?: string | null;

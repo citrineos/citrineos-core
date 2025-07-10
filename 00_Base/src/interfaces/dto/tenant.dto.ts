@@ -2,16 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ITenantDto } from '../..';
-
-export interface IBaseDto {
-  tenantId: number;
-  tenant?: ITenantDto;
+export interface ITenantDto {
+  id?: number;
+  name: string;
+  url?: string | null;
+  countryCode?: string | null;
+  partyId?: string | null;
   updatedAt?: Date;
   createdAt?: Date;
 }
 
-export enum BaseDtoProps {
+export enum ITenantDtoProps {
   tenantId = 'tenantId',
   updatedAt = 'updatedAt',
   createdAt = 'createdAt',

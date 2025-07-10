@@ -302,8 +302,7 @@ export class SequelizeTransactionEventRepository
           // TODO: Log Warning...
         } else {
           event.idTokenValue = authorization.idToken;
-          event.idTokenType =
-            typeof authorization.idTokenType === 'string' ? authorization.idTokenType : undefined;
+          event.idTokenType = authorization.idTokenType ? authorization.idTokenType : undefined;
         }
       }
 

@@ -1,4 +1,4 @@
-import { Authorization } from '@citrineos/data';
+import { Authorization, OCPP2_0_1_Mapper } from '@citrineos/data';
 import { anIdToken } from './IdTokenProvider';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
@@ -8,7 +8,7 @@ export function anAuthorization(updateFunction?: UpdateFunction<Authorization>):
   const item = Object.create(Authorization.prototype) as Authorization;
   item.tenantId = DEFAULT_TENANT_ID;
   item.idToken = idTokenObj.idToken;
-  item.idTokenType = idTokenObj.type;
+  item.idTokenType = OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(idTokenObj.type);
   item.status = 'Accepted';
   item.groupAuthorizationId = 1;
   item.cacheExpiryDateTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
