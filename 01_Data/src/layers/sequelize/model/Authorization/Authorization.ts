@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IAuthorizationDto, Namespace } from '@citrineos/base';
+import { IAuthorizationDto, Namespace, RealTimeAuthEnumType } from '@citrineos/base';
 import { BelongsTo, Column, DataType, Default, ForeignKey, Table } from 'sequelize-typescript';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
@@ -54,6 +54,13 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
 
   @Column(DataType.JSON)
   declare personalMessage?: any | null;
+
+  @Default(RealTimeAuthEnumType.Never)
+  @Column(DataType.ENUM(...Object.values(RealTimeAuthEnumType)))
+  declare realTimeAuth: RealTimeAuthEnumType;
+
+  @Column(DataType.STRING)
+  declare realTimeAuthUrl?: string;
 
   // Reference to another Authorization for groupAuthorization
   @ForeignKey(() => Authorization)
