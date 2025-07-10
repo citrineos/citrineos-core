@@ -3,18 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 import { IBaseDto } from './base.dto';
 import { IMeterValueDto } from './meter.value.dto';
-import { IIdTokenDto } from './id.token.dto';
 
 export interface IStopTransactionDto extends IBaseDto {
-  id: number;
+  id?: number;
   stationId: string;
   transactionDatabaseId?: string;
   meterStop: number;
-  timestamp: Date;
+  timestamp: string; // ISO 8601 format
   idTokenDatabaseId?: number | null;
   reason?: string;
   meterValues?: IMeterValueDto[];
-  idToken?: IIdTokenDto;
 }
 
 export enum StopTransactionDtoProps {
@@ -26,5 +24,4 @@ export enum StopTransactionDtoProps {
   idTokenDatabaseId = 'idTokenDatabaseId',
   reason = 'reason',
   meterValues = 'meterValues',
-  idToken = 'idToken',
 }

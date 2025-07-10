@@ -1,13 +1,16 @@
-import { RegistrationStatusEnumType, SetVariableResultType } from '../../ocpp/model/2.0.1';
+import { IBaseDto, IVariableAttributeDto } from '../..';
 
-export interface IBootDto {
+export interface IBootDto extends IBaseDto {
   id: string;
-  lastBootTime?: Date;
-  heartbeatInterval?: number;
-  bootRetryInterval?: number;
-  status: RegistrationStatusEnumType;
-  // statusInfo?: StatusInfoType; // todo
-  getBaseReportOnPending?: boolean;
-  variablesRejectedOnLastBoot: SetVariableResultType[];
-  bootWithRejectedVariables?: boolean;
+  lastBootTime?: string | null;
+  heartbeatInterval?: number | null;
+  bootRetryInterval?: number | null;
+  status: any;
+  statusInfo?: object | null;
+  getBaseReportOnPending?: boolean | null;
+  pendingBootSetVariables?: IVariableAttributeDto[];
+  variablesRejectedOnLastBoot?: object[] | null;
+  bootWithRejectedVariables?: boolean | null;
+  changeConfigurationsOnPending?: boolean | null;
+  getConfigurationsOnPending?: boolean | null;
 }

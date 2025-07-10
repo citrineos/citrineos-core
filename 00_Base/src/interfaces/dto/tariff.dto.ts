@@ -1,16 +1,13 @@
-import { IBaseDto } from './base.dto';
+import { IBaseDto } from '../..';
 
 export interface ITariffDto extends IBaseDto {
-  id: number;
+  id?: number;
   stationId: string;
-  currency: Currency;
+  currency: string;
   pricePerKwh: number;
-  pricePerMin?: number;
-  pricePerSession?: number;
-  authorizationAmount?: number;
-  paymentFee?: number;
-  taxRate?: number;
-}
-enum Currency {
-  USD = 'USD',
+  pricePerMin?: number | null;
+  pricePerSession?: number | null;
+  authorizationAmount?: number | null;
+  paymentFee?: number | null;
+  taxRate?: number | null;
 }
