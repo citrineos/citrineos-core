@@ -25,7 +25,7 @@ export interface Endpoint {
 
 export interface CredentialRole {
   role: 'CPO' | 'EMSP' | 'HUB' | 'NAP' | 'NSP' | 'SCSP';
-  business_details?: BusinessDetails;
+  businessDetails?: BusinessDetails;
 }
 
 export interface Credentials {

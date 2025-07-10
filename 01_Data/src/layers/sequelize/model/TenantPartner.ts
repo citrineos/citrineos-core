@@ -17,6 +17,12 @@ export class TenantPartner extends Model {
   @Column(DataType.INTEGER)
   declare id: number;
 
+  @Column(DataType.STRING)
+  declare partyId: string;
+
+  @Column(DataType.STRING)
+  declare countryCode: string;
+
   @ForeignKey(() => Tenant)
   @Column(DataType.INTEGER)
   declare tenantId: number;
@@ -28,8 +34,6 @@ export class TenantPartner extends Model {
   declare partnerProfile: JSONB<{
     protocol: string;
     version: string;
-    party_id: string;
-    country_code: string;
     roles: CredentialRole[];
     credentials?: Credentials;
     endpoints?: Endpoint[];
