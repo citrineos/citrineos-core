@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IMeterValueDto, Namespace } from '@citrineos/base';
+import { IMeterValueDto, Namespace, SampledValue } from '@citrineos/base';
 import { Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { TransactionEvent } from './TransactionEvent';
 import { Transaction } from './Transaction';
@@ -26,8 +26,8 @@ export class MeterValue extends BaseModelWithTenant implements IMeterValueDto {
   @Column(DataType.INTEGER)
   declare stopTransactionDatabaseId?: number | null;
 
-  @Column(DataType.JSON)
-  declare sampledValue: [object, ...object[]];
+  @Column(DataType.JSONB)
+  declare sampledValue: [SampledValue, ...SampledValue[]];
 
   @Column({
     type: DataType.DATE,
