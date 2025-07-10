@@ -1,4 +1,4 @@
-import { OCPP2_0_1 } from '@citrineos/base';
+import { IdTokenType, OCPP2_0_1 } from '@citrineos/base';
 import { Authorization } from '../../model/Authorization';
 
 export class AuthorizationMapper {
@@ -85,26 +85,50 @@ export class AuthorizationMapper {
     }
   }
 
-  static toIdTokenEnumType(type: string): OCPP2_0_1.IdTokenEnumType {
+  static toIdTokenEnumType(type: IdTokenType): OCPP2_0_1.IdTokenEnumType {
     switch (type) {
-      case 'Central':
+      case IdTokenType.Central:
+      case IdTokenType.Other:
         return OCPP2_0_1.IdTokenEnumType.Central;
-      case 'eMAID':
+      case IdTokenType.eMAID:
         return OCPP2_0_1.IdTokenEnumType.eMAID;
-      case 'ISO14443':
+      case IdTokenType.ISO14443:
         return OCPP2_0_1.IdTokenEnumType.ISO14443;
-      case 'ISO15693':
+      case IdTokenType.ISO15693:
         return OCPP2_0_1.IdTokenEnumType.ISO15693;
-      case 'KeyCode':
+      case IdTokenType.KeyCode:
         return OCPP2_0_1.IdTokenEnumType.KeyCode;
-      case 'Local':
+      case IdTokenType.Local:
         return OCPP2_0_1.IdTokenEnumType.Local;
-      case 'MacAddress':
+      case IdTokenType.MacAddress:
         return OCPP2_0_1.IdTokenEnumType.MacAddress;
-      case 'NoAuthorization':
+      case IdTokenType.NoAuthorization:
         return OCPP2_0_1.IdTokenEnumType.NoAuthorization;
       default:
-        throw new Error('Unknown idToken type');
+        throw new Error(`Unknown idToken type: ${type}`);
+    }
+  }
+
+  static fromIdTokenEnumType(type: OCPP2_0_1.IdTokenEnumType): IdTokenType {
+    switch (type) {
+      case OCPP2_0_1.IdTokenEnumType.Central:
+        return IdTokenType.Central;
+      case OCPP2_0_1.IdTokenEnumType.eMAID:
+        return IdTokenType.eMAID;
+      case OCPP2_0_1.IdTokenEnumType.ISO14443:
+        return IdTokenType.ISO14443;
+      case OCPP2_0_1.IdTokenEnumType.ISO15693:
+        return IdTokenType.ISO15693;
+      case OCPP2_0_1.IdTokenEnumType.KeyCode:
+        return IdTokenType.KeyCode;
+      case OCPP2_0_1.IdTokenEnumType.Local:
+        return IdTokenType.Local;
+      case OCPP2_0_1.IdTokenEnumType.MacAddress:
+        return IdTokenType.MacAddress;
+      case OCPP2_0_1.IdTokenEnumType.NoAuthorization:
+        return IdTokenType.NoAuthorization;
+      default:
+        throw new Error(`Unknown OCPP 2.0.1 idToken type: ${type}`);
     }
   }
 }
