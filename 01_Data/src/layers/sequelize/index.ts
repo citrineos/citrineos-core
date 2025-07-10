@@ -37,6 +37,7 @@ export {
   ChargingStation,
   Evse,
   ChargingStationNetworkProfile,
+  LatestStatusNotification,
   Location,
   ServerNetworkProfile,
   SetNetworkProfile,

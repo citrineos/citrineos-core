@@ -25,11 +25,14 @@ import {
   Connector,
   EventData,
   Evse,
+  EvseType,
   InstalledCertificate,
+  LatestStatusNotification,
   LocalListAuthorization,
   LocalListVersion,
   LocalListVersionAuthorization,
   Location,
+  MessageInfo,
   MeterValue,
   OCPPMessage,
   Reservation,
@@ -38,6 +41,12 @@ import {
   SendLocalList,
   SendLocalListAuthorization,
   ServerNetworkProfile,
+  SetNetworkProfile,
+  StartTransaction,
+  StatusNotification,
+  StopTransaction,
+  Subscription,
+  Tariff,
   Tenant,
   Transaction,
   TransactionEvent,
@@ -46,14 +55,8 @@ import {
   VariableCharacteristics,
   VariableMonitoring,
   VariableMonitoringStatus,
+  VariableStatus,
 } from '.';
-import { EvseType, VariableStatus } from './model/DeviceModel';
-import { MessageInfo } from './model/MessageInfo';
-import { Subscription } from './model/Subscription';
-import { Tariff } from './model/Tariff';
-import { SetNetworkProfile, StatusNotification } from './model/Location';
-import { LatestStatusNotification } from './model/Location/LatestStatusNotification';
-import { StartTransaction, StopTransaction } from './model/TransactionEvent';
 
 export class DefaultSequelizeInstance {
   /**

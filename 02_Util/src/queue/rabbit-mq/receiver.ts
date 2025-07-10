@@ -157,12 +157,9 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   }
 
   unsubscribe(identifier: string): Promise<boolean> {
+    const cacheKey = `${RabbitMqReceiver.CACHE_PREFIX}${identifier}`;
     return this._cache
-      .get<Array<string>>(
-        `${RabbitMqReceiver.CACHE_PREFIX}${identifier}`,
-        CacheNamespace.Other,
-        () => Array<string>,
-      )
+      .get<Array<string>>(cacheKey, CacheNamespace.Other, () => Array<string>)
       .then(async (queues) => {
         if (queues) {
           if (!this._channel) {
@@ -181,6 +178,8 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
               `Queue ${identifier} deleted with ${messageCount?.messageCount} messages remaining.`,
             );
           }
+          // Remove the cache entry after successfully deleting all queues
+          await this._cache.remove(cacheKey, CacheNamespace.Other);
           return true;
         } else {
           this._logger.warn(
