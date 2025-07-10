@@ -5,7 +5,7 @@
 import { SequelizeRepository } from './Base';
 import { ICertificateRepository } from '../../../interfaces';
 import { Certificate } from '../model/Certificate';
-import { SystemConfig } from '@citrineos/base';
+import { BootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 
@@ -13,7 +13,7 @@ export class SequelizeCertificateRepository
   extends SequelizeRepository<Certificate>
   implements ICertificateRepository
 {
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, Certificate.MODEL_NAME, logger, sequelizeInstance);
   }
 

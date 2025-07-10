@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
 import { SequelizeRepository } from './Base';
 import { IChargingProfileRepository } from '../../../interfaces';
 import { Evse } from '../model/DeviceModel';
@@ -30,7 +30,7 @@ export class SequelizeChargingProfileRepository
   compositeSchedule: CrudRepository<CompositeSchedule>;
 
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig,
     logger?: Logger<ILogObj>,
     sequelizeInstance?: Sequelize,
     chargingNeeds?: CrudRepository<ChargingNeeds>,

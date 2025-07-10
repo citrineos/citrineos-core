@@ -14,6 +14,12 @@ import { ApiAuthenticationResult } from './ApiAuthenticationResult';
  */
 export interface IApiAuthProvider {
   /**
+   * Extracts the authentication token from the request
+   * @param request
+   */
+  extractToken(request: FastifyRequest): Promise<string | null>;
+
+  /**
    * Authenticates a token and extracts user information
    *
    * @param token JWT or other token to authenticate

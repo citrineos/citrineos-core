@@ -1,13 +1,12 @@
 require('ts-node/register');
 
 module.exports = (async () => {
-  const { systemConfig: SystemConfigPromise } = require('./index');
+  const { loadBootstrapConfig } = require('./bootstrap.config');
 
   try {
-    const systemConfig = await SystemConfigPromise;
+    const bootstrapConfig = loadBootstrapConfig();
 
-    const { host, port, database, dialect, username, password, storage } =
-      systemConfig.data.sequelize;
+    const { host, port, database, dialect, username, password } = bootstrapConfig.database;
 
     console.log('[sequelize.bridge.config.js] Loaded config for DB:', {
       host,
@@ -23,11 +22,10 @@ module.exports = (async () => {
       host,
       port,
       dialect,
-      storage,
       logging: true,
     };
   } catch (error) {
-    console.error('[sequelize.bridge.config.js] Failed to load system configuration:', error);
+    console.error('[sequelize.bridge.config.js] Failed to load bootstrap configuration:', error);
     throw error;
   }
 })();

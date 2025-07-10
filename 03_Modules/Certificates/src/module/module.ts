@@ -19,9 +19,11 @@ import {
   OCPP2_0_1_CallAction,
   OCPPVersion,
   SystemConfig,
+  BootstrapConfig,
 } from '@citrineos/base';
 import { Op } from 'sequelize';
 import {
+  Boot,
   ICertificateRepository,
   IDeviceModelRepository,
   IInstalledCertificateRepository,
@@ -72,7 +74,7 @@ export class CertificatesModule extends AbstractModule {
   /**
    * This is the constructor function that initializes the {@link CertificatesModule}.
    *
-   * @param {SystemConfig} config - The `config` contains configuration settings for the module.
+   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
    *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
    *
@@ -100,7 +102,7 @@ export class CertificatesModule extends AbstractModule {
    * type {@link CertificateAuthorityService} which handles certificate authority operations.
    */
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig & SystemConfig,
     cache: ICache,
     sender: IMessageSender,
     handler: IMessageHandler,

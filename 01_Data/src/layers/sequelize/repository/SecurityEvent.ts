@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import { OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
 import { SecurityEvent } from '../model/SecurityEvent';
 import { SequelizeRepository } from './Base';
 import { Op } from 'sequelize';
@@ -15,7 +15,7 @@ export class SequelizeSecurityEventRepository
   extends SequelizeRepository<SecurityEvent>
   implements ISecurityEventRepository
 {
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, SecurityEvent.MODEL_NAME, logger, sequelizeInstance);
   }
 

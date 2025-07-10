@@ -41,14 +41,22 @@ export class LocalBypassAuthProvider implements IApiAuthProvider {
     );
   }
 
+  async extractToken(_request: FastifyRequest): Promise<string> {
+    // Always return a dummy token for local bypass
+    this._logger.debug('LocalBypassAuthProvider.authenticateToken: Returning dummy token');
+    return 'local-bypass-token';
+  }
+
   /**
    * Always returns a successful authentication with admin user
    *
    * @param token Ignored, can be any string
    * @returns Authentication result with admin user info
    */
-  async authenticateToken(token: string): Promise<ApiAuthenticationResult> {
-    this._logger.debug('LocalBypassAuthProvider.authenticateToken: Bypassing authentication');
+  async authenticateToken(_token: string): Promise<ApiAuthenticationResult> {
+    this._logger.debug(
+      'LocalBypassAuthProvider.authenticateToken: Bypassing authentication, using dummy user',
+    );
 
     // Create a default admin user
     const user: UserInfo = {

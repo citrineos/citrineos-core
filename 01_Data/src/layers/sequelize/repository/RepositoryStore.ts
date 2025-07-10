@@ -18,7 +18,7 @@ import {
   ITransactionEventRepository,
   IVariableMonitoringRepository,
 } from '../../../interfaces';
-import { CrudRepository, SystemConfig } from '@citrineos/base';
+import { CrudRepository, BootstrapConfig } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { SequelizeAuthorizationRepository } from './Authorization';
 import { SequelizeBootRepository } from './Boot';
@@ -64,7 +64,7 @@ export class RepositoryStore {
   variableMonitoringRepository: IVariableMonitoringRepository;
   tenantRepository: ITenantRepository;
 
-  constructor(config: SystemConfig, logger: Logger<ILogObj>, sequelizeInstance: Sequelize) {
+  constructor(config: BootstrapConfig, logger: Logger<ILogObj>, sequelizeInstance: Sequelize) {
     this.sequelizeInstance = sequelizeInstance;
     this.authorizationRepository = new SequelizeAuthorizationRepository(
       config,

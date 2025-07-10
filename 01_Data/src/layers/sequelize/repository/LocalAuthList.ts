@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, deepDirectionalEqual, OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import { CrudRepository, deepDirectionalEqual, OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { IAuthorizationRepository, ILocalAuthListRepository } from '../../../interfaces';
@@ -29,7 +29,7 @@ export class SequelizeLocalAuthListRepository
   sendLocalList: CrudRepository<SendLocalList>;
 
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig,
     logger?: Logger<ILogObj>,
     sequelizeInstance?: Sequelize,
     authorization?: IAuthorizationRepository,

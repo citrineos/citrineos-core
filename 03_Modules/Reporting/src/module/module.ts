@@ -6,6 +6,7 @@
 import {
   AbstractModule,
   AsHandler,
+  BootstrapConfig,
   CallAction,
   EventGroup,
   HandlerProperties,
@@ -64,7 +65,7 @@ export class ReportingModule extends AbstractModule {
   /**
    * This is the constructor function that initializes the {@link ReportingModule}.
    *
-   * @param {SystemConfig} config - The `config` contains configuration settings for the module.
+   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
    *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
    *
@@ -85,7 +86,7 @@ export class ReportingModule extends AbstractModule {
    * @param {IVariableMonitoringRepository} [variableMonitoringRepository] - An optional parameter of type {@link IVariableMonitoringRepository} which represents a repository for accessing and manipulating monitoring data.
    */
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig & SystemConfig,
     cache: ICache,
     sender?: IMessageSender,
     handler?: IMessageHandler,
