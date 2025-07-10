@@ -5,7 +5,6 @@
 import { OCPP1_6_Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { Transaction } from './Transaction';
-import { IdToken } from '../Authorization';
 import { Connector } from '../Location';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
@@ -39,12 +38,6 @@ export class StartTransaction extends BaseModelWithTenant {
 
   @BelongsTo(() => Transaction)
   declare transaction: Transaction;
-
-  @ForeignKey(() => IdToken)
-  declare idTokenDatabaseId?: number | null;
-
-  @BelongsTo(() => IdToken)
-  declare idToken?: IdToken;
 
   @ForeignKey(() => Connector)
   declare connectorDatabaseId: number;

@@ -1,10 +1,7 @@
 import { Optional } from 'sequelize';
 import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import {
-  AdditionalInfo,
   Authorization,
-  IdToken,
-  IdTokenInfo,
   LocalListAuthorization,
   LocalListVersion,
   LocalListVersionAuthorization,
@@ -42,7 +39,6 @@ import {
 } from './DeviceModel';
 import { ComponentVariable } from './DeviceModel/ComponentVariable';
 import { EventData, VariableMonitoring, VariableMonitoringStatus } from './VariableMonitoring';
-import { IdTokenAdditionalInfo } from './Authorization/IdTokenAdditionalInfo';
 import {
   MeterValue,
   StartTransaction,
@@ -90,9 +86,6 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
   /**
    * Relationships
    */
-
-  @HasMany(() => AdditionalInfo)
-  declare additionalInfos: AdditionalInfo[];
 
   @HasMany(() => Authorization)
   declare authorizations: Authorization[];
@@ -147,15 +140,6 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
 
   @HasMany(() => EventData)
   declare eventDatas: EventData[];
-
-  @HasMany(() => IdToken)
-  declare idTokens: IdToken[];
-
-  @HasMany(() => IdTokenAdditionalInfo)
-  declare idTokenAdditionalInfos: IdTokenAdditionalInfo[];
-
-  @HasMany(() => IdTokenInfo)
-  declare idTokenInfos: IdTokenInfo[];
 
   @HasMany(() => Location)
   declare locations: Location[];

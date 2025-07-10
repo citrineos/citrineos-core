@@ -13,7 +13,7 @@ export interface IChargingStationDto extends IBaseDto {
   id: string;
   isOnline: boolean;
   protocol?: string;
-  locationId?: string;
+  locationId?: any;
   statusNotifications?: IStatusNotificationDto[];
   latestStatusNotifications?: ILatestStatusNotificationDto[];
   evses?: IEvseDto[];

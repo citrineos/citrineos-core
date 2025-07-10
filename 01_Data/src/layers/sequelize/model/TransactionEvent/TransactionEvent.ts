@@ -5,7 +5,6 @@
 
 import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Table } from 'sequelize-typescript';
-import { IdToken } from '../Authorization';
 import { EvseType } from '../DeviceModel';
 import { MeterValue } from './MeterValue';
 import { Transaction } from './Transaction';
@@ -65,11 +64,11 @@ export class TransactionEvent extends BaseModelWithTenant {
   @BelongsTo(() => EvseType)
   declare evse?: OCPP2_0_1.EVSEType;
 
-  @ForeignKey(() => IdToken)
-  declare idTokenId?: number | null;
+  @Column(DataType.STRING)
+  declare idTokenValue?: string;
 
-  @BelongsTo(() => IdToken)
-  declare idToken?: IdToken;
+  @Column(DataType.STRING)
+  declare idTokenType?: string;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
 }
