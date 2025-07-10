@@ -1,17 +1,20 @@
-import { Authorization, OCPP2_0_1_Mapper } from '@citrineos/data';
-import { anIdToken } from './IdTokenProvider';
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import { Authorization } from '@citrineos/data';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
-import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, IdTokenType, RealTimeAuthEnumType } from '@citrineos/base';
+import { faker } from '@faker-js/faker';
 
 export function anAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {
-  const idTokenObj = anIdToken();
   const item = Object.create(Authorization.prototype) as Authorization;
   item.tenantId = DEFAULT_TENANT_ID;
-  item.idToken = idTokenObj.idToken;
-  item.idTokenType = OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(idTokenObj.type);
+  item.idToken = faker.string.uuid();
+  item.idTokenType = IdTokenType.Central;
   item.status = 'Accepted';
   item.groupAuthorizationId = 1;
   item.cacheExpiryDateTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  item.realTimeAuth = RealTimeAuthEnumType.Never;
   // Optionally add more default fields as needed
 
   return applyUpdateFunction(item, updateFunction);

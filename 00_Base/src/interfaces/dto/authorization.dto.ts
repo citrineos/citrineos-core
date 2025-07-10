@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { AdditionalInfo, IBaseDto } from '../..';
-import { IdTokenType } from './enum';
+import { IdTokenType, RealTimeAuthEnumType } from './enum';
 
 export interface IAuthorizationDto extends IBaseDto {
   id?: number;
@@ -20,6 +20,8 @@ export interface IAuthorizationDto extends IBaseDto {
   groupAuthorizationId?: number | null;
   groupAuthorization?: IAuthorizationDto;
   concurrentTransaction?: boolean;
+  realTimeAuth: RealTimeAuthEnumType;
+  realTimeAuthUrl?: string;
 }
 
 export enum AuthorizationDtoProps {
@@ -38,4 +40,6 @@ export enum AuthorizationDtoProps {
   groupAuthorizationId = 'groupAuthorizationId',
   groupAuthorization = 'groupAuthorization',
   concurrentTransaction = 'concurrentTransaction',
+  realTimeAuth = 'realTimeAuth',
+  realTimeAuthUrl = 'realTimeAuthUrl',
 }

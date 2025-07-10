@@ -9,14 +9,21 @@ import {
   IOCPPMessageRepository,
 } from '@citrineos/data';
 import {
+  AuthorizationDtoProps,
+  IAuthorizationDto,
   IMessageContext,
   MessageOrigin,
   MeterValueUtils,
   OCPP1_6,
   OCPP2_0_1,
+  RealTimeAuthEnumType,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { IAuthorizer } from '@citrineos/util';
+import {
+  AuthorizationStatusEnumType,
+  MessageFormatEnumType,
+} from '@citrineos/base/dist/ocpp/model/2.0.1';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
@@ -25,12 +32,14 @@ export class TransactionService {
   private _ocppMessageRepository: IOCPPMessageRepository;
   private _logger: Logger<ILogObj>;
   private _authorizers: IAuthorizer[];
+  private _realTimeAuthorizer: IAuthorizer;
 
   constructor(
     transactionEventRepository: ITransactionEventRepository,
     authorizeRepository: IAuthorizationRepository,
     reservationRepository: IReservationRepository,
     ocppMessageRepository: IOCPPMessageRepository,
+    realTimeAuthorizer: IAuthorizer,
     authorizers?: IAuthorizer[],
     logger?: Logger<ILogObj>,
   ) {
@@ -42,6 +51,7 @@ export class TransactionService {
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
     this._authorizers = authorizers || [];
+    this._realTimeAuthorizer = realTimeAuthorizer;
   }
 
   async recalculateTotalKwh(tenantId: number, transactionDbId: number) {
@@ -84,7 +94,30 @@ export class TransactionService {
     if (authorizations.length !== 1) {
       return response;
     }
-    const authorization = authorizations[0];
+    let authorization = authorizations[0];
+
+    // Real-time authorization and update existing authorization in DB
+    let realTimeAuthResult: Partial<IAuthorizationDto> | undefined;
+    if (authorization.realTimeAuth !== RealTimeAuthEnumType.Never) {
+      try {
+        realTimeAuthResult = await this._realTimeAuthorizer.authorize(
+          authorization,
+          messageContext,
+        );
+      } catch (error) {
+        this._logger.error(`Real-time authorization failed for idToken: ${idToken}`, error);
+        // If real-time authorization failed and realTimeAuth is Rejected,
+        // then return unknown status without any other checks
+        if (authorization.realTimeAuth === RealTimeAuthEnumType.Rejected) {
+          return response;
+        }
+      }
+    }
+    if (realTimeAuthResult) {
+      authorization = this._updateAuthorizationFromDto(authorization, realTimeAuthResult);
+      await this._authorizeRepository.updateByKey(tenantId, authorization, authorization.id);
+    }
+
     if (!authorization.status) {
       // Assumed to always be valid without status
       response.idTokenInfo = {
@@ -154,7 +187,7 @@ export class TransactionService {
   }
 
   async authorizeOcpp16IdToken(
-    tenantId: number,
+    context: IMessageContext,
     idToken: string,
   ): Promise<OCPP1_6.StartTransactionResponse> {
     const response: OCPP1_6.StartTransactionResponse = {
@@ -166,6 +199,7 @@ export class TransactionService {
 
     try {
       // Find authorization
+      const tenantId = context.tenantId;
       const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
         idToken: idToken,
         type: null,
@@ -176,9 +210,27 @@ export class TransactionService {
         );
         return response;
       }
+      let authorization = authorizations[0];
+
+      // Real-time authorization and update existing authorization in DB
+      let realTimeAuthResult: Partial<IAuthorizationDto> | undefined;
+      if (authorization.realTimeAuth !== RealTimeAuthEnumType.Never) {
+        try {
+          realTimeAuthResult = await this._realTimeAuthorizer.authorize(authorization, context);
+        } catch (error) {
+          this._logger.error(`Real-time authorization failed for idToken: ${idToken}`, error);
+          if (authorization.realTimeAuth === RealTimeAuthEnumType.Rejected) {
+            response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Invalid;
+            return response;
+          }
+        }
+      }
+      if (realTimeAuthResult) {
+        authorization = this._updateAuthorizationFromDto(authorization, realTimeAuthResult);
+        await this._authorizeRepository.updateByKey(tenantId, authorization, authorization.id);
+      }
 
       // Check expiration and status
-      const authorization = authorizations[0];
       if (!authorization.status) {
         response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Accepted;
         return response;
@@ -302,11 +354,14 @@ export class TransactionService {
       if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
         break;
       }
-      const result: Partial<OCPP2_0_1.IdTokenType> = await authorizer.authorize(
+
+      const result: Partial<IAuthorizationDto> = await authorizer.authorize(
         authorization,
         messageContext,
       );
-      Object.assign(idTokenInfo, result);
+      const mappedIdTokenInfo = this._mapAuthorizationDtoToIdTokenInfo(result);
+
+      Object.assign(idTokenInfo, mappedIdTokenInfo);
     }
     return idTokenInfo;
   }
@@ -322,5 +377,48 @@ export class TransactionService {
       );
 
     return activeTransactions.length > 1;
+  }
+
+  private _mapAuthorizationDtoToIdTokenInfo(
+    dto: Partial<IAuthorizationDto>,
+  ): OCPP2_0_1.IdTokenInfoType {
+    return {
+      status: dto.status as AuthorizationStatusEnumType,
+      cacheExpiryDateTime: dto.cacheExpiryDateTime ?? null,
+      chargingPriority: dto.chargingPriority ?? null,
+      language1: dto.language1 ?? null,
+      language2: dto.language2 ?? null,
+      groupIdToken: dto.groupAuthorization
+        ? ({
+            idToken: dto.groupAuthorization?.idToken ?? '',
+            type: dto.groupAuthorization?.idTokenType
+              ? OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenEnumType(
+                  dto.groupAuthorization?.idTokenType,
+                )
+              : '',
+          } as OCPP2_0_1.IdTokenType)
+        : null,
+      personalMessage: dto.personalMessage
+        ? ({
+            content: dto.personalMessage.content ?? '',
+            language: dto.personalMessage.language ?? '',
+            format: dto.personalMessage.format ?? MessageFormatEnumType.ASCII,
+          } as OCPP2_0_1.MessageContentType)
+        : null,
+    };
+  }
+
+  private _updateAuthorizationFromDto(
+    auth: Authorization,
+    dto: Partial<IAuthorizationDto>,
+  ): Authorization {
+    for (const key of Object.values(AuthorizationDtoProps)) {
+      const value = dto[key as keyof IAuthorizationDto];
+
+      if (value !== undefined && value !== null) {
+        (auth as any)[key] = value;
+      }
+    }
+    return auth;
   }
 }
