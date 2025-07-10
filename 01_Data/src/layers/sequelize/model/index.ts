@@ -18,3 +18,4 @@ export * from './Tariff';
 export * from './Tenant';
 export * from './TransactionEvent';
 export * from './VariableMonitoring';
+export * from './TenantPartner';
