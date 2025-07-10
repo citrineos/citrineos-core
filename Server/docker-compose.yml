@@ -87,14 +87,11 @@ services:
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
       # Bootstrap Configuration Environment Variables
-      CITRINEOS_CONFIG_FILENAME: 'config.json'
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
       # CITRINEOS_CONFIG_DIR: '/custom/config/path'  # Optional - uncomment if needed
-      CITRINEOS_FILE_ACCESS_TYPE: 's3'
-      CITRINEOS_FILE_ACCESS_S3_ENDPOINT: 'http://minio:9000'
-      CITRINEOS_FILE_ACCESS_S3_DEFAULT_BUCKET_NAME: 'citrineos-s3-bucket'
-      CITRINEOS_FILE_ACCESS_S3_FORCE_PATH_STYLE: 'true'
-      CITRINEOS_FILE_ACCESS_S3_ACCESS_KEY_ID: 'minioadmin'
-      CITRINEOS_FILE_ACCESS_S3_SECRET_ACCESS_KEY: 'minioadmin'
+      BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: 'local'
+      BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: '/data'
     depends_on:
       ocpp-db:
         condition: service_healthy

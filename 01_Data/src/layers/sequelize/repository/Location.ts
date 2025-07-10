@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, OCPPVersion, SystemConfig } from '@citrineos/base';
+import { CrudRepository, OCPPVersion, BootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { ChargingStation, Connector, Location, SequelizeRepository, StatusNotification } from '..';
@@ -20,7 +20,7 @@ export class SequelizeLocationRepository
   connector: CrudRepository<Connector>;
 
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig,
     logger?: Logger<ILogObj>,
     sequelizeInstance?: Sequelize,
     chargingStation?: CrudRepository<ChargingStation>,
