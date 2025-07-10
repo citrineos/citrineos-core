@@ -1,17 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto } from './base.dto';
+import { IBaseDto } from '../..';
 
 export interface IOCPPMessageDto extends IBaseDto {
-  id: string;
+  id?: number;
   stationId: string;
-  correlationId: string;
+  correlationId?: string;
   origin: any;
   protocol: any;
   action?: any;
   message: any;
-  timestamp: Date;
+  timestamp: string;
 }
 
 export enum OCPPMessageDtoProps {

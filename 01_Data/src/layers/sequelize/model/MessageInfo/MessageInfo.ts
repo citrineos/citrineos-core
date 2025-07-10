@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { IMessageInfoDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
   BelongsTo,
@@ -17,7 +17,7 @@ import { Component } from '../DeviceModel';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class MessageInfo extends BaseModelWithTenant implements OCPP2_0_1.MessageInfoType {
+export class MessageInfo extends BaseModelWithTenant implements IMessageInfoDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.MessageInfoType;
 
   /**
@@ -79,7 +79,7 @@ export class MessageInfo extends BaseModelWithTenant implements OCPP2_0_1.Messag
    */
 
   @BelongsTo(() => Component)
-  declare display: OCPP2_0_1.ComponentType;
+  declare display: Component;
 
   @ForeignKey(() => Component)
   @Column({

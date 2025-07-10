@@ -1,5 +1,5 @@
 export interface IAdditionalInfosDto {
-  id: number;
+  id?: number;
   additionalIdToken: string;
   type: string;
 }

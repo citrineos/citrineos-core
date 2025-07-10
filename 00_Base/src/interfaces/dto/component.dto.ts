@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto } from './base.dto';
+import { IBaseDto, IEvseTypeDto, IVariableDto } from '../..';
 
 export interface IComponentDto extends IBaseDto {
-  id: number;
+  id?: number;
   name: string;
   instance?: string | null;
-  evseDatabaseId?: number;
-  evseId?: number;
-  connectorId?: number;
+  evse?: IEvseTypeDto;
+  evseDatabaseId?: number | null;
+  variables?: IVariableDto[];
 }

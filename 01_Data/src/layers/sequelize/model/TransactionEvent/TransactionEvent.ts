@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { ITransactionEventDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Table } from 'sequelize-typescript';
 import { EvseType } from '../DeviceModel';
 import { MeterValue } from './MeterValue';
@@ -11,7 +11,7 @@ import { Transaction } from './Transaction';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class TransactionEvent extends BaseModelWithTenant {
+export class TransactionEvent extends BaseModelWithTenant implements ITransactionEventDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.TransactionEventRequest;
 
   @Column
@@ -65,10 +65,10 @@ export class TransactionEvent extends BaseModelWithTenant {
   declare evse?: OCPP2_0_1.EVSEType;
 
   @Column(DataType.STRING)
-  declare idTokenValue?: string;
+  declare idTokenValue?: string | null;
 
   @Column(DataType.STRING)
-  declare idTokenType?: string;
+  declare idTokenType?: string | null;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
 }

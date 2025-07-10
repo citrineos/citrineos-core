@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace, OCPPVersion } from '@citrineos/base';
+import { IChargingStationDto, Namespace, OCPPVersion } from '@citrineos/base';
 import {
   BelongsTo,
   BelongsToMany,
@@ -26,7 +26,7 @@ import { Evse } from './Evse';
  * Currently, this data model is internal to CitrineOS. In the future, it will be analogous to an OCPI ChargingStation.
  */
 @Table
-export class ChargingStation extends BaseModelWithTenant {
+export class ChargingStation extends BaseModelWithTenant implements IChargingStationDto {
   static readonly MODEL_NAME: string = Namespace.ChargingStation;
 
   @PrimaryKey

@@ -4,11 +4,11 @@
 import { IBaseDto } from './base.dto';
 
 export interface IStatusNotificationDto extends IBaseDto {
-  id: number;
+  id?: number;
   stationId: string;
-  evseId?: number;
+  evseId?: number | null;
   connectorId: number;
-  timestamp: string;
+  timestamp?: string | null; // ISO 8601 format
   connectorStatus: any; // Use ConnectorStatusEnumType if available
 }
 

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
+import { ITransactionDto, Namespace } from '@citrineos/base';
 import {
   BelongsTo,
   Column,
@@ -21,7 +21,7 @@ import { StartTransaction, StopTransaction } from './';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class Transaction extends BaseModelWithTenant {
+export class Transaction extends BaseModelWithTenant implements ITransactionDto {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
   static readonly TRANSACTION_EVENTS_ALIAS = 'transactionEvents';
   static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter';

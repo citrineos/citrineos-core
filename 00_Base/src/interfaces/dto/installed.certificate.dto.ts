@@ -1,11 +1,13 @@
-export interface IInstalledCertificateDto {
-  id: number;
+import { IBaseDto } from '../..';
+
+export interface IInstalledCertificateDto extends IBaseDto {
+  id?: number;
   stationId: string;
-  hashAlgorithm: string;
+  hashAlgorithm: any;
   issuerNameHash: string;
   issuerKeyHash: string;
   serialNumber: string;
-  certificateType: string;
+  certificateType: any;
 }
 export enum InstalledCertificateDtoProps {
   id = 'id',

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace } from '@citrineos/base';
+import { ILocationDto, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { Column, DataType, HasMany, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { Point } from 'geojson';
@@ -13,7 +13,7 @@ import { BaseModelWithTenant } from '../BaseModelWithTenant';
  * Currently, this data model is internal to CitrineOS. In the future, it will be analogous to an OCPI Location.
  */
 @Table
-export class Location extends BaseModelWithTenant {
+export class Location extends BaseModelWithTenant implements ILocationDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Location;
 
   @Column(DataType.STRING)

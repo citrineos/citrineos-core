@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
+import { IReservationDto, Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
   BelongsTo,
@@ -16,7 +16,7 @@ import { EvseType } from './DeviceModel';
 import { BaseModelWithTenant } from './BaseModelWithTenant';
 
 @Table
-export class Reservation extends BaseModelWithTenant {
+export class Reservation extends BaseModelWithTenant implements IReservationDto {
   static readonly MODEL_NAME: string = Namespace.ReserveNowRequest;
 
   /**
@@ -73,7 +73,7 @@ export class Reservation extends BaseModelWithTenant {
   declare evseId?: number | null;
 
   @BelongsTo(() => EvseType)
-  declare evse?: EvseType;
+  declare evse?: EvseType | null;
 
   declare customData?: any | null;
 }

@@ -4,7 +4,7 @@
 import { IBaseDto } from './base.dto';
 
 export interface ILatestStatusNotificationDto extends IBaseDto {
-  id: number;
+  id?: number;
   stationId: string;
   statusNotificationId: number;
   statusNotification?: any;

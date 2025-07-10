@@ -1,18 +1,20 @@
-export interface ICertificateDto {
-  id: number;
+import { IBaseDto } from '../..';
+
+export interface ICertificateDto extends IBaseDto {
+  id?: number;
   serialNumber: number;
   issuerName: string;
   organizationName: string;
   commonName: string;
-  keyLength: number | null;
-  signatureAlgorithm: SignatureAlgorithmEnumType | null;
-  countryName: CountryNameEnumType | null;
-  isCA: boolean | null;
-  pathLen: number | null;
-  certificateFileId: string | null;
-  privateKeyFileId: string | null;
-  signedBy: string | null;
-  validBefore: any;
+  keyLength?: number | null;
+  validBefore?: string | null;
+  signatureAlgorithm?: any;
+  countryName?: any;
+  isCA?: boolean;
+  pathLen?: number | null;
+  certificateFileId?: string | null;
+  privateKeyFileId?: string | null;
+  signedBy?: string | null;
 }
 
 export interface INewCertificateRequestDto {
@@ -21,8 +23,8 @@ export interface INewCertificateRequestDto {
   commonName: string;
   filePath?: string;
   selfSigned: boolean;
-  countryName?: CountryNameEnumType;
-  signatureAlgorithm?: SignatureAlgorithmEnumType;
+  countryName?: any;
+  signatureAlgorithm?: any;
   pathLen?: number;
   validBefore: any;
 }
