@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 export { Component } from './Component';
-export { Evse } from './Evse';
+export { EvseType } from './Evse';
 export { Variable } from './Variable';
 export { VariableAttribute } from './VariableAttribute';
 export { VariableCharacteristics } from './VariableCharacteristics';

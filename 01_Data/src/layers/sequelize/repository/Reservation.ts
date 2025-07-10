@@ -9,25 +9,25 @@ import { SequelizeRepository } from './Base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { Reservation } from '../model/Reservation';
-import { Evse } from '../model/DeviceModel';
+import { EvseType } from '../model/DeviceModel';
 
 export class SequelizeReservationRepository
   extends SequelizeRepository<Reservation>
   implements IReservationRepository
 {
-  evse: CrudRepository<Evse>;
+  evse: CrudRepository<EvseType>;
   logger: Logger<ILogObj>;
 
   constructor(
     config: SystemConfig,
     logger?: Logger<ILogObj>,
     sequelizeInstance?: Sequelize,
-    evse?: CrudRepository<Evse>,
+    evse?: CrudRepository<EvseType>,
   ) {
     super(config, Reservation.MODEL_NAME, logger, sequelizeInstance);
     this.evse = evse
       ? evse
-      : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
+      : new SequelizeRepository<EvseType>(config, EvseType.MODEL_NAME, logger, sequelizeInstance);
 
     this.logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })

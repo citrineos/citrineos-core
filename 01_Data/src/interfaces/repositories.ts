@@ -27,7 +27,7 @@ import {
   CompositeSchedule,
   Connector,
   type EventData,
-  Evse,
+  EvseType,
   InstalledCertificate,
   LocalListVersion,
   type Location,
@@ -146,7 +146,7 @@ export interface IDeviceModelRepository extends CrudRepository<OCPP2_0_1.Variabl
     tenantId: number,
     id: number,
     connectorId: number | null,
-  ): Promise<Evse | undefined>;
+  ): Promise<EvseType | undefined>;
   findVariableCharacteristicsByVariableNameAndVariableInstance(
     tenantId: number,
     variableName: string,

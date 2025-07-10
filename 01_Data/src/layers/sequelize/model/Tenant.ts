@@ -31,7 +31,7 @@ import { ChargingStationSecurityInfo } from './ChargingStationSecurityInfo';
 import { ChargingStationSequence } from './ChargingStationSequence';
 import {
   Component,
-  Evse,
+  EvseType,
   Variable,
   VariableAttribute,
   VariableCharacteristics,
@@ -135,8 +135,8 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
   @HasMany(() => Connector)
   declare connectors: Connector[];
 
-  @HasMany(() => Evse)
-  declare evses: Evse[];
+  @HasMany(() => EvseType)
+  declare evses: EvseType[];
 
   @HasMany(() => EventData)
   declare eventDatas: EventData[];

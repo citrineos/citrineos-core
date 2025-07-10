@@ -12,7 +12,7 @@ import {
   ForeignKey,
   Table,
 } from 'sequelize-typescript';
-import { Evse } from './Evse';
+import { EvseType } from './Evse';
 import { Variable } from './Variable';
 import { ComponentVariable } from './ComponentVariable';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
@@ -51,10 +51,10 @@ export class Component extends BaseModelWithTenant implements OCPP2_0_1.Componen
    * Relations
    */
 
-  @BelongsTo(() => Evse)
+  @BelongsTo(() => EvseType)
   declare evse?: OCPP2_0_1.EVSEType;
 
-  @ForeignKey(() => Evse)
+  @ForeignKey(() => EvseType)
   @Column(DataType.INTEGER)
   declare evseDatabaseId?: number | null;
 

@@ -18,7 +18,7 @@ import { BaseModelWithTenant } from '../BaseModelWithTenant';
     },
   ],
 })
-export class Evse extends BaseModelWithTenant implements OCPP2_0_1.EVSEType {
+export class EvseType extends BaseModelWithTenant implements OCPP2_0_1.EVSEType {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.EVSEType;
 
   /**

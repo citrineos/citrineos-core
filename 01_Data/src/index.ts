@@ -29,7 +29,7 @@ export {
   Transaction,
   Reservation,
   Subscription,
-  Evse,
+  EvseType,
   Variable,
   VariableAttribute,
   VariableCharacteristics,
