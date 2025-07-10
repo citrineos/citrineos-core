@@ -3,7 +3,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IAuthorizationDto, Namespace, RealTimeAuthEnumType } from '@citrineos/base';
+import {
+  AdditionalInfo,
+  IAuthorizationDto,
+  IdTokenType,
+  Namespace,
+  RealTimeAuthEnumType,
+} from '@citrineos/base';
 import { BelongsTo, Column, DataType, Default, ForeignKey, Table } from 'sequelize-typescript';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
@@ -27,10 +33,10 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
     type: DataType.STRING,
     unique: 'idToken_type',
   })
-  declare idTokenType?: string | null;
+  declare idTokenType?: IdTokenType | null;
 
   @Column(DataType.JSONB)
-  declare additionalInfo?: any | null; // JSONB for AdditionalInfo
+  declare additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]] | null; // JSONB for AdditionalInfo
 
   @Column(DataType.STRING)
   declare status: string;

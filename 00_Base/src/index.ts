@@ -90,7 +90,6 @@ export { BootstrapConfig, loadBootstrapConfig } from './config/boostrap.config';
 
 export { RequestBuilder } from './util/request';
 export { MeterValueUtils } from './util/MeterValueUtils';
-export * from './util/enums';
 
 export const LOG_LEVEL_OCPP = 10;
 

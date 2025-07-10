@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-// Auto-generated barrel file for DTO interfaces
+export * from './enum';
+export * from './json';
 export * from './authorization.dto';
 export * from './base.dto';
 export * from './charging.station.dto';

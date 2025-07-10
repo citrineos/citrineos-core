@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SystemConfig } from '@citrineos/base';
+import { CrudRepository, SystemConfig } from '@citrineos/base';
 import { type AuthorizationQuerystring, type IAuthorizationRepository } from '../../../interfaces';
 import { Authorization } from '../model/Authorization';
 import { SequelizeRepository } from './Base';

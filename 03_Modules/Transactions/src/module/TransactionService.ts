@@ -391,7 +391,11 @@ export class TransactionService {
       groupIdToken: dto.groupAuthorization
         ? ({
             idToken: dto.groupAuthorization?.idToken ?? '',
-            type: dto.groupAuthorization?.idTokenType ?? '',
+            type: dto.groupAuthorization?.idTokenType
+              ? OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenEnumType(
+                  dto.groupAuthorization?.idTokenType,
+                )
+              : '',
           } as OCPP2_0_1.IdTokenType)
         : null,
       personalMessage: dto.personalMessage

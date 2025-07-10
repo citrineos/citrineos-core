@@ -1,16 +1,16 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto } from '../..';
-import { RealTimeAuthEnumType } from '../../util/enums';
+import { AdditionalInfo, IBaseDto } from '../..';
+import { IdTokenType, RealTimeAuthEnumType } from './enum';
 
 export interface IAuthorizationDto extends IBaseDto {
   id?: number;
   allowedConnectorTypes?: string[];
   disallowedEvseIdPrefixes?: string[];
   idToken: string;
-  idTokenType?: string | null;
-  additionalInfo?: any | null;
+  idTokenType?: IdTokenType | null;
+  additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]] | null;
   status: string;
   cacheExpiryDateTime?: string | null;
   chargingPriority?: number | null;
