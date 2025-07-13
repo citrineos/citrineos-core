@@ -1,4 +1,4 @@
-import { IdTokenType, OCPP2_0_1 } from '@citrineos/base';
+import { AuthorizationStatusEnumType, IdTokenType, OCPP2_0_1 } from '@citrineos/base';
 import { AuthorizationMapper } from '../../../../../src/layers/sequelize/mapper/2.0.1';
 import { aAuthorization } from '../../../../providers/Authorization';
 
@@ -40,36 +40,40 @@ describe('AuthenticationMapper', () => {
 
   describe('Enum Mappings', () => {
     describe('toAuthorizationStatusEnumType', () => {
-      const statuses = [
-        { input: 'Accepted', output: OCPP2_0_1.AuthorizationStatusEnumType.Accepted },
-        { input: 'Blocked', output: OCPP2_0_1.AuthorizationStatusEnumType.Blocked },
-        { input: 'ConcurrentTx', output: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx },
-        { input: 'Expired', output: OCPP2_0_1.AuthorizationStatusEnumType.Expired },
-        { input: 'Invalid', output: OCPP2_0_1.AuthorizationStatusEnumType.Invalid },
-        { input: 'NoCredit', output: OCPP2_0_1.AuthorizationStatusEnumType.NoCredit },
-        {
-          input: 'NotAllowedTypeEVSE',
-          output: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
-        },
-        {
-          input: 'NotAtThisLocation',
-          output: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
-        },
-        { input: 'NotAtThisTime', output: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisTime },
-        { input: 'Unknown', output: OCPP2_0_1.AuthorizationStatusEnumType.Unknown },
-      ];
+      const statuses = Object.values(AuthorizationStatusEnumType);
 
-      statuses.forEach(({ input, output }) => {
-        it(`should return ${output} for status ${input}`, () => {
-          const result = AuthorizationMapper.toAuthorizationStatusEnumType(input);
-          expect(result).toBe(output);
+      statuses.forEach((status) => {
+        it(`should map ${status} to the correct OCPP2_0_1.AuthorizationStatusEnumType`, () => {
+          const result = AuthorizationMapper.toAuthorizationStatusEnumType(status);
+          expect(result).toBe(status);
         });
       });
 
       it('should throw an error for unknown statuses', () => {
-        expect(() => AuthorizationMapper.toAuthorizationStatusEnumType('InvalidStatus')).toThrow(
-          'Unknown authorization status',
-        );
+        expect(() =>
+          AuthorizationMapper.toAuthorizationStatusEnumType(
+            'InvalidStatus' as AuthorizationStatusEnumType,
+          ),
+        ).toThrow('Unknown authorization status');
+      });
+    });
+
+    describe('fromAuthorizationStatusEnumType', () => {
+      const statuses = Object.values(OCPP2_0_1.AuthorizationStatusEnumType);
+
+      statuses.forEach((status) => {
+        it(`should map ${status} to the correct AuthorizationStatusEnumType`, () => {
+          const result = AuthorizationMapper.fromAuthorizationStatusEnumType(status);
+          expect(result).toBe(status);
+        });
+      });
+
+      it('should throw an error for unknown statuses', () => {
+        expect(() =>
+          AuthorizationMapper.fromAuthorizationStatusEnumType(
+            'InvalidStatus' as OCPP2_0_1.AuthorizationStatusEnumType,
+          ),
+        ).toThrow('Unknown authorization status');
       });
     });
 

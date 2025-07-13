@@ -9,6 +9,7 @@ export { NetworkProfileFilter } from './networkconnection/authenticator/NetworkP
 export { BasicAuthenticationFilter } from './networkconnection/authenticator/BasicAuthenticationFilter';
 
 export * from './authorization';
+export * from './authorizer';
 export { MemoryCache } from './cache/memory';
 export { RedisCache } from './cache/redis';
 export { S3Storage } from './files/s3Storage';

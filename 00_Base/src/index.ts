@@ -15,6 +15,7 @@ export {
   ApiAuthenticationResult,
   UserInfo,
 } from './interfaces/api';
+export { IAuthorizer } from './interfaces/authorizer';
 export { BadRequestError } from './interfaces/api/exceptions/BadRequestError';
 export { NotFoundError } from './interfaces/api/exceptions/NotFoundError';
 export { ICache } from './interfaces/cache/cache';

@@ -3,7 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Authorization } from '@citrineos/data';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
-import { DEFAULT_TENANT_ID, IdTokenType, RealTimeAuthEnumType } from '@citrineos/base';
+import {
+  AuthorizationStatusEnumType,
+  DEFAULT_TENANT_ID,
+  IdTokenType,
+  RealTimeAuthEnumType,
+} from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 
 export function anAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {
@@ -11,7 +16,7 @@ export function anAuthorization(updateFunction?: UpdateFunction<Authorization>):
   item.tenantId = DEFAULT_TENANT_ID;
   item.idToken = faker.string.uuid();
   item.idTokenType = IdTokenType.Central;
-  item.status = 'Accepted';
+  item.status = AuthorizationStatusEnumType.Accepted;
   item.groupAuthorizationId = 1;
   item.cacheExpiryDateTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   item.realTimeAuth = RealTimeAuthEnumType.Never;

@@ -5,6 +5,7 @@
 
 import {
   AdditionalInfo,
+  AuthorizationStatusEnumType,
   IAuthorizationDto,
   IdTokenType,
   Namespace,
@@ -39,7 +40,7 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
   declare additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]] | null; // JSONB for AdditionalInfo
 
   @Column(DataType.STRING)
-  declare status: string;
+  declare status: AuthorizationStatusEnumType;
 
   @Column({
     type: DataType.DATE,
