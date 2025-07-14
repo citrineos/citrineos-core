@@ -62,9 +62,8 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
   @Column(DataType.JSON)
   declare personalMessage?: any | null;
 
-  @Default(RealTimeAuthEnumType.Never)
-  @Column(DataType.ENUM(...Object.values(RealTimeAuthEnumType)))
-  declare realTimeAuth: RealTimeAuthEnumType;
+  @Column(DataType.STRING)
+  declare realTimeAuth?: RealTimeAuthEnumType;
 
   @Column(DataType.STRING)
   declare realTimeAuthUrl?: string;
