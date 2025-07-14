@@ -221,7 +221,11 @@ export class SequelizeTransactionEventRepository
       );
       await finalTransaction.reload({
         include: [
-          { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [Evse] },
+          {
+            model: TransactionEvent,
+            as: Transaction.TRANSACTION_EVENTS_ALIAS,
+            include: [EvseType],
+          },
           MeterValue,
           EvseType,
         ],
@@ -301,7 +305,7 @@ export class SequelizeTransactionEventRepository
           required: true,
           include: [
             {
-              model: Evse,
+              model: EvseType,
               required: true,
               where: {
                 idToken: idToken.idToken,
@@ -326,7 +330,7 @@ export class SequelizeTransactionEventRepository
           required: true,
           include: [
             {
-              model: Evse,
+              model: EvseType,
               required: true,
               where: {
                 idToken: idToken,
@@ -356,7 +360,7 @@ export class SequelizeTransactionEventRepository
     return this.transaction.readOnlyOneByQuery(tenantId, {
       where: { transactionId },
       include: [
-        { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [Evse] },
+        { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [EvseType] },
         MeterValue,
         EvseType,
       ],
@@ -373,7 +377,7 @@ export class SequelizeTransactionEventRepository
     const queryOptions: any = {
       where: {},
       include: [
-        { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [Evse] },
+        { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [EvseType] },
         MeterValue,
         EvseType,
       ],
@@ -456,7 +460,11 @@ export class SequelizeTransactionEventRepository
           isActive: true,
         },
         include: [
-          { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [Evse] },
+          {
+            model: TransactionEvent,
+            as: Transaction.TRANSACTION_EVENTS_ALIAS,
+            include: [EvseType],
+          },
           MeterValue,
           { model: EvseType, where: { id: evseId }, required: true },
         ],
@@ -582,7 +590,7 @@ export class SequelizeTransactionEventRepository
 
       // Return the new transaction with StartTransaction and IdToken
       await newTransaction.reload({
-        include: [{ model: StartTransaction, include: [Evse] }],
+        include: [{ model: StartTransaction, include: [EvseType] }],
         transaction: sequelizeTransaction,
       });
       this.transaction.emit('created', [newTransaction]);
