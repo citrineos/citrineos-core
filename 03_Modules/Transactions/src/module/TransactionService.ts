@@ -91,7 +91,7 @@ export class TransactionService {
     if (authorizations.length !== 1) {
       return response;
     }
-    let authorization = authorizations[0];
+    const authorization = authorizations[0];
 
     if (!authorization.status) {
       // Assumed to always be valid without status
@@ -186,7 +186,7 @@ export class TransactionService {
         );
         return response;
       }
-      let authorization = authorizations[0];
+      const authorization = authorizations[0];
 
       // Real-time authorization and update existing authorization in DB
       // let realTimeAuthResult: Partial<IAuthorizationDto> | undefined;
