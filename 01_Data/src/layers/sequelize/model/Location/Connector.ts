@@ -2,7 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IConnectorDto, OCPP1_6, OCPP1_6_Namespace } from '@citrineos/base';
+import {
+  ConnectorErrorCode,
+  ConnectorStatus,
+  IConnectorDto,
+  OCPP1_6,
+  OCPP1_6_Namespace,
+} from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
@@ -42,11 +48,17 @@ export class Connector extends BaseModelWithTenant implements IConnectorDto {
   })
   declare evseTypeConnectorId?: number; // This is the serial int starting at 1 used in OCPP 2.0.1 to refer to the connector, unique per EVSE.
 
-  @Column(DataType.STRING)
-  declare status: OCPP1_6.StatusNotificationRequestStatus;
+  @Column({
+    type: DataType.STRING,
+    defaultValue: ConnectorStatus.Unknown,
+  })
+  declare status: ConnectorStatus;
 
-  @Column(DataType.STRING)
-  declare errorCode: OCPP1_6.StatusNotificationRequestErrorCode;
+  @Column({
+    type: DataType.STRING,
+    defaultValue: ConnectorErrorCode.NoError,
+  })
+  declare errorCode: ConnectorErrorCode;
 
   @Column({
     type: DataType.DATE,

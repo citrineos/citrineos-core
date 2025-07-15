@@ -6,6 +6,8 @@ import {
   Variable,
   Connector,
   StatusNotification,
+  OCPP1_6_Mapper,
+  OCPP2_0_1_Mapper,
 } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
 import { CrudRepository, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
@@ -61,6 +63,19 @@ export class StatusNotificationService {
         `Charging station ${stationId} not found. Status notification cannot be associated with a charging station.`,
       );
     }
+
+    const connector = {
+      tenantId,
+      connectorId: statusNotificationRequest.connectorId,
+      stationId,
+      status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
+        statusNotificationRequest.connectorStatus,
+      ),
+      timestamp: statusNotificationRequest.timestamp
+        ? statusNotificationRequest.timestamp
+        : new Date().toISOString(),
+    } as Connector;
+    await this._locationRepository.createOrUpdateConnector(tenantId, connector);
 
     const component = await this._componentRepository.readOnlyOneByQuery(tenantId, {
       where: {
@@ -133,11 +148,16 @@ export class StatusNotificationService {
         tenantId,
         connectorId: statusNotificationRequest.connectorId,
         stationId,
-        status: statusNotificationRequest.status,
+        status: OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
+          statusNotificationRequest.status,
+        ),
         timestamp: statusNotificationRequest.timestamp
           ? statusNotificationRequest.timestamp
           : new Date().toISOString(),
-        errorCode: statusNotificationRequest.errorCode,
+        errorCode:
+          OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestErrorCodeToConnectorErrorCode(
+            statusNotificationRequest.errorCode,
+          ),
         info: statusNotificationRequest.info,
         vendorId: statusNotificationRequest.vendorId,
         vendorErrorCode: statusNotificationRequest.vendorErrorCode,
