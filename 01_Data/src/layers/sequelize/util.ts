@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { type SystemConfig } from '@citrineos/base';
+import { type BootstrapConfig } from '@citrineos/base';
 import { type Dialect } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
@@ -67,11 +67,11 @@ export class DefaultSequelizeInstance {
   private static readonly DEFAULT_RETRY_DELAY = 5000;
   private static instance: Sequelize | null = null;
   private static logger: Logger<ILogObj>;
-  private static config: SystemConfig;
+  private static config: BootstrapConfig;
 
   private constructor() {}
 
-  public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): Sequelize {
+  public static getInstance(config: BootstrapConfig, logger?: Logger<ILogObj>): Sequelize {
     if (!DefaultSequelizeInstance.instance) {
       DefaultSequelizeInstance.config = config;
       DefaultSequelizeInstance.logger = logger
@@ -85,8 +85,8 @@ export class DefaultSequelizeInstance {
 
   public static async initializeSequelize(_sync: boolean = false): Promise<void> {
     let retryCount = 0;
-    const maxRetries = this.config.data.sequelize.maxRetries ?? this.DEFAULT_RETRIES;
-    const retryDelay = this.config.data.sequelize.retryDelay ?? this.DEFAULT_RETRY_DELAY;
+    const maxRetries = this.config.database.maxRetries ?? this.DEFAULT_RETRIES;
+    const retryDelay = this.config.database.retryDelay ?? this.DEFAULT_RETRY_DELAY;
     while (retryCount < maxRetries) {
       try {
         await this.instance!.authenticate();
@@ -111,10 +111,10 @@ export class DefaultSequelizeInstance {
   }
 
   private static async syncDb() {
-    if (this.config.data.sequelize.alter) {
+    if (this.config.database.alter) {
       await this.instance!.sync({ alter: true });
       this.logger.info('Database altered');
-    } else if (this.config.data.sequelize.sync) {
+    } else if (this.config.database.sync) {
       await this.instance!.sync({ force: true });
       this.logger.info('Database synchronized');
     }
@@ -122,13 +122,12 @@ export class DefaultSequelizeInstance {
 
   private static createSequelizeInstance() {
     return new Sequelize({
-      host: this.config.data.sequelize.host,
-      port: this.config.data.sequelize.port,
-      database: this.config.data.sequelize.database,
-      dialect: this.config.data.sequelize.dialect as Dialect,
-      username: this.config.data.sequelize.username,
-      password: this.config.data.sequelize.password,
-      storage: this.config.data.sequelize.storage,
+      host: this.config.database.host,
+      port: this.config.database.port,
+      database: this.config.database.database,
+      dialect: this.config.database.dialect as Dialect,
+      username: this.config.database.username,
+      password: this.config.database.password,
       models: [
         AdditionalInfo,
         Authorization,
