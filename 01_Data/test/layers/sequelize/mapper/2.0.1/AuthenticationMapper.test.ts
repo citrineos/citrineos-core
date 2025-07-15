@@ -40,12 +40,53 @@ describe('AuthenticationMapper', () => {
 
   describe('Enum Mappings', () => {
     describe('toAuthorizationStatusEnumType', () => {
-      const statuses = Object.values(AuthorizationStatusEnumType);
+      const statuses = [
+        {
+          input: AuthorizationStatusEnumType.Accepted,
+          output: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
+        },
+        {
+          input: AuthorizationStatusEnumType.Blocked,
+          output: OCPP2_0_1.AuthorizationStatusEnumType.Blocked,
+        },
+        {
+          input: AuthorizationStatusEnumType.ConcurrentTx,
+          output: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
+        },
+        {
+          input: AuthorizationStatusEnumType.Expired,
+          output: OCPP2_0_1.AuthorizationStatusEnumType.Expired,
+        },
+        {
+          input: AuthorizationStatusEnumType.Invalid,
+          output: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
+        },
+        {
+          input: AuthorizationStatusEnumType.NoCredit,
+          output: OCPP2_0_1.AuthorizationStatusEnumType.NoCredit,
+        },
+        {
+          input: AuthorizationStatusEnumType.NotAllowedTypeEVSE,
+          output: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
+        },
+        {
+          input: AuthorizationStatusEnumType.NotAtThisLocation,
+          output: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
+        },
+        {
+          input: AuthorizationStatusEnumType.NotAtThisTime,
+          output: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisTime,
+        },
+        {
+          input: AuthorizationStatusEnumType.Unknown,
+          output: OCPP2_0_1.AuthorizationStatusEnumType.Unknown,
+        },
+      ];
 
-      statuses.forEach((status) => {
-        it(`should map ${status} to the correct OCPP2_0_1.AuthorizationStatusEnumType`, () => {
-          const result = AuthorizationMapper.toAuthorizationStatusEnumType(status);
-          expect(result).toBe(status);
+      statuses.forEach(({ input, output }) => {
+        it(`should map ${input} to ${output}`, () => {
+          const result = AuthorizationMapper.toAuthorizationStatusEnumType(input);
+          expect(result).toBe(output);
         });
       });
 
@@ -59,12 +100,53 @@ describe('AuthenticationMapper', () => {
     });
 
     describe('fromAuthorizationStatusEnumType', () => {
-      const statuses = Object.values(OCPP2_0_1.AuthorizationStatusEnumType);
+      const statuses = [
+        {
+          input: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
+          output: AuthorizationStatusEnumType.Accepted,
+        },
+        {
+          input: OCPP2_0_1.AuthorizationStatusEnumType.Blocked,
+          output: AuthorizationStatusEnumType.Blocked,
+        },
+        {
+          input: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
+          output: AuthorizationStatusEnumType.ConcurrentTx,
+        },
+        {
+          input: OCPP2_0_1.AuthorizationStatusEnumType.Expired,
+          output: AuthorizationStatusEnumType.Expired,
+        },
+        {
+          input: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
+          output: AuthorizationStatusEnumType.Invalid,
+        },
+        {
+          input: OCPP2_0_1.AuthorizationStatusEnumType.NoCredit,
+          output: AuthorizationStatusEnumType.NoCredit,
+        },
+        {
+          input: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
+          output: AuthorizationStatusEnumType.NotAllowedTypeEVSE,
+        },
+        {
+          input: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
+          output: AuthorizationStatusEnumType.NotAtThisLocation,
+        },
+        {
+          input: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisTime,
+          output: AuthorizationStatusEnumType.NotAtThisTime,
+        },
+        {
+          input: OCPP2_0_1.AuthorizationStatusEnumType.Unknown,
+          output: AuthorizationStatusEnumType.Unknown,
+        },
+      ];
 
-      statuses.forEach((status) => {
-        it(`should map ${status} to the correct AuthorizationStatusEnumType`, () => {
-          const result = AuthorizationMapper.fromAuthorizationStatusEnumType(status);
-          expect(result).toBe(status);
+      statuses.forEach(({ input, output }) => {
+        it(`should map ${input} to ${output}`, () => {
+          const result = AuthorizationMapper.fromAuthorizationStatusEnumType(input);
+          expect(result).toBe(output);
         });
       });
 

@@ -1,5 +1,4 @@
 import {
-  Authorization,
   IAuthorizationRepository,
   ITransactionEventRepository,
   Transaction,
@@ -10,7 +9,6 @@ import {
 } from '@citrineos/data';
 import {
   AuthorizationStatusEnumType,
-  AuthorizationDtoProps,
   IAuthorizationDto,
   IAuthorizer,
   IMessageContext,
@@ -184,24 +182,6 @@ export class TransactionService {
         return response;
       }
       const authorization = authorizations[0];
-
-      // Real-time authorization and update existing authorization in DB
-      // let realTimeAuthResult: Partial<IAuthorizationDto> | undefined;
-      // if (authorization.realTimeAuth !== RealTimeAuthEnumType.Never) {
-      //   try {
-      //     realTimeAuthResult = await this._realTimeAuthorizer.authorize(authorization, context);
-      //   } catch (error) {
-      //     this._logger.error(`Real-time authorization failed for idToken: ${idToken}`, error);
-      //     if (authorization.realTimeAuth === RealTimeAuthEnumType.Rejected) {
-      //       response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Invalid;
-      //       return response;
-      //     }
-      //   }
-      // }
-      // if (realTimeAuthResult) {
-      //   authorization = this._updateAuthorizationFromDto(authorization, realTimeAuthResult);
-      //   await this._authorizeRepository.updateByKey(tenantId, authorization, authorization.id);
-      // }
 
       // Check expiration and status
       if (!authorization.status) {
@@ -383,19 +363,5 @@ export class TransactionService {
           } as OCPP2_0_1.MessageContentType)
         : null,
     };
-  }
-
-  private _updateAuthorizationFromDto(
-    auth: Authorization,
-    dto: Partial<IAuthorizationDto>,
-  ): Authorization {
-    for (const key of Object.values(AuthorizationDtoProps)) {
-      const value = dto[key as keyof IAuthorizationDto];
-
-      if (value !== undefined && value !== null) {
-        (auth as any)[key] = value;
-      }
-    }
-    return auth;
   }
 }
