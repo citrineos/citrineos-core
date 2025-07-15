@@ -42,10 +42,10 @@ export class Connector extends BaseModelWithTenant implements IConnectorDto {
   })
   declare evseTypeConnectorId?: number; // This is the serial int starting at 1 used in OCPP 2.0.1 to refer to the connector, unique per EVSE.
 
-  @Column(DataType.ENUM(...Object.values(OCPP1_6.StatusNotificationRequestStatus)))
+  @Column(DataType.STRING)
   declare status: OCPP1_6.StatusNotificationRequestStatus;
 
-  @Column(DataType.ENUM(...Object.values(OCPP1_6.StatusNotificationRequestErrorCode)))
+  @Column(DataType.STRING)
   declare errorCode: OCPP1_6.StatusNotificationRequestErrorCode;
 
   @Column({
