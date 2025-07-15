@@ -9,6 +9,7 @@ import {
   IOCPPMessageRepository,
 } from '@citrineos/data';
 import {
+  AuthorizationStatusEnumType,
   AuthorizationDtoProps,
   IAuthorizationDto,
   IAuthorizer,
@@ -19,10 +20,6 @@ import {
   OCPP2_0_1,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
-import {
-  AuthorizationStatusEnumType,
-  MessageFormatEnumType,
-} from '@citrineos/base/dist/ocpp/model/2.0.1';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
@@ -382,7 +379,7 @@ export class TransactionService {
         ? ({
             content: dto.personalMessage.content ?? '',
             language: dto.personalMessage.language ?? '',
-            format: dto.personalMessage.format ?? MessageFormatEnumType.ASCII,
+            format: dto.personalMessage.format ?? OCPP2_0_1.MessageFormatEnumType.ASCII,
           } as OCPP2_0_1.MessageContentType)
         : null,
     };
