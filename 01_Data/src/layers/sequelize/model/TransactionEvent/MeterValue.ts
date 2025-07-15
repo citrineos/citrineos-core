@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
+import { IMeterValueDto, Namespace } from '@citrineos/base';
 import { Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { TransactionEvent } from './TransactionEvent';
 import { Transaction } from './Transaction';
@@ -11,7 +11,7 @@ import { StopTransaction } from './StopTransaction';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class MeterValue extends BaseModelWithTenant {
+export class MeterValue extends BaseModelWithTenant implements IMeterValueDto {
   static readonly MODEL_NAME: string = Namespace.MeterValue;
 
   @ForeignKey(() => TransactionEvent)

@@ -28,7 +28,7 @@ import { Op, WhereOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { MeterValueMapper } from '../mapper/2.0.1';
-import { Connector } from '../model/Location';
+import { Connector, Evse } from '../model/Location';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
 import { Authorization } from '../model/Authorization';
 

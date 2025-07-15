@@ -2,46 +2,33 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IBaseDto } from './base.dto';
-import { ILocationDto } from './location.dto';
-import { ITransactionDto } from './transaction.dto';
-import { IStatusNotificationDto } from './status.notification.dto';
-import { ILatestStatusNotificationDto } from './latest.status.notification.dto';
-import { IEvseDto } from './evse.dto';
+import { IBaseDto, IConnectorDto, IEvseDto, ILocationDto, IStatusNotificationDto } from '../..';
 
 export interface IChargingStationDto extends IBaseDto {
   id: string;
   isOnline: boolean;
-  protocol?: string;
-  locationId?: any;
-  statusNotifications?: IStatusNotificationDto[];
-  latestStatusNotifications?: ILatestStatusNotificationDto[];
-  evses?: IEvseDto[];
-  connectorTypes?: string[];
-  transactions?: ITransactionDto[];
-  ocppLogs?: any[];
+  protocol?: any;
+  chargePointVendor?: string | null;
+  chargePointModel?: string | null;
+  chargePointSerialNumber?: string | null;
+  chargeBoxSerialNumber?: string | null;
+  firmwareVersion?: string | null;
+  iccid?: string | null;
+  imsi?: string | null;
+  meterType?: string | null;
+  meterSerialNumber?: string | null;
+  locationId?: number | null;
+  statusNotifications?: IStatusNotificationDto[] | null;
   location?: ILocationDto;
-  chargePointVendor?: string;
-  chargePointModel?: string;
-  chargePointSerialNumber?: string;
-  chargeBoxSerialNumber?: string;
-  firmwareVersion?: string;
-  iccid?: string;
-  imsi?: string;
-  meterSerialNumber?: string;
+  networkProfiles?: any;
+  evses?: IEvseDto[] | null;
+  connectors?: IConnectorDto[] | null;
 }
 
 export enum ChargingStationDtoProps {
   id = 'id',
   isOnline = 'isOnline',
   protocol = 'protocol',
-  locationId = 'locationId',
-  statusNotifications = 'statusNotifications',
-  latestStatusNotifications = 'latestStatusNotifications',
-  evses = 'evses',
-  transactions = 'transactions',
-  ocppLogs = 'ocppLogs',
-  location = 'Location',
   chargePointVendor = 'chargePointVendor',
   chargePointModel = 'chargePointModel',
   chargePointSerialNumber = 'chargePointSerialNumber',
@@ -49,5 +36,12 @@ export enum ChargingStationDtoProps {
   firmwareVersion = 'firmwareVersion',
   iccid = 'iccid',
   imsi = 'imsi',
+  meterType = 'meterType',
   meterSerialNumber = 'meterSerialNumber',
+  locationId = 'locationId',
+  statusNotifications = 'statusNotifications',
+  location = 'Location',
+  networkProfiles = 'networkProfiles',
+  evses = 'evses',
+  connectors = 'connectors',
 }

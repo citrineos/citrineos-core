@@ -1,20 +1,24 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto } from './base.dto';
+import { IBaseDto, IChargingStationDto } from '../..';
 
 export interface IEvseDto extends IBaseDto {
-  databaseId: number;
-  id: number;
-  connectorId?: number | null;
-  // customData?: CustomDataType | null; // Uncomment and define if needed
-  VariableAttributes?: any[];
+  id?: number;
+  stationId: string;
+  evseTypeId?: number;
+  evseId: number;
+  physicalReference?: string | null;
+  removed?: boolean;
+  chargingStation?: IChargingStationDto;
 }
 
 export enum EvseDtoProps {
-  databaseId = 'databaseId',
   id = 'id',
-  connectorId = 'connectorId',
-  customData = 'customData',
-  VariableAttributes = 'VariableAttributes',
+  stationId = 'stationId',
+  evseTypeId = 'evseTypeId',
+  evseId = 'evseId',
+  physicalReference = 'physicalReference',
+  removed = 'removed',
+  chargingStation = 'chargingStation',
 }

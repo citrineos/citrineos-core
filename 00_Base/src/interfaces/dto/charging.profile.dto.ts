@@ -1,22 +1,38 @@
-import {
-  ChargingLimitSourceEnumType,
-  ChargingProfileKindEnumType,
-  ChargingProfilePurposeEnumType,
-  RecurrencyKindEnumType,
-} from '../../ocpp/model/2.0.1';
+import { IBaseDto, ITransactionDto } from '../..';
+import { IChargingScheduleDto } from './charging.schedule.dto';
 
-export interface IChargingProfileDto {
+export interface IChargingProfileDto extends IBaseDto {
   databaseId: number;
-  id: number;
   stationId: string;
-  chargingProfileKind: ChargingProfileKindEnumType;
-  chargingProfilePurpose: ChargingProfilePurposeEnumType;
-  recurrencyKind?: RecurrencyKindEnumType;
+  id?: number;
+  chargingProfileKind: any;
+  chargingProfilePurpose: any;
+  recurrencyKind?: any;
   stackLevel: number;
-  validFrom: Date | null;
-  validTo: Date | null;
+  validFrom?: string | null;
+  validTo?: string | null;
   evseId?: number | null;
-  isActive: boolean | null;
-  chargingLimitSource: ChargingLimitSourceEnumType | null;
-  transactionDatabaseId: number | null;
+  isActive: boolean;
+  chargingLimitSource?: any;
+  chargingSchedule: IChargingScheduleDto[];
+  transactionDatabaseId?: number | null;
+  transaction?: ITransactionDto;
+}
+
+export enum ChargingProfileDtoProps {
+  databaseId = 'databaseId',
+  stationId = 'stationId',
+  id = 'id',
+  chargingProfileKind = 'chargingProfileKind',
+  chargingProfilePurpose = 'chargingProfilePurpose',
+  recurrencyKind = 'recurrencyKind',
+  stackLevel = 'stackLevel',
+  validFrom = 'validFrom',
+  validTo = 'validTo',
+  evseId = 'evseId',
+  isActive = 'isActive',
+  chargingLimitSource = 'chargingLimitSource',
+  chargingSchedule = 'chargingSchedule',
+  transactionDatabaseId = 'transactionDatabaseId',
+  transaction = 'transaction',
 }
