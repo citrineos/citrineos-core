@@ -5,7 +5,7 @@ import { IBaseDto } from './base.dto';
 import { IChargingStationDto } from './charging.station.dto';
 import { Point } from 'geojson';
 import { LocationFacilityType, LocationParkingType } from './enum';
-import { Hours } from './json';
+import { LocationHours } from './json';
 
 export interface ILocationDto extends IBaseDto {
   id?: number;
@@ -20,7 +20,7 @@ export interface ILocationDto extends IBaseDto {
   coordinates: Point;
   parkingType?: LocationParkingType | null;
   facilities?: LocationFacilityType[] | null;
-  openingHours?: Hours | null;
+  openingHours?: LocationHours | null;
   chargingPool: IChargingStationDto[];
 }
 

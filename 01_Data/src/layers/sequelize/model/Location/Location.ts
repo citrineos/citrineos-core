@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  Hours,
+  LocationHours,
   ILocationDto,
   LocationFacilityType,
   LocationParkingType,
@@ -69,7 +69,7 @@ export class Location extends BaseModelWithTenant implements ILocationDto {
   declare facilities?: LocationFacilityType[] | null;
 
   @Column(DataType.JSONB)
-  declare openingHours: Hours | null;
+  declare openingHours: LocationHours | null;
 
   /**
    * [longitude, latitude]

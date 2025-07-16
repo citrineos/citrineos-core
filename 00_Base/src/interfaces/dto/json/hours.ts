@@ -1,23 +1,17 @@
-export class Hours {
-  regular_hours?: RegularHours[] | null;
-
-  twentyfourseven!: boolean;
-
-  exceptional_openings?: ExceptionalPeriod[] | null;
-
-  exceptional_closings?: ExceptionalPeriod[] | null;
+export class LocationHours {
+  regularHours?: LocationRegularHours[] | null;
+  twentyfourSeven!: boolean;
+  exceptionalOpenings?: LocationExceptionalPeriod[] | null;
+  exceptionalClosings?: LocationExceptionalPeriod[] | null;
 }
 
-export class RegularHours {
+export class LocationRegularHours {
   weekday!: number;
-
-  period_begin!: string;
-
-  period_end!: string;
+  periodBegin!: string;
+  periodEnd!: string;
 }
 
-export class ExceptionalPeriod {
-  period_begin!: Date;
-
-  period_end!: Date;
+export class LocationExceptionalPeriod {
+  periodBegin!: Date;
+  periodEnd!: Date;
 }
