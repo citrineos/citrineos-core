@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 export * from './enum';
+export * from './json';
 export * from './authorization.dto';
 export * from './base.dto';
 export * from './charging.station.dto';

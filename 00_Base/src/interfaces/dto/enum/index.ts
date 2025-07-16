@@ -113,3 +113,35 @@ export enum ConnectorPowerType {
   AC3Phase = 'AC3Phase',
   DC = 'DC',
 }
+
+export enum LocationParkingType {
+  AlongMotorway = 'AlongMotorway',
+  ParkingGarage = 'ParkingGarage',
+  ParkingLot = 'ParkingLot',
+  OnDriveway = 'OnDriveway',
+  OnStreet = 'OnStreet',
+  UndergroundGarage = 'UndergroundGarage',
+}
+
+export enum LocationFacilityType {
+  Hotel = 'Hotel',
+  Restaurant = 'Restaurant',
+  Cafe = 'Cafe',
+  Mall = 'Mall',
+  Supermarket = 'Supermarket',
+  Sport = 'Sport',
+  RecreationArea = 'RecreationArea',
+  Nature = 'Nature',
+  Museum = 'Museum',
+  BikeSharing = 'BikeSharing',
+  BusStop = 'BusStop',
+  TaxiStand = 'TaxiStand',
+  TramStop = 'TramStop',
+  MetroStation = 'MetroStation',
+  TrainStation = 'TrainStation',
+  Airport = 'Airport',
+  ParkingLot = 'ParkingLot',
+  CarpoolParking = 'CarpoolParking',
+  FuelStation = 'FuelStation',
+  Wifi = 'Wifi',
+}

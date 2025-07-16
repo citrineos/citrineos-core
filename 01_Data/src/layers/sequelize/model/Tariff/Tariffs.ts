@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { ITariffDto, OCPP2_0_1_Namespace } from '@citrineos/base';
-import { Column, DataType, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 import { CreationOptional } from 'sequelize';
+import { Connector } from '../Location';
 
 @Table
 export class Tariff extends BaseModelWithTenant implements ITariffDto {
@@ -16,6 +17,13 @@ export class Tariff extends BaseModelWithTenant implements ITariffDto {
     unique: true,
   })
   declare stationId: string;
+
+  @ForeignKey(() => Connector)
+  @Column(DataType.INTEGER)
+  declare connectorId?: number | null;
+
+  @BelongsTo(() => Connector)
+  declare connector?: Connector | null;
 
   @Column({
     type: DataType.CHAR(3),
