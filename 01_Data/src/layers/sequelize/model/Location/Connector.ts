@@ -4,15 +4,18 @@
 
 import {
   ConnectorErrorCode,
+  ConnectorFormatEnum,
+  ConnectorPowerType,
   ConnectorStatus,
+  ConnectorTypeEnum,
   IConnectorDto,
-  OCPP1_6,
   OCPP1_6_Namespace,
 } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, HasMany, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 import { Evse } from './Evse';
+import { Tariff } from '../Tariff';
 
 @Table
 export class Connector extends BaseModelWithTenant implements IConnectorDto {
@@ -54,11 +57,29 @@ export class Connector extends BaseModelWithTenant implements IConnectorDto {
   })
   declare status: ConnectorStatus;
 
+  @Column(DataType.STRING)
+  declare type?: ConnectorTypeEnum | null;
+
+  @Column(DataType.STRING)
+  declare format?: ConnectorFormatEnum | null;
+
   @Column({
     type: DataType.STRING,
     defaultValue: ConnectorErrorCode.NoError,
   })
   declare errorCode: ConnectorErrorCode;
+
+  @Column(DataType.STRING)
+  declare powerType?: ConnectorPowerType | null;
+
+  @Column(DataType.INTEGER)
+  declare maximumAmperage?: number | null;
+
+  @Column(DataType.INTEGER)
+  declare maximumVoltage?: number | null;
+
+  @Column(DataType.INTEGER)
+  declare maximumPowerWatts?: number | null;
 
   @Column({
     type: DataType.DATE,
@@ -77,9 +98,15 @@ export class Connector extends BaseModelWithTenant implements IConnectorDto {
   @Column(DataType.STRING)
   declare vendorErrorCode?: string | null;
 
+  @Column(DataType.STRING)
+  declare termsAndConditionsUrl?: string | null;
+
   @BelongsTo(() => ChargingStation)
   declare chargingStation?: ChargingStation;
 
   @BelongsTo(() => Evse)
   declare evse?: Evse;
+
+  @HasMany(() => Tariff)
+  declare tariffs?: Tariff[];
 }
