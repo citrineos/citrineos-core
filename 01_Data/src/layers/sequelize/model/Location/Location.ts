@@ -2,7 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ILocationDto, OCPP2_0_1_Namespace } from '@citrineos/base';
+import {
+  LocationHours,
+  ILocationDto,
+  LocationFacilityType,
+  LocationParkingType,
+  OCPP2_0_1_Namespace,
+} from '@citrineos/base';
 import { Column, DataType, HasMany, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { Point } from 'geojson';
@@ -55,6 +61,15 @@ export class Location extends BaseModelWithTenant implements ILocationDto {
     },
   })
   declare timeZone: string;
+
+  @Column(DataType.STRING)
+  declare parkingType?: LocationParkingType | null;
+
+  @Column(DataType.JSONB)
+  declare facilities?: LocationFacilityType[] | null;
+
+  @Column(DataType.JSONB)
+  declare openingHours: LocationHours | null;
 
   /**
    * [longitude, latitude]
