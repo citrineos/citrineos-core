@@ -3,9 +3,18 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Column, DataType, Default, PrimaryKey, Table } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  Default,
+  PrimaryKey,
+  Table,
+  ForeignKey,
+  BelongsTo,
+} from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { TenantPartner } from '../TenantPartner';
 
 export enum AsyncJobName {
   FETCH_OCPI_TOKENS = 'FETCH_OCPI_TOKENS',
@@ -35,17 +44,12 @@ export class AsyncJobStatus extends BaseModelWithTenant {
   @Column(DataType.ENUM(...Object.values(AsyncJobName)))
   declare jobName: AsyncJobName;
 
-  @Column(DataType.STRING)
-  declare mspCountryCode: string;
+  @ForeignKey(() => TenantPartner)
+  @Column(DataType.INTEGER)
+  declare tenantPartnerId: number;
 
-  @Column(DataType.STRING)
-  declare mspPartyId: string;
-
-  @Column(DataType.STRING)
-  declare cpoCountryCode: string;
-
-  @Column(DataType.STRING)
-  declare cpoPartyId: string;
+  @BelongsTo(() => TenantPartner)
+  declare tenantPartner: TenantPartner;
 
   @Column(DataType.DATE)
   declare finishedAt?: Date;
@@ -71,10 +75,8 @@ export class AsyncJobStatus extends BaseModelWithTenant {
     return {
       jobId: this.jobId,
       jobName: this.jobName,
-      mspCountryCode: this.mspCountryCode,
-      mspPartyId: this.mspPartyId,
-      cpoCountryCode: this.cpoCountryCode,
-      cpoPartyId: this.cpoPartyId,
+      tenantPartnerId: this.tenantPartnerId,
+      tenantPartner: this.tenantPartner,
       createdAt: this.createdAt,
       finishedAt: this.finishedAt,
       stoppedAt: this.stoppedAt,
@@ -89,10 +91,8 @@ export class AsyncJobStatus extends BaseModelWithTenant {
 export class AsyncJobStatusDTO {
   jobId!: string;
   jobName!: AsyncJobName;
-  mspCountryCode!: string;
-  mspPartyId!: string;
-  cpoCountryCode!: string;
-  cpoPartyId!: string;
+  tenantPartnerId!: number;
+  tenantPartner?: TenantPartner;
   createdAt!: Date;
   finishedAt?: Date;
   stoppedAt?: Date | null;
@@ -103,9 +103,6 @@ export class AsyncJobStatusDTO {
 }
 
 export class AsyncJobRequest {
-  mspCountryCode!: string;
-  mspPartyId!: string;
-  cpoCountryCode!: string;
-  cpoPartyId!: string;
+  tenantPartnerId!: number;
   paginatedParams!: PaginatedParams;
 }
