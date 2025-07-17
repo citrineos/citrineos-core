@@ -10,6 +10,7 @@ import {
   RealTimeAuthEnumType,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
+import { auth } from '@directus/sdk';
 
 export class RealTimeAuthorizer implements IAuthorizer {
   private _locationRepository: ILocationRepository;
@@ -28,6 +29,12 @@ export class RealTimeAuthorizer implements IAuthorizer {
   ): Promise<AuthorizationStatusEnumType> {
     if (!authorization.realTimeAuthUrl) {
       this._logger.debug(`No Realtime Auth URL from authorization ${authorization.id}`);
+      return authorization.status;
+    } else if (
+      !authorization.realTimeAuth ||
+      authorization.realTimeAuth === RealTimeAuthEnumType.Allowed
+    ) {
+      this._logger.debug(`Realtime Auth whitelisted for authorization ${authorization.id}`);
       return authorization.status;
     } else if (authorization.status !== AuthorizationStatusEnumType.Accepted) {
       this._logger.debug(
@@ -84,7 +91,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
       }
     } catch (error) {
       this._logger.error(`Real-Time Auth failed: ${error}`);
-      if (authorization.realTimeAuth === RealTimeAuthEnumType.Allowed) {
+      if (authorization.realTimeAuth === RealTimeAuthEnumType.AllowedOffline) {
         result = AuthorizationStatusEnumType.Accepted;
       }
     }

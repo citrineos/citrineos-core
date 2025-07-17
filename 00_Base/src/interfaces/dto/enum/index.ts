@@ -17,6 +17,7 @@ export enum IdTokenType {
 export enum RealTimeAuthEnumType {
   Never = 'Never',
   Allowed = 'Allowed',
+  AllowedOffline = 'AllowedOffline',
 }
 
 export enum AuthorizationStatusEnumType {
