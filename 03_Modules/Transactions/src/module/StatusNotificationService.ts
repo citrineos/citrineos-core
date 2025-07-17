@@ -58,66 +58,66 @@ export class StatusNotificationService {
         stationId,
         statusNotification,
       );
+
+      const connector = {
+        tenantId,
+        connectorId: statusNotificationRequest.connectorId,
+        stationId,
+        status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
+          statusNotificationRequest.connectorStatus,
+        ),
+        timestamp: statusNotificationRequest.timestamp
+          ? statusNotificationRequest.timestamp
+          : new Date().toISOString(),
+      } as Connector;
+      await this._locationRepository.createOrUpdateConnector(tenantId, connector);
+
+      const component = await this._componentRepository.readOnlyOneByQuery(tenantId, {
+        where: {
+          tenantId,
+          name: 'Connector',
+        },
+        include: [
+          {
+            model: EvseType,
+            where: {
+              id: statusNotificationRequest.evseId,
+              connectorId: statusNotificationRequest.connectorId,
+            },
+          },
+          {
+            model: Variable,
+            where: {
+              name: 'AvailabilityState',
+            },
+          },
+        ],
+      });
+      const variable = component?.variables?.[0];
+      if (!component || !variable) {
+        this._logger.warn(
+          'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
+        );
+      } else {
+        const reportDataType: OCPP2_0_1.ReportDataType = {
+          component: component,
+          variable: variable,
+          variableAttribute: [
+            {
+              value: statusNotificationRequest.connectorStatus,
+            },
+          ],
+        };
+        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+          tenantId,
+          reportDataType,
+          stationId,
+          statusNotificationRequest.timestamp,
+        );
+      }
     } else {
       this._logger.warn(
         `Charging station ${stationId} not found. Status notification cannot be associated with a charging station.`,
-      );
-    }
-
-    const connector = {
-      tenantId,
-      connectorId: statusNotificationRequest.connectorId,
-      stationId,
-      status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
-        statusNotificationRequest.connectorStatus,
-      ),
-      timestamp: statusNotificationRequest.timestamp
-        ? statusNotificationRequest.timestamp
-        : new Date().toISOString(),
-    } as Connector;
-    await this._locationRepository.createOrUpdateConnector(tenantId, connector);
-
-    const component = await this._componentRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        tenantId,
-        name: 'Connector',
-      },
-      include: [
-        {
-          model: EvseType,
-          where: {
-            id: statusNotificationRequest.evseId,
-            connectorId: statusNotificationRequest.connectorId,
-          },
-        },
-        {
-          model: Variable,
-          where: {
-            name: 'AvailabilityState',
-          },
-        },
-      ],
-    });
-    const variable = component?.variables?.[0];
-    if (!component || !variable) {
-      this._logger.warn(
-        'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
-      );
-    } else {
-      const reportDataType: OCPP2_0_1.ReportDataType = {
-        component: component,
-        variable: variable,
-        variableAttribute: [
-          {
-            value: statusNotificationRequest.connectorStatus,
-          },
-        ],
-      };
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-        tenantId,
-        reportDataType,
-        stationId,
-        statusNotificationRequest.timestamp,
       );
     }
   }
@@ -162,6 +162,7 @@ export class StatusNotificationService {
         vendorId: statusNotificationRequest.vendorId,
         vendorErrorCode: statusNotificationRequest.vendorErrorCode,
       } as Connector;
+
       await this._locationRepository.createOrUpdateConnector(tenantId, connector);
     } else {
       this._logger.warn(
