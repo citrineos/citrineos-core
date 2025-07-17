@@ -17,6 +17,7 @@ import { SequelizeRepository } from './Base';
 import { LocalListVersionAuthorization } from '../model/Authorization/LocalListVersionAuthorization';
 import { SendLocalListAuthorization } from '../model/Authorization/SendLocalListAuthorization';
 import { SequelizeAuthorizationRepository } from './Authorization';
+import { AuthorizationMapper } from '../mapper/2.0.1';
 
 export class SequelizeLocalAuthListRepository
   extends SequelizeRepository<LocalListVersion>
@@ -86,7 +87,11 @@ export class SequelizeLocalAuthListRepository
           `Authorization not found for ${JSON.stringify(authData)}, invalid SendLocalListRequest (create necessary Authorizations first)`,
         );
       }
-      if (authData.idToken.idToken !== auth.idToken || authData.idToken.type !== auth.idTokenType) {
+      if (
+        authData.idToken.idToken !== auth.idToken ||
+        (auth.idTokenType &&
+          authData.idToken.type !== AuthorizationMapper.toIdTokenEnumType(auth.idTokenType))
+      ) {
         throw new Error(
           `Authorization idToken in SendLocalListRequest ${JSON.stringify(authData.idToken)} does not match idToken in database { idToken: ${auth.idToken}, idTokenType: ${auth.idTokenType} } (update the idToken first)`,
         );

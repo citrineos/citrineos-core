@@ -1,4 +1,4 @@
-import { OCPP2_0_1 } from '@citrineos/base';
+import { AuthorizationStatusEnumType, IdTokenType, OCPP2_0_1 } from '@citrineos/base';
 import { Authorization } from '../../model/Authorization';
 
 export class AuthorizationMapper {
@@ -58,53 +58,107 @@ export class AuthorizationMapper {
     }
   }
 
-  static toAuthorizationStatusEnumType(status: string): OCPP2_0_1.AuthorizationStatusEnumType {
+  static toAuthorizationStatusEnumType(
+    status: AuthorizationStatusEnumType,
+  ): OCPP2_0_1.AuthorizationStatusEnumType {
     switch (status) {
-      case 'Accepted':
+      case AuthorizationStatusEnumType.Accepted:
         return OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
-      case 'Blocked':
+      case AuthorizationStatusEnumType.Blocked:
         return OCPP2_0_1.AuthorizationStatusEnumType.Blocked;
-      case 'ConcurrentTx':
+      case AuthorizationStatusEnumType.ConcurrentTx:
         return OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx;
-      case 'Expired':
+      case AuthorizationStatusEnumType.Expired:
         return OCPP2_0_1.AuthorizationStatusEnumType.Expired;
-      case 'Invalid':
+      case AuthorizationStatusEnumType.Invalid:
         return OCPP2_0_1.AuthorizationStatusEnumType.Invalid;
-      case 'NoCredit':
+      case AuthorizationStatusEnumType.NoCredit:
         return OCPP2_0_1.AuthorizationStatusEnumType.NoCredit;
-      case 'NotAllowedTypeEVSE':
+      case AuthorizationStatusEnumType.NotAllowedTypeEVSE:
         return OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE;
-      case 'NotAtThisLocation':
+      case AuthorizationStatusEnumType.NotAtThisLocation:
         return OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation;
-      case 'NotAtThisTime':
+      case AuthorizationStatusEnumType.NotAtThisTime:
         return OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisTime;
-      case 'Unknown':
+      case AuthorizationStatusEnumType.Unknown:
         return OCPP2_0_1.AuthorizationStatusEnumType.Unknown;
       default:
         throw new Error('Unknown authorization status');
     }
   }
+  static fromAuthorizationStatusEnumType(
+    status: OCPP2_0_1.AuthorizationStatusEnumType,
+  ): AuthorizationStatusEnumType {
+    switch (status) {
+      case OCPP2_0_1.AuthorizationStatusEnumType.Accepted:
+        return AuthorizationStatusEnumType.Accepted;
+      case OCPP2_0_1.AuthorizationStatusEnumType.Blocked:
+        return AuthorizationStatusEnumType.Blocked;
+      case OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx:
+        return AuthorizationStatusEnumType.ConcurrentTx;
+      case OCPP2_0_1.AuthorizationStatusEnumType.Expired:
+        return AuthorizationStatusEnumType.Expired;
+      case OCPP2_0_1.AuthorizationStatusEnumType.Invalid:
+        return AuthorizationStatusEnumType.Invalid;
+      case OCPP2_0_1.AuthorizationStatusEnumType.NoCredit:
+        return AuthorizationStatusEnumType.NoCredit;
+      case OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE:
+        return AuthorizationStatusEnumType.NotAllowedTypeEVSE;
+      case OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation:
+        return AuthorizationStatusEnumType.NotAtThisLocation;
+      case OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisTime:
+        return AuthorizationStatusEnumType.NotAtThisTime;
+      case OCPP2_0_1.AuthorizationStatusEnumType.Unknown:
+        return AuthorizationStatusEnumType.Unknown;
+      default:
+        throw new Error('Unknown authorization status');
+    }
+  }
 
-  static toIdTokenEnumType(type: string): OCPP2_0_1.IdTokenEnumType {
+  static toIdTokenEnumType(type: IdTokenType): OCPP2_0_1.IdTokenEnumType {
     switch (type) {
-      case 'Central':
+      case IdTokenType.Central:
+      case IdTokenType.Other:
         return OCPP2_0_1.IdTokenEnumType.Central;
-      case 'eMAID':
+      case IdTokenType.eMAID:
         return OCPP2_0_1.IdTokenEnumType.eMAID;
-      case 'ISO14443':
+      case IdTokenType.ISO14443:
         return OCPP2_0_1.IdTokenEnumType.ISO14443;
-      case 'ISO15693':
+      case IdTokenType.ISO15693:
         return OCPP2_0_1.IdTokenEnumType.ISO15693;
-      case 'KeyCode':
+      case IdTokenType.KeyCode:
         return OCPP2_0_1.IdTokenEnumType.KeyCode;
-      case 'Local':
+      case IdTokenType.Local:
         return OCPP2_0_1.IdTokenEnumType.Local;
-      case 'MacAddress':
+      case IdTokenType.MacAddress:
         return OCPP2_0_1.IdTokenEnumType.MacAddress;
-      case 'NoAuthorization':
+      case IdTokenType.NoAuthorization:
         return OCPP2_0_1.IdTokenEnumType.NoAuthorization;
       default:
-        throw new Error('Unknown idToken type');
+        throw new Error(`Unknown idToken type: ${type}`);
+    }
+  }
+
+  static fromIdTokenEnumType(type: OCPP2_0_1.IdTokenEnumType): IdTokenType {
+    switch (type) {
+      case OCPP2_0_1.IdTokenEnumType.Central:
+        return IdTokenType.Central;
+      case OCPP2_0_1.IdTokenEnumType.eMAID:
+        return IdTokenType.eMAID;
+      case OCPP2_0_1.IdTokenEnumType.ISO14443:
+        return IdTokenType.ISO14443;
+      case OCPP2_0_1.IdTokenEnumType.ISO15693:
+        return IdTokenType.ISO15693;
+      case OCPP2_0_1.IdTokenEnumType.KeyCode:
+        return IdTokenType.KeyCode;
+      case OCPP2_0_1.IdTokenEnumType.Local:
+        return IdTokenType.Local;
+      case OCPP2_0_1.IdTokenEnumType.MacAddress:
+        return IdTokenType.MacAddress;
+      case OCPP2_0_1.IdTokenEnumType.NoAuthorization:
+        return IdTokenType.NoAuthorization;
+      default:
+        throw new Error(`Unknown OCPP 2.0.1 idToken type: ${type}`);
     }
   }
 }

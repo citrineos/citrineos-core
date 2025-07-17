@@ -4,14 +4,19 @@ import {
   IReservationRepository,
   ITransactionEventRepository,
 } from '@citrineos/data';
-import { DEFAULT_TENANT_ID, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
+import {
+  AuthorizationStatusEnumType,
+  DEFAULT_TENANT_ID,
+  IAuthorizer,
+  OCPP1_6,
+  OCPP2_0_1,
+} from '@citrineos/base';
 import { TransactionService } from '../../src/module/TransactionService';
 import { anIdToken } from '../providers/IdTokenProvider';
 import { anAuthorization } from '../providers/AuthorizationProvider';
 
 import { aMessageContext } from '../providers/MessageContextProvider';
 import { aTransaction, aTransactionEventRequest } from '../providers/TransactionProvider';
-import { IAuthorizer } from '@citrineos/util';
 import { faker } from '@faker-js/faker';
 
 describe('TransactionService', () => {
@@ -148,7 +153,8 @@ describe('TransactionService', () => {
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
       [aTransaction(), aTransaction()],
     );
-    authorizer.authorize.mockResolvedValue({ status: 'Accepted' });
+    authorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
+    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -173,7 +179,8 @@ describe('TransactionService', () => {
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
       [aTransaction(), aTransaction()],
     );
-    authorizer.authorize.mockResolvedValue({ status: 'Accepted' });
+    authorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
+    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -197,7 +204,8 @@ describe('TransactionService', () => {
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
       [],
     );
-    authorizer.authorize.mockResolvedValue({ status: 'Accepted' });
+    authorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
+    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -221,7 +229,8 @@ describe('TransactionService', () => {
       transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken.mockResolvedValue(
         [],
       );
-      authorizer.authorize.mockResolvedValue({ status: 'Accepted' });
+      authorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
+      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
 
       // Use the same idToken as the mock authorization
       const messageContext = aMessageContext();
@@ -237,7 +246,7 @@ describe('TransactionService', () => {
 
     it('should return Blocked status when idTokenInfo is blocked', async () => {
       const authorization = anAuthorization((auth) => {
-        auth.status = OCPP1_6.StartTransactionResponseStatus.Blocked;
+        auth.status = AuthorizationStatusEnumType.Blocked;
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
