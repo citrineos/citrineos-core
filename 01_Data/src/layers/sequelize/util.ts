@@ -48,6 +48,7 @@ import {
   Subscription,
   Tariff,
   Tenant,
+  TenantPartner,
   Transaction,
   TransactionEvent,
   Variable,
@@ -177,8 +178,11 @@ export class DefaultSequelizeInstance {
         SendLocalList,
         SendLocalListAuthorization,
         Tenant,
+        TenantPartner,
       ],
       logging: (_sql: string, _timing?: number) => {},
     });
   }
 }
+
+export type JSONB<T = any> = T | Record<string, unknown>;

@@ -47,6 +47,7 @@ export {
   ChargingStationSecurityInfo,
   ChargingStationNetworkProfile,
   Tenant,
+  TenantPartner,
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
