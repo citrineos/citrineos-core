@@ -7,6 +7,7 @@ import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typesc
 import { EvseType } from '../DeviceModel';
 import { Transaction } from '../TransactionEvent';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { Evse } from '../Location';
 
 @Table
 export class ChargingNeeds extends BaseModelWithTenant implements OCPP2_0_1.ChargingNeedsType {
@@ -39,12 +40,12 @@ export class ChargingNeeds extends BaseModelWithTenant implements OCPP2_0_1.Char
   /**
    * Relations
    */
-  @ForeignKey(() => EvseType)
+  @ForeignKey(() => Evse)
   @Column(DataType.INTEGER)
-  declare evseDatabaseId: number;
+  declare evseId: number;
 
-  @BelongsTo(() => EvseType)
-  declare evse: OCPP2_0_1.EVSEType;
+  @BelongsTo(() => Evse)
+  declare evse: Evse;
 
   @ForeignKey(() => Transaction)
   @Column(DataType.INTEGER)

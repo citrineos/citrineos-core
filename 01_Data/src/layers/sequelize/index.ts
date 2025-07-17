@@ -66,6 +66,7 @@ export { Reservation } from './model/Reservation';
 export { ChargingStationSecurityInfo } from './model/ChargingStationSecurityInfo';
 export { ChangeConfiguration } from './model/ChangeConfiguration';
 export { Tenant } from './model/Tenant';
+export { TenantPartner } from './model/TenantPartner';
 
 // Sequelize Repositories
 export { SequelizeRepository } from './repository/Base';

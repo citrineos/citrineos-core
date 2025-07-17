@@ -6,7 +6,6 @@ import {
   IBaseDto,
   IChargingStationDto,
   IEvseDto,
-  IEvseTypeDto,
   IMeterValueDto,
   IStartTransactionDto,
   IStopTransactionDto,
@@ -19,7 +18,7 @@ export interface ITransactionDto extends IBaseDto {
   stationId: string;
   transactionEvents?: ITransactionEventDto[];
   chargingStation?: IChargingStationDto;
-  evse?: IEvseTypeDto | null;
+  evse?: IEvseDto | null;
   evseDatabaseId?: number;
   isActive: boolean;
   meterValues?: IMeterValueDto[];
