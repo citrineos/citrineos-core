@@ -53,9 +53,11 @@ export class AsyncJobStatus extends BaseModelWithTenant {
   @Column(DataType.DATE)
   declare stoppedAt?: Date | null;
 
+  @Default(false)
   @Column(DataType.BOOLEAN)
   declare stopScheduled: boolean;
 
+  @Default(false)
   @Column(DataType.BOOLEAN)
   declare isFailed: boolean;
 
