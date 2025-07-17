@@ -28,7 +28,7 @@ export class AsyncJobStatus extends BaseModelWithTenant {
   static readonly MODEL_NAME: string = 'AsyncJobStatus';
 
   @PrimaryKey
-  @Default(uuidv4) // Automatically generate jobId
+  @Default(() => uuidv4()) // Automatically generate jobId
   @Column(DataType.STRING)
   declare jobId: string;
 
