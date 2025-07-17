@@ -17,6 +17,7 @@ import {
   SalesTariff,
 } from '../model/ChargingProfile';
 import { Transaction } from '../model/TransactionEvent';
+import { Evse } from '../model';
 
 export class SequelizeChargingProfileRepository
   extends SequelizeRepository<ChargingProfile>
@@ -186,7 +187,7 @@ export class SequelizeChargingProfileRepository
         stationId,
         isActive: true,
       },
-      include: [{ model: EvseType, where: { id: chargingNeedsReq.evseId }, required: true }],
+      include: [{ model: Evse, where: { evseTypeId: chargingNeedsReq.evseId }, required: true }],
     });
     if (!activeTransaction) {
       throw new Error(
@@ -199,7 +200,7 @@ export class SequelizeChargingProfileRepository
       ChargingNeeds.build({
         tenantId,
         ...chargingNeedsReq.chargingNeeds,
-        evseDatabaseId: activeTransaction.evseDatabaseId,
+        evseId: activeTransaction.evseId,
         transactionDatabaseId: activeTransaction.id,
         maxScheduleTuples: chargingNeedsReq.maxScheduleTuples,
       }),

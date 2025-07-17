@@ -13,6 +13,7 @@ import { CredentialRole, Credentials, Endpoint, Version } from '../../../interfa
 
 @Table
 export class TenantPartner extends Model {
+  static readonly MODEL_NAME: string = 'TenantPartner';
   @PrimaryKey
   @Column(DataType.INTEGER)
   declare id: number;
