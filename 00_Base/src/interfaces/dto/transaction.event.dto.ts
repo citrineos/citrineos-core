@@ -21,7 +21,7 @@ export interface ITransactionEventDto extends IBaseDto {
   reservationId?: number | null;
   idTokenValue?: string | null;
   idTokenType?: string | null;
-  // transactionInfo?: any; // Uncomment and type if needed
+  transactionInfo?: any;
 }
 
 export enum TransactionEventDtoProps {

@@ -208,6 +208,10 @@ export class SequelizeTransactionEventRepository
         finalTransaction = await existingTransaction.update(
           {
             isActive: value.eventType !== OCPP2_0_1.TransactionEventEnumType.Ended,
+            endTime:
+              value.eventType === OCPP2_0_1.TransactionEventEnumType.Ended
+                ? value.timestamp
+                : undefined,
             ...value.transactionInfo,
             authorizationId,
             evseId,
@@ -221,6 +225,10 @@ export class SequelizeTransactionEventRepository
           tenantId,
           stationId,
           isActive: value.eventType !== OCPP2_0_1.TransactionEventEnumType.Ended,
+          startTime:
+            value.eventType === OCPP2_0_1.TransactionEventEnumType.Started
+              ? value.timestamp
+              : undefined,
           ...value.transactionInfo,
         });
 
