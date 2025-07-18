@@ -2,7 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IBaseDto, IConnectorDto, IEvseDto, ILocationDto, IStatusNotificationDto } from '../..';
+import {
+  ChargingStationCapability,
+  ChargingStationParkingRestriction,
+  IBaseDto,
+  IConnectorDto,
+  IEvseDto,
+  ILocationDto,
+  IStatusNotificationDto,
+} from '../..';
+import { Point } from 'geojson';
 
 export interface IChargingStationDto extends IBaseDto {
   id: string;
@@ -17,6 +26,10 @@ export interface IChargingStationDto extends IBaseDto {
   imsi?: string | null;
   meterType?: string | null;
   meterSerialNumber?: string | null;
+  coordinates?: Point | null;
+  floorLevel?: string | null;
+  parkingRestrictions?: ChargingStationParkingRestriction[] | null;
+  capabilities?: ChargingStationCapability[] | null;
   locationId?: number | null;
   statusNotifications?: IStatusNotificationDto[] | null;
   location?: ILocationDto;

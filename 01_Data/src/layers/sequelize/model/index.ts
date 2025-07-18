@@ -1,4 +1,5 @@
 // Barrel export for all models
+export * from './AsyncJob';
 export * from './Authorization';
 export * from './BaseModelWithTenant';
 export * from './Boot';

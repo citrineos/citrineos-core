@@ -2,11 +2,20 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IConnectorDto, OCPP1_6, OCPP1_6_Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
+import {
+  ConnectorErrorCode,
+  ConnectorFormatEnum,
+  ConnectorPowerType,
+  ConnectorStatus,
+  ConnectorTypeEnum,
+  IConnectorDto,
+  OCPP1_6_Namespace,
+} from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, HasMany, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 import { Evse } from './Evse';
+import { Tariff } from '../Tariff';
 
 @Table
 export class Connector extends BaseModelWithTenant implements IConnectorDto {
@@ -42,11 +51,35 @@ export class Connector extends BaseModelWithTenant implements IConnectorDto {
   })
   declare evseTypeConnectorId?: number; // This is the serial int starting at 1 used in OCPP 2.0.1 to refer to the connector, unique per EVSE.
 
-  @Column(DataType.ENUM(...Object.values(OCPP1_6.StatusNotificationRequestStatus)))
-  declare status: OCPP1_6.StatusNotificationRequestStatus;
+  @Column({
+    type: DataType.STRING,
+    defaultValue: ConnectorStatus.Unknown,
+  })
+  declare status: ConnectorStatus;
 
-  @Column(DataType.ENUM(...Object.values(OCPP1_6.StatusNotificationRequestErrorCode)))
-  declare errorCode: OCPP1_6.StatusNotificationRequestErrorCode;
+  @Column(DataType.STRING)
+  declare type?: ConnectorTypeEnum | null;
+
+  @Column(DataType.STRING)
+  declare format?: ConnectorFormatEnum | null;
+
+  @Column({
+    type: DataType.STRING,
+    defaultValue: ConnectorErrorCode.NoError,
+  })
+  declare errorCode: ConnectorErrorCode;
+
+  @Column(DataType.STRING)
+  declare powerType?: ConnectorPowerType | null;
+
+  @Column(DataType.INTEGER)
+  declare maximumAmperage?: number | null;
+
+  @Column(DataType.INTEGER)
+  declare maximumVoltage?: number | null;
+
+  @Column(DataType.INTEGER)
+  declare maximumPowerWatts?: number | null;
 
   @Column({
     type: DataType.DATE,
@@ -65,9 +98,15 @@ export class Connector extends BaseModelWithTenant implements IConnectorDto {
   @Column(DataType.STRING)
   declare vendorErrorCode?: string | null;
 
+  @Column(DataType.STRING)
+  declare termsAndConditionsUrl?: string | null;
+
   @BelongsTo(() => ChargingStation)
   declare chargingStation?: ChargingStation;
 
   @BelongsTo(() => Evse)
   declare evse?: Evse;
+
+  @HasMany(() => Tariff)
+  declare tariffs?: Tariff[];
 }
