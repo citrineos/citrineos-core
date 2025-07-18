@@ -12,7 +12,6 @@ export interface IEvseDto extends IBaseDto {
   removed?: boolean;
   chargingStation?: IChargingStationDto;
   connectors?: IConnectorDto[] | null;
-  connectorId: number;
 }
 
 export enum EvseDtoProps {
