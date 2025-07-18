@@ -11,6 +11,8 @@ export interface IEvseDto extends IBaseDto {
   physicalReference?: string | null;
   removed?: boolean;
   chargingStation?: IChargingStationDto;
+  connectors?: IConnectorDto[] | null;
+  connectorId: number;
 }
 
 export enum EvseDtoProps {

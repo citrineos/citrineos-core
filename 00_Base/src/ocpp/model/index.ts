@@ -5,3 +5,4 @@
 
 export * as OCPP1_6 from './1.6';
 export * as OCPP2_0_1 from './2.0.1';
+export * from './common';

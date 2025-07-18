@@ -3,13 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  IAuthorizationDto,
   IBaseDto,
   IChargingStationDto,
+  IConnectorDto,
   IEvseDto,
-  IEvseTypeDto,
+  ILocationDto,
   IMeterValueDto,
   IStartTransactionDto,
   IStopTransactionDto,
+  ITariffDto,
   ITransactionEventDto,
 } from '../..';
 
@@ -19,7 +22,7 @@ export interface ITransactionDto extends IBaseDto {
   stationId: string;
   transactionEvents?: ITransactionEventDto[];
   chargingStation?: IChargingStationDto;
-  evse?: IEvseTypeDto | null;
+  evse?: IEvseDto | null;
   evseDatabaseId?: number;
   isActive: boolean;
   meterValues?: IMeterValueDto[];
@@ -31,24 +34,44 @@ export interface ITransactionDto extends IBaseDto {
   stoppedReason?: any;
   remoteStartId?: number | null;
   totalCost?: number;
+  locationId?: number;
+  location?: ILocationDto;
+  evseId?: number;
+  connectorId?: number;
+  connector?: IConnectorDto | null;
+  authorizationId?: number;
+  authorization?: IAuthorizationDto;
+  tariffId?: number | null;
+  tariff?: ITariffDto | null;
+  customData?: any | null;
 }
 
 export enum TransactionDtoProps {
   id = 'id',
   transactionId = 'transactionId',
   stationId = 'stationId',
-  chargingStation = 'ChargingStation',
-  transactionEvents = 'TransactionEvents',
+  chargingStation = 'chargingStation',
+  transactionEvents = 'transactionEvents',
   evseDatabaseId = 'evseDatabaseId',
   isActive = 'isActive',
   meterValues = 'meterValues',
-  startTransaction = 'StartTransaction',
-  stopTransaction = 'StopTransaction',
+  startTransaction = 'startTransaction',
+  stopTransaction = 'stopTransaction',
   chargingState = 'chargingState',
   timeSpentCharging = 'timeSpentCharging',
   totalKwh = 'totalKwh',
   stoppedReason = 'stoppedReason',
   remoteStartId = 'remoteStartId',
   totalCost = 'totalCost',
-  evse = 'Evse',
+  evse = 'evse',
+  tariff = 'tariff',
+  locationId = 'locationId',
+  location = 'location',
+  evseId = 'evseId',
+  connectorId = 'connectorId',
+  connector = 'connector',
+  authorizationId = 'authorizationId',
+  authorization = 'authorization',
+  tariffId = 'tariffId',
+  customData = 'customData',
 }
