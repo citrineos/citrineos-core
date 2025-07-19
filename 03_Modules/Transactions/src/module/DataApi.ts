@@ -107,6 +107,7 @@ export class TransactionsDataApi
   private buildTariff(request: UpsertTariffRequest): Tariff {
     return Tariff.newInstance({
       id: request.id,
+      stationId: request.stationId,
       currency: request.currency,
       pricePerKwh: request.pricePerKwh,
       pricePerMin: request.pricePerMin,
