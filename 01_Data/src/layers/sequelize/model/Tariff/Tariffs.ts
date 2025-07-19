@@ -96,6 +96,7 @@ export class Tariff extends BaseModelWithTenant implements TariffData {
   get data(): TariffData {
     return {
       id: this.id,
+      stationId: this.stationId,
       currency: this.currency,
       pricePerKwh: this.pricePerKwh,
       pricePerMin: this.pricePerMin,
@@ -113,6 +114,7 @@ export class Tariff extends BaseModelWithTenant implements TariffData {
 
 export interface TariffData {
   id: number;
+  stationId: string;
   currency: string;
 
   pricePerKwh: number;
