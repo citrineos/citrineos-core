@@ -724,6 +724,7 @@ export class SequelizeTransactionEventRepository
         isActive: true,
         transactionId: transactionId.toString(),
         authorizationId: authorization ? authorization.id : null,
+        startTime: request.timestamp,
       });
 
       const chargingStation = await this.station.readByKey(tenantId, stationId);
@@ -765,6 +766,16 @@ export class SequelizeTransactionEventRepository
     meterValues: MeterValue[],
     reason?: string,
   ): Promise<StopTransaction> {
+    const transaction = await this.transaction.readOnlyOneByQuery(tenantId, {
+      where: { id: transactionDatabaseId },
+      include: [StartTransaction],
+    });
+
+    if (!transaction) {
+      this.logger.error(`Transaction with id ${transactionDatabaseId} not found.`);
+      throw new Error(`Transaction with id ${transactionDatabaseId} not found.`);
+    }
+
     const stopTransaction = await StopTransaction.create({
       tenantId,
       stationId,
@@ -775,6 +786,11 @@ export class SequelizeTransactionEventRepository
       meterValues,
     });
     this.stopTransaction.emit('created', [stopTransaction]);
+
+    await transaction.update({
+      endTime: timestamp,
+      isActive: false,
+    });
 
     if (meterValues.length > 0) {
       await Promise.all(
