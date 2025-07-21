@@ -393,7 +393,7 @@ export class EVDriverModule extends AbstractModule {
             context,
           );
           response.idTokenInfo.status =
-            OCPP2_0_1_Mapper.AuthorizationMapper.toAuthorizationStatusEnumType(result);
+            OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusType(result);
         }
       } else {
         // Blocked, Expired, Invalid, NoCredit, Unknown
