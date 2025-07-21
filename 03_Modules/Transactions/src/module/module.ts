@@ -725,7 +725,7 @@ export class TransactionsModule extends AbstractModule {
     }
     transaction.isActive = false;
     transaction.stoppedReason = request.reason;
-    transaction.endTime = new Date(request.timestamp);
+    transaction.endTime = request.timestamp;
     await transaction.save();
   }
 }

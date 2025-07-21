@@ -43,8 +43,8 @@ export interface ITransactionDto extends IBaseDto {
   authorization?: IAuthorizationDto;
   tariffId?: number | null;
   tariff?: ITariffDto | null;
-  startTime?: Date | null;
-  endTime?: Date | null;
+  startTime?: string | null;
+  endTime?: string | null;
   customData?: any | null;
 }
 
