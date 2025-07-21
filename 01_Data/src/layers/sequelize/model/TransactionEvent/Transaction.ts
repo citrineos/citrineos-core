@@ -111,6 +111,22 @@ export class Transaction extends BaseModelWithTenant implements ITransactionDto 
   @Column(DataType.DECIMAL)
   declare totalCost?: number;
 
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('startTime')?.toISOString();
+    },
+  })
+  declare startTime?: string;
+
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('endTime')?.toISOString();
+    },
+  })
+  declare endTime?: string;
+
   @Column(DataType.JSONB)
   declare customData?: any | null;
 }
