@@ -7,11 +7,13 @@ import {
   AbstractModule,
   AsHandler,
   AuthorizationDtoProps,
+  AuthorizationStatusType,
   CallAction,
   ChargingStationSequenceType,
   EventGroup,
   HandlerProperties,
   IAuthorizationDto,
+  IAuthorizer,
   ICache,
   IMessage,
   IMessageContext,
@@ -23,7 +25,6 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
-  RealTimeAuthEnumType,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -46,7 +47,6 @@ import {
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
-  IAuthorizer,
   IdGenerator,
   RabbitMqReceiver,
   RabbitMqSender,
@@ -79,7 +79,6 @@ export class EVDriverModule extends AbstractModule {
 
   private _certificateAuthorityService: CertificateAuthorityService;
   private _localAuthListService: LocalAuthListService;
-  private _realTimeAuthorizer: IAuthorizer;
   private _authorizers: IAuthorizer[];
   private _idGenerator: IdGenerator;
 
@@ -207,9 +206,9 @@ export class EVDriverModule extends AbstractModule {
       this._deviceModelRepository,
     );
 
-    this._authorizers = authorizers || [];
-    this._realTimeAuthorizer =
+    const _realTimeAuthorizer =
       realTimeAuthorizer || new RealTimeAuthorizer(this._locationRepository, this._logger);
+    this._authorizers = [_realTimeAuthorizer, ...(authorizers || [])];
 
     this._idGenerator =
       idGenerator ||
@@ -296,39 +295,15 @@ export class EVDriverModule extends AbstractModule {
       }
     }
 
-    let authorization = await this._authorizeRepository.readOnlyOneByQuerystring(context.tenantId, {
-      idToken: request.idToken.idToken,
-      type: request.idToken.type,
-    });
+    const authorization = await this._authorizeRepository.readOnlyOneByQuerystring(
+      context.tenantId,
+      {
+        idToken: request.idToken.idToken,
+        type: request.idToken.type,
+      },
+    );
 
     if (authorization) {
-      // Real-time authorization and update existing authorization in DB
-      let realTimeAuthResult: Partial<IAuthorizationDto> | undefined;
-      if (authorization.realTimeAuth !== RealTimeAuthEnumType.Never) {
-        try {
-          realTimeAuthResult = await this._realTimeAuthorizer.authorize(authorization, context);
-        } catch (error) {
-          this._logger.error(
-            `Real-time authorization failed for idToken: ${authorization.idToken}`,
-            error,
-          );
-          // If real-time authorization failed and realTimeAuth is Rejected,
-          // then set status to Unknown to avoid further processing
-          if (authorization.realTimeAuth === RealTimeAuthEnumType.Rejected) {
-            authorization.status = 'Unknown';
-          }
-        }
-      }
-      // Only update existing authorization if real-time authorization was successful
-      if (realTimeAuthResult) {
-        authorization = this._updateAuthorizationFromDto(authorization, realTimeAuthResult);
-        await this._authorizeRepository.updateByKey(
-          context.tenantId,
-          authorization,
-          authorization.id,
-        );
-      }
-
       // Use flat fields directly instead of authorization.idTokenInfo
       const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
       if (idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
@@ -413,11 +388,12 @@ export class EVDriverModule extends AbstractModule {
           if (response.idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
             break;
           }
-          const result: Partial<OCPP2_0_1.IdTokenType> = await authorizer.authorize(
+          const result: AuthorizationStatusType = await authorizer.authorize(
             authorization,
             context,
           );
-          Object.assign(response.idTokenInfo, result);
+          response.idTokenInfo.status =
+            OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusType(result);
         }
       } else {
         // Blocked, Expired, Invalid, NoCredit, Unknown
@@ -796,47 +772,13 @@ export class EVDriverModule extends AbstractModule {
         return;
       }
 
-      let authorization = authorizations[0];
-      // Real-time authorization and update existing authorization in DB
-      let realTimeAuthResult: Partial<IAuthorizationDto> | undefined;
-      if (authorization.realTimeAuth !== RealTimeAuthEnumType.Never) {
-        try {
-          realTimeAuthResult = await this._realTimeAuthorizer.authorize(authorization, context);
-        } catch (error) {
-          this._logger.error(
-            `Real-time authorization failed for idToken: ${authorization.idToken}`,
-            error,
-          );
-          if (authorization.realTimeAuth === RealTimeAuthEnumType.Rejected) {
-            // If real-time authorization failed and realTimeAuth is Rejected,
-            // then return invalid status without any other checks
-            response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Invalid;
-            await this.sendCallResultWithMessage(message, response);
-            this._logger.debug('Authorize response sent:', response);
-            return;
-          }
-        }
-      }
-      if (realTimeAuthResult) {
-        authorization = this._updateAuthorizationFromDto(authorization, realTimeAuthResult);
-        await this._authorizeRepository.updateByKey(
-          context.tenantId,
-          authorization,
-          authorization.id,
-        );
-      }
+      const authorization = authorizations[0];
 
       if (!authorization.status) {
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Accepted;
-      } else {
+      } else if (authorization.status === AuthorizationStatusType.Accepted) {
         const cacheExpiryDateTime = authorization.cacheExpiryDateTime;
         const groupAuthorizationId = authorization.groupAuthorizationId;
-        const status = authorization.status;
-        if (cacheExpiryDateTime && new Date() > new Date(cacheExpiryDateTime)) {
-          response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Expired;
-        } else {
-          response.idTagInfo.status = OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(status);
-        }
         response.idTagInfo.expiryDate = cacheExpiryDateTime;
         if (groupAuthorizationId) {
           // Look up the referenced Authorization for parentIdTag
@@ -847,6 +789,19 @@ export class EVDriverModule extends AbstractModule {
           if (parentAuth) {
             response.idTagInfo.parentIdTag = parentAuth.idToken;
           }
+        }
+        if (cacheExpiryDateTime && new Date() > new Date(cacheExpiryDateTime)) {
+          response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Expired;
+        } else {
+          // Apply authorizers
+          let status: AuthorizationStatusType = authorization.status;
+          for (const authorizer of this._authorizers) {
+            if (status !== AuthorizationStatusType.Accepted) {
+              break;
+            }
+            status = await authorizer.authorize(authorization, context);
+          }
+          response.idTagInfo.status = OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(status);
         }
       }
     } catch (error) {

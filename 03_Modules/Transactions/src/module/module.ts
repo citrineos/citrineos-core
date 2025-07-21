@@ -6,11 +6,13 @@
 import {
   AbstractModule,
   AsHandler,
+  AuthorizationStatusType,
   CallAction,
   CrudRepository,
   ErrorCode,
   EventGroup,
   HandlerProperties,
+  IAuthorizer,
   ICache,
   IFileStorage,
   IMessage,
@@ -43,7 +45,6 @@ import {
   VariableAttribute,
 } from '@citrineos/data';
 import {
-  IAuthorizer,
   RabbitMqReceiver,
   RabbitMqSender,
   RealTimeAuthorizer,
@@ -648,17 +649,17 @@ export class TransactionsModule extends AbstractModule {
     let idTokenInfoStatus = authorization?.status;
     if (authorization === undefined && request.idTag) {
       // Unknown idTag, fallback to Invalid
-      idTokenInfoStatus = OCPP1_6.StopTransactionResponseStatus.Invalid;
+      idTokenInfoStatus = AuthorizationStatusType.Invalid;
     }
     switch (idTokenInfoStatus) {
-      case 'Accepted':
-      case 'Blocked':
-      case 'Expired':
-      case 'ConcurrentTx':
-      case 'Invalid':
+      case AuthorizationStatusType.Accepted:
+      case AuthorizationStatusType.Blocked:
+      case AuthorizationStatusType.Expired:
+      case AuthorizationStatusType.ConcurrentTx:
+      case AuthorizationStatusType.Invalid:
         break;
       default: // Other OCPP 2.0.1 statuses default to Invalid for OCPP 1.6
-        idTokenInfoStatus = OCPP1_6.StopTransactionResponseStatus.Invalid;
+        idTokenInfoStatus = AuthorizationStatusType.Invalid;
     }
 
     let parentIdTag: string | undefined = undefined;
@@ -677,7 +678,7 @@ export class TransactionsModule extends AbstractModule {
             idTagInfo: {
               expiryDate: authorization?.cacheExpiryDateTime,
               parentIdTag,
-              status: idTokenInfoStatus as OCPP1_6.StopTransactionResponseStatus, // Ensure this is cast to the correct type
+              status: idTokenInfoStatus as unknown as OCPP1_6.StopTransactionResponseStatus,
             },
           }
         : {}),
