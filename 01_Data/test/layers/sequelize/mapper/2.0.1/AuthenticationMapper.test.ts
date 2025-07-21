@@ -1,4 +1,4 @@
-import { AuthorizationStatusEnumType, IdTokenType, OCPP2_0_1 } from '@citrineos/base';
+import { AuthorizationStatusType, IdTokenType, OCPP2_0_1 } from '@citrineos/base';
 import { AuthorizationMapper } from '../../../../../src/layers/sequelize/mapper/2.0.1';
 import { aAuthorization } from '../../../../providers/Authorization';
 
@@ -42,104 +42,102 @@ describe('AuthenticationMapper', () => {
     describe('toAuthorizationStatusEnumType', () => {
       const statuses = [
         {
-          input: AuthorizationStatusEnumType.Accepted,
+          input: AuthorizationStatusType.Accepted,
           output: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
         },
         {
-          input: AuthorizationStatusEnumType.Blocked,
+          input: AuthorizationStatusType.Blocked,
           output: OCPP2_0_1.AuthorizationStatusEnumType.Blocked,
         },
         {
-          input: AuthorizationStatusEnumType.ConcurrentTx,
+          input: AuthorizationStatusType.ConcurrentTx,
           output: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
         },
         {
-          input: AuthorizationStatusEnumType.Expired,
+          input: AuthorizationStatusType.Expired,
           output: OCPP2_0_1.AuthorizationStatusEnumType.Expired,
         },
         {
-          input: AuthorizationStatusEnumType.Invalid,
+          input: AuthorizationStatusType.Invalid,
           output: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
         },
         {
-          input: AuthorizationStatusEnumType.NoCredit,
+          input: AuthorizationStatusType.NoCredit,
           output: OCPP2_0_1.AuthorizationStatusEnumType.NoCredit,
         },
         {
-          input: AuthorizationStatusEnumType.NotAllowedTypeEVSE,
+          input: AuthorizationStatusType.NotAllowedTypeEVSE,
           output: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
         },
         {
-          input: AuthorizationStatusEnumType.NotAtThisLocation,
+          input: AuthorizationStatusType.NotAtThisLocation,
           output: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
         },
         {
-          input: AuthorizationStatusEnumType.NotAtThisTime,
+          input: AuthorizationStatusType.NotAtThisTime,
           output: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisTime,
         },
         {
-          input: AuthorizationStatusEnumType.Unknown,
+          input: AuthorizationStatusType.Unknown,
           output: OCPP2_0_1.AuthorizationStatusEnumType.Unknown,
         },
       ];
 
       statuses.forEach(({ input, output }) => {
         it(`should map ${input} to ${output}`, () => {
-          const result = AuthorizationMapper.toAuthorizationStatusEnumType(input);
+          const result = AuthorizationMapper.toAuthorizationStatusType(input);
           expect(result).toBe(output);
         });
       });
 
       it('should throw an error for unknown statuses', () => {
         expect(() =>
-          AuthorizationMapper.toAuthorizationStatusEnumType(
-            'InvalidStatus' as AuthorizationStatusEnumType,
-          ),
+          AuthorizationMapper.toAuthorizationStatusType('InvalidStatus' as AuthorizationStatusType),
         ).toThrow('Unknown authorization status');
       });
     });
 
-    describe('fromAuthorizationStatusEnumType', () => {
+    describe('fromAuthorizationStatusType', () => {
       const statuses = [
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
-          output: AuthorizationStatusEnumType.Accepted,
+          output: AuthorizationStatusType.Accepted,
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.Blocked,
-          output: AuthorizationStatusEnumType.Blocked,
+          output: AuthorizationStatusType.Blocked,
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
-          output: AuthorizationStatusEnumType.ConcurrentTx,
+          output: AuthorizationStatusType.ConcurrentTx,
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.Expired,
-          output: AuthorizationStatusEnumType.Expired,
+          output: AuthorizationStatusType.Expired,
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
-          output: AuthorizationStatusEnumType.Invalid,
+          output: AuthorizationStatusType.Invalid,
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.NoCredit,
-          output: AuthorizationStatusEnumType.NoCredit,
+          output: AuthorizationStatusType.NoCredit,
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
-          output: AuthorizationStatusEnumType.NotAllowedTypeEVSE,
+          output: AuthorizationStatusType.NotAllowedTypeEVSE,
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
-          output: AuthorizationStatusEnumType.NotAtThisLocation,
+          output: AuthorizationStatusType.NotAtThisLocation,
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisTime,
-          output: AuthorizationStatusEnumType.NotAtThisTime,
+          output: AuthorizationStatusType.NotAtThisTime,
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.Unknown,
-          output: AuthorizationStatusEnumType.Unknown,
+          output: AuthorizationStatusType.Unknown,
         },
       ];
 
@@ -152,7 +150,7 @@ describe('AuthenticationMapper', () => {
 
       it('should throw an error for unknown statuses', () => {
         expect(() =>
-          AuthorizationMapper.fromAuthorizationStatusEnumType(
+          AuthorizationMapper.fromAuthorizationStatusType(
             'InvalidStatus' as OCPP2_0_1.AuthorizationStatusEnumType,
           ),
         ).toThrow('Unknown authorization status');

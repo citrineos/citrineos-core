@@ -5,18 +5,18 @@
  *
  */
 
-import { AuthorizationStatusEnumType, OCPP1_6 } from '@citrineos/base';
+import { AuthorizationStatusType, OCPP1_6 } from '@citrineos/base';
 
 export class AuthorizationMapper {
-  static toIdTagInfoStatus(status: AuthorizationStatusEnumType): OCPP1_6.AuthorizeResponseStatus {
+  static toIdTagInfoStatus(status: AuthorizationStatusType): OCPP1_6.AuthorizeResponseStatus {
     switch (status) {
-      case AuthorizationStatusEnumType.Accepted:
+      case AuthorizationStatusType.Accepted:
         return OCPP1_6.AuthorizeResponseStatus.Accepted;
-      case AuthorizationStatusEnumType.Blocked:
+      case AuthorizationStatusType.Blocked:
         return OCPP1_6.AuthorizeResponseStatus.Blocked;
-      case AuthorizationStatusEnumType.Expired:
+      case AuthorizationStatusType.Expired:
         return OCPP1_6.AuthorizeResponseStatus.Expired;
-      case AuthorizationStatusEnumType.Invalid:
+      case AuthorizationStatusType.Invalid:
         return OCPP1_6.AuthorizeResponseStatus.Invalid;
       default:
         throw new Error('Unknown IdTagInfoStatus status');
@@ -24,18 +24,18 @@ export class AuthorizationMapper {
   }
 
   static toStartTransactionResponseStatus(
-    status: AuthorizationStatusEnumType,
+    status: AuthorizationStatusType,
   ): OCPP1_6.StartTransactionResponseStatus {
     switch (status) {
-      case AuthorizationStatusEnumType.Accepted:
+      case AuthorizationStatusType.Accepted:
         return OCPP1_6.StartTransactionResponseStatus.Accepted;
-      case AuthorizationStatusEnumType.Blocked:
+      case AuthorizationStatusType.Blocked:
         return OCPP1_6.StartTransactionResponseStatus.Blocked;
-      case AuthorizationStatusEnumType.ConcurrentTx:
+      case AuthorizationStatusType.ConcurrentTx:
         return OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
-      case AuthorizationStatusEnumType.Expired:
+      case AuthorizationStatusType.Expired:
         return OCPP1_6.StartTransactionResponseStatus.Expired;
-      case AuthorizationStatusEnumType.Invalid:
+      case AuthorizationStatusType.Invalid:
         return OCPP1_6.StartTransactionResponseStatus.Invalid;
       default:
         throw new Error('Unknown StartTransactionResponse status');

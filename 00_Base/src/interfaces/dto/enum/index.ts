@@ -14,13 +14,13 @@ export enum IdTokenType {
   Other = 'Other',
 }
 
-export enum RealTimeAuthEnumType {
+export enum AuthorizationWhitelistType {
   Never = 'Never',
   Allowed = 'Allowed',
   AllowedOffline = 'AllowedOffline',
 }
 
-export enum AuthorizationStatusEnumType {
+export enum AuthorizationStatusType {
   Accepted = 'Accepted',
   Blocked = 'Blocked',
   ConcurrentTx = 'ConcurrentTx',

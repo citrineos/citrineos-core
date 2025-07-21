@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AuthorizationStatusEnumType, IAuthorizationDto, IMessageContext } from '../..';
+import { AuthorizationStatusType, IAuthorizationDto, IMessageContext } from '../..';
 
 export interface IAuthorizer {
   /**
@@ -13,10 +13,10 @@ export interface IAuthorizer {
    * @param {IAuthorizationDto} authorization The authorization object associated with the idToken in the request. No modifications should be made to this object.
    * @param {IMessageContext} context
    *
-   * @returns {Promise<AuthorizationStatusEnumType>} The updated authorization status
+   * @returns {Promise<AuthorizationStatusType>} The updated authorization status
    **/
   authorize(
     authorization: IAuthorizationDto,
     context: IMessageContext,
-  ): Promise<AuthorizationStatusEnumType>;
+  ): Promise<AuthorizationStatusType>;
 }

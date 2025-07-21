@@ -8,7 +8,7 @@ import {
   IOCPPMessageRepository,
 } from '@citrineos/data';
 import {
-  AuthorizationStatusEnumType,
+  AuthorizationStatusType,
   IAuthorizationDto,
   IAuthorizer,
   IMessageContext,
@@ -310,10 +310,10 @@ export class TransactionService {
   private async _applyAuthorizers(
     authorization: IAuthorizationDto,
     messageContext: IMessageContext,
-  ): Promise<AuthorizationStatusEnumType> {
+  ): Promise<AuthorizationStatusType> {
     let result = authorization.status;
     for (const authorizer of this._authorizers) {
-      if (result !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
+      if (result !== AuthorizationStatusType.Accepted) {
         break;
       }
 
@@ -337,7 +337,7 @@ export class TransactionService {
 
   private _mapAuthorizationDtoToIdTokenInfo(
     dto: IAuthorizationDto,
-    status: AuthorizationStatusEnumType,
+    status: AuthorizationStatusType,
   ): OCPP2_0_1.IdTokenInfoType {
     return {
       status: status,

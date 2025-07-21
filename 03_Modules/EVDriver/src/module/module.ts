@@ -7,7 +7,7 @@ import {
   AbstractModule,
   AsHandler,
   AuthorizationDtoProps,
-  AuthorizationStatusEnumType,
+  AuthorizationStatusType,
   CallAction,
   ChargingStationSequenceType,
   EventGroup,
@@ -388,7 +388,7 @@ export class EVDriverModule extends AbstractModule {
           if (response.idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
             break;
           }
-          const result: AuthorizationStatusEnumType = await authorizer.authorize(
+          const result: AuthorizationStatusType = await authorizer.authorize(
             authorization,
             context,
           );
@@ -776,7 +776,7 @@ export class EVDriverModule extends AbstractModule {
 
       if (!authorization.status) {
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Accepted;
-      } else if (authorization.status === AuthorizationStatusEnumType.Accepted) {
+      } else if (authorization.status === AuthorizationStatusType.Accepted) {
         const cacheExpiryDateTime = authorization.cacheExpiryDateTime;
         const groupAuthorizationId = authorization.groupAuthorizationId;
         response.idTagInfo.expiryDate = cacheExpiryDateTime;
@@ -794,9 +794,9 @@ export class EVDriverModule extends AbstractModule {
           response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Expired;
         } else {
           // Apply authorizers
-          let status: AuthorizationStatusEnumType = authorization.status;
+          let status: AuthorizationStatusType = authorization.status;
           for (const authorizer of this._authorizers) {
-            if (status !== AuthorizationStatusEnumType.Accepted) {
+            if (status !== AuthorizationStatusType.Accepted) {
               break;
             }
             status = await authorizer.authorize(authorization, context);

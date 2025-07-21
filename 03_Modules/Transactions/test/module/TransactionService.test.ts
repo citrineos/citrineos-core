@@ -5,7 +5,7 @@ import {
   ITransactionEventRepository,
 } from '@citrineos/data';
 import {
-  AuthorizationStatusEnumType,
+  AuthorizationStatusType,
   DEFAULT_TENANT_ID,
   IAuthorizer,
   OCPP1_6,
@@ -153,8 +153,8 @@ describe('TransactionService', () => {
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
       [aTransaction(), aTransaction()],
     );
-    authorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
-    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
+    authorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
+    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -179,8 +179,8 @@ describe('TransactionService', () => {
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
       [aTransaction(), aTransaction()],
     );
-    authorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
-    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
+    authorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
+    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -204,8 +204,8 @@ describe('TransactionService', () => {
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
       [],
     );
-    authorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
-    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
+    authorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
+    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -229,8 +229,8 @@ describe('TransactionService', () => {
       transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken.mockResolvedValue(
         [],
       );
-      authorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
-      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnumType.Accepted);
+      authorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
+      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
 
       // Use the same idToken as the mock authorization
       const messageContext = aMessageContext();
@@ -246,7 +246,7 @@ describe('TransactionService', () => {
 
     it('should return Blocked status when idTokenInfo is blocked', async () => {
       const authorization = anAuthorization((auth) => {
-        auth.status = AuthorizationStatusEnumType.Blocked;
+        auth.status = AuthorizationStatusType.Blocked;
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 

@@ -6,7 +6,7 @@
 import {
   AbstractModule,
   AsHandler,
-  AuthorizationStatusEnumType,
+  AuthorizationStatusType,
   CallAction,
   CrudRepository,
   ErrorCode,
@@ -649,17 +649,17 @@ export class TransactionsModule extends AbstractModule {
     let idTokenInfoStatus = authorization?.status;
     if (authorization === undefined && request.idTag) {
       // Unknown idTag, fallback to Invalid
-      idTokenInfoStatus = AuthorizationStatusEnumType.Invalid;
+      idTokenInfoStatus = AuthorizationStatusType.Invalid;
     }
     switch (idTokenInfoStatus) {
-      case AuthorizationStatusEnumType.Accepted:
-      case AuthorizationStatusEnumType.Blocked:
-      case AuthorizationStatusEnumType.Expired:
-      case AuthorizationStatusEnumType.ConcurrentTx:
-      case AuthorizationStatusEnumType.Invalid:
+      case AuthorizationStatusType.Accepted:
+      case AuthorizationStatusType.Blocked:
+      case AuthorizationStatusType.Expired:
+      case AuthorizationStatusType.ConcurrentTx:
+      case AuthorizationStatusType.Invalid:
         break;
       default: // Other OCPP 2.0.1 statuses default to Invalid for OCPP 1.6
-        idTokenInfoStatus = AuthorizationStatusEnumType.Invalid;
+        idTokenInfoStatus = AuthorizationStatusType.Invalid;
     }
 
     let parentIdTag: string | undefined = undefined;

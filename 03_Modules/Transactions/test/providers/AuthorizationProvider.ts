@@ -4,10 +4,10 @@
 import { Authorization } from '@citrineos/data';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
 import {
-  AuthorizationStatusEnumType,
+  AuthorizationStatusType,
   DEFAULT_TENANT_ID,
   IdTokenType,
-  RealTimeAuthEnumType,
+  AuthorizationWhitelistType,
 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 
@@ -16,10 +16,10 @@ export function anAuthorization(updateFunction?: UpdateFunction<Authorization>):
   item.tenantId = DEFAULT_TENANT_ID;
   item.idToken = faker.string.uuid();
   item.idTokenType = IdTokenType.Central;
-  item.status = AuthorizationStatusEnumType.Accepted;
+  item.status = AuthorizationStatusType.Accepted;
   item.groupAuthorizationId = 1;
   item.cacheExpiryDateTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  item.realTimeAuth = RealTimeAuthEnumType.Never;
+  item.realTimeAuth = AuthorizationWhitelistType.Never;
   // Optionally add more default fields as needed
 
   return applyUpdateFunction(item, updateFunction);

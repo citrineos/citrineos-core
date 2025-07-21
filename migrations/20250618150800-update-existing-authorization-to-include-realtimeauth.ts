@@ -2,7 +2,7 @@
 
 /** @type {import('sequelize-cli').Migration} */
 import { QueryInterface } from 'sequelize';
-import { RealTimeAuthEnumType } from '@citrineos/base';
+import { AuthorizationWhitelistType } from '@citrineos/base';
 import { DataType } from 'sequelize-typescript';
 
 const TABLE_NAME = 'Authorizations';
@@ -10,9 +10,9 @@ const COLUMNS = [
   {
     name: 'realTimeAuth',
     attributes: {
-      type: DataType.ENUM(...Object.values(RealTimeAuthEnumType)),
+      type: DataType.ENUM(...Object.values(AuthorizationWhitelistType)),
       allowNull: false,
-      defaultValue: RealTimeAuthEnumType.Never,
+      defaultValue: AuthorizationWhitelistType.Never,
     },
   },
   {

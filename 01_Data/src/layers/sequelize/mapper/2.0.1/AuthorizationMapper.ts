@@ -1,4 +1,4 @@
-import { AuthorizationStatusEnumType, IdTokenType, OCPP2_0_1 } from '@citrineos/base';
+import { AuthorizationStatusType, IdTokenType, OCPP2_0_1 } from '@citrineos/base';
 import { Authorization } from '../../model/Authorization';
 
 export class AuthorizationMapper {
@@ -24,7 +24,7 @@ export class AuthorizationMapper {
 
   static toIdTokenInfo(authorization: Authorization): OCPP2_0_1.IdTokenInfoType {
     return {
-      status: AuthorizationMapper.toAuthorizationStatusEnumType(authorization.status),
+      status: AuthorizationMapper.toAuthorizationStatusType(authorization.status),
       cacheExpiryDateTime: authorization.cacheExpiryDateTime,
       chargingPriority: authorization.chargingPriority,
       language1: authorization.language1,
@@ -58,58 +58,58 @@ export class AuthorizationMapper {
     }
   }
 
-  static toAuthorizationStatusEnumType(
-    status: AuthorizationStatusEnumType,
+  static toAuthorizationStatusType(
+    status: AuthorizationStatusType,
   ): OCPP2_0_1.AuthorizationStatusEnumType {
     switch (status) {
-      case AuthorizationStatusEnumType.Accepted:
+      case AuthorizationStatusType.Accepted:
         return OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
-      case AuthorizationStatusEnumType.Blocked:
+      case AuthorizationStatusType.Blocked:
         return OCPP2_0_1.AuthorizationStatusEnumType.Blocked;
-      case AuthorizationStatusEnumType.ConcurrentTx:
+      case AuthorizationStatusType.ConcurrentTx:
         return OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx;
-      case AuthorizationStatusEnumType.Expired:
+      case AuthorizationStatusType.Expired:
         return OCPP2_0_1.AuthorizationStatusEnumType.Expired;
-      case AuthorizationStatusEnumType.Invalid:
+      case AuthorizationStatusType.Invalid:
         return OCPP2_0_1.AuthorizationStatusEnumType.Invalid;
-      case AuthorizationStatusEnumType.NoCredit:
+      case AuthorizationStatusType.NoCredit:
         return OCPP2_0_1.AuthorizationStatusEnumType.NoCredit;
-      case AuthorizationStatusEnumType.NotAllowedTypeEVSE:
+      case AuthorizationStatusType.NotAllowedTypeEVSE:
         return OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE;
-      case AuthorizationStatusEnumType.NotAtThisLocation:
+      case AuthorizationStatusType.NotAtThisLocation:
         return OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation;
-      case AuthorizationStatusEnumType.NotAtThisTime:
+      case AuthorizationStatusType.NotAtThisTime:
         return OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisTime;
-      case AuthorizationStatusEnumType.Unknown:
+      case AuthorizationStatusType.Unknown:
         return OCPP2_0_1.AuthorizationStatusEnumType.Unknown;
       default:
         throw new Error('Unknown authorization status');
     }
   }
-  static fromAuthorizationStatusEnumType(
+  static fromAuthorizationStatusType(
     status: OCPP2_0_1.AuthorizationStatusEnumType,
-  ): AuthorizationStatusEnumType {
+  ): AuthorizationStatusType {
     switch (status) {
       case OCPP2_0_1.AuthorizationStatusEnumType.Accepted:
-        return AuthorizationStatusEnumType.Accepted;
+        return AuthorizationStatusType.Accepted;
       case OCPP2_0_1.AuthorizationStatusEnumType.Blocked:
-        return AuthorizationStatusEnumType.Blocked;
+        return AuthorizationStatusType.Blocked;
       case OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx:
-        return AuthorizationStatusEnumType.ConcurrentTx;
+        return AuthorizationStatusType.ConcurrentTx;
       case OCPP2_0_1.AuthorizationStatusEnumType.Expired:
-        return AuthorizationStatusEnumType.Expired;
+        return AuthorizationStatusType.Expired;
       case OCPP2_0_1.AuthorizationStatusEnumType.Invalid:
-        return AuthorizationStatusEnumType.Invalid;
+        return AuthorizationStatusType.Invalid;
       case OCPP2_0_1.AuthorizationStatusEnumType.NoCredit:
-        return AuthorizationStatusEnumType.NoCredit;
+        return AuthorizationStatusType.NoCredit;
       case OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE:
-        return AuthorizationStatusEnumType.NotAllowedTypeEVSE;
+        return AuthorizationStatusType.NotAllowedTypeEVSE;
       case OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation:
-        return AuthorizationStatusEnumType.NotAtThisLocation;
+        return AuthorizationStatusType.NotAtThisLocation;
       case OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisTime:
-        return AuthorizationStatusEnumType.NotAtThisTime;
+        return AuthorizationStatusType.NotAtThisTime;
       case OCPP2_0_1.AuthorizationStatusEnumType.Unknown:
-        return AuthorizationStatusEnumType.Unknown;
+        return AuthorizationStatusType.Unknown;
       default:
         throw new Error('Unknown authorization status');
     }

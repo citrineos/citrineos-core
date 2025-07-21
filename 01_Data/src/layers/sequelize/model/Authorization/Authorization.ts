@@ -5,11 +5,11 @@
 
 import {
   AdditionalInfo,
-  AuthorizationStatusEnumType,
+  AuthorizationStatusType,
   IAuthorizationDto,
   IdTokenType,
   Namespace,
-  RealTimeAuthEnumType,
+  AuthorizationWhitelistType,
 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, Default, ForeignKey, Table } from 'sequelize-typescript';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
@@ -40,7 +40,7 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
   declare additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]] | null; // JSONB for AdditionalInfo
 
   @Column(DataType.STRING)
-  declare status: AuthorizationStatusEnumType;
+  declare status: AuthorizationStatusType;
 
   @Column({
     type: DataType.DATE,
@@ -63,7 +63,7 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
   declare personalMessage?: any | null;
 
   @Column(DataType.STRING)
-  declare realTimeAuth?: RealTimeAuthEnumType;
+  declare realTimeAuth?: AuthorizationWhitelistType;
 
   @Column(DataType.STRING)
   declare realTimeAuthUrl?: string;
