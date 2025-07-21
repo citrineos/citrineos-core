@@ -5,9 +5,6 @@ object_relationships:
   - name: Evse
     using:
       foreign_key_constraint_on: evseId
-  - name: IdToken
-    using:
-      foreign_key_constraint_on: idTokenId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
@@ -47,4 +44,4 @@ select_permissions:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ""
+    comment: ''

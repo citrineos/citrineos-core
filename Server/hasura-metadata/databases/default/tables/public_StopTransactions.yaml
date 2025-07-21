@@ -2,9 +2,6 @@ table:
   name: StopTransactions
   schema: public
 object_relationships:
-  - name: IdToken
-    using:
-      foreign_key_constraint_on: idTokenDatabaseId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
@@ -37,4 +34,4 @@ select_permissions:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ""
+    comment: ''
