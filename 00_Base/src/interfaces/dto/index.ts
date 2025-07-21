@@ -42,3 +42,4 @@ export * from './set.network.profile.dto';
 export * from './charging.station.network.profile.dto';
 export * from './event.data.dto';
 export * from './variable.monitoring.status.dto';
+export * from './async.job.dto';
