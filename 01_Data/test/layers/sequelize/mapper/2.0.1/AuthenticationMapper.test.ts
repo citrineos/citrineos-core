@@ -85,14 +85,16 @@ describe('AuthenticationMapper', () => {
 
       statuses.forEach(({ input, output }) => {
         it(`should map ${input} to ${output}`, () => {
-          const result = AuthorizationMapper.toAuthorizationStatusType(input);
+          const result = AuthorizationMapper.fromAuthorizationStatusType(input);
           expect(result).toBe(output);
         });
       });
 
       it('should throw an error for unknown statuses', () => {
         expect(() =>
-          AuthorizationMapper.toAuthorizationStatusType('InvalidStatus' as AuthorizationStatusType),
+          AuthorizationMapper.fromAuthorizationStatusType(
+            'InvalidStatus' as AuthorizationStatusType,
+          ),
         ).toThrow('Unknown authorization status');
       });
     });
@@ -143,14 +145,14 @@ describe('AuthenticationMapper', () => {
 
       statuses.forEach(({ input, output }) => {
         it(`should map ${input} to ${output}`, () => {
-          const result = AuthorizationMapper.fromAuthorizationStatusType(input);
+          const result = AuthorizationMapper.toAuthorizationStatusType(input);
           expect(result).toBe(output);
         });
       });
 
       it('should throw an error for unknown statuses', () => {
         expect(() =>
-          AuthorizationMapper.fromAuthorizationStatusType(
+          AuthorizationMapper.toAuthorizationStatusType(
             'InvalidStatus' as OCPP2_0_1.AuthorizationStatusEnumType,
           ),
         ).toThrow('Unknown authorization status');

@@ -24,7 +24,7 @@ export class AuthorizationMapper {
 
   static toIdTokenInfo(authorization: Authorization): OCPP2_0_1.IdTokenInfoType {
     return {
-      status: AuthorizationMapper.toAuthorizationStatusType(authorization.status),
+      status: AuthorizationMapper.fromAuthorizationStatusType(authorization.status),
       cacheExpiryDateTime: authorization.cacheExpiryDateTime,
       chargingPriority: authorization.chargingPriority,
       language1: authorization.language1,
@@ -58,7 +58,7 @@ export class AuthorizationMapper {
     }
   }
 
-  static toAuthorizationStatusType(
+  static fromAuthorizationStatusType(
     status: AuthorizationStatusType,
   ): OCPP2_0_1.AuthorizationStatusEnumType {
     switch (status) {
@@ -86,7 +86,7 @@ export class AuthorizationMapper {
         throw new Error('Unknown authorization status');
     }
   }
-  static fromAuthorizationStatusType(
+  static toAuthorizationStatusType(
     status: OCPP2_0_1.AuthorizationStatusEnumType,
   ): AuthorizationStatusType {
     switch (status) {

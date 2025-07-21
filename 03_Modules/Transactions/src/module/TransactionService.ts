@@ -340,7 +340,7 @@ export class TransactionService {
     status: AuthorizationStatusType,
   ): OCPP2_0_1.IdTokenInfoType {
     return {
-      status: status,
+      status: OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusType(status),
       cacheExpiryDateTime: dto.cacheExpiryDateTime ?? null,
       chargingPriority: dto.chargingPriority ?? null,
       language1: dto.language1 ?? null,
