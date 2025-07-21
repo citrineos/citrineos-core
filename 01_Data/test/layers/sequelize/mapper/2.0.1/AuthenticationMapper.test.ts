@@ -143,7 +143,7 @@ describe('AuthenticationMapper', () => {
 
       statuses.forEach(({ input, output }) => {
         it(`should map ${input} to ${output}`, () => {
-          const result = AuthorizationMapper.fromAuthorizationStatusEnumType(input);
+          const result = AuthorizationMapper.fromAuthorizationStatusType(input);
           expect(result).toBe(output);
         });
       });

@@ -102,7 +102,7 @@ describe('TransactionService', () => {
 
   it('should return status from idTokenInfo when not Accepted', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.status = OCPP2_0_1.AuthorizationStatusEnumType.Blocked;
+      auth.status = AuthorizationStatusType.Blocked;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
@@ -126,7 +126,7 @@ describe('TransactionService', () => {
   it('should return Invalid status when cacheExpiryDateTime is expired', async () => {
     const expiredDate = new Date(Date.now() - 1000).toISOString();
     const authorization = anAuthorization((auth) => {
-      auth.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
+      auth.status = AuthorizationStatusType.Accepted;
       auth.cacheExpiryDateTime = expiredDate;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
@@ -147,7 +147,7 @@ describe('TransactionService', () => {
 
   it('should not return ConcurrentTx status when there are concurrent transactions and concurrentTx is false', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
+      auth.status = AuthorizationStatusType.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
@@ -173,7 +173,7 @@ describe('TransactionService', () => {
   it('should return ConcurrentTx status when there are concurrent transactions and concurrentTx is true', async () => {
     const authorization = anAuthorization((auth) => {
       auth.concurrentTransaction = true;
-      auth.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
+      auth.status = AuthorizationStatusType.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
@@ -198,7 +198,7 @@ describe('TransactionService', () => {
 
   it('should apply authorizers when status is Accepted and transaction is started', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
+      auth.status = AuthorizationStatusType.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
