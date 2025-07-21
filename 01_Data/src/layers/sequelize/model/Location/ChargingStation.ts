@@ -2,7 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IChargingStationDto, Namespace, OCPPVersion } from '@citrineos/base';
+import {
+  ChargingStationCapability,
+  ChargingStationParkingRestriction,
+  IChargingStationDto,
+  Namespace,
+  OCPPVersion,
+} from '@citrineos/base';
 import {
   BelongsTo,
   BelongsToMany,
@@ -20,6 +26,7 @@ import { SetNetworkProfile } from './SetNetworkProfile';
 import { Connector } from './Connector';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 import { Evse } from './Evse';
+import { Point } from 'geojson';
 
 /**
  * Represents a charging station.
@@ -65,6 +72,21 @@ export class ChargingStation extends BaseModelWithTenant implements IChargingSta
 
   @Column(DataType.STRING(25))
   declare meterSerialNumber?: string | null;
+
+  /**
+   * [longitude, latitude]
+   */
+  @Column(DataType.GEOMETRY('POINT'))
+  declare coordinates?: Point | null;
+
+  @Column(DataType.STRING)
+  declare floorLevel?: string | null;
+
+  @Column(DataType.JSONB)
+  declare parkingRestrictions?: ChargingStationParkingRestriction[] | null;
+
+  @Column(DataType.JSONB)
+  declare capabilities?: ChargingStationCapability[] | null;
 
   @ForeignKey(() => Location)
   @Column(DataType.INTEGER)
