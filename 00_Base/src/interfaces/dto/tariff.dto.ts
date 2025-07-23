@@ -10,4 +10,5 @@ export interface ITariffDto extends IBaseDto {
   authorizationAmount?: number | null;
   paymentFee?: number | null;
   taxRate?: number | null;
+  tariffAltText?: object[] | null;
 }
