@@ -128,27 +128,6 @@ array_relationships:
         table:
           name: Evses
           schema: public
-  - name: IdTokenAdditionalInfos
-    using:
-      foreign_key_constraint_on:
-        column: tenantId
-        table:
-          name: IdTokenAdditionalInfos
-          schema: public
-  - name: IdTokenInfos
-    using:
-      foreign_key_constraint_on:
-        column: tenantId
-        table:
-          name: IdTokenInfos
-          schema: public
-  - name: IdTokens
-    using:
-      foreign_key_constraint_on:
-        column: tenantId
-        table:
-          name: IdTokens
-          schema: public
   - name: InstalledCertificates
     using:
       foreign_key_constraint_on:
@@ -363,4 +342,4 @@ select_permissions:
         id:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ""
+    comment: ''
