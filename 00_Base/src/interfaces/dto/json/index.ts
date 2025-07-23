@@ -4,6 +4,7 @@
 import { OCPP1_6, OCPP2_0_1 } from '../../../ocpp/model';
 
 export * from './hours';
+export * as OCPIRegistration from './ocpi.registration';
 
 export type SampledValue =
   | OCPP2_0_1.SampledValueType

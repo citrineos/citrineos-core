@@ -54,8 +54,7 @@ import { LatestStatusNotification } from './Location/LatestStatusNotification';
 import { Subscription } from './Subscription';
 import { Tariff } from './Tariff';
 import { TenantPartner } from './TenantPartner';
-import { CredentialRole, Version, Credentials } from '../../../interfaces/ocpi';
-import { JSONB } from '../util';
+import { ITenantDto, OCPIRegistration } from '@citrineos/base';
 
 export enum TenantAttributeProps {
   id = 'id',
@@ -76,7 +75,10 @@ export interface TenantCreationAttributes
   > {}
 
 @Table
-export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
+export class Tenant
+  extends Model<TenantAttributes, TenantCreationAttributes>
+  implements ITenantDto
+{
   static readonly MODEL_NAME: string = 'Tenant';
 
   @PrimaryKey
@@ -86,9 +88,24 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
   @Column(DataType.STRING)
   declare name: string;
 
+  @Column(DataType.STRING)
+  declare url: string;
+
+  @Column(DataType.STRING)
+  declare partyId: string;
+
+  @Column(DataType.STRING)
+  declare countryCode: string;
+
+  @Column(DataType.JSONB)
+  declare serverProfileOCPI?: OCPIRegistration.ServerProfile | null;
+
   /**
    * Relationships
    */
+
+  @HasMany(() => TenantPartner)
+  declare tenantPartners: TenantPartner[];
 
   @HasMany(() => Authorization)
   declare authorizations: Authorization[];
@@ -227,22 +244,4 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
 
   @HasMany(() => SendLocalListAuthorization)
   declare sendLocalListAuthorizations: SendLocalListAuthorization[];
-
-  @HasMany(() => TenantPartner)
-  declare tenantPartners: TenantPartner[];
-
-  @Column(DataType.STRING)
-  declare partyId: string;
-
-  @Column(DataType.STRING)
-  declare countryCode: string;
-
-  @Column(DataType.JSONB)
-  declare serverCredentialsRoles: JSONB<CredentialRole[]>;
-
-  @Column(DataType.JSONB)
-  declare serverVersions: JSONB<Version[]>;
-
-  @Column(DataType.JSONB)
-  declare serverCredential: JSONB<Credentials>;
 }

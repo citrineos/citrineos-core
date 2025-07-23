@@ -32,6 +32,7 @@ export * from './server.network.profile.dto';
 export * from './subscription.dto';
 export * from './tariff.dto';
 export * from './tenant.dto';
+export * from './tenant.partner.dto';
 export * from './variable.monitoring.dto';
 export * from './charging.profile.dto';
 export * from './change.availability.request.dto';
