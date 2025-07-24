@@ -79,6 +79,20 @@ export class OIDCAuthProvider implements IApiAuthProvider {
     this._logger.info(`OIDC auth provider setup with jwksUri: ${this._config.jwksUri}`);
   }
 
+  async extractToken(request: FastifyRequest): Promise<string | null> {
+    // Extract the Authorization header
+    const authHeader = request.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      this._logger.warn('No Bearer token found in request headers');
+      return null;
+    }
+
+    // Return the token without the "Bearer " prefix
+    const token = authHeader.slice(7).trim();
+    this._logger.debug('Extracted token from request:', token);
+    return token;
+  }
+
   /**
    * Authenticates a JWT token from and OIDC provider
    *

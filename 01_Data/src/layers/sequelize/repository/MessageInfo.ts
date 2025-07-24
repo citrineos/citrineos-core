@@ -5,7 +5,7 @@
 import { SequelizeRepository } from './Base';
 import { MessageInfo } from '../model/MessageInfo';
 import { IMessageInfoRepository } from '../../../interfaces';
-import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import { OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 
@@ -13,7 +13,7 @@ export class SequelizeMessageInfoRepository
   extends SequelizeRepository<MessageInfo>
   implements IMessageInfoRepository
 {
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, MessageInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 

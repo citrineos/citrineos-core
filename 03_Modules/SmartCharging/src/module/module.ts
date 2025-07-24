@@ -6,6 +6,7 @@
 import {
   AbstractModule,
   AsHandler,
+  BootstrapConfig,
   CallAction,
   ChargingStationSequenceType,
   EventGroup,
@@ -58,7 +59,7 @@ export class SmartChargingModule extends AbstractModule {
   /**
    * This is the constructor function that initializes the {@link SmartChargingModule}.
    *
-   * @param {SystemConfig} config - The `config` contains configuration settings for the module.
+   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
    *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
    *
@@ -90,7 +91,7 @@ export class SmartChargingModule extends AbstractModule {
    * represents a generator for ids.
    */
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig & SystemConfig,
     cache: ICache,
     sender?: IMessageSender,
     handler?: IMessageHandler,

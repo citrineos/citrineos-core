@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
 import { SequelizeRepository } from './Base';
 import {
   type IDeviceModelRepository,
@@ -36,7 +36,7 @@ export class SequelizeDeviceModelRepository
   variableStatus: CrudRepository<VariableStatus>;
 
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig,
     logger?: Logger<ILogObj>,
     sequelizeInstance?: Sequelize,
     variable?: CrudRepository<Variable>,
