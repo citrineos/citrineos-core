@@ -23,7 +23,6 @@ select_permissions:
         - reason
         - stationId
         - id
-        - idTokenDatabaseId
         - meterStop
         - tenantId
         - transactionDatabaseId

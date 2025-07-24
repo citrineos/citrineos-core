@@ -18,7 +18,6 @@ select_permissions:
         - stationId
         - connectorDatabaseId
         - id
-        - idTokenDatabaseId
         - meterStart
         - reservationId
         - tenantId

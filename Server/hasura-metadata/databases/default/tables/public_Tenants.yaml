@@ -2,13 +2,6 @@ table:
   name: Tenants
   schema: public
 array_relationships:
-  - name: AdditionalInfos
-    using:
-      foreign_key_constraint_on:
-        column: tenantId
-        table:
-          name: AdditionalInfos
-          schema: public
   - name: Authorizations
     using:
       foreign_key_constraint_on:

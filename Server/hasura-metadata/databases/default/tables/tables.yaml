@@ -15,6 +15,7 @@
 - '!include public_Connectors.yaml'
 - '!include public_EventData.yaml'
 - '!include public_Evses.yaml'
+- '!include public_EvseTypes.yaml'
 - '!include public_InstalledCertificates.yaml'
 - '!include public_LatestStatusNotifications.yaml'
 - '!include public_LocalListAuthorizations.yaml'
