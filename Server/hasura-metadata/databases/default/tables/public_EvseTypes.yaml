@@ -1,35 +1,39 @@
 table:
-  name: Evses
+  name: EvseTypes
   schema: public
 object_relationships:
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
 array_relationships:
-  - name: ChargingNeeds
+  - name: Components
     using:
       foreign_key_constraint_on:
-        column: evseId
+        column: evseDatabaseId
         table:
-          name: ChargingNeeds
+          name: Components
           schema: public
-  - name: Transactions
+  - name: Reservations
     using:
       foreign_key_constraint_on:
         column: evseId
         table:
-          name: Transactions
+          name: Reservations
+          schema: public
+  - name: VariableAttributes
+    using:
+      foreign_key_constraint_on:
+        column: evseDatabaseId
+        table:
+          name: VariableAttributes
           schema: public
 select_permissions:
   - role: user
     permission:
       columns:
         - id
-        - stationId
-        - evseTypeId
-        - evseId
-        - physicalReference
-        - removed
+        - databaseId
+        - connectorId
         - tenantId
         - createdAt
         - updatedAt

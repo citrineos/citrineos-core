@@ -9,7 +9,7 @@ import {
   MeterValueUtils,
   OCPP1_6,
   OCPP2_0_1,
-  SystemConfig,
+  BootstrapConfig,
 } from '@citrineos/base';
 import {
   IChargingStationSequenceRepository,
@@ -47,7 +47,7 @@ export class SequelizeTransactionEventRepository
   chargingStationSequence: IChargingStationSequenceRepository;
 
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig,
     logger?: Logger<ILogObj>,
     namespace = TransactionEvent.MODEL_NAME,
     sequelizeInstance?: Sequelize,

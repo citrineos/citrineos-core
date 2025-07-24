@@ -18,7 +18,6 @@ select_permissions:
         - stationId
         - connectorDatabaseId
         - id
-        - idTokenDatabaseId
         - meterStart
         - reservationId
         - tenantId
@@ -30,4 +29,4 @@ select_permissions:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ''
+    comment: ""

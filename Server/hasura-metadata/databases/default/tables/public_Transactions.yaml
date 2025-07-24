@@ -7,7 +7,7 @@ object_relationships:
       foreign_key_constraint_on: stationId
   - name: Evse
     using:
-      foreign_key_constraint_on: evseDatabaseId
+      foreign_key_constraint_on: evseId
   - name: StartTransaction
     using:
       foreign_key_constraint_on:
@@ -64,7 +64,7 @@ select_permissions:
         - stationId
         - stoppedReason
         - transactionId
-        - evseDatabaseId
+        - evseId
         - id
         - remoteStartId
         - tenantId

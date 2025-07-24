@@ -2,12 +2,12 @@ table:
   name: Authorizations
   schema: public
 object_relationships:
-  - name: Tenant
-    using:
-      foreign_key_constraint_on: tenantId
   - name: GroupAuthorization
     using:
       foreign_key_constraint_on: groupAuthorizationId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
 array_relationships:
   - name: LocalListAuthorizations
     using:
@@ -34,7 +34,6 @@ select_permissions:
         - personalMessage
         - groupAuthorizationId
         - concurrentTransaction
-        - customData
         - tenantId
         - createdAt
         - updatedAt

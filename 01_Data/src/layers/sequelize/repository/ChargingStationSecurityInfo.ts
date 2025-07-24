@@ -2,14 +2,14 @@ import { SequelizeRepository } from './Base';
 import { ChargingStationSecurityInfo } from '../model/ChargingStationSecurityInfo';
 import { ILogObj, Logger } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
-import { SystemConfig } from '@citrineos/base';
+import { BootstrapConfig } from '@citrineos/base';
 import { IChargingStationSecurityInfoRepository } from '../../../interfaces';
 
 export class SequelizeChargingStationSecurityInfoRepository
   extends SequelizeRepository<ChargingStationSecurityInfo>
   implements IChargingStationSecurityInfoRepository
 {
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, ChargingStationSecurityInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 

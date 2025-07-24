@@ -17,3 +17,5 @@
 **/*.tgz
 **/*.sh
 **/*.Dockerfile
+
+!directus-env-config.cjs

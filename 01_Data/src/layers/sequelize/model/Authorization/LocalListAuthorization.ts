@@ -79,7 +79,7 @@ export class LocalListAuthorization
   @Column(DataType.INTEGER)
   declare authorizationId?: string;
 
-  @BelongsTo(() => Authorization)
+  @BelongsTo(() => Authorization, { foreignKey: 'authorizationId', as: 'authorization' })
   declare authorization?: Authorization;
 
   @BelongsToMany(() => SendLocalList, () => SendLocalListAuthorization)
