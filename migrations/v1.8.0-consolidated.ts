@@ -312,7 +312,7 @@ export = {
 
       for (const table of TABLES_REQUIRING_TENANT) {
         try {
-          const tableDescription = await queryInterface.describeTable(table, { transaction });
+          const tableDescription = await queryInterface.describeTable(table);
           if (!tableDescription[TENANT_COLUMN]) {
             console.log(`Adding tenantId to ${table}...`);
             await queryInterface.addColumn(
@@ -332,7 +332,7 @@ export = {
               { transaction },
             );
           }
-        } catch (error) {
+        } catch (_error) {
           console.warn(`Table ${table} does not exist, skipping tenant column addition`);
         }
       }
@@ -371,9 +371,7 @@ export = {
       );
 
       // Check if columns exist before adding them
-      const authTableDescription = await queryInterface.describeTable('Authorizations', {
-        transaction,
-      });
+      const authTableDescription = await queryInterface.describeTable('Authorizations');
 
       // Add new flattened columns to Authorizations
       const flattenedColumns = {
@@ -463,11 +461,11 @@ export = {
       // Remove tenant columns from all tables
       for (const table of TABLES_REQUIRING_TENANT) {
         try {
-          const tableDescription = await queryInterface.describeTable(table, { transaction });
+          const tableDescription = await queryInterface.describeTable(table);
           if (tableDescription[TENANT_COLUMN]) {
             await queryInterface.removeColumn(table, TENANT_COLUMN, { transaction });
           }
-        } catch (error) {
+        } catch (_error) {
           console.warn(`Table ${table} does not exist, skipping tenant column removal`);
         }
       }
@@ -489,15 +487,13 @@ export = {
       ];
 
       try {
-        const authTableDescription = await queryInterface.describeTable('Authorizations', {
-          transaction,
-        });
+        const authTableDescription = await queryInterface.describeTable('Authorizations');
         for (const columnName of flattenedColumns) {
           if (authTableDescription[columnName]) {
             await queryInterface.removeColumn('Authorizations', columnName, { transaction });
           }
         }
-      } catch (error) {
+      } catch (_error) {
         console.warn('Authorizations table does not exist, skipping column removal');
       }
 
