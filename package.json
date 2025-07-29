@@ -26,7 +26,17 @@
     "test": "jest --config jest.config.ts",
     "coverage": "jest --config jest.config.ts --coverage",
     "prepare": "husky",
-    "migrate": "npx sequelize-cli db:migrate && echo migration completed successfully"
+    "migrate": "npx sequelize-cli db:migrate && echo migration completed successfully",
+    "migrate:consolidated": "ts-node scripts/run-consolidated-migration.ts up",
+    "migrate:consolidated:status": "ts-node scripts/run-consolidated-migration.ts status",
+    "migrate:version": "ts-node scripts/run-consolidated-migration.ts version",
+    "migrate:rollback": "ts-node scripts/run-consolidated-migration.ts down",
+    "migrate:manager": "ts-node scripts/migration-manager.ts",
+    "migrate:check": "ts-node scripts/check-migration-status.ts",
+    "migrate:select": "ts-node scripts/migration-manager.ts select",
+    "migrate:custom": "ts-node scripts/run-consolidated-migration.ts custom",
+    "migrate:custom:list": "ts-node scripts/run-consolidated-migration.ts custom:list",
+    "migrate:custom:rollback": "ts-node scripts/run-consolidated-migration.ts custom:rollback"
   },
   "lint-staged": {
     "**/*.{js,ts,jsx,tsx,json,md}": "prettier --write"
