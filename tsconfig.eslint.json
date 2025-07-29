@@ -30,7 +30,8 @@
     "./db.sync.ts",
     "jest.config.ts",
     "migrations/**/*.ts",
-    "seeders/**/*.ts"
+    "seeders/**/*.ts",
+    "scripts/**/*.ts"
   ],
   "compilerOptions": {
     "target": "es6",

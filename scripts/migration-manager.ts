@@ -429,7 +429,7 @@ export = {
       await mkdir(this.versionsDir, { recursive: true });
     }
 
-    for (const [version, versionMigrations] of versionGroups) {
+    for (const [version, versionMigrations] of Array.from(versionGroups.entries())) {
       if (versionMigrations.length === 0) continue;
 
       console.log(
@@ -454,7 +454,7 @@ export = {
     console.log('Migrations grouped by version:');
     console.log('='.repeat(50));
 
-    for (const [version, versionMigrations] of versionGroups) {
+    for (const [version, versionMigrations] of Array.from(versionGroups.entries())) {
       console.log(`\n${version.toUpperCase()} (${versionMigrations.length} migrations):`);
       for (const migration of versionMigrations) {
         console.log(`  - ${migration.filename} : ${migration.description}`);
@@ -519,7 +519,7 @@ async function main() {
       case 'select':
         await manager.createCustomBatchMigration();
         break;
-      case 'interactive':
+      case 'interactive': {
         const selected = await manager.selectMigrationsInteractively();
         if (selected.length > 0) {
           console.log(
@@ -527,6 +527,7 @@ async function main() {
           );
         }
         break;
+      }
       case 'help':
       default:
         console.log(`
@@ -565,7 +566,7 @@ Interactive Selection Syntax:
 }
 
 if (require.main === module) {
-  main();
+  void main();
 }
 
 export { MigrationManager };

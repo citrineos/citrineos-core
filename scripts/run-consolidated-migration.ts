@@ -68,7 +68,7 @@ class ConsolidatedMigrationRunner {
         'SELECT name FROM "SequelizeMeta" WHERE name LIKE \'v%.%-consolidated\' ORDER BY name',
       );
       return (results as { name: string }[]).map((r) => r.name);
-    } catch (error) {
+    } catch (_error) {
       // Table doesn't exist yet
       return [];
     }
@@ -275,7 +275,7 @@ class ConsolidatedMigrationRunner {
           console.log(`   Description: ${metadata.description}`);
           console.log(`   Created: ${metadata.createdAt}`);
           console.log(`   Migrations: ${metadata.migrations.length} files`);
-        } catch (error) {
+        } catch (_error) {
           console.log('   (Metadata not available)');
         }
       } else {
@@ -302,7 +302,7 @@ async function main() {
       case 'up':
         await runner.runAllPendingMigrations();
         break;
-      case 'down':
+      case 'down': {
         const targetVersion = args[1];
         if (!targetVersion) {
           console.error('Please specify target version for rollback');
@@ -310,7 +310,8 @@ async function main() {
         }
         await runner.rollbackToVersion(targetVersion);
         break;
-      case 'version':
+      }
+      case 'version': {
         const version = args[1];
         if (!version) {
           console.error('Please specify version to migrate to');
@@ -318,7 +319,8 @@ async function main() {
         }
         await runner.runConsolidatedMigration(`v${version}`);
         break;
-      case 'custom':
+      }
+      case 'custom': {
         const batchName = args[1];
         if (!batchName) {
           console.error('Please specify custom batch name');
@@ -326,7 +328,8 @@ async function main() {
         }
         await runner.runCustomBatchMigration(batchName);
         break;
-      case 'custom:rollback':
+      }
+      case 'custom:rollback': {
         const rollbackBatchName = args[1];
         if (!rollbackBatchName) {
           console.error('Please specify custom batch name to rollback');
@@ -334,14 +337,16 @@ async function main() {
         }
         await runner.rollbackCustomBatchMigration(rollbackBatchName);
         break;
+      }
       case 'custom:list':
         await runner.listCustomBatchMigrations();
         break;
-      case 'status':
+      case 'status': {
         await runner.createMigrationsTable();
         const migratedVersions = await runner.getMigratedVersions();
         console.log('Migrated versions:', migratedVersions);
         break;
+      }
       case 'help':
       default:
         console.log(`
@@ -386,7 +391,7 @@ Examples:
 }
 
 if (require.main === module) {
-  main();
+  void main();
 }
 
 export { ConsolidatedMigrationRunner };
