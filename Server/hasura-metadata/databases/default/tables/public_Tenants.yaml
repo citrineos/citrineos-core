@@ -114,6 +114,13 @@ array_relationships:
         table:
           name: EventData
           schema: public
+  - name: EvseTypes
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: EvseTypes
+          schema: public
   - name: Evses
     using:
       foreign_key_constraint_on:
@@ -267,6 +274,13 @@ array_relationships:
         column: tenantId
         table:
           name: Tariffs
+          schema: public
+  - name: TenantPartners
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: TenantPartners
           schema: public
   - name: TransactionEvents
     using:

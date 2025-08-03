@@ -9,10 +9,31 @@ object_relationships:
     using:
       foreign_key_constraint_on: tenantId
 array_relationships:
+  - name: Authorizations
+    using:
+      foreign_key_constraint_on:
+        column: groupAuthorizationId
+        table:
+          name: Authorizations
+          schema: public
   - name: LocalListAuthorizations
     using:
       foreign_key_constraint_on:
         column: authorizationId
+        table:
+          name: LocalListAuthorizations
+          schema: public
+  - name: Transactions
+    using:
+      foreign_key_constraint_on:
+        column: authorizationId
+        table:
+          name: Transactions
+          schema: public
+  - name: localListAuthorizationsByGroupauthorizationid
+    using:
+      foreign_key_constraint_on:
+        column: groupAuthorizationId
         table:
           name: LocalListAuthorizations
           schema: public

@@ -2,6 +2,9 @@ table:
   name: Evses
   schema: public
 object_relationships:
+  - name: ChargingStation
+    using:
+      foreign_key_constraint_on: stationId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
@@ -12,6 +15,13 @@ array_relationships:
         column: evseId
         table:
           name: ChargingNeeds
+          schema: public
+  - name: Connectors
+    using:
+      foreign_key_constraint_on:
+        column: evseId
+        table:
+          name: Connectors
           schema: public
   - name: Transactions
     using:

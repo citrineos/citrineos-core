@@ -37,6 +37,7 @@
 - "!include public_StopTransactions.yaml"
 - "!include public_Subscriptions.yaml"
 - "!include public_Tariffs.yaml"
+- "!include public_TenantPartners.yaml"
 - "!include public_Tenants.yaml"
 - "!include public_TransactionEvents.yaml"
 - "!include public_Transactions.yaml"

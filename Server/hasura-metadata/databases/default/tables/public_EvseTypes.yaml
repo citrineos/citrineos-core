@@ -20,6 +20,13 @@ array_relationships:
         table:
           name: Reservations
           schema: public
+  - name: TransactionEvents
+    using:
+      foreign_key_constraint_on:
+        column: evseId
+        table:
+          name: TransactionEvents
+          schema: public
   - name: VariableAttributes
     using:
       foreign_key_constraint_on:

@@ -2,12 +2,21 @@ table:
   name: Transactions
   schema: public
 object_relationships:
+  - name: Authorization
+    using:
+      foreign_key_constraint_on: authorizationId
   - name: ChargingStation
     using:
       foreign_key_constraint_on: stationId
+  - name: Connector
+    using:
+      foreign_key_constraint_on: connectorId
   - name: Evse
     using:
       foreign_key_constraint_on: evseId
+  - name: Location
+    using:
+      foreign_key_constraint_on: locationId
   - name: StartTransaction
     using:
       foreign_key_constraint_on:
