@@ -35,5 +35,8 @@ export enum LocationDtoProps {
   publishUpstream = 'publishUpstream',
   timeZone = 'timeZone',
   coordinates = 'coordinates',
+  parkingType = 'parkingType',
+  facilities = 'facilities',
+  openingHours = 'openingHours',
   chargingPool = 'chargingPool',
 }

@@ -48,4 +48,12 @@ export enum ConnectorDtoProps {
   vendorId = 'vendorId',
   vendorErrorCode = 'vendorErrorCode',
   evse = 'evse',
+  type = 'type',
+  format = 'format',
+  powerType = 'powerType',
+  maximumAmperage = 'maximumAmperage',
+  maximumVoltage = 'maximumVoltage',
+  maximumPowerWatts = 'maximumPowerWatts',
+  termsAndConditionsUrl = 'termsAndConditionsUrl',
+  tariffs = 'tariffs',
 }
