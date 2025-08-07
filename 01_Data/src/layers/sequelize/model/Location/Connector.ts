@@ -35,7 +35,7 @@ export class Connector extends BaseModelWithTenant implements IConnectorDto {
     allowNull: false,
     type: DataType.INTEGER,
   })
-  declare evseId: string;
+  declare evseId: number;
 
   @Column({
     unique: 'stationId_connectorId',

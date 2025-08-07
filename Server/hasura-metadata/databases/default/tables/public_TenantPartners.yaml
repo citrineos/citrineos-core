@@ -5,3 +5,11 @@ object_relationships:
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: Authorizations
+    using:
+      foreign_key_constraint_on:
+        column: tenantPartnerId
+        table:
+          name: Authorizations
+          schema: public

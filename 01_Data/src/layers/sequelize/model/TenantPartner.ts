@@ -1,7 +1,8 @@
-import { Column, DataType, Table } from 'sequelize-typescript';
+import { Column, DataType, HasMany, Table } from 'sequelize-typescript';
 import { OCPIRegistration } from '@citrineos/base';
 import { BaseModelWithTenant } from './BaseModelWithTenant';
 import { ITenantPartnerDto } from '@citrineos/base/src/interfaces/dto/tenant.partner.dto';
+import { Authorization } from './Authorization';
 
 @Table
 export class TenantPartner extends BaseModelWithTenant implements ITenantPartnerDto {
@@ -15,4 +16,7 @@ export class TenantPartner extends BaseModelWithTenant implements ITenantPartner
 
   @Column(DataType.JSONB)
   declare partnerProfileOCPI: OCPIRegistration.PartnerProfile;
+
+  @HasMany(() => Authorization)
+  declare authorizations: Authorization[];
 }
