@@ -20,7 +20,7 @@ export interface IAuthorizationDto extends IBaseDto {
   groupAuthorizationId?: number | null;
   groupAuthorization?: IAuthorizationDto;
   concurrentTransaction?: boolean;
-  realTimeAuth?: AuthorizationWhitelistType;
+  realTimeAuth?: AuthorizationWhitelistType | null;
   realTimeAuthUrl?: string;
   tenantPartnerId?: number | null;
   tenantPartner?: ITenantPartnerDto | null;
