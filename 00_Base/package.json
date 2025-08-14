@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/base",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "The base module for OCPP v2.0.1 including all interfaces. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "dist/index.js",
   "module": "dist/esm/index.js",

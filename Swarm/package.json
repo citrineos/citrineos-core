@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/swarm",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "The OCPP swarm implementation which acts right on top of an asynchronous WebSocket with separate servers for each module.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

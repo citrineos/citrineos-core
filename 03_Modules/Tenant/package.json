@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/tenant",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "The tenant module for OCPP v2.0.1. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,8 +17,8 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@citrineos/base": "1.7.1",
-    "@citrineos/data": "1.7.1",
-    "@citrineos/util": "1.7.1"
+    "@citrineos/base": "1.7.2",
+    "@citrineos/data": "1.7.2",
+    "@citrineos/util": "1.7.2"
   }
 }

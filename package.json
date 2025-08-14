@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "private": false,
   "scripts": {
     "install-all": "npm i --verbose",
