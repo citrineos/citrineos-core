@@ -11,6 +11,8 @@ export interface IMeterValueDto extends IBaseDto {
   sampledValue: [SampledValue, ...SampledValue[]];
   timestamp: string; // ISO 8601 format
   connectorId?: number | null;
+  tariffId?: number | null;
+  transactionId?: number | null;
 }
 
 export enum MeterValueDtoProps {
@@ -20,4 +22,6 @@ export enum MeterValueDtoProps {
   sampledValue = 'sampledValue',
   timestamp = 'timestamp',
   connectorId = 'connectorId',
+  tariffId = 'tariffId',
+  transactionId = 'transactionId',
 }

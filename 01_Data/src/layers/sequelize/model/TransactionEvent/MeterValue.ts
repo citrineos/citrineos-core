@@ -9,6 +9,7 @@ import { TransactionEvent } from './TransactionEvent';
 import { Transaction } from './Transaction';
 import { StopTransaction } from './StopTransaction';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { Tariff } from '../Tariff';
 
 @Table
 export class MeterValue extends BaseModelWithTenant implements IMeterValueDto {
@@ -41,4 +42,12 @@ export class MeterValue extends BaseModelWithTenant implements IMeterValueDto {
   declare connectorId?: number;
 
   declare customData?: any | null;
+
+  @ForeignKey(() => Tariff)
+  @Column(DataType.INTEGER)
+  declare tariffId?: number | null;
+
+  @ForeignKey(() => Transaction)
+  @Column(DataType.INTEGER)
+  declare transactionId?: number | null;
 }
