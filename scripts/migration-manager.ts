@@ -28,6 +28,183 @@ class MigrationManager {
   }
 
   /**
+   * Extract the 'up' logic from migration files and consolidate them
+   */
+  private extractUpMigrationLogic(migrations: MigrationInfo[]): string {
+    let consolidatedLogic = '';
+
+    for (const migration of migrations) {
+      const upLogic = this.extractMigrationMethod(migration.content, 'up');
+      if (upLogic) {
+        consolidatedLogic += `
+      // From ${migration.filename}: ${migration.description}
+      console.log('Applying migration: ${migration.filename}');
+      ${upLogic}
+`;
+      }
+    }
+
+    return consolidatedLogic || '      // No migration logic found to consolidate';
+  }
+
+  /**
+   * Extract the 'down' logic from migration files and consolidate them
+   */
+  private extractDownMigrationLogic(migrations: MigrationInfo[]): string {
+    let consolidatedLogic = '';
+
+    for (const migration of migrations) {
+      const downLogic = this.extractMigrationMethod(migration.content, 'down');
+      if (downLogic) {
+        consolidatedLogic += `
+      // Reverting ${migration.filename}: ${migration.description}
+      console.log('Reverting migration: ${migration.filename}');
+      ${downLogic}
+`;
+      }
+    }
+
+    return consolidatedLogic || '      // No rollback logic found to consolidate';
+  }
+
+  /**
+   * Extract the logic from a specific method ('up' or 'down') in a migration file
+   */
+  private extractMigrationMethod(content: string, method: 'up' | 'down'): string | null {
+    try {
+      // Match the method and extract its body
+      const methodRegex = new RegExp(
+        `${method}:\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{([\\s\\S]*?)(?=\\n\\s*},?\\s*(?:down|up):|\\n\\s*}\\s*;?\\s*$)`,
+        'g',
+      );
+
+      const match = methodRegex.exec(content);
+      if (match && match[1]) {
+        let methodBody = match[1].trim();
+
+        // Remove the outer transaction wrapper if it exists (we'll handle transactions in the consolidated migration)
+        methodBody = this.removeTransactionWrapper(methodBody);
+
+        // Clean up and format the extracted logic
+        methodBody = this.formatExtractedLogic(methodBody);
+
+        return methodBody;
+      }
+
+      return null;
+    } catch (error) {
+      console.warn(`Failed to extract ${method} method from migration content:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Remove transaction wrapper from extracted migration logic since we handle transactions at the consolidated level
+   */
+  private removeTransactionWrapper(methodBody: string): string {
+    // First, try to extract content between try/catch blocks if they exist
+    const tryMatch = methodBody.match(/try\s*{\s*([\s\S]*?)\s*}\s*catch/);
+    if (tryMatch && tryMatch[1]) {
+      methodBody = tryMatch[1];
+    }
+
+    // Remove transaction creation and management lines
+    let cleaned = methodBody
+      .replace(
+        /const\s+transaction\s*=\s*await\s+queryInterface\.sequelize\.transaction\(\);?\s*/g,
+        '',
+      )
+      .replace(/await\s+transaction\.commit\(\);?\s*/g, '')
+      .replace(/await\s+transaction\.rollback\(\);?\s*/g, '')
+      .replace(/^\s*try\s*{\s*$/gm, '')
+      .replace(/^\s*}\s*catch\s*\([^)]*\)\s*{[\s\S]*?}$/gm, '')
+      .replace(/^\s*}\s*finally\s*{[\s\S]*?}$/gm, '')
+      .replace(/^\s*console\.log\([^)]*\);\s*$/gm, '')
+      .replace(/^\s*console\.error\([^)]*\);\s*$/gm, '');
+
+    // Remove transaction parameters from queryInterface calls more precisely
+    cleaned = cleaned.replace(/,\s*{\s*transaction[^}]*}/g, '');
+    cleaned = cleaned.replace(/,\s*transaction\s*(?=[,)])/g, '');
+
+    // Clean up multiple empty lines
+    cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n');
+
+    return cleaned.trim();
+  }
+
+  /**
+   * Format and clean up extracted migration logic while preserving original formatting
+   */
+  private formatExtractedLogic(logic: string): string {
+    // Split into lines and process each line
+    const lines = logic.split('\n');
+    const processedLines: string[] = [];
+    let inMultiLineComment = false;
+
+    for (const line of lines) {
+      const originalLine = line;
+      const trimmedLine = line.trim();
+
+      // Handle multi-line comments
+      if (trimmedLine.includes('/*')) {
+        inMultiLineComment = true;
+      }
+      if (trimmedLine.includes('*/')) {
+        inMultiLineComment = false;
+        continue;
+      }
+      if (inMultiLineComment) {
+        continue;
+      }
+
+      // Skip single-line comments and empty lines, but preserve structure
+      if (!trimmedLine || trimmedLine.startsWith('//') || trimmedLine.startsWith('*')) {
+        if (trimmedLine === '') {
+          processedLines.push(''); // Preserve empty lines for readability
+        }
+        continue;
+      }
+
+      // Skip transaction-related lines that weren't caught earlier
+      if (
+        trimmedLine.includes('transaction') &&
+        (trimmedLine.includes('commit') ||
+          trimmedLine.includes('rollback') ||
+          trimmedLine.includes('await transaction'))
+      ) {
+        continue;
+      }
+
+      // Skip try/catch blocks markers
+      if (
+        trimmedLine === 'try {' ||
+        trimmedLine === '}' ||
+        trimmedLine.startsWith('} catch') ||
+        trimmedLine.startsWith('catch')
+      ) {
+        continue;
+      }
+
+      // Preserve the original indentation but ensure minimum base indentation
+      if (trimmedLine) {
+        // Calculate original indentation
+        const originalIndent = originalLine.length - originalLine.trimStart().length;
+        const baseIndent = '      '; // 6 spaces for base indentation in consolidated migration
+
+        // Preserve relative indentation
+        if (originalIndent > 0) {
+          const relativeIndent = ' '.repeat(Math.max(0, originalIndent - 4)); // Adjust for extraction context
+          processedLines.push(baseIndent + relativeIndent + trimmedLine);
+        } else {
+          processedLines.push(baseIndent + trimmedLine);
+        }
+      }
+    }
+
+    return processedLines.join('\n');
+  }
+
+  /**
    * Parse migration filename to extract info
    */
   private parseMigrationFilename(filename: string): { timestamp: string; description: string } {
@@ -316,12 +493,11 @@ export = {
       console.log('Description: ${description}');
       console.log('Migrations included: ${migrations.length}');
 
-      // TODO: Implement consolidated migration logic for selected migrations
+      // Consolidated migration logic for selected migrations
       // Extract and combine the 'up' logic from the following files:
 ${migrations.map((m) => `      // - ${m.filename}`).join('\n')}
       
-      // IMPORTANT: Implement the actual migration logic here
-      // This is a template - you must add the actual database operations
+      ${this.extractUpMigrationLogic(migrations)}
       
       await transaction.commit();
       console.log('Custom migration batch ${batchName} completed successfully!');
@@ -339,7 +515,7 @@ ${migrations.map((m) => `      // - ${m.filename}`).join('\n')}
     try {
       console.log('Rolling back custom migration batch: ${batchName}...');
 
-      // TODO: Implement rollback logic for selected migrations (in reverse order)
+      // Rollback logic for selected migrations (in reverse order)
       // Extract and combine the 'down' logic from the following files (in reverse):
 ${migrations
   .slice()
@@ -347,8 +523,7 @@ ${migrations
   .map((m) => `      // - ${m.filename}`)
   .join('\n')}
       
-      // IMPORTANT: Implement the actual rollback logic here
-      // This is a template - you must add the actual database operations
+      ${this.extractDownMigrationLogic(migrations.slice().reverse())}
 
       await transaction.commit();
       console.log('Custom migration batch ${batchName} rollback completed!');
@@ -383,8 +558,9 @@ export = {
     try {
       console.log('Starting CitrineOS ${version} consolidated migration...');
 
-      // TODO: Implement consolidated migration logic
+      // Consolidated migration logic for ${version}
       // Combine all individual migration 'up' logic here
+      ${this.extractUpMigrationLogic(migrations)}
       
       await transaction.commit();
       console.log('CitrineOS ${version} consolidated migration completed successfully!');
@@ -402,8 +578,9 @@ export = {
     try {
       console.log('Rolling back CitrineOS ${version} consolidated migration...');
 
-      // TODO: Implement consolidated rollback logic
+      // Consolidated rollback logic for ${version}
       // Combine all individual migration 'down' logic here (in reverse order)
+      ${this.extractDownMigrationLogic(migrations.slice().reverse())}
 
       await transaction.commit();
       console.log('CitrineOS ${version} consolidated migration rollback completed!');
