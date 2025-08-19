@@ -107,6 +107,10 @@ export = {
             type: DataTypes.STRING,
             allowNull: false,
           },
+          url: {
+            type: DataTypes.STRING,
+            allowNull: true,
+          },
           // OCPI fields
           countryCode: {
             type: DataTypes.STRING(2),
@@ -174,25 +178,17 @@ export = {
             onUpdate: 'CASCADE',
             onDelete: 'CASCADE',
           },
-          partnerTenantId: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: {
-              model: TENANTS_TABLE,
-              key: 'id',
-            },
-            onUpdate: 'CASCADE',
-            onDelete: 'CASCADE',
-          },
-          relationshipType: {
+          partyId: {
             type: DataTypes.STRING,
             allowNull: false,
-            defaultValue: 'partner',
           },
-          isActive: {
-            type: DataTypes.BOOLEAN,
+          countryCode: {
+            type: DataTypes.STRING,
             allowNull: false,
-            defaultValue: true,
+          },
+          partnerProfile: {
+            type: DataTypes.JSONB,
+            allowNull: true,
           },
           createdAt: {
             type: DataTypes.DATE,
@@ -205,14 +201,7 @@ export = {
             defaultValue: DataTypes.NOW,
           },
         },
-        {
-          transaction,
-          uniqueKeys: {
-            tenant_partner_unique: {
-              fields: ['tenantId', 'partnerTenantId'],
-            },
-          },
-        },
+        { transaction },
       );
 
       // =====================================
@@ -265,6 +254,10 @@ export = {
             type: DataTypes.STRING,
             allowNull: false,
           },
+          tenantPartnerId: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+          },
           finishedAt: {
             type: DataTypes.DATE,
             allowNull: true,
@@ -283,8 +276,8 @@ export = {
             allowNull: false,
             defaultValue: false,
           },
-          paginationParams: {
-            type: DataTypes.JSON,
+          paginatedParams: {
+            type: DataTypes.JSONB,
             allowNull: true,
           },
           totalObjects: {
