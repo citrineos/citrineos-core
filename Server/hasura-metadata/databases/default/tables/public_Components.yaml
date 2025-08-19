@@ -2,7 +2,7 @@ table:
   name: Components
   schema: public
 object_relationships:
-  - name: Evse
+  - name: EvseType
     using:
       foreign_key_constraint_on: evseDatabaseId
   - name: Tenant

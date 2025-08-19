@@ -58,7 +58,7 @@ For more information on the project go to [citrineos.github.io](https://citrineo
 
 Before you begin, make sure you have the following installed on your system:
 
-- Node.js (v18 or higher): [Download Node.js](https://nodejs.org/)
+- Node.js (v22.11 or higher): [Download Node.js](https://nodejs.org/)
 - npm (Node Package Manager): [Download npm](https://www.npmjs.com/get-npm)
 - Docker (Optional). Version >= 20.10: [Download Docker](https://docs.docker.com/get-docker/)
 
@@ -193,6 +193,31 @@ Furthermore, [Visual Studio
 Code](https://code.visualstudio.com/docs/setup/linux) might be handy as
 a common integrated development environment.
 
+### ARM64 (Apple Silicon) Compatibility
+
+If you're running on Apple Silicon Macs (ARM64 architecture), use the ARM64-compatible docker-compose file:
+
+```shell
+cd Server
+docker-compose -f docker-compose.arm64.yml up -d
+```
+
+The `docker-compose.arm64.yml` file includes platform specifications (`platform: linux/amd64`) and compatible image versions for:
+
+- RabbitMQ (uses version 3.12-management for better emulation compatibility)
+- PostGIS/PostgreSQL
+- MinIO and MinIO client
+- Hasura GraphQL Engine
+
+**Note:** The ARM64 version runs these services through x86_64 emulation, which may have slightly reduced performance but provides full compatibility.
+
+For regular x86_64 systems, continue using the standard `docker-compose.yml`:
+
+```shell
+cd Server
+docker-compose up -d
+```
+
 Once Docker is running, the following services should be available:
 
 - **CitrineOS** (service name: citrineos) with ports
@@ -223,39 +248,54 @@ All environment variables use the `CITRINEOS_` prefix.
 Additional prefixes can be added by passing the --env-prefix argument to nodemon (see "start:instance1" in Server/package.json)
 Here's the complete list of environment variables that are used in bootstrapping the application (this is not the full system configuration):
 
-## Basic Configuration
+## Basic Bootstrap Configuration
 
-- `CITRINEOS_CONFIG_FILENAME` - Name of the main config file (default: `config.json`)
-- `CITRINEOS_CONFIG_DIR` - Directory containing the config file (optional)
-- `CITRINEOS_FILE_ACCESS_TYPE` - Type of file access: `local`, `s3`, or `directus`
+- `BOOTSTRAP_CITRINEOS_CONFIG_FILENAME` - Name of the main config file (default: `config.json`)
+- `BOOTSTRAP_CITRINEOS_CONFIG_DIR` - Directory containing the config file (optional)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE` - Type of file access: `local`, `s3`, or `directus`
+
+## Database Configuration
+
+Database connection details (moved from system config to bootstrap config for better security and 12-factor compliance):
+
+- `BOOTSTRAP_CITRINEOS_DATABASE_HOST` - Database host (default: `localhost`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_PORT` - Database port (default: `5432`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_NAME` - Database name (default: `citrine`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_DIALECT` - Database dialect (default: `postgres`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_USERNAME` - Database username (optional)
+- `BOOTSTRAP_CITRINEOS_DATABASE_PASSWORD` - Database password (optional)
+- `BOOTSTRAP_CITRINEOS_DATABASE_SYNC` - Enable database sync (via sequelize) (true/false, default: `false`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_ALTER` - Enable database alter (via sequelize) (true/false, default: `false`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_MAX_RETRIES` - Maximum connection retries (default: `3`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_RETRY_DELAY` - Retry delay in milliseconds (default: `1000`)
 
 ## Local File Access
 
-When `CITRINEOS_FILE_ACCESS_TYPE=local`:
+When `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=local`:
 
-- `CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH` - Default file path (default: `/data`)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH` - Default file path (default: `/data`)
 
 ## S3 File Access
 
-When `CITRINEOS_FILE_ACCESS_TYPE=s3`:
+When `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=s3`:
 
-- `CITRINEOS_FILE_ACCESS_S3_REGION` - AWS region (optional)
-- `CITRINEOS_FILE_ACCESS_S3_ENDPOINT` - S3 endpoint URL (for MinIO or custom S3)
-- `CITRINEOS_FILE_ACCESS_S3_DEFAULT_BUCKET_NAME` - S3 bucket name (default: `citrineos-s3-bucket`)
-- `CITRINEOS_FILE_ACCESS_S3_FORCE_PATH_STYLE` - Force path style (true/false, default: `true`)
-- `CITRINEOS_FILE_ACCESS_S3_ACCESS_KEY_ID` - S3 access key ID
-- `CITRINEOS_FILE_ACCESS_S3_SECRET_ACCESS_KEY` - S3 secret access key
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_REGION` - AWS region (optional)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_ENDPOINT` - S3 endpoint URL (for MinIO or custom S3)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_DEFAULT_BUCKET_NAME` - S3 bucket name (default: `citrineos-s3-bucket`)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_FORCE_PATH_STYLE` - Force path style (true/false, default: `true`)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_ACCESS_KEY_ID` - S3 access key ID
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_SECRET_ACCESS_KEY` - S3 secret access key
 
 ## Directus File Access
 
 When `CITRINEOS_FILE_ACCESS_TYPE=directus`:
 
-- `CITRINEOS_FILE_ACCESS_DIRECTUS_HOST` - Directus host (default: `localhost`)
-- `CITRINEOS_FILE_ACCESS_DIRECTUS_PORT` - Directus port (default: `8055`)
-- `CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN` - Directus API token
-- `CITRINEOS_FILE_ACCESS_DIRECTUS_USERNAME` - Directus username
-- `CITRINEOS_FILE_ACCESS_DIRECTUS_PASSWORD` - Directus password
-- `CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS` - Generate flows (true/false, default: `false`)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_HOST` - Directus host (default: `localhost`)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_PORT` - Directus port (default: `8055`)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN` - Directus API token
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_USERNAME` - Directus username
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_PASSWORD` - Directus password
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS` - Generate flows (true/false, default: `false`)
 
 ## Generating OCPP Interfaces
 

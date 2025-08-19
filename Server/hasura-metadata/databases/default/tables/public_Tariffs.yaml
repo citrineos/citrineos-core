@@ -2,9 +2,20 @@ table:
   name: Tariffs
   schema: public
 object_relationships:
+  - name: Connector
+    using:
+      foreign_key_constraint_on: connectorId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: Transactions
+    using:
+      foreign_key_constraint_on:
+        column: tariffId
+        table:
+          name: Transactions
+          schema: public
 select_permissions:
   - role: user
     permission:

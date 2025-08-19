@@ -11,7 +11,7 @@ object_relationships:
   - name: Component
     using:
       foreign_key_constraint_on: componentId
-  - name: Evse
+  - name: EvseType
     using:
       foreign_key_constraint_on: evseDatabaseId
   - name: Tenant

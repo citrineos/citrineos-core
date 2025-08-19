@@ -8,6 +8,7 @@ import {
   ConnectorStatus,
   ConnectorTypeEnum,
   IBaseDto,
+  IChargingStationDto,
   IEvseDto,
   ITariffDto,
 } from '../..';
@@ -15,7 +16,7 @@ import {
 export interface IConnectorDto extends IBaseDto {
   id?: number;
   stationId: string;
-  evseId: string;
+  evseId: number;
   connectorId: number;
   evseTypeConnectorId?: number;
   status?: ConnectorStatus | null;
@@ -32,6 +33,7 @@ export interface IConnectorDto extends IBaseDto {
   vendorErrorCode?: string | null;
   termsAndConditionsUrl?: string | null;
   evse?: IEvseDto;
+  chargingStation?: IChargingStationDto;
   tariffs?: ITariffDto[] | null;
 }
 

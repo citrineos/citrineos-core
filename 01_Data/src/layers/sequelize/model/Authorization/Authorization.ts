@@ -13,6 +13,7 @@ import {
 } from '@citrineos/base';
 import { BelongsTo, Column, DataType, Default, ForeignKey, Table } from 'sequelize-typescript';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { TenantPartner } from '../TenantPartner';
 
 @Table
 export class Authorization extends BaseModelWithTenant implements IAuthorizationDto {
@@ -63,7 +64,7 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
   declare personalMessage?: any | null;
 
   @Column(DataType.STRING)
-  declare realTimeAuth?: AuthorizationWhitelistType;
+  declare realTimeAuth?: AuthorizationWhitelistType | null;
 
   @Column(DataType.STRING)
   declare realTimeAuthUrl?: string;
@@ -81,4 +82,12 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
   declare concurrentTransaction?: boolean;
 
   declare customData?: any | null;
+
+  // For cases where Authorization is owned by an upstream partner, i.e. an eMSP
+  @ForeignKey(() => TenantPartner)
+  @Column(DataType.INTEGER)
+  declare tenantPartnerId?: number | null;
+
+  @BelongsTo(() => TenantPartner)
+  declare tenantPartner?: TenantPartner | null;
 }

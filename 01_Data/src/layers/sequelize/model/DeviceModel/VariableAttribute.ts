@@ -26,6 +26,7 @@ import { VariableStatus } from './VariableStatus';
 import { ChargingStation, Evse } from '../Location';
 import { CryptoUtils } from '../../../../util/CryptoUtils';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { EvseType } from './EvseType';
 
 @Table({
   indexes: [
@@ -190,10 +191,10 @@ export class VariableAttribute
   })
   declare componentId?: number | null;
 
-  @BelongsTo(() => Evse)
+  @BelongsTo(() => EvseType)
   declare evse?: Evse;
 
-  @ForeignKey(() => Evse)
+  @ForeignKey(() => EvseType)
   @Column(DataType.INTEGER)
   declare evseDatabaseId?: number | null;
 

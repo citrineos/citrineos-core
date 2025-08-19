@@ -221,3 +221,7 @@ export enum TransactionEventEnumType {
   Started = 'Started',
   Updated = 'Updated',
 }
+
+export enum OCPIVersionNumber {
+  OCPI2_2_1 = '2.2.1',
+}

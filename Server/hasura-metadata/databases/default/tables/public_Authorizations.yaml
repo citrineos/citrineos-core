@@ -2,17 +2,41 @@ table:
   name: Authorizations
   schema: public
 object_relationships:
-  - name: Tenant
-    using:
-      foreign_key_constraint_on: tenantId
   - name: GroupAuthorization
     using:
       foreign_key_constraint_on: groupAuthorizationId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+  - name: TenantPartner
+    using:
+      foreign_key_constraint_on: tenantPartnerId
 array_relationships:
+  - name: Authorizations
+    using:
+      foreign_key_constraint_on:
+        column: groupAuthorizationId
+        table:
+          name: Authorizations
+          schema: public
   - name: LocalListAuthorizations
     using:
       foreign_key_constraint_on:
         column: authorizationId
+        table:
+          name: LocalListAuthorizations
+          schema: public
+  - name: Transactions
+    using:
+      foreign_key_constraint_on:
+        column: authorizationId
+        table:
+          name: Transactions
+          schema: public
+  - name: localListAuthorizationsByGroupauthorizationid
+    using:
+      foreign_key_constraint_on:
+        column: groupAuthorizationId
         table:
           name: LocalListAuthorizations
           schema: public
@@ -34,7 +58,6 @@ select_permissions:
         - personalMessage
         - groupAuthorizationId
         - concurrentTransaction
-        - customData
         - tenantId
         - createdAt
         - updatedAt

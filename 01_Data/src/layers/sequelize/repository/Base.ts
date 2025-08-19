@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, type SystemConfig } from '@citrineos/base';
+import { type BootstrapConfig, CrudRepository } from '@citrineos/base';
 import { type Model, type Sequelize } from 'sequelize-typescript';
 import { DefaultSequelizeInstance } from '../util';
 import { type ILogObj, Logger } from 'tslog';
@@ -23,7 +23,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
   protected logger: Logger<ILogObj>;
 
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig,
     namespace: string,
     logger?: Logger<ILogObj>,
     sequelizeInstance?: Sequelize,

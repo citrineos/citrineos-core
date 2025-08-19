@@ -2,13 +2,6 @@ table:
   name: Tenants
   schema: public
 array_relationships:
-  - name: AdditionalInfos
-    using:
-      foreign_key_constraint_on:
-        column: tenantId
-        table:
-          name: AdditionalInfos
-          schema: public
   - name: Authorizations
     using:
       foreign_key_constraint_on:
@@ -120,6 +113,13 @@ array_relationships:
         column: tenantId
         table:
           name: EventData
+          schema: public
+  - name: EvseTypes
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: EvseTypes
           schema: public
   - name: Evses
     using:
@@ -275,6 +275,13 @@ array_relationships:
         table:
           name: Tariffs
           schema: public
+  - name: TenantPartners
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: TenantPartners
+          schema: public
   - name: TransactionEvents
     using:
       foreign_key_constraint_on:
@@ -342,4 +349,4 @@ select_permissions:
         id:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ''
+    comment: ""

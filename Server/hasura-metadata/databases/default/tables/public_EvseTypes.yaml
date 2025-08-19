@@ -1,54 +1,49 @@
 table:
-  name: Connectors
+  name: EvseTypes
   schema: public
 object_relationships:
-  - name: ChargingStation
-    using:
-      foreign_key_constraint_on: stationId
-  - name: Evse
-    using:
-      foreign_key_constraint_on: evseId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
 array_relationships:
-  - name: StartTransactions
+  - name: Components
     using:
       foreign_key_constraint_on:
-        column: connectorDatabaseId
+        column: evseDatabaseId
         table:
-          name: StartTransactions
+          name: Components
           schema: public
-  - name: Tariffs
+  - name: Reservations
     using:
       foreign_key_constraint_on:
-        column: connectorId
+        column: evseId
         table:
-          name: Tariffs
+          name: Reservations
           schema: public
-  - name: Transactions
+  - name: TransactionEvents
     using:
       foreign_key_constraint_on:
-        column: connectorId
+        column: evseId
         table:
-          name: Transactions
+          name: TransactionEvents
+          schema: public
+  - name: VariableAttributes
+    using:
+      foreign_key_constraint_on:
+        column: evseDatabaseId
+        table:
+          name: VariableAttributes
           schema: public
 select_permissions:
   - role: user
     permission:
       columns:
-        - info
-        - stationId
-        - vendorErrorCode
-        - vendorId
-        - connectorId
         - id
+        - databaseId
+        - connectorId
         - tenantId
         - createdAt
-        - timestamp
         - updatedAt
-        - errorCode
-        - status
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

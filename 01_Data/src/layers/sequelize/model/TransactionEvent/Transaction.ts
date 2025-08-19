@@ -19,6 +19,7 @@ import { Evse, ChargingStation, Location, Connector } from '../Location';
 import { StartTransaction, StopTransaction } from './';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 import { Authorization } from '../Authorization';
+import { Tariff } from '..';
 
 @Table
 export class Transaction extends BaseModelWithTenant implements ITransactionDto {
@@ -62,6 +63,13 @@ export class Transaction extends BaseModelWithTenant implements ITransactionDto 
 
   @BelongsTo(() => Authorization)
   authorization?: Authorization;
+
+  @Column(DataType.INTEGER)
+  @ForeignKey(() => Tariff)
+  tariffId?: number;
+
+  @BelongsTo(() => Tariff)
+  tariff?: Tariff;
 
   @Column({
     unique: 'stationId_transactionId',
