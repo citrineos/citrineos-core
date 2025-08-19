@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/data",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "The OCPP data module which includes all persistence layer implementation.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,7 +23,7 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@citrineos/base": "1.7.1",
+    "@citrineos/base": "1.7.2",
     "@types/sequelize": "4.28.20",
     "pg": "8.11.3",
     "pg-hstore": "2.3.4",
