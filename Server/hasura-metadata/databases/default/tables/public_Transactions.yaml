@@ -31,6 +31,9 @@ object_relationships:
         table:
           name: StopTransactions
           schema: public
+  - name: Tariff
+    using:
+      foreign_key_constraint_on: tariffId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId

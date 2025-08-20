@@ -7,8 +7,25 @@ import {
   IAuthorizer,
   IMessageContext,
   AuthorizationWhitelistType,
+  IdTokenType,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
+
+export interface RealTimeAuthorizationRequestBody {
+  tenantPartnerId: number;
+  idToken: string;
+  idTokenType: IdTokenType;
+  locationId?: string;
+  stationId?: string;
+}
+
+export interface RealTimeAuthorizationResponse {
+  timestamp: string;
+  data: {
+    allowed: string;
+    reason?: string;
+  };
+}
 
 export class RealTimeAuthorizer implements IAuthorizer {
   private _locationRepository: ILocationRepository;
@@ -48,13 +65,17 @@ export class RealTimeAuthorizer implements IAuthorizer {
         context.stationId,
       );
 
-      const payload = {
+      const payload: RealTimeAuthorizationRequestBody = {
+        tenantPartnerId: authorization.tenantPartnerId!, // Required if authorization has RealTimeAuth
         idToken: authorization.idToken,
-        idTokenType: authorization.idTokenType,
-        locationId: chargingStation?.locationId,
+        idTokenType: authorization.idTokenType!,
+        locationId: chargingStation!.locationId!.toString(),
         stationId: context.stationId,
       };
 
+      this._logger.debug(
+        `Sending Realtime Auth request for authorization ${authorization.id} to url: ${authorization.realTimeAuthUrl}`,
+      );
       const response = await fetch(authorization.realTimeAuthUrl, {
         method: 'POST',
         headers: {
@@ -64,8 +85,12 @@ export class RealTimeAuthorizer implements IAuthorizer {
       });
 
       const responseJson = await response.json();
-      if (responseJson.data) {
-        switch (responseJson.data.allowed) {
+
+      const realTimeAuth: RealTimeAuthorizationResponse =
+        responseJson as RealTimeAuthorizationResponse;
+      this._logger.debug(`Real time auth response: ${realTimeAuth.data.allowed}`);
+      if (realTimeAuth) {
+        switch (realTimeAuth.data.allowed) {
           case 'ALLOWED':
             result = AuthorizationStatusType.Accepted;
             break;

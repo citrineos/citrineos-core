@@ -6,7 +6,8 @@ import { OCPIVersionNumber } from '../enum';
 
 export interface ServerProfile {
   credentialsRole: CredentialRole;
-  versionDetails: Map<Version, Endpoint[]>;
+  versionDetails: Version[];
+  versionEndpoints: Record<string, Endpoint[]>;
 }
 
 export interface PartnerProfile {

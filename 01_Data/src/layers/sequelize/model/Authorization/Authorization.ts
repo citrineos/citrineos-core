@@ -64,7 +64,7 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
   declare personalMessage?: any | null;
 
   @Column(DataType.STRING)
-  declare realTimeAuth?: AuthorizationWhitelistType;
+  declare realTimeAuth?: AuthorizationWhitelistType | null;
 
   @Column(DataType.STRING)
   declare realTimeAuthUrl?: string;

@@ -10,13 +10,14 @@ import {
   IEvseDto,
   ILocationDto,
   IStatusNotificationDto,
+  OCPPVersion,
 } from '../..';
 import { Point } from 'geojson';
 
 export interface IChargingStationDto extends IBaseDto {
   id: string;
   isOnline: boolean;
-  protocol?: any;
+  protocol?: OCPPVersion | null;
   chargePointVendor?: string | null;
   chargePointModel?: string | null;
   chargePointSerialNumber?: string | null;
@@ -57,4 +58,8 @@ export enum ChargingStationDtoProps {
   networkProfiles = 'networkProfiles',
   evses = 'evses',
   connectors = 'connectors',
+  coordinates = 'coordinates',
+  floorLevel = 'floorLevel',
+  parkingRestrictions = 'parkingRestrictions',
+  capabilities = 'capabilities',
 }

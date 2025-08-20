@@ -31,6 +31,7 @@ import { MeterValueMapper } from '../mapper/2.0.1';
 import { ChargingStation, Connector, Evse } from '../model/Location';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
 import { Authorization } from '../model/Authorization';
+import { Tariff } from '../model';
 
 export class SequelizeTransactionEventRepository
   extends SequelizeRepository<TransactionEvent>
@@ -134,17 +135,6 @@ export class SequelizeTransactionEventRepository
     value: OCPP2_0_1.TransactionEventRequest,
     stationId: string,
   ): Promise<Transaction> {
-    let evse: Evse | undefined;
-    if (value.evse) {
-      [evse] = await this.evse.readOrCreateByQuery(tenantId, {
-        where: {
-          tenantId,
-          id: value.evse.id,
-          connectorId: value.evse.connectorId ? value.evse.connectorId : null,
-        },
-      });
-    }
-
     return await this.s.transaction(async (sequelizeTransaction) => {
       let finalTransaction: Transaction;
       let created = false;
@@ -169,6 +159,7 @@ export class SequelizeTransactionEventRepository
           evseId = evse.id;
         }
         let connectorId = existingTransaction.connectorId;
+        let tariffId = existingTransaction.tariffId;
         if (!connectorId && value.evse?.connectorId) {
           const [evse] = await this.evse.readOrCreateByQuery(tenantId, {
             where: {
@@ -184,8 +175,10 @@ export class SequelizeTransactionEventRepository
               evseId: evse.id,
               evseTypeConnectorId: value.evse.connectorId,
             },
+            include: [Tariff],
           });
           connectorId = connector.id;
+          tariffId = connector.tariffs?.[0]?.id;
         }
         let authorizationId = existingTransaction.authorizationId;
         if (!authorizationId && value.idToken) {
@@ -215,6 +208,8 @@ export class SequelizeTransactionEventRepository
             ...value.transactionInfo,
             authorizationId,
             evseId,
+            connectorId,
+            tariffId,
           },
           {
             transaction: sequelizeTransaction,
@@ -249,8 +244,10 @@ export class SequelizeTransactionEventRepository
                 evseId: evse.id,
                 evseTypeConnectorId: value.evse.connectorId,
               },
+              include: [Tariff],
             });
             newTransaction.connectorId = connector.id;
+            newTransaction.tariffId = connector.tariffs?.[0]?.id;
           }
         }
 
@@ -307,7 +304,9 @@ export class SequelizeTransactionEventRepository
           transaction: sequelizeTransaction,
         });
         if (!authorization) {
-          // TODO: Log Warning...
+          this.logger.warn(
+            `Authorization not found for ${value.idToken.idToken}:${value.idToken.type}`,
+          );
         } else {
           event.idTokenValue = authorization.idToken;
           event.idTokenType = authorization.idTokenType ? authorization.idTokenType : undefined;
@@ -356,7 +355,6 @@ export class SequelizeTransactionEventRepository
             include: [EvseType],
           },
           MeterValue,
-          EvseType,
         ],
         transaction: sequelizeTransaction,
       });
@@ -392,7 +390,7 @@ export class SequelizeTransactionEventRepository
   ): Promise<Transaction | undefined> {
     return await this.transaction.readOnlyOneByQuery(tenantId, {
       where: { stationId, transactionId },
-      include: [MeterValue, EvseType],
+      include: [MeterValue],
     });
   }
 
@@ -402,14 +400,20 @@ export class SequelizeTransactionEventRepository
     evse?: OCPP2_0_1.EVSEType,
     chargingStates?: OCPP2_0_1.ChargingStateEnumType[] | undefined,
   ): Promise<Transaction[]> {
-    const includeObj = evse
+    const includeObj: any = evse
       ? [
           {
-            model: EvseType,
-            where: { id: evse.id, connectorId: evse.connectorId ? evse.connectorId : null },
+            model: Evse,
+            where: { evseTypeId: evse.id },
           },
         ]
       : [];
+    if (evse?.connectorId) {
+      includeObj.push({
+        model: Connector,
+        where: { evseTypeConnectorId: evse.connectorId },
+      });
+    }
     return await this.transaction
       .readAllByQuery(tenantId, {
         where: {
@@ -491,7 +495,6 @@ export class SequelizeTransactionEventRepository
       include: [
         { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [EvseType] },
         MeterValue,
-        EvseType,
       ],
     });
   }
@@ -508,7 +511,6 @@ export class SequelizeTransactionEventRepository
       include: [
         { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [EvseType] },
         MeterValue,
-        EvseType,
       ],
     };
 
@@ -564,12 +566,12 @@ export class SequelizeTransactionEventRepository
         stationId: stationId,
         isActive: true,
       },
-      include: [EvseType],
+      include: [Evse],
     });
 
     const evseIds: number[] = [];
     activeTransactions.forEach((transaction) => {
-      const evseId = transaction.evse?.id;
+      const evseId = transaction.evse?.evseTypeId;
       if (evseId) {
         evseIds.push(evseId);
       }
@@ -595,7 +597,7 @@ export class SequelizeTransactionEventRepository
             include: [EvseType],
           },
           MeterValue,
-          { model: EvseType, where: { id: evseId }, required: true },
+          { model: Evse, where: { evseTypeId: evseId }, required: true },
         ],
       })
       .then((transactions) => {
@@ -689,6 +691,7 @@ export class SequelizeTransactionEventRepository
           connectorId: request.connectorId,
           stationId,
         },
+        include: [Tariff],
         sequelizeTransaction,
       });
       if (!connector) {
@@ -721,6 +724,7 @@ export class SequelizeTransactionEventRepository
         stationId,
         evseId: connector.evseId,
         connectorId: connector.id,
+        tariffId: connector.tariffs?.[0]?.id,
         isActive: true,
         transactionId: transactionId.toString(),
         authorizationId: authorization ? authorization.id : null,
