@@ -34,15 +34,23 @@ class MigrationManager {
     let consolidatedLogic = '';
 
     for (const migration of migrations) {
-      // Extract only the method logic
-      const upLogic = this.extractMigrationMethod(migration.content, 'up');
+      // Extract all components including constants for this migration
+      const extracted = this.extractMigrationComponents(migration.content);
+
+      // Add constants for this specific migration
+      if (extracted.constants) {
+        consolidatedLogic += `
+      // Constants for ${migration.filename}
+      ${extracted.constants}
+`;
+      }
 
       // Add the up method logic
-      if (upLogic) {
+      if (extracted.upLogic) {
         consolidatedLogic += `
       // From ${migration.filename}: ${migration.description}
       console.log('Applying migration: ${migration.filename}');
-      ${upLogic}
+      ${extracted.upLogic}
 `;
       }
     }
@@ -57,15 +65,23 @@ class MigrationManager {
     let consolidatedLogic = '';
 
     for (const migration of migrations) {
-      // Extract only the method logic
-      const downLogic = this.extractMigrationMethod(migration.content, 'down');
+      // Extract all components including constants for this migration
+      const extracted = this.extractMigrationComponents(migration.content);
+
+      // Add constants for this specific migration
+      if (extracted.constants) {
+        consolidatedLogic += `
+      // Constants for ${migration.filename}
+      ${extracted.constants}
+`;
+      }
 
       // Add the down method logic
-      if (downLogic) {
+      if (extracted.downLogic) {
         consolidatedLogic += `
       // Reverting ${migration.filename}: ${migration.description}
       console.log('Reverting migration: ${migration.filename}');
-      ${downLogic}
+      ${extracted.downLogic}
 `;
       }
     }
@@ -671,27 +687,44 @@ class MigrationManager {
 
     const description = await this.promptUser('Enter batch description: ');
 
+    // Ask user for migration mode preference
+    console.log('\n🎯 Choose Migration Mode:\n');
+    console.log('1. Consolidated - Copy all migration logic into batch file');
+    console.log('2. Reference - Create batch file that imports and executes original migrations\n');
+
+    const modeChoice = await this.promptUser('Choose mode (1 for Consolidated, 2 for Reference): ');
+    const useReference = modeChoice === '2';
+
     // Ensure versions directory exists
     if (!existsSync(this.versionsDir)) {
       await mkdir(this.versionsDir, { recursive: true });
     }
 
-    const consolidatedContent = this.generateCustomConsolidatedMigration(
-      batchName,
-      description || 'Custom migration batch',
-      selectedMigrations,
-    );
+    const consolidatedContent = useReference
+      ? this.generateCustomReferenceMigration(
+          batchName,
+          description || 'Custom migration batch',
+          selectedMigrations,
+        )
+      : this.generateCustomConsolidatedMigration(
+          batchName,
+          description || 'Custom migration batch',
+          selectedMigrations,
+        );
 
-    const outputFile = join(this.versionsDir, `${batchName}-consolidated.ts`);
+    const suffix = useReference ? 'reference' : 'consolidated';
+    const outputFile = join(this.versionsDir, `${batchName}-${suffix}.ts`);
 
     await writeFile(outputFile, consolidatedContent, 'utf-8');
-    console.log(`\n✅ Custom batch migration created: ${outputFile}`);
+    const modeDescription = useReference ? 'reference' : 'consolidated';
+    console.log(`\n✅ Custom ${modeDescription} batch migration created: ${outputFile}`);
 
     // Create metadata file
     const metadataFile = join(this.versionsDir, `${batchName}-metadata.json`);
     const metadata = {
       batchName,
       description,
+      mode: useReference ? 'reference' : 'consolidated',
       createdAt: new Date().toISOString(),
       migrations: selectedMigrations.map((m) => ({
         filename: m.filename,
@@ -705,6 +738,13 @@ class MigrationManager {
 
     console.log(`\n🚀 To run this custom batch migration:`);
     console.log(`   ts-node scripts/run-consolidated-migration.ts custom ${batchName}`);
+
+    if (useReference) {
+      console.log(
+        '\n📝 Note: Reference migration imports and executes the original migration files.',
+      );
+      console.log('Make sure the original migration files remain in their current locations.');
+    }
   }
 
   /**
@@ -724,28 +764,17 @@ class MigrationManager {
         ? `${migrationTimestamps[0]} to ${migrationTimestamps[migrationTimestamps.length - 1]}`
         : migrationTimestamps[0];
 
-    // Extract and consolidate imports and constants
+    // Extract and consolidate only imports (constants will be placed per-migration)
     const allImports: string[] = [];
-    const constantsArray: { filename: string; constants: string }[] = [];
 
     for (const migration of migrations) {
       const extracted = this.extractMigrationComponents(migration.content);
-
       // Collect all imports
       allImports.push(...extracted.imports);
-
-      // Collect constants with filename for better consolidation
-      if (extracted.constants) {
-        constantsArray.push({
-          filename: migration.filename,
-          constants: extracted.constants,
-        });
-      }
     }
 
-    // Use smart consolidation
+    // Use smart consolidation for imports only
     const consolidatedImports = this.consolidateImports(allImports);
-    const consolidatedConstants = this.consolidateConstants(constantsArray);
 
     const importsSection = consolidatedImports.join('\n');
     const upLogic = this.extractUpMigrationLogic(migrations);
@@ -755,7 +784,7 @@ class MigrationManager {
 
 ${importsSection}
 
-${consolidatedConstants ? consolidatedConstants + '\n\n' : ''}/**
+/**
  * CitrineOS Custom Migration Batch: ${batchName}
  * 
  * Description: ${description}
@@ -810,28 +839,17 @@ export = {
   private generateConsolidatedMigration(version: string, migrations: MigrationInfo[]): string {
     const migrationList = migrations.map((m) => `// - ${m.filename}`).join('\n');
 
-    // Extract and consolidate imports and constants
+    // Extract and consolidate only imports (constants will be placed per-migration)
     const allImports: string[] = [];
-    const constantsArray: { filename: string; constants: string }[] = [];
 
     for (const migration of migrations) {
       const extracted = this.extractMigrationComponents(migration.content);
-
       // Collect all imports
       allImports.push(...extracted.imports);
-
-      // Collect constants with filename for better consolidation
-      if (extracted.constants) {
-        constantsArray.push({
-          filename: migration.filename,
-          constants: extracted.constants,
-        });
-      }
     }
 
-    // Use smart consolidation
+    // Use smart consolidation for imports only
     const consolidatedImports = this.consolidateImports(allImports);
-    const consolidatedConstants = this.consolidateConstants(constantsArray);
 
     const importsSection = consolidatedImports.join('\n');
     const upLogic = this.extractUpMigrationLogic(migrations);
@@ -841,7 +859,7 @@ export = {
 
 ${importsSection}
 
-${consolidatedConstants ? consolidatedConstants + '\n\n' : ''}/**
+/**
  * CitrineOS ${version} Consolidated Migration
  * 
  * This migration consolidates all database schema changes for ${version}:
@@ -894,6 +912,14 @@ export = {
     const migrations = await this.readMigrations();
     const versionGroups = this.groupMigrationsByVersion(migrations);
 
+    // Ask user for migration mode preference
+    console.log('\n🎯 Choose Migration Mode:\n');
+    console.log('1. Consolidated - Copy all migration logic into batch files (current behavior)');
+    console.log('2. Reference - Create batch files that import and execute original migrations\n');
+
+    const modeChoice = await this.promptUser('Choose mode (1 for Consolidated, 2 for Reference): ');
+    const useReference = modeChoice === '2';
+
     // Ensure versions directory exists
     if (!existsSync(this.versionsDir)) {
       await mkdir(this.versionsDir, { recursive: true });
@@ -902,15 +928,30 @@ export = {
     for (const [version, versionMigrations] of Array.from(versionGroups.entries())) {
       if (versionMigrations.length === 0) continue;
 
+      const modeDescription = useReference ? 'reference' : 'consolidated';
       console.log(
-        `Creating batch migration for ${version} (${versionMigrations.length} migrations)`,
+        `Creating ${modeDescription} batch migration for ${version} (${versionMigrations.length} migrations)`,
       );
 
-      const consolidatedContent = this.generateConsolidatedMigration(version, versionMigrations);
-      const outputFile = join(this.versionsDir, `${version}-consolidated.ts`);
+      const consolidatedContent = useReference
+        ? this.generateReferenceMigration(version, versionMigrations)
+        : this.generateConsolidatedMigration(version, versionMigrations);
+
+      const suffix = useReference ? 'reference' : 'consolidated';
+      const outputFile = join(this.versionsDir, `${version}-${suffix}.ts`);
 
       await writeFile(outputFile, consolidatedContent, 'utf-8');
       console.log(`Created: ${outputFile}`);
+    }
+
+    const modeDescription = useReference ? 'reference' : 'consolidated';
+    console.log(`\n✅ All ${modeDescription} batch migrations created successfully!`);
+
+    if (useReference) {
+      console.log(
+        '\n📝 Note: Reference migrations import and execute the original migration files.',
+      );
+      console.log('Make sure the original migration files remain in their current locations.');
     }
   }
 
@@ -933,8 +974,223 @@ export = {
   }
 
   /**
-   * Generate migration summary report
+   * Generate reference-based migration that imports and runs original migrations
    */
+  private generateReferenceMigration(version: string, migrations: MigrationInfo[]): string {
+    const migrationList = migrations.map((m) => `// - ${m.filename}`).join('\n');
+
+    // Generate import statements for each migration
+    const migrationImports = migrations
+      .map((migration, index) => {
+        const migrationName = `migration${index + 1}`;
+        const relativePath = `../${migration.filename.replace('.ts', '')}`;
+        // Check if migration uses 'export =' or 'module.exports =' (CommonJS) or 'export default' (ES modules)
+        const usesExportEquals = migration.content.includes('export =');
+        const usesModuleExports = migration.content.includes('module.exports =');
+
+        if (usesExportEquals) {
+          return `import ${migrationName} from '${relativePath}';`;
+        } else if (usesModuleExports) {
+          return `import ${migrationName} from '${relativePath}';`;
+        } else {
+          return `import * as ${migrationName} from '${relativePath}';`;
+        }
+      })
+      .join('\n');
+
+    // Generate migration execution calls
+    const upCalls = migrations
+      .map((migration, index) => {
+        const migrationName = `migration${index + 1}`;
+        return `
+      // From ${migration.filename}: ${migration.description}
+      console.log('Applying migration: ${migration.filename}');
+      await ${migrationName}.up(queryInterface);`;
+      })
+      .join('\n');
+
+    const downCalls = migrations
+      .slice()
+      .reverse()
+      .map((migration, index) => {
+        const migrationName = `migration${migrations.length - index}`;
+        return `
+      // Reverting ${migration.filename}: ${migration.description}
+      console.log('Reverting migration: ${migration.filename}');
+      await ${migrationName}.down(queryInterface);`;
+      })
+      .join('\n');
+
+    return `'use strict';
+
+import { QueryInterface } from 'sequelize';
+
+${migrationImports}
+
+/**
+ * CitrineOS ${version} Reference Migration
+ * 
+ * This migration references and executes all database schema changes for ${version}:
+${migrationList}
+ * 
+ * Note: This migration imports and executes the original migration files from their current locations.
+ */
+
+export = {
+  up: async (queryInterface: QueryInterface) => {
+    const transaction = await queryInterface.sequelize.transaction();
+    
+    try {
+      console.log('Starting CitrineOS ${version} reference migration...');
+      console.log('Executing ${migrations.length} individual migrations...');
+${upCalls}
+      
+      await transaction.commit();
+      console.log('CitrineOS ${version} reference migration completed successfully!');
+
+    } catch (error) {
+      await transaction.rollback();
+      console.error('Reference migration failed, rolling back:', error);
+      throw error;
+    }
+  },
+
+  down: async (queryInterface: QueryInterface) => {
+    const transaction = await queryInterface.sequelize.transaction();
+    
+    try {
+      console.log('Rolling back CitrineOS ${version} reference migration...');
+      console.log('Reverting ${migrations.length} individual migrations...');
+${downCalls}
+
+      await transaction.commit();
+      console.log('CitrineOS ${version} reference migration rollback completed!');
+
+    } catch (error) {
+      await transaction.rollback();
+      console.error('Reference migration rollback failed:', error);
+      throw error;
+    }
+  },
+};`;
+  }
+
+  /**
+   * Generate reference-based custom migration
+   */
+  private generateCustomReferenceMigration(
+    batchName: string,
+    description: string,
+    migrations: MigrationInfo[],
+  ): string {
+    const migrationList = migrations
+      .map((m) => `//   - ${m.filename}: ${m.description}`)
+      .join('\n');
+    const migrationTimestamps = migrations.map((m) => m.timestamp).sort();
+    const dateRange =
+      migrationTimestamps.length > 1
+        ? `${migrationTimestamps[0]} to ${migrationTimestamps[migrationTimestamps.length - 1]}`
+        : migrationTimestamps[0];
+
+    // Generate import statements for each migration
+    const migrationImports = migrations
+      .map((migration, index) => {
+        const migrationName = `migration${index + 1}`;
+        const relativePath = `../${migration.filename.replace('.ts', '')}`;
+        // Check if migration uses 'export =' or 'module.exports =' (CommonJS) or 'export default' (ES modules)
+        const usesExportEquals = migration.content.includes('export =');
+        const usesModuleExports = migration.content.includes('module.exports =');
+
+        if (usesExportEquals) {
+          return `import ${migrationName} from '${relativePath}';`;
+        } else if (usesModuleExports) {
+          return `import ${migrationName} from '${relativePath}';`;
+        } else {
+          return `import * as ${migrationName} from '${relativePath}';`;
+        }
+      })
+      .join('\n');
+
+    // Generate migration execution calls
+    const upCalls = migrations
+      .map((migration, index) => {
+        const migrationName = `migration${index + 1}`;
+        return `
+      // From ${migration.filename}: ${migration.description}
+      console.log('Applying migration: ${migration.filename}');
+      await ${migrationName}.up(queryInterface);`;
+      })
+      .join('\n');
+
+    const downCalls = migrations
+      .slice()
+      .reverse()
+      .map((migration, index) => {
+        const migrationName = `migration${migrations.length - index}`;
+        return `
+      // Reverting ${migration.filename}: ${migration.description}
+      console.log('Reverting migration: ${migration.filename}');
+      await ${migrationName}.down(queryInterface);`;
+      })
+      .join('\n');
+
+    return `'use strict';
+
+import { QueryInterface } from 'sequelize';
+
+${migrationImports}
+
+/**
+ * CitrineOS Custom Reference Batch: ${batchName}
+ * 
+ * Description: ${description}
+ * Created: ${new Date().toISOString()}
+ * Date Range: ${dateRange}
+ * 
+ * This custom batch references ${migrations.length} selected migrations:
+${migrationList}
+ * 
+ * Note: This migration imports and executes the original migration files from their current locations.
+ */
+
+export = {
+  up: async (queryInterface: QueryInterface) => {
+    const transaction = await queryInterface.sequelize.transaction();
+    
+    try {
+      console.log('Starting custom reference batch: ${batchName}...');
+      console.log('Description: ${description}');
+      console.log('Migrations included: ${migrations.length}');
+${upCalls}
+      
+      await transaction.commit();
+      console.log('Custom reference batch ${batchName} completed successfully!');
+
+    } catch (error) {
+      await transaction.rollback();
+      console.error('Custom reference batch failed, rolling back:', error);
+      throw error;
+    }
+  },
+
+  down: async (queryInterface: QueryInterface) => {
+    const transaction = await queryInterface.sequelize.transaction();
+    
+    try {
+      console.log('Rolling back custom reference batch: ${batchName}...');
+${downCalls}
+
+      await transaction.commit();
+      console.log('Custom reference batch ${batchName} rollback completed!');
+
+    } catch (error) {
+      await transaction.rollback();
+      console.error('Custom reference batch rollback failed:', error);
+      throw error;
+    }
+  },
+};`;
+  }
   async generateReport(): Promise<void> {
     const migrations = await this.readMigrations();
     const versionGroups = this.groupMigrationsByVersion(migrations);
@@ -1006,19 +1262,23 @@ CitrineOS Migration Manager
 Usage: node migration-manager.js <command>
 
 Commands:
-  batch         Create batched migrations for each version (automatic)
-  select        Interactively select migrations to create custom batch
+  batch         Create batched migrations for each version (consolidated or reference)
+  select        Interactively select migrations to create custom batch (consolidated or reference)
   interactive   Preview migration selection without creating batch
   list          List migrations grouped by version  
   report        Generate migration summary report
   help          Show this help message
 
 Examples:
-  node migration-manager.js batch                    # Auto-batch by version
-  node migration-manager.js select                   # Choose specific migrations
+  node migration-manager.js batch                    # Auto-batch by version with mode choice
+  node migration-manager.js select                   # Choose specific migrations with mode choice
   node migration-manager.js interactive              # Preview selection
   node migration-manager.js list
   node migration-manager.js report
+
+Migration Modes:
+  • Consolidated: Copies all migration logic into batch files (self-contained)
+  • Reference: Creates batch files that import and execute original migrations
 
 Interactive Selection Syntax:
   • Single numbers: 1,3,5
