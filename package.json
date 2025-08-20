@@ -31,6 +31,7 @@
     "migrate:consolidated:status": "ts-node scripts/run-consolidated-migration.ts status",
     "migrate:version": "ts-node scripts/run-consolidated-migration.ts version",
     "migrate:rollback": "ts-node scripts/run-consolidated-migration.ts down",
+    "migrate:reference": "ts-node scripts/run-reference-migration.ts",
     "migrate:manager": "ts-node scripts/migration-manager.ts",
     "migrate:check": "ts-node scripts/check-migration-status.ts",
     "migrate:select": "ts-node scripts/migration-manager.ts select",
