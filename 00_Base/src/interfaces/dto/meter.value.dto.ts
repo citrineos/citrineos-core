@@ -12,7 +12,7 @@ export interface IMeterValueDto extends IBaseDto {
   timestamp: string; // ISO 8601 format
   connectorId?: number | null;
   tariffId?: number | null;
-  transactionId?: number | null;
+  transactionId?: string | null;
 }
 
 export enum MeterValueDtoProps {

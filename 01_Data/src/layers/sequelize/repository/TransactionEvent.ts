@@ -323,6 +323,8 @@ export class SequelizeTransactionEventRepository
                 tenantId,
                 transactionEventId: event.id,
                 transactionDatabaseId: transactionDatabaseId,
+                transactionId: finalTransaction.transactionId,
+                tariffId: finalTransaction.tariffId,
                 ...meterValue,
               },
               { transaction: sequelizeTransaction },
@@ -612,12 +614,16 @@ export class SequelizeTransactionEventRepository
     tenantId: number,
     meterValue: OCPP2_0_1.MeterValueType,
     transactionDatabaseId?: number | null,
+    transactionId?: string | null,
+    tariffId?: number | null,
   ): Promise<void> {
     await this.s.transaction(async (sequelizeTransaction) => {
       const savedMeterValue = await MeterValue.create(
         {
           tenantId,
           transactionDatabaseId: transactionDatabaseId,
+          transactionId,
+          tariffId,
           ...meterValue,
         },
         { transaction: sequelizeTransaction },
@@ -655,6 +661,8 @@ export class SequelizeTransactionEventRepository
     await Promise.all(
       meterValues.map(async (meterValue) => {
         meterValue.transactionDatabaseId = transaction.id;
+        meterValue.transactionId = transaction.transactionId;
+        meterValue.tariffId = transaction.tariffId;
         await meterValue.save();
         this.meterValue.emit('created', [meterValue]);
       }),

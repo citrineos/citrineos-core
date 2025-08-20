@@ -47,7 +47,6 @@ export class MeterValue extends BaseModelWithTenant implements IMeterValueDto {
   @Column(DataType.INTEGER)
   declare tariffId?: number | null;
 
-  @ForeignKey(() => Transaction)
-  @Column(DataType.INTEGER)
-  declare transactionId?: number | null;
+  @Column(DataType.STRING)
+  declare transactionId?: string | null;
 }
