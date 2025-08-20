@@ -34,7 +34,10 @@ class MigrationManager {
     let consolidatedLogic = '';
 
     for (const migration of migrations) {
+      // Extract only the method logic
       const upLogic = this.extractMigrationMethod(migration.content, 'up');
+
+      // Add the up method logic
       if (upLogic) {
         consolidatedLogic += `
       // From ${migration.filename}: ${migration.description}
@@ -54,7 +57,10 @@ class MigrationManager {
     let consolidatedLogic = '';
 
     for (const migration of migrations) {
+      // Extract only the method logic
       const downLogic = this.extractMigrationMethod(migration.content, 'down');
+
+      // Add the down method logic
       if (downLogic) {
         consolidatedLogic += `
       // Reverting ${migration.filename}: ${migration.description}
@@ -65,6 +71,255 @@ class MigrationManager {
     }
 
     return consolidatedLogic || '      // No rollback logic found to consolidate';
+  }
+
+  /**
+   * Extract all components from a migration file (imports, constants, up/down logic)
+   */
+  private extractMigrationComponents(content: string): {
+    imports: string[];
+    constants: string;
+    upLogic: string | null;
+    downLogic: string | null;
+  } {
+    const imports: string[] = [];
+    let constants = '';
+
+    // Extract imports
+    const importMatches = content.match(/^import\s+.*?;$/gm);
+    if (importMatches) {
+      imports.push(...importMatches);
+    }
+
+    // Extract constants, variables, and other declarations before the export
+    const beforeExportMatch = content.match(/^'use strict';?\s*([\s\S]*?)(?=export\s*=)/m);
+    if (beforeExportMatch && beforeExportMatch[1]) {
+      let beforeExport = beforeExportMatch[1].trim();
+
+      // Remove imports since we handle them separately
+      beforeExport = beforeExport.replace(/^import\s+.*?;$/gm, '').trim();
+
+      // Remove empty lines and comments
+      const lines = beforeExport.split('\n').filter((line) => {
+        const trimmed = line.trim();
+        return (
+          trimmed &&
+          !trimmed.startsWith('//') &&
+          !trimmed.startsWith('/*') &&
+          !trimmed.startsWith('*')
+        );
+      });
+
+      if (lines.length > 0) {
+        constants = lines.join('\n      ');
+      }
+    }
+
+    // Extract up and down method logic
+    const upLogic = this.extractMigrationMethod(content, 'up');
+    const downLogic = this.extractMigrationMethod(content, 'down');
+
+    return {
+      imports,
+      constants,
+      upLogic,
+      downLogic,
+    };
+  }
+
+  /**
+   * Smart import consolidation that merges imports from the same package
+   */
+  private consolidateImports(imports: string[]): string[] {
+    const importMap = new Map<string, { named: Set<string>; default: string | null }>();
+
+    for (const importStatement of imports) {
+      // Parse import statement to extract package and imports
+      const match = importStatement.match(/^import\s+(.*?)\s+from\s+['"]([^'"]+)['"];?$/);
+      if (match) {
+        const [, importClause, packageName] = match;
+
+        if (!importMap.has(packageName)) {
+          importMap.set(packageName, { named: new Set(), default: null });
+        }
+
+        const packageImports = importMap.get(packageName)!;
+
+        // Extract individual imports from the clause
+        if (importClause.trim().startsWith('{') && importClause.trim().endsWith('}')) {
+          // Named imports: { QueryInterface, DataTypes }
+          const namedImports = importClause
+            .trim()
+            .slice(1, -1) // Remove { }
+            .split(',')
+            .map((imp) => imp.trim())
+            .filter((imp) => imp);
+
+          namedImports.forEach((imp) => packageImports.named.add(imp));
+        } else {
+          // Default import
+          packageImports.default = importClause.trim();
+        }
+      }
+    }
+
+    // Generate consolidated import statements
+    const consolidatedImports: string[] = [];
+    for (const [packageName, { named, default: defaultImport }] of importMap.entries()) {
+      const namedArray = Array.from(named).sort();
+
+      if (defaultImport && namedArray.length > 0) {
+        // Mix of default and named imports
+        consolidatedImports.push(
+          `import ${defaultImport}, { ${namedArray.join(', ')} } from '${packageName}';`,
+        );
+      } else if (defaultImport) {
+        // Only default import
+        consolidatedImports.push(`import ${defaultImport} from '${packageName}';`);
+      } else if (namedArray.length > 0) {
+        // Only named imports
+        consolidatedImports.push(`import { ${namedArray.join(', ')} } from '${packageName}';`);
+      }
+    }
+
+    return consolidatedImports.sort();
+  }
+
+  /**
+   * Smart constant consolidation that removes duplicates and conflicts
+   */
+  private consolidateConstants(constantsArray: { filename: string; constants: string }[]): string {
+    const constantMap = new Map<string, { value: string; files: string[] }>();
+
+    for (const { filename, constants } of constantsArray) {
+      if (!constants) continue;
+
+      // Parse the entire constants block to handle multi-line declarations
+      this.parseConstantsBlock(constants, filename, constantMap);
+    }
+
+    // Generate consolidated constants
+    const consolidatedConstants: string[] = [];
+    for (const [, { value }] of constantMap.entries()) {
+      consolidatedConstants.push(value);
+    }
+
+    return consolidatedConstants.length > 0 ? consolidatedConstants.join('\n\n') : '';
+  }
+
+  /**
+   * Parse a constants block and extract all constant declarations
+   */
+  private parseConstantsBlock(
+    content: string,
+    filename: string,
+    constantMap: Map<string, { value: string; files: string[] }>,
+  ): void {
+    const lines = content.split('\n');
+    let currentConstant = '';
+    let currentVarName = '';
+    let inConstantDeclaration = false;
+    let bracketCount = 0;
+    let braceCount = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      if (!trimmed) {
+        if (inConstantDeclaration) {
+          currentConstant += line + '\n';
+        }
+        continue;
+      }
+
+      // Start of a new constant declaration
+      const constMatch = trimmed.match(/^const\s+([A-Z_][A-Z0-9_]*)\s*=\s*(.*)/);
+      if (constMatch) {
+        // Finish previous constant if any
+        if (inConstantDeclaration && currentVarName) {
+          this.addConstantToMap(currentVarName, currentConstant.trim(), filename, constantMap);
+        }
+
+        const [, varName, restOfDeclaration] = constMatch;
+        currentVarName = varName;
+        currentConstant = line + '\n';
+        inConstantDeclaration = true;
+        bracketCount = 0;
+        braceCount = 0;
+
+        // Count brackets and braces in the first line
+        for (const char of restOfDeclaration) {
+          if (char === '[') bracketCount++;
+          if (char === ']') bracketCount--;
+          if (char === '{') braceCount++;
+          if (char === '}') braceCount--;
+        }
+
+        // Check if this is a single-line constant
+        if (restOfDeclaration.includes(';') && bracketCount === 0 && braceCount === 0) {
+          this.addConstantToMap(currentVarName, currentConstant.trim(), filename, constantMap);
+          inConstantDeclaration = false;
+          currentConstant = '';
+          currentVarName = '';
+        }
+      } else if (inConstantDeclaration) {
+        // Continue building the current constant
+        currentConstant += line + '\n';
+
+        // Count brackets and braces
+        for (const char of trimmed) {
+          if (char === '[') bracketCount++;
+          if (char === ']') bracketCount--;
+          if (char === '{') braceCount++;
+          if (char === '}') braceCount--;
+        }
+
+        // Check if we've reached the end of the constant
+        if (
+          bracketCount === 0 &&
+          braceCount === 0 &&
+          (trimmed.endsWith('];') || trimmed.endsWith('},'))
+        ) {
+          this.addConstantToMap(currentVarName, currentConstant.trim(), filename, constantMap);
+          inConstantDeclaration = false;
+          currentConstant = '';
+          currentVarName = '';
+        }
+      }
+    }
+
+    // Handle any remaining constant
+    if (inConstantDeclaration && currentVarName) {
+      this.addConstantToMap(currentVarName, currentConstant.trim(), filename, constantMap);
+    }
+  }
+
+  /**
+   * Add a constant to the map, handling duplicates and conflicts
+   */
+  private addConstantToMap(
+    varName: string,
+    value: string,
+    filename: string,
+    constantMap: Map<string, { value: string; files: string[] }>,
+  ): void {
+    if (constantMap.has(varName)) {
+      const existing = constantMap.get(varName)!;
+      // Normalize values for comparison (remove extra whitespace)
+      const normalizedExisting = existing.value.replace(/\s+/g, ' ').trim();
+      const normalizedNew = value.replace(/\s+/g, ' ').trim();
+
+      if (normalizedExisting !== normalizedNew) {
+        existing.files.push(filename);
+        console.warn(
+          `⚠️  Constant '${varName}' has different values in different files: ${existing.files.join(', ')}`,
+        );
+        // Keep the first occurrence
+      }
+    } else {
+      constantMap.set(varName, { value, files: [filename] });
+    }
   }
 
   /**
@@ -469,11 +724,38 @@ class MigrationManager {
         ? `${migrationTimestamps[0]} to ${migrationTimestamps[migrationTimestamps.length - 1]}`
         : migrationTimestamps[0];
 
+    // Extract and consolidate imports and constants
+    const allImports: string[] = [];
+    const constantsArray: { filename: string; constants: string }[] = [];
+
+    for (const migration of migrations) {
+      const extracted = this.extractMigrationComponents(migration.content);
+
+      // Collect all imports
+      allImports.push(...extracted.imports);
+
+      // Collect constants with filename for better consolidation
+      if (extracted.constants) {
+        constantsArray.push({
+          filename: migration.filename,
+          constants: extracted.constants,
+        });
+      }
+    }
+
+    // Use smart consolidation
+    const consolidatedImports = this.consolidateImports(allImports);
+    const consolidatedConstants = this.consolidateConstants(constantsArray);
+
+    const importsSection = consolidatedImports.join('\n');
+    const upLogic = this.extractUpMigrationLogic(migrations);
+    const downLogic = this.extractDownMigrationLogic(migrations.slice().reverse());
+
     return `'use strict';
 
-import { QueryInterface } from 'sequelize';
+${importsSection}
 
-/**
+${consolidatedConstants ? consolidatedConstants + '\n\n' : ''}/**
  * CitrineOS Custom Migration Batch: ${batchName}
  * 
  * Description: ${description}
@@ -493,11 +775,7 @@ export = {
       console.log('Description: ${description}');
       console.log('Migrations included: ${migrations.length}');
 
-      // Consolidated migration logic for selected migrations
-      // Extract and combine the 'up' logic from the following files:
-${migrations.map((m) => `      // - ${m.filename}`).join('\n')}
-      
-      ${this.extractUpMigrationLogic(migrations)}
+      ${upLogic}
       
       await transaction.commit();
       console.log('Custom migration batch ${batchName} completed successfully!');
@@ -515,15 +793,7 @@ ${migrations.map((m) => `      // - ${m.filename}`).join('\n')}
     try {
       console.log('Rolling back custom migration batch: ${batchName}...');
 
-      // Rollback logic for selected migrations (in reverse order)
-      // Extract and combine the 'down' logic from the following files (in reverse):
-${migrations
-  .slice()
-  .reverse()
-  .map((m) => `      // - ${m.filename}`)
-  .join('\n')}
-      
-      ${this.extractDownMigrationLogic(migrations.slice().reverse())}
+      ${downLogic}
 
       await transaction.commit();
       console.log('Custom migration batch ${batchName} rollback completed!');
@@ -540,11 +810,38 @@ ${migrations
   private generateConsolidatedMigration(version: string, migrations: MigrationInfo[]): string {
     const migrationList = migrations.map((m) => `// - ${m.filename}`).join('\n');
 
+    // Extract and consolidate imports and constants
+    const allImports: string[] = [];
+    const constantsArray: { filename: string; constants: string }[] = [];
+
+    for (const migration of migrations) {
+      const extracted = this.extractMigrationComponents(migration.content);
+
+      // Collect all imports
+      allImports.push(...extracted.imports);
+
+      // Collect constants with filename for better consolidation
+      if (extracted.constants) {
+        constantsArray.push({
+          filename: migration.filename,
+          constants: extracted.constants,
+        });
+      }
+    }
+
+    // Use smart consolidation
+    const consolidatedImports = this.consolidateImports(allImports);
+    const consolidatedConstants = this.consolidateConstants(constantsArray);
+
+    const importsSection = consolidatedImports.join('\n');
+    const upLogic = this.extractUpMigrationLogic(migrations);
+    const downLogic = this.extractDownMigrationLogic(migrations.slice().reverse());
+
     return `'use strict';
 
-import { QueryInterface } from 'sequelize';
+${importsSection}
 
-/**
+${consolidatedConstants ? consolidatedConstants + '\n\n' : ''}/**
  * CitrineOS ${version} Consolidated Migration
  * 
  * This migration consolidates all database schema changes for ${version}:
@@ -558,9 +855,7 @@ export = {
     try {
       console.log('Starting CitrineOS ${version} consolidated migration...');
 
-      // Consolidated migration logic for ${version}
-      // Combine all individual migration 'up' logic here
-      ${this.extractUpMigrationLogic(migrations)}
+      ${upLogic}
       
       await transaction.commit();
       console.log('CitrineOS ${version} consolidated migration completed successfully!');
@@ -578,9 +873,7 @@ export = {
     try {
       console.log('Rolling back CitrineOS ${version} consolidated migration...');
 
-      // Consolidated rollback logic for ${version}
-      // Combine all individual migration 'down' logic here (in reverse order)
-      ${this.extractDownMigrationLogic(migrations.slice().reverse())}
+      ${downLogic}
 
       await transaction.commit();
       console.log('CitrineOS ${version} consolidated migration rollback completed!');
