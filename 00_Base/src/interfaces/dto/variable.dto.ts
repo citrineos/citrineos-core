@@ -7,7 +7,7 @@ import {
   IVariableAttributeDto,
   IVariableCharacteristicsDto,
   OCPP2_0_1,
-} from '../..';
+} from '../../index.js';
 
 export interface IVariableDto extends IBaseDto, OCPP2_0_1.VariableType {
   id?: number;

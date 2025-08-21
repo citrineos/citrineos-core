@@ -5,7 +5,7 @@
 
 import { type BootstrapConfig, CrudRepository } from '@citrineos/base';
 import { type Model, type Sequelize } from 'sequelize-typescript';
-import { DefaultSequelizeInstance } from '../util';
+import { DefaultSequelizeInstance } from '../util.js';
 import { type ILogObj, Logger } from 'tslog';
 import {
   AggregateOptions,

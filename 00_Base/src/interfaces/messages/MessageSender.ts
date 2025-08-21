@@ -3,8 +3,14 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IMessage, IMessageConfirmation, OcppError, OcppRequest, OcppResponse } from '../..';
-import { MessageState } from '.';
+import {
+  IMessage,
+  IMessageConfirmation,
+  OcppError,
+  OcppRequest,
+  OcppResponse,
+} from '../../index.js';
+import { MessageState } from './index.js';
 
 /**
  * IMessageSender

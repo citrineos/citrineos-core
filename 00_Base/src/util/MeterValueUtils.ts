@@ -1,4 +1,4 @@
-import { OCPP2_0_1 } from '../ocpp/model';
+import { OCPP2_0_1 } from '../ocpp/model/index.js';
 
 export class MeterValueUtils {
   private static readonly validContexts = new Set([

@@ -1,4 +1,4 @@
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 import jsrsasign from 'jsrsasign';
 import x509 = jsrsasign.KJUR.asn1.x509;
 

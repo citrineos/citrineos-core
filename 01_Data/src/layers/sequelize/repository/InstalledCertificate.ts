@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SequelizeRepository } from './Base';
-import { IInstalledCertificateRepository } from '../../../interfaces';
+import { SequelizeRepository } from './Base.js';
+import { IInstalledCertificateRepository } from '../../../interfaces/index.js';
 import { BootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
-import { InstalledCertificate } from '../model/Certificate/InstalledCertificate';
+import { InstalledCertificate } from '../model/index.js';
 
 export class SequelizeInstalledCertificateRepository
   extends SequelizeRepository<InstalledCertificate>

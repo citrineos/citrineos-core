@@ -9,8 +9,12 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { MessageFormatEnumType, MessagePriorityEnumType, MessageStateEnumType } from '../enums';
-import { OcppRequest } from '../../../..';
+import {
+  MessageFormatEnumType,
+  MessagePriorityEnumType,
+  MessageStateEnumType,
+} from '../enums/index.js';
+import { OcppRequest } from '../../../../index.js';
 
 export interface SetDisplayMessageRequest extends OcppRequest {
   customData?: CustomDataType | null;

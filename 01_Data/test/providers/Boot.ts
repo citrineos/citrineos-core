@@ -1,6 +1,6 @@
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 import { faker } from '@faker-js/faker';
-import { Boot, VariableAttribute } from '../../src';
+import { Boot, VariableAttribute } from '../../src/index.js';
 import { OCPP2_0_1 } from '@citrineos/base';
 
 export function aSetVariable(

@@ -2,6 +2,7 @@
   "name": "@citrineos/util",
   "version": "1.8.0",
   "description": "The OCPP util module which supplies helpful utilities like cache and queue connectors, etc.",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

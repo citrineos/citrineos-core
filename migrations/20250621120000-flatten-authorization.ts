@@ -1,6 +1,6 @@
 import { QueryInterface } from 'sequelize';
 
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
     // 1. Drop any existing temp tables first, then create temp tables to preserve data from related tables
     await queryInterface.sequelize.query('DROP TABLE IF EXISTS "IdTokens_temp"');

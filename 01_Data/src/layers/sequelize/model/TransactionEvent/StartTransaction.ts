@@ -2,14 +2,28 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IStartTransactionDto, OCPP1_6_Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
-import { Transaction } from './Transaction';
-import { Connector } from '../Location';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import {
+  DEFAULT_TENANT_ID,
+  IStartTransactionDto,
+  ITenantDto,
+  OCPP1_6_Namespace,
+} from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Transaction } from './Transaction.js';
+import { Connector } from '../Location/index.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class StartTransaction extends BaseModelWithTenant implements IStartTransactionDto {
+export class StartTransaction extends Model implements IStartTransactionDto {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.StartTransaction;
 
   @Column(DataType.STRING)
@@ -44,4 +58,31 @@ export class StartTransaction extends BaseModelWithTenant implements IStartTrans
 
   @BelongsTo(() => Connector)
   declare connector: Connector;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: StartTransaction) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

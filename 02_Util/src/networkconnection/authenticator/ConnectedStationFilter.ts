@@ -1,8 +1,8 @@
-import { CacheNamespace, ICache, notNull, AuthenticationOptions } from '@citrineos/base';
+import { AuthenticationOptions, CacheNamespace, ICache, notNull } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { IncomingMessage } from 'http';
-import { AuthenticatorFilter } from './AuthenticatorFilter';
-import { UpgradeAuthenticationError } from './errors/AuthenticationError';
+import { AuthenticatorFilter } from './AuthenticatorFilter.js';
+import { UpgradeAuthenticationError } from './errors/AuthenticationError.js';
 
 /**
  * Filter used to prevent multiple simultaneous connections for the same charging station.

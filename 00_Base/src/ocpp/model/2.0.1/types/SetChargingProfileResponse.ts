@@ -9,8 +9,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ChargingProfileStatusEnumType } from '../enums';
-import { OcppResponse } from '../../../..';
+import { ChargingProfileStatusEnumType } from '../enums/index.js';
+import { OcppResponse } from '../../../../index.js';
 
 export interface SetChargingProfileResponse extends OcppResponse {
   customData?: CustomDataType | null;

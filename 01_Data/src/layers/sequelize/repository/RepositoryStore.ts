@@ -17,30 +17,29 @@ import {
   ITenantRepository,
   ITransactionEventRepository,
   IVariableMonitoringRepository,
-} from '../../../interfaces';
-import { CrudRepository, BootstrapConfig } from '@citrineos/base';
+} from '../../../interfaces/index.js';
+import { BootstrapConfig, CrudRepository } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
-import { SequelizeAuthorizationRepository } from './Authorization';
-import { SequelizeBootRepository } from './Boot';
-import { SequelizeCertificateRepository } from './Certificate';
-import { SequelizeDeviceModelRepository } from './DeviceModel';
-import { SequelizeLocationRepository } from './Location';
-import { SequelizeMessageInfoRepository } from './MessageInfo';
-import { SequelizeSecurityEventRepository } from './SecurityEvent';
-import { SequelizeSubscriptionRepository } from './Subscription';
-import { SequelizeTariffRepository } from './Tariff';
-import { SequelizeTransactionEventRepository } from './TransactionEvent';
-import { SequelizeVariableMonitoringRepository } from './VariableMonitoring';
+import { SequelizeAuthorizationRepository } from './Authorization.js';
+import { SequelizeBootRepository } from './Boot.js';
+import { SequelizeCertificateRepository } from './Certificate.js';
+import { SequelizeDeviceModelRepository } from './DeviceModel.js';
+import { SequelizeLocationRepository } from './Location.js';
+import { SequelizeMessageInfoRepository } from './MessageInfo.js';
+import { SequelizeSecurityEventRepository } from './SecurityEvent.js';
+import { SequelizeSubscriptionRepository } from './Subscription.js';
+import { SequelizeTariffRepository } from './Tariff.js';
+import { SequelizeTransactionEventRepository } from './TransactionEvent.js';
+import { SequelizeVariableMonitoringRepository } from './VariableMonitoring.js';
 import { Sequelize } from 'sequelize-typescript';
-import { TransactionEvent } from '../model/TransactionEvent';
-import { Component } from '../model/DeviceModel';
-import { SequelizeRepository } from './Base';
-import { SequelizeReservationRepository } from './Reservation';
-import { SequelizeLocalAuthListRepository } from './LocalAuthList';
-import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
-import { SequelizeChargingProfileRepository } from './ChargingProfile';
-import { SequelizeChangeConfigurationRepository } from './ChangeConfiguration';
-import { SequelizeOCPPMessageRepository, SequelizeTenantRepository } from '..';
+import { Component, TransactionEvent } from '../model/index.js';
+import { SequelizeRepository } from './Base.js';
+import { SequelizeReservationRepository } from './Reservation.js';
+import { SequelizeLocalAuthListRepository } from './LocalAuthList.js';
+import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence.js';
+import { SequelizeChargingProfileRepository } from './ChargingProfile.js';
+import { SequelizeChangeConfigurationRepository } from './ChangeConfiguration.js';
+import { SequelizeOCPPMessageRepository, SequelizeTenantRepository } from '../index.js';
 
 export class RepositoryStore {
   sequelizeInstance: Sequelize;

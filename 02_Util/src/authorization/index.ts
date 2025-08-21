@@ -2,6 +2,6 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export * from './ApiAuthPlugin';
-export { LocalBypassAuthProvider } from './provider/LocalByPassAuthProvider';
-export { OIDCAuthProvider } from './provider/OIDCAuthProvider';
+export * from './ApiAuthPlugin.js';
+export { LocalBypassAuthProvider } from './provider/LocalByPassAuthProvider.js';
+export { OIDCAuthProvider } from './provider/OIDCAuthProvider.js';

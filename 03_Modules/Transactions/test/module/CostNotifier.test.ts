@@ -6,9 +6,9 @@ import {
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import { CostCalculator } from '../../src/module/CostCalculator';
-import { CostNotifier } from '../../src/module/CostNotifier';
-import { aTransaction } from '../providers/TransactionProvider';
+import { CostCalculator } from '../../src/module/CostCalculator.js';
+import { CostNotifier } from '../../src/module/CostNotifier.js';
+import { aTransaction } from '../providers/TransactionProvider.js';
 
 describe('CostNotifier', () => {
   const anyTenantId = DEFAULT_TENANT_ID;

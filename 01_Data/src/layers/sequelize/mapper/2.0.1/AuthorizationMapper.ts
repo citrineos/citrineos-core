@@ -1,5 +1,5 @@
 import { AuthorizationStatusType, IdTokenType, OCPP2_0_1 } from '@citrineos/base';
-import { Authorization } from '../../model/Authorization';
+import { Authorization } from '../../model/index.js';
 
 export class AuthorizationMapper {
   static toAuthorizationData(authorization: Authorization): OCPP2_0_1.AuthorizationData {

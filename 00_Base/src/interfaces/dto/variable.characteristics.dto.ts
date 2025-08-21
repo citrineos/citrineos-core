@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IBaseDto, IVariableDto } from '../..';
+import { IBaseDto, IVariableDto } from '../../index.js';
 
 export interface IVariableCharacteristicsDto extends IBaseDto {
   id?: number;

@@ -1,9 +1,9 @@
 import { jest } from '@jest/globals';
 import { ILocationRepository } from '@citrineos/data';
 import { faker } from '@faker-js/faker';
-import { UnknownStationFilter } from '../../../src/networkconnection/authenticator/UnknownStationFilter';
-import { aRequest } from '../../providers/IncomingMessageProvider';
-import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider';
+import { UnknownStationFilter } from '../../../src/index.js';
+import { aRequest } from '../../providers/IncomingMessageProvider.js';
+import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 describe('UnknownStationFilter', () => {

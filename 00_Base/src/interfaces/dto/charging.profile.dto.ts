@@ -1,5 +1,5 @@
-import { IBaseDto, ITransactionDto } from '../..';
-import { IChargingScheduleDto } from './charging.schedule.dto';
+import { IBaseDto, ITransactionDto } from '../../index.js';
+import { IChargingScheduleDto } from './charging.schedule.dto.js';
 
 export interface IChargingProfileDto extends IBaseDto {
   databaseId: number;

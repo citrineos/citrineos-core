@@ -6,6 +6,7 @@
 import {
   AbstractModule,
   AsHandler,
+  BootstrapConfig,
   CallAction,
   ErrorCode,
   EventGroup,
@@ -14,16 +15,14 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
-  OCPP2_0_1_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPP2_0_1_Namespace,
   OCPPVersion,
   SystemConfig,
-  BootstrapConfig,
 } from '@citrineos/base';
 import { Op } from 'sequelize';
 import {
-  Boot,
   ICertificateRepository,
   IDeviceModelRepository,
   IInstalledCertificateRepository,

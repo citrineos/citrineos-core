@@ -1,4 +1,4 @@
-import { IBaseDto, IComponentDto, IVariableDto } from '../..';
+import { IBaseDto, IComponentDto, IVariableDto } from '../../index.js';
 
 export interface IVariableMonitoringDto extends IBaseDto {
   databaseId: number;

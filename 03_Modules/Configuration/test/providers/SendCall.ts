@@ -1,4 +1,4 @@
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 import { IMessageConfirmation } from '@citrineos/base';
 
 const MOCK_PAYLOAD = 'Payload';

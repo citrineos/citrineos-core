@@ -15,8 +15,8 @@ import {
   OCPPTransportEnumType,
   OCPPVersionEnumType,
   VPNEnumType,
-} from '../enums';
-import { OcppRequest } from '../../../..';
+} from '../enums/index.js';
+import { OcppRequest } from '../../../../index.js';
 
 export interface SetNetworkProfileRequest extends OcppRequest {
   customData?: CustomDataType | null;

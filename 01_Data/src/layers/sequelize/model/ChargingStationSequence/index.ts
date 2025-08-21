@@ -1,1 +1,1 @@
-export { ChargingStationSequence } from './ChargingStationSequence';
+export { ChargingStationSequence } from './ChargingStationSequence.js';

@@ -1,4 +1,4 @@
-import { IBaseDto, IEvseTypeDto } from '../..';
+import { IBaseDto, IEvseTypeDto } from '../../index.js';
 
 export interface IReservationDto extends IBaseDto {
   databaseId: number;

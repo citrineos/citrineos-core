@@ -9,7 +9,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { OcppRequest } from '../../../..';
+import { OcppRequest } from '../../../../index.js';
 
 export interface HeartbeatRequest extends OcppRequest {
   customData?: CustomDataType | null;

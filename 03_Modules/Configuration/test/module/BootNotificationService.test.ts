@@ -1,8 +1,8 @@
 import { Boot, IBootRepository } from '@citrineos/data';
-import { BootNotificationService } from '../../src/module/BootNotificationService';
-import { ICache, OCPP2_0_1, OCPP1_6, SystemConfig } from '@citrineos/base';
-import { aValidBootConfig } from '../providers/BootConfigProvider';
-import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall';
+import { BootNotificationService } from '../../src/module/BootNotificationService.js';
+import { ICache, OCPP1_6, OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import { aValidBootConfig } from '../providers/BootConfigProvider.js';
+import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall.js';
 
 type Configuration = SystemConfig['modules']['configuration'];
 

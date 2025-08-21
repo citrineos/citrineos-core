@@ -13,8 +13,8 @@ import {
   GetCertificateIdUseEnumType,
   GetInstalledCertificateStatusEnumType,
   HashAlgorithmEnumType,
-} from '../enums';
-import { OcppResponse } from '../../../..';
+} from '../enums/index.js';
+import { OcppResponse } from '../../../../index.js';
 
 export interface GetInstalledCertificateIdsResponse extends OcppResponse {
   customData?: CustomDataType | null;

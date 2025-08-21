@@ -1,4 +1,4 @@
-import { IBaseDto, IVariableAttributeDto } from '../..';
+import { IBaseDto, IVariableAttributeDto } from '../../index.js';
 
 export interface IBootDto extends IBaseDto {
   id: string;

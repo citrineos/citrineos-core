@@ -14,7 +14,7 @@ import {
   IStopTransactionDto,
   ITariffDto,
   ITransactionEventDto,
-} from '../..';
+} from '../../index.js';
 
 export interface ITransactionDto extends IBaseDto {
   id?: number;

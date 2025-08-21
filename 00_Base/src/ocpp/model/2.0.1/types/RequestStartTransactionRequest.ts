@@ -16,8 +16,8 @@ import {
   CostKindEnumType,
   IdTokenEnumType,
   RecurrencyKindEnumType,
-} from '../enums';
-import { OcppRequest } from '../../../..';
+} from '../enums/index.js';
+import { OcppRequest } from '../../../../index.js';
 
 export interface RequestStartTransactionRequest extends OcppRequest {
   customData?: CustomDataType | null;

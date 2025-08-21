@@ -2,12 +2,27 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ISubscriptionDto, OCPP2_0_1_Namespace } from '@citrineos/base';
-import { Column, DataType, Index, Table } from 'sequelize-typescript';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import {
+  DEFAULT_TENANT_ID,
+  ISubscriptionDto,
+  ITenantDto,
+  OCPP2_0_1_Namespace,
+} from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Index,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class Subscription extends BaseModelWithTenant implements ISubscriptionDto {
+export class Subscription extends Model implements ISubscriptionDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Subscription;
 
   @Index
@@ -39,4 +54,31 @@ export class Subscription extends BaseModelWithTenant implements ISubscriptionDt
 
   @Column
   declare url: string;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: Subscription) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

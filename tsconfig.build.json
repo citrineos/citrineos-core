@@ -9,8 +9,9 @@
     "./**/**/dist"
   ],
   "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
     "strict": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
@@ -19,6 +20,7 @@
     "declaration": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "sourceMap": true
   }
 }

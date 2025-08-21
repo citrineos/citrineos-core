@@ -1,10 +1,10 @@
 import { ILogObj, Logger } from 'tslog';
 import { CryptoUtils, IDeviceModelRepository } from '@citrineos/data';
 import { IncomingMessage } from 'http';
-import { extractBasicCredentials } from '../../util/RequestOperations';
-import { AuthenticatorFilter } from './AuthenticatorFilter';
+import { extractBasicCredentials } from '../../util/RequestOperations.js';
+import { AuthenticatorFilter } from './AuthenticatorFilter.js';
 import { AuthenticationOptions, OCPP2_0_1 } from '@citrineos/base';
-import { UpgradeAuthenticationError } from './errors/AuthenticationError';
+import { UpgradeAuthenticationError } from './errors/AuthenticationError.js';
 
 /**
  * Filter used to authenticate incoming HTTP requests based on basic authorization header.

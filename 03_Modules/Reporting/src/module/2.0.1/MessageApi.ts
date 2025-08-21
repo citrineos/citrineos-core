@@ -15,8 +15,8 @@ import {
   OCPPVersion,
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
-import { IReportingModuleApi } from '../interface';
-import { ReportingModule } from '../module';
+import { IReportingModuleApi } from '../interface.js';
+import { ReportingModule } from '../module.js';
 import { getBatches, getSizeOfRequest } from '@citrineos/util';
 
 /**

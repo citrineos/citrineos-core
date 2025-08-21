@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IChargingStationCertificateAuthorityClient } from './interface';
+import { IChargingStationCertificateAuthorityClient } from './interface.js';
 import { SystemConfig } from '@citrineos/base';
 import * as acme from 'acme-client';
 import { Client } from 'acme-client';
 import { ILogObj, Logger } from 'tslog';
 import fs from 'fs';
-import { createSignedCertificateFromCSR, parseCertificateChainPem } from '../CertificateUtil';
+import { createSignedCertificateFromCSR, parseCertificateChainPem } from '../CertificateUtil.js';
 
 export class Acme implements IChargingStationCertificateAuthorityClient {
   private readonly _directoryUrl: string = acme.directory.letsencrypt.staging;

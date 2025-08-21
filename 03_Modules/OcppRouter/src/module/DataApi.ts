@@ -18,8 +18,8 @@ import {
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { IAdminApi } from './interface';
-import { MessageRouterImpl } from './router';
+import { IAdminApi } from './interface.js';
+import { MessageRouterImpl } from './router.js';
 import {
   ChargingStationKeyQuerySchema,
   ChargingStationKeyQuerystring,
@@ -27,16 +27,14 @@ import {
   ModelKeyQuerystring,
   ModelKeyQuerystringSchema,
   Subscription,
-  TenantQueryString,
   TenantQuerySchema,
-  WebsocketGetQuerySchema,
-  WebsocketGetQuerystring,
-} from '@citrineos/data';
-import {
+  TenantQueryString,
   WebsocketDeleteQuerySchema,
   WebsocketDeleteQuerystring,
+  WebsocketGetQuerySchema,
+  WebsocketGetQuerystring,
   WebsocketRequestSchema,
-} from '@citrineos/data/dist/interfaces/queries/Websocket';
+} from '@citrineos/data';
 
 /**
  * Admin API for the OcppRouter.

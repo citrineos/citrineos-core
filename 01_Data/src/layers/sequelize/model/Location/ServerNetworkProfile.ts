@@ -3,14 +3,31 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1_Namespace, OCPPVersionType, WebsocketServerConfig } from '@citrineos/base';
-import { BelongsToMany, Column, DataType, PrimaryKey, Table } from 'sequelize-typescript';
-import { ChargingStation } from './ChargingStation';
-import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import {
+  DEFAULT_TENANT_ID,
+  ITenantDto,
+  OCPP2_0_1_Namespace,
+  OCPPVersionType,
+  WebsocketServerConfig,
+} from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  BelongsToMany,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
+import { ChargingStation } from './ChargingStation.js';
+import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class ServerNetworkProfile extends BaseModelWithTenant implements WebsocketServerConfig {
+export class ServerNetworkProfile extends Model implements WebsocketServerConfig {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ServerNetworkProfile;
 
   @PrimaryKey
@@ -52,4 +69,31 @@ export class ServerNetworkProfile extends BaseModelWithTenant implements Websock
 
   @BelongsToMany(() => ChargingStation, () => ChargingStationNetworkProfile)
   declare chargingStations?: ChargingStation[] | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: ServerNetworkProfile) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

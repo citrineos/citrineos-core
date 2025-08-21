@@ -19,19 +19,19 @@ import {
 import jsrsasign from 'jsrsasign';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { ICertificatesModuleApi } from './interface';
-import { CertificatesModule } from './module';
+import { ICertificatesModuleApi } from './interface.js';
+import { CertificatesModule } from './module.js';
 import { generateCertificate, generateCSR, WebsocketNetworkConnection } from '@citrineos/util';
 import {
   Certificate,
-  TenantQueryString,
-  TenantQuerySchema,
   CountryNameEnumType,
   GenerateCertificateChainRequest,
   GenerateCertificateChainSchema,
   InstallRootCertificateRequest,
   InstallRootCertificateSchema,
   SignatureAlgorithmEnumType,
+  TenantQuerySchema,
+  TenantQueryString,
   TlsCertificateSchema,
   TlsCertificatesRequest,
   UpdateTlsCertificateQuerySchema,

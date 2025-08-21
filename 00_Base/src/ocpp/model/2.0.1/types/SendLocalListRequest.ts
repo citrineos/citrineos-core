@@ -14,8 +14,8 @@ import {
   IdTokenEnumType,
   MessageFormatEnumType,
   UpdateEnumType,
-} from '../enums';
-import { OcppRequest } from '../../../..';
+} from '../enums/index.js';
+import { OcppRequest } from '../../../../index.js';
 
 export interface SendLocalListRequest extends OcppRequest {
   customData?: CustomDataType | null;

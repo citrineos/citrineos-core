@@ -1,10 +1,10 @@
-import { ISmartCharging } from './SmartCharging';
+import { ISmartCharging } from './SmartCharging.js';
 import { OCPP2_0_1 } from '@citrineos/base';
 import {
+  ChargingProfile,
+  ChargingSchedule,
   IChargingProfileRepository,
   Transaction,
-  ChargingSchedule,
-  ChargingProfile,
 } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
 

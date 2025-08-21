@@ -1,12 +1,11 @@
 'use strict';
 
-import { Tenant } from '@citrineos/data';
 /** @type {import('sequelize-cli').Migration} */
 import { DataTypes, QueryInterface } from 'sequelize';
 
-const TENANTS_TABLE = `${Tenant.MODEL_NAME}s`;
+const TENANTS_TABLE = `Tenants`;
 
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
     await queryInterface.createTable(TENANTS_TABLE, {
       id: {

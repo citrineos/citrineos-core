@@ -9,7 +9,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { OcppResponse } from '../../../..';
+import { OcppResponse } from '../../../../index.js';
 
 export interface ReportChargingProfilesResponse extends OcppResponse {
   customData?: CustomDataType | null;

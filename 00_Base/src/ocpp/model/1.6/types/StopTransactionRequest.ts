@@ -16,8 +16,8 @@ import {
   StopTransactionRequestPhase,
   StopTransactionRequestLocation,
   StopTransactionRequestUnit,
-} from '../enums';
-import { OcppRequest } from '../../../..';
+} from '../enums/index.js';
+import { OcppRequest } from '../../../../index.js';
 
 export interface StopTransactionRequest extends OcppRequest {
   idTag?: string | null;

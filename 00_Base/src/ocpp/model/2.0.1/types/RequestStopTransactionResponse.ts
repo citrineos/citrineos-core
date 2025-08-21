@@ -9,8 +9,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { RequestStartStopStatusEnumType } from '../enums';
-import { OcppRequest } from '../../../..';
+import { RequestStartStopStatusEnumType } from '../enums/index.js';
+import { OcppRequest } from '../../../../index.js';
 
 export interface RequestStopTransactionResponse extends OcppRequest {
   customData?: CustomDataType | null;

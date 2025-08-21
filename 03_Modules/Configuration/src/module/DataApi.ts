@@ -5,23 +5,23 @@
 
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { IConfigurationModuleApi } from './interface';
-import { ConfigurationModule } from './module';
+import { IConfigurationModuleApi } from './interface.js';
+import { ConfigurationModule } from './module.js';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
+  BootConfig,
   BootConfigSchema,
   HttpMethod,
   IMessageConfirmation,
-  OCPP2_0_1_Namespace,
+  Namespace,
+  OCPP1_6_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPP2_0_1_Namespace,
   OCPPVersion,
   UpdateChargingStationPasswordRequest,
   UpdateChargingStationPasswordSchema,
-  Namespace,
-  OCPP1_6_Namespace,
-  BootConfig,
 } from '@citrineos/base';
 import {
   Boot,

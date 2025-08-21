@@ -1,6 +1,6 @@
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 import { faker } from '@faker-js/faker';
-import { MeterValue } from '../../src';
+import { MeterValue } from '../../src/index.js';
 
 export function aMeterValue(updateFunction?: UpdateFunction<MeterValue>): MeterValue {
   const meterValue: MeterValue = {

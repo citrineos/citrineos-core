@@ -1,4 +1,4 @@
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 import { ChargingStation, Component, EvseType, Variable } from '@citrineos/data';
 
 export const MOCK_STATION_ID = 'Station01';

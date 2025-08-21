@@ -7,7 +7,7 @@ import { type BootstrapConfig } from '@citrineos/base';
 import { type Dialect } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
-import { ComponentVariable } from './model/DeviceModel/ComponentVariable';
+import { ComponentVariable } from './model/DeviceModel/ComponentVariable.js';
 import {
   Authorization,
   Boot,
@@ -57,7 +57,7 @@ import {
   VariableMonitoring,
   VariableMonitoringStatus,
   VariableStatus,
-} from '.';
+} from './index.js';
 
 export class DefaultSequelizeInstance {
   /**

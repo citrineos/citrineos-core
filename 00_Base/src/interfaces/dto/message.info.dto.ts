@@ -1,4 +1,4 @@
-import { IBaseDto, IComponentDto } from '../..';
+import { IBaseDto, IComponentDto } from '../../index.js';
 
 export interface IMessageInfoDto extends IBaseDto {
   databaseId: number;

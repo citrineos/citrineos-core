@@ -13,7 +13,7 @@ import {
   OcppRequest,
   OcppResponse,
   OCPPVersionType,
-} from '..';
+} from '../index.js';
 
 export class RequestBuilder {
   static buildCall(

@@ -12,7 +12,7 @@ import {
   IMessageEndpointDefinition,
   METADATA_DATA_ENDPOINTS,
   METADATA_MESSAGE_ENDPOINTS,
-} from '.';
+} from './index.js';
 import {
   ConfigStoreFactory,
   MessageConfirmationSchema,
@@ -22,15 +22,15 @@ import {
   OCPPVersion,
   SystemConfig,
   systemConfigSchema,
-} from '../..';
-import { OCPP2_0_1_Namespace } from '../../ocpp/persistence';
-import { CallAction } from '../../ocpp/rpc/message';
-import { IMessageConfirmation } from '../messages';
-import { IModule } from '../modules';
-import { IMessageQuerystringSchema } from './MessageQuerystring';
-import { IModuleApi } from './ModuleApi';
-import { AuthorizationSecurity } from './AuthorizationSecurity';
-import zodToJsonSchema from 'zod-to-json-schema';
+} from '../../index.js';
+import { OCPP2_0_1_Namespace } from '../../ocpp/persistence/index.js';
+import { CallAction } from '../../ocpp/rpc/message.js';
+import { IMessageConfirmation } from '../messages/index.js';
+import { IModule } from '../modules/index.js';
+import { IMessageQuerystringSchema } from './MessageQuerystring.js';
+import { IModuleApi } from './ModuleApi.js';
+import { AuthorizationSecurity } from './AuthorizationSecurity.js';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 /**
  * Abstract module api class implementation.

@@ -5,7 +5,7 @@
  *
  */
 
-export { IApiAuthProvider } from './IApiAuthProvider';
-export { ApiAuthorizationResult } from './ApiAuthorizationResult';
-export { ApiAuthenticationResult } from './ApiAuthenticationResult';
-export { UserInfo } from './UserInfo';
+export { IApiAuthProvider } from './IApiAuthProvider.js';
+export { ApiAuthorizationResult } from './ApiAuthorizationResult.js';
+export { ApiAuthenticationResult } from './ApiAuthenticationResult.js';
+export { UserInfo } from './UserInfo.js';

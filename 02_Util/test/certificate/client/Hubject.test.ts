@@ -1,12 +1,12 @@
 import { SystemConfig } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { faker } from '@faker-js/faker';
-import { Hubject } from '../../../src/certificate/client/hubject';
+import { Hubject } from '../../../src/certificate/client/hubject.js';
 import {
   aValidAuthorizationToken,
   aValidRootCertificates,
   aValidSignedContractData,
-} from '../../providers/Hubject';
+} from '../../providers/Hubject.js';
 
 describe('Hubject', () => {
   const mockBaseURL = 'https://hubject.base.test';

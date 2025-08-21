@@ -1,12 +1,14 @@
 import { jest } from '@jest/globals';
-import { Authenticator } from '../../../src';
+import {
+  Authenticator,
+  BasicAuthenticationFilter,
+  ConnectedStationFilter,
+  NetworkProfileFilter,
+  UnknownStationFilter,
+} from '../../../src/index.js';
 import { faker } from '@faker-js/faker';
-import { ConnectedStationFilter } from '../../../src/networkconnection/authenticator/ConnectedStationFilter';
-import { NetworkProfileFilter } from '../../../src/networkconnection/authenticator/NetworkProfileFilter';
-import { BasicAuthenticationFilter } from '../../../src/networkconnection/authenticator/BasicAuthenticationFilter';
-import { UnknownStationFilter } from '../../../src/networkconnection/authenticator/UnknownStationFilter';
-import { aRequest } from '../../providers/IncomingMessageProvider';
-import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider';
+import { aRequest } from '../../providers/IncomingMessageProvider.js';
+import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 describe('Authenticator', () => {

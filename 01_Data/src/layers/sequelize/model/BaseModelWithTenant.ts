@@ -12,14 +12,14 @@ import {
   ForeignKey,
   Model,
 } from 'sequelize-typescript';
-import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { Tenant } from './Tenant';
+import { DEFAULT_TENANT_ID, ITenantDto } from '@citrineos/base';
+import { Tenant } from './Tenant.js';
 
 export abstract class BaseModelWithTenant<
   TModelAttributes extends {} = any,
   TCreationAttributes extends {} = TModelAttributes,
 > extends Model<TModelAttributes, TCreationAttributes> {
-  @ForeignKey(() => lazyLoadModel<typeof Tenant>('Tenant'))
+  @ForeignKey(() => Tenant)
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
@@ -28,8 +28,8 @@ export abstract class BaseModelWithTenant<
   })
   declare tenantId: number;
 
-  @BelongsTo(() => lazyLoadModel<typeof Tenant>('Tenant'))
-  declare tenant?: Tenant;
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
 
   @BeforeUpdate
   @BeforeCreate
@@ -45,10 +45,4 @@ export abstract class BaseModelWithTenant<
       this.tenantId = DEFAULT_TENANT_ID;
     }
   }
-}
-
-// helper method to dynamically lazy load models to avoid circular dependencies
-export function lazyLoadModel<T>(modelName: string): T {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require(`./${modelName}`)[modelName] as T;
 }

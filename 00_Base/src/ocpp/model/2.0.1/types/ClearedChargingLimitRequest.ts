@@ -9,8 +9,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ChargingLimitSourceEnumType } from '../enums';
-import { OcppRequest } from '../../../..';
+import { ChargingLimitSourceEnumType } from '../enums/index.js';
+import { OcppRequest } from '../../../../index.js';
 
 export interface ClearedChargingLimitRequest extends OcppRequest {
   customData?: CustomDataType | null;

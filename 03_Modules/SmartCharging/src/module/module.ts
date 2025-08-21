@@ -30,7 +30,7 @@ import {
   SequelizeChargingStationSequenceRepository,
   Transaction,
 } from '@citrineos/data';
-import { InternalSmartCharging, ISmartCharging } from './smartCharging';
+import { InternalSmartCharging, ISmartCharging } from './smartCharging/index.js';
 
 /**
  * Component that handles provisioning related messages.

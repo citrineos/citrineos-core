@@ -5,19 +5,19 @@ import {
   StatusNotification,
 } from '@citrineos/data';
 import { CrudRepository, DEFAULT_TENANT_ID } from '@citrineos/base';
-import { StatusNotificationService } from '../../src/module/StatusNotificationService';
+import { StatusNotificationService } from '../../src/module/StatusNotificationService.js';
 import {
   aOcpp16StatusNotificationRequest,
   aStatusNotification,
   aStatusNotificationRequest,
-} from '../providers/StatusNotification';
+} from '../providers/StatusNotification.js';
 import {
   aChargingStation,
   aComponent,
   anEvse,
   aVariable,
   MOCK_STATION_ID,
-} from '../providers/DeviceModelProvider';
+} from '../providers/DeviceModelProvider.js';
 
 describe('StatusNotificationService', () => {
   let statusNotificationService: StatusNotificationService;

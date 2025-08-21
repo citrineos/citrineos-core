@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1 } from '../..';
-import { IBaseDto } from './base.dto';
-import { IServerNetworkProfileDto } from './server.network.profile.dto';
+import { OCPP2_0_1 } from '../../index.js';
+import { IBaseDto } from './base.dto.js';
+import { IServerNetworkProfileDto } from './server.network.profile.dto.js';
 
 export interface ISetNetworkProfileDto extends IBaseDto {
   id?: number;

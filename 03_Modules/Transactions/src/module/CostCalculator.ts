@@ -1,6 +1,6 @@
 import { ITariffRepository, Tariff } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
-import { TransactionService } from './TransactionService';
+import { TransactionService } from './TransactionService.js';
 import { Money } from '@citrineos/base';
 
 export class CostCalculator {

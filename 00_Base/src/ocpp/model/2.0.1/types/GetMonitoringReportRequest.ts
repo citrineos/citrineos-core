@@ -9,8 +9,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { MonitoringCriterionEnumType } from '../enums';
-import { OcppRequest } from '../../../..';
+import { MonitoringCriterionEnumType } from '../enums/index.js';
+import { OcppRequest } from '../../../../index.js';
 
 export interface GetMonitoringReportRequest extends OcppRequest {
   customData?: CustomDataType | null;

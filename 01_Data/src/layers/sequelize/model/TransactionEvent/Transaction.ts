@@ -3,26 +3,35 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { ITransactionDto, Namespace } from '@citrineos/base';
 import {
+  DEFAULT_TENANT_ID,
+  IStartTransactionDto,
+  IStopTransactionDto,
+  ITenantDto,
+  ITransactionDto,
+  Namespace,
+} from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
   BelongsTo,
   Column,
   DataType,
   ForeignKey,
   HasMany,
   HasOne,
+  Model,
   Table,
 } from 'sequelize-typescript';
-import { MeterValue } from './MeterValue';
-import { TransactionEvent } from './TransactionEvent';
-import { Evse, ChargingStation, Location, Connector } from '../Location';
-import { StartTransaction, StopTransaction } from './';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
-import { Authorization } from '../Authorization';
-import { Tariff } from '..';
+import { MeterValue } from './MeterValue.js';
+import { TransactionEvent } from './TransactionEvent.js';
+import { ChargingStation, Connector, Evse, Location } from '../Location/index.js';
+import { StartTransaction, StopTransaction } from './index.js';
+import { Authorization } from '../Authorization/index.js';
+import { Tariff, Tenant } from '../index.js';
 
 @Table
-export class Transaction extends BaseModelWithTenant implements ITransactionDto {
+export class Transaction extends Model implements ITransactionDto {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
   static readonly TRANSACTION_EVENTS_ALIAS = 'transactionEvents';
   static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter';
@@ -96,10 +105,10 @@ export class Transaction extends BaseModelWithTenant implements ITransactionDto 
   declare meterValues?: MeterValue[];
 
   @HasOne(() => StartTransaction)
-  declare startTransaction?: StartTransaction;
+  declare startTransaction?: IStartTransactionDto;
 
   @HasOne(() => StopTransaction)
-  declare stopTransaction?: StopTransaction;
+  declare stopTransaction?: IStopTransactionDto;
 
   @Column(DataType.STRING)
   declare chargingState?: string | null;
@@ -137,4 +146,31 @@ export class Transaction extends BaseModelWithTenant implements ITransactionDto 
 
   @Column(DataType.JSONB)
   declare customData?: any | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: Transaction) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

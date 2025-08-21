@@ -1,10 +1,19 @@
-import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
-import { ChargingStation } from '../Location';
-import { ChargingStationSequenceType } from '@citrineos/base';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { ChargingStation } from '../Location/index.js';
+import { ChargingStationSequenceType, DEFAULT_TENANT_ID, ITenantDto } from '@citrineos/base';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class ChargingStationSequence extends BaseModelWithTenant {
+export class ChargingStationSequence extends Model {
   static readonly MODEL_NAME: string = 'ChargingStationSequence';
 
   @ForeignKey(() => ChargingStation)
@@ -31,4 +40,31 @@ export class ChargingStationSequence extends BaseModelWithTenant {
 
   @BelongsTo(() => ChargingStation)
   declare station: ChargingStation;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: ChargingStationSequence) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

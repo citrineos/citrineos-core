@@ -1,4 +1,4 @@
-import { splitOnce } from '../../src/util/StringOperations';
+import { splitOnce } from '../../src/util/StringOperations.js';
 
 describe('splitOnce', () => {
   it.each([

@@ -2,9 +2,9 @@ import { readFileSync } from 'fs';
 import { SystemConfig } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { faker } from '@faker-js/faker';
-import { Acme } from '../../../src/certificate/client/acme';
-import { aValidSignedCertificate } from '../../providers/ACME';
-import * as CertificateUtil from '../../../src/certificate/CertificateUtil';
+import { Acme } from '../../../src/certificate/client/acme.js';
+import { aValidSignedCertificate } from '../../providers/ACME.js';
+import * as CertificateUtil from '../../../src/certificate/CertificateUtil.js';
 import { Client } from 'acme-client';
 
 jest.mock('fs', () => ({

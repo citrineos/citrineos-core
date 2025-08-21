@@ -1,7 +1,6 @@
-import { Money } from '../../src/money/Money';
+import { Currency, Money } from '../../src/index.js';
 import { Big } from 'big.js';
 import { expect } from '@jest/globals';
-import { Currency } from '../../src/money/Currency';
 
 describe('money', () => {
   describe('of', () => {

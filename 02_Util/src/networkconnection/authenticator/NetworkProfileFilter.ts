@@ -5,9 +5,9 @@ import {
   ServerNetworkProfile,
 } from '@citrineos/data';
 import { IncomingMessage } from 'http';
-import { AuthenticatorFilter } from './AuthenticatorFilter';
+import { AuthenticatorFilter } from './AuthenticatorFilter.js';
 import { AuthenticationOptions, OCPP2_0_1 } from '@citrineos/base';
-import { UpgradeAuthenticationError } from './errors/AuthenticationError';
+import { UpgradeAuthenticationError } from './errors/AuthenticationError.js';
 
 /**
  * Filter used to block connections when charging stations attempt to connect to disallowed security profiles
