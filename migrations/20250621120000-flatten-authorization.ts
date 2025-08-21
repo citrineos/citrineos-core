@@ -95,6 +95,32 @@ export default {
         allowNull: true,
       });
     }
+    if (!tableDescription['groupAuthorizationId']) {
+      await queryInterface.addColumn('Authorizations', 'groupAuthorizationId', {
+        type: 'INTEGER',
+        allowNull: true,
+      });
+    }
+    // Ensure personalMessage is JSONB
+    if (
+      tableDescription['personalMessage'] &&
+      tableDescription['personalMessage'].type !== 'JSONB'
+    ) {
+      await queryInterface.changeColumn('Authorizations', 'personalMessage', {
+        type: 'JSONB',
+        allowNull: true,
+      });
+    }
+    // Ensure concurrentTransaction is BOOLEAN
+    if (
+      tableDescription['concurrentTransaction'] &&
+      tableDescription['concurrentTransaction'].type !== 'BOOLEAN'
+    ) {
+      await queryInterface.changeColumn('Authorizations', 'concurrentTransaction', {
+        type: 'BOOLEAN',
+        allowNull: true,
+      });
+    }
 
     // 3. Copy/transform data from old columns/related tables into new flat columns
     await queryInterface.sequelize.query(`
@@ -391,5 +417,6 @@ export default {
     await queryInterface.removeColumn('Authorizations', 'groupIdTokenId').catch(() => {});
     await queryInterface.removeColumn('Authorizations', 'concurrentTransaction').catch(() => {});
     await queryInterface.removeColumn('Authorizations', 'customData').catch(() => {});
+    await queryInterface.removeColumn('Authorizations', 'groupAuthorizationId').catch(() => {});
   },
 };

@@ -48,6 +48,10 @@ export default {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      tenantPartnerId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
       finishedAt: {
         type: DataTypes.DATE,
         allowNull: true,

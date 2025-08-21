@@ -24,6 +24,7 @@ import { TransactionEvent } from './TransactionEvent.js';
 import { Transaction } from './Transaction.js';
 import { StopTransaction } from './StopTransaction.js';
 import { Tenant } from '../Tenant.js';
+import { Tariff } from '../Tariff/index.js';
 
 @Table
 export class MeterValue extends Model implements IMeterValueDto {
@@ -56,6 +57,13 @@ export class MeterValue extends Model implements IMeterValueDto {
   declare connectorId?: number;
 
   declare customData?: any | null;
+
+  @ForeignKey(() => Tariff)
+  @Column(DataType.INTEGER)
+  declare tariffId?: number | null;
+
+  @Column(DataType.STRING)
+  declare transactionId?: string | null;
 
   @ForeignKey(() => Tenant)
   @Column({

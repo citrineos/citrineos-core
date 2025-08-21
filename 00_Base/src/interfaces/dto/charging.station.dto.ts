@@ -58,4 +58,8 @@ export enum ChargingStationDtoProps {
   networkProfiles = 'networkProfiles',
   evses = 'evses',
   connectors = 'connectors',
+  coordinates = 'coordinates',
+  floorLevel = 'floorLevel',
+  parkingRestrictions = 'parkingRestrictions',
+  capabilities = 'capabilities',
 }

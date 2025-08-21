@@ -12,15 +12,11 @@ export default {
       allowNull: false,
       defaultValue: 'US',
     });
-    await queryInterface.addColumn('Tenants', 'serverCredentialsRoles', {
-      type: DataTypes.JSONB,
+    await queryInterface.addColumn('Tenants', 'url', {
+      type: DataTypes.STRING,
       allowNull: true,
     });
-    await queryInterface.addColumn('Tenants', 'serverVersions', {
-      type: DataTypes.JSONB,
-      allowNull: true,
-    });
-    await queryInterface.addColumn('Tenants', 'serverCredential', {
+    await queryInterface.addColumn('Tenants', 'serverProfileOCPI', {
       type: DataTypes.JSONB,
       allowNull: true,
     });
@@ -29,8 +25,7 @@ export default {
   down: async (queryInterface: QueryInterface) => {
     await queryInterface.removeColumn('Tenants', 'partyId');
     await queryInterface.removeColumn('Tenants', 'countryCode');
-    await queryInterface.removeColumn('Tenants', 'serverCredentialsRoles');
-    await queryInterface.removeColumn('Tenants', 'serverVersions');
-    await queryInterface.removeColumn('Tenants', 'serverCredential');
+    await queryInterface.removeColumn('Tenants', 'url');
+    await queryInterface.removeColumn('Tenants', 'serverProfileOCPI');
   },
 };

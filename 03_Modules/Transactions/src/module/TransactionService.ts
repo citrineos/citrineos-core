@@ -138,6 +138,8 @@ export class TransactionService {
     tenantId: number,
     meterValues: [OCPP2_0_1.MeterValueType, ...OCPP2_0_1.MeterValueType[]],
     transactionDbId?: number | null,
+    transactionId?: string | null,
+    tariffId?: number | null,
   ) {
     return Promise.all(
       meterValues.map(async (meterValue) => {
@@ -149,6 +151,8 @@ export class TransactionService {
             tenantId,
             meterValue,
             transactionDbId,
+            transactionId,
+            tariffId,
           );
         } else {
           await this._transactionEventRepository.createMeterValue(tenantId, meterValue);

@@ -431,6 +431,8 @@ export class TransactionsModule extends AbstractModule {
         tenantId,
         meterValues,
         activeTransaction?.id,
+        activeTransaction?.transactionId,
+        activeTransaction?.tariffId,
       );
 
       if (activeTransaction) {
