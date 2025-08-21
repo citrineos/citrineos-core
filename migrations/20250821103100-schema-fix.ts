@@ -257,6 +257,81 @@ export = {
   },
 
   down: async (queryInterface: QueryInterface) => {
-    // This migration is not easily reversible.
+    // 1. Drop all foreign key constraints added in up
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Transactions" DROP CONSTRAINT IF EXISTS "Transactions_evseId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Transactions" DROP CONSTRAINT IF EXISTS "Transactions_tariffId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Transactions" DROP CONSTRAINT IF EXISTS "Transactions_authorizationId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Transactions" DROP CONSTRAINT IF EXISTS "Transactions_connectorId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Transactions" DROP CONSTRAINT IF EXISTS "Transactions_locationId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "ChargingNeeds" DROP CONSTRAINT IF EXISTS "ChargingNeeds_evseId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Authorizations" DROP CONSTRAINT IF EXISTS "Authorizations_tenantPartnerId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Authorizations" DROP CONSTRAINT IF EXISTS "Authorizations_groupAuthorizationId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Evses" DROP CONSTRAINT IF EXISTS "Evses_stationId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Connectors" DROP CONSTRAINT IF EXISTS "Connectors_evseId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Tariffs" DROP CONSTRAINT IF EXISTS "Tariffs_connectorId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "LocalListAuthorizations" DROP CONSTRAINT IF EXISTS "LocalListAuthorizations_groupAuthorizationId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Components" DROP CONSTRAINT IF EXISTS "Components_evseTypeId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Reservations" DROP CONSTRAINT IF EXISTS "Reservations_evseTypeId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "TransactionEvents" DROP CONSTRAINT IF EXISTS "TransactionEvents_evseTypeId_fkey";',
+    );
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "VariableAttributes" DROP CONSTRAINT IF EXISTS "VariableAttributes_evseTypeId_fkey";',
+    );
+
+    // 2. Remove all columns added in up
+    await queryInterface.removeColumn('ChargingNeeds', 'evseId');
+    await queryInterface.removeColumn('Evses', 'stationId');
+    await queryInterface.removeColumn('TransactionEvents', 'idTokenValue');
+    await queryInterface.removeColumn('Transactions', 'evseId');
+    await queryInterface.removeColumn('Authorizations', 'tenantPartnerId');
+    await queryInterface.removeColumn('Connectors', 'evseId');
+    await queryInterface.removeColumn('Tariffs', 'connectorId');
+    await queryInterface.removeColumn('Transactions', 'tariffId');
+    await queryInterface.removeColumn('Transactions', 'authorizationId');
+    await queryInterface.removeColumn('Transactions', 'connectorId');
+    await queryInterface.removeColumn('Transactions', 'locationId');
+    await queryInterface.removeColumn('LocalListAuthorizations', 'groupAuthorizationId');
+    await queryInterface.removeColumn('Evses', 'evseTypeId');
+    await queryInterface.removeColumn('TransactionEvents', 'idTokenType');
+    await queryInterface.removeColumn('Evses', 'evseId');
+    await queryInterface.removeColumn('Evses', 'physicalReference');
+    await queryInterface.removeColumn('Evses', 'removed');
+
+    // 3. Drop EvseTypes table
+    await queryInterface.dropTable('EvseTypes');
+
+    // 4. Restore Evses table PK/index as needed
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Evses" DROP CONSTRAINT IF EXISTS "Evses_pkey";',
+    );
   },
 };
