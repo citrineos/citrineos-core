@@ -256,30 +256,29 @@ export class CitrineOSServer {
   }
 
   protected async _syncWebsocketConfig() {
-    for (const websocketServerConfig of this._config.util.networkConnection.websocketServers) {
-      const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
-        where: {
-          id: websocketServerConfig.id,
-        },
-      });
-      serverNetworkProfile.host = websocketServerConfig.host;
-      serverNetworkProfile.port = websocketServerConfig.port;
-      serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
-      serverNetworkProfile.protocol = websocketServerConfig.protocol;
-      serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
-      serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
-      serverNetworkProfile.allowUnknownChargingStations =
-        websocketServerConfig.allowUnknownChargingStations;
-      serverNetworkProfile.tlsKeyFilePath = websocketServerConfig.tlsKeyFilePath;
-      serverNetworkProfile.tlsCertificateChainFilePath =
-        websocketServerConfig.tlsCertificateChainFilePath;
-      serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath =
-        websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
-      serverNetworkProfile.rootCACertificateFilePath =
-        websocketServerConfig.rootCACertificateFilePath;
-
-      await serverNetworkProfile.save();
-    }
+    // for (const websocketServerConfig of this._config.util.networkConnection.websocketServers) {
+    //   const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
+    //     where: {
+    //       id: websocketServerConfig.id,
+    //     },
+    //   });
+    //   serverNetworkProfile.host = websocketServerConfig.host;
+    //   serverNetworkProfile.port = websocketServerConfig.port;
+    //   serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
+    //   serverNetworkProfile.protocol = websocketServerConfig.protocol;
+    //   serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
+    //   serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
+    //   serverNetworkProfile.allowUnknownChargingStations =
+    //     websocketServerConfig.allowUnknownChargingStations;
+    //   serverNetworkProfile.tlsKeyFilePath = websocketServerConfig.tlsKeyFilePath;
+    //   serverNetworkProfile.tlsCertificateChainFilePath =
+    //     websocketServerConfig.tlsCertificateChainFilePath;
+    //   serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath =
+    //     websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
+    //   serverNetworkProfile.rootCACertificateFilePath =
+    //     websocketServerConfig.rootCACertificateFilePath;
+    //   await serverNetworkProfile.save();
+    // }
   }
 
   protected _createSender(): IMessageSender {
