@@ -26,7 +26,7 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      partnerProfile: {
+      partnerProfileOCPI: {
         type: DataTypes.JSONB,
         allowNull: true,
       },
