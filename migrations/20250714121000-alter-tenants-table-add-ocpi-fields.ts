@@ -1,6 +1,6 @@
 import { DataTypes, QueryInterface } from 'sequelize';
 
-module.exports = {
+export default {
   up: async (queryInterface: QueryInterface) => {
     await queryInterface.addColumn('Tenants', 'partyId', {
       type: DataTypes.STRING,

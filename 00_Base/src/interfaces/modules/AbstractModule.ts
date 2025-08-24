@@ -6,13 +6,13 @@
 import 'reflect-metadata';
 import { ILogObj, Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
-import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from '.';
-import { OcppRequest, OcppResponse } from '../..';
-import { SystemConfig } from '../../config/types';
-import { CallAction, ErrorCode, OcppError, OCPPVersionType } from '../../ocpp/rpc/message';
-import { RequestBuilder } from '../../util/request';
-import { ICache } from '../cache/cache';
-import { CacheNamespace, createIdentifier, IWebsocketConnection } from '../cache/types';
+import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from './index.js';
+import { OcppRequest, OcppResponse } from '../../index.js';
+import { SystemConfig } from '../../config/types.js';
+import { CallAction, ErrorCode, OcppError, OCPPVersionType } from '../../ocpp/rpc/message.js';
+import { RequestBuilder } from '../../util/request.js';
+import { ICache } from '../cache/cache.js';
+import { CacheNamespace, createIdentifier, IWebsocketConnection } from '../cache/types.js';
 import {
   EventGroup,
   HandlerProperties,
@@ -22,7 +22,7 @@ import {
   IMessageSender,
   MessageOrigin,
   MessageState,
-} from '../messages';
+} from '../messages/index.js';
 
 export abstract class AbstractModule implements IModule {
   public static readonly CALLBACK_URL_CACHE_PREFIX: string = 'CALLBACK_URL_';

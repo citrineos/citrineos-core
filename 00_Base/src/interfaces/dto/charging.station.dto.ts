@@ -11,7 +11,7 @@ import {
   ILocationDto,
   IStatusNotificationDto,
   OCPPVersion,
-} from '../..';
+} from '../../index.js';
 import { Point } from 'geojson';
 
 export interface IChargingStationDto extends IBaseDto {

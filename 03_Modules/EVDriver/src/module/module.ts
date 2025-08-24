@@ -29,10 +29,13 @@ import {
   SystemConfig,
 } from '@citrineos/base';
 import {
+  Authorization,
   IAuthorizationRepository,
   IChargingProfileRepository,
   IDeviceModelRepository,
   ILocalAuthListRepository,
+  ILocationRepository,
+  IOCPPMessageRepository,
   IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
@@ -42,9 +45,6 @@ import {
   SequelizeChargingStationSequenceRepository,
   Tariff,
   VariableAttribute,
-  IOCPPMessageRepository,
-  ILocationRepository,
-  Authorization,
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
@@ -54,7 +54,7 @@ import {
   RealTimeAuthorizer,
 } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
-import { LocalAuthListService } from './LocalAuthListService';
+import { LocalAuthListService } from './LocalAuthListService.js';
 
 /**
  * Component that handles provisioning related messages.

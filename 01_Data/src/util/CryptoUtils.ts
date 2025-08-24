@@ -1,4 +1,4 @@
-import { Pbkdf2 } from './Pbkdf2';
+import { Pbkdf2 } from './Pbkdf2.js';
 
 export class CryptoUtils {
   static passwordHashAlgorithm = new Pbkdf2();

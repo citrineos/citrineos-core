@@ -18,7 +18,7 @@ import {
   UserInfo,
 } from '@citrineos/base';
 import { createPublicKey } from 'crypto';
-import { RbacRulesLoader } from '../rbac/RbacRulesLoader';
+import { RbacRulesLoader } from '../rbac/RbacRulesLoader.js';
 
 export interface OIDCConfig {
   // JWKS URI for the public keys

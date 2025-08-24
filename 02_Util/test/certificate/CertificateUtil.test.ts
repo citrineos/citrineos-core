@@ -5,12 +5,12 @@ import {
   extractEncodedContentFromCSR,
   parseCertificateChainPem,
   sendOCSPRequest,
-} from '../../src';
+} from '../../src/index.js';
 import jsrsasign from 'jsrsasign';
+import { faker } from '@faker-js/faker';
+import { readFile } from '../utils/FileUtil.js';
 import X509 = jsrsasign.X509;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
-import { faker } from '@faker-js/faker';
-import { readFile } from '../utils/FileUtil';
 
 describe('CertificateUtil', () => {
   describe('createSignedCertificateFromCSR', () => {

@@ -3,21 +3,21 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
-import { SequelizeRepository } from './Base';
-import { IChargingProfileRepository } from '../../../interfaces';
-import { EvseType } from '../model/DeviceModel';
-import { Sequelize } from 'sequelize-typescript';
-import { Logger, ILogObj } from 'tslog';
+import { BootstrapConfig, CrudRepository, OCPP2_0_1 } from '@citrineos/base';
+import { SequelizeRepository } from './Base.js';
+import { IChargingProfileRepository } from '../../../interfaces/index.js';
 import {
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
   CompositeSchedule,
+  Evse,
+  EvseType,
   SalesTariff,
-} from '../model/ChargingProfile';
-import { Transaction } from '../model/TransactionEvent';
-import { Evse } from '../model';
+  Transaction,
+} from '../model/index.js';
+import { Sequelize } from 'sequelize-typescript';
+import { ILogObj, Logger } from 'tslog';
 
 export class SequelizeChargingProfileRepository
   extends SequelizeRepository<ChargingProfile>

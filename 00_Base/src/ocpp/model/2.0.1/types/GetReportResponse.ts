@@ -9,8 +9,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { GenericDeviceModelStatusEnumType } from '../enums';
-import { OcppResponse } from '../../../..';
+import { GenericDeviceModelStatusEnumType } from '../enums/index.js';
+import { OcppResponse } from '../../../../index.js';
 
 export interface GetReportResponse extends OcppResponse {
   customData?: CustomDataType | null;

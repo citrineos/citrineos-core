@@ -8,25 +8,25 @@ import {
   TariffQuerySchema,
   TariffQueryString,
   TariffSchema,
-  TenantQueryString,
   TenantQuerySchema,
+  TenantQueryString,
   Transaction,
   TransactionEventQuerySchema,
   TransactionEventQuerystring,
 } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
-import { ITransactionsModuleApi } from './interface';
-import { TransactionsModule } from './module';
+import { ITransactionsModuleApi } from './interface.js';
+import { TransactionsModule } from './module.js';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
   HttpMethod,
-  OCPP2_0_1_Namespace,
-  OCPP1_6_Namespace,
   Namespace,
+  OCPP1_6_Namespace,
+  OCPP2_0_1_Namespace,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { UpsertTariffRequest } from './model/tariffs';
+import { UpsertTariffRequest } from './model/tariffs.js';
 import { plainToInstance } from 'class-transformer';
 
 /**

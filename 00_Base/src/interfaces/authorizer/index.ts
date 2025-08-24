@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { AuthorizationStatusType, IAuthorizationDto, IMessageContext } from '../..';
+import { AuthorizationStatusType, IAuthorizationDto, IMessageContext } from '../../index.js';
 
 export interface IAuthorizer {
   /**

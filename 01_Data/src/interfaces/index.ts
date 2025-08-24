@@ -3,61 +3,61 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-export * from './repositories';
+export * from './repositories.js';
 
 // Data endpoints query models
 export {
   ChargingStationKeyQuerystring,
   ChargingStationKeyQuerySchema,
-} from './queries/ChargingStation';
+} from './queries/ChargingStation.js';
 export {
   UpdateChargingStationPasswordQueryString,
   UpdateChargingStationPasswordQuerySchema,
-} from './queries/UpdateChargingStationPasswordQuery';
+} from './queries/UpdateChargingStationPasswordQuery.js';
 export {
   VariableAttributeQuerystring,
   VariableAttributeQuerySchema,
   CreateOrUpdateVariableAttributeQuerystring,
   CreateOrUpdateVariableAttributeQuerySchema,
-} from './queries/VariableAttribute';
-export { AuthorizationQuerystring, AuthorizationQuerySchema } from './queries/Authorization';
+} from './queries/VariableAttribute.js';
+export { AuthorizationQuerystring, AuthorizationQuerySchema } from './queries/Authorization.js';
 export {
   TransactionEventQuerystring,
   TransactionEventQuerySchema,
-} from './queries/TransactionEvent';
-export { TariffQueryString, TariffQuerySchema } from './queries/Tariff';
-export { ModelKeyQuerystring, ModelKeyQuerystringSchema } from './queries/Model';
+} from './queries/TransactionEvent.js';
+export { TariffQueryString, TariffQuerySchema } from './queries/Tariff.js';
+export { ModelKeyQuerystring, ModelKeyQuerystringSchema } from './queries/Model.js';
 export {
   NetworkProfileQuerystring,
   NetworkProfileQuerySchema,
   NetworkProfileDeleteQuerystring,
   NetworkProfileDeleteQuerySchema,
-} from './queries/NetworkProfile';
+} from './queries/NetworkProfile.js';
 export {
   UpdateTlsCertificateQueryString,
   TlsCertificateSchema,
   UpdateTlsCertificateQuerySchema,
-} from './queries/TlsCertificate';
-export { TenantQuerySchema, TenantQueryString } from './queries/Tenant';
+} from './queries/TlsCertificate.js';
+export { TenantQuerySchema, TenantQueryString } from './queries/Tenant.js';
 export {
   GenerateCertificateChainSchema,
   InstallRootCertificateSchema,
-} from './queries/RootCertificate';
-export { CreateSubscriptionSchema } from './queries/Subscription';
+} from './queries/RootCertificate.js';
+export { CreateSubscriptionSchema } from './queries/Subscription.js';
 export {
   WebsocketGetQuerystring,
   WebsocketGetQuerySchema,
   WebsocketDeleteQuerystring,
   WebsocketDeleteQuerySchema,
   WebsocketRequestSchema,
-} from './queries/Websocket';
+} from './queries/Websocket.js';
 
 // Data projection models
-export { AuthorizationRestrictions } from './projections/AuthorizationRestrictions';
-export { default as AuthorizationRestrictionsSchema } from './projections/schemas/AuthorizationRestrictionsSchema.json';
-export { default as TariffSchema } from './projections/schemas/TariffSchema.json';
+export { AuthorizationRestrictions } from './projections/AuthorizationRestrictions.js';
+export { default as AuthorizationRestrictionsSchema } from './projections/schemas/AuthorizationRestrictionsSchema.json' with { type: 'json' };
+export { default as TariffSchema } from './projections/schemas/TariffSchema.json' with { type: 'json' };
 
 // Date endpoints DTOs
-export { TlsCertificatesRequest } from './dtos/TlsCertificatesRequest';
-export { GenerateCertificateChainRequest } from './dtos/GenerateCertificateChainRequest';
-export { InstallRootCertificateRequest } from './dtos/InstallRootCertificateRequest';
+export { TlsCertificatesRequest } from './dtos/TlsCertificatesRequest.js';
+export { GenerateCertificateChainRequest } from './dtos/GenerateCertificateChainRequest.js';
+export { InstallRootCertificateRequest } from './dtos/InstallRootCertificateRequest.js';

@@ -52,10 +52,10 @@ import {
   SignedMeterValuesUtil,
 } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
-import { TransactionService } from './TransactionService';
-import { StatusNotificationService } from './StatusNotificationService';
-import { CostNotifier } from './CostNotifier';
-import { CostCalculator } from './CostCalculator';
+import { TransactionService } from './TransactionService.js';
+import { StatusNotificationService } from './StatusNotificationService.js';
+import { CostNotifier } from './CostNotifier.js';
+import { CostCalculator } from './CostCalculator.js';
 
 /**
  * Component that handles transaction related messages.

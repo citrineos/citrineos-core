@@ -7,28 +7,29 @@ import {
   LocalListVersionAuthorization,
   SendLocalList,
   SendLocalListAuthorization,
-} from './Authorization';
-import { Boot } from './Boot';
-import { Certificate, InstalledCertificate } from './Certificate';
-import { ChangeConfiguration } from './ChangeConfiguration';
+} from './Authorization/index.js';
+import { Boot } from './Boot.js';
+import { Certificate, InstalledCertificate } from './Certificate/index.js';
+import { ChangeConfiguration } from './ChangeConfiguration.js';
 import {
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
   CompositeSchedule,
   SalesTariff,
-} from './ChargingProfile';
+} from './ChargingProfile/index.js';
 import {
   ChargingStation,
   ChargingStationNetworkProfile,
   Connector,
+  LatestStatusNotification,
   Location,
   ServerNetworkProfile,
   SetNetworkProfile,
   StatusNotification,
-} from './Location';
-import { ChargingStationSecurityInfo } from './ChargingStationSecurityInfo';
-import { ChargingStationSequence } from './ChargingStationSequence';
+} from './Location/index.js';
+import { ChargingStationSecurityInfo } from './ChargingStationSecurityInfo.js';
+import { ChargingStationSequence } from './ChargingStationSequence/index.js';
 import {
   Component,
   EvseType,
@@ -36,24 +37,27 @@ import {
   VariableAttribute,
   VariableCharacteristics,
   VariableStatus,
-} from './DeviceModel';
-import { ComponentVariable } from './DeviceModel/ComponentVariable';
-import { EventData, VariableMonitoring, VariableMonitoringStatus } from './VariableMonitoring';
+} from './DeviceModel/index.js';
+import { ComponentVariable } from './DeviceModel/ComponentVariable.js';
+import {
+  EventData,
+  VariableMonitoring,
+  VariableMonitoringStatus,
+} from './VariableMonitoring/index.js';
 import {
   MeterValue,
   StartTransaction,
   StopTransaction,
   Transaction,
   TransactionEvent,
-} from './TransactionEvent';
-import { MessageInfo } from './MessageInfo';
-import { OCPPMessage } from './OCPPMessage';
-import { Reservation } from './Reservation';
-import { SecurityEvent } from './SecurityEvent';
-import { LatestStatusNotification } from './Location/LatestStatusNotification';
-import { Subscription } from './Subscription';
-import { Tariff } from './Tariff';
-import { TenantPartner } from './TenantPartner';
+} from './TransactionEvent/index.js';
+import { MessageInfo } from './MessageInfo/index.js';
+import { OCPPMessage } from './OCPPMessage.js';
+import { Reservation } from './Reservation.js';
+import { SecurityEvent } from './SecurityEvent.js';
+import { Subscription } from './Subscription/index.js';
+import { Tariff } from './Tariff/index.js';
+import { TenantPartner } from './TenantPartner.js';
 import { ITenantDto, OCPIRegistration } from '@citrineos/base';
 
 export enum TenantAttributeProps {

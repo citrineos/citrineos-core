@@ -6,7 +6,7 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 const TABLE_NAME = 'AsyncJobStatuses';
 
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
     // Create enum type for AsyncJobName
     await queryInterface.sequelize.query(`

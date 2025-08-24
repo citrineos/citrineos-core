@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { jest } from '@jest/globals';
 import { ISubscriptionRepository, OCPPMessage, Subscription } from '@citrineos/data';
-import { WebhookDispatcher } from '../../src';
+import { WebhookDispatcher } from '../../src/index.js';
 import { createIdentifier, DEFAULT_TENANT_ID, MessageOrigin } from '@citrineos/base';
-import { aSubscription } from '../providers/SubscriptionProvider';
+import { aSubscription } from '../providers/SubscriptionProvider.js';
 
 describe('WebhookDispatcher', () => {
   const fetch = jest.fn(() =>

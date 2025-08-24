@@ -1,9 +1,9 @@
-import { SequelizeRepository } from './Base';
-import { ChargingStationSecurityInfo } from '../model/ChargingStationSecurityInfo';
+import { SequelizeRepository } from './Base.js';
+import { ChargingStationSecurityInfo } from '../model/ChargingStationSecurityInfo.js';
 import { ILogObj, Logger } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
 import { BootstrapConfig } from '@citrineos/base';
-import { IChargingStationSecurityInfoRepository } from '../../../interfaces';
+import { IChargingStationSecurityInfoRepository } from '../../../interfaces/index.js';
 
 export class SequelizeChargingStationSecurityInfoRepository
   extends SequelizeRepository<ChargingStationSecurityInfo>

@@ -9,7 +9,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { OcppRequest } from '../../../..';
+import { OcppRequest } from '../../../../index.js';
 
 export interface CostUpdatedRequest extends OcppRequest {
   customData?: CustomDataType | null;

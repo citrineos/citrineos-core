@@ -3,12 +3,12 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CrudRepository, BootstrapConfig, type BootConfig, OCPP2_0_1 } from '@citrineos/base';
-import { type IBootRepository } from '../../../interfaces';
-import { Boot } from '../model/Boot';
-import { VariableAttribute } from '../model/DeviceModel';
-import { SequelizeRepository } from '..';
-import { Logger, ILogObj } from 'tslog';
+import { type BootConfig, BootstrapConfig, CrudRepository, OCPP2_0_1 } from '@citrineos/base';
+import { type IBootRepository } from '../../../interfaces/index.js';
+import { Boot } from '../model/Boot.js';
+import { VariableAttribute } from '../model/index.js';
+import { SequelizeRepository } from '../index.js';
+import { ILogObj, Logger } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
 
 export class SequelizeBootRepository extends SequelizeRepository<Boot> implements IBootRepository {

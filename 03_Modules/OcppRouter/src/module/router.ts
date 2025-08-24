@@ -14,8 +14,14 @@ import {
   CallAction,
   CallError,
   CallResult,
+  CircuitBreaker,
+  CircuitBreakerOptions,
+  CircuitBreakerState,
+  createIdentifier,
   ErrorCode,
   EventGroup,
+  getStationIdFromIdentifier,
+  getTenantIdFromIdentifier,
   ICache,
   IMessage,
   IMessageConfirmation,
@@ -36,19 +42,11 @@ import {
   RequestBuilder,
   RetryMessageError,
   SystemConfig,
-  CircuitBreaker,
-  CircuitBreakerOptions,
-  CircuitBreakerState,
 } from '@citrineos/base';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
 import { ILocationRepository, ISubscriptionRepository, sequelize } from '@citrineos/data';
-import { WebhookDispatcher } from './webhook.dispatcher';
-import {
-  createIdentifier,
-  getStationIdFromIdentifier,
-  getTenantIdFromIdentifier,
-} from '@citrineos/base';
+import { WebhookDispatcher } from './webhook.dispatcher.js';
 
 /**
  * Implementation of the ocpp router
@@ -97,7 +95,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     dispatcher: WebhookDispatcher,
     networkHook: (identifier: string, message: string) => Promise<void>,
     logger?: Logger<ILogObj>,
-    ajv?: Ajv,
+    ajv?: Ajv.Ajv,
     locationRepository?: ILocationRepository,
     subscriptionRepository?: ISubscriptionRepository,
     circuitBreakerOptions?: CircuitBreakerOptions,

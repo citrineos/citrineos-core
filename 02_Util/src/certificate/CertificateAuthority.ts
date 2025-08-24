@@ -6,14 +6,13 @@ import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import {
   IChargingStationCertificateAuthorityClient,
   IV2GCertificateAuthorityClient,
-} from './client/interface';
-import { Hubject } from './client/hubject';
-import { Acme } from './client/acme';
+} from './client/interface.js';
+import { Hubject } from './client/hubject.js';
+import { Acme } from './client/acme.js';
 import { ILogObj, Logger } from 'tslog';
+import * as pkijs from 'pkijs';
 import { Certificate } from 'pkijs';
 import jsrsasign, { KJUR, X509 } from 'jsrsasign';
-import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
-import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 import moment from 'moment';
 import {
   createPemBlock,
@@ -22,9 +21,10 @@ import {
   extractEncodedContentFromCSR,
   parseCertificateChainPem,
   sendOCSPRequest,
-} from './CertificateUtil';
-import * as pkijs from 'pkijs';
+} from './CertificateUtil.js';
 import { Crypto } from '@peculiar/webcrypto';
+import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
+import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 
 const cryptoEngine = new pkijs.CryptoEngine({
   crypto: new Crypto(),

@@ -48,8 +48,8 @@ import {
 import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
-import { DeviceModelService } from './DeviceModelService';
-import { BootNotificationService } from './BootNotificationService';
+import { DeviceModelService } from './DeviceModelService.js';
+import { BootNotificationService } from './BootNotificationService.js';
 
 /**
  * Component that handles Configuration related messages.

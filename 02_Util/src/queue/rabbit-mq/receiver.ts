@@ -5,11 +5,13 @@
 
 import * as amqplib from 'amqplib';
 import { ILogObj, Logger } from 'tslog';
-import { MemoryCache } from '../..';
+import { MemoryCache } from '../../index.js';
 import {
   AbstractMessageHandler,
   CacheNamespace,
   CallAction,
+  CircuitBreaker,
+  CircuitBreakerState,
   ICache,
   IModule,
   Message,
@@ -18,8 +20,6 @@ import {
   OcppResponse,
   RetryMessageError,
   SystemConfig,
-  CircuitBreakerState,
-  CircuitBreaker,
 } from '@citrineos/base';
 import { plainToInstance } from 'class-transformer';
 

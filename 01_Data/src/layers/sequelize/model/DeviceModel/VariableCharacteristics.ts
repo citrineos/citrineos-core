@@ -3,14 +3,30 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IVariableCharacteristicsDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
-import { Variable } from './Variable';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import {
+  DEFAULT_TENANT_ID,
+  ITenantDto,
+  IVariableCharacteristicsDto,
+  IVariableDto,
+  OCPP2_0_1,
+  OCPP2_0_1_Namespace,
+} from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Variable } from './Variable.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
 export class VariableCharacteristics
-  extends BaseModelWithTenant
+  extends Model
   implements OCPP2_0_1.VariableCharacteristicsType, IVariableCharacteristicsDto
 {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableCharacteristicsType;
@@ -42,7 +58,7 @@ export class VariableCharacteristics
    */
 
   @BelongsTo(() => Variable)
-  declare variable: Variable;
+  declare variable: IVariableDto;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -52,4 +68,31 @@ export class VariableCharacteristics
   declare variableId?: number | null;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: VariableCharacteristics) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

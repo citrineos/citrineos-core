@@ -3,10 +3,10 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IMessage, OcppRequest, OcppResponse } from '../..';
-import { CallAction } from '../../ocpp/rpc/message';
-import { IModule } from '../modules';
-import { HandlerProperties } from '.';
+import { IMessage, OcppRequest, OcppResponse } from '../../index.js';
+import { CallAction } from '../../ocpp/rpc/message.js';
+import { IModule } from '../modules/index.js';
+import { HandlerProperties } from './index.js';
 
 /**
  * MessageHandler

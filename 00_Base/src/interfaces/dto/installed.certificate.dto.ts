@@ -1,4 +1,4 @@
-import { IBaseDto } from '../..';
+import { IBaseDto } from '../../index.js';
 
 export interface IInstalledCertificateDto extends IBaseDto {
   id?: number;

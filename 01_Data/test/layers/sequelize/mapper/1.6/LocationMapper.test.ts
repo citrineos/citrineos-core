@@ -1,5 +1,5 @@
 import { ConnectorErrorCode, ConnectorStatus, OCPP1_6 } from '@citrineos/base';
-import { LocationMapper } from '../../../../../src/layers/sequelize/mapper/1.6';
+import { LocationMapper } from '../../../../../src/layers/sequelize/mapper/1.6/index.js';
 
 describe('LocationMapper', () => {
   describe('mapStatusNotificationRequestStatusToConnectorStatus', () => {

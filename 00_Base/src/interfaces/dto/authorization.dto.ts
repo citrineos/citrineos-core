@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AdditionalInfo, IBaseDto, ITenantPartnerDto } from '../..';
-import { AuthorizationStatusType, IdTokenType, AuthorizationWhitelistType } from './enum';
+import { AdditionalInfo, IBaseDto, ITenantPartnerDto } from '../../index.js';
+import { AuthorizationStatusType, AuthorizationWhitelistType, IdTokenType } from './enum/index.js';
 
 export interface IAuthorizationDto extends IBaseDto {
   id?: number;

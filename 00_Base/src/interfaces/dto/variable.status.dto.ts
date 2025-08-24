@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IBaseDto } from './base.dto';
-import { IVariableAttributeDto } from './variable.attribute.dto';
-import { OCPP2_0_1 } from '../..';
+import { IBaseDto } from './base.dto.js';
+import { IVariableAttributeDto } from './variable.attribute.dto.js';
+import { OCPP2_0_1 } from '../../index.js';
 
 export interface IVariableStatusDto extends IBaseDto {
   id?: number;

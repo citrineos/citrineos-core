@@ -11,7 +11,7 @@ import {
   IChargingStationDto,
   IEvseDto,
   ITariffDto,
-} from '../..';
+} from '../../index.js';
 
 export interface IConnectorDto extends IBaseDto {
   id?: number;

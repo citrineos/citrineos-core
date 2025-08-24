@@ -4,10 +4,10 @@
  * // SPDX-License-Identifier: Apache 2.0
  *
  */
-import { UserInfo } from './UserInfo';
+import { UserInfo } from './UserInfo.js';
 import { FastifyRequest } from 'fastify';
-import { ApiAuthorizationResult } from './ApiAuthorizationResult';
-import { ApiAuthenticationResult } from './ApiAuthenticationResult';
+import { ApiAuthorizationResult } from './ApiAuthorizationResult.js';
+import { ApiAuthenticationResult } from './ApiAuthenticationResult.js';
 
 /**
  * Interface for authentication providers

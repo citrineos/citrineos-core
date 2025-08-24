@@ -5,6 +5,9 @@
 
 import {
   CacheNamespace,
+  createIdentifier,
+  getStationIdFromIdentifier,
+  getTenantIdFromIdentifier,
   IAuthenticator,
   ICache,
   IMessageRouter,
@@ -20,12 +23,7 @@ import fs from 'fs';
 import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from 'ws';
 import { ILogObj, Logger } from 'tslog';
 import { SecureContextOptions } from 'tls';
-import { IUpgradeError } from './authenticator/errors/IUpgradeError';
-import {
-  createIdentifier,
-  getStationIdFromIdentifier,
-  getTenantIdFromIdentifier,
-} from '@citrineos/base/dist/interfaces/cache/types';
+import { IUpgradeError } from './authenticator/errors/IUpgradeError.js';
 
 export class WebsocketNetworkConnection {
   protected _cache: ICache;

@@ -1,5 +1,5 @@
 import { expect, jest } from '@jest/globals';
-import { Scheduler } from '../../src/module/Scheduler';
+import { Scheduler } from '../../src/module/Scheduler.js';
 
 class PassthroughScheduler extends Scheduler {
   schedule(key: string, task: () => void, intervalSeconds: number) {

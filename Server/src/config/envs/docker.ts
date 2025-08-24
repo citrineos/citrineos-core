@@ -10,7 +10,10 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
 } from '@citrineos/base';
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
 
 export function createDockerConfig() {
   return defineConfig({

@@ -1,16 +1,16 @@
 import {
   IChargingStationCertificateAuthorityClient,
   IV2GCertificateAuthorityClient,
-} from '../../src/certificate/client/interface';
+} from '../../src/certificate/client/interface.js';
 import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
-import { CertificateAuthorityService } from '../../src';
+import { CertificateAuthorityService } from '../../src/index.js';
 import {
   aValidCertificateItemArray,
   aValidSignedCertificateWithOCSPInfo,
-} from '../providers/CertificateAuthority';
+} from '../providers/CertificateAuthority.js';
 import { faker } from '@faker-js/faker';
-import * as CertificateUtil from '../../src/certificate/CertificateUtil';
-import { readFile } from '../utils/FileUtil';
+import * as CertificateUtil from '../../src/certificate/CertificateUtil.js';
+import { readFile } from '../utils/FileUtil.js';
 import { KJUR } from 'jsrsasign';
 
 jest.mock('../../src/certificate/CertificateUtil');

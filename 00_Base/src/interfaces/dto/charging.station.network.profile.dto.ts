@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IBaseDto } from './base.dto';
-import { ISetNetworkProfileDto } from './set.network.profile.dto';
-import { IServerNetworkProfileDto } from './server.network.profile.dto';
+import { IBaseDto } from './base.dto.js';
+import { ISetNetworkProfileDto } from './set.network.profile.dto.js';
+import { IServerNetworkProfileDto } from './server.network.profile.dto.js';
 
 export interface IChargingStationNetworkProfileDto extends IBaseDto {
   id?: number;

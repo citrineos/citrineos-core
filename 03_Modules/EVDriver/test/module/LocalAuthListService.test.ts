@@ -10,7 +10,7 @@ import {
   VariableAttribute,
   VariableCharacteristics,
 } from '@citrineos/data';
-import { LocalAuthListService } from '../../src/module/LocalAuthListService';
+import { LocalAuthListService } from '../../src/module/LocalAuthListService.js';
 import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
 
 describe('LocalAuthListService', () => {

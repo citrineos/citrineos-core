@@ -29,8 +29,8 @@ import {
 } from '@citrineos/data';
 import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
-import { DeviceModelService } from './services';
-import { MonitoringService } from './MonitoringService';
+import { DeviceModelService } from './services.js';
+import { MonitoringService } from './MonitoringService.js';
 
 /**
  * Component that handles monitoring related messages.
