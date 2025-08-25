@@ -9,7 +9,6 @@ import { Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
 import { ComponentVariable } from './model/DeviceModel/ComponentVariable';
 import {
-  AdditionalInfo,
   Authorization,
   Boot,
   Certificate,
@@ -26,13 +25,14 @@ import {
   Connector,
   EventData,
   Evse,
-  IdToken,
-  IdTokenInfo,
+  EvseType,
   InstalledCertificate,
+  LatestStatusNotification,
   LocalListAuthorization,
   LocalListVersion,
   LocalListVersionAuthorization,
   Location,
+  MessageInfo,
   MeterValue,
   OCPPMessage,
   Reservation,
@@ -41,7 +41,14 @@ import {
   SendLocalList,
   SendLocalListAuthorization,
   ServerNetworkProfile,
+  SetNetworkProfile,
+  StartTransaction,
+  StatusNotification,
+  StopTransaction,
+  Subscription,
+  Tariff,
   Tenant,
+  TenantPartner,
   Transaction,
   TransactionEvent,
   Variable,
@@ -49,15 +56,8 @@ import {
   VariableCharacteristics,
   VariableMonitoring,
   VariableMonitoringStatus,
+  VariableStatus,
 } from '.';
-import { VariableStatus } from './model/DeviceModel';
-import { MessageInfo } from './model/MessageInfo';
-import { Subscription } from './model/Subscription';
-import { Tariff } from './model/Tariff';
-import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
-import { SetNetworkProfile, StatusNotification } from './model/Location';
-import { LatestStatusNotification } from './model/Location/LatestStatusNotification';
-import { StartTransaction, StopTransaction } from './model/TransactionEvent';
 
 export class DefaultSequelizeInstance {
   /**
@@ -129,7 +129,6 @@ export class DefaultSequelizeInstance {
       username: this.config.database.username,
       password: this.config.database.password,
       models: [
-        AdditionalInfo,
         Authorization,
         Boot,
         Certificate,
@@ -147,10 +146,8 @@ export class DefaultSequelizeInstance {
         CompositeSchedule,
         Connector,
         Evse,
+        EvseType,
         EventData,
-        IdToken,
-        IdTokenAdditionalInfo,
-        IdTokenInfo,
         Location,
         MeterValue,
         MessageInfo,
@@ -180,6 +177,7 @@ export class DefaultSequelizeInstance {
         SendLocalList,
         SendLocalListAuthorization,
         Tenant,
+        TenantPartner,
       ],
       logging: (_sql: string, _timing?: number) => {},
     });

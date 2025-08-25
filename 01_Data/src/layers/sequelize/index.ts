@@ -8,15 +8,12 @@ export {
   VariableAttribute,
   VariableCharacteristics,
   Component,
-  Evse,
+  EvseType,
   Variable,
   VariableStatus,
 } from './model/DeviceModel';
 export {
   Authorization,
-  IdToken,
-  IdTokenInfo,
-  AdditionalInfo,
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
@@ -38,7 +35,9 @@ export {
 } from './model/VariableMonitoring';
 export {
   ChargingStation,
+  Evse,
   ChargingStationNetworkProfile,
+  LatestStatusNotification,
   Location,
   ServerNetworkProfile,
   SetNetworkProfile,
@@ -67,6 +66,15 @@ export { Reservation } from './model/Reservation';
 export { ChargingStationSecurityInfo } from './model/ChargingStationSecurityInfo';
 export { ChangeConfiguration } from './model/ChangeConfiguration';
 export { Tenant } from './model/Tenant';
+export { TenantPartner } from './model/TenantPartner';
+export {
+  AsyncJobStatus,
+  AsyncJobStatusDTO,
+  AsyncJobRequest,
+  AsyncJobName,
+  AsyncJobAction,
+  PaginatedParams,
+} from './model/AsyncJob';
 
 // Sequelize Repositories
 export { SequelizeRepository } from './repository/Base';
@@ -90,6 +98,7 @@ export { SequelizeChargingStationSecurityInfoRepository } from './repository/Cha
 export { SequelizeChargingStationSequenceRepository } from './repository/ChargingStationSequence';
 export { SequelizeChangeConfigurationRepository } from './repository/ChangeConfiguration';
 export { SequelizeTenantRepository } from './repository/Tenant';
+export { SequelizeAsyncJobStatusRepository } from './repository/AsyncJobStatus';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util';

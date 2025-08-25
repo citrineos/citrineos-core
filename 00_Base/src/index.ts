@@ -15,6 +15,7 @@ export {
   ApiAuthenticationResult,
   UserInfo,
 } from './interfaces/api';
+export { IAuthorizer } from './interfaces/authorizer';
 export { BadRequestError } from './interfaces/api/exceptions/BadRequestError';
 export { NotFoundError } from './interfaces/api/exceptions/NotFoundError';
 export { ICache } from './interfaces/cache/cache';
@@ -46,7 +47,14 @@ export {
   MessageState,
   RetryMessageError,
 } from './interfaces/messages';
-export { AbstractModule, AsHandler, IModule } from './interfaces/modules';
+export {
+  AbstractModule,
+  AsHandler,
+  IModule,
+  CircuitBreaker,
+  type CircuitBreakerState,
+  type CircuitBreakerOptions,
+} from './interfaces/modules';
 export {
   Call,
   CallAction,
@@ -247,4 +255,5 @@ export { assert, notNull, deepDirectionalEqual } from './assertion/assertion';
 export { UnauthorizedError } from './interfaces/api/exception/UnauthorizedError';
 export { AuthorizationSecurity } from './interfaces/api/AuthorizationSecurity';
 export { Ajv };
+export * from './interfaces/dto';
 export declare type Constructable<T> = new (...args: any[]) => T;

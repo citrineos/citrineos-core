@@ -1,10 +1,7 @@
 import { Optional } from 'sequelize';
 import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import {
-  AdditionalInfo,
   Authorization,
-  IdToken,
-  IdTokenInfo,
   LocalListAuthorization,
   LocalListVersion,
   LocalListVersionAuthorization,
@@ -34,7 +31,7 @@ import { ChargingStationSecurityInfo } from './ChargingStationSecurityInfo';
 import { ChargingStationSequence } from './ChargingStationSequence';
 import {
   Component,
-  Evse,
+  EvseType,
   Variable,
   VariableAttribute,
   VariableCharacteristics,
@@ -42,7 +39,6 @@ import {
 } from './DeviceModel';
 import { ComponentVariable } from './DeviceModel/ComponentVariable';
 import { EventData, VariableMonitoring, VariableMonitoringStatus } from './VariableMonitoring';
-import { IdTokenAdditionalInfo } from './Authorization/IdTokenAdditionalInfo';
 import {
   MeterValue,
   StartTransaction,
@@ -57,6 +53,8 @@ import { SecurityEvent } from './SecurityEvent';
 import { LatestStatusNotification } from './Location/LatestStatusNotification';
 import { Subscription } from './Subscription';
 import { Tariff } from './Tariff';
+import { TenantPartner } from './TenantPartner';
+import { ITenantDto, OCPIRegistration } from '@citrineos/base';
 
 export enum TenantAttributeProps {
   id = 'id',
@@ -77,7 +75,10 @@ export interface TenantCreationAttributes
   > {}
 
 @Table
-export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
+export class Tenant
+  extends Model<TenantAttributes, TenantCreationAttributes>
+  implements ITenantDto
+{
   static readonly MODEL_NAME: string = 'Tenant';
 
   @PrimaryKey
@@ -87,12 +88,24 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
   @Column(DataType.STRING)
   declare name: string;
 
+  @Column(DataType.STRING)
+  declare url: string;
+
+  @Column(DataType.STRING)
+  declare partyId: string;
+
+  @Column(DataType.STRING)
+  declare countryCode: string;
+
+  @Column(DataType.JSONB)
+  declare serverProfileOCPI?: OCPIRegistration.ServerProfile | null;
+
   /**
    * Relationships
    */
 
-  @HasMany(() => AdditionalInfo)
-  declare additionalInfos: AdditionalInfo[];
+  @HasMany(() => TenantPartner)
+  declare tenantPartners: TenantPartner[];
 
   @HasMany(() => Authorization)
   declare authorizations: Authorization[];
@@ -142,20 +155,11 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> {
   @HasMany(() => Connector)
   declare connectors: Connector[];
 
-  @HasMany(() => Evse)
-  declare evses: Evse[];
+  @HasMany(() => EvseType)
+  declare evses: EvseType[];
 
   @HasMany(() => EventData)
   declare eventDatas: EventData[];
-
-  @HasMany(() => IdToken)
-  declare idTokens: IdToken[];
-
-  @HasMany(() => IdTokenAdditionalInfo)
-  declare idTokenAdditionalInfos: IdTokenAdditionalInfo[];
-
-  @HasMany(() => IdTokenInfo)
-  declare idTokenInfos: IdTokenInfo[];
 
   @HasMany(() => Location)
   declare locations: Location[];

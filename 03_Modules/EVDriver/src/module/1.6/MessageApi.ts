@@ -79,6 +79,26 @@ export class EVDriverOcpp16Api
     return Promise.all(results);
   }
 
+  @AsMessageEndpoint(OCPP1_6_CallAction.UnlockConnector, OCPP1_6.UnlockConnectorRequestSchema)
+  async unlockConnector(
+    identifier: string[],
+    request: OCPP1_6.UnlockConnectorRequest,
+    callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
+  ): Promise<IMessageConfirmation[]> {
+    const results = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.UnlockConnector,
+        request,
+        callbackUrl,
+      ),
+    );
+    return Promise.all(results);
+  }
+
   /**
    * Overrides superclass method to generate the URL path based on the input {@link CallAction}
    * and the module's endpoint prefix configuration.

@@ -4,3 +4,4 @@
 
 export { BootMapper } from './BootMapper';
 export { AuthorizationMapper } from './AuthorizationMapper';
+export { LocationMapper } from './LocationMapper';

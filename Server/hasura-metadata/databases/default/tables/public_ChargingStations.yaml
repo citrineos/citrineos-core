@@ -30,6 +30,13 @@ array_relationships:
         table:
           name: Connectors
           schema: public
+  - name: Evses
+    using:
+      foreign_key_constraint_on:
+        column: stationId
+        table:
+          name: Evses
+          schema: public
   - name: LatestStatusNotifications
     using:
       foreign_key_constraint_on:

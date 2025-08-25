@@ -2,9 +2,6 @@ table:
   name: StopTransactions
   schema: public
 object_relationships:
-  - name: IdToken
-    using:
-      foreign_key_constraint_on: idTokenDatabaseId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
@@ -26,7 +23,6 @@ select_permissions:
         - reason
         - stationId
         - id
-        - idTokenDatabaseId
         - meterStop
         - tenantId
         - transactionDatabaseId
