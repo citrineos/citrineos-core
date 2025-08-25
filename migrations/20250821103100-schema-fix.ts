@@ -66,11 +66,8 @@ export = {
     }
 
     // 2. Add all missing columns
-    if (!(await columnExists('ChargingNeeds', 'evseId'))) {
-      await queryInterface.addColumn('ChargingNeeds', 'evseId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
+    if (await columnExists('ChargingNeeds', 'evseDatabaseId')) {
+      await queryInterface.renameColumn('ChargingNeeds', 'evseDatabaseId', 'evseId');
     }
     if (!(await columnExists('Evses', 'stationId'))) {
       await queryInterface.addColumn('Evses', 'stationId', {
@@ -89,6 +86,9 @@ export = {
         type: DataTypes.INTEGER,
         allowNull: true,
       });
+    }
+    if (await columnExists('Authorizations', 'groupIdTokenId')) {
+      await queryInterface.removeColumn('Authorizations', 'groupIdTokenId');
     }
     if (!(await columnExists('Authorizations', 'tenantPartnerId'))) {
       await queryInterface.addColumn('Authorizations', 'tenantPartnerId', {
@@ -138,6 +138,73 @@ export = {
         allowNull: true,
       });
     }
+    if (await columnExists('LocalListAuthorizations', 'idTokenId')) {
+      await queryInterface.removeColumn('LocalListAuthorizations', 'idTokenId');
+    }
+    if (!(await columnExists('LocalListAuthorizations', 'idToken'))) {
+      await queryInterface.addColumn('LocalListAuthorizations', 'idToken', {
+        type: DataTypes.STRING,
+        allowNull: false,
+      });
+    }
+    if (!(await columnExists('LocalListAuthorizations', 'idTokenType'))) {
+      await queryInterface.addColumn('LocalListAuthorizations', 'idTokenType', {
+        type: DataTypes.STRING,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('LocalListAuthorizations', 'additionalInfo'))) {
+      await queryInterface.addColumn('LocalListAuthorizations', 'additionalInfo', {
+        type: DataTypes.JSONB,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('LocalListAuthorizations', 'status'))) {
+      await queryInterface.addColumn('LocalListAuthorizations', 'status', {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'Accepted',
+      });
+    }
+    if (!(await columnExists('LocalListAuthorizations', 'cacheExpiryDateTime'))) {
+      await queryInterface.addColumn('LocalListAuthorizations', 'cacheExpiryDateTime', {
+        type: DataTypes.DATE,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('LocalListAuthorizations', 'chargingPriority'))) {
+      await queryInterface.addColumn('LocalListAuthorizations', 'chargingPriority', {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('LocalListAuthorizations', 'language1'))) {
+      await queryInterface.addColumn('LocalListAuthorizations', 'language1', {
+        type: DataTypes.STRING,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('LocalListAuthorizations', 'language2'))) {
+      await queryInterface.addColumn('LocalListAuthorizations', 'language2', {
+        type: DataTypes.STRING,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('LocalListAuthorizations', 'personalMessage'))) {
+      await queryInterface.addColumn('LocalListAuthorizations', 'personalMessage', {
+        type: DataTypes.JSON,
+        allowNull: true,
+      });
+    }
+    if (await columnExists('LocalListAuthorizations', 'idTokenInfoId')) {
+      await queryInterface.removeColumn('LocalListAuthorizations', 'idTokenInfoId');
+    }
+    if (!(await columnExists('LocalListAuthorizations', 'customData'))) {
+      await queryInterface.addColumn('LocalListAuthorizations', 'customData', {
+        type: DataTypes.JSONB,
+        allowNull: true,
+      });
+    }
     if (!(await columnExists('Evses', 'evseTypeId'))) {
       await queryInterface.addColumn('Evses', 'evseTypeId', {
         type: DataTypes.INTEGER,
@@ -149,6 +216,9 @@ export = {
         type: DataTypes.STRING,
         allowNull: true,
       });
+    }
+    if (await columnExists('TransactionEvents', 'idTokenId')) {
+      await queryInterface.removeColumn('TransactionEvents', 'idTokenId');
     }
     if (!(await columnExists('Evses', 'evseId'))) {
       await queryInterface.addColumn('Evses', 'evseId', {
@@ -167,6 +237,21 @@ export = {
         type: DataTypes.BOOLEAN,
         allowNull: true,
       });
+    }
+    if (!(await columnExists('StopTransactions', 'idTokenValue'))) {
+      await queryInterface.addColumn('StopTransactions', 'idTokenValue', {
+        type: DataTypes.STRING,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('StopTransactions', 'idTokenType'))) {
+      await queryInterface.addColumn('StopTransactions', 'idTokenType', {
+        type: DataTypes.STRING,
+        allowNull: true,
+      });
+    }
+    if (await columnExists('StopTransactions', 'idTokenDatabaseId')) {
+      await queryInterface.removeColumn('StopTransactions', 'idTokenDatabaseId');
     }
     // ChargingStation: Add missing columns
     if (!(await columnExists('ChargingStations', 'coordinates'))) {
@@ -193,10 +278,147 @@ export = {
         allowNull: true,
       });
     }
+    if (!(await columnExists('Locations', 'publishUpstream'))) {
+      await queryInterface.addColumn('Locations', 'publishUpstream', {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+      });
+    }
+    if (!(await columnExists('Locations', 'timeZone'))) {
+      await queryInterface.addColumn('Locations', 'timeZone', {
+        type: DataTypes.STRING,
+        defaultValue: 'UTC',
+      });
+    }
+    if (!(await columnExists('Locations', 'parkingType'))) {
+      await queryInterface.addColumn('Locations', 'parkingType', {
+        type: DataTypes.STRING,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('Locations', 'facilities'))) {
+      await queryInterface.addColumn('Locations', 'facilities', {
+        type: DataTypes.JSONB,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('Locations', 'openingHours'))) {
+      await queryInterface.addColumn('Locations', 'openingHours', {
+        type: DataTypes.JSONB,
+        allowNull: true,
+      });
+    }
     // Tariff: Add missing column
     if (!(await columnExists('Tariffs', 'tariffAltText'))) {
       await queryInterface.addColumn('Tariffs', 'tariffAltText', {
         type: DataTypes.STRING,
+        allowNull: true,
+      });
+    }
+
+    if (!(await columnExists('MeterValues', 'customData'))) {
+      await queryInterface.addColumn('MeterValues', 'customData', {
+        type: DataTypes.JSONB,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('MeterValues', 'tariffId'))) {
+      await queryInterface.addColumn('MeterValues', 'tariffId', {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Tariffs',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      });
+    }
+    if (!(await columnExists('MeterValues', 'transactionId'))) {
+      await queryInterface.addColumn('MeterValues', 'transactionId', {
+        type: DataTypes.STRING,
+        allowNull: true,
+      });
+    }
+
+    if (await columnExists('Transactions', 'evseDatabaseId')) {
+      await queryInterface.removeColumn('Transactions', 'evseDatabaseId');
+    }
+    if (!(await columnExists('Transactions', 'locationId'))) {
+      await queryInterface.addColumn('Transactions', 'locationId', {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Locations',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      });
+    }
+    if (!(await columnExists('Transactions', 'evseId'))) {
+      await queryInterface.addColumn('Transactions', 'evseId', {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Evses',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      });
+    }
+    if (!(await columnExists('Transactions', 'connectorId'))) {
+      await queryInterface.addColumn('Transactions', 'connectorId', {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Connectors',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      });
+    }
+    if (!(await columnExists('Transactions', 'authorizationId'))) {
+      await queryInterface.addColumn('Transactions', 'authorizationId', {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Authorizations',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      });
+    }
+    if (!(await columnExists('Transactions', 'tariffId'))) {
+      await queryInterface.addColumn('Transactions', 'tariffId', {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Tariffs',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      });
+    }
+    if (!(await columnExists('Transactions', 'startTime'))) {
+      await queryInterface.addColumn('Transactions', 'startTime', {
+        type: DataTypes.DATE,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('Transactions', 'endTime'))) {
+      await queryInterface.addColumn('Transactions', 'endTime', {
+        type: DataTypes.DATE,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('Transactions', 'customData'))) {
+      await queryInterface.addColumn('Transactions', 'customData', {
+        type: DataTypes.JSONB,
         allowNull: true,
       });
     }
@@ -331,6 +553,12 @@ export = {
     }
     if (!(await columnExists('Connectors', 'vendorErrorCode'))) {
       await queryInterface.addColumn('Connectors', 'vendorErrorCode', {
+        type: DataTypes.STRING,
+        allowNull: true,
+      });
+    }
+    if (!(await columnExists('Connectors', 'termsAndConditionsUrl'))) {
+      await queryInterface.addColumn('Connectors', 'termsAndConditionsUrl', {
         type: DataTypes.STRING,
         allowNull: true,
       });
@@ -473,7 +701,7 @@ export = {
     );
 
     // 2. Remove all columns added in up
-    await queryInterface.removeColumn('ChargingNeeds', 'evseId');
+    await queryInterface.renameColumn('ChargingNeeds', 'evseId', 'evseDatabaseId');
     await queryInterface.removeColumn('Evses', 'stationId');
     await queryInterface.removeColumn('TransactionEvents', 'idTokenValue');
     await queryInterface.removeColumn('Transactions', 'evseId');
@@ -485,8 +713,48 @@ export = {
     await queryInterface.removeColumn('Transactions', 'connectorId');
     await queryInterface.removeColumn('Transactions', 'locationId');
     await queryInterface.removeColumn('LocalListAuthorizations', 'groupAuthorizationId');
+    await queryInterface.addColumn('LocalListAuthorizations', 'idTokenId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'IdTokens',
+        key: 'id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+    });
+    await queryInterface.removeColumn('LocalListAuthorizations', 'idToken');
+    await queryInterface.removeColumn('LocalListAuthorizations', 'idTokenType');
+    await queryInterface.removeColumn('LocalListAuthorizations', 'additionalInfo');
+    await queryInterface.removeColumn('LocalListAuthorizations', 'status');
+    await queryInterface.removeColumn('LocalListAuthorizations', 'cacheExpiryDateTime');
+    await queryInterface.removeColumn('LocalListAuthorizations', 'chargingPriority');
+    await queryInterface.removeColumn('LocalListAuthorizations', 'language1');
+    await queryInterface.removeColumn('LocalListAuthorizations', 'language2');
+    await queryInterface.removeColumn('LocalListAuthorizations', 'personalMessage');
+    await queryInterface.addColumn('LocalListAuthorizations', 'idTokenInfoId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'IdTokenInfos',
+        key: 'id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+    });
+    await queryInterface.removeColumn('LocalListAuthorizations', 'customData');
     await queryInterface.removeColumn('Evses', 'evseTypeId');
     await queryInterface.removeColumn('TransactionEvents', 'idTokenType');
+    await queryInterface.addColumn('TransactionEvents', 'idTokenId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'IdTokens',
+        key: 'id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+    });
     await queryInterface.removeColumn('Evses', 'evseId');
     await queryInterface.removeColumn('Evses', 'physicalReference');
     await queryInterface.removeColumn('Evses', 'removed');
