@@ -85,7 +85,7 @@ export { defineConfig, DEFAULT_TENANT_ID } from './config/defineConfig';
 export { SystemConfig, systemConfigSchema, WebsocketServerConfig } from './config/types';
 export { SignedMeterValuesConfig } from './config/signedMeterValuesConfig';
 export { ConfigStore, ConfigStoreFactory } from './config/ConfigStore';
-export { BootstrapConfig, loadBootstrapConfig } from './config/boostrap.config';
+export { BootstrapConfig, loadBootstrapConfig } from './config/bootstrap.config';
 
 // Utils
 

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { z } from 'zod';
-import { BOOSTRAP_CONFIG_ENV_VAR_PREFIX } from './defineConfig';
+import { BOOTSTRAP_CONFIG_ENV_VAR_PREFIX } from './defineConfig';
 
 // Bootstrap schema contains what's needed to start the application
 export const bootstrapConfigSchema = z.object({
@@ -80,7 +80,7 @@ export type BootstrapConfig = z.infer<typeof bootstrapConfigSchema>;
  * Helper function to load environment variables based on prefix
  */
 function getEnvVarValue(key: string): string | undefined {
-  const envKey = `${BOOSTRAP_CONFIG_ENV_VAR_PREFIX}${key}`.toUpperCase();
+  const envKey = `${BOOTSTRAP_CONFIG_ENV_VAR_PREFIX}${key}`.toUpperCase();
   return process.env[envKey];
 }
 

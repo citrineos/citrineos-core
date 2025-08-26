@@ -141,7 +141,7 @@ export = {
     });
     await queryInterface.removeColumn('TransactionEvents', 'idTokenId');
     await queryInterface.addColumn('Evses', 'evseId', {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: true,
     });
     await queryInterface.addColumn('Evses', 'physicalReference', {
