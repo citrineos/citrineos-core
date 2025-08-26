@@ -1,6 +1,6 @@
 import { VariableAttribute, VariableStatus } from '@citrineos/data';
 import { faker } from '@faker-js/faker';
-import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, IVariableAttributeDto, OCPP2_0_1 } from '@citrineos/base';
 
 export function aVariableAttribute(override?: Partial<VariableAttribute>): VariableAttribute {
   const variableAttribute = {
@@ -21,7 +21,7 @@ export function aVariableAttribute(override?: Partial<VariableAttribute>): Varia
     },
     variableId: faker.number.int({ min: 1, max: 100_000 }),
     ...override,
-  } as VariableAttribute;
+  } as IVariableAttributeDto;
 
   variableAttribute.statuses =
     override?.statuses?.map(
@@ -35,7 +35,7 @@ export function aVariableAttribute(override?: Partial<VariableAttribute>): Varia
       },
     ] as VariableStatus[]);
 
-  return variableAttribute;
+  return variableAttribute as VariableAttribute;
 }
 
 export function aBasicAuthPasswordVariable(

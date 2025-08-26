@@ -2,14 +2,30 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IEvseDto, Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, HasMany, Table } from 'sequelize-typescript';
-import { ChargingStation } from './ChargingStation';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
-import { Connector } from './Connector';
+import {
+  DEFAULT_TENANT_ID,
+  IChargingStationDto,
+  IEvseDto,
+  ITenantDto,
+  Namespace,
+} from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { ChargingStation } from './ChargingStation.js';
+import { Connector } from './Connector.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class Evse extends BaseModelWithTenant implements IEvseDto {
+export class Evse extends Model implements IEvseDto {
   static readonly MODEL_NAME: string = Namespace.Evse;
 
   @ForeignKey(() => ChargingStation)
@@ -35,8 +51,35 @@ export class Evse extends BaseModelWithTenant implements IEvseDto {
   declare removed?: boolean;
 
   @BelongsTo(() => ChargingStation)
-  declare chargingStation?: ChargingStation;
+  declare chargingStation?: IChargingStationDto;
 
   @HasMany(() => Connector)
   declare connectors?: Connector[] | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: Evse) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

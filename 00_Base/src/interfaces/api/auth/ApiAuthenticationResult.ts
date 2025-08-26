@@ -5,7 +5,7 @@
  *
  */
 
-import { UserInfo } from './UserInfo';
+import { UserInfo } from './UserInfo.js';
 
 /**
  * Result of authentication process

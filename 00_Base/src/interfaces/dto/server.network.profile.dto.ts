@@ -1,4 +1,4 @@
-import { IBaseDto } from './base.dto';
+import { IBaseDto } from './base.dto.js';
 
 export interface IServerNetworkProfileDto extends IBaseDto {
   id: string;

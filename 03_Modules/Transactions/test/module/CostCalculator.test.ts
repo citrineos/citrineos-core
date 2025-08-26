@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { jest } from '@jest/globals';
 import { ITariffRepository, Tariff } from '@citrineos/data';
-import { CostCalculator } from '../../src/module/CostCalculator';
-import { TransactionService } from '../../src/module/TransactionService';
-import { aTariff } from '../providers/Tariff';
+import { CostCalculator } from '../../src/module/CostCalculator.js';
+import { TransactionService } from '../../src/module/TransactionService.js';
+import { aTariff } from '../providers/Tariff.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 describe('CostCalculator', () => {

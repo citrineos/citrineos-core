@@ -15,8 +15,8 @@ import {
 } from '@citrineos/base';
 import { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
-import { ICertificatesModuleApi } from '../interface';
-import { CertificatesModule } from '../module';
+import { ICertificatesModuleApi } from '../interface.js';
+import { CertificatesModule } from '../module.js';
 
 /**
  * Server API for the Certificates module.

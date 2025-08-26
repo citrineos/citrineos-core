@@ -9,8 +9,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { TriggerMessageStatusEnumType } from '../enums';
-import { OcppResponse } from '../../../..';
+import { TriggerMessageStatusEnumType } from '../enums/index.js';
+import { OcppResponse } from '../../../../index.js';
 
 export interface TriggerMessageResponse extends OcppResponse {
   customData?: CustomDataType | null;

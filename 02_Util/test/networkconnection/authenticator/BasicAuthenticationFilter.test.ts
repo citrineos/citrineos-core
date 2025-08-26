@@ -2,10 +2,10 @@ import { jest } from '@jest/globals';
 import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
 import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
-import { aBasicAuthPasswordVariable } from '../../providers/VariableAttributeProvider';
-import { BasicAuthenticationFilter } from '../../../src/networkconnection/authenticator/BasicAuthenticationFilter';
-import { aRequestWithAuthorization, basicAuth } from '../../providers/IncomingMessageProvider';
-import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider';
+import { aBasicAuthPasswordVariable } from '../../providers/VariableAttributeProvider.js';
+import { BasicAuthenticationFilter } from '../../../src/index.js';
+import { aRequestWithAuthorization, basicAuth } from '../../providers/IncomingMessageProvider.js';
+import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
 
 type PasswordPair = {
   plaintext: string;

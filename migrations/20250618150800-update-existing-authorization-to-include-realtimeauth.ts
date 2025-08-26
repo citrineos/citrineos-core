@@ -24,7 +24,7 @@ const COLUMNS = [
   },
 ];
 
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
     const tableDescription = await queryInterface.describeTable(TABLE_NAME);
     for (const column of COLUMNS) {

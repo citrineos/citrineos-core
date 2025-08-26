@@ -2,22 +2,32 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { IMessageInfoDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import {
+  DEFAULT_TENANT_ID,
+  IComponentDto,
+  IMessageInfoDto,
+  ITenantDto,
+  OCPP2_0_1,
+  OCPP2_0_1_Namespace,
+} from '@citrineos/base';
 import {
   AutoIncrement,
+  BeforeCreate,
+  BeforeUpdate,
   BelongsTo,
   Column,
   DataType,
   ForeignKey,
   Index,
+  Model,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { Component } from '../DeviceModel';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { Component } from '../DeviceModel/index.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class MessageInfo extends BaseModelWithTenant implements IMessageInfoDto {
+export class MessageInfo extends Model implements IMessageInfoDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.MessageInfoType;
 
   /**
@@ -79,7 +89,7 @@ export class MessageInfo extends BaseModelWithTenant implements IMessageInfoDto 
    */
 
   @BelongsTo(() => Component)
-  declare display: Component;
+  declare display: IComponentDto;
 
   @ForeignKey(() => Component)
   @Column({
@@ -88,4 +98,31 @@ export class MessageInfo extends BaseModelWithTenant implements IMessageInfoDto 
   declare displayComponentId?: number | null;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: MessageInfo) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

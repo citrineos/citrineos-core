@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import { ILogObj, Logger } from 'tslog';
 //TODO fix import
-import { RbacRules, RbacRulesSchema } from '@citrineos/base/dist/config/types';
-import { UrlMatcher } from './UrlMatcher';
+import { RbacRules, RbacRulesSchema } from '@citrineos/base';
+import { UrlMatcher } from './UrlMatcher.js';
 import path from 'path';
 
 /**

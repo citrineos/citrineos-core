@@ -9,8 +9,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ChargingRateUnitEnumType, GenericStatusEnumType } from '../enums';
-import { OcppResponse } from '../../../..';
+import { ChargingRateUnitEnumType, GenericStatusEnumType } from '../enums/index.js';
+import { OcppResponse } from '../../../../index.js';
 
 export interface GetCompositeScheduleResponse extends OcppResponse {
   customData?: CustomDataType | null;

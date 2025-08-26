@@ -11,12 +11,12 @@ import {
   OCPP1_6,
   OCPP2_0_1,
 } from '@citrineos/base';
-import { TransactionService } from '../../src/module/TransactionService';
-import { anIdToken } from '../providers/IdTokenProvider';
-import { anAuthorization } from '../providers/AuthorizationProvider';
+import { TransactionService } from '../../src/module/TransactionService.js';
+import { anIdToken } from '../providers/IdTokenProvider.js';
+import { anAuthorization } from '../providers/AuthorizationProvider.js';
 
-import { aMessageContext } from '../providers/MessageContextProvider';
-import { aTransaction, aTransactionEventRequest } from '../providers/TransactionProvider';
+import { aMessageContext } from '../providers/MessageContextProvider.js';
+import { aTransaction, aTransactionEventRequest } from '../providers/TransactionProvider.js';
 import { faker } from '@faker-js/faker';
 
 describe('TransactionService', () => {

@@ -1,8 +1,7 @@
-require('ts-node/register');
+import 'ts-node/register';
+import { loadBootstrapConfig } from '@citrineos/base';
 
-module.exports = (async () => {
-  const { loadBootstrapConfig } = require('./bootstrap.config');
-
+export default (async () => {
   try {
     const bootstrapConfig = loadBootstrapConfig();
 

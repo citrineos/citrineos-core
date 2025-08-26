@@ -1,4 +1,4 @@
-import { IBaseDto } from '../..';
+import { IBaseDto } from '../../index.js';
 
 export interface ITariffDto extends IBaseDto {
   id?: number;

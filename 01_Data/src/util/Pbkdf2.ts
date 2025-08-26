@@ -1,4 +1,4 @@
-import { PasswordHashAlgorithm } from './PasswordHashAlgorithm';
+import { PasswordHashAlgorithm } from './PasswordHashAlgorithm.js';
 import { pbkdf2Sync, randomBytes } from 'crypto';
 
 export class Pbkdf2 implements PasswordHashAlgorithm {

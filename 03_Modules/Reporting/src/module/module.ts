@@ -29,7 +29,7 @@ import {
 } from '@citrineos/data';
 import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
-import { DeviceModelService } from './services';
+import { DeviceModelService } from './services.js';
 
 /**
  * Component that handles provisioning related messages.

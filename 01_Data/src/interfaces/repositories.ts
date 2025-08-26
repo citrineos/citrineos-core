@@ -12,7 +12,7 @@ import {
   OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/base';
-import { type AuthorizationQuerystring } from './queries/Authorization';
+import { type AuthorizationQuerystring } from './queries/Authorization.js';
 import {
   type Authorization,
   type Boot,
@@ -49,9 +49,9 @@ import {
   type VariableAttribute,
   VariableCharacteristics,
   type VariableMonitoring,
-} from '../layers/sequelize';
-import { type VariableAttributeQuerystring } from '.';
-import { TariffQueryString } from './queries/Tariff';
+} from '../layers/sequelize/index.js';
+import { type VariableAttributeQuerystring } from './index.js';
+import { TariffQueryString } from './queries/Tariff.js';
 
 export interface IAuthorizationRepository extends CrudRepository<Authorization> {
   readAllByQuerystring: (

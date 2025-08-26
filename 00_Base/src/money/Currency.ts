@@ -1,4 +1,4 @@
-import { assert } from '../assertion/assertion';
+import { assert } from '../assertion/assertion.js';
 
 /**
  * ISO-4217 currency codes.

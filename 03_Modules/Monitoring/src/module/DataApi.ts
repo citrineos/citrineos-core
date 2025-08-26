@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import { ILogObj, Logger } from 'tslog';
-import { IMonitoringModuleApi } from './interface';
-import { MonitoringModule } from './module';
+import { IMonitoringModuleApi } from './interface.js';
+import { MonitoringModule } from './module.js';
 import {
   Component,
   CreateOrUpdateVariableAttributeQuerySchema,
@@ -18,13 +18,13 @@ import {
 import {
   AbstractModuleApi,
   AsDataEndpoint,
-  HttpMethod,
-  OCPP2_0_1_Namespace,
-  OCPP2_0_1,
-  ReportDataTypeSchema,
-  OCPP1_6_Namespace,
-  Namespace,
   DEFAULT_TENANT_ID,
+  HttpMethod,
+  Namespace,
+  OCPP1_6_Namespace,
+  OCPP2_0_1,
+  OCPP2_0_1_Namespace,
+  ReportDataTypeSchema,
 } from '@citrineos/base';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 

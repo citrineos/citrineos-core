@@ -9,8 +9,8 @@ import {
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
 } from '@citrineos/base';
-import { TenantModule } from './module';
-import { ITenantModuleApi } from './interface';
+import { TenantModule } from './module.js';
+import { ITenantModuleApi } from './interface.js';
 import { FastifyInstance } from 'fastify';
 import { ILogObj, Logger } from 'tslog';
 

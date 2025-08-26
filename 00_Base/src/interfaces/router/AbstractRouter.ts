@@ -26,9 +26,9 @@ import {
   OCPPVersion,
   OCPPVersionType,
   SystemConfig,
-} from '../..';
+} from '../../index.js';
 import { ILogObj, Logger } from 'tslog';
-import { IMessageRouter } from './Router';
+import { IMessageRouter } from './Router.js';
 
 export abstract class AbstractMessageRouter implements IMessageRouter {
   /**

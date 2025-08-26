@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { CallAction } from '../../ocpp/rpc/message';
+import { CallAction } from '../../ocpp/rpc/message.js';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AsMessageEndpoint } from './AsMessageEndpoint';
+import { AsMessageEndpoint } from './AsMessageEndpoint.js';
 
 /**
  * Interface for usage in {@link AsMessageEndpoint} decorator.

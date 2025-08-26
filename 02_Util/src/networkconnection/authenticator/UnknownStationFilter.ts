@@ -1,9 +1,9 @@
 import { ILogObj, Logger } from 'tslog';
 import { ILocationRepository } from '@citrineos/data';
 import { IncomingMessage } from 'http';
-import { AuthenticatorFilter } from './AuthenticatorFilter';
+import { AuthenticatorFilter } from './AuthenticatorFilter.js';
 import { AuthenticationOptions } from '@citrineos/base';
-import { UpgradeUnknownError } from './errors/UnknownError';
+import { UpgradeUnknownError } from './errors/UnknownError.js';
 
 /**
  * Filter used to block connections from charging stations that are not recognized in the system.

@@ -3,23 +3,35 @@
 // SPDX-License-Identifier: Apache 2.0
 
 import {
-  LocationHours,
+  DEFAULT_TENANT_ID,
   ILocationDto,
+  ITenantDto,
   LocationFacilityType,
+  LocationHours,
   LocationParkingType,
   OCPP2_0_1_Namespace,
 } from '@citrineos/base';
-import { Column, DataType, HasMany, Table } from 'sequelize-typescript';
-import { ChargingStation } from './ChargingStation';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { ChargingStation } from './ChargingStation.js';
 import { Point } from 'geojson';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { Tenant } from '../Tenant.js';
 
 /**
  * Represents a location.
  * Currently, this data model is internal to CitrineOS. In the future, it will be analogous to an OCPI Location.
  */
 @Table
-export class Location extends BaseModelWithTenant implements ILocationDto {
+export class Location extends Model implements ILocationDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Location;
 
   @Column(DataType.STRING)
@@ -79,4 +91,31 @@ export class Location extends BaseModelWithTenant implements ILocationDto {
 
   @HasMany(() => ChargingStation)
   declare chargingPool: [ChargingStation, ...ChargingStation[]];
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: Location) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

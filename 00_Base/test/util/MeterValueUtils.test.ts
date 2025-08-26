@@ -1,5 +1,5 @@
-import { MeterValueUtils } from '../../src/util/MeterValueUtils';
-import { OCPP2_0_1 } from '../../src/ocpp/model';
+import { MeterValueUtils } from '../../src/index.js';
+import { OCPP2_0_1 } from '../../src/ocpp/model/index.js';
 
 function makeMeterValue(ts: string, meas: OCPP2_0_1.MeasurandEnumType, value: number) {
   return {

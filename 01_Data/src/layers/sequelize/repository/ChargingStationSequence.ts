@@ -1,7 +1,7 @@
-import { SequelizeRepository } from './Base';
-import { IChargingStationSequenceRepository } from '../../../interfaces';
-import { ChargingStationSequence } from '../model/ChargingStationSequence';
-import { ChargingStationSequenceType, BootstrapConfig } from '@citrineos/base';
+import { SequelizeRepository } from './Base.js';
+import { IChargingStationSequenceRepository } from '../../../interfaces/index.js';
+import { ChargingStationSequence } from '../model/index.js';
+import { BootstrapConfig, ChargingStationSequenceType } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
 

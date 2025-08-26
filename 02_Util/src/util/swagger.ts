@@ -10,7 +10,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import fs from 'fs';
 import { HttpHeader, HttpStatus, SystemConfig, UnauthorizedError } from '@citrineos/base';
 import * as FastifyAuth from '@fastify/auth';
-import * as packageJson from '../../package.json';
+import * as packageJson from '../../package.json' with { type: 'json' };
 import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
 
 /**
@@ -145,13 +145,15 @@ const buildLocalReference = (json: any, _parent: unknown, _property: unknown, i:
   return json.title || json.$id || `def-${i}`;
 };
 
+console.log('TODO Confirm this version gets pulled in properly!!', packageJson.default.version);
+
 const registerFastifySwagger = (systemConfig: SystemConfig, server: FastifyInstance) => {
   server.register(fastifySwagger as any, {
     openapi: {
       info: {
         title: 'CitrineOS Central System API',
         description: 'Central System API for OCPP 2.0.1 messaging.',
-        version: packageJson.version,
+        version: packageJson.default.version,
       },
       components: {
         securitySchemes: {

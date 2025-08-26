@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { HttpMethod, IDataEndpointDefinition, METADATA_DATA_ENDPOINTS } from '.';
-import { Namespace, OCPP1_6_Namespace, OCPP2_0_1_Namespace } from '../../ocpp/persistence';
+import { HttpMethod, IDataEndpointDefinition, METADATA_DATA_ENDPOINTS } from './index.js';
+import { Namespace, OCPP1_6_Namespace, OCPP2_0_1_Namespace } from '../../ocpp/persistence/index.js';
 
 /**
  * Decorator for use in module API class to expose methods as REST data endpoints.

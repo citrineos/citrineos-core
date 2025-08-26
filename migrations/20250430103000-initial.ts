@@ -2,7 +2,7 @@
 
 import { QueryInterface } from 'sequelize';
 
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
     await queryInterface.sequelize.query(`
     

@@ -1,4 +1,4 @@
-import { Currency } from '../../src/money/Currency';
+import { Currency } from '../../src/money/Currency.js';
 import { expect } from '@jest/globals';
 
 describe('currency', () => {

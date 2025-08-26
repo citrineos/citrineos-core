@@ -9,7 +9,7 @@ import {
   IEvseDto,
   IVariableDto,
   IVariableStatusDto,
-} from '../..';
+} from '../../index.js';
 
 export interface IVariableAttributeDto extends IBaseDto {
   id?: number;

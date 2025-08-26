@@ -1,5 +1,5 @@
 import { AuthorizationStatusType, OCPP1_6 } from '@citrineos/base';
-import { AuthorizationMapper } from '../../../../../src/layers/sequelize/mapper/1.6';
+import { AuthorizationMapper } from '../../../../../src/layers/sequelize/mapper/1.6/index.js';
 
 describe('AuthorizationMapper', () => {
   describe('toIdTagInfoStatus', () => {
