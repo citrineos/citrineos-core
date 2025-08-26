@@ -34,7 +34,7 @@ export class StartTransaction extends BaseModelWithTenant implements IStartTrans
     type: DataType.INTEGER,
     unique: true,
   })
-  declare transactionDatabaseId: string;
+  declare transactionDatabaseId: number;
 
   @BelongsTo(() => Transaction)
   declare transaction: Transaction;

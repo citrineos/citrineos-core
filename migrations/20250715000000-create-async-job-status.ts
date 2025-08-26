@@ -2,7 +2,6 @@
 
 /** @type {import('sequelize-cli').Migration} */
 import { DataTypes, QueryInterface } from 'sequelize';
-import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 const TABLE_NAME = 'AsyncJobStatuses';
 
@@ -32,25 +31,15 @@ export = {
         type: DataTypes.ENUM('FETCH_OCPI_TOKENS'),
         allowNull: false,
       },
-      mspCountryCode: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      mspPartyId: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      cpoCountryCode: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      cpoPartyId: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
       tenantPartnerId: {
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
+        references: {
+          model: 'TenantPartners',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT',
       },
       finishedAt: {
         type: DataTypes.DATE,
@@ -77,17 +66,6 @@ export = {
       totalObjects: {
         type: DataTypes.INTEGER,
         allowNull: true,
-      },
-      tenantId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: DEFAULT_TENANT_ID,
-        references: {
-          model: 'Tenants',
-          key: 'id',
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT',
       },
       createdAt: {
         type: DataTypes.DATE,

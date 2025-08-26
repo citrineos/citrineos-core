@@ -47,3 +47,4 @@
 - "!include public_VariableMonitorings.yaml"
 - "!include public_VariableStatuses.yaml"
 - "!include public_Variables.yaml"
+- "!include public_AsyncJobStatuses.yaml"

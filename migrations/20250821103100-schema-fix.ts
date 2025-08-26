@@ -5,15 +5,6 @@ import { DataTypes, QueryInterface } from 'sequelize';
 
 export = {
   up: async (queryInterface: QueryInterface) => {
-    const columnExists = async (tableName: string, columnName: string): Promise<boolean> => {
-      try {
-        const tableDescription = await queryInterface.describeTable(tableName);
-        return !!tableDescription[columnName];
-      } catch (error) {
-        return false;
-      }
-    };
-
     // Helper to check if a constraint exists (robust for schema/casing)
     const constraintExists = async (
       tableName: string,
@@ -26,180 +17,245 @@ export = {
     };
 
     // 1. Create EvseTypes table
-    if (!(await columnExists('EvseTypes', 'id'))) {
-      await queryInterface.createTable('EvseTypes', {
-        id: {
-          type: DataTypes.INTEGER,
-          allowNull: false,
-          autoIncrement: true,
-          primaryKey: true,
+    await queryInterface.createTable('EvseTypes', {
+      id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      databaseId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      connectorId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      tenantId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'Tenants',
+          key: 'id',
         },
-        databaseId: {
-          type: DataTypes.INTEGER,
-          allowNull: true,
-        },
-        connectorId: {
-          type: DataTypes.INTEGER,
-          allowNull: true,
-        },
-        tenantId: {
-          type: DataTypes.INTEGER,
-          allowNull: false,
-          references: {
-            model: 'Tenants',
-            key: 'id',
-          },
-          onUpdate: 'CASCADE',
-          onDelete: 'RESTRICT',
-        },
-        createdAt: {
-          type: DataTypes.DATE,
-          allowNull: false,
-          defaultValue: DataTypes.NOW,
-        },
-        updatedAt: {
-          type: DataTypes.DATE,
-          allowNull: false,
-          defaultValue: DataTypes.NOW,
-        },
-      });
-    }
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT',
+      },
+      createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
+      },
+      updatedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
+      },
+    });
 
     // 2. Add all missing columns
-    if (!(await columnExists('ChargingNeeds', 'evseId'))) {
-      await queryInterface.addColumn('ChargingNeeds', 'evseId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Evses', 'stationId'))) {
-      await queryInterface.addColumn('Evses', 'stationId', {
-        type: DataTypes.STRING(36),
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('TransactionEvents', 'idTokenValue'))) {
-      await queryInterface.addColumn('TransactionEvents', 'idTokenValue', {
-        type: DataTypes.STRING,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Transactions', 'evseId'))) {
-      await queryInterface.addColumn('Transactions', 'evseId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Authorizations', 'tenantPartnerId'))) {
-      await queryInterface.addColumn('Authorizations', 'tenantPartnerId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Connectors', 'evseId'))) {
-      await queryInterface.addColumn('Connectors', 'evseId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Tariffs', 'connectorId'))) {
-      await queryInterface.addColumn('Tariffs', 'connectorId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Transactions', 'tariffId'))) {
-      await queryInterface.addColumn('Transactions', 'tariffId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Transactions', 'authorizationId'))) {
-      await queryInterface.addColumn('Transactions', 'authorizationId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Transactions', 'connectorId'))) {
-      await queryInterface.addColumn('Transactions', 'connectorId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Transactions', 'locationId'))) {
-      await queryInterface.addColumn('Transactions', 'locationId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('LocalListAuthorizations', 'groupAuthorizationId'))) {
-      await queryInterface.addColumn('LocalListAuthorizations', 'groupAuthorizationId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Evses', 'evseTypeId'))) {
-      await queryInterface.addColumn('Evses', 'evseTypeId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('TransactionEvents', 'idTokenType'))) {
-      await queryInterface.addColumn('TransactionEvents', 'idTokenType', {
-        type: DataTypes.STRING,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Evses', 'evseId'))) {
-      await queryInterface.addColumn('Evses', 'evseId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Evses', 'physicalReference'))) {
-      await queryInterface.addColumn('Evses', 'physicalReference', {
-        type: DataTypes.STRING,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Evses', 'removed'))) {
-      await queryInterface.addColumn('Evses', 'removed', {
-        type: DataTypes.BOOLEAN,
-        allowNull: true,
-      });
-    }
+    await queryInterface.renameColumn('ChargingNeeds', 'evseDatabaseId', 'evseId');
+    await queryInterface.addColumn('Evses', 'stationId', {
+      type: DataTypes.STRING(36),
+      allowNull: true,
+    });
+    await queryInterface.addColumn('TransactionEvents', 'idTokenValue', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.removeColumn('Authorizations', 'groupIdTokenId');
+    await queryInterface.addColumn('Authorizations', 'tenantPartnerId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Connectors', 'evseId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Tariffs', 'connectorId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'groupAuthorizationId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.removeColumn('LocalListAuthorizations', 'idTokenId');
+    await queryInterface.addColumn('LocalListAuthorizations', 'idToken', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.sequelize.query(
+      'UPDATE "LocalListAuthorizations" SET "idToken" = \'\' WHERE "idToken" IS NULL;',
+    );
+    await queryInterface.changeColumn('LocalListAuthorizations', 'idToken', {
+      type: DataTypes.STRING,
+      allowNull: false,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'idTokenType', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'additionalInfo', {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'status', {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'Accepted',
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'cacheExpiryDateTime', {
+      type: DataTypes.DATE,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'chargingPriority', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'language1', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'language2', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'personalMessage', {
+      type: DataTypes.JSON,
+      allowNull: true,
+    });
+    await queryInterface.removeColumn('LocalListAuthorizations', 'idTokenInfoId');
+    await queryInterface.addColumn('LocalListAuthorizations', 'customData', {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Evses', 'evseTypeId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('TransactionEvents', 'idTokenType', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.removeColumn('TransactionEvents', 'idTokenId');
+    await queryInterface.addColumn('Evses', 'evseId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Evses', 'physicalReference', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Evses', 'removed', {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('StopTransactions', 'idTokenValue', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('StopTransactions', 'idTokenType', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.removeColumn('StopTransactions', 'idTokenDatabaseId');
     // ChargingStation: Add missing columns
-    if (!(await columnExists('ChargingStations', 'coordinates'))) {
-      await queryInterface.addColumn('ChargingStations', 'coordinates', {
-        type: DataTypes.GEOMETRY('POINT'),
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('ChargingStations', 'floorLevel'))) {
-      await queryInterface.addColumn('ChargingStations', 'floorLevel', {
-        type: DataTypes.STRING,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('ChargingStations', 'parkingRestrictions'))) {
-      await queryInterface.addColumn('ChargingStations', 'parkingRestrictions', {
-        type: DataTypes.JSONB,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('ChargingStations', 'capabilities'))) {
-      await queryInterface.addColumn('ChargingStations', 'capabilities', {
-        type: DataTypes.JSONB,
-        allowNull: true,
-      });
-    }
+    await queryInterface.addColumn('ChargingStations', 'coordinates', {
+      type: DataTypes.GEOMETRY('POINT'),
+      allowNull: true,
+    });
+    await queryInterface.addColumn('ChargingStations', 'floorLevel', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('ChargingStations', 'parkingRestrictions', {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('ChargingStations', 'capabilities', {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Locations', 'publishUpstream', {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    });
+    await queryInterface.addColumn('Locations', 'timeZone', {
+      type: DataTypes.STRING,
+      defaultValue: 'UTC',
+    });
+    await queryInterface.addColumn('Locations', 'parkingType', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Locations', 'facilities', {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Locations', 'openingHours', {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    });
     // Tariff: Add missing column
-    if (!(await columnExists('Tariffs', 'tariffAltText'))) {
-      await queryInterface.addColumn('Tariffs', 'tariffAltText', {
-        type: DataTypes.STRING,
-        allowNull: true,
-      });
-    }
+    await queryInterface.addColumn('Tariffs', 'tariffAltText', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+
+    await queryInterface.addColumn('MeterValues', 'customData', {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('MeterValues', 'tariffId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Tariffs',
+        key: 'id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+    });
+    await queryInterface.addColumn('MeterValues', 'transactionId', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+
+    await queryInterface.removeColumn('Transactions', 'evseDatabaseId');
+    await queryInterface.addColumn('Transactions', 'locationId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Transactions', 'evseId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Transactions', 'connectorId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Transactions', 'authorizationId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Transactions', 'tariffId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Transactions', 'startTime', {
+      type: DataTypes.DATE,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Transactions', 'endTime', {
+      type: DataTypes.DATE,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Transactions', 'customData', {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    });
 
     // 3. Drop dependent foreign key constraints
     await queryInterface.sequelize.query(
@@ -234,107 +290,54 @@ export = {
     );
 
     // 4. Fix the Evses table
-    await queryInterface.sequelize.query('DROP INDEX IF EXISTS evses_id;');
-    await queryInterface.sequelize.query(
-      'ALTER TABLE "Evses" DROP CONSTRAINT IF EXISTS "Evses_id_connectorId_key";',
-    );
     await queryInterface.sequelize.query(
       'ALTER TABLE "Evses" DROP CONSTRAINT IF EXISTS "Evses_pkey";',
     );
-    await queryInterface.changeColumn('Evses', 'id', { type: DataTypes.INTEGER, allowNull: false });
-    await queryInterface.addConstraint('Evses', {
-      fields: ['id'],
-      type: 'primary key',
-      name: 'Evses_pkey',
-    });
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Evses" ADD CONSTRAINT "Evses_pkey" PRIMARY KEY (id);',
+    );
+    await queryInterface.removeColumn('Evses', 'databaseId');
 
-    // Connector: Add missing columns
-    if (!(await columnExists('Connectors', 'connectorId'))) {
-      await queryInterface.addColumn('Connectors', 'connectorId', {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      });
-    }
-    if (!(await columnExists('Connectors', 'evseTypeConnectorId'))) {
-      await queryInterface.addColumn('Connectors', 'evseTypeConnectorId', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Connectors', 'status'))) {
-      await queryInterface.addColumn('Connectors', 'status', {
-        type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: 'Unknown',
-      });
-    }
-    if (!(await columnExists('Connectors', 'type'))) {
-      await queryInterface.addColumn('Connectors', 'type', {
-        type: DataTypes.STRING,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Connectors', 'format'))) {
-      await queryInterface.addColumn('Connectors', 'format', {
-        type: DataTypes.STRING,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Connectors', 'errorCode'))) {
-      await queryInterface.addColumn('Connectors', 'errorCode', {
-        type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: 'NoError',
-      });
-    }
-    if (!(await columnExists('Connectors', 'powerType'))) {
-      await queryInterface.addColumn('Connectors', 'powerType', {
-        type: DataTypes.STRING,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Connectors', 'maximumAmperage'))) {
-      await queryInterface.addColumn('Connectors', 'maximumAmperage', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Connectors', 'maximumVoltage'))) {
-      await queryInterface.addColumn('Connectors', 'maximumVoltage', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Connectors', 'maximumPowerWatts'))) {
-      await queryInterface.addColumn('Connectors', 'maximumPowerWatts', {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Connectors', 'timestamp'))) {
-      await queryInterface.addColumn('Connectors', 'timestamp', {
-        type: DataTypes.DATE,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Connectors', 'info'))) {
-      await queryInterface.addColumn('Connectors', 'info', {
-        type: DataTypes.STRING,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Connectors', 'vendorId'))) {
-      await queryInterface.addColumn('Connectors', 'vendorId', {
-        type: DataTypes.STRING,
-        allowNull: true,
-      });
-    }
-    if (!(await columnExists('Connectors', 'vendorErrorCode'))) {
-      await queryInterface.addColumn('Connectors', 'vendorErrorCode', {
-        type: DataTypes.STRING,
-        allowNull: true,
-      });
-    }
+    // Populate EvseTypes from existing data before adding foreign keys
+    await queryInterface.sequelize.query(`
+      INSERT INTO "EvseTypes" ("id", "tenantId", "connectorId", "createdAt", "updatedAt")
+      SELECT DISTINCT id, "tenantId", "connectorId", NOW(), NOW()
+      FROM "Evses"
+      ON CONFLICT (id) DO NOTHING;
+    `);
+
+    await queryInterface.addColumn('Connectors', 'evseTypeConnectorId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Connectors', 'type', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Connectors', 'format', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Connectors', 'powerType', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Connectors', 'maximumAmperage', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Connectors', 'maximumVoltage', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Connectors', 'maximumPowerWatts', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Connectors', 'termsAndConditionsUrl', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
     // Foreign key constraints for relationships (add only if not exists, drop if exists first)
     if (await constraintExists('Connectors', 'Connectors_evseId_fkey')) {
       await queryInterface.sequelize.query(
@@ -473,7 +476,7 @@ export = {
     );
 
     // 2. Remove all columns added in up
-    await queryInterface.removeColumn('ChargingNeeds', 'evseId');
+    await queryInterface.renameColumn('ChargingNeeds', 'evseId', 'evseDatabaseId');
     await queryInterface.removeColumn('Evses', 'stationId');
     await queryInterface.removeColumn('TransactionEvents', 'idTokenValue');
     await queryInterface.removeColumn('Transactions', 'evseId');
@@ -485,11 +488,76 @@ export = {
     await queryInterface.removeColumn('Transactions', 'connectorId');
     await queryInterface.removeColumn('Transactions', 'locationId');
     await queryInterface.removeColumn('LocalListAuthorizations', 'groupAuthorizationId');
-    await queryInterface.removeColumn('Evses', 'evseTypeId');
-    await queryInterface.removeColumn('TransactionEvents', 'idTokenType');
-    await queryInterface.removeColumn('Evses', 'evseId');
-    await queryInterface.removeColumn('Evses', 'physicalReference');
-    await queryInterface.removeColumn('Evses', 'removed');
+    await queryInterface.addColumn('LocalListAuthorizations', 'idTokenId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'IdTokens',
+        key: 'id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+    });
+    await queryInterface.removeColumn('LocalListAuthorizations', 'idToken');
+    await queryInterface.addColumn('LocalListAuthorizations', 'idTokenType', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'additionalInfo', {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'status', {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'Accepted',
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'cacheExpiryDateTime', {
+      type: DataTypes.DATE,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'chargingPriority', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'language1', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'language2', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'personalMessage', {
+      type: DataTypes.JSON,
+      allowNull: true,
+    });
+    await queryInterface.removeColumn('LocalListAuthorizations', 'idTokenInfoId');
+    await queryInterface.addColumn('LocalListAuthorizations', 'customData', {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Evses', 'evseTypeId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('TransactionEvents', 'idTokenType', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.removeColumn('TransactionEvents', 'idTokenId');
+    await queryInterface.addColumn('Evses', 'evseId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Evses', 'physicalReference', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Evses', 'removed', {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+    });
     // ChargingStation: Remove columns
     await queryInterface.removeColumn('ChargingStations', 'coordinates');
     await queryInterface.removeColumn('ChargingStations', 'floorLevel');
@@ -502,6 +570,10 @@ export = {
     await queryInterface.dropTable('EvseTypes');
 
     // 4. Restore Evses table PK/index as needed
+    await queryInterface.addColumn('Evses', 'databaseId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
     await queryInterface.sequelize.query(
       'ALTER TABLE "Evses" DROP CONSTRAINT IF EXISTS "Evses_pkey";',
     );
