@@ -84,6 +84,13 @@ export = {
     await queryInterface.removeColumn('LocalListAuthorizations', 'idTokenId');
     await queryInterface.addColumn('LocalListAuthorizations', 'idToken', {
       type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.sequelize.query(
+      'UPDATE "LocalListAuthorizations" SET "idToken" = \'\' WHERE "idToken" IS NULL;',
+    );
+    await queryInterface.changeColumn('LocalListAuthorizations', 'idToken', {
+      type: DataTypes.STRING,
       allowNull: false,
     });
     await queryInterface.addColumn('LocalListAuthorizations', 'idTokenType', {
@@ -291,6 +298,14 @@ export = {
     );
     await queryInterface.removeColumn('Evses', 'databaseId');
 
+    // Populate EvseTypes from existing data before adding foreign keys
+    await queryInterface.sequelize.query(`
+      INSERT INTO "EvseTypes" ("id", "tenantId", "connectorId", "createdAt", "updatedAt")
+      SELECT DISTINCT id, "tenantId", "connectorId", NOW(), NOW()
+      FROM "Evses"
+      ON CONFLICT (id) DO NOTHING;
+    `);
+
     await queryInterface.addColumn('Connectors', 'evseTypeConnectorId', {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -484,40 +499,65 @@ export = {
       onDelete: 'SET NULL',
     });
     await queryInterface.removeColumn('LocalListAuthorizations', 'idToken');
-    await queryInterface.removeColumn('LocalListAuthorizations', 'idTokenType');
-    await queryInterface.removeColumn('LocalListAuthorizations', 'additionalInfo');
-    await queryInterface.removeColumn('LocalListAuthorizations', 'status');
-    await queryInterface.removeColumn('LocalListAuthorizations', 'cacheExpiryDateTime');
-    await queryInterface.removeColumn('LocalListAuthorizations', 'chargingPriority');
-    await queryInterface.removeColumn('LocalListAuthorizations', 'language1');
-    await queryInterface.removeColumn('LocalListAuthorizations', 'language2');
-    await queryInterface.removeColumn('LocalListAuthorizations', 'personalMessage');
-    await queryInterface.addColumn('LocalListAuthorizations', 'idTokenInfoId', {
+    await queryInterface.addColumn('LocalListAuthorizations', 'idTokenType', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'additionalInfo', {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'status', {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'Accepted',
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'cacheExpiryDateTime', {
+      type: DataTypes.DATE,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'chargingPriority', {
       type: DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'IdTokenInfos',
-        key: 'id',
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
     });
-    await queryInterface.removeColumn('LocalListAuthorizations', 'customData');
-    await queryInterface.removeColumn('Evses', 'evseTypeId');
-    await queryInterface.removeColumn('TransactionEvents', 'idTokenType');
-    await queryInterface.addColumn('TransactionEvents', 'idTokenId', {
+    await queryInterface.addColumn('LocalListAuthorizations', 'language1', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'language2', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('LocalListAuthorizations', 'personalMessage', {
+      type: DataTypes.JSON,
+      allowNull: true,
+    });
+    await queryInterface.removeColumn('LocalListAuthorizations', 'idTokenInfoId');
+    await queryInterface.addColumn('LocalListAuthorizations', 'customData', {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Evses', 'evseTypeId', {
       type: DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'IdTokens',
-        key: 'id',
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
     });
-    await queryInterface.removeColumn('Evses', 'evseId');
-    await queryInterface.removeColumn('Evses', 'physicalReference');
-    await queryInterface.removeColumn('Evses', 'removed');
+    await queryInterface.addColumn('TransactionEvents', 'idTokenType', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.removeColumn('TransactionEvents', 'idTokenId');
+    await queryInterface.addColumn('Evses', 'evseId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Evses', 'physicalReference', {
+      type: DataTypes.STRING,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Evses', 'removed', {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+    });
     // ChargingStation: Remove columns
     await queryInterface.removeColumn('ChargingStations', 'coordinates');
     await queryInterface.removeColumn('ChargingStations', 'floorLevel');
