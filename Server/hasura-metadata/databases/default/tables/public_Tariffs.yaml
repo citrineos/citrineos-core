@@ -9,6 +9,13 @@ object_relationships:
     using:
       foreign_key_constraint_on: tenantId
 array_relationships:
+  - name: MeterValues
+    using:
+      foreign_key_constraint_on:
+        column: tariffId
+        table:
+          name: MeterValues
+          schema: public
   - name: Transactions
     using:
       foreign_key_constraint_on:
