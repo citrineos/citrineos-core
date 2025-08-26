@@ -283,19 +283,13 @@ export = {
     );
 
     // 4. Fix the Evses table
-    await queryInterface.sequelize.query('DROP INDEX IF EXISTS evses_id;');
-    await queryInterface.sequelize.query(
-      'ALTER TABLE "Evses" DROP CONSTRAINT IF EXISTS "Evses_id_connectorId_key";',
-    );
     await queryInterface.sequelize.query(
       'ALTER TABLE "Evses" DROP CONSTRAINT IF EXISTS "Evses_pkey";',
     );
-    await queryInterface.changeColumn('Evses', 'id', { type: DataTypes.INTEGER, allowNull: false });
-    await queryInterface.addConstraint('Evses', {
-      fields: ['id'],
-      type: 'primary key',
-      name: 'Evses_pkey',
-    });
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Evses" ADD CONSTRAINT "Evses_pkey" PRIMARY KEY (id);',
+    );
+    await queryInterface.removeColumn('Evses', 'databaseId');
 
     await queryInterface.addColumn('Connectors', 'evseTypeConnectorId', {
       type: DataTypes.INTEGER,
@@ -536,6 +530,10 @@ export = {
     await queryInterface.dropTable('EvseTypes');
 
     // 4. Restore Evses table PK/index as needed
+    await queryInterface.addColumn('Evses', 'databaseId', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    });
     await queryInterface.sequelize.query(
       'ALTER TABLE "Evses" DROP CONSTRAINT IF EXISTS "Evses_pkey";',
     );
