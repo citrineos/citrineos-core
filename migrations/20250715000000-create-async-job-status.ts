@@ -7,20 +7,6 @@ const TABLE_NAME = 'AsyncJobStatuses';
 
 export = {
   up: async (queryInterface: QueryInterface) => {
-    // Create enum type for AsyncJobName
-    await queryInterface.sequelize.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM pg_type WHERE typname = 'enum_AsyncJobStatuses_jobName'
-        ) THEN
-          CREATE TYPE "enum_AsyncJobStatuses_jobName" AS ENUM (
-            'FETCH_OCPI_TOKENS'
-          );
-        END IF;
-      END$$;
-    `);
-
     await queryInterface.createTable(TABLE_NAME, {
       jobId: {
         type: DataTypes.STRING,
@@ -28,7 +14,7 @@ export = {
         allowNull: false,
       },
       jobName: {
-        type: DataTypes.ENUM('FETCH_OCPI_TOKENS'),
+        type: DataTypes.STRING,
         allowNull: false,
       },
       tenantPartnerId: {

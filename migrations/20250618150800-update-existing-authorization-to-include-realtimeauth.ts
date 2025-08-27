@@ -10,7 +10,7 @@ const COLUMNS = [
   {
     name: 'realTimeAuth',
     attributes: {
-      type: DataType.ENUM(...Object.values(AuthorizationWhitelistType)),
+      type: DataType.STRING,
       allowNull: false,
       defaultValue: AuthorizationWhitelistType.Never,
     },

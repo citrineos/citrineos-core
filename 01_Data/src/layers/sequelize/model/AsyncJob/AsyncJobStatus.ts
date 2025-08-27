@@ -41,7 +41,7 @@ export class AsyncJobStatus extends BaseModelWithTenant {
   @Column(DataType.STRING)
   declare jobId: string;
 
-  @Column(DataType.ENUM(...Object.values(AsyncJobName)))
+  @Column(DataType.STRING)
   declare jobName: AsyncJobName;
 
   @ForeignKey(() => TenantPartner)
