@@ -18,13 +18,13 @@ export = {
 
     // 1. Create EvseTypes table
     await queryInterface.createTable('EvseTypes', {
-      id: {
+      databaseId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
       },
-      databaseId: {
+      id: {
         type: DataTypes.INTEGER,
         allowNull: true,
       },
@@ -293,21 +293,21 @@ export = {
     await queryInterface.sequelize.query(
       'ALTER TABLE "Evses" DROP CONSTRAINT IF EXISTS "Evses_pkey";',
     );
-    await queryInterface.sequelize.query(
-      'ALTER TABLE "Evses" ADD CONSTRAINT "Evses_pkey" PRIMARY KEY (id);',
-    );
     await queryInterface.removeColumn('Evses', 'databaseId');
 
     // Populate EvseTypes from existing data before adding foreign keys
     await queryInterface.sequelize.query(`
       INSERT INTO "EvseTypes" ("id", "tenantId", "connectorId", "createdAt", "updatedAt")
-      SELECT DISTINCT id, "tenantId", "connectorId", NOW(), NOW()
-      FROM "Evses"
-      ON CONFLICT (id) DO NOTHING;
+      SELECT "id", "tenantId", "connectorId", NOW(), NOW()
+      FROM "Evses";
     `);
 
     // Truncate Evses table after migration
     await queryInterface.sequelize.query('TRUNCATE TABLE "Evses" CASCADE;');
+
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "Evses" ADD CONSTRAINT "Evses_pkey" PRIMARY KEY (id);',
+    );
 
     await queryInterface.addColumn('Connectors', 'evseTypeConnectorId', {
       type: DataTypes.INTEGER,
@@ -414,16 +414,16 @@ export = {
       'ALTER TABLE "LocalListAuthorizations" ADD CONSTRAINT "LocalListAuthorizations_groupAuthorizationId_fkey" FOREIGN KEY ("groupAuthorizationId") REFERENCES "Authorizations" (id) ON UPDATE CASCADE ON DELETE SET NULL;',
     );
     await queryInterface.sequelize.query(
-      'ALTER TABLE "Components" ADD CONSTRAINT "Components_evseTypeId_fkey" FOREIGN KEY ("evseDatabaseId") REFERENCES "EvseTypes" (id) ON UPDATE CASCADE ON DELETE SET NULL;',
+      'ALTER TABLE "Components" ADD CONSTRAINT "Components_evseTypeId_fkey" FOREIGN KEY ("evseDatabaseId") REFERENCES "EvseTypes" ("databaseId") ON UPDATE CASCADE ON DELETE SET NULL;',
     );
     await queryInterface.sequelize.query(
-      'ALTER TABLE "Reservations" ADD CONSTRAINT "Reservations_evseTypeId_fkey" FOREIGN KEY ("evseId") REFERENCES "EvseTypes" (id) ON UPDATE CASCADE ON DELETE SET NULL;',
+      'ALTER TABLE "Reservations" ADD CONSTRAINT "Reservations_evseTypeId_fkey" FOREIGN KEY ("evseId") REFERENCES "EvseTypes" ("databaseId") ON UPDATE CASCADE ON DELETE SET NULL;',
     );
     await queryInterface.sequelize.query(
-      'ALTER TABLE "TransactionEvents" ADD CONSTRAINT "TransactionEvents_evseTypeId_fkey" FOREIGN KEY ("evseId") REFERENCES "EvseTypes" (id) ON UPDATE CASCADE ON DELETE SET NULL;',
+      'ALTER TABLE "TransactionEvents" ADD CONSTRAINT "TransactionEvents_evseTypeId_fkey" FOREIGN KEY ("evseId") REFERENCES "EvseTypes" ("databaseId") ON UPDATE CASCADE ON DELETE SET NULL;',
     );
     await queryInterface.sequelize.query(
-      'ALTER TABLE "VariableAttributes" ADD CONSTRAINT "VariableAttributes_evseTypeId_fkey" FOREIGN KEY ("evseDatabaseId") REFERENCES "EvseTypes" (id) ON UPDATE CASCADE ON DELETE SET NULL;',
+      'ALTER TABLE "VariableAttributes" ADD CONSTRAINT "VariableAttributes_evseTypeId_fkey" FOREIGN KEY ("evseDatabaseId") REFERENCES "EvseTypes" ("databaseId") ON UPDATE CASCADE ON DELETE SET NULL;',
     );
   },
 
