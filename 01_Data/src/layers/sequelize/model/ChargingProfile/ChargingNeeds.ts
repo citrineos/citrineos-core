@@ -4,9 +4,10 @@
 
 import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
-import { Evse } from '../DeviceModel';
+import { EvseType } from '../DeviceModel';
 import { Transaction } from '../TransactionEvent';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { Evse } from '../Location';
 
 @Table
 export class ChargingNeeds extends BaseModelWithTenant implements OCPP2_0_1.ChargingNeedsType {
@@ -41,10 +42,10 @@ export class ChargingNeeds extends BaseModelWithTenant implements OCPP2_0_1.Char
    */
   @ForeignKey(() => Evse)
   @Column(DataType.INTEGER)
-  declare evseDatabaseId: number;
+  declare evseId: number;
 
   @BelongsTo(() => Evse)
-  declare evse: OCPP2_0_1.EVSEType;
+  declare evse: Evse;
 
   @ForeignKey(() => Transaction)
   @Column(DataType.INTEGER)

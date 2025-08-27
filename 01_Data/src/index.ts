@@ -6,7 +6,6 @@
 import { Transaction as SequelizeTransaction } from 'sequelize';
 
 export { SequelizeTransaction };
-export { IdTokenAdditionalInfo } from './layers/sequelize/model/Authorization/IdTokenAdditionalInfo';
 export * as sequelize from './layers/sequelize';
 export * from './interfaces';
 export * from 'sequelize-typescript';
@@ -30,7 +29,7 @@ export {
   Transaction,
   Reservation,
   Subscription,
-  Evse,
+  EvseType,
   Variable,
   VariableAttribute,
   VariableCharacteristics,
@@ -39,9 +38,6 @@ export {
   InstalledCertificate,
   CountryNameEnumType,
   TransactionEvent,
-  IdToken,
-  IdTokenInfo,
-  AdditionalInfo,
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
@@ -51,6 +47,13 @@ export {
   ChargingStationSecurityInfo,
   ChargingStationNetworkProfile,
   Tenant,
+  TenantPartner,
+  AsyncJobStatus,
+  AsyncJobStatusDTO,
+  AsyncJobRequest,
+  AsyncJobName,
+  AsyncJobAction,
+  PaginatedParams,
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -72,6 +75,7 @@ export {
   SequelizeVariableMonitoringRepository,
   SequelizeChargingStationSequenceRepository,
   SequelizeTenantRepository,
+  SequelizeAsyncJobStatusRepository,
   OCPP2_0_1_Mapper,
   OCPP1_6_Mapper,
 } from './layers/sequelize'; // TODO ensure all needed modules are properly exported

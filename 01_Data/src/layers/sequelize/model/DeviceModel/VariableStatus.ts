@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { IVariableStatusDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { VariableAttribute } from './VariableAttribute';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class VariableStatus extends BaseModelWithTenant {
+export class VariableStatus extends BaseModelWithTenant implements IVariableStatusDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableStatus;
 
   @Column(DataType.STRING(4000))

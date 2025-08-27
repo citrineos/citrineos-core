@@ -172,6 +172,9 @@ export abstract class AbstractModule implements IModule {
       AbstractModule.CALLBACK_URL_CACHE_PREFIX + message.context.stationId,
     );
     if (url) {
+      this._logger.debug(
+        `Sending call result to callback URL: ${url} for correlationId: ${message.context.correlationId}`,
+      );
       try {
         await fetch(url, {
           method: 'POST',
@@ -230,15 +233,24 @@ export abstract class AbstractModule implements IModule {
 
     if (callbackUrl) {
       // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
+      this._logger.debug(
+        `Setting callback URL: ${callbackUrl} for correlationId: ${_correlationId}`,
+      );
       this._cache
         .set(
           _correlationId,
           callbackUrl,
-          AbstractModule.CALLBACK_URL_CACHE_PREFIX + identifier,
+          AbstractModule.CALLBACK_URL_CACHE_PREFIX + stationId,
           this._config.maxCachingSeconds,
         )
-        .then()
-        .catch((error) => this._logger.error('Failed setting cache: ', error));
+        .then((value) => {
+          if (value) {
+            this._logger.debug(`Successfully set cache for correlationId: ${_correlationId}`);
+          } else {
+            this._logger.warn(`Failed to set cache for correlationId: ${_correlationId}`);
+          }
+        })
+        .catch((error) => this._logger.error('Error setting cache: ', error));
     }
     // TODO: Future - Compound key with tenantId
     return this._cache.get<string>(identifier, CacheNamespace.Connections).then((connection) => {

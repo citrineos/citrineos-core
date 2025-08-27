@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { Namespace } from '@citrineos/base';
+import { IReservationDto, Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
   BelongsTo,
@@ -12,11 +12,11 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { Evse } from './DeviceModel';
+import { EvseType } from './DeviceModel';
 import { BaseModelWithTenant } from './BaseModelWithTenant';
 
 @Table
-export class Reservation extends BaseModelWithTenant {
+export class Reservation extends BaseModelWithTenant implements IReservationDto {
   static readonly MODEL_NAME: string = Namespace.ReserveNowRequest;
 
   /**
@@ -69,11 +69,11 @@ export class Reservation extends BaseModelWithTenant {
   /**
    * Relations
    */
-  @ForeignKey(() => Evse)
+  @ForeignKey(() => EvseType)
   declare evseId?: number | null;
 
-  @BelongsTo(() => Evse)
-  declare evse?: Evse;
+  @BelongsTo(() => EvseType)
+  declare evse?: EvseType | null;
 
   declare customData?: any | null;
 }

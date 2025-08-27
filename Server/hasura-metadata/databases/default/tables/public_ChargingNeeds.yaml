@@ -4,7 +4,7 @@ table:
 object_relationships:
   - name: Evse
     using:
-      foreign_key_constraint_on: evseDatabaseId
+      foreign_key_constraint_on: evseId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
@@ -16,7 +16,7 @@ select_permissions:
     permission:
       columns:
         - requestedEnergyTransfer
-        - evseDatabaseId
+        - evseId
         - id
         - maxScheduleTuples
         - tenantId

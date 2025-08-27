@@ -74,7 +74,11 @@ describe('StatusNotificationService', () => {
     expect(locationRepository.addStatusNotificationToChargingStation).not.toHaveBeenCalled();
   });
 
-  it('should save Component and Variable ReportData because Component and Variable exist', async () => {
+  it('should save Component and Variable ReportData because Station and Component and Variable exist', async () => {
+    locationRepository.readChargingStationByStationId.mockResolvedValue(aChargingStation());
+    jest.spyOn(StatusNotification, 'build').mockImplementation(() => {
+      return aStatusNotification();
+    });
     componentRepository.readOnlyOneByQuery.mockResolvedValue(
       aComponent((c) => {
         c.name = 'Connector';
@@ -94,6 +98,28 @@ describe('StatusNotificationService', () => {
     );
 
     expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalled();
+  });
+
+  it('should not save Component and Variable ReportData because Station doesnt exist', async () => {
+    componentRepository.readOnlyOneByQuery.mockResolvedValue(
+      aComponent((c) => {
+        c.name = 'Connector';
+        c.evse = anEvse();
+        c.variables = [
+          aVariable((v) => {
+            v.name = 'AvailabilityState';
+          }),
+        ];
+      }),
+    );
+
+    await statusNotificationService.processStatusNotification(
+      DEFAULT_TENANT_ID,
+      MOCK_STATION_ID,
+      aStatusNotificationRequest(),
+    );
+
+    expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
   });
 
   describe('Component or Variable does not exist', () => {

@@ -27,7 +27,7 @@ import {
   CompositeSchedule,
   Connector,
   type EventData,
-  Evse,
+  EvseType,
   InstalledCertificate,
   LocalListVersion,
   type Location,
@@ -146,7 +146,7 @@ export interface IDeviceModelRepository extends CrudRepository<OCPP2_0_1.Variabl
     tenantId: number,
     id: number,
     connectorId: number | null,
-  ): Promise<Evse | undefined>;
+  ): Promise<EvseType | undefined>;
   findVariableCharacteristicsByVariableNameAndVariableInstance(
     tenantId: number,
     variableName: string,
@@ -259,6 +259,8 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     tenantId: number,
     value: OCPP2_0_1.MeterValueType,
     transactionDatabaseId?: number | null,
+    transactionId?: string | null,
+    tariffId?: number | null,
   ): Promise<void>;
   createTransactionByStartTransaction(
     tenantId: number,

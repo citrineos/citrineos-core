@@ -8,7 +8,9 @@
     "./dist/**/*",
     "**/node_modules/**",
     "DirectusExtensions", // todo for now
-    "Swarm" // todo for now
+    "Swarm", // todo for now
+    "**/jest.config.ts",
+    "**/test/**"
   ],
   "references": [
     {

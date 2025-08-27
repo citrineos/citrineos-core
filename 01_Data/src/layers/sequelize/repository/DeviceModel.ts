@@ -12,7 +12,7 @@ import {
 import { Op } from 'sequelize';
 import {
   Component,
-  Evse,
+  EvseType,
   Variable,
   VariableAttribute,
   VariableCharacteristics,
@@ -30,7 +30,7 @@ export class SequelizeDeviceModelRepository
 {
   variable: CrudRepository<Variable>;
   component: CrudRepository<Component>;
-  evse: CrudRepository<Evse>;
+  evse: CrudRepository<EvseType>;
   variableCharacteristics: CrudRepository<VariableCharacteristics>;
   componentVariable: CrudRepository<ComponentVariable>;
   variableStatus: CrudRepository<VariableStatus>;
@@ -41,7 +41,7 @@ export class SequelizeDeviceModelRepository
     sequelizeInstance?: Sequelize,
     variable?: CrudRepository<Variable>,
     component?: CrudRepository<Component>,
-    evse?: CrudRepository<Evse>,
+    evse?: CrudRepository<EvseType>,
     componentVariable?: CrudRepository<ComponentVariable>,
     variableCharacteristics?: CrudRepository<VariableCharacteristics>,
     variableStatus?: CrudRepository<VariableStatus>,
@@ -55,7 +55,7 @@ export class SequelizeDeviceModelRepository
       : new SequelizeRepository<Component>(config, Component.MODEL_NAME, logger, sequelizeInstance);
     this.evse = evse
       ? evse
-      : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
+      : new SequelizeRepository<EvseType>(config, EvseType.MODEL_NAME, logger, sequelizeInstance);
     this.componentVariable = componentVariable
       ? componentVariable
       : new SequelizeRepository<ComponentVariable>(
@@ -435,7 +435,7 @@ export class SequelizeDeviceModelRepository
         stationId,
         bootConfigSetId: { [Op.ne]: null },
       },
-      include: [{ model: Component, include: [Evse] }, Variable],
+      include: [{ model: Component, include: [EvseType] }, Variable],
     });
 
     return variableAttributeArray.map((variableAttribute) =>
@@ -497,7 +497,7 @@ export class SequelizeDeviceModelRepository
     tenantId: number,
     id: number,
     connectorId: number | null,
-  ): Promise<Evse | undefined> {
+  ): Promise<EvseType | undefined> {
     const storedEvses = await this.evse.readAllByQuery(tenantId, {
       where: {
         id: id,
@@ -553,7 +553,7 @@ export class SequelizeDeviceModelRepository
     const evseInclude =
       queryParams.component_evse_id ?? queryParams.component_evse_connectorId
         ? {
-            model: Evse,
+            model: EvseType,
             where: {
               ...(queryParams.component_evse_id ? { id: queryParams.component_evse_id } : {}),
               ...(queryParams.component_evse_connectorId
@@ -561,7 +561,7 @@ export class SequelizeDeviceModelRepository
                 : {}),
             },
           }
-        : Evse;
+        : EvseType;
     const attributeType =
       queryParams.type && queryParams.type.toUpperCase() === 'NULL' ? null : queryParams.type;
     return {
