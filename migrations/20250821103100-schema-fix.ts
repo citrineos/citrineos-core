@@ -306,6 +306,9 @@ export = {
       ON CONFLICT (id) DO NOTHING;
     `);
 
+    // Truncate Evses table after migration
+    await queryInterface.sequelize.query('TRUNCATE TABLE "Evses" CASCADE;');
+
     await queryInterface.addColumn('Connectors', 'evseTypeConnectorId', {
       type: DataTypes.INTEGER,
       allowNull: true,
