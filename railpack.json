@@ -1,0 +1,21 @@
+{
+    "$schema": "https://schema.railpack.com",
+    "steps": {
+      "install-root": { 
+        "commands": ["npm install"] 
+      },
+      "build-all": { 
+        "inputs": [{ "step": "install-root" }], 
+        "commands": [
+          "npm run build",
+          "npm run copy-assets"
+        ] 
+      }
+    },
+    "deploy": {
+      "startCommand": "npm run start-docker-cloud",
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+}
