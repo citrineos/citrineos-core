@@ -19,6 +19,7 @@ import {
   updateFlow,
   updateOperation,
   uploadFiles,
+  readFiles,
 } from '@directus/sdk';
 import { RouteOptions } from 'fastify';
 import { JSONSchemaFaker } from 'json-schema-faker';
@@ -33,6 +34,11 @@ export class DirectusUtil implements ConfigStore {
   private readonly _client: RestClient<Schema>;
   private readonly _configFileName: string;
   private readonly _configDir?: string;
+  /**
+   * Promise for the login operation, if applicable.
+   * This is used to ensure that the client is logged in before making requests.
+   */
+  private readonly loginPromise?: Promise<void>;
 
   constructor(
     config: BootstrapConfig['fileAccess']['directus'],
@@ -56,11 +62,14 @@ export class DirectusUtil implements ConfigStore {
         .with(authentication())
         .with(rest());
       this._logger.info(`Logging into Directus as ${config!.username}`);
-      client
+      this.loginPromise = client
         .login(config!.username, config!.password)
-        .then()
+        .then(() => {
+          this._logger.info('Directus login successful');
+        })
         .catch((error) => {
           this._logger.error('DirectusUtil could not perform client login', error);
+          throw error;
         });
     } else {
       // No auth
@@ -70,14 +79,50 @@ export class DirectusUtil implements ConfigStore {
     this._configFileName = configFileName;
     this._configDir = configDir;
   }
+  private async ensureLogin() {
+    if (this.loginPromise) {
+      await this.loginPromise.catch((err) => {
+        this._logger.error('Directus login failed', err);
+        throw err;
+      });
+    }
+  }
 
   async fetchConfig(): Promise<SystemConfig | null> {
-    const configString = await this.getFile(this._configFileName);
+    await this.ensureLogin();
+    const fileId = await this.getFileIdByName(this._configFileName);
+    if (!fileId) {
+      this._logger.warn(`Config file not found: ${this._configFileName}`);
+      return null;
+    }
+    // Fetch the config file content using UUID
+    const configString = await this.getFile(fileId);
     if (!configString) return null;
     return JSON.parse(configString) as SystemConfig;
   }
+  public async getFileIdByName(fileName: string): Promise<string | null> {
+    try {
+      const files = await this._client.request(
+        readFiles({
+          filter: { filename_download: { _eq: fileName } },
+          fields: ['id', 'filename_download'],
+        }),
+      );
+
+      if (!files || files.length === 0) {
+        this._logger.warn(`File not found: ${fileName}`);
+        return null;
+      }
+
+      return files[0].id;
+    } catch (error) {
+      this._logger.error(`Failed to fetch fileId for ${fileName}: ${JSON.stringify(error)}`);
+      return null;
+    }
+  }
 
   async saveConfig(config: SystemConfig): Promise<void> {
+    await this.ensureLogin();
     try {
       const fileId = await this.saveFile(
         this._configFileName,
@@ -117,7 +162,8 @@ export class DirectusUtil implements ConfigStore {
   public async getFile(id: string): Promise<string | undefined> {
     try {
       const result = await this._client.request(readAssetBlob(id));
-      return String(result.text());
+      const text = await result.text(); // await the result
+      return text;
     } catch (error) {
       this._logger.error(`Get file ${id} failed: ${JSON.stringify(error)}`);
       return undefined;
