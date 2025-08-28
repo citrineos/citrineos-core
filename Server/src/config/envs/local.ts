@@ -163,7 +163,7 @@ export function createLocalConfig() {
       },
       messageBroker: {
         amqp: {
-          url: 'amqp://username:password@pc:5672/dev_csms',
+          url: 'amqp://guest:guest@localhost:5672',
           exchange: 'citrineos',
         },
       },
