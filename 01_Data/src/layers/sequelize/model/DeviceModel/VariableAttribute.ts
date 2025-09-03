@@ -192,7 +192,7 @@ export class VariableAttribute
   declare componentId?: number | null;
 
   @BelongsTo(() => EvseType)
-  declare evse?: Evse;
+  declare evse?: EvseType;
 
   @ForeignKey(() => EvseType)
   @Column(DataType.INTEGER)

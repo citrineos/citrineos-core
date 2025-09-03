@@ -23,7 +23,7 @@ export interface ITransactionDto extends IBaseDto {
   transactionEvents?: ITransactionEventDto[];
   chargingStation?: IChargingStationDto;
   evse?: IEvseDto | null;
-  evseDatabaseId?: number;
+  evseId?: number;
   isActive: boolean;
   meterValues?: IMeterValueDto[];
   startTransaction?: IStartTransactionDto;
@@ -36,7 +36,6 @@ export interface ITransactionDto extends IBaseDto {
   totalCost?: number;
   locationId?: number;
   location?: ILocationDto;
-  evseId?: number;
   connectorId?: number;
   connector?: IConnectorDto | null;
   authorizationId?: number;

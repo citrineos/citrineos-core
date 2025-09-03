@@ -6,7 +6,7 @@ import {
   IBootDto,
   IChargingStationDto,
   IComponentDto,
-  IEvseDto,
+  IEvseTypeDto,
   IVariableDto,
   IVariableStatusDto,
 } from '../..';
@@ -26,7 +26,7 @@ export interface IVariableAttributeDto extends IBaseDto {
   variableId?: number | null;
   component: IComponentDto;
   componentId?: number | null;
-  evse?: IEvseDto;
+  evse?: IEvseTypeDto;
   evseDatabaseId?: number | null;
   statuses?: IVariableStatusDto[];
   bootConfig?: IBootDto;
