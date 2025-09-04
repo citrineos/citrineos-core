@@ -230,7 +230,9 @@
         "multiplier": {
           "description": "Multiplier, this value represents the exponent to base 10. I.e. multiplier 3 means 10 raised to the 3rd power. Default is 0.\r\n",
           "type": "integer",
-          "default": 0
+          "default": 0,
+          "minimum": -2147483648,
+          "maximum": 2147483647
         }
       }
     }
@@ -243,7 +245,9 @@
     },
     "evseId": {
       "description": "Request_ Body. EVSEID. Numeric_ Identifier\r\nurn:x-enexis:ecdm:uid:1:571101\r\nThis contains a number (&gt;0) designating an EVSE of the Charging Station. ‘0’ (zero) is used to designate the main power meter.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "meterValue": {
       "type": "array",

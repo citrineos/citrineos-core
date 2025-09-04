@@ -96,11 +96,15 @@
         },
         "id": {
           "description": "Identified_ Object. MRID. Numeric_ Identifier\r\nurn:x-enexis:ecdm:uid:1:569198\r\nEVSE Identifier. This contains a number (&gt; 0) designating an EVSE of the Charging Station.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
         },
         "connectorId": {
           "description": "An id to designate a specific connector (on an EVSE) by connector index number.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         }
       },
       "required": ["id"]
@@ -237,7 +241,9 @@
     },
     "requestId": {
       "description": "The id of the GetReportRequest  or GetBaseReportRequest that requested this report\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "generatedAt": {
       "description": "Timestamp of the moment this message was generated at the Charging Station.\r\n",
@@ -260,7 +266,9 @@
     },
     "seqNo": {
       "description": "Sequence number of this message. First message starts at 0.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
     }
   },
   "required": ["requestId", "generatedAt", "seqNo"]

@@ -78,7 +78,9 @@
         },
         "eventId": {
           "description": "Identifies the event. This field can be referred to as a cause by other events.\r\n\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "timestamp": {
           "description": "Timestamp of the moment the report was generated.\r\n",
@@ -91,7 +93,9 @@
         },
         "cause": {
           "description": "Refers to the Id of an event that is considered to be the cause for this event.\r\n\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "actualValue": {
           "description": "Actual value (_attributeType_ Actual) of the variable.\r\n\r\nThe Configuration Variable &lt;&lt;configkey-reporting-value-size,ReportingValueSize&gt;&gt; can be used to limit GetVariableResult.attributeValue, VariableAttribute.value and EventData.actualValue. The max size of these values will always remain equal. \r\n\r\n",
@@ -123,7 +127,9 @@
         },
         "variableMonitoringId": {
           "description": "Identifies the VariableMonitoring which triggered the event.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "eventNotificationType": {
           "$ref": "#/definitions/EventNotificationEnumType"
@@ -153,11 +159,15 @@
         },
         "id": {
           "description": "Identified_ Object. MRID. Numeric_ Identifier\r\nurn:x-enexis:ecdm:uid:1:569198\r\nEVSE Identifier. This contains a number (&gt; 0) designating an EVSE of the Charging Station.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
         },
         "connectorId": {
           "description": "An id to designate a specific connector (on an EVSE) by connector index number.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         }
       },
       "required": ["id"]
@@ -206,7 +216,9 @@
     },
     "seqNo": {
       "description": "Sequence number of this message. First message starts at 0.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
     },
     "eventData": {
       "type": "array",

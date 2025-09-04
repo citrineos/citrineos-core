@@ -33,7 +33,9 @@
     },
     "seqNo": {
       "description": "Sequence number of this message. First message starts at 0.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
     },
     "generatedAt": {
       "description": " Timestamp of the moment this message was generated at the Charging Station.\r\n",
@@ -43,7 +45,9 @@
     },
     "requestId": {
       "description": "The Id of the request.\r\n\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     }
   },
   "required": ["data", "seqNo", "generatedAt", "requestId"]

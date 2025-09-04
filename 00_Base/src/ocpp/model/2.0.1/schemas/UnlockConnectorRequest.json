@@ -23,11 +23,15 @@
     },
     "evseId": {
       "description": "This contains the identifier of the EVSE for which a connector needs to be unlocked.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "connectorId": {
       "description": "This contains the identifier of the connector that needs to be unlocked.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     }
   },
   "required": ["evseId", "connectorId"]

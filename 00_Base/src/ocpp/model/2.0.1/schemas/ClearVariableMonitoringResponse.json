@@ -35,7 +35,9 @@
         },
         "id": {
           "description": "Id of the monitor of which a clear was requested.\r\n\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "statusInfo": {
           "$ref": "#/definitions/StatusInfoType"

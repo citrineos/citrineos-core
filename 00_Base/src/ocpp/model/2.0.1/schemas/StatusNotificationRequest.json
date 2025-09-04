@@ -40,11 +40,15 @@
     },
     "evseId": {
       "description": "The id of the EVSE to which the connector belongs for which the the status is reported.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "connectorId": {
       "description": "The id of the connector within the EVSE for which the status is reported.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     }
   },
   "required": ["timestamp", "connectorStatus", "evseId", "connectorId"]
