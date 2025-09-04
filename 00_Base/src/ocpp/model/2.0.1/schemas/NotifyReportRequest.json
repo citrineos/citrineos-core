@@ -73,12 +73,14 @@
         "name": {
           "description": "Name of the component. Name should be taken from the list of standardized component names whenever possible. Case Insensitive. strongly advised to use Camel Case.\r\n",
           "type": "string",
-          "maxLength": 50
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9*\\\\-_=:+|@.]*$"
         },
         "instance": {
           "description": "Name of instance in case the component exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.\r\n",
           "type": "string",
-          "maxLength": 50
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9*\\\\-_=:+|@.]*$"
         }
       },
       "required": ["name"]
@@ -214,12 +216,14 @@
         "name": {
           "description": "Name of the variable. Name should be taken from the list of standardized variable names whenever possible. Case Insensitive. strongly advised to use Camel Case.\r\n",
           "type": "string",
-          "maxLength": 50
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9*\\\\-_=:+|@.]*$"
         },
         "instance": {
           "description": "Name of instance in case the variable exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.\r\n",
           "type": "string",
-          "maxLength": 50
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9*\\\\-_=:+|@.]*$"
         }
       },
       "required": ["name"]

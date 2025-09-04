@@ -55,12 +55,14 @@
         "name": {
           "description": "Name of the component. Name should be taken from the list of standardized component names whenever possible. Case Insensitive. strongly advised to use Camel Case.\r\n",
           "type": "string",
-          "maxLength": 50
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9*\\\\-_=:+|@.]*$"
         },
         "instance": {
           "description": "Name of instance in case the component exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.\r\n",
           "type": "string",
-          "maxLength": 50
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9*\\\\-_=:+|@.]*$"
         }
       },
       "required": ["name"]
@@ -112,7 +114,8 @@
         "transactionId": {
           "description": "If an event notification is linked to a specific transaction, this field can be used to specify its transactionId.\r\n",
           "type": "string",
-          "maxLength": 36
+          "maxLength": 36,
+          "pattern": "^[a-zA-Z0-9*\\\\-_=:+|@.]*$"
         },
         "component": {
           "$ref": "#/definitions/ComponentType"
@@ -170,12 +173,14 @@
         "name": {
           "description": "Name of the variable. Name should be taken from the list of standardized variable names whenever possible. Case Insensitive. strongly advised to use Camel Case.\r\n",
           "type": "string",
-          "maxLength": 50
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9*\\\\-_=:+|@.]*$"
         },
         "instance": {
           "description": "Name of instance in case the variable exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.\r\n",
           "type": "string",
-          "maxLength": 50
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9*\\\\-_=:+|@.]*$"
         }
       },
       "required": ["name"]
