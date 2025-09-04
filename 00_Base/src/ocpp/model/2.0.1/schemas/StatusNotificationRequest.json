@@ -32,7 +32,8 @@
     "timestamp": {
       "description": "The time for which the status is reported. If absent time of receipt of the message will be assumed.\r\n",
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?(?:Z|[+\\-]\\d{2}:\\d{2})$"
     },
     "connectorStatus": {
       "$ref": "#/definitions/ConnectorStatusEnumType"
