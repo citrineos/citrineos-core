@@ -69,7 +69,7 @@ export class Location extends BaseModelWithTenant implements ILocationDto {
   declare facilities?: LocationFacilityType[] | null;
 
   @Column(DataType.JSONB)
-  declare openingHours: LocationHours | null;
+  declare openingHours?: LocationHours | null;
 
   /**
    * [longitude, latitude]
