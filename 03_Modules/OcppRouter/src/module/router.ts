@@ -49,6 +49,7 @@ import {
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
 } from '@citrineos/base';
+import { OidcTokenProvider } from '@citrineos/util';
 
 /**
  * Implementation of the ocpp router
@@ -70,6 +71,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   protected static readonly DEFAULT_MAX_RECONNECT_DELAY = 30; // seconds
   protected _maxReconnectDelay: number;
   protected _failingReconnectDelay: number = 1; // start with 1 second
+  private readonly _oidcTokenProvider?: OidcTokenProvider;
 
   /**
    * Constructor for the class.
@@ -114,6 +116,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this.subscriptionRepository =
       subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
     this._handler.initConnection();
+    if (this._config.oidcClient) {
+      this._oidcTokenProvider = new OidcTokenProvider(this._config.oidcClient, this._logger);
+    }
     if (circuitBreakerOptions) {
       this._circuitBreaker = new CircuitBreaker({
         ...circuitBreakerOptions,
@@ -805,11 +810,23 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       AbstractModule.CALLBACK_URL_CACHE_PREFIX + message.context.stationId,
     );
     if (url) {
+      const headers: { [key: string]: string } = {
+        'Content-Type': 'application/json',
+      };
+
+      if (this._oidcTokenProvider) {
+        try {
+          const token = await this._oidcTokenProvider.getToken();
+          headers['Authorization'] = `Bearer ${token}`;
+        } catch (error) {
+          this._logger.error('Failed to get OIDC token for callback:', error);
+          return;
+        }
+      }
+
       await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(message.payload),
       });
     }
