@@ -13,6 +13,15 @@ const OCPP2_0_1_CallActionSchema = z.nativeEnum(OCPP2_0_1_CallAction);
 
 const CallActionSchema = z.union([OCPP1_6_CallActionSchema, OCPP2_0_1_CallActionSchema]);
 
+export const oidcClientConfigSchema = z
+  .object({
+    tokenUrl: z.string(),
+    clientId: z.string(),
+    clientSecret: z.string(),
+    audience: z.string(),
+  })
+  .optional();
+
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
 export const websocketServerInputSchema = z.object({
   id: z.string().optional(),
@@ -541,6 +550,7 @@ export const systemConfigSchema = z
     }),
     rbacRulesFileName: z.string().optional(),
     rbacRulesDir: z.string().optional(),
+    oidcClient: oidcClientConfigSchema,
   })
   .refine((obj) => obj.maxCachingSeconds >= obj.maxCallLengthSeconds, {
     message: 'maxCachingSeconds cannot be less than maxCallLengthSeconds',
