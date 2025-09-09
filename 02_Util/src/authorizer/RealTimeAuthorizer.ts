@@ -11,7 +11,7 @@ import {
   SystemConfig,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
-import { OidcTokenProvider } from '../authorization/OidcTokenProvider';
+import { OidcTokenProvider } from '../authorization';
 
 export interface RealTimeAuthorizationRequestBody {
   tenantPartnerId: number;
@@ -43,7 +43,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
-    if (config.util.authProvider.oidc && config.oidcClient) {
+    if (config.oidcClient) {
       this._oidcTokenProvider = new OidcTokenProvider(config.oidcClient, this._logger);
     }
   }
