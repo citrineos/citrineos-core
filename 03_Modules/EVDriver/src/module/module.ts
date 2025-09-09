@@ -208,7 +208,8 @@ export class EVDriverModule extends AbstractModule {
     );
 
     const _realTimeAuthorizer =
-      realTimeAuthorizer || new RealTimeAuthorizer(this._locationRepository, this._logger);
+      realTimeAuthorizer ||
+      new RealTimeAuthorizer(this._locationRepository, this.config, this._logger);
     this._authorizers = [_realTimeAuthorizer, ...(authorizers || [])];
 
     this._idGenerator =

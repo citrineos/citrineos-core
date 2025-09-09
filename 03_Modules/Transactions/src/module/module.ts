@@ -206,7 +206,8 @@ export class TransactionsModule extends AbstractModule {
 
     this._authorizers = authorizers || [];
     this._realTimeAuthorizer =
-      realTimeAuthorizer || new RealTimeAuthorizer(this._locationRepository, this._logger);
+      realTimeAuthorizer ||
+      new RealTimeAuthorizer(this._locationRepository, this.config, this._logger);
 
     this._signedMeterValuesUtil = new SignedMeterValuesUtil(fileStorage, config, this._logger);
 

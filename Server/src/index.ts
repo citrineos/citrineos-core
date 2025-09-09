@@ -732,6 +732,7 @@ export class CitrineOSServer {
   private initRealTimeAuthorizer() {
     this._realTimeAuthorizer = new RealTimeAuthorizer(
       this._repositoryStore.locationRepository,
+      this._config,
       this._logger,
     );
   }
