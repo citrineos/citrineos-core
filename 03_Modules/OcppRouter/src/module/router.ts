@@ -179,11 +179,26 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   async deregisterConnection(tenantId: number, stationId: string): Promise<boolean> {
     this._webhookDispatcher.deregister(tenantId, stationId);
 
-    const offlineCharger = await this._locationRepository.setChargingStationIsOnlineAndOCPPVersion(
+    let protocol: OCPPVersion | null = null;
+    try {
+      const chargingStation = await this._locationRepository.readChargingStationByStationId(
+        tenantId,
+        stationId,
+      );
+      if (chargingStation?.protocol) {
+        protocol = chargingStation.protocol as OCPPVersion;
+      }
+    } catch (e: any) {
+      this._logger?.warn?.(
+        `Could not read charging station ${stationId} of tenant ${tenantId} to determine protocol: ${e.message}`,
+      );
+    }
+
+    await this._locationRepository.setChargingStationIsOnlineAndOCPPVersion(
       tenantId,
       stationId,
       false,
-      null,
+      protocol,
     );
 
     const connectionIdentifier = createIdentifier(tenantId, stationId);
