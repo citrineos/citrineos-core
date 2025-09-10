@@ -22,6 +22,7 @@
     "prettier": "prettier --write .",
     "fi": "npm run fresh && npm run install-all",
     "sync-db": "ts-node ./db.sync.ts",
+    "force-sync-db": "ts-node ./db.force-sync.ts",
     "start-everest": "npm run start-everest --prefix ./Server",
     "test": "jest --config jest.config.ts",
     "coverage": "jest --config jest.config.ts --coverage",

@@ -110,13 +110,23 @@ export class DefaultSequelizeInstance {
     }
   }
 
-  private static async syncDb() {
-    if (this.config.database.alter) {
-      await this.instance!.sync({ alter: true });
-      this.logger.info('Database altered');
-    } else if (this.config.database.sync) {
-      await this.instance!.sync({ force: true });
-      this.logger.info('Database synchronized');
+  private static async syncDb(): Promise<void> {
+    if (this.config.database.sync) {
+      const alter = this.config.database.alter;
+      const force = this.config.database.force;
+      if (force) {
+        this.logger.info('Database force synchronizing');
+        await this.instance!.sync({ force: true });
+        this.logger.info('Database force synchronized');
+      } else if (alter) {
+        this.logger.info('Database altering');
+        await this.instance!.sync({ alter: true });
+        this.logger.info('Database altered');
+      } else {
+        this.logger.info('Database synchronizing');
+        await this.instance!.sync();
+        this.logger.info('Database synchronized');
+      }
     }
   }
 
