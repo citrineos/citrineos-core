@@ -1,0 +1,46 @@
+# Ignore files for REUSE compliance check
+
+# Dot files
+.dockerignore
+.DS_Store
+.gitattributes
+.gitignore
+.npmrc
+.nvmrc
+.prettierignore
+.prettierrc
+.sequelizerc
+
+# Config files
+db.sync.ts
+eslint.config.js
+jest.config.ts
+renovate.json
+tsconfig.build.json
+tsconfig.eslint.json
+tsconfig.json
+
+# Package management
+package-lock.json
+package.json
+
+# Documentation & licenses
+LICENSE
+README.md
+LICENSES/
+
+# Images
+logo_black.png
+logo_white.png
+OCPP_201_Logo_core_and_advanced_security.png
+
+# Directories
+.idea/
+dist/
+migrations/
+node_modules/
+Server/
+Swarm/
+DirectusExtensions/
+.husky/
+.reuse/
