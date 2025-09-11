@@ -50,3 +50,4 @@ DirectusExtensions/
 .github/workflows/tests/CI/environment.json
 00_Base/src/ocpp/model/1.6/schemas/AuthorizeRequest.json
 00_Base/src/ocpp/model/1.6/schemas/AuthorizeResponse.json
+Swarm/data/directus/uploads/
