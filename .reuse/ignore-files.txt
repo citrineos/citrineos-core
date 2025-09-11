@@ -40,8 +40,11 @@ LICENSE
 
 # Generated code and schemas
 **/schemas/
-00_Base/json-schema-processor-*.js
 DirectusExtensions/
+
+# Explicitly ignore json-schema-processor files
+00_Base/json-schema-processor-1.6.js
+00_Base/json-schema-processor-2.0.1.js
 
 # Directories that should be fully ignored
 node_modules/
@@ -352,4 +355,3 @@ package-lock.json
 tsconfig.build.json
 tsconfig.eslint.json
 tsconfig.json
-
