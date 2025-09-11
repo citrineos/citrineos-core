@@ -2,6 +2,7 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
+
 /* eslint-disable */
 
 import fastifySwagger from '@fastify/swagger';

@@ -2,6 +2,7 @@
 // Copyright Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache 2.0
+
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 
 import { CallAction, OCPPVersion } from '../../ocpp/rpc/message';

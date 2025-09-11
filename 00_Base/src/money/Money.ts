@@ -1,3 +1,8 @@
+// Copyright (c) 2023 S44, LLC
+// Copyright Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache 2.0
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Currency, CurrencyCode } from './Currency';
 import { Big } from 'big.js';
