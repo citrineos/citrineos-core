@@ -1,4 +1,4 @@
-# Files
+# Config files
 .dockerignore
 .gitattributes
 .gitignore
@@ -7,53 +7,59 @@
 .prettierignore
 .prettierrc
 .sequelizerc
-LICENSE
-README.md
 renovate.json
 nodemon.json
 rbac-rules.json
-package.json
-package-lock.json
-tsconfig.json
-tsconfig.build.json
-tsconfig.eslint.json
-jest.config.ts
-db.sync.ts
-eslint.config.js
-jest.config.js
+.husky/pre-commit
+Swarm/.eslintrc.json
 
-# Directories
-.husky/
-.idea/
-node_modules/
-dist/
-build/
-coverage/
-migrations/
+# Package manager files
+**/package.json
+**/package-lock.json
+
+# TSConfig files
+**/tsconfig.json
+**/tsconfig.build.json
+**/tsconfig.eslint.json
+**/tsconfig.esm.json
+*.tsbuildinfo
+
+# Data and assets
 Server/data/
 Swarm/data/
-DirectusExtensions/
-00_Base/src/ocpp/model/
-01_Data/src/interfaces/projections/schemas/
+Server/src/assets/
+Swarm/src/assets/
 02_Util/test/resources/
-Server/src/assets/certificates/
-
-# File Extensions
-*.tsbuildinfo
-*.json
-*.png
-*.pem
-*.md
-*.svg
-*.conf
-
-# Specific Files that are either generated or vendored
-00_Base/json-schema-processor-1.6.js
-00_Base/json-schema-processor-2.0.1.js
-02_Util/src/authorization/OidcTokenProvider.ts
-02_Util/src/authorization/provider/LocalByPassAuthProvider.ts
-02_Util/src/authorizer/RealTimeAuthorizer.ts
 logo_black.png
 logo_white.png
 OCPP_201_Logo_core_and_advanced_security.png
+
+# Documentation
+README.md
+Server/everest/README.md
+
+# Schemas
+**/schemas/
+
+# Dockerfiles
+DirectusExtensions/directus.Dockerfile
+DirectusExtensions/directus.deploy.Dockerfile
+Server/deploy.Dockerfile
+Server/everest/Dockerfile
+Server/local.Dockerfile
+Swarm/local.Dockerfile
+
+# Generated/Vendored Code
+00_Base/json-schema-processor-1.6.js
+00_Base/json-schema-processor-2.0.1.js
+DirectusExtensions/
+
+# Other
+LICENSE
+db.sync.ts
+eslint.config.js
+jest.config.ts
+Swarm/data/redis/redis.conf
+.github/workflows/tests/CI/collection.json
+.github/workflows/tests/CI/environment.json
 
