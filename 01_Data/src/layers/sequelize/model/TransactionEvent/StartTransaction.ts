@@ -1,7 +1,7 @@
 // Copyright (c) 2023 S44, LLC
 // Copyright Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import { IStartTransactionDto, OCPP1_6_Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
