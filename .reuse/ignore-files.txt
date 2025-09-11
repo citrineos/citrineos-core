@@ -1,7 +1,19 @@
-# Config files
+# Build and configuration files
+**/*.tsbuildinfo
+**/package.json
+**/package-lock.json
+**/tsconfig.json
+**/tsconfig.*.json
+**/jest.config.ts
+**/vite.config.ts
+**/codegen.ts
+**/copy-assets.ts
 .dockerignore
 .gitattributes
+.github/
 .gitignore
+.husky/
+.idea/
 .npmrc
 .nvmrc
 .prettierignore
@@ -9,57 +21,34 @@
 .sequelizerc
 renovate.json
 nodemon.json
-rbac-rules.json
-.husky/pre-commit
-Swarm/.eslintrc.json
+db.sync.ts
+eslint.config.js
 
-# Package manager files
-**/package.json
-**/package-lock.json
-
-# TSConfig files
-**/tsconfig.json
-**/tsconfig.build.json
-**/tsconfig.eslint.json
-**/tsconfig.esm.json
-*.tsbuildinfo
-
-# Data and assets
-Server/data/
-Swarm/data/
-Server/src/assets/
-Swarm/src/assets/
-02_Util/test/resources/
-logo_black.png
-logo_white.png
-OCPP_201_Logo_core_and_advanced_security.png
+# Assets and data
+**/assets/
+**/data/
+**/public/
+*.png
+*.svg
+*.ico
+*.pem
+*.conf
 
 # Documentation
 README.md
-Server/everest/README.md
+LICENSE
 
-# Schemas
+# Generated code and schemas
 **/schemas/
-
-# Dockerfiles
-DirectusExtensions/directus.Dockerfile
-DirectusExtensions/directus.deploy.Dockerfile
-Server/deploy.Dockerfile
-Server/everest/Dockerfile
-Server/local.Dockerfile
-Swarm/local.Dockerfile
-
-# Generated/Vendored Code
-00_Base/json-schema-processor-1.6.js
-00_Base/json-schema-processor-2.0.1.js
+00_Base/json-schema-processor-*.js
 DirectusExtensions/
 
-# Other
-LICENSE
-db.sync.ts
-eslint.config.js
-jest.config.ts
-Swarm/data/redis/redis.conf
-.github/workflows/tests/CI/collection.json
-.github/workflows/tests/CI/environment.json
-
+# Directories that should be fully ignored
+node_modules/
+dist/
+build/
+coverage/
+migrations/
+seeders/
+Server/everest/
+02_Util/test/resources/
