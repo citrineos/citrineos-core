@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { Boot, IBootRepository, OCPP2_0_1_Mapper, OCPP1_6_Mapper } from '@citrineos/data';
 import {
   BOOT_STATUS,

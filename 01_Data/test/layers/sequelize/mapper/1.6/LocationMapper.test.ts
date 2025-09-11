@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { ConnectorErrorCode, ConnectorStatus, OCPP1_6 } from '@citrineos/base';
 import { LocationMapper } from '../../../../../src/layers/sequelize/mapper/1.6';
 

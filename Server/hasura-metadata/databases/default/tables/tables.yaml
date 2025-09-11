@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
 - "!include public_Authorizations.yaml"
 - "!include public_Boots.yaml"
 - "!include public_Certificates.yaml"

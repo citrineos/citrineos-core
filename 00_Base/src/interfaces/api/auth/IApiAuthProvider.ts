@@ -1,9 +1,6 @@
-/*
- * // Copyright Contributors to the CitrineOS Project
- * //
- * // SPDX-License-Identifier: Apache 2.0
- *
- */
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { UserInfo } from './UserInfo';
 import { FastifyRequest } from 'fastify';
 import { ApiAuthorizationResult } from './ApiAuthorizationResult';
