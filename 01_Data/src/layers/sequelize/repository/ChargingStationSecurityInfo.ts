@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { SequelizeRepository } from './Base';
 import { ChargingStationSecurityInfo } from '../model/ChargingStationSecurityInfo';
 import { ILogObj, Logger } from 'tslog';

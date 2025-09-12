@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { jest } from '@jest/globals';
 import { Authenticator } from '../../../src';
 import { faker } from '@faker-js/faker';
