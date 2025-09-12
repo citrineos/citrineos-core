@@ -1,59 +1,290 @@
-# Build and configuration directories
-node_modules/
-dist/
-build/
-coverage/
-migrations/
-seeders/
-Server/everest/
-02_Util/test/resources/
+# Explicit file list based on REUSE output
+# Use this version if the pattern-based version doesn't work
 
-# Generated and schema directories
-**/schemas/
-DirectusExtensions/
+# JavaScript files (these actually have headers but REUSE isn't detecting them)
+00_Base/json-schema-processor-1.6.js
+00_Base/json-schema-processor-2.0.1.js
 
-# Assets and data (can't contain headers)
-**/assets/
-**/data/
-**/public/
-*.png
-*.svg
-*.ico
-*.pem
-*.conf
+# Vue component
+DirectusExtensions/charging-stations-bundle/src/display-true-count/display.vue
 
-# JSON files (can't contain REUSE headers)
-**/*.json
+# Assets
+Server/src/assets/logo.png
+Swarm/src/assets/logo.png
 
-# Configuration files that can't contain headers
-.dockerignore
-.gitattributes
-.gitignore
-.npmrc
-.nvmrc
-.prettierignore
-.prettierrc
-.sequelizerc
-renovate.json
+# CI/CD files
+.github/workflows/tests/CI/collection.json
+.github/workflows/tests/CI/environment.json
+.husky/pre-commit
 
-# Documentation (usually has different license requirements)
-README.md
-LICENSE
+# Package files
+00_Base/package.json
+01_Data/package.json
+02_Util/package.json
+03_Modules/Certificates/package.json
+03_Modules/Configuration/package.json
+03_Modules/EVDriver/package.json
+03_Modules/Monitoring/package.json
+03_Modules/OcppRouter/package.json
+03_Modules/Reporting/package.json
+03_Modules/SmartCharging/package.json
+03_Modules/Tenant/package.json
+03_Modules/Transactions/package.json
+DirectusExtensions/charging-stations-bundle/package.json
+Server/package.json
+Swarm/package.json
+package-lock.json
 
-# Git and IDE
-.github/
-.idea/
-.husky/
+# TypeScript config files
+00_Base/tsconfig.esm.json
+00_Base/tsconfig.json
+01_Data/tsconfig.json
+02_Util/tsconfig.json
+03_Modules/Certificates/tsconfig.json
+03_Modules/Configuration/tsconfig.json
+03_Modules/EVDriver/tsconfig.json
+03_Modules/Monitoring/tsconfig.json
+03_Modules/OcppRouter/tsconfig.json
+03_Modules/Reporting/tsconfig.json
+03_Modules/SmartCharging/tsconfig.json
+03_Modules/Tenant/tsconfig.json
+03_Modules/Transactions/tsconfig.json
+DirectusExtensions/charging-stations-bundle/tsconfig.json
+DirectusExtensions/tsconfig.build.json
+Server/tsconfig.json
+Swarm/tsconfig.json
+tsconfig.build.json
+tsconfig.eslint.json
+tsconfig.json
 
-# Docker files (these CAN have headers, so removed from ignore)
+# OCPP 1.6 Schema files
+00_Base/src/ocpp/model/1.6/schemas/AuthorizeRequest.json
+00_Base/src/ocpp/model/1.6/schemas/AuthorizeResponse.json
+00_Base/src/ocpp/model/1.6/schemas/BootNotificationRequest.json
+00_Base/src/ocpp/model/1.6/schemas/BootNotificationResponse.json
+00_Base/src/ocpp/model/1.6/schemas/CancelReservationRequest.json
+00_Base/src/ocpp/model/1.6/schemas/CancelReservationResponse.json
+00_Base/src/ocpp/model/1.6/schemas/ChangeAvailabilityRequest.json
+00_Base/src/ocpp/model/1.6/schemas/ChangeAvailabilityResponse.json
+00_Base/src/ocpp/model/1.6/schemas/ChangeConfigurationRequest.json
+00_Base/src/ocpp/model/1.6/schemas/ChangeConfigurationResponse.json
+00_Base/src/ocpp/model/1.6/schemas/ClearCacheRequest.json
+00_Base/src/ocpp/model/1.6/schemas/ClearCacheResponse.json
+00_Base/src/ocpp/model/1.6/schemas/ClearChargingProfileRequest.json
+00_Base/src/ocpp/model/1.6/schemas/ClearChargingProfileResponse.json
+00_Base/src/ocpp/model/1.6/schemas/DataTransferRequest.json
+00_Base/src/ocpp/model/1.6/schemas/DataTransferResponse.json
+00_Base/src/ocpp/model/1.6/schemas/DiagnosticsStatusNotificationRequest.json
+00_Base/src/ocpp/model/1.6/schemas/DiagnosticsStatusNotificationResponse.json
+00_Base/src/ocpp/model/1.6/schemas/FirmwareStatusNotificationRequest.json
+00_Base/src/ocpp/model/1.6/schemas/FirmwareStatusNotificationResponse.json
+00_Base/src/ocpp/model/1.6/schemas/GetCompositeScheduleRequest.json
+00_Base/src/ocpp/model/1.6/schemas/GetCompositeScheduleResponse.json
+00_Base/src/ocpp/model/1.6/schemas/GetConfigurationRequest.json
+00_Base/src/ocpp/model/1.6/schemas/GetConfigurationResponse.json
+00_Base/src/ocpp/model/1.6/schemas/GetDiagnosticsRequest.json
+00_Base/src/ocpp/model/1.6/schemas/GetDiagnosticsResponse.json
+00_Base/src/ocpp/model/1.6/schemas/GetLocalListVersionRequest.json
+00_Base/src/ocpp/model/1.6/schemas/GetLocalListVersionResponse.json
+00_Base/src/ocpp/model/1.6/schemas/HeartbeatRequest.json
+00_Base/src/ocpp/model/1.6/schemas/HeartbeatResponse.json
+00_Base/src/ocpp/model/1.6/schemas/MeterValuesRequest.json
+00_Base/src/ocpp/model/1.6/schemas/MeterValuesResponse.json
+00_Base/src/ocpp/model/1.6/schemas/RemoteStartTransactionRequest.json
+00_Base/src/ocpp/model/1.6/schemas/RemoteStartTransactionResponse.json
+00_Base/src/ocpp/model/1.6/schemas/RemoteStopTransactionRequest.json
+00_Base/src/ocpp/model/1.6/schemas/RemoteStopTransactionResponse.json
+00_Base/src/ocpp/model/1.6/schemas/ReserveNowRequest.json
+00_Base/src/ocpp/model/1.6/schemas/ReserveNowResponse.json
+00_Base/src/ocpp/model/1.6/schemas/ResetRequest.json
+00_Base/src/ocpp/model/1.6/schemas/ResetResponse.json
+00_Base/src/ocpp/model/1.6/schemas/SendLocalListRequest.json
+00_Base/src/ocpp/model/1.6/schemas/SendLocalListResponse.json
+00_Base/src/ocpp/model/1.6/schemas/SetChargingProfileRequest.json
+00_Base/src/ocpp/model/1.6/schemas/SetChargingProfileResponse.json
+00_Base/src/ocpp/model/1.6/schemas/StartTransactionRequest.json
+00_Base/src/ocpp/model/1.6/schemas/StartTransactionResponse.json
+00_Base/src/ocpp/model/1.6/schemas/StatusNotificationRequest.json
+00_Base/src/ocpp/model/1.6/schemas/StatusNotificationResponse.json
+00_Base/src/ocpp/model/1.6/schemas/StopTransactionRequest.json
+00_Base/src/ocpp/model/1.6/schemas/StopTransactionResponse.json
+00_Base/src/ocpp/model/1.6/schemas/TriggerMessageRequest.json
+00_Base/src/ocpp/model/1.6/schemas/TriggerMessageResponse.json
+00_Base/src/ocpp/model/1.6/schemas/UnlockConnectorRequest.json
+00_Base/src/ocpp/model/1.6/schemas/UnlockConnectorResponse.json
+00_Base/src/ocpp/model/1.6/schemas/UpdateFirmwareRequest.json
+00_Base/src/ocpp/model/1.6/schemas/UpdateFirmwareResponse.json
 
-# Specific data files that can't have headers
-Server/rbac-rules.json
-Swarm/data/redis/redis.conf
-OCPP_201_Logo_core_and_advanced_security.png
-logo_black.png
-logo_white.png
+# OCPP 2.0.1 Schema files
+00_Base/src/ocpp/model/2.0.1/schemas/AuthorizeRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/AuthorizeResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/BootNotificationRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/BootNotificationResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/CancelReservationRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/CancelReservationResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/CertificateSignedRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/CertificateSignedResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/ChangeAvailabilityRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/ChangeAvailabilityResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/ClearCacheRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/ClearCacheResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/ClearChargingProfileRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/ClearChargingProfileResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/ClearDisplayMessageRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/ClearDisplayMessageResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/ClearVariableMonitoringRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/ClearVariableMonitoringResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/ClearedChargingLimitRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/ClearedChargingLimitResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/CostUpdatedRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/CostUpdatedResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/CustomerInformationRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/CustomerInformationResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/DataTransferRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/DataTransferResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/DeleteCertificateRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/DeleteCertificateResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/FirmwareStatusNotificationRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/FirmwareStatusNotificationResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/Get15118EVCertificateRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/Get15118EVCertificateResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetBaseReportRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetBaseReportResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetCertificateStatusRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetCertificateStatusResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetChargingProfilesRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetChargingProfilesResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetCompositeScheduleRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetCompositeScheduleResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetDisplayMessagesRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetDisplayMessagesResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetInstalledCertificateIdsRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetInstalledCertificateIdsResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetLocalListVersionRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetLocalListVersionResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetLogRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetLogResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetMonitoringReportRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetMonitoringReportResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetReportRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetReportResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetTransactionStatusRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetTransactionStatusResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetVariablesRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/GetVariablesResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/HeartbeatRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/HeartbeatResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/InstallCertificateRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/InstallCertificateResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/LogStatusNotificationRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/LogStatusNotificationResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/MeterValuesRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/MeterValuesResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyChargingLimitRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyChargingLimitResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyCustomerInformationRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyCustomerInformationResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyDisplayMessagesRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyDisplayMessagesResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyEVChargingNeedsRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyEVChargingNeedsResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyEVChargingScheduleRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyEVChargingScheduleResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyEventRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyEventResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyMonitoringReportRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyMonitoringReportResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyReportRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/NotifyReportResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/PublishFirmwareRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/PublishFirmwareResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/PublishFirmwareStatusNotificationRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/PublishFirmwareStatusNotificationResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/ReportChargingProfilesRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/ReportChargingProfilesResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/RequestStartTransactionRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/RequestStartTransactionResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/RequestStopTransactionRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/RequestStopTransactionResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/ReservationStatusUpdateRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/ReservationStatusUpdateResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/ReserveNowRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/ReserveNowResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/ResetRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/ResetResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/SecurityEventNotificationRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/SecurityEventNotificationResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/SendLocalListRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/SendLocalListResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetChargingProfileRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetChargingProfileResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetDisplayMessageRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetDisplayMessageResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetMonitoringBaseRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetMonitoringBaseResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetMonitoringLevelRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetMonitoringLevelResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetNetworkProfileRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetNetworkProfileResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetVariableMonitoringRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetVariableMonitoringResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetVariablesRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/SetVariablesResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/SignCertificateRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/SignCertificateResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/StatusNotificationRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/StatusNotificationResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/TransactionEventRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/TransactionEventResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/TriggerMessageRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/TriggerMessageResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/UnlockConnectorRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/UnlockConnectorResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/UnpublishFirmwareRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/UnpublishFirmwareResponse.json
+00_Base/src/ocpp/model/2.0.1/schemas/UpdateFirmwareRequest.json
+00_Base/src/ocpp/model/2.0.1/schemas/UpdateFirmwareResponse.json
 
-# Specific uploads directories
-Server/data/directus/uploads/
-Swarm/data/directus/uploads/
+# Persistence schemas
+00_Base/src/ocpp/persistence/schemas/AuthorizationDataSchema.json
+00_Base/src/ocpp/persistence/schemas/BootConfigSchema.json
+00_Base/src/ocpp/persistence/schemas/ChargingStationTypeSchema.json
+00_Base/src/ocpp/persistence/schemas/ReportDataTypeSchema.json
+00_Base/src/ocpp/persistence/schemas/SetVariableResultTypeSchema.json
+00_Base/src/ocpp/persistence/schemas/UpdateChargingStationPasswordRequestSchema.json
+
+# Other schemas
+01_Data/src/interfaces/projections/schemas/AuthorizationRestrictionsSchema.json
+01_Data/src/interfaces/projections/schemas/TariffSchema.json
+
+# Certificate files
+02_Util/test/resources/ChargingStationCSRSample.pem
+02_Util/test/resources/LeafCertificateSample.pem
+02_Util/test/resources/LeafKeySample.pem
+02_Util/test/resources/RootCertificateSample.pem
+02_Util/test/resources/RootKeySample.pem
+02_Util/test/resources/SubCACertificateSample.pem
+02_Util/test/resources/SubCAKeySample.pem
+02_Util/test/resources/V2GCACertChainSample.pem
+02_Util/test/resources/V2GLeafCertificateSample.pem
+Server/src/assets/certificates/acme_account_key.pem
+Server/src/assets/certificates/certChain.pem
+Server/src/assets/certificates/leafKey.pem
+Server/src/assets/certificates/rootCertificate.pem
+Server/src/assets/certificates/subCAKey.pem
+Swarm/src/assets/certificates/acme_account_key.pem
+
+# Documentation
+02_Util/test/resources/README.md
+Server/everest/README.md
+
+# Configuration files
+DirectusExtensions/.dockerignore
+Server/nodemon.json
+Swarm/.eslintrc.json
+Swarm/nodemon.json
+
+# Dockerfiles
+Server/everest/Dockerfile
+DirectusExtensions/directus.Dockerfile
+DirectusExtensions/directus.deploy.Dockerfile

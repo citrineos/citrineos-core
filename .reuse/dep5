@@ -3,7 +3,6 @@ Upstream-Name: CitrineOS Core
 Upstream-Contact: Contributors to the CitrineOS Project
 Source: https://github.com/citrineos/citrineos-core
 
-Files: .env package.json
+Files: package.json _/package.json _/\*/package.json
 Copyright: Contributors to the CitrineOS Project
 License: Apache-2.0
-

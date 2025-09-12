@@ -25,6 +25,9 @@ jobs:
 
       - name: Run REUSE lint with filtering
         run: |
+          echo "=== Full REUSE output ==="
+          reuse lint
+          echo "=== End REUSE output ==="
           # Run reuse lint and capture output
           if ! reuse lint > reuse_output.txt 2>&1; then
             echo "REUSE lint found issues. Checking against ignore list..."
@@ -71,4 +74,3 @@ jobs:
         if: always()
         run: |
           rm -f reuse_output.txt failing_files.txt unignored_failures.txt
-
