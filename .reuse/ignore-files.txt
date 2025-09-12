@@ -1,11 +1,20 @@
-# Explicit file list based on REUSE output
-# Use this version if the pattern-based version doesn't work
+.dockerignore
+.gitattributes
+.gitignore
+.npmrc
+.nvmrc
+.prettierignore
+.prettierrc
+.sequelizerc
+OCPP_201_Logo_core_and_advanced_security.png
+README.md
+Server/rbac-rules.json
+Swarm/data/redis/redis.conf
+entrypoint.sh
+logo_black.png
+logo_white.png
+renovate.json
 
-# JavaScript files (these actually have headers but REUSE isn't detecting them)
-00_Base/json-schema-processor-1.6.js
-00_Base/json-schema-processor-2.0.1.js
-
-# Assets
 Server/src/assets/logo.png
 Swarm/src/assets/logo.png
 
