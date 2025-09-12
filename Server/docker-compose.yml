@@ -87,6 +87,8 @@ services:
       # Skip authentication completely - use public access
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
+      # Database Strategy
+      DB_STRATEGY: 'migrate'
       # Bootstrap Configuration Environment Variables
       BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
       BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'

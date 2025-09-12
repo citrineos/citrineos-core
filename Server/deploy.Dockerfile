@@ -13,6 +13,8 @@ COPY --from=build /usr/local/apps/citrineos /usr/local/apps/citrineos
 
 WORKDIR /usr/local/apps/citrineos
 
+RUN chmod +x /usr/local/apps/citrineos/entrypoint.sh
+
 EXPOSE ${PORT}
 
-CMD ["npm", "run", "start-docker-cloud"]
+ENTRYPOINT ["/usr/local/apps/citrineos/entrypoint.sh"]

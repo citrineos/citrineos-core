@@ -1,0 +1,24 @@
+'use strict';
+
+process.env.APP_ENV = 'local';
+
+import { DefaultSequelizeInstance } from '@citrineos/data';
+import { loadBootstrapConfig } from '@citrineos/base';
+
+async function initializeDatabase() {
+  const bootstrapConfig = loadBootstrapConfig();
+  return DefaultSequelizeInstance.getInstance(bootstrapConfig);
+}
+
+export const sequelize = initializeDatabase();
+
+const syncDatabase = async () => {
+  await (await sequelize).sync({ force: true }); // Use { force: true } for dropping and recreating tables
+  console.log('Database synchronized successfully');
+};
+
+syncDatabase()
+  .then()
+  .catch((error) => {
+    console.error('Error synchronizing database:', error);
+  });

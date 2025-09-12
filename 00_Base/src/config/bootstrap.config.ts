@@ -20,6 +20,7 @@ export const bootstrapConfigSchema = z.object({
     password: z.string().default('citrine'),
     sync: z.boolean().default(false),
     alter: z.boolean().default(false),
+    force: z.boolean().default(false),
     maxRetries: z.number().int().positive().default(3),
     retryDelay: z.number().int().positive().default(1000),
   }),
@@ -113,6 +114,7 @@ export function loadBootstrapConfig(): BootstrapConfig {
       password: getEnvVarValue('database_password'),
       sync: getEnvVarValue('database_sync') && parseEnvValue(getEnvVarValue('database_sync')!),
       alter: getEnvVarValue('database_alter') && parseEnvValue(getEnvVarValue('database_alter')!),
+      force: getEnvVarValue('database_force') && parseEnvValue(getEnvVarValue('database_force')!),
       maxRetries:
         getEnvVarValue('database_max_retries') &&
         parseInt(getEnvVarValue('database_max_retries')!, 10),
