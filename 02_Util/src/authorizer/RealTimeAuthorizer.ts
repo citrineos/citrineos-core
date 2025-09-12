@@ -1,9 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2025 Contributors to the CitrineOS Project
-//
-// SPDX-License-Identifier: Apache 2.0
+
 import { Authorization, ILocationRepository } from '@citrineos/data';
 import {
   AuthorizationStatusType,
