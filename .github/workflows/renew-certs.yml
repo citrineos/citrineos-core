@@ -1,15 +1,19 @@
 # SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 #
 # SPDX-License-Identifier: Apache-2.0
+
 name: Renew Certificates
 # This workflow is to renew the certificates which are used for security profile 2&3
 # It can be triggered manually or automatically every month to check if the certificates are still valid
 # and renew them if needed on main branch
 
+#on:
+#  workflow_dispatch:
+#  schedule:
+#    - cron: '0 0 1 * *'  # Runs on the 1st of every month
+# TODO remove this trigger after testing
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 1 * *'  # Runs on the 1st of every month
+  pull_request:
 
 env:
   TARGET_BRANCH: feature/update-expired-certs
