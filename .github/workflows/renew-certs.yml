@@ -16,7 +16,7 @@ on:
   pull_request:
 
 env:
-  TARGET_BRANCH: feature/update-expired-certs
+  TARGET_BRANCH: feature/renew-expired-cert
 
 jobs:
   renew-certs:
