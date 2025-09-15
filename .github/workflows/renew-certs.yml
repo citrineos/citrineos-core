@@ -63,7 +63,7 @@ jobs:
         if: steps.check_cert.outputs.cert_needs_renewal == 'true'
         run: |
           CERT_DIR="Server/src/assets/certificates"
-          CONFIG_FILE=".github/workflows/renewCerts/openssl.config"
+          CONFIG_FILE=".github/workflows/renew-certs/openssl.config"
 
           mkdir -p "$CERT_DIR"
           

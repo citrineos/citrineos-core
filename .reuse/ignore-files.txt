@@ -21,6 +21,7 @@ Swarm/src/assets/logo.png
 # CI/CD files
 .github/workflows/tests/CI/collection.json
 .github/workflows/tests/CI/environment.json
+.github/workflows/renew-certs/openssl.config
 .husky/pre-commit
 
 # Package files
