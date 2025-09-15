@@ -79,22 +79,24 @@ jobs:
           openssl req -new -key "$CERT_DIR/subCAKey.pem" \
             -subj "/CN=host.docker.internal subCA/O=S44/C=US" \
             -out "$CERT_DIR/subCA.csr" \
-            -extfile "$CONFIG_FILE" -extensions v3_subca
+            -config "$CONFIG_FILE"
 
           # Sign sub-CA cert with root
           openssl x509 -req -in "$CERT_DIR/subCA.csr" -CA "$CERT_DIR/rootCertificate.pem" -CAkey "$CERT_DIR/rootKey.pem" -CAcreateserial \
-            -out "$CERT_DIR/subCA.pem" -days 365 -sha256
+            -out "$CERT_DIR/subCA.pem" -days 365 -sha256 \
+            -extfile "$CONFIG_FILE" -extensions v3_subca
 
           # Create leaf key and CSR
           openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out "$CERT_DIR/leafKey.pem"
           openssl req -new -key "$CERT_DIR/leafKey.pem" \
             -subj "/CN=host.docker.internal/O=S44/C=US" \
             -out "$CERT_DIR/leaf.csr" \
-            -extfile "$CONFIG_FILE" -extensions v3_leaf
+            -config "$CONFIG_FILE"
 
           # Sign leaf cert with sub-CA
           openssl x509 -req -in "$CERT_DIR/leaf.csr" -CA "$CERT_DIR/subCA.pem" -CAkey "$CERT_DIR/subCAKey.pem" -CAcreateserial \
-            -out "$CERT_DIR/leaf.pem" -days 365 -sha256
+            -out "$CERT_DIR/leaf.pem" -days 365 -sha256 \
+            -extfile "$CONFIG_FILE" -extensions v3_leaf
 
           # Combine into certChain.pem
           cat "$CERT_DIR/leaf.pem" "$CERT_DIR/subCA.pem" > "$CERT_DIR/certChain.pem"
