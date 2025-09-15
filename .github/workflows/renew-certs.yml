@@ -71,15 +71,15 @@ jobs:
           openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out "$CERT_DIR/rootKey.pem"
           openssl req -x509 -new -nodes -key "$CERT_DIR/rootKey.pem" -sha256 -days 365 \
             -subj "/CN=host.docker.internal root/O=S44/C=US" \
-            -out "$CERT_DIR/rootCertificate.pem"
+            -out "$CERT_DIR/rootCertificate.pem" \
             -config "$CONFIG_FILE" -extensions v3_ca
 
           # Create sub-CA key and CSR
           openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out "$CERT_DIR/subCAKey.pem"
           openssl req -new -key "$CERT_DIR/subCAKey.pem" \
             -subj "/CN=host.docker.internal subCA/O=S44/C=US" \
-            -out "$CERT_DIR/subCA.csr"
-            -config "$CONFIG_FILE" -extensions v3_subca
+            -out "$CERT_DIR/subCA.csr" \
+            -extfile "$CONFIG_FILE" -extensions v3_subca
 
           # Sign sub-CA cert with root
           openssl x509 -req -in "$CERT_DIR/subCA.csr" -CA "$CERT_DIR/rootCertificate.pem" -CAkey "$CERT_DIR/rootKey.pem" -CAcreateserial \
@@ -89,7 +89,7 @@ jobs:
           openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out "$CERT_DIR/leafKey.pem"
           openssl req -new -key "$CERT_DIR/leafKey.pem" \
             -subj "/CN=host.docker.internal/O=S44/C=US" \
-            -out "$CERT_DIR/leaf.csr"
+            -out "$CERT_DIR/leaf.csr" \
             -extfile "$CONFIG_FILE" -extensions v3_leaf
 
           # Sign leaf cert with sub-CA
