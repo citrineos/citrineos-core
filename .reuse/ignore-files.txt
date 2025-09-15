@@ -92,6 +92,7 @@ Server/src/assets/certificates/acme_account_key.pem
 Server/src/assets/certificates/certChain.pem
 Server/src/assets/certificates/leafKey.pem
 Server/src/assets/certificates/rootCertificate.pem
+Server/src/assets/certificates/rootKey.pem
 Server/src/assets/certificates/subCAKey.pem
 Swarm/src/assets/certificates/acme_account_key.pem
 
