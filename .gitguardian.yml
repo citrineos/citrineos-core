@@ -1,5 +1,0 @@
-version: 1
-
-allowlist:
-  - type: path
-    pattern: "Server/src/assets/certificates/.*"
