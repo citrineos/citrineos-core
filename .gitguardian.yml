@@ -1,0 +1,4 @@
+version: 1
+
+ignore:
+  - Server/src/assets/certificates/**
