@@ -66,13 +66,13 @@ jobs:
           mkdir -p "$CERT_DIR"
           
           # Create root key and self-signed root cert
-          openssl ecparam -genkey -name prime256v1 -out "$CERT_DIR/rootKey.pem"
+          openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out "$CERT_DIR/rootKey.pem"
           openssl req -x509 -new -nodes -key "$CERT_DIR/rootKey.pem" -sha256 -days 365 \
             -subj "/CN=host.docker.internal/O=S44/C=US" \
             -out "$CERT_DIR/rootCertificate.pem"
 
           # Create sub-CA key and CSR
-          openssl ecparam -genkey -name prime256v1 -out "$CERT_DIR/subCAKey.pem"
+          openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out "$CERT_DIR/subCAKey.pem"
           openssl req -new -key "$CERT_DIR/subCAKey.pem" \
             -subj "/CN=host.docker.internal/O=S44/C=US" \
             -out "$CERT_DIR/subCA.csr"
@@ -82,7 +82,7 @@ jobs:
             -out "$CERT_DIR/subCA.pem" -days 365 -sha256
 
           # Create leaf key and CSR
-          openssl ecparam -genkey -name prime256v1 -out "$CERT_DIR/leafKey.pem"
+          openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out "$CERT_DIR/leafKey.pem"
           openssl req -new -key "$CERT_DIR/leafKey.pem" \
             -subj "/CN=host.docker.internal/O=S44/C=US" \
             -out "$CERT_DIR/leaf.csr"
@@ -92,7 +92,7 @@ jobs:
             -out "$CERT_DIR/leaf.pem" -days 365 -sha256
 
           # Combine into certChain.pem
-          cat "$CERT_DIR/leaf.pem" "$CERT_DIR/subCA.pem" "$CERT_DIR/rootCertificate.pem" > "$CERT_DIR/certChain.pem"
+          cat "$CERT_DIR/leaf.pem" "$CERT_DIR/subCA.pem" > "$CERT_DIR/certChain.pem"
 
           # Clean up intermediate files
           rm -f "$CERT_DIR/"*.csr "$CERT_DIR/"*.srl "$CERT_DIR/leaf.pem" "$CERT_DIR/subCA.pem"
