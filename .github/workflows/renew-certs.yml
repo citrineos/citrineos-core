@@ -10,15 +10,10 @@ name: Renew Certificates
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 * * * *'  # Runs on the 1st of every month
-
-#    - cron: '0 0 1 * *'  # Runs on the 1st of every month
-# TODO remove this trigger after testing
-#on:
-#  pull_request:
+    - cron: '0 0 1 * *'  # Runs on the 1st of every month
 
 env:
-  TARGET_BRANCH: feature/renew-expired-cert
+  TARGET_BRANCH: main
 
 jobs:
   renew-certs:
