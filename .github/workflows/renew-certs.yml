@@ -7,13 +7,15 @@ name: Renew Certificates
 # It can be triggered manually or automatically every month to check if the certificates are still valid
 # and renew them if needed on main branch
 
-#on:
-#  workflow_dispatch:
-#  schedule:
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'  # Runs on the 1st of every month
+
 #    - cron: '0 0 1 * *'  # Runs on the 1st of every month
 # TODO remove this trigger after testing
-on:
-  pull_request:
+#on:
+#  pull_request:
 
 env:
   TARGET_BRANCH: feature/renew-expired-cert
