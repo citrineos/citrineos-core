@@ -107,6 +107,7 @@ export class DefaultSequelizeInstance {
         }
       }
     }
+    this.logger.info(`Sequelize initialized: ${JSON.stringify(this.instance?.config || {})}`);
   }
 
   private static async syncDb(): Promise<void> {
@@ -188,6 +189,7 @@ export class DefaultSequelizeInstance {
         Tenant,
         TenantPartner,
       ],
+      pool: this.config.database.pool,
       logging: (_sql: string, _timing?: number) => {},
     });
   }

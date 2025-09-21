@@ -18,6 +18,12 @@ export const bootstrapConfigSchema = z.object({
     dialect: z.string().default('postgres'),
     username: z.string().default('citrine'),
     password: z.string().default('citrine'),
+    pool: z
+      .object({
+        max: z.number().int().positive().optional(),
+        min: z.number().int().nonnegative().optional(),
+      })
+      .optional(),
     sync: z.boolean().default(false),
     alter: z.boolean().default(false),
     force: z.boolean().default(false),
@@ -127,6 +133,13 @@ export function loadBootstrapConfig(): BootstrapConfig {
       type: getEnvVarValue('file_access_type') || 'local',
     },
   };
+  const pool = {
+    max: getEnvVarValue('database_pool_max') && parseInt(getEnvVarValue('database_pool_max')!, 10),
+    min: getEnvVarValue('database_pool_min') && parseInt(getEnvVarValue('database_pool_min')!, 10),
+  };
+  if (Object.keys(pool).length > 0) {
+    config.database.pool = pool;
+  }
 
   // File access configuration
   switch (config.fileAccess.type) {

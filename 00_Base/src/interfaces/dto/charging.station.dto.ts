@@ -10,6 +10,7 @@ import {
   IEvseDto,
   ILocationDto,
   IStatusNotificationDto,
+  ITransactionDto,
   OCPPVersion,
 } from '../..';
 import { Point } from 'geojson';
@@ -33,6 +34,7 @@ export interface IChargingStationDto extends IBaseDto {
   capabilities?: ChargingStationCapability[] | null;
   locationId?: number | null;
   statusNotifications?: IStatusNotificationDto[] | null;
+  transactions?: ITransactionDto[] | null;
   location?: ILocationDto;
   networkProfiles?: any;
   evses?: IEvseDto[] | null;

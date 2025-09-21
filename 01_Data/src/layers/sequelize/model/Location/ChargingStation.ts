@@ -27,6 +27,7 @@ import { Connector } from './Connector';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 import { Evse } from './Evse';
 import { Point } from 'geojson';
+import { Transaction } from '..';
 
 /**
  * Represents a charging station.
@@ -94,6 +95,9 @@ export class ChargingStation extends BaseModelWithTenant implements IChargingSta
 
   @HasMany(() => StatusNotification)
   declare statusNotifications?: StatusNotification[] | null;
+
+  @HasMany(() => Transaction)
+  declare transactions?: Transaction[] | null;
 
   /**
    * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.
