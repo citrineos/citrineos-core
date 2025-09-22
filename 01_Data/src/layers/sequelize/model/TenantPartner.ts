@@ -12,8 +12,9 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { DEFAULT_TENANT_ID, ITenantDto, OCPIRegistration } from '@citrineos/base';
-import { ITenantPartnerDto } from '@citrineos/base/src/interfaces/dto/tenant.partner.dto.js';
+import type { ITenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPIRegistration } from '@citrineos/base';
+import type { ITenantPartnerDto } from '@citrineos/base/src/interfaces/dto/tenant.partner.dto.js';
 import { Authorization } from './Authorization/index.js';
 import { Tenant } from './Tenant.js';
 

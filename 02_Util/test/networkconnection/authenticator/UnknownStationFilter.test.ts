@@ -4,7 +4,7 @@
 import { jest } from '@jest/globals';
 import { ILocationRepository } from '@citrineos/data';
 import { faker } from '@faker-js/faker';
-import { UnknownStationFilter } from '../../../src/index.js';
+import { UnknownStationFilter } from '../../../src';
 import { aRequest } from '../../providers/IncomingMessageProvider.js';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';

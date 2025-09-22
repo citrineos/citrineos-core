@@ -4,5 +4,5 @@
 
 export { TransactionsOcpp201Api } from './module/2.0.1/MessageApi.js';
 export { TransactionsDataApi } from './module/DataApi.js';
-export { ITransactionsModuleApi } from './module/interface.js';
+export type { ITransactionsModuleApi } from './module/interface.js';
 export { TransactionsModule } from './module/module.js';

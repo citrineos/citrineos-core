@@ -9,7 +9,7 @@
  */
 
 import { SendLocalListResponseStatus } from '../enums/index.js';
-import { OcppResponse } from '../../../../index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface SendLocalListResponse extends OcppResponse {
   status: SendLocalListResponseStatus;

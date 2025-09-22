@@ -15,7 +15,8 @@ import {
 import { LocalListVersion } from './LocalListVersion.js';
 import { LocalListAuthorization } from './LocalListAuthorization.js';
 import { Tenant } from '../Tenant.js';
-import { DEFAULT_TENANT_ID, ITenantDto } from '@citrineos/base';
+import type { ITenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 @Table
 export class LocalListVersionAuthorization extends Model {

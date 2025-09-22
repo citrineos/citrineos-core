@@ -2,32 +2,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import 'reflect-metadata';
-import { ILogObj, Logger } from 'tslog';
-import {
-  HttpMethod,
-  IDataEndpointDefinition,
-  IMessageEndpointDefinition,
-  METADATA_DATA_ENDPOINTS,
-  METADATA_MESSAGE_ENDPOINTS,
-} from './index.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IDataEndpointDefinition, IMessageEndpointDefinition } from './index.js';
+import { HttpMethod, METADATA_DATA_ENDPOINTS, METADATA_MESSAGE_ENDPOINTS } from './index.js';
+import type { OcppRequest, SystemConfig } from '../../index.js';
 import {
   ConfigStoreFactory,
   MessageConfirmationSchema,
   Namespace,
   OCPP1_6_Namespace,
-  OcppRequest,
   OCPPVersion,
-  SystemConfig,
   systemConfigSchema,
 } from '../../index.js';
 import { OCPP2_0_1_Namespace } from '../../ocpp/persistence/index.js';
-import { CallAction } from '../../ocpp/rpc/message.js';
-import { IMessageConfirmation } from '../messages/index.js';
-import { IModule } from '../modules/index.js';
+import type { CallAction } from '../../ocpp/rpc/message.js';
+import type { IMessageConfirmation } from '../messages/index.js';
+import type { IModule } from '../modules/index.js';
 import { IMessageQuerystringSchema } from './MessageQuerystring.js';
-import { IModuleApi } from './ModuleApi.js';
+import type { IModuleApi } from './ModuleApi.js';
 import { AuthorizationSecurity } from './AuthorizationSecurity.js';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 

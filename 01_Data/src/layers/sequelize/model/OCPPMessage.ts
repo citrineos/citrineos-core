@@ -13,15 +13,8 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import {
-  CallAction,
-  DEFAULT_TENANT_ID,
-  IOCPPMessageDto,
-  ITenantDto,
-  MessageOrigin,
-  Namespace,
-  OCPPVersion,
-} from '@citrineos/base';
+import type { CallAction, IOCPPMessageDto, ITenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, MessageOrigin, Namespace, OCPPVersion } from '@citrineos/base';
 import { ChargingStation, Tenant } from '../index.js';
 
 @Table

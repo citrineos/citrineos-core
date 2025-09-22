@@ -4,13 +4,14 @@
 
 import { OCPP2_0_1 } from '@citrineos/base';
 import { getNumberOfFractionDigit } from './parser.js';
-import {
+import type {
   IChargingProfileRepository,
   IDeviceModelRepository,
   ITransactionEventRepository,
-  VariableAttribute,
 } from '@citrineos/data';
-import { ILogObj, Logger } from 'tslog';
+import { VariableAttribute } from '@citrineos/data';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 /**
  * Validate a language tag is an RFC-5646 tag, see: {@link https://tools.ietf.org/html/rfc5646},

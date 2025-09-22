@@ -1,11 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { BootstrapConfig, CrudRepository, OCPP2_0_1 } from '@citrineos/base';
+import type { BootstrapConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1 } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { IAuthorizationRepository, ILocalAuthListRepository } from '../../../interfaces/index.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type {
+  IAuthorizationRepository,
+  ILocalAuthListRepository,
+} from '../../../interfaces/index.js';
 import {
   Authorization,
   LocalListAuthorization,

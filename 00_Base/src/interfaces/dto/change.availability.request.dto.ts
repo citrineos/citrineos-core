@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { OperationalStatusEnumType } from '../../ocpp/model/2.0.1/index.js';
-import { IEvseDto } from './evse.dto.js';
+import type { IEvseDto } from './evse.dto.js';
 
 export interface IChangeAvailabilityRequestDto {
   evse?: IEvseDto | null;

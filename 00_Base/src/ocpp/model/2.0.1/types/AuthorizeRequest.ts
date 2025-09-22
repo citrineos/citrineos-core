@@ -9,7 +9,7 @@
  */
 
 import { HashAlgorithmEnumType, IdTokenEnumType } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface AuthorizeRequest extends OcppRequest {
   customData?: CustomDataType | null;

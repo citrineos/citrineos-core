@@ -19,7 +19,7 @@ import {
   TransactionEventEnumType,
   TriggerReasonEnumType,
 } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface TransactionEventRequest extends OcppRequest {
   customData?: CustomDataType | null;

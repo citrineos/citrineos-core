@@ -1,26 +1,27 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type {
+  AbstractModule,
+  BootstrapConfig,
+  IApiAuthProvider,
+  IAuthorizer,
+  ICache,
+  IFileStorage,
+  IMessageHandler,
+  IMessageSender,
+  IModule,
+  IModuleApi,
+  SystemConfig,
+} from '@citrineos/base';
 import {
-  type AbstractModule,
   addFormats,
   Ajv,
-  BootstrapConfig,
   ConfigStoreFactory,
   EventGroup,
   eventGroupFromString,
-  IApiAuthProvider,
   type IAuthenticator,
-  IAuthorizer,
-  type ICache,
-  type IFileStorage,
-  type IMessageHandler,
-  type IMessageSender,
-  type IModule,
-  type IModuleApi,
   loadBootstrapConfig,
-  type SystemConfig,
 } from '@citrineos/base';
 import { MonitoringDataApi, MonitoringModule, MonitoringOcpp201Api } from '@citrineos/monitoring';
 import {
@@ -43,7 +44,8 @@ import {
   WebsocketNetworkConnection,
 } from '@citrineos/util';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import fastify, { type FastifyInstance, RouteOptions } from 'fastify';
+import type { FastifyInstance, RouteOptions } from 'fastify';
+import fastify from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
 import { getSystemConfig } from './config/index.js';
 import {
@@ -69,17 +71,17 @@ import {
   EVDriverOcpp201Api,
 } from '@citrineos/evdriver';
 import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
+import type { ISmartCharging } from '@citrineos/smartcharging';
 import {
   InternalSmartCharging,
-  ISmartCharging,
   SmartChargingModule,
   SmartChargingOcpp201Api,
 } from '@citrineos/smartcharging';
 import { RepositoryStore, sequelize, Sequelize, ServerNetworkProfile } from '@citrineos/data';
-import {
-  type FastifyRouteSchemaDef,
-  type FastifySchemaCompiler,
-  type FastifyValidationResult,
+import type {
+  FastifyRouteSchemaDef,
+  FastifySchemaCompiler,
+  FastifyValidationResult,
 } from 'fastify/types/schema.js';
 import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocpprouter';
 import cors from '@fastify/cors';

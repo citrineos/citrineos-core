@@ -9,7 +9,7 @@
  */
 
 import { PublishFirmwareStatusEnumType } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface PublishFirmwareStatusNotificationRequest extends OcppRequest {
   customData?: CustomDataType | null;

@@ -9,7 +9,7 @@
  */
 
 import { ChargingLimitSourceEnumType, ChargingProfilePurposeEnumType } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface GetChargingProfilesRequest extends OcppRequest {
   customData?: CustomDataType | null;

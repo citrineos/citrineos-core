@@ -1,20 +1,22 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type {
+  TariffQueryString,
+  TenantQueryString,
+  TransactionEventQuerystring,
+} from '@citrineos/data';
 import {
   Tariff,
   TariffQuerySchema,
-  TariffQueryString,
   TariffSchema,
   TenantQuerySchema,
-  TenantQueryString,
   Transaction,
   TransactionEventQuerySchema,
-  TransactionEventQuerystring,
 } from '@citrineos/data';
-import { ILogObj, Logger } from 'tslog';
-import { ITransactionsModuleApi } from './interface.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { ITransactionsModuleApi } from './interface.js';
 import { TransactionsModule } from './module.js';
 import {
   AbstractModuleApi,
@@ -24,7 +26,7 @@ import {
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
 } from '@citrineos/base';
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { UpsertTariffRequest } from './model/tariffs.js';
 import { plainToInstance } from 'class-transformer';
 

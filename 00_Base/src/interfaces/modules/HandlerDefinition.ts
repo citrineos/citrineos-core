@@ -2,10 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-/* eslint-disable @typescript-eslint/no-unsafe-function-type */
-
-import { CallAction, OCPPVersion } from '../../ocpp/rpc/message.js';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { CallAction } from '../../ocpp/rpc/message.js';
+import { OCPPVersion } from '../../ocpp/rpc/message.js';
 import { AsHandler } from './AsHandler.js';
 
 /**

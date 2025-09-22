@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { UserInfo } from './UserInfo.js';
+import type { UserInfo } from './UserInfo.js';
 
 /**
  * Result of authentication process

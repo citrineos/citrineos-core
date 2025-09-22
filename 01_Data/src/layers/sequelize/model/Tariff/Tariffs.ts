@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { DEFAULT_TENANT_ID, ITariffDto, ITenantDto, OCPP2_0_1_Namespace } from '@citrineos/base';
+import type { ITariffDto, ITenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -13,7 +14,7 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { CreationOptional } from 'sequelize';
+import type { CreationOptional } from 'sequelize';
 import { Connector } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
 

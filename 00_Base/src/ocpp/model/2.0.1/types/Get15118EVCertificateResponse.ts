@@ -9,7 +9,7 @@
  */
 
 import { Iso15118EVCertificateStatusEnumType } from '../enums/index.js';
-import { OcppResponse } from '../../../../index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface Get15118EVCertificateResponse extends OcppResponse {
   customData?: CustomDataType | null;

@@ -15,7 +15,8 @@ import {
 import { ChargingStation } from './ChargingStation.js';
 import { ServerNetworkProfile } from './ServerNetworkProfile.js';
 import { SetNetworkProfile } from './SetNetworkProfile.js';
-import { DEFAULT_TENANT_ID, IChargingStationNetworkProfileDto, ITenantDto } from '@citrineos/base';
+import type { IChargingStationNetworkProfileDto, ITenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { Tenant } from '../Tenant.js';
 
 @Table

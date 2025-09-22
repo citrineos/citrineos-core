@@ -8,6 +8,6 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { OcppResponse } from '../../../../index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface DiagnosticsStatusNotificationResponse extends OcppResponse {}

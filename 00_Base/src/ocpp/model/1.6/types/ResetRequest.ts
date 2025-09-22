@@ -9,7 +9,7 @@
  */
 
 import { ResetRequestType } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface ResetRequest extends OcppRequest {
   type: ResetRequestType;

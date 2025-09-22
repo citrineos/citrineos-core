@@ -12,7 +12,8 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { type ChargingStation as ChargingStationType, ChargingStation } from '../Location/index.js';
-import { ChargingStationSequenceType, DEFAULT_TENANT_ID, ITenantDto } from '@citrineos/base';
+import type { ITenantDto } from '@citrineos/base';
+import { ChargingStationSequenceType, DEFAULT_TENANT_ID } from '@citrineos/base';
 import { Tenant } from '../Tenant.js';
 
 @Table

@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Ajv, ErrorObject } from 'ajv';
+import type { ErrorObject } from 'ajv';
+import { Ajv } from 'ajv';
 
-import {
+import type {
   Call,
   CallAction,
   CallResult,
@@ -13,6 +14,12 @@ import {
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
+  OcppRequest,
+  OcppResponse,
+  OCPPVersionType,
+  SystemConfig,
+} from '../../index.js';
+import {
   MessageOrigin,
   MessageState,
   OCPP1_6_CALL_RESULT_SCHEMA_MAP,
@@ -20,14 +27,11 @@ import {
   OCPP2_0_1_CALL_RESULT_SCHEMA_MAP,
   OCPP2_0_1_CALL_SCHEMA_MAP,
   OcppError,
-  OcppRequest,
-  OcppResponse,
   OCPPVersion,
-  OCPPVersionType,
-  SystemConfig,
 } from '../../index.js';
-import { ILogObj, Logger } from 'tslog';
-import { IMessageRouter } from './Router.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IMessageRouter } from './Router.js';
 
 export abstract class AbstractMessageRouter implements IMessageRouter {
   /**

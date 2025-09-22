@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ITenantDto } from '../../index.js';
+import type { ITenantDto } from '../../index.js';
 
 export interface IBaseDto {
   tenantId: number;

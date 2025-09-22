@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { Currency } from '../../src/money/Currency.js';
+import { Currency } from '../../src';
 import { expect } from '@jest/globals';
 
 describe('currency', () => {

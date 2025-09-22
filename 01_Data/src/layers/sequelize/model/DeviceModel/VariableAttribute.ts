@@ -1,17 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  DEFAULT_TENANT_ID,
+import type {
   IBootDto,
   IComponentDto,
   ITenantDto,
   IVariableAttributeDto,
   IVariableDto,
-  OCPP2_0_1,
-  OCPP2_0_1_Namespace,
 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -28,7 +25,7 @@ import { Variable } from './Variable.js';
 import { Component } from './Component.js';
 import { Boot } from '../Boot.js';
 import { VariableStatus } from './VariableStatus.js';
-import { ChargingStation, Evse } from '../Location/index.js';
+import { ChargingStation } from '../Location/index.js';
 import { CryptoUtils } from '../../../../util/CryptoUtils.js';
 import { EvseType } from './EvseType.js';
 import { Tenant } from '../Tenant.js';

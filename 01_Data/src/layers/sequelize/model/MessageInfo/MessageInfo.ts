@@ -1,15 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  DEFAULT_TENANT_ID,
-  IComponentDto,
-  IMessageInfoDto,
-  ITenantDto,
-  OCPP2_0_1,
-  OCPP2_0_1_Namespace,
-} from '@citrineos/base';
+import type { IComponentDto, IMessageInfoDto, ITenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
   BeforeCreate,

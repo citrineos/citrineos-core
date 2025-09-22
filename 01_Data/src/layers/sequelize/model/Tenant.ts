@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { Optional } from 'sequelize';
+import type { Optional } from 'sequelize';
 import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import {
   Authorization,
@@ -61,7 +61,8 @@ import { SecurityEvent } from './SecurityEvent.js';
 import { Subscription } from './Subscription/index.js';
 import { Tariff } from './Tariff/index.js';
 import { TenantPartner } from './TenantPartner.js';
-import { ITenantDto, OCPIRegistration } from '@citrineos/base';
+import type { ITenantDto } from '@citrineos/base';
+import { OCPIRegistration } from '@citrineos/base';
 
 export enum TenantAttributeProps {
   id = 'id',

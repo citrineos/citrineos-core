@@ -14,7 +14,7 @@ import {
   IdTokenEnumType,
   MessageFormatEnumType,
 } from '../enums/index.js';
-import { OcppResponse } from '../../../../index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface AuthorizeResponse extends OcppResponse {
   customData?: CustomDataType | null;

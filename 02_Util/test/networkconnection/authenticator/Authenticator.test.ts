@@ -8,7 +8,7 @@ import {
   ConnectedStationFilter,
   NetworkProfileFilter,
   UnknownStationFilter,
-} from '../../../src/index.js';
+} from '../../../src';
 import { faker } from '@faker-js/faker';
 import { aRequest } from '../../providers/IncomingMessageProvider.js';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';

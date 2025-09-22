@@ -9,7 +9,7 @@
  */
 
 import { GetCompositeScheduleRequestChargingRateUnit } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface GetCompositeScheduleRequest extends OcppRequest {
   connectorId: number;

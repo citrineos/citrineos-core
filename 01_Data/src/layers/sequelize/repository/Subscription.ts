@@ -4,9 +4,10 @@
 
 import { Sequelize } from 'sequelize-typescript';
 import { SequelizeRepository, Subscription } from '../index.js';
-import { ISubscriptionRepository } from '../../../index.js';
-import { BootstrapConfig } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { ISubscriptionRepository } from '../../../index.js';
+import type { BootstrapConfig } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class SequelizeSubscriptionRepository
   extends SequelizeRepository<Subscription>

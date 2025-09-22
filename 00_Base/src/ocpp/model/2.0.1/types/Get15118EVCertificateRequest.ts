@@ -9,7 +9,7 @@
  */
 
 import { CertificateActionEnumType } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface Get15118EVCertificateRequest extends OcppRequest {
   customData?: CustomDataType | null;

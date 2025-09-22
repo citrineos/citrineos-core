@@ -4,10 +4,12 @@
 
 import { SequelizeRepository } from './Base.js';
 import { MessageInfo } from '../model/index.js';
-import { IMessageInfoRepository } from '../../../interfaces/index.js';
-import { BootstrapConfig, OCPP2_0_1 } from '@citrineos/base';
+import type { IMessageInfoRepository } from '../../../interfaces/index.js';
+import type { BootstrapConfig } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class SequelizeMessageInfoRepository
   extends SequelizeRepository<MessageInfo>

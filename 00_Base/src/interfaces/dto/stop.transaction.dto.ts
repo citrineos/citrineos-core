@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto } from './base.dto.js';
-import { IMeterValueDto } from './meter.value.dto.js';
+import type { IBaseDto } from './base.dto.js';
+import type { IMeterValueDto } from './meter.value.dto.js';
 
 export interface IStopTransactionDto extends IBaseDto {
   id?: number;

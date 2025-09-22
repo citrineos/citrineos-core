@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IBaseDto } from './base.dto.js';
-import { IVariableMonitoringDto } from './variable.monitoring.dto.js';
+import type { IBaseDto } from './base.dto.js';
+import type { IVariableMonitoringDto } from './variable.monitoring.dto.js';
 import { OCPP2_0_1 } from '../../index.js';
 
 export interface IVariableMonitoringStatusDto extends IBaseDto {

@@ -9,7 +9,7 @@
  */
 
 import { LogEnumType } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface GetLogRequest extends OcppRequest {
   customData?: CustomDataType | null;

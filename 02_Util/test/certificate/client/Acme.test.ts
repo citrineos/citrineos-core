@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { readFileSync } from 'fs';
 import { SystemConfig } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { faker } from '@faker-js/faker';
 import { Acme } from '../../../src/certificate/client/acme.js';
 import { aValidSignedCertificate } from '../../providers/ACME.js';

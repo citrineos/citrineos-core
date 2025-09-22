@@ -3,10 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { SequelizeRepository } from './Base.js';
-import { BootstrapConfig } from '@citrineos/base';
+import type { BootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { FindOptions } from 'sequelize';
-import { ILogObj, Logger } from 'tslog';
+import type { FindOptions } from 'sequelize';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { AsyncJobStatus } from '../model/index.js';
 
 export class SequelizeAsyncJobStatusRepository extends SequelizeRepository<AsyncJobStatus> {

@@ -1,18 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { BootstrapConfig } from '@citrineos/base';
 import {
-  BootstrapConfig,
   ChargingStationSequenceType,
   CrudRepository,
   MeterValueUtils,
   OCPP1_6,
   OCPP2_0_1,
 } from '@citrineos/base';
-import {
+import type {
   IChargingStationSequenceRepository,
-  type ITransactionEventRepository,
+  ITransactionEventRepository,
 } from '../../../interfaces/index.js';
 import {
   Authorization,
@@ -28,9 +27,11 @@ import {
   TransactionEvent,
 } from '../model/index.js';
 import { SequelizeRepository } from './Base.js';
-import { Op, WhereOptions } from 'sequelize';
+import type { WhereOptions } from 'sequelize';
+import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { MeterValueMapper } from '../mapper/2.0.1/index.js';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence.js';
 

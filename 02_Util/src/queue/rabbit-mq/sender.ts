@@ -1,23 +1,20 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractMessageSender,
+import type {
+  CircuitBreakerState,
   IMessage,
   IMessageConfirmation,
   IMessageSender,
-  MessageState,
-  OcppError,
   OcppRequest,
   OcppResponse,
   SystemConfig,
-  CircuitBreakerState,
-  CircuitBreaker,
 } from '@citrineos/base';
+import { AbstractMessageSender, CircuitBreaker, MessageState, OcppError } from '@citrineos/base';
 import * as amqplib from 'amqplib';
 import { instanceToPlain } from 'class-transformer';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 /**
  * Implementation of a {@link IMessageSender} using RabbitMQ as the underlying transport.

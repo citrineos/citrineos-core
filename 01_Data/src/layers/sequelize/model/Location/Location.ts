@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { ILocationDto, ITenantDto } from '@citrineos/base';
 import {
   DEFAULT_TENANT_ID,
-  ILocationDto,
-  ITenantDto,
   LocationFacilityType,
   LocationHours,
   LocationParkingType,
@@ -23,7 +21,7 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation.js';
-import { Point } from 'geojson';
+import type { Point } from 'geojson';
 import { Tenant } from '../Tenant.js';
 
 /**

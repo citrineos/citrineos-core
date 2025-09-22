@@ -6,7 +6,7 @@ import {
   IV2GCertificateAuthorityClient,
 } from '../../src/certificate/client/interface.js';
 import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
-import { CertificateAuthorityService } from '../../src/index.js';
+import { CertificateAuthorityService } from '../../src';
 import {
   aValidCertificateItemArray,
   aValidSignedCertificateWithOCSPInfo,

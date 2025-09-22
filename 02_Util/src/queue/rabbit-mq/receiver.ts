@@ -3,22 +3,25 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as amqplib from 'amqplib';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { MemoryCache } from '../../index.js';
-import {
-  AbstractMessageHandler,
-  CacheNamespace,
+import type {
   CallAction,
-  CircuitBreaker,
   CircuitBreakerState,
   ICache,
   IModule,
-  Message,
-  OcppError,
   OcppRequest,
   OcppResponse,
-  RetryMessageError,
   SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractMessageHandler,
+  CacheNamespace,
+  CircuitBreaker,
+  Message,
+  OcppError,
+  RetryMessageError,
 } from '@citrineos/base';
 import { plainToInstance } from 'class-transformer';
 

@@ -1,42 +1,45 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
-  AsHandler,
-  BOOT_STATUS,
+import type {
   BootstrapConfig,
   CallAction,
-  ChargingStationSequenceType,
-  ErrorCode,
-  EventGroup,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractModule,
+  AsHandler,
+  BOOT_STATUS,
+  ChargingStationSequenceType,
+  ErrorCode,
+  EventGroup,
   MessageOrigin,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
-  SystemConfig,
 } from '@citrineos/base';
-import {
-  Boot,
-  ChangeConfiguration,
-  ChargingStation,
-  ChargingStationNetworkProfile,
-  Component,
+import type {
   IBootRepository,
   IChangeConfigurationRepository,
   IDeviceModelRepository,
   ILocationRepository,
   IMessageInfoRepository,
   IOCPPMessageRepository,
+} from '@citrineos/data';
+import {
+  Boot,
+  ChangeConfiguration,
+  ChargingStation,
+  ChargingStationNetworkProfile,
+  Component,
   sequelize,
   SequelizeChangeConfigurationRepository,
   SequelizeChargingStationSequenceRepository,
@@ -46,7 +49,8 @@ import {
 } from '@citrineos/data';
 import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { DeviceModelService } from './DeviceModelService.js';
 import { BootNotificationService } from './BootNotificationService.js';
 

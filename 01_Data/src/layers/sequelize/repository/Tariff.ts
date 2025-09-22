@@ -3,11 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { SequelizeRepository } from './Base.js';
-import { ITariffRepository, TariffQueryString } from '../../../interfaces/index.js';
+import type { ITariffRepository, TariffQueryString } from '../../../interfaces/index.js';
 import { Tariff } from '../model/index.js';
 import { Sequelize } from 'sequelize-typescript';
-import { BootstrapConfig } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { BootstrapConfig } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { Op } from 'sequelize';
 
 export class SequelizeTariffRepository

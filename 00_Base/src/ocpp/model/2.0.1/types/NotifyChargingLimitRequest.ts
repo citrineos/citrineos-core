@@ -13,7 +13,7 @@ import {
   ChargingRateUnitEnumType,
   CostKindEnumType,
 } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface NotifyChargingLimitRequest extends OcppRequest {
   customData?: CustomDataType | null;

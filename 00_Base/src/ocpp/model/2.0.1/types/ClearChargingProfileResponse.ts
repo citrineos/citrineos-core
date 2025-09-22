@@ -9,7 +9,7 @@
  */
 
 import { ClearChargingProfileStatusEnumType } from '../enums/index.js';
-import { OcppResponse } from '../../../../index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface ClearChargingProfileResponse extends OcppResponse {
   customData?: CustomDataType | null;

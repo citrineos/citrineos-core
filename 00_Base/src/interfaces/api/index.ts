@@ -16,13 +16,9 @@ export const METADATA_DATA_ENDPOINTS = 'METADATA_DATA_ENDPOINTS';
 export { AbstractModuleApi } from './AbstractModuleApi.js';
 export { AsDataEndpoint } from './AsDataEndpoint.js';
 export { AsMessageEndpoint } from './AsMessageEndpoint.js';
-export { IDataEndpointDefinition } from './DataEndpointDefinition.js';
-export { IMessageEndpointDefinition } from './MessageEndpointDefinition.js';
-export { IMessageQuerystring } from './MessageQuerystring.js';
-export { IModuleApi } from './ModuleApi.js';
-export {
-  IApiAuthProvider,
-  ApiAuthorizationResult,
-  ApiAuthenticationResult,
-  UserInfo,
-} from './auth/index.js';
+export type { IDataEndpointDefinition } from './DataEndpointDefinition.js';
+export type { IMessageEndpointDefinition } from './MessageEndpointDefinition.js';
+export type { IMessageQuerystring } from './MessageQuerystring.js';
+export type { IModuleApi } from './ModuleApi.js';
+export type { IApiAuthProvider, UserInfo } from './auth/index.js';
+export { ApiAuthorizationResult, ApiAuthenticationResult } from './auth/index.js';

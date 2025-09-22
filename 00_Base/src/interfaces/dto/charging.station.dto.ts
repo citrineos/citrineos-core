@@ -2,18 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import {
-  ChargingStationCapability,
-  ChargingStationParkingRestriction,
+import type {
   IBaseDto,
   IConnectorDto,
   IEvseDto,
   ILocationDto,
   IStatusNotificationDto,
   ITransactionDto,
+} from '../../index.js';
+import {
+  ChargingStationCapability,
+  ChargingStationParkingRestriction,
   OCPPVersion,
 } from '../../index.js';
-import { Point } from 'geojson';
+import type { Point } from 'geojson';
 
 export interface IChargingStationDto extends IBaseDto {
   id: string;

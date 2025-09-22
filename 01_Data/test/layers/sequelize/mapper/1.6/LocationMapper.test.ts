@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { ConnectorErrorCode, ConnectorStatus, OCPP1_6 } from '@citrineos/base';
-import { LocationMapper } from '../../../../../src/layers/sequelize/mapper/1.6/index.js';
+import { LocationMapper } from '../../../../../src/layers/sequelize/mapper/1.6';
 
 describe('LocationMapper', () => {
   describe('mapStatusNotificationRequestStatusToConnectorStatus', () => {

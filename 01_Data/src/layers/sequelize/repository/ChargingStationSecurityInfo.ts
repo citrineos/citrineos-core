@@ -2,11 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { SequelizeRepository } from './Base.js';
-import { ChargingStationSecurityInfo } from '../model/ChargingStationSecurityInfo.js';
-import { ILogObj, Logger } from 'tslog';
+import { ChargingStationSecurityInfo } from '../model/index.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
-import { BootstrapConfig } from '@citrineos/base';
-import { IChargingStationSecurityInfoRepository } from '../../../interfaces/index.js';
+import type { BootstrapConfig } from '@citrineos/base';
+import type { IChargingStationSecurityInfoRepository } from '../../../interfaces/index.js';
 
 export class SequelizeChargingStationSecurityInfoRepository
   extends SequelizeRepository<ChargingStationSecurityInfo>

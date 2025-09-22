@@ -6,15 +6,15 @@ import { type BootstrapConfig, CrudRepository } from '@citrineos/base';
 import { type Model, type Sequelize } from 'sequelize-typescript';
 import { DefaultSequelizeInstance } from '../util.js';
 import { type ILogObj, Logger } from 'tslog';
-import {
+import type {
   AggregateOptions,
   Attributes,
   FindAndCountOptions,
   FindOptions,
   ModelStatic,
-  QueryTypes,
   UpdateOptions,
 } from 'sequelize';
+import { QueryTypes } from 'sequelize';
 
 export class SequelizeRepository<T extends Model<any, any>> extends CrudRepository<T> {
   protected s: Sequelize;

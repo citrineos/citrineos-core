@@ -2,10 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { BootstrapConfig } from '@citrineos/base';
-import { IChangeConfigurationRepository } from '../../../interfaces/index.js';
+import type { BootstrapConfig } from '@citrineos/base';
+import type { IChangeConfigurationRepository } from '../../../interfaces/index.js';
 import { ChangeConfiguration, SequelizeRepository } from '../index.js';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
 
 export class SequelizeChangeConfigurationRepository

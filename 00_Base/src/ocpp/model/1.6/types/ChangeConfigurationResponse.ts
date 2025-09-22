@@ -9,7 +9,7 @@
  */
 
 import { ChangeConfigurationResponseStatus } from '../enums/index.js';
-import { OcppResponse } from '../../../../index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface ChangeConfigurationResponse extends OcppResponse {
   status: ChangeConfigurationResponseStatus;

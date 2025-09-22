@@ -1,14 +1,11 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { IChargingStationDto, ILocationDto, ITenantDto } from '@citrineos/base';
 import {
   ChargingStationCapability,
   ChargingStationParkingRestriction,
   DEFAULT_TENANT_ID,
-  IChargingStationDto,
-  ILocationDto,
-  ITenantDto,
   Namespace,
   OCPPVersion,
 } from '@citrineos/base';
@@ -31,7 +28,7 @@ import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile.j
 import { SetNetworkProfile } from './SetNetworkProfile.js';
 import { Connector } from './Connector.js';
 import { Evse } from './Evse.js';
-import { Point } from 'geojson';
+import type { Point } from 'geojson';
 import { Tenant } from '../Tenant.js';
 import { Transaction } from '../index.js';
 

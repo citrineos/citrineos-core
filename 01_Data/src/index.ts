@@ -8,6 +8,7 @@ export { SequelizeTransaction };
 export * as sequelize from './layers/sequelize/index.js';
 export * from './interfaces/index.js';
 export * from 'sequelize-typescript';
+export type { PaginatedParams } from './layers/sequelize/index.js';
 export {
   Authorization,
   Boot,
@@ -52,7 +53,6 @@ export {
   AsyncJobRequest,
   AsyncJobName,
   AsyncJobAction,
-  PaginatedParams,
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,

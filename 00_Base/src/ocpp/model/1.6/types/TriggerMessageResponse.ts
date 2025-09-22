@@ -9,7 +9,7 @@
  */
 
 import { TriggerMessageResponseStatus } from '../enums/index.js';
-import { OcppResponse } from '../../../../index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface TriggerMessageResponse extends OcppResponse {
   status: TriggerMessageResponseStatus;

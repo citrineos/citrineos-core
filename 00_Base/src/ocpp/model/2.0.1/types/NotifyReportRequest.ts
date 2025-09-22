@@ -9,7 +9,7 @@
  */
 
 import { AttributeEnumType, DataEnumType, MutabilityEnumType } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface NotifyReportRequest extends OcppRequest {
   customData?: CustomDataType | null;

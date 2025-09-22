@@ -9,7 +9,7 @@
  */
 
 import { RequestStartStopStatusEnumType } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface RequestStartTransactionResponse extends OcppRequest {
   customData?: CustomDataType | null;

@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IBaseDto, OCPIRegistration } from '../../index.js';
+import type { IBaseDto } from '../../index.js';
+import { OCPIRegistration } from '../../index.js';
 
 export interface ITenantPartnerDto extends IBaseDto {
   id?: number;

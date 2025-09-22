@@ -4,5 +4,5 @@
 
 export { CertificatesOcpp201Api } from './module/2.0.1/MessageApi.js';
 export { CertificatesDataApi } from './module/DataApi.js';
-export { ICertificatesModuleApi } from './module/interface.js';
+export type { ICertificatesModuleApi } from './module/interface.js';
 export { CertificatesModule } from './module/module.js';

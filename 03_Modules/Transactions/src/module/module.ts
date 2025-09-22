@@ -1,16 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
-  AsHandler,
-  AuthorizationStatusType,
+import type {
   BootstrapConfig,
   CallAction,
-  CrudRepository,
-  ErrorCode,
-  EventGroup,
   HandlerProperties,
   IAuthorizer,
   ICache,
@@ -18,17 +11,23 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractModule,
+  AsHandler,
+  AuthorizationStatusType,
+  CrudRepository,
+  ErrorCode,
+  EventGroup,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
   OCPPVersion,
-  SystemConfig,
 } from '@citrineos/base';
-import {
-  Authorization,
-  Component,
+import type {
   IAuthorizationRepository,
   IDeviceModelRepository,
   ILocationRepository,
@@ -36,6 +35,10 @@ import {
   IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
+} from '@citrineos/data';
+import {
+  Authorization,
+  Component,
   MeterValue,
   sequelize,
   SequelizeOCPPMessageRepository,
@@ -50,7 +53,8 @@ import {
   RealTimeAuthorizer,
   SignedMeterValuesUtil,
 } from '@citrineos/util';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { TransactionService } from './TransactionService.js';
 import { StatusNotificationService } from './StatusNotificationService.js';
 import { CostNotifier } from './CostNotifier.js';

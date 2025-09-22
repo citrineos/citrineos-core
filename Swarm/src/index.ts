@@ -32,7 +32,8 @@ import {
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import addFormats from 'ajv-formats';
 import fastify, { FastifyInstance } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { systemConfig } from './config';
 import { ConfigurationModule, ConfigurationOcpp201Api } from '@citrineos/configuration';
 import { TransactionsModule, TransactionsOcpp201Api } from '@citrineos/transactions';

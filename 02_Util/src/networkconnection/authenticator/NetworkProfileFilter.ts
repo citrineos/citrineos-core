@@ -1,15 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { ILogObj, Logger } from 'tslog';
-import {
-  ChargingStationNetworkProfile,
-  IDeviceModelRepository,
-  ServerNetworkProfile,
-} from '@citrineos/data';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IDeviceModelRepository } from '@citrineos/data';
+import { ChargingStationNetworkProfile, ServerNetworkProfile } from '@citrineos/data';
 import { IncomingMessage } from 'http';
 import { AuthenticatorFilter } from './AuthenticatorFilter.js';
-import { AuthenticationOptions, OCPP2_0_1 } from '@citrineos/base';
+import type { AuthenticationOptions } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { UpgradeAuthenticationError } from './errors/AuthenticationError.js';
 
 /**

@@ -1,13 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  DEFAULT_TENANT_ID,
-  IStopTransactionDto,
-  ITenantDto,
-  OCPP1_6_Namespace,
-} from '@citrineos/base';
+import type { IStopTransactionDto, ITenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,

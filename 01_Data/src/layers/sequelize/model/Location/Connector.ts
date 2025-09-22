@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { IChargingStationDto, IConnectorDto, ITenantDto } from '@citrineos/base';
 import {
   ConnectorErrorCode,
   ConnectorFormatEnum,
@@ -9,9 +9,6 @@ import {
   ConnectorStatus,
   ConnectorTypeEnum,
   DEFAULT_TENANT_ID,
-  IChargingStationDto,
-  IConnectorDto,
-  ITenantDto,
   OCPP1_6_Namespace,
 } from '@citrineos/base';
 import {

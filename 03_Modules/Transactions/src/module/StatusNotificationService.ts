@@ -1,19 +1,19 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import type { IDeviceModelRepository, ILocationRepository } from '@citrineos/data';
 import {
   Component,
-  EvseType,
-  IDeviceModelRepository,
-  ILocationRepository,
-  Variable,
   Connector,
-  StatusNotification,
+  EvseType,
   OCPP1_6_Mapper,
   OCPP2_0_1_Mapper,
+  StatusNotification,
+  Variable,
 } from '@citrineos/data';
-import { ILogObj, Logger } from 'tslog';
-import { CrudRepository, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { CrudRepository, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
 
 export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;

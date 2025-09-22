@@ -1,17 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { Authorization, ILocationRepository } from '@citrineos/data';
-import {
-  AuthorizationStatusType,
-  AuthorizationWhitelistType,
-  IAuthorizer,
-  IdTokenType,
-  IMessageContext,
-  SystemConfig,
-} from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { ILocationRepository } from '@citrineos/data';
+import { Authorization } from '@citrineos/data';
+import type { IAuthorizer, IMessageContext, SystemConfig } from '@citrineos/base';
+import { AuthorizationStatusType, AuthorizationWhitelistType, IdTokenType } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { OidcTokenProvider } from '../authorization/index.js';
 
 export interface RealTimeAuthorizationRequestBody {

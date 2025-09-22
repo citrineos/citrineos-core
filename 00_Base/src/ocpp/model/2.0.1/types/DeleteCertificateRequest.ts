@@ -9,7 +9,7 @@
  */
 
 import { HashAlgorithmEnumType } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface DeleteCertificateRequest extends OcppRequest {
   customData?: CustomDataType | null;

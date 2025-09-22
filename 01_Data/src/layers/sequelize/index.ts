@@ -67,13 +67,13 @@ export { ChargingStationSecurityInfo } from './model/ChargingStationSecurityInfo
 export { ChangeConfiguration } from './model/ChangeConfiguration.js';
 export { Tenant } from './model/Tenant.js';
 export { TenantPartner } from './model/TenantPartner.js';
+export type { PaginatedParams } from './model/AsyncJob/index.js';
 export {
   AsyncJobStatus,
   AsyncJobStatusDTO,
   AsyncJobRequest,
   AsyncJobName,
   AsyncJobAction,
-  PaginatedParams,
 } from './model/AsyncJob/index.js';
 
 // Sequelize Repositories

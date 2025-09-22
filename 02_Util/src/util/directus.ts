@@ -2,27 +2,26 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { BootstrapConfig, ConfigStore, SystemConfig } from '@citrineos/base';
+import type { BootstrapConfig, ConfigStore, SystemConfig } from '@citrineos/base';
 import { sequelize } from '@citrineos/data';
+import type { DirectusFlow, DirectusOperation, RestClient } from '@directus/sdk';
 import {
   authentication,
   createDirectus,
   createFlow,
   createOperation,
-  DirectusFlow,
-  DirectusOperation,
   readAssetBlob,
   readFlows,
   rest,
-  RestClient,
   staticToken,
   updateFlow,
   updateOperation,
   uploadFiles,
 } from '@directus/sdk';
-import { RouteOptions } from 'fastify';
+import type { RouteOptions } from 'fastify';
 import { JSONSchemaFaker } from 'json-schema-faker';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 interface Schema {
   // No custom collections needed

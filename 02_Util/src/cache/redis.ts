@@ -2,16 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ICache } from '@citrineos/base';
-import { ClassConstructor, plainToInstance } from 'class-transformer';
-import {
-  createClient,
+import type { ICache } from '@citrineos/base';
+import type { ClassConstructor } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
+import type {
   RedisClientOptions,
   RedisClientType,
   RedisFunctions,
   RedisModules,
   RedisScripts,
 } from 'redis';
+import { createClient } from 'redis';
 
 /**
  * Implementation of cache interface with redis storage

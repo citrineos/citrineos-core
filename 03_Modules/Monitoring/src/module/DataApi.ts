@@ -2,17 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ILogObj, Logger } from 'tslog';
-import { IMonitoringModuleApi } from './interface.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IMonitoringModuleApi } from './interface.js';
 import { MonitoringModule } from './module.js';
+import type {
+  CreateOrUpdateVariableAttributeQuerystring,
+  VariableAttributeQuerystring,
+} from '@citrineos/data';
 import {
   Component,
   CreateOrUpdateVariableAttributeQuerySchema,
-  CreateOrUpdateVariableAttributeQuerystring,
   sequelize,
   Variable,
   VariableAttributeQuerySchema,
-  VariableAttributeQuerystring,
 } from '@citrineos/data';
 import {
   AbstractModuleApi,
@@ -25,7 +28,7 @@ import {
   OCPP2_0_1_Namespace,
   ReportDataTypeSchema,
 } from '@citrineos/base';
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 /**
  * Server API for the Monitoring module.

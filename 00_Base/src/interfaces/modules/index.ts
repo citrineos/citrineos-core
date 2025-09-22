@@ -4,6 +4,7 @@
 
 export { AbstractModule } from './AbstractModule.js';
 export { AsHandler, AS_HANDLER_METADATA } from './AsHandler.js';
-export { IHandlerDefinition } from './HandlerDefinition.js';
-export { IModule } from './Module.js';
-export { CircuitBreaker, CircuitBreakerState, CircuitBreakerOptions } from './CircuitBreaker.js';
+export type { IHandlerDefinition } from './HandlerDefinition.js';
+export type { IModule } from './Module.js';
+export type { CircuitBreakerState, CircuitBreakerOptions } from './CircuitBreaker.js';
+export { CircuitBreaker } from './CircuitBreaker.js';

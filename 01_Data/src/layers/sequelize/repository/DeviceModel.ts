@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { BootstrapConfig, CrudRepository, OCPP2_0_1 } from '@citrineos/base';
+import type { BootstrapConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1 } from '@citrineos/base';
 import { SequelizeRepository } from './Base.js';
 import {
   type IDeviceModelRepository,
@@ -19,7 +19,8 @@ import {
 } from '../model/index.js';
 import { ComponentVariable } from '../model/DeviceModel/ComponentVariable.js';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog'; // TODO: Document this
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 // TODO: Document this
 

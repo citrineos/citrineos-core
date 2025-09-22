@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { MeterValueUtils } from '../../src/util/MeterValueUtils.js';
+import { MeterValueUtils } from '../../src';
 import { OCPP2_0_1 } from '../../src/ocpp/model/index.js';
 
 function makeMeterValue(ts: string, meas: OCPP2_0_1.MeasurandEnumType, value: number) {

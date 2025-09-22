@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { expect } from '@jest/globals';
-import { MeterValueMapper } from '../../../../../src/layers/sequelize/mapper/2.0.1/index.js';
+import { MeterValueMapper } from '../../../../../src/layers/sequelize/mapper/2.0.1';
 import { aMeterValue } from '../../../../providers/MeterValue.js';
 
 describe('MeterValueMapper', () => {

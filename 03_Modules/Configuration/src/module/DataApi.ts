@@ -2,40 +2,45 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import { IConfigurationModuleApi } from './interface.js';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IConfigurationModuleApi } from './interface.js';
 import { ConfigurationModule } from './module.js';
+import type {
+  BootConfig,
+  IMessageConfirmation,
+  UpdateChargingStationPasswordRequest,
+} from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
-  BootConfig,
   BootConfigSchema,
   HttpMethod,
-  IMessageConfirmation,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPP2_0_1_Namespace,
   OCPPVersion,
-  UpdateChargingStationPasswordRequest,
   UpdateChargingStationPasswordSchema,
 } from '@citrineos/base';
+import type {
+  ChargingStationKeyQuerystring,
+  NetworkProfileDeleteQuerystring,
+  NetworkProfileQuerystring,
+  UpdateChargingStationPasswordQueryString,
+} from '@citrineos/data';
 import {
   Boot,
   ChargingStationKeyQuerySchema,
-  ChargingStationKeyQuerystring,
   ChargingStationNetworkProfile,
   Component,
   NetworkProfileDeleteQuerySchema,
-  NetworkProfileDeleteQuerystring,
   NetworkProfileQuerySchema,
-  NetworkProfileQuerystring,
   ServerNetworkProfile,
   SetNetworkProfile,
   UpdateChargingStationPasswordQuerySchema,
-  UpdateChargingStationPasswordQueryString,
   Variable,
   VariableAttribute,
 } from '@citrineos/data';

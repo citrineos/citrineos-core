@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 import { faker } from '@faker-js/faker';
-import { MeterValue } from '../../src/index.js';
+import { MeterValue } from '../../src';
 
 export function aMeterValue(updateFunction?: UpdateFunction<MeterValue>): MeterValue {
   const meterValue: MeterValue = {

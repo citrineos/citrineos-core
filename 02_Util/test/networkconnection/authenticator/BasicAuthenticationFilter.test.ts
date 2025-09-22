@@ -6,7 +6,7 @@ import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
 import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { aBasicAuthPasswordVariable } from '../../providers/VariableAttributeProvider.js';
-import { BasicAuthenticationFilter } from '../../../src/index.js';
+import { BasicAuthenticationFilter } from '../../../src';
 import { aRequestWithAuthorization, basicAuth } from '../../providers/IncomingMessageProvider.js';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
 

@@ -10,16 +10,12 @@ import {
   VariableMonitoring,
   VariableMonitoringStatus,
 } from '../model/index.js';
-import { type IVariableMonitoringRepository } from '../../../interfaces/index.js';
-import {
-  BootstrapConfig,
-  CallAction,
-  CrudRepository,
-  OCPP2_0_1,
-  OCPP2_0_1_CallAction,
-} from '@citrineos/base';
+import type { IVariableMonitoringRepository } from '../../../interfaces/index.js';
+import type { BootstrapConfig, CallAction } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1, OCPP2_0_1_CallAction } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class SequelizeVariableMonitoringRepository
   extends SequelizeRepository<VariableMonitoring>

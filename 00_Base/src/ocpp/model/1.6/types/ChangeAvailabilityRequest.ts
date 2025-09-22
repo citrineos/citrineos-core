@@ -9,7 +9,7 @@
  */
 
 import { ChangeAvailabilityRequestType } from '../enums/index.js';
-import { OcppRequest } from '../../../../index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface ChangeAvailabilityRequest extends OcppRequest {
   connectorId: number;

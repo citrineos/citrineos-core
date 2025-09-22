@@ -9,7 +9,7 @@
  */
 
 import { StartTransactionResponseStatus } from '../enums/index.js';
-import { OcppResponse } from '../../../../index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface StartTransactionResponse extends OcppResponse {
   idTagInfo: {

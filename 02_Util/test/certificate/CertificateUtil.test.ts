@@ -8,7 +8,7 @@ import {
   extractEncodedContentFromCSR,
   parseCertificateChainPem,
   sendOCSPRequest,
-} from '../../src/index.js';
+} from '../../src';
 import jsrsasign from 'jsrsasign';
 import { faker } from '@faker-js/faker';
 import { readFile } from '../utils/FileUtil.js';

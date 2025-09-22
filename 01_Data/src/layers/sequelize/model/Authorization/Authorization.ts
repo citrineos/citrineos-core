@@ -2,14 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { AdditionalInfo, IAuthorizationDto, ITenantDto } from '@citrineos/base';
 import {
-  AdditionalInfo,
   AuthorizationStatusType,
   AuthorizationWhitelistType,
   DEFAULT_TENANT_ID,
-  IAuthorizationDto,
   IdTokenType,
-  ITenantDto,
   Namespace,
 } from '@citrineos/base';
 import {

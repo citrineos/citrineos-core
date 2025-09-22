@@ -6,7 +6,7 @@ import { faker } from '@faker-js/faker';
 import { aRequest } from '../../providers/IncomingMessageProvider.js';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
 import { CacheNamespace, DEFAULT_TENANT_ID, ICache } from '@citrineos/base';
-import { ConnectedStationFilter } from '../../../src/index.js';
+import { ConnectedStationFilter } from '../../../src';
 
 describe('ConnectedStationFilter', () => {
   let cache: jest.Mocked<ICache>;

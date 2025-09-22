@@ -1,9 +1,11 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { ITransactionEventRepository, Transaction } from '@citrineos/data';
+import type { ITransactionEventRepository } from '@citrineos/data';
+import { Transaction } from '@citrineos/data';
 import { AbstractModule, OCPP2_0_1_CallAction, OCPPVersion } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { CostCalculator } from './CostCalculator.js';
 import { Scheduler } from './Scheduler.js';
 

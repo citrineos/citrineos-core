@@ -9,7 +9,7 @@
  */
 
 import { GetChargingProfileStatusEnumType } from '../enums/index.js';
-import { OcppResponse } from '../../../../index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface GetChargingProfilesResponse extends OcppResponse {
   customData?: CustomDataType | null;

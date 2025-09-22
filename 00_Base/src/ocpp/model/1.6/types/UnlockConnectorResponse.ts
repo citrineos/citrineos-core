@@ -9,7 +9,7 @@
  */
 
 import { UnlockConnectorResponseStatus } from '../enums/index.js';
-import { OcppResponse } from '../../../../index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface UnlockConnectorResponse extends OcppResponse {
   status: UnlockConnectorResponseStatus;

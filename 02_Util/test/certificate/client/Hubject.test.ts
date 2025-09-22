@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { SystemConfig } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { faker } from '@faker-js/faker';
 import { Hubject } from '../../../src/certificate/client/hubject.js';
 import {

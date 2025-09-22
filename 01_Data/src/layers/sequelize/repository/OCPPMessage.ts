@@ -2,11 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { BootstrapConfig } from '@citrineos/base';
-import { IOCPPMessageRepository } from '../../../interfaces/index.js';
+import type { BootstrapConfig } from '@citrineos/base';
+import type { IOCPPMessageRepository } from '../../../interfaces/index.js';
 import { SequelizeRepository } from './Base.js';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { OCPPMessage } from '../model/index.js';
 
 export class SequelizeOCPPMessageRepository

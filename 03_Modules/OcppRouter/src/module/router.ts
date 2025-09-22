@@ -1,33 +1,37 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-/* eslint-disable */
-
-import {
-  AbstractMessageRouter,
-  AbstractModule,
-  Ajv,
-  BOOT_STATUS,
+import type {
   BootstrapConfig,
-  CacheNamespace,
   Call,
   CallAction,
   CallError,
   CallResult,
-  CircuitBreaker,
   CircuitBreakerOptions,
   CircuitBreakerState,
-  createIdentifier,
-  ErrorCode,
-  EventGroup,
-  getStationIdFromIdentifier,
-  getTenantIdFromIdentifier,
   ICache,
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
   IMessageRouter,
   IMessageSender,
+  OcppRequest,
+  OcppResponse,
+  OCPPVersionType,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractMessageRouter,
+  AbstractModule,
+  Ajv,
+  BOOT_STATUS,
+  CacheNamespace,
+  CircuitBreaker,
+  createIdentifier,
+  ErrorCode,
+  EventGroup,
+  getStationIdFromIdentifier,
+  getTenantIdFromIdentifier,
   mapToCallAction,
   MessageOrigin,
   MessageState,
@@ -35,17 +39,15 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
-  OcppRequest,
-  OcppResponse,
   OCPPVersion,
-  OCPPVersionType,
   RequestBuilder,
   RetryMessageError,
-  SystemConfig,
 } from '@citrineos/base';
 import { v4 as uuidv4 } from 'uuid';
-import { ILogObj, Logger } from 'tslog';
-import { ILocationRepository, ISubscriptionRepository, sequelize } from '@citrineos/data';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { ILocationRepository, ISubscriptionRepository } from '@citrineos/data';
+import { sequelize } from '@citrineos/data';
 import { WebhookDispatcher } from './webhook.dispatcher.js';
 import { OidcTokenProvider } from '@citrineos/util';
 
