@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { jest } from '@jest/globals';
 import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
 import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';

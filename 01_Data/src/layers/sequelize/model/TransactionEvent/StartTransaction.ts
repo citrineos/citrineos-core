@@ -1,6 +1,6 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import {
   DEFAULT_TENANT_ID,
@@ -48,7 +48,7 @@ export class StartTransaction extends Model implements IStartTransactionDto {
     type: DataType.INTEGER,
     unique: true,
   })
-  declare transactionDatabaseId: string;
+  declare transactionDatabaseId: number;
 
   @BelongsTo(() => Transaction)
   declare transaction: Transaction;

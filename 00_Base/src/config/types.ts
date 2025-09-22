@@ -1,7 +1,6 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
 import { OCPP1_6, OCPP2_0_1 } from '../ocpp/model/index.js';
@@ -12,6 +11,15 @@ const OCPP1_6_CallActionSchema = z.nativeEnum(OCPP1_6_CallAction);
 const OCPP2_0_1_CallActionSchema = z.nativeEnum(OCPP2_0_1_CallAction);
 
 const CallActionSchema = z.union([OCPP1_6_CallActionSchema, OCPP2_0_1_CallActionSchema]);
+
+export const oidcClientConfigSchema = z
+  .object({
+    tokenUrl: z.string(),
+    clientId: z.string(),
+    clientSecret: z.string(),
+    audience: z.string(),
+  })
+  .optional();
 
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
 export const websocketServerInputSchema = z.object({
@@ -541,6 +549,7 @@ export const systemConfigSchema = z
     }),
     rbacRulesFileName: z.string().optional(),
     rbacRulesDir: z.string().optional(),
+    oidcClient: oidcClientConfigSchema,
   })
   .refine((obj) => obj.maxCachingSeconds >= obj.maxCallLengthSeconds, {
     message: 'maxCachingSeconds cannot be less than maxCallLengthSeconds',

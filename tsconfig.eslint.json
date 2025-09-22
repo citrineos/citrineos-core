@@ -28,6 +28,7 @@
     "Server/**/*.ts",
     "Server/**/*.json",
     "./db.sync.ts",
+    "./db.force-sync.ts",
     "jest.config.ts",
     "migrations/**/*.ts",
     "seeders/**/*.ts"

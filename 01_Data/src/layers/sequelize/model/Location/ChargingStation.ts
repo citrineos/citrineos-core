@@ -1,6 +1,6 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import {
   ChargingStationCapability,
@@ -33,6 +33,7 @@ import { Connector } from './Connector.js';
 import { Evse } from './Evse.js';
 import { Point } from 'geojson';
 import { Tenant } from '../Tenant.js';
+import { Transaction } from '../index.js';
 
 /**
  * Represents a charging station.
@@ -100,6 +101,9 @@ export class ChargingStation extends Model implements IChargingStationDto {
 
   @HasMany(() => StatusNotification)
   declare statusNotifications?: StatusNotification[] | null;
+
+  @HasMany(() => Transaction)
+  declare transactions?: Transaction[] | null;
 
   /**
    * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.

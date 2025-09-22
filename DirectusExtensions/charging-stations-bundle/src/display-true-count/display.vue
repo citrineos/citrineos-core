@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project // // SPDX-License-Identifier:
+Apache-2.0
 <template>
   <span>{{ calculatedValue }}{{ totalPrefix }}{{ total }}{{ suffix }}</span>
 </template>
@@ -5,7 +7,7 @@
 <script lang="ts">
 // Copyright Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import { defineComponent, ref } from 'vue';
 

@@ -1,7 +1,6 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import {
   type AbstractModule,
@@ -164,7 +163,7 @@ export class CitrineOSServer {
     // Initialize Swagger if enabled
     this.initSwagger()
       .then()
-      .catch((error) => this._logger.error('Could not initialize swagger', error));
+      .catch((error) => this._logger.error('Could not initialize swagger', { error }));
 
     // Add Directus Message API flow creation if enabled
     if (this._config.fileAccess.directus?.generateFlows) {
@@ -174,23 +173,23 @@ export class CitrineOSServer {
           .addDirectusMessageApiFlowsFastifyRouteHook(routeOptions, this._server.getSchemas())
           .then()
           .catch((error) => {
-            this._logger.error('Could not add Directus Message API flow', error);
+            this._logger.error('Could not add Directus Message API flow', { error });
           });
       });
 
       this._server.addHook('onReady', async () => {
-        this._logger?.info('Directus actions initialization finished');
+        this._logger.info('Directus actions initialization finished');
       });
     }
+
+    // Register API authentication
+    this.registerApiAuth();
 
     // Initialize File Access Implementation
     this._fileStorage = ConfigStoreFactory.getInstance();
 
     // Register AJV for schema validation
     this.registerAjv();
-
-    // Register API authentication
-    this.registerApiAuth();
 
     // Initialize repository store
     this.initRepositoryStore();
@@ -315,55 +314,15 @@ export class CitrineOSServer {
 
   private initLogger() {
     const isCloud = process.env.DEPLOYMENT_TARGET === 'cloud';
-    return new Logger<ILogObj>({
+
+    const loggerSettings = {
       name: 'CitrineOS Logger',
       minLevel: this._config.logLevel,
       hideLogPositionForProduction: this._config.env === 'production',
-      overwrite:
-        this._config && this._config.logLevel !== undefined && this._config.logLevel <= 2
-          ? undefined
-          : {
-              transportJSON: (logObj: any) => {
-                function jsonStringifyRecursive(obj: unknown) {
-                  const cache = new Set();
-                  return JSON.stringify(obj, (key, value) => {
-                    if (typeof value === 'object' && value !== null) {
-                      if (cache.has(value)) {
-                        // Circular reference is found, discard key
-                        return '[Circular]';
-                      }
-                      // Store value in our collection
-                      cache.add(value);
-                    }
-                    if (typeof value === 'bigint') {
-                      return `${value}`;
-                    }
-                    if (typeof value === 'undefined') {
-                      return '[undefined]';
-                    }
-                    return value;
-                  });
-                }
+      type: isCloud ? ('json' as const) : ('pretty' as const),
+    };
 
-                if (logObj._meta) {
-                  const { path, name, date, logLevelId, logLevelName } = logObj._meta;
-                  const { _meta, ...rest } = logObj;
-                  logObj = {
-                    ...rest,
-                    path: path?.fullFilePath,
-                    name,
-                    date,
-                    logLevelId,
-                    logLevelName,
-                  };
-                }
-                console.log(jsonStringifyRecursive(logObj));
-              },
-            },
-      // Disable colors for cloud deployment as some cloud logging environments such as cloudwatch can not interpret colors
-      stylePrettyLogs: !isCloud,
-      type: isCloud ? 'json' : 'pretty',
-    });
+    return new Logger<ILogObj>(loggerSettings);
   }
 
   private async initDb() {
@@ -409,6 +368,7 @@ export class CitrineOSServer {
         ],
         debug: this._config.logLevel <= 2, // Enable debug logs in dev mode
       },
+      logger: this._logger,
     });
   }
 
@@ -430,7 +390,10 @@ export class CitrineOSServer {
       this._logger,
     );
 
-    const webhookDispatcher = new WebhookDispatcher(this._repositoryStore.subscriptionRepository);
+    const webhookDispatcher = new WebhookDispatcher(
+      this._repositoryStore.subscriptionRepository,
+      this._logger,
+    );
 
     const router = new MessageRouterImpl(
       this._config,
@@ -732,6 +695,7 @@ export class CitrineOSServer {
   private initRealTimeAuthorizer() {
     this._realTimeAuthorizer = new RealTimeAuthorizer(
       this._repositoryStore.locationRepository,
+      this._config,
       this._logger,
     );
   }

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { Boot } from '@citrineos/data';
 import { OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';

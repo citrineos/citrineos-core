@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
@@ -10,7 +13,7 @@ const COLUMNS = [
   {
     name: 'realTimeAuth',
     attributes: {
-      type: DataType.ENUM(...Object.values(AuthorizationWhitelistType)),
+      type: DataType.STRING,
       allowNull: false,
       defaultValue: AuthorizationWhitelistType.Never,
     },

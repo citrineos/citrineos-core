@@ -11,7 +11,7 @@ CitrineOS is an open-source project aimed at providing a modular server runtime 
 charging infrastructure. This README will guide you through the process of installing and running CitrineOS.
 
 This is the main part of CitrineOS containing the actual charging station management logic, OCPP message routing and all
-modules.
+await (await sequelize).sync(); // Use { force: true } for dropping and recreating tables
 
 All other documentation and the issue tracking can be found in our main repository
 here: <https://github.com/citrineos/citrineos>.
@@ -30,6 +30,7 @@ here: <https://github.com/citrineos/citrineos>.
 - [Information on Docker setup](#information-on-docker-setup)
 - [Generating OCPP Interfaces](#generating-ocpp-interfaces)
 - [Hasura Metadata](#hasura-metadata)
+- [Database Sync vs. Migration](#database-sync-vs-migration)
 - [Contributing](#contributing)
 - [Licensing](#licensing)
 - [Support and contact](#support-and-contact)
@@ -89,6 +90,17 @@ Before you begin, make sure you have the following installed on your system:
    port for the underlying NodeJS process. A variety of tools can be utilized to establish a debugger connection
    with the exposed localhost 9229 port which is forwarded to the NodeJS service running within docker. The IntelliJ
    `Attach Debugger` Run Configuration was made to attach to a debugging session.
+
+### Database Sync vs. Migration
+
+By default, CitrineOS uses migrations to manage database schema changes. This is the recommended approach for production environments.
+
+For development purposes, you can also use `sync` to automatically synchronize your database schema with the models. There are two sync scripts available:
+
+- `npm run sync-db`: This will synchronize the database schema with the models without altering existing tables. This is useful for development when you want to quickly update the schema without losing data.
+- `npm run force-sync-db`: This will drop all tables and recreate them based on the models. This is useful when you want to start with a fresh database.
+
+**Disclaimer:** Using `sync` in a production environment is not recommended as it can lead to data loss. Always use migrations for production deployments.
 
 ### Runtime configuration
 

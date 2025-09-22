@@ -1,7 +1,6 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import { type BootstrapConfig } from '@citrineos/base';
 import { type Dialect } from 'sequelize';
@@ -108,15 +107,26 @@ export class DefaultSequelizeInstance {
         }
       }
     }
+    this.logger.info(`Sequelize initialized: ${JSON.stringify(this.instance?.config || {})}`);
   }
 
-  private static async syncDb() {
-    if (this.config.database.alter) {
-      await this.instance!.sync({ alter: true });
-      this.logger.info('Database altered');
-    } else if (this.config.database.sync) {
-      await this.instance!.sync({ force: true });
-      this.logger.info('Database synchronized');
+  private static async syncDb(): Promise<void> {
+    if (this.config.database.sync) {
+      const alter = this.config.database.alter;
+      const force = this.config.database.force;
+      if (force) {
+        this.logger.info('Database force synchronizing');
+        await this.instance!.sync({ force: true });
+        this.logger.info('Database force synchronized');
+      } else if (alter) {
+        this.logger.info('Database altering');
+        await this.instance!.sync({ alter: true });
+        this.logger.info('Database altered');
+      } else {
+        this.logger.info('Database synchronizing');
+        await this.instance!.sync();
+        this.logger.info('Database synchronized');
+      }
     }
   }
 
@@ -179,6 +189,7 @@ export class DefaultSequelizeInstance {
         Tenant,
         TenantPartner,
       ],
+      pool: this.config.database.pool,
       logging: (_sql: string, _timing?: number) => {},
     });
   }

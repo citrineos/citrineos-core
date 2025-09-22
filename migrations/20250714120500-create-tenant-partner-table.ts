@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { DataTypes, QueryInterface } from 'sequelize';
 
 export default {
@@ -6,6 +10,7 @@ export default {
       id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
+        autoIncrement: true,
         allowNull: false,
       },
       partyId: {
@@ -23,10 +28,11 @@ export default {
           model: 'Tenants',
           key: 'id',
         },
+        defaultValue: DEFAULT_TENANT_ID,
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      partnerProfile: {
+      partnerProfileOCPI: {
         type: DataTypes.JSONB,
         allowNull: true,
       },

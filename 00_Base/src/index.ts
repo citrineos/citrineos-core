@@ -1,7 +1,6 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 // Base Library Interfaces
 import { OCPP1_6, OCPP2_0_1 } from './ocpp/model/index.js';
@@ -97,7 +96,7 @@ export {
 } from './config/types.js';
 export { SignedMeterValuesConfig } from './config/signedMeterValuesConfig.js';
 export { ConfigStore, ConfigStoreFactory } from './config/ConfigStore.js';
-export { BootstrapConfig, loadBootstrapConfig } from './config/boostrap.config.js';
+export { BootstrapConfig, loadBootstrapConfig } from './config/bootstrap.config.js';
 
 // Utils
 

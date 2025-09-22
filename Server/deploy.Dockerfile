@@ -1,3 +1,7 @@
+#  SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+#  SPDX-License-Identifier: Apache-2.0
+
 # Use a specific base image with platform support
 FROM --platform=${BUILDPLATFORM:-linux/amd64} node:22 AS build
 
@@ -13,6 +17,8 @@ COPY --from=build /usr/local/apps/citrineos /usr/local/apps/citrineos
 
 WORKDIR /usr/local/apps/citrineos
 
+RUN chmod +x /usr/local/apps/citrineos/entrypoint.sh
+
 EXPOSE ${PORT}
 
-CMD ["npm", "run", "start-docker-cloud"]
+ENTRYPOINT ["/usr/local/apps/citrineos/entrypoint.sh"]

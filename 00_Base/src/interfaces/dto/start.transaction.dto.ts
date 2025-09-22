@@ -10,7 +10,7 @@ export interface IStartTransactionDto extends IBaseDto {
   meterStart: number;
   timestamp: string; // ISO 8601 format
   reservationId?: number | null;
-  transactionDatabaseId?: string;
+  transactionDatabaseId?: number;
   idTokenDatabaseId?: number | null;
   connectorDatabaseId: number;
   connector?: IConnectorDto;

@@ -1,6 +1,7 @@
-// Copyright 2025 Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
+
 import { Authorization, ILocationRepository } from '@citrineos/data';
 import {
   AuthorizationStatusType,
@@ -8,8 +9,10 @@ import {
   IMessageContext,
   AuthorizationWhitelistType,
   IdTokenType,
+  SystemConfig,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
+import { OidcTokenProvider } from '../authorization';
 
 export interface RealTimeAuthorizationRequestBody {
   tenantPartnerId: number;
@@ -30,12 +33,20 @@ export interface RealTimeAuthorizationResponse {
 export class RealTimeAuthorizer implements IAuthorizer {
   private _locationRepository: ILocationRepository;
   private readonly _logger: Logger<ILogObj>;
+  private readonly _oidcTokenProvider?: OidcTokenProvider;
 
-  constructor(locationRepository: ILocationRepository, logger?: Logger<ILogObj>) {
+  constructor(
+    locationRepository: ILocationRepository,
+    config: SystemConfig,
+    logger?: Logger<ILogObj>,
+  ) {
     this._locationRepository = locationRepository;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
+    if (config.oidcClient) {
+      this._oidcTokenProvider = new OidcTokenProvider(config.oidcClient, this._logger);
+    }
   }
 
   async authorize(
@@ -76,11 +87,24 @@ export class RealTimeAuthorizer implements IAuthorizer {
       this._logger.debug(
         `Sending Realtime Auth request for authorization ${authorization.id} to url: ${authorization.realTimeAuthUrl}`,
       );
+
+      const headers: { [key: string]: string } = {
+        'Content-Type': 'application/json',
+      };
+
+      if (this._oidcTokenProvider) {
+        try {
+          const token = await this._oidcTokenProvider.getToken();
+          headers['Authorization'] = `Bearer ${token}`;
+        } catch (error) {
+          this._logger.error('Failed to get OIDC token:', error);
+          return AuthorizationStatusType.Invalid;
+        }
+      }
+
       const response = await fetch(authorization.realTimeAuthUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(payload),
       });
 

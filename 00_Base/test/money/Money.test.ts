@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { Currency, Money } from '../../src/index.js';
 import { Big } from 'big.js';
 import { expect } from '@jest/globals';

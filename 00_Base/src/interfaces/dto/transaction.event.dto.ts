@@ -9,7 +9,7 @@ export interface ITransactionEventDto extends IBaseDto {
   id?: number;
   stationId: string;
   evseId?: number | null;
-  transactionDatabaseId?: string;
+  transactionDatabaseId?: number;
   eventType: any;
   meterValues?: IMeterValueDto[];
   timestamp: string; // ISO 8601 format
