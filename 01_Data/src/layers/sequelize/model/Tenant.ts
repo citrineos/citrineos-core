@@ -26,11 +26,11 @@ import {
   ChargingStationNetworkProfile,
   Connector,
   LatestStatusNotification,
-  Location,
   ServerNetworkProfile,
   SetNetworkProfile,
   StatusNotification,
 } from './Location/index.js';
+import { Location } from './Location/Location.js';
 import { ChargingStationSecurityInfo } from './ChargingStationSecurityInfo.js';
 import { ChargingStationSequence } from './ChargingStationSequence/index.js';
 import {

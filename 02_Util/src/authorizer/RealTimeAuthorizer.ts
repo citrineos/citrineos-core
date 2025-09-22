@@ -5,14 +5,14 @@
 import { Authorization, ILocationRepository } from '@citrineos/data';
 import {
   AuthorizationStatusType,
-  IAuthorizer,
-  IMessageContext,
   AuthorizationWhitelistType,
+  IAuthorizer,
   IdTokenType,
+  IMessageContext,
   SystemConfig,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
-import { OidcTokenProvider } from '../authorization';
+import { OidcTokenProvider } from '../authorization/index.js';
 
 export interface RealTimeAuthorizationRequestBody {
   tenantPartnerId: number;

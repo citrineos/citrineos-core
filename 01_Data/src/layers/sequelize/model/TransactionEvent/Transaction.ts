@@ -24,7 +24,13 @@ import {
 } from 'sequelize-typescript';
 import { MeterValue } from './MeterValue.js';
 import { TransactionEvent } from './TransactionEvent.js';
-import { ChargingStation, Connector, Evse, Location } from '../Location/index.js';
+import {
+  type ChargingStation as ChargingStationType,
+  ChargingStation,
+} from '../Location/ChargingStation.js';
+import { Connector } from '../Location/Connector.js';
+import { Evse } from '../Location/Evse.js';
+import { type Location as LocationType, Location } from '../Location/Location.js';
 import { StartTransaction, StopTransaction } from './index.js';
 import { Authorization } from '../Authorization/index.js';
 import { Tariff, Tenant } from '../index.js';
@@ -40,7 +46,7 @@ export class Transaction extends Model implements ITransactionDto {
   locationId?: number;
 
   @BelongsTo(() => Location)
-  location?: Location;
+  location?: LocationType;
 
   @Column({
     unique: 'stationId_transactionId',
@@ -49,7 +55,7 @@ export class Transaction extends Model implements ITransactionDto {
   stationId!: string;
 
   @BelongsTo(() => ChargingStation)
-  station!: ChargingStation;
+  station!: ChargingStationType;
 
   @ForeignKey(() => Evse)
   @Column(DataType.INTEGER)

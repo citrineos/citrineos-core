@@ -11,7 +11,7 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { ChargingStation } from '../Location/index.js';
+import { type ChargingStation as ChargingStationType, ChargingStation } from '../Location/index.js';
 import { ChargingStationSequenceType, DEFAULT_TENANT_ID, ITenantDto } from '@citrineos/base';
 import { Tenant } from '../Tenant.js';
 
@@ -42,7 +42,7 @@ export class ChargingStationSequence extends Model {
   value!: number;
 
   @BelongsTo(() => ChargingStation)
-  declare station: ChargingStation;
+  declare station: ChargingStationType;
 
   @ForeignKey(() => Tenant)
   @Column({
