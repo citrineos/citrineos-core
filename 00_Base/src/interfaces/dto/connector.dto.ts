@@ -35,6 +35,10 @@ export interface IConnectorDto extends IBaseDto {
   evse?: IEvseDto;
   chargingStation?: IChargingStationDto;
   tariffs?: ITariffDto[] | null;
+  isPublished: boolean;
+  validationErrors?: string[] | null;
+  publishedToPartners?: string[] | null;
+  lastPublicationAttempt?: string | null;
 }
 
 export enum ConnectorDtoProps {
@@ -58,4 +62,8 @@ export enum ConnectorDtoProps {
   maximumPowerWatts = 'maximumPowerWatts',
   termsAndConditionsUrl = 'termsAndConditionsUrl',
   tariffs = 'tariffs',
+  isPublished = 'isPublished',
+  validationErrors = 'validationErrors',
+  publishedToPartners = 'publishedToPartners',
+  lastPublicationAttempt = 'lastPublicationAttempt',
 }

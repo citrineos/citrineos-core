@@ -101,6 +101,27 @@ export class Tariff extends BaseModelWithTenant implements ITariffDto {
   @Column(DataType.JSONB)
   declare tariffAltText?: object[] | null;
 
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  declare isPublished: boolean;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  declare readyForPublication: boolean;
+
+  @Column(DataType.JSONB)
+  declare validationErrors?: string[] | null;
+
+  @Column(DataType.JSONB)
+  declare publishedToPartners?: string[] | null;
+
+  @Column(DataType.DATE)
+  declare lastPublicationAttempt?: Date | null;
+
   declare id: number;
   declare updatedAt: CreationOptional<Date>;
 

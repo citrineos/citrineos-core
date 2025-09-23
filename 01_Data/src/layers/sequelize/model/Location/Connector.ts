@@ -101,6 +101,26 @@ export class Connector extends BaseModelWithTenant implements IConnectorDto {
   @Column(DataType.STRING)
   declare termsAndConditionsUrl?: string | null;
 
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  declare isPublished: boolean;
+
+  @Column(DataType.JSONB)
+  declare validationErrors?: string[] | null;
+
+  @Column(DataType.JSONB)
+  declare publishedToPartners?: string[] | null;
+
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('timestamp').toISOString();
+    },
+  })
+  declare lastPublicationAttempt?: string | null;
+
   @BelongsTo(() => ChargingStation)
   declare chargingStation?: ChargingStation;
 

@@ -12,6 +12,10 @@ export interface IEvseDto extends IBaseDto {
   removed?: boolean;
   chargingStation?: IChargingStationDto;
   connectors?: IConnectorDto[] | null;
+  isPublished: boolean;
+  validationErrors?: string[] | null;
+  publishedToPartners?: string[] | null;
+  lastPublicationAttempt?: string | null;
 }
 
 export enum EvseDtoProps {
@@ -22,4 +26,8 @@ export enum EvseDtoProps {
   physicalReference = 'physicalReference',
   removed = 'removed',
   chargingStation = 'chargingStation',
+  isPublished = 'isPublished',
+  validationErrors = 'validationErrors',
+  publishedToPartners = 'publishedToPartners',
+  lastPublicationAttempt = 'lastPublicationAttempt',
 }

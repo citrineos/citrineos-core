@@ -34,6 +34,26 @@ export class Evse extends BaseModelWithTenant implements IEvseDto {
   @Column(DataType.BOOLEAN)
   declare removed?: boolean;
 
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  declare isPublished: boolean;
+
+  @Column(DataType.JSONB)
+  declare validationErrors?: string[] | null;
+
+  @Column(DataType.JSONB)
+  declare publishedToPartners?: string[] | null;
+
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('timestamp').toISOString();
+    },
+  })
+  declare lastPublicationAttempt?: string | null;
+
   @BelongsTo(() => ChargingStation)
   declare chargingStation?: ChargingStation;
 
