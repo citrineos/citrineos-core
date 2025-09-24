@@ -23,7 +23,7 @@ import { Tenant } from '../Tenant.js';
 export class TransactionEvent extends Model implements ITransactionEventDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.TransactionEventRequest;
 
-  @Column
+  @Column(DataType.STRING)
   declare stationId: string;
 
   @Column(DataType.STRING)
@@ -40,7 +40,7 @@ export class TransactionEvent extends Model implements ITransactionEventDto {
   })
   declare timestamp: string;
 
-  @Column
+  @Column(DataType.STRING)
   declare triggerReason: OCPP2_0_1.TriggerReasonEnumType;
 
   @Column(DataType.INTEGER)

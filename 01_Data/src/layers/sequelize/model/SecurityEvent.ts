@@ -24,10 +24,10 @@ export class SecurityEvent extends Model implements OCPP2_0_1.SecurityEventNotif
    * Fields
    */
   @Index
-  @Column
+  @Column(DataType.STRING)
   declare stationId: string;
 
-  @Column
+  @Column(DataType.STRING)
   declare type: string;
 
   @Column({

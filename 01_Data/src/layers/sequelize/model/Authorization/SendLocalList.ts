@@ -23,10 +23,10 @@ import { Tenant } from '../Tenant.js';
 export class SendLocalList extends Model implements OCPP2_0_1.SendLocalListRequest {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.SendLocalListRequest;
 
-  @Column
+  @Column(DataType.STRING)
   declare stationId: string;
 
-  @Column
+  @Column(DataType.STRING)
   declare correlationId: string;
 
   @Column(DataType.INTEGER)

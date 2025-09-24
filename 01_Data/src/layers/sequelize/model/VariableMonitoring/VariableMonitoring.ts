@@ -39,6 +39,7 @@ export class VariableMonitoring extends Model implements IVariableMonitoringDto 
 
   @Index
   @Column({
+    type: DataType.STRING,
     unique: 'stationId_Id',
   })
   declare stationId: string;

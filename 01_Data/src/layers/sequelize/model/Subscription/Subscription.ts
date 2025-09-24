@@ -21,25 +21,29 @@ export class Subscription extends Model implements ISubscriptionDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Subscription;
 
   @Index
-  @Column
+  @Column(DataType.STRING)
   declare stationId: string;
 
   @Column({
+    type: DataType.BOOLEAN,
     defaultValue: false,
   })
   declare onConnect: boolean;
 
   @Column({
+    type: DataType.BOOLEAN,
     defaultValue: false,
   })
   declare onClose: boolean;
 
   @Column({
+    type: DataType.BOOLEAN,
     defaultValue: false,
   })
   declare onMessage: boolean;
 
   @Column({
+    type: DataType.BOOLEAN,
     defaultValue: false,
   })
   declare sentMessage: boolean;
@@ -47,7 +51,7 @@ export class Subscription extends Model implements ISubscriptionDto {
   @Column(DataType.STRING)
   declare messageRegexFilter?: string | null;
 
-  @Column
+  @Column(DataType.STRING)
   declare url: string;
 
   @ForeignKey(() => Tenant)

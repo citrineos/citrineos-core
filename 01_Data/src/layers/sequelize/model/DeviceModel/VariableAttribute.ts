@@ -100,6 +100,7 @@ export class VariableAttribute
 
   @Index
   @Column({
+    type: DataType.STRING,
     unique: 'stationId_type_variableId_componentId',
     allowNull: false,
   })

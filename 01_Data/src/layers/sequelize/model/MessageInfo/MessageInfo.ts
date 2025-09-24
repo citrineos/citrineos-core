@@ -34,6 +34,7 @@ export class MessageInfo extends Model implements IMessageInfoDto {
 
   @Index
   @Column({
+    type: DataType.STRING,
     unique: 'stationId_id',
   })
   declare stationId: string;

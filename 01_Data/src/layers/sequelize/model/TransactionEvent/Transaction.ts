@@ -47,6 +47,7 @@ export class Transaction extends Model implements ITransactionDto {
   location?: LocationType;
 
   @Column({
+    type: DataType.STRING,
     unique: 'stationId_transactionId',
   })
   @ForeignKey(() => ChargingStation)
@@ -84,6 +85,7 @@ export class Transaction extends Model implements ITransactionDto {
   tariff?: Tariff;
 
   @Column({
+    type: DataType.STRING,
     unique: 'stationId_transactionId',
   })
   declare transactionId: string;

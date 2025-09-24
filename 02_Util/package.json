@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "prepublish": "npx eslint ./src",
-    "test": "jest --config jest.config.ts"
+    "test": "vitest run"
   },
   "keywords": [
     "ocpp",

@@ -4,6 +4,7 @@
 import { extractBasicCredentials } from '../../src/util/RequestOperations.js';
 import { faker } from '@faker-js/faker';
 import { aRequestWithAuthorization } from '../providers/IncomingMessageProvider.js';
+import { describe, expect, it } from 'vitest';
 
 describe('extractBasicCredentials', () => {
   it('should return empty object when no Authorization header is present', () => {

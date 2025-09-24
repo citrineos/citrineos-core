@@ -42,7 +42,7 @@ export class VariableCharacteristics
   @Column(DataType.STRING(4000))
   declare valuesList?: string | null;
 
-  @Column
+  @Column(DataType.BOOLEAN)
   declare supportsMonitoring: boolean;
 
   /**

@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { jest } from '@jest/globals';
 import {
   Authenticator,
   BasicAuthenticationFilter,
@@ -13,30 +12,31 @@ import { faker } from '@faker-js/faker';
 import { aRequest } from '../../providers/IncomingMessageProvider.js';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('Authenticator', () => {
-  let unknownStationFilter: jest.Mocked<UnknownStationFilter>;
-  let connectedStationFilter: jest.Mocked<ConnectedStationFilter>;
-  let networkProfileFilter: jest.Mocked<NetworkProfileFilter>;
-  let basicAuthenticationFilter: jest.Mocked<BasicAuthenticationFilter>;
+  let unknownStationFilter: Mocked<UnknownStationFilter>;
+  let connectedStationFilter: Mocked<ConnectedStationFilter>;
+  let networkProfileFilter: Mocked<NetworkProfileFilter>;
+  let basicAuthenticationFilter: Mocked<BasicAuthenticationFilter>;
   let authenticator: Authenticator;
 
   beforeEach(() => {
     unknownStationFilter = {
-      authenticate: jest.fn(),
-    } as unknown as jest.Mocked<UnknownStationFilter>;
+      authenticate: vi.fn(),
+    } as unknown as Mocked<UnknownStationFilter>;
 
     connectedStationFilter = {
-      authenticate: jest.fn(),
-    } as unknown as jest.Mocked<ConnectedStationFilter>;
+      authenticate: vi.fn(),
+    } as unknown as Mocked<ConnectedStationFilter>;
 
     networkProfileFilter = {
-      authenticate: jest.fn(),
-    } as unknown as jest.Mocked<NetworkProfileFilter>;
+      authenticate: vi.fn(),
+    } as unknown as Mocked<NetworkProfileFilter>;
 
     basicAuthenticationFilter = {
-      authenticate: jest.fn(),
-    } as unknown as jest.Mocked<BasicAuthenticationFilter>;
+      authenticate: vi.fn(),
+    } as unknown as Mocked<BasicAuthenticationFilter>;
 
     authenticator = new Authenticator(
       unknownStationFilter,

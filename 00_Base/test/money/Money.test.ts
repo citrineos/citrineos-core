@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Currency, Money } from '../../src';
 import { Big } from 'big.js';
-import { expect } from '@jest/globals';
+import { describe, expect, it } from 'vitest';
 
 describe('money', () => {
   describe('of', () => {

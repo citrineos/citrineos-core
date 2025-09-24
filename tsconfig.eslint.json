@@ -29,7 +29,7 @@
     "Server/**/*.json",
     "./db.sync.ts",
     "./db.force-sync.ts",
-    "jest.config.ts",
+    "vitest.config.ts",
     "migrations/**/*.ts",
     "seeders/**/*.ts"
   ],

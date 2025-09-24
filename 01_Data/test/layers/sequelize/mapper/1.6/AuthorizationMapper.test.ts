@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { AuthorizationStatusType, OCPP1_6 } from '@citrineos/base';
 import { AuthorizationMapper } from '../../../../../src/layers/sequelize/mapper/1.6';
+import { describe, expect, it } from 'vitest';
 
 describe('AuthorizationMapper', () => {
   describe('toIdTagInfoStatus', () => {

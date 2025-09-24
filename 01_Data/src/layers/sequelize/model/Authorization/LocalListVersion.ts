@@ -24,6 +24,7 @@ export class LocalListVersion extends Model {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.LocalListVersion;
 
   @Column({
+    type: DataType.STRING,
     unique: true,
   })
   declare stationId: string;

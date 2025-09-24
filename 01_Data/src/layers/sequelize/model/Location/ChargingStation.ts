@@ -44,7 +44,7 @@ export class ChargingStation extends Model implements IChargingStationDto {
   @Column(DataType.STRING(36))
   declare id: string;
 
-  @Column
+  @Column(DataType.BOOLEAN)
   declare isOnline: boolean;
 
   @Column(DataType.STRING)
