@@ -198,7 +198,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       const result = validate(payload);
       if (!result) {
         const validationErrorsDeepCopy = JSON.parse(JSON.stringify(validate.errors));
-        this._logger.debug('Validate CallResult failed', validationErrorsDeepCopy);
+        this._logger.debug('Validate Call failed', validationErrorsDeepCopy);
         return { isValid: false, errors: validationErrorsDeepCopy };
       } else {
         return { isValid: true };
