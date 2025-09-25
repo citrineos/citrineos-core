@@ -4,7 +4,6 @@
 
 import { HttpMethod } from './index.js';
 import { Namespace, OCPP1_6_Namespace, OCPP2_0_1_Namespace } from '../../index.js';
-import { AsDataEndpoint } from './AsDataEndpoint.js';
 
 /**
  * Interface for usage in {@link AsDataEndpoint} decorator.

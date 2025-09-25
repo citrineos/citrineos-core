@@ -4,7 +4,6 @@
 
 import type { CallAction } from '../../ocpp/rpc/message.js';
 import { OCPPVersion } from '../../ocpp/rpc/message.js';
-import { AsHandler } from './AsHandler.js';
 
 /**
  * Interface for usage in {@link AsHandler} decorator.
@@ -12,6 +11,6 @@ import { AsHandler } from './AsHandler.js';
 export interface IHandlerDefinition {
   protocol: OCPPVersion;
   action: CallAction;
-  method: Function;
+  method: (...args: any[]) => any;
   methodName: string;
 }

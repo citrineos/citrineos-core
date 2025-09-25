@@ -4,9 +4,7 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-import { DataTypes, QueryInterface } from 'sequelize';
-
-const TABLE_NAME = 'Evses';
+import { QueryInterface } from 'sequelize';
 
 export default {
   up: async (queryInterface: QueryInterface) => {

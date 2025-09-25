@@ -115,7 +115,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
     this.subscriptionRepository =
       subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
-    this._handler.initConnection();
+    this._handler.initConnection().catch((err) => {
+      this._logger.error('initConnection failed', err);
+    });
     if (this._config.oidcClient) {
       this._oidcTokenProvider = new OidcTokenProvider(this._config.oidcClient, this._logger);
     }
@@ -177,7 +179,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   }
 
   async deregisterConnection(tenantId: number, stationId: string): Promise<boolean> {
-    this._webhookDispatcher.deregister(tenantId, stationId);
+    this._webhookDispatcher.deregister(tenantId, stationId).catch((err) => {
+      this._logger.error('_webhookDispatcher deregister failed', err);
+    });
 
     let protocol: OCPPVersion | null = null;
     try {
@@ -229,26 +233,32 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       messageTypeId = rpcMessage[0];
       messageId = rpcMessage[1];
       switch (messageTypeId) {
-        case MessageTypeId.Call:
+        case MessageTypeId.Call: {
           await this._onCall(identifier, rpcMessage as Call, timestamp, protocol);
           break;
-        case MessageTypeId.CallResult:
+        }
+        case MessageTypeId.CallResult: {
           await this._onCallResult(identifier, rpcMessage as CallResult, timestamp, protocol);
           break;
-        case MessageTypeId.CallError:
+        }
+        case MessageTypeId.CallError: {
           await this._onCallError(identifier, rpcMessage as CallError, timestamp, protocol);
           break;
-        default:
+        }
+        default: {
           let errorCode;
           switch (protocol) {
-            case 'ocpp1.6':
+            case 'ocpp1.6': {
               errorCode = ErrorCode.FormationViolation;
               break;
-            case 'ocpp2.0.1':
+            }
+            case 'ocpp2.0.1': {
               errorCode = ErrorCode.FormatViolation;
               break;
-            default:
+            }
+            default: {
               throw new Error('Unknown protocol: ' + protocol);
+            }
           }
           throw new OcppError(
             messageId,
@@ -256,6 +266,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             'Unknown message type id: ' + messageTypeId,
             {},
           );
+        }
       }
     } catch (error) {
       success = false; // ensure we return false in case of an error
@@ -273,7 +284,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
               ];
         callError = this.removeNulls(callError);
         const rawMessage = JSON.stringify(callError);
-        this._sendMessage(identifier, protocol, rawMessage, callError);
+        await this._sendMessage(identifier, protocol, rawMessage, callError);
       }
     }
     await this._webhookDispatcher.dispatchMessageReceived(
@@ -373,7 +384,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       );
       return { success: false };
     }
-    let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+    const [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/) ?? []; // Returns all characters after first ':' in case ':' is used in messageId
     if (cachedAction === action && cachedMessageId === correlationId) {
       message = this.removeNulls(message);
       const rawMessage = JSON.stringify(message);
@@ -425,7 +436,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       this._logger.error('Failed to send callError due to missing message id', identifier, message);
       return { success: false };
     }
-    let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+    const [_cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/) ?? []; // Returns all characters after first ':' in case ':' is used in messageId
     if (cachedMessageId === correlationId) {
       message = this.removeNulls(message);
       const rawMessage = JSON.stringify(message);
@@ -538,11 +549,15 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
               details: error,
             });
 
-      this.sendCallError(messageId, stationId, tenantId, protocol, action, callError).finally(
-        () => {
-          this._cache.remove(identifier, CacheNamespace.Transactions);
-        },
-      );
+      this.sendCallError(messageId, stationId, tenantId, protocol, action, callError)
+        .catch((err) => {
+          this._logger.error('sendCallError failed', err);
+        })
+        .finally(() => {
+          this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
+            this._logger.error('cache remove failed', err);
+          });
+        });
     }
   }
 
@@ -568,8 +583,13 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
     this._cache
       .get<string>(identifier, CacheNamespace.Transactions)
+      .catch((err) => {
+        this._logger.error('cache get failed', err);
+      })
       .then((cachedActionMessageId) => {
-        this._cache.remove(identifier, CacheNamespace.Transactions); // Always remove pending call transaction
+        this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
+          this._logger.error('_onCallResult cache remove failed', err);
+        });
         if (!cachedActionMessageId) {
           throw new OcppError(
             messageId,
@@ -645,7 +665,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this._cache
       .get<string>(identifier, CacheNamespace.Transactions)
       .then((cachedActionMessageId) => {
-        this._cache.remove(identifier, CacheNamespace.Transactions); // Always remove pending call transaction
+        this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
+          this._logger.error('_onCallError cache remove failed', err);
+        }); // Always remove pending call transaction
         if (!cachedActionMessageId) {
           throw new OcppError(
             messageId,
@@ -703,13 +725,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       // Don't dispatch if the message was not sent
       return false;
     }
-    this._webhookDispatcher.dispatchMessageSent(
-      identifier,
-      rawMessage,
-      new Date().toISOString(),
-      protocol,
-      rpcMessage,
-    );
+    this._webhookDispatcher
+      .dispatchMessageSent(identifier, rawMessage, new Date().toISOString(), protocol, rpcMessage)
+      .catch((err) => {
+        this._logger.error('dispatchMessageSent failed', err);
+      });
     return true;
   }
 
@@ -812,7 +832,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     );
 
     // Fulfill callback for api, if needed
-    this._handleMessageApiCallback(_message);
+    this._handleMessageApiCallback(_message).catch((err) => {
+      this._logger.error('_handleMessageApiCallback failed', err);
+    });
 
     // No error routing currently done
     this._logger.warn('Error routing not implemented');

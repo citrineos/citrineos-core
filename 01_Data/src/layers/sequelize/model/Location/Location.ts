@@ -64,7 +64,7 @@ export class Location extends Model implements ILocationDto {
         try {
           Intl.DateTimeFormat(undefined, { timeZone: value });
           return true;
-        } catch (ex) {
+        } catch (_ex) {
           return false;
         }
       },
