@@ -121,14 +121,23 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     this._logger.debug('Received message:', message);
 
     if (message.state === MessageState.Response) {
-      if (message.payload instanceof OcppError) {
+      if (message.payload && (message.payload as any)._errorCode) {
+        // Create OcppError from payload properties for sendCallError method
+        const errorPayload = message.payload as any;
+        const ocppError = new OcppError(
+          errorPayload._messageId,
+          errorPayload._errorCode,
+          errorPayload.message || '',
+          errorPayload._errorDetails || {},
+        );
+
         await this.sendCallError(
           message.context.correlationId,
           message.context.stationId,
           message.context.tenantId,
           message.protocol,
           message.action,
-          message.payload,
+          errorPayload,
           message.origin,
         );
       } else {
