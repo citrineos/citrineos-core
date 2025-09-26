@@ -29,6 +29,7 @@ export function validateLanguageTag(languageTag: string): boolean {
  * Validate constraints of ChargingProfileType defined in OCPP 2.0.1
  *
  * @param chargingProfileType ChargingProfileType from the request
+ * @param tenantId tenant id the profile belongs to
  * @param stationId station id
  * @param deviceModelRepository deviceModelRepository
  * @param chargingProfileRepository chargingProfileRepository
@@ -175,5 +176,131 @@ export async function validateChargingProfileType(
         }
       }
     }
+  }
+}
+
+/**
+ * Validate ISO15693 ID token format
+ * ISO 15693 UID should be exactly 8 bytes (16 hex characters)
+ */
+export function validateISO15693IdToken(idToken: string): boolean {
+  return !!idToken && idToken.length === 16 && /^[0-9A-Fa-f]+$/.test(idToken);
+}
+
+/**
+ * Validate ISO14443 ID token format
+ * ISO 14443 UID should be 4 or 7 bytes (8 or 14 hex characters)
+ */
+export function validateISO14443IdToken(idToken: string): boolean {
+  return (
+    !!idToken && (idToken.length === 8 || idToken.length === 14) && /^[0-9A-Fa-f]+$/.test(idToken)
+  );
+}
+
+/**
+ * Validate identifier string format per OCPP 2.0.1. We expect this validation already from the JSON schema,
+ * but we add this extra validation to be sure.
+ * Only allows: a-z, A-Z, 0-9, *, -, _, =, :, +, |, @, .
+ */
+export function validateIdentifierStringIdToken(idToken: string): boolean {
+  return !!idToken && /^[a-zA-Z0-9*\-_=:+|@.]+$/.test(idToken);
+}
+
+/**
+ * Validate NoAuthorization ID token (should be empty)
+ */
+export function validateNoAuthorizationIdToken(idToken: string): boolean {
+  return !idToken || idToken.length === 0;
+}
+
+/**
+ * ID token validation result
+ */
+export interface IdTokenValidationResult {
+  isValid: boolean;
+  errorMessage?: string;
+}
+
+/**
+ * ID token validator - routes to appropriate validator based on type
+ * Returns validation result with detailed error message if invalid
+ */
+export function validateIdToken(
+  idTokenType: OCPP2_0_1.IdTokenEnumType,
+  idToken: string,
+): IdTokenValidationResult {
+  switch (idTokenType) {
+    case OCPP2_0_1.IdTokenEnumType.ISO15693:
+      if (validateISO15693IdToken(idToken)) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage: 'ISO15693 tokens must be exactly 16 hexadecimal characters (0-9, A-F)',
+      };
+
+    case OCPP2_0_1.IdTokenEnumType.ISO14443:
+      if (validateISO14443IdToken(idToken)) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage: 'ISO14443 tokens must be either 8 or 14 hexadecimal characters (0-9, A-F)',
+      };
+
+    case OCPP2_0_1.IdTokenEnumType.NoAuthorization:
+      if (validateNoAuthorizationIdToken(idToken)) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage: 'NoAuthorization tokens must be empty',
+      };
+
+    case OCPP2_0_1.IdTokenEnumType.KeyCode:
+      if (validateIdentifierStringIdToken(idToken)) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage:
+          'KeyCode tokens must contain only letters, numbers, and characters: * - _ = : + | @ .',
+      };
+
+    case OCPP2_0_1.IdTokenEnumType.Local:
+      if (validateIdentifierStringIdToken(idToken)) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage:
+          'Local tokens must contain only letters, numbers, and characters: * - _ = : + | @ .',
+      };
+
+    case OCPP2_0_1.IdTokenEnumType.MacAddress:
+      if (validateIdentifierStringIdToken(idToken)) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage:
+          'MacAddress tokens must contain only letters, numbers, and characters: * - _ = : + | @ .',
+      };
+
+    case OCPP2_0_1.IdTokenEnumType.Central:
+      if (validateIdentifierStringIdToken(idToken)) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage:
+          'Central tokens must contain only letters, numbers, and characters: * - _ = : + | @ .',
+      };
+
+    default:
+      return {
+        isValid: false,
+        errorMessage: `Unknown token type: ${idTokenType}`,
+      };
   }
 }

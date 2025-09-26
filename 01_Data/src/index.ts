@@ -12,6 +12,7 @@ export {
   Authorization,
   Boot,
   ChangeConfiguration,
+  ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
   ChargingStation,
