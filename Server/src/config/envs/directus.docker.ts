@@ -125,12 +125,12 @@ export function createDirectusConfig() {
         endpointPrefix: '/smartcharging',
         responses: [
           OCPP2_0_1_CallAction.ClearChargingProfile,
-          OCPP2_0_1_CallAction.ClearedChargingLimit,
           OCPP2_0_1_CallAction.GetChargingProfiles,
           OCPP2_0_1_CallAction.GetCompositeSchedule,
           OCPP2_0_1_CallAction.SetChargingProfile,
         ],
         requests: [
+          OCPP2_0_1_CallAction.ClearedChargingLimit,
           OCPP2_0_1_CallAction.NotifyChargingLimit,
           OCPP2_0_1_CallAction.NotifyEVChargingNeeds,
           OCPP2_0_1_CallAction.NotifyEVChargingSchedule,
