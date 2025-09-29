@@ -147,8 +147,6 @@ const buildLocalReference = (json: any, _parent: unknown, _property: unknown, i:
   return json.title || json.$id || `def-${i}`;
 };
 
-console.log('TODO Confirm this version gets pulled in properly!!', packageJson.default.version);
-
 const registerFastifySwagger = (systemConfig: SystemConfig, server: FastifyInstance) => {
   server.register(fastifySwagger as any, {
     openapi: {

@@ -10,7 +10,7 @@ export default (async () => {
 
     const { host, port, database, dialect, username, password } = bootstrapConfig.database;
 
-    console.log('[sequelize.bridge.config.js] Loaded config for DB:', {
+    console.log('[sequelize.bridge.config.ts] Loaded config for DB:', {
       host,
       port,
       database,
@@ -27,7 +27,7 @@ export default (async () => {
       logging: true,
     };
   } catch (error) {
-    console.error('[sequelize.bridge.config.js] Failed to load bootstrap configuration:', error);
+    console.error('[sequelize.bridge.config.ts] Failed to load bootstrap configuration:', error);
     throw error;
   }
 })();
