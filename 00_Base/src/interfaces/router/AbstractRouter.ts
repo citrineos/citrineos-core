@@ -137,7 +137,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
           message.context.tenantId,
           message.protocol,
           message.action,
-          errorPayload,
+          ocppError,
           message.origin,
         );
       } else {
