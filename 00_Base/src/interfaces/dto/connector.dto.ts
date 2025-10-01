@@ -36,8 +36,6 @@ export interface IConnectorDto extends IBaseDto {
   chargingStation?: IChargingStationDto;
   tariffs?: ITariffDto[] | null;
   isPublished: boolean;
-  validationErrors?: string[] | null;
-  publishedToPartners?: string[] | null;
   lastPublicationAttempt?: string | null;
 }
 
@@ -63,7 +61,5 @@ export enum ConnectorDtoProps {
   termsAndConditionsUrl = 'termsAndConditionsUrl',
   tariffs = 'tariffs',
   isPublished = 'isPublished',
-  validationErrors = 'validationErrors',
-  publishedToPartners = 'publishedToPartners',
   lastPublicationAttempt = 'lastPublicationAttempt',
 }

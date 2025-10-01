@@ -23,8 +23,6 @@ export interface ILocationDto extends IBaseDto {
   openingHours?: LocationHours | null;
   chargingPool: IChargingStationDto[];
   isPublished: boolean;
-  validationErrors?: string[] | null;
-  publishedToPartners?: string[] | null;
   lastPublicationAttempt?: string | null;
 }
 
@@ -44,7 +42,5 @@ export enum LocationDtoProps {
   openingHours = 'openingHours',
   chargingPool = 'chargingPool',
   isPublished = 'isPublished',
-  validationErrors = 'validationErrors',
-  publishedToPartners = 'publishedToPartners',
   lastPublicationAttempt = 'lastPublicationAttempt',
 }

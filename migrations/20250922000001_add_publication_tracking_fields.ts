@@ -115,7 +115,5 @@ export async function down(queryInterface: QueryInterface): Promise<void> {
 
   // Remove publication tracking fields from Tariff table
   await queryInterface.removeColumn('Tariffs', 'isPublished');
-  await queryInterface.removeColumn('Tariffs', 'validationErrors');
-  await queryInterface.removeColumn('Tariffs', 'publishedToPartners');
   await queryInterface.removeColumn('Tariffs', 'lastPublicationAttempt');
 }

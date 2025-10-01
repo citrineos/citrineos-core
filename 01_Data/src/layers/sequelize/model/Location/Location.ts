@@ -52,12 +52,6 @@ export class Location extends BaseModelWithTenant implements ILocationDto {
   })
   declare isPublished: boolean;
 
-  @Column(DataType.JSONB)
-  declare validationErrors?: string[] | null;
-
-  @Column(DataType.JSONB)
-  declare publishedToPartners?: string[] | null;
-
   @Column({
     type: DataType.DATE,
     get() {

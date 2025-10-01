@@ -13,8 +13,6 @@ export interface IEvseDto extends IBaseDto {
   chargingStation?: IChargingStationDto;
   connectors?: IConnectorDto[] | null;
   isPublished: boolean;
-  validationErrors?: string[] | null;
-  publishedToPartners?: string[] | null;
   lastPublicationAttempt?: string | null;
 }
 
@@ -27,7 +25,5 @@ export enum EvseDtoProps {
   removed = 'removed',
   chargingStation = 'chargingStation',
   isPublished = 'isPublished',
-  validationErrors = 'validationErrors',
-  publishedToPartners = 'publishedToPartners',
   lastPublicationAttempt = 'lastPublicationAttempt',
 }

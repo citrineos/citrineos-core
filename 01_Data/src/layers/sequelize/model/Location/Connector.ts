@@ -107,12 +107,6 @@ export class Connector extends BaseModelWithTenant implements IConnectorDto {
   })
   declare isPublished: boolean;
 
-  @Column(DataType.JSONB)
-  declare validationErrors?: string[] | null;
-
-  @Column(DataType.JSONB)
-  declare publishedToPartners?: string[] | null;
-
   @Column({
     type: DataType.DATE,
     get() {
