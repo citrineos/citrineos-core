@@ -88,7 +88,7 @@ class CitrineOSServer {
         coerceTypes: 'array',
         strict: false,
       });
-    addFormats(this._ajv, { mode: 'fast', formats: ['date-time'] });
+    addFormats(this._ajv, { mode: 'fast', formats: ['date-time', 'uri'] });
 
     // Initialize parent logger
     this._logger = new Logger<ILogObj>({

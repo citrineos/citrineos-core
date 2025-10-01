@@ -48,12 +48,13 @@
           "description": "The serial number of the certificate.\r\n",
           "type": "string",
           "maxLength": 40,
-          "pattern": "^[a-zA-Z0-9*\\\\-_=:+|@.]*$"
+          "pattern": "^(?!0x)(?!0[0-9a-fA-F])[a-zA-Z0-9*\\\\-_=:+|@.]+$"
         },
         "responderURL": {
           "description": "This contains the responder URL (Case insensitive). \r\n\r\n",
           "type": "string",
-          "maxLength": 512
+          "maxLength": 512,
+          "format": "uri"
         }
       },
       "required": [
