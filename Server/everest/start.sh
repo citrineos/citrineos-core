@@ -1,7 +1,8 @@
+#!/bin/sh
 # SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 #
 # SPDX-License-Identifier: Apache-2.0
-#!/bin/sh
+
 if [ "$OCPP_VERSION" = "two" ]; then
     apt-get update && apt-get install -y sqlite3
     sqlite3 /ext/dist/share/everest/modules/OCPP201/device_model_storage.db \

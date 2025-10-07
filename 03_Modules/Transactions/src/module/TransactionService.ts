@@ -69,7 +69,7 @@ export class TransactionService {
     return totalKwh;
   }
 
-  async authorizeIdToken(
+  async authorizeOcpp201IdToken(
     tenantId: number,
     transactionEvent: OCPP2_0_1.TransactionEventRequest,
     messageContext: IMessageContext,
@@ -118,15 +118,16 @@ export class TransactionService {
       };
       return response;
     } else {
-      if (authorization.concurrentTransaction === true) {
-        if (transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started) {
-          const hasConcurrent = await this._hasConcurrentTransactions(tenantId, idToken);
-          if (hasConcurrent) {
-            response.idTokenInfo = {
-              status: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
-            };
-            return response;
-          }
+      if (
+        authorization.concurrentTransaction === true &&
+        transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started
+      ) {
+        const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
+        if (hasConcurrent) {
+          response.idTokenInfo = {
+            status: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
+          };
+          return response;
         }
       }
 
@@ -213,12 +214,8 @@ export class TransactionService {
       }
 
       // Check concurrent transactions
-      const activeTransactions =
-        await this._transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken(
-          tenantId,
-          authorization.idToken,
-        );
-      if (activeTransactions.length > 0) {
+      const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
+      if (hasConcurrent) {
         response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
         return response;
       }
@@ -331,15 +328,15 @@ export class TransactionService {
 
   private async _hasConcurrentTransactions(
     tenantId: number,
-    idToken: OCPP2_0_1.IdTokenType,
+    authorizationId: number,
   ): Promise<boolean> {
     const activeTransactions =
-      await this._transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken(
+      await this._transactionEventRepository.readAllActiveTransactionsByAuthorizationId(
         tenantId,
-        idToken,
+        authorizationId,
       );
 
-    return activeTransactions.length > 1;
+    return activeTransactions.length > 0;
   }
 
   private _mapAuthorizationDtoToIdTokenInfo(

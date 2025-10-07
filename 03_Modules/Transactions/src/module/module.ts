@@ -277,14 +277,24 @@ export class TransactionsModule extends AbstractModule {
     const tenantId: number = message.context.tenantId;
     const stationId: string = message.context.stationId;
 
-    await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
-      tenantId,
-      message.payload,
-      stationId,
-    );
-
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
+    let response: OCPP2_0_1.TransactionEventResponse | undefined = undefined;
+
+    if (transactionEvent.idToken) {
+      response = await this._transactionService.authorizeOcpp201IdToken(
+        tenantId,
+        transactionEvent,
+        message.context,
+      );
+    }
+
+    const transaction =
+      await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
+        tenantId,
+        message.payload,
+        stationId,
+      );
 
     if (message.payload.reservationId) {
       await this._transactionService.deactivateReservation(
@@ -295,12 +305,7 @@ export class TransactionsModule extends AbstractModule {
       );
     }
 
-    if (transactionEvent.idToken) {
-      const response = await this._transactionService.authorizeIdToken(
-        tenantId,
-        transactionEvent,
-        message.context,
-      );
+    if (response) {
       const messageConfirmation = await this.sendCallResultWithMessage(message, response);
       this._logger.debug('Transaction response sent: ', messageConfirmation);
       // If the transaction is accepted and interval is set, start the cost update
@@ -320,13 +325,6 @@ export class TransactionsModule extends AbstractModule {
       const response: OCPP2_0_1.TransactionEventResponse = {
         // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
       };
-
-      const transaction: Transaction | undefined =
-        await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
-          tenantId,
-          stationId,
-          transactionId,
-        );
 
       if (message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Updated) {
         // I02 - Show EV Driver Running Total Cost During Charging

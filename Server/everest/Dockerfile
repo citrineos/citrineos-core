@@ -1,5 +1,5 @@
 ARG EVEREST_IMAGE_TAG=0.0.23
-FROM --platform=linux/x86_64 ghcr.io/everest/everest-demo/manager:${EVEREST_IMAGE_TAG}
+FROM ghcr.io/everest/everest-demo/manager:${EVEREST_IMAGE_TAG}
 
 WORKDIR /workspace
 

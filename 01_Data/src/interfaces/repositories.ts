@@ -288,13 +288,9 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     evse: OCPP2_0_1.EVSEType,
     chargingStates?: OCPP2_0_1.ChargingStateEnumType[],
   ): Promise<Transaction[]>;
-  readAllActiveTransactionsIncludeTransactionEventByIdToken(
+  readAllActiveTransactionsByAuthorizationId(
     tenantId: number,
-    idToken: OCPP2_0_1.IdTokenType,
-  ): Promise<Transaction[]>;
-  readAllActiveTransactionsIncludeStartTransactionByIdToken(
-    tenantId: number,
-    idToken: string,
+    authorizationId: number,
   ): Promise<Transaction[]>;
   readAllMeterValuesByTransactionDataBaseId(
     tenantId: number,
