@@ -238,3 +238,79 @@ export const INVALID_LANGUAGE_TAGS = [
   'en-US-', // trailing dash after valid tag
   'en-US--extra', // double dash in extensions
 ] as const;
+
+// Message content test data for ASCII format
+export const VALID_ASCII_CONTENT = [
+  'Hello World',
+  'Test123',
+  'Valid ASCII: ~!@#$%^&*()_+-={}[]|:;"<>,.?/',
+  '0123456789',
+  '',
+] as const;
+
+export const INVALID_ASCII_CONTENT = [
+  ['Hello 😀', 'contains emoji'],
+  ['Café', 'contains accented character'],
+  ['日本語', 'contains Japanese characters'],
+  ['Hello\nWorld', 'contains newline'],
+  ['Test\x00', 'contains null character'],
+] as const;
+
+// Message content test data for HTML format
+export const VALID_HTML_CONTENT = [
+  '<div>Hello</div>',
+  '<p>Test <b>bold</b> text</p>',
+  '<br/>',
+  '<img src="test.jpg"/>',
+  '<div><span>Nested</span></div>',
+  '',
+] as const;
+
+export const INVALID_HTML_CONTENT = [
+  ['<div>Unclosed', 'unclosed tag'],
+  ['<div><span></div></span>', 'mismatched nesting'],
+  ['</div>', 'closing tag without opening'],
+  ['<div><p>Text</div>', 'wrong closing tag'],
+  [
+    '첥봟쉈힌뒢삔퉺첺맓뎪꿉쁎흜앙솸쑣뺯띙캆줟쵄깭말헡관へ겄땮붋쓿쾹텓Ǖ:윙컜쩯久',
+    'No HTML tag, string only',
+  ],
+] as const;
+
+// Message content test data for URI format
+export const VALID_URI_CONTENT = [
+  'http://example.com',
+  'https://example.com/path',
+  'https://example.com/path?query=value',
+  'ftp://ftp.example.com',
+  'file:///path/to/file',
+  '/relative/path',
+] as const;
+
+export const INVALID_URI_CONTENT = [
+  ['', 'empty string'],
+  ['not a url', 'invalid format'],
+  ['ht tp://bad.com', 'space in URL'],
+] as const;
+
+// Message content test data for UTF8 format
+export const VALID_UTF8_CONTENT = [
+  'Hello World',
+  '日本語テキスト',
+  'Émojis: 😀🎉🚀',
+  'Ελληνικά',
+  '中文',
+  '',
+] as const;
+
+// MessageContentType builder
+export function aMessageContent(
+  override?: Partial<OCPP2_0_1.MessageContentType>,
+): OCPP2_0_1.MessageContentType {
+  return {
+    format: OCPP2_0_1.MessageFormatEnumType.UTF8,
+    content: faker.lorem.sentence(),
+    language: 'en-US',
+    ...override,
+  };
+}

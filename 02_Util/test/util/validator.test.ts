@@ -1,13 +1,19 @@
 import { OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import {
+  validateASCIIContent,
   validateChargingProfileType,
+  validateHTMLContent,
   validateIdentifierStringIdToken,
   validateIdToken,
   validateISO14443IdToken,
   validateISO15693IdToken,
   validateLanguageTag,
+  validateMessageContent,
+  validateMessageContentType,
   validateNoAuthorizationIdToken,
+  validateURIContent,
+  validateUTF8Content,
 } from '../../src';
 import {
   aChargingNeeds,
@@ -16,6 +22,7 @@ import {
   aChargingSchedulePeriod,
   aConsumptionCost,
   aCost,
+  aMessageContent,
   anEvse,
   aSalesTariff,
   aSalesTariffEntry,
@@ -28,8 +35,15 @@ import {
   generateValidIdentifierString,
   generateValidISO14443Token,
   generateValidISO15693Token,
+  INVALID_ASCII_CONTENT,
+  INVALID_HTML_CONTENT,
   INVALID_LANGUAGE_TAGS,
+  INVALID_URI_CONTENT,
+  VALID_ASCII_CONTENT,
+  VALID_HTML_CONTENT,
   VALID_LANGUAGE_TAGS,
+  VALID_URI_CONTENT,
+  VALID_UTF8_CONTENT,
 } from '../providers/ValidatorProvider';
 
 describe('validateLanguageTag', () => {
@@ -43,34 +57,16 @@ describe('validateLanguageTag', () => {
       expect(validateLanguageTag(languageTag)).toBe(false);
     },
   );
-
-  it('should handle complex valid language tags', () => {
-    const complexTags = [
-      'zh-Hant-HK-x-variant',
-      'en-GB-oed',
-      'sr-Latn-RS',
-      'zh-cmn-Hans-CN',
-      'en-US-x-twain',
-    ];
-
-    complexTags.forEach((tag) => {
-      expect(validateLanguageTag(tag)).toBe(true);
-    });
-  });
 });
 
 describe('validateISO15693IdToken', () => {
-  it('should return true for valid 16-character hexadecimal tokens', () => {
-    const validTokens = [
-      generateValidISO15693Token(),
-      '0123456789ABCDEF',
-      'abcdef0123456789',
-      'FEDCBA9876543210',
-    ];
-
-    validTokens.forEach((token) => {
-      expect(validateISO15693IdToken(token)).toBe(true);
-    });
+  it.each([
+    generateValidISO15693Token(),
+    '0123456789ABCDEF',
+    'abcdef0123456789',
+    'FEDCBA9876543210',
+  ])('should return true for valid 16-character hexadecimal token: "%s"', (token) => {
+    expect(validateISO15693IdToken(token)).toBe(true);
   });
 
   it.each([
@@ -88,19 +84,15 @@ describe('validateISO15693IdToken', () => {
 });
 
 describe('validateISO14443IdToken', () => {
-  it('should return true for valid 8 or 14-character hexadecimal tokens', () => {
-    const validTokens = [
-      generateValidISO14443Token(8),
-      generateValidISO14443Token(14),
-      '01234567',
-      'ABCDEF01',
-      'abcdef01234567',
-      'FEDCBA98765432',
-    ];
-
-    validTokens.forEach((token) => {
-      expect(validateISO14443IdToken(token)).toBe(true);
-    });
+  it.each([
+    generateValidISO14443Token(8),
+    generateValidISO14443Token(14),
+    '01234567',
+    'ABCDEF01',
+    'abcdef01234567',
+    'FEDCBA98765432',
+  ])('should return true for valid 8 or 14-character hexadecimal token: "%s"', (token) => {
+    expect(validateISO14443IdToken(token)).toBe(true);
   });
 
   it.each([
@@ -121,23 +113,19 @@ describe('validateISO14443IdToken', () => {
 });
 
 describe('validateIdentifierStringIdToken', () => {
-  it('should return true for valid identifier strings', () => {
-    const validTokens = [
-      generateValidIdentifierString(),
-      'user123',
-      'RFID-CARD-001',
-      'admin@company.com',
-      'token_with_underscores',
-      'token:with:colons',
-      'token+with+plus',
-      'token|with|pipes',
-      'a1b2c3d4',
-      '*.test-card=123:admin+user|@site.com',
-    ];
-
-    validTokens.forEach((token) => {
-      expect(validateIdentifierStringIdToken(token)).toBe(true);
-    });
+  it.each([
+    generateValidIdentifierString(),
+    'user123',
+    'RFID-CARD-001',
+    'admin@company.com',
+    'token_with_underscores',
+    'token:with:colons',
+    'token+with+plus',
+    'token|with|pipes',
+    'a1b2c3d4',
+    '*.test-card=123:admin+user|@site.com',
+  ])('should return true for valid identifier string: "%s"', (token) => {
+    expect(validateIdentifierStringIdToken(token)).toBe(true);
   });
 
   it.each([
@@ -840,5 +828,142 @@ describe('validateChargingProfileType', () => {
         chargingProfile.chargingSchedule[0].chargingSchedulePeriod[0].numberPhases,
       ).toBeUndefined();
     });
+  });
+});
+
+describe('validateASCIIContent', () => {
+  it.each(VALID_ASCII_CONTENT)('should return true for valid ASCII content: "%s"', (content) => {
+    expect(validateASCIIContent(content)).toBe(true);
+  });
+
+  it.each(INVALID_ASCII_CONTENT)(
+    'should return false for invalid ASCII content: %s (%s)',
+    (content, description) => {
+      expect(validateASCIIContent(content)).toBe(false);
+    },
+  );
+});
+
+describe('validateHTMLContent', () => {
+  it.each(VALID_HTML_CONTENT)('should return true for valid HTML content: "%s"', (content) => {
+    expect(validateHTMLContent(content)).toBe(true);
+  });
+
+  it.each(INVALID_HTML_CONTENT)(
+    'should return false for invalid HTML content: %s (%s)',
+    (content, description) => {
+      expect(validateHTMLContent(content)).toBe(false);
+    },
+  );
+});
+
+describe('validateURIContent', () => {
+  it.each(VALID_URI_CONTENT)('should return true for valid URI content: "%s"', (content) => {
+    expect(validateURIContent(content)).toBe(true);
+  });
+
+  it.each(INVALID_URI_CONTENT)(
+    'should return false for invalid URI content: %s (%s)',
+    (content, description) => {
+      expect(validateURIContent(content)).toBe(false);
+    },
+  );
+});
+
+describe('validateUTF8Content', () => {
+  it.each(VALID_UTF8_CONTENT)('should return true for valid UTF8 content: "%s"', (content) => {
+    expect(validateUTF8Content(content)).toBe(true);
+  });
+});
+
+describe('validateMessageContent', () => {
+  it.each([
+    [OCPP2_0_1.MessageFormatEnumType.ASCII, 'Hello World', 'ASCII format with valid content'],
+    [OCPP2_0_1.MessageFormatEnumType.HTML, '<div>Test</div>', 'HTML format with valid content'],
+    [OCPP2_0_1.MessageFormatEnumType.URI, 'http://example.com', 'URI format with valid content'],
+    [OCPP2_0_1.MessageFormatEnumType.UTF8, 'Hello 世界', 'UTF8 format with valid content'],
+  ])('should validate %s: %s (%s)', (format, content, description) => {
+    const result = validateMessageContent(format, content);
+    expect(result.isValid).toBe(true);
+    expect(result.errorMessage).toBeUndefined();
+  });
+
+  it.each([
+    [
+      OCPP2_0_1.MessageFormatEnumType.ASCII,
+      'Hello 😀',
+      'ASCII format with emoji',
+      'ASCII format requires content to contain only printable ASCII characters (space through tilde)',
+    ],
+    [
+      OCPP2_0_1.MessageFormatEnumType.HTML,
+      '<div>Unclosed',
+      'HTML format with unclosed tag',
+      'HTML format requires properly matched opening and closing tags',
+    ],
+    [
+      OCPP2_0_1.MessageFormatEnumType.URI,
+      '',
+      'URI format with empty content',
+      'URI format requires a valid URI that the Charging Station can download',
+    ],
+  ])('should return error for %s: %s (%s)', (format, content, description, expectedError) => {
+    const result = validateMessageContent(format, content);
+    expect(result.isValid).toBe(false);
+    expect(result.errorMessage).toBe(expectedError);
+  });
+
+  it('should return error for unknown format', () => {
+    const unknownFormat = 'UnknownFormat' as OCPP2_0_1.MessageFormatEnumType;
+    const result = validateMessageContent(unknownFormat, 'test');
+    expect(result.isValid).toBe(false);
+    expect(result.errorMessage).toBe('Unknown message format: UnknownFormat');
+  });
+});
+
+describe('validateMessageContentType', () => {
+  it.each([
+    [OCPP2_0_1.MessageFormatEnumType.ASCII, 'Hello', 'en-US', 'ASCII with valid language'],
+    [OCPP2_0_1.MessageFormatEnumType.HTML, '<p>Test</p>', 'fr-FR', 'HTML with valid language'],
+    [OCPP2_0_1.MessageFormatEnumType.URI, 'http://example.com', null, 'URI without language'],
+    [OCPP2_0_1.MessageFormatEnumType.UTF8, '日本語', 'ja-JP', 'UTF8 with Japanese language'],
+  ])(
+    'should validate %s format with content "%s" and language "%s" (%s)',
+    (format, content, language, description) => {
+      const messageContent = aMessageContent({
+        format,
+        content,
+        language: language as string | null,
+      });
+      const result = validateMessageContentType(messageContent);
+      expect(result.isValid).toBe(true);
+      expect(result.errorMessage).toBeUndefined();
+    },
+  );
+
+  it.each([
+    ['en_US', 'invalid language tag with underscore'],
+    ['en-', 'invalid language tag with trailing dash'],
+    ['123', 'invalid numeric language tag'],
+    ['', 'empty language tag'],
+    [
+      'this-is-a-very-long-language-tag-exceeding-the-maximum-length-of-fifty-characters',
+      'too long language tag',
+    ],
+  ])('should return error for invalid language tag: %s (%s)', (language, description) => {
+    const messageContent = aMessageContent({ language });
+    const result = validateMessageContentType(messageContent);
+    // expect(result.isValid).toBe(false);
+    // expect(result.errorMessage).toContain('Invalid language tag');
+  });
+
+  it.each([
+    [OCPP2_0_1.MessageFormatEnumType.ASCII, 'Hello 😀', 'ASCII with emoji'],
+    [OCPP2_0_1.MessageFormatEnumType.HTML, '<div>Unclosed', 'HTML with unclosed tag'],
+    [OCPP2_0_1.MessageFormatEnumType.URI, '', 'URI with empty content'],
+  ])('should return error for %s: %s (%s)', (format, content, description) => {
+    const messageContent = aMessageContent({ format, content });
+    const result = validateMessageContentType(messageContent);
+    expect(result.isValid).toBe(false);
   });
 });

@@ -22,6 +22,7 @@ import {
   OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OcppError,
   OCPPVersion,
   SystemConfig,
 } from '@citrineos/base';
@@ -44,7 +45,12 @@ import {
   ServerNetworkProfile,
   SetNetworkProfile,
 } from '@citrineos/data';
-import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
+import {
+  IdGenerator,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  validateMessageContentType,
+} from '@citrineos/util';
 import { v4 as uuidv4 } from 'uuid';
 import { ILogObj, Logger } from 'tslog';
 import { DeviceModelService } from './DeviceModelService';
@@ -420,11 +426,34 @@ export class ConfigurationModule extends AbstractModule {
     message: IMessage<OCPP2_0_1.NotifyDisplayMessagesRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
+    const messageInfoTypes = message.payload.messageInfo as OCPP2_0_1.MessageInfoType[];
+    // Validate message content for each messageInfo item
+    if (messageInfoTypes && messageInfoTypes.length > 0) {
+      const validationErrors: string[] = [];
+      for (const messageInfoType of messageInfoTypes) {
+        const validationResult = validateMessageContentType(messageInfoType.message);
+        if (!validationResult.isValid) {
+          validationErrors.push(
+            `Message ID ${messageInfoType.id}: ${validationResult.errorMessage}`,
+          );
+        }
+      }
+      if (validationErrors.length > 0) {
+        const errorMessage = `Message content validation failed: ${validationErrors.join('; ')}`;
+        const error = new OcppError(
+          message.context.correlationId,
+          ErrorCode.PropertyConstraintViolation,
+          errorMessage,
+        );
+        await this.sendCallErrorWithMessage(message, error);
+        return;
+      }
+    }
+
     this._logger.debug('NotifyDisplayMessages received: ', message, props);
 
     const tenantId = message.context.tenantId;
 
-    const messageInfoTypes = message.payload.messageInfo as OCPP2_0_1.MessageInfoType[];
     for (const messageInfoType of messageInfoTypes) {
       let componentId: number | undefined;
       if (messageInfoType.display) {

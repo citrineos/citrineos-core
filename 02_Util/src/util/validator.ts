@@ -20,6 +20,10 @@ import { ILogObj, Logger } from 'tslog';
  * @returns {boolean} true if the languageTag is an RFC-5646 tag
  */
 export function validateLanguageTag(languageTag: string): boolean {
+  if (!languageTag.trim()) {
+    console.log('Empty language tag');
+    return false;
+  }
   return /^((?:(en-GB-oed|i-ami|i-bnn|i-default|i-enochian|i-hak|i-klingon|i-lux|i-mingo|i-navajo|i-pwn|i-tao|i-tay|i-tsu|sgn-BE-FR|sgn-BE-NL|sgn-CH-DE)|(art-lojban|cel-gaulish|no-bok|no-nyn|zh-guoyu|zh-hakka|zh-min|zh-min-nan|zh-xiang))|((?:([A-Za-z]{2,3}(-(?:[A-Za-z]{3}(-[A-Za-z]{3}){0,2}))?)|[A-Za-z]{4}|[A-Za-z]{5,8})(-(?:[A-Za-z]{4}))?(-(?:[A-Za-z]{2}|[0-9]{3}))?(-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*(-(?:[0-9A-WY-Za-wy-z](-[A-Za-z0-9]{2,8})+))*(-(?:x(-[A-Za-z0-9]{1,8})+))?)|(?:x(-[A-Za-z0-9]{1,8})+))$/.test(
     languageTag,
   );
@@ -214,9 +218,9 @@ export function validateNoAuthorizationIdToken(idToken: string): boolean {
 }
 
 /**
- * ID token validation result
+ * Generic validation result for all validators
  */
-export interface IdTokenValidationResult {
+export interface ValidationResult {
   isValid: boolean;
   errorMessage?: string;
 }
@@ -228,7 +232,7 @@ export interface IdTokenValidationResult {
 export function validateIdToken(
   idTokenType: OCPP2_0_1.IdTokenEnumType,
   idToken: string,
-): IdTokenValidationResult {
+): ValidationResult {
   switch (idTokenType) {
     case OCPP2_0_1.IdTokenEnumType.ISO15693:
       if (validateISO15693IdToken(idToken)) {
@@ -303,4 +307,206 @@ export function validateIdToken(
         errorMessage: `Unknown token type: ${idTokenType}`,
       };
   }
+}
+
+/**
+ * Validate ASCII content - only printable ASCII allowed (characters 32-126)
+ * @param content Content string to validate
+ * @returns {boolean} true if content contains only printable ASCII characters
+ */
+export function validateASCIIContent(content: string): boolean {
+  if (!content) return true; // Empty content is valid
+  // Printable ASCII: space (32) through tilde (126)
+  return /^[\x20-\x7E]*$/.test(content);
+}
+
+/**
+ * Validate HTML content - checks for basic HTML structure validity
+ * @param content Content string to validate
+ * @returns {boolean} true if content appears to be valid HTML
+ */
+export function validateHTMLContent(content: string): boolean {
+  if (!content) return true; // Empty content is valid
+
+  // Basic HTML validation: check for properly matched tags
+  // This is a simplified check - real HTML validation would require a full parser
+  const tagPattern = /<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g;
+  const tags: string[] = [];
+  let hasTags = false;
+  let match;
+
+  while ((match = tagPattern.exec(content)) !== null) {
+    const tag = match[0];
+    const tagName = match[1].toLowerCase();
+    hasTags = true;
+
+    // Skip self-closing tags and void elements
+    const voidElements = [
+      'area',
+      'base',
+      'br',
+      'col',
+      'embed',
+      'hr',
+      'img',
+      'input',
+      'link',
+      'meta',
+      'param',
+      'source',
+      'track',
+      'wbr',
+    ];
+    if (tag.endsWith('/>') || voidElements.includes(tagName)) {
+      continue;
+    }
+
+    if (tag.startsWith('</')) {
+      // Closing tag
+      if (tags.length === 0 || tags[tags.length - 1] !== tagName) {
+        return false; // Mismatched closing tag
+      }
+      tags.pop();
+    } else {
+      // Opening tag
+      tags.push(tagName);
+    }
+  }
+
+  if (!hasTags) return false; // No HTML tags found
+  // All tags should be closed
+  return tags.length === 0;
+}
+
+/**
+ * Validate URI content - checks if content is a valid URI
+ * @param content Content string to validate
+ * @returns {boolean} true if content is a valid URI
+ */
+export function validateURIContent(content: string): boolean {
+  if (!content) return false; // Empty URI is not valid
+
+  try {
+    // Try to parse as URL - will throw if invalid
+    new URL(content);
+    return true;
+  } catch {
+    // If absolute URL parsing fails, check if it's a valid relative URI
+    // A relative URI should at least not contain invalid characters
+    // and should follow basic URI syntax
+    const uriPattern = /^[a-zA-Z][a-zA-Z0-9+.-]*:|^\/|^[a-zA-Z0-9._~:/?#[\]@!$&'()*+,;=-]+$/;
+    return uriPattern.test(content);
+  }
+}
+
+/**
+ * Validate UTF-8 content - in JavaScript, strings are already UTF-16 encoded
+ * This function checks for invalid surrogate pairs and control characters
+ * @param content Content string to validate
+ * @returns {boolean} true if content is valid UTF-8
+ */
+export function validateUTF8Content(content: string): boolean {
+  if (!content) return true; // Empty content is valid
+
+  // Check for unpaired surrogate characters which indicate invalid UTF-16/UTF-8
+  for (let i = 0; i < content.length; i++) {
+    const charCode = content.charCodeAt(i);
+
+    // Check for high surrogate without low surrogate
+    if (charCode >= 0xd800 && charCode <= 0xdbff) {
+      if (i + 1 >= content.length) {
+        return false; // High surrogate at end of string
+      }
+      const nextCharCode = content.charCodeAt(i + 1);
+      if (nextCharCode < 0xdc00 || nextCharCode > 0xdfff) {
+        return false; // High surrogate not followed by low surrogate
+      }
+      i++; // Skip the low surrogate
+    }
+    // Check for low surrogate without high surrogate
+    else if (charCode >= 0xdc00 && charCode <= 0xdfff) {
+      return false; // Low surrogate without preceding high surrogate
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Message content validator - routes to appropriate validator based on format
+ * Returns validation result with detailed error message if invalid
+ * @param format Message format type (ASCII, HTML, URI, UTF8)
+ * @param content Message content to validate
+ * @returns {ValidationResult} Validation result with error message if invalid
+ */
+export function validateMessageContent(
+  format: OCPP2_0_1.MessageFormatEnumType,
+  content: string,
+): ValidationResult {
+  switch (format) {
+    case OCPP2_0_1.MessageFormatEnumType.ASCII:
+      if (validateASCIIContent(content)) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage:
+          'ASCII format requires content to contain only printable ASCII characters (space through tilde)',
+      };
+
+    case OCPP2_0_1.MessageFormatEnumType.HTML:
+      if (validateHTMLContent(content)) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage: 'HTML format requires properly matched opening and closing tags',
+      };
+
+    case OCPP2_0_1.MessageFormatEnumType.URI:
+      if (validateURIContent(content)) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage: 'URI format requires a valid URI that the Charging Station can download',
+      };
+
+    case OCPP2_0_1.MessageFormatEnumType.UTF8:
+      if (validateUTF8Content(content)) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage:
+          'UTF8 format requires valid UTF-8 encoded content without unpaired surrogate characters',
+      };
+
+    default:
+      return {
+        isValid: false,
+        errorMessage: `Unknown message format: ${format}`,
+      };
+  }
+}
+
+/**
+ * Validate a complete MessageContentType object
+ * Convenience function that validates both language tag (if present) and content against format
+ * @param messageContent MessageContentType object to validate
+ * @returns {ValidationResult} Validation result with error message if invalid
+ */
+export function validateMessageContentType(
+  messageContent: OCPP2_0_1.MessageContentType,
+): ValidationResult {
+  // Validate language tag if present
+  if (messageContent.language && !validateLanguageTag(messageContent.language)) {
+    return {
+      isValid: false,
+      errorMessage: `Invalid language tag: ${messageContent.language}. Must be an RFC-5646 language tag (e.g., "en-US")`,
+    };
+  }
+
+  // Validate content against format
+  return validateMessageContent(messageContent.format, messageContent.content);
 }

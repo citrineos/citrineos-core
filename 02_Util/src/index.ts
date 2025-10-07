@@ -29,7 +29,13 @@ export {
   validateISO14443IdToken,
   validateIdentifierStringIdToken,
   validateNoAuthorizationIdToken,
-  IdTokenValidationResult,
+  ValidationResult,
+  validateASCIIContent,
+  validateHTMLContent,
+  validateURIContent,
+  validateUTF8Content,
+  validateMessageContent,
+  validateMessageContentType,
 } from './util/validator';
 export { IdGenerator } from './util/idGenerator';
 export { isValidPassword, generatePassword } from './security/authentication';
