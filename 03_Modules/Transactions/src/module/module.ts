@@ -63,27 +63,17 @@ export class TransactionsModule extends AbstractModule {
   _requests: CallAction[] = [];
 
   _responses: CallAction[] = [];
-  protected _transactionEventRepository: ITransactionEventRepository;
-  protected _authorizeRepository: IAuthorizationRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
   protected _componentRepository: CrudRepository<Component>;
   protected _locationRepository: ILocationRepository;
-  protected _tariffRepository: ITariffRepository;
   protected _reservationRepository: IReservationRepository;
-  protected _ocppMessageRepository: IOCPPMessageRepository;
-
   protected _transactionService: TransactionService;
   protected _statusNotificationService: StatusNotificationService;
-
   protected _fileStorage: IFileStorage;
-
   private readonly _authorizers: IAuthorizer[];
   private readonly _realTimeAuthorizer: IAuthorizer;
-
   private readonly _signedMeterValuesUtil: SignedMeterValuesUtil;
   private _costNotifier: CostNotifier;
   private _costCalculator: CostCalculator;
-
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
   private readonly _costUpdatedInterval: number | undefined;
 
@@ -244,21 +234,31 @@ export class TransactionsModule extends AbstractModule {
     );
   }
 
+  protected _transactionEventRepository: ITransactionEventRepository;
+
   get transactionEventRepository(): ITransactionEventRepository {
     return this._transactionEventRepository;
   }
+
+  protected _authorizeRepository: IAuthorizationRepository;
 
   get authorizeRepository(): IAuthorizationRepository {
     return this._authorizeRepository;
   }
 
+  protected _deviceModelRepository: IDeviceModelRepository;
+
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
   }
 
+  protected _tariffRepository: ITariffRepository;
+
   get tariffRepository(): ITariffRepository {
     return this._tariffRepository;
   }
+
+  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   get ocppMessageRepository(): IOCPPMessageRepository {
     return this._ocppMessageRepository;
@@ -277,11 +277,52 @@ export class TransactionsModule extends AbstractModule {
     const tenantId: number = message.context.tenantId;
     const stationId: string = message.context.stationId;
 
-    await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
-      tenantId,
-      message.payload,
-      stationId,
-    );
+    try {
+      await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
+        tenantId,
+        message.payload,
+        stationId,
+      );
+    } catch (error) {
+      if ((error as any).name === 'SequelizeForeignKeyConstraintError') {
+        const constraintError = error as any;
+        // Check which constraint failed to provide specific error messages
+        if (constraintError.parent?.constraint?.includes('station')) {
+          const ocppError = new OcppError(
+            message.context.correlationId,
+            ErrorCode.PropertyConstraintViolation,
+            `Charging station ${stationId} does not exist.`,
+            { stationId },
+          );
+          await this.sendCallErrorWithMessage(message, ocppError);
+          return;
+        }
+
+        if (constraintError.parent?.constraint?.includes('evse')) {
+          const ocppError = new OcppError(
+            message.context.correlationId,
+            ErrorCode.PropertyConstraintViolation,
+            `EVSE ${message.payload.evse?.id || 'unknown'} cannot be created for non-existent charging station ${stationId}.`,
+            { stationId, evseId: message.payload.evse?.id },
+          );
+          await this.sendCallErrorWithMessage(message, ocppError);
+          return;
+        }
+
+        // Generic foreign key constraint error
+        const ocppError = new OcppError(
+          message.context.correlationId,
+          ErrorCode.PropertyConstraintViolation,
+          'Referenced entity does not exist.',
+          { stationId },
+        );
+        await this.sendCallErrorWithMessage(message, ocppError);
+        return;
+      }
+
+      // Re-throw unexpected errors
+      throw error;
+    }
 
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
