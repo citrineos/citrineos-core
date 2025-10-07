@@ -124,7 +124,8 @@
         },
         "value": {
           "description": "Value for threshold or delta monitoring.\r\nFor Periodic or PeriodicClockAligned this is the interval in seconds.\r\n",
-          "type": "number"
+          "type": "number",
+          "multipleOf": 0.000001
         },
         "type": {
           "$ref": "#/definitions/MonitorEnumType"
