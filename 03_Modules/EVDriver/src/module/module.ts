@@ -287,8 +287,8 @@ export class EVDriverModule extends AbstractModule {
       const messageId = message.context.correlationId;
       const error = new OcppError(
         messageId,
-        ErrorCode.FormatViolation,
-        tokenValidation.errorMessage || 'Invalid token format',
+        ErrorCode.PropertyConstraintViolation,
+        tokenValidation.errorMessage || 'Invalid token value for specified type',
       );
       response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.Invalid;
       this._logger.error('Token validation failed:', tokenValidation.errorMessage);
