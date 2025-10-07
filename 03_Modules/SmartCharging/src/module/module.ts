@@ -447,11 +447,14 @@ export class SmartChargingModule extends AbstractModule {
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ClearedChargingLimit)
-  protected _handleClearedChargingLimit(
-    message: IMessage<OCPP2_0_1.ClearedChargingLimitResponse>,
+  protected async _handleClearedChargingLimit(
+    message: IMessage<OCPP2_0_1.ClearedChargingLimitRequest>,
     props?: HandlerProperties,
-  ): void {
-    this._logger.debug('ClearedChargingLimit response received:', message, props);
+  ): Promise<void> {
+    this._logger.debug('ClearedChargingLimit request received:', message, props);
+
+    const response: OCPP2_0_1.ClearedChargingLimitResponse = {};
+    await this.sendCallResultWithMessage(message, response);
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetCompositeSchedule)
