@@ -7,6 +7,7 @@ import {
   AsHandler,
   BootstrapConfig,
   CallAction,
+  ErrorCode,
   EventGroup,
   HandlerProperties,
   ICache,
@@ -15,6 +16,7 @@ import {
   IMessageSender,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OcppError,
   OCPPVersion,
   SystemConfig,
 } from '@citrineos/base';
@@ -194,40 +196,55 @@ export class ReportingModule extends AbstractModule {
     this._logger.info('NotifyReport received:', message, props);
     const timestamp = message.payload.generatedAt;
 
-    for (const reportDataType of message.payload.reportData ? message.payload.reportData : []) {
-      // To keep consistency with VariableAttributeType defined in OCPP 2.0.1:
-      // mutability: Default is ReadWrite when omitted.
-      // if it is not present, we set it to ReadWrite
-      for (const variableAttr of reportDataType.variableAttribute) {
-        if (!variableAttr.mutability) {
-          variableAttr.mutability = OCPP2_0_1.MutabilityEnumType.ReadWrite;
+    try {
+      for (const reportDataType of message.payload.reportData ? message.payload.reportData : []) {
+        // To keep consistency with VariableAttributeType defined in OCPP 2.0.1:
+        // mutability: Default is ReadWrite when omitted.
+        // if it is not present, we set it to ReadWrite
+        for (const variableAttr of reportDataType.variableAttribute) {
+          if (!variableAttr.mutability) {
+            variableAttr.mutability = OCPP2_0_1.MutabilityEnumType.ReadWrite;
+          }
+        }
+        const variableAttributes =
+          await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+            message.context.tenantId,
+            reportDataType,
+            message.context.stationId,
+            timestamp,
+          );
+        for (const variableAttribute of variableAttributes) {
+          // Reload is necessary because in createOrUpdateDeviceModelByStationId does not do eager loading
+          await variableAttribute.reload({
+            include: [Component, Variable],
+          });
+          await this._deviceModelRepository.updateResultByStationId(
+            message.context.tenantId,
+            {
+              attributeType: variableAttribute.type,
+              attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
+              attributeStatusInfo: { reasonCode: message.action },
+              component: variableAttribute.component,
+              variable: variableAttribute.variable,
+            },
+            message.context.stationId,
+            timestamp,
+          );
         }
       }
-      const variableAttributes =
-        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-          message.context.tenantId,
-          reportDataType,
-          message.context.stationId,
-          timestamp,
+    } catch (error) {
+      if ((error as any).name === 'SequelizeForeignKeyConstraintError') {
+        await this.sendCallErrorWithMessage(
+          message,
+          new OcppError(
+            message.context.correlationId,
+            ErrorCode.PropertyConstraintViolation,
+            'Referenced entity does not exist.',
+          ),
         );
-      for (const variableAttribute of variableAttributes) {
-        // Reload is necessary because in createOrUpdateDeviceModelByStationId does not do eager loading
-        await variableAttribute.reload({
-          include: [Component, Variable],
-        });
-        await this._deviceModelRepository.updateResultByStationId(
-          message.context.tenantId,
-          {
-            attributeType: variableAttribute.type,
-            attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
-            attributeStatusInfo: { reasonCode: message.action },
-            component: variableAttribute.component,
-            variable: variableAttribute.variable,
-          },
-          message.context.stationId,
-          timestamp,
-        );
+        return;
       }
+      throw error;
     }
 
     if (!message.payload.tbc) {
