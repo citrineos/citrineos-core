@@ -719,7 +719,7 @@ export class SequelizeTransactionEventRepository
 
       // Return the new transaction with StartTransaction and IdToken
       await newTransaction.reload({
-        include: [{ model: StartTransaction, include: [EvseType] }],
+        include: [{ model: StartTransaction }],
         transaction: sequelizeTransaction,
       });
       this.transaction.emit('created', [newTransaction]);
