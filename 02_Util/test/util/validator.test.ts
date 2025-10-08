@@ -12,6 +12,7 @@ import {
   validateMessageContent,
   validateMessageContentType,
   validateNoAuthorizationIdToken,
+  validatePEMEncodedCSR,
   validateURIContent,
   validateUTF8Content,
 } from '../../src';
@@ -965,5 +966,98 @@ describe('validateMessageContentType', () => {
     const messageContent = aMessageContent({ format, content });
     const result = validateMessageContentType(messageContent);
     expect(result.isValid).toBe(false);
+  });
+});
+
+describe('validatePEMEncodedCSR', () => {
+  const validCSR = `-----BEGIN CERTIFICATE REQUEST-----
+MIICvDCCAaQCAQAwdzELMAkGA1UEBhMCVVMxDTALBgNVBAgMBFRlc3QxDTALBgNV
+BAcMBFRlc3QxDTALBgNVBAoMBFRlc3QxDTALBgNVBAsMBFRlc3QxDTALBgNVBAMM
+BFRlc3QxGDAWBgkqhkiG9w0BCQEWCXRlc3RAdGVzdDCCASIwDQYJKoZIhvcNAQEB
+BQADggEPADCCAQoCggEBAL
+-----END CERTIFICATE REQUEST-----`;
+
+  describe('valid CSR', () => {
+    it('should return valid for properly formatted PEM-encoded CSR', () => {
+      const result = validatePEMEncodedCSR(validCSR);
+      expect(result.isValid).toBe(true);
+      expect(result.errorMessage).toBeUndefined();
+    });
+
+    it('should accept CSR with newlines removed', () => {
+      const csrWithoutNewlines = validCSR.replace(/\n/g, '');
+      const result = validatePEMEncodedCSR(csrWithoutNewlines);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should accept CSR with extra whitespace', () => {
+      const csrWithWhitespace = `-----BEGIN CERTIFICATE REQUEST-----
+      MIICvDCCAaQCAQAwdzELMAkGA1UEBhMCVVMxDTALBgNVBAgMBFRlc3QxDTALBgNV
+      -----END CERTIFICATE REQUEST-----`;
+      const result = validatePEMEncodedCSR(csrWithWhitespace);
+      expect(result.isValid).toBe(true);
+    });
+  });
+
+  describe('invalid CSR', () => {
+    it('should return error for empty string', () => {
+      const result = validatePEMEncodedCSR('');
+      expect(result.isValid).toBe(false);
+      expect(result.errorMessage).toBe('CSR cannot be empty');
+    });
+
+    it('should return error for missing BEGIN header', () => {
+      const csr = `MIICvDCCAaQCAQAwdzELMAkGA1UEBhMCVVMxDTALBgNVBAgMBFRlc3Q
+-----END CERTIFICATE REQUEST-----`;
+      const result = validatePEMEncodedCSR(csr);
+      expect(result.isValid).toBe(false);
+      expect(result.errorMessage).toBe('CSR must contain BEGIN CERTIFICATE REQUEST header');
+    });
+
+    it('should return error for missing END header', () => {
+      const csr = `-----BEGIN CERTIFICATE REQUEST-----
+MIICvDCCAaQCAQAwdzELMAkGA1UEBhMCVVMxDTALBgNVBAgMBFRlc3Q`;
+      const result = validatePEMEncodedCSR(csr);
+      expect(result.isValid).toBe(false);
+      expect(result.errorMessage).toBe('CSR must contain END CERTIFICATE REQUEST header');
+    });
+
+    it('should return error for headers in wrong order', () => {
+      const csr = `-----END CERTIFICATE REQUEST-----
+MIICvDCCAaQCAQAwdzELMAkGA1UEBhMCVVMxDTALBgNVBAgMBFRlc3Q
+-----BEGIN CERTIFICATE REQUEST-----`;
+      const result = validatePEMEncodedCSR(csr);
+      expect(result.isValid).toBe(false);
+      expect(result.errorMessage).toBe('CSR headers are in wrong order');
+    });
+
+    it('should return error for invalid characters in content', () => {
+      const csr = `-----BEGIN CERTIFICATE REQUEST-----
+뇞헀딽덆뙣Ȃ쏦몂븨슴썓벓쥕쑉혩ȫ퐫😀😎
+-----END CERTIFICATE REQUEST-----`;
+      const result = validatePEMEncodedCSR(csr);
+      expect(result.isValid).toBe(false);
+      expect(result.errorMessage).toBe(
+        'CSR content contains invalid characters for base64 encoding',
+      );
+    });
+
+    it('should return error for empty content', () => {
+      const csr = `-----BEGIN CERTIFICATE REQUEST-----
+-----END CERTIFICATE REQUEST-----`;
+      const result = validatePEMEncodedCSR(csr);
+      expect(result.isValid).toBe(false);
+      expect(result.errorMessage).toBe('CSR content is empty');
+    });
+
+    it('should return error for whitespace-only content', () => {
+      const csr = `-----BEGIN CERTIFICATE REQUEST-----
+
+
+-----END CERTIFICATE REQUEST-----`;
+      const result = validatePEMEncodedCSR(csr);
+      expect(result.isValid).toBe(false);
+      expect(result.errorMessage).toBe('CSR content is empty');
+    });
   });
 });

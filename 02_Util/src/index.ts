@@ -36,6 +36,7 @@ export {
   validateUTF8Content,
   validateMessageContent,
   validateMessageContentType,
+  validatePEMEncodedCSR,
 } from './util/validator';
 export { IdGenerator } from './util/idGenerator';
 export { isValidPassword, generatePassword } from './security/authentication';

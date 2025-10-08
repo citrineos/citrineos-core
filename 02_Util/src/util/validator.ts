@@ -510,3 +510,70 @@ export function validateMessageContentType(
   // Validate content against format
   return validateMessageContent(messageContent.format, messageContent.content);
 }
+
+/**
+ * Validate PEM-encoded Certificate Signing Request (CSR)
+ * According to RFC 2986, CSR must be PEM-encoded with proper headers and valid base64 content
+ * @param csr CSR string to validate
+ * @returns {ValidationResult} Validation result with error message if invalid
+ */
+export function validatePEMEncodedCSR(csr: string): ValidationResult {
+  if (!csr || !csr.trim()) {
+    return {
+      isValid: false,
+      errorMessage: 'CSR cannot be empty',
+    };
+  }
+
+  const trimmedCSR = csr.trim();
+
+  // Check for PEM headers
+  const beginHeader = '-----BEGIN CERTIFICATE REQUEST-----';
+  const endHeader = '-----END CERTIFICATE REQUEST-----';
+
+  if (!trimmedCSR.includes(beginHeader)) {
+    return {
+      isValid: false,
+      errorMessage: 'CSR must contain BEGIN CERTIFICATE REQUEST header',
+    };
+  }
+
+  if (!trimmedCSR.includes(endHeader)) {
+    return {
+      isValid: false,
+      errorMessage: 'CSR must contain END CERTIFICATE REQUEST header',
+    };
+  }
+
+  // Extract content between headers
+  const beginIndex = trimmedCSR.indexOf(beginHeader) + beginHeader.length;
+  const endIndex = trimmedCSR.indexOf(endHeader);
+
+  if (beginIndex >= endIndex) {
+    return {
+      isValid: false,
+      errorMessage: 'CSR headers are in wrong order',
+    };
+  }
+
+  const content = trimmedCSR.substring(beginIndex, endIndex).trim();
+
+  // Validate base64 content (allows A-Z, a-z, 0-9, +, /, =, and whitespace)
+  const base64Pattern = /^[A-Za-z0-9+/=\s]+$/;
+  if (!base64Pattern.test(content)) {
+    return {
+      isValid: false,
+      errorMessage: 'CSR content contains invalid characters for base64 encoding',
+    };
+  }
+
+  // Check that there's actual content
+  if (content.replace(/\s/g, '').length === 0) {
+    return {
+      isValid: false,
+      errorMessage: 'CSR content is empty',
+    };
+  }
+
+  return { isValid: true };
+}
