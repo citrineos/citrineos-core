@@ -285,42 +285,16 @@ export class TransactionsModule extends AbstractModule {
       );
     } catch (error) {
       if ((error as any).name === 'SequelizeForeignKeyConstraintError') {
-        const constraintError = error as any;
-        // Check which constraint failed to provide specific error messages
-        if (constraintError.parent?.constraint?.includes('station')) {
-          const ocppError = new OcppError(
+        await this.sendCallErrorWithMessage(
+          message,
+          new OcppError(
             message.context.correlationId,
             ErrorCode.PropertyConstraintViolation,
-            `Charging station ${stationId} does not exist.`,
-            { stationId },
-          );
-          await this.sendCallErrorWithMessage(message, ocppError);
-          return;
-        }
-
-        if (constraintError.parent?.constraint?.includes('evse')) {
-          const ocppError = new OcppError(
-            message.context.correlationId,
-            ErrorCode.PropertyConstraintViolation,
-            `EVSE ${message.payload.evse?.id || 'unknown'} cannot be created for non-existent charging station ${stationId}.`,
-            { stationId, evseId: message.payload.evse?.id },
-          );
-          await this.sendCallErrorWithMessage(message, ocppError);
-          return;
-        }
-
-        // Generic foreign key constraint error
-        const ocppError = new OcppError(
-          message.context.correlationId,
-          ErrorCode.PropertyConstraintViolation,
-          'Referenced entity does not exist.',
-          { stationId },
+            'Referenced entity does not exist.',
+          ),
         );
-        await this.sendCallErrorWithMessage(message, ocppError);
         return;
       }
-
-      // Re-throw unexpected errors
       throw error;
     }
 
@@ -653,7 +627,14 @@ export class TransactionsModule extends AbstractModule {
           );
         response.transactionId = parseInt(newTransaction.transactionId);
       } catch (error) {
-        this._logger.error(`Failed to create transaction for idTag ${request.idTag}`, error);
+        const errorMessage = (error as Error).message || '';
+        if (errorMessage.includes('Charging station') && errorMessage.includes('does not exist')) {
+          this._logger.error(
+            `Charging station ${stationId} does not exist for idTag ${request.idTag}`,
+          );
+        } else {
+          this._logger.error(`Failed to create transaction for idTag ${request.idTag}`, error);
+        }
         response.idTagInfo = {
           status: OCPP1_6.StartTransactionResponseStatus.Invalid,
         };
