@@ -65,19 +65,8 @@ export class ConfigurationModule extends AbstractModule {
   _requests: CallAction[] = [];
 
   _responses: CallAction[] = [];
-
-  protected _bootRepository: IBootRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
-  protected _messageInfoRepository: IMessageInfoRepository;
-  protected _locationRepository: ILocationRepository;
-  protected _changeConfigurationRepository: IChangeConfigurationRepository;
-  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _bootService: BootNotificationService;
   private _idGenerator: IdGenerator;
-
-  /**
-   * Constructor
-   */
 
   /**
    * This is the constructor function that initializes the {@link ConfigurationModule}.
@@ -175,6 +164,13 @@ export class ConfigurationModule extends AbstractModule {
       idGenerator ||
       new IdGenerator(new SequelizeChargingStationSequenceRepository(config, this._logger));
   }
+
+  protected _bootRepository: IBootRepository;
+  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _messageInfoRepository: IMessageInfoRepository;
+  protected _locationRepository: ILocationRepository;
+  protected _changeConfigurationRepository: IChangeConfigurationRepository;
+  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   get bootRepository(): IBootRepository {
     return this._bootRepository;
@@ -483,6 +479,7 @@ export class ConfigurationModule extends AbstractModule {
   protected async _handleFirmwareStatusNotification(
     message: IMessage<OCPP2_0_1.FirmwareStatusNotificationRequest>,
     props?: HandlerProperties,
+    // TODO: Validate that the condition for: RequestId as Optional. The request id that was provided in the UpdateFirmwareRequest that started this firmware update. This field is mandatory, unless the message was triggered by a TriggerMessageRequest AND there is no firmware update ongoing.
   ): Promise<void> {
     this._logger.debug('FirmwareStatusNotification received:', message, props);
 
