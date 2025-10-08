@@ -257,15 +257,36 @@ class ModuleService {
     this._server.get('/health', async () => ({ status: 'healthy' }));
 
     // Create Ajv JSON schema validator instance
+
     this._ajv =
       ajv ||
       new Ajv({
-        removeAdditional: 'all',
+        removeAdditional: 'failing', // Remove invalid additional properties but keep valid ones
         useDefaults: true,
-        coerceTypes: 'array',
         strict: false,
+        strictNumbers: true,
+        strictRequired: true,
+        validateFormats: true,
+        allErrors: true, // Report all validation errors
       });
-    addFormats(this._ajv, { mode: 'fast', formats: ['date-time'] });
+
+    // Add custom keywords for OCPP schema metadata
+    this._ajv.addKeyword({
+      keyword: 'comment',
+      compile: () => () => true,
+    });
+
+    this._ajv.addKeyword({
+      keyword: 'javaType',
+      compile: () => () => true,
+    });
+
+    this._ajv.addKeyword({
+      keyword: 'tsEnumNames',
+      compile: () => () => true,
+    });
+
+    addFormats(this._ajv, { mode: 'fast', formats: ['date-time', 'uri'] });
 
     // Initialize parent logger
     this._logger = new Logger<ILogObj>({

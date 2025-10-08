@@ -294,15 +294,35 @@ export class CitrineOSServer {
   }
 
   private initAjv(ajv?: Ajv) {
-    return (
+    const ajvInstance =
       ajv ||
       new Ajv({
-        removeAdditional: 'all',
+        removeAdditional: 'failing', // Remove invalid additional properties but keep valid ones
         useDefaults: true,
-        coerceTypes: 'array',
         strict: false,
-      })
-    );
+        strictNumbers: true,
+        strictRequired: true,
+        validateFormats: true,
+        allErrors: true, // Report all validation errors
+      });
+
+    // Add custom keywords for OCPP schema metadata
+    ajvInstance.addKeyword({
+      keyword: 'comment',
+      compile: () => () => true,
+    });
+
+    ajvInstance.addKeyword({
+      keyword: 'javaType',
+      compile: () => () => true,
+    });
+
+    ajvInstance.addKeyword({
+      keyword: 'tsEnumNames',
+      compile: () => () => true,
+    });
+
+    return ajvInstance;
   }
 
   private addAjvFormats() {
