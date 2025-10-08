@@ -500,7 +500,7 @@ export function validateMessageContentType(
   messageContent: OCPP2_0_1.MessageContentType,
 ): ValidationResult {
   // Validate language tag if present
-  if (messageContent.language && !validateLanguageTag(messageContent.language)) {
+  if (messageContent.language != null && !validateLanguageTag(messageContent.language)) {
     return {
       isValid: false,
       errorMessage: `Invalid language tag: ${messageContent.language}. Must be an RFC-5646 language tag (e.g., "en-US")`,
