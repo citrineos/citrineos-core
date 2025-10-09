@@ -14,6 +14,7 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
@@ -23,6 +24,7 @@ import {
 import {
   Component,
   IDeviceModelRepository,
+  IOCPPMessageRepository,
   ISecurityEventRepository,
   IVariableMonitoringRepository,
   sequelize,
@@ -54,14 +56,9 @@ export class ReportingModule extends AbstractModule {
   _requests: CallAction[] = [];
 
   _responses: CallAction[] = [];
-
-  protected _deviceModelRepository: IDeviceModelRepository;
   protected _securityEventRepository: ISecurityEventRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
-
-  /**
-   * Constructor
-   */
+  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   /**
    * This is the constructor function that initializes the {@link ReportingModule}.
@@ -95,6 +92,7 @@ export class ReportingModule extends AbstractModule {
     deviceModelRepository?: IDeviceModelRepository,
     securityEventRepository?: ISecurityEventRepository,
     variableMonitoringRepository?: IVariableMonitoringRepository,
+    ocppMessageRepository?: IOCPPMessageRepository,
   ) {
     super(
       config,
@@ -116,8 +114,16 @@ export class ReportingModule extends AbstractModule {
     this._variableMonitoringRepository =
       variableMonitoringRepository ||
       new sequelize.SequelizeVariableMonitoringRepository(config, this._logger);
+    this._ocppMessageRepository =
+      ocppMessageRepository || new sequelize.SequelizeOCPPMessageRepository(config, this._logger);
     this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
   }
+
+  /**
+   * Constructor
+   */
+
+  protected _deviceModelRepository: IDeviceModelRepository;
 
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
@@ -136,6 +142,19 @@ export class ReportingModule extends AbstractModule {
 
     // TODO: LogStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
 
+    // Validate requestId requirement
+    // requestId is mandatory unless message was triggered by TriggerMessageRequest AND no log upload ongoing
+    if (!message.payload.requestId) {
+      await this.sendCallErrorWithMessage(
+        message,
+        new OcppError(
+          message.context.correlationId,
+          ErrorCode.OccurrenceConstraintViolation,
+          'RequestId is required.',
+        ),
+      );
+      return;
+    }
     // Create response
     const response: OCPP2_0_1.LogStatusNotificationResponse = {};
 
@@ -149,6 +168,36 @@ export class ReportingModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('NotifyCustomerInformation request received:', message, props);
+
+    // Validate requestId was provided in a previous CustomerInformationRequest
+    const requestId = message.payload.requestId;
+    const previousRequest = await this._ocppMessageRepository.readAllByQuery(
+      message.context.tenantId,
+      {
+        where: {
+          tenantId: message.context.tenantId,
+          stationId: message.context.stationId,
+          action: OCPP2_0_1_CallAction.CustomerInformation,
+          message: {
+            requestId: requestId,
+          },
+        },
+        limit: 1,
+      },
+      Namespace.OCPPMessage,
+    );
+
+    if (!previousRequest || previousRequest.length === 0) {
+      await this.sendCallErrorWithMessage(
+        message,
+        new OcppError(
+          message.context.correlationId,
+          ErrorCode.PropertyConstraintViolation,
+          'RequestId was not provided in a CustomerInformationRequest.',
+        ),
+      );
+      return;
+    }
 
     // Create response
     const response: OCPP2_0_1.NotifyCustomerInformationResponse = {};
