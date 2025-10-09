@@ -26,4 +26,6 @@ COPY Caddyfile /etc/caddy/Caddyfile
 ENV NODE_ENV=production
 
 # Start Core (listens on 8080/8081/8082) AND Caddy on 8080
-CMD sh -lc "(cd /app/Server && npm run start &) && caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"
+CMD /bin/sh -lc "caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile \
+  && (node /app/Server/dist/index.js &) \
+  && caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"
