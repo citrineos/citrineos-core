@@ -21,7 +21,7 @@ export interface ILocationDto extends IBaseDto {
   parkingType?: LocationParkingType | null;
   facilities?: LocationFacilityType[] | null;
   openingHours?: LocationHours | null;
-  chargingPool: IChargingStationDto[];
+  chargingPool?: IChargingStationDto[];
 }
 
 export enum LocationDtoProps {

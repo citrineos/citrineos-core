@@ -63,17 +63,27 @@ export class TransactionsModule extends AbstractModule {
   _requests: CallAction[] = [];
 
   _responses: CallAction[] = [];
+  protected _transactionEventRepository: ITransactionEventRepository;
+  protected _authorizeRepository: IAuthorizationRepository;
+  protected _deviceModelRepository: IDeviceModelRepository;
   protected _componentRepository: CrudRepository<Component>;
   protected _locationRepository: ILocationRepository;
+  protected _tariffRepository: ITariffRepository;
   protected _reservationRepository: IReservationRepository;
+  protected _ocppMessageRepository: IOCPPMessageRepository;
+
   protected _transactionService: TransactionService;
   protected _statusNotificationService: StatusNotificationService;
+
   protected _fileStorage: IFileStorage;
+
   private readonly _authorizers: IAuthorizer[];
   private readonly _realTimeAuthorizer: IAuthorizer;
+
   private readonly _signedMeterValuesUtil: SignedMeterValuesUtil;
   private _costNotifier: CostNotifier;
   private _costCalculator: CostCalculator;
+
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
   private readonly _costUpdatedInterval: number | undefined;
 
@@ -234,31 +244,21 @@ export class TransactionsModule extends AbstractModule {
     );
   }
 
-  protected _transactionEventRepository: ITransactionEventRepository;
-
   get transactionEventRepository(): ITransactionEventRepository {
     return this._transactionEventRepository;
   }
-
-  protected _authorizeRepository: IAuthorizationRepository;
 
   get authorizeRepository(): IAuthorizationRepository {
     return this._authorizeRepository;
   }
 
-  protected _deviceModelRepository: IDeviceModelRepository;
-
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
   }
 
-  protected _tariffRepository: ITariffRepository;
-
   get tariffRepository(): ITariffRepository {
     return this._tariffRepository;
   }
-
-  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   get ocppMessageRepository(): IOCPPMessageRepository {
     return this._ocppMessageRepository;
@@ -277,12 +277,24 @@ export class TransactionsModule extends AbstractModule {
     const tenantId: number = message.context.tenantId;
     const stationId: string = message.context.stationId;
 
-    try {
-      await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
+    const transactionEvent = message.payload;
+    const transactionId = transactionEvent.transactionInfo.transactionId;
+    let response: OCPP2_0_1.TransactionEventResponse | undefined = undefined;
+    let transaction;
+    if (transactionEvent.idToken) {
+      response = await this._transactionService.authorizeOcpp201IdToken(
         tenantId,
-        message.payload,
-        stationId,
+        transactionEvent,
+        message.context,
       );
+    }
+    try {
+      transaction =
+        await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
+          tenantId,
+          message.payload,
+          stationId,
+        );
     } catch (error) {
       if ((error as any).name === 'SequelizeForeignKeyConstraintError') {
         await this.sendCallErrorWithMessage(
@@ -297,10 +309,6 @@ export class TransactionsModule extends AbstractModule {
       }
       throw error;
     }
-
-    const transactionEvent = message.payload;
-    const transactionId = transactionEvent.transactionInfo.transactionId;
-
     if (message.payload.reservationId) {
       await this._transactionService.deactivateReservation(
         tenantId,
@@ -310,12 +318,7 @@ export class TransactionsModule extends AbstractModule {
       );
     }
 
-    if (transactionEvent.idToken) {
-      const response = await this._transactionService.authorizeIdToken(
-        tenantId,
-        transactionEvent,
-        message.context,
-      );
+    if (response) {
       const messageConfirmation = await this.sendCallResultWithMessage(message, response);
       this._logger.debug('Transaction response sent: ', messageConfirmation);
       // If the transaction is accepted and interval is set, start the cost update
@@ -335,13 +338,6 @@ export class TransactionsModule extends AbstractModule {
       const response: OCPP2_0_1.TransactionEventResponse = {
         // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
       };
-
-      const transaction: Transaction | undefined =
-        await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
-          tenantId,
-          stationId,
-          transactionId,
-        );
 
       if (message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Updated) {
         // I02 - Show EV Driver Running Total Cost During Charging
