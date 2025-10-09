@@ -25,6 +25,10 @@ COPY Caddyfile /etc/caddy/Caddyfile
 
 ENV NODE_ENV=production
 
+RUN mkdir -p /data
+ENV BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=local \
+    BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH=/data
+
 # Start Core (listens on 8080/8081/8082) AND Caddy on 8080
 CMD /bin/sh -lc "caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile \
   && (node /app/Server/dist/index.js &) \
