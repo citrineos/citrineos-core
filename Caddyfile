@@ -1,14 +1,21 @@
 :8080 {
-	# Core HTTP (Swagger, APIs)
-	handle_path /docs* { reverse_proxy 127.0.0.1:8080 }
-	handle_path /api/* { reverse_proxy 127.0.0.1:8080 }
-	handle { reverse_proxy 127.0.0.1:8080 }
+	# HTTP to Core (Swagger, REST)
+	handle_path /docs* {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle_path /api/* {
+		reverse_proxy 127.0.0.1:8080
+	}
+	# Default: everything else to Core HTTP
+	handle {
+		reverse_proxy 127.0.0.1:8080
+	}
 
-	# OCPP 2.0.1 WS
-	@ocpp20 { path /ocpp20* }
+	# OCPP 2.0.1 over WebSocket
+	@ocpp20 path /ocpp20*
 	reverse_proxy @ocpp20 127.0.0.1:8081
 
-	# OCPP 1.6 WS
-	@ocpp16 { path /ocpp16* }
+	# OCPP 1.6 over WebSocket
+	@ocpp16 path /ocpp16*
 	reverse_proxy @ocpp16 127.0.0.1:8082
 }
