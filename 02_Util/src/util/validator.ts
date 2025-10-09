@@ -558,20 +558,20 @@ export function validatePEMEncodedCSR(csr: string): ValidationResult {
 
   const content = trimmedCSR.substring(beginIndex, endIndex).trim();
 
+  // Check that there's actual content
+  if (content.replace(/\s/g, '').length === 0) {
+    return {
+      isValid: false,
+      errorMessage: 'CSR content is empty',
+    };
+  }
+
   // Validate base64 content (allows A-Z, a-z, 0-9, +, /, =, and whitespace)
   const base64Pattern = /^[A-Za-z0-9+/=\s]+$/;
   if (!base64Pattern.test(content)) {
     return {
       isValid: false,
       errorMessage: 'CSR content contains invalid characters for base64 encoding',
-    };
-  }
-
-  // Check that there's actual content
-  if (content.replace(/\s/g, '').length === 0) {
-    return {
-      isValid: false,
-      errorMessage: 'CSR content is empty',
     };
   }
 
