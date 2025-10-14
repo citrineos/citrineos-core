@@ -670,7 +670,6 @@ export class SequelizeTransactionEventRepository
       const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
         where: {
           idToken: request.idTag,
-          idTokenType: null, // OCPP 1.6 does not have idTokenType
         },
         transaction: sequelizeTransaction,
       });

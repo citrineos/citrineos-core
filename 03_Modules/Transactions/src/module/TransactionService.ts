@@ -181,7 +181,6 @@ export class TransactionService {
       const tenantId = context.tenantId;
       const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
         idToken: idToken,
-        type: null,
       });
       if (authorizations.length !== 1) {
         this._logger.error(
