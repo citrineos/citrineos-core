@@ -1,13 +1,16 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+// SPDX-License-Identifier: Apache-2.0
+import { IEventDataDto, IVariableDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Index, Table } from 'sequelize-typescript';
 import { Component, Variable } from '../DeviceModel';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class EventData extends BaseModelWithTenant implements OCPP2_0_1.EventDataType {
+export class EventData
+  extends BaseModelWithTenant
+  implements OCPP2_0_1.EventDataType, IEventDataDto
+{
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.EventDataType;
 
   /**
@@ -66,7 +69,7 @@ export class EventData extends BaseModelWithTenant implements OCPP2_0_1.EventDat
    * Relations
    */
   @BelongsTo(() => Variable)
-  declare variable: OCPP2_0_1.VariableType;
+  declare variable: IVariableDto;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -75,7 +78,7 @@ export class EventData extends BaseModelWithTenant implements OCPP2_0_1.EventDat
   declare variableId?: number;
 
   @BelongsTo(() => Component)
-  declare component: OCPP2_0_1.ComponentType;
+  declare component: Component;
 
   @ForeignKey(() => Component)
   @Column({

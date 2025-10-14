@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
 table:
   name: Connectors
   schema: public
@@ -5,6 +8,9 @@ object_relationships:
   - name: ChargingStation
     using:
       foreign_key_constraint_on: stationId
+  - name: Evse
+    using:
+      foreign_key_constraint_on: evseId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
@@ -15,6 +21,20 @@ array_relationships:
         column: connectorDatabaseId
         table:
           name: StartTransactions
+          schema: public
+  - name: Tariffs
+    using:
+      foreign_key_constraint_on:
+        column: connectorId
+        table:
+          name: Tariffs
+          schema: public
+  - name: Transactions
+    using:
+      foreign_key_constraint_on:
+        column: connectorId
+        table:
+          name: Transactions
           schema: public
 select_permissions:
   - role: user

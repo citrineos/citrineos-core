@@ -1,6 +1,6 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import {
   DEFAULT_TENANT_ID,
@@ -125,12 +125,12 @@ export function createDockerConfig() {
         endpointPrefix: '/smartcharging',
         responses: [
           OCPP2_0_1_CallAction.ClearChargingProfile,
-          OCPP2_0_1_CallAction.ClearedChargingLimit,
           OCPP2_0_1_CallAction.GetChargingProfiles,
           OCPP2_0_1_CallAction.GetCompositeSchedule,
           OCPP2_0_1_CallAction.SetChargingProfile,
         ],
         requests: [
+          OCPP2_0_1_CallAction.ClearedChargingLimit,
           OCPP2_0_1_CallAction.NotifyChargingLimit,
           OCPP2_0_1_CallAction.NotifyEVChargingNeeds,
           OCPP2_0_1_CallAction.NotifyEVChargingSchedule,

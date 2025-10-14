@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: TenantPartners
+  schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: AsyncJobStatuses
+    using:
+      foreign_key_constraint_on:
+        column: tenantPartnerId
+        table:
+          name: AsyncJobStatuses
+          schema: public
+  - name: Authorizations
+    using:
+      foreign_key_constraint_on:
+        column: tenantPartnerId
+        table:
+          name: Authorizations
+          schema: public

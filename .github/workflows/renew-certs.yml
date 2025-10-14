@@ -1,0 +1,102 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+name: Renew Certificates
+# This workflow is to renew the certificates which are used for security profile 2&3
+# It can be triggered manually or automatically every month to check if the certificates are still valid
+# and renew them if needed on main branch
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *'  # Runs on the 1st of every month
+
+env:
+  TARGET_BRANCH: feature/update-expired-certs
+
+jobs:
+  renew-certs:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up OpenSSL + Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Check certificate validity
+        id: check_cert
+        run: |
+          CERT_FILE="Server/src/assets/certificates/certChain.pem"
+          # extract the expiry date of the leaf certificate (first cert in the chain)
+          EXPIRY_DATE=$(awk 'BEGIN{found=0} /BEGIN CERTIFICATE/{if (++found==1) print > "/tmp/leaf.pem"; next} found==1 {print > "/tmp/leaf.pem"} /END CERTIFICATE/{if (found==1) exit}' "$CERT_FILE")
+          END_DATE=$(openssl x509 -enddate -noout -in /tmp/leaf.pem | cut -d= -f2)
+          END_TIMESTAMP=$(date -d "$END_DATE" +%s)
+          NOW_TIMESTAMP=$(date +%s)
+          DIFF_DAYS=$(( (END_TIMESTAMP - NOW_TIMESTAMP) / 86400 ))
+          echo "Leaf certificate expires in $DIFF_DAYS days."
+          if [ "$DIFF_DAYS" -lt 31 ]; then
+            echo "cert_needs_renewal=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "cert_needs_renewal=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if certificate is valid
+        if: steps.check_cert.outputs.cert_needs_renewal == 'false'
+        run: echo "Certificate is still valid. Skipping renewal."
+
+      - name: Generate new certificates
+        if: steps.check_cert.outputs.cert_needs_renewal == 'true'
+        run: |
+          CERT_DIR="Server/src/assets/certificates"
+          mkdir -p "$CERT_DIR"
+          
+          # Create root key and self-signed root cert
+          openssl ecparam -genkey -name prime256v1 -out "$CERT_DIR/rootKey.pem"
+          openssl req -x509 -new -nodes -key "$CERT_DIR/rootKey.pem" -sha256 -days 365 \
+            -subj "/CN=host.docker.internal/O=S44/C=US" \
+            -out "$CERT_DIR/rootCertificate.pem"
+
+          # Create sub-CA key and CSR
+          openssl ecparam -genkey -name prime256v1 -out "$CERT_DIR/subCAKey.pem"
+          openssl req -new -key "$CERT_DIR/subCAKey.pem" \
+            -subj "/CN=host.docker.internal/O=S44/C=US" \
+            -out "$CERT_DIR/subCA.csr"
+
+          # Sign sub-CA cert with root
+          openssl x509 -req -in "$CERT_DIR/subCA.csr" -CA "$CERT_DIR/rootCertificate.pem" -CAkey "$CERT_DIR/rootKey.pem" -CAcreateserial \
+            -out "$CERT_DIR/subCA.pem" -days 365 -sha256
+
+          # Create leaf key and CSR
+          openssl ecparam -genkey -name prime256v1 -out "$CERT_DIR/leafKey.pem"
+          openssl req -new -key "$CERT_DIR/leafKey.pem" \
+            -subj "/CN=host.docker.internal/O=S44/C=US" \
+            -out "$CERT_DIR/leaf.csr"
+
+          # Sign leaf cert with sub-CA
+          openssl x509 -req -in "$CERT_DIR/leaf.csr" -CA "$CERT_DIR/subCA.pem" -CAkey "$CERT_DIR/subCAKey.pem" -CAcreateserial \
+            -out "$CERT_DIR/leaf.pem" -days 365 -sha256
+
+          # Combine into certChain.pem
+          cat "$CERT_DIR/leaf.pem" "$CERT_DIR/subCA.pem" "$CERT_DIR/rootCertificate.pem" > "$CERT_DIR/certChain.pem"
+
+          # Clean up intermediate files
+          rm -f "$CERT_DIR/"*.csr "$CERT_DIR/"*.srl "$CERT_DIR/leaf.pem" "$CERT_DIR/subCA.pem"
+
+      - name: Commit and push renewed certificates
+        if: steps.check_cert.outputs.cert_needs_renewal == 'true'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add Server/src/assets/certificates
+          git commit -m "chore(cert): Renewed certificates [auto]"
+          git push origin $TARGET_BRANCH

@@ -1,9 +1,8 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { IComponentDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BelongsTo,
   BelongsToMany,
@@ -12,10 +11,10 @@ import {
   ForeignKey,
   Table,
 } from 'sequelize-typescript';
-import { Evse } from './Evse';
 import { Variable } from './Variable';
 import { ComponentVariable } from './ComponentVariable';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { EvseType } from './EvseType';
 
 @Table({
   indexes: [
@@ -28,7 +27,10 @@ import { BaseModelWithTenant } from '../BaseModelWithTenant';
     },
   ],
 })
-export class Component extends BaseModelWithTenant implements OCPP2_0_1.ComponentType {
+export class Component
+  extends BaseModelWithTenant
+  implements OCPP2_0_1.ComponentType, IComponentDto
+{
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ComponentType;
 
   /**
@@ -51,15 +53,15 @@ export class Component extends BaseModelWithTenant implements OCPP2_0_1.Componen
    * Relations
    */
 
-  @BelongsTo(() => Evse)
-  declare evse?: OCPP2_0_1.EVSEType;
+  @BelongsTo(() => EvseType)
+  declare evse?: EvseType;
 
-  @ForeignKey(() => Evse)
+  @ForeignKey(() => EvseType)
   @Column(DataType.INTEGER)
   declare evseDatabaseId?: number | null;
 
   @BelongsToMany(() => Variable, () => ComponentVariable)
-  declare variables?: OCPP2_0_1.VariableType[];
+  declare variables?: Variable[];
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
 

@@ -1,62 +1,20 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { CrudRepository, BootstrapConfig } from '@citrineos/base';
+import { BootstrapConfig } from '@citrineos/base';
 import { type AuthorizationQuerystring, type IAuthorizationRepository } from '../../../interfaces';
-import { AdditionalInfo, Authorization, IdToken, IdTokenInfo } from '../model/Authorization';
+import { Authorization } from '../model/Authorization';
 import { SequelizeRepository } from './Base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
-import { IdTokenAdditionalInfo } from '../model/Authorization/IdTokenAdditionalInfo';
 
 export class SequelizeAuthorizationRepository
   extends SequelizeRepository<Authorization>
   implements IAuthorizationRepository
 {
-  idToken: CrudRepository<IdToken>;
-  idTokenInfo: CrudRepository<IdTokenInfo>;
-  additionalInfo: CrudRepository<AdditionalInfo>;
-  idTokenAdditionalInfo: CrudRepository<IdTokenAdditionalInfo>;
-
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    sequelizeInstance?: Sequelize,
-    idToken?: CrudRepository<IdToken>,
-    idTokenInfo?: CrudRepository<IdTokenInfo>,
-    additionalInfo?: CrudRepository<AdditionalInfo>,
-    idTokenAdditionalInfo?: CrudRepository<IdTokenAdditionalInfo>,
-  ) {
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, Authorization.MODEL_NAME, logger, sequelizeInstance);
-    this.idToken = idToken
-      ? idToken
-      : new SequelizeRepository<IdToken>(config, IdToken.MODEL_NAME, logger, sequelizeInstance);
-    this.idTokenInfo = idTokenInfo
-      ? idTokenInfo
-      : new SequelizeRepository<IdTokenInfo>(
-          config,
-          IdTokenInfo.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.additionalInfo = additionalInfo
-      ? additionalInfo
-      : new SequelizeRepository<AdditionalInfo>(
-          config,
-          AdditionalInfo.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.idTokenAdditionalInfo = idTokenAdditionalInfo
-      ? idTokenAdditionalInfo
-      : new SequelizeRepository<IdTokenAdditionalInfo>(
-          config,
-          IdTokenAdditionalInfo.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
   }
 
   async readAllByQuerystring(
@@ -93,16 +51,16 @@ export class SequelizeAuthorizationRepository
       idTokenWhere.type = queryParams.type;
     }
 
+    const where: any = {};
+    if (queryParams.idToken) {
+      where.idToken = queryParams.idToken;
+    }
+    if (queryParams.type) {
+      where.idTokenType = queryParams.type;
+    }
+
     return {
-      where: {},
-      include: [
-        {
-          model: IdToken,
-          where: idTokenWhere,
-          required: true, // This ensures the inner join, so only Authorizations with the matching IdToken are returned
-        },
-        { model: IdTokenInfo, include: [{ model: IdToken, include: [AdditionalInfo] }] },
-      ],
+      where,
     };
   }
 }

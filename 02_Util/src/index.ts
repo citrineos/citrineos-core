@@ -1,7 +1,6 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 export { UnknownStationFilter } from './networkconnection/authenticator/UnknownStationFilter';
 export { ConnectedStationFilter } from './networkconnection/authenticator/ConnectedStationFilter';
@@ -9,6 +8,7 @@ export { NetworkProfileFilter } from './networkconnection/authenticator/NetworkP
 export { BasicAuthenticationFilter } from './networkconnection/authenticator/BasicAuthenticationFilter';
 
 export * from './authorization';
+export * from './authorizer';
 export { MemoryCache } from './cache/memory';
 export { RedisCache } from './cache/redis';
 export { S3Storage } from './files/s3Storage';

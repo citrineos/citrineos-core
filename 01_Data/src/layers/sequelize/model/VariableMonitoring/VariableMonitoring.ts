@@ -1,8 +1,8 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { IVariableMonitoringDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
   BelongsTo,
@@ -17,10 +17,7 @@ import { Component, Variable } from '../DeviceModel';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class VariableMonitoring
-  extends BaseModelWithTenant
-  implements OCPP2_0_1.VariableMonitoringType
-{
+export class VariableMonitoring extends BaseModelWithTenant implements IVariableMonitoringDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableMonitoringType;
 
   /**
@@ -61,7 +58,7 @@ export class VariableMonitoring
    */
 
   @BelongsTo(() => Variable)
-  declare variable: OCPP2_0_1.VariableType;
+  declare variable: Variable;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -70,7 +67,7 @@ export class VariableMonitoring
   declare variableId?: number | null;
 
   @BelongsTo(() => Component)
-  declare component: OCPP2_0_1.ComponentType;
+  declare component: Component;
 
   @ForeignKey(() => Component)
   @Column({

@@ -1,8 +1,14 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { Namespace, OCPPVersion } from '@citrineos/base';
+import {
+  ChargingStationCapability,
+  ChargingStationParkingRestriction,
+  IChargingStationDto,
+  Namespace,
+  OCPPVersion,
+} from '@citrineos/base';
 import {
   BelongsTo,
   BelongsToMany,
@@ -19,13 +25,16 @@ import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
 import { SetNetworkProfile } from './SetNetworkProfile';
 import { Connector } from './Connector';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { Evse } from './Evse';
+import { Point } from 'geojson';
+import { Transaction } from '..';
 
 /**
  * Represents a charging station.
  * Currently, this data model is internal to CitrineOS. In the future, it will be analogous to an OCPI ChargingStation.
  */
 @Table
-export class ChargingStation extends BaseModelWithTenant {
+export class ChargingStation extends BaseModelWithTenant implements IChargingStationDto {
   static readonly MODEL_NAME: string = Namespace.ChargingStation;
 
   @PrimaryKey
@@ -65,12 +74,30 @@ export class ChargingStation extends BaseModelWithTenant {
   @Column(DataType.STRING(25))
   declare meterSerialNumber?: string | null;
 
+  /**
+   * [longitude, latitude]
+   */
+  @Column(DataType.GEOMETRY('POINT'))
+  declare coordinates?: Point | null;
+
+  @Column(DataType.STRING)
+  declare floorLevel?: string | null;
+
+  @Column(DataType.JSONB)
+  declare parkingRestrictions?: ChargingStationParkingRestriction[] | null;
+
+  @Column(DataType.JSONB)
+  declare capabilities?: ChargingStationCapability[] | null;
+
   @ForeignKey(() => Location)
   @Column(DataType.INTEGER)
   declare locationId?: number | null;
 
   @HasMany(() => StatusNotification)
   declare statusNotifications?: StatusNotification[] | null;
+
+  @HasMany(() => Transaction)
+  declare transactions?: Transaction[] | null;
 
   /**
    * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.
@@ -80,6 +107,11 @@ export class ChargingStation extends BaseModelWithTenant {
 
   @BelongsToMany(() => SetNetworkProfile, () => ChargingStationNetworkProfile)
   declare networkProfiles?: SetNetworkProfile[] | null;
+
+  @HasMany(() => Evse, {
+    onDelete: 'CASCADE',
+  })
+  declare evses?: Evse[] | null;
 
   @HasMany(() => Connector, {
     onDelete: 'CASCADE',

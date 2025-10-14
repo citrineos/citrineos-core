@@ -1,5 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import {
-  Authorization,
   IAuthorizationRepository,
   ITransactionEventRepository,
   Transaction,
@@ -9,6 +11,9 @@ import {
   IOCPPMessageRepository,
 } from '@citrineos/data';
 import {
+  AuthorizationStatusType,
+  IAuthorizationDto,
+  IAuthorizer,
   IMessageContext,
   MessageOrigin,
   MeterValueUtils,
@@ -16,7 +21,6 @@ import {
   OCPP2_0_1,
 } from '@citrineos/base';
 import { ILogObj, Logger } from 'tslog';
-import { IAuthorizer } from '@citrineos/util';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
@@ -31,6 +35,7 @@ export class TransactionService {
     authorizeRepository: IAuthorizationRepository,
     reservationRepository: IReservationRepository,
     ocppMessageRepository: IOCPPMessageRepository,
+    realTimeAuthorizer: IAuthorizer,
     authorizers?: IAuthorizer[],
     logger?: Logger<ILogObj>,
   ) {
@@ -41,7 +46,7 @@ export class TransactionService {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
-    this._authorizers = authorizers || [];
+    this._authorizers = [realTimeAuthorizer, ...(authorizers || [])];
   }
 
   async recalculateTotalKwh(tenantId: number, transactionDbId: number) {
@@ -64,7 +69,7 @@ export class TransactionService {
     return totalKwh;
   }
 
-  async authorizeIdToken(
+  async authorizeOcpp201IdToken(
     tenantId: number,
     transactionEvent: OCPP2_0_1.TransactionEventRequest,
     messageContext: IMessageContext,
@@ -85,8 +90,9 @@ export class TransactionService {
       return response;
     }
     const authorization = authorizations[0];
-    if (!authorization.idTokenInfo) {
-      // Assumed to always be valid without IdTokenInfo
+
+    if (!authorization.status) {
+      // Assumed to always be valid without status
       response.idTokenInfo = {
         status: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
         // TODO determine how/if to set personalMessage
@@ -112,19 +118,21 @@ export class TransactionService {
       };
       return response;
     } else {
-      response.idTokenInfo = await this._applyAuthorizers(
-        idTokenInfo,
-        authorization,
-        messageContext,
-      );
-      if (authorization.concurrentTransaction === true) {
-        if (transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started) {
-          const hasConcurrent = await this._hasConcurrentTransactions(tenantId, idToken);
-          if (hasConcurrent) {
-            response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx;
-          }
+      if (
+        authorization.concurrentTransaction === true &&
+        transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started
+      ) {
+        const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
+        if (hasConcurrent) {
+          response.idTokenInfo = {
+            status: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
+          };
+          return response;
         }
       }
+
+      const result = await this._applyAuthorizers(authorization, messageContext);
+      response.idTokenInfo = this._mapAuthorizationDtoToIdTokenInfo(authorization, result);
     }
     this._logger.debug('idToken Authorization final status:', response.idTokenInfo.status);
     return response;
@@ -134,6 +142,8 @@ export class TransactionService {
     tenantId: number,
     meterValues: [OCPP2_0_1.MeterValueType, ...OCPP2_0_1.MeterValueType[]],
     transactionDbId?: number | null,
+    transactionId?: string | null,
+    tariffId?: number | null,
   ) {
     return Promise.all(
       meterValues.map(async (meterValue) => {
@@ -145,6 +155,8 @@ export class TransactionService {
             tenantId,
             meterValue,
             transactionDbId,
+            transactionId,
+            tariffId,
           );
         } else {
           await this._transactionEventRepository.createMeterValue(tenantId, meterValue);
@@ -154,7 +166,7 @@ export class TransactionService {
   }
 
   async authorizeOcpp16IdToken(
-    tenantId: number,
+    context: IMessageContext,
     idToken: string,
   ): Promise<OCPP1_6.StartTransactionResponse> {
     const response: OCPP1_6.StartTransactionResponse = {
@@ -166,9 +178,9 @@ export class TransactionService {
 
     try {
       // Find authorization
+      const tenantId = context.tenantId;
       const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
         idToken: idToken,
-        type: null,
       });
       if (authorizations.length !== 1) {
         this._logger.error(
@@ -176,16 +188,16 @@ export class TransactionService {
         );
         return response;
       }
+      const authorization = authorizations[0];
 
-      // Check expiration
-      const idTokenInfo = authorizations[0].idTokenInfo;
-      if (!idTokenInfo) {
+      // Check expiration and status
+      if (!authorization.status) {
         response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Accepted;
         return response;
       }
 
       const idTokenInfoStatus = OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
-        idTokenInfo.status,
+        authorization.status,
       );
       if (idTokenInfoStatus !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
         response.idTagInfo.status = idTokenInfoStatus;
@@ -193,30 +205,41 @@ export class TransactionService {
       }
 
       if (
-        idTokenInfo.cacheExpiryDateTime &&
-        new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
+        authorization.cacheExpiryDateTime &&
+        new Date() > new Date(authorization.cacheExpiryDateTime)
       ) {
         response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Expired;
         return response;
       }
 
       // Check concurrent transactions
-      const activeTransactions =
-        await this._transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken(
-          tenantId,
-          authorizations[0].idToken.idToken,
-        );
-      if (activeTransactions.length > 0) {
+      const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
+      if (hasConcurrent) {
         response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
+        return response;
+      }
+
+      // Check authorizers
+      response.idTagInfo.status =
+        OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
+          await this._applyAuthorizers(authorization, context),
+        );
+      if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
         return response;
       }
 
       // Accept the idToken
       response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Accepted;
-      response.idTagInfo.expiryDate = idTokenInfo.cacheExpiryDateTime;
-      response.idTagInfo.parentIdTag = idTokenInfo.groupIdToken
-        ? idTokenInfo.groupIdToken.idToken
-        : undefined;
+      response.idTagInfo.expiryDate = authorization.cacheExpiryDateTime;
+      if (authorization.groupAuthorizationId) {
+        // Look up the referenced Authorization for parentIdTag
+        const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(tenantId, {
+          where: { id: authorization.groupAuthorizationId },
+        });
+        if (parentAuth) {
+          response.idTagInfo.parentIdTag = parentAuth.idToken;
+        }
+      }
       return response;
     } catch (e) {
       this._logger.error(`Authorization for idToken ${idToken} failed.`, e);
@@ -288,33 +311,60 @@ export class TransactionService {
   }
 
   private async _applyAuthorizers(
-    idTokenInfo: OCPP2_0_1.IdTokenInfoType,
-    authorization: Authorization,
+    authorization: IAuthorizationDto,
     messageContext: IMessageContext,
-  ): Promise<OCPP2_0_1.IdTokenInfoType> {
+  ): Promise<AuthorizationStatusType> {
+    let result = authorization.status;
     for (const authorizer of this._authorizers) {
-      if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
+      if (result !== AuthorizationStatusType.Accepted) {
         break;
       }
-      const result: Partial<OCPP2_0_1.IdTokenType> = await authorizer.authorize(
-        authorization,
-        messageContext,
-      );
-      Object.assign(idTokenInfo, result);
+
+      result = await authorizer.authorize(authorization, messageContext);
     }
-    return idTokenInfo;
+    return result;
   }
 
   private async _hasConcurrentTransactions(
     tenantId: number,
-    idToken: OCPP2_0_1.IdTokenType,
+    authorizationId: number,
   ): Promise<boolean> {
     const activeTransactions =
-      await this._transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken(
+      await this._transactionEventRepository.readAllActiveTransactionsByAuthorizationId(
         tenantId,
-        idToken,
+        authorizationId,
       );
 
-    return activeTransactions.length > 1;
+    return activeTransactions.length > 0;
+  }
+
+  private _mapAuthorizationDtoToIdTokenInfo(
+    dto: IAuthorizationDto,
+    status: AuthorizationStatusType,
+  ): OCPP2_0_1.IdTokenInfoType {
+    return {
+      status: OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusType(status),
+      cacheExpiryDateTime: dto.cacheExpiryDateTime ?? null,
+      chargingPriority: dto.chargingPriority ?? null,
+      language1: dto.language1 ?? null,
+      language2: dto.language2 ?? null,
+      groupIdToken: dto.groupAuthorization
+        ? ({
+            idToken: dto.groupAuthorization?.idToken ?? '',
+            type: dto.groupAuthorization?.idTokenType
+              ? OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenEnumType(
+                  dto.groupAuthorization?.idTokenType,
+                )
+              : '',
+          } as OCPP2_0_1.IdTokenType)
+        : null,
+      personalMessage: dto.personalMessage
+        ? ({
+            content: dto.personalMessage.content ?? '',
+            language: dto.personalMessage.language ?? '',
+            format: dto.personalMessage.format ?? OCPP2_0_1.MessageFormatEnumType.ASCII,
+          } as OCPP2_0_1.MessageContentType)
+        : null,
+    };
   }
 }

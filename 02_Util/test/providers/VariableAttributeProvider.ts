@@ -1,6 +1,9 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { VariableAttribute, VariableStatus } from '@citrineos/data';
 import { faker } from '@faker-js/faker';
-import { OCPP2_0_1 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
 
 export function aVariableAttribute(override?: Partial<VariableAttribute>): VariableAttribute {
   const variableAttribute = {
@@ -46,10 +49,12 @@ export function aBasicAuthPasswordVariable(
     dataType: OCPP2_0_1.DataEnumType.passwordString,
     mutability: OCPP2_0_1.MutabilityEnumType.WriteOnly,
     component: {
+      tenantId: DEFAULT_TENANT_ID,
       ...override?.component,
       name: 'SecurityCtrlr',
     },
     variable: {
+      tenantId: DEFAULT_TENANT_ID,
       ...override?.variable,
       name: 'BasicAuthPassword',
     },

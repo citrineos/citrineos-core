@@ -1,7 +1,6 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 // Base Library Interfaces
 export {
@@ -15,6 +14,7 @@ export {
   ApiAuthenticationResult,
   UserInfo,
 } from './interfaces/api';
+export { IAuthorizer } from './interfaces/authorizer';
 export { BadRequestError } from './interfaces/api/exceptions/BadRequestError';
 export { NotFoundError } from './interfaces/api/exceptions/NotFoundError';
 export { ICache } from './interfaces/cache/cache';
@@ -46,7 +46,14 @@ export {
   MessageState,
   RetryMessageError,
 } from './interfaces/messages';
-export { AbstractModule, AsHandler, IModule } from './interfaces/modules';
+export {
+  AbstractModule,
+  AsHandler,
+  IModule,
+  CircuitBreaker,
+  type CircuitBreakerState,
+  type CircuitBreakerOptions,
+} from './interfaces/modules';
 export {
   Call,
   CallAction,
@@ -77,7 +84,7 @@ export { defineConfig, DEFAULT_TENANT_ID } from './config/defineConfig';
 export { SystemConfig, systemConfigSchema, WebsocketServerConfig } from './config/types';
 export { SignedMeterValuesConfig } from './config/signedMeterValuesConfig';
 export { ConfigStore, ConfigStoreFactory } from './config/ConfigStore';
-export { BootstrapConfig, loadBootstrapConfig } from './config/boostrap.config';
+export { BootstrapConfig, loadBootstrapConfig } from './config/bootstrap.config';
 
 // Utils
 
@@ -247,4 +254,5 @@ export { assert, notNull, deepDirectionalEqual } from './assertion/assertion';
 export { UnauthorizedError } from './interfaces/api/exception/UnauthorizedError';
 export { AuthorizationSecurity } from './interfaces/api/AuthorizationSecurity';
 export { Ajv };
+export * from './interfaces/dto';
 export declare type Constructable<T> = new (...args: any[]) => T;

@@ -1,8 +1,14 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1_Namespace } from '@citrineos/base';
+import {
+  LocationHours,
+  ILocationDto,
+  LocationFacilityType,
+  LocationParkingType,
+  OCPP2_0_1_Namespace,
+} from '@citrineos/base';
 import { Column, DataType, HasMany, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { Point } from 'geojson';
@@ -13,7 +19,7 @@ import { BaseModelWithTenant } from '../BaseModelWithTenant';
  * Currently, this data model is internal to CitrineOS. In the future, it will be analogous to an OCPI Location.
  */
 @Table
-export class Location extends BaseModelWithTenant {
+export class Location extends BaseModelWithTenant implements ILocationDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Location;
 
   @Column(DataType.STRING)
@@ -33,6 +39,37 @@ export class Location extends BaseModelWithTenant {
 
   @Column(DataType.STRING)
   declare country: string;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: true,
+  })
+  declare publishUpstream: boolean;
+
+  @Column({
+    type: DataType.STRING,
+    defaultValue: 'UTC',
+    validate: {
+      isTimezone(value: string) {
+        try {
+          Intl.DateTimeFormat(undefined, { timeZone: value });
+          return true;
+        } catch (ex) {
+          return false;
+        }
+      },
+    },
+  })
+  declare timeZone: string;
+
+  @Column(DataType.STRING)
+  declare parkingType?: LocationParkingType | null;
+
+  @Column(DataType.JSONB)
+  declare facilities?: LocationFacilityType[] | null;
+
+  @Column(DataType.JSONB)
+  declare openingHours?: LocationHours | null;
 
   /**
    * [longitude, latitude]

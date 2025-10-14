@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
 table:
   name: Locations
   schema: public
@@ -12,6 +15,13 @@ array_relationships:
         column: locationId
         table:
           name: ChargingStations
+          schema: public
+  - name: Transactions
+    using:
+      foreign_key_constraint_on:
+        column: locationId
+        table:
+          name: Transactions
           schema: public
 select_permissions:
   - role: user

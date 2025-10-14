@@ -1,39 +1,38 @@
-/*
- * // Copyright Contributors to the CitrineOS Project
- * //
- * // SPDX-License-Identifier: Apache 2.0
- *
- */
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 
-import { OCPP1_6 } from '@citrineos/base';
+import { AuthorizationStatusType, OCPP1_6 } from '@citrineos/base';
 
 export class AuthorizationMapper {
-  static toIdTagInfoStatus(status: string): OCPP1_6.AuthorizeResponseStatus {
+  static toIdTagInfoStatus(status: AuthorizationStatusType): OCPP1_6.AuthorizeResponseStatus {
     switch (status) {
-      case 'Accepted':
+      case AuthorizationStatusType.Accepted:
         return OCPP1_6.AuthorizeResponseStatus.Accepted;
-      case 'Blocked':
+      case AuthorizationStatusType.Blocked:
         return OCPP1_6.AuthorizeResponseStatus.Blocked;
-      case 'Expired':
+      case AuthorizationStatusType.Expired:
         return OCPP1_6.AuthorizeResponseStatus.Expired;
-      case 'Invalid':
+      case AuthorizationStatusType.Invalid:
         return OCPP1_6.AuthorizeResponseStatus.Invalid;
       default:
         throw new Error('Unknown IdTagInfoStatus status');
     }
   }
 
-  static toStartTransactionResponseStatus(status: string): OCPP1_6.StartTransactionResponseStatus {
+  static toStartTransactionResponseStatus(
+    status: AuthorizationStatusType,
+  ): OCPP1_6.StartTransactionResponseStatus {
     switch (status) {
-      case 'Accepted':
+      case AuthorizationStatusType.Accepted:
         return OCPP1_6.StartTransactionResponseStatus.Accepted;
-      case 'Blocked':
+      case AuthorizationStatusType.Blocked:
         return OCPP1_6.StartTransactionResponseStatus.Blocked;
-      case 'ConcurrentTx':
+      case AuthorizationStatusType.ConcurrentTx:
         return OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
-      case 'Expired':
+      case AuthorizationStatusType.Expired:
         return OCPP1_6.StartTransactionResponseStatus.Expired;
-      case 'Invalid':
+      case AuthorizationStatusType.Invalid:
         return OCPP1_6.StartTransactionResponseStatus.Invalid;
       default:
         throw new Error('Unknown StartTransactionResponse status');

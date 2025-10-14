@@ -1,14 +1,15 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1_Namespace } from '@citrineos/base';
-import { Column, DataType, Table } from 'sequelize-typescript';
-import { CreationOptional } from 'sequelize';
+import { ITariffDto, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { CreationOptional } from 'sequelize';
+import { Connector } from '../Location';
 
 @Table
-export class Tariff extends BaseModelWithTenant implements TariffData {
+export class Tariff extends BaseModelWithTenant implements ITariffDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Tariff;
 
   @Column({
@@ -16,6 +17,13 @@ export class Tariff extends BaseModelWithTenant implements TariffData {
     unique: true,
   })
   declare stationId: string;
+
+  @ForeignKey(() => Connector)
+  @Column(DataType.INTEGER)
+  declare connectorId?: number | null;
+
+  @BelongsTo(() => Connector)
+  declare connector?: Connector | null;
 
   @Column({
     type: DataType.CHAR(3),
@@ -89,6 +97,9 @@ export class Tariff extends BaseModelWithTenant implements TariffData {
     },
   })
   declare taxRate?: number | null;
+
+  @Column(DataType.JSONB)
+  declare tariffAltText?: object[] | null;
 
   declare id: number;
   declare updatedAt: CreationOptional<Date>;

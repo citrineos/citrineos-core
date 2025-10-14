@@ -1,8 +1,8 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { Namespace } from '@citrineos/base';
+import { IChargingProfileDto, Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
   BelongsTo,
@@ -18,7 +18,7 @@ import { ChargingSchedule } from './ChargingSchedule';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class ChargingProfile extends BaseModelWithTenant {
+export class ChargingProfile extends BaseModelWithTenant implements IChargingProfileDto {
   static readonly MODEL_NAME: string = Namespace.ChargingProfile;
 
   /**

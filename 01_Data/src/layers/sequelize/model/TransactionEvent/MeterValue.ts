@@ -1,17 +1,17 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { Namespace } from '@citrineos/base';
+import { IMeterValueDto, Namespace, SampledValue } from '@citrineos/base';
 import { Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { TransactionEvent } from './TransactionEvent';
 import { Transaction } from './Transaction';
 import { StopTransaction } from './StopTransaction';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { Tariff } from '../Tariff';
 
 @Table
-export class MeterValue extends BaseModelWithTenant {
+export class MeterValue extends BaseModelWithTenant implements IMeterValueDto {
   static readonly MODEL_NAME: string = Namespace.MeterValue;
 
   @ForeignKey(() => TransactionEvent)
@@ -26,8 +26,8 @@ export class MeterValue extends BaseModelWithTenant {
   @Column(DataType.INTEGER)
   declare stopTransactionDatabaseId?: number | null;
 
-  @Column(DataType.JSON)
-  declare sampledValue: [object, ...object[]];
+  @Column(DataType.JSONB)
+  declare sampledValue: [SampledValue, ...SampledValue[]];
 
   @Column({
     type: DataType.DATE,
@@ -41,4 +41,11 @@ export class MeterValue extends BaseModelWithTenant {
   declare connectorId?: number;
 
   declare customData?: any | null;
+
+  @ForeignKey(() => Tariff)
+  @Column(DataType.INTEGER)
+  declare tariffId?: number | null;
+
+  @Column(DataType.STRING)
+  declare transactionId?: string | null;
 }

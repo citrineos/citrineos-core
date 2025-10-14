@@ -1,9 +1,8 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { Namespace } from '@citrineos/base';
+import { ITransactionDto, Namespace } from '@citrineos/base';
 import {
   BelongsTo,
   Column,
@@ -15,16 +14,24 @@ import {
 } from 'sequelize-typescript';
 import { MeterValue } from './MeterValue';
 import { TransactionEvent } from './TransactionEvent';
-import { Evse } from '../DeviceModel';
-import { ChargingStation } from '../Location';
+import { Evse, ChargingStation, Location, Connector } from '../Location';
 import { StartTransaction, StopTransaction } from './';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { Authorization } from '../Authorization';
+import { Tariff } from '..';
 
 @Table
-export class Transaction extends BaseModelWithTenant {
+export class Transaction extends BaseModelWithTenant implements ITransactionDto {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
   static readonly TRANSACTION_EVENTS_ALIAS = 'transactionEvents';
   static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter';
+
+  @Column(DataType.INTEGER)
+  @ForeignKey(() => Location)
+  locationId?: number;
+
+  @BelongsTo(() => Location)
+  location?: Location;
 
   @Column({
     unique: 'stationId_transactionId',
@@ -35,12 +42,33 @@ export class Transaction extends BaseModelWithTenant {
   @BelongsTo(() => ChargingStation)
   station!: ChargingStation;
 
+  @ForeignKey(() => Evse)
+  @Column(DataType.INTEGER)
+  declare evseId?: number;
+
   @BelongsTo(() => Evse)
   declare evse?: Evse | null;
 
-  @ForeignKey(() => Evse)
   @Column(DataType.INTEGER)
-  declare evseDatabaseId?: number;
+  @ForeignKey(() => Connector)
+  declare connectorId?: number;
+
+  @BelongsTo(() => Connector)
+  declare connector?: Connector | null;
+
+  @Column(DataType.INTEGER)
+  @ForeignKey(() => Authorization)
+  authorizationId?: number;
+
+  @BelongsTo(() => Authorization)
+  authorization?: Authorization;
+
+  @Column(DataType.INTEGER)
+  @ForeignKey(() => Tariff)
+  tariffId?: number;
+
+  @BelongsTo(() => Tariff)
+  tariff?: Tariff;
 
   @Column({
     unique: 'stationId_transactionId',
@@ -90,37 +118,22 @@ export class Transaction extends BaseModelWithTenant {
   @Column(DataType.DECIMAL)
   declare totalCost?: number;
 
-  declare customData?: any | null;
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('startTime')?.toISOString();
+    },
+  })
+  declare startTime?: string;
 
-  static buildTransaction(
-    id: string, // todo temp
-    stationId: string,
-    transactionId: string,
-    isActive: boolean,
-    transactionEvents: TransactionEvent[],
-    meterValues: MeterValue[],
-    chargingState?: string,
-    timeSpentCharging?: number,
-    totalKwh?: number,
-    stoppedReason?: string,
-    remoteStartId?: number,
-    totalCost?: number,
-    customData?: object,
-  ) {
-    const transaction = new Transaction();
-    transaction.id = id;
-    transaction.stationId = stationId;
-    transaction.transactionId = transactionId;
-    transaction.isActive = isActive;
-    transaction.transactionEvents = transactionEvents;
-    transaction.meterValues = meterValues;
-    transaction.chargingState = chargingState;
-    transaction.timeSpentCharging = timeSpentCharging;
-    transaction.totalKwh = totalKwh;
-    transaction.stoppedReason = stoppedReason;
-    transaction.remoteStartId = remoteStartId;
-    transaction.totalCost = totalCost;
-    transaction.customData = customData;
-    return transaction;
-  }
+  @Column({
+    type: DataType.DATE,
+    get() {
+      return this.getDataValue('endTime')?.toISOString();
+    },
+  })
+  declare endTime?: string;
+
+  @Column(DataType.JSONB)
+  declare customData?: any | null;
 }

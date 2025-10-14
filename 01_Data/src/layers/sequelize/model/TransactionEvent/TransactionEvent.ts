@@ -1,18 +1,16 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { ITransactionEventDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Table } from 'sequelize-typescript';
-import { IdToken } from '../Authorization';
-import { Evse } from '../DeviceModel';
+import { EvseType } from '../DeviceModel';
 import { MeterValue } from './MeterValue';
 import { Transaction } from './Transaction';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class TransactionEvent extends BaseModelWithTenant {
+export class TransactionEvent extends BaseModelWithTenant implements ITransactionEventDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.TransactionEventRequest;
 
   @Column
@@ -51,7 +49,7 @@ export class TransactionEvent extends BaseModelWithTenant {
   declare reservationId?: number | null;
 
   @ForeignKey(() => Transaction)
-  declare transactionDatabaseId?: string;
+  declare transactionDatabaseId?: number;
 
   @BelongsTo(() => Transaction)
   declare transaction?: Transaction;
@@ -59,17 +57,17 @@ export class TransactionEvent extends BaseModelWithTenant {
   @Column(DataType.JSON)
   declare transactionInfo: OCPP2_0_1.TransactionType;
 
-  @ForeignKey(() => Evse)
+  @ForeignKey(() => EvseType)
   declare evseId?: number | null;
 
-  @BelongsTo(() => Evse)
+  @BelongsTo(() => EvseType)
   declare evse?: OCPP2_0_1.EVSEType;
 
-  @ForeignKey(() => IdToken)
-  declare idTokenId?: number | null;
+  @Column(DataType.STRING)
+  declare idTokenValue?: string | null;
 
-  @BelongsTo(() => IdToken)
-  declare idToken?: IdToken;
+  @Column(DataType.STRING)
+  declare idTokenType?: string | null;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
 }

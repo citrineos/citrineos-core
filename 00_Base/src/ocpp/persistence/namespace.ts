@@ -1,7 +1,6 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * Persisted DataTypes and their namespaces
@@ -14,6 +13,7 @@ export enum Namespace {
   ChargingSchedule = 'ChargingSchedule',
   ChargingStation = 'ChargingStation',
   CompositeSchedule = 'CompositeSchedule',
+  Evse = 'Evse',
   IdTokenType = 'IdToken',
   IdTokenInfoType = 'IdTokenInfo',
   MeterValue = 'MeterValue',
@@ -33,7 +33,7 @@ export enum OCPP2_0_1_Namespace {
   CertificateChain = 'CertificateChain',
   ChargingStationSecurityInfo = 'ChargingStationSecurityInfo',
   ComponentType = 'Component',
-  EVSEType = 'Evse',
+  EVSEType = 'EvseType',
   EventDataType = 'EventData',
   FileURL = 'FileURL',
   LatestStatusNotification = 'LatestStatusNotification',

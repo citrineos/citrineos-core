@@ -1,14 +1,24 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { OCPP1_6, OCPP1_6_Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
+import {
+  ConnectorErrorCode,
+  ConnectorFormatEnum,
+  ConnectorPowerType,
+  ConnectorStatus,
+  ConnectorTypeEnum,
+  IConnectorDto,
+  OCPP1_6_Namespace,
+} from '@citrineos/base';
+import { BelongsTo, Column, DataType, ForeignKey, HasMany, Table } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { Evse } from './Evse';
+import { Tariff } from '../Tariff';
 
 @Table
-export class Connector extends BaseModelWithTenant {
+export class Connector extends BaseModelWithTenant implements IConnectorDto {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.Connector;
 
   @ForeignKey(() => ChargingStation)
@@ -19,18 +29,57 @@ export class Connector extends BaseModelWithTenant {
   })
   declare stationId: string;
 
+  @ForeignKey(() => Evse)
+  @Column({
+    unique: 'evseId_evseTypeConnectorId',
+    allowNull: false,
+    type: DataType.INTEGER,
+  })
+  declare evseId: number;
+
   @Column({
     unique: 'stationId_connectorId',
     allowNull: false,
     type: DataType.INTEGER,
   })
-  declare connectorId: number;
+  declare connectorId: number; // This is the serial int starting at 1 used in OCPP 1.6 to refer to the connector, unique per Charging Station.
 
-  @Column(DataType.ENUM(...Object.values(OCPP1_6.StatusNotificationRequestStatus)))
-  declare status: OCPP1_6.StatusNotificationRequestStatus;
+  @Column({
+    unique: 'evseId_evseTypeConnectorId',
+    allowNull: false,
+    type: DataType.INTEGER,
+  })
+  declare evseTypeConnectorId?: number; // This is the serial int starting at 1 used in OCPP 2.0.1 to refer to the connector, unique per EVSE.
 
-  @Column(DataType.ENUM(...Object.values(OCPP1_6.StatusNotificationRequestErrorCode)))
-  declare errorCode: OCPP1_6.StatusNotificationRequestErrorCode;
+  @Column({
+    type: DataType.STRING,
+    defaultValue: ConnectorStatus.Unknown,
+  })
+  declare status: ConnectorStatus;
+
+  @Column(DataType.STRING)
+  declare type?: ConnectorTypeEnum | null;
+
+  @Column(DataType.STRING)
+  declare format?: ConnectorFormatEnum | null;
+
+  @Column({
+    type: DataType.STRING,
+    defaultValue: ConnectorErrorCode.NoError,
+  })
+  declare errorCode: ConnectorErrorCode;
+
+  @Column(DataType.STRING)
+  declare powerType?: ConnectorPowerType | null;
+
+  @Column(DataType.INTEGER)
+  declare maximumAmperage?: number | null;
+
+  @Column(DataType.INTEGER)
+  declare maximumVoltage?: number | null;
+
+  @Column(DataType.INTEGER)
+  declare maximumPowerWatts?: number | null;
 
   @Column({
     type: DataType.DATE,
@@ -49,6 +98,15 @@ export class Connector extends BaseModelWithTenant {
   @Column(DataType.STRING)
   declare vendorErrorCode?: string | null;
 
+  @Column(DataType.STRING)
+  declare termsAndConditionsUrl?: string | null;
+
   @BelongsTo(() => ChargingStation)
   declare chargingStation?: ChargingStation;
+
+  @BelongsTo(() => Evse)
+  declare evse?: Evse;
+
+  @HasMany(() => Tariff)
+  declare tariffs?: Tariff[];
 }

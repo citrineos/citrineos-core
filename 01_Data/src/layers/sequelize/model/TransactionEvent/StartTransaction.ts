@@ -1,16 +1,15 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { OCPP1_6_Namespace } from '@citrineos/base';
+import { IStartTransactionDto, OCPP1_6_Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { Transaction } from './Transaction';
-import { IdToken } from '../Authorization';
 import { Connector } from '../Location';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class StartTransaction extends BaseModelWithTenant {
+export class StartTransaction extends BaseModelWithTenant implements IStartTransactionDto {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.StartTransaction;
 
   @Column(DataType.STRING)
@@ -35,16 +34,10 @@ export class StartTransaction extends BaseModelWithTenant {
     type: DataType.INTEGER,
     unique: true,
   })
-  declare transactionDatabaseId: string;
+  declare transactionDatabaseId: number;
 
   @BelongsTo(() => Transaction)
   declare transaction: Transaction;
-
-  @ForeignKey(() => IdToken)
-  declare idTokenDatabaseId?: number | null;
-
-  @BelongsTo(() => IdToken)
-  declare idToken?: IdToken;
 
   @ForeignKey(() => Connector)
   declare connectorDatabaseId: number;

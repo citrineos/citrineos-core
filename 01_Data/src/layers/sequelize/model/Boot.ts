@@ -1,15 +1,14 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { type BootConfig, Namespace } from '@citrineos/base';
+import { IBootDto, Namespace } from '@citrineos/base';
 import { Column, DataType, HasMany, PrimaryKey, Table } from 'sequelize-typescript';
 import { VariableAttribute } from './DeviceModel';
 import { BaseModelWithTenant } from './BaseModelWithTenant';
 
 @Table
-export class Boot extends BaseModelWithTenant implements BootConfig {
+export class Boot extends BaseModelWithTenant implements IBootDto {
   static readonly MODEL_NAME: string = Namespace.BootConfig;
 
   /**

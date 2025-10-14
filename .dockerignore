@@ -17,7 +17,6 @@
 **/*.tsbuildinfo
 **/*.log
 **/*.tgz
-**/*.sh
 **/*.Dockerfile
 
 # Specific directories to ignore

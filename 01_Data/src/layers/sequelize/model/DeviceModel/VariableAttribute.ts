@@ -1,9 +1,14 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import {
+  IComponentDto,
+  IVariableAttributeDto,
+  IVariableDto,
+  OCPP2_0_1,
+  OCPP2_0_1_Namespace,
+} from '@citrineos/base';
 import {
   BelongsTo,
   Column,
@@ -15,12 +20,12 @@ import {
 } from 'sequelize-typescript';
 import { Variable } from './Variable';
 import { Component } from './Component';
-import { Evse } from './Evse';
 import { Boot } from '../Boot';
 import { VariableStatus } from './VariableStatus';
-import { ChargingStation } from '../Location';
+import { ChargingStation, Evse } from '../Location';
 import { CryptoUtils } from '../../../../util/CryptoUtils';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { EvseType } from './EvseType';
 
 @Table({
   indexes: [
@@ -82,7 +87,7 @@ import { BaseModelWithTenant } from '../BaseModelWithTenant';
 })
 export class VariableAttribute
   extends BaseModelWithTenant
-  implements OCPP2_0_1.VariableAttributeType
+  implements OCPP2_0_1.VariableAttributeType, IVariableAttributeDto
 {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableAttributeType;
 
@@ -166,7 +171,7 @@ export class VariableAttribute
    */
 
   @BelongsTo(() => Variable)
-  declare variable: OCPP2_0_1.VariableType;
+  declare variable: IVariableDto;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -176,7 +181,7 @@ export class VariableAttribute
   declare variableId?: number | null;
 
   @BelongsTo(() => Component)
-  declare component: OCPP2_0_1.ComponentType;
+  declare component: IComponentDto;
 
   @ForeignKey(() => Component)
   @Column({
@@ -185,10 +190,10 @@ export class VariableAttribute
   })
   declare componentId?: number | null;
 
-  @BelongsTo(() => Evse)
-  declare evse?: OCPP2_0_1.EVSEType;
+  @BelongsTo(() => EvseType)
+  declare evse?: EvseType;
 
-  @ForeignKey(() => Evse)
+  @ForeignKey(() => EvseType)
   @Column(DataType.INTEGER)
   declare evseDatabaseId?: number | null;
 

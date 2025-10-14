@@ -1,17 +1,18 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import {
   AbstractModule,
   AsHandler,
+  AuthorizationStatusType,
   BootstrapConfig,
   CallAction,
   CrudRepository,
   ErrorCode,
   EventGroup,
   HandlerProperties,
+  IAuthorizer,
   ICache,
   IFileStorage,
   IMessage,
@@ -44,9 +45,9 @@ import {
   VariableAttribute,
 } from '@citrineos/data';
 import {
-  IAuthorizer,
   RabbitMqReceiver,
   RabbitMqSender,
+  RealTimeAuthorizer,
   SignedMeterValuesUtil,
 } from '@citrineos/util';
 import { ILogObj, Logger } from 'tslog';
@@ -77,6 +78,7 @@ export class TransactionsModule extends AbstractModule {
   protected _fileStorage: IFileStorage;
 
   private readonly _authorizers: IAuthorizer[];
+  private readonly _realTimeAuthorizer: IAuthorizer;
 
   private readonly _signedMeterValuesUtil: SignedMeterValuesUtil;
   private _costNotifier: CostNotifier;
@@ -146,6 +148,9 @@ export class TransactionsModule extends AbstractModule {
    *
    * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
    * a list of authorizers that can be used to authorize requests.
+   *
+   * @param {IAuthorizer} [realTimeAuthorizer] - An optional parameter of type {@link IAuthorizer} which represents
+   * a real-time authorizer that can be used to authorize real-time requests.
    */
   constructor(
     config: BootstrapConfig & SystemConfig,
@@ -162,6 +167,7 @@ export class TransactionsModule extends AbstractModule {
     tariffRepository?: ITariffRepository,
     reservationRepository?: IReservationRepository,
     ocppMessageRepository?: IOCPPMessageRepository,
+    realTimeAuthorizer?: IAuthorizer,
     authorizers?: IAuthorizer[],
   ) {
     super(
@@ -198,6 +204,9 @@ export class TransactionsModule extends AbstractModule {
       ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
 
     this._authorizers = authorizers || [];
+    this._realTimeAuthorizer =
+      realTimeAuthorizer ||
+      new RealTimeAuthorizer(this._locationRepository, this.config, this._logger);
 
     this._signedMeterValuesUtil = new SignedMeterValuesUtil(fileStorage, config, this._logger);
 
@@ -209,6 +218,7 @@ export class TransactionsModule extends AbstractModule {
       this._authorizeRepository,
       this._reservationRepository,
       this._ocppMessageRepository,
+      this._realTimeAuthorizer,
       this._authorizers,
       this._logger,
     );
@@ -267,14 +277,24 @@ export class TransactionsModule extends AbstractModule {
     const tenantId: number = message.context.tenantId;
     const stationId: string = message.context.stationId;
 
-    await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
-      tenantId,
-      message.payload,
-      stationId,
-    );
-
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
+    let response: OCPP2_0_1.TransactionEventResponse | undefined = undefined;
+
+    if (transactionEvent.idToken) {
+      response = await this._transactionService.authorizeOcpp201IdToken(
+        tenantId,
+        transactionEvent,
+        message.context,
+      );
+    }
+
+    const transaction =
+      await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
+        tenantId,
+        message.payload,
+        stationId,
+      );
 
     if (message.payload.reservationId) {
       await this._transactionService.deactivateReservation(
@@ -285,12 +305,7 @@ export class TransactionsModule extends AbstractModule {
       );
     }
 
-    if (transactionEvent.idToken) {
-      const response = await this._transactionService.authorizeIdToken(
-        tenantId,
-        transactionEvent,
-        message.context,
-      );
+    if (response) {
       const messageConfirmation = await this.sendCallResultWithMessage(message, response);
       this._logger.debug('Transaction response sent: ', messageConfirmation);
       // If the transaction is accepted and interval is set, start the cost update
@@ -310,13 +325,6 @@ export class TransactionsModule extends AbstractModule {
       const response: OCPP2_0_1.TransactionEventResponse = {
         // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
       };
-
-      const transaction: Transaction | undefined =
-        await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
-          tenantId,
-          stationId,
-          transactionId,
-        );
 
       if (message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Updated) {
         // I02 - Show EV Driver Running Total Cost During Charging
@@ -421,6 +429,8 @@ export class TransactionsModule extends AbstractModule {
         tenantId,
         meterValues,
         activeTransaction?.id,
+        activeTransaction?.transactionId,
+        activeTransaction?.tariffId,
       );
 
       if (activeTransaction) {
@@ -581,7 +591,10 @@ export class TransactionsModule extends AbstractModule {
     const request = message.payload;
 
     // Authorize
-    const response = await this._transactionService.authorizeOcpp16IdToken(tenantId, request.idTag);
+    const response = await this._transactionService.authorizeOcpp16IdToken(
+      message.context,
+      request.idTag,
+    );
 
     // Send response to charger
     if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
@@ -634,29 +647,39 @@ export class TransactionsModule extends AbstractModule {
         })
       : undefined;
 
-    let idTokenInfoStatus = authorization?.idTokenInfo?.status;
+    let idTokenInfoStatus = authorization?.status;
     if (authorization === undefined && request.idTag) {
       // Unknown idTag, fallback to Invalid
-      idTokenInfoStatus = OCPP1_6.StopTransactionResponseStatus.Invalid;
+      idTokenInfoStatus = AuthorizationStatusType.Invalid;
     }
     switch (idTokenInfoStatus) {
-      case 'Accepted':
-      case 'Blocked':
-      case 'Expired':
-      case 'ConcurrentTx':
-      case 'Invalid':
+      case AuthorizationStatusType.Accepted:
+      case AuthorizationStatusType.Blocked:
+      case AuthorizationStatusType.Expired:
+      case AuthorizationStatusType.ConcurrentTx:
+      case AuthorizationStatusType.Invalid:
         break;
       default: // Other OCPP 2.0.1 statuses default to Invalid for OCPP 1.6
-        idTokenInfoStatus = OCPP1_6.StopTransactionResponseStatus.Invalid;
+        idTokenInfoStatus = AuthorizationStatusType.Invalid;
+    }
+
+    let parentIdTag: string | undefined = undefined;
+    if (authorization?.groupAuthorizationId) {
+      const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(tenantId, {
+        where: { id: authorization.groupAuthorizationId },
+      });
+      if (parentAuth) {
+        parentIdTag = parentAuth.idToken;
+      }
     }
 
     const stopTransactionResponse: OCPP1_6.StopTransactionResponse = {
       ...(request.idTag
         ? {
             idTagInfo: {
-              expiryDate: authorization?.idTokenInfo?.cacheExpiryDateTime,
-              parentIdTag: authorization?.idTokenInfo?.groupIdToken?.idToken,
-              status: idTokenInfoStatus as OCPP1_6.StopTransactionResponseStatus, // Ensure this is cast to the correct type
+              expiryDate: authorization?.cacheExpiryDateTime,
+              parentIdTag,
+              status: idTokenInfoStatus as unknown as OCPP1_6.StopTransactionResponseStatus,
             },
           }
         : {}),
@@ -685,7 +708,7 @@ export class TransactionsModule extends AbstractModule {
       new Date(request.timestamp),
       request.transactionData?.map((data) => MeterValue.build({ tenantId, ...data })) || [],
       request.reason || (request.idTag ? 'Remote' : 'Local'),
-      authorization?.idTokenId,
+      authorization?.id,
     );
 
     if (!stopTransaction) {
@@ -704,6 +727,7 @@ export class TransactionsModule extends AbstractModule {
     }
     transaction.isActive = false;
     transaction.stoppedReason = request.reason;
+    transaction.endTime = request.timestamp;
     await transaction.save();
   }
 }

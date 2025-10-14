@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: CitrineOS Core
+Upstream-Contact: Contributors to the CitrineOS Project
+Source: https://github.com/citrineos/citrineos-core
+
+Files: package.json */package.json */*/package.json 00_Base/src/ocpp/persistence/schemas/*.json 01_Data/src/interfaces/projections/schemas/*.json
+Copyright: Contributors to the CitrineOS Project
+License: Apache-2.0

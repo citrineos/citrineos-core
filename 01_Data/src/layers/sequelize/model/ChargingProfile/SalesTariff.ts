@@ -1,8 +1,8 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { ISalesTariffDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
   BelongsTo,
@@ -16,7 +16,7 @@ import { ChargingSchedule } from './ChargingSchedule';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class SalesTariff extends BaseModelWithTenant implements OCPP2_0_1.SalesTariffType {
+export class SalesTariff extends BaseModelWithTenant implements ISalesTariffDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.SalesTariff;
 
   /**
@@ -53,7 +53,7 @@ export class SalesTariff extends BaseModelWithTenant implements OCPP2_0_1.SalesT
   declare chargingScheduleDatabaseId: number;
 
   @BelongsTo(() => ChargingSchedule)
-  declare chargingSchedule: OCPP2_0_1.ChargingScheduleType;
+  declare chargingSchedule: ChargingSchedule;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
 }

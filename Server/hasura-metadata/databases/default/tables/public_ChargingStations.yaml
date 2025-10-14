@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
 table:
   name: ChargingStations
   schema: public
@@ -29,6 +32,13 @@ array_relationships:
         column: stationId
         table:
           name: Connectors
+          schema: public
+  - name: Evses
+    using:
+      foreign_key_constraint_on:
+        column: stationId
+        table:
+          name: Evses
           schema: public
   - name: LatestStatusNotifications
     using:

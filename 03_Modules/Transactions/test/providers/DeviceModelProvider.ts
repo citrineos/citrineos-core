@@ -1,5 +1,8 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
-import { ChargingStation, Component, Evse, Variable } from '@citrineos/data';
+import { ChargingStation, Component, EvseType, Variable } from '@citrineos/data';
 
 export const MOCK_STATION_ID = 'Station01';
 export const MOCK_EVSE_ID = 1;
@@ -15,12 +18,12 @@ export function aChargingStation(
   return applyUpdateFunction(chargingStation, updateFunction);
 }
 
-export function anEvse(updateFunction?: UpdateFunction<Evse>): Evse {
-  const evse: Evse = {
+export function anEvse(updateFunction?: UpdateFunction<EvseType>): EvseType {
+  const evse: EvseType = {
     databaseId: MOCK_EVSE_ID,
     id: MOCK_CONNECTOR_ID,
     connectorId: MOCK_CONNECTOR_ID,
-  } as Evse;
+  } as EvseType;
 
   return applyUpdateFunction(evse, updateFunction);
 }

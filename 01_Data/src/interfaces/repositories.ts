@@ -1,7 +1,6 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import {
   type BootConfig,
@@ -27,7 +26,7 @@ import {
   CompositeSchedule,
   Connector,
   type EventData,
-  Evse,
+  EvseType,
   InstalledCertificate,
   LocalListVersion,
   type Location,
@@ -146,7 +145,7 @@ export interface IDeviceModelRepository extends CrudRepository<OCPP2_0_1.Variabl
     tenantId: number,
     id: number,
     connectorId: number | null,
-  ): Promise<Evse | undefined>;
+  ): Promise<EvseType | undefined>;
   findVariableCharacteristicsByVariableNameAndVariableInstance(
     tenantId: number,
     variableName: string,
@@ -259,6 +258,8 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     tenantId: number,
     value: OCPP2_0_1.MeterValueType,
     transactionDatabaseId?: number | null,
+    transactionId?: string | null,
+    tariffId?: number | null,
   ): Promise<void>;
   createTransactionByStartTransaction(
     tenantId: number,
@@ -287,13 +288,9 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     evse: OCPP2_0_1.EVSEType,
     chargingStates?: OCPP2_0_1.ChargingStateEnumType[],
   ): Promise<Transaction[]>;
-  readAllActiveTransactionsIncludeTransactionEventByIdToken(
+  readAllActiveTransactionsByAuthorizationId(
     tenantId: number,
-    idToken: OCPP2_0_1.IdTokenType,
-  ): Promise<Transaction[]>;
-  readAllActiveTransactionsIncludeStartTransactionByIdToken(
-    tenantId: number,
-    idToken: string,
+    authorizationId: number,
   ): Promise<Transaction[]>;
   readAllMeterValuesByTransactionDataBaseId(
     tenantId: number,

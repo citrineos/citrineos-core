@@ -1,14 +1,14 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1_Namespace } from '@citrineos/base';
+import { ICertificateDto, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { Column, DataType, Table } from 'sequelize-typescript';
 import { CountryNameEnumType, SignatureAlgorithmEnumType } from './index';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
 
 @Table
-export class Certificate extends BaseModelWithTenant {
+export class Certificate extends BaseModelWithTenant implements ICertificateDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Certificate;
 
   /**

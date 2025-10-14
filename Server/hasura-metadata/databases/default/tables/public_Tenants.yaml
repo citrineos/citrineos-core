@@ -1,14 +1,10 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
 table:
   name: Tenants
   schema: public
 array_relationships:
-  - name: AdditionalInfos
-    using:
-      foreign_key_constraint_on:
-        column: tenantId
-        table:
-          name: AdditionalInfos
-          schema: public
   - name: Authorizations
     using:
       foreign_key_constraint_on:
@@ -121,33 +117,19 @@ array_relationships:
         table:
           name: EventData
           schema: public
+  - name: EvseTypes
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: EvseTypes
+          schema: public
   - name: Evses
     using:
       foreign_key_constraint_on:
         column: tenantId
         table:
           name: Evses
-          schema: public
-  - name: IdTokenAdditionalInfos
-    using:
-      foreign_key_constraint_on:
-        column: tenantId
-        table:
-          name: IdTokenAdditionalInfos
-          schema: public
-  - name: IdTokenInfos
-    using:
-      foreign_key_constraint_on:
-        column: tenantId
-        table:
-          name: IdTokenInfos
-          schema: public
-  - name: IdTokens
-    using:
-      foreign_key_constraint_on:
-        column: tenantId
-        table:
-          name: IdTokens
           schema: public
   - name: InstalledCertificates
     using:
@@ -295,6 +277,13 @@ array_relationships:
         column: tenantId
         table:
           name: Tariffs
+          schema: public
+  - name: TenantPartners
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: TenantPartners
           schema: public
   - name: TransactionEvents
     using:

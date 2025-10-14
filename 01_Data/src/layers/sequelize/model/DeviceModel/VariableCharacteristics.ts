@@ -1,9 +1,8 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { IVariableCharacteristicsDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
 import { Variable } from './Variable';
 import { BaseModelWithTenant } from '../BaseModelWithTenant';
@@ -11,7 +10,7 @@ import { BaseModelWithTenant } from '../BaseModelWithTenant';
 @Table
 export class VariableCharacteristics
   extends BaseModelWithTenant
-  implements OCPP2_0_1.VariableCharacteristicsType
+  implements OCPP2_0_1.VariableCharacteristicsType, IVariableCharacteristicsDto
 {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableCharacteristicsType;
 
@@ -42,7 +41,7 @@ export class VariableCharacteristics
    */
 
   @BelongsTo(() => Variable)
-  declare variable: OCPP2_0_1.VariableType;
+  declare variable: Variable;
 
   @ForeignKey(() => Variable)
   @Column({

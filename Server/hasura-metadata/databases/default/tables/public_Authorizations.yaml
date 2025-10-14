@@ -1,21 +1,45 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
 table:
   name: Authorizations
   schema: public
 object_relationships:
-  - name: IdToken
+  - name: GroupAuthorization
     using:
-      foreign_key_constraint_on: idTokenId
-  - name: IdTokenInfo
-    using:
-      foreign_key_constraint_on: idTokenInfoId
+      foreign_key_constraint_on: groupAuthorizationId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
+  - name: TenantPartner
+    using:
+      foreign_key_constraint_on: tenantPartnerId
 array_relationships:
+  - name: Authorizations
+    using:
+      foreign_key_constraint_on:
+        column: groupAuthorizationId
+        table:
+          name: Authorizations
+          schema: public
   - name: LocalListAuthorizations
     using:
       foreign_key_constraint_on:
         column: authorizationId
+        table:
+          name: LocalListAuthorizations
+          schema: public
+  - name: Transactions
+    using:
+      foreign_key_constraint_on:
+        column: authorizationId
+        table:
+          name: Transactions
+          schema: public
+  - name: localListAuthorizationsByGroupauthorizationid
+    using:
+      foreign_key_constraint_on:
+        column: groupAuthorizationId
         table:
           name: LocalListAuthorizations
           schema: public
@@ -26,8 +50,17 @@ select_permissions:
         - allowedConnectorTypes
         - disallowedEvseIdPrefixes
         - id
-        - idTokenId
-        - idTokenInfoId
+        - idToken
+        - idTokenType
+        - additionalInfo
+        - status
+        - cacheExpiryDateTime
+        - chargingPriority
+        - language1
+        - language2
+        - personalMessage
+        - groupAuthorizationId
+        - concurrentTransaction
         - tenantId
         - createdAt
         - updatedAt

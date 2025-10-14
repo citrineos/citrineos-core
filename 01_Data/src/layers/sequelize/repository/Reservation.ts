@@ -1,7 +1,6 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import { CrudRepository, OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
 import { IReservationRepository } from '../../../interfaces';
@@ -9,25 +8,25 @@ import { SequelizeRepository } from './Base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { Reservation } from '../model/Reservation';
-import { Evse } from '../model/DeviceModel';
+import { EvseType } from '../model/DeviceModel';
 
 export class SequelizeReservationRepository
   extends SequelizeRepository<Reservation>
   implements IReservationRepository
 {
-  evse: CrudRepository<Evse>;
+  evse: CrudRepository<EvseType>;
   logger: Logger<ILogObj>;
 
   constructor(
     config: BootstrapConfig,
     logger?: Logger<ILogObj>,
     sequelizeInstance?: Sequelize,
-    evse?: CrudRepository<Evse>,
+    evse?: CrudRepository<EvseType>,
   ) {
     super(config, Reservation.MODEL_NAME, logger, sequelizeInstance);
     this.evse = evse
       ? evse
-      : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
+      : new SequelizeRepository<EvseType>(config, EvseType.MODEL_NAME, logger, sequelizeInstance);
 
     this.logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })

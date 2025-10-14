@@ -1,0 +1,110 @@
+.dockerignore
+.gitattributes
+.gitignore
+.npmrc
+.nvmrc
+.prettierignore
+.prettierrc
+.sequelizerc
+OCPP_201_Logo_core_and_advanced_security.png
+README.md
+Server/rbac-rules.json
+Swarm/data/redis/redis.conf
+entrypoint.sh
+logo_black.png
+logo_white.png
+renovate.json
+
+Server/src/assets/logo.png
+Swarm/src/assets/logo.png
+
+# CI/CD files
+.github/workflows/tests/CI/collection.json
+.github/workflows/tests/CI/environment.json
+.husky/pre-commit
+
+# Package files
+00_Base/package.json
+01_Data/package.json
+02_Util/package.json
+03_Modules/Certificates/package.json
+03_Modules/Configuration/package.json
+03_Modules/EVDriver/package.json
+03_Modules/Monitoring/package.json
+03_Modules/OcppRouter/package.json
+03_Modules/Reporting/package.json
+03_Modules/SmartCharging/package.json
+03_Modules/Tenant/package.json
+03_Modules/Transactions/package.json
+Server/package.json
+Swarm/package.json
+package-lock.json
+
+# TypeScript config files
+00_Base/tsconfig.esm.json
+00_Base/tsconfig.json
+01_Data/tsconfig.json
+02_Util/tsconfig.json
+03_Modules/Certificates/tsconfig.json
+03_Modules/Configuration/tsconfig.json
+03_Modules/EVDriver/tsconfig.json
+03_Modules/Monitoring/tsconfig.json
+03_Modules/OcppRouter/tsconfig.json
+03_Modules/Reporting/tsconfig.json
+03_Modules/SmartCharging/tsconfig.json
+03_Modules/Tenant/tsconfig.json
+03_Modules/Transactions/tsconfig.json
+Server/tsconfig.json
+Swarm/tsconfig.json
+tsconfig.build.json
+tsconfig.eslint.json
+tsconfig.json
+
+# OCPP 1.6 Schema files
+00_Base/src/ocpp/model/1.6/schemas/
+
+# OCPP 2.0.1 Schema files
+00_Base/src/ocpp/model/2.0.1/schemas/
+
+# Persistence schemas
+00_Base/src/ocpp/persistence/schemas/AuthorizationDataSchema.json
+00_Base/src/ocpp/persistence/schemas/BootConfigSchema.json
+00_Base/src/ocpp/persistence/schemas/ChargingStationTypeSchema.json
+00_Base/src/ocpp/persistence/schemas/ReportDataTypeSchema.json
+00_Base/src/ocpp/persistence/schemas/SetVariableResultTypeSchema.json
+00_Base/src/ocpp/persistence/schemas/UpdateChargingStationPasswordRequestSchema.json
+
+# Other schemas
+01_Data/src/interfaces/projections/schemas/AuthorizationRestrictionsSchema.json
+01_Data/src/interfaces/projections/schemas/TariffSchema.json
+
+# Certificate files
+02_Util/test/resources/ChargingStationCSRSample.pem
+02_Util/test/resources/LeafCertificateSample.pem
+02_Util/test/resources/LeafKeySample.pem
+02_Util/test/resources/RootCertificateSample.pem
+02_Util/test/resources/RootKeySample.pem
+02_Util/test/resources/SubCACertificateSample.pem
+02_Util/test/resources/SubCAKeySample.pem
+02_Util/test/resources/V2GCACertChainSample.pem
+02_Util/test/resources/V2GLeafCertificateSample.pem
+Server/src/assets/certificates/acme_account_key.pem
+Server/src/assets/certificates/certChain.pem
+Server/src/assets/certificates/leafKey.pem
+Server/src/assets/certificates/rootCertificate.pem
+Server/src/assets/certificates/subCAKey.pem
+Swarm/src/assets/certificates/acme_account_key.pem
+
+# Documentation
+02_Util/test/resources/README.md
+Server/everest/README.md
+
+# Configuration files
+Server/nodemon.json
+Swarm/.eslintrc.json
+Swarm/nodemon.json
+
+Server/everest/
+DirectusExtensions/
+Server/data/directus/uploads/
+Swarm/data/directus/uploads/

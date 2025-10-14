@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "private": false,
   "scripts": {
     "install-all": "npm i --verbose",
@@ -22,6 +22,7 @@
     "prettier": "prettier --write .",
     "fi": "npm run fresh && npm run install-all",
     "sync-db": "ts-node ./db.sync.ts",
+    "force-sync-db": "ts-node ./db.force-sync.ts",
     "start-everest": "npm run start-everest --prefix ./Server",
     "test": "jest --config jest.config.ts",
     "coverage": "jest --config jest.config.ts --coverage",
