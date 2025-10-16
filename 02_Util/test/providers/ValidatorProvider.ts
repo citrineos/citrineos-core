@@ -14,14 +14,15 @@ import {
   VariableAttribute,
 } from '@citrineos/data';
 import { ILogObj, Logger } from 'tslog';
+import { vi, Mocked } from 'vitest';
 
 // Mock logger that can be used in tests
-export function createMockLogger(): jest.Mocked<Logger<ILogObj>> {
+export function createMockLogger(): Mocked<Logger<ILogObj>> {
   return {
-    info: jest.fn(),
-    debug: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   } as any;
 }
 
@@ -107,22 +108,22 @@ export function aCost(override?: Partial<OCPP2_0_1.CostType>): OCPP2_0_1.CostTyp
 }
 
 // Repository mock builders
-export function createMockDeviceModelRepository(): jest.Mocked<IDeviceModelRepository> {
+export function createMockDeviceModelRepository(): Mocked<IDeviceModelRepository> {
   return {
-    findEvseByIdAndConnectorId: jest.fn(),
-    readAllByQuerystring: jest.fn(),
+    findEvseByIdAndConnectorId: vi.fn(),
+    readAllByQuerystring: vi.fn(),
   } as any;
 }
 
-export function createMockChargingProfileRepository(): jest.Mocked<IChargingProfileRepository> {
+export function createMockChargingProfileRepository(): Mocked<IChargingProfileRepository> {
   return {
-    findChargingNeedsByEvseDBIdAndTransactionDBId: jest.fn(),
+    findChargingNeedsByEvseDBIdAndTransactionDBId: vi.fn(),
   } as any;
 }
 
-export function createMockTransactionEventRepository(): jest.Mocked<ITransactionEventRepository> {
+export function createMockTransactionEventRepository(): Mocked<ITransactionEventRepository> {
   return {
-    readTransactionByStationIdAndTransactionId: jest.fn(),
+    readTransactionByStationIdAndTransactionId: vi.fn(),
   } as any;
 }
 
