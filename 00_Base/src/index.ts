@@ -3,105 +3,115 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Base Library Interfaces
+import { OCPP1_6, OCPP2_0_1 } from './ocpp/model/index.js';
+import type { CallAction } from './ocpp/rpc/message.js';
+import { OCPP1_6_CallAction, OCPP2_0_1_CallAction } from './ocpp/rpc/message.js';
+import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
+
+export type { IModuleApi, IApiAuthProvider, UserInfo } from './interfaces/api/index.js';
 export {
   AbstractModuleApi,
   AsDataEndpoint,
   AsMessageEndpoint,
   HttpMethod,
-  IModuleApi,
-  IApiAuthProvider,
   ApiAuthorizationResult,
   ApiAuthenticationResult,
-  UserInfo,
-} from './interfaces/api';
-export { IAuthorizer } from './interfaces/authorizer';
-export { BadRequestError } from './interfaces/api/exceptions/BadRequestError';
-export { NotFoundError } from './interfaces/api/exceptions/NotFoundError';
-export { ICache } from './interfaces/cache/cache';
+} from './interfaces/api/index.js';
+export type { IAuthorizer } from './interfaces/authorizer/index.js';
+export { BadRequestError } from './interfaces/api/exceptions/BadRequestError.js';
+export { NotFoundError } from './interfaces/api/exceptions/NotFoundError.js';
+export type { ICache } from './interfaces/cache/cache.js';
+export type { IWebsocketConnection } from './interfaces/cache/types.js';
 export {
   CacheNamespace,
-  IWebsocketConnection,
   createIdentifier,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
-} from './interfaces/cache/types';
-export {
-  AbstractMessageRouter,
+} from './interfaces/cache/types.js';
+export type {
   IAuthenticator,
   AuthenticationOptions,
   IMessageRouter,
-} from './interfaces/router';
-export {
-  AbstractMessageHandler,
-  AbstractMessageSender,
-  EventGroup,
+} from './interfaces/router/index.js';
+export { AbstractMessageRouter } from './interfaces/router/index.js';
+export type {
   HandlerProperties,
   IMessage,
   IMessageConfirmation,
   IMessageContext,
   IMessageHandler,
   IMessageSender,
+} from './interfaces/messages/index.js';
+export {
+  AbstractMessageHandler,
+  AbstractMessageSender,
+  EventGroup,
   Message,
   MessageOrigin,
   MessageState,
   RetryMessageError,
-} from './interfaces/messages';
+  eventGroupFromString,
+} from './interfaces/messages/index.js';
+export type { IModule } from './interfaces/modules/index.js';
 export {
   AbstractModule,
   AsHandler,
-  IModule,
   CircuitBreaker,
   type CircuitBreakerState,
   type CircuitBreakerOptions,
-} from './interfaces/modules';
-export {
+} from './interfaces/modules/index.js';
+export type {
   Call,
   CallAction,
-  OCPP1_6_CallAction,
-  OCPP2_0_1_CallAction,
   CallError,
   CallResult,
+  OCPPVersionType,
+} from './ocpp/rpc/message.js';
+export {
+  OCPP1_6_CallAction,
+  OCPP2_0_1_CallAction,
   ErrorCode,
   MessageTypeId,
   OcppError,
   OCPPVersion,
-  OCPPVersionType,
   mapToCallAction,
-} from './ocpp/rpc/message';
-export { ChargingStationSequenceType } from './ocpp/model/requestIds';
-export { IFileAccess, IFileStorage } from './interfaces/files';
+} from './ocpp/rpc/message.js';
+export { ChargingStationSequenceType } from './ocpp/model/requestIds.js';
+export type { IFileAccess, IFileStorage } from './interfaces/files/index.js';
 
 // Persistence Interfaces
 
-export { TenantContextManager } from './interfaces/tenant';
-export { CrudEvent, CrudRepository } from './interfaces/repository';
-export * from './ocpp/persistence';
+export { TenantContextManager } from './interfaces/tenant.js';
+export type { CrudEvent } from './interfaces/repository.js';
+export { CrudRepository } from './interfaces/repository.js';
+export * from './ocpp/persistence/index.js';
 
 // Configuration Types
 
-export { BootConfig, BOOT_STATUS } from './config/BootConfig';
-export { defineConfig, DEFAULT_TENANT_ID } from './config/defineConfig';
-export { SystemConfig, systemConfigSchema, WebsocketServerConfig } from './config/types';
-export { SignedMeterValuesConfig } from './config/signedMeterValuesConfig';
-export { ConfigStore, ConfigStoreFactory } from './config/ConfigStore';
-export { BootstrapConfig, loadBootstrapConfig } from './config/bootstrap.config';
+export type { BootConfig } from './config/BootConfig.js';
+export { BOOT_STATUS } from './config/BootConfig.js';
+export { defineConfig, DEFAULT_TENANT_ID } from './config/defineConfig.js';
+export type { SystemConfig, WebsocketServerConfig, RbacRules } from './config/types.js';
+export { systemConfigSchema, RbacRulesSchema } from './config/types.js';
+export { SignedMeterValuesConfig } from './config/signedMeterValuesConfig.js';
+export type { ConfigStore } from './config/ConfigStore.js';
+export type { BootstrapConfig } from './config/bootstrap.config.js';
+export { ConfigStoreFactory } from './config/ConfigStore.js';
+export { loadBootstrapConfig } from './config/bootstrap.config.js';
 
 // Utils
 
-export { RequestBuilder } from './util/request';
-export { MeterValueUtils } from './util/MeterValueUtils';
+export { RequestBuilder } from './util/request.js';
+export { MeterValueUtils } from './util/MeterValueUtils.js';
 
 export const LOG_LEVEL_OCPP = 10;
 
 // OCPP 2.0.1 Interfaces
 
-export * from './ocpp/model';
+export * from './ocpp/model/index.js';
 
-export { UpdateChargingStationPasswordRequest } from './ocpp/model/UpdateChargingStationPasswordRequest';
-
-import { OCPP1_6, OCPP2_0_1 } from './ocpp/model/index';
-import { CallAction, OCPP1_6_CallAction, OCPP2_0_1_CallAction } from './ocpp/rpc/message';
-import Ajv from 'ajv';
+export type { UpdateChargingStationPasswordRequest } from './ocpp/model/UpdateChargingStationPasswordRequest.js';
 
 export interface OcppRequest {}
 
@@ -244,15 +254,16 @@ export const OCPP2_0_1_CALL_RESULT_SCHEMA_MAP: Map<CallAction, object> = new Map
   [OCPP2_0_1_CallAction.UpdateFirmware, OCPP2_0_1.UpdateFirmwareResponseSchema],
 ]);
 
-export { eventGroupFromString } from './interfaces/messages';
-export { UnauthorizedException } from './interfaces/api/exceptions/unauthorized.exception';
-export { HttpHeader } from './interfaces/api/http.header';
-export { HttpStatus } from './interfaces/api/http.status';
-export { Money } from './money/Money';
-export { Currency, CurrencyCode } from './money/Currency';
-export { assert, notNull, deepDirectionalEqual } from './assertion/assertion';
-export { UnauthorizedError } from './interfaces/api/exception/UnauthorizedError';
-export { AuthorizationSecurity } from './interfaces/api/AuthorizationSecurity';
-export { Ajv };
-export * from './interfaces/dto';
+export { UnauthorizedException } from './interfaces/api/exceptions/unauthorized.exception.js';
+export { HttpHeader } from './interfaces/api/http.header.js';
+export { HttpStatus } from './interfaces/api/http.status.js';
+export { Money } from './money/Money.js';
+export type { CurrencyCode } from './money/Currency.js';
+export { Currency } from './money/Currency.js';
+export { assert, notNull, deepDirectionalEqual } from './assertion/assertion.js';
+export { UnauthorizedError } from './interfaces/api/exception/UnauthorizedError.js';
+export { AuthorizationSecurity } from './interfaces/api/AuthorizationSecurity.js';
+export { Ajv, addFormats };
+export * from './interfaces/dto/index.js';
+export { AuthorizationWhitelistType } from './interfaces/dto/index.js';
 export declare type Constructable<T> = new (...args: any[]) => T;

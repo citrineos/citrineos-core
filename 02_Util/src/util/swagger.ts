@@ -6,12 +6,14 @@
 
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import fs from 'fs';
-import { HttpHeader, HttpStatus, SystemConfig, UnauthorizedError } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/base';
+import { HttpHeader, HttpStatus, UnauthorizedError } from '@citrineos/base';
 import * as FastifyAuth from '@fastify/auth';
-import * as packageJson from '../../package.json';
-import { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
+import * as packageJson from '../../package.json' with { type: 'json' };
+import type { OpenAPIV3_1 } from 'openapi-types';
+import { OpenAPIV2, OpenAPIV3 } from 'openapi-types';
 
 /**
  * This transformation is used to set default tags
@@ -151,7 +153,7 @@ const registerFastifySwagger = (systemConfig: SystemConfig, server: FastifyInsta
       info: {
         title: 'CitrineOS Central System API',
         description: 'Central System API for OCPP 2.0.1 messaging.',
-        version: packageJson.version,
+        version: packageJson.default.version,
       },
       components: {
         securitySchemes: {

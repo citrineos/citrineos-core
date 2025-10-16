@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPIVersionNumber } from '../enum';
+import { OCPIVersionNumber } from '../enum/index.js';
 
 export interface ServerProfile {
   credentialsRole: CredentialRole;

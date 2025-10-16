@@ -2,34 +2,29 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import 'reflect-metadata';
-import { ILogObj, Logger } from 'tslog';
-import {
-  HttpMethod,
-  IDataEndpointDefinition,
-  IMessageEndpointDefinition,
-  METADATA_DATA_ENDPOINTS,
-  METADATA_MESSAGE_ENDPOINTS,
-} from '.';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IDataEndpointDefinition, IMessageEndpointDefinition } from './index.js';
+import { HttpMethod, METADATA_DATA_ENDPOINTS, METADATA_MESSAGE_ENDPOINTS } from './index.js';
+import type { OcppRequest, SystemConfig } from '../../index.js';
 import {
   ConfigStoreFactory,
   MessageConfirmationSchema,
   Namespace,
   OCPP1_6_Namespace,
-  OcppRequest,
   OCPPVersion,
-  SystemConfig,
   systemConfigSchema,
-} from '../..';
-import { OCPP2_0_1_Namespace } from '../../ocpp/persistence';
-import { CallAction } from '../../ocpp/rpc/message';
-import { IMessageConfirmation } from '../messages';
-import { IModule } from '../modules';
-import { IMessageQuerystringSchema } from './MessageQuerystring';
-import { IModuleApi } from './ModuleApi';
-import { AuthorizationSecurity } from './AuthorizationSecurity';
-import zodToJsonSchema from 'zod-to-json-schema';
+} from '../../index.js';
+import { OCPP2_0_1_Namespace } from '../../ocpp/persistence/index.js';
+import type { CallAction } from '../../ocpp/rpc/message.js';
+import type { IMessageConfirmation } from '../messages/index.js';
+import type { IModule } from '../modules/index.js';
+import { IMessageQuerystringSchema } from './MessageQuerystring.js';
+import type { IModuleApi } from './ModuleApi.js';
+import { AuthorizationSecurity } from './AuthorizationSecurity.js';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 /**
  * Abstract module api class implementation.

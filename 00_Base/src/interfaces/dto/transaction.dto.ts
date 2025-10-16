@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import {
+import type {
   IAuthorizationDto,
   IBaseDto,
   IChargingStationDto,
@@ -14,7 +14,7 @@ import {
   IStopTransactionDto,
   ITariffDto,
   ITransactionEventDto,
-} from '../..';
+} from '../../index.js';
 
 export interface ITransactionDto extends IBaseDto {
   id?: number;

@@ -13,16 +13,12 @@ export enum HttpMethod {
 export const METADATA_MESSAGE_ENDPOINTS = 'METADATA_MESSAGE_ENDPOINTS';
 export const METADATA_DATA_ENDPOINTS = 'METADATA_DATA_ENDPOINTS';
 
-export { AbstractModuleApi } from './AbstractModuleApi';
-export { AsDataEndpoint } from './AsDataEndpoint';
-export { AsMessageEndpoint } from './AsMessageEndpoint';
-export { IDataEndpointDefinition } from './DataEndpointDefinition';
-export { IMessageEndpointDefinition } from './MessageEndpointDefinition';
-export { IMessageQuerystring } from './MessageQuerystring';
-export { IModuleApi } from './ModuleApi';
-export {
-  IApiAuthProvider,
-  ApiAuthorizationResult,
-  ApiAuthenticationResult,
-  UserInfo,
-} from './auth';
+export { AbstractModuleApi } from './AbstractModuleApi.js';
+export { AsDataEndpoint } from './AsDataEndpoint.js';
+export { AsMessageEndpoint } from './AsMessageEndpoint.js';
+export type { IDataEndpointDefinition } from './DataEndpointDefinition.js';
+export type { IMessageEndpointDefinition } from './MessageEndpointDefinition.js';
+export type { IMessageQuerystring } from './MessageQuerystring.js';
+export type { IModuleApi } from './ModuleApi.js';
+export type { IApiAuthProvider, UserInfo } from './auth/index.js';
+export { ApiAuthorizationResult, ApiAuthenticationResult } from './auth/index.js';

@@ -2,20 +2,30 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { AdditionalInfo, IAuthorizationDto, ITenantDto } from '@citrineos/base';
 import {
-  AdditionalInfo,
   AuthorizationStatusType,
-  IAuthorizationDto,
+  AuthorizationWhitelistType,
+  DEFAULT_TENANT_ID,
   IdTokenType,
   Namespace,
-  AuthorizationWhitelistType,
 } from '@citrineos/base';
-import { BelongsTo, Column, DataType, Default, ForeignKey, Table } from 'sequelize-typescript';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
-import { TenantPartner } from '../TenantPartner';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  Default,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { TenantPartner } from '../TenantPartner.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class Authorization extends BaseModelWithTenant implements IAuthorizationDto {
+export class Authorization extends Model implements IAuthorizationDto {
   static readonly MODEL_NAME: string = Namespace.AuthorizationData;
 
   @Column(DataType.ARRAY(DataType.STRING))
@@ -89,4 +99,31 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
 
   @BelongsTo(() => TenantPartner)
   declare tenantPartner?: TenantPartner | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: Authorization) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { CountryNameEnumType, SignatureAlgorithmEnumType } from '../../layers/sequelize';
+import { CountryNameEnumType, SignatureAlgorithmEnumType } from '../../layers/sequelize/index.js';
 
 export class GenerateCertificateChainRequest {
   // Fields for generating a certificate

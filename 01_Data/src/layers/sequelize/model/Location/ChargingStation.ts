@@ -1,47 +1,50 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { IChargingStationDto, ILocationDto, ITenantDto } from '@citrineos/base';
 import {
   ChargingStationCapability,
   ChargingStationParkingRestriction,
-  IChargingStationDto,
+  DEFAULT_TENANT_ID,
   Namespace,
   OCPPVersion,
 } from '@citrineos/base';
 import {
+  BeforeCreate,
+  BeforeUpdate,
   BelongsTo,
   BelongsToMany,
   Column,
   DataType,
   ForeignKey,
   HasMany,
+  Model,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { Location } from './Location';
-import { StatusNotification } from './StatusNotification';
-import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
-import { SetNetworkProfile } from './SetNetworkProfile';
-import { Connector } from './Connector';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
-import { Evse } from './Evse';
-import { Point } from 'geojson';
-import { Transaction } from '..';
+import { Location } from './Location.js';
+import { StatusNotification } from './StatusNotification.js';
+import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile.js';
+import { SetNetworkProfile } from './SetNetworkProfile.js';
+import { Connector } from './Connector.js';
+import { Evse } from './Evse.js';
+import type { Point } from 'geojson';
+import { Tenant } from '../Tenant.js';
+import { Transaction } from '../index.js';
 
 /**
  * Represents a charging station.
  * Currently, this data model is internal to CitrineOS. In the future, it will be analogous to an OCPI ChargingStation.
  */
 @Table
-export class ChargingStation extends BaseModelWithTenant implements IChargingStationDto {
+export class ChargingStation extends Model implements IChargingStationDto {
   static readonly MODEL_NAME: string = Namespace.ChargingStation;
 
   @PrimaryKey
   @Column(DataType.STRING(36))
   declare id: string;
 
-  @Column
+  @Column(DataType.BOOLEAN)
   declare isOnline: boolean;
 
   @Column(DataType.STRING)
@@ -103,7 +106,7 @@ export class ChargingStation extends BaseModelWithTenant implements IChargingSta
    * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.
    */
   @BelongsTo(() => Location)
-  declare location?: Location;
+  declare location?: ILocationDto;
 
   @BelongsToMany(() => SetNetworkProfile, () => ChargingStationNetworkProfile)
   declare networkProfiles?: SetNetworkProfile[] | null;
@@ -117,4 +120,31 @@ export class ChargingStation extends BaseModelWithTenant implements IChargingSta
     onDelete: 'CASCADE',
   })
   declare connectors?: Connector[] | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: ChargingStation) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

@@ -1,12 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
-  AsHandler,
-  AuthorizationDtoProps,
-  AuthorizationStatusType,
+import type {
   BootstrapConfig,
   CallAction,
   ChargingStationSequenceType,
@@ -20,6 +15,15 @@ import {
   IMessageContext,
   IMessageHandler,
   IMessageSender,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractModule,
+  AsHandler,
+  AuthorizationDtoProps,
+  AuthorizationStatusType,
+  ChargingStationSequenceType,
+  EventGroup,
   MessageOrigin,
   OCPP1_6,
   OCPP1_6_CallAction,
@@ -27,10 +31,8 @@ import {
   OCPP2_0_1_CallAction,
   OcppError,
   OCPPVersion,
-  SystemConfig,
 } from '@citrineos/base';
-import {
-  Authorization,
+import type {
   IAuthorizationRepository,
   IChargingProfileRepository,
   IDeviceModelRepository,
@@ -40,6 +42,9 @@ import {
   IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
+} from '@citrineos/data';
+import {
+  Authorization,
   OCPP1_6_Mapper,
   OCPP2_0_1_Mapper,
   sequelize,
@@ -55,8 +60,9 @@ import {
   RealTimeAuthorizer,
   validateIdToken,
 } from '@citrineos/util';
-import { ILogObj, Logger } from 'tslog';
-import { LocalAuthListService } from './LocalAuthListService';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { LocalAuthListService } from './LocalAuthListService.js';
 
 /**
  * Component that handles provisioning related messages.

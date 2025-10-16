@@ -1,31 +1,34 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
+import type {
+  IBootDto,
   IComponentDto,
+  ITenantDto,
   IVariableAttributeDto,
   IVariableDto,
-  OCPP2_0_1,
-  OCPP2_0_1_Namespace,
 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
+  BeforeCreate,
+  BeforeUpdate,
   BelongsTo,
   Column,
   DataType,
   ForeignKey,
   HasMany,
   Index,
+  Model,
   Table,
 } from 'sequelize-typescript';
-import { Variable } from './Variable';
-import { Component } from './Component';
-import { Boot } from '../Boot';
-import { VariableStatus } from './VariableStatus';
-import { ChargingStation, Evse } from '../Location';
-import { CryptoUtils } from '../../../../util/CryptoUtils';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
-import { EvseType } from './EvseType';
+import { Variable } from './Variable.js';
+import { Component } from './Component.js';
+import { Boot } from '../Boot.js';
+import { VariableStatus } from './VariableStatus.js';
+import { ChargingStation } from '../Location/index.js';
+import { CryptoUtils } from '../../../../util/CryptoUtils.js';
+import { EvseType } from './EvseType.js';
+import { Tenant } from '../Tenant.js';
 
 @Table({
   indexes: [
@@ -86,7 +89,7 @@ import { EvseType } from './EvseType';
   ],
 })
 export class VariableAttribute
-  extends BaseModelWithTenant
+  extends Model
   implements OCPP2_0_1.VariableAttributeType, IVariableAttributeDto
 {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableAttributeType;
@@ -97,6 +100,7 @@ export class VariableAttribute
 
   @Index
   @Column({
+    type: DataType.STRING,
     unique: 'stationId_type_variableId_componentId',
     allowNull: false,
   })
@@ -205,10 +209,37 @@ export class VariableAttribute
   // Below used to associate attributes with boot process
 
   @BelongsTo(() => Boot)
-  declare bootConfig?: Boot;
+  declare bootConfig?: IBootDto;
 
   @ForeignKey(() => Boot)
   declare bootConfigId?: string | null;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: VariableAttribute) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

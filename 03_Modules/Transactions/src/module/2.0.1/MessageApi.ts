@@ -2,20 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ILogObj, Logger } from 'tslog';
-import { ITransactionsModuleApi } from '../interface';
-import { TransactionsModule } from '../module';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { ITransactionsModuleApi } from '../interface.js';
+import { TransactionsModule } from '../module.js';
+import type { CallAction, IMessageConfirmation } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
-  CallAction,
   DEFAULT_TENANT_ID,
-  IMessageConfirmation,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 /**
  * Server API for the transaction module.

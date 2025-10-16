@@ -7,9 +7,10 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { BootstrapConfig, ConfigStore, SystemConfig } from '@citrineos/base';
+import type { BootstrapConfig, ConfigStore, SystemConfig } from '@citrineos/base';
 import { Readable } from 'stream';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class S3Storage implements ConfigStore {
   protected readonly _logger: Logger<ILogObj>;

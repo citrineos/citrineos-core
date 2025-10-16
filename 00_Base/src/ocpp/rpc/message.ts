@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OcppRequest, OcppResponse } from '../..';
+import type { OcppRequest, OcppResponse } from '../../index.js';
 import { Expose, Transform } from 'class-transformer';
 
 /**

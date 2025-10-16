@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto } from './base.dto';
-import { IConnectorDto } from './connector.dto';
+import type { IBaseDto } from './base.dto.js';
+import type { IConnectorDto } from './connector.dto.js';
 
 export interface IStartTransactionDto extends IBaseDto {
   id?: number;

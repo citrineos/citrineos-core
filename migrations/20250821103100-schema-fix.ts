@@ -6,7 +6,7 @@
 /** @type {import('sequelize-cli').Migration} */
 import { DataTypes, QueryInterface } from 'sequelize';
 
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
     // Helper to check if a constraint exists (robust for schema/casing)
     const constraintExists = async (

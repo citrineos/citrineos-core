@@ -1,35 +1,40 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
-  AsHandler,
+import type {
   BootstrapConfig,
   CallAction,
-  ChargingStationSequenceType,
-  EventGroup,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageHandler,
   IMessageSender,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractModule,
+  AsHandler,
+  ChargingStationSequenceType,
+  EventGroup,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
-  SystemConfig,
 } from '@citrineos/base';
 import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
-import { ILogObj, Logger } from 'tslog';
-import {
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type {
   IChargingProfileRepository,
   IDeviceModelRepository,
   ITransactionEventRepository,
+} from '@citrineos/data';
+import {
   sequelize,
   SequelizeChargingStationSequenceRepository,
   Transaction,
 } from '@citrineos/data';
-import { InternalSmartCharging, ISmartCharging } from './smartCharging';
+import type { ISmartCharging } from './smartCharging/index.js';
+import { InternalSmartCharging } from './smartCharging/index.js';
 
 /**
  * Component that handles provisioning related messages.

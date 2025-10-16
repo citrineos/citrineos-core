@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto } from './base.dto';
-import { SampledValue } from './json';
+import type { IBaseDto } from './base.dto.js';
+import type { SampledValue } from './json/index.js';
 
 export interface IMeterValueDto extends IBaseDto {
   id?: number;

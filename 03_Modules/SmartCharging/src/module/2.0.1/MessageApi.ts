@@ -2,15 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ILogObj, Logger } from 'tslog';
-import { ISmartChargingModuleApi } from '../interface';
-import { SmartChargingModule } from '../module';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { ISmartChargingModuleApi } from '../interface.js';
+import { SmartChargingModule } from '../module.js';
+import type { CallAction, IMessageConfirmation } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
-  CallAction,
   DEFAULT_TENANT_ID,
-  IMessageConfirmation,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_0_1,
@@ -18,7 +18,7 @@ import {
   OCPP2_0_1_Namespace,
   OCPPVersion,
 } from '@citrineos/base';
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { VariableAttribute } from '@citrineos/data';
 import { stringToSet, validateChargingProfileType } from '@citrineos/util';
 

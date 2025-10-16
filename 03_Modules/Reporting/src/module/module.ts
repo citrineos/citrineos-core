@@ -1,38 +1,38 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
-  AsHandler,
+import type {
   BootstrapConfig,
   CallAction,
   ErrorCode,
-  EventGroup,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageHandler,
   IMessageSender,
   Namespace,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractModule,
+  AsHandler,
+  EventGroup,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
   OCPPVersion,
-  SystemConfig,
 } from '@citrineos/base';
-import {
-  Component,
+import type {
   IDeviceModelRepository,
   IOCPPMessageRepository,
   ISecurityEventRepository,
   IVariableMonitoringRepository,
-  sequelize,
-  Variable,
 } from '@citrineos/data';
+import { Component, sequelize, Variable } from '@citrineos/data';
 import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
-import { ILogObj, Logger } from 'tslog';
-import { DeviceModelService } from './services';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { DeviceModelService } from './services.js';
 
 /**
  * Component that handles provisioning related messages.

@@ -2,31 +2,32 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { Boot, IBootRepository } from '@citrineos/data';
-import { BootNotificationService } from '../../src/module/BootNotificationService';
-import { ICache, OCPP2_0_1, OCPP1_6, SystemConfig } from '@citrineos/base';
-import { aValidBootConfig } from '../providers/BootConfigProvider';
-import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall';
+import { BootNotificationService } from '../../src/module/BootNotificationService.js';
+import { ICache, OCPP1_6, OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import { aValidBootConfig } from '../providers/BootConfigProvider.js';
+import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall.js';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 type Configuration = SystemConfig['modules']['configuration'];
 
 describe('BootService', () => {
-  let mockBootRepository: jest.Mocked<IBootRepository>;
-  let mockCache: jest.Mocked<ICache>;
-  let mockConfig: jest.Mocked<Configuration>;
+  let mockBootRepository: Mocked<IBootRepository>;
+  let mockCache: Mocked<ICache>;
+  let mockConfig: Mocked<Configuration>;
   const mockMaxCachingSeconds = 10;
   let bootService: BootNotificationService;
   const MOCK_STATION_ID = 'Station01';
 
   beforeEach(() => {
     mockBootRepository = {
-      readByKey: jest.fn(),
-    } as unknown as jest.Mocked<IBootRepository>;
+      readByKey: vi.fn(),
+    } as unknown as Mocked<IBootRepository>;
 
     mockCache = {
-      onChange: jest.fn(),
-      remove: jest.fn(),
-      set: jest.fn(),
-    } as unknown as jest.Mocked<ICache>;
+      onChange: vi.fn(),
+      remove: vi.fn(),
+      set: vi.fn(),
+    } as unknown as Mocked<ICache>;
 
     mockConfig = {
       bootRetryInterval: 0,
@@ -49,7 +50,7 @@ describe('BootService', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('determineBootStatus', () => {
@@ -89,7 +90,9 @@ describe('BootService', () => {
     it('should return Accepted status when bootConfig.status is pending and no actions are needed but autoAccept is true', () => {
       const bootConfig = aValidBootConfig((item: Boot) => (item.getBaseReportOnPending = false));
 
-      jest.replaceProperty(mockConfig.ocpp2_0_1!, 'autoAccept', true);
+      if (mockConfig && mockConfig.ocpp2_0_1) {
+        mockConfig.ocpp2_0_1.autoAccept = true;
+      }
 
       runDetermineBootStatusTest(bootConfig, OCPP2_0_1.RegistrationStatusEnumType.Accepted);
     });
@@ -109,7 +112,9 @@ describe('BootService', () => {
     it('should return Accepted status when bootConfig.status is pending, no actions are needed, and autoAccept is true', () => {
       const bootConfig = aValidBootConfig();
 
-      jest.replaceProperty(mockConfig.ocpp2_0_1!, 'autoAccept', true);
+      if (mockConfig && mockConfig.ocpp2_0_1) {
+        mockConfig.ocpp2_0_1.autoAccept = true;
+      }
 
       runDetermineBootStatusTest(bootConfig, OCPP2_0_1.RegistrationStatusEnumType.Accepted);
     });

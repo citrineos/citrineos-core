@@ -4,11 +4,9 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-import { DataTypes, QueryInterface } from 'sequelize';
+import { QueryInterface } from 'sequelize';
 
-const TABLE_NAME = 'Evses';
-
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
     // First, let's get all the stations that have EvseTypes associated with them
     // through VariableAttributes

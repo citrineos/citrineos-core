@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { Authorization } from '@citrineos/data';
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 import {
   AuthorizationStatusType,
+  AuthorizationWhitelistType,
   DEFAULT_TENANT_ID,
   IdTokenType,
-  AuthorizationWhitelistType,
 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 

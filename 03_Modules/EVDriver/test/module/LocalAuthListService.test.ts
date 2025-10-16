@@ -10,36 +10,37 @@ import {
   VariableAttribute,
   VariableCharacteristics,
 } from '@citrineos/data';
-import { LocalAuthListService } from '../../src/module/LocalAuthListService';
+import { LocalAuthListService } from '../../src/module/LocalAuthListService.js';
 import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
+import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('LocalAuthListService', () => {
-  let mockLocalAuthListRepository: jest.Mocked<ILocalAuthListRepository>;
-  let mockDeviceModelRepository: jest.Mocked<IDeviceModelRepository>;
+  let mockLocalAuthListRepository: Mocked<ILocalAuthListRepository>;
+  let mockDeviceModelRepository: Mocked<IDeviceModelRepository>;
   let localAuthListService: LocalAuthListService;
 
   const tenantId = DEFAULT_TENANT_ID;
   const stationId = 'station-1';
   const correlationId = 'test-correlation-id';
   const initialVersionNumber = 2;
-  const baseMockLocalListVersion = jest.mocked<LocalListVersion>({
+  const baseMockLocalListVersion = vi.mocked<LocalListVersion>({
     stationId: stationId,
     versionNumber: initialVersionNumber,
   } as unknown as LocalListVersion);
-  const baseMockVariableCharacteristics = jest.mocked<VariableCharacteristics>({
+  const baseMockVariableCharacteristics = vi.mocked<VariableCharacteristics>({
     dataType: OCPP2_0_1.DataEnumType.integer,
   } as unknown as VariableCharacteristics);
 
   beforeEach(() => {
     mockLocalAuthListRepository = {
-      readOnlyOneByQuery: jest.fn(),
-      createSendLocalListFromRequestData: jest.fn(),
-    } as unknown as jest.Mocked<ILocalAuthListRepository>;
+      readOnlyOneByQuery: vi.fn(),
+      createSendLocalListFromRequestData: vi.fn(),
+    } as unknown as Mocked<ILocalAuthListRepository>;
 
     mockDeviceModelRepository = {
-      findVariableCharacteristicsByVariableNameAndVariableInstance: jest.fn(),
-      readAllByQuerystring: jest.fn(),
-    } as unknown as jest.Mocked<IDeviceModelRepository>;
+      findVariableCharacteristicsByVariableNameAndVariableInstance: vi.fn(),
+      readAllByQuerystring: vi.fn(),
+    } as unknown as Mocked<IDeviceModelRepository>;
 
     localAuthListService = new LocalAuthListService(
       mockLocalAuthListRepository,
@@ -63,7 +64,7 @@ describe('LocalAuthListService', () => {
       updateType: expectedUpdateType,
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: expectedCorrelationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -172,7 +173,7 @@ describe('LocalAuthListService', () => {
       ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: correlationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -213,7 +214,7 @@ describe('LocalAuthListService', () => {
       ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: correlationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -263,7 +264,7 @@ describe('LocalAuthListService', () => {
       updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: correlationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -296,7 +297,7 @@ describe('LocalAuthListService', () => {
       updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: correlationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -339,7 +340,7 @@ describe('LocalAuthListService', () => {
       ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: correlationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -359,7 +360,7 @@ describe('LocalAuthListService', () => {
     const testMockVariableCharacteristics = Object.assign({}, baseMockVariableCharacteristics, {
       maxLimit: 10,
     });
-    const mockVariableAttribute = jest.mocked<VariableAttribute>({
+    const mockVariableAttribute = vi.mocked<VariableAttribute>({
       stationId: stationId,
       dataType: OCPP2_0_1.DataEnumType.integer,
       value: '1', // Max 1 item per message
@@ -404,7 +405,7 @@ describe('LocalAuthListService', () => {
       ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: correlationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -424,7 +425,7 @@ describe('LocalAuthListService', () => {
     const testMockVariableCharacteristics = Object.assign({}, baseMockVariableCharacteristics, {
       maxLimit: 10,
     });
-    const mockVariableAttribute = jest.mocked<VariableAttribute>({
+    const mockVariableAttribute = vi.mocked<VariableAttribute>({
       stationId: stationId,
       dataType: OCPP2_0_1.DataEnumType.integer,
       value: '3', // Max 1 item per message

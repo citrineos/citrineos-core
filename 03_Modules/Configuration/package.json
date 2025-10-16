@@ -1,6 +1,7 @@
 {
   "name": "@citrineos/configuration",
   "version": "1.8.0",
+  "type": "module",
   "description": "The configuration module for OCPP v2.0.1. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +10,7 @@
   ],
   "scripts": {
     "prepublish": "npx eslint",
-    "test": "jest --config jest.config.ts"
+    "test": "vitest run"
   },
   "keywords": [
     "ocpp",

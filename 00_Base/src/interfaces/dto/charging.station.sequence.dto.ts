@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto } from './base.dto';
-import { ChargingStationSequenceType } from '../../ocpp/model/requestIds';
+import type { IBaseDto } from './base.dto.js';
+import { ChargingStationSequenceType } from '../../ocpp/model/requestIds.js';
 
 export interface IChargingStationSequenceDto extends IBaseDto {
   stationId: string;

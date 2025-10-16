@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IBaseDto } from './base.dto';
+import type { IBaseDto } from './base.dto.js';
 
 // AsyncJob enums
 export enum AsyncJobName {

@@ -2,9 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable */
-
-import {
-  CacheNamespace,
+import type {
   IAuthenticator,
   ICache,
   IMessageRouter,
@@ -13,19 +11,22 @@ import {
   SystemConfig,
   WebsocketServerConfig,
 } from '@citrineos/base';
+import {
+  CacheNamespace,
+  createIdentifier,
+  getStationIdFromIdentifier,
+  getTenantIdFromIdentifier,
+} from '@citrineos/base';
 import { Duplex } from 'stream';
 import * as http from 'http';
 import * as https from 'https';
 import fs from 'fs';
-import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from 'ws';
-import { ILogObj, Logger } from 'tslog';
-import { SecureContextOptions } from 'tls';
-import { IUpgradeError } from './authenticator/errors/IUpgradeError';
-import {
-  createIdentifier,
-  getStationIdFromIdentifier,
-  getTenantIdFromIdentifier,
-} from '@citrineos/base/dist/interfaces/cache/types';
+import type { ErrorEvent, MessageEvent } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { SecureContextOptions } from 'tls';
+import type { IUpgradeError } from './authenticator/errors/IUpgradeError.js';
 
 export class WebsocketNetworkConnection {
   protected _cache: ICache;

@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { type SystemConfig, SystemConfigInput, systemConfigSchema } from './types';
+import type { SystemConfig, SystemConfigInput } from './types.js';
+import { systemConfigSchema } from './types.js';
 
 const args = typeof process !== 'undefined' && process.argv ? process.argv.slice(2) : [];
 

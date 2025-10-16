@@ -2,20 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FastifyRequest } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import type { FastifyRequest } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { JwtPayload } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import JwksRsa from 'jwks-rsa';
-
-import {
-  ApiAuthenticationResult,
-  ApiAuthorizationResult,
-  IApiAuthProvider,
-  UserInfo,
-} from '@citrineos/base';
+import type { IApiAuthProvider, UserInfo } from '@citrineos/base';
+import { ApiAuthenticationResult, ApiAuthorizationResult } from '@citrineos/base';
 import { createPublicKey } from 'crypto';
-import { RbacRulesLoader } from '../rbac/RbacRulesLoader';
+import { RbacRulesLoader } from '../rbac/RbacRulesLoader.js';
 
 export interface OIDCConfig {
   // JWKS URI for the public keys

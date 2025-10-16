@@ -2,12 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { SequelizeRepository } from './Base';
-import { ITenantRepository } from '../../../interfaces';
-import { BootstrapConfig } from '@citrineos/base';
+import { SequelizeRepository } from './Base.js';
+import type { ITenantRepository } from '../../../interfaces/index.js';
+import type { BootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { Tenant } from '../model/Tenant';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { Tenant } from '../model/Tenant.js';
 
 export class SequelizeTenantRepository
   extends SequelizeRepository<Tenant>

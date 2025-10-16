@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto } from './base.dto';
-import { IChargingStationDto } from './charging.station.dto';
-import { Point } from 'geojson';
-import { LocationFacilityType, LocationParkingType } from './enum';
-import { LocationHours } from './json';
+import type { IBaseDto } from './base.dto.js';
+import type { IChargingStationDto } from './charging.station.dto.js';
+import type { Point } from 'geojson';
+import { LocationFacilityType, LocationParkingType } from './enum/index.js';
+import { LocationHours } from './json/index.js';
 
 export interface ILocationDto extends IBaseDto {
   id?: number;
