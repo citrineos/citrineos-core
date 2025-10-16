@@ -1,29 +1,27 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  BootstrapConfig,
-  CallAction,
+import {
   ChargingStationSequenceType,
   ErrorCode,
   EventGroup,
-  HandlerProperties,
-  IAuthorizationDto,
-  IAuthorizer,
-  ICache,
-  IMessage,
-  IMessageContext,
-  IMessageHandler,
-  IMessageSender,
-  SystemConfig,
+  type BootstrapConfig,
+  type CallAction,
+  type HandlerProperties,
+  type IAuthorizationDto,
+  type IAuthorizer,
+  type ICache,
+  type IMessage,
+  type IMessageContext,
+  type IMessageHandler,
+  type IMessageSender,
+  type SystemConfig,
 } from '@citrineos/base';
 import {
   AbstractModule,
   AsHandler,
   AuthorizationDtoProps,
   AuthorizationStatusType,
-  ChargingStationSequenceType,
-  EventGroup,
   MessageOrigin,
   OCPP1_6,
   OCPP1_6_CallAction,
