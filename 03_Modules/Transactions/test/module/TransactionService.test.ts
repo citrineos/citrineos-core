@@ -39,8 +39,7 @@ describe('TransactionService', () => {
     } as unknown as Mocked<IAuthorizationRepository>;
 
     transactionEventRepository = {
-      readAllActiveTransactionsIncludeTransactionEventByIdToken: vi.fn(),
-      readAllActiveTransactionsIncludeStartTransactionByIdToken: vi.fn(),
+      readAllActiveTransactionsByAuthorizationId: vi.fn(),
     } as unknown as Mocked<ITransactionEventRepository>;
 
     reservationRepository = {} as unknown as Mocked<IReservationRepository>;
@@ -72,7 +71,7 @@ describe('TransactionService', () => {
       item.idToken = anIdToken();
     });
     const messageContext = aMessageContext();
-    const response = await transactionService.authorizeIdToken(
+    const response = await transactionService.authorizeOcpp201IdToken(
       DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
@@ -95,7 +94,7 @@ describe('TransactionService', () => {
       };
     });
     const messageContext = aMessageContext();
-    const response = await transactionService.authorizeIdToken(
+    const response = await transactionService.authorizeOcpp201IdToken(
       DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
@@ -118,7 +117,7 @@ describe('TransactionService', () => {
       item.eventType = OCPP2_0_1.TransactionEventEnumType.Started;
     });
     const messageContext = aMessageContext();
-    const response = await transactionService.authorizeIdToken(
+    const response = await transactionService.authorizeOcpp201IdToken(
       DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
@@ -140,7 +139,7 @@ describe('TransactionService', () => {
       item.eventType = OCPP2_0_1.TransactionEventEnumType.Started;
     });
     const messageContext = aMessageContext();
-    const response = await transactionService.authorizeIdToken(
+    const response = await transactionService.authorizeOcpp201IdToken(
       DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
@@ -154,9 +153,10 @@ describe('TransactionService', () => {
       auth.status = AuthorizationStatusType.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-    transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
-      [aTransaction(), aTransaction()],
-    );
+    transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
+      aTransaction(),
+      aTransaction(),
+    ]);
     authorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
     realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
 
@@ -165,7 +165,7 @@ describe('TransactionService', () => {
       item.eventType = OCPP2_0_1.TransactionEventEnumType.Started;
     });
     const messageContext = aMessageContext();
-    const response = await transactionService.authorizeIdToken(
+    const response = await transactionService.authorizeOcpp201IdToken(
       DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
@@ -180,9 +180,10 @@ describe('TransactionService', () => {
       auth.status = AuthorizationStatusType.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-    transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
-      [aTransaction(), aTransaction()],
-    );
+    transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
+      aTransaction(),
+      aTransaction(),
+    ]);
     authorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
     realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
 
@@ -191,7 +192,7 @@ describe('TransactionService', () => {
       item.eventType = OCPP2_0_1.TransactionEventEnumType.Started;
     });
     const messageContext = aMessageContext();
-    const response = await transactionService.authorizeIdToken(
+    const response = await transactionService.authorizeOcpp201IdToken(
       DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
@@ -205,9 +206,7 @@ describe('TransactionService', () => {
       auth.status = AuthorizationStatusType.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-    transactionEventRepository.readAllActiveTransactionsIncludeTransactionEventByIdToken.mockResolvedValue(
-      [],
-    );
+    transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
     authorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
     realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
 
@@ -216,7 +215,7 @@ describe('TransactionService', () => {
       item.eventType = OCPP2_0_1.TransactionEventEnumType.Started;
     });
     const messageContext = aMessageContext();
-    const response = await transactionService.authorizeIdToken(
+    const response = await transactionService.authorizeOcpp201IdToken(
       DEFAULT_TENANT_ID,
       transactionEventRequest,
       messageContext,
@@ -230,9 +229,7 @@ describe('TransactionService', () => {
     it('should return Accepted status when idToken exists and idTokenInfo is valid', async () => {
       const authorization = anAuthorization();
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-      transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken.mockResolvedValue(
-        [],
-      );
+      transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
       authorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
       realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
 
@@ -285,9 +282,9 @@ describe('TransactionService', () => {
     it('should return ConcurrentTx status when an active transaction exists', async () => {
       const authorization = anAuthorization();
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-      transactionEventRepository.readAllActiveTransactionsIncludeStartTransactionByIdToken.mockResolvedValue(
-        [aTransaction()],
-      );
+      transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
+        aTransaction(),
+      ]);
 
       const messageContext = aMessageContext();
       const response = await transactionService.authorizeOcpp16IdToken(

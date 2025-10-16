@@ -11,3 +11,12 @@ export interface IComponentDto extends IBaseDto {
   evseDatabaseId?: number | null;
   variables?: IVariableDto[];
 }
+
+export enum ComponentDtoProps {
+  id = 'id',
+  name = 'name',
+  instance = 'instance',
+  evse = 'evse',
+  evseDatabaseId = 'evseDatabaseId',
+  variables = 'variables',
+}

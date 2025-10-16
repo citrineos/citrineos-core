@@ -429,53 +429,12 @@ export class SequelizeTransactionEventRepository
       .then((row) => row as Transaction[]);
   }
 
-  async readAllActiveTransactionsIncludeTransactionEventByIdToken(
+  async readAllActiveTransactionsByAuthorizationId(
     tenantId: number,
-    idToken: OCPP2_0_1.IdTokenType,
+    authorizationId: number,
   ): Promise<Transaction[]> {
     return await this.transaction.readAllByQuery(tenantId, {
-      where: { isActive: true },
-      include: [
-        {
-          model: TransactionEvent,
-          as: Transaction.TRANSACTION_EVENTS_ALIAS,
-          required: true,
-          include: [
-            {
-              model: EvseType,
-              required: true,
-              where: {
-                idToken: idToken.idToken,
-                type: idToken.type,
-              },
-            },
-          ],
-        },
-      ],
-    });
-  }
-
-  async readAllActiveTransactionsIncludeStartTransactionByIdToken(
-    tenantId: number,
-    idToken: string,
-  ): Promise<Transaction[]> {
-    return await this.transaction.readAllByQuery(tenantId, {
-      where: { isActive: true },
-      include: [
-        {
-          model: StartTransaction,
-          required: true,
-          include: [
-            {
-              model: EvseType,
-              required: true,
-              where: {
-                idToken: idToken,
-              },
-            },
-          ],
-        },
-      ],
+      where: { isActive: true, authorizationId },
     });
   }
 
@@ -714,7 +673,6 @@ export class SequelizeTransactionEventRepository
       const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
         where: {
           idToken: request.idTag,
-          idTokenType: null, // OCPP 1.6 does not have idTokenType
         },
         transaction: sequelizeTransaction,
       });
@@ -763,7 +721,7 @@ export class SequelizeTransactionEventRepository
 
       // Return the new transaction with StartTransaction and IdToken
       await newTransaction.reload({
-        include: [{ model: StartTransaction, include: [EvseType] }],
+        include: [{ model: StartTransaction }],
         transaction: sequelizeTransaction,
       });
       this.transaction.emit('created', [newTransaction]);
