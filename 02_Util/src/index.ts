@@ -29,7 +29,7 @@ export {
   validateISO14443IdToken,
   validateIdentifierStringIdToken,
   validateNoAuthorizationIdToken,
-  ValidationResult,
+  type ValidationResult,
   validateASCIIContent,
   validateHTMLContent,
   validateURIContent,
@@ -37,7 +37,7 @@ export {
   validateMessageContent,
   validateMessageContentType,
   validatePEMEncodedCSR,
-} from './util/validator';
+} from './util/validator.js';
 export { IdGenerator } from './util/idGenerator.js';
 export { isValidPassword, generatePassword } from './security/authentication.js';
 

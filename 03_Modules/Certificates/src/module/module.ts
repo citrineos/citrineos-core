@@ -21,8 +21,6 @@ import {
   OCPP2_0_1_Namespace,
   OCPPVersion,
   OcppError,
-  SystemConfig,
-  BootstrapConfig,
 } from '@citrineos/base';
 import { Op } from 'sequelize';
 import type {

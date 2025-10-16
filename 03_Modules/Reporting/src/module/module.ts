@@ -4,19 +4,19 @@
 import type {
   BootstrapConfig,
   CallAction,
-  ErrorCode,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageHandler,
   IMessageSender,
-  Namespace,
   SystemConfig,
 } from '@citrineos/base';
 import {
   AbstractModule,
   AsHandler,
+  ErrorCode,
   EventGroup,
+  Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,

@@ -295,10 +295,10 @@ export class CitrineOSServer {
     this._server.get('/health', async () => ({ status: 'healthy' }));
   }
 
-  private initAjv(ajv?: Ajv) {
+  private initAjv(ajv?: Ajv.Ajv) {
     const ajvInstance =
       ajv ||
-      new Ajv({
+      new Ajv.Ajv({
         removeAdditional: 'failing', // Remove invalid additional properties but keep valid ones
         useDefaults: true,
         strict: false,
