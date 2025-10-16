@@ -50,7 +50,7 @@ import {
   VALID_URI_CONTENT,
   VALID_UTF8_CONTENT,
 } from '../providers/ValidatorProvider';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('validateLanguageTag', () => {
   it.each(VALID_LANGUAGE_TAGS)('should return true for valid language tag "%s"', (languageTag) => {
@@ -281,10 +281,10 @@ describe('validateIdToken', () => {
 });
 
 describe('validateChargingProfileType', () => {
-  let mockDeviceModelRepo: jest.Mocked<any>;
-  let mockChargingProfileRepo: jest.Mocked<any>;
-  let mockTransactionEventRepo: jest.Mocked<any>;
-  let mockLogger: jest.Mocked<any>;
+  let mockDeviceModelRepo: Mocked<any>;
+  let mockChargingProfileRepo: Mocked<any>;
+  let mockTransactionEventRepo: Mocked<any>;
+  let mockLogger: Mocked<any>;
 
   const testTenantId = 1;
   const testStationId = 'STATION001';
@@ -303,7 +303,7 @@ describe('validateChargingProfileType', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('stack level validation', () => {
