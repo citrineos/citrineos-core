@@ -50,6 +50,7 @@ import {
   VALID_URI_CONTENT,
   VALID_UTF8_CONTENT,
 } from '../providers/ValidatorProvider';
+import { describe, expect, it } from 'vitest';
 
 describe('validateLanguageTag', () => {
   it.each(VALID_LANGUAGE_TAGS)('should return true for valid language tag "%s"', (languageTag) => {
