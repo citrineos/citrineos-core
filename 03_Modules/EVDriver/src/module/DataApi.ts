@@ -2,10 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import { IEVDriverModuleApi } from './interface';
-import { EVDriverModule } from './module';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IEVDriverModuleApi } from './interface.js';
+import { EVDriverModule } from './module.js';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
@@ -14,11 +15,8 @@ import {
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
 } from '@citrineos/base';
-import {
-  ChargingStationKeyQuerySchema,
-  ChargingStationKeyQuerystring,
-  LocalListVersion,
-} from '@citrineos/data';
+import type { ChargingStationKeyQuerystring } from '@citrineos/data';
+import { ChargingStationKeyQuerySchema, LocalListVersion } from '@citrineos/data';
 
 export class EVDriverDataApi
   extends AbstractModuleApi<EVDriverModule>

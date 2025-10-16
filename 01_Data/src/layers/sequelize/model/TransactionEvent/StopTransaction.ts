@@ -1,15 +1,25 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { IStopTransactionDto, OCPP1_6_Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, HasMany, Table } from 'sequelize-typescript';
-import { Transaction } from './Transaction';
-import { MeterValue } from './MeterValue';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import type { IStopTransactionDto, ITenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Transaction } from './Transaction.js';
+import { MeterValue } from './MeterValue.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class StopTransaction extends BaseModelWithTenant implements IStopTransactionDto {
+export class StopTransaction extends Model implements IStopTransactionDto {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.StopTransaction;
 
   @Column(DataType.STRING)
@@ -48,4 +58,31 @@ export class StopTransaction extends BaseModelWithTenant implements IStopTransac
 
   @Column(DataType.STRING)
   declare idTokenType?: string;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: StopTransaction) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

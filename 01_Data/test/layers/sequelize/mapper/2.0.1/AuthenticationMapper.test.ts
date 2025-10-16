@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { AuthorizationStatusType, IdTokenType, OCPP2_0_1 } from '@citrineos/base';
 import { AuthorizationMapper } from '../../../../../src/layers/sequelize/mapper/2.0.1';
-import { aAuthorization } from '../../../../providers/Authorization';
+import { aAuthorization } from '../../../../providers/Authorization.js';
+import { describe, expect, it } from 'vitest';
 
 // Helper function to validate common structure
 const validateIdToken = (result: any, authorization: any) => {

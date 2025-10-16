@@ -33,7 +33,7 @@ jobs:
       - name: Set up OpenSSL + Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: '24.4.1'
 
       - name: Check certificate validity
         id: check_cert

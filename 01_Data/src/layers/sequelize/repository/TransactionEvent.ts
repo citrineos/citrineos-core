@@ -1,36 +1,39 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { BootstrapConfig } from '@citrineos/base';
 import {
   ChargingStationSequenceType,
   CrudRepository,
   MeterValueUtils,
   OCPP1_6,
   OCPP2_0_1,
-  BootstrapConfig,
 } from '@citrineos/base';
-import {
+import type {
   IChargingStationSequenceRepository,
-  type ITransactionEventRepository,
-} from '../../../interfaces';
+  ITransactionEventRepository,
+} from '../../../interfaces/index.js';
 import {
+  Authorization,
+  ChargingStation,
+  Connector,
+  Evse,
+  EvseType,
   MeterValue,
   StartTransaction,
   StopTransaction,
+  Tariff,
   Transaction,
   TransactionEvent,
-} from '../model/TransactionEvent';
-import { SequelizeRepository } from './Base';
-import { EvseType } from '../model/DeviceModel';
-import { Op, WhereOptions } from 'sequelize';
+} from '../model/index.js';
+import { SequelizeRepository } from './Base.js';
+import type { WhereOptions } from 'sequelize';
+import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { MeterValueMapper } from '../mapper/2.0.1';
-import { ChargingStation, Connector, Evse } from '../model/Location';
-import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
-import { Authorization } from '../model/Authorization';
-import { Tariff } from '../model';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { MeterValueMapper } from '../mapper/2.0.1/index.js';
+import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence.js';
 
 export class SequelizeTransactionEventRepository
   extends SequelizeRepository<TransactionEvent>

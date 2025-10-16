@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto, ITransactionDto } from '../..';
-import { IChargingScheduleDto } from './charging.schedule.dto';
+import type { IBaseDto, ITransactionDto } from '../../index.js';
+import type { IChargingScheduleDto } from './charging.schedule.dto.js';
 
 export interface IChargingProfileDto extends IBaseDto {
   databaseId: number;

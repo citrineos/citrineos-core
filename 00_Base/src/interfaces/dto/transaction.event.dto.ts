@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto } from './base.dto';
-import { IMeterValueDto } from './meter.value.dto';
-import { TriggerReasonEnumType } from '../../ocpp/model/2.0.1';
+import type { IBaseDto } from './base.dto.js';
+import type { IMeterValueDto } from './meter.value.dto.js';
+import { TriggerReasonEnumType } from '../../ocpp/model/2.0.1/index.js';
 
 export interface ITransactionEventDto extends IBaseDto {
   id?: number;

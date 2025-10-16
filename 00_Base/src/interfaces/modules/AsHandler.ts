@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { CallAction, OCPPVersion } from '../../ocpp/rpc/message';
-import { IHandlerDefinition } from './HandlerDefinition';
+import type { CallAction } from '../../ocpp/rpc/message.js';
+import { OCPPVersion } from '../../ocpp/rpc/message.js';
+import type { IHandlerDefinition } from './HandlerDefinition.js';
 
 /**
  * Decorators for module components.

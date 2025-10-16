@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPIRegistration } from './json';
+import { OCPIRegistration } from './json/index.js';
 
 export interface ITenantDto {
   id?: number;

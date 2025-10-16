@@ -2,18 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { IVariableMonitoringRepository } from '@citrineos/data';
-import { MonitoringService } from '../../src/module/MonitoringService';
+import { MonitoringService } from '../../src/module/MonitoringService.js';
 import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
-import { aClearMonitoringResult } from '../providers/Monitoring';
+import { aClearMonitoringResult } from '../providers/Monitoring.js';
+import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('MonitoringService', () => {
-  let mockVariableMonitoringRepository: jest.Mocked<IVariableMonitoringRepository>;
+  let mockVariableMonitoringRepository: Mocked<IVariableMonitoringRepository>;
   let monitoringService: MonitoringService;
 
   beforeEach(() => {
     mockVariableMonitoringRepository = {
-      rejectVariableMonitoringByIdAndStationId: jest.fn(),
-    } as unknown as jest.Mocked<IVariableMonitoringRepository>;
+      rejectVariableMonitoringByIdAndStationId: vi.fn(),
+    } as unknown as Mocked<IVariableMonitoringRepository>;
 
     monitoringService = new MonitoringService(mockVariableMonitoringRepository);
   });

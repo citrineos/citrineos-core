@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { RemoteStartTransactionResponseStatus } from '../enums';
-import { OcppResponse } from '../../../..';
+import { RemoteStartTransactionResponseStatus } from '../enums/index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface RemoteStartTransactionResponse extends OcppResponse {
   status: RemoteStartTransactionResponseStatus;

@@ -8,7 +8,7 @@ import { DataTypes, QueryInterface } from 'sequelize';
 
 const TABLE_NAME = 'AsyncJobStatuses';
 
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
     await queryInterface.createTable(TABLE_NAME, {
       jobId: {

@@ -1,24 +1,34 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { IChargingStationDto, IConnectorDto, ITenantDto } from '@citrineos/base';
 import {
   ConnectorErrorCode,
   ConnectorFormatEnum,
   ConnectorPowerType,
   ConnectorStatus,
   ConnectorTypeEnum,
-  IConnectorDto,
+  DEFAULT_TENANT_ID,
   OCPP1_6_Namespace,
 } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, HasMany, Table } from 'sequelize-typescript';
-import { ChargingStation } from './ChargingStation';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
-import { Evse } from './Evse';
-import { Tariff } from '../Tariff';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { ChargingStation } from './ChargingStation.js';
+import { Evse } from './Evse.js';
+import { Tariff } from '../Tariff/index.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class Connector extends BaseModelWithTenant implements IConnectorDto {
+export class Connector extends Model implements IConnectorDto {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.Connector;
 
   @ForeignKey(() => ChargingStation)
@@ -102,11 +112,38 @@ export class Connector extends BaseModelWithTenant implements IConnectorDto {
   declare termsAndConditionsUrl?: string | null;
 
   @BelongsTo(() => ChargingStation)
-  declare chargingStation?: ChargingStation;
+  declare chargingStation?: IChargingStationDto;
 
   @BelongsTo(() => Evse)
   declare evse?: Evse;
 
   @HasMany(() => Tariff)
   declare tariffs?: Tariff[];
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: ITenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: Connector) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

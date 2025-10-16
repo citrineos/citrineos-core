@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto, IVariableAttributeDto } from '../..';
+import type { IBaseDto, IVariableAttributeDto } from '../../index.js';
 
 export interface IBootDto extends IBaseDto {
   id: string;

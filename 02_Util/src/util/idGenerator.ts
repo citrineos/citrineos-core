@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IChargingStationSequenceRepository } from '@citrineos/data';
+import type { IChargingStationSequenceRepository } from '@citrineos/data';
 import { ChargingStationSequenceType } from '@citrineos/base';
 
 export class IdGenerator {

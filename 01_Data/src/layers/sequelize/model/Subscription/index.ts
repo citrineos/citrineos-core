@@ -2,4 +2,4 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { Subscription } from './Subscription';
+export { Subscription } from './Subscription.js';

@@ -10,7 +10,7 @@ import { DataType } from 'sequelize-typescript';
 const TABLE_NAME = 'Authorizations';
 const COLUMN_NAME = 'concurrentTransaction';
 
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
     const tableDescription = await queryInterface.describeTable(TABLE_NAME);
     if (!tableDescription[COLUMN_NAME]) {

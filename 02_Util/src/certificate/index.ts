@@ -2,5 +2,5 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { CertificateAuthorityService } from './CertificateAuthority';
-export * from './CertificateUtil';
+export { CertificateAuthorityService } from './CertificateAuthority.js';
+export * from './CertificateUtil.js';

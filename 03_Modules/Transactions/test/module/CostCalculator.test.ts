@@ -2,26 +2,26 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { faker } from '@faker-js/faker';
-import { jest } from '@jest/globals';
 import { ITariffRepository, Tariff } from '@citrineos/data';
-import { CostCalculator } from '../../src/module/CostCalculator';
-import { TransactionService } from '../../src/module/TransactionService';
-import { aTariff } from '../providers/Tariff';
+import { CostCalculator } from '../../src/module/CostCalculator.js';
+import { TransactionService } from '../../src/module/TransactionService.js';
+import { aTariff } from '../providers/Tariff.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('CostCalculator', () => {
-  let tariffRepository: jest.Mocked<ITariffRepository>;
-  let transactionService: jest.Mocked<TransactionService>;
+  let tariffRepository: Mocked<ITariffRepository>;
+  let transactionService: Mocked<TransactionService>;
   let costCalculator: CostCalculator;
 
   beforeEach(() => {
     tariffRepository = {
-      findByStationId: jest.fn(),
-    } as unknown as jest.Mocked<ITariffRepository>;
+      findByStationId: vi.fn(),
+    } as unknown as Mocked<ITariffRepository>;
 
     transactionService = {
-      recalculateTotalKwh: jest.fn(),
-    } as unknown as jest.Mocked<TransactionService>;
+      recalculateTotalKwh: vi.fn(),
+    } as unknown as Mocked<TransactionService>;
 
     costCalculator = new CostCalculator(tariffRepository, transactionService);
   });

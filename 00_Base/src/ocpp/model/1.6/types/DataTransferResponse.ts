@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { DataTransferResponseStatus } from '../enums';
-import { OcppResponse } from '../../../..';
+import { DataTransferResponseStatus } from '../enums/index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface DataTransferResponse extends OcppResponse {
   status: DataTransferResponseStatus;

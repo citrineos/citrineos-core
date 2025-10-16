@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 
 export const aValidSignedContractData = (updateFunction?: UpdateFunction<object>): object => {
   // This example is from https://hubject.stoplight.io/docs/open-plugncharge/9fabe1661696f-get-signed-contract-data

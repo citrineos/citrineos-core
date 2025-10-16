@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IBaseDto } from '../..';
-import { IChargingScheduleDto } from './charging.schedule.dto';
+import type { IBaseDto } from '../../index.js';
+import type { IChargingScheduleDto } from './charging.schedule.dto.js';
 
 export interface ISalesTariffDto extends IBaseDto {
   databaseId: number;

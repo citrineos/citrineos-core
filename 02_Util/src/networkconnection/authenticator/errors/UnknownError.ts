@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Duplex } from 'stream';
-import { IUpgradeError } from './IUpgradeError';
+import type { IUpgradeError } from './IUpgradeError.js';
 
 export class UpgradeUnknownError extends Error implements IUpgradeError {
   constructor(message: string) {

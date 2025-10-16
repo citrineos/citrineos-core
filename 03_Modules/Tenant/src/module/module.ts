@@ -1,19 +1,18 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
+import type {
   BootstrapConfig,
   CallAction,
-  EventGroup,
   ICache,
   IMessageHandler,
   IMessageSender,
   SystemConfig,
 } from '@citrineos/base';
+import { AbstractModule, EventGroup } from '@citrineos/base';
 import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class TenantModule extends AbstractModule {
   /**

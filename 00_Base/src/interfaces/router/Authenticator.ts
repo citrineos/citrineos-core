@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { IncomingMessage } from 'http';
-import { AuthenticationOptions } from './AuthenticationOptions';
+import type { AuthenticationOptions } from './AuthenticationOptions.js';
 
 export interface IAuthenticator {
   authenticate(

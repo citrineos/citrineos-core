@@ -9,7 +9,7 @@
     "**/node_modules/**",
     "DirectusExtensions", // todo for now
     "Swarm", // todo for now
-    "**/jest.config.ts",
+    "**/vitest.config.ts",
     "**/test/**"
   ],
   "references": [

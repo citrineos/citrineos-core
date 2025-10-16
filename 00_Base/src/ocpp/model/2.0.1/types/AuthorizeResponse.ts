@@ -13,8 +13,8 @@ import {
   AuthorizeCertificateStatusEnumType,
   IdTokenEnumType,
   MessageFormatEnumType,
-} from '../enums';
-import { OcppResponse } from '../../../..';
+} from '../enums/index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface AuthorizeResponse extends OcppResponse {
   customData?: CustomDataType | null;

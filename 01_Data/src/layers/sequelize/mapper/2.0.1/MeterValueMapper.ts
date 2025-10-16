@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { OCPP2_0_1 } from '@citrineos/base';
-import { MeterValue } from '../../model/TransactionEvent';
+import { MeterValue } from '../../model/index.js';
 
 export class MeterValueMapper {
   static toMeterValueType(meterValue: MeterValue): OCPP2_0_1.MeterValueType {

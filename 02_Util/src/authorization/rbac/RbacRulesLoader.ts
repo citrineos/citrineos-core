@@ -2,10 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import * as fs from 'fs';
-import { ILogObj, Logger } from 'tslog';
-//TODO fix import
-import { RbacRules, RbacRulesSchema } from '@citrineos/base/dist/config/types';
-import { UrlMatcher } from './UrlMatcher';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { RbacRules } from '@citrineos/base';
+import { RbacRulesSchema } from '@citrineos/base';
+import { UrlMatcher } from './UrlMatcher.js';
 import path from 'path';
 
 /**

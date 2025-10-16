@@ -4,7 +4,7 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { DataTypes, QueryInterface } from 'sequelize';
 
-module.exports = {
+export default {
   up: async (queryInterface: QueryInterface) => {
     await queryInterface.createTable('TenantPartners', {
       id: {

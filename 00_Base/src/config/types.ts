@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { OCPP2_0_1, OCPP1_6 } from '../ocpp/model';
-import { OCPP1_6_CallAction, OCPP2_0_1_CallAction } from '../ocpp/rpc/message';
-import { EventGroup } from '../interfaces/messages';
+import { OCPP1_6, OCPP2_0_1 } from '../ocpp/model/index.js';
+import { OCPP1_6_CallAction, OCPP2_0_1_CallAction } from '../ocpp/rpc/message.js';
+import { EventGroup } from '../interfaces/messages/index.js';
 
 const OCPP1_6_CallActionSchema = z.nativeEnum(OCPP1_6_CallAction);
 const OCPP2_0_1_CallActionSchema = z.nativeEnum(OCPP2_0_1_CallAction);

@@ -1,26 +1,23 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
+import type {
   IAuthorizationRepository,
-  ITransactionEventRepository,
-  Transaction,
-  OCPP1_6_Mapper,
-  OCPP2_0_1_Mapper,
-  IReservationRepository,
   IOCPPMessageRepository,
+  IReservationRepository,
+  ITransactionEventRepository,
 } from '@citrineos/data';
+import { OCPP1_6_Mapper, OCPP2_0_1_Mapper, Transaction } from '@citrineos/data';
+import type { IAuthorizationDto, IAuthorizer, IMessageContext } from '@citrineos/base';
 import {
   AuthorizationStatusType,
-  IAuthorizationDto,
-  IAuthorizer,
-  IMessageContext,
   MessageOrigin,
   MeterValueUtils,
   OCPP1_6,
   OCPP2_0_1,
 } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;

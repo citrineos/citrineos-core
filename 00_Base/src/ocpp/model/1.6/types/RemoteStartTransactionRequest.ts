@@ -13,8 +13,8 @@ import {
   RemoteStartTransactionRequestChargingProfileKind,
   RemoteStartTransactionRequestRecurrencyKind,
   RemoteStartTransactionRequestChargingRateUnit,
-} from '../enums';
-import { OcppRequest } from '../../../..';
+} from '../enums/index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface RemoteStartTransactionRequest extends OcppRequest {
   connectorId?: number | null;

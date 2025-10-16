@@ -1,24 +1,27 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractMessageHandler,
+import type {
   CallAction,
+  CircuitBreakerState,
   IMessageHandler,
   IModule,
-  Message,
-  OcppError,
   OcppRequest,
   OcppResponse,
-  RetryMessageError,
   SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractMessageHandler,
   CircuitBreaker,
-  CircuitBreakerState,
+  Message,
+  OcppError,
+  RetryMessageError,
 } from '@citrineos/base';
 import { plainToInstance } from 'class-transformer';
-import { Admin, Consumer, EachMessagePayload, Kafka } from 'kafkajs';
-import { ILogObj, Logger } from 'tslog';
+import type { Admin, Consumer, EachMessagePayload } from 'kafkajs';
+import { Kafka } from 'kafkajs';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 /**
  * Implementation of a {@link IMessageHandler} using Kafka as the underlying transport.

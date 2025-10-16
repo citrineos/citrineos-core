@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IBaseDto } from './base.dto';
-import { OCPP2_0_1 } from '../..';
-import { IVariableDto, IComponentDto } from '.';
+import type { IBaseDto } from './base.dto.js';
+import { OCPP2_0_1 } from '../../index.js';
+import type { IComponentDto, IVariableDto } from './index.js';
 
 export interface IEventDataDto extends IBaseDto {
   id?: number;

@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { OCPP2_0_1 } from '@citrineos/base';
-import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
+import type { IDeviceModelRepository } from '@citrineos/data';
+import { VariableAttribute } from '@citrineos/data';
 
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;

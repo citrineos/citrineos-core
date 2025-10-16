@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { WebsocketServerConfig } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
@@ -13,29 +13,29 @@ import {
   NotFoundError,
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
-  WebsocketServerConfig,
 } from '@citrineos/base';
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import { IAdminApi } from './interface';
-import { MessageRouterImpl } from './router';
-import {
-  ChargingStationKeyQuerySchema,
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IAdminApi } from './interface.js';
+import { MessageRouterImpl } from './router.js';
+import type {
   ChargingStationKeyQuerystring,
-  CreateSubscriptionSchema,
   ModelKeyQuerystring,
-  ModelKeyQuerystringSchema,
-  Subscription,
   TenantQueryString,
-  TenantQuerySchema,
-  WebsocketGetQuerySchema,
+  WebsocketDeleteQuerystring,
   WebsocketGetQuerystring,
 } from '@citrineos/data';
 import {
+  ChargingStationKeyQuerySchema,
+  CreateSubscriptionSchema,
+  ModelKeyQuerystringSchema,
+  Subscription,
+  TenantQuerySchema,
   WebsocketDeleteQuerySchema,
-  WebsocketDeleteQuerystring,
+  WebsocketGetQuerySchema,
   WebsocketRequestSchema,
-} from '@citrineos/data/dist/interfaces/queries/Websocket';
+} from '@citrineos/data';
 
 /**
  * Admin API for the OcppRouter.

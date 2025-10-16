@@ -1,40 +1,38 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { IFileStorage, WebsocketServerConfig } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
   HttpMethod,
-  IFileStorage,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPP2_0_1_Namespace,
   OCPPVersion,
-  WebsocketServerConfig,
 } from '@citrineos/base';
 import jsrsasign from 'jsrsasign';
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import { ICertificatesModuleApi } from './interface';
-import { CertificatesModule } from './module';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { ICertificatesModuleApi } from './interface.js';
+import { CertificatesModule } from './module.js';
 import { generateCertificate, generateCSR, WebsocketNetworkConnection } from '@citrineos/util';
+import type { TenantQueryString, UpdateTlsCertificateQueryString } from '@citrineos/data';
 import {
   Certificate,
-  TenantQueryString,
-  TenantQuerySchema,
   CountryNameEnumType,
   GenerateCertificateChainRequest,
   GenerateCertificateChainSchema,
   InstallRootCertificateRequest,
   InstallRootCertificateSchema,
   SignatureAlgorithmEnumType,
+  TenantQuerySchema,
   TlsCertificateSchema,
   TlsCertificatesRequest,
   UpdateTlsCertificateQuerySchema,
-  UpdateTlsCertificateQueryString,
 } from '@citrineos/data';
 import fs from 'fs';
 import moment from 'moment';

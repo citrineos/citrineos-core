@@ -2,39 +2,38 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { BootConfig, CallAction, CrudRepository } from '@citrineos/base';
+import { ChargingStationSequenceType, OCPP1_6, OCPP2_0_1, OCPPVersion } from '@citrineos/base';
+import type { AuthorizationQuerystring } from './queries/Authorization.js';
+import type {
+  Authorization,
+  Boot,
+  Certificate,
+  ChargingStation,
+  Component,
+  EventData,
+  Location,
+  SecurityEvent,
+  Transaction,
+  Variable,
+  VariableAttribute,
+  VariableMonitoring,
+} from '../layers/sequelize/index.js';
 import {
-  type BootConfig,
-  type CallAction,
-  ChargingStationSequenceType,
-  type CrudRepository,
-  OCPP1_6,
-  OCPP2_0_1,
-  OCPPVersion,
-} from '@citrineos/base';
-import { type AuthorizationQuerystring } from './queries/Authorization';
-import {
-  type Authorization,
-  type Boot,
-  type Certificate,
   ChangeConfiguration,
   ChargingNeeds,
   ChargingProfile,
-  type ChargingStation,
   ChargingStationSecurityInfo,
   ChargingStationSequence,
-  type Component,
   CompositeSchedule,
   Connector,
-  type EventData,
   EvseType,
   InstalledCertificate,
   LocalListVersion,
-  type Location,
   MessageInfo,
   MeterValue,
   OCPPMessage,
   Reservation,
-  type SecurityEvent,
   SendLocalList,
   ServerNetworkProfile,
   StatusNotification,
@@ -42,15 +41,11 @@ import {
   Subscription,
   Tariff,
   Tenant,
-  type Transaction,
   TransactionEvent,
-  type Variable,
-  type VariableAttribute,
   VariableCharacteristics,
-  type VariableMonitoring,
-} from '../layers/sequelize';
-import { type VariableAttributeQuerystring } from '.';
-import { TariffQueryString } from './queries/Tariff';
+} from '../layers/sequelize/index.js';
+import type { VariableAttributeQuerystring } from './index.js';
+import type { TariffQueryString } from './queries/Tariff.js';
 
 export interface IAuthorizationRepository extends CrudRepository<Authorization> {
   readAllByQuerystring: (

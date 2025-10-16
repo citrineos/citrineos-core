@@ -8,40 +8,41 @@ import {
   StatusNotification,
 } from '@citrineos/data';
 import { CrudRepository, DEFAULT_TENANT_ID } from '@citrineos/base';
-import { StatusNotificationService } from '../../src/module/StatusNotificationService';
+import { StatusNotificationService } from '../../src/module/StatusNotificationService.js';
 import {
   aOcpp16StatusNotificationRequest,
   aStatusNotification,
   aStatusNotificationRequest,
-} from '../providers/StatusNotification';
+} from '../providers/StatusNotification.js';
 import {
   aChargingStation,
   aComponent,
   anEvse,
   aVariable,
   MOCK_STATION_ID,
-} from '../providers/DeviceModelProvider';
+} from '../providers/DeviceModelProvider.js';
+import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('StatusNotificationService', () => {
   let statusNotificationService: StatusNotificationService;
-  let componentRepository: jest.Mocked<CrudRepository<Component>>;
-  let deviceModelRepository: jest.Mocked<IDeviceModelRepository>;
-  let locationRepository: jest.Mocked<ILocationRepository>;
+  let componentRepository: Mocked<CrudRepository<Component>>;
+  let deviceModelRepository: Mocked<IDeviceModelRepository>;
+  let locationRepository: Mocked<ILocationRepository>;
 
   beforeEach(() => {
     componentRepository = {
-      readOnlyOneByQuery: jest.fn(),
-    } as unknown as jest.Mocked<CrudRepository<Component>>;
+      readOnlyOneByQuery: vi.fn(),
+    } as unknown as Mocked<CrudRepository<Component>>;
 
     deviceModelRepository = {
-      createOrUpdateDeviceModelByStationId: jest.fn(),
-    } as unknown as jest.Mocked<IDeviceModelRepository>;
+      createOrUpdateDeviceModelByStationId: vi.fn(),
+    } as unknown as Mocked<IDeviceModelRepository>;
 
     locationRepository = {
-      addStatusNotificationToChargingStation: jest.fn(),
-      readChargingStationByStationId: jest.fn(),
-      createOrUpdateConnector: jest.fn(),
-    } as unknown as jest.Mocked<ILocationRepository>;
+      addStatusNotificationToChargingStation: vi.fn(),
+      readChargingStationByStationId: vi.fn(),
+      createOrUpdateConnector: vi.fn(),
+    } as unknown as Mocked<ILocationRepository>;
 
     statusNotificationService = new StatusNotificationService(
       componentRepository,
@@ -52,7 +53,7 @@ describe('StatusNotificationService', () => {
 
   it('should save StatusNotification for Charging Station because Charging Station exists', async () => {
     locationRepository.readChargingStationByStationId.mockResolvedValue(aChargingStation());
-    jest.spyOn(StatusNotification, 'build').mockImplementation(() => {
+    vi.spyOn(StatusNotification, 'build').mockImplementation(() => {
       return aStatusNotification();
     });
 
@@ -79,7 +80,7 @@ describe('StatusNotificationService', () => {
 
   it('should save Component and Variable ReportData because Station and Component and Variable exist', async () => {
     locationRepository.readChargingStationByStationId.mockResolvedValue(aChargingStation());
-    jest.spyOn(StatusNotification, 'build').mockImplementation(() => {
+    vi.spyOn(StatusNotification, 'build').mockImplementation(() => {
       return aStatusNotification();
     });
     componentRepository.readOnlyOneByQuery.mockResolvedValue(
@@ -154,7 +155,7 @@ describe('StatusNotificationService', () => {
   describe('Test process OCPP 1.6 StatusNotification', () => {
     it('should save StatusNotification and connector when Charging Station exists', async () => {
       locationRepository.readChargingStationByStationId.mockResolvedValue(aChargingStation());
-      jest.spyOn(StatusNotification, 'build').mockImplementation(() => {
+      vi.spyOn(StatusNotification, 'build').mockImplementation(() => {
         return aStatusNotification();
       });
 

@@ -1,22 +1,26 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { CrudRepository, deepDirectionalEqual, OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
+import type { BootstrapConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1 } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { IAuthorizationRepository, ILocalAuthListRepository } from '../../../interfaces';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type {
+  IAuthorizationRepository,
+  ILocalAuthListRepository,
+} from '../../../interfaces/index.js';
 import {
   Authorization,
   LocalListAuthorization,
   LocalListVersion,
+  LocalListVersionAuthorization,
   SendLocalList,
-} from '../model/Authorization';
-import { SequelizeRepository } from './Base';
-import { LocalListVersionAuthorization } from '../model/Authorization/LocalListVersionAuthorization';
-import { SendLocalListAuthorization } from '../model/Authorization/SendLocalListAuthorization';
-import { SequelizeAuthorizationRepository } from './Authorization';
-import { AuthorizationMapper } from '../mapper/2.0.1';
+  SendLocalListAuthorization,
+} from '../model/index.js';
+import { SequelizeRepository } from './Base.js';
+import { SequelizeAuthorizationRepository } from './Authorization.js';
+import { AuthorizationMapper } from '../mapper/2.0.1/index.js';
 
 export class SequelizeLocalAuthListRepository
   extends SequelizeRepository<LocalListVersion>
