@@ -21,7 +21,23 @@ export * from './certificate/index.js';
 export { initSwagger } from './util/swagger.js';
 export { getSizeOfRequest, getBatches, stringToSet } from './util/parser.js';
 export { DirectusUtil } from './util/directus.js';
-export { validateLanguageTag, validateChargingProfileType } from './util/validator.js';
+export {
+  validateLanguageTag,
+  validateChargingProfileType,
+  validateIdToken,
+  validateISO15693IdToken,
+  validateISO14443IdToken,
+  validateIdentifierStringIdToken,
+  validateNoAuthorizationIdToken,
+  type ValidationResult,
+  validateASCIIContent,
+  validateHTMLContent,
+  validateURIContent,
+  validateUTF8Content,
+  validateMessageContent,
+  validateMessageContentType,
+  validatePEMEncodedCSR,
+} from './util/validator.js';
 export { IdGenerator } from './util/idGenerator.js';
 export { isValidPassword, generatePassword } from './security/authentication.js';
 

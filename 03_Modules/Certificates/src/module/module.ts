@@ -20,6 +20,7 @@ import {
   OCPP2_0_1_CallAction,
   OCPP2_0_1_Namespace,
   OCPPVersion,
+  OcppError,
 } from '@citrineos/base';
 import { Op } from 'sequelize';
 import type {
@@ -35,6 +36,7 @@ import {
   RabbitMqReceiver,
   RabbitMqSender,
   sendOCSPRequest,
+  validatePEMEncodedCSR,
 } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -217,6 +219,21 @@ export class CertificatesModule extends AbstractModule {
     const csrString: string = message.payload.csr.replace(/\n/g, '');
     const certificateType: OCPP2_0_1.CertificateSigningUseEnumType | undefined | null =
       message.payload.certificateType;
+
+    // Validate PEM format
+    const validationResult = validatePEMEncodedCSR(message.payload.csr);
+    if (!validationResult.isValid) {
+      this._logger.warn(`Invalid CSR format: ${validationResult.errorMessage}`);
+      await this.sendCallErrorWithMessage(
+        message,
+        new OcppError(
+          message.context.correlationId,
+          ErrorCode.FormatViolation,
+          'Invalid CSR format.',
+        ),
+      );
+      return;
+    }
 
     // TODO OCTT Currently fails the CSMS on test case TC_A_14_CSMS if an invalid csr is rejected
     //  Despite explicitly saying in the protocol "The CSMS may do some checks on the CSR"

@@ -284,7 +284,7 @@ export class TransactionsModule extends AbstractModule {
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
     let response: OCPP2_0_1.TransactionEventResponse | undefined = undefined;
-
+    let transaction;
     if (transactionEvent.idToken) {
       response = await this._transactionService.authorizeOcpp201IdToken(
         tenantId,
@@ -292,14 +292,27 @@ export class TransactionsModule extends AbstractModule {
         message.context,
       );
     }
-
-    const transaction =
-      await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
-        tenantId,
-        message.payload,
-        stationId,
-      );
-
+    try {
+      transaction =
+        await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
+          tenantId,
+          message.payload,
+          stationId,
+        );
+    } catch (error) {
+      if ((error as any).name === 'SequelizeForeignKeyConstraintError') {
+        await this.sendCallErrorWithMessage(
+          message,
+          new OcppError(
+            message.context.correlationId,
+            ErrorCode.PropertyConstraintViolation,
+            'Referenced entity does not exist.',
+          ),
+        );
+        return;
+      }
+      throw error;
+    }
     if (message.payload.reservationId) {
       await this._transactionService.deactivateReservation(
         tenantId,
@@ -614,7 +627,14 @@ export class TransactionsModule extends AbstractModule {
           );
         response.transactionId = parseInt(newTransaction.transactionId);
       } catch (error) {
-        this._logger.error(`Failed to create transaction for idTag ${request.idTag}`, error);
+        const errorMessage = (error as Error).message || '';
+        if (errorMessage.includes('Charging station') && errorMessage.includes('does not exist')) {
+          this._logger.error(
+            `Charging station ${stationId} does not exist for idTag ${request.idTag}`,
+          );
+        } else {
+          this._logger.error(`Failed to create transaction for idTag ${request.idTag}`, error);
+        }
         response.idTagInfo = {
           status: OCPP1_6.StartTransactionResponseStatus.Invalid,
         };

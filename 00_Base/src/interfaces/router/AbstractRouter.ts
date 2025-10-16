@@ -125,14 +125,23 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     this._logger.debug('Received message:', message);
 
     if (message.state === MessageState.Response) {
-      if (message.payload instanceof OcppError) {
+      if (message.payload && (message.payload as any)._errorCode) {
+        // Create OcppError from payload properties for sendCallError method
+        const errorPayload = message.payload as any;
+        const ocppError = new OcppError(
+          errorPayload._messageId,
+          errorPayload._errorCode,
+          errorPayload.message || '',
+          errorPayload._errorDetails || {},
+        );
+
         await this.sendCallError(
           message.context.correlationId,
           message.context.stationId,
           message.context.tenantId,
           message.protocol,
           message.action,
-          message.payload,
+          ocppError,
           message.origin,
         );
       } else {
@@ -202,7 +211,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       const result = validate(payload);
       if (!result) {
         const validationErrorsDeepCopy = JSON.parse(JSON.stringify(validate.errors));
-        this._logger.debug('Validate CallResult failed', validationErrorsDeepCopy);
+        this._logger.debug('Validate Call failed', validationErrorsDeepCopy);
         return { isValid: false, errors: validationErrorsDeepCopy };
       } else {
         return { isValid: true };

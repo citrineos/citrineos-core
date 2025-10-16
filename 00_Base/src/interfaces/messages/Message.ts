@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IMessageContext, OcppRequest, OcppResponse } from '../../index.js';
+import type { IMessageContext, OcppError, OcppRequest, OcppResponse } from '../../index.js';
 import type { CallAction, OCPPVersionType } from '../../ocpp/rpc/message.js';
 import { EventGroup, MessageOrigin, MessageState } from './index.js';
 
@@ -55,11 +55,10 @@ export interface IMessage<T extends OcppRequest | OcppResponse> {
   get protocol(): OCPPVersionType;
   set protocol(value: OCPPVersionType);
 }
-
 /**
  * Default implementation of IMessage
  */
-export class Message<T extends OcppRequest | OcppResponse> implements IMessage<T> {
+export class Message<T extends OcppRequest | OcppResponse | OcppError> implements IMessage<T> {
   /**
    * Fields
    */

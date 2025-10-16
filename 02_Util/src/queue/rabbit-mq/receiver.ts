@@ -23,7 +23,6 @@ import {
   OcppError,
   RetryMessageError,
 } from '@citrineos/base';
-import { plainToInstance } from 'class-transformer';
 
 /**
  * Implementation of a {@link IMessageHandler} using RabbitMQ as the underlying transport.
@@ -357,9 +356,17 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
           message.properties,
           message.content.toString(),
         );
-        const parsed = plainToInstance(
-          Message<OcppRequest | OcppResponse | OcppError>,
-          <Message<OcppRequest | OcppResponse | OcppError>>JSON.parse(message.content.toString()),
+        const messageData = JSON.parse(message.content.toString());
+
+        // Create Message instance with generic payload (no type transformation needed)
+        const parsed = new Message(
+          messageData.origin || messageData._origin,
+          messageData.eventGroup || messageData._eventGroup,
+          messageData.action || messageData._action,
+          messageData.state || messageData._state,
+          messageData.context || messageData._context,
+          messageData.payload || messageData._payload, // Keep payload as generic object
+          messageData.protocol || messageData._protocol,
         );
         await this.handle(parsed, message.properties);
       } catch (error) {

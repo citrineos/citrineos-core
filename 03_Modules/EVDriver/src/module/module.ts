@@ -1,31 +1,33 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  BootstrapConfig,
-  CallAction,
-  HandlerProperties,
-  IAuthorizationDto,
-  IAuthorizer,
-  ICache,
-  IMessage,
-  IMessageContext,
-  IMessageHandler,
-  IMessageSender,
-  SystemConfig,
+import {
+  ChargingStationSequenceType,
+  ErrorCode,
+  EventGroup,
+  type BootstrapConfig,
+  type CallAction,
+  type HandlerProperties,
+  type IAuthorizationDto,
+  type IAuthorizer,
+  type ICache,
+  type IMessage,
+  type IMessageContext,
+  type IMessageHandler,
+  type IMessageSender,
+  type SystemConfig,
 } from '@citrineos/base';
 import {
   AbstractModule,
   AsHandler,
   AuthorizationDtoProps,
   AuthorizationStatusType,
-  ChargingStationSequenceType,
-  EventGroup,
   MessageOrigin,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OcppError,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
@@ -54,6 +56,7 @@ import {
   RabbitMqReceiver,
   RabbitMqSender,
   RealTimeAuthorizer,
+  validateIdToken,
 } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -70,19 +73,9 @@ export class EVDriverModule extends AbstractModule {
   _requests: CallAction[] = [];
 
   _responses: CallAction[] = [];
-
-  protected _authorizeRepository: IAuthorizationRepository;
-  protected _localAuthListRepository: ILocalAuthListRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
   protected _tariffRepository: ITariffRepository;
-  protected _transactionEventRepository: ITransactionEventRepository;
-  protected _chargingProfileRepository: IChargingProfileRepository;
-  protected _reservationRepository: IReservationRepository;
-  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _locationRepository: ILocationRepository;
-
   private _certificateAuthorityService: CertificateAuthorityService;
-  private _localAuthListService: LocalAuthListService;
   private _authorizers: IAuthorizer[];
   private _idGenerator: IdGenerator;
 
@@ -220,33 +213,49 @@ export class EVDriverModule extends AbstractModule {
       new IdGenerator(new SequelizeChargingStationSequenceRepository(config, this._logger));
   }
 
+  protected _authorizeRepository: IAuthorizationRepository;
+
   get authorizeRepository(): IAuthorizationRepository {
     return this._authorizeRepository;
   }
+
+  protected _localAuthListRepository: ILocalAuthListRepository;
 
   get localAuthListRepository(): ILocalAuthListRepository {
     return this._localAuthListRepository;
   }
 
+  protected _deviceModelRepository: IDeviceModelRepository;
+
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
   }
+
+  protected _transactionEventRepository: ITransactionEventRepository;
 
   get transactionEventRepository(): ITransactionEventRepository {
     return this._transactionEventRepository;
   }
 
+  protected _chargingProfileRepository: IChargingProfileRepository;
+
   get chargingProfileRepository(): IChargingProfileRepository {
     return this._chargingProfileRepository;
   }
+
+  protected _reservationRepository: IReservationRepository;
 
   get reservationRepository(): IReservationRepository {
     return this._reservationRepository;
   }
 
+  protected _ocppMessageRepository: IOCPPMessageRepository;
+
   get ocppMessageRepository(): IOCPPMessageRepository {
     return this._ocppMessageRepository;
   }
+
+  private _localAuthListService: LocalAuthListService;
 
   get localAuthListService(): LocalAuthListService {
     return this._localAuthListService;
@@ -270,6 +279,26 @@ export class EVDriverModule extends AbstractModule {
         // TODO determine how/if to set personalMessage
       },
     };
+
+    // Validate ID token format after AJV schema validation, checking if the token conforms to expected type e.g if type is ISO14443, the token should be a hex string of even length
+    const tokenValidation = validateIdToken(request.idToken.type, request.idToken.idToken);
+    if (!tokenValidation.isValid) {
+      this._logger.warn(`Invalid ID token format`, {
+        type: request.idToken.type,
+        token: request.idToken.idToken,
+        error: tokenValidation.errorMessage,
+      });
+      const messageId = message.context.correlationId;
+      const error = new OcppError(
+        messageId,
+        ErrorCode.PropertyConstraintViolation,
+        tokenValidation.errorMessage || 'Invalid token value for specified type',
+      );
+      response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.Invalid;
+      this._logger.error('Token validation failed:', tokenValidation.errorMessage);
+      await this.sendCallErrorWithMessage(message, error);
+      return;
+    }
 
     if (message.payload.idToken.type === OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
       response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;

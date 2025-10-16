@@ -700,9 +700,7 @@ export class SequelizeTransactionEventRepository
       });
 
       const chargingStation = await this.station.readByKey(tenantId, stationId);
-      if (!chargingStation) {
-        this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
-      } else {
+      if (chargingStation) {
         if (chargingStation.locationId) {
           newTransaction.locationId = chargingStation.locationId;
         } else {

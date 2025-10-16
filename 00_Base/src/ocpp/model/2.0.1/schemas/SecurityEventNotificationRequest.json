@@ -24,12 +24,35 @@
     "type": {
       "description": "Type of the security event. This value should be taken from the Security events list.\r\n",
       "type": "string",
-      "maxLength": 50
+      "maxLength": 50,
+      "enum": [
+        "FirmwareUpdated",
+        "FailedToAuthenticateAtCsms",
+        "CsmsFailedToAuthenticate",
+        "SettingSystemTime",
+        "StartupOfTheDevice",
+        "ResetOrReboot",
+        "SecurityLogWasCleared",
+        "ReconfigurationOfSecurityParameters",
+        "MemoryExhaustion",
+        "InvalidMessages",
+        "AttemptedReplayAttacks",
+        "TamperDetectionActivated",
+        "InvalidFirmwareSignature",
+        "InvalidFirmwareSigningCertificate",
+        "InvalidCsmsCertificate",
+        "InvalidChargingStationCertificate",
+        "InvalidTLSVersion",
+        "InvalidTLSCipherSuite",
+        "MaintenanceLoginAccepted",
+        "MaintenanceLoginFailed"
+      ]
     },
     "timestamp": {
       "description": "Date and time at which the event occurred.\r\n",
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?(?:Z|[+\\-]\\d{2}:\\d{2})$"
     },
     "techInfo": {
       "description": "Additional information about the occurred security event.\r\n",

@@ -34,7 +34,9 @@
     },
     "evseId": {
       "description": "This contains the ID of a specific EVSE that needs to be reset, instead of the entire Charging Station.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     }
   },
   "required": ["type"]
