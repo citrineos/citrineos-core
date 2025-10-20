@@ -77,7 +77,6 @@ export {
   OCPPVersion,
   mapToCallAction,
 } from './ocpp/rpc/message.js';
-export { ChargingStationSequenceType } from './ocpp/model/requestIds.js';
 export type { IFileAccess, IFileStorage } from './interfaces/files/index.js';
 
 // Persistence Interfaces
@@ -264,6 +263,51 @@ export { assert, notNull, deepDirectionalEqual } from './assertion/assertion.js'
 export { UnauthorizedError } from './interfaces/api/exception/UnauthorizedError.js';
 export { AuthorizationSecurity } from './interfaces/api/AuthorizationSecurity.js';
 export { Ajv, addFormats };
-export * from './interfaces/dto/index.js';
-export { AuthorizationWhitelistType } from './interfaces/dto/index.js';
+export * from './interfaces/dto/authorization.dto.js';
+export * from './interfaces/dto/async.job.dto.js';
+export * from './interfaces/dto/boot.dto.js';
+export * from './interfaces/dto/certificate.dto.js';
+export * from './interfaces/dto/charging.profile.dto.js';
+export * from './interfaces/dto/charging.schedule.dto.js';
+export * from './interfaces/dto/charging.station.dto.js';
+export * from './interfaces/dto/charging.station.network.profile.dto.js';
+export * from './interfaces/dto/charging.station.sequence.dto.js';
+export * from './interfaces/dto/component.dto.js';
+export * from './interfaces/dto/connector.dto.js';
+export * from './interfaces/dto/event.data.dto.js';
+export * from './interfaces/dto/evse.dto.js';
+export * from './interfaces/dto/evse.type.dto.js';
+export * from './interfaces/dto/installed.certificate.dto.js';
+export * from './interfaces/dto/latest.status.notification.dto.js';
+export * from './interfaces/dto/location.dto.js';
+export * from './interfaces/dto/message.info.dto.js';
+export * from './interfaces/dto/meter.value.dto.js';
+export * from './interfaces/dto/ocpp.message.dto.js';
+export * from './interfaces/dto/reservation.dto.js';
+export * from './interfaces/dto/sales.tariff.dto.js';
+export * from './interfaces/dto/server.network.profile.dto.js';
+export * from './interfaces/dto/set.network.profile.dto.js';
+export * from './interfaces/dto/start.transaction.dto.js';
+export * from './interfaces/dto/status.notification.dto.js';
+export * from './interfaces/dto/stop.transaction.dto.js';
+export * from './interfaces/dto/subscription.dto.js';
+export * from './interfaces/dto/tariff.dto.js';
+export * from './interfaces/dto/tenant.dto.js';
+export * from './interfaces/dto/tenant.partner.dto.js';
+export * from './interfaces/dto/transaction.dto.js';
+export * from './interfaces/dto/transaction.event.dto.js';
+export * from './interfaces/dto/variable.attribute.dto.js';
+export * from './interfaces/dto/variable.characteristics.dto.js';
+export * from './interfaces/dto/variable.dto.js';
+export * from './interfaces/dto/variable.monitoring.dto.js';
+export * from './interfaces/dto/variable.monitoring.status.dto.js';
+export * from './interfaces/dto/variable.status.dto.js';
+export * from './interfaces/dto/types/authorization.js';
+export * from './interfaces/dto/types/base.dto.js';
+export * from './interfaces/dto/types/enums.js';
+export * from './interfaces/dto/types/hours.js';
+export * from './interfaces/dto/types/location.js';
+export * from './interfaces/dto/types/ocpi.registration.js';
+export * from './interfaces/dto/types/sales.tariff.js';
+export * from './interfaces/dto/types/sampled.value.dto.js';
 export declare type Constructable<T> = new (...args: any[]) => T;

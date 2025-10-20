@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import type { PartnerProfile, TenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { TenantPartnerDto } from '@citrineos/base/src/interfaces/dto/tenant.partner.dto.js';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -12,14 +15,11 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import type { ITenantDto } from '@citrineos/base';
-import { DEFAULT_TENANT_ID, OCPIRegistration } from '@citrineos/base';
-import type { ITenantPartnerDto } from '@citrineos/base/src/interfaces/dto/tenant.partner.dto.js';
 import { Authorization } from './Authorization/index.js';
 import { Tenant } from './Tenant.js';
 
 @Table
-export class TenantPartner extends Model implements ITenantPartnerDto {
+export class TenantPartner extends Model implements TenantPartnerDto {
   static readonly MODEL_NAME: string = 'TenantPartner';
 
   @Column(DataType.STRING)
@@ -29,7 +29,7 @@ export class TenantPartner extends Model implements ITenantPartnerDto {
   declare countryCode: string;
 
   @Column(DataType.JSONB)
-  declare partnerProfileOCPI: OCPIRegistration.PartnerProfile;
+  declare partnerProfileOCPI: PartnerProfile;
 
   @HasMany(() => Authorization)
   declare authorizations: Authorization[];
@@ -44,7 +44,7 @@ export class TenantPartner extends Model implements ITenantPartnerDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

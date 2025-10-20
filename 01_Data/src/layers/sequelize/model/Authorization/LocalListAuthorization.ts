@@ -18,7 +18,7 @@ import { Authorization, LocalListVersion, SendLocalList } from './index.js';
 import { SendLocalListAuthorization } from './SendLocalListAuthorization.js';
 import { LocalListVersionAuthorization } from './LocalListVersionAuthorization.js';
 import { Tenant } from '../Tenant.js';
-import type { ITenantDto } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 /**
@@ -100,7 +100,7 @@ export class LocalListAuthorization extends Model implements AuthorizationRestri
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

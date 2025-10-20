@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ITenantDto, OCPPVersionType, WebsocketServerConfig } from '@citrineos/base';
+import type { TenantDto, OCPPVersionType, WebsocketServerConfig } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -73,7 +73,7 @@ export class ServerNetworkProfile extends Model implements WebsocketServerConfig
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IStopTransactionDto, ITenantDto } from '@citrineos/base';
+import type { StopTransactionDto, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -19,7 +19,7 @@ import { MeterValue } from './MeterValue.js';
 import { Tenant } from '../Tenant.js';
 
 @Table
-export class StopTransaction extends Model implements IStopTransactionDto {
+export class StopTransaction extends Model implements StopTransactionDto {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.StopTransaction;
 
   @Column(DataType.STRING)
@@ -69,7 +69,7 @@ export class StopTransaction extends Model implements IStopTransactionDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

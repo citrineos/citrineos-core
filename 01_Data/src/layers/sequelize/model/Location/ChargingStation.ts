@@ -1,14 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IChargingStationDto, ILocationDto, ITenantDto } from '@citrineos/base';
-import {
-  ChargingStationCapability,
-  ChargingStationParkingRestriction,
-  DEFAULT_TENANT_ID,
-  Namespace,
-  OCPPVersion,
+import type {
+  ChargingStationCapabilityType,
+  ChargingStationDto,
+  ChargingStationParkingRestrictionType,
+  LocationDto,
+  TenantDto,
 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, Namespace, OCPPVersion } from '@citrineos/base';
+import type { Point } from 'geojson';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -22,22 +23,21 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { Location } from './Location.js';
-import { StatusNotification } from './StatusNotification.js';
-import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile.js';
-import { SetNetworkProfile } from './SetNetworkProfile.js';
-import { Connector } from './Connector.js';
-import { Evse } from './Evse.js';
-import type { Point } from 'geojson';
 import { Tenant } from '../Tenant.js';
 import { Transaction } from '../index.js';
+import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile.js';
+import { Connector } from './Connector.js';
+import { Evse } from './Evse.js';
+import { Location } from './Location.js';
+import { SetNetworkProfile } from './SetNetworkProfile.js';
+import { StatusNotification } from './StatusNotification.js';
 
 /**
  * Represents a charging station.
  * Currently, this data model is internal to CitrineOS. In the future, it will be analogous to an OCPI ChargingStation.
  */
 @Table
-export class ChargingStation extends Model implements IChargingStationDto {
+export class ChargingStation extends Model implements ChargingStationDto {
   static readonly MODEL_NAME: string = Namespace.ChargingStation;
 
   @PrimaryKey
@@ -87,10 +87,10 @@ export class ChargingStation extends Model implements IChargingStationDto {
   declare floorLevel?: string | null;
 
   @Column(DataType.JSONB)
-  declare parkingRestrictions?: ChargingStationParkingRestriction[] | null;
+  declare parkingRestrictions?: ChargingStationParkingRestrictionType[] | null;
 
   @Column(DataType.JSONB)
-  declare capabilities?: ChargingStationCapability[] | null;
+  declare capabilities?: ChargingStationCapabilityType[] | null;
 
   @ForeignKey(() => Location)
   @Column(DataType.INTEGER)
@@ -106,7 +106,7 @@ export class ChargingStation extends Model implements IChargingStationDto {
    * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.
    */
   @BelongsTo(() => Location)
-  declare location?: ILocationDto;
+  declare location?: LocationDto;
 
   @BelongsToMany(() => SetNetworkProfile, () => ChargingStationNetworkProfile)
   declare networkProfiles?: SetNetworkProfile[] | null;
@@ -131,7 +131,7 @@ export class ChargingStation extends Model implements IChargingStationDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

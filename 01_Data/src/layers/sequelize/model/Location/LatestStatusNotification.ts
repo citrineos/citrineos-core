@@ -11,7 +11,7 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import type { ITenantDto } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
 import { ChargingStation } from './ChargingStation.js';
 import { StatusNotification } from './StatusNotification.js';
@@ -43,7 +43,7 @@ export class LatestStatusNotification extends Model {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

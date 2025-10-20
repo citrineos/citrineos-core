@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IAuthorizationDto, IMessageContext } from '../../index.js';
-import { AuthorizationStatusType } from '../../index.js';
+import type { AuthorizationDto, AuthorizationStatusType, IMessageContext } from '../../index.js';
 
 export interface IAuthorizer {
   /**
@@ -11,13 +10,13 @@ export interface IAuthorizer {
    * If status is not Accepted, the authorization process will stop and the rejection put into the response.
    * The order of Authorizers can lead to different outputs; instantiate them in the order they should be called.
    *
-   * @param {IAuthorizationDto} authorization The authorization object associated with the idToken in the request. No modifications should be made to this object.
+   * @param {AuthorizationDto} authorization The authorization object associated with the idToken in the request. No modifications should be made to this object.
    * @param {IMessageContext} context
    *
    * @returns {Promise<AuthorizationStatusType>} The updated authorization status
    **/
   authorize(
-    authorization: IAuthorizationDto,
+    authorization: AuthorizationDto,
     context: IMessageContext,
   ): Promise<AuthorizationStatusType>;
 }

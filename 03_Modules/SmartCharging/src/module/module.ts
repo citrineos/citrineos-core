@@ -14,15 +14,11 @@ import type {
 import {
   AbstractModule,
   AsHandler,
-  ChargingStationSequenceType,
   EventGroup,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import type {
   IChargingProfileRepository,
   IDeviceModelRepository,
@@ -33,6 +29,9 @@ import {
   SequelizeChargingStationSequenceRepository,
   Transaction,
 } from '@citrineos/data';
+import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import type { ISmartCharging } from './smartCharging/index.js';
 import { InternalSmartCharging } from './smartCharging/index.js';
 
@@ -378,7 +377,7 @@ export class SmartChargingModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            ChargingStationSequenceType.getChargingProfiles,
+            'getChargingProfiles',
           ),
           chargingProfile: {
             chargingLimitSource: [
@@ -441,7 +440,7 @@ export class SmartChargingModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            ChargingStationSequenceType.getChargingProfiles,
+            'getChargingProfiles',
           ),
           chargingProfile: {
             chargingLimitSource: [OCPP2_0_1.ChargingLimitSourceEnumType.CSO],

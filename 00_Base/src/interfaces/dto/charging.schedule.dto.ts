@@ -2,36 +2,38 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IBaseDto } from '../../index.js';
-import type { IChargingProfileDto } from './charging.profile.dto.js';
-import type { ISalesTariffDto } from './sales.tariff.dto.js';
+import { z } from 'zod';
+import { BaseSchema } from './types/base.dto.js';
+import { SalesTariffSchema } from './sales.tariff.dto.js';
 
-export interface IChargingScheduleDto extends IBaseDto {
-  databaseId: number;
-  id?: number;
-  stationId: string;
-  chargingRateUnit: any;
-  chargingSchedulePeriod: [any, ...any[]];
-  duration?: number | null;
-  minChargingRate?: number | null;
-  startSchedule?: string | null;
-  timeBase?: string;
-  chargingProfile?: IChargingProfileDto;
-  chargingProfileDatabaseId?: number;
-  salesTariff?: ISalesTariffDto;
-}
+export const ChargingScheduleSchema = BaseSchema.extend({
+  databaseId: z.number().int(),
+  id: z.number().int().optional(),
+  stationId: z.string(),
+  chargingRateUnit: z.string(),
+  chargingSchedulePeriod: z.tuple([z.any()]).rest(z.any()), // Non-empty array of JSONB
+  duration: z.number().int().nullable().optional(),
+  minChargingRate: z.number().nullable().optional(), // DECIMAL
+  startSchedule: z.string().nullable().optional(),
+  timeBase: z.iso.datetime().optional(),
+  chargingProfileDatabaseId: z.number().int().optional(),
+  salesTariff: SalesTariffSchema.optional(),
+});
 
-export enum ChargingScheduleDtoProps {
-  databaseId = 'databaseId',
-  id = 'id',
-  stationId = 'stationId',
-  chargingRateUnit = 'chargingRateUnit',
-  chargingSchedulePeriod = 'chargingSchedulePeriod',
-  duration = 'duration',
-  minChargingRate = 'minChargingRate',
-  startSchedule = 'startSchedule',
-  timeBase = 'timeBase',
-  chargingProfile = 'chargingProfile',
-  chargingProfileDatabaseId = 'chargingProfileDatabaseId',
-  salesTariff = 'salesTariff',
-}
+export type ChargingScheduleDto = z.infer<typeof ChargingScheduleSchema>;
+
+export const ChargingScheduleCreateSchema = ChargingScheduleSchema.omit({
+  databaseId: true,
+  tenant: true,
+  chargingProfile: true,
+  salesTariff: true,
+  updatedAt: true,
+  createdAt: true,
+});
+
+export type ChargingScheduleCreate = z.infer<typeof ChargingScheduleCreateSchema>;
+
+export const chargingScheduleSchemas = {
+  ChargingSchedule: ChargingScheduleSchema,
+  ChargingScheduleCreate: ChargingScheduleCreateSchema,
+};

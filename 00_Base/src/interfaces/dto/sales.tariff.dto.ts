@@ -2,15 +2,32 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IBaseDto } from '../../index.js';
-import type { IChargingScheduleDto } from './charging.schedule.dto.js';
+import { z } from 'zod';
+import { BaseSchema } from './types/base.dto.js';
+import { SalesTariffEntrySchema } from './types/sales.tariff.js';
 
-export interface ISalesTariffDto extends IBaseDto {
-  databaseId: number;
-  id?: number;
-  numEPriceLevels?: number | null;
-  salesTariffDescription?: string | null;
-  salesTariffEntry: [any, ...any[]];
-  chargingScheduleDatabaseId: number;
-  chargingSchedule: IChargingScheduleDto;
-}
+export const SalesTariffSchema = BaseSchema.extend({
+  databaseId: z.number().int(),
+  id: z.number().int().optional(),
+  numEPriceLevels: z.number().int().nullable().optional(),
+  salesTariffDescription: z.string().nullable().optional(),
+  salesTariffEntry: z.tuple([SalesTariffEntrySchema]).rest(SalesTariffEntrySchema), // Non-empty array
+  chargingScheduleDatabaseId: z.number().int(),
+});
+
+export type SalesTariffDto = z.infer<typeof SalesTariffSchema>;
+
+export const SalesTariffCreateSchema = SalesTariffSchema.omit({
+  databaseId: true,
+  tenant: true,
+  chargingSchedule: true,
+  updatedAt: true,
+  createdAt: true,
+});
+
+export type SalesTariffCreate = z.infer<typeof SalesTariffCreateSchema>;
+
+export const salesTariffSchemas = {
+  SalesTariff: SalesTariffSchema,
+  SalesTariffCreate: SalesTariffCreateSchema,
+};

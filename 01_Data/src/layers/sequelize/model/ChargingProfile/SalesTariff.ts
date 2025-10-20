@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IChargingScheduleDto, ISalesTariffDto, ITenantDto } from '@citrineos/base';
+import type { ChargingScheduleDto, SalesTariffDto, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
@@ -19,7 +19,7 @@ import { ChargingSchedule } from './ChargingSchedule.js';
 import { Tenant } from '../Tenant.js';
 
 @Table
-export class SalesTariff extends Model implements ISalesTariffDto {
+export class SalesTariff extends Model implements SalesTariffDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.SalesTariff;
 
   /**
@@ -56,7 +56,7 @@ export class SalesTariff extends Model implements ISalesTariffDto {
   declare chargingScheduleDatabaseId: number;
 
   @BelongsTo(() => ChargingSchedule)
-  declare chargingSchedule: IChargingScheduleDto;
+  declare chargingSchedule: ChargingScheduleDto;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
 
@@ -70,7 +70,7 @@ export class SalesTariff extends Model implements ISalesTariffDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

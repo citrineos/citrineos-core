@@ -16,7 +16,6 @@ import type {
 import {
   AbstractModule,
   AsHandler,
-  AuthorizationStatusType,
   CrudRepository,
   ErrorCode,
   EventGroup,
@@ -55,10 +54,10 @@ import {
 } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { TransactionService } from './TransactionService.js';
-import { StatusNotificationService } from './StatusNotificationService.js';
-import { CostNotifier } from './CostNotifier.js';
 import { CostCalculator } from './CostCalculator.js';
+import { CostNotifier } from './CostNotifier.js';
+import { StatusNotificationService } from './StatusNotificationService.js';
+import { TransactionService } from './TransactionService.js';
 
 /**
  * Component that handles transaction related messages.
@@ -674,17 +673,17 @@ export class TransactionsModule extends AbstractModule {
     let idTokenInfoStatus = authorization?.status;
     if (authorization === undefined && request.idTag) {
       // Unknown idTag, fallback to Invalid
-      idTokenInfoStatus = AuthorizationStatusType.Invalid;
+      idTokenInfoStatus = 'Invalid';
     }
     switch (idTokenInfoStatus) {
-      case AuthorizationStatusType.Accepted:
-      case AuthorizationStatusType.Blocked:
-      case AuthorizationStatusType.Expired:
-      case AuthorizationStatusType.ConcurrentTx:
-      case AuthorizationStatusType.Invalid:
+      case 'Accepted':
+      case 'Blocked':
+      case 'Expired':
+      case 'ConcurrentTx':
+      case 'Invalid':
         break;
       default: // Other OCPP 2.0.1 statuses default to Invalid for OCPP 1.6
-        idTokenInfoStatus = AuthorizationStatusType.Invalid;
+        idTokenInfoStatus = 'Invalid';
     }
 
     let parentIdTag: string | undefined = undefined;

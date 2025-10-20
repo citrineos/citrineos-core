@@ -2,68 +2,69 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  IBaseDto,
-  IConnectorDto,
-  IEvseDto,
-  ILocationDto,
-  IStatusNotificationDto,
-  ITransactionDto,
-} from '../../index.js';
+import { z } from 'zod';
+import { BaseSchema } from './types/base.dto.js';
 import {
-  ChargingStationCapability,
-  ChargingStationParkingRestriction,
-  OCPPVersion,
-} from '../../index.js';
-import type { Point } from 'geojson';
+  ChargingStationCapabilitySchema,
+  ChargingStationParkingRestrictionSchema,
+  OCPPVersionSchema,
+} from './types/enums.js';
+import { PointSchema } from './types/location.js';
+import { LocationSchema } from './location.dto.js';
+import { EvseSchema } from './evse.dto.js';
+import { ConnectorSchema } from './connector.dto.js';
 
-export interface IChargingStationDto extends IBaseDto {
-  id: string;
-  isOnline: boolean;
-  protocol?: OCPPVersion | null;
-  chargePointVendor?: string | null;
-  chargePointModel?: string | null;
-  chargePointSerialNumber?: string | null;
-  chargeBoxSerialNumber?: string | null;
-  firmwareVersion?: string | null;
-  iccid?: string | null;
-  imsi?: string | null;
-  meterType?: string | null;
-  meterSerialNumber?: string | null;
-  coordinates?: Point | null;
-  floorLevel?: string | null;
-  parkingRestrictions?: ChargingStationParkingRestriction[] | null;
-  capabilities?: ChargingStationCapability[] | null;
-  locationId?: number | null;
-  statusNotifications?: IStatusNotificationDto[] | null;
-  transactions?: ITransactionDto[] | null;
-  location?: ILocationDto;
-  networkProfiles?: any;
-  evses?: IEvseDto[] | null;
-  connectors?: IConnectorDto[] | null;
-}
+export const ChargingStationSchema = BaseSchema.extend({
+  id: z.string().max(36),
+  isOnline: z.boolean(),
+  protocol: OCPPVersionSchema.nullable().optional(),
+  chargePointVendor: z.string().max(20).nullable().optional(),
+  chargePointModel: z.string().max(20).nullable().optional(),
+  chargePointSerialNumber: z.string().max(25).nullable().optional(),
+  chargeBoxSerialNumber: z.string().max(25).nullable().optional(),
+  firmwareVersion: z.string().max(50).nullable().optional(),
+  iccid: z.string().max(20).nullable().optional(),
+  imsi: z.string().max(20).nullable().optional(),
+  meterType: z.string().max(25).nullable().optional(),
+  meterSerialNumber: z.string().max(25).nullable().optional(),
+  coordinates: PointSchema.nullable().optional(),
+  floorLevel: z.string().nullable().optional(),
+  parkingRestrictions: z.array(ChargingStationParkingRestrictionSchema).nullable().optional(),
+  capabilities: z.array(ChargingStationCapabilitySchema).nullable().optional(),
+  locationId: z.number().int().nullable().optional(),
+  networkProfiles: z.any().optional(),
+  evses: z.array(EvseSchema).nullable().optional(),
+  connectors: z.array(ConnectorSchema).nullable().optional(),
+});
 
-export enum ChargingStationDtoProps {
-  id = 'id',
-  isOnline = 'isOnline',
-  protocol = 'protocol',
-  chargePointVendor = 'chargePointVendor',
-  chargePointModel = 'chargePointModel',
-  chargePointSerialNumber = 'chargePointSerialNumber',
-  chargeBoxSerialNumber = 'chargeBoxSerialNumber',
-  firmwareVersion = 'firmwareVersion',
-  iccid = 'iccid',
-  imsi = 'imsi',
-  meterType = 'meterType',
-  meterSerialNumber = 'meterSerialNumber',
-  locationId = 'locationId',
-  statusNotifications = 'statusNotifications',
-  location = 'Location',
-  networkProfiles = 'networkProfiles',
-  evses = 'evses',
-  connectors = 'connectors',
-  coordinates = 'coordinates',
-  floorLevel = 'floorLevel',
-  parkingRestrictions = 'parkingRestrictions',
-  capabilities = 'capabilities',
-}
+export type ChargingStationDto = z.infer<typeof ChargingStationSchema>;
+
+export const ChargingStationCreateSchema = ChargingStationSchema.omit({
+  tenant: true,
+  statusNotifications: true,
+  transactions: true,
+  location: true,
+  networkProfiles: true,
+  evses: true,
+  connectors: true,
+  updatedAt: true,
+  createdAt: true,
+});
+
+export type ChargingStationCreate = z.infer<typeof ChargingStationCreateSchema>;
+
+// OCPI-specific validation (requires evses and connectors)
+export const ChargingStationOCPISchema = ChargingStationSchema.extend({
+  evses: z.array(EvseSchema).min(1, 'OCPI requires at least one EVSE'),
+  connectors: z.array(ConnectorSchema).min(1, 'OCPI requires at least one connector'),
+  location: LocationSchema, // Required for OCPI
+  coordinates: PointSchema, // Required for OCPI (not nullable)
+});
+
+export type ChargingStationOCPI = z.infer<typeof ChargingStationOCPISchema>;
+
+export const chargingStationSchemas = {
+  ChargingStation: ChargingStationSchema,
+  ChargingStationCreate: ChargingStationCreateSchema,
+  ChargingStationOCPI: ChargingStationOCPISchema,
+};

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ITenantDto, IVariableCharacteristicsDto, IVariableDto } from '@citrineos/base';
+import type { TenantDto, VariableCharacteristicsDto, VariableDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -19,7 +19,7 @@ import { Tenant } from '../Tenant.js';
 @Table
 export class VariableCharacteristics
   extends Model
-  implements OCPP2_0_1.VariableCharacteristicsType, IVariableCharacteristicsDto
+  implements OCPP2_0_1.VariableCharacteristicsType, VariableCharacteristicsDto
 {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableCharacteristicsType;
 
@@ -50,7 +50,7 @@ export class VariableCharacteristics
    */
 
   @BelongsTo(() => Variable)
-  declare variable: IVariableDto;
+  declare variable: VariableDto;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -71,7 +71,7 @@ export class VariableCharacteristics
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

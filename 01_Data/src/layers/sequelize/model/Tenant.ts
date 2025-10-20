@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import type { ServerProfile, TenantDto } from '@citrineos/base';
 import type { Optional } from 'sequelize';
 import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import {
@@ -21,6 +22,17 @@ import {
   CompositeSchedule,
   SalesTariff,
 } from './ChargingProfile/index.js';
+import { ChargingStationSecurityInfo } from './ChargingStationSecurityInfo.js';
+import { ChargingStationSequence } from './ChargingStationSequence/index.js';
+import { ComponentVariable } from './DeviceModel/ComponentVariable.js';
+import {
+  Component,
+  EvseType,
+  Variable,
+  VariableAttribute,
+  VariableCharacteristics,
+  VariableStatus,
+} from './DeviceModel/index.js';
 import {
   ChargingStation,
   ChargingStationNetworkProfile,
@@ -31,29 +43,6 @@ import {
   StatusNotification,
 } from './Location/index.js';
 import { Location } from './Location/Location.js';
-import { ChargingStationSecurityInfo } from './ChargingStationSecurityInfo.js';
-import { ChargingStationSequence } from './ChargingStationSequence/index.js';
-import {
-  Component,
-  EvseType,
-  Variable,
-  VariableAttribute,
-  VariableCharacteristics,
-  VariableStatus,
-} from './DeviceModel/index.js';
-import { ComponentVariable } from './DeviceModel/ComponentVariable.js';
-import {
-  EventData,
-  VariableMonitoring,
-  VariableMonitoringStatus,
-} from './VariableMonitoring/index.js';
-import {
-  MeterValue,
-  StartTransaction,
-  StopTransaction,
-  Transaction,
-  TransactionEvent,
-} from './TransactionEvent/index.js';
 import { MessageInfo } from './MessageInfo/index.js';
 import { OCPPMessage } from './OCPPMessage.js';
 import { Reservation } from './Reservation.js';
@@ -61,8 +50,18 @@ import { SecurityEvent } from './SecurityEvent.js';
 import { Subscription } from './Subscription/index.js';
 import { Tariff } from './Tariff/index.js';
 import { TenantPartner } from './TenantPartner.js';
-import type { ITenantDto } from '@citrineos/base';
-import { OCPIRegistration } from '@citrineos/base';
+import {
+  MeterValue,
+  StartTransaction,
+  StopTransaction,
+  Transaction,
+  TransactionEvent,
+} from './TransactionEvent/index.js';
+import {
+  EventData,
+  VariableMonitoring,
+  VariableMonitoringStatus,
+} from './VariableMonitoring/index.js';
 
 export enum TenantAttributeProps {
   id = 'id',
@@ -83,10 +82,7 @@ export interface TenantCreationAttributes
   > {}
 
 @Table
-export class Tenant
-  extends Model<TenantAttributes, TenantCreationAttributes>
-  implements ITenantDto
-{
+export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> implements TenantDto {
   static readonly MODEL_NAME: string = 'Tenant';
 
   @PrimaryKey
@@ -106,7 +102,7 @@ export class Tenant
   declare countryCode: string;
 
   @Column(DataType.JSONB)
-  declare serverProfileOCPI?: OCPIRegistration.ServerProfile | null;
+  declare serverProfileOCPI?: ServerProfile | null;
 
   /**
    * Relationships

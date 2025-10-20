@@ -12,8 +12,8 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { type ChargingStation as ChargingStationType, ChargingStation } from '../Location/index.js';
-import type { ITenantDto } from '@citrineos/base';
-import { ChargingStationSequenceType, DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { ChargingStationSequenceType, TenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { Tenant } from '../Tenant.js';
 
 @Table
@@ -55,7 +55,7 @@ export class ChargingStationSequence extends Model {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

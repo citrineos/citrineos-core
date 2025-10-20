@@ -1,10 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import type {
+  AuthorizationStatusType,
+  IAuthorizer,
+  IdTokenType,
+  IMessageContext,
+  SystemConfig,
+} from '@citrineos/base';
 import type { ILocationRepository } from '@citrineos/data';
 import { Authorization } from '@citrineos/data';
-import type { IAuthorizer, IMessageContext, SystemConfig } from '@citrineos/base';
-import { AuthorizationStatusType, AuthorizationWhitelistType, IdTokenType } from '@citrineos/base';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { OidcTokenProvider } from '../authorization/index.js';
@@ -51,20 +56,17 @@ export class RealTimeAuthorizer implements IAuthorizer {
     if (!authorization.realTimeAuthUrl) {
       this._logger.debug(`No Realtime Auth URL from authorization ${authorization.id}`);
       return authorization.status;
-    } else if (
-      !authorization.realTimeAuth ||
-      authorization.realTimeAuth === AuthorizationWhitelistType.Allowed
-    ) {
+    } else if (!authorization.realTimeAuth || authorization.realTimeAuth === 'Allowed') {
       this._logger.debug(`Realtime Auth whitelisted for authorization ${authorization.id}`);
       return authorization.status;
-    } else if (authorization.status !== AuthorizationStatusType.Accepted) {
+    } else if (authorization.status !== 'Accepted') {
       this._logger.debug(
         `Skipping Realtime Auth for authorization ${authorization.id} with status ${authorization.status}`,
       );
       return authorization.status;
     }
 
-    let result: AuthorizationStatusType = AuthorizationStatusType.Invalid;
+    let result: AuthorizationStatusType = 'Invalid';
     try {
       const chargingStation = await this._locationRepository.readChargingStationByStationId(
         context.tenantId,
@@ -93,7 +95,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
           headers['Authorization'] = `Bearer ${token}`;
         } catch (error) {
           this._logger.error('Failed to get OIDC token:', error);
-          return AuthorizationStatusType.Invalid;
+          return 'Invalid';
         }
       }
 
@@ -111,30 +113,30 @@ export class RealTimeAuthorizer implements IAuthorizer {
       if (realTimeAuth) {
         switch (realTimeAuth.data.allowed) {
           case 'ALLOWED':
-            result = AuthorizationStatusType.Accepted;
+            result = 'Accepted';
             break;
           case 'BLOCKED':
-            result = AuthorizationStatusType.Blocked;
+            result = 'Blocked';
             break;
           case 'EXPIRED':
-            result = AuthorizationStatusType.Expired;
+            result = 'Expired';
             break;
           case 'NO_CREDIT':
-            result = AuthorizationStatusType.NoCredit;
+            result = 'NoCredit';
             break;
           case 'NOT_ALLOWED':
-            result = AuthorizationStatusType.NotAtThisLocation;
+            result = 'NotAtThisLocation';
             break;
           default:
-            result = AuthorizationStatusType.Unknown;
+            result = 'Unknown';
         }
       } else {
-        result = AuthorizationStatusType.Unknown;
+        result = 'Unknown';
       }
     } catch (error) {
       this._logger.error(`Real-Time Auth failed: ${error}`);
-      if (authorization.realTimeAuth === AuthorizationWhitelistType.AllowedOffline) {
-        result = AuthorizationStatusType.Accepted;
+      if (authorization.realTimeAuth === 'AllowedOffline') {
+        result = 'Accepted';
       }
     }
 

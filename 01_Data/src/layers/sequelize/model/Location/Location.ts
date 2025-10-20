@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ILocationDto, ITenantDto } from '@citrineos/base';
-import {
-  DEFAULT_TENANT_ID,
+import type {
+  LocationDto,
   LocationFacilityType,
-  LocationHours,
   LocationParkingType,
-  OCPP2_0_1_Namespace,
+  TenantDto,
 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, LocationHours, OCPP2_0_1_Namespace } from '@citrineos/base';
+import type { Point } from 'geojson';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -20,16 +20,15 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { ChargingStation } from './ChargingStation.js';
-import type { Point } from 'geojson';
 import { Tenant } from '../Tenant.js';
+import { ChargingStation } from './ChargingStation.js';
 
 /**
  * Represents a location.
  * Currently, this data model is internal to CitrineOS. In the future, it will be analogous to an OCPI Location.
  */
 @Table
-export class Location extends Model implements ILocationDto {
+export class Location extends Model implements LocationDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Location;
 
   @Column(DataType.STRING)
@@ -100,7 +99,7 @@ export class Location extends Model implements ILocationDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

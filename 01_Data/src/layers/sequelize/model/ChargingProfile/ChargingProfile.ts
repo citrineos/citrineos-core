@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IChargingProfileDto, ITenantDto, ITransactionDto } from '@citrineos/base';
+import type { ChargingProfileDto, TenantDto, TransactionDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
@@ -21,7 +21,7 @@ import { ChargingSchedule } from './ChargingSchedule.js';
 import { Tenant } from '../Tenant.js';
 
 @Table
-export class ChargingProfile extends Model implements IChargingProfileDto {
+export class ChargingProfile extends Model implements ChargingProfileDto {
   static readonly MODEL_NAME: string = Namespace.ChargingProfile;
 
   /**
@@ -103,7 +103,7 @@ export class ChargingProfile extends Model implements IChargingProfileDto {
   declare transactionDatabaseId?: number | null;
 
   @BelongsTo(() => Transaction)
-  declare transaction?: ITransactionDto;
+  declare transaction?: TransactionDto;
 
   declare customData?: object | null;
 
@@ -117,7 +117,7 @@ export class ChargingProfile extends Model implements IChargingProfileDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

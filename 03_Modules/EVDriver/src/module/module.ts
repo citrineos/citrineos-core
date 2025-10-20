@@ -1,27 +1,26 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  ChargingStationSequenceType,
-  ErrorCode,
-  EventGroup,
-  type BootstrapConfig,
-  type CallAction,
-  type HandlerProperties,
-  type IAuthorizationDto,
-  type IAuthorizer,
-  type ICache,
-  type IMessage,
-  type IMessageContext,
-  type IMessageHandler,
-  type IMessageSender,
-  type SystemConfig,
+import type {
+  AuthorizationDto,
+  AuthorizationStatusType,
+  BootstrapConfig,
+  CallAction,
+  HandlerProperties,
+  IAuthorizer,
+  ICache,
+  IMessage,
+  IMessageContext,
+  IMessageHandler,
+  IMessageSender,
+  SystemConfig,
 } from '@citrineos/base';
 import {
   AbstractModule,
   AsHandler,
-  AuthorizationDtoProps,
-  AuthorizationStatusType,
+  ErrorCode,
+  EventGroup,
+  // AuthorizationStatusType, // Remove, not needed as value
   MessageOrigin,
   OCPP1_6,
   OCPP1_6_CallAction,
@@ -573,7 +572,7 @@ export class EVDriverModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            ChargingStationSequenceType.getChargingProfiles,
+            'getChargingProfiles',
           ),
           chargingProfile: {
             chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
@@ -810,7 +809,7 @@ export class EVDriverModule extends AbstractModule {
 
       if (!authorization.status) {
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Accepted;
-      } else if (authorization.status === AuthorizationStatusType.Accepted) {
+      } else if (authorization.status === OCPP1_6.AuthorizeResponseStatus.Accepted) {
         const cacheExpiryDateTime = authorization.cacheExpiryDateTime;
         const groupAuthorizationId = authorization.groupAuthorizationId;
         response.idTagInfo.expiryDate = cacheExpiryDateTime;
@@ -830,7 +829,7 @@ export class EVDriverModule extends AbstractModule {
           // Apply authorizers
           let status: AuthorizationStatusType = authorization.status;
           for (const authorizer of this._authorizers) {
-            if (status !== AuthorizationStatusType.Accepted) {
+            if (status !== OCPP1_6.AuthorizeResponseStatus.Accepted) {
               break;
             }
             status = await authorizer.authorize(authorization, context);
@@ -860,10 +859,10 @@ export class EVDriverModule extends AbstractModule {
 
   private _updateAuthorizationFromDto(
     auth: Authorization,
-    dto: Partial<IAuthorizationDto>,
+    dto: Partial<AuthorizationDto>,
   ): Authorization {
-    for (const key of Object.values(AuthorizationDtoProps)) {
-      const value = dto[key as keyof IAuthorizationDto];
+    for (const key of Object.keys(dto) as (keyof AuthorizationDto)[]) {
+      const value = dto[key];
 
       if (value !== undefined && value !== null) {
         (auth as any)[key] = value;

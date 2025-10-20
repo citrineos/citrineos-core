@@ -1,14 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { BootstrapConfig } from '@citrineos/base';
-import {
-  ChargingStationSequenceType,
-  CrudRepository,
-  MeterValueUtils,
-  OCPP1_6,
-  OCPP2_0_1,
-} from '@citrineos/base';
+import type { BootstrapConfig, ChargingStationSequenceType } from '@citrineos/base';
+import { CrudRepository, MeterValueUtils, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
 import type {
   IChargingStationSequenceRepository,
   ITransactionEventRepository,
@@ -684,7 +678,7 @@ export class SequelizeTransactionEventRepository
       const transactionId = await this.chargingStationSequence.getNextSequenceValue(
         tenantId,
         stationId,
-        ChargingStationSequenceType.transactionId,
+        'transactionId',
       );
       // Store transaction in db
       let newTransaction = Transaction.build({

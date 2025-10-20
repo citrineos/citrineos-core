@@ -15,7 +15,7 @@ import {
 import { SendLocalList } from './index.js';
 import { LocalListAuthorization } from './LocalListAuthorization.js';
 import { Tenant } from '../Tenant.js';
-import type { ITenantDto } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 @Table
@@ -41,7 +41,7 @@ export class SendLocalListAuthorization extends Model {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
-  IBootDto,
-  IComponentDto,
-  ITenantDto,
-  IVariableAttributeDto,
-  IVariableDto,
+  BootDto,
+  ComponentDto,
+  TenantDto,
+  VariableAttributeDto,
+  VariableDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
@@ -21,14 +21,14 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { Variable } from './Variable.js';
-import { Component } from './Component.js';
-import { Boot } from '../Boot.js';
-import { VariableStatus } from './VariableStatus.js';
-import { ChargingStation } from '../Location/index.js';
 import { CryptoUtils } from '../../../../util/CryptoUtils.js';
-import { EvseType } from './EvseType.js';
+import { Boot } from '../Boot.js';
+import { ChargingStation } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
+import { Component } from './Component.js';
+import { EvseType } from './EvseType.js';
+import { Variable } from './Variable.js';
+import { VariableStatus } from './VariableStatus.js';
 
 @Table({
   indexes: [
@@ -90,7 +90,7 @@ import { Tenant } from '../Tenant.js';
 })
 export class VariableAttribute
   extends Model
-  implements OCPP2_0_1.VariableAttributeType, IVariableAttributeDto
+  implements OCPP2_0_1.VariableAttributeType, VariableAttributeDto
 {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableAttributeType;
 
@@ -175,7 +175,7 @@ export class VariableAttribute
    */
 
   @BelongsTo(() => Variable)
-  declare variable: IVariableDto;
+  declare variable: VariableDto;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -185,7 +185,7 @@ export class VariableAttribute
   declare variableId?: number | null;
 
   @BelongsTo(() => Component)
-  declare component: IComponentDto;
+  declare component: ComponentDto;
 
   @ForeignKey(() => Component)
   @Column({
@@ -209,7 +209,7 @@ export class VariableAttribute
   // Below used to associate attributes with boot process
 
   @BelongsTo(() => Boot)
-  declare bootConfig?: IBootDto;
+  declare bootConfig?: BootDto;
 
   @ForeignKey(() => Boot)
   declare bootConfigId?: string | null;
@@ -226,7 +226,7 @@ export class VariableAttribute
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

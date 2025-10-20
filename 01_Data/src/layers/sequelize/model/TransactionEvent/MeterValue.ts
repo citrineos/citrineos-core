@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IMeterValueDto, ITenantDto, SampledValue } from '@citrineos/base';
+import type { MeterValueDto, TenantDto, SampledValue } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -20,7 +20,7 @@ import { Tenant } from '../Tenant.js';
 import { Tariff } from '../Tariff/index.js';
 
 @Table
-export class MeterValue extends Model implements IMeterValueDto {
+export class MeterValue extends Model implements MeterValueDto {
   static readonly MODEL_NAME: string = Namespace.MeterValue;
 
   @ForeignKey(() => TransactionEvent)
@@ -68,7 +68,7 @@ export class MeterValue extends Model implements IMeterValueDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

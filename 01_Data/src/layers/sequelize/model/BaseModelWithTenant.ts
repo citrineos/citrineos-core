@@ -11,7 +11,7 @@ import {
   ForeignKey,
   Model,
 } from 'sequelize-typescript';
-import type { ITenantDto } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { Tenant } from './Tenant.js';
 
@@ -29,7 +29,7 @@ export abstract class BaseModelWithTenant<
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

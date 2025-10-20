@@ -2,20 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
+  AuthorizationDto,
+  AuthorizationStatusType,
+  IAuthorizer,
+  IMessageContext,
+} from '@citrineos/base';
+import { MessageOrigin, MeterValueUtils, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
+import type {
   IAuthorizationRepository,
   IOCPPMessageRepository,
   IReservationRepository,
   ITransactionEventRepository,
 } from '@citrineos/data';
 import { OCPP1_6_Mapper, OCPP2_0_1_Mapper, Transaction } from '@citrineos/data';
-import type { IAuthorizationDto, IAuthorizer, IMessageContext } from '@citrineos/base';
-import {
-  AuthorizationStatusType,
-  MessageOrigin,
-  MeterValueUtils,
-  OCPP1_6,
-  OCPP2_0_1,
-} from '@citrineos/base';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
@@ -308,12 +307,12 @@ export class TransactionService {
   }
 
   private async _applyAuthorizers(
-    authorization: IAuthorizationDto,
+    authorization: AuthorizationDto,
     messageContext: IMessageContext,
   ): Promise<AuthorizationStatusType> {
     let result = authorization.status;
     for (const authorizer of this._authorizers) {
-      if (result !== AuthorizationStatusType.Accepted) {
+      if (result !== 'Accepted') {
         break;
       }
 
@@ -336,7 +335,7 @@ export class TransactionService {
   }
 
   private _mapAuthorizationDtoToIdTokenInfo(
-    dto: IAuthorizationDto,
+    dto: AuthorizationDto,
     status: AuthorizationStatusType,
   ): OCPP2_0_1.IdTokenInfoType {
     return {

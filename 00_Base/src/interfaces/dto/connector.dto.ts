@@ -1,58 +1,59 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IBaseDto, IChargingStationDto, IEvseDto, ITariffDto } from '../../index.js';
+
+import { z } from 'zod';
+import { BaseSchema } from './types/base.dto.js';
 import {
-  ConnectorErrorCode,
-  ConnectorFormatEnum,
-  ConnectorPowerType,
-  ConnectorStatus,
-  ConnectorTypeEnum,
-} from '../../index.js';
+  ConnectorStatusSchema,
+  ConnectorTypeSchema,
+  ConnectorFormatSchema,
+  ConnectorErrorCodeSchema,
+  ConnectorPowerTypeSchema,
+} from './types/enums.js';
 
-export interface IConnectorDto extends IBaseDto {
-  id?: number;
-  stationId: string;
-  evseId: number;
-  connectorId: number;
-  evseTypeConnectorId?: number;
-  status?: ConnectorStatus | null;
-  type?: ConnectorTypeEnum | null;
-  format?: ConnectorFormatEnum | null;
-  errorCode?: ConnectorErrorCode | null;
-  powerType?: ConnectorPowerType | null;
-  maximumAmperage?: number | null;
-  maximumVoltage?: number | null;
-  maximumPowerWatts?: number | null;
-  timestamp: string;
-  info?: string | null;
-  vendorId?: string | null;
-  vendorErrorCode?: string | null;
-  termsAndConditionsUrl?: string | null;
-  evse?: IEvseDto;
-  chargingStation?: IChargingStationDto;
-  tariffs?: ITariffDto[] | null;
-}
+export const ConnectorSchema = BaseSchema.extend({
+  id: z.number().int().optional(),
+  stationId: z.string(),
+  evseId: z.number().int(),
+  connectorId: z.number().int(),
+  evseTypeConnectorId: z.number().int().optional(),
+  status: ConnectorStatusSchema.default('Unknown').nullable().optional(),
+  type: ConnectorTypeSchema.nullable().optional(),
+  format: ConnectorFormatSchema.nullable().optional(),
+  errorCode: ConnectorErrorCodeSchema.default('NoError').nullable().optional(),
+  powerType: ConnectorPowerTypeSchema.nullable().optional(),
+  maximumAmperage: z.number().int().nullable().optional(),
+  maximumVoltage: z.number().int().nullable().optional(),
+  maximumPowerWatts: z.number().int().nullable().optional(),
+  timestamp: z.iso.datetime(),
+  info: z.string().nullable().optional(),
+  vendorId: z.string().nullable().optional(),
+  vendorErrorCode: z.string().nullable().optional(),
+  termsAndConditionsUrl: z.string().nullable().optional(),
+  tariffs: z.array(z.any()).nullable().optional(), // Replace z.any() with TariffSchema when available
+});
 
-export enum ConnectorDtoProps {
-  id = 'id',
-  stationId = 'stationId',
-  evseId = 'evseId',
-  connectorId = 'connectorId',
-  evseTypeConnectorId = 'evseTypeConnectorId',
-  status = 'status',
-  errorCode = 'errorCode',
-  timestamp = 'timestamp',
-  info = 'info',
-  vendorId = 'vendorId',
-  vendorErrorCode = 'vendorErrorCode',
-  evse = 'evse',
-  type = 'type',
-  format = 'format',
-  powerType = 'powerType',
-  maximumAmperage = 'maximumAmperage',
-  maximumVoltage = 'maximumVoltage',
-  maximumPowerWatts = 'maximumPowerWatts',
-  termsAndConditionsUrl = 'termsAndConditionsUrl',
-  tariffs = 'tariffs',
-}
+export type ConnectorDto = z.infer<typeof ConnectorSchema>;
+export type ConnectorStatus = z.infer<typeof ConnectorStatusSchema>;
+export type ConnectorType = z.infer<typeof ConnectorTypeSchema>;
+export type ConnectorFormat = z.infer<typeof ConnectorFormatSchema>;
+export type ConnectorErrorCode = z.infer<typeof ConnectorErrorCodeSchema>;
+export type ConnectorPowerType = z.infer<typeof ConnectorPowerTypeSchema>;
+
+export const ConnectorCreateSchema = ConnectorSchema.omit({
+  id: true,
+  tenant: true,
+  evse: true,
+  chargingStation: true,
+  tariffs: true,
+  updatedAt: true,
+  createdAt: true,
+});
+
+export type ConnectorCreate = z.infer<typeof ConnectorCreateSchema>;
+
+export const connectorSchemas = {
+  Connector: ConnectorSchema,
+  ConnectorCreate: ConnectorCreateSchema,
+};

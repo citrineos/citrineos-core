@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
-  IStartTransactionDto,
-  IStopTransactionDto,
-  ITenantDto,
-  ITransactionDto,
+  StartTransactionDto,
+  StopTransactionDto,
+  TenantDto,
+  TransactionDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
@@ -34,7 +34,7 @@ import { Authorization } from '../Authorization/index.js';
 import { Tariff, Tenant } from '../index.js';
 
 @Table
-export class Transaction extends Model implements ITransactionDto {
+export class Transaction extends Model implements TransactionDto {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
   static readonly TRANSACTION_EVENTS_ALIAS = 'transactionEvents';
   static readonly TRANSACTION_EVENTS_FILTER_ALIAS = 'transactionEventsFilter';
@@ -110,10 +110,10 @@ export class Transaction extends Model implements ITransactionDto {
   declare meterValues?: MeterValue[];
 
   @HasOne(() => StartTransaction)
-  declare startTransaction?: IStartTransactionDto;
+  declare startTransaction?: StartTransactionDto;
 
   @HasOne(() => StopTransaction)
-  declare stopTransaction?: IStopTransactionDto;
+  declare stopTransaction?: StopTransactionDto;
 
   @Column(DataType.STRING)
   declare chargingState?: string | null;
@@ -162,7 +162,7 @@ export class Transaction extends Model implements ITransactionDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate
