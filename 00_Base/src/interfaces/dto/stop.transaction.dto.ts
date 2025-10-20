@@ -9,7 +9,7 @@ import { BaseSchema } from './types/base.dto.js';
 export const StopTransactionSchema = BaseSchema.extend({
   id: z.number().int().optional(),
   stationId: z.string(),
-  transactionDatabaseId: z.string(), // Note: STRING in model, not number
+  transactionDatabaseId: z.number(),
   meterStop: z.number().int(),
   timestamp: z.iso.datetime(),
   reason: z.string().optional(),

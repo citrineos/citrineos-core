@@ -3,13 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
+import { TariffSchema } from './tariff.dto.js';
 import { BaseSchema } from './types/base.dto.js';
 import {
+  ConnectorErrorCodeSchema,
+  ConnectorFormatSchema,
+  ConnectorPowerTypeSchema,
   ConnectorStatusSchema,
   ConnectorTypeSchema,
-  ConnectorFormatSchema,
-  ConnectorErrorCodeSchema,
-  ConnectorPowerTypeSchema,
 } from './types/enums.js';
 
 export const ConnectorSchema = BaseSchema.extend({
@@ -31,7 +32,7 @@ export const ConnectorSchema = BaseSchema.extend({
   vendorId: z.string().nullable().optional(),
   vendorErrorCode: z.string().nullable().optional(),
   termsAndConditionsUrl: z.string().nullable().optional(),
-  tariffs: z.array(z.any()).nullable().optional(), // Replace z.any() with TariffSchema when available
+  tariffs: z.array(TariffSchema).nullable().optional(),
 });
 
 export type ConnectorDto = z.infer<typeof ConnectorSchema>;

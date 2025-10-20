@@ -1,10 +1,11 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AuthorizationStatusType, IdTokenType, OCPP2_0_1 } from '@citrineos/base';
+import type { AuthorizationStatusType, IdTokenType } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
+import { describe, expect, it } from 'vitest';
 import { AuthorizationMapper } from '../../../../../src/layers/sequelize/mapper/2.0.1';
 import { aAuthorization } from '../../../../providers/Authorization.js';
-import { describe, expect, it } from 'vitest';
 
 // Helper function to validate common structure
 const validateIdToken = (result: any, authorization: any) => {
@@ -44,45 +45,48 @@ describe('AuthenticationMapper', () => {
 
   describe('Enum Mappings', () => {
     describe('toAuthorizationStatusEnumType', () => {
-      const statuses = [
+      const statuses: {
+        input: AuthorizationStatusType;
+        output: OCPP2_0_1.AuthorizationStatusEnumType;
+      }[] = [
         {
-          input: AuthorizationStatusType.Accepted,
+          input: 'Accepted',
           output: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
         },
         {
-          input: AuthorizationStatusType.Blocked,
+          input: 'Blocked',
           output: OCPP2_0_1.AuthorizationStatusEnumType.Blocked,
         },
         {
-          input: AuthorizationStatusType.ConcurrentTx,
+          input: 'ConcurrentTx',
           output: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
         },
         {
-          input: AuthorizationStatusType.Expired,
+          input: 'Expired',
           output: OCPP2_0_1.AuthorizationStatusEnumType.Expired,
         },
         {
-          input: AuthorizationStatusType.Invalid,
+          input: 'Invalid',
           output: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
         },
         {
-          input: AuthorizationStatusType.NoCredit,
+          input: 'NoCredit',
           output: OCPP2_0_1.AuthorizationStatusEnumType.NoCredit,
         },
         {
-          input: AuthorizationStatusType.NotAllowedTypeEVSE,
+          input: 'NotAllowedTypeEVSE',
           output: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
         },
         {
-          input: AuthorizationStatusType.NotAtThisLocation,
+          input: 'NotAtThisLocation',
           output: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
         },
         {
-          input: AuthorizationStatusType.NotAtThisTime,
+          input: 'NotAtThisTime',
           output: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisTime,
         },
         {
-          input: AuthorizationStatusType.Unknown,
+          input: 'Unknown',
           output: OCPP2_0_1.AuthorizationStatusEnumType.Unknown,
         },
       ];
@@ -107,43 +111,43 @@ describe('AuthenticationMapper', () => {
       const statuses = [
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
-          output: AuthorizationStatusType.Accepted,
+          output: 'Accepted',
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.Blocked,
-          output: AuthorizationStatusType.Blocked,
+          output: 'Blocked',
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
-          output: AuthorizationStatusType.ConcurrentTx,
+          output: 'ConcurrentTx',
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.Expired,
-          output: AuthorizationStatusType.Expired,
+          output: 'Expired',
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
-          output: AuthorizationStatusType.Invalid,
+          output: 'Invalid',
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.NoCredit,
-          output: AuthorizationStatusType.NoCredit,
+          output: 'NoCredit',
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.NotAllowedTypeEVSE,
-          output: AuthorizationStatusType.NotAllowedTypeEVSE,
+          output: 'NotAllowedTypeEVSE',
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
-          output: AuthorizationStatusType.NotAtThisLocation,
+          output: 'NotAtThisLocation',
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisTime,
-          output: AuthorizationStatusType.NotAtThisTime,
+          output: 'NotAtThisTime',
         },
         {
           input: OCPP2_0_1.AuthorizationStatusEnumType.Unknown,
-          output: AuthorizationStatusType.Unknown,
+          output: 'Unknown',
         },
       ];
 
@@ -164,16 +168,16 @@ describe('AuthenticationMapper', () => {
     });
 
     describe('toIdTokenEnumType', () => {
-      const tokenTypes = [
-        { input: IdTokenType.Central, output: OCPP2_0_1.IdTokenEnumType.Central },
-        { input: IdTokenType.eMAID, output: OCPP2_0_1.IdTokenEnumType.eMAID },
-        { input: IdTokenType.ISO14443, output: OCPP2_0_1.IdTokenEnumType.ISO14443 },
-        { input: IdTokenType.ISO15693, output: OCPP2_0_1.IdTokenEnumType.ISO15693 },
-        { input: IdTokenType.KeyCode, output: OCPP2_0_1.IdTokenEnumType.KeyCode },
-        { input: IdTokenType.Local, output: OCPP2_0_1.IdTokenEnumType.Local },
-        { input: IdTokenType.MacAddress, output: OCPP2_0_1.IdTokenEnumType.MacAddress },
-        { input: IdTokenType.NoAuthorization, output: OCPP2_0_1.IdTokenEnumType.NoAuthorization },
-        { input: IdTokenType.Other, output: OCPP2_0_1.IdTokenEnumType.Central }, // Other maps to Central
+      const tokenTypes: { input: IdTokenType; output: OCPP2_0_1.IdTokenEnumType }[] = [
+        { input: 'Central', output: OCPP2_0_1.IdTokenEnumType.Central },
+        { input: 'eMAID', output: OCPP2_0_1.IdTokenEnumType.eMAID },
+        { input: 'ISO14443', output: OCPP2_0_1.IdTokenEnumType.ISO14443 },
+        { input: 'ISO15693', output: OCPP2_0_1.IdTokenEnumType.ISO15693 },
+        { input: 'KeyCode', output: OCPP2_0_1.IdTokenEnumType.KeyCode },
+        { input: 'Local', output: OCPP2_0_1.IdTokenEnumType.Local },
+        { input: 'MacAddress', output: OCPP2_0_1.IdTokenEnumType.MacAddress },
+        { input: 'NoAuthorization', output: OCPP2_0_1.IdTokenEnumType.NoAuthorization },
+        { input: 'Other', output: OCPP2_0_1.IdTokenEnumType.Central }, // Other maps to Central
       ];
 
       tokenTypes.forEach(({ input, output }) => {
@@ -192,14 +196,14 @@ describe('AuthenticationMapper', () => {
 
     describe('fromIdTokenEnumType', () => {
       const tokenTypes = [
-        { input: OCPP2_0_1.IdTokenEnumType.Central, output: IdTokenType.Central },
-        { input: OCPP2_0_1.IdTokenEnumType.eMAID, output: IdTokenType.eMAID },
-        { input: OCPP2_0_1.IdTokenEnumType.ISO14443, output: IdTokenType.ISO14443 },
-        { input: OCPP2_0_1.IdTokenEnumType.ISO15693, output: IdTokenType.ISO15693 },
-        { input: OCPP2_0_1.IdTokenEnumType.KeyCode, output: IdTokenType.KeyCode },
-        { input: OCPP2_0_1.IdTokenEnumType.Local, output: IdTokenType.Local },
-        { input: OCPP2_0_1.IdTokenEnumType.MacAddress, output: IdTokenType.MacAddress },
-        { input: OCPP2_0_1.IdTokenEnumType.NoAuthorization, output: IdTokenType.NoAuthorization },
+        { input: OCPP2_0_1.IdTokenEnumType.Central, output: 'Central' },
+        { input: OCPP2_0_1.IdTokenEnumType.eMAID, output: 'eMAID' },
+        { input: OCPP2_0_1.IdTokenEnumType.ISO14443, output: 'ISO14443' },
+        { input: OCPP2_0_1.IdTokenEnumType.ISO15693, output: 'ISO15693' },
+        { input: OCPP2_0_1.IdTokenEnumType.KeyCode, output: 'KeyCode' },
+        { input: OCPP2_0_1.IdTokenEnumType.Local, output: 'Local' },
+        { input: OCPP2_0_1.IdTokenEnumType.MacAddress, output: 'MacAddress' },
+        { input: OCPP2_0_1.IdTokenEnumType.NoAuthorization, output: 'NoAuthorization' },
       ];
 
       tokenTypes.forEach(({ input, output }) => {

@@ -4,14 +4,14 @@
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 import { faker } from '@faker-js/faker';
 import { Authorization } from '../../src';
-import { AdditionalInfo, IdTokenType } from '@citrineos/base';
+import type { AdditionalInfo } from '@citrineos/base';
 
 export function aAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {
   return applyUpdateFunction(
     {
       customData: { exampleKey: faker.lorem.word() },
       idToken: faker.string.uuid(),
-      idTokenType: IdTokenType.Central,
+      idTokenType: 'Central',
       additionalInfo: [{ additionalIdToken: 'value', type: 'key' }] as AdditionalInfo[],
       status: 'Accepted',
       cacheExpiryDateTime: faker.date.future().toISOString(),

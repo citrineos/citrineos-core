@@ -3,14 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BaseSchema } from './types/base.dto.js';
 import { ChargingStationSchema } from './charging.station.dto.js';
+import { BaseSchema } from './types/base.dto.js';
+import { ConnectorStatusSchema } from './types/enums.js';
 
 export const StatusNotificationSchema = BaseSchema.extend({
   id: z.number().int().optional(),
   stationId: z.string(),
   timestamp: z.iso.datetime().nullable().optional(),
-  connectorStatus: z.string(), // Use ConnectorStatusEnumType if available
+  connectorStatus: ConnectorStatusSchema,
   evseId: z.number().int().nullable().optional(),
   connectorId: z.number().int(),
   errorCode: z.string().nullable().optional(),

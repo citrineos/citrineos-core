@@ -14,9 +14,9 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { Transaction } from './Transaction.js';
-import { MeterValue } from './MeterValue.js';
 import { Tenant } from '../Tenant.js';
+import { MeterValue } from './MeterValue.js';
+import { Transaction } from './Transaction.js';
 
 @Table
 export class StopTransaction extends Model implements StopTransactionDto {
@@ -30,7 +30,7 @@ export class StopTransaction extends Model implements StopTransactionDto {
     type: DataType.INTEGER,
     unique: true,
   })
-  declare transactionDatabaseId: string;
+  declare transactionDatabaseId: number;
 
   @BelongsTo(() => Transaction)
   declare transaction: Transaction;

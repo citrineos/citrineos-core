@@ -37,7 +37,30 @@ export class AuthorizationMapper {
     };
   }
 
-  // Rest stays the same...
+  static toMessageContentType(messageContent: any): OCPP2_0_1.MessageContentType {
+    return {
+      customData: messageContent.customData,
+      format: AuthorizationMapper.toMessageFormatEnum(messageContent.format),
+      language: messageContent.language,
+      content: messageContent.content,
+    };
+  }
+
+  static toMessageFormatEnum(messageFormat: string): OCPP2_0_1.MessageFormatEnumType {
+    switch (messageFormat) {
+      case 'ASCII':
+        return OCPP2_0_1.MessageFormatEnumType.ASCII;
+      case 'HTML':
+        return OCPP2_0_1.MessageFormatEnumType.HTML;
+      case 'URI':
+        return OCPP2_0_1.MessageFormatEnumType.URI;
+      case 'UTF8':
+        return OCPP2_0_1.MessageFormatEnumType.UTF8;
+      default:
+        throw new Error('Unknown message format');
+    }
+  }
+
   static fromAuthorizationStatusType(
     status: AuthorizationStatusType,
   ): OCPP2_0_1.AuthorizationStatusEnumType {

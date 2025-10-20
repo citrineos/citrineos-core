@@ -12,7 +12,7 @@ export const BootSchema = BaseSchema.extend({
   heartbeatInterval: z.number().int().nullable().optional(),
   bootRetryInterval: z.number().int().nullable().optional(),
   status: z.any(),
-  statusInfo: z.record(z.string(), z.any()).nullable().optional(), // JSON object
+  statusInfo: z.record(z.string(), z.any()).nullable().optional(), // JSONB
   getBaseReportOnPending: z.boolean().nullable().optional(),
   pendingBootSetVariables: z.array(VariableAttributeSchema).optional(),
   variablesRejectedOnLastBoot: z.array(z.record(z.string(), z.any())).nullable().optional(),
@@ -23,7 +23,6 @@ export const BootSchema = BaseSchema.extend({
 
 export type BootDto = z.infer<typeof BootSchema>;
 
-// For creating a boot record
 export const BootCreateSchema = BootSchema.omit({
   tenant: true,
   updatedAt: true,
@@ -33,7 +32,6 @@ export const BootCreateSchema = BootSchema.omit({
 
 export type BootCreate = z.infer<typeof BootCreateSchema>;
 
-// For updates
 export const BootUpdateSchema = BootSchema.partial()
   .omit({
     tenant: true,
