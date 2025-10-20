@@ -9,7 +9,6 @@ import type {
   ConnectorPowerType,
   ConnectorStatus,
   ConnectorType,
-  TenantDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import {
@@ -131,7 +130,7 @@ export class Connector extends Model implements ConnectorDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: TenantDto;
+  declare tenant?: Tenant;
 
   @BeforeUpdate
   @BeforeCreate

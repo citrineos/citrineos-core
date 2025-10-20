@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { CallAction, OCPPMessageDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, MessageOrigin, Namespace, OCPPVersion } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -13,8 +15,6 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import type { CallAction, OCPPMessageDto, TenantDto } from '@citrineos/base';
-import { DEFAULT_TENANT_ID, MessageOrigin, Namespace, OCPPVersion } from '@citrineos/base';
 import { ChargingStation, Tenant } from '../index.js';
 
 @Table
@@ -60,7 +60,7 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: TenantDto;
+  declare tenant?: Tenant;
 
   @BeforeUpdate
   @BeforeCreate

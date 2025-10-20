@@ -33,6 +33,7 @@ export const AuthorizationStatusTypeSchema = z.enum([
 
 export const ConnectorStatusSchema = z.enum([
   'Available',
+  'Occupied',
   'Preparing',
   'Charging',
   'SuspendedEVSE',

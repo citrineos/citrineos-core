@@ -6,7 +6,6 @@ import type {
   ChargingStationDto,
   ChargingStationParkingRestrictionType,
   LocationDto,
-  TenantDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace, OCPPVersion } from '@citrineos/base';
 import type { Point } from 'geojson';
@@ -131,7 +130,7 @@ export class ChargingStation extends Model implements ChargingStationDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: TenantDto;
+  declare tenant?: Tenant;
 
   @BeforeUpdate
   @BeforeCreate

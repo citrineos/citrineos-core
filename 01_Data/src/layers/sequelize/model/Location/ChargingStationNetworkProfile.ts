@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { ChargingStationNetworkProfileDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -12,12 +14,10 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
 import { ChargingStation } from './ChargingStation.js';
 import { ServerNetworkProfile } from './ServerNetworkProfile.js';
 import { SetNetworkProfile } from './SetNetworkProfile.js';
-import type { ChargingStationNetworkProfileDto, TenantDto } from '@citrineos/base';
-import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { Tenant } from '../Tenant.js';
 
 @Table
 export class ChargingStationNetworkProfile
@@ -74,7 +74,7 @@ export class ChargingStationNetworkProfile
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: TenantDto;
+  declare tenant?: Tenant;
 
   @BeforeUpdate
   @BeforeCreate

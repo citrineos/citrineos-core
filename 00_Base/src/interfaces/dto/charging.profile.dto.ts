@@ -5,7 +5,6 @@
 import { z } from 'zod';
 import { ChargingScheduleSchema } from './charging.schedule.dto.js';
 import { BaseSchema } from './types/base.dto.js';
-import { TransactionSchema } from './transaction.dto.js';
 
 export const ChargingProfileSchema = BaseSchema.extend({
   databaseId: z.number().int(),
@@ -26,7 +25,6 @@ export const ChargingProfileSchema = BaseSchema.extend({
     z.tuple([ChargingScheduleSchema, ChargingScheduleSchema, ChargingScheduleSchema]),
   ]),
   transactionDatabaseId: z.number().int().nullable().optional(),
-  transaction: TransactionSchema.optional(),
 });
 
 export type ChargingProfileDto = z.infer<typeof ChargingProfileSchema>;

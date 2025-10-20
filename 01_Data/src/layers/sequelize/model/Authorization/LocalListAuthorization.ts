@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -14,12 +15,10 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { type AuthorizationRestrictions } from '../../../../interfaces/index.js';
-import { Authorization, LocalListVersion, SendLocalList } from './index.js';
-import { SendLocalListAuthorization } from './SendLocalListAuthorization.js';
-import { LocalListVersionAuthorization } from './LocalListVersionAuthorization.js';
 import { Tenant } from '../Tenant.js';
-import type { TenantDto } from '@citrineos/base';
-import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { Authorization, LocalListVersion, SendLocalList } from './index.js';
+import { LocalListVersionAuthorization } from './LocalListVersionAuthorization.js';
+import { SendLocalListAuthorization } from './SendLocalListAuthorization.js';
 
 /**
  *
@@ -100,7 +99,7 @@ export class LocalListAuthorization extends Model implements AuthorizationRestri
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: TenantDto;
+  declare tenant?: Tenant;
 
   @BeforeUpdate
   @BeforeCreate

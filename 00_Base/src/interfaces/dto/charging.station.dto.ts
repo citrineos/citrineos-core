@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
+import { ConnectorSchema } from './connector.dto.js';
+import { EvseSchema } from './evse.dto.js';
 import { BaseSchema } from './types/base.dto.js';
 import {
   ChargingStationCapabilitySchema,
@@ -10,9 +12,6 @@ import {
   OCPPVersionSchema,
 } from './types/enums.js';
 import { PointSchema } from './types/location.js';
-import { LocationSchema } from './location.dto.js';
-import { EvseSchema } from './evse.dto.js';
-import { ConnectorSchema } from './connector.dto.js';
 
 export const ChargingStationSchema = BaseSchema.extend({
   id: z.string().max(36),
@@ -57,7 +56,6 @@ export type ChargingStationCreate = z.infer<typeof ChargingStationCreateSchema>;
 export const ChargingStationOCPISchema = ChargingStationSchema.extend({
   evses: z.array(EvseSchema).min(1, 'OCPI requires at least one EVSE'),
   connectors: z.array(ConnectorSchema).min(1, 'OCPI requires at least one connector'),
-  location: LocationSchema, // Required for OCPI
   coordinates: PointSchema, // Required for OCPI (not nullable)
 });
 

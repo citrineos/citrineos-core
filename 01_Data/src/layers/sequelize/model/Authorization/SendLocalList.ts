@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -15,9 +14,9 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { SendLocalListAuthorization } from './SendLocalListAuthorization.js';
-import { LocalListAuthorization } from './LocalListAuthorization.js';
 import { Tenant } from '../Tenant.js';
+import { LocalListAuthorization } from './LocalListAuthorization.js';
+import { SendLocalListAuthorization } from './SendLocalListAuthorization.js';
 
 @Table
 export class SendLocalList extends Model implements OCPP2_0_1.SendLocalListRequest {
@@ -82,7 +81,7 @@ export class SendLocalList extends Model implements OCPP2_0_1.SendLocalListReque
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: TenantDto;
+  declare tenant?: Tenant;
 
   @BeforeUpdate
   @BeforeCreate

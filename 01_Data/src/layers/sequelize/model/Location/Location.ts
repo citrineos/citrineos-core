@@ -1,12 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  LocationDto,
-  LocationFacilityType,
-  LocationParkingType,
-  TenantDto,
-} from '@citrineos/base';
+import type { LocationDto, LocationFacilityType, LocationParkingType } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, LocationHours, OCPP2_0_1_Namespace } from '@citrineos/base';
 import type { Point } from 'geojson';
 import {
@@ -99,7 +94,7 @@ export class Location extends Model implements LocationDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: TenantDto;
+  declare tenant?: Tenant;
 
   @BeforeUpdate
   @BeforeCreate

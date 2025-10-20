@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ChargingProfileDto, ChargingScheduleDto, TenantDto } from '@citrineos/base';
+import type { ChargingScheduleDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
@@ -16,9 +16,9 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
 import { ChargingProfile } from './ChargingProfile.js';
 import { SalesTariff } from './SalesTariff.js';
-import { Tenant } from '../Tenant.js';
 
 @Table
 export class ChargingSchedule extends Model implements ChargingScheduleDto {
@@ -74,7 +74,7 @@ export class ChargingSchedule extends Model implements ChargingScheduleDto {
    * Relations
    */
   @BelongsTo(() => ChargingProfile)
-  declare chargingProfile: ChargingProfileDto;
+  declare chargingProfile: ChargingProfile;
 
   @ForeignKey(() => ChargingProfile)
   @Column(DataType.INTEGER)
@@ -95,7 +95,7 @@ export class ChargingSchedule extends Model implements ChargingScheduleDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: TenantDto;
+  declare tenant?: Tenant;
 
   @BeforeUpdate
   @BeforeCreate

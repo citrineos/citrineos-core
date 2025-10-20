@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { TenantDto, TransactionDto } from '@citrineos/base';
+import type { TransactionDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -13,9 +13,9 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { Transaction } from '../TransactionEvent/index.js';
 import { Evse } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
+import { Transaction } from '../TransactionEvent/index.js';
 
 @Table
 export class ChargingNeeds extends Model implements OCPP2_0_1.ChargingNeedsType {
@@ -74,7 +74,7 @@ export class ChargingNeeds extends Model implements OCPP2_0_1.ChargingNeedsType 
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: TenantDto;
+  declare tenant?: Tenant;
 
   @BeforeUpdate
   @BeforeCreate

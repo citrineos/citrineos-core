@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { TariffDto, TenantDto } from '@citrineos/base';
+import type { TariffDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
+import type { CreationOptional } from 'sequelize';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -14,7 +15,6 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import type { CreationOptional } from 'sequelize';
 import { Connector } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
 
@@ -141,7 +141,7 @@ export class Tariff extends Model implements TariffDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: TenantDto;
+  declare tenant?: Tenant;
 
   @BeforeUpdate
   @BeforeCreate
