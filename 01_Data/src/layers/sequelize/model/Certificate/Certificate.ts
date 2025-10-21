@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CertificateDto } from '@citrineos/base';
+import type { CertificateDto, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -90,7 +90,7 @@ export class Certificate extends Model implements CertificateDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: Tenant;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -99,7 +100,7 @@ export class LocalListAuthorization extends Model implements AuthorizationRestri
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: Tenant;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

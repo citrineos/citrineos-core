@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ComponentDto, MessageInfoDto } from '@citrineos/base';
+import type { ComponentDto, MessageInfoDto, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
@@ -103,7 +103,7 @@ export class MessageInfo extends Model implements MessageInfoDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: Tenant;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

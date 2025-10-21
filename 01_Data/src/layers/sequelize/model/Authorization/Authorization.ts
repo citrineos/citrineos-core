@@ -8,6 +8,7 @@ import type {
   AuthorizationStatusType,
   AuthorizationWhitelistType,
   IdTokenType,
+  TenantDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
@@ -110,7 +111,7 @@ export class Authorization extends Model implements AuthorizationDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: Tenant;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

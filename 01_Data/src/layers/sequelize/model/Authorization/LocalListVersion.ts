@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -48,7 +49,7 @@ export class LocalListVersion extends Model {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: Tenant;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

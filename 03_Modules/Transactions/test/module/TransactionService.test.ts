@@ -1,27 +1,21 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { DEFAULT_TENANT_ID, IAuthorizer, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
 import {
   IAuthorizationRepository,
   IOCPPMessageRepository,
   IReservationRepository,
   ITransactionEventRepository,
 } from '@citrineos/data';
-import {
-  AuthorizationStatusType,
-  DEFAULT_TENANT_ID,
-  IAuthorizer,
-  OCPP1_6,
-  OCPP2_0_1,
-} from '@citrineos/base';
 import { TransactionService } from '../../src/module/TransactionService.js';
-import { anIdToken } from '../providers/IdTokenProvider.js';
 import { anAuthorization } from '../providers/AuthorizationProvider.js';
+import { anIdToken } from '../providers/IdTokenProvider.js';
 
-import { aMessageContext } from '../providers/MessageContextProvider.js';
-import { aTransaction, aTransactionEventRequest } from '../providers/TransactionProvider.js';
 import { faker } from '@faker-js/faker';
 import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { aMessageContext } from '../providers/MessageContextProvider.js';
+import { aTransaction, aTransactionEventRequest } from '../providers/TransactionProvider.js';
 
 describe('TransactionService', () => {
   let transactionService: TransactionService;
@@ -105,7 +99,7 @@ describe('TransactionService', () => {
 
   it('should return status from idTokenInfo when not Accepted', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.status = AuthorizationStatusType.Blocked;
+      auth.status = 'Blocked';
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
@@ -129,7 +123,7 @@ describe('TransactionService', () => {
   it('should return Invalid status when cacheExpiryDateTime is expired', async () => {
     const expiredDate = new Date(Date.now() - 1000).toISOString();
     const authorization = anAuthorization((auth) => {
-      auth.status = AuthorizationStatusType.Accepted;
+      auth.status = 'Accepted';
       auth.cacheExpiryDateTime = expiredDate;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
@@ -150,15 +144,15 @@ describe('TransactionService', () => {
 
   it('should not return ConcurrentTx status when there are concurrent transactions and concurrentTx is false', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.status = AuthorizationStatusType.Accepted;
+      auth.status = 'Accepted';
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
       aTransaction(),
       aTransaction(),
     ]);
-    authorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
-    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
+    authorizer.authorize.mockResolvedValue('Accepted');
+    realTimeAuthorizer.authorize.mockResolvedValue('Accepted');
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -177,15 +171,15 @@ describe('TransactionService', () => {
   it('should return ConcurrentTx status when there are concurrent transactions and concurrentTx is true', async () => {
     const authorization = anAuthorization((auth) => {
       auth.concurrentTransaction = true;
-      auth.status = AuthorizationStatusType.Accepted;
+      auth.status = 'Accepted';
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
       aTransaction(),
       aTransaction(),
     ]);
-    authorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
-    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
+    authorizer.authorize.mockResolvedValue('Accepted');
+    realTimeAuthorizer.authorize.mockResolvedValue('Accepted');
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -203,12 +197,12 @@ describe('TransactionService', () => {
 
   it('should apply authorizers when status is Accepted and transaction is started', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.status = AuthorizationStatusType.Accepted;
+      auth.status = 'Accepted';
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
-    authorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
-    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
+    authorizer.authorize.mockResolvedValue('Accepted');
+    realTimeAuthorizer.authorize.mockResolvedValue('Accepted');
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -230,8 +224,8 @@ describe('TransactionService', () => {
       const authorization = anAuthorization();
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
       transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
-      authorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
-      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusType.Accepted);
+      authorizer.authorize.mockResolvedValue('Accepted');
+      realTimeAuthorizer.authorize.mockResolvedValue('Accepted');
 
       // Use the same idToken as the mock authorization
       const messageContext = aMessageContext();
@@ -247,7 +241,7 @@ describe('TransactionService', () => {
 
     it('should return Blocked status when idTokenInfo is blocked', async () => {
       const authorization = anAuthorization((auth) => {
-        auth.status = AuthorizationStatusType.Blocked;
+        auth.status = 'Blocked';
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
