@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ChargingStationSequenceType, TenantDto } from '@citrineos/base';
+import type { ChargingStationSequenceTypeEnumType, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -33,7 +33,7 @@ export class ChargingStationSequence extends Model {
     allowNull: false,
     unique: 'stationId_type',
   })
-  type!: ChargingStationSequenceType;
+  type!: ChargingStationSequenceTypeEnumType;
 
   @Column({
     type: DataType.BIGINT,

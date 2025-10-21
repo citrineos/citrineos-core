@@ -16,6 +16,8 @@ export const SubscriptionSchema = BaseSchema.extend({
   url: z.string(),
 });
 
+export const SubscriptionProps = SubscriptionSchema.keyof().enum;
+
 export type SubscriptionDto = z.infer<typeof SubscriptionSchema>;
 
 export const SubscriptionCreateSchema = SubscriptionSchema.omit({

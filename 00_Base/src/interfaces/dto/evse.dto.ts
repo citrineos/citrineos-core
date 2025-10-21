@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BaseSchema } from './types/base.dto.js';
 import { ConnectorSchema } from './connector.dto.js';
+import { BaseSchema } from './types/base.dto.js';
 
 export const EvseSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -15,6 +15,8 @@ export const EvseSchema = BaseSchema.extend({
   removed: z.boolean().optional(),
   connectors: z.array(ConnectorSchema).nullable().optional(),
 });
+
+export const EvseProps = EvseSchema.keyof().enum;
 
 export type EvseDto = z.infer<typeof EvseSchema>;
 

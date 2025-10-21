@@ -9,9 +9,9 @@ import { BaseSchema } from './types/base.dto.js';
 import {
   ChargingStationCapabilitySchema,
   ChargingStationParkingRestrictionSchema,
-  OCPPVersionSchema,
 } from './types/enums.js';
 import { PointSchema } from './types/location.js';
+import { OCPPVersionSchema } from './types/ocpp.message.js';
 
 export const ChargingStationSchema = BaseSchema.extend({
   id: z.string().max(36),
@@ -35,6 +35,8 @@ export const ChargingStationSchema = BaseSchema.extend({
   evses: z.array(EvseSchema).nullable().optional(),
   connectors: z.array(ConnectorSchema).nullable().optional(),
 });
+
+export const ChargingStationProps = ChargingStationSchema.keyof().enum;
 
 export type ChargingStationDto = z.infer<typeof ChargingStationSchema>;
 

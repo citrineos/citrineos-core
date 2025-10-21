@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BaseSchema } from './types/base.dto.js';
 import { ServerNetworkProfileSchema } from './server.network.profile.dto.js';
+import { BaseSchema } from './types/base.dto.js';
 
 export const SetNetworkProfileSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -22,6 +22,8 @@ export const SetNetworkProfileSchema = BaseSchema.extend({
   apn: z.string().optional(), // Stringified JSON
   vpn: z.string().optional(), // Stringified JSON
 });
+
+export const SetNetworkProfileProps = SetNetworkProfileSchema.keyof().enum;
 
 export type SetNetworkProfileDto = z.infer<typeof SetNetworkProfileSchema>;
 

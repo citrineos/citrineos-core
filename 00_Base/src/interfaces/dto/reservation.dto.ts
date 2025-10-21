@@ -21,6 +21,8 @@ export const ReservationSchema = BaseSchema.extend({
   evse: EvseTypeSchema.nullable().optional(),
 });
 
+export const ReservationProps = ReservationSchema.keyof().enum;
+
 export type ReservationDto = z.infer<typeof ReservationSchema>;
 
 export const ReservationCreateSchema = ReservationSchema.omit({

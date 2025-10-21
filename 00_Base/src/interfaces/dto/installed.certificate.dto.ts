@@ -15,6 +15,8 @@ export const InstalledCertificateSchema = BaseSchema.extend({
   certificateType: z.string(),
 });
 
+export const InstalledCertificateProps = InstalledCertificateSchema.keyof().enum;
+
 export type InstalledCertificateDto = z.infer<typeof InstalledCertificateSchema>;
 
 export const InstalledCertificateCreateSchema = InstalledCertificateSchema.omit({

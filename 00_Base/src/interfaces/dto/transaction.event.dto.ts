@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { EvseTypeSchema } from './evse.type.dto.js';
 import { MeterValueSchema } from './meter.value.dto.js';
 import { BaseSchema } from './types/base.dto.js';
-import { TransactionEventEnumSchema, TriggerReasonSchema } from './types/enums.js';
+import { TransactionEventEnumSchema, TriggerReasonEnumSchema } from './types/enums.js';
 
 export const TransactionEventSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -14,7 +14,7 @@ export const TransactionEventSchema = BaseSchema.extend({
   eventType: TransactionEventEnumSchema,
   meterValue: z.tuple([MeterValueSchema]).rest(MeterValueSchema).optional(), // Non-empty array
   timestamp: z.iso.datetime(),
-  triggerReason: TriggerReasonSchema,
+  triggerReason: TriggerReasonEnumSchema,
   seqNo: z.number().int(),
   offline: z.boolean().default(false).nullable().optional(),
   numberOfPhasesUsed: z.number().int().nullable().optional(),
@@ -26,6 +26,8 @@ export const TransactionEventSchema = BaseSchema.extend({
   idTokenValue: z.string().nullable().optional(),
   idTokenType: z.string().nullable().optional(),
 });
+
+export const TransactionEventProps = TransactionEventSchema.keyof().enum;
 
 export type TransactionEventDto = z.infer<typeof TransactionEventSchema>;
 

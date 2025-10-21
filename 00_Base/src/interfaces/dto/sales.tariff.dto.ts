@@ -15,6 +15,8 @@ export const SalesTariffSchema = BaseSchema.extend({
   chargingScheduleDatabaseId: z.number().int(),
 });
 
+export const SalesTariffProps = SalesTariffSchema.keyof().enum;
+
 export type SalesTariffDto = z.infer<typeof SalesTariffSchema>;
 
 export const SalesTariffCreateSchema = SalesTariffSchema.omit({

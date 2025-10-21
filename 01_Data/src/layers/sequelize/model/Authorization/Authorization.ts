@@ -5,9 +5,9 @@
 import type {
   AdditionalInfo,
   AuthorizationDto,
-  AuthorizationStatusType,
-  AuthorizationWhitelistType,
-  IdTokenType,
+  AuthorizationStatusEnumType,
+  AuthorizationWhitelistEnumType,
+  IdTokenEnumType,
   TenantDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
@@ -45,13 +45,13 @@ export class Authorization extends Model implements AuthorizationDto {
     type: DataType.STRING,
     unique: 'idToken_type',
   })
-  declare idTokenType?: IdTokenType | null;
+  declare idTokenType?: IdTokenEnumType | null;
 
   @Column(DataType.JSONB)
   declare additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]] | null; // JSONB for AdditionalInfo
 
   @Column(DataType.STRING)
-  declare status: AuthorizationStatusType;
+  declare status: AuthorizationStatusEnumType;
 
   @Column({
     type: DataType.DATE,
@@ -74,7 +74,7 @@ export class Authorization extends Model implements AuthorizationDto {
   declare personalMessage?: any | null;
 
   @Column(DataType.STRING)
-  declare realTimeAuth?: AuthorizationWhitelistType | null;
+  declare realTimeAuth?: AuthorizationWhitelistEnumType | null;
 
   @Column(DataType.STRING)
   declare realTimeAuthUrl?: string;

@@ -21,6 +21,8 @@ export const BootSchema = BaseSchema.extend({
   getConfigurationsOnPending: z.boolean().nullable().optional(),
 });
 
+export const BootProps = BootSchema.keyof().enum;
+
 export type BootDto = z.infer<typeof BootSchema>;
 
 export const BootCreateSchema = BootSchema.omit({

@@ -11,6 +11,8 @@ export const EvseTypeSchema = BaseSchema.extend({
   connectorId: z.number().int().nullable().optional(),
 });
 
+export const EvseTypeProps = EvseTypeSchema.keyof().enum;
+
 export type EvseTypeDto = z.infer<typeof EvseTypeSchema>;
 
 export const EvseTypeCreateSchema = EvseTypeSchema.omit({

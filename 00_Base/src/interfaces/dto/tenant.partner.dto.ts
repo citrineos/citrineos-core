@@ -13,6 +13,8 @@ export const TenantPartnerSchema = BaseSchema.extend({
   partnerProfileOCPI: PartnerProfileSchema.nullable().optional(),
 });
 
+export const TenantPartnerProps = TenantPartnerSchema.keyof().enum;
+
 export type TenantPartnerDto = z.infer<typeof TenantPartnerSchema>;
 
 export const TenantPartnerCreateSchema = TenantPartnerSchema.omit({

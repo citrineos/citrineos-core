@@ -14,6 +14,8 @@ export const LatestStatusNotificationSchema = BaseSchema.extend({
   statusNotification: StatusNotificationSchema.optional(),
 });
 
+export const LatestStatusNotificationProps = LatestStatusNotificationSchema.keyof().enum;
+
 export type LatestStatusNotificationDto = z.infer<typeof LatestStatusNotificationSchema>;
 
 export const LatestStatusNotificationCreateSchema = LatestStatusNotificationSchema.omit({

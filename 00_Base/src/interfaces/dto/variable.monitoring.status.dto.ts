@@ -15,6 +15,8 @@ export const VariableMonitoringStatusSchema = BaseSchema.extend({
   variableMonitoringId: z.number().int().nullable().optional(),
 });
 
+export const VariableMonitoringStatusProps = VariableMonitoringStatusSchema.keyof().enum;
+
 export type VariableMonitoringStatusDto = z.infer<typeof VariableMonitoringStatusSchema>;
 
 export const VariableMonitoringStatusCreateSchema = VariableMonitoringStatusSchema.omit({

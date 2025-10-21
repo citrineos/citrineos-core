@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BaseSchema } from './types/base.dto.js';
 import { EvseTypeSchema } from './evse.type.dto.js';
+import { BaseSchema } from './types/base.dto.js';
 import { VariableSchema } from './variable.dto.js';
 
 export const ComponentSchema = BaseSchema.extend({
@@ -15,6 +15,8 @@ export const ComponentSchema = BaseSchema.extend({
   evseDatabaseId: z.number().int().nullable().optional(),
   variables: z.array(VariableSchema).optional(),
 });
+
+export const ComponentProps = ComponentSchema.keyof().enum;
 
 export type ComponentDto = z.infer<typeof ComponentSchema>;
 

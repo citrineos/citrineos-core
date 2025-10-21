@@ -11,6 +11,8 @@ export const VariableSchema = BaseSchema.extend({
   instance: z.string().nullable().optional(),
 });
 
+export const VariableProps = VariableSchema.keyof().enum;
+
 export type VariableDto = z.infer<typeof VariableSchema>;
 
 export const VariableCreateSchema = VariableSchema.omit({

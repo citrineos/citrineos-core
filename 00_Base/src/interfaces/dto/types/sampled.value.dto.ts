@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { MeasurandSchema } from './enums.js';
+import { MeasurandEnumSchema } from './enums.js';
 
 export const ReadingContextSchema = z.string();
 export const PhaseSchema = z.string();
@@ -24,7 +24,7 @@ export const SignedMeterValueSchema = z.object({
 export const SampledValueSchema = z.object({
   value: z.number(),
   context: ReadingContextSchema.optional(),
-  measurand: MeasurandSchema.optional(),
+  measurand: MeasurandEnumSchema.optional(),
   phase: PhaseSchema.nullable().optional(),
   location: SampleLocationSchema.optional(),
   signedMeterValue: SignedMeterValueSchema.optional(),

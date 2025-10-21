@@ -19,6 +19,8 @@ export const TariffSchema = BaseSchema.extend({
   tariffAltText: z.record(z.string(), z.any()).nullable().optional(), // JSONB
 });
 
+export const TariffProps = TariffSchema.keyof().enum;
+
 export type TariffDto = z.infer<typeof TariffSchema>;
 
 export const TariffCreateSchema = TariffSchema.omit({

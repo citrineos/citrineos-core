@@ -3,13 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BaseSchema } from './types/base.dto.js';
 import { ChargingStationSchema } from './charging.station.dto.js';
-import { AttributeEnumSchema, DataEnumSchema, MutabilityEnumSchema } from './types/enums.js';
-import { VariableSchema } from './variable.dto.js';
 import { ComponentSchema } from './component.dto.js';
 import { EvseTypeSchema } from './evse.type.dto.js';
-import { BootSchema } from './boot.dto.js';
+import { BaseSchema } from './types/base.dto.js';
+import { AttributeEnumSchema, DataEnumSchema, MutabilityEnumSchema } from './types/device.model.js';
+import { VariableSchema } from './variable.dto.js';
 
 export const VariableAttributeSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -30,6 +29,8 @@ export const VariableAttributeSchema = BaseSchema.extend({
   evseDatabaseId: z.number().int().nullable().optional(),
   bootConfigId: z.string().nullable().optional(),
 });
+
+export const VariableAttributeProps = VariableAttributeSchema.keyof().enum;
 
 export type VariableAttributeDto = z.infer<typeof VariableAttributeSchema>;
 

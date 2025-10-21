@@ -16,6 +16,8 @@ export const TenantSchema = z.object({
   createdAt: z.date().optional(),
 });
 
+export const TenantProps = TenantSchema.keyof().enum;
+
 export type TenantDto = z.infer<typeof TenantSchema>;
 
 export const TenantCreateSchema = TenantSchema.omit({

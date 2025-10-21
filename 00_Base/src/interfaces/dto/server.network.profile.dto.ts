@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BaseSchema } from './types/base.dto.js';
 import { ChargingStationSchema } from './charging.station.dto.js';
+import { BaseSchema } from './types/base.dto.js';
 
 export const ServerNetworkProfileSchema = BaseSchema.extend({
   id: z.string(),
@@ -21,6 +21,8 @@ export const ServerNetworkProfileSchema = BaseSchema.extend({
   rootCACertificateFilePath: z.string().optional(),
   chargingStations: z.array(ChargingStationSchema).nullable().optional(),
 });
+
+export const ServerNetworkProfileProps = ServerNetworkProfileSchema.keyof().enum;
 
 export type ServerNetworkProfileDto = z.infer<typeof ServerNetworkProfileSchema>;
 

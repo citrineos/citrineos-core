@@ -16,6 +16,7 @@ import type {
 import {
   AbstractModule,
   AsHandler,
+  AuthorizationStatusEnum,
   CrudRepository,
   ErrorCode,
   EventGroup,
@@ -676,14 +677,14 @@ export class TransactionsModule extends AbstractModule {
       idTokenInfoStatus = 'Invalid';
     }
     switch (idTokenInfoStatus) {
-      case 'Accepted':
-      case 'Blocked':
-      case 'Expired':
-      case 'ConcurrentTx':
-      case 'Invalid':
+      case AuthorizationStatusEnum.Accepted:
+      case AuthorizationStatusEnum.Blocked:
+      case AuthorizationStatusEnum.Expired:
+      case AuthorizationStatusEnum.ConcurrentTx:
+      case AuthorizationStatusEnum.Invalid:
         break;
       default: // Other OCPP 2.0.1 statuses default to Invalid for OCPP 1.6
-        idTokenInfoStatus = 'Invalid';
+        idTokenInfoStatus = AuthorizationStatusEnum.Invalid;
     }
 
     let parentIdTag: string | undefined = undefined;

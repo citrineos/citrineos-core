@@ -5,22 +5,7 @@
 import { z } from 'zod';
 import { ChargingStationSchema } from './charging.station.dto.js';
 import { BaseSchema } from './types/base.dto.js';
-
-export const ChargingStationSequenceTypeSchema = z.enum([
-  'customerInformation',
-  'getBaseReport',
-  'getChargingProfiles',
-  'getDisplayMessages',
-  'getLog',
-  'getMonitoringReport',
-  'getReport',
-  'publishFirmware',
-  'remoteStartId',
-  'updateFirmware',
-  'transactionId',
-]);
-
-export type ChargingStationSequenceType = z.infer<typeof ChargingStationSequenceTypeSchema>;
+import { ChargingStationSequenceTypeSchema } from './types/enums.js';
 
 export const ChargingStationSequenceSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -29,6 +14,8 @@ export const ChargingStationSequenceSchema = BaseSchema.extend({
   value: z.number().int().default(0), // BIGINT
   station: ChargingStationSchema.optional(),
 });
+
+export const ChargingStationSequenceProps = ChargingStationSequenceSchema.keyof().enum;
 
 export type ChargingStationSequenceDto = z.infer<typeof ChargingStationSequenceSchema>;
 

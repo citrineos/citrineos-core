@@ -14,6 +14,7 @@ import type {
 import {
   AbstractModule,
   AsHandler,
+  ChargingStationSequenceTypeEnum,
   EventGroup,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
@@ -287,7 +288,7 @@ export class MonitoringModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            'getMonitoringReport',
+            ChargingStationSequenceTypeEnum.getMonitoringReport,
           ),
         } as OCPP2_0_1.GetMonitoringReportRequest,
       );

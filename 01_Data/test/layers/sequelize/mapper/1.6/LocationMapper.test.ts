@@ -1,10 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ConnectorErrorCode, ConnectorStatus } from '@citrineos/base';
-import { OCPP1_6 } from '@citrineos/base';
-import { LocationMapper } from '../../../../../src/layers/sequelize/mapper/1.6';
+import { ConnectorErrorCodeEnum, ConnectorStatusEnum, OCPP1_6 } from '@citrineos/base';
 import { describe, expect, it } from 'vitest';
+import { LocationMapper } from '../../../../../src/layers/sequelize/mapper/1.6';
 
 describe('LocationMapper', () => {
   describe('mapStatusNotificationRequestStatusToConnectorStatus', () => {
@@ -12,39 +11,39 @@ describe('LocationMapper', () => {
       const testCases = [
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Available,
-          expected: 'Available',
+          expected: ConnectorStatusEnum.Available,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Preparing,
-          expected: 'Preparing',
+          expected: ConnectorStatusEnum.Preparing,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Charging,
-          expected: 'Charging',
+          expected: ConnectorStatusEnum.Charging,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.SuspendedEVSE,
-          expected: 'SuspendedEVSE',
+          expected: ConnectorStatusEnum.SuspendedEVSE,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.SuspendedEV,
-          expected: 'SuspendedEV',
+          expected: ConnectorStatusEnum.SuspendedEV,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Finishing,
-          expected: 'Finishing',
+          expected: ConnectorStatusEnum.Finishing,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Reserved,
-          expected: 'Reserved',
+          expected: ConnectorStatusEnum.Reserved,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Unavailable,
-          expected: 'Unavailable',
+          expected: ConnectorStatusEnum.Unavailable,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Faulted,
-          expected: 'Faulted',
+          expected: ConnectorStatusEnum.Faulted,
         },
       ];
 
@@ -67,67 +66,67 @@ describe('LocationMapper', () => {
       const testCases = [
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.ConnectorLockFailure,
-          expected: 'ConnectorLockFailure',
+          expected: ConnectorErrorCodeEnum.ConnectorLockFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.EVCommunicationError,
-          expected: 'EVCommunicationError',
+          expected: ConnectorErrorCodeEnum.EVCommunicationError,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.GroundFailure,
-          expected: 'GroundFailure',
+          expected: ConnectorErrorCodeEnum.GroundFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.HighTemperature,
-          expected: 'HighTemperature',
+          expected: ConnectorErrorCodeEnum.HighTemperature,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.InternalError,
-          expected: 'InternalError',
+          expected: ConnectorErrorCodeEnum.InternalError,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.LocalListConflict,
-          expected: 'LocalListConflict',
+          expected: ConnectorErrorCodeEnum.LocalListConflict,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.NoError,
-          expected: 'NoError',
+          expected: ConnectorErrorCodeEnum.NoError,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.OtherError,
-          expected: 'OtherError',
+          expected: ConnectorErrorCodeEnum.OtherError,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.OverCurrentFailure,
-          expected: 'OverCurrentFailure',
+          expected: ConnectorErrorCodeEnum.OverCurrentFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.PowerMeterFailure,
-          expected: 'PowerMeterFailure',
+          expected: ConnectorErrorCodeEnum.PowerMeterFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.PowerSwitchFailure,
-          expected: 'PowerSwitchFailure',
+          expected: ConnectorErrorCodeEnum.PowerSwitchFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.ReaderFailure,
-          expected: 'ReaderFailure',
+          expected: ConnectorErrorCodeEnum.ReaderFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.ResetFailure,
-          expected: 'ResetFailure',
+          expected: ConnectorErrorCodeEnum.ResetFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.UnderVoltage,
-          expected: 'UnderVoltage',
+          expected: ConnectorErrorCodeEnum.UnderVoltage,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.OverVoltage,
-          expected: 'OverVoltage',
+          expected: ConnectorErrorCodeEnum.OverVoltage,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.WeakSignal,
-          expected: 'WeakSignal',
+          expected: ConnectorErrorCodeEnum.WeakSignal,
         },
       ];
 

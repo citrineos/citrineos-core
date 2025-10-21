@@ -11,9 +11,9 @@ import { LocationSchema } from './location.dto.js';
 import { MeterValueSchema } from './meter.value.dto.js';
 import { StartTransactionSchema } from './start.transaction.dto.js';
 import { StopTransactionSchema } from './stop.transaction.dto.js';
-import { BaseSchema } from './types/base.dto.js';
-import { TransactionEventSchema } from './transaction.event.dto.js';
 import { TariffSchema } from './tariff.dto.js';
+import { TransactionEventSchema } from './transaction.event.dto.js';
+import { BaseSchema } from './types/base.dto.js';
 
 export const TransactionSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -45,6 +45,8 @@ export const TransactionSchema = BaseSchema.extend({
   endTime: z.iso.datetime().optional(),
   customData: z.any().nullable().optional(),
 });
+
+export const TransactionProps = TransactionSchema.keyof().enum;
 
 export type TransactionDto = z.infer<typeof TransactionSchema>;
 

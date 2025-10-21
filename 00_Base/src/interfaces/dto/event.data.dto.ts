@@ -27,6 +27,8 @@ export const EventDataSchema = BaseSchema.extend({
   componentId: z.number().int().optional(),
 });
 
+export const EventDataProps = EventDataSchema.keyof().enum;
+
 export type EventDataDto = z.infer<typeof EventDataSchema>;
 
 export const EventDataCreateSchema = EventDataSchema.omit({

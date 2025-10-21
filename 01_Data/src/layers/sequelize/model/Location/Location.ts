@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import type {
   LocationDto,
-  LocationFacilityType,
-  LocationParkingType,
+  LocationFacilityEnumType,
+  LocationParkingEnumType,
   TenantDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, LocationHours, OCPP2_0_1_Namespace } from '@citrineos/base';
@@ -72,10 +72,10 @@ export class Location extends Model implements LocationDto {
   declare timeZone: string;
 
   @Column(DataType.STRING)
-  declare parkingType?: LocationParkingType | null;
+  declare parkingType?: LocationParkingEnumType | null;
 
   @Column(DataType.JSONB)
-  declare facilities?: LocationFacilityType[] | null;
+  declare facilities?: LocationFacilityEnumType[] | null;
 
   @Column(DataType.JSONB)
   declare openingHours?: LocationHours | null;

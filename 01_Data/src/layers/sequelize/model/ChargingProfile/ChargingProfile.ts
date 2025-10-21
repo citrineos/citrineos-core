@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ChargingProfileDto, TenantDto } from '@citrineos/base';
+import type {
+  ChargingProfileDto,
+  ChargingScheduleDto,
+  TenantDto,
+  TransactionDto,
+} from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
@@ -95,15 +100,15 @@ export class ChargingProfile extends Model implements ChargingProfileDto {
    */
   @HasMany(() => ChargingSchedule)
   declare chargingSchedule:
-    | [ChargingSchedule]
-    | [ChargingSchedule, ChargingSchedule]
-    | [ChargingSchedule, ChargingSchedule, ChargingSchedule];
+    | [ChargingScheduleDto]
+    | [ChargingScheduleDto, ChargingScheduleDto]
+    | [ChargingScheduleDto, ChargingScheduleDto, ChargingScheduleDto];
 
   @ForeignKey(() => Transaction)
   declare transactionDatabaseId?: number | null;
 
   @BelongsTo(() => Transaction)
-  declare transaction?: Transaction;
+  declare transaction?: TransactionDto;
 
   declare customData?: object | null;
 

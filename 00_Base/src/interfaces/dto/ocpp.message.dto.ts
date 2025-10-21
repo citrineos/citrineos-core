@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { BaseSchema } from './types/base.dto.js';
-import { MessageOriginSchema, OCPPVersionSchema, CallActionSchema } from './types/enums.js';
+import { CallActionSchema, MessageOriginSchema, OCPPVersionSchema } from './types/ocpp.message.js';
 
 export const OCPPMessageSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -16,6 +16,8 @@ export const OCPPMessageSchema = BaseSchema.extend({
   message: z.any(), // JSONB
   timestamp: z.iso.datetime(),
 });
+
+export const OCPPMessageProps = OCPPMessageSchema.keyof().enum;
 
 export type OCPPMessageDto = z.infer<typeof OCPPMessageSchema>;
 

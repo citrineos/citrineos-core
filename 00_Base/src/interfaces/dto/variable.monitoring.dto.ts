@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BaseSchema } from './types/base.dto.js';
 import { ComponentSchema } from './component.dto.js';
+import { BaseSchema } from './types/base.dto.js';
 import { VariableSchema } from './variable.dto.js';
 
 export const VariableMonitoringSchema = BaseSchema.extend({
@@ -20,6 +20,8 @@ export const VariableMonitoringSchema = BaseSchema.extend({
   component: ComponentSchema,
   componentId: z.number().int().nullable().optional(),
 });
+
+export const VariableMonitoringProps = VariableMonitoringSchema.keyof().enum;
 
 export type VariableMonitoringDto = z.infer<typeof VariableMonitoringSchema>;
 

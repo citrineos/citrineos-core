@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BaseSchema } from './types/base.dto.js';
-import { LocationParkingTypeSchema, LocationFacilityTypeSchema } from './types/enums.js';
-import { LocationHoursSchema, PointSchema } from './types/location.js';
 import { ChargingStationSchema } from './charging.station.dto.js';
+import { BaseSchema } from './types/base.dto.js';
+import { LocationFacilityEnumSchema, LocationParkingEnumSchema } from './types/enums.js';
+import { LocationHoursSchema, PointSchema } from './types/location.js';
 
 export const LocationSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -18,12 +18,14 @@ export const LocationSchema = BaseSchema.extend({
   country: z.string(),
   publishUpstream: z.boolean().default(true),
   timeZone: z.string().default('UTC'),
-  parkingType: LocationParkingTypeSchema.nullable().optional(),
-  facilities: z.array(LocationFacilityTypeSchema).nullable().optional(),
+  parkingType: LocationParkingEnumSchema.nullable().optional(),
+  facilities: z.array(LocationFacilityEnumSchema).nullable().optional(),
   openingHours: LocationHoursSchema.nullable().optional(),
   coordinates: PointSchema,
   chargingPool: z.array(ChargingStationSchema).nullable().optional(),
 });
+
+export const LocationProps = LocationSchema.keyof().enum;
 
 export type LocationDto = z.infer<typeof LocationSchema>;
 export type Point = z.infer<typeof PointSchema>;

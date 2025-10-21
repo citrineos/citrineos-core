@@ -16,6 +16,7 @@ import {
   AbstractModule,
   AsHandler,
   BOOT_STATUS,
+  ChargingStationSequenceTypeEnum,
   ErrorCode,
   EventGroup,
   MessageOrigin,
@@ -641,7 +642,7 @@ export class ConfigurationModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            'getDisplayMessages',
+            ChargingStationSequenceTypeEnum.getDisplayMessages,
           ),
         } as OCPP2_0_1.GetDisplayMessagesRequest,
       );
@@ -712,7 +713,7 @@ export class ConfigurationModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            'getDisplayMessages',
+            ChargingStationSequenceTypeEnum.getDisplayMessages,
           ),
         } as OCPP2_0_1.GetDisplayMessagesRequest,
       );

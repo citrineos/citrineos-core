@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { SetNetworkProfileSchema } from './set.network.profile.dto.js';
 import { ServerNetworkProfileSchema } from './server.network.profile.dto.js';
+import { SetNetworkProfileSchema } from './set.network.profile.dto.js';
 import { BaseSchema } from './types/base.dto.js';
 
 export const ChargingStationNetworkProfileSchema = BaseSchema.extend({
@@ -16,6 +16,8 @@ export const ChargingStationNetworkProfileSchema = BaseSchema.extend({
   websocketServerConfigId: z.string().optional(),
   websocketServerConfig: ServerNetworkProfileSchema.optional(),
 });
+
+export const ChargingStationNetworkProfileProps = ChargingStationNetworkProfileSchema.keyof().enum;
 
 export type ChargingStationNetworkProfileDto = z.infer<typeof ChargingStationNetworkProfileSchema>;
 

@@ -27,6 +27,8 @@ export const ChargingProfileSchema = BaseSchema.extend({
   transactionDatabaseId: z.number().int().nullable().optional(),
 });
 
+export const ChargingProfileProps = ChargingProfileSchema.keyof().enum;
+
 export type ChargingProfileDto = z.infer<typeof ChargingProfileSchema>;
 
 export const ChargingProfileCreateSchema = ChargingProfileSchema.omit({

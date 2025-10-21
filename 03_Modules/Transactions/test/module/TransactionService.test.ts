@@ -1,7 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { DEFAULT_TENANT_ID, IAuthorizer, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
+import {
+  AuthorizationStatusEnum,
+  DEFAULT_TENANT_ID,
+  IAuthorizer,
+  OCPP1_6,
+  OCPP2_0_1,
+} from '@citrineos/base';
 import {
   IAuthorizationRepository,
   IOCPPMessageRepository,
@@ -99,7 +105,7 @@ describe('TransactionService', () => {
 
   it('should return status from idTokenInfo when not Accepted', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.status = 'Blocked';
+      auth.status = AuthorizationStatusEnum.Blocked;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
@@ -123,7 +129,7 @@ describe('TransactionService', () => {
   it('should return Invalid status when cacheExpiryDateTime is expired', async () => {
     const expiredDate = new Date(Date.now() - 1000).toISOString();
     const authorization = anAuthorization((auth) => {
-      auth.status = 'Accepted';
+      auth.status = AuthorizationStatusEnum.Accepted;
       auth.cacheExpiryDateTime = expiredDate;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
@@ -144,15 +150,15 @@ describe('TransactionService', () => {
 
   it('should not return ConcurrentTx status when there are concurrent transactions and concurrentTx is false', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.status = 'Accepted';
+      auth.status = AuthorizationStatusEnum.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
       aTransaction(),
       aTransaction(),
     ]);
-    authorizer.authorize.mockResolvedValue('Accepted');
-    realTimeAuthorizer.authorize.mockResolvedValue('Accepted');
+    authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -171,15 +177,15 @@ describe('TransactionService', () => {
   it('should return ConcurrentTx status when there are concurrent transactions and concurrentTx is true', async () => {
     const authorization = anAuthorization((auth) => {
       auth.concurrentTransaction = true;
-      auth.status = 'Accepted';
+      auth.status = AuthorizationStatusEnum.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
       aTransaction(),
       aTransaction(),
     ]);
-    authorizer.authorize.mockResolvedValue('Accepted');
-    realTimeAuthorizer.authorize.mockResolvedValue('Accepted');
+    authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -197,12 +203,12 @@ describe('TransactionService', () => {
 
   it('should apply authorizers when status is Accepted and transaction is started', async () => {
     const authorization = anAuthorization((auth) => {
-      auth.status = 'Accepted';
+      auth.status = AuthorizationStatusEnum.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
     transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
-    authorizer.authorize.mockResolvedValue('Accepted');
-    realTimeAuthorizer.authorize.mockResolvedValue('Accepted');
+    authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -224,8 +230,8 @@ describe('TransactionService', () => {
       const authorization = anAuthorization();
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
       transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
-      authorizer.authorize.mockResolvedValue('Accepted');
-      realTimeAuthorizer.authorize.mockResolvedValue('Accepted');
+      authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
 
       // Use the same idToken as the mock authorization
       const messageContext = aMessageContext();

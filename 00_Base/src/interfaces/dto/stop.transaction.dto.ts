@@ -18,6 +18,8 @@ export const StopTransactionSchema = BaseSchema.extend({
   idTokenType: z.string().optional(),
 });
 
+export const StopTransactionProps = StopTransactionSchema.keyof().enum;
+
 export type StopTransactionDto = z.infer<typeof StopTransactionSchema>;
 
 export const StopTransactionCreateSchema = StopTransactionSchema.omit({

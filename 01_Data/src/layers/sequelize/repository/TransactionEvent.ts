@@ -1,12 +1,24 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { BootstrapConfig, ChargingStationSequenceType } from '@citrineos/base';
-import { CrudRepository, MeterValueUtils, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
+import type { BootstrapConfig } from '@citrineos/base';
+import {
+  ChargingStationSequenceTypeEnum,
+  CrudRepository,
+  MeterValueUtils,
+  OCPP1_6,
+  OCPP2_0_1,
+} from '@citrineos/base';
+import type { WhereOptions } from 'sequelize';
+import { Op } from 'sequelize';
+import { Sequelize } from 'sequelize-typescript';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import type {
   IChargingStationSequenceRepository,
   ITransactionEventRepository,
 } from '../../../interfaces/index.js';
+import { MeterValueMapper } from '../mapper/2.0.1/index.js';
 import {
   Authorization,
   ChargingStation,
@@ -21,12 +33,6 @@ import {
   TransactionEvent,
 } from '../model/index.js';
 import { SequelizeRepository } from './Base.js';
-import type { WhereOptions } from 'sequelize';
-import { Op } from 'sequelize';
-import { Sequelize } from 'sequelize-typescript';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { MeterValueMapper } from '../mapper/2.0.1/index.js';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence.js';
 
 export class SequelizeTransactionEventRepository
@@ -678,7 +684,7 @@ export class SequelizeTransactionEventRepository
       const transactionId = await this.chargingStationSequence.getNextSequenceValue(
         tenantId,
         stationId,
-        'transactionId',
+        ChargingStationSequenceTypeEnum.transactionId,
       );
       // Store transaction in db
       let newTransaction = Transaction.build({

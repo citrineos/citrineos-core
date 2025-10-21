@@ -1,14 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { SequelizeRepository } from './Base.js';
-import type { IChargingStationSequenceRepository } from '../../../interfaces/index.js';
-import { ChargingStationSequence } from '../model/index.js';
-import type { BootstrapConfig } from '@citrineos/base';
-import type { ChargingStationSequenceType } from '@citrineos/base';
+import type { BootstrapConfig, ChargingStationSequenceTypeEnumType } from '@citrineos/base';
+import { Sequelize } from 'sequelize-typescript';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { Sequelize } from 'sequelize-typescript';
+import type { IChargingStationSequenceRepository } from '../../../interfaces/index.js';
+import { ChargingStationSequence } from '../model/index.js';
+import { SequelizeRepository } from './Base.js';
 
 export class SequelizeChargingStationSequenceRepository
   extends SequelizeRepository<ChargingStationSequence>
@@ -23,7 +22,7 @@ export class SequelizeChargingStationSequenceRepository
   async getNextSequenceValue(
     tenantId: number,
     stationId: string,
-    type: ChargingStationSequenceType,
+    type: ChargingStationSequenceTypeEnumType,
   ): Promise<number> {
     return await this.s.transaction(async (transaction) => {
       const [storedSequence, sequenceCreated] = await this.readOrCreateByQuery(tenantId, {

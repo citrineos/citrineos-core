@@ -28,6 +28,8 @@ export const CertificateSchema = BaseSchema.extend({
   signedBy: z.string().nullable().optional(),
 });
 
+export const CertificateProps = CertificateSchema.keyof().enum;
+
 export type CertificateDto = z.infer<typeof CertificateSchema>;
 
 export const CertificateCreateSchema = CertificateSchema.omit({

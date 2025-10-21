@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BaseSchema } from './types/base.dto.js';
 import { ComponentSchema } from './component.dto.js';
+import { BaseSchema } from './types/base.dto.js';
 
 const MessagePrioritySchema = z.string();
 const MessageStateSchema = z.string();
@@ -24,6 +24,8 @@ export const MessageInfoSchema = BaseSchema.extend({
   display: ComponentSchema,
   displayComponentId: z.number().int().nullable().optional(),
 });
+
+export const MessageInfoProps = MessageInfoSchema.keyof().enum;
 
 export type MessageInfoDto = z.infer<typeof MessageInfoSchema>;
 

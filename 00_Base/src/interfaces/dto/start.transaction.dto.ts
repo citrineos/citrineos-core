@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BaseSchema } from './types/base.dto.js';
 import { ConnectorSchema } from './connector.dto.js';
+import { BaseSchema } from './types/base.dto.js';
 
 export const StartTransactionSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -16,6 +16,8 @@ export const StartTransactionSchema = BaseSchema.extend({
   connectorDatabaseId: z.number().int(),
   connector: ConnectorSchema.optional(),
 });
+
+export const StartTransactionProps = StartTransactionSchema.keyof().enum;
 
 export type StartTransactionDto = z.infer<typeof StartTransactionSchema>;
 

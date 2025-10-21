@@ -20,6 +20,8 @@ export const StatusNotificationSchema = BaseSchema.extend({
   chargingStation: ChargingStationSchema.optional(),
 });
 
+export const StatusNotificationProps = StatusNotificationSchema.keyof().enum;
+
 export type StatusNotificationDto = z.infer<typeof StatusNotificationSchema>;
 
 export const StatusNotificationCreateSchema = StatusNotificationSchema.omit({

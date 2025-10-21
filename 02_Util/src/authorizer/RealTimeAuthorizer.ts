@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
-  AuthorizationStatusType,
+  AuthorizationStatusEnumType,
   IAuthorizer,
-  IdTokenType,
+  IdTokenEnumType,
   IMessageContext,
   SystemConfig,
 } from '@citrineos/base';
@@ -17,7 +17,7 @@ import { OidcTokenProvider } from '../authorization/index.js';
 export interface RealTimeAuthorizationRequestBody {
   tenantPartnerId: number;
   idToken: string;
-  idTokenType: IdTokenType;
+  idTokenType: IdTokenEnumType;
   locationId?: string;
   stationId?: string;
 }
@@ -52,7 +52,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
   async authorize(
     authorization: Authorization,
     context: IMessageContext,
-  ): Promise<AuthorizationStatusType> {
+  ): Promise<AuthorizationStatusEnumType> {
     if (!authorization.realTimeAuthUrl) {
       this._logger.debug(`No Realtime Auth URL from authorization ${authorization.id}`);
       return authorization.status;
@@ -66,7 +66,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
       return authorization.status;
     }
 
-    let result: AuthorizationStatusType = 'Invalid';
+    let result: AuthorizationStatusEnumType = 'Invalid';
     try {
       const chargingStation = await this._locationRepository.readChargingStationByStationId(
         context.tenantId,

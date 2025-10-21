@@ -17,6 +17,8 @@ export const MeterValueSchema = BaseSchema.extend({
   transactionId: z.string().nullable().optional(),
 });
 
+export const MeterValueProps = MeterValueSchema.keyof().enum;
+
 export type MeterValueDto = z.infer<typeof MeterValueSchema>;
 
 export const MeterValueCreateSchema = MeterValueSchema.omit({

@@ -16,6 +16,8 @@ export const VariableStatusSchema = BaseSchema.extend({
   variableAttributeId: z.number().int().nullable().optional(),
 });
 
+export const VariableStatusProps = VariableStatusSchema.keyof().enum;
+
 export type VariableStatusDto = z.infer<typeof VariableStatusSchema>;
 
 export const VariableStatusCreateSchema = VariableStatusSchema.omit({

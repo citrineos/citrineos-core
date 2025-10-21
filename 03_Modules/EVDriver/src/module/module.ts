@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type {
   AuthorizationDto,
-  AuthorizationStatusType,
+  AuthorizationStatusEnumType,
   BootstrapConfig,
   CallAction,
   HandlerProperties,
@@ -18,6 +18,8 @@ import type {
 import {
   AbstractModule,
   AsHandler,
+  AuthorizationStatusEnum,
+  ChargingStationSequenceTypeEnum,
   ErrorCode,
   EventGroup,
   // AuthorizationStatusType, // Remove, not needed as value
@@ -421,12 +423,12 @@ export class EVDriverModule extends AbstractModule {
           if (response.idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
             break;
           }
-          const result: AuthorizationStatusType = await authorizer.authorize(
+          const result: AuthorizationStatusEnumType = await authorizer.authorize(
             authorization,
             context,
           );
           response.idTokenInfo.status =
-            OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusType(result);
+            OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusEnumType(result);
         }
       } else {
         // Blocked, Expired, Invalid, NoCredit, Unknown
@@ -572,7 +574,7 @@ export class EVDriverModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            'getChargingProfiles',
+            ChargingStationSequenceTypeEnum.getChargingProfiles,
           ),
           chargingProfile: {
             chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
@@ -809,7 +811,7 @@ export class EVDriverModule extends AbstractModule {
 
       if (!authorization.status) {
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Accepted;
-      } else if (authorization.status === OCPP1_6.AuthorizeResponseStatus.Accepted) {
+      } else if (authorization.status === AuthorizationStatusEnum.Accepted) {
         const cacheExpiryDateTime = authorization.cacheExpiryDateTime;
         const groupAuthorizationId = authorization.groupAuthorizationId;
         response.idTagInfo.expiryDate = cacheExpiryDateTime;
@@ -827,9 +829,9 @@ export class EVDriverModule extends AbstractModule {
           response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Expired;
         } else {
           // Apply authorizers
-          let status: AuthorizationStatusType = authorization.status;
+          let status: AuthorizationStatusEnumType = authorization.status;
           for (const authorizer of this._authorizers) {
-            if (status !== OCPP1_6.AuthorizeResponseStatus.Accepted) {
+            if (status !== AuthorizationStatusEnum.Accepted) {
               break;
             }
             status = await authorizer.authorize(authorization, context);

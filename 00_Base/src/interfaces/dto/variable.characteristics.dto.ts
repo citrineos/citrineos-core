@@ -4,8 +4,8 @@
 
 import { z } from 'zod';
 import { BaseSchema } from './types/base.dto.js';
+import { DataEnumSchema } from './types/device.model.js';
 import { VariableSchema } from './variable.dto.js';
-import { DataEnumSchema } from './types/enums.js';
 
 export const VariableCharacteristicsSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -18,6 +18,8 @@ export const VariableCharacteristicsSchema = BaseSchema.extend({
   variable: VariableSchema,
   variableId: z.number().int().nullable().optional(),
 });
+
+export const VariableCharacteristicsProps = VariableCharacteristicsSchema.keyof().enum;
 
 export type VariableCharacteristicsDto = z.infer<typeof VariableCharacteristicsSchema>;
 

@@ -3,30 +3,30 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod/v4';
-import { BaseSchema } from './types/base.dto.js';
-import { AdditionalInfoSchema } from './types/authorization.js';
-import {
-  AuthorizationStatusTypeSchema,
-  AuthorizationWhitelistTypeSchema,
-  IdTokenTypeSchema,
-} from './types/enums.js';
 import { TenantPartnerSchema } from './tenant.partner.dto.js';
+import { AdditionalInfoSchema } from './types/authorization.js';
+import { BaseSchema } from './types/base.dto.js';
+import {
+  AuthorizationStatusEnumSchema,
+  AuthorizationWhitelistEnumSchema,
+  IdTokenEnumSchema,
+} from './types/enums.js';
 
 const authorizationFields = {
   id: z.number().int().optional(),
   allowedConnectorTypes: z.array(z.string()).optional(),
   disallowedEvseIdPrefixes: z.array(z.string()).optional(),
   idToken: z.string(),
-  idTokenType: IdTokenTypeSchema.nullable().optional(),
+  idTokenType: IdTokenEnumSchema.nullable().optional(),
   additionalInfo: z.tuple([AdditionalInfoSchema]).rest(AdditionalInfoSchema).nullable().optional(),
-  status: AuthorizationStatusTypeSchema,
+  status: AuthorizationStatusEnumSchema,
   cacheExpiryDateTime: z.iso.datetime().nullable().optional(),
   chargingPriority: z.number().int().nullable().optional(),
   language1: z.string().nullable().optional(),
   language2: z.string().nullable().optional(),
   personalMessage: z.any().nullable().optional(),
   concurrentTransaction: z.boolean().optional(),
-  realTimeAuth: AuthorizationWhitelistTypeSchema.nullable().optional(),
+  realTimeAuth: AuthorizationWhitelistEnumSchema.nullable().optional(),
   realTimeAuthUrl: z.string().optional(),
   tenantPartnerId: z.number().int().nullable().optional(),
   tenantPartner: TenantPartnerSchema.nullable().optional(),
@@ -41,6 +41,8 @@ export const AuthorizationSchema = BaseSchema.extend({
   groupAuthorizationId: z.number().int().nullable().optional(),
   groupAuthorization: z.lazy(() => GroupAuthorizationSchema).optional(),
 });
+
+export const AuthorizationProps = AuthorizationSchema.keyof().enum;
 
 export type AuthorizationDto = z.infer<typeof AuthorizationSchema>;
 

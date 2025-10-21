@@ -4,21 +4,11 @@
 
 import { z } from 'zod';
 
-export const IdTokenTypeSchema = z.enum([
-  'Central',
-  'eMAID',
-  'ISO14443',
-  'ISO15693',
-  'KeyCode',
-  'Local',
-  'MacAddress',
-  'NoAuthorization',
-  'Other',
-]);
+// ============================================================================
+// Schemas
+// ============================================================================
 
-export const AuthorizationWhitelistTypeSchema = z.enum(['Never', 'Allowed', 'AllowedOffline']);
-
-export const AuthorizationStatusTypeSchema = z.enum([
+export const AuthorizationStatusEnumSchema = z.enum([
   'Accepted',
   'Blocked',
   'ConcurrentTx',
@@ -31,7 +21,84 @@ export const AuthorizationStatusTypeSchema = z.enum([
   'Unknown',
 ]);
 
-export const ConnectorStatusSchema = z.enum([
+export const AuthorizationWhitelistEnumSchema = z.enum(['Never', 'Allowed', 'AllowedOffline']);
+
+export const ChargingStateEnumSchema = z.enum([
+  'Charging',
+  'EVConnected',
+  'SuspendedEV',
+  'SuspendedEVSE',
+  'Idle',
+]);
+
+export const ChargingStationCapabilitySchema = z.enum([
+  'ChargingProfileCapable',
+  'ChargingPreferencesCapable',
+  'ChipCardSupport',
+  'ContactlessCardSupport',
+  'CreditCardPayable',
+  'DebitCardPayable',
+  'PEDTerminal',
+  'RemoteStartStopCapable',
+  'Reservable',
+  'RFIDReader',
+  'StartSessionConnectorRequired',
+  'TokenGroupCapable',
+  'UnlockCapable',
+]);
+
+export const ChargingStationParkingRestrictionSchema = z.enum([
+  'EVOnly',
+  'Plugged',
+  'Disabled',
+  'Customers',
+  'Motorcycles',
+]);
+
+export const ChargingStationSequenceTypeSchema = z.enum([
+  'customerInformation',
+  'getBaseReport',
+  'getChargingProfiles',
+  'getDisplayMessages',
+  'getLog',
+  'getMonitoringReport',
+  'getReport',
+  'publishFirmware',
+  'remoteStartId',
+  'updateFirmware',
+  'transactionId',
+]);
+
+export const ConnectorErrorCodeEnumSchema = z.enum([
+  'ConnectorLockFailure',
+  'EVCommunicationError',
+  'GroundFailure',
+  'HighTemperature',
+  'InternalError',
+  'LocalListConflict',
+  'NoError',
+  'OtherError',
+  'OverCurrentFailure',
+  'PowerMeterFailure',
+  'PowerSwitchFailure',
+  'ReaderFailure',
+  'ResetFailure',
+  'UnderVoltage',
+  'OverVoltage',
+  'WeakSignal',
+]);
+
+export const ConnectorFormatEnumSchema = z.enum(['Socket', 'Cable']);
+
+export const ConnectorPowerTypeEnumSchema = z.enum([
+  'AC1Phase',
+  'AC2Phase',
+  'AC2PhaseSplit',
+  'AC3Phase',
+  'DC',
+]);
+
+export const ConnectorStatusEnumSchema = z.enum([
   'Available',
   'Occupied',
   'Preparing',
@@ -45,7 +112,7 @@ export const ConnectorStatusSchema = z.enum([
   'Unknown',
 ]);
 
-export const ConnectorTypeSchema = z.enum([
+export const ConnectorTypeEnumSchema = z.enum([
   'CHAdeMO',
   'ChaoJi',
   'DomesticA',
@@ -88,45 +155,25 @@ export const ConnectorTypeSchema = z.enum([
   'TeslaS',
 ]);
 
-export const ConnectorFormatSchema = z.enum(['Socket', 'Cable']);
-
-export const ConnectorErrorCodeSchema = z.enum([
-  'ConnectorLockFailure',
-  'EVCommunicationError',
-  'GroundFailure',
-  'HighTemperature',
-  'InternalError',
-  'LocalListConflict',
-  'NoError',
-  'OtherError',
-  'OverCurrentFailure',
-  'PowerMeterFailure',
-  'PowerSwitchFailure',
-  'ReaderFailure',
-  'ResetFailure',
-  'UnderVoltage',
-  'OverVoltage',
-  'WeakSignal',
+export const CostKindEnumSchema = z.enum([
+  'CarbonDioxideEmission',
+  'RelativePricePercentage',
+  'RenewableGenerationPercentage',
 ]);
 
-export const ConnectorPowerTypeSchema = z.enum([
-  'AC1Phase',
-  'AC2Phase',
-  'AC2PhaseSplit',
-  'AC3Phase',
-  'DC',
+export const IdTokenEnumSchema = z.enum([
+  'Central',
+  'eMAID',
+  'ISO14443',
+  'ISO15693',
+  'KeyCode',
+  'Local',
+  'MacAddress',
+  'NoAuthorization',
+  'Other',
 ]);
 
-export const LocationParkingTypeSchema = z.enum([
-  'AlongMotorway',
-  'ParkingGarage',
-  'ParkingLot',
-  'OnDriveway',
-  'OnStreet',
-  'UndergroundGarage',
-]);
-
-export const LocationFacilityTypeSchema = z.enum([
+export const LocationFacilityEnumSchema = z.enum([
   'Hotel',
   'Restaurant',
   'Cafe',
@@ -149,7 +196,16 @@ export const LocationFacilityTypeSchema = z.enum([
   'Wifi',
 ]);
 
-export const MeasurandSchema = z.enum([
+export const LocationParkingEnumSchema = z.enum([
+  'AlongMotorway',
+  'ParkingGarage',
+  'ParkingLot',
+  'OnDriveway',
+  'OnStreet',
+  'UndergroundGarage',
+]);
+
+export const MeasurandEnumSchema = z.enum([
   'Current.Export',
   'Current.Import',
   'Current.Offered',
@@ -177,17 +233,31 @@ export const MeasurandSchema = z.enum([
   'Voltage',
 ]);
 
-export const AttributeEnumSchema = z.string().default('Actual');
-export const DataEnumSchema = z.string().default('string');
-export const MutabilityEnumSchema = z.string().default('ReadWrite');
+export const ReasonEnumSchema = z.enum([
+  'DeAuthorized',
+  'EmergencyStop',
+  'EnergyLimitReached',
+  'EVDisconnected',
+  'GroundFault',
+  'ImmediateReset',
+  'Local',
+  'LocalOutOfCredit',
+  'MasterPass',
+  'Other',
+  'OvercurrentFault',
+  'PowerLoss',
+  'PowerQuality',
+  'Reboot',
+  'Remote',
+  'SOCLimitReached',
+  'StoppedByEV',
+  'TimeLimitReached',
+  'Timeout',
+]);
 
-export const ChargingStationParkingRestrictionSchema = z.string();
-export const ChargingStationCapabilitySchema = z.string();
-export const OCPPVersionSchema = z.string();
-export const MessageOriginSchema = z.string();
-export const CallActionSchema = z.string();
+export const TransactionEventEnumSchema = z.enum(['Ended', 'Started', 'Updated']);
 
-export const TriggerReasonSchema = z.enum([
+export const TriggerReasonEnumSchema = z.enum([
   'Authorized',
   'CablePluggedIn',
   'ChargingRateChanged',
@@ -211,67 +281,52 @@ export const TriggerReasonSchema = z.enum([
   'ResetCommand',
 ]);
 
-export const TransactionEventEnumSchema = z.enum(['Ended', 'Started', 'Updated']);
+// ============================================================================
+// Enum Exports
+// ============================================================================
 
-export const ChargingStateEnumSchema = z.enum([
-  'Charging',
-  'EVConnected',
-  'SuspendedEV',
-  'SuspendedEVSE',
-  'Idle',
-]);
+export const AuthorizationStatusEnum = AuthorizationStatusEnumSchema.enum;
+export const AuthorizationWhitelistEnum = AuthorizationWhitelistEnumSchema.enum;
+export const ChargingStateEnum = ChargingStateEnumSchema.enum;
+export const ChargingStationCapability = ChargingStationCapabilitySchema.enum;
+export const ChargingStationParkingRestriction = ChargingStationParkingRestrictionSchema.enum;
+export const ChargingStationSequenceTypeEnum = ChargingStationSequenceTypeSchema.enum;
+export const ConnectorErrorCodeEnum = ConnectorErrorCodeEnumSchema.enum;
+export const ConnectorFormatEnum = ConnectorFormatEnumSchema.enum;
+export const ConnectorPowerTypeEnum = ConnectorPowerTypeEnumSchema.enum;
+export const ConnectorStatusEnum = ConnectorStatusEnumSchema.enum;
+export const ConnectorTypeEnum = ConnectorTypeEnumSchema.enum;
+export const CostKindEnum = CostKindEnumSchema.enum;
+export const IdTokenEnum = IdTokenEnumSchema.enum;
+export const LocationFacilityEnum = LocationFacilityEnumSchema.enum;
+export const LocationParkingEnum = LocationParkingEnumSchema.enum;
+export const MeasurandEnum = MeasurandEnumSchema.enum;
+export const ReasonEnum = ReasonEnumSchema.enum;
+export const TransactionEventEnum = TransactionEventEnumSchema.enum;
+export const TriggerReasonEnum = TriggerReasonEnumSchema.enum;
 
-export const ReasonEnumSchema = z.enum([
-  'DeAuthorized',
-  'EmergencyStop',
-  'EnergyLimitReached',
-  'EVDisconnected',
-  'GroundFault',
-  'ImmediateReset',
-  'Local',
-  'LocalOutOfCredit',
-  'MasterPass',
-  'Other',
-  'OvercurrentFault',
-  'PowerLoss',
-  'PowerQuality',
-  'Reboot',
-  'Remote',
-  'SOCLimitReached',
-  'StoppedByEV',
-  'TimeLimitReached',
-  'Timeout',
-]);
+// ============================================================================
+// Type Exports
+// ============================================================================
 
-export const CostKindEnumSchema = z.enum([
-  'CarbonDioxideEmission',
-  'RelativePricePercentage',
-  'RenewableGenerationPercentage',
-]);
-
-export type TriggerReason = z.infer<typeof TriggerReasonSchema>;
-export type TransactionEventEnum = z.infer<typeof TransactionEventEnumSchema>;
-export type ChargingStateEnum = z.infer<typeof ChargingStateEnumSchema>;
-export type ReasonEnum = z.infer<typeof ReasonEnumSchema>;
-export type CostKindEnum = z.infer<typeof CostKindEnumSchema>;
-export type IdTokenType = z.infer<typeof IdTokenTypeSchema>;
-export type AuthorizationWhitelistType = z.infer<typeof AuthorizationWhitelistTypeSchema>;
-export type AuthorizationStatusType = z.infer<typeof AuthorizationStatusTypeSchema>;
-export type ConnectorStatusType = z.infer<typeof ConnectorStatusSchema>;
-export type ConnectorTypeType = z.infer<typeof ConnectorTypeSchema>;
-export type ConnectorFormatType = z.infer<typeof ConnectorFormatSchema>;
-export type ConnectorErrorCodeType = z.infer<typeof ConnectorErrorCodeSchema>;
-export type ConnectorPowerTypeType = z.infer<typeof ConnectorPowerTypeSchema>;
-export type LocationParkingType = z.infer<typeof LocationParkingTypeSchema>;
-export type LocationFacilityType = z.infer<typeof LocationFacilityTypeSchema>;
-export type MeasurandType = z.infer<typeof MeasurandSchema>;
-export type AttributeEnumType = z.infer<typeof AttributeEnumSchema>;
-export type DataEnumType = z.infer<typeof DataEnumSchema>;
-export type MutabilityEnumType = z.infer<typeof MutabilityEnumSchema>;
+export type AuthorizationStatusEnumType = z.infer<typeof AuthorizationStatusEnumSchema>;
+export type AuthorizationWhitelistEnumType = z.infer<typeof AuthorizationWhitelistEnumSchema>;
+export type ChargingStateEnumType = z.infer<typeof ChargingStateEnumSchema>;
+export type ChargingStationCapabilityType = z.infer<typeof ChargingStationCapabilitySchema>;
 export type ChargingStationParkingRestrictionType = z.infer<
   typeof ChargingStationParkingRestrictionSchema
 >;
-export type ChargingStationCapabilityType = z.infer<typeof ChargingStationCapabilitySchema>;
-export type OCPPVersionType = z.infer<typeof OCPPVersionSchema>;
-export type MessageOriginType = z.infer<typeof MessageOriginSchema>;
-export type CallActionType = z.infer<typeof CallActionSchema>;
+export type ChargingStationSequenceTypeEnumType = z.infer<typeof ChargingStationSequenceTypeSchema>;
+export type ConnectorErrorCodeEnumType = z.infer<typeof ConnectorErrorCodeEnumSchema>;
+export type ConnectorFormatEnumType = z.infer<typeof ConnectorFormatEnumSchema>;
+export type ConnectorPowerTypeEnumType = z.infer<typeof ConnectorPowerTypeEnumSchema>;
+export type ConnectorStatusEnumType = z.infer<typeof ConnectorStatusEnumSchema>;
+export type ConnectorTypeEnumType = z.infer<typeof ConnectorTypeEnumSchema>;
+export type CostKindEnumType = z.infer<typeof CostKindEnumSchema>;
+export type IdTokenEnumType = z.infer<typeof IdTokenEnumSchema>;
+export type LocationFacilityEnumType = z.infer<typeof LocationFacilityEnumSchema>;
+export type LocationParkingEnumType = z.infer<typeof LocationParkingEnumSchema>;
+export type MeasurandEnumType = z.infer<typeof MeasurandEnumSchema>;
+export type ReasonEnumType = z.infer<typeof ReasonEnumSchema>;
+export type TransactionEventEnumType = z.infer<typeof TransactionEventEnumSchema>;
+export type TriggerReasonEnumType = z.infer<typeof TriggerReasonEnumSchema>;

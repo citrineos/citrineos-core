@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BaseSchema } from './types/base.dto.js';
 import { SalesTariffSchema } from './sales.tariff.dto.js';
+import { BaseSchema } from './types/base.dto.js';
 
 export const ChargingScheduleSchema = BaseSchema.extend({
   databaseId: z.number().int(),
@@ -19,6 +19,8 @@ export const ChargingScheduleSchema = BaseSchema.extend({
   chargingProfileDatabaseId: z.number().int().optional(),
   salesTariff: SalesTariffSchema.optional(),
 });
+
+export const ChargingScheduleProps = ChargingScheduleSchema.keyof().enum;
 
 export type ChargingScheduleDto = z.infer<typeof ChargingScheduleSchema>;
 

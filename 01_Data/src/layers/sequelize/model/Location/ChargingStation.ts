@@ -5,8 +5,11 @@ import type {
   ChargingStationCapabilityType,
   ChargingStationDto,
   ChargingStationParkingRestrictionType,
+  ConnectorDto,
+  EvseDto,
   LocationDto,
   TenantDto,
+  TransactionDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace, OCPPVersion } from '@citrineos/base';
 import type { Point } from 'geojson';
@@ -100,7 +103,7 @@ export class ChargingStation extends Model implements ChargingStationDto {
   declare statusNotifications?: StatusNotification[] | null;
 
   @HasMany(() => Transaction)
-  declare transactions?: Transaction[] | null;
+  declare transactions?: TransactionDto[] | null;
 
   /**
    * The business Location of the charging station. Optional in case a charging station is not yet in the field, or retired.
@@ -114,12 +117,12 @@ export class ChargingStation extends Model implements ChargingStationDto {
   @HasMany(() => Evse, {
     onDelete: 'CASCADE',
   })
-  declare evses?: Evse[] | null;
+  declare evses?: EvseDto[] | null;
 
   @HasMany(() => Connector, {
     onDelete: 'CASCADE',
   })
-  declare connectors?: Connector[] | null;
+  declare connectors?: ConnectorDto[] | null;
 
   @ForeignKey(() => Tenant)
   @Column({

@@ -4,11 +4,11 @@
 import type {
   ChargingStationDto,
   ConnectorDto,
-  ConnectorErrorCode,
-  ConnectorFormat,
-  ConnectorPowerType,
-  ConnectorStatus,
-  ConnectorType,
+  ConnectorErrorCodeEnumType,
+  ConnectorFormatEnumType,
+  ConnectorPowerTypeEnumType,
+  ConnectorStatusEnumType,
+  ConnectorTypeEnumType,
   TenantDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
@@ -66,22 +66,22 @@ export class Connector extends Model implements ConnectorDto {
     type: DataType.STRING,
     defaultValue: 'Unknown',
   })
-  declare status: ConnectorStatus;
+  declare status: ConnectorStatusEnumType;
 
   @Column(DataType.STRING)
-  declare type?: ConnectorType | null;
+  declare type?: ConnectorTypeEnumType | null;
 
   @Column(DataType.STRING)
-  declare format?: ConnectorFormat | null;
+  declare format?: ConnectorFormatEnumType | null;
 
   @Column({
     type: DataType.STRING,
     defaultValue: 'NoError',
   })
-  declare errorCode: ConnectorErrorCode;
+  declare errorCode: ConnectorErrorCodeEnumType;
 
   @Column(DataType.STRING)
-  declare powerType?: ConnectorPowerType | null;
+  declare powerType?: ConnectorPowerTypeEnumType | null;
 
   @Column(DataType.INTEGER)
   declare maximumAmperage?: number | null;
