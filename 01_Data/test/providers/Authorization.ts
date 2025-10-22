@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { AdditionalInfo } from '@citrineos/base';
-import { AuthorizationStatusEnum } from '@citrineos/base';
+import { AuthorizationStatusEnum, IdTokenEnum } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { Authorization } from '../../src';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
@@ -12,7 +12,7 @@ export function aAuthorization(updateFunction?: UpdateFunction<Authorization>): 
     {
       customData: { exampleKey: faker.lorem.word() },
       idToken: faker.string.uuid(),
-      idTokenType: 'Central',
+      idTokenType: IdTokenEnum.Central,
       additionalInfo: [{ additionalIdToken: 'value', type: 'key' }] as AdditionalInfo[],
       status: AuthorizationStatusEnum.Accepted,
       cacheExpiryDateTime: faker.date.future().toISOString(),

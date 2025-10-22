@@ -57,7 +57,7 @@ describe('LocationMapper', () => {
       const result = LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
         'InvalidStatus' as OCPP1_6.StatusNotificationRequestStatus,
       );
-      expect(result).toBe('Unknown');
+      expect(result).toBe(ConnectorStatusEnum.Unknown);
     });
   });
 

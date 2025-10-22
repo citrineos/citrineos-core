@@ -247,7 +247,7 @@ describe('TransactionService', () => {
 
     it('should return Blocked status when idTokenInfo is blocked', async () => {
       const authorization = anAuthorization((auth) => {
-        auth.status = 'Blocked';
+        auth.status = AuthorizationStatusEnum.Blocked;
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 

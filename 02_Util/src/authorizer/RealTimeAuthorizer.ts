@@ -1,12 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  AuthorizationStatusEnumType,
-  IAuthorizer,
-  IdTokenEnumType,
-  IMessageContext,
-  SystemConfig,
+import {
+  AuthorizationStatusEnum,
+  AuthorizationWhitelistEnum,
+  type AuthorizationStatusEnumType,
+  type IAuthorizer,
+  type IdTokenEnumType,
+  type IMessageContext,
+  type SystemConfig,
 } from '@citrineos/base';
 import type { ILocationRepository } from '@citrineos/data';
 import { Authorization } from '@citrineos/data';
@@ -56,17 +58,20 @@ export class RealTimeAuthorizer implements IAuthorizer {
     if (!authorization.realTimeAuthUrl) {
       this._logger.debug(`No Realtime Auth URL from authorization ${authorization.id}`);
       return authorization.status;
-    } else if (!authorization.realTimeAuth || authorization.realTimeAuth === 'Allowed') {
+    } else if (
+      !authorization.realTimeAuth ||
+      authorization.realTimeAuth === AuthorizationWhitelistEnum.Allowed
+    ) {
       this._logger.debug(`Realtime Auth whitelisted for authorization ${authorization.id}`);
       return authorization.status;
-    } else if (authorization.status !== 'Accepted') {
+    } else if (authorization.status !== AuthorizationStatusEnum.Accepted) {
       this._logger.debug(
         `Skipping Realtime Auth for authorization ${authorization.id} with status ${authorization.status}`,
       );
       return authorization.status;
     }
 
-    let result: AuthorizationStatusEnumType = 'Invalid';
+    let result: AuthorizationStatusEnumType = AuthorizationStatusEnum.Invalid;
     try {
       const chargingStation = await this._locationRepository.readChargingStationByStationId(
         context.tenantId,
@@ -95,7 +100,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
           headers['Authorization'] = `Bearer ${token}`;
         } catch (error) {
           this._logger.error('Failed to get OIDC token:', error);
-          return 'Invalid';
+          return AuthorizationStatusEnum.Invalid;
         }
       }
 
@@ -113,30 +118,30 @@ export class RealTimeAuthorizer implements IAuthorizer {
       if (realTimeAuth) {
         switch (realTimeAuth.data.allowed) {
           case 'ALLOWED':
-            result = 'Accepted';
+            result = AuthorizationStatusEnum.Accepted;
             break;
           case 'BLOCKED':
-            result = 'Blocked';
+            result = AuthorizationStatusEnum.Blocked;
             break;
           case 'EXPIRED':
-            result = 'Expired';
+            result = AuthorizationStatusEnum.Expired;
             break;
           case 'NO_CREDIT':
-            result = 'NoCredit';
+            result = AuthorizationStatusEnum.NoCredit;
             break;
           case 'NOT_ALLOWED':
-            result = 'NotAtThisLocation';
+            result = AuthorizationStatusEnum.NotAtThisLocation;
             break;
           default:
-            result = 'Unknown';
+            result = AuthorizationStatusEnum.Unknown;
         }
       } else {
-        result = 'Unknown';
+        result = AuthorizationStatusEnum.Unknown;
       }
     } catch (error) {
       this._logger.error(`Real-Time Auth failed: ${error}`);
       if (authorization.realTimeAuth === 'AllowedOffline') {
-        result = 'Accepted';
+        result = AuthorizationStatusEnum.Accepted;
       }
     }
 
