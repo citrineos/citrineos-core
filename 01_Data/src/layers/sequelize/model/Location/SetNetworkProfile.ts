@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ITenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -14,9 +14,9 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
 import { ChargingStation } from './ChargingStation.js';
 import { ServerNetworkProfile } from './ServerNetworkProfile.js';
-import { Tenant } from '../Tenant.js';
 
 /**
  * The CallMessage model can be extended with new optional fields,
@@ -105,7 +105,7 @@ export class SetNetworkProfile extends Model {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

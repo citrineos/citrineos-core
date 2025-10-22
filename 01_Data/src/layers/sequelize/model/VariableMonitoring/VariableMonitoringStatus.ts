@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
-  ITenantDto,
-  IVariableMonitoringDto,
-  IVariableMonitoringStatusDto,
+  VariableMonitoringDto,
+  VariableMonitoringStatusDto,
+  TenantDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
@@ -17,11 +17,11 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { VariableMonitoring } from './VariableMonitoring.js';
 import { Tenant } from '../Tenant.js';
+import { VariableMonitoring } from './VariableMonitoring.js';
 
 @Table
-export class VariableMonitoringStatus extends Model implements IVariableMonitoringStatusDto {
+export class VariableMonitoringStatus extends Model implements VariableMonitoringStatusDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableMonitoringStatus;
 
   @Column(DataType.STRING)
@@ -35,7 +35,7 @@ export class VariableMonitoringStatus extends Model implements IVariableMonitori
    */
 
   @BelongsTo(() => VariableMonitoring)
-  declare variable: IVariableMonitoringDto;
+  declare variable: VariableMonitoringDto;
 
   @ForeignKey(() => VariableMonitoring)
   @Column(DataType.INTEGER)
@@ -53,7 +53,7 @@ export class VariableMonitoringStatus extends Model implements IVariableMonitori
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

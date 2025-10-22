@@ -16,7 +16,7 @@ import {
   AbstractModule,
   AsHandler,
   BOOT_STATUS,
-  ChargingStationSequenceType,
+  ChargingStationSequenceTypeEnum,
   ErrorCode,
   EventGroup,
   MessageOrigin,
@@ -55,11 +55,11 @@ import {
   RabbitMqSender,
   validateMessageContentType,
 } from '@citrineos/util';
-import { v4 as uuidv4 } from 'uuid';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { DeviceModelService } from './DeviceModelService.js';
+import { v4 as uuidv4 } from 'uuid';
 import { BootNotificationService } from './BootNotificationService.js';
+import { DeviceModelService } from './DeviceModelService.js';
 
 /**
  * Component that handles Configuration related messages.
@@ -642,7 +642,7 @@ export class ConfigurationModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            ChargingStationSequenceType.getDisplayMessages,
+            ChargingStationSequenceTypeEnum.getDisplayMessages,
           ),
         } as OCPP2_0_1.GetDisplayMessagesRequest,
       );
@@ -713,7 +713,7 @@ export class ConfigurationModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            ChargingStationSequenceType.getDisplayMessages,
+            ChargingStationSequenceTypeEnum.getDisplayMessages,
           ),
         } as OCPP2_0_1.GetDisplayMessagesRequest,
       );

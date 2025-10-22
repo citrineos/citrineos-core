@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -15,10 +17,8 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
-import { TenantPartner } from '../TenantPartner.js';
 import { Tenant } from '../Tenant.js';
-import type { ITenantDto } from '@citrineos/base';
-import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { TenantPartner } from '../TenantPartner.js';
 
 export enum AsyncJobName {
   FETCH_OCPI_TOKENS = 'FETCH_OCPI_TOKENS',
@@ -85,7 +85,7 @@ export class AsyncJobStatus extends Model {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

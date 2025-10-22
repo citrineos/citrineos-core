@@ -24,7 +24,7 @@ import type { IModule } from '../modules/index.js';
 import { IMessageQuerystringSchema } from './MessageQuerystring.js';
 import type { IModuleApi } from './ModuleApi.js';
 import { AuthorizationSecurity } from './AuthorizationSecurity.js';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { z } from 'zod';
 
 /**
  * Abstract module api class implementation.
@@ -389,9 +389,8 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
       HttpMethod.Get,
     );
 
-    const systemConfigJsonSchema: any = zodToJsonSchema(systemConfigSchema, {
-      name: 'SystemConfigSchema',
-      $refStrategy: 'none',
+    const systemConfigJsonSchema = z.toJSONSchema(systemConfigSchema, {
+      target: 'openapi-3.0',
     });
     this._addDataRoute.call(
       this,

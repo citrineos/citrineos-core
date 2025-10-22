@@ -2,14 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AdditionalInfo, IAuthorizationDto, ITenantDto } from '@citrineos/base';
-import {
-  AuthorizationStatusType,
-  AuthorizationWhitelistType,
-  DEFAULT_TENANT_ID,
-  IdTokenType,
-  Namespace,
+import type {
+  AdditionalInfo,
+  AuthorizationDto,
+  AuthorizationStatusEnumType,
+  AuthorizationWhitelistEnumType,
+  IdTokenEnumType,
+  TenantDto,
 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -21,11 +22,11 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { TenantPartner } from '../TenantPartner.js';
 import { Tenant } from '../Tenant.js';
+import { TenantPartner } from '../TenantPartner.js';
 
 @Table
-export class Authorization extends Model implements IAuthorizationDto {
+export class Authorization extends Model implements AuthorizationDto {
   static readonly MODEL_NAME: string = Namespace.AuthorizationData;
 
   @Column(DataType.ARRAY(DataType.STRING))
@@ -44,13 +45,13 @@ export class Authorization extends Model implements IAuthorizationDto {
     type: DataType.STRING,
     unique: 'idToken_type',
   })
-  declare idTokenType?: IdTokenType | null;
+  declare idTokenType?: IdTokenEnumType | null;
 
   @Column(DataType.JSONB)
   declare additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]] | null; // JSONB for AdditionalInfo
 
   @Column(DataType.STRING)
-  declare status: AuthorizationStatusType;
+  declare status: AuthorizationStatusEnumType;
 
   @Column({
     type: DataType.DATE,
@@ -73,7 +74,7 @@ export class Authorization extends Model implements IAuthorizationDto {
   declare personalMessage?: any | null;
 
   @Column(DataType.STRING)
-  declare realTimeAuth?: AuthorizationWhitelistType | null;
+  declare realTimeAuth?: AuthorizationWhitelistEnumType | null;
 
   @Column(DataType.STRING)
   declare realTimeAuthUrl?: string;
@@ -110,7 +111,7 @@ export class Authorization extends Model implements IAuthorizationDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

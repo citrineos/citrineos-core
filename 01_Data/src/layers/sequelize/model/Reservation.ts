@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IReservationDto, ITenantDto } from '@citrineos/base';
+import type { ReservationDto, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
@@ -19,7 +19,7 @@ import { EvseType } from './DeviceModel/index.js';
 import { Tenant } from './Tenant.js';
 
 @Table
-export class Reservation extends Model implements IReservationDto {
+export class Reservation extends Model implements ReservationDto {
   static readonly MODEL_NAME: string = Namespace.ReserveNowRequest;
 
   /**
@@ -90,7 +90,7 @@ export class Reservation extends Model implements IReservationDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

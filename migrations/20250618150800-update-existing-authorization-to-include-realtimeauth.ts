@@ -4,8 +4,8 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
+import { AuthorizationWhitelistEnum } from '@citrineos/base';
 import { QueryInterface } from 'sequelize';
-import { AuthorizationWhitelistType } from '@citrineos/base';
 import { DataType } from 'sequelize-typescript';
 
 const TABLE_NAME = 'Authorizations';
@@ -15,7 +15,7 @@ const COLUMNS = [
     attributes: {
       type: DataType.STRING,
       allowNull: false,
-      defaultValue: AuthorizationWhitelistType.Never,
+      defaultValue: AuthorizationWhitelistEnum.Never,
     },
   },
   {

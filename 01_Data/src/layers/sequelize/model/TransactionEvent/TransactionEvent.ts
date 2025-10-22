@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ITenantDto, ITransactionEventDto } from '@citrineos/base';
+import type { TenantDto, TransactionEventDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -20,7 +20,7 @@ import { Transaction } from './Transaction.js';
 import { Tenant } from '../Tenant.js';
 
 @Table
-export class TransactionEvent extends Model implements ITransactionEventDto {
+export class TransactionEvent extends Model implements TransactionEventDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.TransactionEventRequest;
 
   @Column(DataType.STRING)
@@ -91,7 +91,7 @@ export class TransactionEvent extends Model implements ITransactionEventDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IStartTransactionDto, ITenantDto } from '@citrineos/base';
+import type { StartTransactionDto, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -18,7 +18,7 @@ import { Connector } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
 
 @Table
-export class StartTransaction extends Model implements IStartTransactionDto {
+export class StartTransaction extends Model implements StartTransactionDto {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.StartTransaction;
 
   @Column(DataType.STRING)
@@ -64,7 +64,7 @@ export class StartTransaction extends Model implements IStartTransactionDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

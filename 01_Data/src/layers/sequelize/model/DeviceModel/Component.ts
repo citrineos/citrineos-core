@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IComponentDto, ITenantDto } from '@citrineos/base';
+import type { ComponentDto, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -15,10 +15,10 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { Variable } from './Variable.js';
+import { Tenant } from '../Tenant.js';
 import { ComponentVariable } from './ComponentVariable.js';
 import { EvseType } from './EvseType.js';
-import { Tenant } from '../Tenant.js';
+import { Variable } from './Variable.js';
 
 @Table({
   indexes: [
@@ -31,7 +31,7 @@ import { Tenant } from '../Tenant.js';
     },
   ],
 })
-export class Component extends Model implements OCPP2_0_1.ComponentType, IComponentDto {
+export class Component extends Model implements OCPP2_0_1.ComponentType, ComponentDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ComponentType;
 
   /**
@@ -80,7 +80,7 @@ export class Component extends Model implements OCPP2_0_1.ComponentType, ICompon
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IEvseTypeDto, ITenantDto } from '@citrineos/base';
+import type { EvseTypeDto, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
@@ -28,7 +28,7 @@ import { Tenant } from '../Tenant.js';
     },
   ],
 })
-export class EvseType extends Model implements OCPP2_0_1.EVSEType, IEvseTypeDto {
+export class EvseType extends Model implements OCPP2_0_1.EVSEType, EvseTypeDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.EVSEType;
 
   /**
@@ -64,7 +64,7 @@ export class EvseType extends Model implements OCPP2_0_1.EVSEType, IEvseTypeDto 
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

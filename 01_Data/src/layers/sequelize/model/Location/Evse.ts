@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IChargingStationDto, IEvseDto, ITenantDto } from '@citrineos/base';
+import type { ChargingStationDto, ConnectorDto, EvseDto, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -14,12 +14,12 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
 import { ChargingStation } from './ChargingStation.js';
 import { Connector } from './Connector.js';
-import { Tenant } from '../Tenant.js';
 
 @Table
-export class Evse extends Model implements IEvseDto {
+export class Evse extends Model implements EvseDto {
   static readonly MODEL_NAME: string = Namespace.Evse;
 
   @ForeignKey(() => ChargingStation)
@@ -45,10 +45,10 @@ export class Evse extends Model implements IEvseDto {
   declare removed?: boolean;
 
   @BelongsTo(() => ChargingStation)
-  declare chargingStation?: IChargingStationDto;
+  declare chargingStation?: ChargingStationDto;
 
   @HasMany(() => Connector)
-  declare connectors?: Connector[] | null;
+  declare connectors?: ConnectorDto[] | null;
 
   @ForeignKey(() => Tenant)
   @Column({
@@ -60,7 +60,7 @@ export class Evse extends Model implements IEvseDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

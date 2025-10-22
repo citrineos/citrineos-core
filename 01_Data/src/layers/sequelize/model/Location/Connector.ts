@@ -1,16 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IChargingStationDto, IConnectorDto, ITenantDto } from '@citrineos/base';
-import {
-  ConnectorErrorCode,
-  ConnectorFormatEnum,
-  ConnectorPowerType,
-  ConnectorStatus,
-  ConnectorTypeEnum,
-  DEFAULT_TENANT_ID,
-  OCPP1_6_Namespace,
+import type {
+  ChargingStationDto,
+  ConnectorDto,
+  ConnectorErrorCodeEnumType,
+  ConnectorFormatEnumType,
+  ConnectorPowerTypeEnumType,
+  ConnectorStatusEnumType,
+  ConnectorTypeEnumType,
+  TenantDto,
 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -22,13 +23,13 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { ChargingStation } from './ChargingStation.js';
-import { Evse } from './Evse.js';
 import { Tariff } from '../Tariff/index.js';
 import { Tenant } from '../Tenant.js';
+import { ChargingStation } from './ChargingStation.js';
+import { Evse } from './Evse.js';
 
 @Table
-export class Connector extends Model implements IConnectorDto {
+export class Connector extends Model implements ConnectorDto {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.Connector;
 
   @ForeignKey(() => ChargingStation)
@@ -63,24 +64,24 @@ export class Connector extends Model implements IConnectorDto {
 
   @Column({
     type: DataType.STRING,
-    defaultValue: ConnectorStatus.Unknown,
+    defaultValue: 'Unknown',
   })
-  declare status: ConnectorStatus;
+  declare status: ConnectorStatusEnumType;
 
   @Column(DataType.STRING)
-  declare type?: ConnectorTypeEnum | null;
+  declare type?: ConnectorTypeEnumType | null;
 
   @Column(DataType.STRING)
-  declare format?: ConnectorFormatEnum | null;
+  declare format?: ConnectorFormatEnumType | null;
 
   @Column({
     type: DataType.STRING,
-    defaultValue: ConnectorErrorCode.NoError,
+    defaultValue: 'NoError',
   })
-  declare errorCode: ConnectorErrorCode;
+  declare errorCode: ConnectorErrorCodeEnumType;
 
   @Column(DataType.STRING)
-  declare powerType?: ConnectorPowerType | null;
+  declare powerType?: ConnectorPowerTypeEnumType | null;
 
   @Column(DataType.INTEGER)
   declare maximumAmperage?: number | null;
@@ -112,7 +113,7 @@ export class Connector extends Model implements IConnectorDto {
   declare termsAndConditionsUrl?: string | null;
 
   @BelongsTo(() => ChargingStation)
-  declare chargingStation?: IChargingStationDto;
+  declare chargingStation?: ChargingStationDto;
 
   @BelongsTo(() => Evse)
   declare evse?: Evse;
@@ -130,7 +131,7 @@ export class Connector extends Model implements IConnectorDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

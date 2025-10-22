@@ -2,9 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootConfig, CallAction, CrudRepository } from '@citrineos/base';
-import { ChargingStationSequenceType, OCPP1_6, OCPP2_0_1, OCPPVersion } from '@citrineos/base';
-import type { AuthorizationQuerystring } from './queries/Authorization.js';
+import type {
+  BootConfig,
+  CallAction,
+  ChargingStationSequenceTypeEnumType,
+  CrudRepository,
+  OCPP1_6,
+  OCPP2_0_1,
+  OCPPVersion,
+} from '@citrineos/base';
 import type {
   Authorization,
   Boot,
@@ -45,6 +51,7 @@ import {
   VariableCharacteristics,
 } from '../layers/sequelize/index.js';
 import type { VariableAttributeQuerystring } from './index.js';
+import type { AuthorizationQuerystring } from './queries/Authorization.js';
 import type { TariffQueryString } from './queries/Tariff.js';
 
 export interface IAuthorizationRepository extends CrudRepository<Authorization> {
@@ -439,7 +446,7 @@ export interface IChargingStationSequenceRepository
   getNextSequenceValue(
     tenantId: number,
     stationId: string,
-    type: ChargingStationSequenceType,
+    type: ChargingStationSequenceTypeEnumType,
   ): Promise<number>;
 }
 

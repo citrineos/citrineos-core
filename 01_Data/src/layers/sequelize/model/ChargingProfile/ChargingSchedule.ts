@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IChargingProfileDto, IChargingScheduleDto, ITenantDto } from '@citrineos/base';
+import type {
+  ChargingProfileDto,
+  ChargingScheduleDto,
+  SalesTariffDto,
+  TenantDto,
+} from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
@@ -16,12 +21,12 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
 import { ChargingProfile } from './ChargingProfile.js';
 import { SalesTariff } from './SalesTariff.js';
-import { Tenant } from '../Tenant.js';
 
 @Table
-export class ChargingSchedule extends Model implements IChargingScheduleDto {
+export class ChargingSchedule extends Model implements ChargingScheduleDto {
   static readonly MODEL_NAME: string = Namespace.ChargingSchedule;
 
   /**
@@ -74,14 +79,14 @@ export class ChargingSchedule extends Model implements IChargingScheduleDto {
    * Relations
    */
   @BelongsTo(() => ChargingProfile)
-  declare chargingProfile: IChargingProfileDto;
+  declare chargingProfile: ChargingProfileDto;
 
   @ForeignKey(() => ChargingProfile)
   @Column(DataType.INTEGER)
   declare chargingProfileDatabaseId?: number;
 
   @HasOne(() => SalesTariff)
-  declare salesTariff?: SalesTariff;
+  declare salesTariff?: SalesTariffDto;
 
   declare customData?: object | null;
 
@@ -95,7 +100,7 @@ export class ChargingSchedule extends Model implements IChargingScheduleDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

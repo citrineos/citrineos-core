@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ICertificateDto, ITenantDto } from '@citrineos/base';
+import type { CertificateDto, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -14,11 +14,11 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { CountryNameEnumType, SignatureAlgorithmEnumType } from './index.js';
 import { Tenant } from '../Tenant.js';
+import { CountryNameEnumType, SignatureAlgorithmEnumType } from './index.js';
 
 @Table
-export class Certificate extends Model implements ICertificateDto {
+export class Certificate extends Model implements CertificateDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Certificate;
 
   /**
@@ -90,7 +90,7 @@ export class Certificate extends Model implements ICertificateDto {
   declare tenantId: number;
 
   @BelongsTo(() => Tenant)
-  declare tenant?: ITenantDto;
+  declare tenant?: TenantDto;
 
   @BeforeUpdate
   @BeforeCreate

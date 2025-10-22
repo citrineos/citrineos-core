@@ -14,7 +14,7 @@ import type {
 import {
   AbstractModule,
   AsHandler,
-  ChargingStationSequenceType,
+  ChargingStationSequenceTypeEnum,
   EventGroup,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
@@ -29,8 +29,8 @@ import {
 import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { DeviceModelService } from './services.js';
 import { MonitoringService } from './MonitoringService.js';
+import { DeviceModelService } from './services.js';
 
 /**
  * Component that handles monitoring related messages.
@@ -288,7 +288,7 @@ export class MonitoringModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            ChargingStationSequenceType.getMonitoringReport,
+            ChargingStationSequenceTypeEnum.getMonitoringReport,
           ),
         } as OCPP2_0_1.GetMonitoringReportRequest,
       );

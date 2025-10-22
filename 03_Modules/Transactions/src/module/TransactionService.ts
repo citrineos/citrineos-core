@@ -2,20 +2,25 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
+  AuthorizationDto,
+  AuthorizationStatusEnumType,
+  IAuthorizer,
+  IMessageContext,
+} from '@citrineos/base';
+import {
+  AuthorizationStatusEnum,
+  MessageOrigin,
+  MeterValueUtils,
+  OCPP1_6,
+  OCPP2_0_1,
+} from '@citrineos/base';
+import type {
   IAuthorizationRepository,
   IOCPPMessageRepository,
   IReservationRepository,
   ITransactionEventRepository,
 } from '@citrineos/data';
 import { OCPP1_6_Mapper, OCPP2_0_1_Mapper, Transaction } from '@citrineos/data';
-import type { IAuthorizationDto, IAuthorizer, IMessageContext } from '@citrineos/base';
-import {
-  AuthorizationStatusType,
-  MessageOrigin,
-  MeterValueUtils,
-  OCPP1_6,
-  OCPP2_0_1,
-} from '@citrineos/base';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
@@ -308,12 +313,12 @@ export class TransactionService {
   }
 
   private async _applyAuthorizers(
-    authorization: IAuthorizationDto,
+    authorization: AuthorizationDto,
     messageContext: IMessageContext,
-  ): Promise<AuthorizationStatusType> {
+  ): Promise<AuthorizationStatusEnumType> {
     let result = authorization.status;
     for (const authorizer of this._authorizers) {
-      if (result !== AuthorizationStatusType.Accepted) {
+      if (result !== AuthorizationStatusEnum.Accepted) {
         break;
       }
 
@@ -336,11 +341,11 @@ export class TransactionService {
   }
 
   private _mapAuthorizationDtoToIdTokenInfo(
-    dto: IAuthorizationDto,
-    status: AuthorizationStatusType,
+    dto: AuthorizationDto,
+    status: AuthorizationStatusEnumType,
   ): OCPP2_0_1.IdTokenInfoType {
     return {
-      status: OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusType(status),
+      status: OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusEnumType(status),
       cacheExpiryDateTime: dto.cacheExpiryDateTime ?? null,
       chargingPriority: dto.chargingPriority ?? null,
       language1: dto.language1 ?? null,
