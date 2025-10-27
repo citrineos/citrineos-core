@@ -439,9 +439,6 @@ export class CitrineOSServer {
     );
 
     this.apis.push(new AdminApi(router, this._server, this._logger));
-
-    this.host = this._config.centralSystem.host;
-    this.port = this._config.centralSystem.port;
   }
 
   private async initHandlersAndAddModule(module: AbstractModule) {
@@ -476,12 +473,6 @@ export class CitrineOSServer {
 
     if (this._config.modules.transactions) {
       await this.initTransactionsModule();
-    }
-
-    // TODO: take actions to make sure module has correct subscriptions and log proof
-    if (this.eventGroup !== EventGroup.All) {
-      this.host = this._config.centralSystem.host as string;
-      this.port = this._config.centralSystem.port as number;
     }
   }
 
@@ -678,6 +669,10 @@ export class CitrineOSServer {
 
   private async initSystem() {
     this.eventGroup = eventGroupFromString(this.appName);
+
+    this.host = this._config.centralSystem.host;
+    this.port = this._config.centralSystem.port;
+
     if (this.eventGroup === EventGroup.All) {
       this.initNetworkConnection();
       await this.initAllModules();
