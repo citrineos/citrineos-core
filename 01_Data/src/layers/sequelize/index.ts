@@ -27,7 +27,6 @@ export {
   TransactionEvent,
   MeterValue,
 } from './model/TransactionEvent/index.js';
-export { SecurityEvent } from './model/SecurityEvent.js';
 export {
   VariableMonitoring,
   EventData,
@@ -84,7 +83,6 @@ export { SequelizeDeviceModelRepository } from './repository/DeviceModel.js';
 export { SequelizeLocalAuthListRepository } from './repository/LocalAuthList.js';
 export { SequelizeLocationRepository } from './repository/Location.js';
 export { SequelizeTransactionEventRepository } from './repository/TransactionEvent.js';
-export { SequelizeSecurityEventRepository } from './repository/SecurityEvent.js';
 export { SequelizeVariableMonitoringRepository } from './repository/VariableMonitoring.js';
 export { SequelizeMessageInfoRepository } from './repository/MessageInfo.js';
 export { SequelizeTariffRepository } from './repository/Tariff.js';

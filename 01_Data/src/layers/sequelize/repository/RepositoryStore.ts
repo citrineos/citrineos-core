@@ -14,7 +14,6 @@ import type {
   IMessageInfoRepository,
   IOCPPMessageRepository,
   IReservationRepository,
-  ISecurityEventRepository,
   ISubscriptionRepository,
   ITariffRepository,
   ITenantRepository,
@@ -31,7 +30,6 @@ import { SequelizeCertificateRepository } from './Certificate.js';
 import { SequelizeDeviceModelRepository } from './DeviceModel.js';
 import { SequelizeLocationRepository } from './Location.js';
 import { SequelizeMessageInfoRepository } from './MessageInfo.js';
-import { SequelizeSecurityEventRepository } from './SecurityEvent.js';
 import { SequelizeSubscriptionRepository } from './Subscription.js';
 import { SequelizeTariffRepository } from './Tariff.js';
 import { SequelizeTransactionEventRepository } from './TransactionEvent.js';
@@ -61,7 +59,6 @@ export class RepositoryStore {
   messageInfoRepository: IMessageInfoRepository;
   ocppMessageRepository: IOCPPMessageRepository;
   reservationRepository: IReservationRepository;
-  securityEventRepository: ISecurityEventRepository;
   subscriptionRepository: ISubscriptionRepository;
   tariffRepository: ITariffRepository;
   transactionEventRepository: ITransactionEventRepository;
@@ -123,11 +120,6 @@ export class RepositoryStore {
       sequelizeInstance,
     );
     this.reservationRepository = new SequelizeReservationRepository(
-      config,
-      logger,
-      sequelizeInstance,
-    );
-    this.securityEventRepository = new SequelizeSecurityEventRepository(
       config,
       logger,
       sequelizeInstance,

@@ -599,7 +599,6 @@ export class CitrineOSServer {
       this._createHandler(),
       this._logger,
       this._repositoryStore.deviceModelRepository,
-      this._repositoryStore.securityEventRepository,
       this._repositoryStore.variableMonitoringRepository,
     );
     await this.initHandlersAndAddModule(module);

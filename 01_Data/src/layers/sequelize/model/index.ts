@@ -16,7 +16,6 @@ export * from './Location/index.js';
 export * from './MessageInfo/index.js';
 export * from './OCPPMessage.js';
 export * from './Reservation.js';
-export * from './SecurityEvent.js';
 export * from './Subscription/index.js';
 export * from './Tariff/index.js';
 export * from './Tenant.js';

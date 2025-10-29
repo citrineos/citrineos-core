@@ -69,7 +69,6 @@ export {
   SequelizeMessageInfoRepository,
   SequelizeRepository,
   SequelizeReservationRepository,
-  SequelizeSecurityEventRepository,
   SequelizeSubscriptionRepository,
   SequelizeTariffRepository,
   SequelizeTransactionEventRepository,

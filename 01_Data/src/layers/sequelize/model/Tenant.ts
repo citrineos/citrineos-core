@@ -46,7 +46,6 @@ import { Location } from './Location/Location.js';
 import { MessageInfo } from './MessageInfo/index.js';
 import { OCPPMessage } from './OCPPMessage.js';
 import { Reservation } from './Reservation.js';
-import { SecurityEvent } from './SecurityEvent.js';
 import { Subscription } from './Subscription/index.js';
 import { Tariff } from './Tariff/index.js';
 import { TenantPartner } from './TenantPartner.js';
@@ -182,9 +181,6 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> im
 
   @HasMany(() => SalesTariff)
   declare salesTariffs: SalesTariff[];
-
-  @HasMany(() => SecurityEvent)
-  declare securityEvents: SecurityEvent[];
 
   @HasMany(() => SetNetworkProfile)
   declare setNetworkProfiles: SetNetworkProfile[];

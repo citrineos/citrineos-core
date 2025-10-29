@@ -19,7 +19,6 @@ import type {
   Component,
   EventData,
   Location,
-  SecurityEvent,
   Transaction,
   Variable,
   VariableAttribute,
@@ -227,21 +226,6 @@ export interface ILocationRepository extends CrudRepository<Location> {
     chargingStation: ChargingStation,
   ): Promise<ChargingStation>;
   createOrUpdateConnector(tenantId: number, connector: Connector): Promise<Connector | undefined>;
-}
-
-export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {
-  createByStationId: (
-    tenantId: number,
-    value: OCPP2_0_1.SecurityEventNotificationRequest,
-    stationId: string,
-  ) => Promise<SecurityEvent>;
-  readByStationIdAndTimestamps: (
-    tenantId: number,
-    stationId: string,
-    from?: Date,
-    to?: Date,
-  ) => Promise<SecurityEvent[]>;
-  deleteByKey: (tenantId: number, key: string) => Promise<SecurityEvent | undefined>;
 }
 
 export interface ISubscriptionRepository extends CrudRepository<Subscription> {

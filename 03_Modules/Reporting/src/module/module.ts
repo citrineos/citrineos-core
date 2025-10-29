@@ -25,7 +25,6 @@ import {
 import type {
   IDeviceModelRepository,
   IOCPPMessageRepository,
-  ISecurityEventRepository,
   IVariableMonitoringRepository,
 } from '@citrineos/data';
 import { Component, sequelize, Variable } from '@citrineos/data';
@@ -56,7 +55,6 @@ export class ReportingModule extends AbstractModule {
   _requests: CallAction[] = [];
 
   _responses: CallAction[] = [];
-  protected _securityEventRepository: ISecurityEventRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
   protected _ocppMessageRepository: IOCPPMessageRepository;
 
@@ -74,14 +72,16 @@ export class ReportingModule extends AbstractModule {
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
    *
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
+   * It is used to propagate system-wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is created and used.
    *
-   * @param {ISecurityEventRepository} [securityEventRepository] - An optional parameter of type {@link ISecurityEventRepository} which represents a repository for accessing security event notification data.
-   *
    * @param {IVariableMonitoringRepository} [variableMonitoringRepository] - An optional parameter of type {@link IVariableMonitoringRepository} which represents a repository for accessing and manipulating monitoring data.
+   *
+   * @param {IOCPPMessageRepository} [ocppMessageRepository] - An optional parameter of type {@link IOCPPMessageRepository} which
+   * represents a repository for accessing and manipulating call message data. If no `ocppMessageRepository` is provided, a default
+   * {@link SequelizeOCPPMessageRepository} instance is created and used.
    */
   constructor(
     config: BootstrapConfig & SystemConfig,
@@ -90,7 +90,6 @@ export class ReportingModule extends AbstractModule {
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
     deviceModelRepository?: IDeviceModelRepository,
-    securityEventRepository?: ISecurityEventRepository,
     variableMonitoringRepository?: IVariableMonitoringRepository,
     ocppMessageRepository?: IOCPPMessageRepository,
   ) {
@@ -108,9 +107,6 @@ export class ReportingModule extends AbstractModule {
 
     this._deviceModelRepository =
       deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, this._logger);
-    this._securityEventRepository =
-      securityEventRepository ||
-      new sequelize.SequelizeSecurityEventRepository(config, this._logger);
     this._variableMonitoringRepository =
       variableMonitoringRepository ||
       new sequelize.SequelizeVariableMonitoringRepository(config, this._logger);
@@ -329,11 +325,7 @@ export class ReportingModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('SecurityEventNotification request received:', message, props);
-    await this._securityEventRepository.createByStationId(
-      message.context.tenantId,
-      message.payload,
-      message.context.stationId,
-    );
+
     await this.sendCallResultWithMessage(
       message,
       {} as OCPP2_0_1.SecurityEventNotificationResponse,
