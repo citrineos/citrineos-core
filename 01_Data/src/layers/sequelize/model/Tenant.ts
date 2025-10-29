@@ -56,11 +56,7 @@ import {
   Transaction,
   TransactionEvent,
 } from './TransactionEvent/index.js';
-import {
-  EventData,
-  VariableMonitoring,
-  VariableMonitoringStatus,
-} from './VariableMonitoring/index.js';
+import { VariableMonitoring, VariableMonitoringStatus } from './VariableMonitoring/index.js';
 
 export enum TenantAttributeProps {
   id = 'id',
@@ -160,9 +156,6 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> im
 
   @HasMany(() => EvseType)
   declare evses: EvseType[];
-
-  @HasMany(() => EventData)
-  declare eventDatas: EventData[];
 
   @HasMany(() => Location)
   declare locations: Location[];

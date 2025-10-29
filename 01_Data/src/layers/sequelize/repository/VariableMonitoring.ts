@@ -5,7 +5,6 @@
 import { SequelizeRepository } from './Base.js';
 import {
   Component,
-  EventData,
   Variable,
   VariableMonitoring,
   VariableMonitoringStatus,
@@ -21,20 +20,15 @@ export class SequelizeVariableMonitoringRepository
   extends SequelizeRepository<VariableMonitoring>
   implements IVariableMonitoringRepository
 {
-  eventData: CrudRepository<EventData>;
   variableMonitoringStatus: CrudRepository<VariableMonitoringStatus>;
 
   constructor(
     config: BootstrapConfig,
     logger?: Logger<ILogObj>,
     sequelizeInstance?: Sequelize,
-    eventData?: CrudRepository<EventData>,
     variableMonitoringStatus?: CrudRepository<VariableMonitoringStatus>,
   ) {
     super(config, VariableMonitoring.MODEL_NAME, logger, sequelizeInstance);
-    this.eventData = eventData
-      ? eventData
-      : new SequelizeRepository<EventData>(config, EventData.MODEL_NAME, logger, sequelizeInstance);
     this.variableMonitoringStatus = variableMonitoringStatus
       ? variableMonitoringStatus
       : new SequelizeRepository<VariableMonitoringStatus>(
@@ -256,24 +250,5 @@ export class SequelizeVariableMonitoringRepository
     } else {
       throw new Error(`Unable to update set monitoring result: ${result}`);
     }
-  }
-
-  async createEventDatumByComponentIdAndVariableIdAndStationId(
-    tenantId: number,
-    event: OCPP2_0_1.EventDataType,
-    componentId: string,
-    variableId: string,
-    stationId: string,
-  ): Promise<EventData> {
-    return await this.eventData.create(
-      tenantId,
-      EventData.build({
-        tenantId,
-        stationId,
-        variableId,
-        componentId,
-        ...event,
-      }),
-    );
   }
 }

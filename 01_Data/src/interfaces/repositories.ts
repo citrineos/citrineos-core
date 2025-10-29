@@ -17,7 +17,6 @@ import type {
   Certificate,
   ChargingStation,
   Component,
-  EventData,
   Location,
   Transaction,
   Variable,
@@ -338,13 +337,6 @@ export interface IVariableMonitoringRepository
     result: OCPP2_0_1.SetMonitoringResultType,
     stationId: string,
   ): Promise<VariableMonitoring>;
-  createEventDatumByComponentIdAndVariableIdAndStationId(
-    tenantId: number,
-    event: OCPP2_0_1.EventDataType,
-    componentId: string,
-    variableId: string,
-    stationId: string,
-  ): Promise<EventData>;
 }
 
 export interface IMessageInfoRepository extends CrudRepository<OCPP2_0_1.MessageInfoType> {

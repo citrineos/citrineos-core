@@ -27,11 +27,7 @@ export {
   TransactionEvent,
   MeterValue,
 } from './model/TransactionEvent/index.js';
-export {
-  VariableMonitoring,
-  EventData,
-  VariableMonitoringStatus,
-} from './model/VariableMonitoring/index.js';
+export { VariableMonitoring, VariableMonitoringStatus } from './model/VariableMonitoring/index.js';
 export {
   ChargingStation,
   Evse,

@@ -140,13 +140,6 @@ export class MonitoringModule extends AbstractModule {
           event.component,
           event.variable,
         );
-      await this._variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId(
-        message.context.tenantId,
-        event,
-        component?.id,
-        variable?.id,
-        stationId,
-      );
       const reportDataType: OCPP2_0_1.ReportDataType = {
         component,
         variable,
