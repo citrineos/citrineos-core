@@ -42,23 +42,13 @@ export default {
             "createdAt"             timestamp with time zone not null,
             "updatedAt"             timestamp with time zone not null,
             "tenantId" int4 default 1 not null
+                references "Tenants"
+                    on update cascade on delete restrict,
             unique ("stationId", "eventId")
         );
 
         create index if not exists event_data_station_id
             on "EventData" ("stationId");
-
-        alter table "EventData" add constraint "EventData_componentId_fkey" foreign key ("componentId") references "Components"(id) on
-        update
-          cascade;
-
-        alter table "EventData" add constraint "EventData_tenantId_fkey" foreign key ("tenantId") references "Tenants"(id) on 
-        delete restrict on 
-          update cascade;
-
-        alter table "EventData" add constraint "EventData_variableId_fkey" foreign key ("variableId") references "Variables"(id) on
-        update
-          cascade;
             
         create table if not exists "SecurityEvents"
         (
