@@ -2,4 +2,3 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 export { VariableMonitoring } from './VariableMonitoring.js';
-export { VariableMonitoringStatus } from './VariableMonitoringStatus.js';

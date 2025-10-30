@@ -321,17 +321,6 @@ export interface IVariableMonitoringRepository
     variableId: string,
     stationId: string,
   ): Promise<VariableMonitoring>;
-  rejectAllVariableMonitoringsByStationId(
-    tenantId: number,
-    action: CallAction,
-    stationId: string,
-  ): Promise<void>;
-  rejectVariableMonitoringByIdAndStationId(
-    tenantId: number,
-    action: CallAction,
-    id: number,
-    stationId: string,
-  ): Promise<void>;
   updateResultByStationId(
     tenantId: number,
     result: OCPP2_0_1.SetMonitoringResultType,

@@ -29,7 +29,6 @@ import {
 import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { MonitoringService } from './MonitoringService.js';
 import { DeviceModelService } from './services.js';
 
 /**
@@ -37,7 +36,6 @@ import { DeviceModelService } from './services.js';
  */
 export class MonitoringModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
-  protected _monitoringService: MonitoringService;
 
   _requests: CallAction[] = [];
 
@@ -103,10 +101,6 @@ export class MonitoringModule extends AbstractModule {
       new SequelizeVariableMonitoringRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
-    this._monitoringService = new MonitoringService(
-      this._variableMonitoringRepository,
-      this._logger,
-    );
 
     this._idGenerator =
       idGenerator ||
@@ -190,12 +184,6 @@ export class MonitoringModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('ClearVariableMonitoring response received:', message, props);
-
-    await this._monitoringService.processClearMonitoringResult(
-      message.context.tenantId,
-      message.context.stationId,
-      message.payload.clearMonitoringResult,
-    );
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetMonitoringReport)
@@ -262,15 +250,8 @@ export class MonitoringModule extends AbstractModule {
       );
     } else {
       // After setting monitoring base, variable monitorings on charger side are influenced
-      // To get all the latest monitoring data, we intend to mask all variable monitorings on the charger as rejected.
-      // Then request a GetMonitoringReport for all monitorings
+      // To get all the latest monitoring data, we request a GetMonitoringReport for all monitorings
       const stationId: string = message.context.stationId;
-      await this._variableMonitoringRepository.rejectAllVariableMonitoringsByStationId(
-        message.context.tenantId,
-        OCPP2_0_1_CallAction.SetVariableMonitoring,
-        stationId,
-      );
-      this._logger.debug('Rejected all variable monitorings on the charger', stationId);
 
       await this.sendCall(
         stationId,

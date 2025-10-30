@@ -299,7 +299,6 @@ export * from './interfaces/dto/variable.attribute.dto.js';
 export * from './interfaces/dto/variable.characteristics.dto.js';
 export * from './interfaces/dto/variable.dto.js';
 export * from './interfaces/dto/variable.monitoring.dto.js';
-export * from './interfaces/dto/variable.monitoring.status.dto.js';
 export * from './interfaces/dto/variable.status.dto.js';
 export * from './interfaces/dto/types/authorization.js';
 export * from './interfaces/dto/types/base.dto.js';

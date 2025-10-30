@@ -52,7 +52,6 @@ import {
   VariableAttribute,
   VariableCharacteristics,
   VariableMonitoring,
-  VariableMonitoringStatus,
   VariableStatus,
 } from './index.js';
 
@@ -174,7 +173,6 @@ export class DefaultSequelizeInstance {
         VariableAttribute,
         VariableCharacteristics,
         VariableMonitoring,
-        VariableMonitoringStatus,
         VariableStatus,
         Variable,
         LocalListAuthorization,

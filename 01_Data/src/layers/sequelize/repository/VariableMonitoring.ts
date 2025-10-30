@@ -3,15 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { SequelizeRepository } from './Base.js';
-import {
-  Component,
-  Variable,
-  VariableMonitoring,
-  VariableMonitoringStatus,
-} from '../model/index.js';
+import { Component, Variable, VariableMonitoring } from '../model/index.js';
 import type { IVariableMonitoringRepository } from '../../../interfaces/index.js';
-import type { BootstrapConfig, CallAction } from '@citrineos/base';
-import { CrudRepository, OCPP2_0_1, OCPP2_0_1_CallAction } from '@citrineos/base';
+import type { BootstrapConfig } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -20,23 +15,8 @@ export class SequelizeVariableMonitoringRepository
   extends SequelizeRepository<VariableMonitoring>
   implements IVariableMonitoringRepository
 {
-  variableMonitoringStatus: CrudRepository<VariableMonitoringStatus>;
-
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    sequelizeInstance?: Sequelize,
-    variableMonitoringStatus?: CrudRepository<VariableMonitoringStatus>,
-  ) {
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, VariableMonitoring.MODEL_NAME, logger, sequelizeInstance);
-    this.variableMonitoringStatus = variableMonitoringStatus
-      ? variableMonitoringStatus
-      : new SequelizeRepository<VariableMonitoringStatus>(
-          config,
-          VariableMonitoringStatus.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
   }
 
   async createOrUpdateByMonitoringDataTypeAndStationId(
@@ -47,9 +27,9 @@ export class SequelizeVariableMonitoringRepository
     stationId: string,
   ): Promise<VariableMonitoring[]> {
     return await Promise.all(
-      value.variableMonitoring.map(async (variableMonitoring) => {
-        const savedVariableMonitoring: VariableMonitoring = await this.s.transaction(
-          async (transaction) => {
+      value.variableMonitoring.map(
+        async (variableMonitoring) =>
+          await this.s.transaction(async (transaction) => {
             const existingVariableMonitoring = await this.s.models[
               VariableMonitoring.MODEL_NAME
             ].findOne({
@@ -77,34 +57,8 @@ export class SequelizeVariableMonitoringRepository
                 existingVariableMonitoring.dataValues.databaseId,
               )) as VariableMonitoring;
             }
-          },
-        );
-        await this.createVariableMonitoringStatus(
-          tenantId,
-          OCPP2_0_1.SetMonitoringStatusEnumType.Accepted,
-          OCPP2_0_1_CallAction.NotifyMonitoringReport,
-          savedVariableMonitoring.get('databaseId'),
-        );
-
-        return savedVariableMonitoring;
-      }),
-    );
-  }
-
-  async createVariableMonitoringStatus(
-    tenantId: number,
-    status: OCPP2_0_1.SetMonitoringStatusEnumType,
-    action: CallAction,
-    variableMonitoringId: number,
-  ): Promise<void> {
-    await this.variableMonitoringStatus.create(
-      tenantId,
-      VariableMonitoringStatus.build({
-        tenantId,
-        status,
-        statusInfo: { reasonCode: action },
-        variableMonitoringId,
-      }),
+          }),
+      ),
     );
   }
 
@@ -150,50 +104,6 @@ export class SequelizeVariableMonitoringRepository
     return result;
   }
 
-  async rejectAllVariableMonitoringsByStationId(
-    tenantId: number,
-    action: CallAction,
-    stationId: string,
-  ): Promise<void> {
-    await this.readAllByQuery(tenantId, {
-      where: {
-        stationId,
-      },
-    }).then(async (variableMonitorings) => {
-      for (const variableMonitoring of variableMonitorings) {
-        await this.createVariableMonitoringStatus(
-          tenantId,
-          OCPP2_0_1.SetMonitoringStatusEnumType.Rejected,
-          action,
-          variableMonitoring.databaseId,
-        );
-      }
-    });
-  }
-
-  async rejectVariableMonitoringByIdAndStationId(
-    tenantId: number,
-    action: CallAction,
-    id: number,
-    stationId: string,
-  ): Promise<void> {
-    await this.readAllByQuery(tenantId, {
-      where: {
-        id,
-        stationId,
-      },
-    }).then(async (variableMonitorings) => {
-      for (const variableMonitoring of variableMonitorings) {
-        await this.createVariableMonitoringStatus(
-          tenantId,
-          OCPP2_0_1.SetMonitoringStatusEnumType.Rejected,
-          action,
-          variableMonitoring.databaseId,
-        );
-      }
-    });
-  }
-
   async updateResultByStationId(
     tenantId: number,
     result: OCPP2_0_1.SetMonitoringResultType,
@@ -233,19 +143,8 @@ export class SequelizeVariableMonitoringRepository
         );
       }
 
-      await this.variableMonitoringStatus.create(
-        tenantId,
-        VariableMonitoringStatus.build({
-          tenantId,
-          status: result.status,
-          statusInfo: result.statusInfo,
-          variableMonitoringId: savedVariableMonitoring.get('databaseId'),
-        }),
-      );
-      // Reload in order to include the statuses
       return await this.readAllByQuery(tenantId, {
         where: { databaseId: savedVariableMonitoring.get('databaseId') },
-        include: [VariableMonitoringStatus],
       }).then((variableMonitorings) => variableMonitorings[0]);
     } else {
       throw new Error(`Unable to update set monitoring result: ${result}`);
