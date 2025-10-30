@@ -274,7 +274,6 @@ export * from './interfaces/dto/charging.station.network.profile.dto.js';
 export * from './interfaces/dto/charging.station.sequence.dto.js';
 export * from './interfaces/dto/component.dto.js';
 export * from './interfaces/dto/connector.dto.js';
-export * from './interfaces/dto/event.data.dto.js';
 export * from './interfaces/dto/evse.dto.js';
 export * from './interfaces/dto/evse.type.dto.js';
 export * from './interfaces/dto/installed.certificate.dto.js';
