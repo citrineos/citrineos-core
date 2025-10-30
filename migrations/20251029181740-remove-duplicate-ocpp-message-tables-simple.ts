@@ -17,33 +17,36 @@ export default {
   down: async (queryInterface: QueryInterface) => {
     await queryInterface.sequelize.query(`
 
-        create table "EventData" (
-          id serial4 not null,
-          "stationId" varchar(255) null,
-          "eventId" int4 null,
-          "trigger" varchar(255) null,
-          cause int4 null,
-          "timestamp" timestamptz null,
-          "actualValue" varchar(255) null,
-          "techCode" varchar(255) null,
-          "techInfo" varchar(255) null,
-          cleared bool null,
-          "transactionId" varchar(255) null,
-          "variableMonitoringId" int4 null,
-          "eventNotificationType" varchar(255) null,
-          "variableId" int4 null,
-          "componentId" int4 null,
-          "createdAt" timestamptz not null,
-          "updatedAt" timestamptz not null,
-          "tenantId" int4 default 1 not null,
-          constraint "EventData_pkey" primary key (id),
-          constraint "EventData_stationId_eventId_key" unique ("stationId",
-        "eventId")
+        create table if not exists "EventData"
+        (
+            id                      serial
+                primary key,
+            "stationId"             varchar(255),
+            "eventId"               integer,
+            trigger                 varchar(255),
+            cause                   integer,
+            timestamp               timestamp with time zone,
+            "actualValue"           varchar(255),
+            "techCode"              varchar(255),
+            "techInfo"              varchar(255),
+            cleared                 boolean,
+            "transactionId"         varchar(255),
+            "variableMonitoringId"  integer,
+            "eventNotificationType" varchar(255),
+            "variableId"            integer
+                references "Variables"
+                    on update cascade,
+            "componentId"           integer
+                references "Components"
+                    on update cascade,
+            "createdAt"             timestamp with time zone not null,
+            "updatedAt"             timestamp with time zone not null,
+            "tenantId" int4 default 1 not null
+            unique ("stationId", "eventId")
         );
 
-        create index event_data_station_id on
-        "EventData"
-          using btree ("stationId");
+        create index if not exists event_data_station_id
+            on "EventData" ("stationId");
 
         alter table "EventData" add constraint "EventData_componentId_fkey" foreign key ("componentId") references "Components"(id) on
         update
@@ -66,13 +69,15 @@ export default {
             "techInfo"  varchar(255),
             "createdAt" timestamp with time zone not null,
             "updatedAt" timestamp with time zone not null,
-            "tenantId" int4 DEFAULT 1 not null
+            "tenantId" int4 default 1 not null
         );
 
         create index if not exists security_events_station_id
             on "SecurityEvents" ("stationId");
             
         alter table "SecurityEvents" add constraint "SecurityEvents_tenantId_fkey" foreign key ("tenantId") references "Tenants"(id) on delete restrict on update cascade;
+        
+        
     `);
   },
 };
