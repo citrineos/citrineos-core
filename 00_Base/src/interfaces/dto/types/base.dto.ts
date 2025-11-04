@@ -12,4 +12,6 @@ export const BaseSchema = z.object({
   createdAt: z.date().optional(),
 });
 
+export const BaseProps = BaseSchema.keyof().enum;
+
 export type BaseDto = z.infer<typeof BaseSchema>;

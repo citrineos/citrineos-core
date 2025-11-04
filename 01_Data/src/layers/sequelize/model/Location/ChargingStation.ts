@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
-  ChargingStationCapabilityType,
+  ChargingStationCapabilityEnumType,
   ChargingStationDto,
-  ChargingStationParkingRestrictionType,
+  ChargingStationParkingRestrictionEnumType,
   ConnectorDto,
   EvseDto,
   LocationDto,
@@ -90,10 +90,10 @@ export class ChargingStation extends Model implements ChargingStationDto {
   declare floorLevel?: string | null;
 
   @Column(DataType.JSONB)
-  declare parkingRestrictions?: ChargingStationParkingRestrictionType[] | null;
+  declare parkingRestrictions?: ChargingStationParkingRestrictionEnumType[] | null;
 
   @Column(DataType.JSONB)
-  declare capabilities?: ChargingStationCapabilityType[] | null;
+  declare capabilities?: ChargingStationCapabilityEnumType[] | null;
 
   @ForeignKey(() => Location)
   @Column(DataType.INTEGER)

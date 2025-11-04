@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ChargingStationDto, StatusNotificationDto, TenantDto } from '@citrineos/base';
+import type {
+  ChargingStationDto,
+  ConnectorStatusEnumType,
+  StatusNotificationDto,
+  TenantDto,
+} from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -36,7 +41,7 @@ export class StatusNotification extends Model implements StatusNotificationDto {
   declare timestamp?: string | null;
 
   @Column(DataType.STRING)
-  declare connectorStatus: string;
+  declare connectorStatus: ConnectorStatusEnumType;
 
   @Column(DataType.INTEGER)
   declare evseId?: number | null;

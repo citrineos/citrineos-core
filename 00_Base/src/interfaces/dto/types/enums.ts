@@ -288,8 +288,8 @@ export const TriggerReasonEnumSchema = z.enum([
 export const AuthorizationStatusEnum = AuthorizationStatusEnumSchema.enum;
 export const AuthorizationWhitelistEnum = AuthorizationWhitelistEnumSchema.enum;
 export const ChargingStateEnum = ChargingStateEnumSchema.enum;
-export const ChargingStationCapability = ChargingStationCapabilitySchema.enum;
-export const ChargingStationParkingRestriction = ChargingStationParkingRestrictionSchema.enum;
+export const ChargingStationCapabilityEnum = ChargingStationCapabilitySchema.enum;
+export const ChargingStationParkingRestrictionEnum = ChargingStationParkingRestrictionSchema.enum;
 export const ChargingStationSequenceTypeEnum = ChargingStationSequenceTypeSchema.enum;
 export const ConnectorErrorCodeEnum = ConnectorErrorCodeEnumSchema.enum;
 export const ConnectorFormatEnum = ConnectorFormatEnumSchema.enum;
@@ -312,8 +312,8 @@ export const TriggerReasonEnum = TriggerReasonEnumSchema.enum;
 export type AuthorizationStatusEnumType = z.infer<typeof AuthorizationStatusEnumSchema>;
 export type AuthorizationWhitelistEnumType = z.infer<typeof AuthorizationWhitelistEnumSchema>;
 export type ChargingStateEnumType = z.infer<typeof ChargingStateEnumSchema>;
-export type ChargingStationCapabilityType = z.infer<typeof ChargingStationCapabilitySchema>;
-export type ChargingStationParkingRestrictionType = z.infer<
+export type ChargingStationCapabilityEnumType = z.infer<typeof ChargingStationCapabilitySchema>;
+export type ChargingStationParkingRestrictionEnumType = z.infer<
   typeof ChargingStationParkingRestrictionSchema
 >;
 export type ChargingStationSequenceTypeEnumType = z.infer<typeof ChargingStationSequenceTypeSchema>;
