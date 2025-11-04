@@ -86,6 +86,7 @@ import type {
 import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocpprouter';
 import cors from '@fastify/cors';
 import ApiAuthPlugin from '@citrineos/util/dist/authorization/ApiAuthPlugin.js';
+import type { RedisClientOptions } from 'redis';
 
 export class CitrineOSServer {
   /**
@@ -352,17 +353,20 @@ export class CitrineOSServer {
   }
 
   private initCache(cache?: ICache): ICache {
-    return (
-      cache ||
-      (this._config.util.cache.redis
-        ? new RedisCache({
-            socket: {
-              host: this._config.util.cache.redis.host,
-              port: this._config.util.cache.redis.port,
-            },
-          })
-        : new MemoryCache())
-    );
+    if (cache) return cache;
+    if (this._config.util.cache.redis) {
+      const redisClientOptions: RedisClientOptions =
+        'url' in this._config.util.cache.redis
+          ? { url: this._config.util.cache.redis.url }
+          : {
+              socket: {
+                host: this._config.util.cache.redis.host,
+                port: this._config.util.cache.redis.port,
+              },
+            };
+      return new RedisCache(redisClientOptions);
+    }
+    return new MemoryCache();
   }
 
   private async initSwagger() {
