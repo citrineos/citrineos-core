@@ -5,7 +5,14 @@
 import { CrudRepository, OCPPVersion, BootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
-import { ChargingStation, Connector, Location, SequelizeRepository, StatusNotification } from '..';
+import {
+  ChargingStation,
+  Connector,
+  Evse,
+  Location,
+  SequelizeRepository,
+  StatusNotification,
+} from '..';
 import { type ILocationRepository } from '../../..';
 import { Op } from 'sequelize';
 import { LatestStatusNotification } from '../model/Location/LatestStatusNotification';
@@ -18,6 +25,7 @@ export class SequelizeLocationRepository
   statusNotification: CrudRepository<StatusNotification>;
   latestStatusNotification: CrudRepository<LatestStatusNotification>;
   connector: CrudRepository<Connector>;
+  evse: CrudRepository<Evse>;
 
   constructor(
     config: BootstrapConfig,
@@ -27,6 +35,7 @@ export class SequelizeLocationRepository
     statusNotification?: CrudRepository<StatusNotification>,
     latestStatusNotification?: CrudRepository<LatestStatusNotification>,
     connector?: CrudRepository<Connector>,
+    evse?: CrudRepository<Evse>,
   ) {
     super(config, Location.MODEL_NAME, logger, sequelizeInstance);
     this.chargingStation = chargingStation
@@ -56,6 +65,9 @@ export class SequelizeLocationRepository
     this.connector = connector
       ? connector
       : new SequelizeRepository<Connector>(config, Connector.MODEL_NAME, logger, sequelizeInstance);
+    this.evse = evse
+      ? evse
+      : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
   }
 
   async readLocationById(tenantId: number, id: number): Promise<Location | undefined> {
@@ -270,38 +282,159 @@ export class SequelizeLocationRepository
     }
   }
 
+  async createOrUpdateEvse(tenantId: number, evse: Evse): Promise<Evse | undefined> {
+    evse.tenantId = tenantId;
+    this.logger.debug('[LocationRepo] createOrUpdateEvse called', {
+      tenantId,
+      stationId: evse.stationId,
+      evseTypeId: evse.evseTypeId,
+      evseId: evse.evseId,
+    });
+
+    try {
+      const [savedEvse, evseCreated] = await this.evse.readOrCreateByQuery(tenantId, {
+        where: {
+          tenantId,
+          stationId: evse.stationId,
+          evseTypeId: evse.evseTypeId,
+        },
+        defaults: {
+          ...evse,
+        },
+      });
+
+      if (evseCreated) {
+        this.logger.info('[LocationRepo] EVSE created', {
+          id: savedEvse.id,
+          stationId: evse.stationId,
+          evseTypeId: evse.evseTypeId,
+        });
+        return savedEvse;
+      } else {
+        this.logger.debug('[LocationRepo] EVSE exists, updating', {
+          id: savedEvse.id,
+        });
+        await this.evse.updateByKey(
+          tenantId,
+          {
+            evseId: evse.evseId,
+            physicalReference: evse.physicalReference,
+            removed: evse.removed,
+          },
+          savedEvse.id,
+        );
+        return savedEvse.reload();
+      }
+    } catch (e: any) {
+      this.logger.error(
+        '[LocationRepo] createOrUpdateEvse failed',
+        {
+          tenantId,
+          stationId: evse.stationId,
+          evseTypeId: evse.evseTypeId,
+          error: e?.message,
+        },
+        e,
+      );
+      throw e;
+    }
+  }
+
   async createOrUpdateConnector(
     tenantId: number,
     connector: Connector,
   ): Promise<Connector | undefined> {
-    let result;
-    await this.s.transaction(async (sequelizeTransaction) => {
-      const [savedConnector, connectorCreated] = await this.connector.readOrCreateByQuery(
-        tenantId,
-        {
-          where: {
-            tenantId,
-            stationId: connector.stationId,
-            connectorId: connector.connectorId,
-          },
-          defaults: {
-            ...connector,
-          },
-          transaction: sequelizeTransaction,
-        },
-      );
-      if (!connectorCreated) {
-        const updatedConnectors = await this.connector.updateAllByQuery(tenantId, connector, {
-          where: {
-            id: savedConnector.id,
-          },
-          transaction: sequelizeTransaction,
-        });
-        result = updatedConnectors.length > 0 ? updatedConnectors[0] : undefined;
-      } else {
-        result = savedConnector;
-      }
+    let result: Connector | undefined;
+    this.logger.debug('[LocationRepo] createOrUpdateConnector called', {
+      tenantId,
+      stationId: connector.stationId,
+      evseId: connector.evseId,
+      evseTypeConnectorId: connector.evseTypeConnectorId,
+      connectorId: connector.connectorId,
+      status: (connector as any)?.status,
     });
+
+    try {
+      await this.s.transaction(async (sequelizeTransaction) => {
+        // Determine keying strategy based on provided fields:
+        // - For OCPP 2.0.1, connector.evseId and connector.evseTypeConnectorId are set and
+        //   identify a connector uniquely within an EVSE.
+        // - For OCPP 1.6, connectorId is unique within a station.
+        const isOcpp201 =
+          connector.evseId !== undefined &&
+          connector.evseId !== null &&
+          connector.evseTypeConnectorId !== undefined &&
+          connector.evseTypeConnectorId !== null;
+
+        const where = isOcpp201
+          ? {
+              tenantId,
+              evseId: connector.evseId,
+              // for OCPP 2.0.1, use evseTypeConnectorId as the unique key within the EVSE
+              evseTypeConnectorId: connector.evseTypeConnectorId,
+            }
+          : {
+              tenantId,
+              stationId: connector.stationId,
+              // for OCPP 1.6, use stationId + connectorId as the unique key
+              connectorId: connector.connectorId,
+            };
+
+        this.logger.debug('[LocationRepo] createOrUpdateConnector key', {
+          isOcpp201,
+          where,
+        });
+
+        const [savedConnector, connectorCreated] = await this.connector.readOrCreateByQuery(
+          tenantId,
+          {
+            where,
+            defaults: {
+              ...connector,
+            },
+            transaction: sequelizeTransaction,
+          },
+        );
+
+        if (connectorCreated) {
+          this.logger.info('[LocationRepo] Connector created', {
+            id: savedConnector.id,
+            where,
+            stationId: connector.stationId,
+          });
+          result = savedConnector;
+        } else {
+          this.logger.debug('[LocationRepo] Connector exists, updating', {
+            id: savedConnector.id,
+          });
+          const updatedConnectors = await this.connector.updateAllByQuery(tenantId, connector, {
+            where: {
+              id: savedConnector.id,
+            },
+            transaction: sequelizeTransaction,
+          });
+          result = updatedConnectors.length > 0 ? updatedConnectors[0] : undefined;
+          this.logger.info('[LocationRepo] Connector updated', {
+            id: savedConnector.id,
+            updated: !!result,
+          });
+        }
+      });
+    } catch (e: any) {
+      this.logger.error(
+        '[LocationRepo] createOrUpdateConnector failed',
+        {
+          tenantId,
+          stationId: connector.stationId,
+          evseId: connector.evseId,
+          evseTypeConnectorId: connector.evseTypeConnectorId,
+          connectorId: connector.connectorId,
+          error: e?.message,
+        },
+        e,
+      );
+      throw e;
+    }
     return result;
   }
 }

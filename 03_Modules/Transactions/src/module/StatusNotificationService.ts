@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   Component,
+  Evse,
   EvseType,
   IDeviceModelRepository,
   ILocationRepository,
@@ -46,6 +47,10 @@ export class StatusNotificationService {
     stationId: string,
     statusNotificationRequest: OCPP2_0_1.StatusNotificationRequest,
   ) {
+    this._logger.debug(
+      `Processing OCPP 2.0.1 StatusNotification for station: ${stationId}, evseId: ${statusNotificationRequest.evseId}, connectorId: ${statusNotificationRequest.connectorId}, status: ${statusNotificationRequest.connectorStatus}`,
+    );
+
     const chargingStation = await this._locationRepository.readChargingStationByStationId(
       tenantId,
       stationId,
@@ -62,10 +67,40 @@ export class StatusNotificationService {
         statusNotification,
       );
 
+      // Find or create the Evse record based on stationId and evseTypeId
+      this._logger.debug(
+        `Looking for Evse with stationId: ${stationId}, evseTypeId: ${statusNotificationRequest.evseId}`,
+      );
+      const evse = await this._locationRepository.createOrUpdateEvse(tenantId, {
+        tenantId,
+        stationId,
+        evseTypeId: statusNotificationRequest.evseId,
+        evseId: `${stationId}-EVSE-${statusNotificationRequest.evseId}`, // Generate a default evseId
+      } as Evse);
+
+      if (!evse) {
+        this._logger.error(
+          `Failed to find or create Evse for stationId: ${stationId}, evseTypeId: ${statusNotificationRequest.evseId}. Cannot create or update connector.`,
+        );
+        return;
+      }
+
+      this._logger.debug(
+        `Evse created or updated: id=${evse.id}, evseId=${evse.evseId}, evseTypeId=${evse.evseTypeId}`,
+      );
+
+      // For OCPP 2.0.1, station-level unique(stationId, connectorId) may collide across EVSEs
+      // when multiple EVSEs use connectorId=1. Keep the EVSE-scoped index in evseTypeConnectorId
+      // and derive a station-unique connectorId for persistence to satisfy legacy uniqueness.
+      const stationScopedConnectorId =
+        statusNotificationRequest.evseId * 1000 + statusNotificationRequest.connectorId;
+
       const connector = {
         tenantId,
-        connectorId: statusNotificationRequest.connectorId,
+        connectorId: stationScopedConnectorId,
         stationId,
+        evseId: evse.id, // Use the Evse primary key
+        evseTypeConnectorId: statusNotificationRequest.connectorId,
         status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
           statusNotificationRequest.connectorStatus,
         ),
@@ -73,6 +108,10 @@ export class StatusNotificationService {
           ? statusNotificationRequest.timestamp
           : new Date().toISOString(),
       } as Connector;
+
+      this._logger.debug(
+        `Creating/updating Connector: connectorId=${connector.connectorId}, evseId=${connector.evseId}, evseTypeConnectorId=${connector.evseTypeConnectorId}, status=${connector.status}`,
+      );
       await this._locationRepository.createOrUpdateConnector(tenantId, connector);
 
       const component = await this._componentRepository.readOnlyOneByQuery(tenantId, {

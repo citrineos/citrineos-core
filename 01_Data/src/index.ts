@@ -19,6 +19,7 @@ export {
   Component,
   Connector,
   DefaultSequelizeInstance,
+  Evse,
   Location,
   MeterValue,
   OCPPMessage,
