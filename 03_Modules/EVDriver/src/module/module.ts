@@ -401,11 +401,18 @@ export class EVDriverModule extends AbstractModule {
         response.idTokenInfo = idTokenInfo;
       }
     } else {
+      this._logger.warn(`No authorization found for idToken: ${request.idToken.idToken}`);
+      response.idTokenInfo = {
+        status: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
+        // TODO determine how/if to set personalMessage
+      };
+      /*
       // Assumed to always be valid without IdTokenInfo
       response.idTokenInfo = {
         status: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
         // TODO determine how/if to set personalMessage
       };
+      */
     }
 
     if (response.idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
