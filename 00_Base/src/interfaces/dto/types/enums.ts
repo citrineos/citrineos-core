@@ -23,6 +23,14 @@ export const AuthorizationStatusEnumSchema = z.enum([
 
 export const AuthorizationWhitelistEnumSchema = z.enum(['Never', 'Allowed', 'AllowedOffline']);
 
+export const CertificateUseEnumSchema = z.enum([
+  'V2GRootCertificate',
+  'MORootCertificate',
+  'CSMSRootCertificate',
+  'V2GCertificateChain',
+  'ManufacturerRootCertificate',
+]);
+
 export const ChargingStateEnumSchema = z.enum([
   'Charging',
   'EVConnected',
@@ -287,6 +295,7 @@ export const TriggerReasonEnumSchema = z.enum([
 
 export const AuthorizationStatusEnum = AuthorizationStatusEnumSchema.enum;
 export const AuthorizationWhitelistEnum = AuthorizationWhitelistEnumSchema.enum;
+export const CertificateUseEnum = CertificateUseEnumSchema.enum;
 export const ChargingStateEnum = ChargingStateEnumSchema.enum;
 export const ChargingStationCapabilityEnum = ChargingStationCapabilitySchema.enum;
 export const ChargingStationParkingRestrictionEnum = ChargingStationParkingRestrictionSchema.enum;
@@ -311,6 +320,7 @@ export const TriggerReasonEnum = TriggerReasonEnumSchema.enum;
 
 export type AuthorizationStatusEnumType = z.infer<typeof AuthorizationStatusEnumSchema>;
 export type AuthorizationWhitelistEnumType = z.infer<typeof AuthorizationWhitelistEnumSchema>;
+export type CertificateUseEnumType = z.infer<typeof CertificateUseEnumSchema>;
 export type ChargingStateEnumType = z.infer<typeof ChargingStateEnumSchema>;
 export type ChargingStationCapabilityEnumType = z.infer<typeof ChargingStationCapabilitySchema>;
 export type ChargingStationParkingRestrictionEnumType = z.infer<
