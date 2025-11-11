@@ -13,26 +13,36 @@ export default {
       allowNull: false,
     });
     await queryInterface.sequelize.query(`
-      DROP TYPE enum_InstalledCertificates_certificateType;
+      DROP TYPE "enum_InstalledCertificates_certificateType";
     `);
 
     await queryInterface.changeColumn('Connectors', 'status', {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: 'Unknown',
     });
     await queryInterface.sequelize.query(`
-      DROP TYPE enum_Connectors_status;
+      DROP TYPE "enum_Connectors_status";
     `);
+    // Default value references enum type, since default value is changed before column type, so we had to change the column to STRING first.
+    await queryInterface.changeColumn('Connectors', 'status', {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'Unknown',
+    });
 
+    await queryInterface.changeColumn('Connectors', 'errorCode', {
+      type: DataTypes.STRING,
+      allowNull: false,
+    });
+    await queryInterface.sequelize.query(`
+      DROP TYPE "enum_Connectors_errorCode";
+    `);
+    // Default value references enum type, since default value is changed before column type, so we had to change the column to STRING first.
     await queryInterface.changeColumn('Connectors', 'errorCode', {
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: 'NoError',
     });
-    await queryInterface.sequelize.query(`
-      DROP TYPE enum_Connectors_errorCode;
-    `);
   },
 
   down: async (queryInterface: QueryInterface) => {
