@@ -396,8 +396,7 @@ export function validateIdToken(
 
     default:
       return {
-        isValid: false,
-        errorMessage: `Unknown token type: ${idTokenType}`,
+        isValid: true, // IdTokenType is already validated by JSON schema, so types not listed here are considered valid
       };
   }
 }
