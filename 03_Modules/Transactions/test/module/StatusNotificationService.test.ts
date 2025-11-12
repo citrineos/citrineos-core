@@ -1,19 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { CrudRepository, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   Component,
   IDeviceModelRepository,
   ILocationRepository,
   StatusNotification,
 } from '@citrineos/data';
-import { CrudRepository, DEFAULT_TENANT_ID } from '@citrineos/base';
+import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import { StatusNotificationService } from '../../src/module/StatusNotificationService.js';
-import {
-  aOcpp16StatusNotificationRequest,
-  aStatusNotification,
-  aStatusNotificationRequest,
-} from '../providers/StatusNotification.js';
 import {
   aChargingStation,
   aComponent,
@@ -21,7 +17,11 @@ import {
   aVariable,
   MOCK_STATION_ID,
 } from '../providers/DeviceModelProvider.js';
-import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import {
+  aOcpp16StatusNotificationRequest,
+  aStatusNotification,
+  aStatusNotificationRequest,
+} from '../providers/StatusNotification.js';
 
 describe('StatusNotificationService', () => {
   let statusNotificationService: StatusNotificationService;
@@ -31,7 +31,7 @@ describe('StatusNotificationService', () => {
 
   beforeEach(() => {
     componentRepository = {
-      readOnlyOneByQuery: vi.fn(),
+      readAllByQuery: vi.fn(),
     } as unknown as Mocked<CrudRepository<Component>>;
 
     deviceModelRepository = {
