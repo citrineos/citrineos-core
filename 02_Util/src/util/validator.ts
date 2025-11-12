@@ -385,15 +385,16 @@ export function validateIdToken(
           'Central tokens must contain only letters, numbers, and characters: * - _ = : + | @ .',
       };
 
-    case OCPP2_0_1.IdTokenEnumType.eMAID:
-      if (validateEMAIDIdToken(idToken)) {
+    case OCPP2_0_1.IdTokenEnumType.eMAID: {
+      const errors = validateEMAIDIdToken(idToken);
+      if (errors.length === 0) {
         return { isValid: true };
       }
       return {
         isValid: false,
-        errorMessage: 'eMAID tokens must follow the eMI3 format',
+        errorMessage: 'eMAID tokens must follow the eMI3 format: ' + errors.join(', '),
       };
-
+    }
     default:
       return {
         isValid: true, // IdTokenType is already validated by JSON schema, so types not listed here are considered valid
