@@ -489,11 +489,15 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('StatusNotification received:', message, props);
 
-    await this._statusNotificationService.processStatusNotification(
-      message.context.tenantId,
-      message.context.stationId,
-      message.payload,
-    );
+    this._statusNotificationService
+      .processStatusNotification(
+        message.context.tenantId,
+        message.context.stationId,
+        message.payload,
+      )
+      .catch((error) => {
+        this._logger.error('Failed to process status notification', error);
+      });
 
     // Create response
     const response: OCPP2_0_1.StatusNotificationResponse = {};
