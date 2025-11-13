@@ -157,8 +157,7 @@
         },
         "value": {
           "description": "Sampled_ Value. Value. Measure\r\nurn:x-oca:ocpp:uid:1:569260\r\nIndicates the measured value.\r\n\r\n",
-          "type": "number",
-          "multipleOf": 0.000001
+          "type": "number"
         },
         "context": {
           "$ref": "#/definitions/ReadingContextEnumType"
