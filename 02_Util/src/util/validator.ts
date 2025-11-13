@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { OCPP2_0_1 } from '@citrineos/base';
-import { getNumberOfFractionDigit } from './parser.js';
 import type {
   IChargingProfileRepository,
   IDeviceModelRepository,
@@ -12,6 +11,8 @@ import type {
 import { VariableAttribute } from '@citrineos/data';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
+import { calculateCheckDigit } from './emaidCheckDigitCalculator.js';
+import { getNumberOfFractionDigit } from './parser.js';
 
 /**
  * Validate a language tag is an RFC-5646 tag, see: {@link https://tools.ietf.org/html/rfc5646},
@@ -212,6 +213,88 @@ export function validateIdentifierStringIdToken(idToken: string): boolean {
 }
 
 /**
+ * Validates an eMAID string according to eMI³ specifications
+ * @param emaid - The eMAID string to validate
+ * @returns errors - String array with errors, empty if valid
+ */
+export function validateEMAIDIdToken(emaid: string): string[] {
+  const errors: string[] = [];
+
+  // Remove optional separators and convert to uppercase
+  const separator = '-';
+  let cleanedEmaid = emaid.replace(new RegExp(separator, 'g'), '').toUpperCase();
+
+  // For backwards compatibility with DIN SPEC 91286 and eMAIDs without ID type at position 6
+  if (cleanedEmaid.length === 13) {
+    // Insert id type 'C'
+    cleanedEmaid = cleanedEmaid.substring(0, 5) + 'C' + cleanedEmaid.substring(5);
+  } else if (cleanedEmaid.length === 14 && cleanedEmaid.substring(5, 6) !== 'C') {
+    // Insert id type 'C' and prune check digit
+    cleanedEmaid = cleanedEmaid.substring(0, 5) + 'C' + cleanedEmaid.substring(5, 13);
+  }
+
+  // Check overall length (14 or 15 characters without separators)
+  if (cleanedEmaid.length < 14 || cleanedEmaid.length > 15) {
+    errors.push(`Invalid length: ${cleanedEmaid.length} characters (expected 14 or 15)`);
+    return errors;
+  }
+
+  // Validate character set (alphanumeric only)
+  if (!/^[A-Z0-9]+$/.test(cleanedEmaid)) {
+    errors.push(
+      'eMAID must contain only alphanumeric characters (and optional hyphens as separators)',
+    );
+    return errors;
+  }
+
+  // Parse components
+  const countryCode = cleanedEmaid.substring(0, 2);
+  const providerId = cleanedEmaid.substring(2, 5);
+  const idType = cleanedEmaid.substring(5, 6);
+  const instance = cleanedEmaid.substring(6, 14);
+  const checkDigit = cleanedEmaid.length === 15 ? cleanedEmaid.substring(14, 15) : undefined;
+
+  // Validate Country Code (2 letters)
+  if (!/^[A-Z]{2}$/.test(countryCode)) {
+    errors.push('Country code must be exactly 2 letters');
+  }
+
+  // Validate Provider ID (3 alphanumeric)
+  if (!/^[A-Z0-9]{3}$/.test(providerId)) {
+    errors.push('Provider ID must be exactly 3 alphanumeric characters');
+  }
+
+  // Validate ID Type (must be 'C' for Contract)
+  if (idType !== 'C') {
+    errors.push(`ID Type must be 'C' for Contract (found: '${idType}')`);
+  }
+
+  // Validate Instance (8 alphanumeric)
+  if (!/^[A-Z0-9]{8}$/.test(instance)) {
+    errors.push('Instance must be exactly 8 alphanumeric characters');
+  }
+
+  // If check digit is present, validate it
+  if (checkDigit !== undefined) {
+    try {
+      const calculatedCheckDigit = calculateCheckDigit(cleanedEmaid.substring(0, 14));
+
+      if (checkDigit !== calculatedCheckDigit) {
+        errors.push(
+          `Invalid check digit: expected '${calculatedCheckDigit}', found '${checkDigit}'`,
+        );
+      }
+    } catch (error) {
+      errors.push(
+        `Check digit calculation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  return errors;
+}
+
+/**
  * Validate NoAuthorization ID token (should be empty)
  */
 export function validateNoAuthorizationIdToken(idToken: string): boolean {
@@ -302,10 +385,19 @@ export function validateIdToken(
           'Central tokens must contain only letters, numbers, and characters: * - _ = : + | @ .',
       };
 
-    default:
+    case OCPP2_0_1.IdTokenEnumType.eMAID: {
+      const errors = validateEMAIDIdToken(idToken);
+      if (errors.length === 0) {
+        return { isValid: true };
+      }
       return {
         isValid: false,
-        errorMessage: `Unknown token type: ${idTokenType}`,
+        errorMessage: 'eMAID tokens must follow the eMI3 format: ' + errors.join(', '),
+      };
+    }
+    default:
+      return {
+        isValid: true, // IdTokenType is already validated by JSON schema, so types not listed here are considered valid
       };
   }
 }
