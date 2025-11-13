@@ -131,7 +131,7 @@
           "description": "SHALL only be included if ChargingProfilePurpose is set to TxProfile. The transactionId is used to match the profile to a specific transaction.\r\n",
           "type": "string",
           "maxLength": 36,
-          "pattern": "^[a-zA-Z0-9*\\\\-_=:+|@.]*$"
+          "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         }
       },
       "required": [
