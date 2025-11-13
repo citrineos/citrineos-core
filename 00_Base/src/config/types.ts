@@ -151,10 +151,17 @@ export const systemConfigInputSchema = z.object({
       .object({
         memory: z.boolean().optional(),
         redis: z
-          .object({
-            host: z.string().default('localhost').optional(),
-            port: z.number().int().min(1).default(6379).optional(),
-          })
+          .union([
+            z.object({
+              host: z.string().default('localhost').optional(),
+              port: z.number().int().min(1).default(6379).optional(),
+            }),
+            z.object({
+              url: z.url().refine((v) => v.startsWith('redis://') || v.startsWith('rediss://'), {
+                message: 'Redis URL must start with redis:// or rediss://',
+              }),
+            }),
+          ])
           .optional(),
       })
       .refine((obj) => obj.memory || obj.redis, {
@@ -427,10 +434,17 @@ export const systemConfigSchema = z
         .object({
           memory: z.boolean().optional(),
           redis: z
-            .object({
-              host: z.string(),
-              port: z.number().int().min(1),
-            })
+            .union([
+              z.object({
+                host: z.string(),
+                port: z.number().int().min(1),
+              }),
+              z.object({
+                url: z.url().refine((v) => v.startsWith('redis://') || v.startsWith('rediss://'), {
+                  message: 'Redis URL must start with redis:// or rediss://',
+                }),
+              }),
+            ])
             .optional(),
         })
         .refine((obj) => obj.memory || obj.redis, {
