@@ -1,19 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { CrudRepository, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   Component,
   IDeviceModelRepository,
   ILocationRepository,
   StatusNotification,
 } from '@citrineos/data';
-import { CrudRepository, DEFAULT_TENANT_ID } from '@citrineos/base';
+import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import { StatusNotificationService } from '../../src/module/StatusNotificationService.js';
-import {
-  aOcpp16StatusNotificationRequest,
-  aStatusNotification,
-  aStatusNotificationRequest,
-} from '../providers/StatusNotification.js';
 import {
   aChargingStation,
   aComponent,
@@ -21,7 +17,11 @@ import {
   aVariable,
   MOCK_STATION_ID,
 } from '../providers/DeviceModelProvider.js';
-import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import {
+  aOcpp16StatusNotificationRequest,
+  aStatusNotification,
+  aStatusNotificationRequest,
+} from '../providers/StatusNotification.js';
 
 describe('StatusNotificationService', () => {
   let statusNotificationService: StatusNotificationService;
@@ -31,7 +31,7 @@ describe('StatusNotificationService', () => {
 
   beforeEach(() => {
     componentRepository = {
-      readOnlyOneByQuery: vi.fn(),
+      readAllByQuery: vi.fn(),
     } as unknown as Mocked<CrudRepository<Component>>;
 
     deviceModelRepository = {
@@ -53,6 +53,7 @@ describe('StatusNotificationService', () => {
 
   it('should save StatusNotification for Charging Station because Charging Station exists', async () => {
     locationRepository.readChargingStationByStationId.mockResolvedValue(aChargingStation());
+    componentRepository.readAllByQuery.mockResolvedValue([]);
     vi.spyOn(StatusNotification, 'build').mockImplementation(() => {
       return aStatusNotification();
     });
@@ -83,7 +84,7 @@ describe('StatusNotificationService', () => {
     vi.spyOn(StatusNotification, 'build').mockImplementation(() => {
       return aStatusNotification();
     });
-    componentRepository.readOnlyOneByQuery.mockResolvedValue(
+    componentRepository.readAllByQuery.mockResolvedValue([
       aComponent((c) => {
         c.name = 'Connector';
         c.evse = anEvse();
@@ -93,7 +94,7 @@ describe('StatusNotificationService', () => {
           }),
         ];
       }),
-    );
+    ]);
 
     await statusNotificationService.processStatusNotification(
       DEFAULT_TENANT_ID,
@@ -105,7 +106,7 @@ describe('StatusNotificationService', () => {
   });
 
   it('should not save Component and Variable ReportData because Station doesnt exist', async () => {
-    componentRepository.readOnlyOneByQuery.mockResolvedValue(
+    componentRepository.readAllByQuery.mockResolvedValue([
       aComponent((c) => {
         c.name = 'Connector';
         c.evse = anEvse();
@@ -115,7 +116,7 @@ describe('StatusNotificationService', () => {
           }),
         ];
       }),
-    );
+    ]);
 
     await statusNotificationService.processStatusNotification(
       DEFAULT_TENANT_ID,
@@ -128,7 +129,7 @@ describe('StatusNotificationService', () => {
 
   describe('Component or Variable does not exist', () => {
     it('should not save Component and Variable ReportData because Component does not exist', async () => {
-      componentRepository.readOnlyOneByQuery.mockResolvedValue(undefined);
+      componentRepository.readAllByQuery.mockResolvedValue([]);
 
       await statusNotificationService.processStatusNotification(
         DEFAULT_TENANT_ID,
@@ -140,7 +141,7 @@ describe('StatusNotificationService', () => {
     });
 
     it('should not save Component and Variable ReportData because Variable does not exist', async () => {
-      componentRepository.readOnlyOneByQuery.mockResolvedValue(aComponent());
+      componentRepository.readAllByQuery.mockResolvedValue([aComponent()]);
 
       await statusNotificationService.processStatusNotification(
         DEFAULT_TENANT_ID,
@@ -170,7 +171,7 @@ describe('StatusNotificationService', () => {
     });
 
     it('should not save StatusNotification or connector when Charging Station does not exist', async () => {
-      componentRepository.readOnlyOneByQuery.mockResolvedValue(aComponent());
+      componentRepository.readAllByQuery.mockResolvedValue([aComponent()]);
 
       await statusNotificationService.processStatusNotification(
         DEFAULT_TENANT_ID,
