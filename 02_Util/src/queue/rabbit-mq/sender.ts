@@ -232,7 +232,11 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
           reason,
         );
         void this.shutdown();
-        this._startReconnectInterval();
+        if (this._reconnectInterval) {
+          this._logger.info('Clearing reconnect interval as circuit breaker is now CLOSED.');
+          clearInterval(this._reconnectInterval);
+          this._reconnectInterval = undefined;
+        }
         break;
       }
       case 'OPEN': {
@@ -260,6 +264,8 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
           'Circuit breaker is FAILING. RabbitMQ sender will not send messages until recovery. Reason:',
           reason,
         );
+        this._logger.info('Attempting to start reconnect interval after circuit breaker FAILING.');
+        this._startReconnectInterval();
         break;
       }
       default:
@@ -295,8 +301,5 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
     this._connection = undefined;
     this._channel = undefined;
     this._circuitBreaker.triggerFailure('RabbitMQ connection lost');
-    if (this._circuitBreaker.state === 'CLOSED') {
-      this._startReconnectInterval();
-    }
   }
 }

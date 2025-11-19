@@ -11,8 +11,6 @@ import type {
   CircuitBreakerState,
   ICache,
   IModule,
-  OcppRequest,
-  OcppResponse,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -20,7 +18,6 @@ import {
   CacheNamespace,
   CircuitBreaker,
   Message,
-  OcppError,
   RetryMessageError,
 } from '@citrineos/base';
 
@@ -271,7 +268,11 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
           reason,
         );
         void this.shutdown();
-        this._startReconnectInterval();
+        if (this._reconnectInterval) {
+          this._logger.info('Clearing reconnect interval as circuit breaker is now CLOSED.');
+          clearInterval(this._reconnectInterval);
+          this._reconnectInterval = undefined;
+        }
         break;
       }
       case 'OPEN': {
@@ -299,6 +300,8 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
           'Circuit breaker is FAILING. RabbitMQ receiver will not receive messages until recovery. Reason:',
           reason,
         );
+        this._logger.info('Attempting to start reconnect interval after circuit breaker FAILING.');
+        this._startReconnectInterval();
         break;
       }
       default:
