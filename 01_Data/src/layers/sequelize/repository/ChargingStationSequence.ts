@@ -39,7 +39,7 @@ export class SequelizeChargingStationSequenceRepository
 
       if (!sequenceCreated) {
         const updatedSequences = await storedSequence.increment('value', { transaction });
-        return updatedSequences.value;
+        return updatedSequences.get('value') as number;
       } else {
         return storedSequence.value;
       }
