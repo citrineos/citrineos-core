@@ -8,7 +8,7 @@
 export interface INetworkConnection {
   bindNetworkHook(): (identifier: string, message: string) => Promise<void>;
 
-  disconnectWebsocketConnection(tenantId: number, stationId: string): Promise<boolean>;
+  disconnect(tenantId: number, stationId: string): Promise<boolean>;
 
   shutdown(): Promise<void>;
 }

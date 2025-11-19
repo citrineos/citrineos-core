@@ -191,10 +191,7 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
   async deleteWebsocketConnection(
     request: FastifyRequest<{ Querystring: ConnectionDeleteQuerystring }>,
   ): Promise<void> {
-    await this._networkConnection.disconnectWebsocketConnection(
-      request.query.tenantId,
-      request.query.stationId,
-    );
+    await this._networkConnection.disconnect(request.query.tenantId, request.query.stationId);
   }
 
   /**

@@ -151,7 +151,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       this.sendMessage(identifier.toUpperCase(), message);
   }
 
-  async disconnectWebsocketConnection(tenantId: number, stationId: string): Promise<boolean> {
+  async disconnect(tenantId: number, stationId: string): Promise<boolean> {
     const identifier = createIdentifier(tenantId, stationId);
 
     const websocketConnection = this._identifierConnections.get(identifier);
