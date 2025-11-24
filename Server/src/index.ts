@@ -87,6 +87,7 @@ import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocppr
 import cors from '@fastify/cors';
 import ApiAuthPlugin from '@citrineos/util/dist/authorization/ApiAuthPlugin.js';
 import type { RedisClientOptions } from 'redis';
+import { TenantDataApi, TenantModule } from '@citrineos/tenant';
 
 export class CitrineOSServer {
   /**
@@ -478,6 +479,10 @@ export class CitrineOSServer {
     if (this._config.modules.transactions) {
       await this.initTransactionsModule();
     }
+
+    if (this._config.modules.tenant) {
+      await this.initTenantModule();
+    }
   }
 
   private initApiAuthProvider(): IApiAuthProvider {
@@ -643,6 +648,18 @@ export class CitrineOSServer {
     );
   }
 
+  private async initTenantModule() {
+    const module = new TenantModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(new TenantDataApi(module, this._server, this._logger));
+  }
+
   private async initModule(eventGroup = this.eventGroup) {
     switch (eventGroup) {
       case EventGroup.Certificates:
@@ -665,6 +682,9 @@ export class CitrineOSServer {
         break;
       case EventGroup.Transactions:
         await this.initTransactionsModule();
+        break;
+      case EventGroup.Tenant:
+        await this.initTenantModule();
         break;
       default:
         throw new Error('Unhandled module type: ' + this.appName);
