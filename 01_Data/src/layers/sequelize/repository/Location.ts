@@ -309,7 +309,8 @@ export class SequelizeLocationRepository
           stationId: evse.stationId,
           evseTypeId: evse.evseTypeId,
         });
-        return savedEvse;
+        const reloadedEvse = await savedEvse.reload();
+        return reloadedEvse;
       } else {
         this.logger.debug('[LocationRepo] EVSE exists, updating', {
           id: savedEvse.id,

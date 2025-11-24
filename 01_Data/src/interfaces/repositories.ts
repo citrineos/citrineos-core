@@ -136,6 +136,7 @@ export interface IDeviceModelRepository extends CrudRepository<OCPP2_0_1.Variabl
     tenantId: number,
     componentType: OCPP2_0_1.ComponentType,
     variableType: OCPP2_0_1.VariableType,
+    stationId?: string,
   ): Promise<[Component, Variable]>;
   findOrCreateEvseAndComponent(
     tenantId: number,

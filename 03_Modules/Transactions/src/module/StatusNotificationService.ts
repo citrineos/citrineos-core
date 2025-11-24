@@ -75,7 +75,6 @@ export class StatusNotificationService {
         tenantId,
         stationId,
         evseTypeId: statusNotificationRequest.evseId,
-        evseId: `${stationId}-EVSE-${statusNotificationRequest.evseId}`, // Generate a default evseId
       } as Evse);
 
       if (!evse) {
@@ -89,15 +88,9 @@ export class StatusNotificationService {
         `Evse created or updated: id=${evse.id}, evseId=${evse.evseId}, evseTypeId=${evse.evseTypeId}`,
       );
 
-      // For OCPP 2.0.1, station-level unique(stationId, connectorId) may collide across EVSEs
-      // when multiple EVSEs use connectorId=1. Keep the EVSE-scoped index in evseTypeConnectorId
-      // and derive a station-unique connectorId for persistence to satisfy legacy uniqueness.
-      const stationScopedConnectorId =
-        statusNotificationRequest.evseId * 1000 + statusNotificationRequest.connectorId;
-
       const connector = {
         tenantId,
-        connectorId: stationScopedConnectorId,
+        connectorId: statusNotificationRequest.connectorId,
         stationId,
         evseId: evse.id, // Use the Evse primary key
         evseTypeConnectorId: statusNotificationRequest.connectorId,
@@ -114,36 +107,32 @@ export class StatusNotificationService {
       );
       await this._locationRepository.createOrUpdateConnector(tenantId, connector);
 
-      const component = await this._componentRepository.readOnlyOneByQuery(tenantId, {
-        where: {
+      // Create or find the Connector component with EVSE information and AvailabilityState variable in the device model
+      const [component, availabilityStateVariable] =
+        await this._deviceModelRepository.findOrCreateEvseAndComponentAndVariable(
           tenantId,
-          name: 'Connector',
-        },
-        include: [
           {
-            model: EvseType,
-            where: {
+            name: 'Connector',
+            instance: `${statusNotificationRequest.evseId}:${statusNotificationRequest.connectorId}`,
+            evse: {
               id: statusNotificationRequest.evseId,
               connectorId: statusNotificationRequest.connectorId,
             },
-          },
+          } as OCPP2_0_1.ComponentType,
           {
-            model: Variable,
-            where: {
-              name: 'AvailabilityState',
-            },
-          },
-        ],
-      });
-      const variable = component?.variables?.[0];
-      if (!component || !variable) {
+            name: 'AvailabilityState',
+          } as OCPP2_0_1.VariableType,
+          stationId,
+        );
+
+      if (!component || !availabilityStateVariable) {
         this._logger.warn(
           'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
         );
       } else {
         const reportDataType: OCPP2_0_1.ReportDataType = {
           component: component,
-          variable: variable,
+          variable: availabilityStateVariable,
           variableAttribute: [
             {
               value: statusNotificationRequest.connectorStatus,
