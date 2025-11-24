@@ -15,6 +15,7 @@ import type {
   IOCPPMessageRepository,
   IReservationRepository,
   ISecurityEventRepository,
+  IServerNetworkProfileRepository,
   ISubscriptionRepository,
   ITariffRepository,
   ITenantRepository,
@@ -45,6 +46,7 @@ import { SequelizeChargingStationSequenceRepository } from './ChargingStationSeq
 import { SequelizeChargingProfileRepository } from './ChargingProfile.js';
 import { SequelizeChangeConfigurationRepository } from './ChangeConfiguration.js';
 import { SequelizeOCPPMessageRepository, SequelizeTenantRepository } from '../index.js';
+import { SequelizeServerNetworkProfileRepository } from './ServerNetworkProfile.js';
 
 export class RepositoryStore {
   sequelizeInstance: Sequelize;
@@ -67,6 +69,7 @@ export class RepositoryStore {
   transactionEventRepository: ITransactionEventRepository;
   variableMonitoringRepository: IVariableMonitoringRepository;
   tenantRepository: ITenantRepository;
+  serverNetworkProfileRepository: IServerNetworkProfileRepository;
 
   constructor(config: BootstrapConfig, logger: Logger<ILogObj>, sequelizeInstance: Sequelize) {
     this.sequelizeInstance = sequelizeInstance;
@@ -150,5 +153,10 @@ export class RepositoryStore {
       sequelizeInstance,
     );
     this.tenantRepository = new SequelizeTenantRepository(config, logger, sequelizeInstance);
+    this.serverNetworkProfileRepository = new SequelizeServerNetworkProfileRepository(
+      config,
+      logger,
+      sequelizeInstance,
+    );
   }
 }

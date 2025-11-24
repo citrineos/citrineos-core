@@ -99,6 +99,7 @@ export { SequelizeChargingStationSequenceRepository } from './repository/Chargin
 export { SequelizeChangeConfigurationRepository } from './repository/ChangeConfiguration.js';
 export { SequelizeTenantRepository } from './repository/Tenant.js';
 export { SequelizeAsyncJobStatusRepository } from './repository/AsyncJobStatus.js';
+export { SequelizeServerNetworkProfileRepository } from './repository/ServerNetworkProfile.js';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util.js';

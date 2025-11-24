@@ -46,7 +46,11 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { ILocationRepository, ISubscriptionRepository } from '@citrineos/data';
+import type {
+  ILocationRepository,
+  IServerNetworkProfileRepository,
+  ISubscriptionRepository,
+} from '@citrineos/data';
 import { sequelize } from '@citrineos/data';
 import { WebhookDispatcher } from './webhook.dispatcher.js';
 import { OidcTokenProvider } from '@citrineos/util';
@@ -66,6 +70,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   protected _networkHook: (identifier: string, message: string) => Promise<void>;
   protected _locationRepository: ILocationRepository;
   public subscriptionRepository: ISubscriptionRepository;
+  public serverNetworkProfileRepository: IServerNetworkProfileRepository;
   protected _circuitBreaker: CircuitBreaker;
   protected _reconnectInterval?: NodeJS.Timeout;
   protected static readonly DEFAULT_MAX_RECONNECT_DELAY = 30; // seconds
@@ -85,8 +90,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
    * represents a repository for accessing and manipulating variable data.
    * If no `locationRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
-   *
    * @param {ISubscriptionRepository} [subscriptionRepository] - the subscription repository
+   * @param {IServerNetworkProfileRepository} [serverNetworkProfileRepository] - the server network profile repository
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
    * @param {Ajv} [ajv] - the Ajv object, for message validation (optional)
    * @param {CircuitBreakerOptions} [circuitBreakerOptions] - options to configure the circuit breaker
@@ -103,6 +108,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     locationRepository?: ILocationRepository,
     subscriptionRepository?: ISubscriptionRepository,
     circuitBreakerOptions?: CircuitBreakerOptions,
+    serverNetworkProfileRepository?: IServerNetworkProfileRepository,
   ) {
     super(config, cache, handler, sender, networkHook, logger, ajv);
 
@@ -115,6 +121,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
     this.subscriptionRepository =
       subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
+    this.serverNetworkProfileRepository =
+      serverNetworkProfileRepository ||
+      new sequelize.SequelizeServerNetworkProfileRepository(config, logger);
     this._handler.initConnection().catch((err) => {
       this._logger.error('initConnection failed', err);
     });

@@ -77,6 +77,7 @@ export {
   SequelizeChargingStationSequenceRepository,
   SequelizeTenantRepository,
   SequelizeAsyncJobStatusRepository,
+  SequelizeServerNetworkProfileRepository,
   OCPP2_0_1_Mapper,
   OCPP1_6_Mapper,
 } from './layers/sequelize/index.js'; // TODO ensure all needed modules are properly exported

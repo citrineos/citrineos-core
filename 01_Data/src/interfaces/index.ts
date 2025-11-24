@@ -36,7 +36,7 @@ export {
 export type { UpdateTlsCertificateQueryString } from './queries/TlsCertificate.js';
 export { TlsCertificateSchema, UpdateTlsCertificateQuerySchema } from './queries/TlsCertificate.js';
 export type { TenantQueryString } from './queries/Tenant.js';
-export { TenantQuerySchema } from './queries/Tenant.js';
+export { TenantQuerySchema, CreateTenantQuerySchema } from './queries/Tenant.js';
 export {
   GenerateCertificateChainSchema,
   InstallRootCertificateSchema,

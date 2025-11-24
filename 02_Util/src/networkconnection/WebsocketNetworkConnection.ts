@@ -55,49 +55,8 @@ export class WebsocketNetworkConnection {
     this._router = router;
 
     this._httpServersMap = new Map<string, http.Server | https.Server>();
-    this._config.util.networkConnection.websocketServers.forEach((websocketServerConfig) => {
-      let _httpServer;
-      switch (websocketServerConfig.securityProfile) {
-        case 3: // mTLS
-        case 2: // TLS
-          _httpServer = https.createServer(
-            this._generateServerOptions(websocketServerConfig),
-            this._onHttpRequest.bind(this),
-          );
-          break;
-        case 1:
-        case 0:
-        default: // No TLS
-          _httpServer = http.createServer(this._onHttpRequest.bind(this));
-          break;
-      }
-
-      // TODO: stop using handleProtocols and switch to shouldHandle or verifyClient; see https://github.com/websockets/ws/issues/1552
-      let _socketServer = new WebSocketServer({
-        noServer: true,
-        handleProtocols: (protocols, req) =>
-          this._handleProtocols(protocols, req, websocketServerConfig.protocol as OCPPVersionType),
-        clientTracking: false,
-      });
-
-      _socketServer.on('connection', (ws: WebSocket, req: http.IncomingMessage) =>
-        this._onConnection(ws, websocketServerConfig, websocketServerConfig.pingInterval, req),
-      );
-      _socketServer.on('error', (wss: WebSocketServer, error: Error) => this._onError(wss, error));
-      _socketServer.on('close', (wss: WebSocketServer) => this._onClose(wss));
-
-      _httpServer.on('upgrade', (request, socket, head) =>
-        this._upgradeRequest(request, socket, head, _socketServer, websocketServerConfig),
-      );
-      _httpServer.on('error', (error) => _socketServer.emit('error', error));
-      // socketServer.close() will not do anything; use httpServer.close()
-      _httpServer.on('close', () => _socketServer.emit('close'));
-      const protocol = websocketServerConfig.securityProfile > 1 ? 'wss' : 'ws';
-      _httpServer.listen(websocketServerConfig.port, websocketServerConfig.host, () => {
-        this._logger.info(
-          `WebsocketServer running on ${protocol}://${websocketServerConfig.host}:${websocketServerConfig.port}/`,
-        );
-      });
+    this._config.util.networkConnection.websocketServers.forEach(async (websocketServerConfig) => {
+      const _httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
       this._httpServersMap.set(websocketServerConfig.id, _httpServer);
     });
   }
@@ -181,6 +140,17 @@ export class WebsocketNetworkConnection {
     } else {
       throw new TypeError(`Server ${serverId} is not a https server.`);
     }
+  }
+
+  /**
+   * Dynamically adds a new websocket server at runtime and starts it.
+   *
+   * @param {WebsocketServerConfig} websocketServerConfig
+   * @returns {Promise<void>}
+   */
+  async addWebsocketServer(websocketServerConfig: WebsocketServerConfig): Promise<void> {
+    const httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
+    this._httpServersMap.set(websocketServerConfig.id, httpServer);
   }
 
   private _onHttpRequest(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -496,5 +466,54 @@ export class WebsocketNetworkConnection {
     }
 
     return serverOptions;
+  }
+
+  private _createAndStartWebsocketServer(
+    wsConfig: WebsocketServerConfig,
+  ): Promise<http.Server | https.Server> {
+    return new Promise((resolve) => {
+      let httpServer: http.Server | https.Server;
+      switch (wsConfig.securityProfile) {
+        case 3: // mTLS
+        case 2: // TLS
+          httpServer = https.createServer(
+            this._generateServerOptions(wsConfig),
+            this._onHttpRequest.bind(this),
+          );
+          break;
+        case 1:
+        case 0:
+        default:
+          httpServer = http.createServer(this._onHttpRequest.bind(this));
+          break;
+      }
+
+      const wss = new WebSocketServer({
+        noServer: true,
+        handleProtocols: (protocols, req) =>
+          this._handleProtocols(protocols, req, wsConfig.protocol as OCPPVersionType),
+        clientTracking: false,
+      });
+
+      wss.on('connection', (ws, req) =>
+        this._onConnection(ws, wsConfig, wsConfig.pingInterval, req),
+      );
+      wss.on('error', (server: any, error: any) => this._onError(server, error));
+      wss.on('close', (server: any) => this._onClose(server));
+
+      httpServer.on('upgrade', (req, socket, head) =>
+        this._upgradeRequest(req, socket, head, wss, wsConfig),
+      );
+      httpServer.on('error', (error) => wss.emit('error', error));
+      httpServer.on('close', () => wss.emit('close'));
+
+      const protocol = wsConfig.securityProfile > 1 ? 'wss' : 'ws';
+      httpServer.listen(wsConfig.port, wsConfig.host, () => {
+        this._logger.info(
+          `WebsocketServer running on ${protocol}://${wsConfig.host}:${wsConfig.port}/`,
+        );
+        resolve(httpServer);
+      });
+    });
   }
 }

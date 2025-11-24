@@ -17,4 +17,13 @@ export class SequelizeTenantRepository
   constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, Tenant.MODEL_NAME, logger, sequelizeInstance);
   }
+
+  async createTenant(tenant: Tenant): Promise<Tenant> {
+    const newTenant = Tenant.build({
+      name: tenant.name,
+      isUserTenant: tenant.isUserTenant,
+      url: tenant.url,
+    } as any); // bypass TS for tenant creation attributes
+    return await newTenant.save();
+  }
 }

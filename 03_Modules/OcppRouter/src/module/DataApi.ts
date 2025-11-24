@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { WebsocketServerConfig } from '@citrineos/base';
+import { OCPPVersion, type WebsocketServerConfig } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
@@ -36,20 +36,29 @@ import {
   WebsocketGetQuerySchema,
   WebsocketRequestSchema,
 } from '@citrineos/data';
+import { WebsocketNetworkConnection } from '@citrineos/util';
 
 /**
  * Admin API for the OcppRouter.
  */
 export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IAdminApi {
+  private readonly _networkConnection: WebsocketNetworkConnection;
   /**
    * Constructs a new instance of the class.
    *
    * @param {MessageRouterImpl} ocppRouter - The OcppRouter module.
    * @param {FastifyInstance} server - The Fastify server instance.
+   * @param {WebsocketNetworkConnection} networkConnection - The NetworkConnection
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
-  constructor(ocppRouter: MessageRouterImpl, server: FastifyInstance, logger?: Logger<ILogObj>) {
+  constructor(
+    ocppRouter: MessageRouterImpl,
+    server: FastifyInstance,
+    networkConnection: WebsocketNetworkConnection,
+    logger?: Logger<ILogObj>,
+  ) {
     super(ocppRouter, server, null, logger);
+    this._networkConnection = networkConnection;
   }
 
   // N.B.: When adding subscriptions, chargers may be connected to a different instance of Citrine.
@@ -148,6 +157,61 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
     }
   }
 
+  /**
+   * Add new websocket servers for the tenant without restarting the service.
+   */
+  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Put, TenantQuerySchema)
+  async addWebsocketConfigurationsForTenant(
+    request: FastifyRequest<{ Body: { tenantId: number }; Querystring: TenantQueryString }>,
+  ): Promise<WebsocketServerConfig[]> {
+    const existingConfig = this._module.config.util.networkConnection.websocketServers.find(
+      (ws) => ws.tenantId === request.body.tenantId,
+    );
+
+    if (existingConfig) {
+      throw new BadRequestError(
+        `Websocket configurations for tenant ${request.body.tenantId} already exists.`,
+      );
+    } else {
+      // 1. find the max port and max server id in the existing ws configs
+      const maxPort: number = this._module.config.util.networkConnection.websocketServers.reduce(
+        (max, ws) => Math.max(max, ws.port, 8500),
+        10000, // the stating value for dynamic ports
+      );
+      if (maxPort > 10500) {
+        throw new BadRequestError('Cannot create new websocket server: maximum port 9000 reached.');
+      }
+
+      const maxServerId: number =
+        this._module.config.util.networkConnection.websocketServers.reduce(
+          (max, ws) => Math.max(max, Number(ws.id)),
+          0,
+        );
+      // 2. create new ws servers, one for profile 0 and one for profile 1
+      const newServerForProfile0: WebsocketServerConfig = await this._createNewWebsocketServer(
+        request.body.tenantId,
+        maxPort + 1,
+        maxServerId + 1,
+        0,
+        true,
+        this._module.config.util.networkConnection.websocketServers[0],
+      );
+      const newServerForProfile1: WebsocketServerConfig = await this._createNewWebsocketServer(
+        request.body.tenantId,
+        maxPort + 2,
+        maxServerId + 2,
+        1,
+        false,
+        this._module.config.util.networkConnection.websocketServers[0],
+      );
+
+      // 3. Save the updated configs in the file store
+      await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
+
+      return [newServerForProfile0, newServerForProfile1];
+    }
+  }
+
   @AsDataEndpoint(Namespace.Websocket, HttpMethod.Delete, WebsocketDeleteQuerySchema)
   async deleteWebsocketConfiguration(
     request: FastifyRequest<{ Querystring: WebsocketDeleteQuerystring }>,
@@ -173,5 +237,37 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
   protected _toDataPath(input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace): string {
     const endpointPrefix = '/ocpprouter';
     return super._toDataPath(input, endpointPrefix);
+  }
+
+  private async _createNewWebsocketServer(
+    tenantId: number,
+    port: number,
+    serverId: number,
+    securityProfile: number,
+    allowUnknownChargingStations: boolean,
+    existingServerConfig: WebsocketServerConfig,
+  ): Promise<WebsocketServerConfig> {
+    const newServerConfig: WebsocketServerConfig = {
+      id: serverId.toString(),
+      host: existingServerConfig.host,
+      port,
+      pingInterval: existingServerConfig.pingInterval,
+      protocol: OCPPVersion.OCPP2_0_1,
+      securityProfile,
+      tenantId,
+      allowUnknownChargingStations,
+    };
+
+    // save new config in db
+    await this._module.serverNetworkProfileRepository.upsertServerNetworkProfile(
+      newServerConfig,
+      this._module.config.maxCallLengthSeconds,
+    );
+    // start the new ws server
+    await this._networkConnection.addWebsocketServer(newServerConfig);
+    // add the new ws server to the config
+    this._module.config.util.networkConnection.websocketServers.push(newServerConfig);
+
+    return newServerConfig;
   }
 }

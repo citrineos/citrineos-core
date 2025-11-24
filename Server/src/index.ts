@@ -87,6 +87,7 @@ import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocppr
 import cors from '@fastify/cors';
 import ApiAuthPlugin from '@citrineos/util/dist/authorization/ApiAuthPlugin.js';
 import type { RedisClientOptions } from 'redis';
+import { TenantDataApi, TenantModule } from '@citrineos/tenant';
 
 export class CitrineOSServer {
   /**
@@ -259,28 +260,10 @@ export class CitrineOSServer {
 
   protected async _syncWebsocketConfig() {
     for (const websocketServerConfig of this._config.util.networkConnection.websocketServers) {
-      const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
-        where: {
-          id: websocketServerConfig.id,
-        },
-      });
-      serverNetworkProfile.host = websocketServerConfig.host;
-      serverNetworkProfile.port = websocketServerConfig.port;
-      serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
-      serverNetworkProfile.protocol = websocketServerConfig.protocol;
-      serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
-      serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
-      serverNetworkProfile.allowUnknownChargingStations =
-        websocketServerConfig.allowUnknownChargingStations;
-      serverNetworkProfile.tlsKeyFilePath = websocketServerConfig.tlsKeyFilePath;
-      serverNetworkProfile.tlsCertificateChainFilePath =
-        websocketServerConfig.tlsCertificateChainFilePath;
-      serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath =
-        websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
-      serverNetworkProfile.rootCACertificateFilePath =
-        websocketServerConfig.rootCACertificateFilePath;
-
-      await serverNetworkProfile.save();
+      await this._repositoryStore.serverNetworkProfileRepository.upsertServerNetworkProfile(
+        websocketServerConfig,
+        this._config.maxCallLengthSeconds,
+      );
     }
   }
 
@@ -442,7 +425,7 @@ export class CitrineOSServer {
       this._logger,
     );
 
-    this.apis.push(new AdminApi(router, this._server, this._logger));
+    this.apis.push(new AdminApi(router, this._server, this._networkConnection, this._logger));
   }
 
   private async initHandlersAndAddModule(module: AbstractModule) {
@@ -477,6 +460,10 @@ export class CitrineOSServer {
 
     if (this._config.modules.transactions) {
       await this.initTransactionsModule();
+    }
+
+    if (this._config.modules.tenant) {
+      await this.initTenantModule();
     }
   }
 
@@ -643,6 +630,20 @@ export class CitrineOSServer {
     );
   }
 
+  private async initTenantModule() {
+    const module = new TenantModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.tenantRepository,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(new TenantDataApi(module, this._server, this._logger));
+    console.log('Tenant module initialized');
+  }
+
   private async initModule(eventGroup = this.eventGroup) {
     switch (eventGroup) {
       case EventGroup.Certificates:
@@ -665,6 +666,9 @@ export class CitrineOSServer {
         break;
       case EventGroup.Transactions:
         await this.initTransactionsModule();
+        break;
+      case EventGroup.Tenant:
+        await this.initTenantModule();
         break;
       default:
         throw new Error('Unhandled module type: ' + this.appName);
