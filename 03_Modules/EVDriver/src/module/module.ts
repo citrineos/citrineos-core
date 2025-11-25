@@ -324,6 +324,7 @@ export class EVDriverModule extends AbstractModule {
           await this._certificateAuthorityService.validateCertificateChainPem(request.certificate);
       }
       if (response.certificateStatus !== OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted) {
+        response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.Invalid;
         const messageConfirmation = await this.sendCallResultWithMessage(message, response);
         this._logger.debug('Authorize response sent:', messageConfirmation);
         return;
@@ -435,11 +436,10 @@ export class EVDriverModule extends AbstractModule {
         response.idTokenInfo = idTokenInfo;
       }
     } else {
-      // Assumed to always be valid without IdTokenInfo
-      response.idTokenInfo = {
-        status: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
-        // TODO determine how/if to set personalMessage
-      };
+      // Status is Unknown if no authorization found
+      const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+      this._logger.debug('Authorize response sent:', messageConfirmation);
+      return;
     }
 
     if (response.idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
