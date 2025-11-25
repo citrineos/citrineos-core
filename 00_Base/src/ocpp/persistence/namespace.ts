@@ -13,6 +13,7 @@ export enum Namespace {
   ChargingSchedule = 'ChargingSchedule',
   ChargingStation = 'ChargingStation',
   CompositeSchedule = 'CompositeSchedule',
+  Connection = 'Connection',
   Evse = 'Evse',
   IdTokenType = 'IdToken',
   IdTokenInfoType = 'IdTokenInfo',

@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export type { IMessageRouter } from './Router.js';
 export { AbstractMessageRouter } from './AbstractRouter.js';
-export type { IAuthenticator } from './Authenticator.js';
 export type { AuthenticationOptions } from './AuthenticationOptions.js';
+export type { IAuthenticator } from './Authenticator.js';
+export type { INetworkConnection } from './INetworkConnection.js';
+export type { IMessageRouter } from './Router.js';
