@@ -43,13 +43,13 @@ import {
   RequestBuilder,
   RetryMessageError,
 } from '@citrineos/base';
-import { v4 as uuidv4 } from 'uuid';
+import type { ILocationRepository } from '@citrineos/data';
+import { sequelize } from '@citrineos/data';
+import { OidcTokenProvider } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { ILocationRepository, ISubscriptionRepository } from '@citrineos/data';
-import { sequelize } from '@citrineos/data';
+import { v4 as uuidv4 } from 'uuid';
 import { WebhookDispatcher } from './webhook.dispatcher.js';
-import { OidcTokenProvider } from '@citrineos/util';
 
 /**
  * Implementation of the ocpp router
@@ -65,7 +65,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   protected _handler: IMessageHandler;
   protected _networkHook: (identifier: string, message: string) => Promise<void>;
   protected _locationRepository: ILocationRepository;
-  public subscriptionRepository: ISubscriptionRepository;
   protected _circuitBreaker: CircuitBreaker;
   protected _reconnectInterval?: NodeJS.Timeout;
   protected static readonly DEFAULT_MAX_RECONNECT_DELAY = 30; // seconds
@@ -101,7 +100,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     logger?: Logger<ILogObj>,
     ajv?: Ajv.Ajv,
     locationRepository?: ILocationRepository,
-    subscriptionRepository?: ISubscriptionRepository,
     circuitBreakerOptions?: CircuitBreakerOptions,
   ) {
     super(config, cache, handler, sender, networkHook, logger, ajv);
@@ -113,8 +111,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this._networkHook = networkHook;
     this._locationRepository =
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
-    this.subscriptionRepository =
-      subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
     this._handler.initConnection().catch((err) => {
       this._logger.error('initConnection failed', err);
     });
