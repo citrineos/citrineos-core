@@ -81,10 +81,7 @@ describe('TransactionService', () => {
   });
 
   it('should return Accepted status when idTokenInfo is accepted', async () => {
-    const authorization = anAuthorization((auth) => {
-      // idTokenInfo is now flat, so set status directly
-      auth.status = AuthorizationStatusEnum.Accepted;
-    });
+    const authorization = anAuthorization();
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
