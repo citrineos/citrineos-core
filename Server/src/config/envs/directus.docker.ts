@@ -209,18 +209,24 @@ export function createDirectusConfig() {
             host: '0.0.0.0',
             port: 8443,
             protocol: 'ocpp2.0.1',
-            tlsKeyFilePath: path.resolve(
-              path.dirname(__filename),
-              '../../assets/certificates/leafKey.pem',
-            ),
-            tlsCertificateChainFilePath: path.resolve(
-              path.dirname(__filename),
-              '../../assets/certificates/certChain.pem',
-            ),
-            rootCACertificateFilePath: path.resolve(
-              path.dirname(__filename),
-              '../../assets/certificates/rootCertificate.pem',
-            ),
+            tlsKeyFile: {
+              path: path.resolve(path.dirname(__filename), '../../assets/certificates/leafKey.pem'),
+              id: 'leafKey',
+            },
+            tlsCertificateChainFile: {
+              path: path.resolve(
+                path.dirname(__filename),
+                '../../assets/certificates/certChain.pem',
+              ),
+              id: 'certChain',
+            },
+            rootCACertificateFile: {
+              path: path.resolve(
+                path.dirname(__filename),
+                '../../assets/certificates/rootCertificate.pem',
+              ),
+              id: 'rootCertificate',
+            },
             tenantId: DEFAULT_TENANT_ID,
           },
           {
@@ -231,22 +237,31 @@ export function createDirectusConfig() {
             host: '0.0.0.0',
             port: 8444,
             protocol: 'ocpp2.0.1',
-            tlsKeyFilePath: path.resolve(
-              path.dirname(__filename),
-              '../../assets/certificates/leafKey.pem',
-            ),
-            tlsCertificateChainFilePath: path.resolve(
-              path.dirname(__filename),
-              '../../assets/certificates/certChain.pem',
-            ),
-            mtlsCertificateAuthorityKeyFilePath: path.resolve(
-              path.dirname(__filename),
-              '../../assets/certificates/subCAKey.pem',
-            ),
-            rootCACertificateFilePath: path.resolve(
-              path.dirname(__filename),
-              '../../assets/certificates/rootCertificate.pem',
-            ),
+            tlsKeyFile: {
+              path: path.resolve(path.dirname(__filename), '../../assets/certificates/leafKey.pem'),
+              id: 'leafKey',
+            },
+            tlsCertificateChainFile: {
+              path: path.resolve(
+                path.dirname(__filename),
+                '../../assets/certificates/certChain.pem',
+              ),
+              id: 'certChain',
+            },
+            mtlsCertificateAuthorityKeyFile: {
+              path: path.resolve(
+                path.dirname(__filename),
+                '../../assets/certificates/subCAKey.pem',
+              ),
+              id: 'subCAKey',
+            },
+            rootCACertificateFile: {
+              path: path.resolve(
+                path.dirname(__filename),
+                '../../assets/certificates/rootCertificate.pem',
+              ),
+              id: 'rootCertificate',
+            },
             tenantId: DEFAULT_TENANT_ID,
           },
           {

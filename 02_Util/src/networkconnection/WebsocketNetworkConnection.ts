@@ -5,6 +5,7 @@
 import type {
   IAuthenticator,
   ICache,
+  IFileStorage,
   IMessageRouter,
   IWebsocketConnection,
   OCPPVersionType,
@@ -17,15 +18,14 @@ import {
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
 } from '@citrineos/base';
-import { Duplex } from 'stream';
 import * as http from 'http';
 import * as https from 'https';
-import fs from 'fs';
-import type { ErrorEvent, MessageEvent } from 'ws';
-import { WebSocket, WebSocketServer } from 'ws';
+import { Duplex } from 'stream';
+import type { SecureContextOptions } from 'tls';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { SecureContextOptions } from 'tls';
+import type { ErrorEvent, MessageEvent } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import type { IUpgradeError } from './authenticator/errors/IUpgradeError.js';
 
 export class WebsocketNetworkConnection {
@@ -37,12 +37,14 @@ export class WebsocketNetworkConnection {
   private _httpServersMap: Map<string, http.Server | https.Server>;
   private _authenticator: IAuthenticator;
   private _router: IMessageRouter;
+  private _fileStorage: IFileStorage;
 
   constructor(
     config: SystemConfig,
     cache: ICache,
     authenticator: IAuthenticator,
     router: IMessageRouter,
+    fileStorage: IFileStorage,
     logger?: Logger<ILogObj>,
   ) {
     this._cache = cache;
@@ -53,6 +55,7 @@ export class WebsocketNetworkConnection {
     this._authenticator = authenticator;
     router.networkHook = this.sendMessage.bind(this);
     this._router = router;
+    this._fileStorage = fileStorage;
 
     this._httpServersMap = new Map<string, http.Server | https.Server>();
     this._config.util.networkConnection.websocketServers.forEach((websocketServerConfig) => {
@@ -478,14 +481,40 @@ export class WebsocketNetworkConnection {
     return url.split('/').pop() as string;
   }
 
-  private _generateServerOptions(config: WebsocketServerConfig): https.ServerOptions {
+  private async _generateServerOptions(
+    config: WebsocketServerConfig,
+  ): Promise<https.ServerOptions> {
+    const key =
+      config.tlsKeyFile &&
+      (await this._fileStorage.getFile(config.tlsKeyFile.id, config.tlsKeyFile.path));
+    const cert =
+      config.tlsCertificateChainFile &&
+      (await this._fileStorage.getFile(
+        config.tlsCertificateChainFile.id,
+        config.tlsCertificateChainFile.path,
+      ));
+
+    if (!key) {
+      throw new Error(`Failed to load TLS key for Websocket server ${config.id}`);
+    } else if (!cert) {
+      throw new Error(`Failed to load TLS certificate chain for Websocket server ${config.id}`);
+    }
     const serverOptions: https.ServerOptions = {
-      key: fs.readFileSync(config.tlsKeyFilePath as string),
-      cert: fs.readFileSync(config.tlsCertificateChainFilePath as string),
+      key,
+      cert,
     };
 
-    if (config.rootCACertificateFilePath) {
-      serverOptions.ca = fs.readFileSync(config.rootCACertificateFilePath as string);
+    if (config.securityProfile > 2) {
+      const ca =
+        config.rootCACertificateFile &&
+        (await this._fileStorage.getFile(
+          config.rootCACertificateFile.id,
+          config.rootCACertificateFile.path,
+        ));
+      if (!ca) {
+        throw new Error(`Failed to load root CA certificate for Websocket server ${config.id}`);
+      }
+      serverOptions.ca = ca;
     }
 
     if (config.securityProfile > 2) {

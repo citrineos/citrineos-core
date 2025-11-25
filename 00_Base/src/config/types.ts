@@ -7,8 +7,8 @@ import { EventGroup } from '../interfaces/messages/index.js';
 import { OCPP1_6, OCPP2_0_1 } from '../ocpp/model/index.js';
 import { OCPP1_6_CallAction, OCPP2_0_1_CallAction } from '../ocpp/rpc/message.js';
 
-const OCPP1_6_CallActionSchema = z.nativeEnum(OCPP1_6_CallAction);
-const OCPP2_0_1_CallActionSchema = z.nativeEnum(OCPP2_0_1_CallAction);
+const OCPP1_6_CallActionSchema = z.enum(OCPP1_6_CallAction);
+const OCPP2_0_1_CallActionSchema = z.enum(OCPP2_0_1_CallAction);
 
 const CallActionSchema = z.union([OCPP1_6_CallActionSchema, OCPP2_0_1_CallActionSchema]);
 
@@ -30,11 +30,34 @@ export const websocketServerInputSchema = z.object({
   protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']).default('ocpp2.0.1').optional(),
   securityProfile: z.number().int().min(0).max(3).default(0).optional(),
   allowUnknownChargingStations: z.boolean().default(false).optional(),
-  tlsKeyFilePath: z.string().optional(), // Leaf certificate's private key pem which decrypts the message from client
-  tlsCertificateChainFilePath: z.string().optional(), // Certificate chain pem consist of a leaf followed by sub CAs
-  mtlsCertificateAuthorityKeyFilePath: z.string().optional(), // Sub CA's private key which signs the leaf (e.g.,
-  // charging station certificate and csms certificate)
-  rootCACertificateFilePath: z.string().optional(), // Root CA certificate that overrides default CA certificates
+  tlsKeyFile: z
+    .object({
+      // Leaf certificate's private key pem which decrypts the message from client
+      path: z.string().optional(),
+      id: z.string(),
+    })
+    .optional(),
+  tlsCertificateChainFile: z
+    .object({
+      // Certificate chain pem consist of a leaf followed by sub CAs
+      path: z.string().optional(),
+      id: z.string(),
+    })
+    .optional(),
+  mtlsCertificateAuthorityKeyFile: z
+    .object({
+      // Sub CA's private key which signs the leaf (e.g.,
+      path: z.string().optional(),
+      id: z.string(),
+    })
+    .optional(),
+  rootCACertificateFile: z
+    .object({
+      // Root CA certificate that overrides default CA certificates
+      path: z.string().optional(),
+      id: z.string(),
+    })
+    .optional(),
   // allowed by Mozilla
   tenantId: z.number(),
 });
@@ -287,10 +310,34 @@ export const websocketServerSchema = z
     protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']),
     securityProfile: z.number().int().min(0).max(3),
     allowUnknownChargingStations: z.boolean(),
-    tlsKeyFilePath: z.string().optional(),
-    tlsCertificateChainFilePath: z.string().optional(),
-    mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
-    rootCACertificateFilePath: z.string().optional(),
+    tlsKeyFile: z
+      .object({
+        // Leaf certificate's private key pem which decrypts the message from client
+        path: z.string().optional(),
+        id: z.string(),
+      })
+      .optional(),
+    tlsCertificateChainFile: z
+      .object({
+        // Certificate chain pem consist of a leaf followed by sub CAs
+        path: z.string().optional(),
+        id: z.string(),
+      })
+      .optional(),
+    mtlsCertificateAuthorityKeyFile: z
+      .object({
+        // Sub CA's private key which signs the leaf (e.g.,
+        path: z.string().optional(),
+        id: z.string(),
+      })
+      .optional(),
+    rootCACertificateFile: z
+      .object({
+        // Root CA certificate that overrides default CA certificates
+        path: z.string().optional(),
+        id: z.string(),
+      })
+      .optional(),
     tenantId: z.number(),
   })
   .refine((obj) => {
@@ -299,13 +346,9 @@ export const websocketServerSchema = z
       case 1: // Basic Auth
         return true;
       case 2: // Basic Auth + TLS
-        return obj.tlsKeyFilePath && obj.tlsCertificateChainFilePath;
+        return obj.tlsKeyFile && obj.tlsCertificateChainFile;
       case 3: // mTLS
-        return (
-          obj.tlsCertificateChainFilePath &&
-          obj.tlsKeyFilePath &&
-          obj.mtlsCertificateAuthorityKeyFilePath
-        );
+        return obj.tlsCertificateChainFile && obj.tlsKeyFile && obj.mtlsCertificateAuthorityKeyFile;
       default:
         return false;
     }

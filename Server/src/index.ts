@@ -23,7 +23,38 @@ import {
   type IAuthenticator,
   loadBootstrapConfig,
 } from '@citrineos/base';
+import {
+  CertificatesDataApi,
+  CertificatesModule,
+  CertificatesOcpp201Api,
+} from '@citrineos/certificates';
+import {
+  ConfigurationDataApi,
+  ConfigurationModule,
+  ConfigurationOcpp16Api,
+  ConfigurationOcpp201Api,
+} from '@citrineos/configuration';
+import { RepositoryStore, sequelize, Sequelize, ServerNetworkProfile } from '@citrineos/data';
+import {
+  EVDriverDataApi,
+  EVDriverModule,
+  EVDriverOcpp16Api,
+  EVDriverOcpp201Api,
+} from '@citrineos/evdriver';
 import { MonitoringDataApi, MonitoringModule, MonitoringOcpp201Api } from '@citrineos/monitoring';
+import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocpprouter';
+import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
+import type { ISmartCharging } from '@citrineos/smartcharging';
+import {
+  InternalSmartCharging,
+  SmartChargingModule,
+  SmartChargingOcpp201Api,
+} from '@citrineos/smartcharging';
+import {
+  TransactionsDataApi,
+  TransactionsModule,
+  TransactionsOcpp201Api,
+} from '@citrineos/transactions';
 import {
   Authenticator,
   BasicAuthenticationFilter,
@@ -43,50 +74,37 @@ import {
   UnknownStationFilter,
   WebsocketNetworkConnection,
 } from '@citrineos/util';
+import ApiAuthPlugin from '@citrineos/util/dist/authorization/ApiAuthPlugin.js';
+import cors from '@fastify/cors';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import type { FastifyInstance, RouteOptions } from 'fastify';
 import fastify from 'fastify';
-import { type ILogObj, Logger } from 'tslog';
-import { getSystemConfig } from './config/index.js';
-import {
-  ConfigurationDataApi,
-  ConfigurationModule,
-  ConfigurationOcpp16Api,
-  ConfigurationOcpp201Api,
-} from '@citrineos/configuration';
-import {
-  TransactionsDataApi,
-  TransactionsModule,
-  TransactionsOcpp201Api,
-} from '@citrineos/transactions';
-import {
-  CertificatesDataApi,
-  CertificatesModule,
-  CertificatesOcpp201Api,
-} from '@citrineos/certificates';
-import {
-  EVDriverDataApi,
-  EVDriverModule,
-  EVDriverOcpp16Api,
-  EVDriverOcpp201Api,
-} from '@citrineos/evdriver';
-import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
-import type { ISmartCharging } from '@citrineos/smartcharging';
-import {
-  InternalSmartCharging,
-  SmartChargingModule,
-  SmartChargingOcpp201Api,
-} from '@citrineos/smartcharging';
-import { RepositoryStore, sequelize, Sequelize, ServerNetworkProfile } from '@citrineos/data';
 import type {
   FastifyRouteSchemaDef,
   FastifySchemaCompiler,
   FastifyValidationResult,
 } from 'fastify/types/schema.js';
-import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocpprouter';
-import cors from '@fastify/cors';
-import ApiAuthPlugin from '@citrineos/util/dist/authorization/ApiAuthPlugin.js';
+import path from 'node:path';
 import type { RedisClientOptions } from 'redis';
+import { type ILogObj, Logger } from 'tslog';
+import { getSystemConfig } from './config/index.js';
+
+const DEFAULT_TLS_KEY_FILE_PATH = path.resolve(
+  path.dirname(__filename),
+  '../../assets/certificates/leafKey.pem',
+);
+const DEFAULT_TLS_CERTIFICATE_CHAIN_FILE_PATH = path.resolve(
+  path.dirname(__filename),
+  '../../assets/certificates/certChain.pem',
+);
+const DEFAULT_MTLS_CERTIFICATE_AUTHORITY_KEY_FILE_PATH = path.resolve(
+  path.dirname(__filename),
+  '../../assets/certificates/subCAKey.pem',
+);
+const DEFAULT_ROOT_CA_CERTIFICATE_FILE_PATH = path.resolve(
+  path.dirname(__filename),
+  '../../assets/certificates/rootCertificate.pem',
+);
 
 export class CitrineOSServer {
   /**
@@ -190,6 +208,9 @@ export class CitrineOSServer {
 
     // Initialize File Access Implementation
     this._fileStorage = ConfigStoreFactory.getInstance();
+
+    // Add default certificates to file storage, if needed
+    this.initDefaultCertificatesInFileStorage();
 
     // Register AJV for schema validation
     this.registerAjv();
@@ -439,6 +460,7 @@ export class CitrineOSServer {
       this._cache,
       this._authenticator,
       router,
+      this._fileStorage,
       this._logger,
     );
 
