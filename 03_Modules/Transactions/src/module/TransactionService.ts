@@ -93,15 +93,6 @@ export class TransactionService {
     }
     const authorization = authorizations[0];
 
-    if (!authorization.status) {
-      // Assumed to always be valid without status
-      response.idTokenInfo = {
-        status: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
-        // TODO determine how/if to set personalMessage
-      };
-      return response;
-    }
-
     // Extract DTO fields from sequelize Model<any, any> objects
     const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
 
