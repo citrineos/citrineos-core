@@ -80,10 +80,10 @@ describe('TransactionService', () => {
     expect(response.idTokenInfo!.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.Unknown);
   });
 
-  it('should return Accepted status when idTokenInfo is not defined', async () => {
+  it('should return Accepted status when idTokenInfo is accepted', async () => {
     const authorization = anAuthorization((auth) => {
       // idTokenInfo is now flat, so set status directly
-      auth.status = undefined as any; // purposely set to undefined for test, but TS will error, so use 'as any'
+      auth.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
