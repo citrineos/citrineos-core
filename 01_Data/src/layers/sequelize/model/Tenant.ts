@@ -86,23 +86,32 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> im
   static readonly MODEL_NAME: string = 'Tenant';
 
   @PrimaryKey
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    autoIncrement: true,
+  })
   declare id: number;
 
   @Column(DataType.STRING)
   declare name: string;
 
   @Column(DataType.STRING)
-  declare url: string;
+  declare url?: string | null;
 
   @Column(DataType.STRING)
-  declare partyId: string;
+  declare partyId?: string | null;
 
   @Column(DataType.STRING)
-  declare countryCode: string;
+  declare countryCode?: string | null;
 
   @Column(DataType.JSONB)
   declare serverProfileOCPI?: ServerProfile | null;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  declare isUserTenant: boolean;
 
   /**
    * Relationships

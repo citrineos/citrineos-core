@@ -23,6 +23,7 @@ export enum Namespace {
   StatusNotificationRequest = 'StatusNotification',
   TransactionType = 'Transaction',
   Websocket = 'Websocket',
+  Tenant = 'Tenant',
 }
 
 export enum OCPP2_0_1_Namespace {

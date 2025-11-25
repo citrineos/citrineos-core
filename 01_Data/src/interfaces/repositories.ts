@@ -450,7 +450,12 @@ export interface IChargingStationSequenceRepository
   ): Promise<number>;
 }
 
-export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {}
+export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {
+  upsertServerNetworkProfile(
+    websocketServerConfig: any,
+    maxCallLengthSeconds: number,
+  ): Promise<ServerNetworkProfile>;
+}
 
 export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {
   createOrUpdateChangeConfiguration(
@@ -459,4 +464,6 @@ export interface IChangeConfigurationRepository extends CrudRepository<ChangeCon
   ): Promise<ChangeConfiguration | undefined>;
 }
 
-export interface ITenantRepository extends CrudRepository<Tenant> {}
+export interface ITenantRepository extends CrudRepository<Tenant> {
+  createTenant(tenant: Tenant): Promise<Tenant>;
+}

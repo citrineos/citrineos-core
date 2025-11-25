@@ -263,28 +263,10 @@ export class CitrineOSServer {
 
   protected async _syncWebsocketConfig() {
     for (const websocketServerConfig of this._config.util.networkConnection.websocketServers) {
-      const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
-        where: {
-          id: websocketServerConfig.id,
-        },
-      });
-      serverNetworkProfile.host = websocketServerConfig.host;
-      serverNetworkProfile.port = websocketServerConfig.port;
-      serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
-      serverNetworkProfile.protocol = websocketServerConfig.protocol;
-      serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
-      serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
-      serverNetworkProfile.allowUnknownChargingStations =
-        websocketServerConfig.allowUnknownChargingStations;
-      serverNetworkProfile.tlsKeyFilePath = websocketServerConfig.tlsKeyFilePath;
-      serverNetworkProfile.tlsCertificateChainFilePath =
-        websocketServerConfig.tlsCertificateChainFilePath;
-      serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath =
-        websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
-      serverNetworkProfile.rootCACertificateFilePath =
-        websocketServerConfig.rootCACertificateFilePath;
-
-      await serverNetworkProfile.save();
+      await this._repositoryStore.serverNetworkProfileRepository.upsertServerNetworkProfile(
+        websocketServerConfig,
+        this._config.maxCallLengthSeconds,
+      );
     }
   }
 
@@ -455,6 +437,7 @@ export class CitrineOSServer {
         this._config,
         this._logger,
         this._repositoryStore.subscriptionRepository,
+        this._repositoryStore.serverNetworkProfileRepository,
       ),
     );
   }
@@ -668,9 +651,11 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._repositoryStore.tenantRepository,
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(new TenantDataApi(module, this._server, this._logger));
+    console.log('Tenant module initialized');
   }
 
   private async initModule(eventGroup = this.eventGroup) {

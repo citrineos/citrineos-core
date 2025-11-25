@@ -83,9 +83,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {Function} networkHook - the network hook needed to send messages to chargers
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
    * represents a repository for accessing and manipulating variable data.
-   * If no `locationRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
-   *
-   * @param {ISubscriptionRepository} [subscriptionRepository] - the subscription repository
+   * If no `locationRepository` is provided, a default {@link locationRepository} instance is created and used.
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
    * @param {Ajv} [ajv] - the Ajv object, for message validation (optional)
    * @param {CircuitBreakerOptions} [circuitBreakerOptions] - options to configure the circuit breaker
@@ -216,7 +214,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     let success = true;
     let rpcMessage: any;
     let messageTypeId: MessageTypeId | undefined = undefined;
-    let messageId: string = '-1'; // OCPP 2.0.1 part 4, section 4.2.3, "When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId."
+    let messageId: string = '-1'; // OCPP 2.0.1 part 4, section 4.2.3, When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId.
     try {
       try {
         rpcMessage = JSON.parse(message);
