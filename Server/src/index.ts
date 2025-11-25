@@ -86,6 +86,7 @@ import type {
   FastifyValidationResult,
 } from 'fastify/types/schema.js';
 import type { RedisClientOptions } from 'redis';
+import { TenantDataApi, TenantModule } from '@citrineos/tenant';
 import { type ILogObj, Logger } from 'tslog';
 import { getSystemConfig } from './config/index.js';
 
@@ -491,6 +492,10 @@ export class CitrineOSServer {
     if (this._config.modules.transactions) {
       await this.initTransactionsModule();
     }
+
+    if (this._config.modules.tenant) {
+      await this.initTenantModule();
+    }
   }
 
   private initApiAuthProvider(): IApiAuthProvider {
@@ -656,6 +661,18 @@ export class CitrineOSServer {
     );
   }
 
+  private async initTenantModule() {
+    const module = new TenantModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(new TenantDataApi(module, this._server, this._logger));
+  }
+
   private async initModule(eventGroup = this.eventGroup) {
     switch (eventGroup) {
       case EventGroup.Certificates:
@@ -678,6 +695,9 @@ export class CitrineOSServer {
         break;
       case EventGroup.Transactions:
         await this.initTransactionsModule();
+        break;
+      case EventGroup.Tenant:
+        await this.initTenantModule();
         break;
       default:
         throw new Error('Unhandled module type: ' + this.appName);
