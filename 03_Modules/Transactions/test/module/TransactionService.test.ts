@@ -83,7 +83,7 @@ describe('TransactionService', () => {
   it('should return Accepted status when idTokenInfo is accepted', async () => {
     const authorization = anAuthorization((auth) => {
       // idTokenInfo is now flat, so set status directly
-      auth.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
+      auth.status = AuthorizationStatusEnum.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
