@@ -24,6 +24,7 @@ import {
 import type {
   ChargingStationKeyQuerystring,
   ConnectionDeleteQuerystring,
+  IServerNetworkProfileRepository,
   ISubscriptionRepository,
   ModelKeyQuerystring,
   TenantQueryString,
@@ -42,7 +43,6 @@ import {
   WebsocketGetQuerySchema,
   WebsocketRequestSchema,
 } from '@citrineos/data';
-import { WebsocketNetworkConnection } from '@citrineos/util';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -54,6 +54,7 @@ import type { IAdminApi } from './interface.js';
 export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdminApi {
   private _networkConnection: INetworkConnection;
   private _subscriptionRepository: ISubscriptionRepository;
+  private _serverNetworkProfileRepository: IServerNetworkProfileRepository;
 
   /**
    * Constructs a new instance of the class.
@@ -71,11 +72,15 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
     config: BootstrapConfig & SystemConfig,
     logger?: Logger<ILogObj>,
     subscriptionRepository?: ISubscriptionRepository,
+    serverNetworkProfileRepository?: IServerNetworkProfileRepository,
   ) {
     super(ocppRouter, server, null, logger);
     this._networkConnection = networkConnection;
     this._subscriptionRepository =
       subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
+    this._serverNetworkProfileRepository =
+      serverNetworkProfileRepository ||
+      new sequelize.SequelizeServerNetworkProfileRepository(config, this._logger);
   }
 
   // N.B.: When adding subscriptions, chargers may be connected to a different instance of Citrine.
@@ -284,7 +289,7 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
     };
 
     // save new config in db
-    await this._module.serverNetworkProfileRepository.upsertServerNetworkProfile(
+    await this._serverNetworkProfileRepository.upsertServerNetworkProfile(
       newServerConfig,
       this._module.config.maxCallLengthSeconds,
     );
