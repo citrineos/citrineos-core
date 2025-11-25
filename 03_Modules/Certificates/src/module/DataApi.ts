@@ -13,13 +13,6 @@ import {
   OCPP2_0_1_Namespace,
   OCPPVersion,
 } from '@citrineos/base';
-import jsrsasign from 'jsrsasign';
-import type { FastifyInstance, FastifyRequest } from 'fastify';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import type { ICertificatesModuleApi } from './interface.js';
-import { CertificatesModule } from './module.js';
-import { generateCertificate, generateCSR, WebsocketNetworkConnection } from '@citrineos/util';
 import type { TenantQueryString, UpdateTlsCertificateQueryString } from '@citrineos/data';
 import {
   Certificate,
@@ -34,8 +27,15 @@ import {
   TlsCertificatesRequest,
   UpdateTlsCertificateQuerySchema,
 } from '@citrineos/data';
+import { generateCertificate, generateCSR, WebsocketNetworkConnection } from '@citrineos/util';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import fs from 'fs';
+import jsrsasign from 'jsrsasign';
 import moment from 'moment';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { ICertificatesModuleApi } from './interface.js';
+import { CertificatesModule } from './module.js';
 
 const enum PemType {
   Root = 'Root',
@@ -60,7 +60,6 @@ export class CertificatesDataApi
    * @param {CertificatesModule} certificatesModule - The Certificates module.
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {IFileStorage} fileStorage - The fileStorage
-   * @param {WebsocketNetworkConnection} networkConnection - The NetworkConnection
    * @param {WebsocketServerConfig[]} websocketServersConfig - Configuration for websocket servers
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */

@@ -5,6 +5,8 @@
 import type { ErrorObject } from 'ajv';
 import { Ajv } from 'ajv';
 
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import type {
   Call,
   CallAction,
@@ -24,13 +26,13 @@ import {
   MessageState,
   OCPP1_6_CALL_RESULT_SCHEMA_MAP,
   OCPP1_6_CALL_SCHEMA_MAP,
+  OCPP1_6_CallAction,
   OCPP2_0_1_CALL_RESULT_SCHEMA_MAP,
   OCPP2_0_1_CALL_SCHEMA_MAP,
+  OCPP2_0_1_CallAction,
   OcppError,
   OCPPVersion,
 } from '../../index.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import type { IMessageRouter } from './Router.js';
 
 export abstract class AbstractMessageRouter implements IMessageRouter {
@@ -214,6 +216,28 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
         this._logger.debug('Validate Call failed', validationErrorsDeepCopy);
         return { isValid: false, errors: validationErrorsDeepCopy };
       } else {
+        if (
+          action === OCPP1_6_CallAction.DataTransfer ||
+          action === OCPP2_0_1_CallAction.DataTransfer
+        ) {
+          const dataTransferRequest: { vendorId: string; messageId?: string; data: string } =
+            payload as any;
+          const dataTransferPayloadValidate = this._ajv.getSchema(
+            `${protocol}-${dataTransferRequest.vendorId}${dataTransferRequest.messageId ? `-${dataTransferRequest.messageId}` : ''}`,
+          );
+          if (dataTransferPayloadValidate) {
+            const dataTransferPayloadResult = dataTransferPayloadValidate(
+              JSON.parse(dataTransferRequest.data),
+            );
+            if (!dataTransferPayloadResult) {
+              const validationErrorsDeepCopy = JSON.parse(
+                JSON.stringify(dataTransferPayloadValidate.errors),
+              );
+              this._logger.debug('Validate DataTransfer payload failed', validationErrorsDeepCopy);
+              return { isValid: false, errors: validationErrorsDeepCopy };
+            }
+          }
+        }
         return { isValid: true };
       }
     } else {

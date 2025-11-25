@@ -6,6 +6,7 @@ import type {
   IAuthenticator,
   ICache,
   IMessageRouter,
+  INetworkConnection,
   IWebsocketConnection,
   OCPPVersionType,
   SystemConfig,
@@ -17,18 +18,18 @@ import {
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
 } from '@citrineos/base';
-import { Duplex } from 'stream';
+import fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
-import fs from 'fs';
-import type { ErrorEvent, MessageEvent } from 'ws';
-import { WebSocket, WebSocketServer } from 'ws';
+import { Duplex } from 'stream';
+import type { SecureContextOptions } from 'tls';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { SecureContextOptions } from 'tls';
+import type { ErrorEvent, MessageEvent } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import type { IUpgradeError } from './authenticator/errors/IUpgradeError.js';
 
-export class WebsocketNetworkConnection {
+export class WebsocketNetworkConnection implements INetworkConnection {
   protected _cache: ICache;
   protected _config: SystemConfig;
   protected _logger: Logger<ILogObj>;
@@ -104,9 +105,29 @@ export class WebsocketNetworkConnection {
     });
   }
 
+  bindNetworkHook(): (identifier: string, message: string) => Promise<void> {
+    return (identifier: string, message: string) =>
+      this.sendMessage(identifier.toUpperCase(), message);
+  }
+
+  async disconnect(tenantId: number, stationId: string): Promise<boolean> {
+    const identifier = createIdentifier(tenantId, stationId);
+
+    const websocketConnection = this._identifierConnections.get(identifier);
+
+    if (!websocketConnection) {
+      this._logger.warn(
+        `No websocket connection found for tenantId ${tenantId} and stationId ${stationId}, will still deregister from router.`,
+      );
+    }
+    websocketConnection?.close(1000, 'Disconnected by admin request');
+    const deregistered = await this._router?.deregisterConnection(tenantId, stationId);
+
+    return !!websocketConnection && deregistered;
+  }
+
   async shutdown(): Promise<void> {
     this._httpServersMap.forEach((server) => server.close());
-    await this._router.shutdown();
   }
 
   /**

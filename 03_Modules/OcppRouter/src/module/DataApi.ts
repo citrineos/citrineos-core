@@ -1,7 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { OCPPVersion, type WebsocketServerConfig } from '@citrineos/base';
+import type {
+  BootstrapConfig,
+  IMessageRouter,
+  INetworkConnection,
+  SystemConfig,
+  WebsocketServerConfig,
+} from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
@@ -13,14 +19,12 @@ import {
   NotFoundError,
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
+  OCPPVersion,
 } from '@citrineos/base';
-import type { FastifyInstance, FastifyRequest } from 'fastify';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import type { IAdminApi } from './interface.js';
-import { MessageRouterImpl } from './router.js';
 import type {
   ChargingStationKeyQuerystring,
+  ConnectionDeleteQuerystring,
+  ISubscriptionRepository,
   ModelKeyQuerystring,
   TenantQueryString,
   WebsocketDeleteQuerystring,
@@ -28,8 +32,10 @@ import type {
 } from '@citrineos/data';
 import {
   ChargingStationKeyQuerySchema,
+  ConnectionDeleteQuerySchema,
   CreateSubscriptionSchema,
   ModelKeyQuerystringSchema,
+  sequelize,
   Subscription,
   TenantQuerySchema,
   WebsocketDeleteQuerySchema,
@@ -37,28 +43,39 @@ import {
   WebsocketRequestSchema,
 } from '@citrineos/data';
 import { WebsocketNetworkConnection } from '@citrineos/util';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IAdminApi } from './interface.js';
 
 /**
  * Admin API for the OcppRouter.
  */
-export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IAdminApi {
-  private readonly _networkConnection: WebsocketNetworkConnection;
+export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdminApi {
+  private _networkConnection: INetworkConnection;
+  private _subscriptionRepository: ISubscriptionRepository;
+
   /**
    * Constructs a new instance of the class.
    *
-   * @param {MessageRouterImpl} ocppRouter - The OcppRouter module.
+   * @param {IMessageRouter} ocppRouter - The OcppRouter module.
+   * @param {INetworkConnection} networkConnection - The network connection instance.
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {WebsocketNetworkConnection} networkConnection - The NetworkConnection
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
   constructor(
-    ocppRouter: MessageRouterImpl,
+    ocppRouter: IMessageRouter,
+    networkConnection: INetworkConnection,
     server: FastifyInstance,
-    networkConnection: WebsocketNetworkConnection,
+    config: BootstrapConfig & SystemConfig,
     logger?: Logger<ILogObj>,
+    subscriptionRepository?: ISubscriptionRepository,
   ) {
     super(ocppRouter, server, null, logger);
     this._networkConnection = networkConnection;
+    this._subscriptionRepository =
+      subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
   }
 
   // N.B.: When adding subscriptions, chargers may be connected to a different instance of Citrine.
@@ -91,7 +108,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
         'Must specify at least one of onConnect, onClose, onMessage, sentMessage to true.',
       );
     }
-    return this._module.subscriptionRepository
+    return this._subscriptionRepository
       .create(tenantId, request.body as Subscription)
       .then((subscription) => subscription?.id);
   }
@@ -100,7 +117,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
   async getSubscriptionsByChargingStation(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Subscription[]> {
-    return this._module.subscriptionRepository.readAllByStationId(
+    return this._subscriptionRepository.readAllByStationId(
       request.query.tenantId,
       request.query.stationId,
     );
@@ -111,7 +128,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
     request: FastifyRequest<{ Querystring: ModelKeyQuerystring }>,
   ): Promise<boolean> {
     const tenantId = request.query.tenantId ?? DEFAULT_TENANT_ID;
-    return this._module.subscriptionRepository
+    return this._subscriptionRepository
       .deleteByKey(tenantId, request.query.id.toString())
       .then(() => true);
   }
@@ -225,6 +242,14 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
       this._module.config.util.networkConnection.websocketServers.splice(existingConfigIndex, 1);
       await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
     }
+  }
+
+  // Forcibly disconnect a websocket connection by station id and tenant id and mark the station as offline
+  @AsDataEndpoint(Namespace.Connection, HttpMethod.Delete, ConnectionDeleteQuerySchema)
+  async deleteWebsocketConnection(
+    request: FastifyRequest<{ Querystring: ConnectionDeleteQuerystring }>,
+  ): Promise<void> {
+    await this._networkConnection.disconnect(request.query.tenantId, request.query.stationId);
   }
 
   /**
