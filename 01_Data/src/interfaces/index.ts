@@ -21,10 +21,6 @@ export type {
   NetworkProfileDeleteQuerystring,
   NetworkProfileQuerystring,
 } from './queries/NetworkProfile.js';
-export type { UpdateTlsCertificateQueryString } from './queries/TlsCertificate.js';
-export { TlsCertificateSchema, UpdateTlsCertificateQuerySchema } from './queries/TlsCertificate.js';
-export type { TenantQueryString } from './queries/Tenant.js';
-export { TenantQuerySchema, CreateTenantQuerySchema } from './queries/Tenant.js';
 export {
   GenerateCertificateChainSchema,
   InstallRootCertificateSchema,
@@ -32,7 +28,7 @@ export {
 export { CreateSubscriptionSchema } from './queries/Subscription.js';
 export { TariffQuerySchema } from './queries/Tariff.js';
 export type { TariffQueryString } from './queries/Tariff.js';
-export { TenantQuerySchema } from './queries/Tenant.js';
+export { TenantQuerySchema, CreateTenantQuerySchema } from './queries/Tenant.js';
 export type { TenantQueryString } from './queries/Tenant.js';
 export { TlsCertificateSchema, UpdateTlsCertificateQuerySchema } from './queries/TlsCertificate.js';
 export type { UpdateTlsCertificateQueryString } from './queries/TlsCertificate.js';
