@@ -62,8 +62,10 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
    * @param {IMessageRouter} ocppRouter - The OcppRouter module.
    * @param {INetworkConnection} networkConnection - The network connection instance.
    * @param {FastifyInstance} server - The Fastify server instance.
-   * @param {WebsocketNetworkConnection} networkConnection - The NetworkConnection
+   * @param {BootstrapConfig & SystemConfig} config - The configuration instance.
    * @param {Logger<ILogObj>} [logger] - The logger instance.
+   * @param {ISubscriptionRepository} [subscriptionRepository] - The subscription repository instance.
+   * @param {IServerNetworkProfileRepository} [serverNetworkProfileRepository] - The server network profile repository instance.
    */
   constructor(
     ocppRouter: IMessageRouter,
@@ -197,7 +199,7 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
     } else {
       // 1. find the max port and max server id in the existing ws configs
       const maxPort: number = this._module.config.util.networkConnection.websocketServers.reduce(
-        (max, ws) => Math.max(max, ws.port, 8500),
+        (max, ws) => Math.max(max, ws.port),
         10000, // the stating value for dynamic ports
       );
       if (maxPort > 10500) {

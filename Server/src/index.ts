@@ -437,6 +437,7 @@ export class CitrineOSServer {
         this._config,
         this._logger,
         this._repositoryStore.subscriptionRepository,
+        this._repositoryStore.serverNetworkProfileRepository,
       ),
     );
   }
