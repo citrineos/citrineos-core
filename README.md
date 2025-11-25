@@ -29,6 +29,7 @@ here: <https://github.com/citrineos/citrineos>.
 - [Linting and Prettier](#linting-and-prettier)
 - [Information on Docker setup](#information-on-docker-setup)
 - [Generating OCPP Interfaces](#generating-ocpp-interfaces)
+- [Validating custom OCPP DataTransfer messages](#data-transfer-messages)
 - [Hasura Metadata](#hasura-metadata)
 - [Database Sync vs. Migration](#database-sync-vs-migration)
 - [Contributing](#contributing)
@@ -319,7 +320,29 @@ It can be rerun:
 npm run generate-interfaces -- ../../Path/To/OCPP-2.0.1_part3_JSON_schemas
 ```
 
-This will replace all the files in `00_Base/src/ocpp/model/`,
+This will replace all the files in `00_Base/src/ocpp/model/`.
+As of release 1.8.0, the schema files used by CitrineOS are not the raw output of this function; we have added field-level validation that the official schemas lack.
+
+## Data Transfer Messages
+
+It is possible to add custom JSON schemas to validate the data fields of DataTransfer messages, which are supported by all OCPP versions.
+In the Server/index.ts code, there is a function ajvInstance() that creates the AJV instance. Here, you could register DataTransfer schemas:
+
+```
+import { MyDataTransferRequestSchema } from './path'
+...
+ajvInstance.compile(MyDataTransferRequestSchema);
+```
+
+Note: The schema's `$id` field must follow this format:
+
+```
+${protocol}-${dataTransferRequest.vendorId}${dataTransferRequest.messageId ? `-${dataTransferRequest.messageId}` : ''}
+```
+
+'Protocol' is the OCPP websocket subprotocol, i.e. "ocpp1.6", "ocpp2.0.1", or so on.
+
+CitrineOS's validation logic assumes that the data field is a string field with JSON structure, and uses JSON.parse before validation. Other approaches to custom DataTransfer message types are not supported.
 
 ## Hasura Metadata
 
