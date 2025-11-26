@@ -86,7 +86,7 @@ export class AuthorizationMapper {
       case AuthorizationStatusEnum.Unknown:
         return OCPP2_0_1.AuthorizationStatusEnumType.Unknown;
       default:
-        throw new Error('Unknown authorization status');
+        throw new Error('Unknown authorization status: ' + status);
     }
   }
 

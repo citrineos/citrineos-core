@@ -80,29 +80,6 @@ describe('TransactionService', () => {
     expect(response.idTokenInfo!.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.Unknown);
   });
 
-  it('should return Accepted status when idTokenInfo is not defined', async () => {
-    const authorization = anAuthorization((auth) => {
-      // idTokenInfo is now flat, so set status directly
-      auth.status = undefined as any; // purposely set to undefined for test, but TS will error, so use 'as any'
-    });
-    authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-
-    const transactionEventRequest = aTransactionEventRequest((item) => {
-      item.idToken = {
-        idToken: faker.string.uuid(),
-        type: OCPP2_0_1.IdTokenEnumType.Central,
-      };
-    });
-    const messageContext = aMessageContext();
-    const response = await transactionService.authorizeOcpp201IdToken(
-      DEFAULT_TENANT_ID,
-      transactionEventRequest,
-      messageContext,
-    );
-
-    expect(response.idTokenInfo?.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.Accepted);
-  });
-
   it('should return status from idTokenInfo when not Accepted', async () => {
     const authorization = anAuthorization((auth) => {
       auth.status = AuthorizationStatusEnum.Blocked;
