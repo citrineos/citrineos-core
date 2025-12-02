@@ -71,6 +71,7 @@ export class StatusNotificationService {
       this._logger.debug(
         `Looking for Evse with stationId: ${stationId}, evseTypeId: ${statusNotificationRequest.evseId}`,
       );
+      // Unique: stationId + evseTypeId - migrate -> id
       const evse = await this._locationRepository.createOrUpdateEvse(tenantId, {
         tenantId,
         stationId,
@@ -87,7 +88,7 @@ export class StatusNotificationService {
       this._logger.debug(
         `Evse created or updated: id=${evse.id}, evseId=${evse.evseId}, evseTypeId=${evse.evseTypeId}`,
       );
-
+      // Unique: evseId + evseTypeConnectorId or (( stationId + connectorId ))
       const connector = {
         tenantId,
         connectorId: statusNotificationRequest.connectorId,

@@ -292,40 +292,38 @@ export class SequelizeLocationRepository
     });
 
     try {
-      const [savedEvse, evseCreated] = await this.evse.readOrCreateByQuery(tenantId, {
+      const savedEvse = await this.evse.readOnlyOneByQuery(tenantId, {
         where: {
           tenantId,
           stationId: evse.stationId,
           evseTypeId: evse.evseTypeId,
         },
-        defaults: {
-          ...evse,
-        },
       });
 
-      if (evseCreated) {
-        this.logger.info('[LocationRepo] EVSE created', {
-          id: savedEvse.id,
+      if (!savedEvse) {
+        this.logger.warn('[LocationRepo] EVSE not found, skipping creation', {
+          tenantId,
           stationId: evse.stationId,
           evseTypeId: evse.evseTypeId,
         });
-        const reloadedEvse = await savedEvse.reload();
-        return reloadedEvse;
-      } else {
-        this.logger.debug('[LocationRepo] EVSE exists, updating', {
-          id: savedEvse.id,
-        });
-        await this.evse.updateByKey(
-          tenantId,
-          {
-            evseId: evse.evseId,
-            physicalReference: evse.physicalReference,
-            removed: evse.removed,
-          },
-          savedEvse.id,
-        );
-        return savedEvse.reload();
+        return undefined;
       }
+
+      this.logger.debug('[LocationRepo] EVSE exists, updating', {
+        id: savedEvse.id,
+      });
+
+      await this.evse.updateByKey(
+        tenantId,
+        {
+          evseId: evse.evseId,
+          physicalReference: evse.physicalReference,
+          removed: evse.removed,
+        },
+        savedEvse.id,
+      );
+
+      return savedEvse.reload();
     } catch (e: any) {
       this.logger.error(
         '[LocationRepo] createOrUpdateEvse failed',
