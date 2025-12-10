@@ -106,8 +106,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   }
 
   bindNetworkHook(): (identifier: string, message: string) => Promise<void> {
-    return (identifier: string, message: string) =>
-      this.sendMessage(identifier.toUpperCase(), message);
+    return (identifier: string, message: string) => this.sendMessage(identifier, message);
   }
 
   async disconnect(tenantId: number, stationId: string): Promise<boolean> {
