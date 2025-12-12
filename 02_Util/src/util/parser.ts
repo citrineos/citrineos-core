@@ -26,6 +26,9 @@ export function getBatches(
   array: object[] | string[] | boolean[] | number[],
   size: number,
 ): Map<number, object[] | string[] | boolean[] | number[]> {
+  if (!Number.isInteger(size) || size <= 0) {
+    size = 1;
+  }
   const batchMap = new Map();
   let lastIndex = 0;
   while (array.length > 0) {
