@@ -31,33 +31,28 @@ describe('getBatches', () => {
     assert.strictEqual(result.size, 0);
   });
 
-  it('defaults to size 1 when size is 0', () => {
+  it('defaults to full length when size is 0', () => {
     const input = [1, 2, 3];
     const result = getBatches(input, 0);
 
-    assert.strictEqual(result.size, 3);
-    assert.deepStrictEqual(result.get(0), [1]);
-    assert.deepStrictEqual(result.get(1), [2]);
-    assert.deepStrictEqual(result.get(2), [3]);
+    // size normalized to input.length => one batch with all elements
+    assert.strictEqual(result.size, 1);
+    assert.deepStrictEqual(result.get(0), [1, 2, 3]);
   });
 
-  it('defaults to size 1 when size is negative', () => {
+  it('defaults to full length when size is negative', () => {
     const input = [1, 2, 3];
     const result = getBatches(input, -5);
 
-    assert.strictEqual(result.size, 3);
-    assert.deepStrictEqual(result.get(0), [1]);
-    assert.deepStrictEqual(result.get(1), [2]);
-    assert.deepStrictEqual(result.get(2), [3]);
+    assert.strictEqual(result.size, 1);
+    assert.deepStrictEqual(result.get(0), [1, 2, 3]);
   });
 
-  it('defaults to size 1 when size is non-integer', () => {
+  it('defaults to full length when size is non-integer', () => {
     const input = [1, 2, 3];
     const result = getBatches(input, 2.5);
 
-    assert.strictEqual(result.size, 3);
-    assert.deepStrictEqual(result.get(0), [1]);
-    assert.deepStrictEqual(result.get(1), [2]);
-    assert.deepStrictEqual(result.get(2), [3]);
+    assert.strictEqual(result.size, 1);
+    assert.deepStrictEqual(result.get(0), [1, 2, 3]);
   });
 });
