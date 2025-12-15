@@ -308,12 +308,13 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     _origin?: MessageOrigin,
   ): Promise<IMessageConfirmation> {
     const identifier = createIdentifier(tenantId, stationId);
+    const txKey = `${identifier}:${correlationId}`;
 
     let message: Call = [MessageTypeId.Call, correlationId, action, payload];
     if (await this._sendCallIsAllowed(identifier, protocol, message)) {
       if (
         await this._cache.setIfNotExist(
-          identifier,
+          txKey,
           `${action}:${correlationId}`,
           CacheNamespace.Transactions,
           this._config.maxCallLengthSeconds,
@@ -324,15 +325,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         const success = await this._sendMessage(identifier, protocol, rawMessage, message);
         return { success };
       } else {
-        this._logger.info(
-          'Call already in progress, throwing retry exception',
-          identifier,
-          message,
-        );
+        this._logger.info('Call already in progress, throwing retry exception', txKey, message);
         throw new RetryMessageError('Call already in progress');
       }
     } else {
-      this._logger.info('RegistrationStatus Rejected, unable to send', identifier, message);
+      this._logger.info('RegistrationStatus Rejected, unable to send', txKey, message);
       return { success: false };
     }
   }
@@ -360,32 +357,46 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   ): Promise<IMessageConfirmation> {
     let message: CallResult = [MessageTypeId.CallResult, correlationId, payload];
     const identifier = createIdentifier(tenantId, stationId);
+    const txKey = `${identifier}:${correlationId}`;
 
-    const cachedActionMessageId = await this._cache.get<string>(
-      identifier,
-      CacheNamespace.Transactions,
-    );
+    const cachedActionMessageId = await this._cache.get<string>(txKey, CacheNamespace.Transactions);
     if (!cachedActionMessageId) {
-      this._logger.error(
-        'Failed to send callResult due to missing message id',
-        identifier,
-        message,
+      this._logger.error('Missing transaction for CallResult, sending CallError', txKey, message);
+
+      const error = new OcppError(
+        correlationId,
+        ErrorCode.RpcFrameworkError,
+        'No matching CALL found for CALLRESULT (transaction expired or missing)',
+        {
+          txKey,
+          maxCallLengthSeconds: this._config.maxCallLengthSeconds,
+        },
       );
-      return { success: false };
+
+      return this.sendCallError(
+        correlationId,
+        stationId,
+        tenantId,
+        protocol,
+        action,
+        error,
+        _origin,
+      );
     }
+
     let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
     if (cachedAction === action && cachedMessageId === correlationId) {
       message = this.removeNulls(message);
       const rawMessage = JSON.stringify(message);
       const success = await Promise.all([
         this._sendMessage(identifier, protocol, rawMessage, message),
-        this._cache.remove(identifier, CacheNamespace.Transactions),
+        this._cache.remove(txKey, CacheNamespace.Transactions),
       ]).then((successes) => successes.every(Boolean));
       return { success };
     } else {
       this._logger.error(
         'Failed to send callResult due to mismatch in message id',
-        identifier,
+        txKey,
         cachedActionMessageId,
         message,
       );
@@ -416,13 +427,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   ): Promise<IMessageConfirmation> {
     let message: CallError = error.asCallError();
     const identifier = createIdentifier(tenantId, stationId);
+    const txKey = `${identifier}:${correlationId}`;
 
-    const cachedActionMessageId = await this._cache.get<string>(
-      identifier,
-      CacheNamespace.Transactions,
-    );
+    const cachedActionMessageId = await this._cache.get<string>(txKey, CacheNamespace.Transactions);
     if (!cachedActionMessageId) {
-      this._logger.error('Failed to send callError due to missing message id', identifier, message);
+      this._logger.error('Failed to send callError due to missing message id', txKey, message);
       return { success: false };
     }
     let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
@@ -431,13 +440,13 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       const rawMessage = JSON.stringify(message);
       const success = await Promise.all([
         this._sendMessage(identifier, protocol, rawMessage, message),
-        this._cache.remove(identifier, CacheNamespace.Transactions),
+        this._cache.remove(txKey, CacheNamespace.Transactions),
       ]).then((successes) => successes.every(Boolean));
       return { success };
     } else {
       this._logger.error(
         'Failed to send callError due to mismatch in message id',
-        identifier,
+        txKey,
         cachedActionMessageId,
         message,
       );
@@ -472,6 +481,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     const messageId = message[1];
     const tenantId = getTenantIdFromIdentifier(identifier);
     const stationId = getStationIdFromIdentifier(identifier);
+    const txKey = `${identifier}:${messageId}`;
 
     let action = null;
 
@@ -492,7 +502,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
       // Ensure only one call is processed at a time
       const successfullySet = await this._cache.setIfNotExist(
-        identifier,
+        txKey,
         `${action}:${messageId}`,
         CacheNamespace.Transactions,
         this._config.maxCallLengthSeconds,
@@ -502,7 +512,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         throw new OcppError(messageId, ErrorCode.RpcFrameworkError, 'Call already in progress', {});
       }
     } catch (error) {
-      this._logger.error('Failed to process Call message', identifier, message, error);
+      this._logger.error('Failed to process Call message', txKey, message, error);
 
       // Send manual reply since cache was unable to be set
       let callError =
@@ -566,10 +576,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
     this._logger.debug('Process CallResult', identifier, messageId, payload);
 
+    const txKey = `${identifier}:${messageId}`;
     this._cache
-      .get<string>(identifier, CacheNamespace.Transactions)
+      .get<string>(txKey, CacheNamespace.Transactions)
       .then((cachedActionMessageId) => {
-        this._cache.remove(identifier, CacheNamespace.Transactions); // Always remove pending call transaction
+        this._cache.remove(txKey, CacheNamespace.Transactions); // Always remove pending call transaction
         if (!cachedActionMessageId) {
           throw new OcppError(
             messageId,
@@ -640,12 +651,13 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   ): void {
     const messageId = message[1];
 
-    this._logger.debug('Process CallError', identifier, message);
+    const txKey = `${identifier}:${messageId}`;
+    this._logger.debug('Process CallError', txKey, message);
 
     this._cache
-      .get<string>(identifier, CacheNamespace.Transactions)
+      .get<string>(txKey, CacheNamespace.Transactions)
       .then((cachedActionMessageId) => {
-        this._cache.remove(identifier, CacheNamespace.Transactions); // Always remove pending call transaction
+        this._cache.remove(txKey, CacheNamespace.Transactions); // Always remove pending call transaction
         if (!cachedActionMessageId) {
           throw new OcppError(
             messageId,
