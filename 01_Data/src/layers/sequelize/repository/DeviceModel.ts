@@ -169,18 +169,26 @@ export class SequelizeDeviceModelRepository
           },
         );
         if (!variableAttributeCreated) {
+          const updatePayload: Partial<VariableAttribute> = {
+            evseDatabaseId: component.evseDatabaseId,
+            dataType: dataType ?? savedVariableAttribute.dataType,
+            type: variableAttribute.type ?? savedVariableAttribute.type,
+            mutability: variableAttribute.mutability ?? savedVariableAttribute.mutability,
+            persistent: variableAttribute.persistent ?? savedVariableAttribute.persistent ?? false,
+            constant: variableAttribute.constant ?? savedVariableAttribute.constant ?? false,
+            generatedAt: isoTimestamp,
+          };
+
+          // Only overwrite value if it is explicitly present in the incoming data.
+          // This prevents clearing secrets like BasicAuthPassword when chargers
+          // send write-only variables without a value in NotifyReport.
+          if ('value' in variableAttribute) {
+            updatePayload.value = variableAttribute.value;
+          }
+
           return (await this.updateByKey(
             tenantId,
-            {
-              evseDatabaseId: component.evseDatabaseId,
-              dataType: dataType ?? savedVariableAttribute.dataType,
-              type: variableAttribute.type ?? savedVariableAttribute.type,
-              value: variableAttribute.value ?? null,
-              mutability: variableAttribute.mutability ?? savedVariableAttribute.mutability,
-              persistent: variableAttribute.persistent ?? false,
-              constant: variableAttribute.constant ?? false,
-              generatedAt: isoTimestamp,
-            },
+            updatePayload,
             savedVariableAttribute.id,
           )) as VariableAttribute;
         }
