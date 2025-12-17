@@ -12,6 +12,7 @@ export * from './authorizer/index.js';
 export { MemoryCache } from './cache/memory.js';
 export { RedisCache } from './cache/redis.js';
 export { S3Storage } from './files/s3Storage.js';
+export { GcpCloudStorage } from './files/gcpCloudStorage.js';
 export { FtpServer } from './files/ftpServer.js';
 export { LocalStorage } from './files/localStorage.js';
 export * from './queue/index.js';
