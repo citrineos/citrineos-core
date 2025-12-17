@@ -22,7 +22,10 @@ export class GcpCloudStorage implements ConfigStore {
     if (!config) {
       throw new Error('GCP Cloud Storage config missing.');
     }
-    this.storageClient = new Storage();
+    this.storageClient = new Storage({
+      projectId: config.projectId,
+      credentials: config.credentials,
+    });
     this.configBucketName = configDir || 'default';
     this.configFileName = configFileName;
     this._logger = logger
