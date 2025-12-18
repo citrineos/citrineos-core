@@ -1,27 +1,37 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-/* eslint-disable */
-
-import {
-  AbstractMessageRouter,
-  AbstractModule,
-  Ajv,
-  BOOT_STATUS,
+import type {
   BootstrapConfig,
-  CacheNamespace,
   Call,
   CallAction,
   CallError,
   CallResult,
-  ErrorCode,
-  EventGroup,
+  CircuitBreakerOptions,
+  CircuitBreakerState,
   ICache,
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
   IMessageRouter,
   IMessageSender,
+  OcppRequest,
+  OcppResponse,
+  OCPPVersionType,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractMessageRouter,
+  AbstractModule,
+  Ajv,
+  BOOT_STATUS,
+  CacheNamespace,
+  CircuitBreaker,
+  createIdentifier,
+  ErrorCode,
+  EventGroup,
+  getStationIdFromIdentifier,
+  getTenantIdFromIdentifier,
   mapToCallAction,
   MessageOrigin,
   MessageState,
@@ -29,27 +39,17 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
-  OcppRequest,
-  OcppResponse,
   OCPPVersion,
-  OCPPVersionType,
   RequestBuilder,
   RetryMessageError,
-  SystemConfig,
-  CircuitBreaker,
-  CircuitBreakerOptions,
-  CircuitBreakerState,
 } from '@citrineos/base';
-import { v4 as uuidv4 } from 'uuid';
-import { ILogObj, Logger } from 'tslog';
-import { ILocationRepository, ISubscriptionRepository, sequelize } from '@citrineos/data';
-import { WebhookDispatcher } from './webhook.dispatcher';
-import {
-  createIdentifier,
-  getStationIdFromIdentifier,
-  getTenantIdFromIdentifier,
-} from '@citrineos/base';
+import type { ILocationRepository } from '@citrineos/data';
+import { sequelize } from '@citrineos/data';
 import { OidcTokenProvider } from '@citrineos/util';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { v4 as uuidv4 } from 'uuid';
+import { WebhookDispatcher } from './webhook.dispatcher.js';
 
 /**
  * Implementation of the ocpp router
@@ -65,7 +65,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   protected _handler: IMessageHandler;
   protected _networkHook: (identifier: string, message: string) => Promise<void>;
   protected _locationRepository: ILocationRepository;
-  public subscriptionRepository: ISubscriptionRepository;
   protected _circuitBreaker: CircuitBreaker;
   protected _reconnectInterval?: NodeJS.Timeout;
   protected static readonly DEFAULT_MAX_RECONNECT_DELAY = 30; // seconds
@@ -84,9 +83,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {Function} networkHook - the network hook needed to send messages to chargers
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
    * represents a repository for accessing and manipulating variable data.
-   * If no `locationRepository` is provided, a default {@link sequelize.LocationRepository} instance is created and used.
-   *
-   * @param {ISubscriptionRepository} [subscriptionRepository] - the subscription repository
+   * If no `locationRepository` is provided, a default {@link locationRepository} instance is created and used.
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
    * @param {Ajv} [ajv] - the Ajv object, for message validation (optional)
    * @param {CircuitBreakerOptions} [circuitBreakerOptions] - options to configure the circuit breaker
@@ -99,9 +96,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     dispatcher: WebhookDispatcher,
     networkHook: (identifier: string, message: string) => Promise<void>,
     logger?: Logger<ILogObj>,
-    ajv?: Ajv,
+    ajv?: Ajv.Ajv,
     locationRepository?: ILocationRepository,
-    subscriptionRepository?: ISubscriptionRepository,
     circuitBreakerOptions?: CircuitBreakerOptions,
   ) {
     super(config, cache, handler, sender, networkHook, logger, ajv);
@@ -113,9 +109,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this._networkHook = networkHook;
     this._locationRepository =
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
-    this.subscriptionRepository =
-      subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
-    this._handler.initConnection();
+    this._handler.initConnection().catch((err) => {
+      this._logger.error('initConnection failed', err);
+    });
     if (this._config.oidcClient) {
       this._oidcTokenProvider = new OidcTokenProvider(this._config.oidcClient, this._logger);
     }
@@ -177,7 +173,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   }
 
   async deregisterConnection(tenantId: number, stationId: string): Promise<boolean> {
-    this._webhookDispatcher.deregister(tenantId, stationId);
+    this._webhookDispatcher.deregister(tenantId, stationId).catch((err) => {
+      this._logger.error('_webhookDispatcher deregister failed', err);
+    });
 
     let protocol: OCPPVersion | null = null;
     try {
@@ -216,7 +214,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     let success = true;
     let rpcMessage: any;
     let messageTypeId: MessageTypeId | undefined = undefined;
-    let messageId: string = '-1'; // OCPP 2.0.1 part 4, section 4.2.3, "When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId."
+    let messageId: string = '-1'; // OCPP 2.0.1 part 4, section 4.2.3, When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId.
     try {
       try {
         rpcMessage = JSON.parse(message);
@@ -229,26 +227,32 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       messageTypeId = rpcMessage[0];
       messageId = rpcMessage[1];
       switch (messageTypeId) {
-        case MessageTypeId.Call:
+        case MessageTypeId.Call: {
           await this._onCall(identifier, rpcMessage as Call, timestamp, protocol);
           break;
-        case MessageTypeId.CallResult:
+        }
+        case MessageTypeId.CallResult: {
           await this._onCallResult(identifier, rpcMessage as CallResult, timestamp, protocol);
           break;
-        case MessageTypeId.CallError:
+        }
+        case MessageTypeId.CallError: {
           await this._onCallError(identifier, rpcMessage as CallError, timestamp, protocol);
           break;
-        default:
+        }
+        default: {
           let errorCode;
           switch (protocol) {
-            case 'ocpp1.6':
+            case 'ocpp1.6': {
               errorCode = ErrorCode.FormationViolation;
               break;
-            case 'ocpp2.0.1':
+            }
+            case 'ocpp2.0.1': {
               errorCode = ErrorCode.FormatViolation;
               break;
-            default:
+            }
+            default: {
               throw new Error('Unknown protocol: ' + protocol);
+            }
           }
           throw new OcppError(
             messageId,
@@ -256,6 +260,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             'Unknown message type id: ' + messageTypeId,
             {},
           );
+        }
       }
     } catch (error) {
       success = false; // ensure we return false in case of an error
@@ -273,7 +278,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
               ];
         callError = this.removeNulls(callError);
         const rawMessage = JSON.stringify(callError);
-        this._sendMessage(identifier, protocol, rawMessage, callError);
+        await this._sendMessage(identifier, protocol, rawMessage, callError);
       }
     }
     await this._webhookDispatcher.dispatchMessageReceived(
@@ -373,7 +378,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       );
       return { success: false };
     }
-    let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+    const [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/) ?? []; // Returns all characters after first ':' in case ':' is used in messageId
     if (cachedAction === action && cachedMessageId === correlationId) {
       message = this.removeNulls(message);
       const rawMessage = JSON.stringify(message);
@@ -425,7 +430,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       this._logger.error('Failed to send callError due to missing message id', identifier, message);
       return { success: false };
     }
-    let [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+    const [_cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/) ?? []; // Returns all characters after first ':' in case ':' is used in messageId
     if (cachedMessageId === correlationId) {
       message = this.removeNulls(message);
       const rawMessage = JSON.stringify(message);
@@ -538,11 +543,15 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
               details: error,
             });
 
-      this.sendCallError(messageId, stationId, tenantId, protocol, action, callError).finally(
-        () => {
-          this._cache.remove(identifier, CacheNamespace.Transactions);
-        },
-      );
+      this.sendCallError(messageId, stationId, tenantId, protocol, action, callError)
+        .catch((err) => {
+          this._logger.error('sendCallError failed', err);
+        })
+        .finally(() => {
+          this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
+            this._logger.error('cache remove failed', err);
+          });
+        });
     }
   }
 
@@ -568,8 +577,13 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
     this._cache
       .get<string>(identifier, CacheNamespace.Transactions)
+      .catch((err) => {
+        this._logger.error('cache get failed', err);
+      })
       .then((cachedActionMessageId) => {
-        this._cache.remove(identifier, CacheNamespace.Transactions); // Always remove pending call transaction
+        this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
+          this._logger.error('_onCallResult cache remove failed', err);
+        });
         if (!cachedActionMessageId) {
           throw new OcppError(
             messageId,
@@ -645,7 +659,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this._cache
       .get<string>(identifier, CacheNamespace.Transactions)
       .then((cachedActionMessageId) => {
-        this._cache.remove(identifier, CacheNamespace.Transactions); // Always remove pending call transaction
+        this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
+          this._logger.error('_onCallError cache remove failed', err);
+        }); // Always remove pending call transaction
         if (!cachedActionMessageId) {
           throw new OcppError(
             messageId,
@@ -703,13 +719,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       // Don't dispatch if the message was not sent
       return false;
     }
-    this._webhookDispatcher.dispatchMessageSent(
-      identifier,
-      rawMessage,
-      new Date().toISOString(),
-      protocol,
-      rpcMessage,
-    );
+    this._webhookDispatcher
+      .dispatchMessageSent(identifier, rawMessage, new Date().toISOString(), protocol, rpcMessage)
+      .catch((err) => {
+        this._logger.error('dispatchMessageSent failed', err);
+      });
     return true;
   }
 
@@ -812,7 +826,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     );
 
     // Fulfill callback for api, if needed
-    this._handleMessageApiCallback(_message);
+    this._handleMessageApiCallback(_message).catch((err) => {
+      this._logger.error('_handleMessageApiCallback failed', err);
+    });
 
     // No error routing currently done
     this._logger.warn('Error routing not implemented');

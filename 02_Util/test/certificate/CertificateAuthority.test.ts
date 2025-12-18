@@ -4,20 +4,21 @@
 import {
   IChargingStationCertificateAuthorityClient,
   IV2GCertificateAuthorityClient,
-} from '../../src/certificate/client/interface';
+} from '../../src/certificate/client/interface.js';
 import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { CertificateAuthorityService } from '../../src';
 import {
   aValidCertificateItemArray,
   aValidSignedCertificateWithOCSPInfo,
-} from '../providers/CertificateAuthority';
+} from '../providers/CertificateAuthority.js';
 import { faker } from '@faker-js/faker';
-import * as CertificateUtil from '../../src/certificate/CertificateUtil';
-import { readFile } from '../utils/FileUtil';
+import * as CertificateUtil from '../../src/certificate/CertificateUtil.js';
+import { readFile } from '../utils/FileUtil.js';
 import { KJUR } from 'jsrsasign';
+import { beforeAll, describe, expect, it, Mock, Mocked, vi } from 'vitest';
 
-jest.mock('../../src/certificate/CertificateUtil');
-jest.spyOn(KJUR.asn1.ocsp.OCSPUtil, 'getOCSPResponseInfo').mockImplementation(() => {
+vi.mock('../../src/certificate/CertificateUtil');
+vi.spyOn(KJUR.asn1.ocsp.OCSPUtil, 'getOCSPResponseInfo').mockImplementation(() => {
   // Provide a mock implementation
   return {
     certStatus: 'good',
@@ -28,27 +29,27 @@ jest.spyOn(KJUR.asn1.ocsp.OCSPUtil, 'getOCSPResponseInfo').mockImplementation(()
 });
 
 describe('CertificateAuthorityService', () => {
-  let mockV2GClient: jest.Mocked<IV2GCertificateAuthorityClient>;
-  let mockChargingStationClient: jest.Mocked<IChargingStationCertificateAuthorityClient>;
-  let mockSystemConfig: jest.Mocked<SystemConfig>;
-  let mockCertUtil: jest.Mocked<typeof CertificateUtil>;
+  let mockV2GClient: Mocked<IV2GCertificateAuthorityClient>;
+  let mockChargingStationClient: Mocked<IChargingStationCertificateAuthorityClient>;
+  let mockSystemConfig: Mocked<SystemConfig>;
+  let mockCertUtil: Mocked<typeof CertificateUtil>;
   let certificateAuthorityService: CertificateAuthorityService;
 
   beforeAll(() => {
-    mockSystemConfig = {} as unknown as jest.Mocked<SystemConfig>;
+    mockSystemConfig = {} as unknown as Mocked<SystemConfig>;
 
     mockV2GClient = {
-      getSignedCertificate: jest.fn(),
-      getCACertificates: jest.fn(),
-      getRootCertificates: jest.fn(),
-    } as unknown as jest.Mocked<IV2GCertificateAuthorityClient>;
+      getSignedCertificate: vi.fn(),
+      getCACertificates: vi.fn(),
+      getRootCertificates: vi.fn(),
+    } as unknown as Mocked<IV2GCertificateAuthorityClient>;
 
     mockChargingStationClient = {
-      getRootCACertificate: jest.fn(),
-      getCertificateChain: jest.fn(),
-    } as unknown as jest.Mocked<IChargingStationCertificateAuthorityClient>;
+      getRootCACertificate: vi.fn(),
+      getCertificateChain: vi.fn(),
+    } as unknown as Mocked<IChargingStationCertificateAuthorityClient>;
 
-    mockCertUtil = CertificateUtil as jest.Mocked<typeof CertificateUtil>;
+    mockCertUtil = CertificateUtil as Mocked<typeof CertificateUtil>;
 
     certificateAuthorityService = new CertificateAuthorityService(
       mockSystemConfig,
@@ -202,7 +203,7 @@ describe('CertificateAuthorityService', () => {
     });
 
     it('fails when no root certificates match', async () => {
-      (mockV2GClient.getRootCertificates as jest.Mock).mockReturnValueOnce([]);
+      (mockV2GClient.getRootCertificates as Mock).mockReturnValueOnce([]);
       const result = await certificateAuthorityService.validateCertificateChainPem(
         readFile('SubCACertificateSample.pem'), //aInvalidCertificateChainWithoutRoot(),
       );

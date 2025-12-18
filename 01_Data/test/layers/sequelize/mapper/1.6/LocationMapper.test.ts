@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { ConnectorErrorCode, ConnectorStatus, OCPP1_6 } from '@citrineos/base';
+import { ConnectorErrorCodeEnum, ConnectorStatusEnum, OCPP1_6 } from '@citrineos/base';
+import { describe, expect, it } from 'vitest';
 import { LocationMapper } from '../../../../../src/layers/sequelize/mapper/1.6';
 
 describe('LocationMapper', () => {
@@ -10,39 +11,39 @@ describe('LocationMapper', () => {
       const testCases = [
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Available,
-          expected: ConnectorStatus.Available,
+          expected: ConnectorStatusEnum.Available,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Preparing,
-          expected: ConnectorStatus.Preparing,
+          expected: ConnectorStatusEnum.Preparing,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Charging,
-          expected: ConnectorStatus.Charging,
+          expected: ConnectorStatusEnum.Charging,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.SuspendedEVSE,
-          expected: ConnectorStatus.SuspendedEVSE,
+          expected: ConnectorStatusEnum.SuspendedEVSE,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.SuspendedEV,
-          expected: ConnectorStatus.SuspendedEV,
+          expected: ConnectorStatusEnum.SuspendedEV,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Finishing,
-          expected: ConnectorStatus.Finishing,
+          expected: ConnectorStatusEnum.Finishing,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Reserved,
-          expected: ConnectorStatus.Reserved,
+          expected: ConnectorStatusEnum.Reserved,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Unavailable,
-          expected: ConnectorStatus.Unavailable,
+          expected: ConnectorStatusEnum.Unavailable,
         },
         {
           input: OCPP1_6.StatusNotificationRequestStatus.Faulted,
-          expected: ConnectorStatus.Faulted,
+          expected: ConnectorStatusEnum.Faulted,
         },
       ];
 
@@ -56,7 +57,7 @@ describe('LocationMapper', () => {
       const result = LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
         'InvalidStatus' as OCPP1_6.StatusNotificationRequestStatus,
       );
-      expect(result).toBe(ConnectorStatus.Unknown);
+      expect(result).toBe(ConnectorStatusEnum.Unknown);
     });
   });
 
@@ -65,67 +66,67 @@ describe('LocationMapper', () => {
       const testCases = [
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.ConnectorLockFailure,
-          expected: ConnectorErrorCode.ConnectorLockFailure,
+          expected: ConnectorErrorCodeEnum.ConnectorLockFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.EVCommunicationError,
-          expected: ConnectorErrorCode.EVCommunicationError,
+          expected: ConnectorErrorCodeEnum.EVCommunicationError,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.GroundFailure,
-          expected: ConnectorErrorCode.GroundFailure,
+          expected: ConnectorErrorCodeEnum.GroundFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.HighTemperature,
-          expected: ConnectorErrorCode.HighTemperature,
+          expected: ConnectorErrorCodeEnum.HighTemperature,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.InternalError,
-          expected: ConnectorErrorCode.InternalError,
+          expected: ConnectorErrorCodeEnum.InternalError,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.LocalListConflict,
-          expected: ConnectorErrorCode.LocalListConflict,
+          expected: ConnectorErrorCodeEnum.LocalListConflict,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.NoError,
-          expected: ConnectorErrorCode.NoError,
+          expected: ConnectorErrorCodeEnum.NoError,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.OtherError,
-          expected: ConnectorErrorCode.OtherError,
+          expected: ConnectorErrorCodeEnum.OtherError,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.OverCurrentFailure,
-          expected: ConnectorErrorCode.OverCurrentFailure,
+          expected: ConnectorErrorCodeEnum.OverCurrentFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.PowerMeterFailure,
-          expected: ConnectorErrorCode.PowerMeterFailure,
+          expected: ConnectorErrorCodeEnum.PowerMeterFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.PowerSwitchFailure,
-          expected: ConnectorErrorCode.PowerSwitchFailure,
+          expected: ConnectorErrorCodeEnum.PowerSwitchFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.ReaderFailure,
-          expected: ConnectorErrorCode.ReaderFailure,
+          expected: ConnectorErrorCodeEnum.ReaderFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.ResetFailure,
-          expected: ConnectorErrorCode.ResetFailure,
+          expected: ConnectorErrorCodeEnum.ResetFailure,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.UnderVoltage,
-          expected: ConnectorErrorCode.UnderVoltage,
+          expected: ConnectorErrorCodeEnum.UnderVoltage,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.OverVoltage,
-          expected: ConnectorErrorCode.OverVoltage,
+          expected: ConnectorErrorCodeEnum.OverVoltage,
         },
         {
           input: OCPP1_6.StatusNotificationRequestErrorCode.WeakSignal,
-          expected: ConnectorErrorCode.WeakSignal,
+          expected: ConnectorErrorCodeEnum.WeakSignal,
         },
       ];
 

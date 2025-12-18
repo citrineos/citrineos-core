@@ -1,23 +1,20 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractMessageSender,
+import type {
+  CircuitBreakerState,
   IMessage,
   IMessageConfirmation,
   IMessageSender,
-  MessageState,
-  OcppError,
   OcppRequest,
   OcppResponse,
   SystemConfig,
-  CircuitBreakerState,
-  CircuitBreaker,
 } from '@citrineos/base';
+import { AbstractMessageSender, CircuitBreaker, MessageState, OcppError } from '@citrineos/base';
 import * as amqplib from 'amqplib';
 import { instanceToPlain } from 'class-transformer';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 /**
  * Implementation of a {@link IMessageSender} using RabbitMQ as the underlying transport.
@@ -235,7 +232,11 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
           reason,
         );
         void this.shutdown();
-        this._startReconnectInterval();
+        if (this._reconnectInterval) {
+          this._logger.info('Clearing reconnect interval as circuit breaker is now CLOSED.');
+          clearInterval(this._reconnectInterval);
+          this._reconnectInterval = undefined;
+        }
         break;
       }
       case 'OPEN': {
@@ -263,6 +264,8 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
           'Circuit breaker is FAILING. RabbitMQ sender will not send messages until recovery. Reason:',
           reason,
         );
+        this._logger.info('Attempting to start reconnect interval after circuit breaker FAILING.');
+        this._startReconnectInterval();
         break;
       }
       default:
@@ -298,8 +301,5 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
     this._connection = undefined;
     this._channel = undefined;
     this._circuitBreaker.triggerFailure('RabbitMQ connection lost');
-    if (this._circuitBreaker.state === 'CLOSED') {
-      this._startReconnectInterval();
-    }
   }
 }

@@ -1,25 +1,34 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  LocationHours,
-  ILocationDto,
-  LocationFacilityType,
-  LocationParkingType,
-  OCPP2_0_1_Namespace,
+import type {
+  LocationDto,
+  LocationFacilityEnumType,
+  LocationParkingEnumType,
+  TenantDto,
 } from '@citrineos/base';
-import { Column, DataType, HasMany, Table } from 'sequelize-typescript';
-import { ChargingStation } from './ChargingStation';
-import { Point } from 'geojson';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { DEFAULT_TENANT_ID, LocationHours, OCPP2_0_1_Namespace } from '@citrineos/base';
+import type { Point } from 'geojson';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
+import { ChargingStation } from './ChargingStation.js';
 
 /**
  * Represents a location.
  * Currently, this data model is internal to CitrineOS. In the future, it will be analogous to an OCPI Location.
  */
 @Table
-export class Location extends BaseModelWithTenant implements ILocationDto {
+export class Location extends Model implements LocationDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Location;
 
   @Column(DataType.STRING)
@@ -54,7 +63,7 @@ export class Location extends BaseModelWithTenant implements ILocationDto {
         try {
           Intl.DateTimeFormat(undefined, { timeZone: value });
           return true;
-        } catch (ex) {
+        } catch (_ex) {
           return false;
         }
       },
@@ -63,10 +72,10 @@ export class Location extends BaseModelWithTenant implements ILocationDto {
   declare timeZone: string;
 
   @Column(DataType.STRING)
-  declare parkingType?: LocationParkingType | null;
+  declare parkingType?: LocationParkingEnumType | null;
 
   @Column(DataType.JSONB)
-  declare facilities?: LocationFacilityType[] | null;
+  declare facilities?: LocationFacilityEnumType[] | null;
 
   @Column(DataType.JSONB)
   declare openingHours?: LocationHours | null;
@@ -79,4 +88,31 @@ export class Location extends BaseModelWithTenant implements ILocationDto {
 
   @HasMany(() => ChargingStation)
   declare chargingPool: [ChargingStation, ...ChargingStation[]];
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: Location) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

@@ -1,12 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { SequelizeRepository } from './Base';
-import { ChargingStationSecurityInfo } from '../model/ChargingStationSecurityInfo';
-import { ILogObj, Logger } from 'tslog';
+import { SequelizeRepository } from './Base.js';
+import { ChargingStationSecurityInfo } from '../model/index.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
-import { BootstrapConfig } from '@citrineos/base';
-import { IChargingStationSecurityInfoRepository } from '../../../interfaces';
+import type { BootstrapConfig } from '@citrineos/base';
+import type { IChargingStationSecurityInfoRepository } from '../../../interfaces/index.js';
 
 export class SequelizeChargingStationSecurityInfoRepository
   extends SequelizeRepository<ChargingStationSecurityInfo>

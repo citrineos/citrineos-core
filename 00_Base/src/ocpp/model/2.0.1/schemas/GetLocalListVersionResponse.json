@@ -23,7 +23,9 @@
     },
     "versionNumber": {
       "description": "This contains the current version number of the local authorization list in the Charging Station.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     }
   },
   "required": ["versionNumber"]

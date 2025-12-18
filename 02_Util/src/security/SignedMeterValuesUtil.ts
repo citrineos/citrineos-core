@@ -1,15 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IChargingStationSecurityInfoRepository, sequelize } from '@citrineos/data';
-import {
-  BootstrapConfig,
-  IFileStorage,
-  OCPP2_0_1,
-  SignedMeterValuesConfig,
-  SystemConfig,
-} from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { IChargingStationSecurityInfoRepository } from '@citrineos/data';
+import { sequelize } from '@citrineos/data';
+import type { BootstrapConfig, IFileStorage, SystemConfig } from '@citrineos/base';
+import { OCPP2_0_1, SignedMeterValuesConfig } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import * as crypto from 'node:crypto';
 import { stringToArrayBuffer } from 'pvutils';
 

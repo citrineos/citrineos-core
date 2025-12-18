@@ -2,13 +2,25 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IBootDto, Namespace } from '@citrineos/base';
-import { Column, DataType, HasMany, PrimaryKey, Table } from 'sequelize-typescript';
-import { VariableAttribute } from './DeviceModel';
-import { BaseModelWithTenant } from './BaseModelWithTenant';
+import type { BootDto, TenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
+import { VariableAttribute } from './DeviceModel/index.js';
+import { Tenant } from './Tenant.js';
 
 @Table
-export class Boot extends BaseModelWithTenant implements IBootDto {
+export class Boot extends Model implements BootDto {
   static readonly MODEL_NAME: string = Namespace.BootConfig;
 
   /**
@@ -61,4 +73,31 @@ export class Boot extends BaseModelWithTenant implements IBootDto {
   declare getConfigurationsOnPending?: boolean | null;
 
   declare customData?: object | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: Boot) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

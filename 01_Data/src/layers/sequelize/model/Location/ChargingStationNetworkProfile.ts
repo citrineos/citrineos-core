@@ -2,17 +2,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
-import { ChargingStation } from './ChargingStation';
-import { ServerNetworkProfile } from './ServerNetworkProfile';
-import { SetNetworkProfile } from './SetNetworkProfile';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
-import { IChargingStationNetworkProfileDto } from '@citrineos/base';
+import type { ChargingStationNetworkProfileDto, TenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
+import { ChargingStation } from './ChargingStation.js';
+import { ServerNetworkProfile } from './ServerNetworkProfile.js';
+import { SetNetworkProfile } from './SetNetworkProfile.js';
 
 @Table
 export class ChargingStationNetworkProfile
-  extends BaseModelWithTenant
-  implements IChargingStationNetworkProfileDto
+  extends Model
+  implements ChargingStationNetworkProfileDto
 {
   // Namespace enum not used as this is not a model required by CitrineOS
   static readonly MODEL_NAME: string = 'ChargingStationNetworkProfile';
@@ -53,4 +63,31 @@ export class ChargingStationNetworkProfile
 
   @BelongsTo(() => ServerNetworkProfile)
   declare websocketServerConfig?: ServerNetworkProfile;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: ChargingStationNetworkProfile) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

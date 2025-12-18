@@ -2,20 +2,31 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import {
+import type {
   AdditionalInfo,
-  AuthorizationStatusType,
-  IAuthorizationDto,
-  IdTokenType,
-  Namespace,
-  AuthorizationWhitelistType,
+  AuthorizationDto,
+  AuthorizationStatusEnumType,
+  AuthorizationWhitelistEnumType,
+  IdTokenEnumType,
+  TenantDto,
 } from '@citrineos/base';
-import { BelongsTo, Column, DataType, Default, ForeignKey, Table } from 'sequelize-typescript';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
-import { TenantPartner } from '../TenantPartner';
+import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  Default,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
+import { TenantPartner } from '../TenantPartner.js';
 
 @Table
-export class Authorization extends BaseModelWithTenant implements IAuthorizationDto {
+export class Authorization extends Model implements AuthorizationDto {
   static readonly MODEL_NAME: string = Namespace.AuthorizationData;
 
   @Column(DataType.ARRAY(DataType.STRING))
@@ -34,13 +45,13 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
     type: DataType.STRING,
     unique: 'idToken_type',
   })
-  declare idTokenType?: IdTokenType | null;
+  declare idTokenType?: IdTokenEnumType | null;
 
   @Column(DataType.JSONB)
   declare additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]] | null; // JSONB for AdditionalInfo
 
   @Column(DataType.STRING)
-  declare status: AuthorizationStatusType;
+  declare status: AuthorizationStatusEnumType;
 
   @Column({
     type: DataType.DATE,
@@ -63,7 +74,7 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
   declare personalMessage?: any | null;
 
   @Column(DataType.STRING)
-  declare realTimeAuth?: AuthorizationWhitelistType | null;
+  declare realTimeAuth?: AuthorizationWhitelistEnumType | null;
 
   @Column(DataType.STRING)
   declare realTimeAuthUrl?: string;
@@ -89,4 +100,31 @@ export class Authorization extends BaseModelWithTenant implements IAuthorization
 
   @BelongsTo(() => TenantPartner)
   declare tenantPartner?: TenantPartner | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: Authorization) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

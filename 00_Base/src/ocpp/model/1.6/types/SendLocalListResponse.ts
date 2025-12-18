@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { SendLocalListResponseStatus } from '../enums';
-import { OcppResponse } from '../../../..';
+import { SendLocalListResponseStatus } from '../enums/index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface SendLocalListResponse extends OcppResponse {
   status: SendLocalListResponseStatus;

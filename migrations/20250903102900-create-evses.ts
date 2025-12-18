@@ -4,12 +4,29 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-import { DataTypes, QueryInterface } from 'sequelize';
+import { QueryInterface, QueryTypes } from 'sequelize';
 
-const TABLE_NAME = 'Evses';
-
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
+    const migrationName = '20250903102900-create-evses';
+
+    const [results] = await queryInterface.sequelize.query(
+      `SELECT EXISTS (
+      SELECT 1 
+      FROM "SequelizeMeta" 
+      WHERE name LIKE :pattern
+    ) AS migration_exists`,
+      {
+        replacements: { pattern: `${migrationName}%` },
+        type: QueryTypes.SELECT,
+      },
+    );
+
+    if ((results as any).migration_exists) {
+      console.log('Migration already run, skipping...');
+      return;
+    }
+
     // First, let's get all the stations that have EvseTypes associated with them
     // through VariableAttributes
     const [stationEvseTypes] = await queryInterface.sequelize.query(`

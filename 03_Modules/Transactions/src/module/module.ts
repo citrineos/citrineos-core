@@ -1,16 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
-  AsHandler,
-  AuthorizationStatusType,
+import type {
   BootstrapConfig,
   CallAction,
-  CrudRepository,
-  ErrorCode,
-  EventGroup,
   HandlerProperties,
   IAuthorizer,
   ICache,
@@ -18,17 +11,23 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractModule,
+  AsHandler,
+  AuthorizationStatusEnum,
+  CrudRepository,
+  ErrorCode,
+  EventGroup,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
   OCPPVersion,
-  SystemConfig,
 } from '@citrineos/base';
-import {
-  Authorization,
-  Component,
+import type {
   IAuthorizationRepository,
   IDeviceModelRepository,
   ILocationRepository,
@@ -36,6 +35,10 @@ import {
   IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
+} from '@citrineos/data';
+import {
+  Authorization,
+  Component,
   MeterValue,
   sequelize,
   SequelizeOCPPMessageRepository,
@@ -50,11 +53,12 @@ import {
   RealTimeAuthorizer,
   SignedMeterValuesUtil,
 } from '@citrineos/util';
-import { ILogObj, Logger } from 'tslog';
-import { TransactionService } from './TransactionService';
-import { StatusNotificationService } from './StatusNotificationService';
-import { CostNotifier } from './CostNotifier';
-import { CostCalculator } from './CostCalculator';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { CostCalculator } from './CostCalculator.js';
+import { CostNotifier } from './CostNotifier.js';
+import { StatusNotificationService } from './StatusNotificationService.js';
+import { TransactionService } from './TransactionService.js';
 
 /**
  * Component that handles transaction related messages.
@@ -280,7 +284,7 @@ export class TransactionsModule extends AbstractModule {
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
     let response: OCPP2_0_1.TransactionEventResponse | undefined = undefined;
-
+    let transaction;
     if (transactionEvent.idToken) {
       response = await this._transactionService.authorizeOcpp201IdToken(
         tenantId,
@@ -288,14 +292,27 @@ export class TransactionsModule extends AbstractModule {
         message.context,
       );
     }
-
-    const transaction =
-      await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
-        tenantId,
-        message.payload,
-        stationId,
-      );
-
+    try {
+      transaction =
+        await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
+          tenantId,
+          message.payload,
+          stationId,
+        );
+    } catch (error) {
+      if ((error as any).name === 'SequelizeForeignKeyConstraintError') {
+        await this.sendCallErrorWithMessage(
+          message,
+          new OcppError(
+            message.context.correlationId,
+            ErrorCode.PropertyConstraintViolation,
+            'Referenced entity does not exist.',
+          ),
+        );
+        return;
+      }
+      throw error;
+    }
     if (message.payload.reservationId) {
       await this._transactionService.deactivateReservation(
         tenantId,
@@ -472,11 +489,15 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('StatusNotification received:', message, props);
 
-    await this._statusNotificationService.processStatusNotification(
-      message.context.tenantId,
-      message.context.stationId,
-      message.payload,
-    );
+    this._statusNotificationService
+      .processStatusNotification(
+        message.context.tenantId,
+        message.context.stationId,
+        message.payload,
+      )
+      .catch((error) => {
+        this._logger.error('Failed to process status notification', error);
+      });
 
     // Create response
     const response: OCPP2_0_1.StatusNotificationResponse = {};
@@ -610,7 +631,14 @@ export class TransactionsModule extends AbstractModule {
           );
         response.transactionId = parseInt(newTransaction.transactionId);
       } catch (error) {
-        this._logger.error(`Failed to create transaction for idTag ${request.idTag}`, error);
+        const errorMessage = (error as Error).message || '';
+        if (errorMessage.includes('Charging station') && errorMessage.includes('does not exist')) {
+          this._logger.error(
+            `Charging station ${stationId} does not exist for idTag ${request.idTag}`,
+          );
+        } else {
+          this._logger.error(`Failed to create transaction for idTag ${request.idTag}`, error);
+        }
         response.idTagInfo = {
           status: OCPP1_6.StartTransactionResponseStatus.Invalid,
         };
@@ -650,17 +678,17 @@ export class TransactionsModule extends AbstractModule {
     let idTokenInfoStatus = authorization?.status;
     if (authorization === undefined && request.idTag) {
       // Unknown idTag, fallback to Invalid
-      idTokenInfoStatus = AuthorizationStatusType.Invalid;
+      idTokenInfoStatus = 'Invalid';
     }
     switch (idTokenInfoStatus) {
-      case AuthorizationStatusType.Accepted:
-      case AuthorizationStatusType.Blocked:
-      case AuthorizationStatusType.Expired:
-      case AuthorizationStatusType.ConcurrentTx:
-      case AuthorizationStatusType.Invalid:
+      case AuthorizationStatusEnum.Accepted:
+      case AuthorizationStatusEnum.Blocked:
+      case AuthorizationStatusEnum.Expired:
+      case AuthorizationStatusEnum.ConcurrentTx:
+      case AuthorizationStatusEnum.Invalid:
         break;
       default: // Other OCPP 2.0.1 statuses default to Invalid for OCPP 1.6
-        idTokenInfoStatus = AuthorizationStatusType.Invalid;
+        idTokenInfoStatus = AuthorizationStatusEnum.Invalid;
     }
 
     let parentIdTag: string | undefined = undefined;

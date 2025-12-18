@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { IncomingMessage } from 'http';
-import { splitOnce } from './StringOperations';
+import { splitOnce } from './StringOperations.js';
 
 /**
  * Extracts credentials from the Authorization header.

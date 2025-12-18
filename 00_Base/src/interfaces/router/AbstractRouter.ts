@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Ajv, ErrorObject } from 'ajv';
+import type { ErrorObject } from 'ajv';
+import { Ajv } from 'ajv';
 
-import {
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type {
   Call,
   CallAction,
   CallResult,
@@ -13,21 +16,24 @@ import {
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
+  OcppRequest,
+  OcppResponse,
+  OCPPVersionType,
+  SystemConfig,
+} from '../../index.js';
+import {
   MessageOrigin,
   MessageState,
   OCPP1_6_CALL_RESULT_SCHEMA_MAP,
   OCPP1_6_CALL_SCHEMA_MAP,
+  OCPP1_6_CallAction,
   OCPP2_0_1_CALL_RESULT_SCHEMA_MAP,
   OCPP2_0_1_CALL_SCHEMA_MAP,
+  OCPP2_0_1_CallAction,
   OcppError,
-  OcppRequest,
-  OcppResponse,
   OCPPVersion,
-  OCPPVersionType,
-  SystemConfig,
-} from '../..';
-import { ILogObj, Logger } from 'tslog';
-import { IMessageRouter } from './Router';
+} from '../../index.js';
+import type { IMessageRouter } from './Router.js';
 
 export abstract class AbstractMessageRouter implements IMessageRouter {
   /**
@@ -121,14 +127,23 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     this._logger.debug('Received message:', message);
 
     if (message.state === MessageState.Response) {
-      if (message.payload instanceof OcppError) {
+      if (message.payload && (message.payload as any)._errorCode) {
+        // Create OcppError from payload properties for sendCallError method
+        const errorPayload = message.payload as any;
+        const ocppError = new OcppError(
+          errorPayload._messageId,
+          errorPayload._errorCode,
+          errorPayload.message || '',
+          errorPayload._errorDetails || {},
+        );
+
         await this.sendCallError(
           message.context.correlationId,
           message.context.stationId,
           message.context.tenantId,
           message.protocol,
           message.action,
-          message.payload,
+          ocppError,
           message.origin,
         );
       } else {
@@ -198,9 +213,31 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       const result = validate(payload);
       if (!result) {
         const validationErrorsDeepCopy = JSON.parse(JSON.stringify(validate.errors));
-        this._logger.debug('Validate CallResult failed', validationErrorsDeepCopy);
+        this._logger.debug('Validate Call failed', validationErrorsDeepCopy);
         return { isValid: false, errors: validationErrorsDeepCopy };
       } else {
+        if (
+          action === OCPP1_6_CallAction.DataTransfer ||
+          action === OCPP2_0_1_CallAction.DataTransfer
+        ) {
+          const dataTransferRequest: { vendorId: string; messageId?: string; data: string } =
+            payload as any;
+          const dataTransferPayloadValidate = this._ajv.getSchema(
+            `${protocol}-${dataTransferRequest.vendorId}${dataTransferRequest.messageId ? `-${dataTransferRequest.messageId}` : ''}`,
+          );
+          if (dataTransferPayloadValidate) {
+            const dataTransferPayloadResult = dataTransferPayloadValidate(
+              JSON.parse(dataTransferRequest.data),
+            );
+            if (!dataTransferPayloadResult) {
+              const validationErrorsDeepCopy = JSON.parse(
+                JSON.stringify(dataTransferPayloadValidate.errors),
+              );
+              this._logger.debug('Validate DataTransfer payload failed', validationErrorsDeepCopy);
+              return { isValid: false, errors: validationErrorsDeepCopy };
+            }
+          }
+        }
         return { isValid: true };
       }
     } else {

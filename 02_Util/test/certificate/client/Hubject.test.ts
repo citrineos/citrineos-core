@@ -2,14 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { SystemConfig } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { faker } from '@faker-js/faker';
-import { Hubject } from '../../../src/certificate/client/hubject';
+import { Hubject } from '../../../src/certificate/client/hubject.js';
 import {
   aValidAuthorizationToken,
   aValidRootCertificates,
   aValidSignedContractData,
-} from '../../providers/Hubject';
+} from '../../providers/Hubject.js';
+import { beforeAll, describe, expect, it, Mock, vi } from 'vitest';
 
 describe('Hubject', () => {
   const mockBaseURL = 'https://hubject.base.test';
@@ -24,7 +26,7 @@ describe('Hubject', () => {
   let hubject: Hubject;
 
   beforeAll(() => {
-    global.fetch = jest.fn();
+    global.fetch = vi.fn();
 
     systemConfig = {
       util: {
@@ -45,7 +47,7 @@ describe('Hubject', () => {
 
   describe('getSignedContractData', () => {
     it('successes', async () => {
-      (fetch as jest.Mock)
+      (fetch as Mock)
         .mockReturnValueOnce(
           Promise.resolve({
             ok: true,
@@ -90,7 +92,7 @@ describe('Hubject', () => {
 
   describe('getRootCertificates', () => {
     it('successes', async () => {
-      (fetch as jest.Mock)
+      (fetch as Mock)
         .mockReturnValueOnce(
           Promise.resolve({
             ok: true,
@@ -127,7 +129,7 @@ describe('Hubject', () => {
 
   describe('getSignedCertificate', () => {
     it('fails due to internal server error', async () => {
-      (fetch as jest.Mock)
+      (fetch as Mock)
         .mockReturnValueOnce(
           Promise.resolve({
             ok: true,
@@ -163,7 +165,7 @@ describe('Hubject', () => {
 
   describe('getCACertificates', () => {
     it('fails due to internal server error', async () => {
-      (fetch as jest.Mock)
+      (fetch as Mock)
         .mockReturnValueOnce(
           Promise.resolve({
             ok: true,

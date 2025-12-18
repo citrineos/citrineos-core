@@ -2,6 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { BootMapper } from './BootMapper';
-export { AuthorizationMapper } from './AuthorizationMapper';
-export { LocationMapper } from './LocationMapper';
+export { BootMapper } from './BootMapper.js';
+export { AuthorizationMapper } from './AuthorizationMapper.js';
+export { LocationMapper } from './LocationMapper.js';

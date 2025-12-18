@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { OCPP2_0_1, OCPP1_6 } from '../ocpp/model';
-import { OCPP1_6_CallAction, OCPP2_0_1_CallAction } from '../ocpp/rpc/message';
-import { EventGroup } from '../interfaces/messages';
+import { EventGroup } from '../interfaces/messages/index.js';
+import { OCPP1_6, OCPP2_0_1 } from '../ocpp/model/index.js';
+import { OCPP1_6_CallAction, OCPP2_0_1_CallAction } from '../ocpp/rpc/message.js';
 
 const OCPP1_6_CallActionSchema = z.nativeEnum(OCPP1_6_CallAction);
 const OCPP2_0_1_CallActionSchema = z.nativeEnum(OCPP2_0_1_CallAction);
@@ -25,8 +25,8 @@ export const oidcClientConfigSchema = z
 export const websocketServerInputSchema = z.object({
   id: z.string().optional(),
   host: z.string().default('localhost').optional(),
-  port: z.number().int().positive().default(8080).optional(),
-  pingInterval: z.number().int().positive().default(60).optional(),
+  port: z.number().int().min(1).default(8080).optional(),
+  pingInterval: z.number().int().min(1).default(60).optional(),
   protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']).default('ocpp2.0.1').optional(),
   securityProfile: z.number().int().min(0).max(3).default(0).optional(),
   allowUnknownChargingStations: z.boolean().default(false).optional(),
@@ -43,21 +43,21 @@ export const systemConfigInputSchema = z.object({
   env: z.enum(['development', 'production']),
   centralSystem: z.object({
     host: z.string().default('localhost').optional(),
-    port: z.number().int().positive().default(8081).optional(),
+    port: z.number().int().min(1).default(8081).optional(),
   }),
   modules: z.object({
     certificates: z
       .object({
         endpointPrefix: z.string().default(EventGroup.Certificates).optional(),
         host: z.string().default('localhost').optional(),
-        port: z.number().int().positive().default(8081).optional(),
+        port: z.number().int().min(1).default(8081).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
       })
       .optional(),
     configuration: z.object({
-      heartbeatInterval: z.number().int().positive().default(60).optional(),
-      bootRetryInterval: z.number().int().positive().default(10).optional(),
+      heartbeatInterval: z.number().int().min(1).default(60).optional(),
+      bootRetryInterval: z.number().int().min(1).default(10).optional(),
       requests: z.array(CallActionSchema),
       responses: z.array(CallActionSchema),
       ocpp2_0_1: z
@@ -89,26 +89,26 @@ export const systemConfigInputSchema = z.object({
         .optional(),
       endpointPrefix: z.string().default(EventGroup.Configuration).optional(),
       host: z.string().default('localhost').optional(),
-      port: z.number().int().positive().default(8081).optional(),
+      port: z.number().int().min(1).default(8081).optional(),
     }),
     evdriver: z.object({
       endpointPrefix: z.string().default(EventGroup.EVDriver).optional(),
       host: z.string().default('localhost').optional(),
-      port: z.number().int().positive().default(8081).optional(),
+      port: z.number().int().min(1).default(8081).optional(),
       requests: z.array(CallActionSchema),
       responses: z.array(CallActionSchema),
     }),
     monitoring: z.object({
       endpointPrefix: z.string().default(EventGroup.Monitoring).optional(),
       host: z.string().default('localhost').optional(),
-      port: z.number().int().positive().default(8081).optional(),
+      port: z.number().int().min(1).default(8081).optional(),
       requests: z.array(CallActionSchema),
       responses: z.array(CallActionSchema),
     }),
     reporting: z.object({
       endpointPrefix: z.string().default(EventGroup.Reporting).optional(),
       host: z.string().default('localhost').optional(),
-      port: z.number().int().positive().default(8081).optional(),
+      port: z.number().int().min(1).default(8081).optional(),
       requests: z.array(CallActionSchema),
       responses: z.array(CallActionSchema),
     }),
@@ -116,7 +116,7 @@ export const systemConfigInputSchema = z.object({
       .object({
         endpointPrefix: z.string().default(EventGroup.SmartCharging).optional(),
         host: z.string().default('localhost').optional(),
-        port: z.number().int().positive().default(8081).optional(),
+        port: z.number().int().min(1).default(8081).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
       })
@@ -125,7 +125,7 @@ export const systemConfigInputSchema = z.object({
       .object({
         endpointPrefix: z.string().default(EventGroup.Tenant).optional(),
         host: z.string().default('localhost').optional(),
-        port: z.number().int().positive().default(8081).optional(),
+        port: z.number().int().min(1).default(8081).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
       })
@@ -135,8 +135,8 @@ export const systemConfigInputSchema = z.object({
       requests: z.array(CallActionSchema),
       responses: z.array(CallActionSchema),
       host: z.string().default('localhost').optional(),
-      port: z.number().int().positive().default(8081).optional(),
-      costUpdatedInterval: z.number().int().positive().default(60).optional(),
+      port: z.number().int().min(1).default(8081).optional(),
+      costUpdatedInterval: z.number().int().min(1).default(60).optional(),
       sendCostUpdatedOnMeterValue: z.boolean().default(false).optional(),
       signedMeterValuesConfiguration: z
         .object({
@@ -151,10 +151,17 @@ export const systemConfigInputSchema = z.object({
       .object({
         memory: z.boolean().optional(),
         redis: z
-          .object({
-            host: z.string().default('localhost').optional(),
-            port: z.number().int().positive().default(6379).optional(),
-          })
+          .union([
+            z.object({
+              host: z.string().default('localhost').optional(),
+              port: z.number().int().min(1).default(6379).optional(),
+            }),
+            z.object({
+              url: z.url().refine((v) => v.startsWith('redis://') || v.startsWith('rediss://'), {
+                message: 'Redis URL must start with redis:// or rediss://',
+              }),
+            }),
+          ])
           .optional(),
       })
       .refine((obj) => obj.memory || obj.redis, {
@@ -191,7 +198,7 @@ export const systemConfigInputSchema = z.object({
             jwksUri: z.string(),
             issuer: z.string(),
             audience: z.string(),
-            cacheTime: z.number().int().positive().optional(),
+            cacheTime: z.number().int().min(1).optional(),
             rateLimit: z.boolean().default(false).optional(),
           })
           .optional(),
@@ -255,12 +262,12 @@ export const systemConfigInputSchema = z.object({
     }),
   }),
   logLevel: z.number().min(0).max(6).default(0).optional(),
-  maxCallLengthSeconds: z.number().int().positive().default(5).optional(),
-  maxCachingSeconds: z.number().int().positive().default(10).optional(),
-  maxReconnectDelay: z.number().int().positive().default(30).optional(),
+  maxCallLengthSeconds: z.number().int().min(1).default(5).optional(),
+  maxCachingSeconds: z.number().int().min(1).default(10).optional(),
+  maxReconnectDelay: z.number().int().min(1).default(30).optional(),
   ocpiServer: z.object({
     host: z.string().default('localhost').optional(),
-    port: z.number().int().positive().default(8085).optional(),
+    port: z.number().int().min(1).default(8085).optional(),
   }),
   userPreferences: z.object({
     telemetryConsent: z.boolean().default(false).optional(),
@@ -275,8 +282,8 @@ export const websocketServerSchema = z
   .object({
     id: z.string(),
     host: z.string(),
-    port: z.number().int().positive(),
-    pingInterval: z.number().int().positive(),
+    port: z.number().int().min(1),
+    pingInterval: z.number().int().min(1),
     protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']),
     securityProfile: z.number().int().min(0).max(3),
     allowUnknownChargingStations: z.boolean(),
@@ -309,14 +316,14 @@ export const systemConfigSchema = z
     env: z.enum(['development', 'production']),
     centralSystem: z.object({
       host: z.string(),
-      port: z.number().int().positive(),
+      port: z.number().int().min(1),
     }),
     modules: z.object({
       certificates: z
         .object({
           endpointPrefix: z.string(),
           host: z.string().optional(),
-          port: z.number().int().positive().optional(),
+          port: z.number().int().min(1).optional(),
           requests: z.array(CallActionSchema),
           responses: z.array(CallActionSchema),
         })
@@ -324,14 +331,14 @@ export const systemConfigSchema = z
       evdriver: z.object({
         endpointPrefix: z.string(),
         host: z.string().optional(),
-        port: z.number().int().positive().optional(),
+        port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
       }),
       configuration: z
         .object({
-          heartbeatInterval: z.number().int().positive(),
-          bootRetryInterval: z.number().int().positive(),
+          heartbeatInterval: z.number().int().min(1),
+          bootRetryInterval: z.number().int().min(1),
           ocpp2_0_1: z
             .object({
               unknownChargerStatus: z.enum([
@@ -358,7 +365,7 @@ export const systemConfigSchema = z
             .optional(),
           endpointPrefix: z.string(),
           host: z.string().optional(),
-          port: z.number().int().positive().optional(),
+          port: z.number().int().min(1).optional(),
           requests: z.array(CallActionSchema),
           responses: z.array(CallActionSchema),
         })
@@ -368,14 +375,14 @@ export const systemConfigSchema = z
       monitoring: z.object({
         endpointPrefix: z.string(),
         host: z.string().optional(),
-        port: z.number().int().positive().optional(),
+        port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
       }),
       reporting: z.object({
         endpointPrefix: z.string(),
         host: z.string().optional(),
-        port: z.number().int().positive().optional(),
+        port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
       }),
@@ -383,7 +390,7 @@ export const systemConfigSchema = z
         .object({
           endpointPrefix: z.string(),
           host: z.string().optional(),
-          port: z.number().int().positive().optional(),
+          port: z.number().int().min(1).optional(),
           requests: z.array(CallActionSchema),
           responses: z.array(CallActionSchema),
         })
@@ -391,7 +398,7 @@ export const systemConfigSchema = z
       tenant: z.object({
         endpointPrefix: z.string(),
         host: z.string().optional(),
-        port: z.number().int().positive().optional(),
+        port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
       }),
@@ -399,8 +406,8 @@ export const systemConfigSchema = z
         .object({
           endpointPrefix: z.string(),
           host: z.string().optional(),
-          port: z.number().int().positive().optional(),
-          costUpdatedInterval: z.number().int().positive().optional(),
+          port: z.number().int().min(1).optional(),
+          costUpdatedInterval: z.number().int().min(1).optional(),
           sendCostUpdatedOnMeterValue: z.boolean().optional(),
           requests: z.array(CallActionSchema),
           responses: z.array(CallActionSchema),
@@ -427,10 +434,17 @@ export const systemConfigSchema = z
         .object({
           memory: z.boolean().optional(),
           redis: z
-            .object({
-              host: z.string(),
-              port: z.number().int().positive(),
-            })
+            .union([
+              z.object({
+                host: z.string(),
+                port: z.number().int().min(1),
+              }),
+              z.object({
+                url: z.url().refine((v) => v.startsWith('redis://') || v.startsWith('rediss://'), {
+                  message: 'Redis URL must start with redis:// or rediss://',
+                }),
+              }),
+            ])
             .optional(),
         })
         .refine((obj) => obj.memory || obj.redis, {
@@ -467,7 +481,7 @@ export const systemConfigSchema = z
               jwksUri: z.string(),
               issuer: z.string(),
               audience: z.string(),
-              cacheTime: z.number().int().positive().optional(),
+              cacheTime: z.number().int().min(1).optional(),
               rateLimit: z.boolean(),
             })
             .optional(),
@@ -537,12 +551,12 @@ export const systemConfigSchema = z
       }),
     }),
     logLevel: z.number().min(0).max(6),
-    maxCallLengthSeconds: z.number().int().positive(),
-    maxCachingSeconds: z.number().int().positive(),
-    maxReconnectDelay: z.number().int().positive().default(30),
+    maxCallLengthSeconds: z.number().int().min(1),
+    maxCachingSeconds: z.number().int().min(1),
+    maxReconnectDelay: z.number().int().min(1).default(30),
     ocpiServer: z.object({
       host: z.string(),
-      port: z.number().int().positive(),
+      port: z.number().int().min(1),
     }),
     userPreferences: z.object({
       telemetryConsent: z.boolean().optional(),

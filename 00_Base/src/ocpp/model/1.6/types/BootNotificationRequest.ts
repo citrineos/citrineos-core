@@ -8,7 +8,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { OcppRequest } from '../../../..';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface BootNotificationRequest extends OcppRequest {
   chargePointVendor: string;

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
+import type {
   IAuthorizationRepository,
   IBootRepository,
   ICertificateRepository,
@@ -15,35 +15,38 @@ import {
   IOCPPMessageRepository,
   IReservationRepository,
   ISecurityEventRepository,
+  IServerNetworkProfileRepository,
   ISubscriptionRepository,
   ITariffRepository,
   ITenantRepository,
   ITransactionEventRepository,
   IVariableMonitoringRepository,
-} from '../../../interfaces';
-import { CrudRepository, BootstrapConfig } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
-import { SequelizeAuthorizationRepository } from './Authorization';
-import { SequelizeBootRepository } from './Boot';
-import { SequelizeCertificateRepository } from './Certificate';
-import { SequelizeDeviceModelRepository } from './DeviceModel';
-import { SequelizeLocationRepository } from './Location';
-import { SequelizeMessageInfoRepository } from './MessageInfo';
-import { SequelizeSecurityEventRepository } from './SecurityEvent';
-import { SequelizeSubscriptionRepository } from './Subscription';
-import { SequelizeTariffRepository } from './Tariff';
-import { SequelizeTransactionEventRepository } from './TransactionEvent';
-import { SequelizeVariableMonitoringRepository } from './VariableMonitoring';
+} from '../../../interfaces/index.js';
+import type { BootstrapConfig } from '@citrineos/base';
+import { CrudRepository } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { SequelizeAuthorizationRepository } from './Authorization.js';
+import { SequelizeBootRepository } from './Boot.js';
+import { SequelizeCertificateRepository } from './Certificate.js';
+import { SequelizeDeviceModelRepository } from './DeviceModel.js';
+import { SequelizeLocationRepository } from './Location.js';
+import { SequelizeMessageInfoRepository } from './MessageInfo.js';
+import { SequelizeSecurityEventRepository } from './SecurityEvent.js';
+import { SequelizeSubscriptionRepository } from './Subscription.js';
+import { SequelizeTariffRepository } from './Tariff.js';
+import { SequelizeTransactionEventRepository } from './TransactionEvent.js';
+import { SequelizeVariableMonitoringRepository } from './VariableMonitoring.js';
 import { Sequelize } from 'sequelize-typescript';
-import { TransactionEvent } from '../model/TransactionEvent';
-import { Component } from '../model/DeviceModel';
-import { SequelizeRepository } from './Base';
-import { SequelizeReservationRepository } from './Reservation';
-import { SequelizeLocalAuthListRepository } from './LocalAuthList';
-import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
-import { SequelizeChargingProfileRepository } from './ChargingProfile';
-import { SequelizeChangeConfigurationRepository } from './ChangeConfiguration';
-import { SequelizeOCPPMessageRepository, SequelizeTenantRepository } from '..';
+import { Component, TransactionEvent } from '../model/index.js';
+import { SequelizeRepository } from './Base.js';
+import { SequelizeReservationRepository } from './Reservation.js';
+import { SequelizeLocalAuthListRepository } from './LocalAuthList.js';
+import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence.js';
+import { SequelizeChargingProfileRepository } from './ChargingProfile.js';
+import { SequelizeChangeConfigurationRepository } from './ChangeConfiguration.js';
+import { SequelizeOCPPMessageRepository, SequelizeTenantRepository } from '../index.js';
+import { SequelizeServerNetworkProfileRepository } from './ServerNetworkProfile.js';
 
 export class RepositoryStore {
   sequelizeInstance: Sequelize;
@@ -66,6 +69,7 @@ export class RepositoryStore {
   transactionEventRepository: ITransactionEventRepository;
   variableMonitoringRepository: IVariableMonitoringRepository;
   tenantRepository: ITenantRepository;
+  serverNetworkProfileRepository: IServerNetworkProfileRepository;
 
   constructor(config: BootstrapConfig, logger: Logger<ILogObj>, sequelizeInstance: Sequelize) {
     this.sequelizeInstance = sequelizeInstance;
@@ -149,5 +153,10 @@ export class RepositoryStore {
       sequelizeInstance,
     );
     this.tenantRepository = new SequelizeTenantRepository(config, logger, sequelizeInstance);
+    this.serverNetworkProfileRepository = new SequelizeServerNetworkProfileRepository(
+      config,
+      logger,
+      sequelizeInstance,
+    );
   }
 }

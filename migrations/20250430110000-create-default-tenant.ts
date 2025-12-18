@@ -4,13 +4,31 @@
 'use strict';
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { QueryInterface } from 'sequelize';
-import { Tenant } from '@citrineos/data';
+import { QueryInterface, QueryTypes } from 'sequelize';
 
-const TENANTS_TABLE = `${Tenant.MODEL_NAME}s`;
+const TENANTS_TABLE = `Tenants`;
 
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
+    const migrationName = '20250430110000-create-default-tenant';
+
+    const [results] = await queryInterface.sequelize.query(
+      `SELECT EXISTS (
+      SELECT 1 
+      FROM "SequelizeMeta" 
+      WHERE name LIKE :pattern
+    ) AS migration_exists`,
+      {
+        replacements: { pattern: `${migrationName}%` },
+        type: QueryTypes.SELECT,
+      },
+    );
+
+    if ((results as any).migration_exists) {
+      console.log('Migration already run, skipping...');
+      return;
+    }
+
     const [[existingTenant]] = await queryInterface.sequelize.query(
       `SELECT 1 FROM "${TENANTS_TABLE}" WHERE id = ${DEFAULT_TENANT_ID} LIMIT 1`,
     );

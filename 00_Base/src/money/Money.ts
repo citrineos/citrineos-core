@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Currency, CurrencyCode } from './Currency';
+import type { CurrencyCode } from './Currency.js';
+import { Currency } from './Currency.js';
 import { Big } from 'big.js';
-import { assert, notNull } from '../assertion/assertion';
+import { assert, notNull } from '../assertion/assertion.js';
 
 export type CurrencySource = string | CurrencyCode | Currency;
 

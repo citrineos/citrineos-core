@@ -2,25 +2,39 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IBaseDto } from './base.dto';
-import { ISetNetworkProfileDto } from './set.network.profile.dto';
-import { IServerNetworkProfileDto } from './server.network.profile.dto';
+import { z } from 'zod';
+import { ServerNetworkProfileSchema } from './server.network.profile.dto.js';
+import { SetNetworkProfileSchema } from './set.network.profile.dto.js';
+import { BaseSchema } from './types/base.dto.js';
 
-export interface IChargingStationNetworkProfileDto extends IBaseDto {
-  id?: number;
-  stationId: string;
-  configurationSlot: number;
-  setNetworkProfileId: number;
-  setNetworkProfile: ISetNetworkProfileDto;
-  websocketServerConfigId?: string;
-  websocketServerConfig?: IServerNetworkProfileDto;
-}
+export const ChargingStationNetworkProfileSchema = BaseSchema.extend({
+  id: z.number().int().optional(),
+  stationId: z.string(),
+  configurationSlot: z.number().int(),
+  setNetworkProfileId: z.number().int(),
+  setNetworkProfile: SetNetworkProfileSchema,
+  websocketServerConfigId: z.string().optional(),
+  websocketServerConfig: ServerNetworkProfileSchema.optional(),
+});
 
-export enum ChargingStationNetworkProfileDtoProps {
-  stationId = 'stationId',
-  configurationSlot = 'configurationSlot',
-  setNetworkProfileId = 'setNetworkProfileId',
-  setNetworkProfile = 'setNetworkProfile',
-  websocketServerConfigId = 'websocketServerConfigId',
-  websocketServerConfig = 'websocketServerConfig',
-}
+export const ChargingStationNetworkProfileProps = ChargingStationNetworkProfileSchema.keyof().enum;
+
+export type ChargingStationNetworkProfileDto = z.infer<typeof ChargingStationNetworkProfileSchema>;
+
+export const ChargingStationNetworkProfileCreateSchema = ChargingStationNetworkProfileSchema.omit({
+  id: true,
+  tenant: true,
+  setNetworkProfile: true,
+  websocketServerConfig: true,
+  updatedAt: true,
+  createdAt: true,
+});
+
+export type ChargingStationNetworkProfileCreate = z.infer<
+  typeof ChargingStationNetworkProfileCreateSchema
+>;
+
+export const chargingStationNetworkProfileSchemas = {
+  ChargingStationNetworkProfile: ChargingStationNetworkProfileSchema,
+  ChargingStationNetworkProfileCreate: ChargingStationNetworkProfileCreateSchema,
+};

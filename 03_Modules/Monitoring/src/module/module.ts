@@ -1,35 +1,36 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
-  AsHandler,
+import type {
   BootstrapConfig,
   CallAction,
-  ChargingStationSequenceType,
-  EventGroup,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageHandler,
   IMessageSender,
-  OCPP2_0_1,
-  OCPP2_0_1_CallAction,
-  OCPPVersion,
   SystemConfig,
 } from '@citrineos/base';
 import {
-  IDeviceModelRepository,
-  IVariableMonitoringRepository,
+  AbstractModule,
+  AsHandler,
+  ChargingStationSequenceTypeEnum,
+  EventGroup,
+  OCPP2_0_1,
+  OCPP2_0_1_CallAction,
+  OCPPVersion,
+} from '@citrineos/base';
+import type { IDeviceModelRepository, IVariableMonitoringRepository } from '@citrineos/data';
+import {
   SequelizeChargingStationSequenceRepository,
   SequelizeDeviceModelRepository,
   SequelizeVariableMonitoringRepository,
 } from '@citrineos/data';
 import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
-import { ILogObj, Logger } from 'tslog';
-import { DeviceModelService } from './services';
-import { MonitoringService } from './MonitoringService';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { MonitoringService } from './MonitoringService.js';
+import { DeviceModelService } from './services.js';
 
 /**
  * Component that handles monitoring related messages.
@@ -287,7 +288,7 @@ export class MonitoringModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            ChargingStationSequenceType.getMonitoringReport,
+            ChargingStationSequenceTypeEnum.getMonitoringReport,
           ),
         } as OCPP2_0_1.GetMonitoringReportRequest,
       );
