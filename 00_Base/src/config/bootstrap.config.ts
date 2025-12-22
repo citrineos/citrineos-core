@@ -173,6 +173,7 @@ export function loadBootstrapConfig(): BootstrapConfig {
         projectId: getEnvVarValue('file_access_gcp_project_id'),
         credentials: getEnvVarValue('file_access_gcp_credentials'),
       };
+      break;
     case 'directus':
       config.fileAccess.directus = {
         host: getEnvVarValue('file_access_directus_host'),

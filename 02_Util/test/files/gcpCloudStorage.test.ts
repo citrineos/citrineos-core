@@ -1,6 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import type { SystemConfig } from '@citrineos/base';
 import { Storage } from '@google-cloud/storage';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GcpCloudStorage } from '../../src';
 
 vi.mock('@google-cloud/storage', () => {
