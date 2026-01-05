@@ -298,7 +298,7 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
     this._connection = undefined;
     this._channel = undefined;
     this._circuitBreaker.triggerFailure('RabbitMQ connection lost');
-    if (this._circuitBreaker.state === 'CLOSED') {
+    if (this._circuitBreaker.state === 'CLOSED' || this._circuitBreaker.state === 'FAILING') {
       this._startReconnectInterval();
     }
   }
