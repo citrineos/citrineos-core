@@ -332,22 +332,87 @@ export class SequelizeTransactionEventRepository
           }),
         );
       }
-      await event.reload({ include: [MeterValue], transaction: sequelizeTransaction });
+      // Optimize: Skip eager loading of all MeterValues to reduce memory usage during long charging sessions
+      // For register-based calculations (most common), we only need first and last meter values
       this.emit('created', [event]);
 
-      const allMeterValues = await this.meterValue.readAllByQuery(tenantId, {
-        where: {
-          transactionDatabaseId,
-        },
-        transaction: sequelizeTransaction,
-      });
-      const meterValueTypes = allMeterValues.map((meterValue) =>
+      // Optimize memory: Fetch only first and last meter values ordered by timestamp
+      // This dramatically reduces memory usage for long charging sessions (hundreds of meter values)
+      const [firstMeterValue, lastMeterValue] = await Promise.all([
+        this.meterValue.readAllByQuery(tenantId, {
+          where: {
+            transactionDatabaseId,
+          },
+          order: [['timestamp', 'ASC']],
+          limit: 1,
+          transaction: sequelizeTransaction,
+        }),
+        this.meterValue.readAllByQuery(tenantId, {
+          where: {
+            transactionDatabaseId,
+          },
+          order: [['timestamp', 'DESC']],
+          limit: 1,
+          transaction: sequelizeTransaction,
+        }),
+      ]);
+
+      // Combine first and last (remove duplicates if same record)
+      const meterValuesForCalculation: MeterValue[] =
+        firstMeterValue.length > 0 && lastMeterValue.length > 0
+          ? firstMeterValue[0].id === lastMeterValue[0].id
+            ? firstMeterValue
+            : [...firstMeterValue, ...lastMeterValue]
+          : firstMeterValue.length > 0
+            ? firstMeterValue
+            : lastMeterValue;
+
+      // Convert to MeterValueType and calculate total kWh
+      // For register-based calculations (most common), this works perfectly as it only needs first/last
+      const meterValueTypes = meterValuesForCalculation.map((meterValue) =>
         MeterValueMapper.toMeterValueType(meterValue),
       );
-      await finalTransaction.update(
-        { totalKwh: MeterValueUtils.getTotalKwh(meterValueTypes) },
-        { transaction: sequelizeTransaction },
-      );
+      let totalKwh = MeterValueUtils.getTotalKwh(meterValueTypes);
+
+      // Clear intermediate arrays to help GC
+      meterValuesForCalculation.length = 0;
+
+      // Check if we need all meter values (e.g., interval-based calculations)
+      // Only if first/last gives 0 and we have multiple meter values
+      if (totalKwh === 0 && (firstMeterValue.length > 0 || lastMeterValue.length > 0)) {
+        const meterValueCount = await this.meterValue.existByQuery(tenantId, {
+          where: {
+            transactionDatabaseId,
+          },
+          transaction: sequelizeTransaction,
+        });
+
+        // If we have multiple meter values but got 0, might be interval-based - fetch all
+        // This is a fallback for non-register-based calculations
+        if (meterValueCount > 2) {
+          const allMeterValues = await this.meterValue.readAllByQuery(tenantId, {
+            where: {
+              transactionDatabaseId,
+            },
+            transaction: sequelizeTransaction,
+          });
+          const allMeterValueTypes = allMeterValues.map((meterValue) =>
+            MeterValueMapper.toMeterValueType(meterValue),
+          );
+          totalKwh = MeterValueUtils.getTotalKwh(allMeterValueTypes);
+          // Clear references to help GC - critical for long charging sessions
+          allMeterValues.length = 0;
+          allMeterValueTypes.length = 0;
+        }
+      }
+
+      // Clear references to first/last arrays to help GC
+      firstMeterValue.length = 0;
+      lastMeterValue.length = 0;
+
+      await finalTransaction.update({ totalKwh }, { transaction: sequelizeTransaction });
+      // Optimize memory: Skip eager loading of all MeterValues
+      // Only reload TransactionEvent relations if needed, but not all MeterValues
       await finalTransaction.reload({
         include: [
           {
@@ -355,7 +420,7 @@ export class SequelizeTransactionEventRepository
             as: Transaction.TRANSACTION_EVENTS_ALIAS,
             include: [EvseType],
           },
-          MeterValue,
+          // Removed MeterValue eager loading to avoid loading hundreds/thousands of records
         ],
         transaction: sequelizeTransaction,
       });
@@ -371,10 +436,13 @@ export class SequelizeTransactionEventRepository
     stationId: string,
     transactionId: string,
   ): Promise<TransactionEvent[]> {
+    // Optimize memory: Skip eager loading of MeterValues to avoid loading large arrays
+    // MeterValues can be loaded separately per TransactionEvent if needed
     return await super
       .readAllByQuery(tenantId, {
         where: { stationId },
-        include: [{ model: Transaction, where: { transactionId } }, MeterValue, Evse],
+        include: [{ model: Transaction, where: { transactionId } }, Evse],
+        // Removed MeterValue eager loading to prevent memory issues with many meter values
       })
       .then((transactionEvents) => {
         transactionEvents?.forEach(
@@ -389,9 +457,11 @@ export class SequelizeTransactionEventRepository
     stationId: string,
     transactionId: string,
   ): Promise<Transaction | undefined> {
+    // Optimize memory: Skip eager loading of all MeterValues to avoid memory issues
+    // MeterValues can be loaded separately if needed using readAllMeterValuesByTransactionDataBaseId
     return await this.transaction.readOnlyOneByQuery(tenantId, {
       where: { stationId, transactionId },
-      include: [MeterValue],
+      // Removed MeterValue eager loading to prevent memory leaks during long charging sessions
     });
   }
 
@@ -626,16 +696,73 @@ export class SequelizeTransactionEventRepository
       }),
     );
 
-    // Update transaction total kWh
-    const allMeterValues = await this.meterValue.readAllByQuery(tenantId, {
-      where: {
-        transactionDatabaseId: transaction.id,
-      },
-    });
-    const meterValueTypes = allMeterValues.map((meterValue) =>
+    // Optimize memory: Fetch only first and last meter values for register-based calculations
+    // This avoids loading hundreds/thousands of meter values during long charging sessions
+    const [firstMeterValue, lastMeterValue] = await Promise.all([
+      this.meterValue.readAllByQuery(tenantId, {
+        where: {
+          transactionDatabaseId: transaction.id,
+        },
+        order: [['timestamp', 'ASC']],
+        limit: 1,
+      }),
+      this.meterValue.readAllByQuery(tenantId, {
+        where: {
+          transactionDatabaseId: transaction.id,
+        },
+        order: [['timestamp', 'DESC']],
+        limit: 1,
+      }),
+    ]);
+
+    // Combine first and last (remove duplicates if same record)
+    const meterValuesForCalculation: MeterValue[] =
+      firstMeterValue.length > 0 && lastMeterValue.length > 0
+        ? firstMeterValue[0].id === lastMeterValue[0].id
+          ? firstMeterValue
+          : [...firstMeterValue, ...lastMeterValue]
+        : firstMeterValue.length > 0
+          ? firstMeterValue
+          : lastMeterValue;
+
+    const meterValueTypes = meterValuesForCalculation.map((meterValue) =>
       MeterValueMapper.toMeterValueType(meterValue),
     );
-    await transaction.update({ totalKwh: MeterValueUtils.getTotalKwh(meterValueTypes) });
+    let totalKwh = MeterValueUtils.getTotalKwh(meterValueTypes);
+
+    // Clear intermediate arrays to help GC
+    meterValuesForCalculation.length = 0;
+    meterValueTypes.length = 0;
+
+    // Fallback: If we got 0 and have multiple meter values, might need all for interval-based
+    if (totalKwh === 0 && (firstMeterValue.length > 0 || lastMeterValue.length > 0)) {
+      const meterValueCount = await this.meterValue.existByQuery(tenantId, {
+        where: {
+          transactionDatabaseId: transaction.id,
+        },
+      });
+
+      if (meterValueCount > 2) {
+        const allMeterValues = await this.meterValue.readAllByQuery(tenantId, {
+          where: {
+            transactionDatabaseId: transaction.id,
+          },
+        });
+        const allMeterValueTypes = allMeterValues.map((meterValue) =>
+          MeterValueMapper.toMeterValueType(meterValue),
+        );
+        totalKwh = MeterValueUtils.getTotalKwh(allMeterValueTypes);
+        // Clear references to help GC - critical for long charging sessions
+        allMeterValues.length = 0;
+        allMeterValueTypes.length = 0;
+      }
+    }
+
+    // Clear references to first/last arrays to help GC
+    firstMeterValue.length = 0;
+    lastMeterValue.length = 0;
+
+    await transaction.update({ totalKwh });
   }
 
   async createTransactionByStartTransaction(
