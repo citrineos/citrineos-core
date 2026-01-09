@@ -5,13 +5,15 @@
 import { Transaction as SequelizeTransaction } from 'sequelize';
 
 export { SequelizeTransaction };
-export * as sequelize from './layers/sequelize';
-export * from './interfaces';
+export * as sequelize from './layers/sequelize/index.js';
+export * from './interfaces/index.js';
 export * from 'sequelize-typescript';
+export type { PaginatedParams } from './layers/sequelize/index.js';
 export {
   Authorization,
   Boot,
   ChangeConfiguration,
+  ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
   ChargingStation,
@@ -19,6 +21,7 @@ export {
   Component,
   Connector,
   DefaultSequelizeInstance,
+  Evse,
   Location,
   MeterValue,
   OCPPMessage,
@@ -52,7 +55,6 @@ export {
   AsyncJobRequest,
   AsyncJobName,
   AsyncJobAction,
-  PaginatedParams,
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -75,8 +77,9 @@ export {
   SequelizeChargingStationSequenceRepository,
   SequelizeTenantRepository,
   SequelizeAsyncJobStatusRepository,
+  SequelizeServerNetworkProfileRepository,
   OCPP2_0_1_Mapper,
   OCPP1_6_Mapper,
-} from './layers/sequelize'; // TODO ensure all needed modules are properly exported
-export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore';
-export { CryptoUtils } from './util/CryptoUtils';
+} from './layers/sequelize/index.js'; // TODO ensure all needed modules are properly exported
+export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore.js';
+export { CryptoUtils } from './util/CryptoUtils.js';

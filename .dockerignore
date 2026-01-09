@@ -28,4 +28,4 @@
 !Server/
 !Server/src/
 !Server/src/config/
-!Server/src/config/sequelize.bridge.config.js
+!Server/src/config/sequelize.bridge.config.ts

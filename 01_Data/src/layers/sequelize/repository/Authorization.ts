@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { BootstrapConfig } from '@citrineos/base';
-import { type AuthorizationQuerystring, type IAuthorizationRepository } from '../../../interfaces';
-import { Authorization } from '../model/Authorization';
-import { SequelizeRepository } from './Base';
+import type { BootstrapConfig } from '@citrineos/base';
+import {
+  type AuthorizationQuerystring,
+  type IAuthorizationRepository,
+} from '../../../interfaces/index.js';
+import { Authorization } from '../model/index.js';
+import { SequelizeRepository } from './Base.js';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class SequelizeAuthorizationRepository
   extends SequelizeRepository<Authorization>

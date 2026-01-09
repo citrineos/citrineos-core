@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ReportBaseEnumType } from '../enums';
-import { OcppRequest } from '../../../..';
+import { ReportBaseEnumType } from '../enums/index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface GetBaseReportRequest extends OcppRequest {
   customData?: CustomDataType | null;

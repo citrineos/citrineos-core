@@ -2,10 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IV2GCertificateAuthorityClient } from './interface';
-import { SystemConfig } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
-import { createPemBlock } from '../CertificateUtil';
+import type { IV2GCertificateAuthorityClient } from './interface.js';
+import type { SystemConfig } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { createPemBlock } from '../CertificateUtil.js';
 
 export class Hubject implements IV2GCertificateAuthorityClient {
   private readonly _baseUrl: string;

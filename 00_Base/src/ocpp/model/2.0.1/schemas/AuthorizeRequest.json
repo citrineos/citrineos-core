@@ -60,7 +60,8 @@
         "additionalIdToken": {
           "description": "This field specifies the additional IdToken.\r\n",
           "type": "string",
-          "maxLength": 36
+          "maxLength": 36,
+          "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         },
         "type": {
           "description": "This defines the type of the additionalIdToken. This is a custom type, so the implementation needs to be agreed upon by all involved parties.\r\n",
@@ -90,7 +91,8 @@
         "idToken": {
           "description": "IdToken is case insensitive. Might hold the hidden id of an RFID tag, but can for example also contain a UUID.\r\n",
           "type": "string",
-          "maxLength": 36
+          "maxLength": 36,
+          "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         },
         "type": {
           "$ref": "#/definitions/IdTokenEnumType"

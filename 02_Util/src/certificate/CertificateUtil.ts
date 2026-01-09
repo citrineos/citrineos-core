@@ -14,7 +14,8 @@ import { CertificationRequest } from 'pkijs';
 import { fromBase64, stringToArrayBuffer } from 'pvutils';
 import { fromBER } from 'asn1js';
 import moment from 'moment';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import KEYUTIL = jsrsasign.KEYUTIL;
 
 export const dateTimeFormat = 'YYMMDDHHmmssZ';

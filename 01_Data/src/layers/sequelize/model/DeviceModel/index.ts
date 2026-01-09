@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { Component } from './Component';
-export { EvseType } from './EvseType';
-export { Variable } from './Variable';
-export { VariableAttribute } from './VariableAttribute';
-export { VariableCharacteristics } from './VariableCharacteristics';
-export { VariableStatus } from './VariableStatus';
+export { Component } from './Component.js';
+export { EvseType } from './EvseType.js';
+export { Variable } from './Variable.js';
+export { VariableAttribute } from './VariableAttribute.js';
+export { VariableCharacteristics } from './VariableCharacteristics.js';
+export { VariableStatus } from './VariableStatus.js';

@@ -1,17 +1,16 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-require('ts-node/register');
+import 'ts-node/register';
+import { loadBootstrapConfig } from '@citrineos/base';
 
-module.exports = (async () => {
-  const { loadBootstrapConfig } = require('./bootstrap.config');
-
+export default (async () => {
   try {
     const bootstrapConfig = loadBootstrapConfig();
 
     const { host, port, database, dialect, username, password } = bootstrapConfig.database;
 
-    console.log('[sequelize.bridge.config.js] Loaded config for DB:', {
+    console.log('[sequelize.bridge.config.ts] Loaded config for DB:', {
       host,
       port,
       database,
@@ -28,7 +27,7 @@ module.exports = (async () => {
       logging: true,
     };
   } catch (error) {
-    console.error('[sequelize.bridge.config.js] Failed to load bootstrap configuration:', error);
+    console.error('[sequelize.bridge.config.ts] Failed to load bootstrap configuration:', error);
     throw error;
   }
 })();

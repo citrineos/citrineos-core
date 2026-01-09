@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ChangeConfigurationResponseStatus } from '../enums';
-import { OcppResponse } from '../../../..';
+import { ChangeConfigurationResponseStatus } from '../enums/index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface ChangeConfigurationResponse extends OcppResponse {
   status: ChangeConfigurationResponseStatus;

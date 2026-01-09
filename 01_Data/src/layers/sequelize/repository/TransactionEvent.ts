@@ -1,36 +1,39 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { BootstrapConfig } from '@citrineos/base';
 import {
-  ChargingStationSequenceType,
+  ChargingStationSequenceTypeEnum,
   CrudRepository,
   MeterValueUtils,
   OCPP1_6,
   OCPP2_0_1,
-  BootstrapConfig,
 } from '@citrineos/base';
-import {
+import type { WhereOptions } from 'sequelize';
+import { Op } from 'sequelize';
+import { Sequelize } from 'sequelize-typescript';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type {
   IChargingStationSequenceRepository,
-  type ITransactionEventRepository,
-} from '../../../interfaces';
+  ITransactionEventRepository,
+} from '../../../interfaces/index.js';
+import { MeterValueMapper } from '../mapper/2.0.1/index.js';
 import {
+  Authorization,
+  ChargingStation,
+  Connector,
+  Evse,
+  EvseType,
   MeterValue,
   StartTransaction,
   StopTransaction,
+  Tariff,
   Transaction,
   TransactionEvent,
-} from '../model/TransactionEvent';
-import { SequelizeRepository } from './Base';
-import { EvseType } from '../model/DeviceModel';
-import { Op, WhereOptions } from 'sequelize';
-import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { MeterValueMapper } from '../mapper/2.0.1';
-import { ChargingStation, Connector, Evse } from '../model/Location';
-import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
-import { Authorization } from '../model/Authorization';
-import { Tariff } from '../model';
+} from '../model/index.js';
+import { SequelizeRepository } from './Base.js';
+import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence.js';
 
 export class SequelizeTransactionEventRepository
   extends SequelizeRepository<TransactionEvent>
@@ -681,7 +684,7 @@ export class SequelizeTransactionEventRepository
       const transactionId = await this.chargingStationSequence.getNextSequenceValue(
         tenantId,
         stationId,
-        ChargingStationSequenceType.transactionId,
+        ChargingStationSequenceTypeEnum.transactionId,
       );
       // Store transaction in db
       let newTransaction = Transaction.build({
@@ -697,9 +700,7 @@ export class SequelizeTransactionEventRepository
       });
 
       const chargingStation = await this.station.readByKey(tenantId, stationId);
-      if (!chargingStation) {
-        this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
-      } else {
+      if (chargingStation) {
         if (chargingStation.locationId) {
           newTransaction.locationId = chargingStation.locationId;
         } else {

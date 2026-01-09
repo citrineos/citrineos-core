@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { ChargingProfile } from './ChargingProfile';
-export { ChargingNeeds } from './ChargingNeeds';
-export { ChargingSchedule } from './ChargingSchedule';
-export { SalesTariff } from './SalesTariff';
-export { CompositeSchedule } from './CompositeSchedule';
+export { ChargingProfile } from './ChargingProfile.js';
+export { ChargingNeeds } from './ChargingNeeds.js';
+export { ChargingSchedule } from './ChargingSchedule.js';
+export { SalesTariff } from './SalesTariff.js';
+export { CompositeSchedule } from './CompositeSchedule.js';

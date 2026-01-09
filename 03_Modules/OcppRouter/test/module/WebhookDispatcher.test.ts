@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { faker } from '@faker-js/faker';
-import { jest } from '@jest/globals';
 import { ISubscriptionRepository, OCPPMessage, Subscription } from '@citrineos/data';
 import { WebhookDispatcher } from '../../src';
 import { createIdentifier, DEFAULT_TENANT_ID, MessageOrigin } from '@citrineos/base';
-import { aSubscription } from '../providers/SubscriptionProvider';
+import { aSubscription } from '../providers/SubscriptionProvider.js';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('WebhookDispatcher', () => {
-  const fetch = jest.fn(() =>
+  const fetch = vi.fn(() =>
     Promise.resolve({
       ok: true,
       status: 200,
@@ -20,27 +20,27 @@ describe('WebhookDispatcher', () => {
 
   // Mock transaction object
   const mockTransaction = {
-    commit: jest.fn(),
-    rollback: jest.fn(),
+    commit: vi.fn(),
+    rollback: vi.fn(),
   };
-  let subscriptionRepository: jest.Mocked<ISubscriptionRepository>;
+  let subscriptionRepository: Mocked<ISubscriptionRepository>;
   let webhookDispatcher: WebhookDispatcher;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
     subscriptionRepository = {
-      readAllByStationId: jest.fn(),
-    } as unknown as jest.Mocked<ISubscriptionRepository>;
+      readAllByStationId: vi.fn(),
+    } as unknown as Mocked<ISubscriptionRepository>;
 
     Object.defineProperty(OCPPMessage, 'sequelize', {
       configurable: true, // Allow further modifications
       value: {
-        transaction: jest.fn(() => mockTransaction),
+        transaction: vi.fn(() => mockTransaction),
       },
     });
-    OCPPMessage.findOne = jest.fn(() => Promise.resolve(null));
-    OCPPMessage.create = jest.fn(() => Promise.resolve({} as any));
+    OCPPMessage.findOne = vi.fn(() => Promise.resolve(null));
+    OCPPMessage.create = vi.fn(() => Promise.resolve({} as any));
 
     webhookDispatcher = new WebhookDispatcher(subscriptionRepository);
   });
@@ -48,7 +48,7 @@ describe('WebhookDispatcher', () => {
   afterEach(() => {
     fetch.mockClear();
     subscriptionRepository.readAllByStationId.mockReset();
-    jest.clearAllTimers();
+    vi.clearAllTimers();
   });
 
   describe('register', () => {
@@ -436,7 +436,7 @@ describe('WebhookDispatcher', () => {
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
 
       subscriptionRepository.readAllByStationId.mockClear();
-      await jest.runOnlyPendingTimersAsync();
+      await vi.runOnlyPendingTimersAsync();
       expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(1);
       expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledWith(
         subscription.tenantId,
@@ -499,7 +499,7 @@ describe('WebhookDispatcher', () => {
 
       // Run pending timers to trigger subscription refresh
       subscriptionRepository.readAllByStationId.mockClear();
-      await jest.runOnlyPendingTimersAsync();
+      await vi.runOnlyPendingTimersAsync();
       expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(1);
       expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledWith(
         subscription.tenantId,

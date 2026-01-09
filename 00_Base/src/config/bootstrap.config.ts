@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BOOTSTRAP_CONFIG_ENV_VAR_PREFIX } from './defineConfig';
+import { BOOTSTRAP_CONFIG_ENV_VAR_PREFIX } from './defineConfig.js';
 
 // Bootstrap schema contains what's needed to start the application
 export const bootstrapConfigSchema = z.object({
@@ -34,7 +34,7 @@ export const bootstrapConfigSchema = z.object({
   // File access configuration
   fileAccess: z
     .object({
-      type: z.enum(['local', 's3', 'directus']),
+      type: z.enum(['local', 's3', 'directus', 'gcp']),
       local: z
         .object({
           defaultFilePath: z.string().default('data'),
@@ -48,6 +48,12 @@ export const bootstrapConfigSchema = z.object({
           s3ForcePathStyle: z.boolean().default(true),
           accessKeyId: z.string().optional(),
           secretAccessKey: z.string().optional(),
+        })
+        .optional(),
+      gcp: z
+        .object({
+          projectId: z.string(),
+          credentials: z.object().optional(),
         })
         .optional(),
       directus: z
@@ -69,6 +75,8 @@ export const bootstrapConfigSchema = z.object({
             return !!obj.local;
           case 's3':
             return !!obj.s3;
+          case 'gcp':
+            return !!obj.gcp;
           case 'directus':
             return !!obj.directus;
           default:
@@ -158,6 +166,12 @@ export function loadBootstrapConfig(): BootstrapConfig {
           parseEnvValue(getEnvVarValue('file_access_s3_force_path_style')!),
         accessKeyId: getEnvVarValue('file_access_s3_access_key_id'),
         secretAccessKey: getEnvVarValue('file_access_s3_secret_access_key'),
+      };
+      break;
+    case 'gcp':
+      config.fileAccess.gcp = {
+        projectId: getEnvVarValue('file_access_gcp_project_id'),
+        credentials: getEnvVarValue('file_access_gcp_credentials'),
       };
       break;
     case 'directus':

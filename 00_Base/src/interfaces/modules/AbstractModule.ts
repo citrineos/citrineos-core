@@ -3,25 +3,27 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'reflect-metadata';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
-import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from '.';
-import { OcppRequest, OcppResponse } from '../..';
-import { SystemConfig } from '../../config/types';
-import { CallAction, ErrorCode, OcppError, OCPPVersionType } from '../../ocpp/rpc/message';
-import { RequestBuilder } from '../../util/request';
-import { ICache } from '../cache/cache';
-import { CacheNamespace, createIdentifier, IWebsocketConnection } from '../cache/types';
-import {
-  EventGroup,
+import type { IHandlerDefinition, IModule } from './index.js';
+import { AS_HANDLER_METADATA } from './index.js';
+import type { OcppRequest, OcppResponse } from '../../index.js';
+import type { SystemConfig } from '../../config/types.js';
+import type { CallAction, OCPPVersionType } from '../../ocpp/rpc/message.js';
+import { ErrorCode, OcppError } from '../../ocpp/rpc/message.js';
+import { RequestBuilder } from '../../util/request.js';
+import type { ICache } from '../cache/cache.js';
+import type { IWebsocketConnection } from '../cache/types.js';
+import { CacheNamespace, createIdentifier } from '../cache/types.js';
+import type {
   HandlerProperties,
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
-  MessageOrigin,
-  MessageState,
-} from '../messages';
+} from '../messages/index.js';
+import { EventGroup, MessageOrigin, MessageState } from '../messages/index.js';
 
 export abstract class AbstractModule implements IModule {
   public static readonly CALLBACK_URL_CACHE_PREFIX: string = 'CALLBACK_URL_';

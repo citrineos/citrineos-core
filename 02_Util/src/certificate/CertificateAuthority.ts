@@ -1,19 +1,19 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
-import {
+import type { SystemConfig } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
+import type {
   IChargingStationCertificateAuthorityClient,
   IV2GCertificateAuthorityClient,
-} from './client/interface';
-import { Hubject } from './client/hubject';
-import { Acme } from './client/acme';
-import { ILogObj, Logger } from 'tslog';
+} from './client/interface.js';
+import { Hubject } from './client/hubject.js';
+import { Acme } from './client/acme.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import * as pkijs from 'pkijs';
 import { Certificate } from 'pkijs';
 import jsrsasign, { KJUR, X509 } from 'jsrsasign';
-import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
-import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 import moment from 'moment';
 import {
   createPemBlock,
@@ -22,9 +22,10 @@ import {
   extractEncodedContentFromCSR,
   parseCertificateChainPem,
   sendOCSPRequest,
-} from './CertificateUtil';
-import * as pkijs from 'pkijs';
+} from './CertificateUtil.js';
 import { Crypto } from '@peculiar/webcrypto';
+import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
+import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 
 const cryptoEngine = new pkijs.CryptoEngine({
   crypto: new Crypto(),

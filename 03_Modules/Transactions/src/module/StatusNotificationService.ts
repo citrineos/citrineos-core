@@ -1,19 +1,19 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { CrudRepository, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
+import type { IDeviceModelRepository, ILocationRepository } from '@citrineos/data';
 import {
   Component,
-  EvseType,
-  IDeviceModelRepository,
-  ILocationRepository,
-  Variable,
   Connector,
-  StatusNotification,
+  EvseType,
   OCPP1_6_Mapper,
   OCPP2_0_1_Mapper,
+  StatusNotification,
+  Variable,
 } from '@citrineos/data';
-import { ILogObj, Logger } from 'tslog';
-import { CrudRepository, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;
@@ -75,7 +75,7 @@ export class StatusNotificationService {
       } as Connector;
       await this._locationRepository.createOrUpdateConnector(tenantId, connector);
 
-      const component = await this._componentRepository.readOnlyOneByQuery(tenantId, {
+      let components = await this._componentRepository.readAllByQuery(tenantId, {
         where: {
           tenantId,
           name: 'Connector',
@@ -96,15 +96,19 @@ export class StatusNotificationService {
           },
         ],
       });
-      const variable = component?.variables?.[0];
-      if (!component || !variable) {
+      components = components.filter(
+        (component) => component.variables?.length && component.variables.length > 0,
+      );
+      if (components.length === 0) {
         this._logger.warn(
           'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
         );
-      } else {
+      }
+      for (const component of components) {
+        const variable = component.variables?.[0];
         const reportDataType: OCPP2_0_1.ReportDataType = {
           component: component,
-          variable: variable,
+          variable: variable!,
           variableAttribute: [
             {
               value: statusNotificationRequest.connectorStatus,

@@ -3,10 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Sequelize } from 'sequelize-typescript';
-import { SequelizeRepository, Subscription } from '..';
-import { ISubscriptionRepository } from '../../..';
-import { BootstrapConfig } from '@citrineos/base';
-import { Logger, ILogObj } from 'tslog';
+import { SequelizeRepository, Subscription } from '../index.js';
+import type { ISubscriptionRepository } from '../../../index.js';
+import type { BootstrapConfig } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class SequelizeSubscriptionRepository
   extends SequelizeRepository<Subscription>

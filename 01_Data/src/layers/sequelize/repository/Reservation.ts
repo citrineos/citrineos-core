@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { CrudRepository, OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
-import { IReservationRepository } from '../../../interfaces';
-import { SequelizeRepository } from './Base';
+import type { BootstrapConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1 } from '@citrineos/base';
+import type { IReservationRepository } from '../../../interfaces/index.js';
+import { SequelizeRepository } from './Base.js';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { Reservation } from '../model/Reservation';
-import { EvseType } from '../model/DeviceModel';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { EvseType, Reservation } from '../model/index.js';
 
 export class SequelizeReservationRepository
   extends SequelizeRepository<Reservation>

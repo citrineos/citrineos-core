@@ -32,7 +32,8 @@ import {
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import addFormats from 'ajv-formats';
 import fastify, { FastifyInstance } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { systemConfig } from './config';
 import { ConfigurationModule, ConfigurationOcpp201Api } from '@citrineos/configuration';
 import { TransactionsModule, TransactionsOcpp201Api } from '@citrineos/transactions';
@@ -88,7 +89,7 @@ class CitrineOSServer {
         coerceTypes: 'array',
         strict: false,
       });
-    addFormats(this._ajv, { mode: 'fast', formats: ['date-time'] });
+    addFormats(this._ajv, { mode: 'fast', formats: ['date-time', 'uri'] });
 
     // Initialize parent logger
     this._logger = new Logger<ILogObj>({
@@ -257,15 +258,36 @@ class ModuleService {
     this._server.get('/health', async () => ({ status: 'healthy' }));
 
     // Create Ajv JSON schema validator instance
+
     this._ajv =
       ajv ||
       new Ajv({
-        removeAdditional: 'all',
+        removeAdditional: 'failing', // Remove invalid additional properties but keep valid ones
         useDefaults: true,
-        coerceTypes: 'array',
         strict: false,
+        strictNumbers: true,
+        strictRequired: true,
+        validateFormats: true,
+        allErrors: true, // Report all validation errors
       });
-    addFormats(this._ajv, { mode: 'fast', formats: ['date-time'] });
+
+    // Add custom keywords for OCPP schema metadata
+    this._ajv.addKeyword({
+      keyword: 'comment',
+      compile: () => () => true,
+    });
+
+    this._ajv.addKeyword({
+      keyword: 'javaType',
+      compile: () => () => true,
+    });
+
+    this._ajv.addKeyword({
+      keyword: 'tsEnumNames',
+      compile: () => () => true,
+    });
+
+    addFormats(this._ajv, { mode: 'fast', formats: ['date-time', 'uri'] });
 
     // Initialize parent logger
     this._logger = new Logger<ILogObj>({

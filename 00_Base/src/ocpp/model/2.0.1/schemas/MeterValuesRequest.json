@@ -140,7 +140,8 @@
         "timestamp": {
           "description": "Meter_ Value. Timestamp. Date_ Time\r\nurn:x-oca:ocpp:uid:1:569259\r\nTimestamp for measured value(s).\r\n",
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?(?:Z|[+\\-]\\d{2}:\\d{2})$"
         }
       },
       "required": ["timestamp", "sampledValue"]
@@ -191,7 +192,8 @@
         "signedMeterData": {
           "description": "Base64 encoded, contains the signed data which might contain more then just the meter value. It can contain information like timestamps, reference to a customer etc.\r\n",
           "type": "string",
-          "maxLength": 2500
+          "maxLength": 2500,
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
         },
         "signingMethod": {
           "description": "Method used to create the digital signature.\r\n",
@@ -206,7 +208,8 @@
         "publicKey": {
           "description": "Base64 encoded, sending depends on configuration variable _PublicKeyWithSignedMeterValue_.\r\n",
           "type": "string",
-          "maxLength": 2500
+          "maxLength": 2500,
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
         }
       },
       "required": ["signedMeterData", "signingMethod", "encodingMethod", "publicKey"]
@@ -229,7 +232,9 @@
         "multiplier": {
           "description": "Multiplier, this value represents the exponent to base 10. I.e. multiplier 3 means 10 raised to the 3rd power. Default is 0.\r\n",
           "type": "integer",
-          "default": 0
+          "default": 0,
+          "minimum": -2147483648,
+          "maximum": 2147483647
         }
       }
     }
@@ -242,7 +247,9 @@
     },
     "evseId": {
       "description": "Request_ Body. EVSEID. Numeric_ Identifier\r\nurn:x-enexis:ecdm:uid:1:571101\r\nThis contains a number (&gt;0) designating an EVSE of the Charging Station. ‘0’ (zero) is used to designate the main power meter.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
     },
     "meterValue": {
       "type": "array",

@@ -1,7 +1,8 @@
 {
   "name": "@citrineos/data",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "The OCPP data module which includes all persistence layer implementation.",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -9,7 +10,7 @@
   ],
   "scripts": {
     "prepublish": "npx eslint",
-    "test": "jest --config jest.config.ts"
+    "test": "vitest run"
   },
   "keywords": [
     "ocpp",
@@ -23,7 +24,7 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@citrineos/base": "1.8.0",
+    "@citrineos/base": "1.8.1",
     "@types/sequelize": "4.28.20",
     "pg": "8.11.3",
     "pg-hstore": "2.3.4",

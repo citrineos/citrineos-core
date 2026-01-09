@@ -3,12 +3,17 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable */
 
-const eslint = require('@eslint/js');
-const tseslint = require('typescript-eslint');
-const prettier = require('eslint-config-prettier');
-const pluginPrettier = require('eslint-plugin-prettier');
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import prettier from 'eslint-config-prettier';
+import pluginPrettier from 'eslint-plugin-prettier';
 
-module.exports = tseslint.config(
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -47,9 +52,9 @@ module.exports = tseslint.config(
       '**/lib/**',
       'eslint.config.js',
       'Server/directus-env-config.cjs',
-      'Server/src/config/sequelize.bridge.config.js',
       '00_Base/json-schema-processor-1.6.js',
       '00_Base/json-schema-processor-2.0.1.js',
+      'coverage',
     ],
   },
   // Disable ESLint rules that conflict with Prettier

@@ -1,23 +1,25 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { Authorization, ILocationRepository } from '@citrineos/data';
 import {
-  AuthorizationStatusType,
-  IAuthorizer,
-  IMessageContext,
-  AuthorizationWhitelistType,
-  IdTokenType,
-  SystemConfig,
+  AuthorizationStatusEnum,
+  AuthorizationWhitelistEnum,
+  type AuthorizationStatusEnumType,
+  type IAuthorizer,
+  type IdTokenEnumType,
+  type IMessageContext,
+  type SystemConfig,
 } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
-import { OidcTokenProvider } from '../authorization';
+import type { ILocationRepository } from '@citrineos/data';
+import { Authorization } from '@citrineos/data';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { OidcTokenProvider } from '../authorization/index.js';
 
 export interface RealTimeAuthorizationRequestBody {
   tenantPartnerId: number;
   idToken: string;
-  idTokenType: IdTokenType;
+  idTokenType: IdTokenEnumType;
   locationId?: string;
   stationId?: string;
 }
@@ -52,24 +54,24 @@ export class RealTimeAuthorizer implements IAuthorizer {
   async authorize(
     authorization: Authorization,
     context: IMessageContext,
-  ): Promise<AuthorizationStatusType> {
+  ): Promise<AuthorizationStatusEnumType> {
     if (!authorization.realTimeAuthUrl) {
       this._logger.debug(`No Realtime Auth URL from authorization ${authorization.id}`);
       return authorization.status;
     } else if (
       !authorization.realTimeAuth ||
-      authorization.realTimeAuth === AuthorizationWhitelistType.Allowed
+      authorization.realTimeAuth === AuthorizationWhitelistEnum.Allowed
     ) {
       this._logger.debug(`Realtime Auth whitelisted for authorization ${authorization.id}`);
       return authorization.status;
-    } else if (authorization.status !== AuthorizationStatusType.Accepted) {
+    } else if (authorization.status !== AuthorizationStatusEnum.Accepted) {
       this._logger.debug(
         `Skipping Realtime Auth for authorization ${authorization.id} with status ${authorization.status}`,
       );
       return authorization.status;
     }
 
-    let result: AuthorizationStatusType = AuthorizationStatusType.Invalid;
+    let result: AuthorizationStatusEnumType = AuthorizationStatusEnum.Invalid;
     try {
       const chargingStation = await this._locationRepository.readChargingStationByStationId(
         context.tenantId,
@@ -98,7 +100,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
           headers['Authorization'] = `Bearer ${token}`;
         } catch (error) {
           this._logger.error('Failed to get OIDC token:', error);
-          return AuthorizationStatusType.Invalid;
+          return AuthorizationStatusEnum.Invalid;
         }
       }
 
@@ -116,30 +118,30 @@ export class RealTimeAuthorizer implements IAuthorizer {
       if (realTimeAuth) {
         switch (realTimeAuth.data.allowed) {
           case 'ALLOWED':
-            result = AuthorizationStatusType.Accepted;
+            result = AuthorizationStatusEnum.Accepted;
             break;
           case 'BLOCKED':
-            result = AuthorizationStatusType.Blocked;
+            result = AuthorizationStatusEnum.Blocked;
             break;
           case 'EXPIRED':
-            result = AuthorizationStatusType.Expired;
+            result = AuthorizationStatusEnum.Expired;
             break;
           case 'NO_CREDIT':
-            result = AuthorizationStatusType.NoCredit;
+            result = AuthorizationStatusEnum.NoCredit;
             break;
           case 'NOT_ALLOWED':
-            result = AuthorizationStatusType.NotAtThisLocation;
+            result = AuthorizationStatusEnum.NotAtThisLocation;
             break;
           default:
-            result = AuthorizationStatusType.Unknown;
+            result = AuthorizationStatusEnum.Unknown;
         }
       } else {
-        result = AuthorizationStatusType.Unknown;
+        result = AuthorizationStatusEnum.Unknown;
       }
     } catch (error) {
       this._logger.error(`Real-Time Auth failed: ${error}`);
-      if (authorization.realTimeAuth === AuthorizationWhitelistType.AllowedOffline) {
-        result = AuthorizationStatusType.Accepted;
+      if (authorization.realTimeAuth === 'AllowedOffline') {
+        result = AuthorizationStatusEnum.Accepted;
       }
     }
 

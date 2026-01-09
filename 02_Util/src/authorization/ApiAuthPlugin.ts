@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import fp from 'fastify-plugin';
-import { HttpStatus, IApiAuthProvider, UserInfo } from '@citrineos/base';
+import type { IApiAuthProvider, UserInfo } from '@citrineos/base';
+import { HttpStatus } from '@citrineos/base';
 
 /**
  * Options for the authentication plugin
