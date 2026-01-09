@@ -1,26 +1,26 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { expect, jest, describe, it, beforeEach } from '@jest/globals';
+import { beforeEach, describe, expect, it, Mock, Mocked, vi } from 'vitest';
 
 // Mock the util module to avoid circular dependency issues during test loading
-jest.mock('../../../../src/layers/sequelize/util', () => ({
+vi.mock('../../../../src/layers/sequelize/util', () => ({
   DefaultSequelizeInstance: {
-    getInstance: jest.fn(),
+    getInstance: vi.fn(),
   },
 }));
 
-import { SequelizeChargingStationSequenceRepository } from '../../../../src/layers/sequelize/repository/ChargingStationSequence';
-import { ChargingStationSequence } from '../../../../src/layers/sequelize/model/ChargingStationSequence/ChargingStationSequence';
-import { ChargingStationSequenceType, BootstrapConfig } from '@citrineos/base';
+import { BootstrapConfig, ChargingStationSequenceType } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
+import { ChargingStationSequence } from '../../../../src/layers/sequelize/model/ChargingStationSequence/ChargingStationSequence';
+import { SequelizeChargingStationSequenceRepository } from '../../../../src/layers/sequelize/repository/ChargingStationSequence';
 
 describe('SequelizeChargingStationSequenceRepository', () => {
   let repository: SequelizeChargingStationSequenceRepository;
-  let mockSequelize: jest.Mocked<Sequelize>;
-  let mockTransaction: jest.Mock;
-  let mockLogger: jest.Mocked<Logger<ILogObj>>;
+  let mockSequelize: Mocked<Sequelize>;
+  let mockTransaction: Mock;
+  let mockLogger: Mocked<Logger<ILogObj>>;
   let mockConfig: BootstrapConfig;
 
   const tenantId = 1;
@@ -28,20 +28,20 @@ describe('SequelizeChargingStationSequenceRepository', () => {
   const sequenceType = ChargingStationSequenceType.getChargingProfiles;
 
   beforeEach(() => {
-    mockTransaction = jest.fn();
+    mockTransaction = vi.fn();
     mockSequelize = {
-      transaction: jest.fn((callback: (transaction: any) => Promise<any>) =>
+      transaction: vi.fn((callback: (transaction: any) => Promise<any>) =>
         callback(mockTransaction),
       ),
-    } as unknown as jest.Mocked<Sequelize>;
+    } as unknown as Mocked<Sequelize>;
 
     mockLogger = {
-      debug: jest.fn(),
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      getSubLogger: jest.fn().mockReturnThis(),
-    } as unknown as jest.Mocked<Logger<ILogObj>>;
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      getSubLogger: vi.fn().mockReturnThis(),
+    } as unknown as Mocked<Logger<ILogObj>>;
 
     mockConfig = {} as BootstrapConfig;
 
@@ -59,7 +59,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
       } as ChargingStationSequence;
 
       // Mock readOrCreateByQuery to return new sequence
-      jest.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, true]);
+      vi.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, true]);
 
       const result = await repository.getNextSequenceValue(tenantId, stationId, sequenceType);
 
@@ -68,8 +68,8 @@ describe('SequelizeChargingStationSequenceRepository', () => {
     });
 
     it('should increment and return number when sequence exists (string bigint)', async () => {
-      const mockIncrement = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
-      const mockReload = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+      const mockIncrement = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+      const mockReload = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
       const mockSequence = {
         value: '5' as string | number,
         increment: mockIncrement,
@@ -77,7 +77,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
       } as unknown as ChargingStationSequence;
 
       // Mock readOrCreateByQuery to return existing sequence
-      jest.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
+      vi.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
 
       const result = await repository.getNextSequenceValue(tenantId, stationId, sequenceType);
 
@@ -90,11 +90,11 @@ describe('SequelizeChargingStationSequenceRepository', () => {
     it('should convert string bigint to number correctly', async () => {
       const mockSequence = {
         value: '42' as string | number,
-        increment: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        reload: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        increment: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        reload: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
       } as any as ChargingStationSequence;
 
-      jest.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
+      vi.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
 
       const result = await repository.getNextSequenceValue(tenantId, stationId, sequenceType);
 
@@ -105,11 +105,11 @@ describe('SequelizeChargingStationSequenceRepository', () => {
     it('should handle number value correctly (already a number)', async () => {
       const mockSequence = {
         value: 100 as string | number,
-        increment: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        reload: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        increment: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        reload: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
       } as any as ChargingStationSequence;
 
-      jest.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
+      vi.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
 
       const result = await repository.getNextSequenceValue(tenantId, stationId, sequenceType);
 
@@ -120,11 +120,11 @@ describe('SequelizeChargingStationSequenceRepository', () => {
     it('should handle null value and return SEQUENCE_START', async () => {
       const mockSequence = {
         value: null,
-        increment: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        reload: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        increment: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        reload: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
       } as any as ChargingStationSequence;
 
-      jest.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
+      vi.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
 
       const result = await repository.getNextSequenceValue(tenantId, stationId, sequenceType);
 
@@ -134,11 +134,11 @@ describe('SequelizeChargingStationSequenceRepository', () => {
     it('should handle undefined value and return SEQUENCE_START', async () => {
       const mockSequence = {
         value: undefined,
-        increment: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        reload: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        increment: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        reload: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
       } as any as ChargingStationSequence;
 
-      jest.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
+      vi.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
 
       const result = await repository.getNextSequenceValue(tenantId, stationId, sequenceType);
 
@@ -148,11 +148,11 @@ describe('SequelizeChargingStationSequenceRepository', () => {
     it('should handle invalid string and return SEQUENCE_START', async () => {
       const mockSequence = {
         value: 'invalid' as string | number,
-        increment: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        reload: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        increment: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        reload: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
       } as any as ChargingStationSequence;
 
-      jest.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
+      vi.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
 
       const result = await repository.getNextSequenceValue(tenantId, stationId, sequenceType);
 
@@ -164,7 +164,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
         value: '1' as string | number,
       } as ChargingStationSequence;
 
-      const readOrCreateSpy = jest
+      const readOrCreateSpy = vi
         .spyOn(repository as any, 'readOrCreateByQuery')
         .mockResolvedValue([mockSequence, true]);
 
