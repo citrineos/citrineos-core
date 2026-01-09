@@ -31,14 +31,18 @@
     },
     "duration": {
       "description": "Length of the requested schedule in seconds.\r\n\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "chargingRateUnit": {
       "$ref": "#/definitions/ChargingRateUnitEnumType"
     },
     "evseId": {
       "description": "The ID of the EVSE for which the schedule is requested. When evseid=0, the Charging Station will calculate the expected consumption for the grid connection.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     }
   },
   "required": ["duration", "evseId"]

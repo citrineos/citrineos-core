@@ -51,10 +51,11 @@ export const eventGroupFromString = (source: string): EventGroup => {
   return eventGroup;
 };
 
-export { IMessage, Message } from './Message';
-export { IMessageHandler } from './MessageHandler';
-export { IMessageSender } from './MessageSender';
-export { IMessageContext } from './MessageContext';
-export { IMessageConfirmation } from './MessageConfirmation';
-export { AbstractMessageHandler } from './AbstractMessageHandler';
-export { AbstractMessageSender } from './AbstractMessageSender';
+export type { IMessage } from './Message.js';
+export { Message } from './Message.js';
+export type { IMessageHandler } from './MessageHandler.js';
+export type { IMessageSender } from './MessageSender.js';
+export type { IMessageContext } from './MessageContext.js';
+export type { IMessageConfirmation } from './MessageConfirmation.js';
+export { AbstractMessageHandler } from './AbstractMessageHandler.js';
+export { AbstractMessageSender } from './AbstractMessageSender.js';

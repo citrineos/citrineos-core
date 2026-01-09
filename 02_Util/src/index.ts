@@ -2,27 +2,44 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { UnknownStationFilter } from './networkconnection/authenticator/UnknownStationFilter';
-export { ConnectedStationFilter } from './networkconnection/authenticator/ConnectedStationFilter';
-export { NetworkProfileFilter } from './networkconnection/authenticator/NetworkProfileFilter';
-export { BasicAuthenticationFilter } from './networkconnection/authenticator/BasicAuthenticationFilter';
+export { UnknownStationFilter } from './networkconnection/authenticator/UnknownStationFilter.js';
+export { ConnectedStationFilter } from './networkconnection/authenticator/ConnectedStationFilter.js';
+export { NetworkProfileFilter } from './networkconnection/authenticator/NetworkProfileFilter.js';
+export { BasicAuthenticationFilter } from './networkconnection/authenticator/BasicAuthenticationFilter.js';
 
-export * from './authorization';
-export * from './authorizer';
-export { MemoryCache } from './cache/memory';
-export { RedisCache } from './cache/redis';
-export { S3Storage } from './files/s3Storage';
-export { FtpServer } from './files/ftpServer';
-export { LocalStorage } from './files/localStorage';
-export * from './queue';
-export * from './networkconnection';
-export * from './certificate';
+export * from './authorization/index.js';
+export * from './authorizer/index.js';
+export { MemoryCache } from './cache/memory.js';
+export { RedisCache } from './cache/redis.js';
+export { S3Storage } from './files/s3Storage.js';
+export { GcpCloudStorage } from './files/gcpCloudStorage.js';
+export { FtpServer } from './files/ftpServer.js';
+export { LocalStorage } from './files/localStorage.js';
+export * from './queue/index.js';
+export * from './networkconnection/index.js';
+export * from './certificate/index.js';
 
-export { initSwagger } from './util/swagger';
-export { getSizeOfRequest, getBatches, stringToSet } from './util/parser';
-export { DirectusUtil } from './util/directus';
-export { validateLanguageTag, validateChargingProfileType } from './util/validator';
-export { IdGenerator } from './util/idGenerator';
-export { isValidPassword, generatePassword } from './security/authentication';
+export { initSwagger } from './util/swagger.js';
+export { getSizeOfRequest, getBatches, stringToSet } from './util/parser.js';
+export { DirectusUtil } from './util/directus.js';
+export {
+  validateLanguageTag,
+  validateChargingProfileType,
+  validateIdToken,
+  validateISO15693IdToken,
+  validateISO14443IdToken,
+  validateIdentifierStringIdToken,
+  validateNoAuthorizationIdToken,
+  type ValidationResult,
+  validateASCIIContent,
+  validateHTMLContent,
+  validateURIContent,
+  validateUTF8Content,
+  validateMessageContent,
+  validateMessageContentType,
+  validatePEMEncodedCSR,
+} from './util/validator.js';
+export { IdGenerator } from './util/idGenerator.js';
+export { isValidPassword, generatePassword } from './security/authentication.js';
 
-export { SignedMeterValuesUtil } from './security/SignedMeterValuesUtil';
+export { SignedMeterValuesUtil } from './security/SignedMeterValuesUtil.js';

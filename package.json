@@ -1,13 +1,13 @@
 {
   "name": "@citrineos/workspace",
-  "version": "1.8.0",
+  "version": "1.8.1",
+  "type": "module",
   "private": false,
   "scripts": {
     "install-all": "npm i --verbose",
     "copy-assets": "npm run copy-assets --prefix ./Server",
     "build": "tsc --build --verbose",
-    "build:base:esm": "npm run build:esm --prefix ./00_Base",
-    "postbuild": "npm run copy-assets && npm run build:base:esm",
+    "postbuild": "npm run copy-assets",
     "clear-cache": "npm cache clean --force",
     "remove-dependencies": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json node_modules **/node_modules **/**/node_modules",
     "fresh": "npm run clean && npm run remove-dependencies && npm run clear-cache",
@@ -24,10 +24,10 @@
     "sync-db": "ts-node ./db.sync.ts",
     "force-sync-db": "ts-node ./db.force-sync.ts",
     "start-everest": "npm run start-everest --prefix ./Server",
-    "test": "jest --config jest.config.ts",
-    "coverage": "jest --config jest.config.ts --coverage",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
     "prepare": "husky",
-    "migrate": "npx sequelize-cli db:migrate && echo migration completed successfully"
+    "migrate": "npx sequelize-cli db:migrate --debug && echo migration completed successfully"
   },
   "lint-staged": {
     "**/*.{js,ts,jsx,tsx,json,md}": "prettier --write"
@@ -48,7 +48,7 @@
     "Server"
   ],
   "engines": {
-    "node": ">=22.11.0"
+    "node": ">=24.4.1"
   },
   "devDependencies": {
     "sequelize-cli": "^6.6.2",

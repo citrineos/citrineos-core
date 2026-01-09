@@ -2,47 +2,47 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IBaseDto } from './base.dto';
-import { OCPP2_0_1 } from '../..';
-import { IVariableDto, IComponentDto } from '.';
+import { z } from 'zod';
+import { ComponentSchema } from './component.dto.js';
+import { BaseSchema } from './types/base.dto.js';
+import { VariableSchema } from './variable.dto.js';
 
-export interface IEventDataDto extends IBaseDto {
-  id?: number;
-  stationId: string;
-  eventId: number;
-  trigger: OCPP2_0_1.EventTriggerEnumType;
-  cause?: number | null;
-  timestamp: string;
-  actualValue: string;
-  techCode?: string | null;
-  techInfo?: string | null;
-  cleared?: boolean | null;
-  transactionId?: string | null;
-  variableMonitoringId?: number | null;
-  eventNotificationType: OCPP2_0_1.EventNotificationEnumType;
-  variable: IVariableDto;
-  variableId?: number;
-  component: IComponentDto;
-  componentId?: number;
-  //   customData?: OCPP2_0_1.CustomDataType | null;
-}
+export const EventDataSchema = BaseSchema.extend({
+  id: z.number().int().optional(),
+  stationId: z.string(),
+  eventId: z.number().int(),
+  trigger: z.string(),
+  cause: z.number().int().nullable().optional(),
+  timestamp: z.iso.datetime(),
+  actualValue: z.string(),
+  techCode: z.string().nullable().optional(),
+  techInfo: z.string().nullable().optional(),
+  cleared: z.boolean().nullable().optional(),
+  transactionId: z.string().nullable().optional(),
+  variableMonitoringId: z.number().int().nullable().optional(),
+  eventNotificationType: z.string(),
+  variable: VariableSchema,
+  variableId: z.number().int().optional(),
+  component: ComponentSchema,
+  componentId: z.number().int().optional(),
+});
 
-export enum EventDataDtoProps {
-  stationId = 'stationId',
-  eventId = 'eventId',
-  trigger = 'trigger',
-  cause = 'cause',
-  timestamp = 'timestamp',
-  actualValue = 'actualValue',
-  techCode = 'techCode',
-  techInfo = 'techInfo',
-  cleared = 'cleared',
-  transactionId = 'transactionId',
-  variableMonitoringId = 'variableMonitoringId',
-  eventNotificationType = 'eventNotificationType',
-  variable = 'variable',
-  variableId = 'variableId',
-  component = 'component',
-  componentId = 'componentId',
-  customData = 'customData',
-}
+export const EventDataProps = EventDataSchema.keyof().enum;
+
+export type EventDataDto = z.infer<typeof EventDataSchema>;
+
+export const EventDataCreateSchema = EventDataSchema.omit({
+  id: true,
+  tenant: true,
+  variable: true,
+  component: true,
+  updatedAt: true,
+  createdAt: true,
+});
+
+export type EventDataCreate = z.infer<typeof EventDataCreateSchema>;
+
+export const eventDataSchemas = {
+  EventData: EventDataSchema,
+  EventDataCreate: EventDataCreateSchema,
+};

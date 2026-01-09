@@ -10,10 +10,11 @@ import {
   sendOCSPRequest,
 } from '../../src';
 import jsrsasign from 'jsrsasign';
+import { faker } from '@faker-js/faker';
+import { readFile } from '../utils/FileUtil.js';
+import { describe, expect, it, Mock, vi } from 'vitest';
 import X509 = jsrsasign.X509;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
-import { faker } from '@faker-js/faker';
-import { readFile } from '../utils/FileUtil';
 
 describe('CertificateUtil', () => {
   describe('createSignedCertificateFromCSR', () => {
@@ -77,7 +78,7 @@ describe('CertificateUtil', () => {
   });
 
   describe('sendOCSPRequest', () => {
-    global.fetch = jest.fn();
+    global.fetch = vi.fn();
 
     const issuerCertPem = readFile('SubCACertificateSample.pem');
     const subjectCertPem = readFile('LeafCertificateSample.pem');
@@ -93,7 +94,7 @@ describe('CertificateUtil', () => {
 
     it('success', async () => {
       const mockResult = faker.lorem.word();
-      (fetch as jest.Mock).mockReturnValueOnce(
+      (fetch as Mock).mockReturnValueOnce(
         Promise.resolve({
           ok: true,
           text: () => mockResult,
@@ -115,7 +116,7 @@ describe('CertificateUtil', () => {
     });
 
     it('fails due to internal server error', async () => {
-      (fetch as jest.Mock).mockReturnValueOnce(
+      (fetch as Mock).mockReturnValueOnce(
         Promise.resolve({
           ok: false,
           status: 500,

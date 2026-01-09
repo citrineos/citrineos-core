@@ -1,16 +1,24 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IEventDataDto, IVariableDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Index, Table } from 'sequelize-typescript';
-import { Component, Variable } from '../DeviceModel';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import type { ComponentDto, EventDataDto, VariableDto, TenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Index,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Component, Variable } from '../DeviceModel/index.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class EventData
-  extends BaseModelWithTenant
-  implements OCPP2_0_1.EventDataType, IEventDataDto
-{
+export class EventData extends Model implements OCPP2_0_1.EventDataType, EventDataDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.EventDataType;
 
   /**
@@ -69,7 +77,7 @@ export class EventData
    * Relations
    */
   @BelongsTo(() => Variable)
-  declare variable: IVariableDto;
+  declare variable: VariableDto;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -78,7 +86,7 @@ export class EventData
   declare variableId?: number;
 
   @BelongsTo(() => Component)
-  declare component: Component;
+  declare component: ComponentDto;
 
   @ForeignKey(() => Component)
   @Column({
@@ -87,4 +95,31 @@ export class EventData
   declare componentId?: number;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: EventData) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

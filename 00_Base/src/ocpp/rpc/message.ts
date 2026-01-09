@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OcppRequest, OcppResponse } from '../..';
+import type { OcppRequest, OcppResponse } from '../../index.js';
+import { Expose, Transform } from 'class-transformer';
 
 /**
  * Definition of Call Message (4.2.1 CALL)
@@ -223,6 +224,11 @@ export class OcppError extends Error {
   private _messageId: string;
   private _errorCode: ErrorCode;
   private _errorDetails: object;
+
+  @Expose()
+  get message(): string {
+    return super.message;
+  }
 
   constructor(
     messageId: string,

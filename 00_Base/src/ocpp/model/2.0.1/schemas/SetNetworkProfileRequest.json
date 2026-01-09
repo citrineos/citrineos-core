@@ -98,7 +98,9 @@
         },
         "simPin": {
           "description": "APN. SIMPIN. PIN_ Code\r\nurn:x-oca:ocpp:uid:1:568821\r\nSIM card pin code.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "preferredNetwork": {
           "description": "APN. Preferred_ Network. Mobile_ Network_ ID\r\nurn:x-oca:ocpp:uid:1:568822\r\nPreferred network, written as MCC and MNC concatenated. See note.\r\n",
@@ -141,11 +143,15 @@
         },
         "messageTimeout": {
           "description": "Duration in seconds before a message send by the Charging Station via this network connection times-out.\r\nThe best setting depends on the underlying network and response times of the CSMS.\r\nIf you are looking for a some guideline: use 30 seconds as a starting point.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "securityProfile": {
           "description": "This field specifies the security profile used when connecting to the CSMS with this NetworkConnectionProfile.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "ocppInterface": {
           "$ref": "#/definitions/OCPPInterfaceEnumType"
@@ -212,7 +218,9 @@
     },
     "configurationSlot": {
       "description": "Slot in which the configuration should be stored.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "connectionData": {
       "$ref": "#/definitions/NetworkConnectionProfileType"

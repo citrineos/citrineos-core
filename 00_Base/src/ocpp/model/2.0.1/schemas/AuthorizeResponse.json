@@ -143,7 +143,9 @@
         },
         "chargingPriority": {
           "description": "Priority from a business point of view. Default priority is 0, The range is from -9 to 9. Higher values indicate a higher priority. The chargingPriority in &lt;&lt;transactioneventresponse,TransactionEventResponse&gt;&gt; overrules this one. \r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -9,
+          "maximum": 9
         },
         "language1": {
           "description": "ID_ Token. Language1. Language_ Code\r\nurn:x-oca:ocpp:uid:1:569374\r\nPreferred user interface language of identifier user. Contains a language code as defined in &lt;&lt;ref-RFC5646,[RFC5646]&gt;&gt;.\r\n\r\n",
@@ -155,7 +157,9 @@
           "type": "array",
           "additionalItems": false,
           "items": {
-            "type": "integer"
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
           },
           "minItems": 1
         },

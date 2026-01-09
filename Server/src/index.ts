@@ -1,27 +1,61 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  type AbstractModule,
-  Ajv,
+import type {
+  AbstractModule,
   BootstrapConfig,
+  IApiAuthProvider,
+  IAuthorizer,
+  ICache,
+  IFileStorage,
+  IMessageHandler,
+  IMessageRouter,
+  IMessageSender,
+  IModule,
+  IModuleApi,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  addFormats,
+  Ajv,
   ConfigStoreFactory,
   EventGroup,
   eventGroupFromString,
-  IApiAuthProvider,
   type IAuthenticator,
-  IAuthorizer,
-  type ICache,
-  type IFileStorage,
-  type IMessageHandler,
-  type IMessageSender,
-  type IModule,
-  type IModuleApi,
   loadBootstrapConfig,
-  type SystemConfig,
 } from '@citrineos/base';
+import {
+  CertificatesDataApi,
+  CertificatesModule,
+  CertificatesOcpp201Api,
+} from '@citrineos/certificates';
+import {
+  ConfigurationDataApi,
+  ConfigurationModule,
+  ConfigurationOcpp16Api,
+  ConfigurationOcpp201Api,
+} from '@citrineos/configuration';
+import { RepositoryStore, sequelize, Sequelize, ServerNetworkProfile } from '@citrineos/data';
+import {
+  EVDriverDataApi,
+  EVDriverModule,
+  EVDriverOcpp16Api,
+  EVDriverOcpp201Api,
+} from '@citrineos/evdriver';
 import { MonitoringDataApi, MonitoringModule, MonitoringOcpp201Api } from '@citrineos/monitoring';
+import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocpprouter';
+import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
+import type { ISmartCharging } from '@citrineos/smartcharging';
+import {
+  InternalSmartCharging,
+  SmartChargingModule,
+  SmartChargingOcpp201Api,
+} from '@citrineos/smartcharging';
+import {
+  TransactionsDataApi,
+  TransactionsModule,
+  TransactionsOcpp201Api,
+} from '@citrineos/transactions';
 import {
   Authenticator,
   BasicAuthenticationFilter,
@@ -41,49 +75,20 @@ import {
   UnknownStationFilter,
   WebsocketNetworkConnection,
 } from '@citrineos/util';
-import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import addFormats from 'ajv-formats';
-import fastify, { type FastifyInstance, RouteOptions } from 'fastify';
-import { type ILogObj, Logger } from 'tslog';
-import { getSystemConfig } from './config';
-import {
-  ConfigurationDataApi,
-  ConfigurationModule,
-  ConfigurationOcpp16Api,
-  ConfigurationOcpp201Api,
-} from '@citrineos/configuration';
-import {
-  TransactionsDataApi,
-  TransactionsModule,
-  TransactionsOcpp201Api,
-} from '@citrineos/transactions';
-import {
-  CertificatesDataApi,
-  CertificatesModule,
-  CertificatesOcpp201Api,
-} from '@citrineos/certificates';
-import {
-  EVDriverDataApi,
-  EVDriverModule,
-  EVDriverOcpp16Api,
-  EVDriverOcpp201Api,
-} from '@citrineos/evdriver';
-import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
-import {
-  InternalSmartCharging,
-  ISmartCharging,
-  SmartChargingModule,
-  SmartChargingOcpp201Api,
-} from '@citrineos/smartcharging';
-import { RepositoryStore, sequelize, Sequelize, ServerNetworkProfile } from '@citrineos/data';
-import {
-  type FastifyRouteSchemaDef,
-  type FastifySchemaCompiler,
-  type FastifyValidationResult,
-} from 'fastify/types/schema';
-import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocpprouter';
+import ApiAuthPlugin from '@citrineos/util/dist/authorization/ApiAuthPlugin.js';
 import cors from '@fastify/cors';
-import ApiAuthPlugin from '@citrineos/util/dist/authorization/ApiAuthPlugin';
+import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+import type { FastifyInstance, RouteOptions } from 'fastify';
+import fastify from 'fastify';
+import type {
+  FastifyRouteSchemaDef,
+  FastifySchemaCompiler,
+  FastifyValidationResult,
+} from 'fastify/types/schema.js';
+import type { RedisClientOptions } from 'redis';
+import { TenantDataApi, TenantModule } from '@citrineos/tenant';
+import { type ILogObj, Logger } from 'tslog';
+import { getSystemConfig } from './config/index.js';
 
 export class CitrineOSServer {
   /**
@@ -93,7 +98,7 @@ export class CitrineOSServer {
   private readonly _logger: Logger<ILogObj>;
   private readonly _server: FastifyInstance;
   private readonly _cache: ICache;
-  private readonly _ajv: Ajv;
+  private readonly _ajv: Ajv.Ajv;
   private readonly _fileStorage: IFileStorage;
   private readonly modules: IModule[] = [];
   private readonly apis: IModuleApi[] = [];
@@ -102,6 +107,7 @@ export class CitrineOSServer {
   private port?: number;
   private eventGroup?: EventGroup;
   private _authenticator?: IAuthenticator;
+  private _router?: IMessageRouter;
   private _networkConnection?: WebsocketNetworkConnection;
   private _repositoryStore!: RepositoryStore;
   private _idGenerator!: IdGenerator;
@@ -127,7 +133,7 @@ export class CitrineOSServer {
     bootstrapConfig: BootstrapConfig,
     systemConfig: SystemConfig,
     server?: FastifyInstance,
-    ajv?: Ajv,
+    ajv?: Ajv.Ajv,
     cache?: ICache,
     _fileStorage?: IFileStorage,
   ) {
@@ -222,6 +228,7 @@ export class CitrineOSServer {
       await module.shutdown();
     }
     await this._networkConnection?.shutdown();
+    await this._router?.shutdown();
 
     // Shutdown server
     await this._server.close();
@@ -256,28 +263,10 @@ export class CitrineOSServer {
 
   protected async _syncWebsocketConfig() {
     for (const websocketServerConfig of this._config.util.networkConnection.websocketServers) {
-      const [serverNetworkProfile] = await ServerNetworkProfile.findOrBuild({
-        where: {
-          id: websocketServerConfig.id,
-        },
-      });
-      serverNetworkProfile.host = websocketServerConfig.host;
-      serverNetworkProfile.port = websocketServerConfig.port;
-      serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
-      serverNetworkProfile.protocol = websocketServerConfig.protocol;
-      serverNetworkProfile.messageTimeout = this._config.maxCallLengthSeconds;
-      serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
-      serverNetworkProfile.allowUnknownChargingStations =
-        websocketServerConfig.allowUnknownChargingStations;
-      serverNetworkProfile.tlsKeyFilePath = websocketServerConfig.tlsKeyFilePath;
-      serverNetworkProfile.tlsCertificateChainFilePath =
-        websocketServerConfig.tlsCertificateChainFilePath;
-      serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath =
-        websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
-      serverNetworkProfile.rootCACertificateFilePath =
-        websocketServerConfig.rootCACertificateFilePath;
-
-      await serverNetworkProfile.save();
+      await this._repositoryStore.serverNetworkProfileRepository.upsertServerNetworkProfile(
+        websocketServerConfig,
+        this._config.maxCallLengthSeconds,
+      );
     }
   }
 
@@ -293,22 +282,42 @@ export class CitrineOSServer {
     this._server.get('/health', async () => ({ status: 'healthy' }));
   }
 
-  private initAjv(ajv?: Ajv) {
-    return (
+  private initAjv(ajv?: Ajv.Ajv) {
+    const ajvInstance =
       ajv ||
-      new Ajv({
-        removeAdditional: 'all',
+      new Ajv.Ajv({
+        removeAdditional: 'failing', // Remove invalid additional properties but keep valid ones
         useDefaults: true,
-        coerceTypes: 'array',
         strict: false,
-      })
-    );
+        strictNumbers: true,
+        strictRequired: true,
+        validateFormats: true,
+        allErrors: true, // Report all validation errors
+      });
+
+    // Add custom keywords for OCPP schema metadata
+    ajvInstance.addKeyword({
+      keyword: 'comment',
+      compile: () => () => true,
+    });
+
+    ajvInstance.addKeyword({
+      keyword: 'javaType',
+      compile: () => () => true,
+    });
+
+    ajvInstance.addKeyword({
+      keyword: 'tsEnumNames',
+      compile: () => () => true,
+    });
+
+    return ajvInstance;
   }
 
   private addAjvFormats() {
-    addFormats(this._ajv, {
+    addFormats.default(this._ajv, {
       mode: 'fast',
-      formats: ['date-time'],
+      formats: ['date-time', 'uri'],
     });
   }
 
@@ -330,17 +339,20 @@ export class CitrineOSServer {
   }
 
   private initCache(cache?: ICache): ICache {
-    return (
-      cache ||
-      (this._config.util.cache.redis
-        ? new RedisCache({
-            socket: {
-              host: this._config.util.cache.redis.host,
-              port: this._config.util.cache.redis.port,
-            },
-          })
-        : new MemoryCache())
-    );
+    if (cache) return cache;
+    if (this._config.util.cache.redis) {
+      const redisClientOptions: RedisClientOptions =
+        'url' in this._config.util.cache.redis
+          ? { url: this._config.util.cache.redis.url }
+          : {
+              socket: {
+                host: this._config.util.cache.redis.host,
+                port: this._config.util.cache.redis.port,
+              },
+            };
+      return new RedisCache(redisClientOptions);
+    }
+    return new MemoryCache();
   }
 
   private async initSwagger() {
@@ -395,7 +407,7 @@ export class CitrineOSServer {
       this._logger,
     );
 
-    const router = new MessageRouterImpl(
+    this._router = new MessageRouterImpl(
       this._config,
       this._cache,
       this._createSender(),
@@ -405,21 +417,29 @@ export class CitrineOSServer {
       this._logger,
       this._ajv,
       this._repositoryStore.locationRepository,
-      this._repositoryStore.subscriptionRepository,
     );
 
     this._networkConnection = new WebsocketNetworkConnection(
       this._config,
       this._cache,
       this._authenticator,
-      router,
+      this._router,
       this._logger,
     );
 
-    this.apis.push(new AdminApi(router, this._server, this._logger));
+    this._router.networkHook = this._networkConnection.bindNetworkHook();
 
-    this.host = this._config.centralSystem.host;
-    this.port = this._config.centralSystem.port;
+    this.apis.push(
+      new AdminApi(
+        this._router,
+        this._networkConnection,
+        this._server,
+        this._config,
+        this._logger,
+        this._repositoryStore.subscriptionRepository,
+        this._repositoryStore.serverNetworkProfileRepository,
+      ),
+    );
   }
 
   private async initHandlersAndAddModule(module: AbstractModule) {
@@ -456,10 +476,8 @@ export class CitrineOSServer {
       await this.initTransactionsModule();
     }
 
-    // TODO: take actions to make sure module has correct subscriptions and log proof
-    if (this.eventGroup !== EventGroup.All) {
-      this.host = this._config.centralSystem.host as string;
-      this.port = this._config.centralSystem.port as number;
+    if (this._config.modules.tenant) {
+      await this.initTenantModule();
     }
   }
 
@@ -626,6 +644,20 @@ export class CitrineOSServer {
     );
   }
 
+  private async initTenantModule() {
+    const module = new TenantModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.tenantRepository,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(new TenantDataApi(module, this._server, this._logger));
+    console.log('Tenant module initialized');
+  }
+
   private async initModule(eventGroup = this.eventGroup) {
     switch (eventGroup) {
       case EventGroup.Certificates:
@@ -649,6 +681,9 @@ export class CitrineOSServer {
       case EventGroup.Transactions:
         await this.initTransactionsModule();
         break;
+      case EventGroup.Tenant:
+        await this.initTenantModule();
+        break;
       default:
         throw new Error('Unhandled module type: ' + this.appName);
     }
@@ -656,6 +691,10 @@ export class CitrineOSServer {
 
   private async initSystem() {
     this.eventGroup = eventGroupFromString(this.appName);
+
+    this.host = this._config.centralSystem.host;
+    this.port = this._config.centralSystem.port;
+
     if (this.eventGroup === EventGroup.All) {
       this.initNetworkConnection();
       await this.initAllModules();

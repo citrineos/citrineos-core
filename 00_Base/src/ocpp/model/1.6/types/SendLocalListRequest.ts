@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { SendLocalListRequestStatus, SendLocalListRequestUpdateType } from '../enums';
-import { OcppRequest } from '../../../..';
+import { SendLocalListRequestStatus, SendLocalListRequestUpdateType } from '../enums/index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface SendLocalListRequest extends OcppRequest {
   listVersion: number;

@@ -2,19 +2,23 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Column, DataType, ForeignKey, Index, Table } from 'sequelize-typescript';
+import type { CallAction, OCPPMessageDto, TenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, MessageOrigin, Namespace, OCPPVersion } from '@citrineos/base';
 import {
-  CallAction,
-  IOCPPMessageDto,
-  MessageOrigin,
-  Namespace,
-  OCPPVersion,
-} from '@citrineos/base';
-import { ChargingStation } from '..';
-import { BaseModelWithTenant } from './BaseModelWithTenant';
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Index,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { ChargingStation, Tenant } from '../index.js';
 
 @Table
-export class OCPPMessage extends BaseModelWithTenant implements IOCPPMessageDto {
+export class OCPPMessage extends Model implements OCPPMessageDto {
   static readonly MODEL_NAME: string = Namespace.OCPPMessage;
 
   @ForeignKey(() => ChargingStation)
@@ -45,4 +49,31 @@ export class OCPPMessage extends BaseModelWithTenant implements IOCPPMessageDto 
     },
   })
   declare timestamp: string;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: OCPPMessage) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

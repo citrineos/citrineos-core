@@ -2,39 +2,44 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import {
-  type BootConfig,
-  type CallAction,
-  ChargingStationSequenceType,
-  type CrudRepository,
+import type {
+  BootConfig,
+  CallAction,
+  ChargingStationSequenceTypeEnumType,
+  CrudRepository,
   OCPP1_6,
   OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/base';
-import { type AuthorizationQuerystring } from './queries/Authorization';
+import type {
+  Authorization,
+  Boot,
+  Certificate,
+  ChargingStation,
+  Component,
+  EventData,
+  Location,
+  SecurityEvent,
+  Transaction,
+  Variable,
+  VariableAttribute,
+  VariableMonitoring,
+} from '../layers/sequelize/index.js';
 import {
-  type Authorization,
-  type Boot,
-  type Certificate,
   ChangeConfiguration,
   ChargingNeeds,
   ChargingProfile,
-  type ChargingStation,
   ChargingStationSecurityInfo,
   ChargingStationSequence,
-  type Component,
   CompositeSchedule,
   Connector,
-  type EventData,
   EvseType,
   InstalledCertificate,
   LocalListVersion,
-  type Location,
   MessageInfo,
   MeterValue,
   OCPPMessage,
   Reservation,
-  type SecurityEvent,
   SendLocalList,
   ServerNetworkProfile,
   StatusNotification,
@@ -42,15 +47,12 @@ import {
   Subscription,
   Tariff,
   Tenant,
-  type Transaction,
   TransactionEvent,
-  type Variable,
-  type VariableAttribute,
   VariableCharacteristics,
-  type VariableMonitoring,
-} from '../layers/sequelize';
-import { type VariableAttributeQuerystring } from '.';
-import { TariffQueryString } from './queries/Tariff';
+} from '../layers/sequelize/index.js';
+import type { VariableAttributeQuerystring } from './index.js';
+import type { AuthorizationQuerystring } from './queries/Authorization.js';
+import type { TariffQueryString } from './queries/Tariff.js';
 
 export interface IAuthorizationRepository extends CrudRepository<Authorization> {
   readAllByQuerystring: (
@@ -444,11 +446,16 @@ export interface IChargingStationSequenceRepository
   getNextSequenceValue(
     tenantId: number,
     stationId: string,
-    type: ChargingStationSequenceType,
+    type: ChargingStationSequenceTypeEnumType,
   ): Promise<number>;
 }
 
-export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {}
+export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {
+  upsertServerNetworkProfile(
+    websocketServerConfig: any,
+    maxCallLengthSeconds: number,
+  ): Promise<ServerNetworkProfile>;
+}
 
 export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {
   createOrUpdateChangeConfiguration(
@@ -457,4 +464,6 @@ export interface IChangeConfigurationRepository extends CrudRepository<ChangeCon
   ): Promise<ChangeConfiguration | undefined>;
 }
 
-export interface ITenantRepository extends CrudRepository<Tenant> {}
+export interface ITenantRepository extends CrudRepository<Tenant> {
+  createTenant(tenant: Tenant): Promise<Tenant>;
+}

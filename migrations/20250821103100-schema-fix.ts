@@ -4,10 +4,29 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-import { DataTypes, QueryInterface } from 'sequelize';
+import { DataTypes, QueryInterface, QueryTypes } from 'sequelize';
 
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
+    const migrationName = '20250821103100-schema-fix';
+
+    const [results] = await queryInterface.sequelize.query(
+      `SELECT EXISTS (
+      SELECT 1 
+      FROM "SequelizeMeta" 
+      WHERE name LIKE :pattern
+    ) AS migration_exists`,
+      {
+        replacements: { pattern: `${migrationName}%` },
+        type: QueryTypes.SELECT,
+      },
+    );
+
+    if ((results as any).migration_exists) {
+      console.log('Migration already run, skipping...');
+      return;
+    }
+
     // Helper to check if a constraint exists (robust for schema/casing)
     const constraintExists = async (
       tableName: string,

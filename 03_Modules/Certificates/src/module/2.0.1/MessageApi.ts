@@ -1,21 +1,20 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { CallAction, IMessageConfirmation } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
-  CallAction,
   DEFAULT_TENANT_ID,
-  IMessageConfirmation,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import { FastifyInstance } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import { ICertificatesModuleApi } from '../interface';
-import { CertificatesModule } from '../module';
+import type { FastifyInstance } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { ICertificatesModuleApi } from '../interface.js';
+import { CertificatesModule } from '../module.js';
 
 /**
  * Server API for the Certificates module.

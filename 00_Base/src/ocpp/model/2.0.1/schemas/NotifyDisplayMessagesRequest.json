@@ -53,12 +53,14 @@
         "name": {
           "description": "Name of the component. Name should be taken from the list of standardized component names whenever possible. Case Insensitive. strongly advised to use Camel Case.\r\n",
           "type": "string",
-          "maxLength": 50
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         },
         "instance": {
           "description": "Name of instance in case the component exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.\r\n",
           "type": "string",
-          "maxLength": 50
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         }
       },
       "required": ["name"]
@@ -74,11 +76,15 @@
         },
         "id": {
           "description": "Identified_ Object. MRID. Numeric_ Identifier\r\nurn:x-enexis:ecdm:uid:1:569198\r\nEVSE Identifier. This contains a number (&gt; 0) designating an EVSE of the Charging Station.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
         },
         "connectorId": {
           "description": "An id to designate a specific connector (on an EVSE) by connector index number.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         }
       },
       "required": ["id"]
@@ -122,7 +128,9 @@
         },
         "id": {
           "description": "Identified_ Object. MRID. Numeric_ Identifier\r\nurn:x-enexis:ecdm:uid:1:569198\r\nMaster resource identifier, unique within an exchange context. It is defined within the OCPP context as a positive Integer value (greater or equal to zero).\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
         },
         "priority": {
           "$ref": "#/definitions/MessagePriorityEnumType"
@@ -133,17 +141,20 @@
         "startDateTime": {
           "description": "Message_ Info. Start. Date_ Time\r\nurn:x-enexis:ecdm:uid:1:569256\r\nFrom what date-time should this message be shown. If omitted: directly.\r\n",
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?(?:Z|[+\\-]\\d{2}:\\d{2})$"
         },
         "endDateTime": {
           "description": "Message_ Info. End. Date_ Time\r\nurn:x-enexis:ecdm:uid:1:569257\r\nUntil what date-time should this message be shown, after this date/time this message SHALL be removed.\r\n",
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?(?:Z|[+\\-]\\d{2}:\\d{2})$"
         },
         "transactionId": {
           "description": "During which transaction shall this message be shown.\r\nMessage SHALL be removed by the Charging Station after transaction has\r\nended.\r\n",
           "type": "string",
-          "maxLength": 36
+          "maxLength": 36,
+          "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         },
         "message": {
           "$ref": "#/definitions/MessageContentType"
@@ -168,7 +179,9 @@
     },
     "requestId": {
       "description": "The id of the &lt;&lt;getdisplaymessagesrequest,GetDisplayMessagesRequest&gt;&gt; that requested this message.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "tbc": {
       "description": "\"to be continued\" indicator. Indicates whether another part of the report follows in an upcoming NotifyDisplayMessagesRequest message. Default value when omitted is false.\r\n",

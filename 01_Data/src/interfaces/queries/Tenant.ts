@@ -15,3 +15,19 @@ export const TenantQuerySchema = QuerySchema('TenantQuerySchema', [
 export interface TenantQueryString {
   tenantId: number;
 }
+
+export const CreateTenantQuerySchema = QuerySchema('CreateTenantQuerySchema', [
+  {
+    key: 'name',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'isUserTenant',
+    type: 'boolean',
+  },
+  {
+    key: 'url',
+    type: 'string',
+  },
+]);

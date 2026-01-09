@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { Optional } from 'sequelize';
+import type { ServerProfile, TenantDto } from '@citrineos/base';
+import type { Optional } from 'sequelize';
 import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import {
   Authorization,
@@ -10,28 +11,20 @@ import {
   LocalListVersionAuthorization,
   SendLocalList,
   SendLocalListAuthorization,
-} from './Authorization';
-import { Boot } from './Boot';
-import { Certificate, InstalledCertificate } from './Certificate';
-import { ChangeConfiguration } from './ChangeConfiguration';
+} from './Authorization/index.js';
+import { Boot } from './Boot.js';
+import { Certificate, InstalledCertificate } from './Certificate/index.js';
+import { ChangeConfiguration } from './ChangeConfiguration.js';
 import {
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
   CompositeSchedule,
   SalesTariff,
-} from './ChargingProfile';
-import {
-  ChargingStation,
-  ChargingStationNetworkProfile,
-  Connector,
-  Location,
-  ServerNetworkProfile,
-  SetNetworkProfile,
-  StatusNotification,
-} from './Location';
-import { ChargingStationSecurityInfo } from './ChargingStationSecurityInfo';
-import { ChargingStationSequence } from './ChargingStationSequence';
+} from './ChargingProfile/index.js';
+import { ChargingStationSecurityInfo } from './ChargingStationSecurityInfo.js';
+import { ChargingStationSequence } from './ChargingStationSequence/index.js';
+import { ComponentVariable } from './DeviceModel/ComponentVariable.js';
 import {
   Component,
   EvseType,
@@ -39,25 +32,36 @@ import {
   VariableAttribute,
   VariableCharacteristics,
   VariableStatus,
-} from './DeviceModel';
-import { ComponentVariable } from './DeviceModel/ComponentVariable';
-import { EventData, VariableMonitoring, VariableMonitoringStatus } from './VariableMonitoring';
+} from './DeviceModel/index.js';
+import {
+  ChargingStation,
+  ChargingStationNetworkProfile,
+  Connector,
+  LatestStatusNotification,
+  ServerNetworkProfile,
+  SetNetworkProfile,
+  StatusNotification,
+} from './Location/index.js';
+import { Location } from './Location/Location.js';
+import { MessageInfo } from './MessageInfo/index.js';
+import { OCPPMessage } from './OCPPMessage.js';
+import { Reservation } from './Reservation.js';
+import { SecurityEvent } from './SecurityEvent.js';
+import { Subscription } from './Subscription/index.js';
+import { Tariff } from './Tariff/index.js';
+import { TenantPartner } from './TenantPartner.js';
 import {
   MeterValue,
   StartTransaction,
   StopTransaction,
   Transaction,
   TransactionEvent,
-} from './TransactionEvent';
-import { MessageInfo } from './MessageInfo';
-import { OCPPMessage } from './OCPPMessage';
-import { Reservation } from './Reservation';
-import { SecurityEvent } from './SecurityEvent';
-import { LatestStatusNotification } from './Location/LatestStatusNotification';
-import { Subscription } from './Subscription';
-import { Tariff } from './Tariff';
-import { TenantPartner } from './TenantPartner';
-import { ITenantDto, OCPIRegistration } from '@citrineos/base';
+} from './TransactionEvent/index.js';
+import {
+  EventData,
+  VariableMonitoring,
+  VariableMonitoringStatus,
+} from './VariableMonitoring/index.js';
 
 export enum TenantAttributeProps {
   id = 'id',
@@ -78,30 +82,36 @@ export interface TenantCreationAttributes
   > {}
 
 @Table
-export class Tenant
-  extends Model<TenantAttributes, TenantCreationAttributes>
-  implements ITenantDto
-{
+export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> implements TenantDto {
   static readonly MODEL_NAME: string = 'Tenant';
 
   @PrimaryKey
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    autoIncrement: true,
+  })
   declare id: number;
 
   @Column(DataType.STRING)
   declare name: string;
 
   @Column(DataType.STRING)
-  declare url: string;
+  declare url?: string | null;
 
   @Column(DataType.STRING)
-  declare partyId: string;
+  declare partyId?: string | null;
 
   @Column(DataType.STRING)
-  declare countryCode: string;
+  declare countryCode?: string | null;
 
   @Column(DataType.JSONB)
-  declare serverProfileOCPI?: OCPIRegistration.ServerProfile | null;
+  declare serverProfileOCPI?: ServerProfile | null;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  declare isUserTenant: boolean;
 
   /**
    * Relationships

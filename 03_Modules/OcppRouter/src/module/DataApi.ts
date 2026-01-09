@@ -1,7 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type {
+  BootstrapConfig,
+  IMessageRouter,
+  INetworkConnection,
+  SystemConfig,
+  WebsocketServerConfig,
+} from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
@@ -13,43 +19,70 @@ import {
   NotFoundError,
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
-  WebsocketServerConfig,
+  OCPPVersion,
 } from '@citrineos/base';
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import { IAdminApi } from './interface';
-import { MessageRouterImpl } from './router';
-import {
-  ChargingStationKeyQuerySchema,
+import type {
   ChargingStationKeyQuerystring,
-  CreateSubscriptionSchema,
+  ConnectionDeleteQuerystring,
+  IServerNetworkProfileRepository,
+  ISubscriptionRepository,
   ModelKeyQuerystring,
-  ModelKeyQuerystringSchema,
-  Subscription,
   TenantQueryString,
-  TenantQuerySchema,
-  WebsocketGetQuerySchema,
+  WebsocketDeleteQuerystring,
   WebsocketGetQuerystring,
 } from '@citrineos/data';
 import {
+  ChargingStationKeyQuerySchema,
+  ConnectionDeleteQuerySchema,
+  CreateSubscriptionSchema,
+  ModelKeyQuerystringSchema,
+  sequelize,
+  Subscription,
+  TenantQuerySchema,
   WebsocketDeleteQuerySchema,
-  WebsocketDeleteQuerystring,
+  WebsocketGetQuerySchema,
   WebsocketRequestSchema,
-} from '@citrineos/data/dist/interfaces/queries/Websocket';
+} from '@citrineos/data';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IAdminApi } from './interface.js';
 
 /**
  * Admin API for the OcppRouter.
  */
-export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IAdminApi {
+export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdminApi {
+  private _networkConnection: INetworkConnection;
+  private _subscriptionRepository: ISubscriptionRepository;
+  private _serverNetworkProfileRepository: IServerNetworkProfileRepository;
+
   /**
    * Constructs a new instance of the class.
    *
-   * @param {MessageRouterImpl} ocppRouter - The OcppRouter module.
+   * @param {IMessageRouter} ocppRouter - The OcppRouter module.
+   * @param {INetworkConnection} networkConnection - The network connection instance.
    * @param {FastifyInstance} server - The Fastify server instance.
+   * @param {BootstrapConfig & SystemConfig} config - The configuration instance.
    * @param {Logger<ILogObj>} [logger] - The logger instance.
+   * @param {ISubscriptionRepository} [subscriptionRepository] - The subscription repository instance.
+   * @param {IServerNetworkProfileRepository} [serverNetworkProfileRepository] - The server network profile repository instance.
    */
-  constructor(ocppRouter: MessageRouterImpl, server: FastifyInstance, logger?: Logger<ILogObj>) {
+  constructor(
+    ocppRouter: IMessageRouter,
+    networkConnection: INetworkConnection,
+    server: FastifyInstance,
+    config: BootstrapConfig & SystemConfig,
+    logger?: Logger<ILogObj>,
+    subscriptionRepository?: ISubscriptionRepository,
+    serverNetworkProfileRepository?: IServerNetworkProfileRepository,
+  ) {
     super(ocppRouter, server, null, logger);
+    this._networkConnection = networkConnection;
+    this._subscriptionRepository =
+      subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
+    this._serverNetworkProfileRepository =
+      serverNetworkProfileRepository ||
+      new sequelize.SequelizeServerNetworkProfileRepository(config, this._logger);
   }
 
   // N.B.: When adding subscriptions, chargers may be connected to a different instance of Citrine.
@@ -82,7 +115,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
         'Must specify at least one of onConnect, onClose, onMessage, sentMessage to true.',
       );
     }
-    return this._module.subscriptionRepository
+    return this._subscriptionRepository
       .create(tenantId, request.body as Subscription)
       .then((subscription) => subscription?.id);
   }
@@ -91,7 +124,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
   async getSubscriptionsByChargingStation(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Subscription[]> {
-    return this._module.subscriptionRepository.readAllByStationId(
+    return this._subscriptionRepository.readAllByStationId(
       request.query.tenantId,
       request.query.stationId,
     );
@@ -102,7 +135,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
     request: FastifyRequest<{ Querystring: ModelKeyQuerystring }>,
   ): Promise<boolean> {
     const tenantId = request.query.tenantId ?? DEFAULT_TENANT_ID;
-    return this._module.subscriptionRepository
+    return this._subscriptionRepository
       .deleteByKey(tenantId, request.query.id.toString())
       .then(() => true);
   }
@@ -148,6 +181,61 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
     }
   }
 
+  /**
+   * Add new websocket servers for the tenant without restarting the service.
+   */
+  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Put, TenantQuerySchema)
+  async addWebsocketConfigurationsForTenant(
+    request: FastifyRequest<{ Body: { tenantId: number }; Querystring: TenantQueryString }>,
+  ): Promise<WebsocketServerConfig[]> {
+    const existingConfig = this._module.config.util.networkConnection.websocketServers.find(
+      (ws) => ws.tenantId === request.body.tenantId,
+    );
+
+    if (existingConfig) {
+      throw new BadRequestError(
+        `Websocket configurations for tenant ${request.body.tenantId} already exists.`,
+      );
+    } else {
+      // 1. find the max port and max server id in the existing ws configs
+      const maxPort: number = this._module.config.util.networkConnection.websocketServers.reduce(
+        (max, ws) => Math.max(max, ws.port),
+        10000, // the stating value for dynamic ports
+      );
+      if (maxPort > 10500) {
+        throw new BadRequestError('Cannot create new websocket server: maximum port 9000 reached.');
+      }
+
+      const maxServerId: number =
+        this._module.config.util.networkConnection.websocketServers.reduce(
+          (max, ws) => Math.max(max, Number(ws.id)),
+          0,
+        );
+      // 2. create new ws servers, one for profile 0 and one for profile 1
+      const newServerForProfile0: WebsocketServerConfig = await this._createNewWebsocketServer(
+        request.body.tenantId,
+        maxPort + 1,
+        maxServerId + 1,
+        0,
+        true,
+        this._module.config.util.networkConnection.websocketServers[0],
+      );
+      const newServerForProfile1: WebsocketServerConfig = await this._createNewWebsocketServer(
+        request.body.tenantId,
+        maxPort + 2,
+        maxServerId + 2,
+        1,
+        false,
+        this._module.config.util.networkConnection.websocketServers[0],
+      );
+
+      // 3. Save the updated configs in the file store
+      await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
+
+      return [newServerForProfile0, newServerForProfile1];
+    }
+  }
+
   @AsDataEndpoint(Namespace.Websocket, HttpMethod.Delete, WebsocketDeleteQuerySchema)
   async deleteWebsocketConfiguration(
     request: FastifyRequest<{ Querystring: WebsocketDeleteQuerystring }>,
@@ -163,6 +251,14 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
     }
   }
 
+  // Forcibly disconnect a websocket connection by station id and tenant id and mark the station as offline
+  @AsDataEndpoint(Namespace.Connection, HttpMethod.Delete, ConnectionDeleteQuerySchema)
+  async deleteWebsocketConnection(
+    request: FastifyRequest<{ Querystring: ConnectionDeleteQuerystring }>,
+  ): Promise<void> {
+    await this._networkConnection.disconnect(request.query.tenantId, request.query.stationId);
+  }
+
   /**
    * Overrides superclass method to generate the URL path based on the input {@link Namespace}
    * and the module's endpoint prefix configuration.
@@ -173,5 +269,37 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
   protected _toDataPath(input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace): string {
     const endpointPrefix = '/ocpprouter';
     return super._toDataPath(input, endpointPrefix);
+  }
+
+  private async _createNewWebsocketServer(
+    tenantId: number,
+    port: number,
+    serverId: number,
+    securityProfile: number,
+    allowUnknownChargingStations: boolean,
+    existingServerConfig: WebsocketServerConfig,
+  ): Promise<WebsocketServerConfig> {
+    const newServerConfig: WebsocketServerConfig = {
+      id: serverId.toString(),
+      host: existingServerConfig.host,
+      port,
+      pingInterval: existingServerConfig.pingInterval,
+      protocol: OCPPVersion.OCPP2_0_1,
+      securityProfile,
+      tenantId,
+      allowUnknownChargingStations,
+    };
+
+    // save new config in db
+    await this._serverNetworkProfileRepository.upsertServerNetworkProfile(
+      newServerConfig,
+      this._module.config.maxCallLengthSeconds,
+    );
+    // start the new ws server
+    await this._networkConnection.addWebsocketServer(newServerConfig);
+    // add the new ws server to the config
+    this._module.config.util.networkConnection.websocketServers.push(newServerConfig);
+
+    return newServerConfig;
   }
 }

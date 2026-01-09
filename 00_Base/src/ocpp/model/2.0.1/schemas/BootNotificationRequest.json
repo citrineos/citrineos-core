@@ -87,9 +87,10 @@
           "$ref": "#/definitions/CustomDataType"
         },
         "iccid": {
-          "description": "Wireless_ Communication_ Module. ICCID. CI20_ Text\r\nurn:x-oca:ocpp:uid:1:569327\r\nThis contains the ICCID of the modem’s SIM card.\r\n",
+          "description": "Wireless_ Communication_ Module. ICCID. CI20_ Text\r\nurn:x-oca:ocpp:uid:1:569327\r\nThis contains the ICCID of the modem's SIM card.\r\n",
           "type": "string",
-          "maxLength": 20
+          "maxLength": 20,
+          "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         },
         "imsi": {
           "description": "Wireless_ Communication_ Module. IMSI. CI20_ Text\r\nurn:x-oca:ocpp:uid:1:569328\r\nThis contains the IMSI of the modem’s SIM card.\r\n",

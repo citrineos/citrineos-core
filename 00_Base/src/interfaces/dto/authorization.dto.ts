@@ -1,47 +1,76 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AdditionalInfo, IBaseDto, ITenantPartnerDto } from '../..';
-import { AuthorizationStatusType, IdTokenType, AuthorizationWhitelistType } from './enum';
 
-export interface IAuthorizationDto extends IBaseDto {
-  id?: number;
-  allowedConnectorTypes?: string[];
-  disallowedEvseIdPrefixes?: string[];
-  idToken: string;
-  idTokenType?: IdTokenType | null;
-  additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]] | null;
-  status: AuthorizationStatusType;
-  cacheExpiryDateTime?: string | null;
-  chargingPriority?: number | null;
-  language1?: string | null;
-  language2?: string | null;
-  personalMessage?: any | null;
-  groupAuthorizationId?: number | null;
-  groupAuthorization?: IAuthorizationDto;
-  concurrentTransaction?: boolean;
-  realTimeAuth?: AuthorizationWhitelistType | null;
-  realTimeAuthUrl?: string;
-  tenantPartnerId?: number | null;
-  tenantPartner?: ITenantPartnerDto | null;
-}
+import { z } from 'zod/v4';
+import { TenantPartnerSchema } from './tenant.partner.dto.js';
+import { AdditionalInfoSchema } from './types/authorization.js';
+import { BaseSchema } from './types/base.dto.js';
+import {
+  AuthorizationStatusEnumSchema,
+  AuthorizationWhitelistEnumSchema,
+  IdTokenEnumSchema,
+} from './types/enums.js';
 
-export enum AuthorizationDtoProps {
-  id = 'id',
-  allowedConnectorTypes = 'allowedConnectorTypes',
-  disallowedEvseIdPrefixes = 'disallowedEvseIdPrefixes',
-  idToken = 'idToken',
-  idTokenType = 'idTokenType',
-  additionalInfo = 'additionalInfo',
-  status = 'status',
-  cacheExpiryDateTime = 'cacheExpiryDateTime',
-  chargingPriority = 'chargingPriority',
-  language1 = 'language1',
-  language2 = 'language2',
-  personalMessage = 'personalMessage',
-  groupAuthorizationId = 'groupAuthorizationId',
-  groupAuthorization = 'groupAuthorization',
-  concurrentTransaction = 'concurrentTransaction',
-  realTimeAuth = 'realTimeAuth',
-  realTimeAuthUrl = 'realTimeAuthUrl',
-}
+const authorizationFields = {
+  id: z.number().int().optional(),
+  allowedConnectorTypes: z.array(z.string()).optional(),
+  disallowedEvseIdPrefixes: z.array(z.string()).optional(),
+  idToken: z.string(),
+  idTokenType: IdTokenEnumSchema.nullable().optional(),
+  additionalInfo: z.tuple([AdditionalInfoSchema]).rest(AdditionalInfoSchema).nullable().optional(),
+  status: AuthorizationStatusEnumSchema,
+  cacheExpiryDateTime: z.iso.datetime().nullable().optional(),
+  chargingPriority: z.number().int().nullable().optional(),
+  language1: z.string().nullable().optional(),
+  language2: z.string().nullable().optional(),
+  personalMessage: z.any().nullable().optional(),
+  concurrentTransaction: z.boolean().optional(),
+  realTimeAuth: AuthorizationWhitelistEnumSchema.nullable().optional(),
+  realTimeAuthUrl: z.string().optional(),
+  tenantPartnerId: z.number().int().nullable().optional(),
+  tenantPartner: TenantPartnerSchema.nullable().optional(),
+};
+
+export const GroupAuthorizationSchema = BaseSchema.extend(authorizationFields);
+
+export type GroupAuthorizationDto = z.infer<typeof GroupAuthorizationSchema>;
+
+export const AuthorizationSchema = BaseSchema.extend({
+  ...authorizationFields,
+  groupAuthorizationId: z.number().int().nullable().optional(),
+  groupAuthorization: z.lazy(() => GroupAuthorizationSchema).optional(),
+});
+
+export const AuthorizationProps = AuthorizationSchema.keyof().enum;
+
+export type AuthorizationDto = z.infer<typeof AuthorizationSchema>;
+
+export const AuthorizationCreateSchema = AuthorizationSchema.omit({
+  id: true,
+  tenant: true,
+  updatedAt: true,
+  createdAt: true,
+  groupAuthorization: true,
+  tenantPartner: true,
+});
+
+export type AuthorizationCreate = z.infer<typeof AuthorizationCreateSchema>;
+
+export const AuthorizationUpdateSchema = AuthorizationSchema.partial()
+  .omit({
+    tenant: true,
+    updatedAt: true,
+    createdAt: true,
+    groupAuthorization: true,
+    tenantPartner: true,
+  })
+  .required({ id: true, tenantId: true });
+
+export type AuthorizationUpdate = z.infer<typeof AuthorizationUpdateSchema>;
+
+export const authorizationSchemas = {
+  Authorization: AuthorizationSchema,
+  AuthorizationCreate: AuthorizationCreateSchema,
+  AuthorizationUpdate: AuthorizationUpdateSchema,
+};

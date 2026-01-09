@@ -2,17 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import {
-  CallAction,
-  EventGroup,
-  IMessage,
-  MessageOrigin,
-  MessageState,
-  OcppError,
-  OcppRequest,
-  OcppResponse,
-  OCPPVersionType,
-} from '..';
+import type { CallAction, IMessage, OcppRequest, OcppResponse, OCPPVersionType } from '../index.js';
+import { EventGroup, MessageOrigin, MessageState, OcppError } from '../index.js';
 
 export class RequestBuilder {
   static buildCall(

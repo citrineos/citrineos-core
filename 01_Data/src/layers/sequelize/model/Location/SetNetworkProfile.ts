@@ -1,19 +1,29 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { OCPP2_0_1 } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Index, Table } from 'sequelize-typescript';
-import { ChargingStation } from './ChargingStation';
-import { ServerNetworkProfile } from './ServerNetworkProfile';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Index,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
+import { ChargingStation } from './ChargingStation.js';
+import { ServerNetworkProfile } from './ServerNetworkProfile.js';
 
 /**
  * The CallMessage model can be extended with new optional fields,
  * e.g. chargingProfileId, for other correlationId related lookups.
  */
 @Table
-export class SetNetworkProfile extends BaseModelWithTenant {
+export class SetNetworkProfile extends Model {
   static readonly MODEL_NAME: string = 'SetNetworkProfile';
 
   @ForeignKey(() => ChargingStation)
@@ -84,4 +94,31 @@ export class SetNetworkProfile extends BaseModelWithTenant {
    */
   @Column(DataType.STRING)
   declare vpn?: string;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: SetNetworkProfile) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

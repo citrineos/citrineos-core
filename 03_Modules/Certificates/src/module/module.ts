@@ -1,43 +1,45 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
-  AsHandler,
+import type {
+  BootstrapConfig,
   CallAction,
-  ErrorCode,
-  EventGroup,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageHandler,
   IMessageSender,
-  OCPP2_0_1_Namespace,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractModule,
+  AsHandler,
+  ErrorCode,
+  EventGroup,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPP2_0_1_Namespace,
   OCPPVersion,
-  SystemConfig,
-  BootstrapConfig,
+  OcppError,
 } from '@citrineos/base';
 import { Op } from 'sequelize';
-import {
-  Boot,
+import type {
   ICertificateRepository,
   IDeviceModelRepository,
   IInstalledCertificateRepository,
   ILocationRepository,
-  InstalledCertificate,
-  sequelize,
 } from '@citrineos/data';
+import { InstalledCertificate, sequelize } from '@citrineos/data';
 import {
   CertificateAuthorityService,
   parseCSRForVerification,
   RabbitMqReceiver,
   RabbitMqSender,
   sendOCSPRequest,
+  validatePEMEncodedCSR,
 } from '@citrineos/util';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import jsrsasign from 'jsrsasign';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';
@@ -217,6 +219,21 @@ export class CertificatesModule extends AbstractModule {
     const csrString: string = message.payload.csr.replace(/\n/g, '');
     const certificateType: OCPP2_0_1.CertificateSigningUseEnumType | undefined | null =
       message.payload.certificateType;
+
+    // Validate PEM format
+    const validationResult = validatePEMEncodedCSR(message.payload.csr);
+    if (!validationResult.isValid) {
+      this._logger.warn(`Invalid CSR format: ${validationResult.errorMessage}`);
+      await this.sendCallErrorWithMessage(
+        message,
+        new OcppError(
+          message.context.correlationId,
+          ErrorCode.FormatViolation,
+          'Invalid CSR format.',
+        ),
+      );
+      return;
+    }
 
     // TODO OCTT Currently fails the CSMS on test case TC_A_14_CSMS if an invalid csr is rejected
     //  Despite explicitly saying in the protocol "The CSMS may do some checks on the CSR"

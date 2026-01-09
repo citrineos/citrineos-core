@@ -2,13 +2,21 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { CrudRepository, OCPPVersion, BootstrapConfig } from '@citrineos/base';
+import type { BootstrapConfig } from '@citrineos/base';
+import { CrudRepository, OCPPVersion } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { ChargingStation, Connector, Location, SequelizeRepository, StatusNotification } from '..';
-import { type ILocationRepository } from '../../..';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import {
+  ChargingStation,
+  Connector,
+  Location,
+  SequelizeRepository,
+  StatusNotification,
+} from '../index.js';
+import { type ILocationRepository } from '../../../index.js';
 import { Op } from 'sequelize';
-import { LatestStatusNotification } from '../model/Location/LatestStatusNotification';
+import { LatestStatusNotification } from '../model/index.js';
 
 export class SequelizeLocationRepository
   extends SequelizeRepository<Location>

@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { MessageTriggerEnumType } from '../enums';
-import { OcppRequest } from '../../../..';
+import { MessageTriggerEnumType } from '../enums/index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface TriggerMessageRequest extends OcppRequest {
   customData?: CustomDataType | null;

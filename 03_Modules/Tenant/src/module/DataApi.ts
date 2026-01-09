@@ -4,15 +4,18 @@
 
 import {
   AbstractModuleApi,
+  AsDataEndpoint,
+  HttpMethod,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
 } from '@citrineos/base';
-import { TenantModule } from './module';
-import { ITenantModuleApi } from './interface';
-import { FastifyInstance } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-
+import { TenantModule } from './module.js';
+import type { ITenantModuleApi } from './interface.js';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { Tenant, CreateTenantQuerySchema } from '@citrineos/data';
 /**
  * Server API for the Tenant module.
  */
@@ -27,6 +30,15 @@ export class TenantDataApi extends AbstractModuleApi<TenantModule> implements IT
    */
   constructor(tenantModule: TenantModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
     super(tenantModule, server, null, logger);
+  }
+
+  @AsDataEndpoint(Namespace.Tenant, HttpMethod.Post, undefined, CreateTenantQuerySchema)
+  async createTenant(
+    request: FastifyRequest<{
+      Body: Tenant;
+    }>,
+  ): Promise<Tenant> {
+    return await this._module.tenantRepository.createTenant(request.body);
   }
 
   /**

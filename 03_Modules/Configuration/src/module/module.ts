@@ -1,42 +1,47 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
-  AsHandler,
-  BOOT_STATUS,
+import type {
   BootstrapConfig,
   CallAction,
-  ChargingStationSequenceType,
-  ErrorCode,
-  EventGroup,
   HandlerProperties,
   ICache,
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractModule,
+  AsHandler,
+  BOOT_STATUS,
+  ChargingStationSequenceTypeEnum,
+  ErrorCode,
+  EventGroup,
   MessageOrigin,
+  Namespace,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OcppError,
   OCPPVersion,
-  SystemConfig,
 } from '@citrineos/base';
-import {
-  Boot,
-  ChangeConfiguration,
-  ChargingStation,
-  ChargingStationNetworkProfile,
-  Component,
+import type {
   IBootRepository,
   IChangeConfigurationRepository,
   IDeviceModelRepository,
   ILocationRepository,
   IMessageInfoRepository,
   IOCPPMessageRepository,
+} from '@citrineos/data';
+import {
+  Boot,
+  ChangeConfiguration,
+  ChargingStation,
+  ChargingStationNetworkProfile,
+  Component,
   sequelize,
   SequelizeChangeConfigurationRepository,
   SequelizeChargingStationSequenceRepository,
@@ -44,11 +49,17 @@ import {
   ServerNetworkProfile,
   SetNetworkProfile,
 } from '@citrineos/data';
-import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
+import {
+  IdGenerator,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  validateMessageContentType,
+} from '@citrineos/util';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
-import { ILogObj, Logger } from 'tslog';
-import { DeviceModelService } from './DeviceModelService';
-import { BootNotificationService } from './BootNotificationService';
+import { BootNotificationService } from './BootNotificationService.js';
+import { DeviceModelService } from './DeviceModelService.js';
 
 /**
  * Component that handles Configuration related messages.
@@ -59,19 +70,8 @@ export class ConfigurationModule extends AbstractModule {
   _requests: CallAction[] = [];
 
   _responses: CallAction[] = [];
-
-  protected _bootRepository: IBootRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
-  protected _messageInfoRepository: IMessageInfoRepository;
-  protected _locationRepository: ILocationRepository;
-  protected _changeConfigurationRepository: IChangeConfigurationRepository;
-  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _bootService: BootNotificationService;
   private _idGenerator: IdGenerator;
-
-  /**
-   * Constructor
-   */
 
   /**
    * This is the constructor function that initializes the {@link ConfigurationModule}.
@@ -170,25 +170,37 @@ export class ConfigurationModule extends AbstractModule {
       new IdGenerator(new SequelizeChargingStationSequenceRepository(config, this._logger));
   }
 
+  protected _bootRepository: IBootRepository;
+
   get bootRepository(): IBootRepository {
     return this._bootRepository;
   }
+
+  protected _deviceModelRepository: IDeviceModelRepository;
 
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
   }
 
+  protected _messageInfoRepository: IMessageInfoRepository;
+
   get messageInfoRepository(): IMessageInfoRepository {
     return this._messageInfoRepository;
   }
+
+  protected _locationRepository: ILocationRepository;
 
   get locationRepository(): ILocationRepository {
     return this._locationRepository;
   }
 
+  protected _changeConfigurationRepository: IChangeConfigurationRepository;
+
   get changeConfigurationRepository(): IChangeConfigurationRepository {
     return this._changeConfigurationRepository;
   }
+
+  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   get ocppMessageRepository(): IOCPPMessageRepository {
     return this._ocppMessageRepository;
@@ -420,11 +432,64 @@ export class ConfigurationModule extends AbstractModule {
     message: IMessage<OCPP2_0_1.NotifyDisplayMessagesRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
+    // Validate requestId was provided in a previous GetDisplayMessagesRequest
+    const requestId = message.payload.requestId;
+    const previousRequest = await this._ocppMessageRepository.readAllByQuery(
+      message.context.tenantId,
+      {
+        where: {
+          tenantId: message.context.tenantId,
+          stationId: message.context.stationId,
+          action: OCPP2_0_1_CallAction.GetDisplayMessages,
+          message: {
+            requestId: requestId,
+          },
+        },
+        limit: 1,
+      },
+      Namespace.OCPPMessage,
+    );
+
+    if (!previousRequest || previousRequest.length === 0) {
+      await this.sendCallErrorWithMessage(
+        message,
+        new OcppError(
+          message.context.correlationId,
+          ErrorCode.PropertyConstraintViolation,
+          'RequestId was not provided in a GetDisplayMessagesRequest.',
+        ),
+      );
+      return;
+    }
+
+    const messageInfoTypes = message.payload.messageInfo as OCPP2_0_1.MessageInfoType[];
+    // Validate message content for each messageInfo item
+    if (messageInfoTypes && messageInfoTypes.length > 0) {
+      const validationErrors: string[] = [];
+      for (const messageInfoType of messageInfoTypes) {
+        const validationResult = validateMessageContentType(messageInfoType.message);
+        if (!validationResult.isValid) {
+          validationErrors.push(
+            `Message ID ${messageInfoType.id}: ${validationResult.errorMessage}`,
+          );
+        }
+      }
+      if (validationErrors.length > 0) {
+        const errorMessage = `Message content validation failed: ${validationErrors.join('; ')}`;
+        const error = new OcppError(
+          message.context.correlationId,
+          ErrorCode.PropertyConstraintViolation,
+          errorMessage,
+        );
+        await this.sendCallErrorWithMessage(message, error);
+        return;
+      }
+    }
+
     this._logger.debug('NotifyDisplayMessages received: ', message, props);
 
     const tenantId = message.context.tenantId;
 
-    const messageInfoTypes = message.payload.messageInfo as OCPP2_0_1.MessageInfoType[];
     for (const messageInfoType of messageInfoTypes) {
       let componentId: number | undefined;
       if (messageInfoType.display) {
@@ -458,6 +523,20 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('FirmwareStatusNotification received:', message, props);
 
     // TODO: FirmwareStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
+
+    // Validate requestId requirement
+    // requestId is mandatory unless message was triggered by TriggerMessageRequest AND no firmware update is ongoing
+    if (!message.payload.requestId) {
+      await this.sendCallErrorWithMessage(
+        message,
+        new OcppError(
+          message.context.correlationId,
+          ErrorCode.OccurrenceConstraintViolation,
+          'RequestId is required.',
+        ),
+      );
+      return;
+    }
 
     // Create response
     const response: OCPP2_0_1.FirmwareStatusNotificationResponse = {};
@@ -563,7 +642,7 @@ export class ConfigurationModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            ChargingStationSequenceType.getDisplayMessages,
+            ChargingStationSequenceTypeEnum.getDisplayMessages,
           ),
         } as OCPP2_0_1.GetDisplayMessagesRequest,
       );
@@ -634,7 +713,7 @@ export class ConfigurationModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            ChargingStationSequenceType.getDisplayMessages,
+            ChargingStationSequenceTypeEnum.getDisplayMessages,
           ),
         } as OCPP2_0_1.GetDisplayMessagesRequest,
       );

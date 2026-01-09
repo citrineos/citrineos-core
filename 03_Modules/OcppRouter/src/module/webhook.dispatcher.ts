@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { OCPPVersionType } from '@citrineos/base';
 import {
   createIdentifier,
   getStationIdFromIdentifier,
@@ -9,10 +9,11 @@ import {
   mapToCallAction,
   MessageOrigin,
   MessageTypeId,
-  OCPPVersionType,
 } from '@citrineos/base';
-import { ISubscriptionRepository, OCPPMessage, Subscription } from '@citrineos/data';
-import { ILogObj, Logger } from 'tslog';
+import type { ISubscriptionRepository } from '@citrineos/data';
+import { OCPPMessage, Subscription } from '@citrineos/data';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 
 export class WebhookDispatcher {

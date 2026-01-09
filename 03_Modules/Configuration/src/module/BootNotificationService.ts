@@ -1,21 +1,20 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { Boot, IBootRepository, OCPP2_0_1_Mapper, OCPP1_6_Mapper } from '@citrineos/data';
+import type { IBootRepository } from '@citrineos/data';
+import { Boot, OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@citrineos/data';
+import type { BootConfig, ICache, IMessageConfirmation, SystemConfig } from '@citrineos/base';
 import {
   BOOT_STATUS,
-  BootConfig,
-  ICache,
-  IMessageConfirmation,
-  OCPP2_0_1,
   OCPP1_6,
-  OCPP2_0_1_CALL_SCHEMA_MAP,
   OCPP1_6_CALL_SCHEMA_MAP,
-  OCPP2_0_1_CallAction,
-  SystemConfig,
   OCPP1_6_CallAction,
+  OCPP2_0_1,
+  OCPP2_0_1_CALL_SCHEMA_MAP,
+  OCPP2_0_1_CallAction,
 } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 type Configuration = SystemConfig['modules']['configuration'];
 

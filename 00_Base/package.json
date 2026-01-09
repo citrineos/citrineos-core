@@ -1,9 +1,9 @@
 {
   "name": "@citrineos/base",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "The base module for OCPP v2.0.1 including all interfaces. This module is not intended to be used directly, but rather as a dependency for other modules.",
+  "type": "module",
   "main": "dist/index.js",
-  "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
@@ -12,8 +12,7 @@
     "prepublish": "npx eslint ./src",
     "generate-interfaces-1-6": "node json-schema-processor-1.6.js",
     "generate-interfaces-2-0-1": "node json-schema-processor-2.0.1.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build:esm": "tsc --project tsconfig.esm.json"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "ocpp",
@@ -25,22 +24,21 @@
     "@eslint/js": "9.16.0",
     "@faker-js/faker": "8.4.1",
     "@types/eslint__js": "8.42.3",
-    "@types/jest": "29.5.12",
     "@types/uuid": "9.0.7",
     "@types/validator": "13.11.1",
+    "@vitest/coverage-v8": "3.2.4",
     "concurrently": "8.2.2",
     "eslint": "9.16.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-prettier": "5.2.3",
-    "husky": "^9.1.7",
-    "jest": "29.7.0",
+    "husky": "9.1.7",
     "json-schema-to-typescript": "12.0.0",
     "json-schema-to-zod": "1.1.1",
-    "lint-staged": "^15.4.3",
+    "lint-staged": "15.4.3",
     "prettier": "3.2.5",
-    "ts-jest": "29.2.3",
-    "typescript": "^5.8.2",
-    "typescript-eslint": "8.17.0"
+    "typescript": "5.8.2",
+    "typescript-eslint": "8.17.0",
+    "vitest": "3.2.4"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.750.0",
@@ -54,7 +52,6 @@
     "reflect-metadata": "0.1.13",
     "tslog": "4.9.2",
     "uuid": "9.0.1",
-    "zod": "^3.24.1",
-    "zod-to-json-schema": "^3.24.5"
+    "zod": "4.1.12"
   }
 }

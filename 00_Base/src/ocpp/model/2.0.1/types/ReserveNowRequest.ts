@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ConnectorEnumType, IdTokenEnumType } from '../enums';
-import { OcppRequest } from '../../../..';
+import { ConnectorEnumType, IdTokenEnumType } from '../enums/index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface ReserveNowRequest extends OcppRequest {
   customData?: CustomDataType | null;

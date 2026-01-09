@@ -2,5 +2,5 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export * as OCPP1_6 from './1.6';
-export * as OCPP2_0_1 from './2.0.1';
+export * as OCPP1_6 from './1.6/index.js';
+export * as OCPP2_0_1 from './2.0.1/index.js';

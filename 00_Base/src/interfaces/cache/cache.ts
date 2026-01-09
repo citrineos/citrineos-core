@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ClassConstructor } from 'class-transformer';
+import type { ClassConstructor } from 'class-transformer';
 
 /**
  * Interface for cache

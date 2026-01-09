@@ -1,19 +1,19 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
+import type {
   BootstrapConfig,
   CallAction,
-  EventGroup,
   ICache,
   IMessageHandler,
   IMessageSender,
   SystemConfig,
 } from '@citrineos/base';
+import { AbstractModule, EventGroup } from '@citrineos/base';
 import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { type ITenantRepository, SequelizeTenantRepository } from '@citrineos/data';
 
 export class TenantModule extends AbstractModule {
   /**
@@ -22,6 +22,8 @@ export class TenantModule extends AbstractModule {
 
   _requests: CallAction[] = [];
   _responses: CallAction[] = [];
+
+  protected _tenantRepository: ITenantRepository;
 
   /**
    * Constructor
@@ -43,6 +45,9 @@ export class TenantModule extends AbstractModule {
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
+   * @param {ITenantRepository} [tenantRepository] - An optional parameter of type {@link ITenantRepository}
+   * which represents a repository for tenant data.
+   * If no `tenantRepository` is provided, a default {@link sequelize:tenantRepository} instance is created and used.
    */
   constructor(
     config: BootstrapConfig & SystemConfig,
@@ -50,6 +55,7 @@ export class TenantModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    tenantRepository?: ITenantRepository,
   ) {
     super(
       config,
@@ -61,5 +67,11 @@ export class TenantModule extends AbstractModule {
     );
     this._requests = config.modules.tenant.requests;
     this._responses = config.modules.tenant.responses;
+
+    this._tenantRepository = tenantRepository || new SequelizeTenantRepository(config, logger);
+  }
+
+  get tenantRepository(): ITenantRepository {
+    return this._tenantRepository;
   }
 }

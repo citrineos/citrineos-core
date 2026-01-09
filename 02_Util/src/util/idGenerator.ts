@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IChargingStationSequenceRepository } from '@citrineos/data';
-import { ChargingStationSequenceType } from '@citrineos/base';
+import type { ChargingStationSequenceTypeEnumType } from '@citrineos/base';
+import type { IChargingStationSequenceRepository } from '@citrineos/data';
 
 export class IdGenerator {
   private _stationSequenceRepository: IChargingStationSequenceRepository;
@@ -14,7 +14,7 @@ export class IdGenerator {
   async generateRequestId(
     tenantId: number,
     stationId: string,
-    type: ChargingStationSequenceType,
+    type: ChargingStationSequenceTypeEnumType,
   ): Promise<number> {
     return this._stationSequenceRepository.getNextSequenceValue(tenantId, stationId, type);
   }
