@@ -10,7 +10,7 @@ vi.mock('../../../../src/layers/sequelize/util', () => ({
   },
 }));
 
-import { BootstrapConfig, ChargingStationSequenceType } from '@citrineos/base';
+import { BootstrapConfig, ChargingStationSequenceTypeEnum } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { ChargingStationSequence } from '../../../../src/layers/sequelize/model/ChargingStationSequence/ChargingStationSequence';
@@ -25,7 +25,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
 
   const tenantId = 1;
   const stationId = 'CP_TEST_001';
-  const sequenceType = ChargingStationSequenceType.getChargingProfiles;
+  const sequenceType = ChargingStationSequenceTypeEnum.getChargingProfiles;
 
   beforeEach(() => {
     mockTransaction = vi.fn();
