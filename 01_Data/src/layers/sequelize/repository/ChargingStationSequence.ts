@@ -19,6 +19,28 @@ export class SequelizeChargingStationSequenceRepository
     super(config, ChargingStationSequence.MODEL_NAME, logger, sequelizeInstance);
   }
 
+  /**
+   * Converts a Sequelize bigint value to a JavaScript number.
+   * Sequelize returns PostgreSQL BIGINT columns as strings to avoid precision loss,
+   * but OCPP requires numeric types (e.g., requestId in GetChargingProfilesRequest).
+   *
+   * @param value - The value from Sequelize (may be string or number)
+   * @returns A JavaScript number
+   */
+  private _ensureNumber(value: string | number | null | undefined): number {
+    if (value === null || value === undefined) {
+      return SequelizeChargingStationSequenceRepository.SEQUENCE_START;
+    }
+    if (typeof value === 'string') {
+      const parsed = parseInt(value, 10);
+      if (isNaN(parsed)) {
+        return SequelizeChargingStationSequenceRepository.SEQUENCE_START;
+      }
+      return parsed;
+    }
+    return Number(value);
+  }
+
   async getNextSequenceValue(
     tenantId: number,
     stationId: string,
@@ -38,11 +60,11 @@ export class SequelizeChargingStationSequenceRepository
       });
 
       if (!sequenceCreated) {
-        const updatedSequences = await storedSequence.increment('value', { transaction });
-        return updatedSequences.get('value') as number;
-      } else {
-        return storedSequence.value;
+        await storedSequence.increment('value', { transaction });
+        await storedSequence.reload({ transaction });
       }
+
+      return this._ensureNumber(storedSequence.value);
     });
   }
 }
