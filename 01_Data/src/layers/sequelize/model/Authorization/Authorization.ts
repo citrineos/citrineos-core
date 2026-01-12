@@ -8,6 +8,7 @@ import type {
   AuthorizationStatusEnumType,
   AuthorizationWhitelistEnumType,
   IdTokenEnumType,
+  RealTimeAuthLastAttempt,
   TenantDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
@@ -76,6 +77,12 @@ export class Authorization extends Model implements AuthorizationDto {
   @Column(DataType.STRING)
   declare realTimeAuth?: AuthorizationWhitelistEnumType | null;
 
+  @Column(DataType.JSONB)
+  declare realTimeAuthLastAttempt?: RealTimeAuthLastAttempt | null;
+
+  @Column(DataType.INTEGER)
+  declare realTimeAuthTimeout?: number | null;
+
   @Column(DataType.STRING)
   declare realTimeAuthUrl?: string;
 
@@ -118,6 +125,14 @@ export class Authorization extends Model implements AuthorizationDto {
   static setDefaultTenant(instance: Authorization) {
     if (instance.tenantId == null) {
       instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  @BeforeUpdate
+  @BeforeCreate
+  static normalizeIdToken(instance: Authorization) {
+    if (instance.idToken) {
+      instance.idToken = instance.idToken.toLowerCase();
     }
   }
 
