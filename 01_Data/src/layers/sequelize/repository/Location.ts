@@ -4,9 +4,11 @@
 
 import type { BootstrapConfig } from '@citrineos/base';
 import { CrudRepository, OCPPVersion } from '@citrineos/base';
+import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
+import { type ILocationRepository } from '../../../index.js';
 import {
   ChargingStation,
   Connector,
@@ -14,9 +16,7 @@ import {
   SequelizeRepository,
   StatusNotification,
 } from '../index.js';
-import { type ILocationRepository } from '../../../index.js';
-import { Op } from 'sequelize';
-import { LatestStatusNotification } from '../model/index.js';
+import { Evse, LatestStatusNotification } from '../model/index.js';
 
 export class SequelizeLocationRepository
   extends SequelizeRepository<Location>
@@ -311,5 +311,33 @@ export class SequelizeLocationRepository
       }
     });
     return result;
+  }
+
+  async readConnectorByStationIdAndOcpp16ConnectorId(
+    tenantId: number,
+    stationId: string,
+    ocpp16ConnectorId: number,
+  ): Promise<Connector | undefined> {
+    return await this.connector.readOnlyOneByQuery(tenantId, {
+      where: {
+        stationId,
+        connectorId: ocpp16ConnectorId,
+      },
+      include: [Evse],
+    });
+  }
+
+  async readConnectorByStationIdAndOcpp201EvseType(
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseType: any,
+  ): Promise<Connector | undefined> {
+    return await this.connector.readOnlyOneByQuery(tenantId, {
+      where: {
+        stationId,
+        evseTypeConnectorId: ocpp201EvseType.connectorId,
+      },
+      include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.evseTypeId } }],
+    });
   }
 }

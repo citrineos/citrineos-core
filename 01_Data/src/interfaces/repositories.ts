@@ -210,6 +210,16 @@ export interface ILocationRepository extends CrudRepository<Location> {
     tenantId: number,
     stationId: string,
   ) => Promise<ChargingStation | undefined>;
+  readConnectorByStationIdAndOcpp16ConnectorId: (
+    tenantId: number,
+    stationId: string,
+    ocpp16ConnectorId: number,
+  ) => Promise<Connector | undefined>;
+  readConnectorByStationIdAndOcpp201EvseType: (
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseType: OCPP2_0_1.EVSEType,
+  ) => Promise<Connector | undefined>;
   setChargingStationIsOnlineAndOCPPVersion: (
     tenantId: number,
     stationId: string,

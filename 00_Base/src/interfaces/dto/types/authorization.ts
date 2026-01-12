@@ -14,11 +14,11 @@ export const AdditionalInfoSchema = z.object({
 export type AdditionalInfo = z.infer<typeof AdditionalInfoSchema>;
 
 export const RealTimeAuthLastAttemptSchema = z.object({
-  timestamp: z.iso.datetime().nullable().optional(),
+  timestamp: z.iso.datetime(),
   result: AuthorizationStatusEnumSchema.nullable().optional(),
-  stationId: z.string().nullable().optional(),
-  evseId: z.string().nullable().optional(),
-  connectorId: z.string().nullable().optional(),
+  stationId: z.string(),
+  evseId: z.number().nullable().optional(),
+  connectorId: z.number().nullable().optional(),
 });
 
 export type RealTimeAuthLastAttempt = z.infer<typeof RealTimeAuthLastAttemptSchema>;

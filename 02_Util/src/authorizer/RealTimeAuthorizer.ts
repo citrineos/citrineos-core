@@ -5,13 +5,13 @@ import {
   AuthorizationStatusEnum,
   AuthorizationWhitelistEnum,
   type AuthorizationStatusEnumType,
+  type ConnectorDto,
   type IAuthorizer,
   type IdTokenEnumType,
   type IMessageContext,
   type SystemConfig,
 } from '@citrineos/base';
-import type { ILocationRepository } from '@citrineos/data';
-import { Authorization } from '@citrineos/data';
+import type { Authorization, ILocationRepository } from '@citrineos/data';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { OidcTokenProvider } from '../authorization/index.js';
@@ -22,6 +22,8 @@ export interface RealTimeAuthorizationRequestBody {
   idTokenType: IdTokenEnumType;
   locationId?: string;
   stationId?: string;
+  evseId?: number;
+  connectorId?: number;
 }
 
 export interface RealTimeAuthorizationResponse {
@@ -34,6 +36,7 @@ export interface RealTimeAuthorizationResponse {
 
 export class RealTimeAuthorizer implements IAuthorizer {
   private _locationRepository: ILocationRepository;
+  private _config: SystemConfig;
   private readonly _logger: Logger<ILogObj>;
   private readonly _oidcTokenProvider?: OidcTokenProvider;
 
@@ -43,6 +46,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
     logger?: Logger<ILogObj>,
   ) {
     this._locationRepository = locationRepository;
+    this._config = config;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -54,8 +58,12 @@ export class RealTimeAuthorizer implements IAuthorizer {
   async authorize(
     authorization: Authorization,
     context: IMessageContext,
+    connector?: ConnectorDto,
   ): Promise<AuthorizationStatusEnumType> {
-    if (!authorization.realTimeAuthUrl) {
+    if (!connector) {
+      this._logger.debug('No connector provided, skipping Realtime Auth');
+      return authorization.status;
+    } else if (!authorization.realTimeAuthUrl) {
       this._logger.debug(`No Realtime Auth URL from authorization ${authorization.id}`);
       return authorization.status;
     } else if (
@@ -69,6 +77,27 @@ export class RealTimeAuthorizer implements IAuthorizer {
         `Skipping Realtime Auth for authorization ${authorization.id} with status ${authorization.status}`,
       );
       return authorization.status;
+    } else if (authorization.realTimeAuthLastAttempt) {
+      const realTimeAuthLastAttempt = authorization.realTimeAuthLastAttempt;
+      // Check if last attempt was at the same station and connector within the timeout period
+      if (
+        context.stationId === realTimeAuthLastAttempt.stationId &&
+        (realTimeAuthLastAttempt.connectorId
+          ? connector.id! === realTimeAuthLastAttempt.connectorId
+          : true)
+      ) {
+        const lastAttempt = new Date(realTimeAuthLastAttempt.timestamp);
+        const timeout =
+          authorization.realTimeAuthTimeout ?? this._config.realTimeAuthDefaultTimeoutSeconds;
+        const now = new Date();
+        const diffInSeconds = (now.getTime() - lastAttempt.getTime()) / 1000;
+        if (diffInSeconds < timeout) {
+          this._logger.debug(
+            `Skipping Realtime Auth for authorization ${authorization.id} due to timeout (${diffInSeconds}s < ${timeout}s)`,
+          );
+          return authorization.status;
+        }
+      }
     }
 
     let result: AuthorizationStatusEnumType = AuthorizationStatusEnum.Invalid;
@@ -84,6 +113,8 @@ export class RealTimeAuthorizer implements IAuthorizer {
         idTokenType: authorization.idTokenType!,
         locationId: chargingStation!.locationId!.toString(),
         stationId: context.stationId,
+        evseId: connector.evseId,
+        connectorId: connector.id,
       };
 
       this._logger.debug(
@@ -144,6 +175,19 @@ export class RealTimeAuthorizer implements IAuthorizer {
         result = AuthorizationStatusEnum.Accepted;
       }
     }
+
+    authorization.realTimeAuthLastAttempt = {
+      timestamp: new Date().toISOString(),
+      result,
+      stationId: context.stationId,
+      evseId: connector.evseId,
+      connectorId: connector.id,
+    };
+    authorization.save().catch((error) => {
+      this._logger.error(
+        `Failed to save realTimeAuthLastAttempt for authorization ${authorization.id}: ${error}`,
+      );
+    });
 
     return result;
   }
