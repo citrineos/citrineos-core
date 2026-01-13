@@ -21,9 +21,9 @@ export interface RealTimeAuthorizationRequestBody {
   idToken: string;
   idTokenType: IdTokenEnumType;
   locationId?: string;
-  stationId?: string;
+  stationId: string;
   evseId?: number;
-  connectorId?: number;
+  connectorId: number;
 }
 
 export interface RealTimeAuthorizationResponse {
@@ -82,9 +82,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
       // Check if last attempt was at the same station and connector within the timeout period
       if (
         context.stationId === realTimeAuthLastAttempt.stationId &&
-        (realTimeAuthLastAttempt.connectorId
-          ? connector.id! === realTimeAuthLastAttempt.connectorId
-          : true)
+        connector.id! === realTimeAuthLastAttempt.connectorId
       ) {
         const lastAttempt = new Date(realTimeAuthLastAttempt.timestamp);
         const timeout =
@@ -95,7 +93,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
           this._logger.debug(
             `Skipping Realtime Auth for authorization ${authorization.id} due to timeout (${diffInSeconds}s < ${timeout}s)`,
           );
-          return authorization.status;
+          return realTimeAuthLastAttempt.result;
         }
       }
     }
@@ -114,7 +112,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
         locationId: chargingStation!.locationId!.toString(),
         stationId: context.stationId,
         evseId: connector.evseId,
-        connectorId: connector.id,
+        connectorId: connector.id!,
       };
 
       this._logger.debug(
@@ -181,7 +179,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
       result,
       stationId: context.stationId,
       evseId: connector.evseId,
-      connectorId: connector.id,
+      connectorId: connector.id!,
     };
     authorization.save().catch((error) => {
       this._logger.error(
