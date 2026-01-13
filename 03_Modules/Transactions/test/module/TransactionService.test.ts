@@ -10,6 +10,7 @@ import {
 } from '@citrineos/base';
 import {
   IAuthorizationRepository,
+  ILocationRepository,
   IOCPPMessageRepository,
   IReservationRepository,
   ITransactionEventRepository,
@@ -27,6 +28,7 @@ describe('TransactionService', () => {
   let transactionService: TransactionService;
   let authorizationRepository: Mocked<IAuthorizationRepository>;
   let transactionEventRepository: Mocked<ITransactionEventRepository>;
+  let locationRepository: Mocked<ILocationRepository>;
   let reservationRepository: Mocked<IReservationRepository>;
   let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
   let authorizer: Mocked<IAuthorizer>;
@@ -41,6 +43,11 @@ describe('TransactionService', () => {
     transactionEventRepository = {
       readAllActiveTransactionsByAuthorizationId: vi.fn(),
     } as unknown as Mocked<ITransactionEventRepository>;
+
+    locationRepository = {
+      readConnectorByStationIdAndOcpp16ConnectorId: vi.fn(),
+      readConnectorByStationIdAndOcpp201EvseType: vi.fn(),
+    } as unknown as Mocked<ILocationRepository>;
 
     reservationRepository = {} as unknown as Mocked<IReservationRepository>;
 
@@ -57,6 +64,7 @@ describe('TransactionService', () => {
     transactionService = new TransactionService(
       transactionEventRepository,
       authorizationRepository,
+      locationRepository,
       reservationRepository,
       ocppMessageRepository,
       realTimeAuthorizer,
@@ -212,9 +220,11 @@ describe('TransactionService', () => {
 
       // Use the same idToken as the mock authorization
       const messageContext = aMessageContext();
+      const connectorId = 1;
       const response = await transactionService.authorizeOcpp16IdToken(
         messageContext,
         authorization.idToken,
+        connectorId,
       );
 
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Accepted);
@@ -229,9 +239,11 @@ describe('TransactionService', () => {
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
       const messageContext = aMessageContext();
+      const connectorId = 1;
       const response = await transactionService.authorizeOcpp16IdToken(
         messageContext,
         faker.string.uuid(),
+        connectorId,
       );
 
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Blocked);
@@ -246,9 +258,11 @@ describe('TransactionService', () => {
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
 
       const messageContext = aMessageContext();
+      const connectorId = 1;
       const response = await transactionService.authorizeOcpp16IdToken(
         messageContext,
         faker.string.uuid(),
+        connectorId,
       );
 
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Expired);
@@ -264,9 +278,11 @@ describe('TransactionService', () => {
       ]);
 
       const messageContext = aMessageContext();
+      const connectorId = 1;
       const response = await transactionService.authorizeOcpp16IdToken(
         messageContext,
         faker.string.uuid(),
+        connectorId,
       );
 
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.ConcurrentTx);
