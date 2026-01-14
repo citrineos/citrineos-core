@@ -168,7 +168,13 @@ export function createLocalConfig() {
         },
       },
       authProvider: {
-        localByPass: true,
+        localByPass: false,
+        oidc: {
+          jwksUri: 'http://keycloak:8180/auth/realms/patterm/protocol/openid-connect/certs',
+          issuer: 'http://keycloak:8180/auth/realms/patterm',
+          audience: 'citrineos',
+          rateLimit: true,
+        },
       },
       swagger: {
         path: '/docs',
