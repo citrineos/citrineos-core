@@ -170,8 +170,8 @@ export function createLocalConfig() {
       authProvider: {
         localByPass: false,
         oidc: {
-          jwksUri: 'http://172.17.0.1:8180/auth/realms/patterm/protocol/openid-connect/certs',
-          issuer: 'http://localhost:8180/auth/realms/patterm',
+          jwksUri: 'http://keycloak:8180/auth/realms/patterm/protocol/openid-connect/certs',
+          issuer: 'http://keycloak:8180/auth/realms/patterm',
           audience: 'citrineos',
           rateLimit: true,
         },

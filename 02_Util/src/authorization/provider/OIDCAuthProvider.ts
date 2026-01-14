@@ -216,8 +216,30 @@ export class OIDCAuthProvider implements IApiAuthProvider {
    * @private
    */
   private extractRoles(decoded: any): string[] {
-    //Customize here to match your token structure
-    return decoded.roles || [];
+    // Keycloak puts roles in resource_access.{client-id}.roles or realm_access.roles
+    // Collect all roles from all clients and realm
+    const roles: string[] = [];
+    
+    // Add realm roles
+    if (decoded.realm_access?.roles) {
+      roles.push(...decoded.realm_access.roles);
+    }
+    
+    // Add client roles from all clients
+    if (decoded.resource_access) {
+      for (const clientId in decoded.resource_access) {
+        if (decoded.resource_access[clientId]?.roles) {
+          roles.push(...decoded.resource_access[clientId].roles);
+        }
+      }
+    }
+    
+    // Fallback to top-level roles if present
+    if (decoded.roles) {
+      roles.push(...decoded.roles);
+    }
+    
+    return roles;
   }
 
   /**
