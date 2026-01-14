@@ -673,7 +673,6 @@ export class TransactionsModule extends AbstractModule {
     const authorization: Authorization | undefined = request.idTag
       ? await this._authorizeRepository.readOnlyOneByQuerystring(tenantId, {
           idToken: request.idTag,
-          type: null, //explicitly ignore type
         })
       : undefined;
 

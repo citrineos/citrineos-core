@@ -51,6 +51,7 @@ import {
   Tariff,
   VariableAttribute,
 } from '@citrineos/data';
+import { AuthorizationMapper } from '@citrineos/data/src/layers/sequelize/mapper/2.0.1/AuthorizationMapper.js';
 import {
   CertificateAuthorityService,
   IdGenerator,
@@ -335,7 +336,7 @@ export class EVDriverModule extends AbstractModule {
       context.tenantId,
       {
         idToken: request.idToken.idToken,
-        type: request.idToken.type,
+        type: AuthorizationMapper.fromIdTokenEnumType(request.idToken.type),
       },
     );
 
@@ -786,7 +787,6 @@ export class EVDriverModule extends AbstractModule {
         context.tenantId,
         {
           idToken: request.idTag,
-          type: null, //explicitly ignore type
         },
       );
       if (!authorizations || authorizations.length === 0) {

@@ -23,6 +23,7 @@ import type {
   ITransactionEventRepository,
 } from '@citrineos/data';
 import { OCPP1_6_Mapper, OCPP2_0_1_Mapper, Transaction } from '@citrineos/data';
+import { AuthorizationMapper } from '@citrineos/data/src/layers/sequelize/mapper/2.0.1/AuthorizationMapper.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
@@ -83,7 +84,8 @@ export class TransactionService {
   ): Promise<OCPP2_0_1.TransactionEventResponse> {
     const idToken = transactionEvent.idToken!;
     const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
-      ...idToken,
+      idToken: idToken.idToken,
+      type: AuthorizationMapper.fromIdTokenEnumType(idToken.type),
     });
 
     const response: OCPP2_0_1.TransactionEventResponse = {

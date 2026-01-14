@@ -18,7 +18,7 @@ import type {
   IChargingStationSequenceRepository,
   ITransactionEventRepository,
 } from '../../../interfaces/index.js';
-import { MeterValueMapper } from '../mapper/2.0.1/index.js';
+import { AuthorizationMapper, MeterValueMapper } from '../mapper/2.0.1/index.js';
 import {
   Authorization,
   ChargingStation,
@@ -300,8 +300,8 @@ export class SequelizeTransactionEventRepository
       if (value.idToken && value.idToken.type !== OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
         const authorization = await Authorization.findOne({
           where: {
-            idToken: value.idToken.idToken,
-            idTokenType: value.idToken.type,
+            idToken: value.idToken.idToken.toLowerCase(),
+            idTokenType: AuthorizationMapper.fromIdTokenEnumType(value.idToken.type),
           },
           transaction: sequelizeTransaction,
         });
