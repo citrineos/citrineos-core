@@ -210,14 +210,31 @@ export class OIDCAuthProvider implements IApiAuthProvider {
 
   /**
    * Extracts roles from a decoded JWT token
+   * Supports Keycloak token structure: realm_access.roles and resource_access.{client-id}.roles
    *
    * @param decoded The decoded JWT token
    * @returns Array of role strings
    * @private
    */
   private extractRoles(decoded: any): string[] {
-    //Customize here to match your token structure
-    return decoded.roles || [];
+    const roles: string[] = [];
+    
+    // Extract realm roles
+    if (decoded.realm_access?.roles) {
+      roles.push(...decoded.realm_access.roles);
+    }
+    
+    // Extract client roles from all clients in resource_access
+    if (decoded.resource_access) {
+      for (const clientId in decoded.resource_access) {
+        const client = decoded.resource_access[clientId];
+        if (client?.roles) {
+          roles.push(...client.roles);
+        }
+      }
+    }
+    
+    return roles;
   }
 
   /**
