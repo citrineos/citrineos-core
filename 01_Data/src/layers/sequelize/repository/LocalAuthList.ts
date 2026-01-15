@@ -81,7 +81,7 @@ export class SequelizeLocalAuthListRepository
     for (const authData of localAuthorizationList ?? []) {
       const auth = await Authorization.findOne({
         where: {
-          idToken: authData.idToken.idToken.toLowerCase(),
+          idToken: authData.idToken.idToken,
           idTokenType: AuthorizationMapper.fromIdTokenEnumType(authData.idToken.type),
         },
       });
@@ -94,7 +94,7 @@ export class SequelizeLocalAuthListRepository
       if (authData.idTokenInfo?.groupIdToken) {
         const groupAuth = await Authorization.findOne({
           where: {
-            idToken: authData.idTokenInfo.groupIdToken.idToken.toLowerCase(),
+            idToken: authData.idTokenInfo.groupIdToken.idToken,
             idTokenType: AuthorizationMapper.fromIdTokenEnumType(
               authData.idTokenInfo.groupIdToken.type,
             ),

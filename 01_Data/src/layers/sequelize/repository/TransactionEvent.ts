@@ -179,7 +179,7 @@ export class SequelizeTransactionEventRepository
           const authorization = await Authorization.findOne({
             where: {
               tenantId,
-              idToken: value.idToken.idToken.toLowerCase(),
+              idToken: value.idToken.idToken,
               idTokenType: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(
                 value.idToken.type,
               ),
@@ -252,7 +252,7 @@ export class SequelizeTransactionEventRepository
           const authorization = await Authorization.findOne({
             where: {
               tenantId,
-              idToken: value.idToken.idToken.toLowerCase(),
+              idToken: value.idToken.idToken,
               idTokenType: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(
                 value.idToken.type,
               ),
@@ -298,7 +298,7 @@ export class SequelizeTransactionEventRepository
         const authorization = await Authorization.findOne({
           where: {
             tenantId,
-            idToken: value.idToken.idToken.toLowerCase(),
+            idToken: value.idToken.idToken,
             idTokenType: AuthorizationMapper.fromIdTokenEnumType(value.idToken.type),
           },
           transaction: sequelizeTransaction,
@@ -671,7 +671,7 @@ export class SequelizeTransactionEventRepository
       const authorization = await Authorization.findOne({
         where: {
           tenantId,
-          idToken: request.idTag.toLowerCase(),
+          idToken: request.idTag,
         },
         transaction: sequelizeTransaction,
       });

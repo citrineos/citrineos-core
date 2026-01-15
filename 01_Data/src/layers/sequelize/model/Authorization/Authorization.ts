@@ -43,7 +43,7 @@ export class Authorization extends Model implements AuthorizationDto {
   declare idToken: string;
 
   @Column({
-    type: DataType.CITEXT,
+    type: DataType.STRING,
     unique: 'idToken_type',
   })
   declare idTokenType?: IdTokenEnumType | null;
@@ -125,15 +125,6 @@ export class Authorization extends Model implements AuthorizationDto {
   static setDefaultTenant(instance: Authorization) {
     if (instance.tenantId == null) {
       instance.tenantId = DEFAULT_TENANT_ID;
-    }
-  }
-
-  @BeforeUpdate
-  @BeforeCreate
-  static normalizeIdToken(instance: Authorization) {
-    console.log('Normalizing idToken');
-    if (instance.idToken) {
-      instance.idToken = instance.idToken.toLowerCase();
     }
   }
 

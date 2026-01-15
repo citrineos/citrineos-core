@@ -42,8 +42,7 @@ export class SequelizeAuthorizationRepository
   private _constructQuery(queryParams: AuthorizationQuerystring): object {
     const where: any = {};
     if (queryParams.idToken) {
-      // Normalize input to match stored lowercase data
-      where.idToken = queryParams.idToken.toLowerCase();
+      where.idToken = queryParams.idToken;
     }
     // 1.6 doesn't have the concept of token type. But we need to support token type for 2.0.1 messages.
     if (queryParams.type) {
