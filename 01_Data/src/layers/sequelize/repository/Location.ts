@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig } from '@citrineos/base';
+import type { BootstrapConfig, OCPP2_0_1 } from '@citrineos/base';
 import { CrudRepository, OCPPVersion } from '@citrineos/base';
 import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
@@ -77,7 +77,15 @@ export class SequelizeLocationRepository
     tenantId: number,
     stationId: string,
   ): Promise<ChargingStation | undefined> {
-    return await this.chargingStation.readByKey(tenantId, stationId);
+    return (
+      (await ChargingStation.findOne({
+        where: {
+          id: stationId,
+          tenantId,
+        },
+        include: [{ model: Evse, include: [Connector] }],
+      })) ?? undefined
+    );
   }
 
   async setChargingStationIsOnlineAndOCPPVersion(
@@ -327,17 +335,34 @@ export class SequelizeLocationRepository
     });
   }
 
+  async readEvseByStationIdAndOcpp201EvseId(
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseId: number,
+  ): Promise<Evse | undefined> {
+    return (
+      (await Evse.findOne({
+        where: {
+          stationId,
+          evseTypeId: ocpp201EvseId,
+          tenantId,
+        },
+        include: [Connector],
+      })) ?? undefined
+    );
+  }
+
   async readConnectorByStationIdAndOcpp201EvseType(
     tenantId: number,
     stationId: string,
-    ocpp201EvseType: any,
+    ocpp201EvseType: OCPP2_0_1.EVSEType,
   ): Promise<Connector | undefined> {
     return await this.connector.readOnlyOneByQuery(tenantId, {
       where: {
         stationId,
         evseTypeConnectorId: ocpp201EvseType.connectorId,
       },
-      include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.evseTypeId } }],
+      include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.id } }],
     });
   }
 }

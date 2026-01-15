@@ -4,23 +4,25 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-import { QueryInterface } from 'sequelize';
+import { DataTypes, QueryInterface } from 'sequelize';
 
 export default {
   up: async (queryInterface: QueryInterface) => {
-    console.log('Normalizing existing idToken values to lowercase...');
+    console.log('Creating citext extension if not exists...');
+    await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS citext;');
 
-    // Update all existing idToken values to lowercase
-    await queryInterface.sequelize.query(`
-      UPDATE "Authorizations" 
-      SET "idToken" = LOWER("idToken") 
-      WHERE "idToken" IS NOT NULL
-    `);
-
-    console.log('Successfully normalized all idToken values to lowercase.');
+    console.log('Changing column to use CITEXT type...');
+    await queryInterface.changeColumn('Authorizations', 'idToken', {
+      type: DataTypes.CITEXT,
+      allowNull: false,
+    });
   },
 
-  down: async () => {
-    // No automatic rollback possible since we don't know the original casing
+  down: async (queryInterface: QueryInterface) => {
+    await queryInterface.changeColumn('Authorizations', 'idToken', {
+      type: DataTypes.STRING,
+      allowNull: false,
+    });
+    // Note: Not dropping the extension in case other tables use it
   },
 };

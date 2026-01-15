@@ -13,7 +13,7 @@ import {
   ConnectorTypeEnumSchema,
 } from './types/enums.js';
 
-export const ConnectorSchema = BaseSchema.extend({
+export const ConnectorSchemaWithoutParent = BaseSchema.extend({
   id: z.number().int().optional(),
   stationId: z.string(),
   evseId: z.number().int(),
@@ -33,6 +33,12 @@ export const ConnectorSchema = BaseSchema.extend({
   vendorErrorCode: z.string().nullable().optional(),
   termsAndConditionsUrl: z.string().nullable().optional(),
   tariffs: z.array(TariffSchema).nullable().optional(),
+});
+
+export const ConnectorSchema = ConnectorSchemaWithoutParent.extend({
+  tenant: z.any().optional(),
+  evse: z.any().optional(),
+  chargingStation: z.any().optional(),
 });
 
 export const ConnectorProps = ConnectorSchema.keyof().enum;

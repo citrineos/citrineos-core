@@ -18,6 +18,7 @@ import type {
   ChargingStation,
   Component,
   EventData,
+  Evse,
   Location,
   SecurityEvent,
   Transaction,
@@ -215,6 +216,11 @@ export interface ILocationRepository extends CrudRepository<Location> {
     stationId: string,
     ocpp16ConnectorId: number,
   ) => Promise<Connector | undefined>;
+  readEvseByStationIdAndOcpp201EvseId: (
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseId: number,
+  ) => Promise<Evse | undefined>;
   readConnectorByStationIdAndOcpp201EvseType: (
     tenantId: number,
     stationId: string,

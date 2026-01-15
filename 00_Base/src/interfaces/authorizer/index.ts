@@ -6,6 +6,7 @@ import type {
   AuthorizationDto,
   AuthorizationStatusEnumType,
   ConnectorDto,
+  EvseDto,
   IMessageContext,
 } from '../../index.js';
 
@@ -23,6 +24,7 @@ export interface IAuthorizer {
   authorize(
     authorization: AuthorizationDto,
     context: IMessageContext,
+    evse?: EvseDto,
     connector?: ConnectorDto,
   ): Promise<AuthorizationStatusEnumType>;
 }

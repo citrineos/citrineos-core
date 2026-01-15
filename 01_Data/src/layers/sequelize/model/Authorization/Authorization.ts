@@ -37,13 +37,13 @@ export class Authorization extends Model implements AuthorizationDto {
   declare disallowedEvseIdPrefixes?: string[];
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.CITEXT,
     unique: 'idToken_type',
   })
   declare idToken: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.CITEXT,
     unique: 'idToken_type',
   })
   declare idTokenType?: IdTokenEnumType | null;
@@ -131,6 +131,7 @@ export class Authorization extends Model implements AuthorizationDto {
   @BeforeUpdate
   @BeforeCreate
   static normalizeIdToken(instance: Authorization) {
+    console.log('Normalizing idToken');
     if (instance.idToken) {
       instance.idToken = instance.idToken.toLowerCase();
     }

@@ -5,6 +5,7 @@ import type {
   AuthorizationDto,
   AuthorizationStatusEnumType,
   ConnectorDto,
+  EvseDto,
   IAuthorizer,
   IMessageContext,
 } from '@citrineos/base';
@@ -23,7 +24,6 @@ import type {
   ITransactionEventRepository,
 } from '@citrineos/data';
 import { OCPP1_6_Mapper, OCPP2_0_1_Mapper, Transaction } from '@citrineos/data';
-import { AuthorizationMapper } from '@citrineos/data/src/layers/sequelize/mapper/2.0.1/AuthorizationMapper.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
@@ -85,7 +85,7 @@ export class TransactionService {
     const idToken = transactionEvent.idToken!;
     const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
       idToken: idToken.idToken,
-      type: AuthorizationMapper.fromIdTokenEnumType(idToken.type),
+      type: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(idToken.type),
     });
 
     const response: OCPP2_0_1.TransactionEventResponse = {
@@ -131,14 +131,26 @@ export class TransactionService {
         }
       }
 
-      const connector = transactionEvent.evse
-        ? await this._locationRepository.readConnectorByStationIdAndOcpp201EvseType(
+      let evse: EvseDto | undefined = undefined;
+      let connector: ConnectorDto | undefined = undefined;
+      if (transactionEvent.evse) {
+        if (transactionEvent.evse.connectorId) {
+          connector = await this._locationRepository.readConnectorByStationIdAndOcpp201EvseType(
             tenantId,
             messageContext.stationId,
             transactionEvent.evse,
-          )
-        : undefined;
-      const result = await this._applyAuthorizers(authorization, messageContext, connector);
+          );
+        }
+        evse =
+          connector?.evse ??
+          (await this._locationRepository.readEvseByStationIdAndOcpp201EvseId(
+            tenantId,
+            messageContext.stationId,
+            transactionEvent.evse.id,
+          ));
+      }
+
+      const result = await this._applyAuthorizers(authorization, messageContext, evse, connector);
       response.idTokenInfo = this._mapAuthorizationDtoToIdTokenInfo(authorization, result);
     }
     this._logger.debug('idToken Authorization final status:', response.idTokenInfo.status);
@@ -235,7 +247,7 @@ export class TransactionService {
       );
       response.idTagInfo.status =
         OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
-          await this._applyAuthorizers(authorization, context, connector),
+          await this._applyAuthorizers(authorization, context, connector?.evse, connector),
         );
       if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
         return response;
@@ -326,6 +338,7 @@ export class TransactionService {
   private async _applyAuthorizers(
     authorization: AuthorizationDto,
     messageContext: IMessageContext,
+    evse?: EvseDto,
     connector?: ConnectorDto,
   ): Promise<AuthorizationStatusEnumType> {
     let result = authorization.status;
@@ -334,7 +347,7 @@ export class TransactionService {
         break;
       }
 
-      result = await authorizer.authorize(authorization, messageContext, connector);
+      result = await authorizer.authorize(authorization, messageContext, evse, connector);
     }
     return result;
   }

@@ -18,6 +18,7 @@ import type {
   IChargingStationSequenceRepository,
   ITransactionEventRepository,
 } from '../../../interfaces/index.js';
+import { OCPP2_0_1_Mapper } from '../index.js';
 import { AuthorizationMapper, MeterValueMapper } from '../mapper/2.0.1/index.js';
 import {
   Authorization,
@@ -40,7 +41,6 @@ export class SequelizeTransactionEventRepository
   implements ITransactionEventRepository
 {
   transaction: CrudRepository<Transaction>;
-  authorization: CrudRepository<Authorization>;
   evse: CrudRepository<Evse>;
   station: CrudRepository<ChargingStation>;
   meterValue: CrudRepository<MeterValue>;
@@ -55,7 +55,6 @@ export class SequelizeTransactionEventRepository
     namespace = TransactionEvent.MODEL_NAME,
     sequelizeInstance?: Sequelize,
     transaction?: CrudRepository<Transaction>,
-    authorization?: CrudRepository<Authorization>,
     station?: CrudRepository<ChargingStation>,
     evse?: CrudRepository<Evse>,
     meterValue?: CrudRepository<MeterValue>,
@@ -70,14 +69,6 @@ export class SequelizeTransactionEventRepository
       : new SequelizeRepository<Transaction>(
           config,
           Transaction.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.authorization = authorization
-      ? authorization
-      : new SequelizeRepository<Authorization>(
-          config,
-          Authorization.MODEL_NAME,
           logger,
           sequelizeInstance,
         );
@@ -185,10 +176,13 @@ export class SequelizeTransactionEventRepository
         let authorizationId = existingTransaction.authorizationId;
         if (!authorizationId && value.idToken) {
           // Find Authorization by IdToken
-          const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+          const authorization = await Authorization.findOne({
             where: {
-              idToken: value.idToken.idToken,
-              idTokenType: value.idToken.type,
+              tenantId,
+              idToken: value.idToken.idToken.toLowerCase(),
+              idTokenType: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(
+                value.idToken.type,
+              ),
             },
             transaction: sequelizeTransaction,
           });
@@ -255,10 +249,13 @@ export class SequelizeTransactionEventRepository
 
         if (value.idToken) {
           // Find Authorization by IdToken
-          const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+          const authorization = await Authorization.findOne({
             where: {
-              idToken: value.idToken.idToken,
-              idTokenType: value.idToken.type,
+              tenantId,
+              idToken: value.idToken.idToken.toLowerCase(),
+              idTokenType: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(
+                value.idToken.type,
+              ),
             },
             transaction: sequelizeTransaction,
           });
@@ -300,6 +297,7 @@ export class SequelizeTransactionEventRepository
       if (value.idToken && value.idToken.type !== OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
         const authorization = await Authorization.findOne({
           where: {
+            tenantId,
             idToken: value.idToken.idToken.toLowerCase(),
             idTokenType: AuthorizationMapper.fromIdTokenEnumType(value.idToken.type),
           },
@@ -670,9 +668,10 @@ export class SequelizeTransactionEventRepository
       event.connectorDatabaseId = connector.id;
 
       // Find Authorization by IdToken
-      const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+      const authorization = await Authorization.findOne({
         where: {
-          idToken: request.idTag,
+          tenantId,
+          idToken: request.idTag.toLowerCase(),
         },
         transaction: sequelizeTransaction,
       });
