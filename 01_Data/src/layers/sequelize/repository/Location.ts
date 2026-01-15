@@ -367,7 +367,7 @@ export class SequelizeLocationRepository
           stationId,
           evseTypeConnectorId: ocpp201EvseType.connectorId,
         },
-        include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.id } }],
+        include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.id }, required: true }],
       })) ?? undefined
     );
   }
