@@ -112,7 +112,7 @@ export class OIDCAuthProvider implements IApiAuthProvider {
         id: payload.sub as string,
         name: payload.preferred_username || payload.name || payload.sub,
         email: payload.email || '',
-        roles: this.extractRoles(payload),
+        roles: payload.resource_access.citrineos?.roles,
         tenantId: payload.tenant_id || this._defaultTenantId,
         metadata: {
           firstName: payload.given_name,
@@ -122,7 +122,6 @@ export class OIDCAuthProvider implements IApiAuthProvider {
           locale: payload.locale || 'en-US',
         },
       };
-
       return ApiAuthenticationResult.success(user);
     } catch (error) {
       this._logger.error('Token authentication failed:', error);
@@ -206,18 +205,6 @@ export class OIDCAuthProvider implements IApiAuthProvider {
       this._logger.error('Failed to fetch public key:', error);
       throw error;
     }
-  }
-
-  /**
-   * Extracts roles from a decoded JWT token
-   *
-   * @param decoded The decoded JWT token
-   * @returns Array of role strings
-   * @private
-   */
-  private extractRoles(decoded: any): string[] {
-    //Customize here to match your token structure
-    return decoded.roles || [];
   }
 
   /**
