@@ -10,6 +10,7 @@ import type {
   IAuthorizationRepository,
   ILocalAuthListRepository,
 } from '../../../interfaces/index.js';
+import { AuthorizationMapper } from '../mapper/2.0.1/index.js';
 import {
   Authorization,
   LocalListAuthorization,
@@ -18,9 +19,8 @@ import {
   SendLocalList,
   SendLocalListAuthorization,
 } from '../model/index.js';
-import { SequelizeRepository } from './Base.js';
 import { SequelizeAuthorizationRepository } from './Authorization.js';
-import { AuthorizationMapper } from '../mapper/2.0.1/index.js';
+import { SequelizeRepository } from './Base.js';
 
 export class SequelizeLocalAuthListRepository
   extends SequelizeRepository<LocalListVersion>
@@ -82,7 +82,7 @@ export class SequelizeLocalAuthListRepository
       const auth = await Authorization.findOne({
         where: {
           idToken: authData.idToken.idToken,
-          idTokenType: authData.idToken.type,
+          idTokenType: AuthorizationMapper.fromIdTokenEnumType(authData.idToken.type),
         },
       });
       if (!auth) {
@@ -90,42 +90,21 @@ export class SequelizeLocalAuthListRepository
           `Authorization not found for ${JSON.stringify(authData)}, invalid SendLocalListRequest (create necessary Authorizations first)`,
         );
       }
-      if (
-        authData.idToken.idToken !== auth.idToken ||
-        (auth.idTokenType &&
-          authData.idToken.type !== AuthorizationMapper.toIdTokenEnumType(auth.idTokenType))
-      ) {
-        throw new Error(
-          `Authorization idToken in SendLocalListRequest ${JSON.stringify(authData.idToken)} does not match idToken in database { idToken: ${auth.idToken}, idTokenType: ${auth.idTokenType} } (update the idToken first)`,
-        );
-      }
       // If groupAuthorizationId is present, compare its id to groupAuthorizationId
       if (authData.idTokenInfo?.groupIdToken) {
-        let groupAuthorizationAuthId: number | undefined;
-        // Only perform groupAuthorizationId check if groupIdToken is an object with idToken and type
-        if (
-          authData.idTokenInfo?.groupIdToken &&
-          typeof authData.idTokenInfo.groupIdToken === 'object' &&
-          'idToken' in authData.idTokenInfo.groupIdToken &&
-          'type' in authData.idTokenInfo.groupIdToken
-        ) {
-          const groupAuth = await Authorization.findOne({
-            where: {
-              idToken: authData.idTokenInfo.groupIdToken.idToken,
-              idTokenType: authData.idTokenInfo.groupIdToken.type,
-            },
-          });
-          const groupAuthorizationAuthId = groupAuth?.id;
-          if (
-            !auth.groupAuthorizationId ||
-            groupAuthorizationAuthId !== auth.groupAuthorizationId
-          ) {
-            throw new Error(
-              `Authorization groupIdToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match groupAuthorizationId in database ${JSON.stringify(auth.groupAuthorizationId)} (update the groupAuthorization first)`,
-            );
-          }
-        } else if (typeof authData.idTokenInfo.groupIdToken === 'number') {
-          groupAuthorizationAuthId = authData.idTokenInfo.groupIdToken;
+        const groupAuth = await Authorization.findOne({
+          where: {
+            idToken: authData.idTokenInfo.groupIdToken.idToken,
+            idTokenType: AuthorizationMapper.fromIdTokenEnumType(
+              authData.idTokenInfo.groupIdToken.type,
+            ),
+          },
+        });
+        const groupAuthorizationAuthId = groupAuth?.id;
+        if (!auth.groupAuthorizationId || groupAuthorizationAuthId !== auth.groupAuthorizationId) {
+          throw new Error(
+            `Authorization groupIdToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match groupAuthorizationId in database ${JSON.stringify(auth.groupAuthorizationId)} (update the groupAuthorization first)`,
+          );
         }
         if (!auth.groupAuthorizationId || groupAuthorizationAuthId !== auth.groupAuthorizationId) {
           throw new Error(

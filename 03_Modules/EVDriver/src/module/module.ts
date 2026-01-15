@@ -335,7 +335,7 @@ export class EVDriverModule extends AbstractModule {
       context.tenantId,
       {
         idToken: request.idToken.idToken,
-        type: request.idToken.type,
+        type: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(request.idToken.type),
       },
     );
 
@@ -357,8 +357,11 @@ export class EVDriverModule extends AbstractModule {
           // this logic will break. CSMS's aiming to use the allowedConnectorTypes or disallowedEvseIdPrefixes
           // Authorization restrictions MUST provide these variable attributes as defined in Physical Component
           // list of Part 2 - Appendices of OCPP 2.0.1
-          let evseIds: Set<number> | undefined;
-          if (authorization.allowedConnectorTypes) {
+          let evseIds: Set<number> | undefined = undefined;
+          if (
+            authorization.allowedConnectorTypes &&
+            authorization.allowedConnectorTypes.length > 0
+          ) {
             evseIds = new Set();
             const connectorTypes: VariableAttribute[] =
               await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
@@ -381,7 +384,10 @@ export class EVDriverModule extends AbstractModule {
               // TODO determine how/if to set personalMessage
             };
           } else {
-            if (authorization.disallowedEvseIdPrefixes) {
+            if (
+              authorization.disallowedEvseIdPrefixes &&
+              authorization.disallowedEvseIdPrefixes.length > 0
+            ) {
               evseIds = evseIds ? evseIds : new Set();
               const evseIdAttributes: VariableAttribute[] =
                 await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
@@ -786,7 +792,6 @@ export class EVDriverModule extends AbstractModule {
         context.tenantId,
         {
           idToken: request.idTag,
-          type: null, //explicitly ignore type
         },
       );
       if (!authorizations || authorizations.length === 0) {
