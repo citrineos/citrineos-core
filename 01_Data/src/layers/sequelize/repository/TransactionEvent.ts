@@ -231,7 +231,7 @@ export class SequelizeTransactionEventRepository
               evseTypeId: value.evse.id,
             },
           });
-          newTransaction.evseId = evse.id;
+          newTransaction.set('evseId', evse.id);
           if (value.evse?.connectorId) {
             const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
               where: {
@@ -242,8 +242,8 @@ export class SequelizeTransactionEventRepository
               },
               include: [Tariff],
             });
-            newTransaction.connectorId = connector.id;
-            newTransaction.tariffId = connector.tariffs?.[0]?.id;
+            newTransaction.set('connectorId', connector.id);
+            newTransaction.set('tariffId', connector.tariffs?.[0]?.id);
           }
         }
 
@@ -260,7 +260,7 @@ export class SequelizeTransactionEventRepository
             transaction: sequelizeTransaction,
           });
           if (authorization) {
-            newTransaction.authorizationId = authorization.id;
+            newTransaction.set('authorizationId', authorization.id);
           } else {
             this.logger.warn(
               `Authorization with idToken ${value.idToken.idToken} : ${value.idToken.type} does not exist. Transaction ${newTransaction.transactionId} will not be associated with an authorization.`,
@@ -273,7 +273,7 @@ export class SequelizeTransactionEventRepository
           this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
         } else {
           if (chargingStation.locationId) {
-            newTransaction.locationId = chargingStation.locationId;
+            newTransaction.set('locationId', chargingStation.locationId);
           } else {
             this.logger.warn(
               `Charging station with stationId ${stationId} does not have a locationId. Transaction ${newTransaction.transactionId} will not be associated with a location, which may prevent it from being sent to upstream partners.`,
@@ -701,7 +701,7 @@ export class SequelizeTransactionEventRepository
       const chargingStation = await this.station.readByKey(tenantId, stationId);
       if (chargingStation) {
         if (chargingStation.locationId) {
-          newTransaction.locationId = chargingStation.locationId;
+          newTransaction.set('locationId', chargingStation.locationId);
         } else {
           this.logger.warn(
             `Charging station with stationId ${stationId} does not have a locationId. Transaction ${newTransaction.transactionId} will not be associated with a location, which may prevent it from being sent to upstream partners.`,
