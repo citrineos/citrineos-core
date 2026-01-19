@@ -98,6 +98,12 @@ services:
       # CITRINEOS_CONFIG_DIR: '/custom/config/path'  # Optional - uncomment if needed
       BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: 'local'
       BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: '/data'
+      # OIDC Authentication Configuration
+      CITRINEOS_UTIL_AUTHPROVIDER_OIDC_JWKSUri: 'http://keycloak:8180/auth/realms/patterm/protocol/openid-connect/certs'
+      CITRINEOS_UTIL_AUTHPROVIDER_OIDC_ISSUER: 'http://keycloak:8180/auth/realms/patterm'
+      CITRINEOS_UTIL_AUTHPROVIDER_OIDC_AUDIENCE: 'citrineos'
+      CITRINEOS_UTIL_AUTHPROVIDER_OIDC_RATELIMIT: 'true'
+      CITRINEOS_UTIL_AUTHPROVIDER_LOCALBYPASS: 'false'
     depends_on:
       ocpp-db:
         condition: service_healthy
