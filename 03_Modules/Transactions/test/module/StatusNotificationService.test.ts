@@ -13,8 +13,11 @@ import { StatusNotificationService } from '../../src/module/StatusNotificationSe
 import {
   aChargingStation,
   aComponent,
+  aEvse,
   anEvse,
   aVariable,
+  MOCK_CONNECTOR_ID,
+  MOCK_EVSE_ID,
   MOCK_STATION_ID,
 } from '../providers/DeviceModelProvider.js';
 import {
@@ -181,6 +184,56 @@ describe('StatusNotificationService', () => {
 
       expect(locationRepository.addStatusNotificationToChargingStation).not.toHaveBeenCalled();
       expect(locationRepository.createOrUpdateConnector).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Test process OCPP 1.6 StatusNotification sets evseId in StatusNotification record', () => {
+    it('should set evseId when matching evse is found for the connector', async () => {
+      locationRepository.readChargingStationByStationId.mockResolvedValue(
+        aChargingStation((cs) => {
+          cs.evses = [aEvse()];
+        }),
+      );
+
+      const mockStatusNotification = aStatusNotification();
+      const buildSpy = vi.spyOn(StatusNotification, 'build').mockImplementation((input: any) => {
+        expect(input.evseId).toBe(MOCK_EVSE_ID);
+        return mockStatusNotification;
+      });
+
+      await statusNotificationService.processOcpp16StatusNotification(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        aOcpp16StatusNotificationRequest((req) => {
+          req.connectorId = MOCK_CONNECTOR_ID;
+        }),
+      );
+
+      expect(buildSpy).toHaveBeenCalled();
+      expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalled();
+    });
+
+    it('should not set evseId when no matching evse is found for the connector', async () => {
+      locationRepository.readChargingStationByStationId.mockResolvedValue(
+        aChargingStation((cs) => {
+          cs.evses = [aEvse()];
+        }),
+      );
+
+      const buildSpy = vi.spyOn(StatusNotification, 'build').mockImplementation((input: any) => {
+        expect(input.evseId).toBeUndefined();
+        return aStatusNotification();
+      });
+
+      await statusNotificationService.processOcpp16StatusNotification(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        aOcpp16StatusNotificationRequest((req) => {
+          req.connectorId = 404;
+        }),
+      );
+
+      expect(buildSpy).toHaveBeenCalled();
     });
   });
 });

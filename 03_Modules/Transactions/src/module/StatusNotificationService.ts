@@ -2,11 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { CrudRepository, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
-import type { IDeviceModelRepository, ILocationRepository } from '@citrineos/data';
 import {
   Component,
   Connector,
   EvseType,
+  type IDeviceModelRepository,
+  type ILocationRepository,
   OCPP1_6_Mapper,
   OCPP2_0_1_Mapper,
   StatusNotification,
@@ -139,12 +140,21 @@ export class StatusNotificationService {
       stationId,
     );
     if (chargingStation) {
-      const statusNotification = StatusNotification.build({
+      const matchingEvse = chargingStation.evses?.find((evse) =>
+        evse.connectors?.find(
+          (connector) => connector.connectorId === statusNotificationRequest.connectorId,
+        ),
+      );
+      const statusNotificationInput: Partial<StatusNotification> = {
         tenantId,
         ...statusNotificationRequest,
         stationId,
         connectorStatus: statusNotificationRequest.status,
-      });
+      };
+      if (matchingEvse) {
+        statusNotificationInput.evseId = matchingEvse.evseTypeId;
+      }
+      const statusNotification = StatusNotification.build(statusNotificationInput);
       await this._locationRepository.addStatusNotificationToChargingStation(
         tenantId,
         stationId,
