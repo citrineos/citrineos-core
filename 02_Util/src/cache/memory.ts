@@ -104,8 +104,8 @@ export class MemoryCache implements ICache {
         }
       }),
       new Promise<T | null>((resolve) => {
-        setTimeout(async () => {
-          resolve(await this.get(key, namespace, classConstructor));
+        setTimeout(() => {
+          resolve(this.get(key, namespace, classConstructor));
         }, waitSeconds * 1000);
       }),
     ]) as Promise<T>;
