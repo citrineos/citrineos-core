@@ -2,6 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { beforeEach, describe, expect, it, Mock, Mocked, vi } from 'vitest';
+import { BootstrapConfig, ChargingStationSequenceTypeEnum } from '@citrineos/base';
+import { Sequelize } from 'sequelize-typescript';
+import { ILogObj, Logger } from 'tslog';
+import { ChargingStationSequence } from '../../../../src/layers/sequelize/model/ChargingStationSequence/ChargingStationSequence';
+import { SequelizeChargingStationSequenceRepository } from '../../../../src/layers/sequelize/repository/ChargingStationSequence';
 
 // Mock the util module to avoid circular dependency issues during test loading
 vi.mock('../../../../src/layers/sequelize/util', () => ({
@@ -9,12 +14,6 @@ vi.mock('../../../../src/layers/sequelize/util', () => ({
     getInstance: vi.fn(),
   },
 }));
-
-import { BootstrapConfig, ChargingStationSequenceTypeEnum } from '@citrineos/base';
-import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { ChargingStationSequence } from '../../../../src/layers/sequelize/model/ChargingStationSequence/ChargingStationSequence';
-import { SequelizeChargingStationSequenceRepository } from '../../../../src/layers/sequelize/repository/ChargingStationSequence';
 
 describe('SequelizeChargingStationSequenceRepository', () => {
   let repository: SequelizeChargingStationSequenceRepository;
@@ -55,8 +54,8 @@ describe('SequelizeChargingStationSequenceRepository', () => {
   describe('getNextSequenceValue', () => {
     it('should return SEQUENCE_START when sequence is created (new sequence)', async () => {
       const mockSequence = {
-        value: '1' as string | number,
-      } as ChargingStationSequence;
+        get: vi.fn<() => any>().mockReturnValue('1' as any),
+      } as any as ChargingStationSequence;
 
       // Mock readOrCreateByQuery to return new sequence
       vi.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, true]);
@@ -71,10 +70,10 @@ describe('SequelizeChargingStationSequenceRepository', () => {
       const mockIncrement = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
       const mockReload = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
       const mockSequence = {
-        value: '5' as string | number,
+        get: vi.fn<() => any>().mockReturnValue('5' as any),
         increment: mockIncrement,
         reload: mockReload,
-      } as unknown as ChargingStationSequence;
+      } as any as ChargingStationSequence;
 
       // Mock readOrCreateByQuery to return existing sequence
       vi.spyOn(repository as any, 'readOrCreateByQuery').mockResolvedValue([mockSequence, false]);
@@ -89,7 +88,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
 
     it('should convert string bigint to number correctly', async () => {
       const mockSequence = {
-        value: '42' as string | number,
+        get: vi.fn<() => any>().mockReturnValue('42' as any),
         increment: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
         reload: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
       } as any as ChargingStationSequence;
@@ -104,7 +103,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
 
     it('should handle number value correctly (already a number)', async () => {
       const mockSequence = {
-        value: 100 as string | number,
+        get: vi.fn<() => any>().mockReturnValue(100 as any),
         increment: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
         reload: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
       } as any as ChargingStationSequence;
@@ -119,7 +118,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
 
     it('should handle null value and return SEQUENCE_START', async () => {
       const mockSequence = {
-        value: null,
+        get: vi.fn<() => any>().mockReturnValue(null as any),
         increment: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
         reload: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
       } as any as ChargingStationSequence;
@@ -133,7 +132,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
 
     it('should handle undefined value and return SEQUENCE_START', async () => {
       const mockSequence = {
-        value: undefined,
+        get: vi.fn<() => any>().mockReturnValue(undefined),
         increment: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
         reload: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
       } as any as ChargingStationSequence;
@@ -147,7 +146,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
 
     it('should handle invalid string and return SEQUENCE_START', async () => {
       const mockSequence = {
-        value: 'invalid' as string | number,
+        get: vi.fn<() => any>().mockReturnValue('invalid' as any),
         increment: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
         reload: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
       } as any as ChargingStationSequence;
@@ -161,8 +160,8 @@ describe('SequelizeChargingStationSequenceRepository', () => {
 
     it('should call readOrCreateByQuery with correct parameters', async () => {
       const mockSequence = {
-        value: '1' as string | number,
-      } as ChargingStationSequence;
+        get: vi.fn<() => any>().mockReturnValue('1' as any),
+      } as any as ChargingStationSequence;
 
       const readOrCreateSpy = vi
         .spyOn(repository as any, 'readOrCreateByQuery')
