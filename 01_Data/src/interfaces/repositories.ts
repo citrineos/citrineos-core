@@ -243,6 +243,11 @@ export interface ILocationRepository extends CrudRepository<Location> {
     chargingStation: ChargingStation,
   ): Promise<ChargingStation>;
   createOrUpdateConnector(tenantId: number, connector: Connector): Promise<Connector | undefined>;
+  updateAllConnectorsByQuery(
+    tenantId: number,
+    value: Partial<Connector>,
+    query: object,
+  ): Promise<Connector[]>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {
