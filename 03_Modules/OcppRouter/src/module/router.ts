@@ -509,7 +509,13 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       );
 
       if (!successfullySet) {
+        this._logger.debug(
+          'Ongoing Call already in progress, waiting for ongoing call before handling',
+          identifier,
+          message,
+        );
         await callOngoing; // Wait for ongoing call to finish
+        this._logger.debug('Ongoing Call finished, proceeding with call', identifier, message);
         successfullySet = await this._cache.setIfNotExist(
           identifier,
           `${action}:${messageId}`,
