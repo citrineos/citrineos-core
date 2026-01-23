@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import * as fs from 'fs';
 import * as jsts from 'json-schema-to-typescript';
 import * as prettier from 'prettier';
@@ -143,7 +147,7 @@ export const createTypescriptString = async (jsonSchema, id, elements) => {
   return { typescriptString, enums };
 };
 
-export const LICENSE_STRING = `// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+export const LICENSE_STRING = `// SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
 

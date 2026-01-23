@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
 
