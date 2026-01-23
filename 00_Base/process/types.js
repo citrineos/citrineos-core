@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 export const OCPP_SCHEMA_PROCESS_VERSION = {
   OCPP_1_6: '1.6',
   OCPP_2_0_1: '2.0.1',
