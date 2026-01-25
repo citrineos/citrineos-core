@@ -180,7 +180,24 @@ export class StatusNotificationService {
         vendorErrorCode: statusNotificationRequest.vendorErrorCode,
       } as Connector;
 
-      await this._locationRepository.createOrUpdateConnector(tenantId, connector);
+      if (statusNotificationRequest.connectorId === 0) {
+        // update all connectors
+        await this._locationRepository.updateAllConnectorsByQuery(
+          tenantId,
+          {
+            ...connector,
+            connectorId: undefined,
+          },
+          {
+            where: {
+              stationId,
+              tenantId,
+            },
+          },
+        );
+      } else {
+        await this._locationRepository.createOrUpdateConnector(tenantId, connector);
+      }
     } else {
       this._logger.warn(
         `Charging station ${stationId} not found. Status notification cannot be associated with a charging station.`,

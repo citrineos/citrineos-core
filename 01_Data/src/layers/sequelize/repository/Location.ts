@@ -321,6 +321,14 @@ export class SequelizeLocationRepository
     return result;
   }
 
+  async updateAllConnectorsByQuery(
+    tenantId: number,
+    value: Partial<Connector>,
+    query: object,
+  ): Promise<Connector[]> {
+    return await this.connector.updateAllByQuery(tenantId, value, query);
+  }
+
   async readConnectorByStationIdAndOcpp16ConnectorId(
     tenantId: number,
     stationId: string,
