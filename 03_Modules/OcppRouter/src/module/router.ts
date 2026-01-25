@@ -496,7 +496,12 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       }
 
       // Ensure only one call is processed at a time
-      const successfullySet = await this._cache.setIfNotExist(
+      const callOngoing = this._cache.onChange(
+        identifier,
+        this.config.maxCallLengthSeconds,
+        CacheNamespace.Transactions,
+      );
+      let successfullySet = await this._cache.setIfNotExist(
         identifier,
         `${action}:${messageId}`,
         CacheNamespace.Transactions,
@@ -504,7 +509,27 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       );
 
       if (!successfullySet) {
-        throw new OcppError(messageId, ErrorCode.RpcFrameworkError, 'Call already in progress', {});
+        this._logger.debug(
+          'Ongoing Call already in progress, waiting for ongoing call before handling',
+          identifier,
+          message,
+        );
+        await callOngoing; // Wait for ongoing call to finish
+        this._logger.debug('Ongoing Call finished, proceeding with call', identifier, message);
+        successfullySet = await this._cache.setIfNotExist(
+          identifier,
+          `${action}:${messageId}`,
+          CacheNamespace.Transactions,
+          this._config.maxCallLengthSeconds,
+        );
+        if (!successfullySet) {
+          throw new OcppError(
+            messageId,
+            ErrorCode.RpcFrameworkError,
+            'Call already in progress',
+            {},
+          );
+        }
       }
     } catch (error) {
       this._logger.error('Failed to process Call message', identifier, message, error);
