@@ -58,7 +58,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
-          context: ./Server
+          context: ./
           file: ./Server/deploy.Dockerfile
           push: true
           tags: ${{ steps.login-ecr.outputs.registry }}/citrineos-server:${{ steps.branch.outputs.branch }}-${{ steps.date.outputs.date }}-${{ github.sha }},${{ steps.login-ecr.outputs.registry }}/citrineos-server:latest,ghcr.io/enexflow/citrineos-server:latest,ghcr.io/enexflow/citrineos-server:${{ steps.branch.outputs.branch }}-${{ steps.date.outputs.date }}-${{ github.sha }}
