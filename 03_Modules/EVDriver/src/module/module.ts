@@ -401,9 +401,8 @@ export class EVDriverModule extends AbstractModule {
         response.idTokenInfo = idTokenInfo;
       }
     } else {
-      // Assumed to always be valid without IdTokenInfo
       response.idTokenInfo = {
-        status: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
+        status: OCPP2_0_1.AuthorizationStatusEnumType.Unknown,
         // TODO determine how/if to set personalMessage
       };
     }
