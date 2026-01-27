@@ -35,7 +35,7 @@ import {
   ConfigurationOcpp16Api,
   ConfigurationOcpp201Api,
 } from '@citrineos/configuration';
-import { RepositoryStore, sequelize, Sequelize, ServerNetworkProfile } from '@citrineos/data';
+import { RepositoryStore, sequelize, Sequelize } from '@citrineos/data';
 import {
   EVDriverDataApi,
   EVDriverModule,
@@ -51,6 +51,7 @@ import {
   SmartChargingModule,
   SmartChargingOcpp201Api,
 } from '@citrineos/smartcharging';
+import { TenantDataApi, TenantModule } from '@citrineos/tenant';
 import {
   TransactionsDataApi,
   TransactionsModule,
@@ -86,7 +87,6 @@ import type {
   FastifyValidationResult,
 } from 'fastify/types/schema.js';
 import type { RedisClientOptions } from 'redis';
-import { TenantDataApi, TenantModule } from '@citrineos/tenant';
 import { type ILogObj, Logger } from 'tslog';
 import { getSystemConfig } from './config/index.js';
 
@@ -655,10 +655,11 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(new TenantDataApi(module, this._server, this._logger));
-    console.log('Tenant module initialized');
+    this._logger.info('Tenant module initialized');
   }
 
   private async initModule(eventGroup = this.eventGroup) {
+    this._logger.info(`Initializing module: ${this.appName}`);
     switch (eventGroup) {
       case EventGroup.Certificates:
         await this.initCertificatesModule();
@@ -696,10 +697,17 @@ export class CitrineOSServer {
     this.port = this._config.centralSystem.port;
 
     if (this.eventGroup === EventGroup.All) {
+      this._logger.info('Initializing in ALL mode: WebSocket server and all modules');
       this.initNetworkConnection();
       await this.initAllModules();
-    } else if (this.eventGroup === EventGroup.General) {
+    } else if (this.eventGroup === EventGroup.Router) {
+      this._logger.info('Initializing in ROUTER mode: WebSocket server, no modules');
+      // OCPP Router only: WebSocket server, no modules
       this.initNetworkConnection();
+    } else if (this.eventGroup === EventGroup.Modules) {
+      // All modules, no WebSocket server
+      this._logger.info('Initializing in MODULES mode: all modules without NetworkConnection');
+      await this.initAllModules();
     } else {
       await this.initModule();
     }
@@ -743,7 +751,11 @@ export class CitrineOSServer {
 async function main() {
   const bootstrapConfig = loadBootstrapConfig();
   const config = await getSystemConfig(bootstrapConfig);
-  const server = new CitrineOSServer(process.env.APP_NAME as EventGroup, bootstrapConfig, config);
+  const server = new CitrineOSServer(
+    process.env.APP_NAME?.toLowerCase() as EventGroup,
+    bootstrapConfig,
+    config,
+  );
   server.run().catch((error: any) => {
     console.error(error);
     process.exit(1);

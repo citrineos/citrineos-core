@@ -2,10 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import * as amqplib from 'amqplib';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { MemoryCache } from '../../index.js';
 import type {
   CallAction,
   CircuitBreakerState,
@@ -20,6 +16,10 @@ import {
   Message,
   RetryMessageError,
 } from '@citrineos/base';
+import * as amqplib from 'amqplib';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { MemoryCache } from '../../index.js';
 
 /**
  * Implementation of a {@link IMessageHandler} using RabbitMQ as the underlying transport.
@@ -95,7 +95,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     }
 
     const exchange = this._config.util.messageBroker.amqp?.exchange as string;
-    const queueName = `${RabbitMqReceiver.QUEUE_PREFIX}${identifier}_${Date.now()}`;
+    const queueName = `${RabbitMqReceiver.QUEUE_PREFIX}${identifier}`;
 
     // Ensure that filter includes the x-match header set to all
     filter = filter
@@ -125,10 +125,16 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
           `Bind ${queueName} on ${exchange} for ${action} with filter ${JSON.stringify(filter)}.`,
         );
         await channel.bindQueue(queueName, exchange, '', { action, ...filter });
+        this._logger.info(
+          `Queue ${queueName} bound to exchange ${exchange} for action ${action} with filter ${JSON.stringify(filter)}.`,
+        );
       }
     } else {
       this._logger.debug(`Bind ${queueName} on ${exchange} with filter ${JSON.stringify(filter)}.`);
       await channel.bindQueue(queueName, exchange, '', filter);
+      this._logger.info(
+        `Queue ${queueName} bound to exchange ${exchange} with filter ${JSON.stringify(filter)}.`,
+      );
     }
 
     // Start consuming messages
