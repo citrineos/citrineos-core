@@ -1,0 +1,71 @@
+name: Push docker images
+
+on:
+  push:
+    branches: [ env/staging, env/prod, TECH-1315/creer-une-cicd-pour-le-repo-citrine]
+
+jobs:
+  push-to-ecr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::085680810369:role/terraform
+          aws-region: eu-west-3
+
+      - name: Log in to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Log in to the Github Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Get current branch name
+        id: branch
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "branch=${{ github.base_ref }}" >> $GITHUB_OUTPUT
+          else
+            echo "branch=$(echo ${GITHUB_REF:-dev} | sed s/.*\\///g)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: ./
+          file: ./Server/deploy.Dockerfile
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/citrineos:${{ steps.branch.outputs.branch }}-${{ steps.date.outputs.date }}-${{ github.sha }},${{ steps.login-ecr.outputs.registry }}/citrineos:latest,ghcr.io/enexflow/citrineos-server:latest,ghcr.io/enexflow/citrineos-server:${{ steps.branch.outputs.branch }}-${{ steps.date.outputs.date }}-${{ github.sha }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
