@@ -45,7 +45,6 @@ export default tseslint.config(
   // Ignore patterns
   {
     ignores: [
-      '**/DirectusExtensions/**',
       '**/Swarm/**',
       '**/dist/**',
       '**/node_modules/**',

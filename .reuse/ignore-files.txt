@@ -107,6 +107,5 @@ Swarm/.eslintrc.json
 Swarm/nodemon.json
 
 Server/everest/
-DirectusExtensions/
 Server/data/directus/uploads/
 Swarm/data/directus/uploads/
