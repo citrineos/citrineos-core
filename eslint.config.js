@@ -46,7 +46,6 @@ export default tseslint.config(
   {
     ignores: [
       '**/DirectusExtensions/**',
-      '**/Swarm/**',
       '**/dist/**',
       '**/node_modules/**',
       '**/lib/**',

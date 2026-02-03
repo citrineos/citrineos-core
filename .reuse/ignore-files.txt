@@ -9,14 +9,12 @@
 OCPP_201_Logo_core_and_advanced_security.png
 README.md
 Server/rbac-rules.json
-Swarm/data/redis/redis.conf
 entrypoint.sh
 logo_black.png
 logo_white.png
 renovate.json
 
 Server/src/assets/logo.png
-Swarm/src/assets/logo.png
 
 # CI/CD files
 .github/workflows/tests/CI/collection.json
@@ -38,7 +36,6 @@ Swarm/src/assets/logo.png
 03_Modules/Tenant/package.json
 03_Modules/Transactions/package.json
 Server/package.json
-Swarm/package.json
 package-lock.json
 
 # TypeScript config files
@@ -56,7 +53,6 @@ package-lock.json
 03_Modules/Tenant/tsconfig.json
 03_Modules/Transactions/tsconfig.json
 Server/tsconfig.json
-Swarm/tsconfig.json
 tsconfig.build.json
 tsconfig.eslint.json
 tsconfig.json
@@ -95,7 +91,6 @@ Server/src/assets/certificates/leafKey.pem
 Server/src/assets/certificates/rootCertificate.pem
 Server/src/assets/certificates/rootKey.pem
 Server/src/assets/certificates/subCAKey.pem
-Swarm/src/assets/certificates/acme_account_key.pem
 
 # Documentation
 02_Util/test/resources/README.md
@@ -103,10 +98,7 @@ Server/everest/README.md
 
 # Configuration files
 Server/nodemon.json
-Swarm/.eslintrc.json
-Swarm/nodemon.json
 
 Server/everest/
 DirectusExtensions/
 Server/data/directus/uploads/
-Swarm/data/directus/uploads/
