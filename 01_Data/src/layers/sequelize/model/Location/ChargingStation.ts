@@ -8,11 +8,11 @@ import type {
   ConnectorDto,
   EvseDto,
   LocationDto,
+  Point,
   TenantDto,
   TransactionDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace, OCPPVersion } from '@citrineos/base';
-import type { Point } from 'geojson';
 import {
   BeforeCreate,
   BeforeUpdate,

@@ -62,7 +62,6 @@ import {
   BasicAuthenticationFilter,
   CertificateAuthorityService,
   ConnectedStationFilter,
-  DirectusUtil,
   IdGenerator,
   initSwagger,
   LocalBypassAuthProvider,
@@ -79,7 +78,7 @@ import {
 import ApiAuthPlugin from '@citrineos/util/dist/authorization/ApiAuthPlugin.js';
 import cors from '@fastify/cors';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import type { FastifyInstance, RouteOptions } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import fastify from 'fastify';
 import type {
   FastifyRouteSchemaDef,
@@ -170,23 +169,6 @@ export class CitrineOSServer {
     this.initSwagger()
       .then()
       .catch((error) => this._logger.error('Could not initialize swagger', { error }));
-
-    // Add Directus Message API flow creation if enabled
-    if (this._config.fileAccess.directus?.generateFlows) {
-      const directusUtil = ConfigStoreFactory.getInstance() as DirectusUtil;
-      this._server.addHook('onRoute', (routeOptions: RouteOptions) => {
-        directusUtil!
-          .addDirectusMessageApiFlowsFastifyRouteHook(routeOptions, this._server.getSchemas())
-          .then()
-          .catch((error) => {
-            this._logger.error('Could not add Directus Message API flow', { error });
-          });
-      });
-
-      this._server.addHook('onReady', async () => {
-        this._logger.info('Directus actions initialization finished');
-      });
-    }
 
     // Register API authentication
     this.registerApiAuth();
