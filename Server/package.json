@@ -46,7 +46,6 @@
     "@citrineos/tenant": "1.8.2",
     "@citrineos/transactions": "1.8.2",
     "@citrineos/util": "1.8.2",
-    "@directus/extensions": "1.0.10",
     "@fastify/cors": "10.0.1",
     "cross-env": "7.0.3",
     "sqlite3": "5.1.6",

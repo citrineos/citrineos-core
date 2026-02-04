@@ -100,5 +100,3 @@ Server/everest/README.md
 Server/nodemon.json
 
 Server/everest/
-DirectusExtensions/
-Server/data/directus/uploads/

@@ -16,7 +16,6 @@ export class GenerateCertificateChainRequest {
   signatureAlgorithm?: SignatureAlgorithmEnumType;
   pathLen?: number;
   // The file path to store the generated certificate.
-  // If we use directus files as storage, filePath is the folder id
   filePath?: string;
 
   constructor(
