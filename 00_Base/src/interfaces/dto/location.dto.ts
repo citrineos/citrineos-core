@@ -28,7 +28,6 @@ export const LocationSchema = BaseSchema.extend({
 export const LocationProps = LocationSchema.keyof().enum;
 
 export type LocationDto = z.infer<typeof LocationSchema>;
-export type Point = z.infer<typeof PointSchema>;
 
 export const LocationCreateSchema = LocationSchema.omit({
   id: true,
