@@ -186,7 +186,8 @@
         "timestamp": {
           "description": "Timestamp for measured value(s).\r\n",
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?(?:Z|[+\\-]\\d{2}:\\d{2})$"
         },
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -237,7 +238,8 @@
         "signedMeterData": {
           "description": "Base64 encoded, contains the signed data from the meter in the format specified in _encodingMethod_, which might contain more then just the meter value. It can contain information like timestamps, reference to a customer etc.\r\n",
           "type": "string",
-          "maxLength": 32768
+          "maxLength": 32768,
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
         },
         "signingMethod": {
           "description": "*(2.1)* Method used to create the digital signature. Optional, if already included in _signedMeterData_. Standard values for this are defined in Appendix as SigningMethodEnumStringType.\r\n",
@@ -252,7 +254,8 @@
         "publicKey": {
           "description": "*(2.1)* Base64 encoded, sending depends on configuration variable _PublicKeyWithSignedMeterValue_.\r\n",
           "type": "string",
-          "maxLength": 2500
+          "maxLength": 2500,
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
         },
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -275,7 +278,9 @@
         "multiplier": {
           "description": "Multiplier, this value represents the exponent to base 10. I.e. multiplier 3 means 10 raised to the 3rd power. Default is 0. +\r\nThe _multiplier_ only multiplies the value of the measurand. It does not specify a conversion between units, for example, kW and W.\r\n",
           "type": "integer",
-          "default": 0
+          "default": 0,
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -301,7 +306,8 @@
     "evseId": {
       "description": "This contains a number (&gt;0) designating an EVSE of the Charging Station. ‘0’ (zero) is used to designate the main power meter.\r\n",
       "type": "integer",
-      "minimum": 0
+      "minimum": 1,
+      "maximum": 2147483647
     },
     "meterValue": {
       "type": "array",

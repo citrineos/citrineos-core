@@ -28,7 +28,9 @@
   "properties": {
     "requestId": {
       "description": "The Id of the request.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "reportBase": {
       "$ref": "#/definitions/ReportBaseEnumType"

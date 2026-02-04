@@ -60,12 +60,14 @@
         "id": {
           "description": "EVSE Identifier. This contains a number (&gt; 0) designating an EVSE of the Charging Station.\r\n",
           "type": "integer",
-          "minimum": 0
+          "minimum": 1,
+          "maximum": 2147483647
         },
         "connectorId": {
           "description": "An id to designate a specific connector (on an EVSE) by connector index number.\r\n",
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 2147483647
         },
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -110,7 +112,8 @@
         "id": {
           "description": "Unique id within an exchange context. It is defined within the OCPP context as a positive Integer value (greater or equal to zero).\r\n",
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 2147483647
         },
         "priority": {
           "$ref": "#/definitions/MessagePriorityEnumType"

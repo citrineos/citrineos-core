@@ -51,11 +51,14 @@
       "properties": {
         "startPeriod": {
           "description": "Start of the period, in seconds from the start of schedule. The value of StartPeriod also defines the stop time of the previous period.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "limit": {
           "description": "Optional only when not required by the _operationMode_, as in CentralSetpoint, ExternalSetpoint, ExternalLimits, LocalFrequency,  LocalLoadBalancing. +\r\nCharging rate limit during the schedule period, in the applicable _chargingRateUnit_. \r\nThis SHOULD be a non-negative value; a negative value is only supported for backwards compatibility with older systems that use a negative value to specify a discharging limit.\r\nWhen using _chargingRateUnit_ = `W`, this field represents the sum of the power of all phases, unless values are provided for L2 and L3, in which case this field represents phase L1.\r\n",
-          "type": "number"
+          "type": "number",
+          "multipleOf": 0.1
         },
         "limit_L2": {
           "description": "*(2.1)* Charging rate limit on phase L2  in the applicable _chargingRateUnit_. \r\n",
@@ -162,10 +165,13 @@
       "properties": {
         "evseId": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 1,
+          "maximum": 2147483647
         },
         "duration": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "scheduleStart": {
           "type": "string",

@@ -36,14 +36,17 @@
         "stackLevel": {
           "description": "Value determining level in hierarchy stack of profiles. Higher values have precedence over lower values. Lowest level is 0.\r\n",
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 2147483647
         },
         "chargingProfileId": {
           "description": "List of all the chargingProfileIds requested. Any ChargingProfile that matches one of these profiles will be reported. If omitted, the Charging Station SHALL not filter on chargingProfileId. This field SHALL NOT contain more ids than set in &lt;&lt;configkey-charging-profile-entries,ChargingProfileEntries.maxLimit&gt;&gt;\r\n\r\n",
           "type": "array",
           "additionalItems": false,
           "items": {
-            "type": "integer"
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
           },
           "minItems": 1
         },

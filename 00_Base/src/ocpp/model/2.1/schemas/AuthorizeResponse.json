@@ -148,7 +148,9 @@
         },
         "chargingPriority": {
           "description": "Priority from a business point of view. Default priority is 0, The range is from -9 to 9. Higher values indicate a higher priority. The chargingPriority in &lt;&lt;transactioneventresponse,TransactionEventResponse&gt;&gt; overrules this one. \r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -9,
+          "maximum": 9
         },
         "groupIdToken": {
           "$ref": "#/definitions/IdTokenType"
@@ -169,7 +171,8 @@
           "additionalItems": false,
           "items": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 1,
+            "maximum": 2147483647
           },
           "minItems": 1
         },

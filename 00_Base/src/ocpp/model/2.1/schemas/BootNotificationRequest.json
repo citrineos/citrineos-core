@@ -74,7 +74,8 @@
         "iccid": {
           "description": "This contains the ICCID of the modem’s SIM card.\r\n",
           "type": "string",
-          "maxLength": 20
+          "maxLength": 20,
+          "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         },
         "imsi": {
           "description": "This contains the IMSI of the modem’s SIM card.\r\n",
