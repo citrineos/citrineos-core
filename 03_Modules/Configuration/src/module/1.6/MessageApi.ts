@@ -13,8 +13,7 @@ import {
   AsMessageEndpoint,
   DEFAULT_TENANT_ID,
   OCPP1_6,
-  OCPP1_6_CallAction,
-  OCPP2_0_1_CallAction,
+  OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
 import { v4 as uuidv4 } from 'uuid';
@@ -41,7 +40,7 @@ export class ConfigurationOcpp16Api
     super(ConfigurationComponent, server, OCPPVersion.OCPP1_6, logger);
   }
 
-  @AsMessageEndpoint(OCPP1_6_CallAction.TriggerMessage, OCPP1_6.TriggerMessageRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.TriggerMessage, OCPP1_6.TriggerMessageRequestSchema)
   async triggerMessage(
     identifier: string[],
     request: OCPP1_6.TriggerMessageRequest,
@@ -60,7 +59,7 @@ export class ConfigurationOcpp16Api
         id,
         tenantId,
         OCPPVersion.OCPP1_6,
-        OCPP2_0_1_CallAction.TriggerMessage,
+        OCPP_CallAction.TriggerMessage,
         request,
         callbackUrl,
       ),
@@ -68,10 +67,7 @@ export class ConfigurationOcpp16Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP1_6_CallAction.ChangeConfiguration,
-    OCPP1_6.ChangeConfigurationRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP_CallAction.ChangeConfiguration, OCPP1_6.ChangeConfigurationRequestSchema)
   async changeConfiguration(
     identifier: string[],
     request: OCPP1_6.ChangeConfigurationRequest,
@@ -95,7 +91,7 @@ export class ConfigurationOcpp16Api
         stationId,
         tenantId,
         OCPPVersion.OCPP1_6,
-        OCPP1_6_CallAction.ChangeConfiguration,
+        OCPP_CallAction.ChangeConfiguration,
         request,
         callbackUrl,
       );
@@ -104,7 +100,7 @@ export class ConfigurationOcpp16Api
     return Promise.all(confirmations);
   }
 
-  @AsMessageEndpoint(OCPP1_6_CallAction.GetConfiguration, OCPP1_6.GetConfigurationRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.GetConfiguration, OCPP1_6.GetConfigurationRequestSchema)
   async getConfiguration(
     identifier: string[],
     request: OCPP1_6.GetConfigurationRequest,
@@ -155,7 +151,7 @@ export class ConfigurationOcpp16Api
                   stationId,
                   tenantId,
                   OCPPVersion.OCPP1_6,
-                  OCPP1_6_CallAction.GetConfiguration,
+                  OCPP_CallAction.GetConfiguration,
                   { key: batch },
                   callbackUrl,
                   correlationId,
@@ -198,7 +194,7 @@ export class ConfigurationOcpp16Api
     return confirmations;
   }
 
-  @AsMessageEndpoint(OCPP1_6_CallAction.Reset, OCPP1_6.ResetRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.Reset, OCPP1_6.ResetRequestSchema)
   reset(
     identifier: string[],
     request: OCPP1_6.ResetRequest,
@@ -210,7 +206,7 @@ export class ConfigurationOcpp16Api
         id,
         tenantId,
         OCPPVersion.OCPP1_6,
-        OCPP1_6_CallAction.Reset,
+        OCPP_CallAction.Reset,
         request,
         callbackUrl,
       ),
@@ -218,7 +214,7 @@ export class ConfigurationOcpp16Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP1_6_CallAction.ChangeAvailability, OCPP1_6.ChangeAvailabilityRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.ChangeAvailability, OCPP1_6.ChangeAvailabilityRequestSchema)
   changeAvailability(
     identifier: string[],
     request: OCPP1_6.ChangeAvailabilityRequest,
@@ -230,7 +226,7 @@ export class ConfigurationOcpp16Api
         id,
         tenantId,
         OCPPVersion.OCPP1_6,
-        OCPP1_6_CallAction.ChangeAvailability,
+        OCPP_CallAction.ChangeAvailability,
         request,
         callbackUrl,
       ),
@@ -238,7 +234,7 @@ export class ConfigurationOcpp16Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP1_6_CallAction.UpdateFirmware, OCPP1_6.UpdateFirmwareRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.UpdateFirmware, OCPP1_6.UpdateFirmwareRequestSchema)
   updateFirmware(
     identifier: string[],
     request: OCPP1_6.UpdateFirmwareRequest,
@@ -250,7 +246,7 @@ export class ConfigurationOcpp16Api
         id,
         tenantId,
         OCPPVersion.OCPP1_6,
-        OCPP1_6_CallAction.UpdateFirmware,
+        OCPP_CallAction.UpdateFirmware,
         request,
         callbackUrl,
       ),

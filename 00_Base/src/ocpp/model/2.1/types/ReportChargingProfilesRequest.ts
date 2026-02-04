@@ -9,6 +9,7 @@
  */
 
 import {
+  ChargingLimitSourceEnumType,
   ChargingProfileKindEnumType,
   ChargingProfilePurposeEnumType,
   ChargingRateUnitEnumType,
@@ -28,7 +29,7 @@ export interface ReportChargingProfilesRequest extends OcppRequest {
    * Source that has installed this charging profile. Values defined in Appendix as ChargingLimitSourceEnumStringType.
    *
    */
-  chargingLimitSource: string;
+  chargingLimitSource: ChargingLimitSourceEnumType;
   /**
    * @minItems 1
    */

@@ -5,12 +5,10 @@
 import { z } from 'zod';
 import { EventGroup } from '../interfaces/messages/index.js';
 import { OCPP1_6, OCPP2_0_1 } from '../ocpp/model/index.js';
-import { OCPP1_6_CallAction, OCPP2_0_1_CallAction } from '../ocpp/rpc/message.js';
+import { OCPP_CallAction } from '../ocpp/rpc/message.js';
+import { OCPP_VERSION_LIST } from '../index.js';
 
-const OCPP1_6_CallActionSchema = z.nativeEnum(OCPP1_6_CallAction);
-const OCPP2_0_1_CallActionSchema = z.nativeEnum(OCPP2_0_1_CallAction);
-
-const CallActionSchema = z.union([OCPP1_6_CallActionSchema, OCPP2_0_1_CallActionSchema]);
+const CallActionSchema = z.nativeEnum(OCPP_CallAction);
 
 export const oidcClientConfigSchema = z
   .object({
@@ -27,7 +25,7 @@ export const websocketServerInputSchema = z.object({
   host: z.string().default('localhost').optional(),
   port: z.number().int().min(1).default(8080).optional(),
   pingInterval: z.number().int().min(1).default(60).optional(),
-  protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']).default('ocpp2.0.1').optional(),
+  protocol: z.enum(OCPP_VERSION_LIST).default('ocpp2.0.1').optional(),
   securityProfile: z.number().int().min(0).max(3).default(0).optional(),
   allowUnknownChargingStations: z.boolean().default(false).optional(),
   tlsKeyFilePath: z.string().optional(), // Leaf certificate's private key pem which decrypts the message from client
@@ -285,7 +283,7 @@ export const websocketServerSchema = z
     host: z.string(),
     port: z.number().int().min(1),
     pingInterval: z.number().int().min(1),
-    protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']),
+    protocol: z.enum(OCPP_VERSION_LIST),
     securityProfile: z.number().int().min(0).max(3),
     allowUnknownChargingStations: z.boolean(),
     tlsKeyFilePath: z.string().optional(),
