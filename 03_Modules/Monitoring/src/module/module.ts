@@ -18,7 +18,7 @@ import {
   EventGroup,
   OCPP2_0_1,
   OCPP2_1,
-  OCPP_2,
+  OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
@@ -126,7 +126,7 @@ export class MonitoringModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(OCPP_2, OCPP_CallAction.NotifyEvent)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyEvent)
   protected async _handleNotifyEvent(
     message: IMessage<OCPP2_1.NotifyEventRequest>,
     props?: HandlerProperties,
@@ -196,7 +196,7 @@ export class MonitoringModule extends AbstractModule {
   //TODO: Need to create a separate handler for OCPP 2.1 for handleSetVariableMonitoring
   //      2.1's NotifyMonitoringReportRequest has an additional required enum compared to 2.0.1
 
-  @AsHandler(OCPP_2, OCPP_CallAction.ClearVariableMonitoring)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.ClearVariableMonitoring)
   protected async _handleClearVariableMonitoring(
     message: IMessage<OCPP2_1.ClearVariableMonitoringResponse>,
     props?: HandlerProperties,
@@ -210,7 +210,7 @@ export class MonitoringModule extends AbstractModule {
     );
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.GetMonitoringReport)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetMonitoringReport)
   protected _handleGetMonitoringReport(
     message: IMessage<OCPP2_1.GetMonitoringReportResponse>,
     props?: HandlerProperties,
@@ -233,7 +233,7 @@ export class MonitoringModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.SetMonitoringLevel)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetMonitoringLevel)
   protected _handleSetMonitoringLevel(
     message: IMessage<OCPP2_1.SetMonitoringLevelResponse>,
     props?: HandlerProperties,
@@ -252,7 +252,7 @@ export class MonitoringModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.SetMonitoringBase)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetMonitoringBase)
   protected async _handleSetMonitoringBase(
     message: IMessage<OCPP2_1.SetMonitoringBaseResponse>,
     props?: HandlerProperties,
@@ -300,7 +300,7 @@ export class MonitoringModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.GetVariables)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetVariables)
   protected async _handleGetVariables(
     message: IMessage<OCPP2_1.GetVariablesResponse>,
     props?: HandlerProperties,
@@ -314,7 +314,7 @@ export class MonitoringModule extends AbstractModule {
     );
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.SetVariables)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetVariables)
   protected async _handleSetVariables(
     message: IMessage<OCPP2_1.SetVariablesResponse>,
     props?: HandlerProperties,

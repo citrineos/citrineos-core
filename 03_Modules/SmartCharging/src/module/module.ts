@@ -18,7 +18,7 @@ import {
   ChargingStationSequenceTypeEnum,
   EventGroup,
   OCPP2_1,
-  OCPP_2,
+  OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
@@ -154,7 +154,7 @@ export class SmartChargingModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(OCPP_2, OCPP_CallAction.NotifyEVChargingNeeds)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyEVChargingNeeds)
   protected async _handleNotifyEVChargingNeeds(
     message: IMessage<OCPP2_1.NotifyEVChargingNeedsRequest>,
     props?: HandlerProperties,
@@ -241,7 +241,7 @@ export class SmartChargingModule extends AbstractModule {
     );
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.NotifyEVChargingSchedule)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyEVChargingSchedule)
   protected async _handleNotifyEVChargingSchedule(
     message: IMessage<OCPP2_1.NotifyEVChargingScheduleRequest>,
     props?: HandlerProperties,
@@ -301,7 +301,7 @@ export class SmartChargingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.NotifyChargingLimit)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyChargingLimit)
   protected async _handleNotifyChargingLimit(
     message: IMessage<OCPP2_1.NotifyChargingLimitRequest>,
     props?: HandlerProperties,
@@ -315,7 +315,7 @@ export class SmartChargingModule extends AbstractModule {
     this._logger.debug('NotifyChargingLimit response sent: ', messageConfirmation);
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.ReportChargingProfiles)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.ReportChargingProfiles)
   protected async _handleReportChargingProfiles(
     message: IMessage<OCPP2_1.ReportChargingProfilesRequest>,
     props?: HandlerProperties,
@@ -348,7 +348,7 @@ export class SmartChargingModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(OCPP_2, OCPP_CallAction.ClearChargingProfile)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.ClearChargingProfile)
   protected async _handleClearChargingProfile(
     message: IMessage<OCPP2_1.ClearChargingProfileResponse>,
     props?: HandlerProperties,
@@ -400,7 +400,7 @@ export class SmartChargingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.GetChargingProfiles)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetChargingProfiles)
   protected _handleGetChargingProfiles(
     message: IMessage<OCPP2_1.GetChargingProfilesResponse>,
     props?: HandlerProperties,
@@ -408,7 +408,7 @@ export class SmartChargingModule extends AbstractModule {
     this._logger.debug('GetChargingProfiles response received:', message, props);
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.SetChargingProfile)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetChargingProfile)
   protected async _handleSetChargingProfile(
     message: IMessage<OCPP2_1.SetChargingProfileResponse>,
     props?: HandlerProperties,
@@ -456,7 +456,7 @@ export class SmartChargingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.ClearedChargingLimit)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.ClearedChargingLimit)
   protected async _handleClearedChargingLimit(
     message: IMessage<OCPP2_1.ClearedChargingLimitRequest>,
     props?: HandlerProperties,
@@ -467,7 +467,7 @@ export class SmartChargingModule extends AbstractModule {
     await this.sendCallResultWithMessage(message, response);
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.GetCompositeSchedule)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCompositeSchedule)
   protected async _handleGetCompositeSchedule(
     message: IMessage<OCPP2_1.GetCompositeScheduleResponse>,
     props?: HandlerProperties,

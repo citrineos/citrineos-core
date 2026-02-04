@@ -25,7 +25,7 @@ import {
   MessageOrigin,
   OCPP1_6,
   OCPP2_1,
-  OCPP_2,
+  OCPP_2_VER_LIST,
   OCPP_CallAction,
   OcppError,
   OCPPVersion,
@@ -265,7 +265,7 @@ export class EVDriverModule extends AbstractModule {
    * Handle OCPP 2.x requests
    */
 
-  @AsHandler(OCPP_2, OCPP_CallAction.Authorize)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.Authorize)
   protected async _handleAuthorize(
     message: IMessage<OCPP2_1.AuthorizeRequest>,
     props?: HandlerProperties,
@@ -492,7 +492,7 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('Authorize response sent:', messageConfirmation);
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.ReservationStatusUpdate)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.ReservationStatusUpdate)
   protected async _handleReservationStatusUpdate(
     message: IMessage<OCPP2_1.ReservationStatusUpdateRequest>,
     props?: HandlerProperties,
@@ -543,7 +543,7 @@ export class EVDriverModule extends AbstractModule {
    * Handle OCPP 2.x responses
    */
 
-  @AsHandler(OCPP_2, OCPP_CallAction.RequestStartTransaction)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.RequestStartTransaction)
   protected async _handleRequestStartTransaction(
     message: IMessage<OCPP2_1.RequestStartTransactionResponse>,
     props?: HandlerProperties,
@@ -592,7 +592,7 @@ export class EVDriverModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.RequestStopTransaction)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.RequestStopTransaction)
   protected async _handleRequestStopTransaction(
     message: IMessage<OCPP2_1.RequestStopTransactionResponse>,
     props?: HandlerProperties,
@@ -600,7 +600,7 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('RequestStopTransactionResponse received:', message, props);
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.CancelReservation)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.CancelReservation)
   protected async _handleCancelReservation(
     message: IMessage<OCPP2_1.CancelReservationResponse>,
     props?: HandlerProperties,
@@ -630,7 +630,7 @@ export class EVDriverModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.ReserveNow)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.ReserveNow)
   protected async _handleReserveNow(
     message: IMessage<OCPP2_1.ReserveNowResponse>,
     props?: HandlerProperties,
@@ -662,7 +662,7 @@ export class EVDriverModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.UnlockConnector)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.UnlockConnector)
   protected async _handleUnlockConnector(
     message: IMessage<OCPP2_1.UnlockConnectorResponse>,
     props?: HandlerProperties,
@@ -670,7 +670,7 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('UnlockConnectorResponse received:', message, props);
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.ClearCache)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.ClearCache)
   protected async _handleClearCache(
     message: IMessage<OCPP2_1.ClearCacheResponse>,
     props?: HandlerProperties,
@@ -678,7 +678,7 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('ClearCacheResponse received:', message, props);
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.SendLocalList)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.SendLocalList)
   protected async _handleSendLocalList(
     message: IMessage<OCPP2_1.SendLocalListResponse>,
     props?: HandlerProperties,
@@ -745,7 +745,7 @@ export class EVDriverModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.GetLocalListVersion)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetLocalListVersion)
   protected async _handleGetLocalListVersion(
     message: IMessage<OCPP2_1.GetLocalListVersionResponse>,
     props?: HandlerProperties,
