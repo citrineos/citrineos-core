@@ -4,7 +4,7 @@
 import type { IVariableMonitoringRepository } from '@citrineos/data';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { OCPP2_0_1, OCPP2_0_1_CallAction } from '@citrineos/base';
+import { OCPP2_0_1, OCPP_CallAction } from '@citrineos/base';
 
 export class MonitoringService {
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
@@ -40,7 +40,7 @@ export class MonitoringService {
       ) {
         await this._variableMonitoringRepository.rejectVariableMonitoringByIdAndStationId(
           tenantId,
-          OCPP2_0_1_CallAction.ClearVariableMonitoring,
+          OCPP_CallAction.ClearVariableMonitoring,
           monitorId,
           stationId,
         );

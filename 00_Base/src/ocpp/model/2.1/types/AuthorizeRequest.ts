@@ -8,7 +8,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { HashAlgorithmEnumType } from '../enums/index.js';
+import { HashAlgorithmEnumType, IdTokenEnumType } from '../enums/index.js';
 import type { OcppRequest } from '../../../../index.js';
 
 export interface AuthorizeRequest extends OcppRequest {
@@ -50,7 +50,7 @@ export interface IdTokenType {
    * *(2.1)* Enumeration of possible idToken types. Values defined in Appendix as IdTokenEnumStringType.
    *
    */
-  type: string;
+  type: IdTokenEnumType;
   customData?: CustomDataType | null;
 }
 /**

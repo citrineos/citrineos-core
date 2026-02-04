@@ -12,6 +12,7 @@ import type {
   MeterValueDto,
   OCPP1_6,
   OCPP2_0_1,
+  OCPP2_1,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
@@ -396,11 +397,11 @@ export interface IVariableMonitoringRepository
   ): Promise<EventData>;
 }
 
-export interface IMessageInfoRepository extends CrudRepository<OCPP2_0_1.MessageInfoType> {
+export interface IMessageInfoRepository extends CrudRepository<OCPP2_1.MessageInfoType> {
   deactivateAllByStationId(tenantId: number, stationId: string): Promise<void>;
   createOrUpdateByMessageInfoTypeAndStationId(
     tenantId: number,
-    value: OCPP2_0_1.MessageInfoType,
+    value: OCPP2_1.MessageInfoType,
     stationId: string,
     componentId?: number,
   ): Promise<MessageInfo>;
@@ -417,20 +418,20 @@ export interface ICertificateRepository extends CrudRepository<Certificate> {
   createOrUpdateCertificate(tenantId: number, certificate: Certificate): Promise<Certificate>;
 }
 
-export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> {}
+export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> { }
 
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
   createOrUpdateChargingProfile(
     tenantId: number,
-    chargingProfile: ChargingProfileInput,
+    chargingProfile: OCPP2_1.ChargingProfileType,
     stationId: string,
     evseId?: number | null,
-    chargingLimitSource?: ChargingLimitSourceEnumType,
+    chargingLimitSource?: OCPP2_1.ChargingLimitSourceEnumType,
     isActive?: boolean,
   ): Promise<ChargingProfile>;
   createChargingNeeds(
     tenantId: number,
-    chargingNeeds: OCPP2_0_1.NotifyEVChargingNeedsRequest,
+    chargingNeeds: OCPP2_1.NotifyEVChargingNeedsRequest,
     stationId: string,
   ): Promise<ChargingNeeds>;
   findChargingNeedsByEvseDBIdAndTransactionDBId(
@@ -440,7 +441,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   ): Promise<ChargingNeeds | undefined>;
   createCompositeSchedule(
     tenantId: number,
-    compositeSchedule: CompositeScheduleInput,
+    compositeSchedule: OCPP2_1.CompositeScheduleType,
     stationId: string,
   ): Promise<CompositeSchedule>;
   getNextChargingProfileId(tenantId: number, stationId: string): Promise<number>;
@@ -449,7 +450,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
     tenantId: number,
     stationId: string,
     transactionDatabaseId: number | null,
-    profilePurpose: ChargingProfilePurposeEnumType,
+    profilePurpose: OCPP2_1.ChargingProfilePurposeEnumType,
   ): Promise<number>;
 }
 
@@ -462,7 +463,7 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
   ): Promise<Reservation | undefined>;
 }
 
-export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {}
+export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> { }
 
 export interface IChargingStationSecurityInfoRepository
   extends CrudRepository<ChargingStationSecurityInfo> {

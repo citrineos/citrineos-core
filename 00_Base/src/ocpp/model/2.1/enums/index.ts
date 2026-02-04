@@ -3,6 +3,34 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * Enumeration of possible idToken types.
+ * Imported from 2.0.1
+ *
+ */
+export enum IdTokenEnumType {
+  Central = 'Central',
+  eMAID = 'eMAID',
+  ISO14443 = 'ISO14443',
+  ISO15693 = 'ISO15693',
+  KeyCode = 'KeyCode',
+  Local = 'Local',
+  MacAddress = 'MacAddress',
+  NoAuthorization = 'NoAuthorization',
+}
+
+/**
+ * Source that has installed this charging profile.
+ * Imported from 2.0.1
+ *
+ */
+export enum ChargingLimitSourceEnumType {
+  EMS = 'EMS',
+  Other = 'Other',
+  SO = 'SO',
+  CSO = 'CSO',
+}
+
+/**
  * *(2.1)* Indicates whether EV wants to operate in Dynamic or Scheduled mode. When absent, Scheduled mode is assumed for backwards compatibility. +
  * *ISO 15118-20:* +
  * ServiceSelectionReq(SelectedEnergyTransferService)
