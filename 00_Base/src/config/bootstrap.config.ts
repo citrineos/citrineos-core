@@ -34,7 +34,7 @@ export const bootstrapConfigSchema = z.object({
   // File access configuration
   fileAccess: z
     .object({
-      type: z.enum(['local', 's3', 'directus', 'gcp']),
+      type: z.enum(['local', 's3', 'gcp']),
       local: z
         .object({
           defaultFilePath: z.string().default('data'),
@@ -56,16 +56,6 @@ export const bootstrapConfigSchema = z.object({
           credentials: z.object().optional(),
         })
         .optional(),
-      directus: z
-        .object({
-          host: z.string().default('localhost'),
-          port: z.number().int().positive().default(8055),
-          token: z.string().optional(),
-          username: z.string().optional(),
-          password: z.string().optional(),
-          generateFlows: z.boolean().default(false),
-        })
-        .optional(),
     })
     .refine(
       (obj) => {
@@ -77,8 +67,6 @@ export const bootstrapConfigSchema = z.object({
             return !!obj.s3;
           case 'gcp':
             return !!obj.gcp;
-          case 'directus':
-            return !!obj.directus;
           default:
             return false;
         }
@@ -172,17 +160,6 @@ export function loadBootstrapConfig(): BootstrapConfig {
       config.fileAccess.gcp = {
         projectId: getEnvVarValue('file_access_gcp_project_id'),
         credentials: getEnvVarValue('file_access_gcp_credentials'),
-      };
-      break;
-    case 'directus':
-      config.fileAccess.directus = {
-        host: getEnvVarValue('file_access_directus_host'),
-        port:
-          getEnvVarValue('file_access_directus_port') &&
-          parseInt(getEnvVarValue('file_access_directus_port')!, 10),
-        token: getEnvVarValue('file_access_directus_token'),
-        username: getEnvVarValue('file_access_directus_username'),
-        password: getEnvVarValue('file_access_directus_password'),
       };
       break;
   }
