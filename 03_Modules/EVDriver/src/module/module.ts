@@ -22,7 +22,6 @@ import {
   ChargingStationSequenceTypeEnum,
   ErrorCode,
   EventGroup,
-  // AuthorizationStatusType, // Remove, not needed as value
   MessageOrigin,
   OCPP1_6,
   OCPP1_6_CallAction,
@@ -197,7 +196,7 @@ export class EVDriverModule extends AbstractModule {
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
 
     this._certificateAuthorityService =
-      certificateAuthorityService || new CertificateAuthorityService(config, logger);
+      certificateAuthorityService || new CertificateAuthorityService(config, cache, logger);
 
     this._localAuthListService = new LocalAuthListService(
       this._localAuthListRepository,
