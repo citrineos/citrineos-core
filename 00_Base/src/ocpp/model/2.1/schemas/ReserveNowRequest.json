@@ -73,7 +73,8 @@
     "id": {
       "description": "Id of reservation.\r\n",
       "type": "integer",
-      "minimum": 0
+      "minimum": 0,
+      "maximum": 2147483647
     },
     "expiryDateTime": {
       "description": "Date and time at which the reservation expires.\r\n",
@@ -91,7 +92,8 @@
     "evseId": {
       "description": "This contains ID of the evse to be reserved.\r\n",
       "type": "integer",
-      "minimum": 0
+      "minimum": 1,
+      "maximum": 2147483647
     },
     "groupIdToken": {
       "$ref": "#/definitions/IdTokenType"

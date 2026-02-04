@@ -21,7 +21,8 @@
     "id": {
       "description": "Id of the message that SHALL be removed from the Charging Station.\r\n",
       "type": "integer",
-      "minimum": 0
+      "minimum": 0,
+      "maximum": 2147483647
     },
     "customData": {
       "$ref": "#/definitions/CustomDataType"

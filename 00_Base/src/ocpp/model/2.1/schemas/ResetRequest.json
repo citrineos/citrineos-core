@@ -32,7 +32,8 @@
     "evseId": {
       "description": "This contains the ID of a specific EVSE that needs to be reset, instead of the entire Charging Station.\r\n",
       "type": "integer",
-      "minimum": 0
+      "minimum": 1,
+      "maximum": 2147483647
     },
     "customData": {
       "$ref": "#/definitions/CustomDataType"

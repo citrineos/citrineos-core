@@ -22,7 +22,8 @@
         "issuerNameHash": {
           "description": "The hash of the issuer’s distinguished\r\nname (DN), that must be calculated over the DER\r\nencoding of the issuer’s name field in the certificate\r\nbeing checked.\r\n",
           "type": "string",
-          "maxLength": 128
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         },
         "issuerKeyHash": {
           "description": "The hash of the DER encoded public key:\r\nthe value (excluding tag and length) of the subject\r\npublic key field in the issuer’s certificate.\r\n",
@@ -32,12 +33,14 @@
         "serialNumber": {
           "description": "The string representation of the\r\nhexadecimal value of the serial number without the\r\nprefix \"0x\" and without leading zeroes.\r\n",
           "type": "string",
-          "maxLength": 40
+          "maxLength": 40,
+          "pattern": "^(?!0x)(?!0[0-9a-fA-F])[a-zA-Z0-9*\\-_=:+|@.]+$"
         },
         "responderURL": {
           "description": "This contains the responder URL (Case insensitive). \r\n\r\n",
           "type": "string",
-          "maxLength": 2000
+          "maxLength": 2000,
+          "format": "uri"
         },
         "customData": {
           "$ref": "#/definitions/CustomDataType"

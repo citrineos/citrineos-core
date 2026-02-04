@@ -61,12 +61,14 @@
         "id": {
           "description": "EVSE Identifier. This contains a number (&gt; 0) designating an EVSE of the Charging Station.\r\n",
           "type": "integer",
-          "minimum": 0
+          "minimum": 1,
+          "maximum": 2147483647
         },
         "connectorId": {
           "description": "An id to designate a specific connector (on an EVSE) by connector index number.\r\n",
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 2147483647
         },
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -122,7 +124,9 @@
     },
     "requestId": {
       "description": "The Id of the request.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "monitoringCriteria": {
       "description": "This field contains criteria for components for which a monitoring report is requested\r\n",

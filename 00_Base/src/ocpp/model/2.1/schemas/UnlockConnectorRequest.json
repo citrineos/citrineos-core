@@ -21,12 +21,14 @@
     "evseId": {
       "description": "This contains the identifier of the EVSE for which a connector needs to be unlocked.\r\n",
       "type": "integer",
-      "minimum": 0
+      "minimum": 1,
+      "maximum": 2147483647
     },
     "connectorId": {
       "description": "This contains the identifier of the connector that needs to be unlocked.\r\n",
       "type": "integer",
-      "minimum": 0
+      "minimum": 0,
+      "maximum": 2147483647
     },
     "customData": {
       "$ref": "#/definitions/CustomDataType"
