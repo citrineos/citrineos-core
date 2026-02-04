@@ -198,8 +198,6 @@ export const OCPP2_1_CALL_SCHEMA_RECORD: Record<string, object> = {
   [OCPP_CallAction.UpdateDynamicSchedule]: OCPP2_1.UpdateDynamicScheduleRequestSchema,
   [OCPP_CallAction.UsePriorityCharging]: OCPP2_1.UsePriorityChargingRequestSchema,
   [OCPP_CallAction.VatNumberValidation]: OCPP2_1.VatNumberValidationRequestSchema,
-  //Overwritten in 2.1
-  [OCPP_CallAction.Authorize]: OCPP2_1.AuthorizeResponseSchema,
 };
 
 export const OCPP1_6_CALL_RESULT_SCHEMA_RECORD: Record<string, object> = {
