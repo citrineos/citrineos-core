@@ -241,13 +241,34 @@ export class ConfigurationModule extends AbstractModule {
     const bootNotificationResponseMessageConfirmation: IMessageConfirmation =
       await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
-    // Update or create charging station
-    await this._deviceModelService.updateDeviceModel(
-      chargingStation,
-      tenantId,
-      stationId,
-      timestamp,
-    );
+    // Update device model and charging station
+    this._deviceModelService
+      .updateDeviceModel(chargingStation, tenantId, stationId, timestamp)
+      .then()
+      .catch((error) => {
+        this._logger.error(
+          `Error updating device model for station ${stationId} with boot info:`,
+          error,
+        );
+      });
+    this._locationRepository
+      .createOrUpdateChargingStation(
+        tenantId,
+        ChargingStation.build({
+          tenantId,
+          id: stationId,
+          chargePointVendor: chargingStation.vendorName,
+          chargePointModel: chargingStation.model,
+          chargePointSerialNumber: chargingStation.serialNumber,
+          firmwareVersion: chargingStation.firmwareVersion,
+          iccid: chargingStation.modem?.iccid,
+          imsi: chargingStation.modem?.imsi,
+        }),
+      )
+      .then()
+      .catch((error) => {
+        this._logger.error(`Error updating station ${stationId} with boot info:`, error);
+      });
 
     if (!bootNotificationResponseMessageConfirmation.success) {
       throw new Error('BootNotification failed: ' + bootNotificationResponseMessageConfirmation);
@@ -770,22 +791,27 @@ export class ConfigurationModule extends AbstractModule {
       await this.sendCallResultWithMessage(message, bootNotificationResponse);
     // Create or update charging station
     this._logger.debug(`Creating or updating charging station: ${stationId}`);
-    await this._locationRepository.createOrUpdateChargingStation(
-      tenantId,
-      ChargingStation.build({
+    this._locationRepository
+      .createOrUpdateChargingStation(
         tenantId,
-        id: stationId,
-        chargePointVendor: request.chargePointVendor,
-        chargePointModel: request.chargePointModel,
-        chargePointSerialNumber: request.chargePointSerialNumber,
-        chargeBoxSerialNumber: request.chargeBoxSerialNumber,
-        firmwareVersion: request.firmwareVersion,
-        iccid: request.iccid,
-        imsi: request.imsi,
-        meterType: request.meterType,
-        meterSerialNumber: request.meterSerialNumber,
-      }),
-    );
+        ChargingStation.build({
+          tenantId,
+          id: stationId,
+          chargePointVendor: request.chargePointVendor,
+          chargePointModel: request.chargePointModel,
+          chargePointSerialNumber: request.chargePointSerialNumber,
+          chargeBoxSerialNumber: request.chargeBoxSerialNumber,
+          firmwareVersion: request.firmwareVersion,
+          iccid: request.iccid,
+          imsi: request.imsi,
+          meterType: request.meterType,
+          meterSerialNumber: request.meterSerialNumber,
+        }),
+      )
+      .then()
+      .catch((error) => {
+        this._logger.error(`Error updating station ${stationId} with boot info:`, error);
+      });
     // Check if response was successful
     if (!bootNotificationResponseMessageConfirmation.success) {
       throw new Error(
