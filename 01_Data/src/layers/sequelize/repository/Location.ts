@@ -94,15 +94,41 @@ export class SequelizeLocationRepository
     isOnline: boolean,
     ocppVersion: OCPPVersion | null,
   ): Promise<ChargingStation | undefined> {
-    return await this.chargingStation.updateByKey(
+    let result = await this.chargingStation.updateByKey(
       tenantId,
       { isOnline: isOnline, protocol: ocppVersion },
       stationId,
     );
+    // If no row matched (e.g. wrong tenant passed or row has different tenant), find actual tenant and retry
+    if (result === undefined) {
+      const actualTenantId = await this.findTenantIdByStationId(stationId);
+      if (actualTenantId !== undefined && actualTenantId !== tenantId) {
+        this.logger.info(
+          'setChargingStationIsOnlineAndOCPPVersion: no row for tenant %s, station %s; retrying with DB tenant %s',
+          tenantId,
+          stationId,
+          actualTenantId,
+        );
+        result = await this.chargingStation.updateByKey(
+          actualTenantId,
+          { isOnline: isOnline, protocol: ocppVersion },
+          stationId,
+        );
+      }
+    }
+    return result;
   }
 
   async doesChargingStationExistByStationId(tenantId: number, stationId: string): Promise<boolean> {
     return await this.chargingStation.existsByKey(tenantId, stationId);
+  }
+
+  async findTenantIdByStationId(stationId: string): Promise<number | undefined> {
+    const row = await ChargingStation.findOne({
+      where: { id: stationId },
+      attributes: ['tenantId'],
+    });
+    return row?.tenantId;
   }
 
   async addStatusNotificationToChargingStation(

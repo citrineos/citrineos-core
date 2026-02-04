@@ -233,6 +233,7 @@ export interface ILocationRepository extends CrudRepository<Location> {
     ocppVersion: OCPPVersion | null,
   ) => Promise<ChargingStation | undefined>;
   doesChargingStationExistByStationId: (tenantId: number, stationId: string) => Promise<boolean>;
+  findTenantIdByStationId: (stationId: string) => Promise<number | undefined>;
   addStatusNotificationToChargingStation(
     tenantId: number,
     stationId: string,

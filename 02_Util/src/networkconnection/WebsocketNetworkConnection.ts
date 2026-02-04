@@ -38,6 +38,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   private _httpServersMap: Map<string, http.Server | https.Server>;
   private _authenticator: IAuthenticator;
   private _router: IMessageRouter;
+  private _resolveTenantIdByStationId?: (stationId: string) => Promise<number | undefined>;
 
   constructor(
     config: SystemConfig,
@@ -45,9 +46,11 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     authenticator: IAuthenticator,
     router: IMessageRouter,
     logger?: Logger<ILogObj>,
+    resolveTenantIdByStationId?: (stationId: string) => Promise<number | undefined>,
   ) {
     this._cache = cache;
     this._config = config;
+    this._resolveTenantIdByStationId = resolveTenantIdByStationId;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -291,11 +294,45 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       ws.pause();
 
       const stationId = this._getClientIdFromUrl(req.url as string);
-      const tenantId = websocketServerConfig.tenantId;
-      const identifier = createIdentifier(tenantId, stationId);
+      const tenantIdFromConfig = websocketServerConfig.tenantId;
+
+      // Resolve tenant for this station: DB first (by stationId), then cache, then config only if allowed
+      const resolver =
+        this._resolveTenantIdByStationId ??
+        this._router.resolveTenantIdByStationId?.bind(this._router);
+      let tenantIdFromDb: string | null = null;
+      if (resolver) {
+        const tenantIdFromResolver = await resolver(stationId);
+        if (tenantIdFromResolver !== undefined) {
+          tenantIdFromDb = String(tenantIdFromResolver);
+        }
+      } else {
+        this._logger.debug(
+          'No tenant resolver available; will use cache or config for station %s',
+          stationId,
+        );
+      }
+      if (!tenantIdFromDb) {
+        const fromCache = await this._cache.get(stationId, CacheNamespace.ChargingStation);
+        if (fromCache) tenantIdFromDb = fromCache as string;
+      }
+
+      let resolvedTenantId: number;
+      if (tenantIdFromDb) {
+        resolvedTenantId = parseInt(tenantIdFromDb, 10);
+      } else if (websocketServerConfig.allowUnknownChargingStations) {
+        resolvedTenantId = tenantIdFromConfig;
+      } else {
+        this._logger.warn(
+          'Rejecting connection: station %s unknown and allowUnknownChargingStations=false',
+          stationId,
+        );
+        ws.close(1011, 'Unknown charging station');
+        return;
+      }
+      const identifier = createIdentifier(resolvedTenantId, stationId);
 
       this._identifierConnections.set(identifier, ws);
-
       try {
         // Get IP address of client
         const ip =
@@ -316,7 +353,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           CacheNamespace.Connections,
         );
         registered =
-          registered && (await this._router.registerConnection(tenantId, stationId, ws.protocol));
+          registered &&
+          (await this._router.registerConnection(resolvedTenantId, stationId, ws.protocol));
         if (!registered) {
           this._logger.fatal('Failed to register websocket client', identifier);
           throw new Error('Failed to register websocket client');
