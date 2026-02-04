@@ -9,6 +9,8 @@ export const PointSchema = z.object({
   coordinates: z.array(z.number()), // [longitude, latitude], doesn't restrict to 2 elements bc Point type doesn't
 });
 
+export type Point = z.infer<typeof PointSchema>;
+
 export const LocationHoursSchema = z.any();
 
 export const StatusInfoSchema = z.object({

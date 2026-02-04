@@ -8,6 +8,7 @@ import type {
   ConnectorDto,
   EvseDto,
   LocationDto,
+  Point,
   TenantDto,
   TransactionDto,
 } from '@citrineos/base';
@@ -33,7 +34,6 @@ import { Evse } from './Evse.js';
 import { Location } from './Location.js';
 import { SetNetworkProfile } from './SetNetworkProfile.js';
 import { StatusNotification } from './StatusNotification.js';
-import type { Point } from '../Point.js';
 
 /**
  * Represents a charging station.
