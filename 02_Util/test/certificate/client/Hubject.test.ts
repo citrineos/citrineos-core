@@ -307,6 +307,29 @@ describe('Hubject', () => {
         'Get token response is unexpected: 403: Forbidden',
       );
     });
+
+    it.each([
+      'getSignedCertificate',
+      'getCACertificates',
+      'getSignedContractData',
+      'getRootCertificates',
+    ])('should throw error if retry also fails', async (method) => {
+      (fetch as Mock)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: HttpStatus.UNAUTHORIZED,
+          text: async () => 'Unauthorized',
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: HttpStatus.UNAUTHORIZED,
+          text: async () => 'Still Unauthorized',
+        });
+
+      await expect((hubject as any)[method]('arg1', 'arg2')).rejects.toThrow(
+        'Get token response is unexpected: 401: Unauthorized',
+      );
+    });
   });
 
   describe('authorized endpoints', () => {

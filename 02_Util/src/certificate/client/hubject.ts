@@ -251,9 +251,9 @@ export class Hubject implements IV2GCertificateAuthorityClient {
     try {
       let response = await requestFn();
 
-      // If 403, clear cache and retry once
-      if (response.status === HttpStatus.FORBIDDEN) {
-        this._logger.warn('Received 403, clearing auth token cache and retrying...');
+      // If 401/403, clear cache and retry once
+      if (response.status === HttpStatus.FORBIDDEN || response.status === HttpStatus.UNAUTHORIZED) {
+        this._logger.warn(`Received ${response.status}, clearing auth token cache and retrying...`);
         const removed = await this._cache.remove(
           Hubject.AUTH_TOKEN_CACHE_KEY,
           Hubject.AUTH_TOKEN_CACHE_NAMESPACE,
