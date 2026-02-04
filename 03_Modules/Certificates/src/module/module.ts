@@ -19,7 +19,7 @@ import {
   OCPP2_1,
   OCPP_CallAction,
   OCPP2_0_1_Namespace,
-  OCPP_2,
+  OCPP_2_VER_LIST,
   OcppError,
 } from '@citrineos/base';
 import { Op } from 'sequelize';
@@ -152,7 +152,7 @@ export class CertificatesModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(OCPP_2, OCPP_CallAction.Get15118EVCertificate)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.Get15118EVCertificate)
   protected async _handleGet15118EVCertificate(
     message: IMessage<OCPP2_1.Get15118EVCertificateRequest>,
     props?: HandlerProperties,
@@ -181,7 +181,7 @@ export class CertificatesModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.GetCertificateStatus)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus)
   protected async _handleGetCertificateStatus(
     message: IMessage<OCPP2_1.GetCertificateStatusRequest>,
     props?: HandlerProperties,
@@ -209,7 +209,7 @@ export class CertificatesModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.SignCertificate)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.SignCertificate)
   protected async _handleSignCertificate(
     message: IMessage<OCPP2_1.SignCertificateRequest>,
     props?: HandlerProperties,
@@ -293,7 +293,7 @@ export class CertificatesModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(OCPP_2, OCPP_CallAction.CertificateSigned)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.CertificateSigned)
   protected _handleCertificateSigned(
     message: IMessage<OCPP2_1.CertificateSignedResponse>,
     props?: HandlerProperties,
@@ -303,7 +303,7 @@ export class CertificatesModule extends AbstractModule {
     // TODO: If accepted, revoke old certificate
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.DeleteCertificate)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.DeleteCertificate)
   protected async _handleDeleteCertificate(
     message: IMessage<OCPP2_1.DeleteCertificateResponse>,
     props?: HandlerProperties,
@@ -311,7 +311,7 @@ export class CertificatesModule extends AbstractModule {
     this._logger.debug('DeleteCertificate received:', message, props);
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.GetInstalledCertificateIds)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetInstalledCertificateIds)
   protected async _handleGetInstalledCertificateIds(
     message: IMessage<OCPP2_1.GetInstalledCertificateIdsResponse>,
     props?: HandlerProperties,
@@ -358,7 +358,7 @@ export class CertificatesModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.InstallCertificate)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.InstallCertificate)
   protected async _handleInstallCertificate(
     message: IMessage<OCPP2_1.InstallCertificateResponse>,
     props?: HandlerProperties,

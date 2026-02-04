@@ -18,7 +18,7 @@ import {
   ErrorCode,
   EventGroup,
   Namespace,
-  OCPP_2,
+  OCPP_2_VER_LIST,
   OCPP2_1,
   OCPP_CallAction,
   OcppError,
@@ -135,7 +135,7 @@ export class ReportingModule extends AbstractModule {
    * Handle Requests
    */
 
-  @AsHandler(OCPP_2, OCPP_CallAction.LogStatusNotification)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.LogStatusNotification)
   protected async _handleLogStatusNotification(
     message: IMessage<OCPP2_1.LogStatusNotificationRequest>,
     props?: HandlerProperties,
@@ -164,7 +164,7 @@ export class ReportingModule extends AbstractModule {
     this._logger.debug('LogStatusNotification response sent: ', messageConfirmation);
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.NotifyCustomerInformation)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyCustomerInformation)
   protected async _handleNotifyCustomerInformation(
     message: IMessage<OCPP2_1.NotifyCustomerInformationRequest>,
     props?: HandlerProperties,
@@ -242,7 +242,7 @@ export class ReportingModule extends AbstractModule {
   //TODO: Need to create a separate handler for OCPP 2.1 for handleSetVariableMonitoring
   //      2.1's NotifyMonitoringReportRequest has an additional required enum compared to 2.0.1
 
-  @AsHandler(OCPP_2, OCPP_CallAction.NotifyReport)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyReport)
   protected async _handleNotifyReport(
     message: IMessage<OCPP2_1.NotifyReportRequest>,
     props?: HandlerProperties,
@@ -328,7 +328,7 @@ export class ReportingModule extends AbstractModule {
     this._logger.debug('NotifyReport response sent:', message, props);
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.SecurityEventNotification)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.SecurityEventNotification)
   protected async _handleSecurityEventNotification(
     message: IMessage<OCPP2_1.SecurityEventNotificationRequest>,
     props?: HandlerProperties,
@@ -346,7 +346,7 @@ export class ReportingModule extends AbstractModule {
    * Handle responses
    */
 
-  @AsHandler(OCPP_2, OCPP_CallAction.GetBaseReport)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetBaseReport)
   protected _handleGetBaseReport(
     message: IMessage<OCPP2_1.GetBaseReportResponse>,
     props?: HandlerProperties,
@@ -354,7 +354,7 @@ export class ReportingModule extends AbstractModule {
     this._logger.debug('GetBaseReport response received:', message, props);
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.GetReport)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetReport)
   protected _handleGetReport(
     message: IMessage<OCPP2_1.GetReportResponse>,
     props?: HandlerProperties,
@@ -376,7 +376,7 @@ export class ReportingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.GetMonitoringReport)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetMonitoringReport)
   protected async _handleGetMonitoringReport(
     message: IMessage<OCPP2_1.GetMonitoringReportResponse>,
     props?: HandlerProperties,
@@ -398,7 +398,7 @@ export class ReportingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.GetLog)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetLog)
   protected _handleGetLog(
     message: IMessage<OCPP2_1.GetLogResponse>,
     props?: HandlerProperties,
@@ -406,7 +406,7 @@ export class ReportingModule extends AbstractModule {
     this._logger.debug('GetLog response received:', message, props);
   }
 
-  @AsHandler(OCPP_2, OCPP_CallAction.CustomerInformation)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.CustomerInformation)
   protected _handleCustomerInformation(
     message: IMessage<OCPP2_1.CustomerInformationResponse>,
     props?: HandlerProperties,
