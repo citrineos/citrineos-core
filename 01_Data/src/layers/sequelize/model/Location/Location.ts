@@ -8,7 +8,6 @@ import type {
   TenantDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, LocationHours, OCPP2_0_1_Namespace } from '@citrineos/base';
-import type { Point } from 'geojson';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -22,6 +21,7 @@ import {
 } from 'sequelize-typescript';
 import { Tenant } from '../Tenant.js';
 import { ChargingStation } from './ChargingStation.js';
+import type { Point } from '../Point.js';
 
 /**
  * Represents a location.

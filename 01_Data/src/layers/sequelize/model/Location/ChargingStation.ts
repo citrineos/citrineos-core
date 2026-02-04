@@ -12,7 +12,6 @@ import type {
   TransactionDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace, OCPPVersion } from '@citrineos/base';
-import type { Point } from 'geojson';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -34,6 +33,7 @@ import { Evse } from './Evse.js';
 import { Location } from './Location.js';
 import { SetNetworkProfile } from './SetNetworkProfile.js';
 import { StatusNotification } from './StatusNotification.js';
+import type { Point } from '../Point.js';
 
 /**
  * Represents a charging station.
