@@ -13,7 +13,7 @@ import {
   AsMessageEndpoint,
   DEFAULT_TENANT_ID,
   OCPP2_0_1,
-  OCPP2_0_1_CallAction,
+  OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
 import { SetNetworkProfile } from '@citrineos/data';
@@ -46,11 +46,9 @@ export class ConfigurationOcpp201Api
     super(ConfigurationComponent, server, OCPPVersion.OCPP2_0_1, logger);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.SetNetworkProfile,
-    OCPP2_0_1.SetNetworkProfileRequestSchema,
-    { websocketServerConfigId: { type: 'string' } },
-  )
+  @AsMessageEndpoint(OCPP_CallAction.SetNetworkProfile, OCPP2_0_1.SetNetworkProfileRequestSchema, {
+    websocketServerConfigId: { type: 'string' },
+  })
   async setNetworkProfile(
     identifier: string[],
     request: OCPP2_0_1.SetNetworkProfileRequest,
@@ -79,7 +77,7 @@ export class ConfigurationOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.SetNetworkProfile,
+        OCPP_CallAction.SetNetworkProfile,
         request,
         callbackUrl,
         correlationId,
@@ -89,7 +87,7 @@ export class ConfigurationOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.ClearDisplayMessage,
+    OCPP_CallAction.ClearDisplayMessage,
     OCPP2_0_1.ClearDisplayMessageRequestSchema,
   )
   clearDisplayMessage(
@@ -103,7 +101,7 @@ export class ConfigurationOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.ClearDisplayMessage,
+        OCPP_CallAction.ClearDisplayMessage,
         request,
         callbackUrl,
       ),
@@ -111,10 +109,7 @@ export class ConfigurationOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.GetDisplayMessages,
-    OCPP2_0_1.GetDisplayMessagesRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP_CallAction.GetDisplayMessages, OCPP2_0_1.GetDisplayMessagesRequestSchema)
   getDisplayMessages(
     identifier: string[],
     request: OCPP2_0_1.GetDisplayMessagesRequest,
@@ -126,7 +121,7 @@ export class ConfigurationOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.GetDisplayMessages,
+        OCPP_CallAction.GetDisplayMessages,
         request,
         callbackUrl,
       ),
@@ -134,7 +129,7 @@ export class ConfigurationOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.PublishFirmware, OCPP2_0_1.PublishFirmwareRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.PublishFirmware, OCPP2_0_1.PublishFirmwareRequestSchema)
   publishFirmware(
     identifier: string[],
     request: OCPP2_0_1.PublishFirmwareRequest,
@@ -146,7 +141,7 @@ export class ConfigurationOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.PublishFirmware,
+        OCPP_CallAction.PublishFirmware,
         request,
         callbackUrl,
       ),
@@ -154,10 +149,7 @@ export class ConfigurationOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.SetDisplayMessage,
-    OCPP2_0_1.SetDisplayMessageRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP_CallAction.SetDisplayMessage, OCPP2_0_1.SetDisplayMessageRequestSchema)
   async setDisplayMessage(
     identifier: string[],
     request: OCPP2_0_1.SetDisplayMessageRequest,
@@ -184,7 +176,7 @@ export class ConfigurationOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.SetDisplayMessage,
+        OCPP_CallAction.SetDisplayMessage,
         request,
         callbackUrl,
       ),
@@ -192,10 +184,7 @@ export class ConfigurationOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.UnpublishFirmware,
-    OCPP2_0_1.UnpublishFirmwareRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP_CallAction.UnpublishFirmware, OCPP2_0_1.UnpublishFirmwareRequestSchema)
   unpublishFirmware(
     identifier: string[],
     request: OCPP2_0_1.UnpublishFirmwareRequest,
@@ -207,7 +196,7 @@ export class ConfigurationOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.UnpublishFirmware,
+        OCPP_CallAction.UnpublishFirmware,
         request,
         callbackUrl,
       ),
@@ -215,7 +204,7 @@ export class ConfigurationOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.UpdateFirmware, OCPP2_0_1.UpdateFirmwareRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.UpdateFirmware, OCPP2_0_1.UpdateFirmwareRequestSchema)
   updateFirmware(
     identifier: string[],
     request: OCPP2_0_1.UpdateFirmwareRequest,
@@ -227,7 +216,7 @@ export class ConfigurationOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.UpdateFirmware,
+        OCPP_CallAction.UpdateFirmware,
         request,
         callbackUrl,
       ),
@@ -235,7 +224,7 @@ export class ConfigurationOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.Reset, OCPP2_0_1.ResetRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.Reset, OCPP2_0_1.ResetRequestSchema)
   reset(
     identifier: string[],
     request: OCPP2_0_1.ResetRequest,
@@ -247,7 +236,7 @@ export class ConfigurationOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.Reset,
+        OCPP_CallAction.Reset,
         request,
         callbackUrl,
       ),
@@ -255,10 +244,7 @@ export class ConfigurationOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.ChangeAvailability,
-    OCPP2_0_1.ChangeAvailabilityRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP_CallAction.ChangeAvailability, OCPP2_0_1.ChangeAvailabilityRequestSchema)
   changeAvailability(
     identifier: string[],
     request: OCPP2_0_1.ChangeAvailabilityRequest,
@@ -270,7 +256,7 @@ export class ConfigurationOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.ChangeAvailability,
+        OCPP_CallAction.ChangeAvailability,
         request,
         callbackUrl,
       ),
@@ -278,7 +264,7 @@ export class ConfigurationOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.TriggerMessage, OCPP2_0_1.TriggerMessageRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.TriggerMessage, OCPP2_0_1.TriggerMessageRequestSchema)
   triggerMessage(
     identifier: string[],
     request: OCPP2_0_1.TriggerMessageRequest,
@@ -290,7 +276,7 @@ export class ConfigurationOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.TriggerMessage,
+        OCPP_CallAction.TriggerMessage,
         request,
         callbackUrl,
       ),

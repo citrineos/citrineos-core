@@ -24,12 +24,13 @@ import type {
 import {
   MessageOrigin,
   MessageState,
-  OCPP1_6_CALL_RESULT_SCHEMA_MAP,
-  OCPP1_6_CALL_SCHEMA_MAP,
-  OCPP1_6_CallAction,
-  OCPP2_0_1_CALL_RESULT_SCHEMA_MAP,
-  OCPP2_0_1_CALL_SCHEMA_MAP,
-  OCPP2_0_1_CallAction,
+  OCPP1_6_CALL_RESULT_SCHEMA_RECORD,
+  OCPP1_6_CALL_SCHEMA_RECORD,
+  OCPP_CallAction,
+  OCPP2_0_1_CALL_RESULT_SCHEMA_RECORD,
+  OCPP2_0_1_CALL_SCHEMA_RECORD,
+  OCPP2_1_CALL_SCHEMA_RECORD,
+  OCPP2_1_CALL_RESULT_SCHEMA_RECORD,
   OcppError,
   OCPPVersion,
 } from '../../index.js';
@@ -193,10 +194,13 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     let schema: any;
     switch (protocol) {
       case OCPPVersion.OCPP1_6:
-        schema = OCPP1_6_CALL_SCHEMA_MAP.get(action);
+        schema = OCPP1_6_CALL_SCHEMA_RECORD[action];
         break;
       case OCPPVersion.OCPP2_0_1:
-        schema = OCPP2_0_1_CALL_SCHEMA_MAP.get(action);
+        schema = OCPP2_0_1_CALL_SCHEMA_RECORD[action];
+        break;
+      case OCPPVersion.OCPP2_1:
+        schema = OCPP2_1_CALL_SCHEMA_RECORD[action];
         break;
       default:
         this._logger.error('Unknown subprotocol', protocol);
@@ -216,10 +220,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
         this._logger.debug('Validate Call failed', validationErrorsDeepCopy);
         return { isValid: false, errors: validationErrorsDeepCopy };
       } else {
-        if (
-          action === OCPP1_6_CallAction.DataTransfer ||
-          action === OCPP2_0_1_CallAction.DataTransfer
-        ) {
+        if (action === OCPP_CallAction.DataTransfer) {
           const dataTransferRequest: { vendorId: string; messageId?: string; data: string } =
             payload as any;
           const dataTransferPayloadValidate = this._ajv.getSchema(
@@ -266,10 +267,13 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     let schema: any;
     switch (protocol) {
       case OCPPVersion.OCPP1_6:
-        schema = OCPP1_6_CALL_RESULT_SCHEMA_MAP.get(action);
+        schema = OCPP1_6_CALL_RESULT_SCHEMA_RECORD[action];
         break;
       case OCPPVersion.OCPP2_0_1:
-        schema = OCPP2_0_1_CALL_RESULT_SCHEMA_MAP.get(action);
+        schema = OCPP2_0_1_CALL_RESULT_SCHEMA_RECORD[action];
+        break;
+      case OCPPVersion.OCPP2_1:
+        schema = OCPP2_1_CALL_RESULT_SCHEMA_RECORD[action];
         break;
       default:
         this._logger.error('Unknown subprotocol', protocol);

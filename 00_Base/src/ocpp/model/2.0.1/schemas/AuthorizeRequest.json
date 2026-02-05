@@ -91,7 +91,7 @@
         "idToken": {
           "description": "IdToken is case insensitive. Might hold the hidden id of an RFID tag, but can for example also contain a UUID.\r\n",
           "type": "string",
-          "maxLength": 36,
+          "maxLength": 255,
           "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         },
         "type": {

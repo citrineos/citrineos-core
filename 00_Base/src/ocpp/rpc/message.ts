@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { OcppRequest, OcppResponse } from '../../index.js';
-import { Expose, Transform } from 'class-transformer';
+import { Expose } from 'class-transformer';
 
 /**
  * Definition of Call Message (4.2.1 CALL)
@@ -49,100 +49,105 @@ export enum MessageTypeId {
 export enum OCPPVersion {
   OCPP1_6 = 'ocpp1.6',
   OCPP2_0_1 = 'ocpp2.0.1',
+  OCPP2_1 = 'ocpp2.1',
 }
 
-export type OCPPVersionType = 'ocpp1.6' | 'ocpp2.0.1';
+/**
+ * All OCPP 2.x versions
+ */
+export const OCPP_2_VER_LIST = [OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1];
+
+export type OCPPVersionType = 'ocpp1.6' | 'ocpp2.0.1' | 'ocpp2.1';
 
 /**
  * The different OCPP action types.
  *
  */
 
-export type CallAction = OCPP1_6_CallAction | OCPP2_0_1_CallAction;
+export type CallAction = OCPP_CallAction;
 
-export enum OCPP1_6_CallAction {
+export enum OCPP_CallAction {
+  AdjustPeriodicEventStream = 'AdjustPeriodicEventStream',
+  AFRRSignal = 'AFRRSignal',
   Authorize = 'Authorize',
+  BatterySwap = 'BatterySwap',
   BootNotification = 'BootNotification',
   CancelReservation = 'CancelReservation',
   ChangeAvailability = 'ChangeAvailability',
   ChangeConfiguration = 'ChangeConfiguration',
-  ClearCache = 'ClearCache',
-  ClearChargingProfile = 'ClearChargingProfile',
-  DataTransfer = 'DataTransfer',
-  DiagnosticsStatusNotification = 'DiagnosticsStatusNotification',
-  FirmwareStatusNotification = 'FirmwareStatusNotification',
-  GetCompositeSchedule = 'GetCompositeSchedule',
-  GetConfiguration = 'GetConfiguration',
-  GetDiagnostics = 'GetDiagnostics',
-  GetLocalListVersion = 'GetLocalListVersion',
-  Heartbeat = 'Heartbeat',
-  MeterValues = 'MeterValues',
-  RemoteStartTransaction = 'RemoteStartTransaction',
-  RemoteStopTransaction = 'RemoteStopTransaction',
-  ReserveNow = 'ReserveNow',
-  Reset = 'Reset',
-  SendLocalList = 'SendLocalList',
-  SetChargingProfile = 'SetChargingProfile',
-  StartTransaction = 'StartTransaction',
-  StatusNotification = 'StatusNotification',
-  StopTransaction = 'StopTransaction',
-  TriggerMessage = 'TriggerMessage',
-  UnlockConnector = 'UnlockConnector',
-  UpdateFirmware = 'UpdateFirmware',
-}
-
-export enum OCPP2_0_1_CallAction {
-  Authorize = 'Authorize',
-  BootNotification = 'BootNotification',
-  CancelReservation = 'CancelReservation',
+  ChangeTransactionTariff = 'ChangeTransactionTariff',
   CertificateSigned = 'CertificateSigned',
-  ChangeAvailability = 'ChangeAvailability',
   ClearCache = 'ClearCache',
   ClearChargingProfile = 'ClearChargingProfile',
+  ClearDERControl = 'ClearDERControl',
   ClearDisplayMessage = 'ClearDisplayMessage',
-  ClearedChargingLimit = 'ClearedChargingLimit',
+  ClearTariffs = 'ClearTariffs',
   ClearVariableMonitoring = 'ClearVariableMonitoring',
+  ClearedChargingLimit = 'ClearedChargingLimit',
+  ClosePeriodicEventStream = 'ClosePeriodicEventStream',
   CostUpdated = 'CostUpdated',
   CustomerInformation = 'CustomerInformation',
   DataTransfer = 'DataTransfer',
   DeleteCertificate = 'DeleteCertificate',
+  DiagnosticsStatusNotification = 'DiagnosticsStatusNotification',
   FirmwareStatusNotification = 'FirmwareStatusNotification',
   Get15118EVCertificate = 'Get15118EVCertificate',
   GetBaseReport = 'GetBaseReport',
+  GetCertificateChainStatus = 'GetCertificateChainStatus',
   GetCertificateStatus = 'GetCertificateStatus',
   GetChargingProfiles = 'GetChargingProfiles',
   GetCompositeSchedule = 'GetCompositeSchedule',
+  GetConfiguration = 'GetConfiguration',
+  GetDiagnostics = 'GetDiagnostics',
+  GetDERControl = 'GetDERControl',
   GetDisplayMessages = 'GetDisplayMessages',
   GetInstalledCertificateIds = 'GetInstalledCertificateIds',
   GetLocalListVersion = 'GetLocalListVersion',
   GetLog = 'GetLog',
   GetMonitoringReport = 'GetMonitoringReport',
+  GetPeriodicEventStream = 'GetPeriodicEventStream',
   GetReport = 'GetReport',
+  GetTariffs = 'GetTariffs',
   GetTransactionStatus = 'GetTransactionStatus',
   GetVariables = 'GetVariables',
   Heartbeat = 'Heartbeat',
   InstallCertificate = 'InstallCertificate',
   LogStatusNotification = 'LogStatusNotification',
   MeterValues = 'MeterValues',
+  NotifyAllowedEnergyTransfer = 'NotifyAllowedEnergyTransfer',
   NotifyChargingLimit = 'NotifyChargingLimit',
   NotifyCustomerInformation = 'NotifyCustomerInformation',
+  NotifyDERAlarm = 'NotifyDERAlarm',
+  NotifyDERStartStop = 'NotifyDERStartStop',
   NotifyDisplayMessages = 'NotifyDisplayMessages',
   NotifyEVChargingNeeds = 'NotifyEVChargingNeeds',
   NotifyEVChargingSchedule = 'NotifyEVChargingSchedule',
   NotifyEvent = 'NotifyEvent',
   NotifyMonitoringReport = 'NotifyMonitoringReport',
+  NotifyPeriodicEventStream = 'NotifyPeriodicEventStream',
+  NotifyPriorityCharging = 'NotifyPriorityCharging',
   NotifyReport = 'NotifyReport',
+  NotifySettlement = 'NotifySettlement',
+  NotifyWebPaymentStarted = 'NotifyWebPaymentStarted',
+  OpenPeriodicEventStream = 'OpenPeriodicEventStream',
+  PullDynamicScheduleUpdate = 'PullDynamicScheduleUpdate',
   PublishFirmware = 'PublishFirmware',
   PublishFirmwareStatusNotification = 'PublishFirmwareStatusNotification',
   ReportChargingProfiles = 'ReportChargingProfiles',
+  ReportDERControl = 'ReportDERControl',
+  RequestBatterySwap = 'RequestBatterySwap',
   RequestStartTransaction = 'RequestStartTransaction',
   RequestStopTransaction = 'RequestStopTransaction',
   ReservationStatusUpdate = 'ReservationStatusUpdate',
   ReserveNow = 'ReserveNow',
   Reset = 'Reset',
+  RemoteStartTransaction = 'RemoteStartTransaction',
+  RemoteStopTransaction = 'RemoteStopTransaction',
   SecurityEventNotification = 'SecurityEventNotification',
   SendLocalList = 'SendLocalList',
   SetChargingProfile = 'SetChargingProfile',
+  SetDefaultTariff = 'SetDefaultTariff',
+  SetDERControl = 'SetDERControl',
   SetDisplayMessage = 'SetDisplayMessage',
   SetMonitoringBase = 'SetMonitoringBase',
   SetMonitoringLevel = 'SetMonitoringLevel',
@@ -150,12 +155,17 @@ export enum OCPP2_0_1_CallAction {
   SetVariableMonitoring = 'SetVariableMonitoring',
   SetVariables = 'SetVariables',
   SignCertificate = 'SignCertificate',
+  StartTransaction = 'StartTransaction',
   StatusNotification = 'StatusNotification',
+  StopTransaction = 'StopTransaction',
   TransactionEvent = 'TransactionEvent',
   TriggerMessage = 'TriggerMessage',
   UnlockConnector = 'UnlockConnector',
   UnpublishFirmware = 'UnpublishFirmware',
+  UpdateDynamicSchedule = 'UpdateDynamicSchedule',
   UpdateFirmware = 'UpdateFirmware',
+  UsePriorityCharging = 'UsePriorityCharging',
+  VatNumberValidation = 'VatNumberValidation',
 }
 
 /**
@@ -254,6 +264,129 @@ export class OcppError extends Error {
   }
 }
 
+const OCPP_Base_CallActions = new Set<string>([
+  OCPP_CallAction.Authorize,
+  OCPP_CallAction.BootNotification,
+  OCPP_CallAction.CancelReservation,
+  OCPP_CallAction.ChangeAvailability,
+  OCPP_CallAction.ClearCache,
+  OCPP_CallAction.ClearChargingProfile,
+  OCPP_CallAction.DataTransfer,
+  OCPP_CallAction.FirmwareStatusNotification,
+  OCPP_CallAction.GetCompositeSchedule,
+  OCPP_CallAction.GetConfiguration,
+  OCPP_CallAction.GetLocalListVersion,
+  OCPP_CallAction.Heartbeat,
+  OCPP_CallAction.MeterValues,
+  OCPP_CallAction.ReserveNow,
+  OCPP_CallAction.Reset,
+  OCPP_CallAction.SendLocalList,
+  OCPP_CallAction.SetChargingProfile,
+  OCPP_CallAction.StartTransaction,
+  OCPP_CallAction.StatusNotification,
+  OCPP_CallAction.StopTransaction,
+  OCPP_CallAction.TriggerMessage,
+  OCPP_CallAction.UnlockConnector,
+  OCPP_CallAction.UpdateFirmware,
+]);
+
+const OCPP1_6_CallActions = new Set<string>([
+  ...OCPP_Base_CallActions,
+  OCPP_CallAction.ChangeConfiguration,
+  OCPP_CallAction.DiagnosticsStatusNotification,
+  OCPP_CallAction.GetConfiguration,
+  OCPP_CallAction.GetDiagnostics,
+  OCPP_CallAction.RemoteStartTransaction,
+  OCPP_CallAction.RemoteStopTransaction,
+  OCPP_CallAction.StartTransaction,
+  OCPP_CallAction.StopTransaction,
+]);
+
+const OCPP2_0_1_CallActions = new Set<string>([
+  ...OCPP_Base_CallActions,
+  OCPP_CallAction.CertificateSigned,
+  OCPP_CallAction.ClearDisplayMessage,
+  OCPP_CallAction.ClearedChargingLimit,
+  OCPP_CallAction.ClearVariableMonitoring,
+  OCPP_CallAction.CostUpdated,
+  OCPP_CallAction.CustomerInformation,
+  OCPP_CallAction.DeleteCertificate,
+  OCPP_CallAction.Get15118EVCertificate,
+  OCPP_CallAction.GetBaseReport,
+  OCPP_CallAction.GetCertificateStatus,
+  OCPP_CallAction.GetChargingProfiles,
+  OCPP_CallAction.GetDisplayMessages,
+  OCPP_CallAction.GetInstalledCertificateIds,
+  OCPP_CallAction.GetLog,
+  OCPP_CallAction.GetMonitoringReport,
+  OCPP_CallAction.GetReport,
+  OCPP_CallAction.GetTransactionStatus,
+  OCPP_CallAction.GetVariables,
+  OCPP_CallAction.InstallCertificate,
+  OCPP_CallAction.LogStatusNotification,
+  OCPP_CallAction.NotifyChargingLimit,
+  OCPP_CallAction.NotifyCustomerInformation,
+  OCPP_CallAction.NotifyDisplayMessages,
+  OCPP_CallAction.NotifyEVChargingNeeds,
+  OCPP_CallAction.NotifyEVChargingSchedule,
+  OCPP_CallAction.NotifyEvent,
+  OCPP_CallAction.NotifyMonitoringReport,
+  OCPP_CallAction.NotifyReport,
+  OCPP_CallAction.PublishFirmware,
+  OCPP_CallAction.PublishFirmwareStatusNotification,
+  OCPP_CallAction.ReportChargingProfiles,
+  OCPP_CallAction.RequestStartTransaction,
+  OCPP_CallAction.RequestStopTransaction,
+  OCPP_CallAction.ReservationStatusUpdate,
+  OCPP_CallAction.SecurityEventNotification,
+  OCPP_CallAction.SetDisplayMessage,
+  OCPP_CallAction.SetMonitoringBase,
+  OCPP_CallAction.SetMonitoringLevel,
+  OCPP_CallAction.SetNetworkProfile,
+  OCPP_CallAction.SetVariableMonitoring,
+  OCPP_CallAction.SetVariables,
+  OCPP_CallAction.SignCertificate,
+  OCPP_CallAction.TransactionEvent,
+  OCPP_CallAction.UnpublishFirmware,
+]);
+
+const OCPP2_1_CallActions = new Set<string>([
+  ...OCPP2_0_1_CallActions,
+  OCPP_CallAction.AdjustPeriodicEventStream,
+  OCPP_CallAction.AFRRSignal,
+  OCPP_CallAction.BatterySwap,
+  OCPP_CallAction.ChangeTransactionTariff,
+  OCPP_CallAction.ClearDERControl,
+  OCPP_CallAction.ClearTariffs,
+  OCPP_CallAction.ClosePeriodicEventStream,
+  OCPP_CallAction.GetCertificateChainStatus,
+  OCPP_CallAction.GetDERControl,
+  OCPP_CallAction.GetPeriodicEventStream,
+  OCPP_CallAction.GetTariffs,
+  OCPP_CallAction.NotifyAllowedEnergyTransfer,
+  OCPP_CallAction.NotifyDERAlarm,
+  OCPP_CallAction.NotifyDERStartStop,
+  OCPP_CallAction.NotifyPeriodicEventStream,
+  OCPP_CallAction.NotifyPriorityCharging,
+  OCPP_CallAction.NotifySettlement,
+  OCPP_CallAction.NotifyWebPaymentStarted,
+  OCPP_CallAction.OpenPeriodicEventStream,
+  OCPP_CallAction.PullDynamicScheduleUpdate,
+  OCPP_CallAction.ReportDERControl,
+  OCPP_CallAction.RequestBatterySwap,
+  OCPP_CallAction.SetDefaultTariff,
+  OCPP_CallAction.SetDERControl,
+  OCPP_CallAction.UpdateDynamicSchedule,
+  OCPP_CallAction.UsePriorityCharging,
+  OCPP_CallAction.VatNumberValidation,
+]);
+
+const ALLOWED_ACTIONS: Record<OCPPVersionType, Set<string>> = {
+  [OCPPVersion.OCPP1_6]: OCPP1_6_CallActions,
+  [OCPPVersion.OCPP2_0_1]: OCPP2_0_1_CallActions,
+  [OCPPVersion.OCPP2_1]: OCPP2_1_CallActions,
+};
+
 /**
  * Maps a string to the corresponding OCPP CallAction enum value based on protocol version
  * @param version OCPP protocol version
@@ -268,15 +401,15 @@ export function mapToCallAction(version: OCPPVersionType, action: string): CallA
   }
 
   switch (version) {
-    case 'ocpp1.6':
-      if (action in OCPP1_6_CallAction) {
-        return OCPP1_6_CallAction[action as keyof typeof OCPP1_6_CallAction];
+    case OCPPVersion.OCPP1_6:
+      if (action in OCPP_CallAction && ALLOWED_ACTIONS[OCPPVersion.OCPP1_6].has(action)) {
+        return OCPP_CallAction[action as keyof typeof OCPP_CallAction];
       }
       throw new Error(`Invalid OCPP 1.6 action: ${action}`);
 
-    case 'ocpp2.0.1':
-      if (action in OCPP2_0_1_CallAction) {
-        return OCPP2_0_1_CallAction[action as keyof typeof OCPP2_0_1_CallAction];
+    case OCPPVersion.OCPP2_0_1:
+      if (action in OCPP_CallAction && ALLOWED_ACTIONS[OCPPVersion.OCPP2_0_1].has(action)) {
+        return OCPP_CallAction[action as keyof typeof OCPP_CallAction];
       }
       throw new Error(`Invalid OCPP 2.0.1 action: ${action}`);
 

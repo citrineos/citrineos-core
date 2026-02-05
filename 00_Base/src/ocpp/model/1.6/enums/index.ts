@@ -404,6 +404,7 @@ export enum StopTransactionRequestUnit {
   V = 'V',
   K = 'K',
   Celcius = 'Celcius',
+  Celsius = 'Celsius',
   Fahrenheit = 'Fahrenheit',
   Percent = 'Percent',
 }

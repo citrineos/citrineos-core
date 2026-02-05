@@ -20,8 +20,8 @@ import {
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_0_1,
-  OCPP2_0_1_CallAction,
   OCPP2_0_1_Namespace,
+  OCPP_CallAction,
   OCPPVersion,
   UpdateChargingStationPasswordSchema,
 } from '@citrineos/base';
@@ -221,7 +221,7 @@ export class ConfigurationDataApi
       stationId,
       tenantId,
       OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.SetVariables,
+      OCPP_CallAction.SetVariables,
       {
         setVariableData: [
           {

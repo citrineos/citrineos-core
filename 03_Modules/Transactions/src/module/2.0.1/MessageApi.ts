@@ -12,7 +12,7 @@ import {
   AsMessageEndpoint,
   DEFAULT_TENANT_ID,
   OCPP2_0_1,
-  OCPP2_0_1_CallAction,
+  OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
 import type { FastifyInstance } from 'fastify';
@@ -39,7 +39,7 @@ export class TransactionsOcpp201Api
     super(transactionModule, server, OCPPVersion.OCPP2_0_1, logger);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.CostUpdated, OCPP2_0_1.CostUpdatedRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.CostUpdated, OCPP2_0_1.CostUpdatedRequestSchema)
   async costUpdated(
     identifier: string[],
     request: OCPP2_0_1.CostUpdatedRequest,
@@ -51,7 +51,7 @@ export class TransactionsOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.CostUpdated,
+        OCPP_CallAction.CostUpdated,
         request,
         callbackUrl,
       ),
@@ -60,7 +60,7 @@ export class TransactionsOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.GetTransactionStatus,
+    OCPP_CallAction.GetTransactionStatus,
     OCPP2_0_1.GetTransactionStatusRequestSchema,
   )
   getTransactionStatus(
@@ -74,7 +74,7 @@ export class TransactionsOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.GetTransactionStatus,
+        OCPP_CallAction.GetTransactionStatus,
         request,
         callbackUrl,
       ),

@@ -2,12 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { ITransactionEventRepository, Transaction } from '@citrineos/data';
-import {
-  AbstractModule,
-  DEFAULT_TENANT_ID,
-  OCPP2_0_1_CallAction,
-  OCPPVersion,
-} from '@citrineos/base';
+import { AbstractModule, DEFAULT_TENANT_ID, OCPP_CallAction, OCPPVersion } from '@citrineos/base';
 import { CostCalculator } from '../../src/module/CostCalculator.js';
 import { CostNotifier } from '../../src/module/CostNotifier.js';
 import { aTransaction } from '../providers/TransactionProvider.js';
@@ -139,7 +134,7 @@ describe('CostNotifier', () => {
       transaction.stationId,
       tenantId,
       OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.CostUpdated,
+      OCPP_CallAction.CostUpdated,
       {
         totalCost: totalCost,
         transactionId: transaction.transactionId,

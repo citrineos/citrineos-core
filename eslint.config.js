@@ -51,6 +51,8 @@ export default tseslint.config(
       'eslint.config.js',
       '00_Base/json-schema-processor-1.6.js',
       '00_Base/json-schema-processor-2.0.1.js',
+      '00_Base/json-schema-processor.js',
+      '00_Base/process/**',
       'coverage',
     ],
   },

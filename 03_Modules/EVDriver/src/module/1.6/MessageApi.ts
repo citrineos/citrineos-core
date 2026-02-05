@@ -13,8 +13,8 @@ import {
   AsMessageEndpoint,
   DEFAULT_TENANT_ID,
   OCPP1_6,
-  OCPP1_6_CallAction,
   OCPPVersion,
+  OCPP_CallAction,
 } from '@citrineos/base';
 
 export class EVDriverOcpp16Api
@@ -33,7 +33,7 @@ export class EVDriverOcpp16Api
   }
 
   @AsMessageEndpoint(
-    OCPP1_6_CallAction.RemoteStartTransaction,
+    OCPP_CallAction.RemoteStartTransaction,
     OCPP1_6.RemoteStartTransactionRequestSchema,
   )
   async remoteStartTransaction(
@@ -47,7 +47,7 @@ export class EVDriverOcpp16Api
         id,
         tenantId,
         OCPPVersion.OCPP1_6,
-        OCPP1_6_CallAction.RemoteStartTransaction,
+        OCPP_CallAction.RemoteStartTransaction,
         request,
         callbackUrl,
       ),
@@ -56,7 +56,7 @@ export class EVDriverOcpp16Api
   }
 
   @AsMessageEndpoint(
-    OCPP1_6_CallAction.RemoteStopTransaction,
+    OCPP_CallAction.RemoteStopTransaction,
     OCPP1_6.RemoteStopTransactionRequestSchema,
   )
   async remoteStopTransaction(
@@ -70,7 +70,7 @@ export class EVDriverOcpp16Api
         id,
         tenantId,
         OCPPVersion.OCPP1_6,
-        OCPP1_6_CallAction.RemoteStopTransaction,
+        OCPP_CallAction.RemoteStopTransaction,
         request,
         callbackUrl,
       ),
@@ -78,7 +78,7 @@ export class EVDriverOcpp16Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP1_6_CallAction.UnlockConnector, OCPP1_6.UnlockConnectorRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.UnlockConnector, OCPP1_6.UnlockConnectorRequestSchema)
   async unlockConnector(
     identifier: string[],
     request: OCPP1_6.UnlockConnectorRequest,
@@ -90,7 +90,7 @@ export class EVDriverOcpp16Api
         id,
         tenantId,
         OCPPVersion.OCPP1_6,
-        OCPP1_6_CallAction.UnlockConnector,
+        OCPP_CallAction.UnlockConnector,
         request,
         callbackUrl,
       ),
