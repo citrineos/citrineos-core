@@ -59,8 +59,6 @@ export const OCPP_2_VER_LIST = [OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1];
 
 export type OCPPVersionType = 'ocpp1.6' | 'ocpp2.0.1' | 'ocpp2.1';
 
-export const OCPP_VERSION_LIST: OCPPVersionType[] = ['ocpp1.6', 'ocpp2.0.1', 'ocpp2.1'];
-
 /**
  * The different OCPP action types.
  *
