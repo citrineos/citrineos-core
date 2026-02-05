@@ -68,7 +68,6 @@ export {
   OCPP_CallAction,
   OcppError,
   OCPPVersion,
-  OCPP_VERSION_LIST,
   OCPP_2_VER_LIST,
 } from './ocpp/rpc/message.js';
 export type {
