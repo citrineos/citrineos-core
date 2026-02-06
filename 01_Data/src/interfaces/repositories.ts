@@ -7,6 +7,7 @@ import type {
   CallAction,
   ChargingStationSequenceTypeEnumType,
   CrudRepository,
+  MeterValueDto,
   OCPP1_6,
   OCPP2_0_1,
   OCPPVersion,
@@ -283,7 +284,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     transactionDatabaseId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
-  ): Promise<void>;
+  ): Promise<MeterValue>;
   createTransactionByStartTransaction(
     tenantId: number,
     request: OCPP1_6.StartTransactionRequest,
@@ -291,7 +292,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   ): Promise<Transaction>;
   updateTransactionByMeterValues(
     tenantId: number,
-    meterValues: MeterValue[],
+    meterValues: MeterValueDto[],
     stationId: string,
     transactionId: number,
   ): Promise<void>;
@@ -331,7 +332,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     stationId: string,
     meterStop: number,
     timestamp: Date,
-    meterValues: MeterValue[],
+    meterValues: MeterValueDto[],
     reason?: string,
     idTokenDatabaseId?: number,
   ): Promise<StopTransaction>;

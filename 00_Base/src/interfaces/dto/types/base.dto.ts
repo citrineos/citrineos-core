@@ -6,7 +6,7 @@ import { z } from 'zod/v4';
 import { TenantSchema } from '../tenant.dto.js';
 
 export const BaseSchema = z.object({
-  tenantId: z.number().int(),
+  tenantId: z.number().int().optional(),
   tenant: TenantSchema.optional(),
   updatedAt: z.date().optional(),
   createdAt: z.date().optional(),
