@@ -715,7 +715,11 @@ export class CitrineOSServer {
   }
 
   private initCertificateAuthorityService() {
-    this._certificateAuthorityService = new CertificateAuthorityService(this._config, this._logger);
+    this._certificateAuthorityService = new CertificateAuthorityService(
+      this._config,
+      this._cache,
+      this._logger,
+    );
   }
 
   private initSmartChargingService() {
